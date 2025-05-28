@@ -5,11 +5,11 @@ from pathlib import Path
 from typing import Optional, TypeVar
 
 import click
-from dagster_dg.config import normalize_cli_config
-from dagster_dg.context import DgContext
-from dagster_dg.shared_options import dg_global_options, dg_path_options
-from dagster_dg.utils import DgClickCommand, pushd, validate_dagster_availability
-from dagster_dg.utils.telemetry import cli_telemetry_wrapper
+from dagster_dg_core.config import normalize_cli_config
+from dagster_dg_core.context import DgContext
+from dagster_dg_core.shared_options import dg_global_options, dg_path_options
+from dagster_dg_core.utils import DgClickCommand, pushd, validate_dagster_availability
+from dagster_dg_core.utils.telemetry import cli_telemetry_wrapper
 
 from dagster_dg_cli.cli.utils import create_temp_workspace_file
 
@@ -89,7 +89,7 @@ def dev_command(
     If run inside a workspace directory, this command will launch all projects in the
     workspace. If launched inside a project directory, it will launch only that project.
     """
-    from dagster_dg.check import check_yaml as check_yaml_fn
+    from dagster_dg_core.check import check_yaml as check_yaml_fn
 
     validate_dagster_availability()
 

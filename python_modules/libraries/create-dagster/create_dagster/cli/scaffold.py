@@ -3,16 +3,16 @@ from pathlib import Path
 from typing import Optional
 
 import click
-from dagster_dg.config import (
+from dagster_dg_core.config import (
     DgProjectPythonEnvironment,
     DgProjectPythonEnvironmentFlag,
     DgRawWorkspaceConfig,
     DgWorkspaceScaffoldProjectOptions,
     normalize_cli_config,
 )
-from dagster_dg.context import DgContext
-from dagster_dg.shared_options import dg_editable_dagster_options, dg_global_options
-from dagster_dg.utils import (
+from dagster_dg_core.context import DgContext
+from dagster_dg_core.shared_options import dg_editable_dagster_options, dg_global_options
+from dagster_dg_core.utils import (
     DgClickCommand,
     exit_with_error,
     format_multiline_str,
@@ -21,7 +21,7 @@ from dagster_dg.utils import (
     is_uv_installed,
     pushd,
 )
-from dagster_dg.utils.telemetry import cli_telemetry_wrapper
+from dagster_dg_core.utils.telemetry import cli_telemetry_wrapper
 from typing_extensions import get_args
 
 from create_dagster.scaffold import scaffold_project, scaffold_workspace

@@ -3,11 +3,11 @@ from pathlib import Path
 from typing import Optional
 
 import click
-from dagster_dg.config import normalize_cli_config
-from dagster_dg.context import DgContext
-from dagster_dg.shared_options import dg_global_options, dg_path_options
-from dagster_dg.utils import DgClickCommand, validate_dagster_availability
-from dagster_dg.utils.telemetry import cli_telemetry_wrapper
+from dagster_dg_core.config import normalize_cli_config
+from dagster_dg_core.context import DgContext
+from dagster_dg_core.shared_options import dg_global_options, dg_path_options
+from dagster_dg_core.utils import DgClickCommand, validate_dagster_availability
+from dagster_dg_core.utils.telemetry import cli_telemetry_wrapper
 from dagster_shared import check
 
 SINGLETON_REPOSITORY_NAME = "__repository__"

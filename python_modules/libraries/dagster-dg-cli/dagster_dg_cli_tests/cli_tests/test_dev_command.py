@@ -3,7 +3,7 @@ import textwrap
 from pathlib import Path
 
 import pytest
-from dagster_dg.utils import (
+from dagster_dg_core.utils import (
     activate_venv,
     discover_git_root,
     ensure_dagster_dg_tests_import,
@@ -14,7 +14,7 @@ from dagster_dg.utils import (
 
 ensure_dagster_dg_tests_import()
 
-from dagster_dg_tests.utils import (
+from dagster_dg_core_tests.utils import (
     ProxyRunner,
     assert_projects_loaded_and_exit,
     assert_runner_result,

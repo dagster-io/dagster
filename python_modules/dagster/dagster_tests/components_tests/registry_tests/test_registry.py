@@ -14,7 +14,7 @@ from dagster._core.test_utils import ensure_dagster_tests_import
 from dagster._utils import pushd
 from dagster.components.core.package_entry import discover_entry_point_package_objects
 from dagster.components.core.snapshot import get_package_entry_snap
-from dagster_dg.utils import get_venv_executable
+from dagster_dg_core.utils import get_venv_executable
 from dagster_shared.error import SerializableErrorInfo
 from dagster_shared.serdes.objects import PluginObjectKey
 from dagster_shared.serdes.objects.package_entry import PluginManifest

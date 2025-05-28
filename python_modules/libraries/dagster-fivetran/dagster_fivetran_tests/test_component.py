@@ -19,7 +19,7 @@ from dagster._utils import alter_sys_path
 from dagster._utils.env import environ
 from dagster.components.cli import cli
 from dagster.components.core.context import use_component_load_context
-from dagster_dg.utils import ensure_dagster_dg_tests_import
+from dagster_dg_core.utils import ensure_dagster_dg_tests_import
 from dagster_fivetran.components.workspace_component.component import FivetranWorkspaceComponent
 from dagster_fivetran.resources import FivetranWorkspace
 from dagster_fivetran.translator import FivetranConnector
@@ -42,7 +42,7 @@ from dagster_tests.components_tests.utils import get_underlying_component
 ensure_dagster_dg_tests_import()
 
 from click.testing import CliRunner
-from dagster_dg_tests.utils import ProxyRunner, isolated_example_project_foo_bar
+from dagster_dg_core_tests.utils import ProxyRunner, isolated_example_project_foo_bar
 
 
 @contextmanager

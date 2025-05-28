@@ -1,7 +1,7 @@
 from unittest.mock import patch
 
 import shellingham
-from dagster_dg_tests.utils import ProxyRunner, assert_runner_result
+from dagster_dg_core_tests.utils import ProxyRunner, assert_runner_result
 
 
 # It's quite difficult to have a true test of whether `install_completion` is working correctly,

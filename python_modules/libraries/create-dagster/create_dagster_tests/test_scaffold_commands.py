@@ -6,8 +6,8 @@ from typing import Literal, Optional, get_args
 import dagster_shared.check as check
 import pytest
 import tomlkit
-from dagster_dg.shared_options import DEFAULT_EDITABLE_DAGSTER_PROJECTS_ENV_VAR
-from dagster_dg.utils import (
+from dagster_dg_core.shared_options import DEFAULT_EDITABLE_DAGSTER_PROJECTS_ENV_VAR
+from dagster_dg_core.utils import (
     create_toml_node,
     discover_git_root,
     ensure_dagster_dg_tests_import,
@@ -19,8 +19,8 @@ from typing_extensions import TypeAlias
 
 ensure_dagster_dg_tests_import()
 
-from dagster_dg.utils import ensure_dagster_dg_tests_import
-from dagster_dg_tests.utils import (
+from dagster_dg_core.utils import ensure_dagster_dg_tests_import
+from dagster_dg_core_tests.utils import (
     ProxyRunner,
     assert_runner_result,
     clear_module_from_cache,
