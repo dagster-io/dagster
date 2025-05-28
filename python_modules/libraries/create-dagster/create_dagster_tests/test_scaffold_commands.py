@@ -363,7 +363,7 @@ def validate_published_pyproject_toml(
     ) == {
         "dev": [
             f"dagster-webserver=={version}",
-            f"dagster-dg-cli=={version}",
+            f"dagster-dg-cli[local]=={version}",
         ]
     }
 

@@ -43,6 +43,9 @@ setup(
         ]
     },
     extras_require={
+        "local": [
+            f"dagster=={ver}",
+        ],
         "mcp": [
             "mcp",
         ],
