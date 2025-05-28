@@ -197,6 +197,9 @@ mutation CliAddOrUpdateLocation($document: GenericScalar!) {
         ... on InvalidLocationError {
             errors
         }
+        ... on UnauthorizedError {
+            message
+        }
     }
 }
 """
