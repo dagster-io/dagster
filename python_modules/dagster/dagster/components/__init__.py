@@ -25,7 +25,6 @@ from dagster.components.resolved.core_models import (
     ResolvedAssetSpec as ResolvedAssetSpec,
 )
 from dagster.components.resolved.model import (
-    Injectable as Injectable,
     Injected as Injected,
     Model as Model,
     Resolver as Resolver,

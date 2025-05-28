@@ -148,7 +148,8 @@ def derive_model_type(
                     )
                 )
 
-            if field_resolver.can_inject:  # derive and serve via model_field_type
+            # make all fields injectable
+            if field_type != str:
                 field_type = Union[field_type, str]
 
             model_fields[field_name] = (
@@ -396,6 +397,7 @@ def _dig_for_resolver(annotation, path: Sequence[_TypeContainer]) -> Optional[Re
                     )
                 ),
                 model_field_type=_wrap(resolver.model_field_type or args[0], path),
+                inject_before_resolve=resolver.inject_before_resolve,
             )
         annotated_type = args[0]
         if _is_implicitly_resolved_type(annotated_type):
