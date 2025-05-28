@@ -1,4 +1,5 @@
 from collections.abc import Mapping, Sequence
+from copy import copy
 from pathlib import Path
 from typing import Optional
 
@@ -9,8 +10,40 @@ from dagster_dg_core.shared_options import dg_global_options, dg_path_options
 from dagster_dg_core.utils import DgClickCommand, validate_dagster_availability
 from dagster_dg_core.utils.telemetry import cli_telemetry_wrapper
 from dagster_shared import check
+from dagster_shared.cli import WorkspaceOpts, dg_workspace_options
 
 SINGLETON_REPOSITORY_NAME = "__repository__"
+
+
+OPTIONS_NOT_TO_PASS_ON = {
+    "use_component_modules",
+    "verbose",
+    "disable_cache",
+    "cache_dir",
+    "use_ssl",
+    "grpc_host",
+    "grpc_socket",
+    "grpc_port",
+    "workspace",
+    "empty_workspace",
+}
+
+
+def _args_from_workspace_opts(workspace_opts: WorkspaceOpts) -> dict[str, str]:
+    """Converts WorkspaceOpts to a dictionary of arguments of the type that
+    dagster job launch or dagster asset materialize expects.
+    """
+    return {
+        k: v
+        for k, v in {
+            "python_file": next(iter(workspace_opts.python_file or ()), None),
+            "module_name": next(iter(workspace_opts.module_name or ()), None),
+            "package_name": next(iter(workspace_opts.package_name or ()), None),
+            "working_directory": next(iter(workspace_opts.working_directory or ()), None),
+            "attribute": next(iter(workspace_opts.attribute or ()), None),
+        }.items()
+        if v is not None
+    }
 
 
 @click.command(name="launch", cls=DgClickCommand)
@@ -37,6 +70,7 @@ SINGLETON_REPOSITORY_NAME = "__repository__"
 )
 @dg_path_options
 @dg_global_options
+@dg_workspace_options
 @cli_telemetry_wrapper
 def launch_command(
     assets: Optional[str],
@@ -46,13 +80,11 @@ def launch_command(
     config_json: Optional[str],
     config: Sequence[str],
     path: Path,
-    **global_options: Mapping[str, object],
+    **other_options: Mapping[str, object],
 ):
     """Launch a Dagster run."""
     check.invariant(assets is not None or job is not None, "Either assets or job must be provided")
     check.invariant(assets is None or job is None, "Cannot provide both assets and job")
-
-    cli_config = normalize_cli_config(global_options, click.get_current_context())
 
     # TODO - make this work in a workspace and/or cloud context instead of materializing the
     # assets in process. It should use the instance's run launcher to launch a run (or backfill
@@ -61,9 +93,18 @@ def launch_command(
     # dev/OSS, and executes the selected assets in process using the "dagster asset materialize"
     # command.
 
-    dg_context = DgContext.for_project_environment(path, cli_config)
-
     validate_dagster_availability()
+    workspace_opts = WorkspaceOpts.extract_from_cli_options(copy(other_options))
+
+    if workspace_opts.specifies_target():
+        extra_workspace_opts = _args_from_workspace_opts(workspace_opts)
+    else:
+        cli_config = normalize_cli_config(other_options, click.get_current_context())
+        dg_context = DgContext.for_project_environment(path, cli_config)
+        extra_workspace_opts = {
+            "working_directory": str(dg_context.root_path),
+            "module_name": dg_context.code_location_target_module_name,
+        }
 
     if assets:
         from dagster._cli.asset import asset_materialize_command_impl
@@ -74,8 +115,9 @@ def launch_command(
             partition_range=partition_range,
             config=tuple(config),
             config_json=config_json,
-            **dg_context.target_args,
+            **extra_workspace_opts,
         )
+
     elif job:
         from dagster._cli.job import job_execute_command_impl
 
@@ -83,10 +125,10 @@ def launch_command(
             job_name=job,
             config=tuple(config),
             config_json=config_json,
-            repository=SINGLETON_REPOSITORY_NAME,
             tags=None,
             op_selection=None,
             partition=partition,
             partition_range=partition_range,
-            **dg_context.target_args,
+            repository=None,
+            **extra_workspace_opts,
         )

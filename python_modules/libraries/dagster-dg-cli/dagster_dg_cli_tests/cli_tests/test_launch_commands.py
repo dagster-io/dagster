@@ -68,6 +68,18 @@ def _sample_job():
         my_configured_op()
 
 
+def _sample_single_job():
+    from dagster import job, op
+
+    @op
+    def my_op():
+        pass
+
+    @job()
+    def my_job():
+        my_op()
+
+
 def test_launch_assets() -> None:
     with (
         ProxyRunner.test() as runner,
@@ -372,3 +384,71 @@ def test_launch_job_config_files() -> None:
         assert result.returncode == 0
 
         assert "CONFIG: 7" in result.stderr.decode("utf-8")
+
+
+def test_launch_job_point_to_module_explicitly() -> None:
+    with (
+        ProxyRunner.test() as runner,
+        isolated_example_project_foo_bar(
+            runner,
+            in_workspace=False,
+            python_environment="uv_managed",
+        ) as project_dir,
+        activate_venv(project_dir / ".venv"),
+    ):
+        result = subprocess.run(
+            ["dg", "scaffold", "defs", "dagster.DefsFolderComponent", "mydefs"],
+            check=True,
+        )
+        assert result.returncode == 0
+
+        with Path("src/foo_bar/defs/mydefs/definitions.py").open("w") as f:
+            defs_source = textwrap.dedent(inspect.getsource(_sample_job).split("\n", 1)[1])
+            f.write(defs_source)
+
+        result = subprocess.run(
+            [
+                "dg",
+                "launch",
+                "--module-name",
+                "foo_bar.definitions",
+                "--job",
+                "my_partitioned_job",
+            ],
+            check=True,
+        )
+        assert result.returncode == 0, result.stderr.decode("utf-8")
+
+
+def test_launch_assets_point_to_module_explicitly() -> None:
+    with (
+        ProxyRunner.test() as runner,
+        isolated_example_project_foo_bar(
+            runner,
+            in_workspace=False,
+            python_environment="uv_managed",
+        ) as project_dir,
+        activate_venv(project_dir / ".venv"),
+    ):
+        result = subprocess.run(
+            ["dg", "scaffold", "defs", "dagster.DefsFolderComponent", "mydefs"],
+            check=True,
+        )
+        assert result.returncode == 0
+
+        with Path("src/foo_bar/defs/mydefs/definitions.py").open("w") as f:
+            defs_source = textwrap.dedent(inspect.getsource(_sample_defs).split("\n", 1)[1])
+            f.write(defs_source)
+
+        result = subprocess.run(
+            [
+                "dg",
+                "launch",
+                "--module-name",
+                "foo_bar.definitions",
+                "--assets",
+                "my_asset_1",
+            ],
+            check=True,
+        )
+        assert result.returncode == 0, result.stderr.decode("utf-8")
