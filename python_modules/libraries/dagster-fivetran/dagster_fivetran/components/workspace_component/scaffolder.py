@@ -12,7 +12,7 @@ class FivetranScaffolderParams(BaseModel):
     api_secret: Optional[str] = None
 
 
-class FivetranWorkspaceComponentScaffolder(Scaffolder[FivetranScaffolderParams]):
+class FivetranAccountComponentScaffolder(Scaffolder[FivetranScaffolderParams]):
     @classmethod
     def get_scaffold_params(cls) -> type[FivetranScaffolderParams]:
         return FivetranScaffolderParams
