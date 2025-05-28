@@ -140,6 +140,7 @@ class DbtProjectComponent(Component, Resolvable):
     select: str = "fqn:*"
     exclude: Optional[str] = None
     translation_settings: Optional[DagsterDbtComponentsTranslatorSettings] = None
+    prepare_if_dev: bool = True
 
     @cached_property
     def translator(self):
@@ -163,7 +164,8 @@ class DbtProjectComponent(Component, Resolvable):
         )
 
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
-        self.project.prepare_if_dev()
+        if self.prepare_if_dev:
+            self.project.prepare_if_dev()
 
         @dbt_assets(
             manifest=self.project.manifest_path,
