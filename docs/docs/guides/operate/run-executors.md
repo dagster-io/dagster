@@ -4,7 +4,7 @@ description: Executors are responsible for executing steps within a Dagster job 
 sidebar_position: 40
 ---
 
-Executors are responsible for executing steps within a job run. Once a run has launched and the process for the run (the [run worker](/guides/deploy/oss-deployment-architecture#job-execution-flow)) is allocated and started, the executor assumes responsibility for execution.
+Executors are responsible for executing steps within a job run. Once a run has launched and the process for the run (the [run worker](/deployment/oss/oss-deployment-architecture#job-execution-flow)) is allocated and started, the executor assumes responsibility for execution.
 
 Executors can range from single-process serial executors to managing per-step computational resources with a sophisticated control plane.
 

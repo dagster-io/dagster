@@ -18,7 +18,7 @@ defs = Definitions(
 )
 ```
 
-For more information. see the [code locations documentation](/guides/deploy/code-locations/).
+For more information. see the [code locations documentation](/deployment/code-locations).
 
 ## Step 2: Verify that the schedule has been started
 
@@ -75,7 +75,7 @@ This section is applicable to Open Source (OSS) deployments.
 
 :::
 
-If the schedule interval is correctly configured but runs aren't being created, it's possible that the dagster-daemon process isn't working correctly. If you haven't set up a Dagster daemon yet, refer to the [Open Source Deployment guides](/guides/deploy/deployment-options/) for more info.
+If the schedule interval is correctly configured but runs aren't being created, it's possible that the dagster-daemon process isn't working correctly. If you haven't set up a Dagster daemon yet, refer to the [Open Source Deployment guides](/deployment/oss/deployment-options/) for more info.
 
 ### Verify the daemon is running
 
@@ -91,7 +91,7 @@ If there isn't a clear error on this page or if the daemon should be sending hea
 
 Next, check the logs from the daemon process. The steps to do this will depend on your deployment - for example, if you're using Kubernetes, you'll need to get the logs from the pod that's running the daemon. You should be able to search those logs for the name of the schedule (or `SchedulerDaemon` to see all logs associated with the scheduler) to gain an understanding of what's going wrong.
 
-If the daemon output contains error indicating the schedule couldn't be found, verify that the daemon is using the same `workspace.yaml` file as the webserver. The daemon does not need to restart in order to pick up changes to the `workspace.yaml` file. Refer to the [Workspace files documentation](/guides/deploy/code-locations/workspace-yaml) for more information.
+If the daemon output contains error indicating the schedule couldn't be found, verify that the daemon is using the same `workspace.yaml` file as the webserver. The daemon does not need to restart in order to pick up changes to the `workspace.yaml` file. Refer to the [Workspace files documentation](/deployment/code-locations/workspace-yaml) for more information.
 
 If the logs don't indicate the cause of the issue, move on to the next step.
 

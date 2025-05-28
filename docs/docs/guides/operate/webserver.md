@@ -16,11 +16,11 @@ The easiest way to launch the webserver from the command line during local devel
 dagster dev
 ```
 
-This command launches both the Dagster webserver and the [Dagster daemon](/guides/deploy/execution/dagster-daemon), allowing you to start a full local deployment of Dagster from the command line.
+This command launches both the Dagster webserver and the [Dagster daemon](/deployment/execution/dagster-daemon), allowing you to start a full local deployment of Dagster from the command line.
 
 The command will print out the URL you can access the UI from in the browser, usually on port 3000.
 
-When invoked, the webserver will fetch definitions - such as assets, jobs, schedules, sensors, and resources - from a <PyObject section="definitions" module="dagster" object="Definitions" /> object in a Python module or package or the code locations configured in an open source deployment's [workspace files](/guides/deploy/code-locations/workspace-yaml). For more information, see the [code locations documentation](/guides/deploy/code-locations/).
+When invoked, the webserver will fetch definitions - such as assets, jobs, schedules, sensors, and resources - from a <PyObject section="definitions" module="dagster" object="Definitions" /> object in a Python module or package or the code locations configured in an open source deployment's [workspace files](/deployment/code-locations/workspace-yaml). For more information, see the [code locations documentation](/deployment/code-locations).
 
 You can also launch the webserver by itself from the command line by running:
 
@@ -47,7 +47,7 @@ Note that several Dagster features, like schedules and sensors, require the Dags
 
 **Asset catalog (OSS)**
 
-- **Description**: The **Asset catalog** page lists all [assets](/guides/build/assets/) in your Dagster deployment, which can be filtered by asset key, compute kind, asset group, [code location](/guides/deploy/code-locations/), and [tags](/guides/build/assets/metadata-and-tags/index.md#tags). Clicking an asset opens the **Asset details** page for that asset. You can also navigate to the **Global asset lineage** page, reload definitions, and materialize assets.
+- **Description**: The **Asset catalog** page lists all [assets](/guides/build/assets/) in your Dagster deployment, which can be filtered by asset key, compute kind, asset group, [code location](/deployment/code-locations), and [tags](/guides/build/assets/metadata-and-tags/index.md#tags). Clicking an asset opens the **Asset details** page for that asset. You can also navigate to the **Global asset lineage** page, reload definitions, and materialize assets.
 
 - **Accessed by:** Clicking **Assets** in the top navigation bar
 
@@ -64,7 +64,7 @@ This feature is only available in Dagster+ Pro.
 
 :::
 
-- **Description**: This version of the **Asset catalog** page includes all the information and functionality of the original page, broken out by compute kind, asset group, [code location](/guides/deploy/code-locations/), [tags](/guides/build/assets/metadata-and-tags/index.md#tags), and [owners](/guides/build/assets/metadata-and-tags/index.md#owners), etc. On this page, you can:
+- **Description**: This version of the **Asset catalog** page includes all the information and functionality of the original page, broken out by compute kind, asset group, [code location](/deployment/code-locations), [tags](/guides/build/assets/metadata-and-tags/index.md#tags), and [owners](/guides/build/assets/metadata-and-tags/index.md#owners), etc. On this page, you can:
 
   - View all [assets](/guides/build/assets/) in your Dagster deployment
   - View details about a specific asset by clicking on it
@@ -126,7 +126,7 @@ This feature is only available in Dagster+ Pro.
   - **Checks** - The [Asset checks](/guides/test/asset-checks) defined for the asset
   - **Lineage** - The asset's lineage in the **Global asset lineage** page
   - **Automation** - The [Declarative Automation conditions](/guides/automate/declarative-automation) associated with the asset
-  - **Insights** - **Dagster+ only.** Historical information about the asset, such as failures and credit usage. Refer to the [Dagster+ Insights](/dagster-plus/features/insights/) documentation for more information.
+  - **Insights** - **Dagster+ only.** Historical information about the asset, such as failures and credit usage. Refer to the [Dagster+ Insights](/guides/monitor/insights/) documentation for more information.
 
 - **Accessed by**: Clicking an asset in the **Asset catalog**
 
@@ -276,7 +276,7 @@ This feature is only available in Dagster+ Pro.
 
 **Configuration tab**
 
-- **Description**: The **Configuration** tab contains detailed information about a resource's configuration, including the name of each key, type, and value of each config value. If a key's value is an [environment variable](/guides/deploy/using-environment-variables-and-secrets), an `Env var` badge will display next to the value.
+- **Description**: The **Configuration** tab contains detailed information about a resource's configuration, including the name of each key, type, and value of each config value. If a key's value is an [environment variable](/guides/operate/configuration/using-environment-variables-and-secrets), an `Env var` badge will display next to the value.
 
 - **Accessed by**: On the **Resource details** page, clicking the **Configuration tab**
 
@@ -410,7 +410,7 @@ In addition to the **Code locations** tab, Dagster OSS deployments contain a few
 
 **Daemons tab**
 
-- **Description**: The **Daemons** tab contains information about the [daemons](/guides/deploy/execution/dagster-daemon) in an Open Source Dagster deployment, including their current status and when their last heartbeat was detected.
+- **Description**: The **Daemons** tab contains information about the [daemons](/deployment/execution/dagster-daemon) in an Open Source Dagster deployment, including their current status and when their last heartbeat was detected.
 - **Accessed by**: On the **Deployment overview** page, clicking the **Daemons** tab
 
 ![UI Deployment - Daemons tab](/images/guides/operate/webserver/deployment-daemons-tab.png)
@@ -420,7 +420,7 @@ In addition to the **Code locations** tab, Dagster OSS deployments contain a few
 
 **Configuration tab**
 
-- **Description**: The **Configuration** tab displays information about the configuration for a Dagster deployment, which is managed through the [`dagster.yaml`](/guides/deploy/dagster-yaml) file
+- **Description**: The **Configuration** tab displays information about the configuration for a Dagster deployment, which is managed through the [`dagster.yaml`](/deployment/oss/dagster-yaml) file
 - **Accessed by**: On the **Deployment overview** page, clicking the **Configuration** tab
 
 ![UI Deployment - Configuration tab](/images/guides/operate/webserver/deployment-configuration-tab.png)
@@ -450,7 +450,7 @@ In addition to the **Code locations** tab, Dagster+ deployments contain a few ad
 
 **Environment variables tab**
 
-- **Description**: The **Agents** tab contains information about the environment variables configured in a Dagster+ deployment. Refer to the [Dagster+ environment variables documentation](/dagster-plus/deployment/management/environment-variables/) for more info.
+- **Description**: The **Agents** tab contains information about the environment variables configured in a Dagster+ deployment. Refer to the [Dagster+ environment variables documentation](/deployment/dagster-plus/management/environment-variables/) for more info.
 - **Accessed by**: On the **Deployment overview** page, clicking the **Environment variables** tab
 
 ![UI Cloud Deployment - Environment variables tab](/images/guides/operate/webserver/deployment-cloud-environment-variables-tab.png)
@@ -460,7 +460,7 @@ In addition to the **Code locations** tab, Dagster+ deployments contain a few ad
 
 **Alerts tab**
 
-- **Description**: The **Alerts** tab contains information about the alert policies configured for a Dagster+ deployment. Refer to the [Dagster+ alerts guide](/dagster-plus/features/alerts/) for more info.
+- **Description**: The **Alerts** tab contains information about the alert policies configured for a Dagster+ deployment. Refer to the [Dagster+ alerts guide](/guides/monitor/alerts) for more info.
 - **Accessed by**: On the **Deployment overview** page, clicking the **Alerts** tab
 
 ![UI Dagster+ Deployment - Alerts tab](/images/guides/operate/webserver/deployment-cloud-alerts-tab.png)
