@@ -2999,6 +2999,10 @@
       "destination": "/deployment/oss/deployment-options"
     },
     {
+      "source": "/guides/deploy/deployment-options/dask",
+      "destination": "/deployment/execution/dask"
+    },
+    {
       "source": "/guides/deploy/deployment-options/:path*",
       "destination": "/deployment/oss/deployment-options/:path*"
     },

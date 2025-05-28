@@ -1,6 +1,6 @@
 ---
-title: Dagster OSS instance configuration
-description: Define configuration options for your Dagster instance.
+title: Instance configuration
+description: Define configuration options for your OSS Dagster instance.
 sidebar_position: 30
 ---
 
