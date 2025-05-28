@@ -24,11 +24,16 @@ ConnectorSelectorFn: TypeAlias = Callable[["FivetranConnector"], bool]
 class FivetranConnectorTableProps(NamedTuple):
     table: str
     connector_id: str
-    name: str
+    connector_name: str
     connector_url: str
+    destination_id: Optional[str]
     schema_config: "FivetranSchemaConfig"
     database: Optional[str]
     service: Optional[str]
+
+    @property
+    def name(self) -> str:
+        return self.connector_name
 
 
 class FivetranConnectorScheduleType(str, Enum):
@@ -247,8 +252,9 @@ class FivetranWorkspaceData:
                                         table_name=table.name_in_destination,
                                     ),
                                     connector_id=connector.id,
-                                    name=connector.name,
+                                    connector_name=connector.name,
                                     connector_url=connector.url,
+                                    destination_id=connector.destination_id,
                                     schema_config=schema_config,
                                     database=destination.database,
                                     service=destination.service,

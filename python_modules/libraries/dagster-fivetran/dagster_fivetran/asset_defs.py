@@ -141,8 +141,9 @@ def _build_fivetran_assets(
             FivetranConnectorTableProps(
                 table=table,
                 connector_id=connection_metadata.connector_id,
-                name=connection_metadata.name,
+                connector_name=connection_metadata.name,
                 connector_url=connection_metadata.connector_url,
+                destination_id=None,
                 schema_config=FivetranSchemaConfig.from_schema_config_details(
                     connection_metadata.schemas
                 ),
