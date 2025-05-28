@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from dagster_dg.config import load_dg_root_file_config, load_dg_user_file_config
+from dagster_dg_core.config import load_dg_root_file_config, load_dg_user_file_config
 
 from docs_snippets_tests.snippet_checks.guides.components.utils import (
     DAGSTER_ROOT,

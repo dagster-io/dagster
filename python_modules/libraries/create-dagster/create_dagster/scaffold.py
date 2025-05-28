@@ -4,15 +4,15 @@ from pathlib import Path
 from typing import Optional
 
 import click
-from dagster_dg.config import (
+from dagster_dg_core.config import (
     DgProjectPythonEnvironment,
     DgRawWorkspaceConfig,
     DgWorkspaceScaffoldProjectOptions,
     discover_workspace_root,
     modify_dg_toml_config,
 )
-from dagster_dg.context import DgContext
-from dagster_dg.utils import exit_with_error, get_toml_node, has_toml_node, set_toml_node
+from dagster_dg_core.context import DgContext
+from dagster_dg_core.utils import exit_with_error, get_toml_node, has_toml_node, set_toml_node
 from dagster_shared.scaffold import scaffold_subtree
 
 
@@ -169,7 +169,7 @@ EDITABLE_DAGSTER_DEPENDENCIES = (
 EDITABLE_DAGSTER_DEV_DEPENDENCIES = (
     "dagster-webserver",
     "dagster-graphql",
-    "dagster-dg",
+    "dagster-dg-core",
     "dagster-dg-cli",
     "dagster-cloud-cli",
 )

@@ -6,18 +6,18 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional
 
 import click
-from dagster_dg.component import RemotePluginRegistry
-from dagster_dg.config import normalize_cli_config
-from dagster_dg.context import DgContext
-from dagster_dg.env import ProjectEnvVars, get_project_specified_env_vars
-from dagster_dg.shared_options import dg_global_options, dg_path_options
-from dagster_dg.utils import (
+from dagster_dg_core.component import RemotePluginRegistry
+from dagster_dg_core.config import normalize_cli_config
+from dagster_dg_core.context import DgContext
+from dagster_dg_core.env import ProjectEnvVars, get_project_specified_env_vars
+from dagster_dg_core.shared_options import dg_global_options, dg_path_options
+from dagster_dg_core.utils import (
     DgClickCommand,
     DgClickGroup,
     capture_stdout,
     validate_dagster_availability,
 )
-from dagster_dg.utils.telemetry import cli_telemetry_wrapper
+from dagster_dg_core.utils.telemetry import cli_telemetry_wrapper
 from dagster_shared.plus.config import DagsterPlusCliConfig
 from dagster_shared.record import as_dict
 from dagster_shared.serdes import deserialize_value

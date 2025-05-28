@@ -3,14 +3,14 @@ from pathlib import Path
 from typing import TYPE_CHECKING, cast
 
 import pytest
-from dagster_dg.utils import ensure_dagster_dg_tests_import
+from dagster_dg_core.utils import ensure_dagster_dg_tests_import
 
 ensure_dagster_dg_tests_import()
 
 from contextlib import asynccontextmanager
 
-from dagster_dg.utils import ensure_dagster_dg_tests_import
-from dagster_dg_tests.utils import ProxyRunner, isolated_example_project_foo_bar
+from dagster_dg_core.utils import ensure_dagster_dg_tests_import
+from dagster_dg_core_tests.utils import ProxyRunner, isolated_example_project_foo_bar
 
 
 @asynccontextmanager

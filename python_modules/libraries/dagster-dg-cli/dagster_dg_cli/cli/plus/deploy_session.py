@@ -9,9 +9,9 @@ from typing import Optional
 import click
 import dagster_shared.check as check
 from dagster_cloud_cli.types import SnapshotBaseDeploymentCondition
-from dagster_dg.config import DgRawBuildConfig, merge_build_configs
-from dagster_dg.context import DgContext
-from dagster_dg.utils.git import get_local_branch_name
+from dagster_dg_core.config import DgRawBuildConfig, merge_build_configs
+from dagster_dg_core.context import DgContext
+from dagster_dg_core.utils.git import get_local_branch_name
 
 from dagster_dg_cli.cli.plus.constants import DgPlusAgentType, DgPlusDeploymentType
 from dagster_dg_cli.cli.utils import create_temp_dagster_cloud_yaml_file

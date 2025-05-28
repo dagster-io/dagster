@@ -2,7 +2,7 @@ import os
 
 import boto3
 import pytest
-from dagster_dg.context import DG_UPDATE_CHECK_ENABLED_ENV_VAR
+from dagster_dg_core.context import DG_UPDATE_CHECK_ENABLED_ENV_VAR
 from moto import mock_s3
 
 from dagster import file_relative_path

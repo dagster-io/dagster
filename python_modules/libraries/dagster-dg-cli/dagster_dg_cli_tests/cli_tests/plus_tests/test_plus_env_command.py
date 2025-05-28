@@ -3,12 +3,12 @@ from pathlib import Path
 
 import pytest
 import responses
-from dagster_dg.utils import ensure_dagster_dg_tests_import
 from dagster_dg_cli.utils.plus import gql
+from dagster_dg_core.utils import ensure_dagster_dg_tests_import
 
 ensure_dagster_dg_tests_import()
 
-from dagster_dg_tests.utils import (
+from dagster_dg_core_tests.utils import (
     ProxyRunner,
     isolated_example_project_foo_bar,
     isolated_example_workspace,

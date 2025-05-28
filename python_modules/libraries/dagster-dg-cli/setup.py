@@ -35,12 +35,17 @@ setup(
     packages=find_packages(exclude=["dagster_dg_cli_tests*"]),
     include_package_data=True,
     install_requires=[
-        f"dagster-dg{pin}",
+        f"dagster-dg-core{pin}",
     ],
     entry_points={
         "console_scripts": [
             "dg = dagster_dg_cli.cli:main",
         ]
+    },
+    extras_require={
+        "mcp": [
+            "mcp",
+        ],
     },
     zip_safe=False,
 )

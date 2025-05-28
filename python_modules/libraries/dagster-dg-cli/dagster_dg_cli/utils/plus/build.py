@@ -3,8 +3,8 @@ from pathlib import Path
 from typing import Optional
 
 import click
-from dagster_dg.config import DgRawBuildConfig, merge_build_configs
-from dagster_dg.context import DgContext
+from dagster_dg_core.config import DgRawBuildConfig, merge_build_configs
+from dagster_dg_core.context import DgContext
 from dagster_shared import check
 from dagster_shared.plus.config import DagsterPlusCliConfig
 

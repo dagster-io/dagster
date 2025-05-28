@@ -44,19 +44,19 @@ def check_dagster_package_version(library_name: str, library_version: str) -> No
     from dagster_shared.version import __version__
 
     parsed_lib_version = parse_package_version(library_version)
-    if parsed_lib_version.release[0] < 1:
+    if parsed_lib_version.release[0] >= 1:
         if library_version != __version__:
             message = (
-                f"Found version mismatch between `dagster-shared` ({__version__}) "
+                f"Found version mismatch between `dagster-shared` ({__version__})"
                 f"and `{library_name}` ({library_version})"
             )
             warnings.warn(message)
     else:
-        expected_version = core_version_from_library_version(__version__)
-        if library_version != expected_version:
+        target_version = library_version_from_core_version(__version__)
+        if library_version != target_version:
             message = (
                 f"Found version mismatch between `dagster-shared` ({__version__}) "
-                f"expected library version ({expected_version}) "
+                f"expected library version ({target_version}) "
                 f"and `{library_name}` ({library_version})."
             )
             warnings.warn(message)

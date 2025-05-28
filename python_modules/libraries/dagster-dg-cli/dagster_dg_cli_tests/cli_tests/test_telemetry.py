@@ -2,7 +2,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 import pytest
-from dagster_dg.utils import ensure_dagster_dg_tests_import, pushd
+from dagster_dg_core.utils import ensure_dagster_dg_tests_import, pushd
 from dagster_test.components.test_utils.test_cases import BASIC_INVALID_VALUE, BASIC_VALID_VALUE
 
 ensure_dagster_dg_tests_import()
@@ -10,7 +10,7 @@ ensure_dagster_dg_tests_import()
 import json
 import os
 
-from dagster_dg_tests.utils import (
+from dagster_dg_core_tests.utils import (
     ProxyRunner,
     crawl_cli_commands,
     create_project_from_components,
