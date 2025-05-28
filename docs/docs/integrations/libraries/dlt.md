@@ -154,7 +154,7 @@ DESTINATION__SNOWFLAKE__CREDENTIALS__WAREHOUSE=""
 DESTINATION__SNOWFLAKE__CREDENTIALS__ROLE=""
 ```
 
-Ensure that these variables are defined in your environment, either in your `.env` file when running locally or in the [Dagster deployment's environment variables](/guides/deploy/using-environment-variables-and-secrets).
+Ensure that these variables are defined in your environment, either in your `.env` file when running locally or in the [Dagster deployment's environment variables](/guides/operate/configuration/using-environment-variables-and-secrets).
 
 ## Step 4: Define a DagsterDltResource
 

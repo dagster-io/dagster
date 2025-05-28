@@ -122,7 +122,7 @@ Dagster validates any provided run config against the corresponding Pydantic mod
 
 ### Using environment variables with config
 
-Assets and ops can be configured using environment variables by passing an <PyObject section="resources" module="dagster" object="EnvVar" /> when constructing a config object. This is useful when the value is sensitive or may vary based on environment. If using Dagster+, environment variables can be [set up directly in the UI](/guides/deploy/using-environment-variables-and-secrets).
+Assets and ops can be configured using environment variables by passing an <PyObject section="resources" module="dagster" object="EnvVar" /> when constructing a config object. This is useful when the value is sensitive or may vary based on environment. If using Dagster+, environment variables can be [set up directly in the UI](/guides/operate/configuration/using-environment-variables-and-secrets).
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/dagster/pythonic_config/pythonic_config.py"
@@ -131,7 +131,7 @@ Assets and ops can be configured using environment variables by passing an <PyOb
   dedent="4"
 />
 
-Refer to the [Environment variables and secrets guide](/guides/deploy/using-environment-variables-and-secrets) for more general info about environment variables in Dagster.
+Refer to the [Environment variables and secrets guide](/guides/operate/configuration/using-environment-variables-and-secrets) for more general info about environment variables in Dagster.
 
 ## Next steps
 
