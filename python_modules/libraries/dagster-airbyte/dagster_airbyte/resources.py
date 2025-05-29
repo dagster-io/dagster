@@ -4,7 +4,7 @@ import logging
 import sys
 import time
 from abc import abstractmethod
-from collections.abc import Mapping, Sequence
+from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from datetime import datetime, timedelta
 from typing import Any, Callable, Optional, cast
@@ -1321,6 +1321,21 @@ class AirbyteCloudWorkspace(ConfigurableResource):
         if unmaterialized_asset_keys:
             context.log.warning(f"Assets were not materialized: {unmaterialized_asset_keys}")
 
+    @contextmanager
+    def process_config_and_initialize_cm_cached(self) -> Iterator["AirbyteCloudWorkspace"]:
+        # Hack to avoid reconstructing initialized copies of this resource, which invalidates
+        # @cached_method caches. This means that multiple calls to load_airbyte_cloud_asset_specs
+        # will not trigger multiple API calls to fetch the workspace data.
+        # Bespoke impl since @cached_method doesn't play nice with iterators; it's exhausted after
+        # the first call.
+        if hasattr(self, "_initialized"):
+            yield getattr(self, "_initialized")
+        else:
+            with self.process_config_and_initialize_cm() as initialized_workspace:
+                initialized = initialized_workspace
+                setattr(self, "_initialized", initialized)
+                yield initialized
+
 
 @beta
 def load_airbyte_cloud_asset_specs(
@@ -1381,7 +1396,7 @@ def load_airbyte_cloud_asset_specs(
     """
     dagster_airbyte_translator = dagster_airbyte_translator or DagsterAirbyteTranslator()
 
-    with workspace.process_config_and_initialize_cm() as initialized_workspace:
+    with workspace.process_config_and_initialize_cm_cached() as initialized_workspace:
         return [
             spec.merge_attributes(
                 metadata={DAGSTER_AIRBYTE_TRANSLATOR_METADATA_KEY: dagster_airbyte_translator}
