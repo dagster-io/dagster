@@ -19,8 +19,8 @@ def build_dbt_asset_specs(
     manifest: DbtManifestParam,
     dagster_dbt_translator: Optional[DagsterDbtTranslator] = None,
     select: str = DBT_DEFAULT_SELECT,
-    exclude: str = DBT_DEFAULT_EXCLUDE,
-    selector: str = DBT_DEFAULT_SELECTOR,
+    exclude: Optional[str] = DBT_DEFAULT_EXCLUDE,
+    selector: Optional[str] = DBT_DEFAULT_SELECTOR,
     project: Optional[DbtProject] = None,
 ) -> Sequence[AssetSpec]:
     """Build a list of asset specs from a set of dbt resources selected from a dbt manifest.
@@ -52,8 +52,8 @@ def build_dbt_asset_specs(
         manifest=manifest,
         translator=dagster_dbt_translator,
         select=select,
-        exclude=exclude,
-        selector=selector,
+        exclude=exclude or DBT_DEFAULT_EXCLUDE,
+        selector=selector or DBT_DEFAULT_SELECTOR,
         io_manager_key=None,
         project=project,
     )

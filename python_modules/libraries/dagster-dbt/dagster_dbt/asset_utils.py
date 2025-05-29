@@ -210,8 +210,8 @@ def get_asset_key_for_source(dbt_assets: Sequence[AssetsDefinition], source_name
 def build_dbt_asset_selection(
     dbt_assets: Sequence[AssetsDefinition],
     dbt_select: str = DBT_DEFAULT_SELECT,
-    dbt_exclude: str = DBT_DEFAULT_EXCLUDE,
-    dbt_selector: str = DBT_DEFAULT_SELECTOR,
+    dbt_exclude: Optional[str] = DBT_DEFAULT_EXCLUDE,
+    dbt_selector: Optional[str] = DBT_DEFAULT_SELECTOR,
 ) -> AssetSelection:
     """Build an asset selection for a dbt selection string.
 
@@ -288,8 +288,8 @@ def build_dbt_asset_selection(
         manifest=manifest,
         dagster_dbt_translator=dagster_dbt_translator,
         select=dbt_select,
-        exclude=dbt_exclude,
-        selector=dbt_selector,
+        exclude=dbt_exclude or DBT_DEFAULT_EXCLUDE,
+        selector=dbt_selector or DBT_DEFAULT_SELECTOR,
     )
 
 
@@ -298,7 +298,7 @@ def build_schedule_from_dbt_selection(
     job_name: str,
     cron_schedule: str,
     dbt_select: str = DBT_DEFAULT_SELECT,
-    dbt_exclude: str = DBT_DEFAULT_EXCLUDE,
+    dbt_exclude: Optional[str] = DBT_DEFAULT_EXCLUDE,
     schedule_name: Optional[str] = None,
     tags: Optional[Mapping[str, str]] = None,
     config: Optional[RunConfig] = None,
@@ -350,7 +350,7 @@ def build_schedule_from_dbt_selection(
             selection=build_dbt_asset_selection(
                 dbt_assets,
                 dbt_select=dbt_select,
-                dbt_exclude=dbt_exclude,
+                dbt_exclude=dbt_exclude or DBT_DEFAULT_EXCLUDE,
             ),
             config=config,
             tags=tags,
