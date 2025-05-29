@@ -35,7 +35,7 @@ setup(
     packages=find_packages(exclude=["dagster_dg_cli_tests*"]),
     include_package_data=True,
     install_requires=[
-        "dagster-dg-core==1.10.18rc2",
+        "dagster-dg-core==1.10.18",
     ],
     entry_points={
         "console_scripts": [
@@ -44,7 +44,7 @@ setup(
     },
     extras_require={
         "local": [
-            f"dagster==1.10.18rc2",
+            f"dagster==1.10.18",
         ],
         "mcp": [
             "mcp",
