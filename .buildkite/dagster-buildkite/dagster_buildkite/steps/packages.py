@@ -504,7 +504,14 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
     ),
     PackageSpec(
         "python_modules/libraries/dagster-dg-cli",
-        pytest_tox_factors=["general", "docs", "plus", "mcp"],
+        pytest_tox_factors=["general", "docs", "plus"],
+    ),
+    PackageSpec(
+        "python_modules/libraries/dagster-dg-cli",
+        pytest_tox_factors=["mcp"],
+        unsupported_python_versions=[
+            AvailablePythonVersion.V3_9,
+        ],
     ),
     PackageSpec(
         "python_modules/libraries/dagster-aws",
