@@ -17,6 +17,7 @@ from dagster import (
     asset,
     execute_job,
     job,
+    materialize,
     op,
     reconstructable,
     seven,
@@ -34,6 +35,7 @@ from dagster._core.errors import (
     DagsterInvalidConfigError,
     DagsterInvariantViolationError,
 )
+from dagster._core.events import DagsterEventType
 from dagster._core.execution.api import create_execution_plan
 from dagster._core.instance import DagsterInstance, InstanceRef
 from dagster._core.instance.config import DEFAULT_LOCAL_CODE_SERVER_STARTUP_TIMEOUT
@@ -839,3 +841,46 @@ def test_invalid_run_id():
             match="run_id must be a valid UUID. Got invalid_run_id",
         ):
             create_run_for_test(instance, job_name="foo_job", run_id="invalid_run_id")
+
+
+def test_asset_wiped_event():
+    @asset
+    def asset_to_wipe():
+        return 1
+
+    with instance_for_test() as instance:
+        materialize([asset_to_wipe], instance=instance)
+        materializations = instance.fetch_materializations(asset_to_wipe.key, limit=100).records
+        assert len(materializations) == 1
+
+        with patch.object(instance.event_log_storage, "store_event") as mock_store_event:
+            instance.wipe_assets([asset_to_wipe.key])
+            materializations = instance.fetch_materializations(asset_to_wipe.key, limit=100).records
+            assert len(materializations) == 0
+            mock_store_event.assert_called_once()
+            called_with = mock_store_event.call_args[0][0]
+            assert called_with.dagster_event.asset_key == asset_to_wipe.key
+            assert called_with.dagster_event_type == DagsterEventType.ASSET_WIPED
+            assert called_with.dagster_event.asset_wiped_data.partition_keys is None
+
+
+def test_asset_partitioned_wiped_event():
+    @asset(partitions_def=StaticPartitionsDefinition(["a", "b", "c"]))
+    def asset_to_wipe():
+        return 1
+
+    with instance_for_test() as instance:
+        materialize([asset_to_wipe], instance=instance, partition_key="a")
+        materializations = instance.fetch_materializations(asset_to_wipe.key, limit=100).records
+        assert len(materializations) == 1
+
+        with patch.object(instance.event_log_storage, "store_event") as mock_store_event:
+            # wiping partitions is not supported for sqlite storage, but we can still test that the event is
+            # reported
+            with patch.object(instance.event_log_storage, "wipe_asset_partitions"):
+                instance.wipe_asset_partitions(asset_to_wipe.key, ["a"])
+                mock_store_event.assert_called_once()
+                called_with = mock_store_event.call_args[0][0]
+                assert called_with.dagster_event.asset_key == asset_to_wipe.key
+                assert called_with.dagster_event_type == DagsterEventType.ASSET_WIPED
+                assert called_with.dagster_event.asset_wiped_data.partition_keys == ["a"]
