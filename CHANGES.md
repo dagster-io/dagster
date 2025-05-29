@@ -1,5 +1,57 @@
 # Changelog
 
+## 1.10.18 (core) / 0.26.18 (libraries)
+
+### New
+
+- `BackfillPolicy` is now marked as generally available (GA).
+- Optimized the order of the `@asset` decorator overloads to make custom wrappers around the asset decorator easier. Thanks, [@jonathanunderwood](https://github.com/jonathanunderwood)!
+- [dagster-slack] Added `get_client()` to SlackResource.
+
+### Bugfixes
+
+- `Definitions` and `AssetDefinition` will now warn if they get different `AssetSpec`s with the same key. This will become an exception in 1.11.
+- Functions that load all definitions from modules like `load_definitions_from_modules` now handle duplicate `AssetSpec`s.
+- Fixed typo in logging, thanks [@eli-b](https://github.com/eli-b)!
+- [dagster-dbt] An issue occurring when using dbt selection arguments with a dbt project using saved queries and semantic models have been fixed.
+- [dagster-fivetran] Fixed an issue with `load_assets_from_fivetran_instance` where assets whose asset keys have been customized using a Fivetran translator would lead to an exception.
+
+### Documentation
+
+- Fixed grammar issues in GCP docs, thanks [@D1n0](https://github.com/D1n0)!
+- Fixed missing docs for `required_resource_keys` in `@sensor`, thanks [@seyf97](https://github.com/seyf97)!
+
+### Breaking Changes
+
+- `Definitions` and `AssetDefinition` will now warn if they get different `AssetSpec`s with the same key. This will become an exception in 1.11.
+
+### Dagster Plus
+
+- [dagster-cloud-cli] Add `--wait` to `job launch` command, thanks @stevenayers!
+- [fix][dagster-cloud-cli] Fixed an issue where the `dagster-cloud` cli failed to deploy PEX projects on python 3.12 in certain environments without setuptools already installed.
+
+### dg & Components (Preview)
+
+- Definitions and component instances are now scaffolded with `dg scaffold defs <scaffolder>` instead of ` dg scaffold <scaffolder>`.
+- The `component.yaml` file to specify a component instance is now called "defs.yaml". "component.yaml" will remain supported for several weeks, but is deprecated.
+- The `lib` folder in newly scaffolded projects has been renamed to "components".
+- `dg scaffold component-type` has been renamed to `dg scaffold component`.
+- `dg list plugins` has been renamed to `dg list plugin-modules` and now outputs only plugin module names, not plugin objects.
+- `dg list component` now lists component types instead of instances.
+- Exports from `dagster.components` are now available in the top-level `dagster` module.
+- Added `@component_instance` to replace `@component`, which allows multiple component instances in a python file.
+- If you type a partial component name for `dg scaffold defs <component>`, you will now be prompted with possible matches.
+- When component classnames are unique, you can now use just the classname as an alias for the fully qualified name when running `dg scaffold defs <component>`.
+- `dg launch` now supports passing config files through `--config/-c`.
+- Added `Component.from_attributes_dict` and `Component.from_yaml_path` to help with testing.
+- Added `dagster.components.testing.component_defs` utility to help with testing components.
+- Scaffolded schedules and sensors in `dg` are now loadable by default.
+- `dg scaffold defs inline-component` can now be used to create inline components and corresponding instances.
+- `dg list defs` now outputs resources.
+- [fix] The `dagster-dbt` cli flag `--components` flag now correcty finds `DbtProjectComponent` again.
+- [dagster-fivetran] Added a `FivetranAccountComponent` which can be used to pull in Fivetran connections into Dagster.
+- [dagster-dlt] The DltLoadCollectionComponent scaffolder no longer attempts to automatically construct loads for the given source and destination type.
+
 ## 1.10.17 (core) / 0.26.17 (libraries)
 
 ### Bugfixes
