@@ -5,21 +5,21 @@
 ### New
 
 - `BackfillPolicy` is now marked as generally available (GA).
-- Optimized the order of the `@asset` decorator overloads to make custom wrappers around the asset decorator easier. Thanks, [@jonathanunderwood](https://github.com/jonathanunderwood)!
+- Optimized the order of the `@asset` decorator overloads to make custom wrappers around the asset decorator easier. Thanks [@jonathanunderwood](https://github.com/jonathanunderwood)!
 - [dagster-slack] Added `get_client()` to SlackResource.
 
 ### Bugfixes
 
 - `Definitions` and `AssetDefinition` will now warn if they get different `AssetSpec`s with the same key. This will become an exception in 1.11.
 - Functions that load all definitions from modules like `load_definitions_from_modules` now handle duplicate `AssetSpec`s.
-- Fixed typo in logging, thanks [@eli-b](https://github.com/eli-b)!
+- Fixed typo in logging. Thanks [@eli-b](https://github.com/eli-b)!
 - [dagster-dbt] An issue occurring when using dbt selection arguments with a dbt project using saved queries and semantic models has been fixed.
 - [dagster-fivetran] Fixed an issue with `load_assets_from_fivetran_instance` where assets whose asset keys have been customized using a Fivetran translator would lead to an exception.
 
 ### Documentation
 
-- Fixed grammar issues in GCP docs, thanks [@D1n0](https://github.com/D1n0)!
-- Fixed missing docs for `required_resource_keys` in `@sensor`, thanks [@seyf97](https://github.com/seyf97)!
+- Fixed grammar issues in GCP docs. Thanks [@D1n0](https://github.com/D1n0)!
+- Fixed missing docs for `required_resource_keys` in `@sensor`. Thanks [@seyf97](https://github.com/seyf97)!
 
 ### Breaking Changes
 
@@ -27,7 +27,7 @@
 
 ### Dagster Plus
 
-- [dagster-cloud-cli] Add `--wait` to `job launch` command, thanks [@stevenayers](https://github.com/stevenayers)!
+- [dagster-cloud-cli] Added a `--wait` to the `dagster-cloud job launch` command that makes it wait until the launched run copmletes. Thanks [@stevenayers](https://github.com/stevenayers)!
 - [fix][dagster-cloud-cli] Fixed an issue where the `dagster-cloud` cli failed to deploy PEX projects on python 3.12 in certain environments without setuptools already installed.
 
 ### dg & Components (Preview)
