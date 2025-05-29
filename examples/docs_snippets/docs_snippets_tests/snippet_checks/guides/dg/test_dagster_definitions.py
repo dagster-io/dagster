@@ -1,19 +1,16 @@
 from pathlib import Path
 
-from dagster._utils.env import environ
+from dagster_dg_core.utils import activate_venv
+
 from docs_snippets_tests.snippet_checks.guides.components.utils import (
     DAGSTER_ROOT,
-    EDITABLE_DIR,
     MASK_PLUGIN_CACHE_REBUILD,
     format_multiline,
-    isolated_snippet_generation_environment,
 )
 from docs_snippets_tests.snippet_checks.utils import (
     _run_command,
-    check_file,
     compare_tree_output,
-    create_file,
-    run_command_and_snippet_output,
+    isolated_snippet_generation_environment,
 )
 
 MASK_MY_PROJECT = (r" \/.*?\/my-project", " /.../my-project")
@@ -32,58 +29,61 @@ SNIPPETS_DIR = (
 
 
 def test_dagster_definitions(update_snippets: bool) -> None:
-    with isolated_snippet_generation_environment() as get_next_snip_number:
+    with isolated_snippet_generation_environment(
+        should_update_snippets=update_snippets,
+        snapshot_base_dir=SNIPPETS_DIR,
+        global_snippet_replace_regexes=[
+            MASK_MY_PROJECT,
+            MASK_PLUGIN_CACHE_REBUILD,
+            MASK_VENV,
+        ],
+    ) as context:
         _run_command(
             cmd="dg scaffold project my-project --python-environment uv_managed --use-editable-dagster && cd my-project",
         )
 
-        run_command_and_snippet_output(
-            cmd="dg scaffold dagster.asset assets/my_asset.py",
-            snippet_path=SNIPPETS_DIR / f"{get_next_snip_number()}-scaffold.txt",
-            update_snippets=update_snippets,
-            snippet_replace_regex=[
-                MASK_MY_PROJECT,
-                MASK_PLUGIN_CACHE_REBUILD,
-            ],
-        )
+        with activate_venv(".venv") as venv_path:
+            context.run_command_and_snippet_output(
+                cmd="dg scaffold defs dagster.asset assets/my_asset.py",
+                snippet_path=SNIPPETS_DIR
+                / f"{context.get_next_snip_number()}-scaffold.txt",
+            )
 
-        _run_command(r"find . -type d -name __pycache__ -exec rm -r {} \+")
-        _run_command(r"find . -type d -name my_project.egg-info -exec rm -r {} \+")
-        run_command_and_snippet_output(
-            cmd="tree",
-            snippet_path=SNIPPETS_DIR / f"{get_next_snip_number()}-tree.txt",
-            update_snippets=update_snippets,
-            custom_comparison_fn=compare_tree_output,
-        )
+            _run_command(r"find . -type d -name __pycache__ -exec rm -r {} \+")
+            _run_command(r"find . -type d -name my_project.egg-info -exec rm -r {} \+")
+            context.run_command_and_snippet_output(
+                cmd="tree",
+                snippet_path=SNIPPETS_DIR
+                / f"{context.get_next_snip_number()}-tree.txt",
+                custom_comparison_fn=compare_tree_output,
+            )
 
-        run_command_and_snippet_output(
-            cmd="cat src/my_project/defs/assets/my_asset.py",
-            snippet_path=SNIPPETS_DIR / f"{get_next_snip_number()}-cat.txt",
-            update_snippets=update_snippets,
-        )
+            context.run_command_and_snippet_output(
+                cmd="cat src/my_project/defs/assets/my_asset.py",
+                snippet_path=SNIPPETS_DIR / f"{context.get_next_snip_number()}-cat.txt",
+            )
 
-        create_file(
-            Path("src") / "my_project" / "defs" / "assets" / "my_asset.py",
-            format_multiline('''
-                import dagster as dg
+            context.create_file(
+                Path("src") / "my_project" / "defs" / "assets" / "my_asset.py",
+                format_multiline('''
+                    import dagster as dg
 
 
-                @dg.asset(group_name="my_group")
-                def my_asset(context: dg.AssetExecutionContext) -> None:
-                    """Asset that greets you."""
-                    context.log.info("hi!")
-            '''),
-            SNIPPETS_DIR / f"{get_next_snip_number()}-written-asset.py",
-        )
+                    @dg.asset(group_name="my_group")
+                    def my_asset(context: dg.AssetExecutionContext) -> None:
+                        """Asset that greets you."""
+                        context.log.info("hi!")
+                '''),
+                SNIPPETS_DIR / f"{context.get_next_snip_number()}-written-asset.py",
+            )
 
-        run_command_and_snippet_output(
-            cmd="dg list defs",
-            snippet_path=SNIPPETS_DIR / f"{get_next_snip_number()}-list-defs.txt",
-            update_snippets=update_snippets,
-            snippet_replace_regex=[MASK_VENV],
-        )
+            context.run_command_and_snippet_output(
+                cmd="dg list defs",
+                snippet_path=SNIPPETS_DIR
+                / f"{context.get_next_snip_number()}-list-defs.txt",
+            )
 
-        # validate loads
-        _run_command(
-            "uv pip freeze && uv run dagster asset materialize --select '*' -m 'my_project.definitions'"
-        )
+            # validate loads
+            _run_command(
+                "uv pip freeze && uv run dagster asset materialize --select '*' -m 'my_project.definitions'"
+            )

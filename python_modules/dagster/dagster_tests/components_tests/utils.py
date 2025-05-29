@@ -13,10 +13,9 @@ from typing import Any, Iterable, Optional, TypeVar, Union  # noqa: UP035
 
 import tomlkit
 from click.testing import Result
-from dagster import Definitions
+from dagster import Component, ComponentLoadContext, Definitions
 from dagster._utils import alter_sys_path, pushd
 from dagster._utils.pydantic_yaml import enrich_validation_errors_with_source_position
-from dagster.components import Component, ComponentLoadContext
 from dagster.components.core.defs_module import CompositeYamlComponent, get_component
 from dagster.components.utils import ensure_loadable_path
 from dagster_shared import check
@@ -202,7 +201,7 @@ def print_exception_info(
 # ##### TOML MANIPULATION
 # ########################
 
-# Copied from dagster-dg
+# Copied from dagster-dg-core
 
 
 @contextmanager

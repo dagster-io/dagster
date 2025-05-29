@@ -72,8 +72,6 @@ def load_defs(defs_root: ModuleType, project_root: Optional[Path] = None) -> Def
         project_root (Optional[Path]): path to the project root directory.
     """
     from dagster.components.core.defs_module import get_component
-    from dagster.components.core.package_entry import discover_entry_point_package_objects
-    from dagster.components.core.snapshot import get_package_entry_snap
 
     project_root = project_root if project_root else get_project_root(defs_root)
 
@@ -84,11 +82,18 @@ def load_defs(defs_root: ModuleType, project_root: Optional[Path] = None) -> Def
         if root_component is None:
             raise DagsterInvalidDefinitionError("Could not resolve root module to a component.")
 
-        library_objects = discover_entry_point_package_objects()
-        snaps = [get_package_entry_snap(key, obj) for key, obj in library_objects.items()]
-        components_json = json_for_all_components(snaps)
-
         return Definitions.merge(
             root_component.build_defs(context),
-            Definitions(metadata={PLUGIN_COMPONENT_TYPES_JSON_METADATA_KEY: components_json}),
+            get_library_json_enriched_defs(),
         )
+
+
+def get_library_json_enriched_defs() -> Definitions:
+    from dagster.components.core.package_entry import discover_entry_point_package_objects
+    from dagster.components.core.snapshot import get_package_entry_snap
+
+    library_objects = discover_entry_point_package_objects()
+    snaps = [get_package_entry_snap(key, obj) for key, obj in library_objects.items()]
+    components_json = json_for_all_components(snaps)
+
+    return Definitions(metadata={PLUGIN_COMPONENT_TYPES_JSON_METADATA_KEY: components_json})

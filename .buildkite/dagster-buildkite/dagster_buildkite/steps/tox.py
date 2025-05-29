@@ -75,7 +75,7 @@ def _tox_env_to_label_suffix(tox_env: str) -> str:
     if m:
         version_number = m[1]
         number_str = f"{version_number[0]}.{version_number[1:]}"
-        return f" {factor} {number_str}"
+        return f"{factor} {number_str}"
     else:
         return ""
 

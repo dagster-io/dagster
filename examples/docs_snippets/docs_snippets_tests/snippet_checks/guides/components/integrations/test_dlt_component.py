@@ -1,22 +1,24 @@
+import tempfile
 import textwrap
+from contextlib import ExitStack
 from pathlib import Path
+
+from dagster_dg_core.utils import activate_venv
 
 from dagster._utils.env import environ
 from docs_snippets_tests.snippet_checks.guides.components.utils import (
     DAGSTER_ROOT,
     EDITABLE_DIR,
-    isolated_snippet_generation_environment,
 )
 from docs_snippets_tests.snippet_checks.utils import (
-    check_file,
     compare_tree_output,
-    create_file,
-    run_command_and_snippet_output,
+    isolated_snippet_generation_environment,
 )
 
 MASK_MY_PROJECT = (r" \/.*?\/my-project", " /.../my-project")
 MASK_VENV = (r"Using.*\.venv.*", "")
 MASK_USING_LOG_MESSAGE = (r"Using.*\n", "")
+MASK_PKG_RESOURCES = (r".*import pkg_resources\n", "")
 
 SNIPPETS_DIR = (
     DAGSTER_ROOT
@@ -30,74 +32,119 @@ SNIPPETS_DIR = (
 )
 
 
-def test_components_docs_adding_attributes_to_assets(
+def test_dlt_components_docs_adding_attributes_to_assets(
     update_snippets: bool, update_screenshots: bool, get_selenium_driver
 ) -> None:
-    with (
-        isolated_snippet_generation_environment() as get_next_snip_number,
-        environ({"SOURCES__GITHUB__ACCESS_TOKEN": "XX"}),
-    ):
+    with ExitStack() as stack:
+        context = stack.enter_context(
+            isolated_snippet_generation_environment(
+                should_update_snippets=update_snippets,
+                snapshot_base_dir=SNIPPETS_DIR,
+                global_snippet_replace_regexes=[
+                    MASK_MY_PROJECT,
+                    MASK_VENV,
+                    MASK_USING_LOG_MESSAGE,
+                    MASK_PKG_RESOURCES,
+                ],
+            )
+        )
+        tmp_dir = stack.enter_context(tempfile.TemporaryDirectory())
+        stack.enter_context(
+            environ(
+                {"SOURCES__GITHUB__ACCESS_TOKEN": "XX", "DLT_CONFIG_FOLDER": tmp_dir}
+            )
+        )
         # Scaffold code location
-        run_command_and_snippet_output(
+        context.run_command_and_snippet_output(
             cmd="dg scaffold project my-project --python-environment uv_managed --use-editable-dagster && cd my-project/src",
             snippet_path=SNIPPETS_DIR
-            / f"{get_next_snip_number()}-scaffold-project.txt",
+            / f"{context.get_next_snip_number()}-scaffold-project.txt",
             snippet_replace_regex=[
-                ("--python-environment uv_managed --use-editable-dagster ", ""),
+                (
+                    "--python-environment uv_managed --use-editable-dagster ",
+                    "",
+                ),
                 ("--editable.*dagster-sling", "dagster-sling"),
             ],
-            update_snippets=update_snippets,
             ignore_output=True,
         )
+        stack.enter_context(activate_venv("../.venv"))
 
-        run_command_and_snippet_output(
+        context.run_command_and_snippet_output(
             cmd=f"uv add --editable {EDITABLE_DIR / 'dagster-dlt'}",
-            snippet_path=SNIPPETS_DIR / f"{get_next_snip_number()}-add-dlt.txt",
-            update_snippets=update_snippets,
+            snippet_path=SNIPPETS_DIR / f"{context.get_next_snip_number()}-add-dlt.txt",
             print_cmd="uv add dagster-dlt",
             ignore_output=True,
         )
 
         # scaffold dlt component
-        run_command_and_snippet_output(
-            cmd="dg scaffold dagster_dlt.DltLoadCollectionComponent github_snowflake_ingest \\\n  --source github --destination snowflake",
+        context.run_command_and_snippet_output(
+            cmd="dg scaffold defs dagster_dlt.DltLoadCollectionComponent github_snowflake_ingest \\\n  --source github --destination snowflake",
             snippet_path=SNIPPETS_DIR
-            / f"{get_next_snip_number()}-scaffold-dlt-component.txt",
-            update_snippets=update_snippets,
-            snippet_replace_regex=[MASK_MY_PROJECT],
+            / f"{context.get_next_snip_number()}-scaffold-dlt-component.txt",
+            ignore_output=True,
         )
 
         # Tree the project
-        run_command_and_snippet_output(
+        context.run_command_and_snippet_output(
             cmd="tree my_project/defs",
-            snippet_path=SNIPPETS_DIR / f"{get_next_snip_number()}-tree.txt",
-            update_snippets=update_snippets,
+            snippet_path=SNIPPETS_DIR / f"{context.get_next_snip_number()}-tree.txt",
             custom_comparison_fn=compare_tree_output,
         )
 
-        check_file(
+        context.check_file(
             Path("my_project") / "defs" / "github_snowflake_ingest" / "loads.py",
-            snippet_path=SNIPPETS_DIR / f"{get_next_snip_number()}-loads.py",
-            update_snippets=update_snippets,
+            snippet_path=SNIPPETS_DIR / f"{context.get_next_snip_number()}-loads.py",
         )
 
-        check_file(
-            Path("my_project") / "defs" / "github_snowflake_ingest" / "component.yaml",
-            snippet_path=SNIPPETS_DIR / f"{get_next_snip_number()}-component.yaml",
-            update_snippets=update_snippets,
+        context.check_file(
+            Path("my_project") / "defs" / "github_snowflake_ingest" / "defs.yaml",
+            snippet_path=SNIPPETS_DIR / f"{context.get_next_snip_number()}-defs.yaml",
         )
 
-        # List defs
-        run_command_and_snippet_output(
-            cmd="dg list defs",
-            snippet_path=SNIPPETS_DIR / f"{get_next_snip_number()}-list-defs.txt",
-            update_snippets=update_snippets,
-            snippet_replace_regex=[MASK_VENV, MASK_USING_LOG_MESSAGE],
+        # Update loads.py
+        context.create_file(
+            Path("my_project") / "defs" / "github_snowflake_ingest" / "loads.py",
+            contents=textwrap.dedent(
+                """\
+                import dlt
+                from .github import github_reactions, github_repo_events, github_stargazers
+
+                dlthub_dlt_stargazers_source = github_stargazers("dlt-hub", "dlt")
+                dlthub_dlt_stargazers_pipeline = dlt.pipeline(
+                    "github_stargazers", destination="snowflake", dataset_name="dlthub_stargazers"
+                )
+                """
+            ),
+            snippet_path=SNIPPETS_DIR
+            / f"{context.get_next_snip_number()}-customized-loads.py",
         )
 
         # Update component.yaml
-        create_file(
-            Path("my_project") / "defs" / "github_snowflake_ingest" / "component.yaml",
+        context.create_file(
+            Path("my_project") / "defs" / "github_snowflake_ingest" / "defs.yaml",
+            contents=textwrap.dedent(
+                """\
+                type: dagster_dlt.DltLoadCollectionComponent
+
+                attributes:
+                  loads:
+                    - source: .loads.dlthub_dlt_stargazers_source
+                      pipeline: .loads.dlthub_dlt_stargazers_pipeline
+                """
+            ),
+            snippet_path=SNIPPETS_DIR
+            / f"{context.get_next_snip_number()}-customized-defs.yaml",
+        )
+        # List defs
+        context.run_command_and_snippet_output(
+            cmd="dg list defs",
+            snippet_path=SNIPPETS_DIR
+            / f"{context.get_next_snip_number()}-list-defs.txt",
+        )
+        # Update component.yaml
+        context.create_file(
+            Path("my_project") / "defs" / "github_snowflake_ingest" / "defs.yaml",
             contents=textwrap.dedent(
                 """\
                 type: dagster_dlt.DltLoadCollectionComponent
@@ -112,20 +159,19 @@ def test_components_docs_adding_attributes_to_assets(
                 """
             ),
             snippet_path=SNIPPETS_DIR
-            / f"{get_next_snip_number()}-customized-component.yaml",
+            / f"{context.get_next_snip_number()}-customized-defs.yaml",
         )
 
         # List defs
-        run_command_and_snippet_output(
+        context.run_command_and_snippet_output(
             cmd="dg list defs",
-            snippet_path=SNIPPETS_DIR / f"{get_next_snip_number()}-list-defs.txt",
-            update_snippets=update_snippets,
-            snippet_replace_regex=[MASK_VENV, MASK_USING_LOG_MESSAGE],
+            snippet_path=SNIPPETS_DIR
+            / f"{context.get_next_snip_number()}-list-defs.txt",
         )
 
         # Update component.yaml
-        create_file(
-            Path("my_project") / "defs" / "github_snowflake_ingest" / "component.yaml",
+        context.create_file(
+            Path("my_project") / "defs" / "github_snowflake_ingest" / "defs.yaml",
             contents=textwrap.dedent(
                 """\
                 type: dagster_dlt.DltLoadCollectionComponent
@@ -142,13 +188,12 @@ def test_components_docs_adding_attributes_to_assets(
                 """
             ),
             snippet_path=SNIPPETS_DIR
-            / f"{get_next_snip_number()}-customized-component.yaml",
+            / f"{context.get_next_snip_number()}-customized-defs.yaml",
         )
 
         # List defs
-        run_command_and_snippet_output(
+        context.run_command_and_snippet_output(
             cmd="dg list defs",
-            snippet_path=SNIPPETS_DIR / f"{get_next_snip_number()}-list-defs.txt",
-            update_snippets=update_snippets,
-            snippet_replace_regex=[MASK_VENV, MASK_USING_LOG_MESSAGE],
+            snippet_path=SNIPPETS_DIR
+            / f"{context.get_next_snip_number()}-list-defs.txt",
         )

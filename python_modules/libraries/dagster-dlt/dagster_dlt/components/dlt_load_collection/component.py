@@ -5,9 +5,8 @@ from functools import cached_property
 from typing import TYPE_CHECKING, Annotated, Callable, Optional, Union
 
 import dagster as dg
-from dagster import AssetKey, AssetSpec
+from dagster import AssetKey, AssetSpec, Component, ComponentLoadContext, Resolvable, Resolver
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
-from dagster.components import Component, ComponentLoadContext, Resolvable, Resolver
 from dagster.components.resolved.context import ResolutionContext
 from dagster.components.resolved.core_models import AssetAttributesModel
 from dagster.components.scaffold.scaffold import scaffold_with
@@ -82,6 +81,7 @@ ResolvedTranslationFn: TypeAlias = Annotated[
     TranslationFn,
     Resolver(
         resolve_translation,
+        inject_before_resolve=False,
         model_field_type=Union[str, AssetAttributesModel],
     ),
 ]

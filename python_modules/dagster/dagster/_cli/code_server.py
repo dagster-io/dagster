@@ -7,9 +7,10 @@ from typing import Optional
 
 import click
 import dagster_shared.seven as seven
+from dagster_shared.cli import python_pointer_options
 
 from dagster._cli.utils import assert_no_remaining_opts
-from dagster._cli.workspace.cli_target import PythonPointerOpts, python_pointer_options
+from dagster._cli.workspace.cli_target import PythonPointerOpts
 from dagster._core.instance import InstanceRef
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.utils import FuturesAwareThreadPoolExecutor
@@ -190,8 +191,9 @@ def start_command(
     instance_ref: Optional[str],
     **other_opts,
 ):
-    from dagster._grpc import DagsterGrpcServer
+    # deferring for import perf
     from dagster._grpc.proxy_server import DagsterProxyApiServicer
+    from dagster._grpc.server import DagsterGrpcServer
 
     python_pointer_opts = PythonPointerOpts.extract_from_cli_options(other_opts)
     assert_no_remaining_opts(other_opts)

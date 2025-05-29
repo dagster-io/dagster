@@ -1,6 +1,6 @@
+from dagster import Component, ComponentLoadContext, component_instance
 from dagster._core.definitions.decorators.asset_decorator import asset
 from dagster._core.definitions.definitions_class import Definitions
-from dagster.components import Component, ComponentLoadContext, component
 
 # This import is used to test relative imports in the same module.
 from .other_file import return_value  # noqa
@@ -18,7 +18,7 @@ class AComponent(Component):
         return Definitions(assets=[an_asset])
 
 
-@component
+@component_instance
 def load(context: ComponentLoadContext) -> Component:
     """A component that loads a component from the same module."""
     return AComponent()

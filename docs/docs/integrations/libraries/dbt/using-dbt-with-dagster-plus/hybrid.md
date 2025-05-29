@@ -1,6 +1,7 @@
 ---
-title: 'Using dbt with Hybrid deployments in Dagster+'
+title: Making a dbt project accessible to Dagster+ Hybrid
 description: Deploy your dbt & Dagster project with Hybrid deployments in Dagster+.
+sidebar_position: 400
 ---
 
 If you have a Hybrid deployment, you must make the dbt project accessible to the Dagster code executed by your agent.
@@ -29,7 +30,7 @@ This can be done by running the [`dagster-dbt project prepare-and-package`](/api
 
 ### Using CI/CD files
 
-If you are using [CI/CD files](/dagster-plus/features/ci-cd/ci-cd-file-reference) in a Git repository to build and push your Docker image, you'll need to add a few steps to allow the dbt project to deploy successfully.
+If you are using [CI/CD files](/deployment/dagster-plus/ci-cd/ci-cd-file-reference) in a Git repository to build and push your Docker image, you'll need to add a few steps to allow the dbt project to deploy successfully.
 
 Our example updates the CI/CD files of a project from a GitHub repository, but this could be achieved in other platform like GitLab.
 

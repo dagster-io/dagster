@@ -1,27 +1,24 @@
 import textwrap
+from contextlib import ExitStack
 from pathlib import Path
 
 import pytest
+from dagster_dg_core.utils import activate_venv
 
-from dagster._utils.env import environ
 from docs_snippets_tests.snippet_checks.guides.components.utils import (
     DAGSTER_ROOT,
     EDITABLE_DIR,
     format_multiline,
-    isolated_snippet_generation_environment,
 )
 from docs_snippets_tests.snippet_checks.utils import (
     _run_command,
-    check_file,
     compare_tree_output,
-    create_file,
-    run_command_and_snippet_output,
+    isolated_snippet_generation_environment,
     screenshot_page,
 )
 
 MASK_MY_PROJECT = (r" \/.*?\/my-project", " /.../my-project")
-MASK_VENV = (r"Using.*\.venv.*", "")
-MASK_USING_LOG_MESSAGE = (r"Using.*\n", "")
+
 
 SNIPPETS_DIR = (
     DAGSTER_ROOT
@@ -46,35 +43,47 @@ class CustomSlingReplicationComponent(SlingReplicationCollectionComponent):
 def test_components_docs_adding_attributes_to_assets(
     update_snippets: bool, update_screenshots: bool, get_selenium_driver, component_type
 ) -> None:
-    with isolated_snippet_generation_environment() as get_next_snip_number:
+    with ExitStack() as stack:
+        context = stack.enter_context(
+            isolated_snippet_generation_environment(
+                should_update_snippets=update_snippets,
+                snapshot_base_dir=SNIPPETS_DIR,
+                global_snippet_replace_regexes=[
+                    MASK_MY_PROJECT,
+                ],
+            )
+        )
+
         # Scaffold code location, add some assets
-        run_command_and_snippet_output(
+        context.run_command_and_snippet_output(
             cmd=textwrap.dedent(
                 f"""\
                 dg scaffold project my-project --python-environment uv_managed --use-editable-dagster \\
+                    && source my-project/.venv/bin/activate \\
                     && cd my-project/src \\
                     && uv add --editable {EDITABLE_DIR / "dagster-sling"} \\
-                    && dg scaffold dagster_sling.SlingReplicationCollectionComponent my_sling_sync\
+                    && dg scaffold defs dagster_sling.SlingReplicationCollectionComponent my_sling_sync\
                 """
             ),
             snippet_path=SNIPPETS_DIR
-            / f"{get_next_snip_number()}-scaffold-project.txt",
+            / f"{context.get_next_snip_number()}-scaffold-project.txt",
             snippet_replace_regex=[
                 ("--python-environment uv_managed --use-editable-dagster ", ""),
                 ("--editable.*dagster-sling", "dagster-sling"),
+                (".*&& source my-project/.venv/bin/activate.*\n", ""),
             ],
-            update_snippets=update_snippets,
             ignore_output=True,
         )
+
+        stack.enter_context(activate_venv("../.venv"))
 
         _run_command(r"find . -type d -name __pycache__ -exec rm -r {} \+")
         _run_command(r"find . -type d -name my_project.egg-info -exec rm -r {} \+")
 
         # Tree the project
-        run_command_and_snippet_output(
+        context.run_command_and_snippet_output(
             cmd="tree my_project/defs",
-            snippet_path=SNIPPETS_DIR / f"{get_next_snip_number()}-tree.txt",
-            update_snippets=update_snippets,
+            snippet_path=SNIPPETS_DIR / f"{context.get_next_snip_number()}-tree.txt",
             custom_comparison_fn=compare_tree_output,
         )
 
@@ -82,26 +91,25 @@ def test_components_docs_adding_attributes_to_assets(
             component_py_path = (
                 Path("my_project") / "defs" / "my_sling_sync" / "component.py"
             )
-            create_file(
+            context.create_file(
                 component_py_path,
                 contents=CUSTOM_SLING_COMPONENT_BODY,
                 snippet_path=SNIPPETS_DIR
                 / component_type
-                / f"{get_next_snip_number()}-component.py",
+                / f"{context.get_next_snip_number()}-component.py",
             )
-            run_command_and_snippet_output(
+            _run_command(r"find . -type d -name __pycache__ -exec rm -r {} \+")
+            _run_command(r"find . -type d -name my_project.egg-info -exec rm -r {} \+")
+            context.run_command_and_snippet_output(
                 cmd="tree my_project",
                 snippet_path=SNIPPETS_DIR
                 / component_type
-                / f"{get_next_snip_number()}-tree.txt",
-                update_snippets=update_snippets,
+                / f"{context.get_next_snip_number()}-tree.txt",
                 custom_comparison_fn=compare_tree_output,
             )
-            create_file(
-                Path("my_project") / "defs" / "my_sling_sync" / "component.yaml",
-                contents=(
-                    Path("my_project") / "defs" / "my_sling_sync" / "component.yaml"
-                )
+            context.create_file(
+                Path("my_project") / "defs" / "my_sling_sync" / "defs.yaml",
+                contents=(Path("my_project") / "defs" / "my_sling_sync" / "defs.yaml")
                 .read_text()
                 .replace(
                     "dagster_sling.SlingReplicationCollectionComponent",
@@ -109,49 +117,48 @@ def test_components_docs_adding_attributes_to_assets(
                 ),
                 snippet_path=SNIPPETS_DIR
                 / component_type
-                / f"{get_next_snip_number()}-component.yaml",
+                / f"{context.get_next_snip_number()}defs.yaml",
             )
-            get_next_snip_number()
+            context.get_next_snip_number()
         elif component_type == "global":
             component_py_path = (
-                Path("my_project") / "lib" / "custom_sling_replication_component.py"
+                Path("my_project")
+                / "components"
+                / "custom_sling_replication_component.py"
             )
-            run_command_and_snippet_output(
-                cmd="dg scaffold component-type CustomSlingReplicationComponent",
+            context.run_command_and_snippet_output(
+                cmd="dg scaffold component CustomSlingReplicationComponent",
                 snippet_path=SNIPPETS_DIR
                 / component_type
-                / f"{get_next_snip_number()}-scaffold-component-type.txt",
-                update_snippets=update_snippets,
-                snippet_replace_regex=[MASK_MY_PROJECT],
+                / f"{context.get_next_snip_number()}-scaffold-component.txt",
             )
-            create_file(
+            context.create_file(
                 component_py_path,
                 contents=CUSTOM_SLING_COMPONENT_BODY,
                 snippet_path=SNIPPETS_DIR
                 / component_type
-                / f"{get_next_snip_number()}-component.py",
+                / f"{context.get_next_snip_number()}-component.py",
             )
-            run_command_and_snippet_output(
+            _run_command(r"find . -type d -name __pycache__ -exec rm -r {} \+")
+            _run_command(r"find . -type d -name my_project.egg-info -exec rm -r {} \+")
+            context.run_command_and_snippet_output(
                 cmd="tree my_project",
                 snippet_path=SNIPPETS_DIR
                 / component_type
-                / f"{get_next_snip_number()}-tree.txt",
-                update_snippets=update_snippets,
+                / f"{context.get_next_snip_number()}-tree.txt",
                 custom_comparison_fn=compare_tree_output,
             )
-            create_file(
-                Path("my_project") / "defs" / "my_sling_sync" / "component.yaml",
-                contents=(
-                    Path("my_project") / "defs" / "my_sling_sync" / "component.yaml"
-                )
+            context.create_file(
+                Path("my_project") / "defs" / "my_sling_sync" / "defs.yaml",
+                contents=(Path("my_project") / "defs" / "my_sling_sync" / "defs.yaml")
                 .read_text()
                 .replace(
                     "dagster_sling.SlingReplicationCollectionComponent",
-                    "my_project.lib.CustomSlingReplicationComponent",
+                    "my_project.components.CustomSlingReplicationComponent",
                 ),
                 snippet_path=SNIPPETS_DIR
                 / component_type
-                / f"{get_next_snip_number()}-component.yaml",
+                / f"{context.get_next_snip_number()}-defs.yaml",
             )
 
         _run_command("dg check yaml")
@@ -164,7 +171,7 @@ def test_components_docs_adding_attributes_to_assets(
                 curl -O https://raw.githubusercontent.com/dbt-labs/jaffle-shop-classic/refs/heads/main/seeds/raw_payments.csv
             """).strip(),
         )
-        create_file(
+        context.create_file(
             file_path=Path("my_project")
             / "defs"
             / "my_sling_sync"
@@ -189,12 +196,12 @@ def test_components_docs_adding_attributes_to_assets(
             ).strip(),
         )
         type_str = (
-            (Path("my_project") / "defs" / "my_sling_sync" / "component.yaml")
+            (Path("my_project") / "defs" / "my_sling_sync" / "defs.yaml")
             .read_text()
             .split("\n")[0]
         )
-        create_file(
-            file_path=Path("my_project") / "defs" / "my_sling_sync" / "component.yaml",
+        context.create_file(
+            file_path=Path("my_project") / "defs" / "my_sling_sync" / "defs.yaml",
             contents=format_multiline(f"""
                 {type_str}
 
@@ -211,7 +218,7 @@ def test_components_docs_adding_attributes_to_assets(
         _run_command("dagster asset materialize --select '*' -m my_project.definitions")
 
         # Add debug logic
-        create_file(
+        context.create_file(
             component_py_path,
             contents=format_multiline(
                 """
@@ -238,14 +245,15 @@ def test_components_docs_adding_attributes_to_assets(
 
                 """
             ),
-            snippet_path=SNIPPETS_DIR / f"{get_next_snip_number()}-component.py",
+            snippet_path=SNIPPETS_DIR
+            / f"{context.get_next_snip_number()}-component.py",
         )
 
         # Validate works properly
         _run_command("dagster asset materialize --select '*' -m my_project.definitions")
 
         # Add custom scope
-        create_file(
+        context.create_file(
             component_py_path,
             contents=format_multiline(
                 """
@@ -270,11 +278,12 @@ def test_components_docs_adding_attributes_to_assets(
 
                 """
             ),
-            snippet_path=SNIPPETS_DIR / f"{get_next_snip_number()}-component.py",
+            snippet_path=SNIPPETS_DIR
+            / f"{context.get_next_snip_number()}-component.py",
         )
         # Update the component.yaml to use the new scope
-        create_file(
-            Path("my_project") / "defs" / "my_sling_sync" / "component.yaml",
+        context.create_file(
+            Path("my_project") / "defs" / "my_sling_sync" / "defs.yaml",
             contents=format_multiline(f"""
                 {type_str}
 
@@ -292,7 +301,7 @@ def test_components_docs_adding_attributes_to_assets(
                 """),
             snippet_path=SNIPPETS_DIR
             / component_type
-            / f"{get_next_snip_number()}-component.yaml",
+            / f"{context.get_next_snip_number()}-defs.yaml",
             snippet_replace_regex=[
                 (r".*sling:.*\n.*\n.*\n.*\n.*\n", ""),
             ],

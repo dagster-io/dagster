@@ -132,6 +132,7 @@ setup(
             "rapidfuzz",
             "flaky",
             "psutil",
+            "ruff==0.11.5",
         ],
         "test-components": [
             "tomlkit",
@@ -173,7 +174,6 @@ setup(
         ],
         "dagster_dg.plugin": [
             "dagster = dagster",
-            "dagster.components = dagster.components",
         ],
     },
 )

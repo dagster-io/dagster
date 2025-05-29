@@ -38,6 +38,13 @@ class DgJobMetadata:
 
 @whitelist_for_serdes
 @record
+class DgResourceMetadata:
+    name: str
+    type: str
+
+
+@whitelist_for_serdes
+@record
 class DgAssetCheckMetadata:
     key: str
     asset_key: str
@@ -52,4 +59,5 @@ DgDefinitionMetadata: TypeAlias = Union[
     DgScheduleMetadata,
     DgJobMetadata,
     DgAssetCheckMetadata,
+    DgResourceMetadata,
 ]

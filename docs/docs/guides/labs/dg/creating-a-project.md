@@ -10,7 +10,7 @@ import InstallUv from '@site/docs/partials/\_InstallUv.md';
 
 <DgComponentsPreview />
 
-`dg` allows you to create a special type of Python package, called a _project_, that defines a [Dagster code location](/guides/deploy/code-locations/managing-code-locations-with-definitions).
+`dg` allows you to create a special type of Python package, called a _project_, that defines a [Dagster code location](/deployment/code-locations/managing-code-locations-with-definitions).
 
 :::note
 
@@ -26,14 +26,10 @@ Before creating a project with `dg`, you must [install `dg`](/guides/labs/dg#ins
 
 <Tabs>
   <TabItem value="uv" label="uv">
-    ```
-    dg scaffold project my-project
-    ```
+    ``` dg scaffold project my-project ```
   </TabItem>
   <TabItem value="pip" label="pip">
-    ```
-    dg scaffold project my-project
-    ```
+    ``` dg scaffold project my-project ```
   </TabItem>
 </Tabs>
 

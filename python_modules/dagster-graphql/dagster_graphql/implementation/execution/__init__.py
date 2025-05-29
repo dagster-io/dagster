@@ -14,6 +14,7 @@ from dagster._core.events import (
     DagsterEventType,
     EngineEventData,
 )
+from dagster._core.events.log import EventLogEntry
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.dagster_run import CANCELABLE_RUN_STATUSES
 from dagster._core.workspace.permissions import Permissions
@@ -288,9 +289,9 @@ async def gen_events_for_run(
         after_cursor = connection.cursor
 
     loop = asyncio.get_event_loop()
-    queue: asyncio.Queue[tuple[Any, Any]] = asyncio.Queue()
+    queue: asyncio.Queue[tuple[EventLogEntry, str]] = asyncio.Queue()
 
-    def _enqueue(event, cursor):
+    def _enqueue(event: EventLogEntry, cursor: str):
         loop.call_soon_threadsafe(queue.put_nowait, (event, cursor))
 
     # watch for live events
@@ -301,8 +302,7 @@ async def gen_events_for_run(
             event, cursor = await queue.get()
             if (
                 show_failed_to_materialize
-                or event.event_log_entry.dagster_event_type
-                != DagsterEventType.ASSET_FAILED_TO_MATERIALIZE
+                or event.dagster_event_type != DagsterEventType.ASSET_FAILED_TO_MATERIALIZE
             ):
                 yield GraphenePipelineRunLogsSubscriptionSuccess(
                     run=GrapheneRun(record),

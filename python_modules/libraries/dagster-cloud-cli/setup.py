@@ -43,6 +43,7 @@ setup(
         "PyYAML>=5.1",
         "github3.py",
         "Jinja2",
+        "setuptools",
     ],
     include_package_data=True,
     zip_safe=False,
@@ -53,6 +54,12 @@ setup(
         ]
     },
     extras_require={
-        "test": ["freezegun", "pytest>=8", "pytest-mock==3.14.0", "buildkite-test-collector"],
+        "test": [
+            "freezegun",
+            "pytest>=8",
+            "pytest-mock==3.14.0",
+            "buildkite-test-collector",
+            "flaky",
+        ],
     },
 )

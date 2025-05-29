@@ -12,6 +12,12 @@ export const linkToAssetTableWithGroupFilter = (groupMetadata: GroupMetadata) =>
   })}`;
 };
 
+export const linkToAssetTableWithCrossCodeLocationGroupFilter = (groupName: string) => {
+  return `/assets?${qs.stringify({
+    'asset-selection': `group:"${groupName}"`,
+  })}`;
+};
+
 export const linkToAssetTableWithKindFilter = (kind: string) => {
   return `/assets?${qs.stringify({
     'asset-selection': `kind:"${kind}"`,

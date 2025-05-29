@@ -1,4 +1,4 @@
-from dagster.components import Component
+from dagster import Component
 from dagster.components.component_scaffolding import get_scaffolder
 from dagster.components.scaffold.scaffold import ScaffolderUnavailableReason, scaffold_with
 

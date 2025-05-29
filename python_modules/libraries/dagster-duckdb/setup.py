@@ -39,7 +39,7 @@ setup(
         "pandas": [
             "pandas",
         ],
-        "pyspark": ["pyspark>=3"],
+        "pyspark": ["pyspark>=3,<4"],
     },
     zip_safe=False,
 )

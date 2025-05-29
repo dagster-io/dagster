@@ -68,7 +68,7 @@ from dagster._core.workspace.workspace import (
     CurrentWorkspace,
     location_status_from_location_entry,
 )
-from dagster._grpc.server import INCREASE_TIMEOUT_DAGSTER_YAML_MSG, GrpcServerCommand
+from dagster._grpc.constants import INCREASE_TIMEOUT_DAGSTER_YAML_MSG, GrpcServerCommand
 from dagster._time import get_current_timestamp
 from dagster._utils.aiodataloader import DataLoader
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer

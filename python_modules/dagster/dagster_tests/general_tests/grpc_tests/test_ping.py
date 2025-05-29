@@ -13,10 +13,11 @@ import pytest
 from dagster._core.errors import DagsterUserCodeUnreachableError
 from dagster._core.test_utils import instance_for_test
 from dagster._core.utils import FuturesAwareThreadPoolExecutor
-from dagster._grpc import DagsterGrpcClient, DagsterGrpcServer, ephemeral_grpc_api_client
+from dagster._grpc.client import DagsterGrpcClient, ephemeral_grpc_api_client
+from dagster._grpc.constants import GrpcServerCommand
 from dagster._grpc.server import (
     DagsterCodeServerUtilizationMetrics,
-    GrpcServerCommand,
+    DagsterGrpcServer,
     GrpcServerProcess,
     open_server_process,
 )

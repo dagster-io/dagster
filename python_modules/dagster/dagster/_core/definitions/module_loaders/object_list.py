@@ -1,6 +1,6 @@
 from collections import defaultdict
 from collections.abc import Iterable, Mapping, Sequence
-from functools import cached_property
+from functools import cached_property, reduce
 from types import ModuleType
 from typing import Any, Callable, Optional, Union, cast, get_args
 
@@ -145,9 +145,20 @@ class ModuleScopedDagsterDefs:
         for key, asset_objects in self.asset_objects_by_key.items():
             # In certain cases, we allow asset specs to collide because we know we aren't loading them.
             # If there is more than one asset_object in the list for a given key, and the objects do not refer to the same asset_object in memory, we have a collision.
-            num_distinct_objects_for_key = len(
-                set(id(asset_object) for asset_object in asset_objects)
-            )
+
+            # special handling for conflicting AssetSpecs since they are tuples and we can compare them with == and
+            # dedupe at least those that dont contain nested complex objects
+            if asset_objects and all(isinstance(obj, AssetSpec) for obj in asset_objects):
+                first = asset_objects[0]
+                num_distinct_objects_for_key = reduce(
+                    lambda count, obj: count + int(obj != first),
+                    asset_objects,
+                    1,
+                )
+            else:
+                num_distinct_objects_for_key = len(
+                    set(id(asset_object) for asset_object in asset_objects)
+                )
             if len(asset_objects) > 1 and num_distinct_objects_for_key > 1:
                 asset_objects_str = ", ".join(
                     set(self.module_name_by_id[id(asset_object)] for asset_object in asset_objects)

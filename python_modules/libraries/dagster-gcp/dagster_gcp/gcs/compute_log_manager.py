@@ -3,7 +3,7 @@ import json
 import os
 from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager
-from typing import Any, Optional
+from typing import IO, Any, Optional
 
 import dagster_shared.seven as seven
 from dagster import (
@@ -13,8 +13,8 @@ from dagster import (
 )
 from dagster._config.config_type import Noneable
 from dagster._core.storage.cloud_storage_compute_log_manager import (
-    CloudStorageComputeLogManager,
     PollingComputeLogSubscriptionManager,
+    TruncatingCloudStorageComputeLogManager,
 )
 from dagster._core.storage.compute_log_manager import CapturedLogContext, ComputeIOType
 from dagster._core.storage.local_compute_log_manager import (
@@ -22,12 +22,12 @@ from dagster._core.storage.local_compute_log_manager import (
     LocalComputeLogManager,
 )
 from dagster._serdes import ConfigurableClass, ConfigurableClassData
-from dagster._utils import ensure_dir, ensure_file
+from dagster._utils import ensure_dir
 from google.cloud import storage
 from typing_extensions import Self
 
 
-class GCSComputeLogManager(CloudStorageComputeLogManager, ConfigurableClass):
+class GCSComputeLogManager(TruncatingCloudStorageComputeLogManager, ConfigurableClass):
     """Logs op compute function stdout and stderr to GCS.
 
     Users should not instantiate this class directly. Instead, use a YAML block in ``dagster.yaml``
@@ -95,6 +95,7 @@ class GCSComputeLogManager(CloudStorageComputeLogManager, ConfigurableClass):
         self._subscription_manager = PollingComputeLogSubscriptionManager(self)
         self._show_url_only = show_url_only
         self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
+        super().__init__()
 
     @property
     def inst_data(self):
@@ -206,18 +207,16 @@ class GCSComputeLogManager(CloudStorageComputeLogManager, ConfigurableClass):
         gcs_key = self._gcs_key(log_key, io_type, partial)
         return self._bucket.blob(gcs_key).exists()
 
-    def upload_to_cloud_storage(
-        self, log_key: Sequence[str], io_type: ComputeIOType, partial=False
+    def _upload_file_obj(
+        self, data: IO[bytes], log_key: Sequence[str], io_type: ComputeIOType, partial=False
     ):
         path = self.local_manager.get_captured_local_path(log_key, IO_TYPE_EXTENSION[io_type])
-        ensure_file(path)
 
         if partial and os.stat(path).st_size == 0:
             return
 
         gcs_key = self._gcs_key(log_key, io_type, partial=partial)
-        with open(path, "rb") as data:
-            self._bucket.blob(gcs_key).upload_from_file(data)
+        self._bucket.blob(gcs_key).upload_from_file(data)
 
     def download_from_cloud_storage(
         self, log_key: Sequence[str], io_type: ComputeIOType, partial=False

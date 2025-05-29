@@ -3,8 +3,16 @@ from dataclasses import dataclass
 from functools import cached_property
 from typing import Any, Optional, Union
 
-from dagster import AssetExecutionContext, AssetsDefinition, Definitions, multi_asset
-from dagster.components import Component, ComponentLoadContext, Resolvable, ResolvedAssetSpec
+from dagster import (
+    AssetExecutionContext,
+    AssetsDefinition,
+    Component,
+    ComponentLoadContext,
+    Definitions,
+    Resolvable,
+    ResolvedAssetSpec,
+    multi_asset,
+)
 
 from dagster_k8s.pipes import PipesK8sClient, build_pod_body
 

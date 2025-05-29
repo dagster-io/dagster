@@ -1,0 +1,5 @@
+include README.md
+include CHANGELOG.md
+include LICENSE
+include dagster_dg_core/py.typed
+include dagster_dg_core/utils/editor/vscode_extension_package.json

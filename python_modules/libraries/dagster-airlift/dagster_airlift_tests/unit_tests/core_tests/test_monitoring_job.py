@@ -41,6 +41,7 @@ from dagster_airlift.core.monitoring_job.builder import (
 from dagster_airlift.core.serialization.defs_construction import make_default_dag_asset_key
 from dagster_airlift.core.utils import monitoring_job_name
 from dagster_airlift.test import make_dag_run, make_task_instance
+from dagster_test.utils.definitions_execute_in_process import definitions_execute_job_in_process
 
 from dagster_airlift_tests.unit_tests.conftest import create_defs_and_instance
 
@@ -158,7 +159,8 @@ def test_monitoring_job_execution(init_load_context: None, instance: DagsterInst
             ),
             run_creation_time=freeze_datetime - timedelta(seconds=30),
         )
-        result = defs.execute_job_in_process(
+        result = definitions_execute_job_in_process(
+            defs=defs,
             job_name=monitoring_job_name(af_instance.name),
             instance=instance,
             tags={REPOSITORY_LABEL_TAG: "placeholder"},
@@ -277,7 +279,8 @@ def test_monitoring_job_log_extraction_errors(
             mapped_defs=defs,
         )
         # Despite the invalid log content, we should still be able to execute the job.
-        result = defs.execute_job_in_process(
+        result = definitions_execute_job_in_process(
+            defs=defs,
             job_name=monitoring_job_name(af_instance.name),
             instance=instance,
             tags={REPOSITORY_LABEL_TAG: "placeholder"},
@@ -360,7 +363,8 @@ def test_monitoring_job_dag_assets(init_load_context: None, instance: DagsterIns
         full_defs = Definitions.merge(
             enriched_defs, build_airflow_monitoring_defs(airflow_instance=af_instance)
         )
-        result = full_defs.execute_job_in_process(
+        result = definitions_execute_job_in_process(
+            defs=full_defs,
             job_name=monitoring_job_name(af_instance.name),
             instance=instance,
             tags={REPOSITORY_LABEL_TAG: "placeholder"},
@@ -503,7 +507,8 @@ def test_metadata_from_step_output_events() -> None:
         assert instance.get_latest_materialization_event(AssetKey("a")) is None
 
         # Now run the monitoring job. The resulting materialization should have metadata.
-        result = defs.execute_job_in_process(
+        result = definitions_execute_job_in_process(
+            defs=defs,
             job_name=monitoring_job_name(af_instance.name),
             instance=instance,
             tags={REPOSITORY_LABEL_TAG: "placeholder"},

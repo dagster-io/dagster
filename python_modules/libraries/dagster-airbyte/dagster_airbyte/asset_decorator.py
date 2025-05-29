@@ -110,8 +110,8 @@ def airbyte_assets(
 
     if any([spec for spec in specs if spec.group_name]) and group_name:
         raise DagsterInvariantViolationError(
-            "Cannot set group_name parameter on airbyte_assets if one or more of the "
-            "Airbyte asset specs have a group_name defined."
+            f"Cannot set group_name parameter on airbyte_assets with connection ID {connection_id} - "
+            f"one or more of the Airbyte asset specs have a group_name defined."
         )
 
     return multi_asset(

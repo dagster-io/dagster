@@ -4,7 +4,7 @@ sidebar_position: 1000
 title: Tags
 ---
 
-**Tags** are the primary way to organize assets in Dagster. You can attach several tags to an asset when it's defined, and they will appear in the UI. You can also use tags to search and filter for assets in the [Asset catalog](/dagster-plus/features/asset-catalog/) in Dagster+. They're structured as key-value pairs of strings.
+**Tags** are the primary way to organize assets in Dagster. You can attach several tags to an asset when it's defined, and they will appear in the UI. You can also use tags to search and filter for assets in the [Asset catalog](/guides/build/assets/asset-catalog/) in Dagster+. They're structured as key-value pairs of strings.
 
 Here's an example of some tags you might apply to an asset:
 
@@ -55,10 +55,10 @@ A label will look like the following in the UI:
 
 While tags are primarily used for labeling and organization, some run execution features are controlled using run tags:
 
-- [Customizing Kubernetes config](/guides/deploy/deployment-options/kubernetes/customizing-your-deployment)
-- [Specifying Celery config](/guides/deploy/deployment-options/kubernetes/kubernetes-and-celery)
+- [Customizing Kubernetes config](/deployment/oss/deployment-options/kubernetes/customizing-your-deployment)
+- [Specifying Celery config](/deployment/oss/deployment-options/kubernetes/kubernetes-and-celery)
 - [Setting concurrency limits when using the `QueuedRunCoordinator`](/guides/operate/managing-concurrency)
-- [Setting the priority of different runs](/guides/deploy/execution/customizing-run-queue-priority)
+- [Setting the priority of different runs](/deployment/execution/customizing-run-queue-priority)
 
 ### System tags
 

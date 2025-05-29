@@ -37,6 +37,6 @@ To add a component with Python, you can use the `dg scaffold` command with the `
 dg scaffold dagster_dbt.DbtProjectComponent jdbt --project-path dbt/jdbt --format python
 ```
 
-Running this command will generate a `component.py` file, rather than a `component.yaml` file:
+Running this command will generate a `component.py` file, rather than a `defs.yaml` file:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/python-components/tree.txt" />

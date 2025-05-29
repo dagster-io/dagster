@@ -1,9 +1,14 @@
+from unittest.mock import MagicMock
+
 import pytest
 import responses
 from dagster import Failure
 from dagster._config.field_utils import EnvVar
+from dagster._core.definitions import materialize
+from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.errors import DagsterInvariantViolationError
+from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster._core.test_utils import environ
 from dagster_fivetran import (
     DagsterFivetranTranslator,
@@ -22,6 +27,7 @@ from dagster_fivetran_tests.conftest import (
     TEST_API_SECRET,
     TEST_CONNECTOR_ID,
     TEST_CONNECTOR_NAME,
+    TEST_DESTINATION_ID,
     TEST_DESTINATION_SERVICE,
 )
 
@@ -171,6 +177,12 @@ def test_translator_spec(
 
         first_asset_metadata = next(asset.metadata for asset in all_assets)
         assert FivetranMetadataSet.extract(first_asset_metadata).connector_id == TEST_CONNECTOR_ID
+        assert (
+            FivetranMetadataSet.extract(first_asset_metadata).connector_name == TEST_CONNECTOR_NAME
+        )
+        assert (
+            FivetranMetadataSet.extract(first_asset_metadata).destination_id == TEST_DESTINATION_ID
+        )
 
 
 def test_cached_load_spec_single_resource(
@@ -235,8 +247,8 @@ def test_cached_load_spec_with_asset_factory(
 
 
 class MyCustomTranslator(DagsterFivetranTranslator):
-    def get_asset_spec(self, data: FivetranConnectorTableProps) -> AssetSpec:  # pyright: ignore[reportIncompatibleMethodOverride]
-        default_spec = super().get_asset_spec(data)
+    def get_asset_spec(self, props: FivetranConnectorTableProps) -> AssetSpec:
+        default_spec = super().get_asset_spec(props)
         return default_spec.replace_attributes(
             key=default_spec.key.with_prefix("prefix"),
             metadata={**default_spec.metadata, "custom": "metadata"},
@@ -266,6 +278,68 @@ def test_translator_custom_metadata(
             "table_name_in_destination_1",
         ]
         assert "dagster/kind/fivetran" in asset_spec.tags
+
+
+class MyCustomTranslatorWackyKeys(DagsterFivetranTranslator):
+    def get_asset_spec(self, props: FivetranConnectorTableProps) -> AssetSpec:
+        default_spec = super().get_asset_spec(props)
+        return default_spec.replace_attributes(
+            key=["wacky", *["".join(reversed(item)) for item in default_spec.key.path], "wow"],
+        )
+
+
+@pytest.mark.parametrize(
+    "translator, expected_key",
+    [
+        (
+            MyCustomTranslator,
+            AssetKey(["prefix", "schema_name_in_destination_1", "table_name_in_destination_1"]),
+        ),
+        (
+            MyCustomTranslatorWackyKeys,
+            AssetKey(
+                ["wacky", "1_noitanitsed_ni_eman_amehcs", "1_noitanitsed_ni_eman_elbat", "wow"]
+            ),
+        ),
+    ],
+    ids=["custom_translator", "custom_translator_wacky_keys"],
+)
+def test_translator_custom_metadata_materialize(
+    fetch_workspace_data_api_mocks: responses.RequestsMock,
+    sync_and_poll: MagicMock,
+    translator: type[DagsterFivetranTranslator],
+    expected_key: AssetKey,
+) -> None:
+    with environ({"FIVETRAN_API_KEY": TEST_API_KEY, "FIVETRAN_API_SECRET": TEST_API_SECRET}):
+        resource = FivetranWorkspace(
+            account_id=TEST_ACCOUNT_ID,
+            api_key=EnvVar("FIVETRAN_API_KEY"),
+            api_secret=EnvVar("FIVETRAN_API_SECRET"),
+        )
+
+        @fivetran_assets(
+            connector_id=TEST_CONNECTOR_ID,
+            workspace=resource,
+            dagster_fivetran_translator=translator(),
+        )
+        def my_fivetran_assets_def(context: AssetExecutionContext, fivetran: FivetranWorkspace):
+            yield from fivetran.sync_and_poll(context=context)
+
+        result = materialize([my_fivetran_assets_def], resources={"fivetran": resource})
+
+        assert result.success
+        asset_materializations = [
+            event
+            for event in result.all_events
+            if event.event_type_value == "ASSET_MATERIALIZATION"
+        ]
+        assert len(asset_materializations) == 4
+        materialized_asset_keys = {
+            asset_materialization.asset_key for asset_materialization in asset_materializations
+        }
+        assert len(materialized_asset_keys) == 4
+        assert my_fivetran_assets_def.keys == materialized_asset_keys
+        assert expected_key in materialized_asset_keys
 
 
 class MyCustomTranslatorWithGroupName(DagsterFivetranTranslator):

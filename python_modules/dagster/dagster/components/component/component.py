@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Any, Optional
 
 from dagster_shared.record import IHaveNew, record_custom
 from dagster_shared.yaml_utils.source_position import SourcePosition
-from pydantic import BaseModel
+from pydantic import BaseModel, TypeAdapter
 from typing_extensions import Self
 
 import dagster._check as check
@@ -139,3 +139,60 @@ class Component(ABC):
     @classmethod
     def get_description(cls) -> Optional[str]:
         return cls.get_spec().description or inspect.getdoc(cls)
+
+    @classmethod
+    def from_attributes_dict(
+        cls, *, attributes: dict, context: Optional["ComponentLoadContext"] = None
+    ) -> Self:
+        """Load a Component from a dictionary. The dictionary is what would exist in the component.yaml file
+        under the "attributes" key.
+
+        Examples:
+
+        .. code-block:: python
+
+            class ModelComponentWithDeclaration(Component, Model, Resolvable):
+                value: str
+
+                def build_defs(self, context: ComponentLoadContext) -> Definitions: ...
+
+            assert (
+                component_defs(
+                    component=ModelComponentWithDeclaration.from_attributes_dict(attributes={"value": "foobar"}),
+                ).get_assets_def("an_asset")()
+                == "foobar"
+            )
+
+        Args:
+            attributes (dict): The attributes to load the Component from.
+            context (Optional[ComponentLoadContext]): The context to load the Component from.
+
+        Returns:
+            A Component instance.
+        """
+        from dagster.components.core.context import ComponentLoadContext
+
+        model_cls = cls.get_model_cls()
+        assert model_cls
+        model = TypeAdapter(model_cls).validate_python(attributes)
+        return cls.load(model, context if context else ComponentLoadContext.for_test())
+
+    @classmethod
+    def from_yaml_path(
+        cls, yaml_path: Path, context: Optional["ComponentLoadContext"] = None
+    ) -> "Component":
+        """Load a Component from a yaml file.
+
+        Args:
+            yaml_path (Path): The path to the yaml file.
+            context (Optional[ComponentLoadContext]): The context to load the Component from. Defaults to a test context.
+
+        Returns:
+            A Component instance.
+        """
+        from dagster.components.core.context import ComponentLoadContext
+        from dagster.components.core.defs_module import load_yaml_component_from_path
+
+        return load_yaml_component_from_path(
+            context=context or ComponentLoadContext.for_test(), component_def_path=yaml_path
+        )

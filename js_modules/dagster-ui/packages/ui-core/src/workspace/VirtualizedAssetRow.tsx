@@ -67,17 +67,15 @@ export const VirtualizedAssetRow = (props: AssetRowProps) => {
   } = props;
 
   const liveData = useLiveDataOrLatestMaterializationDebounced(path, type);
-  let linkUrl = assetDetailsPathForKey(
+  const assetSelection = getAssetSelectionQueryString();
+  const linkUrl = assetDetailsPathForKey(
     {path},
     {
       view: type === 'folder' ? 'folder' : undefined,
+      // Forward asset selection if visiting a folder
+      'asset-selection': type === 'folder' ? assetSelection : undefined,
     },
   );
-
-  if (type === 'folder') {
-    // Forward filters
-    linkUrl += getAssetSelectionQueryString();
-  }
 
   const onChange = (e: React.FormEvent<HTMLInputElement>) => {
     if (onToggleChecked && e.target instanceof HTMLInputElement) {

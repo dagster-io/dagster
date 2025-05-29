@@ -1,7 +1,7 @@
 from collections.abc import Sequence
 from typing import Annotated, Optional
 
-from dagster.components import Injectable, ResolutionContext, Resolvable, Resolver
+from dagster import ResolutionContext, Resolvable, Resolver
 from pydantic import BaseModel
 
 
@@ -16,13 +16,14 @@ class InnerObject(BaseModel, Resolvable):
             resolve_val1,
             model_field_type=str,
             model_field_name="val1",
+            inject_before_resolve=False,
         ),
     ]
     val2: Optional[str]
 
 
 class TargetObject(BaseModel, Resolvable):
-    int_val: Injectable[int]
+    int_val: int
     str_val: str
     inners: Optional[Sequence[InnerObject]]
 
