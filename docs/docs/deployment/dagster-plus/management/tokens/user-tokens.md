@@ -6,10 +6,6 @@ title: Managing user tokens in Dagster+
 
 import ThemedImage from '@theme/ThemedImage';
 
-:::note
-This guide is applicable to Dagster+.
-:::
-
 In this guide, we'll walk you through creating user tokens in Dagster+.
 
 ## Managing user tokens

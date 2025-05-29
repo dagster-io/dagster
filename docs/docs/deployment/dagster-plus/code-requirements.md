@@ -19,7 +19,9 @@ To follow the steps in this guide, you'll need:
 ## General requirements
 
 :::tip
-**Learn by example?** Check out [an example repo](https://github.com/dagster-io/hooli-data-eng-pipelines) which is set up to run in Dagster+.
+
+**Learn by example?** Check out [an example repository](https://github.com/dagster-io/hooli-data-eng-pipelines) that is set up to run in Dagster+.
+
 :::
 
 To work with Dagster+, your Dagster code:

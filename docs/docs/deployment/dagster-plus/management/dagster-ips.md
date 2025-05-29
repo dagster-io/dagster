@@ -1,7 +1,7 @@
 ---
 description: The Dagster+ agent interacts with a specific set of IP addresses that you may need to allowlist in your infrastructure.
 sidebar_label: IP addresses
-sidebar_position: 400
+sidebar_position: 600
 title: Dagster+ IP addresses
 ---
 

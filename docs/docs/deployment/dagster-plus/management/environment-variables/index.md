@@ -1,12 +1,12 @@
 ---
 description: Configure environment variables through the Dagster+ UI or with agent configuration to dynamically modify application behavior depending on environment.
-sidebar_position: 20
+sidebar_position: 200
 title: Environment variables
 ---
 
 Environment variables, which are key-value pairs configured outside your source code, allow you to dynamically modify application behavior depending on environment.
 
-Using environment variables, you can define various configuration options for your Dagster application and securely set up secrets. For example, instead of hard-coding database credentials - which is bad practice and cumbersome for development - you can use environment variables to supply user details. This allows you to parameterize your pipeline without modifying code or insecurely storing sensitive data.
+Using environment variables, you can define various configuration options for your Dagster+ application and securely set up secrets. For example, instead of hard-coding database credentials - which is bad practice and cumbersome for development - you can use environment variables to supply user details. This allows you to parameterize your pipeline without modifying code or insecurely storing sensitive data.
 
 There are two ways to declare and manage variables in Dagster+:
 

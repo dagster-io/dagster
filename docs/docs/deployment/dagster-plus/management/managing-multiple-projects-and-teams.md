@@ -1,7 +1,7 @@
 ---
 title: 'Managing multiple projects and teams with Dagster+ Hybrid'
 description: Manage multiple projects with Dagster+ Hybrid deployments.
-sidebar_position: 300
+sidebar_position: 800
 ---
 
 In this guide, we'll cover some strategies for managing multiple projects/code bases and teams in a Dagster+ account.

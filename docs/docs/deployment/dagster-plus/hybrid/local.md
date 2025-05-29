@@ -8,11 +8,13 @@ title: Running a local agent
 Local agents are a good way to experiment with Dagster+ before deploying a more scalable Hybrid agent like [Kubernetes](/deployment/dagster-plus/hybrid/kubernetes) or [Amazon ECS](/deployment/dagster-plus/hybrid/amazon-ecs/).
 
 :::note
+
 Local agents aren't well suited for most production use cases. If you're running the local agent in production, make sure that:
 
 - You've set up a supervisor to automatically restart the agent process if it crashes
 - You're alerted if the VM or container dies, or to automatically restart it
-  :::
+
+:::
 
 <details>
   <summary>Prerequisites</summary>

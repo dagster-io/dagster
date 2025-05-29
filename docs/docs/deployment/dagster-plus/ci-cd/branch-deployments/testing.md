@@ -4,16 +4,18 @@ sidebar_position: 400
 title: Testing against production with branch deployments
 ---
 
-:::note
-This guide is applicable to Dagster+.
-:::
-
 This guide details a workflow to test Dagster code in your cloud environment without impacting your production data. To highlight this functionality, we'll leverage Dagster+ branch deployments and a Snowflake database to:
 
 - Execute code on a feature branch directly on Dagster+
 - Read and write to a unique per-branch clone of our Snowflake data
 
 With these tools, we can merge changes with confidence in the impact on our data platform and with the assurance that our code will execute as intended.
+
+:::note
+
+Branch deployments are only available in Dagster+.
+
+:::
 
 Here's an overview of the main concepts we'll be using:
 

@@ -4,12 +4,6 @@ sidebar_position: 200
 title: Managing agent tokens in Dagster+
 ---
 
-:::note
-
-This guide is applicable to Dagster+.
-
-:::
-
 In this guide, we'll walk you through creating and revoking agent tokens in Dagster+.
 
 ## Managing agent tokens

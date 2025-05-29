@@ -4,6 +4,10 @@ sidebar_position: 100
 title: Setting up branch deployments
 ---
 
+import DagsterPlus from '@site/docs/partials/\_DagsterPlus.md';
+
+<DagsterPlus />
+
 In this guide, we'll walk you through setting up Branch Deployments for a code location. Once you're finished, any time a PR is created or updated in your repository, it will automatically create or update an associated branch deployment in Dagster+.
 
 <details>

@@ -5,13 +5,7 @@ sidebar_position: 70
 title: Running multiple agents
 ---
 
-:::note
-This guide is applicable to Dagster+.
-:::
-
 Each Dagster+ full deployment (e.g., `prod`) needs to have at least one agent running. A single agent is adequate for many use cases, but you may want to run multiple agents to provide redundancy if a single agent goes down.
-
----
 
 ## Running multiple agents in the same environment
 

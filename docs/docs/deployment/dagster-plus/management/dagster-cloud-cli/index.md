@@ -1,6 +1,6 @@
 ---
 description: The dagster-cloud CLI offers command-line tools for managing and deploying Dagster+ workflows.
-sidebar_position: 40
+sidebar_position: 400
 title: dagster-cloud CLI
 ---
 

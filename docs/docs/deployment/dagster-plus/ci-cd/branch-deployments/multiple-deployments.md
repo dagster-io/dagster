@@ -4,11 +4,13 @@ description: Frequent use cases and troubleshooting tips for managing branch dep
 sidebar_position: 500
 ---
 
-:::note
-This guide applies to Dagster+.
-:::
-
 This guide will present frequent use cases and troubleshooting tips for managing branch deployments when your organization has multiple Dagster+ deployments or environments.
+
+:::note
+
+Branch deployments are only available in Dagster+.
+
+:::
 
 ## Relevant configuration options
 

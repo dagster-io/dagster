@@ -58,5 +58,5 @@ Your agent will send Dagster+ metadata letting us know the run has been launched
 
 You can do the following to make your Dagster+ Hybrid deployment more secure:
 
-- [Disable log forwarding](/deployment/dagster-plus/management/settings/customizing-agent-settings#disabling-compute-logs)
+- [Disable log forwarding](/deployment/dagster-plus/management/customizing-agent-settings#disabling-compute-logs)
 - [Manage tokens](/deployment/dagster-plus/management/tokens/agent-tokens)

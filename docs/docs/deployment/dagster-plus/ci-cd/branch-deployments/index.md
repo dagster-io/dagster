@@ -4,11 +4,9 @@ sidebar_position: 200
 title: Branch deployments
 ---
 
-:::note
+import DagsterPlus from '@site/docs/partials/\_DagsterPlus.md';
 
-Branch Deployments are only available in Dagster+.
-
-:::
+<DagsterPlus />
 
 Dagster+ provides out-of-the-box support for Continuous Integration (CI) with **Branch Deployments**.
 

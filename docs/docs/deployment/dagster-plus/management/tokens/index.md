@@ -1,6 +1,6 @@
 ---
 description: Managing user and agent tokens in Dagster+.
-sidebar_position: 30
+sidebar_position: 300
 title: Tokens
 ---
 

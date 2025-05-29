@@ -36,6 +36,6 @@ To get started with Dagster+ Hybrid, follow the steps in the [Dagster+ Hybrid do
 
 ## Next steps
 
-Your Dagster+ account is automatically enrolled in a trial. You can [pick your plan type and enter your billing information](/deployment/dagster-plus/management/settings/dagster-plus-settings), or [contact the Dagster team](https://dagster.io/contact) if you need support or want to evaluate the Dagster+ Pro plan.
+Your Dagster+ account is automatically enrolled in a trial. You can pick your plan type and enter your billing information, or [contact the Dagster team](https://dagster.io/contact) if you need support or want to evaluate the Dagster+ Pro plan.
 
 If you are migrating from OSS to Dagster+, follow the steps in the [OSS to Dagster+ migration guide](/migration/oss-to-dagster-plus).
