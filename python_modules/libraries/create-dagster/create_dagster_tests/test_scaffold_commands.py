@@ -3,6 +3,7 @@ import subprocess
 from pathlib import Path
 from typing import Literal, Optional, get_args
 
+import create_dagster
 import dagster_shared.check as check
 import pytest
 import tomlkit
@@ -323,6 +324,54 @@ def validate_pyproject_toml_with_editable(
         assert not has_toml_node(toml, ("tool", "uv", "sources", "dagster-shared"))
         assert not has_toml_node(toml, ("tool", "uv", "sources", "dagster-webserver"))
         assert not has_toml_node(toml, ("tool", "uv", "sources", "dagstermill"))
+
+
+def test_scaffold_project_pinned_dependencies(monkeypatch) -> None:
+    monkeypatch.setattr(create_dagster.version, "__version__", "1.10.18")  # type: ignore
+
+    with (
+        ProxyRunner.test() as runner,
+        isolated_example_workspace(runner, use_editable_dagster=False),
+    ):
+        result = runner.invoke_create_dagster(
+            "project",
+            "--no-uv-sync",
+            "projects/foo-bar",
+        )
+        assert_runner_result(result)
+        assert Path("projects/foo-bar").exists()
+        assert Path("projects/foo-bar/pyproject.toml").exists()
+        with open("projects/foo-bar/pyproject.toml") as f:
+            file_contents = f.read()
+            toml = tomlkit.parse(file_contents)
+            validate_published_pyproject_toml(toml, "1.10.18")
+
+
+def validate_published_pyproject_toml(
+    toml: tomlkit.TOMLDocument,
+    version: str,
+) -> None:
+    assert get_toml_node(
+        toml,
+        ("project", "dependencies"),
+        list,
+    ) == [f"dagster=={version}"]
+    assert get_toml_node(
+        toml,
+        ("dependency-groups",),
+        dict,
+    ) == {
+        "dev": [
+            f"dagster-webserver=={version}",
+            f"dagster-dg-cli=={version}",
+        ]
+    }
+
+    assert not has_toml_node(toml, ("tool", "uv", "sources", "dagster"))
+    assert not has_toml_node(toml, ("tool", "uv", "sources", "dagster-pipes"))
+    assert not has_toml_node(toml, ("tool", "uv", "sources", "dagster-shared"))
+    assert not has_toml_node(toml, ("tool", "uv", "sources", "dagster-webserver"))
+    assert not has_toml_node(toml, ("tool", "uv", "sources", "dagstermill"))
 
 
 def test_scaffold_project_use_editable_dagster_env_var_succeeds(monkeypatch) -> None:
