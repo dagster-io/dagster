@@ -8,7 +8,7 @@ import DagsterPlus from '@site/docs/partials/\_DagsterPlus.md';
 
 <DagsterPlus />
 
-`dagster_cloud.yaml` is used to define multiple code locations for Dagster+. It is similar to `workspace.yaml` in Dagster open source. For [Hybrid deployments](/deployment/dagster-plus/hybrid/), `dagster_cloud.yaml` can be used to manage environment variables and secrets.
+`dagster_cloud.yaml` is used to define multiple code locations for Dagster+. It is similar to `workspace.yaml` in Dagster open source. For [Hybrid deployments](/deployment/dagster-plus/hybrid), `dagster_cloud.yaml` can be used to manage environment variables and secrets.
 
 ## File location
 

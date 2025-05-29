@@ -5,7 +5,7 @@ sidebar_position: 6000
 title: Running a local agent
 ---
 
-Local agents are a good way to experiment with Dagster+ before deploying a more scalable Hybrid agent like [Kubernetes](/deployment/dagster-plus/hybrid/kubernetes) or [Amazon ECS](/deployment/dagster-plus/hybrid/amazon-ecs/).
+Local agents are a good way to experiment with Dagster+ before deploying a more scalable Hybrid agent like [Kubernetes](/deployment/dagster-plus/hybrid/kubernetes) or [Amazon ECS](/deployment/dagster-plus/hybrid/amazon-ecs).
 
 :::note
 
@@ -79,4 +79,4 @@ To view the agent in Dagster+, click the Dagster icon in the top left to navigat
 
 ## Next steps
 
-- Add a [code location](/deployment/code-locations/) to your Dagster+ deployment.
+- Add a [code location](/deployment/code-locations) to your Dagster+ deployment.

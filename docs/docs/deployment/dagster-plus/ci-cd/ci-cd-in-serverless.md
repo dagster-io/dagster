@@ -22,7 +22,7 @@ Using the `Connect to GitHub` or `Connect to GitLab` buttons in Dagster+ to conf
 <Tabs groupId="method">
 <TabItem value="GitHub" label="With GitHub">
 
-If you're a GitHub user, with a single click our GitHub app with GitHub Actions can set up a repo containing skeleton code and configuration for you consistent with Dagster+'s best practices. Pushing your code changes to the `main` branch will automatically deploy them to your `prod` Serverless deployment. Pull requests will spin up ephemeral [branch deployments](/deployment/dagster-plus/ci-cd/branch-deployments/) that you can view in the Dagster+ UI for previewing and testing.
+If you're a GitHub user, with a single click our GitHub app with GitHub Actions can set up a repo containing skeleton code and configuration for you consistent with Dagster+'s best practices. Pushing your code changes to the `main` branch will automatically deploy them to your `prod` Serverless deployment. Pull requests will spin up ephemeral [branch deployments](/deployment/dagster-plus/ci-cd/branch-deployments) that you can view in the Dagster+ UI for previewing and testing.
 
 :::note
 
@@ -46,7 +46,7 @@ If you're a GitLab user, with a single click our GitLab app can set up a repo co
 
 <TabItem value="Other" label="Other Git providers or local development">
 
-If you don't want to use our automated GitHub/GitLab process, we offer [the powerful `dagster-cloud` command-line interface (CLI)](/deployment/dagster-plus/management/dagster-cloud-cli/) that you can use in another CI environment or locally.
+If you don't want to use our automated GitHub/GitLab process, we offer [the powerful `dagster-cloud` command-line interface (CLI)](/deployment/dagster-plus/management/dagster-cloud-cli) that you can use in another CI environment or locally.
 
 First, [create a new project](/getting-started/quickstart) with the Dagster open source CLI.
 

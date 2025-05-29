@@ -98,4 +98,4 @@ if os.getenv("DAGSTER_IS_DEV_CLI"):
 
 `dagster dev` is primarily useful for running Dagster for local development and testing. It isn't suitable for the demands of most production deployments. Most importantly, `dagster dev` does not include authentication or web security. Additionally, in a production deployment, you might want to run multiple webserver replicas, have zero downtime continuous deployment of your code, or set up your Dagster daemon to automatically restart if it crashes.
 
-For information about deploying Dagster in production, see the [Dagster Open Source deployment options documentation](/deployment/oss/deployment-options/).
+For information about deploying Dagster in production, see the [Dagster Open Source deployment options documentation](/deployment/oss/deployment-options).

@@ -195,9 +195,9 @@ In this example, any secret tagged with `dagster` will be included in the enviro
 
 ## Using S3 for I/O management
 
-To enable parallel computation (e.g., with the multiprocessing or Dagster celery executors), you'll need to configure persistent [I/O managers](/guides/build/io-managers/). For example, using an S3 bucket to store data passed between ops.
+To enable parallel computation (e.g., with the multiprocessing or Dagster celery executors), you'll need to configure persistent [I/O managers](/guides/build/io-managers). For example, using an S3 bucket to store data passed between ops.
 
-You'll need to use <PyObject section="libraries" module="dagster_aws" object="s3.s3_pickle_io_manager"/> as your I/O Manager or customize your own persistent I/O managers. Refer to the [I/O managers documentation](/guides/build/io-managers/) for an example.
+You'll need to use <PyObject section="libraries" module="dagster_aws" object="s3.s3_pickle_io_manager"/> as your I/O Manager or customize your own persistent I/O managers. Refer to the [I/O managers documentation](/guides/build/io-managers) for an example.
 
 <CodeExample path="docs_snippets/docs_snippets/deploying/aws/io_manager.py" />
 

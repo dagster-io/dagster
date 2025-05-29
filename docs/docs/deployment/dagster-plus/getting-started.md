@@ -32,7 +32,7 @@ If you don't have any Dagster code, you can select an example project or import 
 
 [Dagster+ Hybrid](/deployment/dagster-plus/hybrid) is a good choice if you want to orchestrate tools without giving Dagster+ direct access to your systems. Dagster+ Hybrid requires more DevOps support.
 
-To get started with Dagster+ Hybrid, follow the steps in the [Dagster+ Hybrid documentation](/deployment/dagster-plus/hybrid/) to install a Dagster+ Hybrid agent and set up CI/CD.
+To get started with Dagster+ Hybrid, follow the steps in the [Dagster+ Hybrid documentation](/deployment/dagster-plus/hybrid) to install a Dagster+ Hybrid agent and set up CI/CD.
 
 ## Next steps
 

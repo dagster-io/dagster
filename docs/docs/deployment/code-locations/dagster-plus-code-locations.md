@@ -103,8 +103,8 @@ Adding a code location to a Git repository follows the same steps as adding a co
 
 To get started, review the appropriate example repository and then create your Git repository with the same structure.
 
-- [GitHub repository with Dagster+ Serverless](https://github.com/dagster-io/dagster-cloud-serverless-quickstart/)
-- [GitHub repository with Dagster+ Hybrid](https://github.com/dagster-io/dagster-cloud-hybrid-quickstart/)
+- [GitHub repository with Dagster+ Serverless](https://github.com/dagster-io/dagster-cloud-serverless-quickstart)
+- [GitHub repository with Dagster+ Hybrid](https://github.com/dagster-io/dagster-cloud-hybrid-quickstart)
 - [GitLab CI/CD for Dagster+ Serverless](https://github.com/dagster-io/dagster-cloud-action/blob/main/gitlab/serverless-ci.yml)
 - [GitLab CI/CD for Dagster+ Hybrid](https://github.com/dagster-io/dagster-cloud-action/blob/main/gitlab/hybrid-ci.yml)
 

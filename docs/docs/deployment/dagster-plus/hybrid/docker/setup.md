@@ -10,7 +10,7 @@ In this guide, you'll configure and run a Dagster+ Docker agent. Docker agents a
 
 To complete the steps in this guide, you'll need:
 
-- **Permissions in Dagster+ that allow you to manage agent tokens**. Refer to the [User permissions documentation](/deployment/dagster-plus/authentication-and-access-control/rbac/user-roles-permissions/) for more info.
+- **Permissions in Dagster+ that allow you to manage agent tokens**. Refer to the [User permissions documentation](/deployment/dagster-plus/authentication-and-access-control/rbac/user-roles-permissions) for more info.
 - **To have Docker installed**
 - **Access to a container registry to which you can push images with Dagster code.** Additionally, your Docker agent must have the permissions required to pull images from the registry.
 
@@ -114,5 +114,5 @@ These credential helpers generally are configured in `~/.docker.config.json`. To
 
 Now that you've got your agent running, what's next?
 
-- **If you're getting Dagster+ set up**, the next step is to [add a code location](/deployment/code-locations/) using the agent.
-- **If you're ready to load your Dagster code**, refer to the [Adding Code to Dagster+](/deployment/code-locations/) guide for more info.
+- **If you're getting Dagster+ set up**, the next step is to [add a code location](/deployment/code-locations) using the agent.
+- **If you're ready to load your Dagster code**, refer to the [Adding Code to Dagster+](/deployment/code-locations) guide for more info.

@@ -23,7 +23,7 @@ The default I/O manager cannot be used if you are a Serverless user who:
 - Are otherwise working with data subject to GDPR or other such regulations
   :::
 
-In Serverless, code that uses the default [I/O manager](/guides/build/io-managers/) is automatically adjusted to save data in Dagster+ managed storage. This automatic change is useful because the Serverless filesystem is ephemeral, which means the default I/O manager wouldn't work as expected.
+In Serverless, code that uses the default [I/O manager](/guides/build/io-managers) is automatically adjusted to save data in Dagster+ managed storage. This automatic change is useful because the Serverless filesystem is ephemeral, which means the default I/O manager wouldn't work as expected.
 
 However, this automatic change also means potentially sensitive data could be **stored** and not just processed or orchestrated by Dagster+.
 

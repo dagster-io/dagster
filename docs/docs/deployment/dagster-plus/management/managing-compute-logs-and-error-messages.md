@@ -9,7 +9,7 @@ import ThemedImage from '@theme/ThemedImage';
 
 In this guide, we'll cover how to adjust where Dagster+ compute logs are stored and manage masking of error messages in the Dagster+ UI.
 
-By default, Dagster+ ingests [structured event logs and compute logs](/guides/monitor/logging/index.md#log-types) from runs and surfaces error messages from [code locations](/deployment/code-locations/) in the UI.
+By default, Dagster+ ingests [structured event logs and compute logs](/guides/monitor/logging/index.md#log-types) from runs and surfaces error messages from [code locations](/deployment/code-locations) in the UI.
 
 Depending on your organization's needs, you may want to retain these logs in your own infrastructure or mask error message contents.
 
@@ -74,7 +74,7 @@ For a full list of available compute log storage options, see "[Dagster instance
 
 By default, Dagster+ surfaces error messages from your code locations in the UI, including when runs fail, sensors or schedules throw an exception, or code locations fail to load. You can mask these error messages in the case that their contents are sensitive.
 
-To mask error messages in a Dagster+ Deployment, set the environment variable `DAGSTER_REDACT_USER_CODE_ERRORS` equal to `1` using the [**Environment variables** page](/deployment/dagster-plus/management/environment-variables/) in the UI:
+To mask error messages in a Dagster+ Deployment, set the environment variable `DAGSTER_REDACT_USER_CODE_ERRORS` equal to `1` using the [**Environment variables** page](/deployment/dagster-plus/management/environment-variables) in the UI:
 
 ![Environment variable UI showing DAGSTER_REDACT_USER_CODE_ERRORS set to 1](/images/dagster-plus/management/configure-redact-env-var.png)
 
