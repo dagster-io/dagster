@@ -27,7 +27,7 @@
 
 ### Dagster Plus
 
-- [dagster-cloud-cli] Add `--wait` to `job launch` command, thanks @stevenayers!
+- [dagster-cloud-cli] Add `--wait` to `job launch` command, thanks [@stevenayers](https://github.com/stevenayers)!
 - [fix][dagster-cloud-cli] Fixed an issue where the `dagster-cloud` cli failed to deploy PEX projects on python 3.12 in certain environments without setuptools already installed.
 
 ### dg & Components (Preview)
