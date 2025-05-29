@@ -1,13 +1,12 @@
-from dagster import (
-    asset,
-    define_asset_job,
-    RetryPolicy,
-)
+import random
+
+from dagster import RetryPolicy, asset, define_asset_job
 
 
 @asset
 def sample_asset():
-    fails_sometimes()
+    if random.choice([True, False]):
+        raise Exception("failed")
 
 
 sample_job = define_asset_job(
