@@ -169,7 +169,7 @@ def test_internal_freshness_policy_fail_window_validation() -> None:
     )
 
 
-def test_internal_freshness_policy_cron_policy() -> None:
+def test_internal_freshness_policy_cron_policy_validation() -> None:
     """Can we define a cron freshness policy?"""
     # Valid cron string and lookback, daily
     policy = InternalFreshnessPolicy.cron(
@@ -240,3 +240,49 @@ def test_attach_internal_freshness_policy_overwrite_existing() -> None:
     assert spec_with_policy.metadata[INTERNAL_FRESHNESS_POLICY_METADATA_KEY] == serialize_value(
         InternalFreshnessPolicy.time_window(fail_window=timedelta(hours=24))
     )
+
+
+def test_internal_freshness_policy_apply_to_asset() -> None:
+    @asset(
+        internal_freshness_policy=InternalFreshnessPolicy.cron(
+            deadline_cron="0 10 * * *",
+            lookback_window=timedelta(hours=1),
+            timezone="UTC",
+        )
+    )
+    def asset_with_internal_freshness_policy():
+        pass
+
+    asset_spec = asset_with_internal_freshness_policy.get_asset_spec()
+    policy = asset_spec.metadata.get(INTERNAL_FRESHNESS_POLICY_METADATA_KEY)
+    assert policy is not None
+    deserialized = deserialize_value(policy)
+    assert isinstance(deserialized, CronFreshnessPolicy)
+    assert deserialized.deadline_cron == "0 10 * * *"
+    assert deserialized.lookback_window == SerializableTimeDelta.from_timedelta(timedelta(hours=1))
+    assert deserialized.timezone == "UTC"
+
+
+def test_internal_freshness_policy_apply_to_asset_spec() -> None:
+    asset_spec = AssetSpec(
+        key="foo",
+        internal_freshness_policy=InternalFreshnessPolicy.cron(
+            deadline_cron="0 10 * * *",
+            lookback_window=timedelta(hours=1),
+            timezone="UTC",
+        ),
+    )
+    asset_spec = attach_internal_freshness_policy(
+        asset_spec,
+        InternalFreshnessPolicy.cron(
+            deadline_cron="0 10 * * *",
+            lookback_window=timedelta(hours=1),
+            timezone="UTC",
+        ),
+    )
+    assert asset_spec.metadata.get(INTERNAL_FRESHNESS_POLICY_METADATA_KEY) is not None
+    deserialized = deserialize_value(asset_spec.metadata[INTERNAL_FRESHNESS_POLICY_METADATA_KEY])
+    assert isinstance(deserialized, CronFreshnessPolicy)
+    assert deserialized.deadline_cron == "0 10 * * *"
+    assert deserialized.lookback_window == SerializableTimeDelta.from_timedelta(timedelta(hours=1))
+    assert deserialized.timezone == "UTC"
