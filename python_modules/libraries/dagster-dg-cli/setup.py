@@ -35,7 +35,7 @@ setup(
     packages=find_packages(exclude=["dagster_dg_cli_tests*"]),
     include_package_data=True,
     install_requires=[
-        f"dagster-dg-core{pin}",
+        "dagster-dg-core==1.10.18rc0",
     ],
     entry_points={
         "console_scripts": [

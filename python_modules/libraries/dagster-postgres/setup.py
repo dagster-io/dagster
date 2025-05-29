@@ -38,6 +38,6 @@ setup(
     },
     include_package_data=True,
     python_requires=">=3.9,<3.13",
-    install_requires=[f"dagster{pin}", "psycopg2-binary"],
+    install_requires=["dagster==1.10.18rc0", "psycopg2-binary"],
     zip_safe=False,
 )
