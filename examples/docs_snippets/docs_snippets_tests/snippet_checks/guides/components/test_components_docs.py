@@ -95,7 +95,7 @@ def test_components_docs_index(
         )
         if package_manager == "uv":
             context.run_command_and_snippet_output(
-                cmd="dg scaffold project jaffle-platform",
+                cmd="create-dagster project jaffle-platform",
                 snippet_path=get_scaffold_project_snip_name(),
                 snippet_replace_regex=[
                     (r"Using CPython.*?(?:\n(?!\n).*)*\n\n", "...venv creation...\n"),
@@ -106,6 +106,7 @@ def test_components_docs_index(
                 ],
                 input_str="y\n",
                 ignore_output=True,
+                print_cmd="uvx create-dagster project jaffle-platform",
             )
             context.run_command_and_snippet_output(
                 cmd="cd jaffle-platform && source .venv/bin/activate",
@@ -138,7 +139,7 @@ def test_components_docs_index(
                     stack.enter_context(activate_venv(".venv"))
 
             context.run_command_and_snippet_output(
-                cmd="dg scaffold project .",
+                cmd="create-dagster project .",
                 snippet_path=get_scaffold_project_snip_name(),
                 ignore_output=True,
             )

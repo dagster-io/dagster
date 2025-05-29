@@ -40,15 +40,21 @@ def test_dg_docs_workspace(update_snippets: bool) -> None:
         # TODO: Make this use "active" python environment in docs followup
 
         context.run_command_and_snippet_output(
-            cmd="dg scaffold workspace --use-editable-dagster dagster-workspace && cd dagster-workspace",
+            cmd="create-dagster workspace --use-editable-dagster dagster-workspace && cd dagster-workspace",
             snippet_path=f"{context.get_next_snip_number()}-dg-scaffold-workspace.txt",
-            print_cmd="dg scaffold workspace dagster-workspace && cd dagster-workspace",
+            print_cmd="create-dagster workspace dagster-workspace && cd dagster-workspace",
+            snippet_replace_regex=[
+                ("create-dagster", "uvx create-dagster"),
+            ],
         )
 
         context.run_command_and_snippet_output(
-            cmd="dg scaffold project --use-editable-dagster --python-environment uv_managed projects/project-1",
+            cmd="create-dagster project --use-editable-dagster --python-environment uv_managed projects/project-1",
             snippet_path=f"{context.get_next_snip_number()}-dg-scaffold-project.txt",
-            print_cmd="dg scaffold project --python-environment uv_managed projects/project-1",
+            print_cmd="create-dagster project --python-environment uv_managed projects/project-1",
+            snippet_replace_regex=[
+                ("create-dagster", "uvx create-dagster"),
+            ],
         )
 
         # Remove files we don't want to show up in the tree
@@ -87,9 +93,12 @@ def test_dg_docs_workspace(update_snippets: bool) -> None:
 
         # Scaffold new project
         context.run_command_and_snippet_output(
-            cmd="dg scaffold project projects/project-2 --python-environment uv_managed --use-editable-dagster",
+            cmd="create-dagster project projects/project-2 --python-environment uv_managed --use-editable-dagster",
             snippet_path=f"{context.get_next_snip_number()}-scaffold-project.txt",
-            print_cmd="dg scaffold project projects/project-2 --python-environment uv_managed",
+            print_cmd="create-dagster project projects/project-2 --python-environment uv_managed",
+            snippet_replace_regex=[
+                ("create-dagster", "uvx create-dagster"),
+            ],
         )
 
         # List projects

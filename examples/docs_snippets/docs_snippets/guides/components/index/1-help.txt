@@ -4,6 +4,7 @@ Usage: dg [OPTIONS] COMMAND [ARGS]...
                                                                                                                         
  CLI for managing Dagster projects.                                                                                     
                                                                                                                         
+                                                                                                                        
 ╭─ Options ────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
 │ --path                        PATH  Specify a directory to use to load the context for this command. This will       │
 │                                     typically be a folder with a dg.toml or pyproject.toml file in it.               │

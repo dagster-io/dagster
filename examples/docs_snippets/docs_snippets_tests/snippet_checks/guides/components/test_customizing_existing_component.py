@@ -58,7 +58,7 @@ def test_components_docs_adding_attributes_to_assets(
         context.run_command_and_snippet_output(
             cmd=textwrap.dedent(
                 f"""\
-                dg scaffold project my-project --python-environment uv_managed --use-editable-dagster \\
+                create-dagster project my-project --python-environment uv_managed --use-editable-dagster \\
                     && source my-project/.venv/bin/activate \\
                     && cd my-project/src \\
                     && uv add --editable {EDITABLE_DIR / "dagster-sling"} \\
@@ -71,6 +71,7 @@ def test_components_docs_adding_attributes_to_assets(
                 ("--python-environment uv_managed --use-editable-dagster ", ""),
                 ("--editable.*dagster-sling", "dagster-sling"),
                 (".*&& source my-project/.venv/bin/activate.*\n", ""),
+                ("create-dagster", "uvx create-dagster"),
             ],
             ignore_output=True,
         )

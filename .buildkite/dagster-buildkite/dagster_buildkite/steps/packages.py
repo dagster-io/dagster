@@ -243,7 +243,7 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         pytest_tox_factors=[
             "all",
             "integrations",
-            # "docs_snapshot_test" Temporarily disabled as we overhaul the dg CLI
+            "docs_snapshot_test",
         ],
         always_run_if=has_dg_changes,
     ),

@@ -15,6 +15,7 @@ MASK_MY_EXISTING_PROJECT = (r" \/.*?\/my-existing-project", " /.../my-existing-p
 MASK_ISORT = (r"#isort:skip-file", "# definitions.py")
 MASK_VENV = (r"Using.*\.venv.*", "")
 MASK_USING_LOG_MESSAGE = (r"Using.*\n", "")
+MASK_PKG_RESOURCES = (r"\n.*import pkg_resources\n", "")
 
 
 SNIPPETS_DIR = (
@@ -35,6 +36,7 @@ def test_components_docs_migrating_definitions(update_snippets: bool) -> None:
     with isolated_snippet_generation_environment(
         should_update_snippets=update_snippets,
         snapshot_base_dir=SNIPPETS_DIR,
+        global_snippet_replace_regexes=[MASK_PKG_RESOURCES],
     ) as context:
         _run_command(f"cp -r {MY_EXISTING_PROJECT} . && cd my-existing-project")
         _run_command(r"find . -type d -name __pycache__ -exec rm -r {} \+")
