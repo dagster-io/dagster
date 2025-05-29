@@ -32,8 +32,8 @@
 
 ### dg & Components (Preview)
 
-- `dg scaffold project` and `dg scaffold workspace` are now commands in a new `create-dagster` CLI.
-- The `dg` CLI now expects to run in the same venv as the underlying dagster project, and no longer launches subprocesses to run commands.
+- The `dg` CLI is now installed in each project's Python environment instead of as a global tool. If you previously had `dg` installed globally and are upgrading, first uninstall the global dg tool (`uv tool uninstall dagster-dg` or `pip uninstall dagster-dg`) and add `dagster-dg-cli` as a dependency to each of your projects. Newly scaffolded projects will automatically include the `dg` CLI going forward.
+- A new `create-dagster` CLI has been added for scaffolding projects instead of workspaces. `uvx create-dagster project` has replaced `dg scaffold project`, and `uvx create-dagster workspace` has replaced `dg scaffold workspace`. The commands take identical arguments.
 - Definitions and component instances are now scaffolded with `dg scaffold defs <scaffolder>` instead of `dg scaffold <scaffolder>`.
 - The `component.yaml` file to specify a component instance is now called "defs.yaml". "component.yaml" will remain supported for several weeks, but is deprecated.
 - The `lib` folder in newly scaffolded projects has been renamed to "components".
@@ -53,6 +53,7 @@
 - [fix] The `dagster-dbt` cli flag `--components` flag now correctly finds `DbtProjectComponent` again.
 - [dagster-fivetran] Added a `FivetranAccountComponent` which can be used to pull in Fivetran connections into Dagster.
 - [dagster-dlt] The DltLoadCollectionComponent scaffolder no longer attempts to automatically construct loads for the given source and destination type.
+- Fixed an issue where components failed to load when using `load_assets_from_airbyte_instance` or other APIs that return a `CacheableAssetsDefinition`.
 
 ## 1.10.17 (core) / 0.26.17 (libraries)
 
