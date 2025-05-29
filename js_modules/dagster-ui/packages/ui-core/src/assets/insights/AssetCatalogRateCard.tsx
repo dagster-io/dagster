@@ -2,7 +2,7 @@ import {BodyLarge, Box, Colors, Icon, Spinner} from '@dagster-io/ui-components';
 import React from 'react';
 
 import styles from './AssetCatalogRateCard.module.css';
-import {numberFormatter} from '../../ui/formatters';
+import {numberFormatter, percentFormatter} from '../../ui/formatters';
 
 export interface AssetCatalogRateCardProps {
   title: string;
@@ -12,7 +12,7 @@ export interface AssetCatalogRateCardProps {
   unit: 'percent' | 'seconds';
 }
 
-function pct_change(x: number, y: number): number {
+function pctChange(x: number, y: number): number {
   if (x === 0) {
     if (y === 0) {
       return 0.0; // No change
@@ -21,9 +21,9 @@ function pct_change(x: number, y: number): number {
   }
 
   if (y > x) {
-    return Math.round(1000 * (y / x - 1)) / 10;
+    return y / x - 1;
   }
-  return Math.round(-(1000 * (1 - y / x))) / 10;
+  return -(1 - y / x);
 }
 
 function formatValues(
@@ -34,26 +34,33 @@ function formatValues(
   currValueString: string;
   prevValueString: string;
   absDeltaString: string;
-  isDown: boolean;
+  hasNegativeDelta: boolean;
 } {
-  let value = valueOrNull ?? 0;
-  let prevValue = prevValueOrNull ?? 0;
+  const value = valueOrNull ?? 0;
+  const prevValue = prevValueOrNull ?? 0;
+
+  const delta = pctChange(prevValue, value);
+  const hasNegativeDelta = delta < 0;
+  const absDelta = Math.abs(delta);
 
   if (unit === 'percent') {
-    value = Math.round(value * 1000) / 10;
-    prevValue = Math.round(prevValue * 1000) / 10;
+    return {
+      currValueString: percentFormatter.format(value),
+      prevValueString: percentFormatter.format(prevValue),
+      absDeltaString: percentFormatter.format(absDelta),
+      hasNegativeDelta,
+    };
   }
 
-  const deltaPct = pct_change(prevValue, value);
-  const isDown = deltaPct < 0;
-  const absDeltaPct = Math.abs(deltaPct);
-  const unitString = unit === 'percent' ? '%' : ' seconds';
-
+  const secondsFormatter = new Intl.NumberFormat(navigator.language, {
+    style: "unit",
+    unit: "second",
+  })
   return {
-    currValueString: numberFormatter.format(value) + unitString,
-    prevValueString: numberFormatter.format(prevValue) + unitString,
-    absDeltaString: numberFormatter.format(absDeltaPct) + '%', // delta is always in percent
-    isDown,
+    currValueString: secondsFormatter.format(value),
+    prevValueString: secondsFormatter.format(prevValue),
+    absDeltaString: percentFormatter.format(absDelta),
+    hasNegativeDelta,
   };
 }
 
@@ -64,7 +71,7 @@ export function AssetCatalogRateCard({
   loading,
   unit,
 }: AssetCatalogRateCardProps) {
-  const {currValueString, prevValueString, absDeltaString, isDown} = formatValues(
+  const {currValueString, prevValueString, absDeltaString, hasNegativeDelta} = formatValues(
     value,
     prevValue,
     unit,
@@ -119,7 +126,7 @@ export function AssetCatalogRateCard({
                 flex={{direction: 'row', alignItems: 'center', gap: 4}}
               >
                 <Icon
-                  name={isDown ? 'trending_down' : 'trending_up'}
+                  name={hasNegativeDelta ? 'trending_down' : 'trending_up'}
                   color={Colors.textLight()}
                   size={16}
                 />
