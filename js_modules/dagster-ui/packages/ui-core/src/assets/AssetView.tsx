@@ -300,6 +300,7 @@ const AssetViewImpl = ({assetKey, headerBreadcrumbs, writeAssetVisit, currentPat
         headerBreadcrumbs={headerBreadcrumbs}
         tags={
           <AssetViewPageHeaderTags
+            assetKey={assetKey}
             definition={cachedOrLiveDefinition}
             liveData={liveData}
             onShowUpstream={() => setParams({...params, view: 'lineage', lineageScope: 'upstream'})}
@@ -544,10 +545,12 @@ const HistoricalViewAlert = ({asOf, hasDefinition}: {asOf: string; hasDefinition
 };
 
 const AssetViewPageHeaderTags = ({
+  assetKey,
   definition,
   liveData,
   onShowUpstream,
 }: {
+  assetKey: AssetKey;
   definition: AssetViewDefinitionNodeFragment | AssetTableDefinitionFragment | null | undefined;
   liveData?: LiveDataForNodeWithStaleData;
   onShowUpstream: () => void;
@@ -556,20 +559,22 @@ const AssetViewPageHeaderTags = ({
   // When the old code below is removed, some of these components may no longer be used.
   return (
     <>
-      {definition ? (
-        <Box flex={{direction: 'row', gap: 6, alignItems: 'center'}}>
-          <AssetHealthSummary assetKey={definition.assetKey} />
-          <StaleReasonsTag
-            liveData={liveData}
-            assetKey={definition.assetKey}
-            onClick={onShowUpstream}
-          />
-          <ChangedReasonsTag
-            changedReasons={definition.changedReasons}
-            assetKey={definition.assetKey}
-          />
-        </Box>
-      ) : null}
+      <Box flex={{direction: 'row', gap: 6, alignItems: 'center'}}>
+        <AssetHealthSummary assetKey={assetKey} />
+        {definition ? (
+          <Box>
+            <StaleReasonsTag
+              liveData={liveData}
+              assetKey={definition.assetKey}
+              onClick={onShowUpstream}
+            />
+            <ChangedReasonsTag
+              changedReasons={definition.changedReasons}
+              assetKey={definition.assetKey}
+            />
+          </Box>
+        ) : null}
+      </Box>
       {!definition?.isMaterializable ? <Tag>External Asset</Tag> : undefined}
     </>
   );
