@@ -94,14 +94,16 @@ class CompositeYamlComponent(Component):
 
         return Definitions.merge(
             *(
-                component.build_defs(context).map_asset_specs(
+                component.build_defs(context).map_asset_specs_inner(
                     func=lambda spec: _add_defs_yaml_code_reference_to_spec(
                         component_yaml_path=component_yaml,
                         load_context=context,
                         component=component,
                         source_position=source_position,
                         asset_spec=spec,
-                    )
+                    ),
+                    selection=None,
+                    ignore_non_spec_asset_types=True,
                 )
                 for component, source_position in zip(self.components, self.source_positions)
             )

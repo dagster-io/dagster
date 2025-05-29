@@ -753,6 +753,18 @@ class Definitions(IHaveNew):
                 )
 
         """
+        return self.map_asset_specs_inner(
+            func=func,
+            selection=selection,
+            ignore_non_spec_asset_types=False,
+        )
+
+    def map_asset_specs_inner(
+        self,
+        func: Callable[[AssetSpec], AssetSpec],
+        selection: Optional[CoercibleToAssetSelection],
+        ignore_non_spec_asset_types: bool,
+    ) -> "Definitions":
         target_keys = None
         if selection:
             if isinstance(selection, str):
@@ -763,7 +775,7 @@ class Definitions(IHaveNew):
         non_spec_asset_types = {
             type(d) for d in self.assets or [] if not isinstance(d, (AssetsDefinition, AssetSpec))
         }
-        if non_spec_asset_types:
+        if non_spec_asset_types and not ignore_non_spec_asset_types:
             raise DagsterInvariantViolationError(
                 "Can only map over AssetSpec or AssetsDefinition objects. "
                 "Received objects of types: "
