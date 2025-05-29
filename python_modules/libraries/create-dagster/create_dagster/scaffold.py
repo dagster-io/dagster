@@ -1,4 +1,5 @@
 import os
+from collections.abc import Sequence
 from dataclasses import asdict
 from pathlib import Path
 from typing import Optional
@@ -13,6 +14,7 @@ from dagster_dg_core.config import (
 )
 from dagster_dg_core.context import DgContext
 from dagster_dg_core.utils import exit_with_error, get_toml_node, has_toml_node, set_toml_node
+from dagster_shared.libraries import parse_package_version
 from dagster_shared.scaffold import scaffold_subtree
 
 
@@ -90,6 +92,15 @@ def scaffold_project(
         editable_dagster_root = None
         deps = PYPI_DAGSTER_DEPENDENCIES
         dev_deps = PYPI_DAGSTER_DEV_DEPENDENCIES
+
+        from create_dagster.version import __version__
+
+        create_dagster_version = parse_package_version(__version__)
+        if create_dagster_version.release[0] >= 1:
+            # Pin scaffolded libraries to match create-dagster version
+            deps = [f"{dep}=={__version__}" for dep in deps]
+            dev_deps = [f"{dep}=={__version__}" for dep in dev_deps]
+
         sources = []
 
     dependencies_str = _get_pyproject_toml_dependencies(deps)
@@ -160,24 +171,26 @@ def scaffold_project(
 # not. This is because `tool.uv.sources` only seems to apply to direct dependencies of the package,
 # so any 2+-order Dagster dependency of our package needs to be listed as a direct dependency in the
 # editable case. See: https://github.com/astral-sh/uv/issues/9446
-EDITABLE_DAGSTER_DEPENDENCIES = (
+EDITABLE_DAGSTER_DEPENDENCIES = [
     "dagster",
     "dagster-pipes",
     "dagster-shared",
     "dagster-test",  # we include dagster-test for testing purposes
-)
-EDITABLE_DAGSTER_DEV_DEPENDENCIES = (
+]
+EDITABLE_DAGSTER_DEV_DEPENDENCIES = [
     "dagster-webserver",
     "dagster-graphql",
     "dagster-dg-core",
     "dagster-dg-cli",
     "dagster-cloud-cli",
-)
-PYPI_DAGSTER_DEPENDENCIES = ("dagster",)
-PYPI_DAGSTER_DEV_DEPENDENCIES = (
+]
+
+
+PYPI_DAGSTER_DEPENDENCIES = ["dagster"]
+PYPI_DAGSTER_DEV_DEPENDENCIES = [
     "dagster-webserver",
     "dagster-dg-cli",
-)
+]
 
 
 def _get_editable_dagster_from_env() -> str:
@@ -189,7 +202,7 @@ def _get_editable_dagster_from_env() -> str:
     return os.environ["DAGSTER_GIT_REPO_DIR"]
 
 
-def _get_pyproject_toml_dependencies(deps: tuple[str, ...]) -> str:
+def _get_pyproject_toml_dependencies(deps: Sequence[str]) -> str:
     return "\n".join(
         [
             "dependencies = [",
@@ -199,7 +212,7 @@ def _get_pyproject_toml_dependencies(deps: tuple[str, ...]) -> str:
     )
 
 
-def _get_pyproject_toml_dev_dependencies(deps: tuple[str, ...]) -> str:
+def _get_pyproject_toml_dev_dependencies(deps: Sequence[str]) -> str:
     return "\n".join(
         [
             "dev = [",
