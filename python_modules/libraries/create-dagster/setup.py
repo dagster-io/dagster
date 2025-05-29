@@ -42,6 +42,7 @@ setup(
             "pytest",
             "buildkite-test-collector",
             "flaky",
+            "psutil",
         ],
     },
     zip_safe=False,

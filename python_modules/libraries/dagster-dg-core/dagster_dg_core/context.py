@@ -56,6 +56,8 @@ from dagster_dg_core.utils.warnings import emit_warning
 _DEFAULT_PROJECT_DEFS_SUBMODULE: Final = "defs"
 _DEFAULT_PROJECT_CODE_LOCATION_TARGET_MODULE: Final = "definitions"
 _EXCLUDED_COMPONENT_DIRECTORIES: Final = {"__pycache__"}
+# Remove in future, in place for backcompat
+OLD_DG_PLUGIN_ENTRY_POINT_GROUPS = ["dagster_dg.library", "dagster_dg.plugin"]
 
 
 def _should_capture_components_cli_stderr() -> bool:
@@ -549,7 +551,6 @@ class DgContext:
         # defered imports for perf
         import tomlkit
         import tomlkit.items
-        from dagster.components.core.package_entry import OLD_DG_PLUGIN_ENTRY_POINT_GROUPS
 
         if self.pyproject_toml_path.exists():
             toml = tomlkit.parse(self.pyproject_toml_path.read_text())
@@ -743,7 +744,6 @@ def _validate_plugin_entry_point(context: DgContext) -> None:
         return
 
     import tomlkit
-    from dagster.components.core.package_entry import OLD_DG_PLUGIN_ENTRY_POINT_GROUPS
 
     toml = tomlkit.parse(context.pyproject_toml_path.read_text())
     for entry_point_group in OLD_DG_PLUGIN_ENTRY_POINT_GROUPS:
