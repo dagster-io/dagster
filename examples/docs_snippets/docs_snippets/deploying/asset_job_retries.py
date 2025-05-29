@@ -1,3 +1,4 @@
+import random
 from dagster import (
     asset,
     define_asset_job,
@@ -7,7 +8,8 @@ from dagster import (
 
 @asset
 def sample_asset():
-    fails_sometimes()
+    if random.choice([True, False]):
+        raise Exception('failed')
 
 
 sample_job = define_asset_job(
