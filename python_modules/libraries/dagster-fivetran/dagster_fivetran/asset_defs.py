@@ -141,8 +141,9 @@ def _build_fivetran_assets(
             FivetranConnectorTableProps(
                 table=table,
                 connector_id=connection_metadata.connector_id,
-                name=connection_metadata.name,
+                connector_name=connection_metadata.name,
                 connector_url=connection_metadata.connector_url,
+                destination_id=None,
                 schema_config=FivetranSchemaConfig.from_schema_config_details(
                     connection_metadata.schemas
                 ),
@@ -799,18 +800,21 @@ def build_fivetran_assets_definitions(
         connector_selector_fn=connector_selector_fn,
     )
 
-    connector_ids = {
-        check.not_none(FivetranMetadataSet.extract(spec.metadata).connector_id)
+    connectors = {
+        (
+            check.not_none(FivetranMetadataSet.extract(spec.metadata).connector_id),
+            check.not_none(FivetranMetadataSet.extract(spec.metadata).connector_name),
+        )
         for spec in all_asset_specs
     }
 
     _asset_fns = []
-    for connector_id in connector_ids:
+    for connector_id, connector_name in connectors:
 
         @fivetran_assets(
             connector_id=connector_id,
             workspace=workspace,
-            name=connector_id,
+            name=connector_name,
             dagster_fivetran_translator=dagster_fivetran_translator,
             connector_selector_fn=connector_selector_fn,
         )

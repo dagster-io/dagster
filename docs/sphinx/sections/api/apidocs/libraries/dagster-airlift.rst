@@ -23,8 +23,8 @@ Assets & Definitions
 
 .. autofunction:: build_defs_from_airflow_instance
 
-Mapping Dagster assets to Airflow tasks/dags:
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Mapping Dagster assets to Airflow tasks/DAGs
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. autofunction:: assets_with_task_mappings
 
@@ -32,8 +32,8 @@ Mapping Dagster assets to Airflow tasks/dags:
 
 .. autofunction:: assets_with_multiple_task_mappings 
 
-Annotations for customizable components:
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Annotations for customizable components
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. autoclass:: DagSelectorFn
 
@@ -41,12 +41,21 @@ Annotations for customizable components:
 
 .. autoclass:: TaskHandleDict
 
-Objects for retrieving information about the Airflow/Dagster mapping:
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Objects for retrieving information about the Airflow/Dagster mapping
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. autoclass:: DagInfo
 
 .. autoclass:: AirflowDefinitionsData
+
+
+AirflowInstanceComponent
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. currentmodule:: dagster_airlift.core.components
+
+.. autoclass:: AirflowInstanceComponent
+    :members:
 
 
 MWAA (dagster_airlift.mwaa)
@@ -69,7 +78,7 @@ Proxying
     
 .. autofunction:: load_proxied_state_from_yaml
 
-Proxying State
+Proxying state
 ~~~~~~~~~~~~~~
 
 .. autoclass:: AirflowProxiedState
@@ -78,18 +87,16 @@ Proxying State
 
 .. autoclass:: TaskProxiedState
 
-Task-level Proxying
+Task-level proxying
 ~~~~~~~~~~~~~~~~~~~~
 
 .. autoclass:: BaseProxyTaskToDagsterOperator
 
 .. autoclass:: DefaultProxyTaskToDagsterOperator
   
-Dag-level Proxying
+DAG-level Proxying
 ~~~~~~~~~~~~~~~~~~~
 
 .. autoclass:: BaseProxyDAGToDagsterOperator
 
 .. autoclass:: DefaultProxyDAGToDagsterOperator
-
-

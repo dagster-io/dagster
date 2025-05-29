@@ -1,4 +1,4 @@
-type: dagster_fivetran.FivetranWorkspaceComponent
+type: dagster_fivetran.FivetranAccountComponent
 
 attributes:
   workspace:

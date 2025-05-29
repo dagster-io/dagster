@@ -28,6 +28,32 @@ hr {
   height: 1px;
 }
 
+////////////////////////////////////////////////////////////////////////////////////////////////////
+//                                             Navbar                                             //
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+@media screen and (min-width: 996px) and (max-width: 1272px) {
+  // hide version dropdown on smaller sizes
+  .dropdown--right {
+    display: none;
+  }
+
+  .feedback-nav-link {
+    display: none;
+  }
+
+  // reduce navbar item margins on smaller sizes
+  .navbar__item {
+    margin-right: 8px;
+  }
+
+  // reduce search bar width on smaller sizes
+  .navbar__search-input {
+    width: 8rem;
+  }
+}
+
 .navbar {
   box-shadow: none;
   border-bottom: 1px solid var(--theme-color-keyline);
@@ -84,23 +110,6 @@ hr {
   }
 }
 
-/* Main content */
-.theme-doc-markdown {
-  margin: 0 auto;
-  margin-top: 1rem;
-
-  img {
-    border: 1px solid var(--theme-color-keyline);
-    border-radius: 8px;
-    overflow: hidden;
-  }
-}
-
-/* Custom code for PyObject */
-a.pyobject {
-  color: var(--theme-color-text-default);
-}
-
 .navbar {
   &--dark {
     --ifm-navbar-link-color: var(--theme-color-text-default);
@@ -130,6 +139,10 @@ a.pyobject {
   }
 }
 
+////////////////////////////////////////////////////////////////////////////////////////////////////
+//                                             Search                                             //
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
 .DocSearch-Button {
   border-radius: 8px !important;
   background: var(--theme-color-background-default) !important;
@@ -147,6 +160,7 @@ a.pyobject {
     border: 1px solid var(--theme-color-text-lighter) !important;
   }
 }
+
 .DocSearch-Hit-source {
   color: var(--theme-color-text-light) !important;
 }
@@ -162,6 +176,26 @@ a.pyobject {
 
 .DocSearch-Cancel {
   color: var(--theme-color-text-light) !important;
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+//                                          Main Content                                          //
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+.theme-doc-markdown {
+  margin: 0 auto;
+  margin-top: 1rem;
+
+  img {
+    border: 1px solid var(--theme-color-keyline);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+}
+
+/* Custom code for PyObject */
+a.pyobject {
+  color: var(--theme-color-text-default);
 }
 
 .footer {
@@ -466,11 +500,8 @@ table {
   color: var(--theme-color-text-light);
 }
 
-@media (max-width: 950px) {
-  .navbar__items .navbar__brand {
-    margin: 0 auto;
-  }
-
+@media (max-width: 996px) {
+  // center logo on smaller displays
   .navbar__items .navbar__brand {
     margin: 0 auto;
   }

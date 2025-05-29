@@ -89,23 +89,21 @@ async def get_freshness_status_and_metadata(
 ) -> tuple[str, Optional["GrapheneAssetHealthFreshnessMeta"]]:
     """Gets an AssetFreshnessHealthState object for an asset, either via streamline or by computing
     it based on the state of the DB. Then converts it to a GrapheneAssetHealthStatus and the metadata
-    needed to power the UIs. Metadata is fetched from the AssetLatestMaterializationState object, again
-    either via streamline or by computing it based on the state of the DB.
+    needed to power the UIs. Metadata is computed based on the state of the DB.
     """
     from dagster_graphql.schema.asset_health import (
         GrapheneAssetHealthFreshnessMeta,
         GrapheneAssetHealthStatus,
     )
 
+    asset_freshness_health_state = None
     if graphene_info.context.instance.streamline_read_asset_health_supported():
         asset_freshness_health_state = (
             graphene_info.context.instance.get_asset_freshness_health_state_for_asset(asset_key)
         )
-        if asset_freshness_health_state is None:
-            # if the freshness state is None, it means that the asset hasn't been processed by streamline
-            # yet. Return UNKNOWN and rely on the freshness daemon to update the state on the next iteration.
-            return GrapheneAssetHealthStatus.UNKNOWN, None
-    else:
+    if (
+        asset_freshness_health_state is None
+    ):  # if streamline reads are off or no streamline state exists for the asset compute it from the DB
         if graphene_info.context.asset_graph.get(asset_key).internal_freshness_policy is None:
             return GrapheneAssetHealthStatus.NOT_APPLICABLE, None
         asset_freshness_health_state = AssetFreshnessHealthState.compute_for_asset(
