@@ -34,9 +34,9 @@ def random_3(context, random_1):
     return 1
 
 
-@dg.asset
-def always_materializes():
-    return 1
+# @dg.asset
+# def always_materializes():
+#     return 1
 
 
 @dg.asset
@@ -97,20 +97,20 @@ def random_2_check_sometimes_errors(context):
         return dg.AssetCheckResult(passed=True)
 
 
-@dg.asset_check(asset=always_materializes)
-def always_materializes_check_sometimes_warns(context):
-    if should_fail(context.log):
-        return dg.AssetCheckResult(passed=False, severity=dg.AssetCheckSeverity.WARN)
-    else:
-        return dg.AssetCheckResult(passed=True)
+# @dg.asset_check(asset=always_materializes)
+# def always_materializes_check_sometimes_warns(context):
+#     if should_fail(context.log):
+#         return dg.AssetCheckResult(passed=False, severity=dg.AssetCheckSeverity.WARN)
+#     else:
+#         return dg.AssetCheckResult(passed=True)
 
 
-@dg.asset_check(asset=always_materializes)
-def always_materializes_check_sometimes_errors(context):
-    if should_fail(context.log):
-        return dg.AssetCheckResult(passed=False, severity=dg.AssetCheckSeverity.ERROR)
-    else:
-        return dg.AssetCheckResult(passed=True)
+# @dg.asset_check(asset=always_materializes)
+# def always_materializes_check_sometimes_errors(context):
+#     if should_fail(context.log):
+#         return dg.AssetCheckResult(passed=False, severity=dg.AssetCheckSeverity.ERROR)
+#     else:
+#         return dg.AssetCheckResult(passed=True)
 
 
 @dg.observable_source_asset
@@ -163,7 +163,7 @@ def get_assets_and_checks():
         random_1,
         random_2,
         random_3,
-        always_materializes,
+        # always_materializes,
         always_fails,
         random_failure_partitioned_asset,
         random_1_check_always_warns,
@@ -171,8 +171,8 @@ def get_assets_and_checks():
         random_1_check_always_execution_fails,
         random_2_check_sometimes_warns,
         random_2_check_sometimes_errors,
-        always_materializes_check_sometimes_warns,
-        always_materializes_check_sometimes_errors,
+        # always_materializes_check_sometimes_warns,
+        # always_materializes_check_sometimes_errors,
         observable_source_asset_always_observes,
         observable_source_asset_execution_error,
         observable_source_asset_random_execution_error,
