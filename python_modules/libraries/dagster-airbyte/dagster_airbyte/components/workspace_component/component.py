@@ -11,6 +11,9 @@ from dagster_shared import check
 from typing_extensions import TypeAlias
 
 from dagster_airbyte.asset_defs import build_airbyte_assets_definitions
+from dagster_airbyte.components.workspace_component.scaffolder import (
+    AirbyteCloudWorkspaceComponentScaffolder,
+)
 from dagster_airbyte.resources import AirbyteCloudWorkspace
 from dagster_airbyte.translator import (
     AirbyteConnection,
@@ -94,6 +97,7 @@ def resolve_connection_selector(
         check.failed(f"Unknown connection target type: {type(model)}")
 
 
+@dg.scaffold_with(AirbyteCloudWorkspaceComponentScaffolder)
 class AirbyteCloudWorkspaceComponent(dg.Component, dg.Model, dg.Resolvable):
     """Loads Airbyte Cloud connections from a given Airbyte Cloud workspace as Dagster assets.
     Materializing these assets will trigger a sync of the Airbyte Cloud connection, enabling
@@ -124,6 +128,10 @@ class AirbyteCloudWorkspaceComponent(dg.Component, dg.Model, dg.Resolvable):
     )
 
     @cached_property
+    def workspace_resource(self) -> AirbyteCloudWorkspace:
+        return self.workspace
+
+    @cached_property
     def translator(self) -> DagsterAirbyteTranslator:
         if self.translation:
             return ProxyDagsterAirbyteTranslator(self.translation)
@@ -131,14 +139,14 @@ class AirbyteCloudWorkspaceComponent(dg.Component, dg.Model, dg.Resolvable):
 
     def build_defs(self, context: dg.ComponentLoadContext) -> dg.Definitions:
         airbyte_assets = build_airbyte_assets_definitions(
-            workspace=self.workspace,
+            workspace=self.workspace_resource,
             dagster_airbyte_translator=self.translator,
             connection_selector_fn=self.connection_selector,
         )
         assets_with_resource = [
             airbyte_asset.with_resources(
                 {
-                    "airbyte": self.workspace.get_resource_definition(),
+                    "airbyte": self.workspace_resource.get_resource_definition(),
                     "io_manager": default_job_io_manager,
                 }
             )
