@@ -50,7 +50,7 @@
 - Scaffolded schedules and sensors in `dg` are now loadable by default.
 - `dg scaffold defs inline-component` can now be used to create inline components and corresponding instances.
 - `dg list defs` now outputs resources.
-- [fix] The `dagster-dbt` cli flag `--components` flag now correcty finds `DbtProjectComponent` again.
+- [fix] The `dagster-dbt` cli flag `--components` flag now correctly finds `DbtProjectComponent` again.
 - [dagster-fivetran] Added a `FivetranAccountComponent` which can be used to pull in Fivetran connections into Dagster.
 - [dagster-dlt] The DltLoadCollectionComponent scaffolder no longer attempts to automatically construct loads for the given source and destination type.
 
