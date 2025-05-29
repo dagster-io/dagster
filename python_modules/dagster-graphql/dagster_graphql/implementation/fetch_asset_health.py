@@ -184,8 +184,7 @@ async def get_materialization_status_and_metadata(
                 meta = GrapheneAssetHealthMaterializationDegradedNotPartitionedMeta(
                     failedRunId=run_id,
                 )
-                if is_currently_failed:
-                    return GrapheneAssetHealthStatus.DEGRADED, meta
+                return GrapheneAssetHealthStatus.DEGRADED, meta
             if has_ever_materialized:
                 return GrapheneAssetHealthStatus.HEALTHY, None
             else:
