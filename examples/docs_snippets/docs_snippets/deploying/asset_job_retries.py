@@ -9,7 +9,7 @@ from dagster import (
 @asset
 def sample_asset():
     if random.choice([True, False]):
-        raise Exception('failed')
+        raise Exception("failed")
 
 
 sample_job = define_asset_job(
