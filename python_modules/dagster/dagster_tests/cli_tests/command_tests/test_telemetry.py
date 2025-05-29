@@ -38,7 +38,6 @@ from dagster._core.storage.runs import SqlRunStorage
 from dagster._core.telemetry import (
     TELEMETRY_STR,
     UPDATE_REPO_STATS,
-    cleanup_telemetry_logger,
     get_or_set_instance_id,
     get_stats_from_remote_repo,
     hash_name,
@@ -49,7 +48,11 @@ from dagster._core.telemetry import (
 from dagster._core.test_utils import environ, instance_for_test
 from dagster._core.workspace.load import load_workspace_process_context_from_yaml_paths
 from dagster._utils import file_relative_path, pushd, script_relative_path
-from dagster_shared.telemetry import get_or_create_dir_from_dagster_home
+from dagster_shared.telemetry import (
+    cleanup_telemetry_logger,
+    get_or_create_dir_from_dagster_home,
+    get_telemetry_logger,
+)
 from dagster_test.utils.data_factory import remote_repository
 
 EXPECTED_KEYS = set(
@@ -70,6 +73,17 @@ EXPECTED_KEYS = set(
 )
 
 
+@pytest.fixture
+def telemetry_caplog(caplog):
+    # telemetry logger doesn't propagate to the root logger, so need to attach the caplog handler
+    get_telemetry_logger().addHandler(caplog.handler)
+    yield caplog
+    get_telemetry_logger().removeHandler(caplog.handler)
+
+    # Needed to avoid file contention issues on windows with the telemetry log file
+    cleanup_telemetry_logger()
+
+
 def path_to_file(path):
     return script_relative_path(os.path.join("./", path))
 
@@ -80,7 +94,7 @@ def instance():
         return instance
 
 
-def test_dagster_telemetry_enabled(caplog):
+def test_dagster_telemetry_enabled(telemetry_caplog):
     with instance_for_test(overrides={"telemetry": {"enabled": True}}):
         runner = CliRunner()
         with pushd(path_to_file("")):
@@ -96,7 +110,7 @@ def test_dagster_telemetry_enabled(caplog):
                 ],
             )
 
-            for record in caplog.records:
+            for record in telemetry_caplog.records:
                 message = json.loads(record.getMessage())
                 if message.get("action") == UPDATE_REPO_STATS:
                     metadata = message.get("metadata")
@@ -106,14 +120,11 @@ def test_dagster_telemetry_enabled(caplog):
                         get_ephemeral_repository_name(job_name)
                     )
                 assert set(message.keys()) == EXPECTED_KEYS
-            assert len(caplog.records) == 9
+            assert len(telemetry_caplog.records) == 9
             assert result.exit_code == 0
 
-        # Needed to avoid file contention issues on windows with the telemetry log file
-        cleanup_telemetry_logger()
 
-
-def test_dagster_telemetry_disabled_avoids_run_storage_query():
+def test_dagster_telemetry_disabled_avoids_run_storage_query(telemetry_caplog):
     """Verify that when telemetry is disabled, we don't query run_storage_id."""
     with instance_for_test(overrides={"telemetry": {"enabled": False}}) as instance:
         # Ensure the instance uses SqlRunStorage for the mock target to be relevant
@@ -139,11 +150,8 @@ def test_dagster_telemetry_disabled_avoids_run_storage_query():
             log_action(instance_enabled, "TEST_ACTION_ENABLED")
             mock_get_id_enabled.assert_called_once()
 
-    # Needed to avoid file contention issues on windows with the telemetry log file
-    cleanup_telemetry_logger()
 
-
-def test_dagster_telemetry_disabled(caplog):
+def test_dagster_telemetry_disabled(telemetry_caplog):
     with instance_for_test(overrides={"telemetry": {"enabled": False}}):
         runner = CliRunner()
         with pushd(path_to_file("")):
@@ -161,11 +169,11 @@ def test_dagster_telemetry_disabled(caplog):
         assert not os.path.exists(
             os.path.join(get_or_create_dir_from_dagster_home("logs"), "event.log")
         )
-        assert len(caplog.records) == 0
+        assert len(telemetry_caplog.records) == 0
         assert result.exit_code == 0
 
 
-def test_dagster_telemetry_unset(caplog):
+def test_dagster_telemetry_unset(telemetry_caplog):
     with tempfile.TemporaryDirectory() as temp_dir:
         with instance_for_test(temp_dir=temp_dir, overrides={"telemetry": {"enabled": True}}):
             runner = CliRunner(env={"DAGSTER_HOME": temp_dir})
@@ -177,7 +185,7 @@ def test_dagster_telemetry_unset(caplog):
                     ["-f", path_to_file("test_cli_commands.py"), "-a", job_attribute],
                 )
 
-                for record in caplog.records:
+                for record in telemetry_caplog.records:
                     message = json.loads(record.getMessage())
                     if message.get("action") == UPDATE_REPO_STATS:
                         metadata = message.get("metadata")
@@ -188,11 +196,8 @@ def test_dagster_telemetry_unset(caplog):
                         )
                     assert set(message.keys()) == EXPECTED_KEYS
 
-                assert len(caplog.records) == 9
+                assert len(telemetry_caplog.records) == 9
                 assert result.exit_code == 0
-
-            # Needed to avoid file contention issues on windows with the telemetry log file
-            cleanup_telemetry_logger()
 
 
 def get_dynamic_partitioned_asset_repo():
@@ -207,7 +212,7 @@ def get_dynamic_partitioned_asset_repo():
     return my_repo
 
 
-def test_update_repo_stats_dynamic_partitions(caplog):
+def test_update_repo_stats_dynamic_partitions(telemetry_caplog):
     with instance_for_test(overrides={"telemetry": {"enabled": True}}) as instance:
         instance.add_dynamic_partitions("fruit", ["apple"])
         runner = CliRunner()
@@ -228,16 +233,13 @@ def test_update_repo_stats_dynamic_partitions(caplog):
                 ],
             )
 
-            for record in caplog.records:
+            for record in telemetry_caplog.records:
                 message = json.loads(record.getMessage())
                 if message.get("action") == UPDATE_REPO_STATS:
                     metadata = message.get("metadata")
                     assert metadata.get("num_pipelines_in_repo") == str(2)
                     assert metadata.get("num_dynamic_partitioned_assets_in_repo") == str(1)
             assert result.exit_code == 0
-
-        # Needed to avoid file contention issues on windows with the telemetry log file
-        cleanup_telemetry_logger()
 
 
 def test_get_stats_from_remote_repo_partitions():
@@ -605,7 +607,7 @@ def test_get_stats_from_remote_repo_delayed_resource_configuration():
 
 
 # TODO - not sure what this test is testing for, so unclear as to how to update it to jobs
-def test_repo_stats(caplog):
+def test_repo_stats(telemetry_caplog):
     with tempfile.TemporaryDirectory() as temp_dir:
         with instance_for_test(temp_dir=temp_dir, overrides={"telemetry": {"enabled": True}}):
             runner = CliRunner(env={"DAGSTER_HOME": temp_dir})
@@ -629,7 +631,7 @@ def test_repo_stats(caplog):
 
                 assert result.exit_code == 0, result.stdout
 
-                for record in caplog.records:
+                for record in telemetry_caplog.records:
                     message = json.loads(record.getMessage())
                     if message.get("action") == UPDATE_REPO_STATS:
                         metadata = message.get("metadata")
@@ -638,29 +640,23 @@ def test_repo_stats(caplog):
                         assert metadata.get("repo_hash") == hash_name("dagster_test_repository")
                     assert set(message.keys()) == EXPECTED_KEYS
 
-                assert len(caplog.records) == 7
+                assert len(telemetry_caplog.records) == 7
                 assert result.exit_code == 0
 
-            # Needed to avoid file contention issues on windows with the telemetry log file
-            cleanup_telemetry_logger()
 
-
-def test_log_workspace_stats(caplog):
+def test_log_workspace_stats(telemetry_caplog):
     with instance_for_test(overrides={"telemetry": {"enabled": True}}) as instance:
         with load_workspace_process_context_from_yaml_paths(
             instance, [file_relative_path(__file__, "./multi_env_telemetry_workspace.yaml")]
         ) as context:
             log_workspace_stats(instance, context)
 
-            for record in caplog.records:
+            for record in telemetry_caplog.records:
                 message = json.loads(record.getMessage())
                 assert message.get("action") == UPDATE_REPO_STATS
                 assert set(message.keys()) == EXPECTED_KEYS
 
-            assert len(caplog.records) == 2
-
-        # Needed to avoid file contention issues on windows with the telemetry log file
-        cleanup_telemetry_logger()
+            assert len(telemetry_caplog.records) == 2
 
 
 # Sanity check that the hash function maps these similar names to sufficiently dissimilar strings
