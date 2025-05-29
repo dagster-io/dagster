@@ -42,6 +42,10 @@ async def get_asset_check_status_and_metadata(
         )
     # captures streamline disabled or consumer state doesn't exist
     if asset_check_health_state is None:
+        # Note - this will only compute check health if there is a definition for the asset and checks in the
+        # asset graph. If check results are reported for assets or checks that are not in the asset graph, those
+        # results will not be picked up. If we add storage methods to get all check results for an asset by
+        # asset key, rather than by check keys, we could compute check health for the asset in this case.
         remote_check_nodes = graphene_info.context.asset_graph.get_checks_for_asset(asset_key)
         asset_check_health_state = await AssetCheckHealthState.compute_for_asset_checks(
             {remote_check_node.asset_check.key for remote_check_node in remote_check_nodes},
