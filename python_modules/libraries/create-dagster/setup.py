@@ -35,7 +35,7 @@ setup(
     packages=find_packages(exclude=["create_dagster_tests*"]),
     include_package_data=True,
     install_requires=[
-        "dagster-dg-core==1.10.18rc0",
+        "dagster-dg-core==1.10.18rc1",
     ],
     zip_safe=False,
     entry_points={
