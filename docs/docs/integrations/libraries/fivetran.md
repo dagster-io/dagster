@@ -58,6 +58,12 @@ Dagster can automatically load all connector tables from your Fivetran workspace
 
 You can use Dagster to sync Fivetran connectors and materialize Fivetran connector tables. You can use the <PyObject section="libraries" module="dagster_fivetran" object="build_fivetran_assets_definitions" /> factory to create all assets definitions for your Fivetran workspace.
 
+:::note
+
+When syncing a Fivetran connector via Dagster, all Fivetran assets for this connector are materialized in Dagster.
+
+:::
+
 <CodeExample
   path="docs_snippets/docs_snippets/integrations/fivetran/sync_and_materialize_fivetran_assets.py"
   language="python"
