@@ -45,11 +45,11 @@ While it is also possible to create a virtual environment and install `create-da
 
 Use `curl` to download a standalone installation script and execute it with `sh`:
 
-<CliInvocationExample contents="curl -LsSf https://dagster.io/create-dagster/install.sh | sh" />
+<CliInvocationExample contents="curl -LsSf https://dg.dagster.io/create-dagster/install.sh | sh" />
 
 Request a specific version by including it in the URL:
 
-<CliInvocationExample contents="curl -LsSf https://dagster.io/create-dagster/1.10.18/install.sh | sh" />
+<CliInvocationExample contents="curl -LsSf https://dg.dagster.io/create-dagster/1.10.18/install.sh | sh" />
 
 `create-dagster` is available starting at version 1.10.18.
 
