@@ -1,6 +1,6 @@
 ---
 description: Store Dagster+ compute logs in Azure Blob Storage or Azure Data Lake Storage.
-sidebar_position: 300
+sidebar_position: 5300
 title: Store compute logs in Azure Blob Storage or Azure Data Lake Storage
 ---
 

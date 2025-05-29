@@ -2,7 +2,7 @@
 description: Configure Microsoft Entra ID (formerly Azure Active Directory) to use SSO with your Dagster+ organization.
 title: Setting up Microsoft Entra ID (formerly Azure Active Directory) SSO for Dagster+
 sidebar_label: Microsoft Entra ID (formerly Azure Active Directory)
-sidebar_position: 200
+sidebar_position: 8220
 ---
 
 In this guide, you'll configure Microsoft Entra ID (formerly Azure Active Directory) to use single sign-on (SSO) with your Dagster+ organization.

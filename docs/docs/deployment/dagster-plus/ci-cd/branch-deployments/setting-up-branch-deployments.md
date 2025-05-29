@@ -1,6 +1,6 @@
 ---
 description: Configure branch deployments for a code location in Dagster+ using GitHub, GitLab, or the dagster-cloud CLI.
-sidebar_position: 100
+sidebar_position: 7310
 title: Setting up branch deployments
 ---
 

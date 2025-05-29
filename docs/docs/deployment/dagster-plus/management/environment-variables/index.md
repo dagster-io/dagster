@@ -1,6 +1,6 @@
 ---
 description: Configure environment variables through the Dagster+ UI or with agent configuration to dynamically modify application behavior depending on environment.
-sidebar_position: 200
+sidebar_position: 2000
 title: Environment variables
 ---
 

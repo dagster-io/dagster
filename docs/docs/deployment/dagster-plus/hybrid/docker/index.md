@@ -1,6 +1,6 @@
 ---
 description: Learn to set up and configure the Dagster+ Docker agent.
-sidebar_position: 40
+sidebar_position: 4000
 title: Docker
 ---
 

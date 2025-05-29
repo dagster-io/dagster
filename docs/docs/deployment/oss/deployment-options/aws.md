@@ -2,7 +2,7 @@
 title: 'Deploying Dagster to Amazon Web Services'
 sidebar_label: Amazon Web Services
 description: To deploy open source Dagster to AWS, EC2 or ECS can host the Dagster webserver, RDS can store runs and events, and S3 can act as an IO manager.
-sidebar_position: 50
+sidebar_position: 5000
 ---
 
 This guide provides instructions for deploying Dagster on Amazon Web Services (AWS). You can use EC2 or ECS to host the Dagster webserver and the Dagster daemon, RDS to store runs and events, and S3 as an I/O manager to store op inputs and outputs.

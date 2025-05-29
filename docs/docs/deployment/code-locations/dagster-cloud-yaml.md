@@ -1,6 +1,6 @@
 ---
 description: The dagster_cloud.yaml file defines multiple code locations for Dagster+ projects.
-sidebar_position: 50
+sidebar_position: 500
 title: dagster_cloud.yaml reference (Dagster+)
 ---
 

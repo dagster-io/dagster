@@ -2,7 +2,7 @@
 description: Configure CI/CD for Dagster+ Hybrid using GitHub Actions, or non-GitHub providers with the dagster-cloud CLI.
 title: CI/CD in Dagster+ Hybrid
 sidebar_label: CI/CD in Hybrid
-sidebar_position: 200
+sidebar_position: 7200
 ---
 
 :::note

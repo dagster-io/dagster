@@ -1,6 +1,6 @@
 ---
 description: Deploy a Dagster+ agent on an Azure Kubernetes Service (AKS) cluster.
-sidebar_position: 100
+sidebar_position: 5100
 title: Deploy a Dagster+ agent on an Azure Kubernetes Service cluster
 ---
 

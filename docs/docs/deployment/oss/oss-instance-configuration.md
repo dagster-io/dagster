@@ -1,7 +1,7 @@
 ---
 title: Instance configuration
 description: Define configuration options for your OSS Dagster instance.
-sidebar_position: 30
+sidebar_position: 300
 ---
 
 The Dagster instance defines the configuration that Dagster OSS needs for a single deployment - for example, where to store the history of past runs and their associated logs, where to stream the raw logs from op compute functions, and how to launch new runs.

@@ -1,7 +1,7 @@
 ---
 description: Manage team permissions in Dagster+ with role-based access control (RBAC).
 sidebar_label: Managing teams
-sidebar_position: 200
+sidebar_position: 8120
 title: Managing teams
 ---
 

@@ -1,6 +1,6 @@
 ---
 description: Deploy Dagster code to Azure Kubernetes Service using GitHub Actions and Azure Container Registry.
-sidebar_position: 200
+sidebar_position: 5200
 title: Deploy user code in Azure Container Registry
 ---
 

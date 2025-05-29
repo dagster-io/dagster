@@ -1,6 +1,6 @@
 ---
 description: dagster-cloud CLI reference
-sidebar_position: 200
+sidebar_position: 4200
 title: dagster-cloud CLI reference
 ---
 

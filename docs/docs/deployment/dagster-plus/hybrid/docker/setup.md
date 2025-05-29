@@ -1,6 +1,6 @@
 ---
 description: Configure and run Dagster+ Docker agents to execute code within Docker containers.
-sidebar_position: 100
+sidebar_position: 4100
 title: Docker agent setup
 ---
 

@@ -1,7 +1,7 @@
 ---
 description: Dagster+ allows you to grant specific permissions to your organization's users with role-based access control (RBAC), ensuring that Dagster users have access only to what they need.
 sidebar_label: Managing users
-sidebar_position: 100
+sidebar_position: 8110
 title: Managing users
 ---
 

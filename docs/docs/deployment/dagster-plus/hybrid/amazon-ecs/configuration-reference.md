@@ -1,6 +1,6 @@
 ---
 description: Dagster+ configuration reference for Amazon ECS agents.
-sidebar_position: 400
+sidebar_position: 3400
 title: Configuration reference
 ---
 

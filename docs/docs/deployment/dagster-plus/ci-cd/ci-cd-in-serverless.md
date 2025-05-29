@@ -1,6 +1,6 @@
 ---
 description: Implement CI/CD for your Dagster+ Serverless deployment with GitHub, GitLab, or another Git provider.
-sidebar_position: 100
+sidebar_position: 7100
 title: CI/CD in Dagster+ Serverless
 sidebar_label: CI/CD in Serverless
 ---

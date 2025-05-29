@@ -1,6 +1,6 @@
 ---
 description: Create and revoke agent tokens for authenticating Dagster+ hybrid agents.
-sidebar_position: 200
+sidebar_position: 3200
 title: Managing agent tokens in Dagster+
 ---
 

@@ -1,6 +1,6 @@
 ---
 description: Customize Dagster+ agent settings in dagster.yaml
-sidebar_position: 100
+sidebar_position: 1000
 title: Customizing agent settings
 ---
 

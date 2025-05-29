@@ -1,6 +1,6 @@
 ---
 description: Viewing, creating, editing, and revoking user tokens in Dagster+.
-sidebar_position: 100
+sidebar_position: 3100
 title: Managing user tokens in Dagster+
 ---
 

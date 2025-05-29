@@ -1,7 +1,7 @@
 ---
 description: Configure and run a local Dagster+ agent for testing before scaling with your preferred cloud service provider.
 sidebar_label: Local agent
-sidebar_position: 60
+sidebar_position: 6000
 title: Running a local agent
 ---
 

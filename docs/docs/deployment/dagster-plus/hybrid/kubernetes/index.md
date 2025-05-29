@@ -1,6 +1,6 @@
 ---
 description: Automate deployment, scaling, and management of containerized Kubernetes applications with the Dagster+ agent.
-sidebar_position: 20
+sidebar_position: 2000
 title: Kubernetes
 ---
 

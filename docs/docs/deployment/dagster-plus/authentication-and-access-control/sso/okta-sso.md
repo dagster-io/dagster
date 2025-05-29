@@ -1,7 +1,7 @@
 ---
 description: Configure Okta to use single sign-on (SSO) with your Dagster+ organization.
 sidebar_label: Okta SSO
-sidebar_position: 400
+sidebar_position: 8240
 title: Setting up Okta SSO for Dagster+
 ---
 

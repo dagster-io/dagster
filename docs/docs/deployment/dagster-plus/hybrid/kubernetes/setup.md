@@ -1,6 +1,6 @@
 ---
 description: Set up the Dagster+ agent on a Kubernetes cluster using Helm. Configure secrets, manage deployments, and perform rolling upgrades.
-sidebar_position: 100
+sidebar_position: 2100
 title: Kubernetes agent setup
 ---
 
