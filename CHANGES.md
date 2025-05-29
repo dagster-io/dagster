@@ -13,7 +13,7 @@
 - `Definitions` and `AssetDefinition` will now warn if they get different `AssetSpec`s with the same key. This will become an exception in 1.11.
 - Functions that load all definitions from modules like `load_definitions_from_modules` now handle duplicate `AssetSpec`s.
 - Fixed typo in logging, thanks [@eli-b](https://github.com/eli-b)!
-- [dagster-dbt] An issue occurring when using dbt selection arguments with a dbt project using saved queries and semantic models have been fixed.
+- [dagster-dbt] An issue occurring when using dbt selection arguments with a dbt project using saved queries and semantic models has been fixed.
 - [dagster-fivetran] Fixed an issue with `load_assets_from_fivetran_instance` where assets whose asset keys have been customized using a Fivetran translator would lead to an exception.
 
 ### Documentation
