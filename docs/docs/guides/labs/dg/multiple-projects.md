@@ -2,7 +2,7 @@
 title: 'Managing multiple projects with dg'
 sidebar_label: 'Managing multiple projects'
 sidebar_position: 300
-description: Manage multiple isolated Dagster projects using dg, each with unique environments, by creating a workspace directory with dg scaffold project.
+description: Manage multiple isolated Dagster projects using dg, each with unique environments, by creating a workspace directory with create-dagster project.
 ---
 
 import DgComponentsPreview from '@site/docs/partials/\_DgComponentsPreview.md';
@@ -27,11 +27,11 @@ A workspace does not define a Python environment by default. Instead, Python env
 
 ## Scaffold a new workspace and first project
 
-To scaffold a new workspace called `dagster-workspace`, run `dg scaffold workspace`:
+To scaffold a new workspace called `dagster-workspace`, run `uvx create-dagster workspace`:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/workspace/1-dg-scaffold-workspace.txt" />
 
-Now we'll create a project inside our workspace called `project-1`. Run `dg scaffold project` with the `--python-environment uv_managed` option. You will be prompted for the name of the project:
+Now we'll create a project inside our workspace called `project-1`. Run `uvx create-dagster project` with the `--python-environment uv_managed` option. You will be prompted for the name of the project:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/workspace/2-dg-scaffold-project.txt" />
 

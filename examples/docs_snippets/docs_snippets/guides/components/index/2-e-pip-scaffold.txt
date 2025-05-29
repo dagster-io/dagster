@@ -1,1 +1,1 @@
-dg scaffold project .
+create-dagster project .
