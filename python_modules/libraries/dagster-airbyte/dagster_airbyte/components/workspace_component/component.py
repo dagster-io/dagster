@@ -40,7 +40,7 @@ ResolvedTranslationFn: TypeAlias = Annotated[
     TranslationFn,
     dg.Resolver(
         resolve_translation,
-        model_field_type=Union[str, dg.AssetAttributesModel],  # type: ignore
+        model_field_type=Union[str, dg.AssetAttributesModel],
     ),
 ]
 
