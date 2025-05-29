@@ -43,7 +43,10 @@ setup(
     entry_points={
         "console_scripts": [
             "dagster-airbyte = dagster_airbyte.cli:main",
-        ]
+        ],
+        "dagster_dg_cli.plugin": [
+            "dagster_airbyte = dagster_airbyte",
+        ],
     },
     extras_require={
         "test": [
