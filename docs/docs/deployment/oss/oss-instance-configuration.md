@@ -4,11 +4,7 @@ description: Define configuration options for your OSS Dagster instance.
 sidebar_position: 30
 ---
 
-import DagsterOSS from '@site/docs/partials/\_DagsterOSS.md';
-
-<DagsterOSS />
-
-The Dagster instance defines the configuration that Dagster needs for a single deployment - for example, where to store the history of past runs and their associated logs, where to stream the raw logs from op compute functions, and how to launch new runs.
+The Dagster instance defines the configuration that Dagster OSS needs for a single deployment - for example, where to store the history of past runs and their associated logs, where to stream the raw logs from op compute functions, and how to launch new runs.
 
 All of the processes and services that make up your Dagster deployment should share a single instance config file, named `dagster.yaml`, so that they can effectively share information.
 

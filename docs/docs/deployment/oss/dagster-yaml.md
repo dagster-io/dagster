@@ -4,7 +4,7 @@ sidebar_position: 40
 title: dagster.yaml reference
 ---
 
-The `dagster.yaml` file is used to configure the Dagster instance. It defines various settings for storage, run execution, logging, and other aspects of a Dagster deployment.
+The `dagster.yaml` file is used to configure the [Dagster OSS instance](/deployment/oss/oss-instance-configuration) and [Dagster+ agent](/deployment/dagster-plus/management/customizing-agent-settings). It defines various settings for storage, run execution, logging, and other aspects of a Dagster deployment.
 
 ## File location
 

@@ -5,14 +5,7 @@ sidebar_label: Deployment architecture
 title: Dagster OSS deployment architecture
 ---
 
-:::note
-
-This guide is applicable to Dagster Open Source (OSS) deployments. For
-Dagster+ deployments, refer to the [Dagster+](/deployment/dagster-plus) documentation.
-
-:::
-
-This page covers general information about deploying Dagster on your own infrastructure. For guides on specific platforms, see the [deployment options documentation](/deployment/oss/deployment-options/).
+This page covers general information about deploying Dagster OSS on your own infrastructure. For guides on specific platforms, see the [deployment options documentation](/deployment/oss/deployment-options/). For Dagster+ deployments, see the [Dagster+](/deployment/dagster-plus) documentation.
 
 Let's take a look at a generic Dagster deployment, after which we'll walk through each of its components:
 
