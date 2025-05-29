@@ -7,9 +7,10 @@ from typing import Any, Optional
 from dagster_shared.serdes.utils import SerializableTimeDelta
 
 from dagster._core.definitions.asset_key import AssetKey
-from dagster._record import IHaveNew, record
+from dagster._record import IHaveNew, record, record_custom
 from dagster._serdes import deserialize_value, whitelist_for_serdes
 from dagster._utils import check
+from dagster._utils.schedules import is_valid_cron_string
 
 
 @whitelist_for_serdes
@@ -58,6 +59,12 @@ class InternalFreshnessPolicy(ABC):
     ) -> "TimeWindowFreshnessPolicy":
         return TimeWindowFreshnessPolicy.from_timedeltas(fail_window, warn_window)
 
+    @staticmethod
+    def cron(
+        deadline_cron: str, lookback_window: timedelta, timezone: str = "UTC"
+    ) -> "CronFreshnessPolicy":
+        return CronFreshnessPolicy(deadline_cron, lookback_window, timezone)
+
 
 @whitelist_for_serdes
 @record
@@ -81,6 +88,55 @@ class TimeWindowFreshnessPolicy(InternalFreshnessPolicy, IHaveNew):
         return cls(
             fail_window=SerializableTimeDelta.from_timedelta(fail_window),
             warn_window=SerializableTimeDelta.from_timedelta(warn_window) if warn_window else None,
+        )
+
+
+@whitelist_for_serdes
+@record_custom
+class CronFreshnessPolicy(InternalFreshnessPolicy, IHaveNew):
+    """Defines a cron schedule on which the asset is expected to materialize.
+
+    Args:
+        deadline_cron: a cron string that defines a deadline for the asset to be materialized.
+            Seconds resolution in the cron string is not supported.
+            Ex: "0 10 * * *" means we expect the asset to be materialized by 10:00 AM every day
+        lookback_window: the asset must be materialized within this time window before the deadline.
+        timezone: the timezone to use for the cron schedule. IANA time zone database strings are supported. Defaults to UTC.
+
+    Example:
+    policy = InternalFreshnessPolicy.cron(
+        deadline_cron="0 10 * * *", # 10am daily
+        lookback_window=timedelta(hours=1),
+    )
+
+    This policy expects the asset to materialize every day between 9:00 AM and 10:00 AM.
+    The asset is stale if it materializes outside of this time window.
+
+    Until 9:00 AM, the asset's freshness state will not change.
+
+    If the asset is materialized at 9:30 AM, the asset is fresh
+    If the asset is materialized at 9:59 AM, the asset is fresh
+    If the asset is not materialized by 10:00 AM, the asset is stale (freshness state is FAIL)
+    If the asset is materialized at 10:01AM, the asset is still stale.
+
+    """
+
+    deadline_cron: str
+    lookback_window: SerializableTimeDelta
+    timezone: str
+
+    def __new__(cls, deadline_cron: str, lookback_window: timedelta, timezone: str = "UTC"):
+        check.str_param(deadline_cron, "deadline_cron")
+        check.invariant(is_valid_cron_string(deadline_cron), "Invalid cron string.")
+
+        # TODO validate lookback window fits within the cron
+        # This will require a method to find the minimum cycle length of the cron schedule
+
+        return super().__new__(
+            cls,
+            deadline_cron=deadline_cron,
+            lookback_window=SerializableTimeDelta.from_timedelta(lookback_window),
+            timezone=timezone,
         )
 
 

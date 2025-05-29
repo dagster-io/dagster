@@ -1,14 +1,13 @@
 from datetime import timedelta
 
 import pytest
+from dagster import AssetKey, AssetsDefinition, AssetSpec, Definitions
 from dagster._check import CheckError
-from dagster._core.definitions.asset_key import AssetKey
-from dagster._core.definitions.asset_spec import AssetSpec, attach_internal_freshness_policy
-from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.asset_spec import attach_internal_freshness_policy
 from dagster._core.definitions.decorators.asset_decorator import asset
-from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.freshness import (
     INTERNAL_FRESHNESS_POLICY_METADATA_KEY,
+    CronFreshnessPolicy,
     InternalFreshnessPolicy,
     TimeWindowFreshnessPolicy,
 )
@@ -168,6 +167,37 @@ def test_internal_freshness_policy_fail_window_validation() -> None:
     InternalFreshnessPolicy.time_window(
         fail_window=timedelta(seconds=61), warn_window=timedelta(minutes=1)
     )
+
+
+def test_internal_freshness_policy_cron_policy() -> None:
+    """Can we define a cron freshness policy?"""
+    # Valid cron string and lookback, daily
+    policy = InternalFreshnessPolicy.cron(
+        deadline_cron="0 10 * * *",
+        lookback_window=timedelta(hours=1),
+    )
+    assert isinstance(policy, CronFreshnessPolicy)
+    assert policy.deadline_cron == "0 10 * * *"
+    assert policy.lookback_window == SerializableTimeDelta.from_timedelta(timedelta(hours=1))
+    assert policy.timezone == "UTC"
+
+    # Valid cron string and lookback and timezone
+    policy = InternalFreshnessPolicy.cron(
+        deadline_cron="0 10 * * *",
+        lookback_window=timedelta(hours=1),
+        timezone="America/New_York",
+    )
+    assert isinstance(policy, CronFreshnessPolicy)
+    assert policy.deadline_cron == "0 10 * * *"
+    assert policy.lookback_window == SerializableTimeDelta.from_timedelta(timedelta(hours=1))
+    assert policy.timezone == "America/New_York"
+
+    # Invalid cron string
+    with pytest.raises(CheckError):
+        InternalFreshnessPolicy.cron(
+            deadline_cron="0 10 * * * *",  # we don't support seconds resolution in the cron
+            lookback_window=timedelta(hours=1),
+        )
 
 
 def test_attach_internal_freshness_policy_overwrite_existing() -> None:
