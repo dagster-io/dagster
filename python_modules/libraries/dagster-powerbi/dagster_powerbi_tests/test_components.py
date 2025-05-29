@@ -18,7 +18,7 @@ from dagster._utils import alter_sys_path
 from dagster._utils.env import environ
 from dagster.components import ComponentLoadContext
 from dagster.components.core.context import use_component_load_context
-from dagster_dg.utils import ensure_dagster_dg_tests_import
+from dagster_dg_core.utils import ensure_dagster_dg_tests_import
 from dagster_powerbi import PowerBIWorkspaceComponent
 
 ensure_dagster_tests_import()
@@ -27,7 +27,7 @@ from dagster_tests.components_tests.utils import get_underlying_component
 ensure_dagster_tests_import()
 ensure_dagster_dg_tests_import()
 
-from dagster_dg_tests.utils import ProxyRunner, isolated_example_project_foo_bar
+from dagster_dg_core_tests.utils import ProxyRunner, isolated_example_project_foo_bar
 
 
 @contextmanager
