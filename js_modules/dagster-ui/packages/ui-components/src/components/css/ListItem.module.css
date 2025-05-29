@@ -37,7 +37,7 @@
 }
 
 .listItemAnchor {
-  padding: 12px 20px 12px 24px;
+  padding: var(--spacing-top) 0 var(--spacing-bottom) var(--spacing-left);
   transition: color 0.1s ease-in-out;
   flex: 1;
   overflow: hidden;
@@ -96,7 +96,7 @@
 
 .right {
   align-self: center;
-  padding-right: 24px;
+  padding-right: var(--spacing-right);
 }
 
 .right > * {
