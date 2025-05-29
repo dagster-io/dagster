@@ -751,6 +751,18 @@ class Definitions(IHaveNew):
                 )
 
         """
+        return self.map_asset_specs_inner(
+            func=func,
+            selection=selection,
+            _ignore_non_spec_asset_types=False,
+        )
+
+    def map_asset_specs_inner(
+        self,
+        func: Callable[[AssetSpec], AssetSpec],
+        selection: Optional[CoercibleToAssetSelection],
+        _ignore_non_spec_asset_types: bool,
+    ) -> "Definitions":
         target_keys = None
         if selection:
             if isinstance(selection, str):
