@@ -212,7 +212,9 @@ def isolated_venv_with_component_lib_dagster_foo(
                 yield venv_root
 
 
-@pytest.mark.parametrize("entry_point_group", ["dagster_dg.plugin", "dagster_dg.library"])
+@pytest.mark.parametrize(
+    "entry_point_group", ["dagster_dg_cli.plugin", "dagster_dg.plugin", "dagster_dg.library"]
+)
 def test_components_from_third_party_lib(entry_point_group: str):
     with isolated_venv_with_component_lib_dagster_foo(entry_point_group) as venv_root:
         component_types = _get_component_types_in_python_environment(venv_root)
@@ -220,7 +222,9 @@ def test_components_from_third_party_lib(entry_point_group: str):
         assert "dagster_foo.lib.TestComponent2" in component_types
 
 
-@pytest.mark.parametrize("entry_point_group", ["dagster_dg.plugin", "dagster_dg.library"])
+@pytest.mark.parametrize(
+    "entry_point_group", ["dagster_dg_cli.plugin", "dagster_dg.plugin", "dagster_dg.library"]
+)
 def test_bad_entry_point_error_message(entry_point_group: str):
     # Modify the entry point to point to a non-existent module. This has to be done before the
     # package is installed, which is why we use a pre-install hook.

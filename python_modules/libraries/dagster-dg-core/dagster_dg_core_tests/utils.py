@@ -327,7 +327,7 @@ def isolated_example_component_library_foo_bar(
             if components_module_name:
                 set_toml_node(
                     toml,
-                    ("project", "entry-points", "dagster_dg.plugin", "foo_bar"),
+                    ("project", "entry-points", "dagster_dg_cli.plugin", "foo_bar"),
                     components_module_name,
                 )
                 components_dir = Path("src", *components_module_name.split("."))

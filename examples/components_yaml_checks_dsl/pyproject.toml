@@ -10,7 +10,7 @@ dependencies = [
 ]
 
 [project.entry-points]
-"dagster_dg.library" = { components_yaml_checks_dsl = "components_yaml_checks_dsl.lib"}
+"dagster_dg_cli.plugin" = { components_yaml_checks_dsl = "components_yaml_checks_dsl.lib"}
 
 [dependency-groups]
 dev = [
