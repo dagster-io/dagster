@@ -32,7 +32,9 @@
 
 ### dg & Components (Preview)
 
-- Definitions and component instances are now scaffolded with `dg scaffold defs <scaffolder>` instead of ` dg scaffold <scaffolder>`.
+- `dg scaffold project` and `dg scaffold workspace` are now commands in a new `create-dagster` CLI.
+- The `dg` CLI now expects to run in the same venv as the underlying dagster project, and no longer launches subprocesses to run commands.
+- Definitions and component instances are now scaffolded with `dg scaffold defs <scaffolder>` instead of `dg scaffold <scaffolder>`.
 - The `component.yaml` file to specify a component instance is now called "defs.yaml". "component.yaml" will remain supported for several weeks, but is deprecated.
 - The `lib` folder in newly scaffolded projects has been renamed to "components".
 - `dg scaffold component-type` has been renamed to `dg scaffold component`.
