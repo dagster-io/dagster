@@ -90,7 +90,6 @@ def scaffold_project(
         sources = _gather_dagster_packages(Path(editable_dagster_root))
     else:
         editable_dagster_root = None
-        deps = PYPI_DAGSTER_DEPENDENCIES
         dev_deps = PYPI_DAGSTER_DEV_DEPENDENCIES
 
         from create_dagster.version import __version__
@@ -98,8 +97,9 @@ def scaffold_project(
         create_dagster_version = parse_package_version(__version__)
         if create_dagster_version.release[0] >= 1:
             # Pin scaffolded libraries to match create-dagster version
-            deps = [f"{dep}=={__version__}" for dep in deps]
-            dev_deps = [f"{dep}=={__version__}" for dep in dev_deps]
+            deps = [f"dagster=={__version__}"]
+        else:
+            deps = ["dagster"]
 
         sources = []
 
@@ -186,7 +186,6 @@ EDITABLE_DAGSTER_DEV_DEPENDENCIES = [
 ]
 
 
-PYPI_DAGSTER_DEPENDENCIES = ["dagster"]
 PYPI_DAGSTER_DEV_DEPENDENCIES = [
     "dagster-webserver",
     "dagster-dg-cli[local]",
