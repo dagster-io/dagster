@@ -1,9 +1,6 @@
 import random
-from dagster import (
-    asset,
-    define_asset_job,
-    RetryPolicy,
-)
+
+from dagster import RetryPolicy, asset, define_asset_job
 
 
 @asset
