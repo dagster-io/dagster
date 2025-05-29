@@ -299,6 +299,7 @@ def build_schedule_from_dbt_selection(
     cron_schedule: str,
     dbt_select: str = DBT_DEFAULT_SELECT,
     dbt_exclude: Optional[str] = DBT_DEFAULT_EXCLUDE,
+    dbt_selector: str = DBT_DEFAULT_SELECTOR,
     schedule_name: Optional[str] = None,
     tags: Optional[Mapping[str, str]] = None,
     config: Optional[RunConfig] = None,
@@ -315,6 +316,7 @@ def build_schedule_from_dbt_selection(
         cron_schedule (str): The cron schedule to define the schedule.
         dbt_select (str): A dbt selection string to specify a set of dbt resources.
         dbt_exclude (Optional[str]): A dbt selection string to exclude a set of dbt resources.
+        dbt_selector (str): A dbt selector to select resources to materialize.
         schedule_name (Optional[str]): The name of the dbt schedule to create.
         tags (Optional[Mapping[str, str]]): A dictionary of tags (string key-value pairs) to attach
             to the scheduled runs.
@@ -351,6 +353,7 @@ def build_schedule_from_dbt_selection(
                 dbt_assets,
                 dbt_select=dbt_select,
                 dbt_exclude=dbt_exclude or DBT_DEFAULT_EXCLUDE,
+                dbt_selector=dbt_selector,
             ),
             config=config,
             tags=tags,
