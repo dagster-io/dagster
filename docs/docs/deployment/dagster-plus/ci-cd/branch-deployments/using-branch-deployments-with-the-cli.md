@@ -4,7 +4,7 @@ sidebar_position: 300
 title: Using branch deployments with the dagster-cloud CLI
 ---
 
-In this article, we'll walk you through setting up branch deployments with a general continuous integration (CI) or Git platform, using the [`dagster-cloud` CLI](/deployment/dagster-plus/management/dagster-cloud-cli/).
+In this article, we'll walk you through setting up branch deployments with a general continuous integration (CI) or Git platform, using the [`dagster-cloud` CLI](/deployment/dagster-plus/management/dagster-cloud-cli).
 
 Using this approach to branch deployments may be a good fit if:
 
@@ -27,7 +27,7 @@ Using Branch Deployments requires setting up two components: the Branch Deployme
 - **Organization Admin** permissions in Dagster+
 - To install the [`dagster-cloud` CLI](/deployment/dagster-plus/management/dagster-cloud-cli/installing-and-configuring)
 - The ability to configure your CI platform
-- The ability to run a new agent in your infrastructure. This isn't required if you're using [Serverless deployment](/deployment/dagster-plus/serverless/).
+- The ability to run a new agent in your infrastructure. This isn't required if you're using [Serverless deployment](/deployment/dagster-plus/serverless).
 
 ## Step 1: Generate a Dagster+ agent token
 
@@ -55,7 +55,7 @@ Using the tabs, select your agent type to view instructions.
 <Tabs>
 <TabItem value="Amazon ECS">
 
-1. **Deploy an ECS agent to serve your branch deployments**. Follow the [ECS agent](/deployment/dagster-plus/hybrid/amazon-ecs/) setup guide, making sure to set the **Enable Branch Deployments** parameter if using the CloudFormation template. If you are running an existing agent, follow the [upgrade guide](/deployment/dagster-plus/hybrid/amazon-ecs/upgrading-cloudformation) to ensure your template is up-to-date. Then, turn on the **Enable Branch Deployments** parameter.
+1. **Deploy an ECS agent to serve your branch deployments**. Follow the [ECS agent](/deployment/dagster-plus/hybrid/amazon-ecs) setup guide, making sure to set the **Enable Branch Deployments** parameter if using the CloudFormation template. If you are running an existing agent, follow the [upgrade guide](/deployment/dagster-plus/hybrid/amazon-ecs/upgrading-cloudformation) to ensure your template is up-to-date. Then, turn on the **Enable Branch Deployments** parameter.
 
 2. **Create a private [Amazon Elastic Registry (ECR) repository](https://console.aws.amazon.com/ecr/repositories).** Refer to the [AWS ECR documentation](https://docs.aws.amazon.com/AmazonECR/latest/userguide/repository-create.html) for instructions.
 
@@ -77,7 +77,7 @@ Using the tabs, select your agent type to view instructions.
 </TabItem>
 <TabItem value="Docker">
 
-1. Set up a new Docker agent. Refer to the [Docker agent setup guide](/deployment/dagster-plus/hybrid/docker/) for instructions.
+1. Set up a new Docker agent. Refer to the [Docker agent setup guide](/deployment/dagster-plus/hybrid/docker) for instructions.
 2. After the agent is set up, modify the `dagster.yaml` file as follows:
 
    - Set the `dagster_cloud_api.branch_deployments` field to `true`
@@ -131,7 +131,7 @@ Using the tabs, select your agent type to view instructions.
 
 Next, you'll create a branch deployment using the `dagster-cloud` CLI. When the state of a branch or merge request is updated, Dagster+ first expects these steps to occur:
 
-1. A new image containing your code and requirements is built on the branch. Refer to the [Dagster code requirements guide](/deployment/code-locations/).
+1. A new image containing your code and requirements is built on the branch. Refer to the [Dagster code requirements guide](/deployment/code-locations).
 
 2. The new image is pushed to a Docker registry accessible to your agent. **Note**: The following examples assume the registry URL and image tag are stored in the `LOCATION_REGISTRY_URL` and `IMAGE_TAG` environment variables, respectively.
 

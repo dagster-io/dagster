@@ -19,12 +19,12 @@ Branch deployments are only available in Dagster+.
 
 Here's an overview of the main concepts we'll be using:
 
-- [Assets](/guides/build/assets/) - We'll define three assets that each persist a table to Snowflake.
-- [Ops](/guides/build/ops/) - We'll define two ops that query Snowflake: the first will clone a database, and the second will drop database clones.
+- [Assets](/guides/build/assets) - We'll define three assets that each persist a table to Snowflake.
+- [Ops](/guides/build/ops) - We'll define two ops that query Snowflake: the first will clone a database, and the second will drop database clones.
 - [Graphs](/guides/build/ops/graphs) - We'll build graphs that define the order our ops should run.
 - [Jobs](/guides/build/jobs/asset-jobs) - We'll define jobs by binding our graphs to resources.
-- [Resources](/guides/build/external-resources/) - We'll use the <PyObject section="libraries" module="dagster_snowflake" object="SnowflakeResource" /> to swap in different Snowflake connections to our jobs depending on environment.
-- [I/O managers](/guides/build/io-managers/) - We'll use a Snowflake I/O manager to persist asset outputs to Snowflake.
+- [Resources](/guides/build/external-resources) - We'll use the <PyObject section="libraries" module="dagster_snowflake" object="SnowflakeResource" /> to swap in different Snowflake connections to our jobs depending on environment.
+- [I/O managers](/guides/build/io-managers) - We'll use a Snowflake I/O manager to persist asset outputs to Snowflake.
 
 ## Prerequisites
 
@@ -37,7 +37,7 @@ This guide is an extension of the [Transitioning data pipelines from development
 To complete the steps in this guide, you'll need:
 
 - A Dagster+ account
-- An existing Branch Deployments setup that uses [GitHub actions](/deployment/dagster-plus/ci-cd/configuring-ci-cd#github) or [Gitlab CI/CD](/deployment/dagster-plus/ci-cd/configuring-ci-cd#non-github). Your setup should contain a Dagster project set up for branch deployments containing:
+- An existing Branch Deployments setup that uses [GitHub actions](/deployment/dagster-plus/ci-cd/ci-cd-in-hybrid#github) or [Gitlab CI/CD](/deployment/dagster-plus/ci-cd/ci-cd-in-hybrid#non-github). Your setup should contain a Dagster project set up for branch deployments containing:
   - Either a GitHub actions workflow file (e.g. `.github/workflows/branch-deployments.yaml`) or a Gitlab CI/CD file (e.g. `.gitlab-ci.yml`)
   - Dockerfile that installs your Dagster project
 - User permissions in Dagster+ that allow you to [access Branch Deployments](/deployment/dagster-plus/authentication-and-access-control/rbac/user-roles-permissions)
@@ -52,7 +52,7 @@ We have a `PRODUCTION` Snowflake database with a schema named `HACKER_NEWS`. In 
 
 To set up a branch deployment workflow to construct and test these tables, we will:
 
-1. Define these tables as [assets](/guides/build/assets/).
+1. Define these tables as [assets](/guides/build/assets).
 2. Configure our assets to write to Snowflake using a different connection (credentials and database name) for two environments: production and branch deployment.
 3. Write a job that will clone the production database upon each branch deployment launch. Each clone will be named `PRODUCTION_CLONE_<ID>`, where `<ID>` is the pull request ID of the branch. Then we'll create a branch deployment and test our Hacker News assets against our newly cloned database.
 4. Write a job that will delete the corresponding database clone upon closing the feature branch.
@@ -67,7 +67,7 @@ In production, we want to write three tables to Snowflake: `ITEMS`, `COMMENTS`, 
   endBefore="end_assets"
 />
 
-As you can see, our assets use an [I/O manager](/guides/build/io-managers/) named `snowflake_io_manager`. Using I/O managers and other resources allow us to swap out implementations per environment without modifying our business logic.
+As you can see, our assets use an [I/O manager](/guides/build/io-managers) named `snowflake_io_manager`. Using I/O managers and other resources allow us to swap out implementations per environment without modifying our business logic.
 
 ## Step 2: Configure our assets for each environment
 
@@ -85,7 +85,7 @@ Because we want to configure our assets to write to Snowflake using a different 
   endBefore="end_repository"
 />
 
-Refer to the [Dagster+ environment variables documentation](/deployment/dagster-plus/management/environment-variables/) for more info about available environment variables.
+Refer to the [Dagster+ environment variables documentation](/deployment/dagster-plus/management/environment-variables) for more info about available environment variables.
 
 ## Step 3: Create jobs to manage database cloning per branch deployment
 

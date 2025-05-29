@@ -1,7 +1,7 @@
 ---
 description: Reference page for the Dagster+ CI/CD configuration files branch_deployments.yml and deploy.yml.
 title: CI/CD file reference
-sidebar_position: 300
+sidebar_position: 400
 ---
 
 When you import a project into Dagster+ from GitHub or Gitlab, a few `.yml` files will be added to the repository. These files are essential as they manage the deployments in Dagster+.

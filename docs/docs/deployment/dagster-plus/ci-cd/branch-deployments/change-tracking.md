@@ -163,7 +163,7 @@ def fruits_in_stock(): ...
 ### Metadata
 
 {/* Change Tracking can detect when an [asset's definition metadata](/concepts/metadata-tags/asset-metadata#attaching-definition-metadata) has changed, whether it's been added, modified, or removed. */}
-Change Tracking can detect when an [asset's definition metadata](/guides/build/assets/metadata-and-tags/) has changed, whether it's been added, modified, or removed.
+Change Tracking can detect when an [asset's definition metadata](/guides/build/assets/metadata-and-tags) has changed, whether it's been added, modified, or removed.
 
 <Tabs>
 <TabItem value="Asset in the Dagster UI">

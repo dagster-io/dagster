@@ -1,5 +1,5 @@
 ---
-title: 'Managing branch deployments across multiple deployments'
+title: Managing branch deployments across multiple deployments
 description: Frequent use cases and troubleshooting tips for managing branch deployments when your organization has multiple Dagster+ deployments or environments.
 sidebar_position: 500
 ---
@@ -48,9 +48,9 @@ agent_queues:
 
 For more information about configuring the Docker, local, or ECS agents, see their documentation:
 
-- [Docker agent](/deployment/dagster-plus/hybrid/docker/)
-- [Local agent](/deployment/dagster-plus/hybrid/local/)
-- [Amazon ECS agent](/deployment/dagster-plus/hybrid/amazon-ecs/)
+- [Docker agent](/deployment/dagster-plus/hybrid/docker)
+- [Local agent](/deployment/dagster-plus/hybrid/local)
+- [Amazon ECS agent](/deployment/dagster-plus/hybrid/amazon-ecs)
 
 ### Helm chart values (for the Kubernetes agent)
 
@@ -147,7 +147,7 @@ dagster_cloud_api:
 
 There is an organization-scoped setting `max_concurrent_branch_deployment_runs` that controls concurrency across all branch deployments. By default its value is 50.
 
-Modifying organization-scoped settings can only be done using the [dagster-cloud CLI](/deployment/dagster-plus/management/dagster-cloud-cli/). The CLI must be [authenticated](/deployment/dagster-plus/management/dagster-cloud-cli/installing-and-configuring#setting-up-the-configuration-file) with a user token for a user that has the [Organization Admin role](/deployment/dagster-plus/authentication-and-access-control/rbac/user-roles-permissions#dagster-user-roles).
+Modifying organization-scoped settings can only be done using the [dagster-cloud CLI](/deployment/dagster-plus/management/dagster-cloud-cli). The CLI must be [authenticated](/deployment/dagster-plus/management/dagster-cloud-cli/installing-and-configuring#setting-up-the-configuration-file) with a user token for a user that has the [Organization Admin role](/deployment/dagster-plus/authentication-and-access-control/rbac/user-roles-permissions#dagster-user-roles).
 
 To view the organization settings in the terminal:
 

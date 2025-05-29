@@ -1,12 +1,20 @@
 ---
 description: Implement CI/CD for your Dagster+ Serverless deployment with GitHub, GitLab, or another Git provider.
-sidebar_position: 300
-title: CI/CD in Serverless
+sidebar_position: 100
+title: CI/CD in Dagster+ Serverless
+sidebar_label: CI/CD in Serverless
 ---
+
+:::note
+
+This guide only applies to [Dagster+ Serverless deployments](/deployment/dagster-plus/serverless).
+
+:::
 
 If you're a GitHub or GitLab user, you can use our predefined workflows to seamlessly deploy and synchronize your code to Dagster+. You can also use other Git providers or a local Git repository with our [dagster-cloud CLI](/deployment/dagster-plus/management/dagster-cloud-cli) to run your own CI/CD process.
 
 :::note
+
 Using the `Connect to GitHub` or `Connect to GitLab` buttons in Dagster+ to configure a Git repository requires the Organization Admin role so that the system can provision an agent token.
 
 :::
@@ -17,6 +25,7 @@ Using the `Connect to GitHub` or `Connect to GitLab` buttons in Dagster+ to conf
 If you're a GitHub user, with a single click our GitHub app with GitHub Actions can set up a repo containing skeleton code and configuration for you consistent with Dagster+'s best practices. Pushing your code changes to the `main` branch will automatically deploy them to your `prod` Serverless deployment. Pull requests will spin up ephemeral [branch deployments](/deployment/dagster-plus/ci-cd/branch-deployments/) that you can view in the Dagster+ UI for previewing and testing.
 
 :::note
+
 **If you are importing a Dagster project that's in an existing GitHub repo:**
 
 - The repo will need to allow the [Workflow permission](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/enabling-features-for-your-repository/managing-github-actions-settings-for-a-repository) for `Read and write permissions`. Workflow permissions settings can be found in GitHub's `Settings` > `Actions` > `General` > `Workflow permissions`. In GitHub Enterprise, these permissions [are controlled at the Organization level](https://github.com/orgs/community/discussions/57244).

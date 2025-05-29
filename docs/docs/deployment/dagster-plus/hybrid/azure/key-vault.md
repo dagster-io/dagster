@@ -5,11 +5,14 @@ title: Retrieve secrets and credentials from Azure Key Vault in AKS
 ---
 
 :::note
-This guide is applicable to Dagster+ on AKS only and requires version 1.10.2 or later of the Helm chart.
+
+This guide requires version 1.10.2 or later of the Helm chart.
+
 :::
 
 In this guide, we'll walk through how to retrieve secrets and credentials from Azure Key Vault in an Azure Kubernetes Service (AKS) cluster.
-This guide assumes you completed the first step of [Deploying Dagster+ hybrid on Azure](/deployment/dagster-plus/hybrid/azure/aks-agent).
+
+This guide assumes you completed the first step of [Deploy a Dagster+ agent on an Azure Kubernetes Service cluster](/deployment/dagster-plus/hybrid/azure/aks-agent).
 
 ## Prerequisites
 

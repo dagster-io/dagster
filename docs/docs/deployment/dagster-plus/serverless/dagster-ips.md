@@ -5,7 +5,7 @@ sidebar_position: 400
 title: Dagster+ Serverless IP addresses
 ---
 
-Serverless code will make requests from one of the following IP addresses. You may need to whitelist / allowlist them for services your code interacts with.
+Dagster+ Serverless code will make requests from one of the following IP addresses. You may need to whitelist / allowlist them for services your code interacts with.
 
 ```plain
 34.216.9.66
@@ -26,5 +26,7 @@ Serverless code will make requests from one of the following IP addresses. You m
 ```
 
 :::note
+
 Additional IP addresses may be added over time. This list was last updated on **October 24, 2024**.
+
 :::

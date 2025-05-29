@@ -371,7 +371,7 @@ The last step is to verify that the GitLab pipeline runs successfully.
 
 Whenever the state of your branch is updated, Dagster+ expects the following steps to occur:
 
-1. A new image containing your code and requirements is built on the branch. Refer to [Managing code locations](/deployment/code-locations/) to learn more.
+1. A new image containing your code and requirements is built on the branch. Refer to [Managing code locations](/deployment/code-locations) to learn more.
 
 2. The new image is pushed to a Docker registry accessible to your agent.
 
@@ -494,5 +494,5 @@ To ensure the best experience when using Branch Deployments, we recommend:
 
 ## Next steps
 
-- Learn more about [branch deployments](/deployment/dagster-plus/ci-cd/branch-deployments/index.md)
+- Learn more about [branch deployments](/deployment/dagster-plus/ci-cd/branch-deployments)
 - Learn how to [track changes on a branch deployment](/deployment/dagster-plus/ci-cd/branch-deployments/change-tracking)
