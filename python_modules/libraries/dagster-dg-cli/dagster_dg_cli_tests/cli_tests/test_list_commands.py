@@ -649,7 +649,7 @@ def _assert_entry_point_error(cmd: list[str]):
         output = standardize_box_characters(result.stdout.decode("utf-8"))
 
         expected_header_message = format_error_message("""
-            Error loading entry point `foo_bar.components` in group `dagster_dg.plugin`.
+            Error loading entry point `foo_bar.components` in group `dagster_dg_cli.plugin`.
         """)
         assert expected_header_message in output
 

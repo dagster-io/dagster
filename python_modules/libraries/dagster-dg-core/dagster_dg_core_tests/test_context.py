@@ -213,13 +213,13 @@ def test_setup_cfg_entry_point():
     ):
         # Delete the entry point section from pyproject.toml
         with modify_toml_as_dict(Path("pyproject.toml")) as toml:
-            delete_toml_node(toml, ("project", "entry-points", "dagster_dg.plugin"))
+            delete_toml_node(toml, ("project", "entry-points", "dagster_dg_cli.plugin"))
         # Create a setup.cfg file with the entry point
         with open("setup.cfg", "w") as f:
             f.write(
                 textwrap.dedent("""
                 [options.entry_points]
-                dagster_dg.plugin =
+                dagster_dg_cli.plugin =
                     foo_bar = foo_bar.lib
                 """)
             )
@@ -227,21 +227,22 @@ def test_setup_cfg_entry_point():
         assert context.is_plugin
 
 
-def test_deprecated_entry_point_group_warning():
+@pytest.mark.parametrize("deprecated_group", ["dagster_dg.library", "dagster_dg.plugin"])
+def test_deprecated_entry_point_group_warning(deprecated_group: str):
     with (
         ProxyRunner.test() as runner,
         isolated_example_project_foo_bar(runner),
     ):
         with modify_toml_as_dict(Path("pyproject.toml")) as toml_dict:
             plugin_entry_points = get_toml_node(
-                toml_dict, ("project", "entry-points", "dagster_dg.plugin"), dict
+                toml_dict, ("project", "entry-points", "dagster_dg_cli.plugin"), dict
             )
             set_toml_node(
-                toml_dict, ("project", "entry-points", "dagster_dg.library"), plugin_entry_points
+                toml_dict, ("project", "entry-points", deprecated_group), plugin_entry_points
             )
-            delete_toml_node(toml_dict, ("project", "entry-points", "dagster_dg.plugin"))
+            delete_toml_node(toml_dict, ("project", "entry-points", "dagster_dg_cli.plugin"))
 
-        expected_match = "deprecated `dagster_dg.library` entry point group"
+        expected_match = f"deprecated `{deprecated_group}` entry point group"
         with dg_warns(expected_match):
             DgContext.for_project_environment(Path("foo-bar"), {})
         with dg_warns(expected_match):
@@ -273,7 +274,7 @@ def test_missing_dg_plugin_module_in_manifest_warning():
         )
         with activate_venv(Path(".venv")):
             context = DgContext.for_project_environment(Path.cwd(), {})
-            with dg_warns("Your package defines a `dagster_dg.plugin` entry point"):
+            with dg_warns("Your package defines a `dagster_dg_cli.plugin` entry point"):
                 RemotePluginRegistry.from_dg_context(context)
 
 

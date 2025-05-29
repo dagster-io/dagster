@@ -63,7 +63,7 @@ def test_creating_dg_plugin(update_snippets: bool) -> None:
         pyproject_toml_content = pyproject_toml_path.read_text()
         pyproject_toml_content += format_multiline("""
             [project.entry-points]
-            "dagster_dg.plugin" = { my_library = "my_library" }
+            "dagster_dg_cli.plugin" = { my_library = "my_library" }
         """)
         pyproject_toml_path.write_text(pyproject_toml_content)
 

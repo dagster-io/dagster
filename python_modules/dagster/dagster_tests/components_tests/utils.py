@@ -75,7 +75,7 @@ def generate_component_lib_pyproject_toml(name: str, is_project: bool = False) -
         ]
 
         [project.entry-points]
-        "dagster_dg.plugin" = {{ {pkg_name} = "{pkg_name}.lib" }}
+        "dagster_dg_cli.plugin" = {{ {pkg_name} = "{pkg_name}.lib" }}
     """)
     if is_project:
         return base + textwrap.dedent(f"""
