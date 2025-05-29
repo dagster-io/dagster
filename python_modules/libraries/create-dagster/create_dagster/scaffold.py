@@ -30,7 +30,7 @@ def scaffold_workspace(
     existing_workspace_path = discover_workspace_root(new_workspace_path)
     if existing_workspace_path:
         exit_with_error(
-            f"Workspace already exists at {existing_workspace_path}.  Run `dg scaffold project` to add a new project to that workspace."
+            f"Workspace already exists at {existing_workspace_path}.  Run `create-dagster project` to add a new project to that workspace."
         )
     elif dirname != "." and new_workspace_path.exists():
         exit_with_error(f"Folder already exists at {new_workspace_path}.")

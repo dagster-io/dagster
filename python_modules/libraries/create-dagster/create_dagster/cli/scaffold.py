@@ -119,10 +119,10 @@ def scaffold_project_command(
     "." may be passed as PATH to create the new project inside the existing working directory.
 
     Examples:
-        dagster-create project PROJECT_NAME
+        create-dagster project PROJECT_NAME
             Scaffold a new project in new directory PROJECT_NAME. Automatically creates directory
             and parent directories.
-        dagster-create project .
+        create-dagster project .
             Scaffold a new project in the CWD. The project name is taken from the last component of the CWD.
 
     Created projects will have the following structure:
@@ -213,10 +213,10 @@ def scaffold_workspace_command(
     """Initialize a new Dagster workspace.
 
     Examples:
-        dagster-create workspace WORKSPACE_NAME
+        create-dagster workspace WORKSPACE_NAME
             Scaffold a new workspace in new directory WORKSPACE_NAME. Automatically creates directory
             and parent directories.
-        dagster-create workspace .
+        create-dagster workspace .
             Scaffold a new workspace in the CWD. The workspace name is the last component of the CWD.
 
     The scaffolded workspace folder has the following structure:

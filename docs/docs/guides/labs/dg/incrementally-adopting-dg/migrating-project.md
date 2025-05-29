@@ -22,12 +22,6 @@ both a case where we have been using [uv](https://docs.astral.sh/uv/) with `pypr
   </TabItem>
 </Tabs>
 
-`dg` needs to be able to resolve a Python environment for your project. This
-environment must include an installation of your project package. By default,
-a project's environment will resolve to whatever virtual environment is
-currently activated in the shell, or system Python if no virtual environment is
-activated.
-
 Before proceeding, we'll make sure we have an activated and up-to-date virtual
 environment in the project root. Having the virtual environment located in the
 project root is recommended (particularly when using `uv`) but not required.
@@ -51,19 +45,13 @@ project root is recommended (particularly when using `uv`) but not required.
 
 ## Install dependencies
 
-### Install the `dg` command line tool
+### Install the `dg` command line tool into your project virtual environment.
 
 <Tabs groupId="package-manager">
   <TabItem value="uv" label="uv">
-    We'll [install `dg` globally](/guides/labs/dg) as a `uv` tool:
     <CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/migrating-project/3-uv-install-dg.txt" />
-    This installs `dg` into a hidden, isolated Python environment separate from your project virtual environment. The
-    `dg` executable is always available in the user's `$PATH`, regardless of any virtual environment activation in the
-    shell. This is the recommended way to work with `dg` if you are using `uv`.
   </TabItem>
   <TabItem value="pip" label="pip">
-    Let's install `dg` into your project virtual environment. This is the recommended way to work with `dg` if you are
-    using `pip`.
     <CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/migrating-project/3-pip-install-dg.txt" />
   </TabItem>
 </Tabs>
@@ -100,7 +88,7 @@ Now that these settings are in place, you can interact with your project using `
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/migrating-project/5-list-defs.txt" />
 
-### Add a `dagster_dg.plugin` entry point
+### Add a `dagster_dg_cli.plugin` entry point
 
 We're not quite done adding configuration. `dg` uses the Python [entry
 point](https://packaging.python.org/en/latest/specifications/entry-points/) API
@@ -116,7 +104,7 @@ Let's create this submodule now:
 See the [plugin guide](/guides/labs/components/creating-new-component-types/creating-dg-plugin) for more on `dg` plugins.
 :::
 
-We'll need to add a `dagster_dg.plugin` entry point to our project and then
+We'll need to add a `dagster_dg_cli.plugin` entry point to our project and then
 reinstall the project package into our virtual environment. The reinstallation
 step is crucial. Python entry points are registered at package installation
 time, so if you simply add a new entry point to an existing editable-installed
