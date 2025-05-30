@@ -326,6 +326,85 @@ def test_list_defs_succeeds(use_json: bool):
                 match_terminal_box_output(result.stdout.decode("utf-8").strip(), _EXPECTED_DEFS)
 
 
+def _asset_1():
+    from dagster import asset
+
+    @asset
+    def my_asset_1():
+        pass
+
+
+def _asset_2():
+    from dagster import asset
+
+    @asset
+    def my_asset_2():
+        pass
+
+
+def _asset_3():
+    from dagster import asset
+
+    @asset
+    def my_asset_3():
+        pass
+
+
+@pytest.mark.parametrize(
+    "path,should_error,expected_assets,not_expected_assets",
+    [
+        ("src/foo_bar/defs", False, ["my_asset_1", "my_asset_2", "my_asset_3"], []),
+        ("src/foo_bar/defs/asset1.py", False, ["my_asset_1"], ["my_asset_2", "my_asset_3"]),
+        (
+            "src/foo_bar/defs/subfolder/asset2.py",
+            False,
+            ["my_asset_2"],
+            ["my_asset_1", "my_asset_3"],
+        ),
+        ("src/foo_bar/defs/subfolder", False, ["my_asset_2", "my_asset_3"], ["my_asset_1"]),
+        ("src/foo_bar/defs/does_not_exist.py", True, [], []),
+    ],
+)
+def test_list_defs_with_path(
+    path: str, should_error: bool, expected_assets: list[str], not_expected_assets: list[str]
+):
+    project_kwargs: dict[str, Any] = {"use_editable_dagster": True}
+    with (
+        ProxyRunner.test() as runner,
+        isolated_example_project_foo_bar(
+            runner,
+            in_workspace=False,
+            python_environment="uv_managed",
+            **project_kwargs,
+        ) as project_dir,
+        activate_venv(project_dir / ".venv"),
+    ):
+        Path("src/foo_bar/defs/subfolder").mkdir(parents=True, exist_ok=True)
+
+        defs_source = textwrap.dedent(inspect.getsource(_asset_1).split("\n", 1)[1])
+        Path("src/foo_bar/defs/asset1.py").write_text(defs_source)
+
+        defs_source = textwrap.dedent(inspect.getsource(_asset_2).split("\n", 1)[1])
+        Path("src/foo_bar/defs/subfolder/asset2.py").write_text(defs_source)
+
+        defs_source = textwrap.dedent(inspect.getsource(_asset_3).split("\n", 1)[1])
+        Path("src/foo_bar/defs/subfolder/asset3.py").write_text(defs_source)
+
+        result = subprocess.run(
+            ["dg", "list", "defs", "--path", path], check=False, capture_output=True
+        )
+        if should_error:
+            assert result.returncode != 0
+        else:
+            assert result.returncode == 0
+            output = result.stdout.decode("utf-8").strip()
+
+            for asset in expected_assets:
+                assert asset in output
+            for asset in not_expected_assets:
+                assert asset not in output
+
+
 def _sample_defs():
     from dagster import ConfigurableResource, Definitions, asset, job, schedule, sensor
 

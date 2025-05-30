@@ -260,10 +260,21 @@ def _get_sensors_table(sensors: Sequence[DgSensorMetadata]) -> "Table":
     default=False,
     help="Output as JSON instead of a table.",
 )
-@dg_path_options
+@click.option(
+    "--path",
+    "-p",
+    type=click.Path(
+        resolve_path=True,
+        path_type=Path,
+    ),
+    help="Path to the definitions to list.",
+)
 @dg_global_options
+@dg_path_options
 @cli_telemetry_wrapper
-def list_defs_command(output_json: bool, target_path: Path, **global_options: object) -> None:
+def list_defs_command(
+    output_json: bool, target_path: Path, path: Path, **global_options: object
+) -> None:
     """List registered Dagster definitions in the current project environment."""
     from rich.console import Console
     from rich.table import Table
@@ -280,6 +291,7 @@ def list_defs_command(output_json: bool, target_path: Path, **global_options: ob
         definitions = list_definitions(
             location=dg_context.code_location_name,
             **dg_context.target_args,
+            path=path,
         )
 
     # JSON
