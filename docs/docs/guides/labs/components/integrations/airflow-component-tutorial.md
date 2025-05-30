@@ -13,18 +13,24 @@ The [dagster-airlift](/integrations/libraries/airlift) library provides an `Airf
 
 ## Setup and peering
 
-### 1. Create a components-ready Dagster project
+### 1. Create a Dagster project
 
 To begin, you'll need a components-ready Dagster project. To create one, use the `uvx create-dagster` command:
 
 ```
-uvx create-dagster project my-project && cd my-project/src
+uvx create-dagster project my-project && cd my-project
 ```
 
-Next, you will need to add the `dagster-airlift` library to the project:
+Activate the project virtual environment:
 
 ```
-uv add dagster-airlift[core]
+source .venv/bin/activate
+```
+
+Finally, add the `dagster-airlift` library to the project:
+
+```
+uv add 'dagster-airlift==0.26.18rc3'
 ```
 
 ### 2. Scaffold an AirflowInstanceComponent
@@ -39,7 +45,7 @@ To scaffold a new component in your project, use the `dg scaffold defs` command:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/integrations/airlift_v2/setup/basic_auth/1-scaffold.txt" />
 
-This will create a component definition file called `defs.yaml` in your project under the `defs/airflow` directory.
+This will create a component definition file called `defs.yaml` in your project under the `src/my_project/defs/airflow` directory.
 
 <CliInvocationExample path="docs_snippets/docs_snippets/integrations/airlift_v2/setup/basic_auth/2-tree.txt" />
 
