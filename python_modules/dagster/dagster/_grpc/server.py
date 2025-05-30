@@ -26,7 +26,7 @@ from dagster_shared.utils import find_free_port
 from grpc_health.v1 import health, health_pb2, health_pb2_grpc
 
 import dagster._check as check
-from dagster._core.code_pointer import CodePointer
+from dagster._core.code_pointer import AutoloadDefsModuleCodePointer, CodePointer
 from dagster._core.definitions.definitions_load_context import (
     DefinitionsLoadContext,
     DefinitionsLoadType,
@@ -267,11 +267,12 @@ class LoadedRepositories:
                 ),
             ):
                 loadable_targets = get_loadable_targets(
-                    loadable_target_origin.python_file,
-                    loadable_target_origin.module_name,
-                    loadable_target_origin.package_name,
-                    loadable_target_origin.working_directory,
-                    loadable_target_origin.attribute,
+                    python_file=loadable_target_origin.python_file,
+                    module_name=loadable_target_origin.module_name,
+                    package_name=loadable_target_origin.package_name,
+                    working_directory=loadable_target_origin.working_directory,
+                    attribute=loadable_target_origin.attribute,
+                    autoload_defs_module_name=loadable_target_origin.autoload_defs_module_name,
                 )
             for loadable_target in loadable_targets:
                 pointer = _get_code_pointer(loadable_target_origin, loadable_target)
@@ -341,6 +342,11 @@ def _get_code_pointer(
             loadable_target_origin.module_name,
             loadable_repository_symbol.attribute,
             loadable_target_origin.working_directory,
+        )
+    elif loadable_target_origin.autoload_defs_module_name:
+        return AutoloadDefsModuleCodePointer(
+            module=loadable_target_origin.autoload_defs_module_name,
+            working_directory=loadable_target_origin.working_directory,
         )
     else:
         check.failed("Invalid loadable target origin")

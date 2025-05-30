@@ -17,14 +17,17 @@ _DEFAULT_REPOSITORY_TIMEOUT_IF_NO_ENV_VAR_SET = 180
 
 
 def get_loadable_targets(
+    *,
     python_file: Optional[str],
     module_name: Optional[str],
     package_name: Optional[str],
+    autoload_defs_module_name: Optional[str],
     working_directory: Optional[str],
     attribute: Optional[str],
 ) -> Sequence["LoadableTarget"]:
     from dagster._core.workspace.autodiscovery import (
         LoadableTarget,
+        autodefs_module_target,
         loadable_targets_from_python_file,
         loadable_targets_from_python_module,
         loadable_targets_from_python_package,
@@ -60,6 +63,8 @@ def get_loadable_targets(
             if attribute
             else loadable_targets_from_python_package(package_name, working_directory)
         )
+    elif autoload_defs_module_name:
+        return [autodefs_module_target(autoload_defs_module_name, working_directory)]
     else:
         check.failed("invalid")
 

@@ -199,16 +199,26 @@ def _serialize_json_schema(schema: Mapping[str, Any]) -> str:
 
 
 def _workspace_entry_for_project(dg_context: DgContext) -> dict[str, dict[str, str]]:
+    if not dg_context.config.project:
+        exit_with_error("Unexpected empty project config.")
+
+    if dg_context.config.project.autoload_defs:
+        key = "autoload_defs_module"
+        module_name = dg_context.defs_module_name
+    else:
+        key = "python_module"
+        module_name = dg_context.code_location_target_module_name
+
     entry = {
         "working_directory": str(
             dg_context.get_path_for_local_module(dg_context.root_module_name).parent
         ),
-        "module_name": str(dg_context.code_location_target_module_name),
+        "module_name": module_name,
         "location_name": dg_context.code_location_name,
     }
     if dg_context.use_dg_managed_environment:
         entry["executable_path"] = str(dg_context.project_python_executable)
-    return {"python_module": entry}
+    return {key: entry}
 
 
 MIN_ENV_VAR_INJECTION_VERSION = Version("1.10.8")
@@ -260,7 +270,7 @@ def _dagster_cloud_entry_for_project(
     return {
         "location_name": dg_context.code_location_name,
         "code_source": {
-            "module_name": str(dg_context.code_location_target_module_name),
+            **dg_context.target_args,
         },
         **({"build": merged_build_config} if merged_build_config else {}),
         **(
