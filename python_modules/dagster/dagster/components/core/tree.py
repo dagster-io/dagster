@@ -60,8 +60,12 @@ class ComponentTree:
 
     def load_defs_at_path(self, defs_path: Path) -> Definitions:
         # impl to be fleshed out to flexibly handle different path types (str, list[str], ...)
+        if self.root.path.absolute().as_posix() == defs_path.absolute().as_posix():
+            ctx = self.load_context.for_path(self.root.path)
+            with use_component_load_context(ctx):
+                return self.root.build_defs(ctx)
         for cp, c in self.root.iterate_path_component_pairs():
-            if cp.file_path.relative_to(self.root.path) == defs_path:
+            if cp.file_path.absolute().as_posix() == defs_path.absolute().as_posix():
                 ctx = self.load_context.for_path(cp.file_path)
                 with use_component_load_context(ctx):
                     return c.build_defs(ctx)
