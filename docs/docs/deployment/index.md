@@ -11,6 +11,6 @@ You can deploy Dagster with Dagster+ or Dagster open source (OSS).
 
 Dagster+ comes in two flavors: a fully [Serverless](/deployment/dagster-plus/serverless) offering and a [Hybrid](/deployment/dagster-plus/hybrid) offering. 
 
-## OSS
+## Dagster OSS
 
 [Dagster OSS](/deployment/oss) is an open source orchestration platform that you deploy and manage yourself. It is a good fit for local development and for those who are comfortable with self-managed infrastructure.

@@ -1,6 +1,7 @@
 ---
 description: Manage standalone Dagster+ full deployments with independent permissions.
-title: Managing full deployments in Dagster+
+title: Managing full deployments
+sidebar_position: 6100
 ---
 
 Full deployments are standalone environments, allowing you to operate independent instances of Dagster with separately managed permissions.

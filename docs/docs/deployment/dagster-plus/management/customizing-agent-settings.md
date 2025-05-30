@@ -1,18 +1,14 @@
 ---
 description: Customize Dagster+ agent settings in dagster.yaml
-sidebar_position: 300
-title: Customizing Dagster+ agent settings in dagster.yaml
+sidebar_position: 1000
+title: Customizing agent settings
 ---
-
-:::note
-This guide is applicable to Dagster+.
-:::
 
 The Dagster+ Agent is a special variant of the Dagster instance used in Dagster Open Source and is configured through the same `dagster.yaml` file. You can customize your agent with these settings.
 
 :::note
 
-For [Kubernetes agents](/deployment/dagster-plus/hybrid/kubernetes/) deployed with the Dagster+ Helm chart, you'll need to refer to the Helm chart's config map for customizing the agent.
+For [Kubernetes agents](/deployment/dagster-plus/hybrid/kubernetes) deployed with the Dagster+ Helm chart, you'll need to refer to the Helm chart's config map for customizing the agent.
 
 :::
 
