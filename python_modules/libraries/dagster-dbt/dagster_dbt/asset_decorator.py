@@ -16,6 +16,9 @@ from dagster_dbt.asset_utils import (
     DAGSTER_DBT_EXCLUDE_METADATA_KEY,
     DAGSTER_DBT_SELECT_METADATA_KEY,
     DAGSTER_DBT_SELECTOR_METADATA_KEY,
+    DBT_DEFAULT_EXCLUDE,
+    DBT_DEFAULT_SELECT,
+    DBT_DEFAULT_SELECTOR,
     build_dbt_specs,
 )
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator, validate_translator
@@ -27,9 +30,9 @@ from dagster_dbt.dbt_project import DbtProject
 def dbt_assets(
     *,
     manifest: DbtManifestParam,
-    select: str = "fqn:*",
-    exclude: Optional[str] = None,
-    selector: Optional[str] = None,
+    select: str = DBT_DEFAULT_SELECT,
+    exclude: Optional[str] = DBT_DEFAULT_EXCLUDE,
+    selector: Optional[str] = DBT_DEFAULT_SELECTOR,
     name: Optional[str] = None,
     io_manager_key: Optional[str] = None,
     partitions_def: Optional[PartitionsDefinition] = None,
@@ -314,8 +317,8 @@ def dbt_assets(
         translator=dagster_dbt_translator,
         manifest=manifest,
         select=select,
-        exclude=exclude or "",
-        selector=selector,
+        exclude=exclude or DBT_DEFAULT_EXCLUDE,
+        selector=selector or DBT_DEFAULT_SELECTOR,
         io_manager_key=io_manager_key,
         project=project,
     )
