@@ -365,3 +365,49 @@ export const JobList = () => {
     </div>
   );
 };
+
+export const SmallList = () => {
+  return (
+    <div style={{width: '400px'}}>
+      <ListItem
+        index={0}
+        padding={{vertical: 8, horizontal: 12}}
+        renderLink={renderLink}
+        href="/jobs/foo"
+        left={
+          <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
+            <Icon name="job" />
+            foo
+          </Box>
+        }
+        right={<div>Right</div>}
+      />
+      <ListItem
+        index={1}
+        padding={{vertical: 8, horizontal: 12}}
+        renderLink={renderLink}
+        href="/jobs/bar"
+        left={
+          <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
+            <Icon name="job" />
+            bar
+          </Box>
+        }
+        right={<div>Right</div>}
+      />
+      <ListItem
+        index={2}
+        padding={{vertical: 8, horizontal: 12}}
+        renderLink={renderLink}
+        href="/jobs/baz"
+        left={
+          <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
+            <Icon name="job" />
+            baz
+          </Box>
+        }
+        right={<div>Right</div>}
+      />
+    </div>
+  );
+};
