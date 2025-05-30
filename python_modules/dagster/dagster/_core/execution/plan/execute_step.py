@@ -1,4 +1,5 @@
 import inspect
+from collections import defaultdict
 from collections.abc import Iterable, Iterator, Mapping
 from typing import Any, Optional, Union, cast
 
@@ -132,15 +133,7 @@ def _process_user_event(
                 f"AssetCheckResult for check '{spec.name}' for asset '{spec.asset_key.to_user_string()}' was yielded which is not selected. Letting it through."
             )
         yield asset_check_evaluation
-        if (
-            not asset_check_evaluation.passed
-            and asset_check_evaluation.severity == AssetCheckSeverity.ERROR
-            and spec.blocking
-        ):
-            raise DagsterAssetCheckFailedError(
-                f"Blocking check '{spec.name}' for asset '{spec.asset_key.to_user_string()}' failed with"
-                " ERROR severity."
-            )
+
     else:
         yield user_event
 
@@ -502,6 +495,8 @@ def core_dagster_event_sequence_for_step(
             compute_context,
         )
 
+        failed_blocking_asset_check_evaluations = []
+
         # It is important for this loop to be indented within the
         # timer block above in order for time to be recorded accurately.
         for user_event in _step_output_error_checked_user_event_sequence(
@@ -520,11 +515,31 @@ def core_dagster_event_sequence_for_step(
             elif isinstance(user_event, AssetObservation):
                 yield DagsterEvent.asset_observation(step_context, user_event)
             elif isinstance(user_event, AssetCheckEvaluation):
+                if (
+                    not user_event.passed
+                    and user_event.severity == AssetCheckSeverity.ERROR
+                    and user_event.blocking
+                ):
+                    failed_blocking_asset_check_evaluations.append(user_event)
                 yield DagsterEvent.asset_check_evaluation(step_context, user_event)
             elif isinstance(user_event, ExpectationResult):
                 yield DagsterEvent.step_expectation_result(step_context, user_event)
             else:
                 check.failed(f"Unexpected event {user_event}, should have been caught earlier")
+
+    if failed_blocking_asset_check_evaluations:
+        grouped_by_asset_key: dict[AssetKey, list[AssetCheckEvaluation]] = defaultdict(list)
+        for failed_check in failed_blocking_asset_check_evaluations:
+            grouped_by_asset_key.setdefault(failed_check.asset_key, []).append(failed_check)
+
+        grouped_by_asset_key_str = "\n".join(
+            f"{asset_key.to_user_string()}: {','.join(failed_check.check_name for failed_check in checks)}"
+            for asset_key, checks in grouped_by_asset_key.items()
+        )
+
+        raise DagsterAssetCheckFailedError(
+            f"{len(failed_blocking_asset_check_evaluations)} blocking asset check{'s' if len(failed_blocking_asset_check_evaluations) > 1 else ''} failed with ERROR severity:\n{grouped_by_asset_key_str}"
+        )
 
     yield DagsterEvent.step_success_event(
         step_context, StepSuccessData(duration_ms=timer_result.millis)
