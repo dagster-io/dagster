@@ -216,7 +216,7 @@ def test_components_docs_adding_attributes_to_assets(
                     - path: replication.yaml
                 """),
         )
-        _run_command("dagster asset materialize --select '*' -m my_project.definitions")
+        _run_command("dg launch --assets '*'")
 
         # Add debug logic
         context.create_file(
@@ -251,7 +251,7 @@ def test_components_docs_adding_attributes_to_assets(
         )
 
         # Validate works properly
-        _run_command("dagster asset materialize --select '*' -m my_project.definitions")
+        _run_command("dg launch --assets '*'")
 
         # Add custom scope
         context.create_file(
@@ -308,4 +308,4 @@ def test_components_docs_adding_attributes_to_assets(
             ],
         )
         # Validate works properly
-        _run_command("dagster asset materialize --select '*' -m my_project.definitions")
+        _run_command("dg launch --assets '*'")

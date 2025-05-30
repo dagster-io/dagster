@@ -155,6 +155,4 @@ def test_creating_a_component(
             / "script.sh",
             f"{context.get_next_snip_number()}-scaffolded-component-script.sh",
         )
-        _run_command(
-            "uv run dagster asset materialize --select '*' -m my_component_library.definitions"
-        )
+        _run_command("dg launch --assets '*'")
