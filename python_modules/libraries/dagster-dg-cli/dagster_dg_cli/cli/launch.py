@@ -15,20 +15,6 @@ from dagster_shared.cli import WorkspaceOpts, dg_workspace_options
 SINGLETON_REPOSITORY_NAME = "__repository__"
 
 
-OPTIONS_NOT_TO_PASS_ON = {
-    "use_component_modules",
-    "verbose",
-    "disable_cache",
-    "cache_dir",
-    "use_ssl",
-    "grpc_host",
-    "grpc_socket",
-    "grpc_port",
-    "workspace",
-    "empty_workspace",
-}
-
-
 def _args_from_workspace_opts(workspace_opts: WorkspaceOpts) -> dict[str, str]:
     """Converts WorkspaceOpts to a dictionary of arguments of the type that
     dagster job launch or dagster asset materialize expects.
