@@ -61,7 +61,10 @@ class ComponentTree:
         if self.root.path.absolute().as_posix() == defs_path.absolute().as_posix():
             return self.root.build_defs(self.load_context.for_path(self.root.path))
         for cp, c in self.root.iterate_path_component_pairs():
-            if cp.file_path.absolute().as_posix() == defs_path.absolute().as_posix():
+            if (
+                cp.file_path.absolute().as_posix() == defs_path.absolute().as_posix()
+                or cp.file_path.relative_to(self.root.path) == defs_path
+            ):
                 ctx = self.load_context.for_path(cp.file_path)
                 return c.build_defs(ctx)
 
