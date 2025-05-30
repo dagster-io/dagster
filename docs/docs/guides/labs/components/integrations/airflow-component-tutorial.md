@@ -14,7 +14,11 @@ The [dagster-airlift](/integrations/libraries/airlift) library provides an `Airf
 
 ### 1. Create a components-ready Dagster project
 
-To begin, you'll need a components-ready Dagster project. To create one, follow the steps in "[Creating a project with dg](https://docs.dagster.io/guides/labs/dg/creating-a-project)".
+To begin, you'll need a components-ready Dagster project. To create one, use the `uvx create-dagster` command:
+
+```
+uvx create-dagster project my-project && cd my-project
+```
 
 Next, you will need to add the `dagster-airlift` library to the project:
 
