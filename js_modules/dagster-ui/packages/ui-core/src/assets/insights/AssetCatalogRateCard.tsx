@@ -2,7 +2,7 @@ import {BodyLarge, Box, Colors, Icon, Spinner} from '@dagster-io/ui-components';
 import React from 'react';
 
 import styles from './AssetCatalogRateCard.module.css';
-import {numberFormatter, percentFormatter} from '../../ui/formatters';
+import {percentFormatter} from '../../ui/formatters';
 
 export interface AssetCatalogRateCardProps {
   title: string;
@@ -20,11 +20,16 @@ function pctChange(x: number, y: number): number {
     return Number.POSITIVE_INFINITY;
   }
 
-  if (y > x) {
+  if (y >= x) {
     return y / x - 1;
   }
   return -(1 - y / x);
 }
+
+const secondsFormatter = new Intl.NumberFormat(navigator.language, {
+  style: 'unit',
+  unit: 'second',
+});
 
 function formatValues(
   valueOrNull: number | null,
@@ -52,10 +57,6 @@ function formatValues(
     };
   }
 
-  const secondsFormatter = new Intl.NumberFormat(navigator.language, {
-    style: "unit",
-    unit: "second",
-  })
   return {
     currValueString: secondsFormatter.format(value),
     prevValueString: secondsFormatter.format(prevValue),
