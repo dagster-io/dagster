@@ -1,9 +1,12 @@
 import logging
 import sys
 from collections.abc import Sequence
+from pathlib import Path
 from traceback import TracebackException
 from typing import Any, Literal, Optional, Union
 
+import click
+from dagster_shared import check
 from dagster_shared.error import SerializableErrorInfo, remove_system_frames_from_error
 from dagster_shared.serdes.objects import PluginObjectKey
 from dagster_shared.serdes.objects.definition_metadata import (
@@ -78,8 +81,9 @@ def list_all_components_schema(
     return TypeAdapter(union_type).json_schema()
 
 
-def list_definitions(
+def list_definitions_impl(
     location: Optional[str],
+    path: Optional[Path] = None,
     **other_opts: object,
 ) -> list[DgDefinitionMetadata]:
     python_pointer_opts = PythonPointerOpts.extract_from_cli_options(other_opts)
@@ -101,6 +105,17 @@ def list_definitions(
             repository_origin = get_repository_python_origin_from_cli_opts(python_pointer_opts)
             recon_repo = recon_repository_from_origin(repository_origin)
             repo_def = recon_repo.get_definition()
+            tree = check.not_none(repo_def.get_component_tree())
+
+            try:
+                defs = tree.load_defs_at_path(path) if path else tree.load_defs()
+            except Exception as e:
+                path_text = f" at {path}" if path else ""
+                raise click.ClickException(f"Unable to load definitions{path_text}: {e}") from e
+
+            repo_def = defs.get_repository_def()
+        except click.ClickException:
+            raise
         except Exception:
             underlying_error = remove_system_frames_from_error(
                 serializable_error_info_from_exc_info(sys.exc_info()),
