@@ -360,7 +360,7 @@ You may have wanted to run this command in the following directory:
 
 NOT_COMPONENT_LIBRARY_ERROR_MESSAGE = """
 This command must be run inside a Dagster component library directory. Ensure that the nearest
-pyproject.toml has an entry point defined under the `dagster_dg.plugin` group.
+pyproject.toml has an entry point defined under the `dagster_dg_cli.plugin` group.
 """
 
 

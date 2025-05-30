@@ -55,7 +55,7 @@ The `ShellCommand` component type will need the following to be defined:
 - The path to the shell script to be run
 - The assets the shell script is expected to produce
 
-The `ShellCommand` class inherits from <PyObject section="resolved" module="dagster.components" object="Resolvable" />, in addition to <PyObject section="components" module="dagster.components" object="Component" />. `Resolvable` handles deriving a YAML schema for the `ShellCommand` class based on what the class is annotated with. To simplify common use cases, Dagster provides annotations for common bits of configuration, such as `ResolvedAssetSpec`, which will handle exposing a schema for defining <PyObject section="assets" module="dagster" object="AssetSpec" pluralize /> from YAML and resolving them before instantiating the component.
+The `ShellCommand` class inherits from <PyObject section="components" module="dagster" object="Resolvable" />, in addition to <PyObject section="components" module="dagster" object="Component" />. `Resolvable` handles deriving a YAML schema for the `ShellCommand` class based on what the class is annotated with. To simplify common use cases, Dagster provides annotations for common bits of configuration, such as `ResolvedAssetSpec`, which will handle exposing a schema for defining <PyObject section="assets" module="dagster" object="AssetSpec" pluralize /> from YAML and resolving them before instantiating the component.
 
 You can define the schema for the `ShellCommand` component and add it to the `ShellCommand` class as follows:
 

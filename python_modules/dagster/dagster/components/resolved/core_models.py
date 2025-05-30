@@ -73,7 +73,7 @@ def _expect_injected(context, val):
     return check.opt_inst_param(val, "val", AutomationCondition)
 
 
-ResolvedAssetKey = Annotated[
+ResolvedAssetKey: TypeAlias = Annotated[
     AssetKey,
     Resolver(
         _resolve_asset_key,

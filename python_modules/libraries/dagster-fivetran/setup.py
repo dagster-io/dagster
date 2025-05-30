@@ -39,7 +39,7 @@ setup(
         "console_scripts": [
             "dagster-fivetran = dagster_fivetran.cli:main",
         ],
-        "dagster_dg.plugin": [
+        "dagster_dg_cli.plugin": [
             "dagster_fivetran = dagster_fivetran",
         ],
     },

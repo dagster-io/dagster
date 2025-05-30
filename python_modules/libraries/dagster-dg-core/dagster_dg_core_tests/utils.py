@@ -44,7 +44,6 @@ from dagster_dg_core.utils import (
     pushd,
     set_toml_node,
 )
-from dagster_graphql.client import DagsterGraphQLClient
 from packaging.version import Version
 from typing_extensions import Self, TypeAlias
 
@@ -327,7 +326,7 @@ def isolated_example_component_library_foo_bar(
             if components_module_name:
                 set_toml_node(
                     toml,
-                    ("project", "entry-points", "dagster_dg.plugin", "foo_bar"),
+                    ("project", "entry-points", "dagster_dg_cli.plugin", "foo_bar"),
                     components_module_name,
                 )
                 components_dir = Path("src", *components_module_name.split("."))
@@ -853,6 +852,8 @@ query GetCodeLocationNames {
 
 
 def _query_code_locations(port: int) -> set[str]:
+    from dagster_graphql.client import DagsterGraphQLClient
+
     gql_client = DagsterGraphQLClient(hostname="localhost", port_number=port)
     result = gql_client._execute(_GET_CODE_LOCATION_NAMES_QUERY)  # noqa: SLF001
     assert result["repositoriesOrError"]["__typename"] == "RepositoryConnection"

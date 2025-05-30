@@ -38,7 +38,7 @@ def test_setup_basic_auth(update_snippets: bool) -> None:
         )
 
         run_command_and_snippet_output(
-            cmd="dg scaffold dagster_airlift.core.components.AirflowInstanceComponent airflow --name my_airflow --auth-type basic_auth",
+            cmd="dg scaffold defs dagster_airlift.core.components.AirflowInstanceComponent airflow --name my_airflow --auth-type basic_auth",
             snippet_path=SNIPPETS_DIR
             / "setup"
             / "basic_auth"
@@ -52,7 +52,7 @@ def test_setup_basic_auth(update_snippets: bool) -> None:
         )
 
         _run_command(r"find . -type d -name __pycache__ -exec rm -r {} \+")
-        _run_command(r"find . -type d -name my_project.egg-info -exec rm -r {} \+")
+        _run_command(r"find . -type d -name my-project.egg-info -exec rm -r {} \+")
         run_command_and_snippet_output(
             cmd="tree src/my_project/defs",
             snippet_path=SNIPPETS_DIR
@@ -64,7 +64,7 @@ def test_setup_basic_auth(update_snippets: bool) -> None:
         )
 
         run_command_and_snippet_output(
-            cmd="cat src/my_project/defs/airflow/component.yaml",
+            cmd="cat src/my_project/defs/airflow/defs.yaml",
             snippet_path=SNIPPETS_DIR
             / "setup"
             / "basic_auth"
@@ -84,11 +84,11 @@ def test_component_files() -> None:
             cmd=f"dg scaffold project my-project --python-environment uv_managed --use-editable-dagster && cd my-project && uv add --editable {EDITABLE_DIR / 'dagster-airlift[core]'}",
         )
         _run_command(
-            cmd="dg scaffold dagster_airlift.core.components.AirflowInstanceComponent airflow --name my_airflow --auth-type basic_auth",
+            cmd="dg scaffold defs dagster_airlift.core.components.AirflowInstanceComponent airflow --name my_airflow --auth-type basic_auth",
         )
 
         component_yaml_path = (
-            Path.cwd() / "src" / "my_project" / "defs" / "airflow" / "component.yaml"
+            Path.cwd() / "src" / "my_project" / "defs" / "airflow" / "defs.yaml"
         )
 
         for path in [

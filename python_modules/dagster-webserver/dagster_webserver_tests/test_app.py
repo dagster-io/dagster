@@ -11,6 +11,7 @@ from dagster._core.workspace.load import load_workspace_process_context_from_yam
 from dagster._utils import file_relative_path
 from dagster._utils.log import get_structlog_json_formatter
 from dagster_shared import seven
+from dagster_shared.telemetry import cleanup_telemetry_logger, get_telemetry_logger
 from dagster_webserver.app import create_app_from_workspace_process_context
 from dagster_webserver.cli import (
     DEFAULT_WEBSERVER_PORT,
@@ -18,6 +19,16 @@ from dagster_webserver.cli import (
     host_dagster_ui_with_workspace_process_context,
 )
 from starlette.testclient import TestClient
+
+
+@pytest.fixture
+def telemetry_caplog(caplog):
+    # telemetry logger doesn't propagate to the root logger, so need to attach the caplog handler
+    get_telemetry_logger().addHandler(caplog.handler)
+    yield caplog
+    get_telemetry_logger().removeHandler(caplog.handler)
+    # Needed to avoid file contention issues on windows with the telemetry log file
+    cleanup_telemetry_logger()
 
 
 @pytest.fixture
@@ -284,7 +295,7 @@ def test_valid_path_prefix():
 
 
 @mock.patch("uvicorn.run")
-def test_dagster_webserver_logs(_, caplog):
+def test_dagster_webserver_logs(_, telemetry_caplog):
     with tempfile.TemporaryDirectory() as temp_dir:
         with instance_for_test(temp_dir=temp_dir, overrides={"telemetry": {"enabled": True}}):
             runner = CliRunner(env={"DAGSTER_HOME": temp_dir})
@@ -301,7 +312,7 @@ def test_dagster_webserver_logs(_, caplog):
             }
             actions = set()
             records = []
-            for record in caplog.records:
+            for record in telemetry_caplog.records:
                 try:
                     message = json.loads(record.getMessage())
                 except seven.JSONDecodeError:

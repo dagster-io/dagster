@@ -2,24 +2,35 @@
 title: Dagster & Airflow with components
 sidebar_position: 300
 description: The dagster-airlift library provides an AirflowInstanceComponent, which you can use to peer a Dagster project with an Airflow instance.
+unlisted: true
 ---
 
 import DgComponentsPreview from '@site/docs/partials/\_DgComponentsPreview.md';
 
 <DgComponentsPreview />
 
-The [dagster-airlift](/integrations/libraries/airlift) library provides an `AirflowInstanceComponent` which can be used to represent Airflow DAGs in Dagster.
+The [dagster-airlift](/integrations/libraries/airlift) library provides an `AirflowInstanceComponent` which can be used to represent Airflow DAGs in Dagster, allowing easy interoperability between Airflow and Dagster.
 
 ## Setup and peering
 
-### 1. Create a components-ready Dagster project
+### 1. Create a Dagster project
 
-To begin, you'll need a components-ready Dagster project. To create one, follow the steps in "[Creating a project with dg](https://docs.dagster.io/guides/labs/dg/creating-a-project)".
-
-Next, you will need to add the `dagster-airlift` library to the project:
+To begin, you'll need a components-ready Dagster project. To create one, use the `uvx create-dagster` command:
 
 ```
-uv add dagster-airlift[core]
+uvx create-dagster project my-project && cd my-project
+```
+
+Activate the project virtual environment:
+
+```
+source .venv/bin/activate
+```
+
+Finally, add the `dagster-airlift` library to the project:
+
+```
+uv add 'dagster-airlift==0.26.18rc3'
 ```
 
 ### 2. Scaffold an AirflowInstanceComponent
@@ -34,13 +45,13 @@ To scaffold a new component in your project, use the `dg scaffold defs` command:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/integrations/airlift_v2/setup/basic_auth/1-scaffold.txt" />
 
-This will create a component definition file called `component.yaml` in your project under the `defs/airflow` directory.
+This will create a component definition file called `defs.yaml` in your project under the `src/my_project/defs/airflow` directory.
 
 <CliInvocationExample path="docs_snippets/docs_snippets/integrations/airlift_v2/setup/basic_auth/2-tree.txt" />
 
-### 4. Update `component.yaml` with Airflow configuration
+### 4. Update `defs.yaml` with Airflow configuration
 
-By default, the Airlift component reads values from the environment variables `AIRFLOW_WEBSERVER_URL`, `AIRFLOW_USERNAME`, and `AIRFLOW_PASSWORD`. While you should never include your password directly in this file, you can update `component.yaml` to add the webserver URL and username:
+By default, the Airlift component reads values from the environment variables `AIRFLOW_WEBSERVER_URL`, `AIRFLOW_USERNAME`, and `AIRFLOW_PASSWORD`. While you should never include your password directly in this file, you can update `defs.yaml` to add the webserver URL and username:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/integrations/airlift_v2/setup/basic_auth/3-cat.txt" />
 
@@ -53,11 +64,11 @@ Once you have added these values, the following will happen:
 
 ## Mapping Dagster assets to Airflow tasks
 
-Once you have represented your Airflow instance in Dagster using the Airflow instance component, you may want to represent the graph of asset dependencies produced by that DAG as well, which you can do in `component.yaml`.
+Once you have represented your Airflow instance in Dagster using the Airflow instance component, you may want to represent the graph of asset dependencies produced by that DAG as well, which you can do in `defs.yaml`.
 
 ### DAG-level mapping
 
-You can manually define which assets are produced by a given Airflow DAG by editing `mappings` in `component.yaml`:
+You can manually define which assets are produced by a given Airflow DAG by editing `mappings` in `defs.yaml`:
 
 <CodeExample path="docs_snippets/docs_snippets/integrations/airlift_v2/represent_airflow_dags_in_dagster/component_dag_mappings.yaml" />
 

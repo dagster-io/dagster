@@ -132,3 +132,14 @@ def _loadable_targets_of_type(
             loadable_targets.append(LoadableTarget(name, value))
 
     return loadable_targets
+
+
+def autodefs_module_target(autoload_defs_module_name: str, working_directory: Optional[str]):
+    from dagster.components import load_defs
+
+    module = load_python_module(autoload_defs_module_name, working_directory)
+    defs = load_defs(module)
+    return LoadableTarget(
+        attribute="",
+        target_definition=defs,
+    )

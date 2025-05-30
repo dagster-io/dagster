@@ -43,9 +43,9 @@ See the [`duckdb`](https://duckdb.org/docs/installation/?version=stable&environm
 
 :::
 
-### 2. Install `dg`
+### 2. Install `create-dagster`
 
-Next, follow the [`dg` installation steps](/guides/labs/dg) to install the `dg` command line tool. `dg` allows you to quickly create a components-ready Dagster project.
+The `create-dagster` CLI allows you to quickly create a components-ready Dagster project. We recommend using `uv`, which allows you to run `uvx create-dagster` without a separate installation step. If you're not using `uv`, follow the [`create-dagster` installation steps](/guides/labs/dg#installing-the-create-dagster-cli) to install the `create-dagster` command line tool.
 
 ### 3. Create a new Dagster project
 
@@ -69,12 +69,11 @@ After installing dependencies, create a components-ready Dagster project. The st
         :::
     </TabItem>
     <TabItem value="pip" label="pip">
-        Because `pip` does not support global installations, you will need to install `dg` inside your Dagster project virtual environment. To do so, follow the commands below to create and enter a Dagster project directory, initialize and activate a virtual environment, and install the `dagster-dg` package into it:
+        First initialize and activate a virtual environment:
         <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/2-a-pip-scaffold.txt" />
         <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/2-b-pip-scaffold.txt" />
         <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/2-c-pip-scaffold.txt" />
-        <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/2-d-pip-scaffold.txt" />
-        Next, run `dg scaffold project .` to create a new Dagster project in the current directory:
+        Next, run `create-dagster project .` to create a new Dagster project in the current directory:
         <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/2-e-pip-scaffold.txt" />
         Finally, install the newly created project package into the virtual environment as an [editable install](https://setuptools.pypa.io/en/latest/userguide/development_mode.html):
         <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/2-f-pip-scaffold.txt" />
@@ -82,7 +81,7 @@ After installing dependencies, create a components-ready Dagster project. The st
 
 </Tabs>
 
-To learn more about the files, directories, and default settings in a project created with `dg scaffold project`, see "[Creating a project with components](/guides/labs/dg/creating-a-project#project-structure)".
+To learn more about the files, directories, and default settings in a project created with `create-dagster project`, see "[Creating a project with components](/guides/labs/dg/creating-a-project#project-structure)".
 
 ## Ingest data
 
