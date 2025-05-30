@@ -138,7 +138,7 @@ def deploy_group(
     use_editable_dagster: Optional[str],
     skip_confirmation_prompt: bool,
     location_names: tuple[str],
-    path: Path,
+    context_path: Path,
     status_url: Optional[str],
     snapshot_base_condition_str: Optional[str],
     **global_options: object,
@@ -169,7 +169,7 @@ def deploy_group(
     organization = _get_organization(organization, plus_config)
     deployment = _get_deployment(deployment, plus_config)
 
-    dg_context = DgContext.for_workspace_or_project_environment(path, cli_config)
+    dg_context = DgContext.for_workspace_or_project_environment(context_path, cli_config)
     _validate_location_names(dg_context, location_names, cli_config)
 
     # TODO Confirm that dagster-cloud is packaged in the project
@@ -273,7 +273,7 @@ def start_deploy_session_command(
     git_url: Optional[str],
     commit_hash: Optional[str],
     location_names: tuple[str],
-    path: Path,
+    context_path: Path,
     status_url: Optional[str],
     snapshot_base_condition_str: Optional[str],
     **global_options: object,
@@ -289,7 +289,7 @@ def start_deploy_session_command(
     organization = _get_organization(organization, plus_config)
     deployment = _get_deployment(deployment, plus_config)
 
-    dg_context = DgContext.for_workspace_or_project_environment(path, cli_config)
+    dg_context = DgContext.for_workspace_or_project_environment(context_path, cli_config)
     _validate_location_names(dg_context, location_names, cli_config)
     statedir = _get_statedir()
 
@@ -345,7 +345,7 @@ def build_and_push_command(
     python_version: Optional[str],
     use_editable_dagster: Optional[str],
     location_names: tuple[str],
-    path: Path,
+    context_path: Path,
     **global_options: object,
 ) -> None:
     """Builds a Docker image to be deployed, and pushes it to the registry
@@ -353,7 +353,7 @@ def build_and_push_command(
     """
     cli_config = normalize_cli_config(global_options, click.get_current_context())
 
-    dg_context = DgContext.for_workspace_or_project_environment(path, cli_config)
+    dg_context = DgContext.for_workspace_or_project_environment(context_path, cli_config)
 
     _validate_location_names(dg_context, location_names, cli_config)
 
@@ -393,7 +393,7 @@ def build_and_push_command(
 @dg_path_options
 @cli_telemetry_wrapper
 def set_build_output_command(
-    image_tag: str, location_names: tuple[str], path: Path, **global_options: object
+    image_tag: str, location_names: tuple[str], context_path: Path, **global_options: object
 ) -> None:
     """If building a Docker image was built outside of the `dg` CLI, configures the deploy session
     to indicate the correct tag to use when the session is finished.
@@ -402,7 +402,7 @@ def set_build_output_command(
 
     cli_config = normalize_cli_config(global_options, click.get_current_context())
 
-    dg_context = DgContext.for_workspace_or_project_environment(path, cli_config)
+    dg_context = DgContext.for_workspace_or_project_environment(context_path, cli_config)
     statedir = _get_statedir()
     _validate_location_names(dg_context, location_names, cli_config)
 
@@ -425,14 +425,14 @@ def set_build_output_command(
 @dg_path_options
 @cli_telemetry_wrapper
 def finish_deploy_session_command(
-    location_names: tuple[str], path: Path, **global_options: object
+    location_names: tuple[str], context_path: Path, **global_options: object
 ) -> None:
     """Once all needed images have been built and pushed, completes the deploy session, signaling
     to the Dagster+ API that the deployment can be updated to the newly built and pushed code.
     """
     cli_config = normalize_cli_config(global_options, click.get_current_context())
 
-    dg_context = DgContext.for_workspace_or_project_environment(path, cli_config)
+    dg_context = DgContext.for_workspace_or_project_environment(context_path, cli_config)
     _validate_location_names(dg_context, location_names, cli_config)
     statedir = _get_statedir()
 

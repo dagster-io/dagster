@@ -45,7 +45,7 @@ def launch_command(
     partition_range: Optional[str],
     config_json: Optional[str],
     config: Sequence[str],
-    path: Path,
+    context_path: Path,
     **global_options: Mapping[str, object],
 ):
     """Launch a Dagster run."""
@@ -61,7 +61,7 @@ def launch_command(
     # dev/OSS, and executes the selected assets in process using the "dagster asset materialize"
     # command.
 
-    dg_context = DgContext.for_project_environment(path, cli_config)
+    dg_context = DgContext.for_project_environment(context_path, cli_config)
 
     validate_dagster_availability()
 
