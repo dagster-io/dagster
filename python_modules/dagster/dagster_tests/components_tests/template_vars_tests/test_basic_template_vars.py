@@ -5,13 +5,13 @@ from dagster.components.component.component import Component
 from dagster.components.component.template_vars import template_var
 from dagster.components.core.context import ComponentLoadContext
 from dagster.components.resolved.base import Resolvable
-from dagster.components.resolved.model import Injectable, Model
+from dagster.components.resolved.model import Model
 
 from dagster_tests.components_tests.utils import load_context_and_component_for_test
 
 
 class ComponentWithAdditionalScope(Component, Resolvable, Model):
-    value: Injectable[str]
+    value: str
 
     @staticmethod
     @template_var
