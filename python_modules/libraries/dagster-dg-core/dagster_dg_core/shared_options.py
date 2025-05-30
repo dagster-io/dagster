@@ -133,7 +133,7 @@ PATH_OPTIONS = {
     not_none(option.name): option
     for option in [
         click.Option(
-            ["--path"],
+            ["--context-path"],
             type=click.Path(
                 resolve_path=True,
                 path_type=Path,

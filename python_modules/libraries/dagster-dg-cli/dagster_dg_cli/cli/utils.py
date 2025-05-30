@@ -73,14 +73,14 @@ def generate_component_schema(
 @click.argument("editor", type=click.Choice(["vscode", "cursor"]))
 def configure_editor_command(
     editor: str,
-    path: Path,
+    context_path: Path,
     **global_options: object,
 ) -> None:
     """Generates and installs a VS Code or Cursor extension which provides JSON schemas for Components types specified by YamlComponentsLoader objects."""
     executable_name = "code" if editor == "vscode" else "cursor"
 
     cli_config = normalize_cli_config(global_options, click.get_current_context())
-    dg_context = DgContext.for_project_environment(path, cli_config)
+    dg_context = DgContext.for_project_environment(context_path, cli_config)
 
     recommend_yaml_extension(executable_name)
     schema_path = _generate_component_schema(dg_context)
@@ -149,12 +149,12 @@ def inspect_component_type_command(
     description: bool,
     scaffold_params_schema: bool,
     component_schema: bool,
-    path: Path,
+    context_path: Path,
     **global_options: object,
 ) -> None:
     """Get detailed information on a registered Dagster component type."""
     cli_config = normalize_cli_config(global_options, click.get_current_context())
-    dg_context = DgContext.for_defined_registry_environment(path, cli_config)
+    dg_context = DgContext.for_defined_registry_environment(context_path, cli_config)
     registry = RemotePluginRegistry.from_dg_context(dg_context)
     component_key = PluginObjectKey.from_typename(component_type)
     if not registry.has(component_key):

@@ -51,12 +51,12 @@ LOCALHOST_URL_REGEX = re.compile(b".*(http://localhost.*)\n")
 def serve_docs_command(
     component_type: Optional[str],
     port: int,
-    path: Path,
+    context_path: Path,
     **global_options: object,
 ) -> None:
     """Serve the Dagster components docs, to be viewed in a browser."""
     cli_config = normalize_cli_config(global_options, click.get_current_context())
-    dg_context = DgContext.for_defined_registry_environment(path, cli_config)
+    dg_context = DgContext.for_defined_registry_environment(context_path, cli_config)
     registry = RemotePluginRegistry.from_dg_context(dg_context)
 
     component_key = None
@@ -118,12 +118,12 @@ def serve_docs_command(
 @cli_telemetry_wrapper
 def build_docs_command(
     output_dir: str,
-    path: Path,
+    context_path: Path,
     **global_options: object,
 ) -> None:
     """Build a static version of the Dagster components docs, to be served by a static file server."""
     cli_config = normalize_cli_config(global_options, click.get_current_context())
-    dg_context = DgContext.for_defined_registry_environment(path, cli_config)
+    dg_context = DgContext.for_defined_registry_environment(context_path, cli_config)
     registry = RemotePluginRegistry.from_dg_context(dg_context)
 
     with pushd(ACTIVE_DOCS_DIR):

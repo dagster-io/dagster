@@ -49,7 +49,7 @@ def launch_command(
     partition_range: Optional[str],
     config_json: Optional[str],
     config: Sequence[str],
-    path: Path,
+    context_path: Path,
     **other_options: Mapping[str, object],
 ):
     """Launch a Dagster run."""
@@ -70,7 +70,7 @@ def launch_command(
         extra_workspace_opts = as_dict(pointer_opts)
     else:
         cli_config = normalize_cli_config(other_options, click.get_current_context())
-        dg_context = DgContext.for_project_environment(path, cli_config)
+        dg_context = DgContext.for_project_environment(context_path, cli_config)
         extra_workspace_opts = dg_context.target_args
 
     if assets:

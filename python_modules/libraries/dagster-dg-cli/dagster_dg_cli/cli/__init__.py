@@ -58,7 +58,7 @@ def create_dg_cli():
     def group(
         install_completion: bool,
         clear_cache: bool,
-        path: Path,
+        context_path: Path,
         **global_options: object,
     ):
         """CLI for managing Dagster projects."""
@@ -74,7 +74,9 @@ def create_dg_cli():
             from dagster_dg_core.cache import DgCache
 
             cli_config = normalize_cli_config(global_options, context)
-            dg_context = DgContext.from_file_discovery_and_command_line_config(path, cli_config)
+            dg_context = DgContext.from_file_discovery_and_command_line_config(
+                context_path, cli_config
+            )
             # Normally we would access the cache through the DgContext, but cache is currently
             # disabled outside of a project context. When that restriction is lifted, we will change
             # this to access the cache through the DgContext.

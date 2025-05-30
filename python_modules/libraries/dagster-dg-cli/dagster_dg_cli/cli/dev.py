@@ -80,7 +80,7 @@ def dev_command(
     host: Optional[str],
     live_data_poll_rate: int,
     check_yaml: bool,
-    path: Path,
+    context_path: Path,
     **other_options: Mapping[str, object],
 ) -> None:
     """Start a local instance of Dagster.
@@ -113,7 +113,7 @@ def dev_command(
     # If not, use dg config to construct a workspace file and do a yaml check before
     # invoking dagster core
     cli_config = normalize_cli_config(other_options, click.get_current_context())
-    dg_context = DgContext.for_workspace_or_project_environment(path, cli_config)
+    dg_context = DgContext.for_workspace_or_project_environment(context_path, cli_config)
 
     if dg_context.is_workspace:
         os.environ["DAGSTER_PROJECT_ENV_FILE_PATHS"] = json.dumps(
