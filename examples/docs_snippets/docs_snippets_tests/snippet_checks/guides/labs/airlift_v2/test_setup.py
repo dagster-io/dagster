@@ -52,9 +52,9 @@ def test_setup_basic_auth(update_snippets: bool) -> None:
         )
 
         _run_command(r"find . -type d -name __pycache__ -exec rm -r {} \+")
-        _run_command(r"find . -type d -name my_project.egg-info -exec rm -r {} \+")
+        _run_command(r"find . -type d -name my-project.egg-info -exec rm -r {} \+")
         run_command_and_snippet_output(
-            cmd="tree src/my_project/defs",
+            cmd="tree src/my-project/defs",
             snippet_path=SNIPPETS_DIR
             / "setup"
             / "basic_auth"
@@ -64,7 +64,7 @@ def test_setup_basic_auth(update_snippets: bool) -> None:
         )
 
         run_command_and_snippet_output(
-            cmd="cat src/my_project/defs/airflow/component.yaml",
+            cmd="cat my-project/defs/airflow/component.yaml",
             snippet_path=SNIPPETS_DIR
             / "setup"
             / "basic_auth"
