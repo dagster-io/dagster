@@ -15,7 +15,7 @@ from typing_extensions import Never, Self
 import dagster._check as check
 from dagster import __version__ as dagster_version
 from dagster._cli.utils import has_pyproject_dagster_block, serialize_sorted_quoted
-from dagster._core.code_pointer import CodePointer
+from dagster._core.code_pointer import AutoloadDefsModuleCodePointer, CodePointer
 from dagster._core.definitions.reconstruct import repository_def_from_target_def
 from dagster._core.instance import DagsterInstance
 from dagster._core.origin import DEFAULT_DAGSTER_ENTRY_POINT, RepositoryPythonOrigin
@@ -302,6 +302,7 @@ class PythonPointerOpts:
     package_name: Optional[str] = None
     working_directory: Optional[str] = None
     attribute: Optional[str] = None
+    autoload_defs_module_name: Optional[str] = None
 
     @classmethod
     def extract_from_cli_options(cls, cli_options: dict[str, Any]) -> Self:
@@ -313,6 +314,7 @@ class PythonPointerOpts:
             package_name=cli_options.pop("package_name", None),
             working_directory=cli_options.pop("working_directory", None),
             attribute=cli_options.pop("attribute", None),
+            autoload_defs_module_name=cli_options.pop("autoload_defs_module_name", None),
         )
 
     def to_workspace_opts(self) -> "WorkspaceOpts":
@@ -320,13 +322,17 @@ class PythonPointerOpts:
             python_file=(self.python_file,) if self.python_file else None,
             module_name=(self.module_name,) if self.module_name else None,
             package_name=(self.package_name,) if self.package_name else None,
+            autoload_defs_module_name=self.autoload_defs_module_name
+            if self.autoload_defs_module_name
+            else None,
             working_directory=self.working_directory,
             attribute=self.attribute,
         )
 
 
 def workspace_opts_to_load_target(
-    opts: WorkspaceOpts, allow_in_process: bool = False
+    opts: WorkspaceOpts,
+    allow_in_process: bool = False,
 ) -> WorkspaceLoadTarget:
     load_target = _get_workspace_load_target_from_cli_opts(opts)
     origins = load_target.create_origins()
@@ -478,11 +484,12 @@ def _get_code_pointer_dict_from_python_pointer_opts(
 ) -> Mapping[str, CodePointer]:
     working_directory = params.working_directory or os.getcwd()
     loadable_targets = get_loadable_targets(
-        params.python_file,
-        params.module_name,
-        params.package_name,
-        working_directory,
-        params.attribute,
+        python_file=params.python_file,
+        module_name=params.module_name,
+        package_name=params.package_name,
+        working_directory=working_directory,
+        attribute=params.attribute,
+        autoload_defs_module_name=params.autoload_defs_module_name,
     )
 
     # repository_name -> code_pointer
@@ -501,6 +508,11 @@ def _get_code_pointer_dict_from_python_pointer_opts(
             code_pointer = CodePointer.from_python_package(
                 params.package_name, loadable_target.attribute, working_directory
             )
+        elif params.autoload_defs_module_name:
+            code_pointer = AutoloadDefsModuleCodePointer(
+                module=params.autoload_defs_module_name,
+                working_directory=working_directory,
+            )
         else:
             check.failed("Must specify a Python file or module name")
 
@@ -512,7 +524,20 @@ def _get_code_pointer_dict_from_python_pointer_opts(
 def get_repository_python_origin_from_cli_opts(
     params: PythonPointerOpts, repo_name: Optional[str] = None
 ) -> RepositoryPythonOrigin:
-    if sum([bool(x) for x in (params.python_file, params.module_name, params.package_name)]) != 1:
+    if (
+        sum(
+            [
+                bool(x)
+                for x in (
+                    params.python_file,
+                    params.module_name,
+                    params.package_name,
+                    params.autoload_defs_module_name,
+                )
+            ]
+        )
+        != 1
+    ):
         _raise_cli_usage_error()
 
     # Short-circuit the case where an attribute and no repository name is passed in,
@@ -538,6 +563,11 @@ def get_repository_python_origin_from_cli_opts(
                 params.package_name,
                 params.attribute,
                 working_directory,
+            )
+        elif params.autoload_defs_module_name:
+            code_pointer = AutoloadDefsModuleCodePointer(
+                module=params.autoload_defs_module_name,
+                working_directory=working_directory,
             )
         else:
             check.failed("Must specify a Python file or module name")

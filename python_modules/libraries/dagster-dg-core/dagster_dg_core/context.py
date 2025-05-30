@@ -56,6 +56,8 @@ from dagster_dg_core.utils.warnings import emit_warning
 _DEFAULT_PROJECT_DEFS_SUBMODULE: Final = "defs"
 _DEFAULT_PROJECT_CODE_LOCATION_TARGET_MODULE: Final = "definitions"
 _EXCLUDED_COMPONENT_DIRECTORIES: Final = {"__pycache__"}
+# Remove in future, in place for backcompat
+OLD_DG_PLUGIN_ENTRY_POINT_GROUPS = ["dagster_dg.library", "dagster_dg.plugin"]
 
 
 def _should_capture_components_cli_stderr() -> bool:
@@ -490,10 +492,24 @@ class DgContext:
         return (self.defs_path / name).is_dir()
 
     @property
+    def target_args(self) -> Mapping[str, str]:
+        if not self.config.project:
+            raise DgError("`target_args` are only available in a Dagster project context")
+
+        if self.config.project.autoload_defs:
+            return {"autoload_defs_module_name": self.defs_module_name}
+
+        return {"module_name": self.code_location_target_module_name}
+
+    @property
     def code_location_target_module_name(self) -> str:
         if not self.config.project:
             raise DgError(
                 "`code_location_target_module_name` is only available in a Dagster project context"
+            )
+        if self.config.project.autoload_defs:
+            raise DgError(
+                "`code_location_target_module_name` is not valid when autoload_defs is enabled"
             )
         return (
             self.config.project.code_location_target_module
@@ -521,7 +537,7 @@ class DgContext:
     # ########################
 
     # It is possible for a single package to define multiple entry points under the
-    # `dagster_dg.plugin` entry point group. At present, `dg` only cares about the first one, which
+    # `dagster_dg_cli.plugin` entry point group. At present, `dg` only cares about the first one, which
     # it uses for all component type scaffolding operations.
 
     @property
@@ -546,25 +562,26 @@ class DgContext:
 
     @cached_property
     def _dagster_components_entry_points(self) -> Mapping[str, str]:
+        # defered imports for perf
         import tomlkit
         import tomlkit.items
 
         if self.pyproject_toml_path.exists():
             toml = tomlkit.parse(self.pyproject_toml_path.read_text())
-            if has_toml_node(toml, ("project", "entry-points", "dagster_dg.plugin")):
+            if has_toml_node(toml, ("project", "entry-points", "dagster_dg_cli.plugin")):
                 return get_toml_node(
                     toml,
-                    ("project", "entry-points", "dagster_dg.plugin"),
+                    ("project", "entry-points", "dagster_dg_cli.plugin"),
                     (tomlkit.items.Table, tomlkit.items.InlineTable),
                 ).unwrap()
-            # Keeping for a few weeks (as of 2025-04-09) for backwards compatibility. Should be removed
-            # eventually.
-            elif has_toml_node(toml, ("project", "entry-points", "dagster_dg.library")):
-                return get_toml_node(
-                    toml,
-                    ("project", "entry-points", "dagster_dg.library"),
-                    (tomlkit.items.Table, tomlkit.items.InlineTable),
-                ).unwrap()
+            # Keeping for backwards compatibility. Should be removed eventually.
+            for entry_point_group in OLD_DG_PLUGIN_ENTRY_POINT_GROUPS:
+                if has_toml_node(toml, ("project", "entry-points", entry_point_group)):
+                    return get_toml_node(
+                        toml,
+                        ("project", "entry-points", entry_point_group),
+                        (tomlkit.items.Table, tomlkit.items.InlineTable),
+                    ).unwrap()
         if self.setup_cfg_path.exists():
             import warnings
 
@@ -576,7 +593,9 @@ class DgContext:
                 warnings.simplefilter("ignore", category=SetuptoolsDeprecationWarning)
                 config = read_configuration("setup.cfg")
             entry_points = config.get("options", {}).get("entry_points", {})
-            if "dagster_dg.plugin" in entry_points:
+            if "dagster_dg_cli.plugin" in entry_points:
+                raw_plugin_entry_points = entry_points["dagster_dg_cli.plugin"]
+            elif "dagster_dg.plugin" in entry_points:
                 raw_plugin_entry_points = entry_points["dagster_dg.plugin"]
             elif "dagster_dg.library" in entry_points:
                 raw_plugin_entry_points = entry_points["dagster_dg.library"]
@@ -733,7 +752,7 @@ def _validate_project_venv_activated(context: DgContext) -> None:
         )
 
 
-# Can be removed when we drop support for dagster_dg.library
+# Can be removed when we drop support for dagster_dg.library and dagster_dg.plugin
 def _validate_plugin_entry_point(context: DgContext) -> None:
     if not context.pyproject_toml_path.exists():
         return
@@ -741,23 +760,24 @@ def _validate_plugin_entry_point(context: DgContext) -> None:
     import tomlkit
 
     toml = tomlkit.parse(context.pyproject_toml_path.read_text())
-    if has_toml_node(toml, ("project", "entry-points", "dagster_dg.library")):
-        emit_warning(
-            "deprecated_dagster_dg_library_entry_point",
-            f"""
-            Found deprecated `dagster_dg.library` entry point group in:
-                {context.pyproject_toml_path}
+    for entry_point_group in OLD_DG_PLUGIN_ENTRY_POINT_GROUPS:
+        if has_toml_node(toml, ("project", "entry-points", entry_point_group)):
+            emit_warning(
+                "deprecated_dagster_dg_library_entry_point",
+                f"""
+                Found deprecated `{entry_point_group}` entry point group in:
+                    {context.pyproject_toml_path}
 
-            Please update the group name to `dagster_dg.plugin`. Package reinstallation is required
-            because entry points are registered at install time. Reinstall your package to your
-            environment using:
+                Please update the group name to `dagster_dg_cli.plugin`. Package reinstallation is required
+                because entry points are registered at install time. Reinstall your package to your
+                environment using:
 
-                [uv]  $ uv pip install -e .
-                [pip] $ pip install -e .
+                    [uv]  $ uv pip install -e .
+                    [pip] $ pip install -e .
 
-            """,
-            context.config.cli.suppress_warnings,
-        )
+                """,
+                context.config.cli.suppress_warnings,
+            )
 
 
 DG_UPDATE_CHECK_INTERVAL = datetime.timedelta(hours=1)

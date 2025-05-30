@@ -1,5 +1,6 @@
 import inspect
 import os
+import sys
 from abc import ABC
 from collections import namedtuple
 from collections.abc import Iterator, Mapping
@@ -63,6 +64,15 @@ def _get_field_set_and_defaults(
                     "If you are trying to set a function as a default value "
                     "you will have to override __new__.",
                 )
+                if "pydantic" in sys.modules:
+                    from pydantic.fields import FieldInfo
+
+                    check.invariant(
+                        not isinstance(attr_val, FieldInfo),
+                        "pydantic.Field is not supported as a default value for @record fields."
+                        " For Resolved subclasses, you may provide additional field metadata"
+                        " through the Resolver: Annotated[..., Resolver.default(description=...)].",
+                    )
                 defaults[name] = attr_val
                 last_defaulted_field = name
                 continue

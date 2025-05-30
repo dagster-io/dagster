@@ -94,14 +94,16 @@ class CompositeYamlComponent(Component):
 
         return Definitions.merge(
             *(
-                component.build_defs(context).map_asset_specs(
+                component.build_defs(context).map_asset_specs_inner(
                     func=lambda spec: _add_defs_yaml_code_reference_to_spec(
                         component_yaml_path=component_yaml,
                         load_context=context,
                         component=component,
                         source_position=source_position,
                         asset_spec=spec,
-                    )
+                    ),
+                    selection=None,
+                    ignore_non_spec_asset_types=True,
                 )
                 for component, source_position in zip(self.components, self.source_positions)
             )
@@ -109,11 +111,13 @@ class CompositeYamlComponent(Component):
 
 
 class CompositeComponent(Component):
-    def __init__(self, components: Sequence[Component]):
+    def __init__(self, components: Mapping[str, Component]):
         self.components = components
 
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
-        return Definitions.merge(*[component.build_defs(context) for component in self.components])
+        return Definitions.merge(
+            *[component.build_defs(context) for component in self.components.values()]
+        )
 
 
 def get_component(context: ComponentLoadContext) -> Optional[Component]:
@@ -154,12 +158,20 @@ class DefsFolderComponentYamlSchema(Resolvable):
 @record
 class ComponentPath:
     """Identifier for where a Component instance was defined:
-    file_path: The Path to the file or directory.
+    file_path: The Path to the file or directory relative to the root defs module.
     instance_key: The optional identifier to distinguish instances originating from the same file.
     """
 
     file_path: Path
     instance_key: Optional[Union[int, str]] = None
+
+    def get_relative_key(self, parent_path: Path):
+        key = self.file_path.relative_to(parent_path).as_posix()
+
+        if self.instance_key is not None:
+            return f"{key}[{self.instance_key}]"
+
+        return key
 
 
 @public
@@ -231,6 +243,10 @@ class DefsFolderComponent(Component):
             if isinstance(component, CompositeYamlComponent):
                 for idx, inner_comp in enumerate(component.components):
                     yield ComponentPath(file_path=path, instance_key=idx), inner_comp
+
+            if isinstance(component, CompositeComponent):
+                for attr, inner_comp in component.components.items():
+                    yield ComponentPath(file_path=path, instance_key=attr), inner_comp
 
 
 EXPLICITLY_IGNORED_GLOB_PATTERNS = [
@@ -308,7 +324,7 @@ def load_pythonic_component(context: ComponentLoadContext) -> Component:
         return component_loader(context)
     else:
         return CompositeComponent(
-            [component_loader(context) for _, component_loader in component_loaders]
+            {attr: component_loader(context) for attr, component_loader in component_loaders}
         )
 
 

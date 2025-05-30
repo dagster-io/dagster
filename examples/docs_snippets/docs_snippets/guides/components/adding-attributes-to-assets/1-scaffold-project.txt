@@ -1,4 +1,4 @@
-dg scaffold project my-project \
+uvx create-dagster project my-project \
     && cd my-project/src \
     && dg scaffold defs dagster.asset team_a/subproject/a.py \
     && dg scaffold defs dagster.asset team_a/b.py \

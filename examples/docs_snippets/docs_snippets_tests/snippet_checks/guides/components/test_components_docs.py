@@ -174,7 +174,7 @@ def test_components_docs_index(
             snippet_replace_regex=[
                 re_ignore_before("[project.entry-points]"),
                 re_ignore_after(
-                    '"dagster_dg.plugin" = { jaffle_platform = "jaffle_platform.components"}'
+                    '"dagster_dg_cli.plugin" = { jaffle_platform = "jaffle_platform.components"}'
                 ),
             ],
         )

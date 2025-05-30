@@ -15,7 +15,7 @@ dependencies = [
 ]
 
 [project.entry-points]
-"dagster_dg.plugin" = { project_components_pdf_extraction = "project_components_pdf_extraction.lib"}
+"dagster_dg_cli.plugin" = { project_components_pdf_extraction = "project_components_pdf_extraction.lib"}
 
 [dependency-groups]
 dev = [

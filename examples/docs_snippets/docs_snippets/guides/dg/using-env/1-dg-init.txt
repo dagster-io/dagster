@@ -1,1 +1,1 @@
-dg scaffold project ingestion
+uvx create-dagster project ingestion

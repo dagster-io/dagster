@@ -37,7 +37,7 @@ setup(
     zip_safe=False,
     extras_require={"test": ["duckdb", "dagster-dg-cli"]},
     entry_points={
-        "dagster_dg.plugin": [
+        "dagster_dg_cli.plugin": [
             "dagster_dlt = dagster_dlt",
         ],
     },

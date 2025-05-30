@@ -74,8 +74,7 @@ def launch_command(
             partition_range=partition_range,
             config=tuple(config),
             config_json=config_json,
-            working_directory=str(dg_context.root_path),
-            module_name=dg_context.code_location_target_module_name,
+            **dg_context.target_args,
         )
     elif job:
         from dagster._cli.job import job_execute_command_impl
@@ -84,11 +83,10 @@ def launch_command(
             job_name=job,
             config=tuple(config),
             config_json=config_json,
-            working_directory=str(dg_context.root_path),
-            module_name=dg_context.code_location_target_module_name,
             repository=SINGLETON_REPOSITORY_NAME,
             tags=None,
             op_selection=None,
             partition=partition,
             partition_range=partition_range,
+            **dg_context.target_args,
         )
