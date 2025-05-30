@@ -35,7 +35,7 @@ graph LR
     SP[<img src='/images/examples/icons/shopify.svg' width='50' height='50' /> Shopify]
     BQ[<img src='/images/examples/icons/gcp-bigquery.svg' width='50' height='50' /> BigQuery]
     LK[<img src='/images/examples/icons/looker.svg' width='50' height='50' /> Looker]
-    HX[<img src='/images/examples/icons/hightouch.svg' width='50' height='50' /> Hex]
+    HX[<img src='/images/examples/icons/hex.svg' width='50' height='50' /> Hex]
 
     PG ==> AB
     SP ==> AB
