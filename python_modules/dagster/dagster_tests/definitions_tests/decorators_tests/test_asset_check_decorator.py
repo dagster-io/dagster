@@ -472,8 +472,7 @@ def test_blocking_check_skip_downstream() -> None:
 
     error = error_for_node(result, "asset1_check1")
     assert error.message.startswith(
-        "dagster._core.errors.DagsterAssetCheckFailedError: Blocking check 'check1' for asset 'asset1'"
-        " failed with ERROR severity."
+        "dagster._core.errors.DagsterAssetCheckFailedError: 1 blocking asset check failed with ERROR severity:\nasset1: check1"
     )
 
 
@@ -504,8 +503,7 @@ def test_blocking_check_with_source_asset_fail() -> None:
 
     error = error_for_node(result, "asset1_check1")
     assert error.message.startswith(
-        "dagster._core.errors.DagsterAssetCheckFailedError: Blocking check 'check1' for asset 'asset1'"
-        " failed with ERROR severity."
+        "dagster._core.errors.DagsterAssetCheckFailedError: 1 blocking asset check failed with ERROR severity:\nasset1: check1"
     )
 
 
