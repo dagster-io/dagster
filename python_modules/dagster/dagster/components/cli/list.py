@@ -135,7 +135,7 @@ def list_definitions_command(
 
 def list_definitions_impl(
     location: Optional[str],
-    path: Optional[Path] = None,
+    path: Optional[Path],
     **other_opts: object,
 ) -> list[DgDefinitionMetadata]:
     python_pointer_opts = PythonPointerOpts.extract_from_cli_options(other_opts)
@@ -162,7 +162,15 @@ def list_definitions_impl(
             tree = check.not_none(repo_def.get_component_tree())
 
             try:
-                defs = tree.load_defs_at_path(path) if path else tree.load_defs()
+                if path:
+                    path_from_cwd = Path.cwd() / path
+                    if path_from_cwd.exists():
+                        defs = tree.load_defs_at_path(path_from_cwd)
+                    else:
+                        defs = tree.load_defs_at_path(tree.root.path / path)
+                else:
+                    defs = tree.load_defs()
+
             except Exception as e:
                 path_text = f" at {path}" if path else ""
                 raise click.ClickException(f"Unable to load definitions{path_text}: {e}") from e

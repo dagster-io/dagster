@@ -354,6 +354,8 @@ def _asset_3():
     "path,should_error,expected_assets,not_expected_assets",
     [
         ("src/foo_bar/defs", False, ["my_asset_1", "my_asset_2", "my_asset_3"], []),
+        # Accepts either relative to cwd or relative to defs
+        ("asset1.py", False, ["my_asset_1"], ["my_asset_2", "my_asset_3"]),
         ("src/foo_bar/defs/asset1.py", False, ["my_asset_1"], ["my_asset_2", "my_asset_3"]),
         (
             "src/foo_bar/defs/subfolder/asset2.py",
