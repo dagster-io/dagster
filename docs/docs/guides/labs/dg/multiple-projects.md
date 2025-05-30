@@ -86,8 +86,13 @@ Now we have two projects. We can list them with:
 
 ## Load workspace with `dg`
 
-Finally, let's load up our two projects with `dg dev`. `dg dev` will automatically recognize the projects in your workspace and launch them in their respective environments. Let's run `dg dev` back in the workspace root directory and load up the Dagster UI in a browser:
+Finally, let's load up our two projects with `dg dev`. When we run `dg dev` from the workspace root, it will automatically recognize the projects in your workspace and launch them in their respective environments. However, since the workspace root does not have an associated Python environment, we'll need to use the `dg` executable from one of our project environments. We'll use `project-1`. Let's activate that virtual environment and then launch `dg dev`:
 
-<CliInvocationExample contents="cd ../.. && dg dev" />
+<CliInvocationExample contents="source projects/project-1/.venv/bin/activate && dg dev" />
+
+:::note
+More streamlined python environment management at the workspace level is under
+development.
+:::
 
 ![](/images/guides/build/projects-and-components/setting-up-a-workspace/two-projects.png)
