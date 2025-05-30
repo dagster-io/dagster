@@ -270,8 +270,8 @@ export const AssetCatalogInsightsLineChart = React.memo(
             }
           }
 
-          const after = metrics.timestamps[index]!;
-          const before = after + timeSliceSeconds;
+          const before = metrics.timestamps[index]!;
+          const after = before - timeSliceSeconds;
 
           // Only open the dialog if data exists for the clicked index
           // in the current period
