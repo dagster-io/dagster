@@ -288,10 +288,21 @@ MIN_DAGSTER_COMPONENTS_LIST_DEFINITIONS_OUTPUT_FILE_OPTION_VERSION = Version("1.
     default=False,
     help="Output as JSON instead of a table.",
 )
-@dg_path_options
+@click.option(
+    "--path",
+    "-p",
+    type=click.Path(
+        resolve_path=True,
+        path_type=Path,
+    ),
+    help="Path to the definitions to list.",
+)
 @dg_global_options
+@dg_path_options
 @cli_telemetry_wrapper
-def list_defs_command(output_json: bool, context_path: Path, **global_options: object) -> None:
+def list_defs_command(
+    output_json: bool, context_path: Path, path: Path, **global_options: object
+) -> None:
     """List registered Dagster definitions in the current project environment."""
     from rich.console import Console
     from rich.table import Table
@@ -308,6 +319,7 @@ def list_defs_command(output_json: bool, context_path: Path, **global_options: o
         definitions = list_definitions_impl(
             location=dg_context.code_location_name,
             **dg_context.target_args,
+            path=path,
         )
 
     # JSON
