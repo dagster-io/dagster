@@ -1,6 +1,6 @@
 ---
 description: Deploy open source Dagster on Kubernetes with Celery for task concurrency control.
-sidebar_position: 300
+sidebar_position: 3300
 title: Using Celery with Kubernetes
 ---
 

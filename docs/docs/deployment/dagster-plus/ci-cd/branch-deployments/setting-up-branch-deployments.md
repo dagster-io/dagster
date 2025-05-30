@@ -1,8 +1,12 @@
 ---
 description: Configure branch deployments for a code location in Dagster+ using GitHub, GitLab, or the dagster-cloud CLI.
-sidebar_position: 100
+sidebar_position: 7310
 title: Setting up branch deployments
 ---
+
+import DagsterPlus from '@site/docs/partials/\_DagsterPlus.md';
+
+<DagsterPlus />
 
 In this guide, we'll walk you through setting up Branch Deployments for a code location. Once you're finished, any time a PR is created or updated in your repository, it will automatically create or update an associated branch deployment in Dagster+.
 
@@ -367,7 +371,7 @@ The last step is to verify that the GitLab pipeline runs successfully.
 
 Whenever the state of your branch is updated, Dagster+ expects the following steps to occur:
 
-1. A new image containing your code and requirements is built on the branch. Refer to [Managing code locations](/deployment/code-locations/) to learn more.
+1. A new image containing your code and requirements is built on the branch. Refer to [Managing code locations](/deployment/code-locations) to learn more.
 
 2. The new image is pushed to a Docker registry accessible to your agent.
 
@@ -490,5 +494,5 @@ To ensure the best experience when using Branch Deployments, we recommend:
 
 ## Next steps
 
-- Learn more about [branch deployments](/deployment/dagster-plus/ci-cd/branch-deployments/index.md)
+- Learn more about [branch deployments](/deployment/dagster-plus/ci-cd/branch-deployments)
 - Learn how to [track changes on a branch deployment](/deployment/dagster-plus/ci-cd/branch-deployments/change-tracking)

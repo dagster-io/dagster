@@ -1,7 +1,7 @@
 ---
 description: Dagster+ code must load from a single entry point and be able to be run in an environment where the dagster and dagster-cloud 0.13.2+ Python packages are installed, plus meet additional requirements for hybrid deployments.
 sidebar_label: Code requirements
-sidebar_position: 10
+sidebar_position: 200
 title: Dagster+ code requirements
 ---
 
@@ -19,7 +19,9 @@ To follow the steps in this guide, you'll need:
 ## General requirements
 
 :::tip
-**Learn by example?** Check out [an example repo](https://github.com/dagster-io/hooli-data-eng-pipelines) which is set up to run in Dagster+.
+
+**Learn by example?** Check out [an example repository](https://github.com/dagster-io/hooli-data-eng-pipelines) that is set up to run in Dagster+.
+
 :::
 
 To work with Dagster+, your Dagster code:

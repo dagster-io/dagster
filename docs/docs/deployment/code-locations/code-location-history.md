@@ -1,6 +1,6 @@
 ---
 description: Track and manage code location history and rollbacks in Dagster+.
-sidebar_position: 40
+sidebar_position: 400
 title: Dagster+ code location history and rollbacks
 ---
 

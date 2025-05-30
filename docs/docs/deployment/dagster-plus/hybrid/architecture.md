@@ -1,10 +1,10 @@
 ---
 description: The Dagster+ Hybrid architecture is the most flexible and secure way to deploy Dagster+, allowing you to run your user code in your environment while leveraging Dagster+'s infrastructure for orchestration and metadata management.
-sidebar_position: 10
-title: Dagster+ Hybrid architecture
+sidebar_position: 1000
+title: Architecture overview
 ---
 
-The Hybrid architecture is the most flexible and secure way to deploy Dagster+. It allows you to run your user code in your environment while leveraging Dagster+'s infrastructure for orchestration and metadata management.
+The Dagster+ Hybrid architecture is the most flexible and secure way to deploy Dagster+. It allows you to run your user code in your environment while leveraging Dagster+'s infrastructure for orchestration and metadata management.
 
 ## Hybrid architecture overview
 
@@ -75,7 +75,7 @@ Runs are launched by calling the `dagster api` CLI command in a separate process
 
 When runs are launched, the user code process/container streams structured metadata (containing everything that's viewable in the integrated logs viewer in the Dagster+ UI) back to Dagster+ over a well-defined GraphQL interface. Structured metadata is stored in Amazon RDS, encrypted at rest.
 
-By default, the run worker also uploads the compute logs (raw `stdout` and `stderr` from runs) to Dagster+. If you don't want to upload logs, you can disable this feature in the [agent settings](/deployment/dagster-plus/management/settings/hybrid-agent-settings).
+By default, the run worker also uploads the compute logs (raw `stdout` and `stderr` from runs) to Dagster+. If you don't want to upload logs, you can disable this feature in the [agent settings](/deployment/dagster-plus/management/customizing-agent-settings#disabling-compute-logs).
 
 ### Ingress
 

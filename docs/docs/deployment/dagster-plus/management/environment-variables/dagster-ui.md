@@ -1,7 +1,7 @@
 ---
 description: Configure environment variables in the Dagster+ UI with secure storage.
 sidebar_label: Set with Dagster+ UI
-sidebar_position: 200
+sidebar_position: 2200
 title: Setting environment variables with the Dagster+ UI
 ---
 

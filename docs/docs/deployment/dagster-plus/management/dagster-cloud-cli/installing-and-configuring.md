@@ -1,12 +1,8 @@
 ---
 description: Install and configure the Dagster+ dagster-cloud CLI.
-sidebar_position: 100
+sidebar_position: 4100
 title: Installing and configuring the dagster-cloud CLI
 ---
-
-:::note
-This guide is applicable to Dagster+.
-:::
 
 The `dagster-cloud` CLI is a command-line toolkit designed to work with Dagster+.
 

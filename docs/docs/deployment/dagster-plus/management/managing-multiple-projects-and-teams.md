@@ -1,7 +1,7 @@
 ---
 title: 'Managing multiple projects and teams with Dagster+ Hybrid'
 description: Manage multiple projects with Dagster+ Hybrid deployments.
-sidebar_position: 300
+sidebar_position: 8000
 ---
 
 In this guide, we'll cover some strategies for managing multiple projects/code bases and teams in a Dagster+ account.
@@ -30,7 +30,7 @@ Refer to the following table for more information, including the pros and cons o
 
 ### Deployment configuration
 
-Whether you use a single repository or multiple, you can use a [`dagster_cloud.yaml` file](/deployment/code-locations/dagster-cloud-yaml) to define the code locations to deploy. For each repository, follow the [steps appropriate to your CI/CD provider](/deployment/dagster-plus/ci-cd/configuring-ci-cd) and include only the code locations that are relevant to the repository in your CI/CD workflow.
+Whether you use a single repository or multiple, you can use a [`dagster_cloud.yaml` file](/deployment/code-locations/dagster-cloud-yaml) to define the code locations to deploy. For each repository, follow the [steps appropriate to your CI/CD provider](/deployment/dagster-plus/ci-cd/ci-cd-in-hybrid) and include only the code locations that are relevant to the repository in your CI/CD workflow.
 
 #### Example with GitHub CI/CD on Hybrid deployment
 

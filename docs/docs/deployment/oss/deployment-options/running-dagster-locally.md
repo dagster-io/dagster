@@ -2,13 +2,15 @@
 title: 'Running Dagster locally'
 sidebar_label: Local deployment
 description: How to run open source Dagster on your local machine.
-sidebar_position: 1
+sidebar_position: 1000
 ---
 
 In this guide, we'll walk you through how to run Dagster on your local machine using the `dagster dev` command. The `dagster dev` command launches the Dagster UI and the Dagster daemon, allowing you to start a full deployment of Dagster from the command line.
 
 :::warning
-`dagster dev` is intended for local development _only_. If you want to run Dagster for production use cases, see our other [deployment guides](/deployment/oss/deployment-options/index.md).
+
+`dagster dev` is intended for local development _only_. If you want to run Dagster for production use cases, see our other [OSS deployment guides](/deployment/oss/deployment-options) or check out [Dagster+](/deployment/dagster-plus).
+
 :::
 
 ## Locating your code
@@ -96,4 +98,4 @@ if os.getenv("DAGSTER_IS_DEV_CLI"):
 
 `dagster dev` is primarily useful for running Dagster for local development and testing. It isn't suitable for the demands of most production deployments. Most importantly, `dagster dev` does not include authentication or web security. Additionally, in a production deployment, you might want to run multiple webserver replicas, have zero downtime continuous deployment of your code, or set up your Dagster daemon to automatically restart if it crashes.
 
-For information about deploying Dagster in production, see the [Dagster Open Source deployment options documentation](/deployment/oss/deployment-options/).
+For information about deploying Dagster in production, see the [Dagster Open Source deployment options documentation](/deployment/oss/deployment-options).

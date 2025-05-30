@@ -1183,7 +1183,7 @@
     },
     {
       "source": "/dagster-plus/deployment/agents/customizing-configuration",
-      "destination": "/deployment/dagster-plus/management/settings/customizing-agent-settings"
+      "destination": "/deployment/dagster-plus/management/customizing-agent-settings"
     },
     {
       "source": "/dagster-plus/deployment/agents/running-multiple-agents",
@@ -3141,6 +3141,18 @@
     {
       "source": "/guides/deploy/code-locations/workspace-yaml",
       "destination": "/deployment/code-locations/workspace-yaml"
+    },
+    {
+      "source": "/deployment/dagster-plus/management/settings/customizing-agent-settings",
+      "destination": "/deployment/dagster-plus/management/customizing-agent-settings"
+    },
+    {
+      "source": "/deployment/dagster-plus/ci-cd/configuring-ci-cd",
+      "destination": "/deployment/dagster-plus/ci-cd/ci-cd-in-hybrid"
+    },
+    {
+      "source": "/deployment/dagster-plus/serverless/ci-cd-in-serverless",
+      "destination": "/deployment/dagster-plus/ci-cd/ci-cd-in-serverless"
     }
   ],
   "trailingSlash": false

@@ -1,6 +1,7 @@
 ---
 title: 'Migrating a Dagster instance while upgrading Dagster in a Kubernetes environment'
 description: Migrate your open source Dagster instance using a Kubernetes Job from the Helm chart.
+sidebar_position: 3400
 ---
 
 When upgrading your Dagster version, you may also need to migrate your Dagster instance. Migrations will only be required if you are upgrading your minor version.

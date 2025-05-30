@@ -1,6 +1,6 @@
 ---
 description: Deploy a Dagster+ agent on an Azure Kubernetes Service (AKS) cluster.
-sidebar_position: 100
+sidebar_position: 5100
 title: Deploy a Dagster+ agent on an Azure Kubernetes Service cluster
 ---
 
@@ -15,8 +15,8 @@ We'll start from a brand new organization in Dagster+, and finish with a full hy
 To complete the steps in this guide, you'll need:
 
 - The azure CLI installed on your machine. You can download it [here](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli).
-- `kubectl` installed on your machine. You can download it [here](https://kubernetes.io/docs/tasks/tools/install-kubectl/).
-- `helm` installed on your machine. You can download it [here](https://helm.sh/docs/intro/install/).
+- `kubectl` installed on your machine. You can download it [here](https://kubernetes.io/docs/tasks/tools/install-kubectl).
+- `helm` installed on your machine. You can download it [here](https://helm.sh/docs/intro/install).
 - An existing AKS cluster. If you need to create a new AKS cluster, refer to the [Azure documentation](https://learn.microsoft.com/en-us/azure/aks/learn/quick-kubernetes-deploy-portal?tabs=azure-cli).
 - A Dagster+ organization, with an agent token for that organization.
 
