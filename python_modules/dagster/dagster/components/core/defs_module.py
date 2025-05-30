@@ -133,10 +133,15 @@ def get_component(context: ComponentLoadContext) -> Optional[Component]:
     if _find_defs_or_component_yaml(context.path):
         return load_yaml_component(context)
     # pythonic component
-    elif (context.path / "component.py").exists():
+    elif (
+        context.terminate_autoloading_on_keyword_files and (context.path / "component.py").exists()
+    ):
         return load_pythonic_component(context)
     # defs
-    elif (context.path / "definitions.py").exists():
+    elif (
+        context.terminate_autoloading_on_keyword_files
+        and (context.path / "definitions.py").exists()
+    ):
         return DagsterDefsComponent(path=context.path / "definitions.py")
     elif context.path.suffix == ".py":
         return DagsterDefsComponent(path=context.path)

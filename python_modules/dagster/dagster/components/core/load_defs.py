@@ -65,19 +65,28 @@ def get_project_root(defs_root: ModuleType) -> Path:
 @public
 @preview(emit_runtime_warning=False)
 @suppress_dagster_warnings
-def load_defs(defs_root: ModuleType, project_root: Optional[Path] = None) -> Definitions:
+def load_defs(
+    defs_root: ModuleType,
+    project_root: Optional[Path] = None,
+    terminate_autoloading_on_keyword_files: bool = True,
+) -> Definitions:
     """Constructs a Definitions object, loading all Dagster defs in the given module.
 
     Args:
         defs_root (Path): The path to the defs root, typically `package.defs`.
         project_root (Optional[Path]): path to the project root directory.
+        terminate_autoloading_on_keyword_files (bool): Whether to terminate the defs
+            autoloading process when encountering a definitions.py or component.py file.
+            Defaults to True.
     """
     from dagster.components.core.defs_module import DefsFolderComponent, get_component
 
     project_root = project_root if project_root else get_project_root(defs_root)
 
     # create a top-level DefsModule component from the root module
-    context = ComponentLoadContext.for_module(defs_root, project_root)
+    context = ComponentLoadContext.for_module(
+        defs_root, project_root, terminate_autoloading_on_keyword_files
+    )
     with use_component_load_context(context):
         # Despite the argument being named defs_root, load_defs supports loading arbitrary components
         # directly, so use get_component instead of DefsFolderComponent.get
