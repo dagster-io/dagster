@@ -34,6 +34,7 @@ COMPONENT_FILE_SCHEMA = {
             "properties": {"env": {"type": "array", "items": {"type": "string"}}},
             "additionalProperties": False,
         },
+        "template_vars_module": {"type": "string"},
     },
     "additionalProperties": False,
 }
