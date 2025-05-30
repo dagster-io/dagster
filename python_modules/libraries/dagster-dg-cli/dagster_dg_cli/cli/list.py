@@ -297,11 +297,20 @@ MIN_DAGSTER_COMPONENTS_LIST_DEFINITIONS_OUTPUT_FILE_OPTION_VERSION = Version("1.
     ),
     help="Path to the definitions to list.",
 )
+@click.option(
+    "--assets",
+    "-a",
+    help="Asset selection to list.",
+)
 @dg_global_options
 @dg_path_options
 @cli_telemetry_wrapper
 def list_defs_command(
-    output_json: bool, context_path: Path, path: Optional[Path], **global_options: object
+    output_json: bool,
+    context_path: Path,
+    path: Optional[Path],
+    assets: Optional[str],
+    **global_options: object,
 ) -> None:
     """List registered Dagster definitions in the current project environment."""
     from rich.console import Console
@@ -320,6 +329,7 @@ def list_defs_command(
             location=dg_context.code_location_name,
             **dg_context.target_args,
             path=path,
+            asset_selection=assets,
         )
 
     # JSON
@@ -329,7 +339,7 @@ def list_defs_command(
 
     # TABLE
     else:
-        assets = [item for item in definitions if isinstance(item, DgAssetMetadata)]
+        _assets = [item for item in definitions if isinstance(item, DgAssetMetadata)]
         asset_checks = [item for item in definitions if isinstance(item, DgAssetCheckMetadata)]
         jobs = [item for item in definitions if isinstance(item, DgJobMetadata)]
         resources = [item for item in definitions if isinstance(item, DgResourceMetadata)]
@@ -346,8 +356,8 @@ def list_defs_command(
         table.add_column("Section", style="bold")
         table.add_column("Definitions")
 
-        if assets:
-            table.add_row("Assets", _get_assets_table(assets))
+        if _assets:
+            table.add_row("Assets", _get_assets_table(_assets))
         if asset_checks:
             table.add_row("Asset Checks", _get_asset_checks_table(asset_checks))
         if jobs:

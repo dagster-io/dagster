@@ -31,6 +31,7 @@ from dagster._cli.workspace.cli_target import (
 )
 from dagster._config.pythonic_config.resource import get_resource_type_name
 from dagster._core.definitions.asset_job import is_reserved_asset_job_name
+from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._utils.hosted_user_process import recon_repository_from_origin
 from dagster.components.component.component import Component
@@ -136,6 +137,7 @@ def list_definitions_command(
 def list_definitions_impl(
     location: Optional[str],
     path: Optional[Path],
+    asset_selection: Optional[str],
     **other_opts: object,
 ) -> list[DgDefinitionMetadata]:
     python_pointer_opts = PythonPointerOpts.extract_from_cli_options(other_opts)
@@ -190,8 +192,17 @@ def list_definitions_impl(
         all_defs: list[DgDefinitionMetadata] = []
 
         asset_graph = repo_def.asset_graph
+
+        asset_selection_obj = (
+            AssetSelection.from_string(asset_selection) if asset_selection else None
+        )
+        selected_assets = asset_selection_obj.resolve(asset_graph) if asset_selection_obj else None
+        selected_checks = (
+            asset_selection_obj.resolve_checks(asset_graph) if asset_selection_obj else None
+        )
         for key in sorted(
-            list(asset_graph.get_all_asset_keys()), key=lambda key: key.to_user_string()
+            selected_assets or list(asset_graph.get_all_asset_keys()),
+            key=lambda key: key.to_user_string(),
         ):
             node = asset_graph.get(key)
             all_defs.append(
@@ -206,7 +217,7 @@ def list_definitions_impl(
                     else None,
                 )
             )
-        for key in asset_graph.asset_check_keys:
+        for key in selected_checks or asset_graph.asset_check_keys:
             node = asset_graph.get(key)
             all_defs.append(
                 DgAssetCheckMetadata(
@@ -217,6 +228,11 @@ def list_definitions_impl(
                     description=node.description,
                 )
             )
+
+        # If we have an asset selection, we only want to return assets
+        if asset_selection:
+            return all_defs
+
         for job in repo_def.get_all_jobs():
             if not is_reserved_asset_job_name(job.name):
                 all_defs.append(DgJobMetadata(name=job.name))
