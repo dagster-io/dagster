@@ -10,6 +10,7 @@ export enum AssetCatalogMetricNames {
   FRESHNESS_FAILURES = '__dagster_freshness_failures',
   FRESHNESS_WARNINGS = '__dagster_freshness_warnings',
   FRESHNESS_PASS_RATE = '__dagster_freshness_pass_rate',
+  TIME_TO_RESOLUTION = '__dagster_asset_time_to_resolution',
   // Custom metrics
   DBT_EXECUTION_DURATION = 'Execution Duration',
   ROW_COUNT = 'row_count',
