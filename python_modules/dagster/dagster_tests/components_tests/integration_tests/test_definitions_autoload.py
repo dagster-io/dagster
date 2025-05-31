@@ -7,6 +7,7 @@ from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._utils.env import environ
 from dagster.components.core.context import ComponentLoadContext
 from dagster.components.core.defs_module import CompositeYamlComponent, DefsFolderComponent
+from dagster.components.testing import get_underlying_component
 from dagster_shared import check
 from pydantic import ValidationError
 
@@ -14,10 +15,7 @@ from dagster_tests.components_tests.integration_tests.component_loader import (
     chdir as chdir,
     sync_load_test_component_defs,
 )
-from dagster_tests.components_tests.utils import (
-    create_project_from_components,
-    get_underlying_component,
-)
+from dagster_tests.components_tests.utils import create_project_from_components
 
 
 @pytest.mark.parametrize("defs", ["definitions/explicit_file_relative_imports"], indirect=True)
