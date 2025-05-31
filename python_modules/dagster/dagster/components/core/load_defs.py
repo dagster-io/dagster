@@ -9,7 +9,7 @@ from dagster._annotations import deprecated, preview, public
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._utils.warnings import suppress_dagster_warnings
-from dagster.components.core.context import ComponentLoadContext, use_component_load_context
+from dagster.components.core.context import ComponentLoadContext
 from dagster.components.core.tree import ComponentTree
 
 PLUGIN_COMPONENT_TYPES_JSON_METADATA_KEY = "plugin_component_types_json"
@@ -87,25 +87,24 @@ def load_defs(
     context = ComponentLoadContext.for_module(
         defs_root, project_root, terminate_autoloading_on_keyword_files
     )
-    with use_component_load_context(context):
-        # Despite the argument being named defs_root, load_defs supports loading arbitrary components
-        # directly, so use get_component instead of DefsFolderComponent.get
-        root_component = get_component(context)
-        if root_component is None:
-            raise DagsterInvalidDefinitionError("Could not resolve root module to a component.")
+    # Despite the argument being named defs_root, load_defs supports loading arbitrary components
+    # directly, so use get_component instead of DefsFolderComponent.get
+    root_component = get_component(context)
+    if root_component is None:
+        raise DagsterInvalidDefinitionError("Could not resolve root module to a component.")
 
-        tree = None
-        # If we did get a folder component back, assume its the root tree
-        if isinstance(root_component, DefsFolderComponent):
-            tree = ComponentTree(
-                defs_module=defs_root,
-                project_root=project_root,
-            )
-
-        return Definitions.merge(
-            root_component.build_defs(context),
-            get_library_json_enriched_defs(tree),
+    tree = None
+    # If we did get a folder component back, assume its the root tree
+    if isinstance(root_component, DefsFolderComponent):
+        tree = ComponentTree(
+            defs_module=defs_root,
+            project_root=project_root,
         )
+
+    return Definitions.merge(
+        root_component.build_defs(context),
+        get_library_json_enriched_defs(tree),
+    )
 
 
 def get_library_json_enriched_defs(tree: Optional[ComponentTree]) -> Definitions:

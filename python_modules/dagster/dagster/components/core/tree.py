@@ -8,7 +8,7 @@ from typing_extensions import TypeVar
 
 from dagster._core.definitions.definitions_class import Definitions
 from dagster.components.component.component import Component
-from dagster.components.core.context import ComponentLoadContext, use_component_load_context
+from dagster.components.core.context import ComponentLoadContext
 from dagster.components.core.defs_module import DefsFolderComponent
 
 PLUGIN_COMPONENT_TYPES_JSON_METADATA_KEY = "plugin_component_types_json"
@@ -52,19 +52,16 @@ class ComponentTree:
     def load_defs(self) -> Definitions:
         from dagster.components.core.load_defs import get_library_json_enriched_defs
 
-        with use_component_load_context(self.load_context):
-            return Definitions.merge(
-                self.root.build_defs(self.load_context),
-                get_library_json_enriched_defs(self),
-            )
+        return Definitions.merge(
+            self.root.build_defs(self.load_context),
+            get_library_json_enriched_defs(self),
+        )
 
     def load_defs_at_path(self, defs_path: Path) -> Definitions:
         # impl to be fleshed out to flexibly handle different path types (str, list[str], ...)
         for cp, c in self.root.iterate_path_component_pairs():
             if cp.file_path.relative_to(self.root.path) == defs_path:
-                ctx = self.load_context.for_path(cp.file_path)
-                with use_component_load_context(ctx):
-                    return c.build_defs(ctx)
+                return c.build_defs(self.load_context.for_path(cp.file_path))
 
         raise Exception(f"No component found for path {defs_path}")
 

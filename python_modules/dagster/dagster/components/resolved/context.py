@@ -41,6 +41,8 @@ class ResolutionContext:
     scope: Mapping[str, Any]
     path: list[Union[str, int]] = []
     source_position_tree: Optional[SourcePositionTree] = None
+    # dictionay where you can stash arbitrary objects. Used to store references to ComponentLoadContext
+    stash: dict[str, Any] = {}
 
     def at_path(self, path_part: Union[str, int]):
         return copy(self, path=[*self.path, path_part])
@@ -51,6 +53,9 @@ class ResolutionContext:
             scope={"env": env_scope, "automation_condition": automation_condition_scope()},
             source_position_tree=source_position_tree,
         )
+
+    def with_stashed_value(self, key: str, value: Any) -> "ResolutionContext":
+        return copy(self, stash={**self.stash, key: value})
 
     def with_scope(self, **additional_scope) -> "ResolutionContext":
         return copy(self, scope={**self.scope, **additional_scope})
