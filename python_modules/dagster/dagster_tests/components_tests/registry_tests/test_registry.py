@@ -18,7 +18,6 @@ from dagster.components.core.snapshot import get_package_entry_snap
 from dagster_dg_core.utils import get_venv_executable
 from dagster_shared.error import SerializableErrorInfo
 from dagster_shared.serdes.objects import PluginObjectKey
-from dagster_shared.serdes.objects.package_entry import PluginManifest
 from dagster_shared.serdes.serdes import deserialize_value
 
 ensure_dagster_tests_import()
@@ -63,9 +62,6 @@ def _get_component_types_in_python_environment(venv_root: Path) -> Sequence[str]
 
     component_type_list = json.loads(result.stdout)
     return [component_type["key"] for component_type in component_type_list]
-    return [
-        obj.key.to_typename() for obj in deserialize_value(result.stdout, PluginManifest).objects
-    ]
 
 
 def _find_repo_root():
