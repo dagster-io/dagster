@@ -41,8 +41,7 @@ class ComponentTree:
     @cached_property
     def load_context(self):
         return ComponentLoadContext.for_module(
-            defs_module=self.defs_module,
-            project_root=self.project_root,
+            defs_module=self.defs_module, project_root=self.project_root
         )
 
     @cached_property
