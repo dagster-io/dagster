@@ -8,11 +8,10 @@ tree
     │       ├── __init__.py
     │       ├── components
     │       │   └── __init__.py
-    │       ├── definitions.py
     │       └── defs
     │           └── __init__.py
     ├── tests
     │   └── __init__.py
     └── uv.lock
 
-7 directories, 7 files
+7 directories, 6 files

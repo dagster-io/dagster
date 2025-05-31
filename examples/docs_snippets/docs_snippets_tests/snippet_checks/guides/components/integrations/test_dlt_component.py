@@ -18,7 +18,7 @@ from docs_snippets_tests.snippet_checks.utils import (
 MASK_MY_PROJECT = (r" \/.*?\/my-project", " /.../my-project")
 MASK_VENV = (r"Using.*\.venv.*", "")
 MASK_USING_LOG_MESSAGE = (r"Using.*\n", "")
-MASK_PKG_RESOURCES = (r".*import pkg_resources\n", "")
+MASK_PKG_RESOURCES = (r"\n.*import pkg_resources\n", "")
 
 SNIPPETS_DIR = (
     DAGSTER_ROOT
@@ -56,7 +56,7 @@ def test_dlt_components_docs_adding_attributes_to_assets(
         )
         # Scaffold code location
         context.run_command_and_snippet_output(
-            cmd="dg scaffold project my-project --python-environment uv_managed --use-editable-dagster && cd my-project/src",
+            cmd="create-dagster project my-project --python-environment uv_managed --use-editable-dagster && cd my-project/src",
             snippet_path=SNIPPETS_DIR
             / f"{context.get_next_snip_number()}-scaffold-project.txt",
             snippet_replace_regex=[
@@ -65,6 +65,7 @@ def test_dlt_components_docs_adding_attributes_to_assets(
                     "",
                 ),
                 ("--editable.*dagster-sling", "dagster-sling"),
+                ("create-dagster", "uvx create-dagster"),
             ],
             ignore_output=True,
         )

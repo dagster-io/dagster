@@ -122,7 +122,7 @@ def test_migrating_project(
                     cmd=get_editable_install_cmd_for_dg(package_manager),
                     snippet_path=f"{context.get_next_snip_number()}-{package_manager}-install-dg.txt",
                     ignore_output=True,
-                    print_cmd="uv tool install dagster-dg-cli",
+                    print_cmd="uv add dagster-dg-cli",
                 )
             elif package_manager == "pip":
                 context.run_command_and_snippet_output(

@@ -58,7 +58,7 @@ def test_components_docs_adding_attributes_to_assets(
         context.run_command_and_snippet_output(
             cmd=textwrap.dedent(
                 f"""\
-                dg scaffold project my-project --python-environment uv_managed --use-editable-dagster \\
+                create-dagster project my-project --python-environment uv_managed --use-editable-dagster \\
                     && source my-project/.venv/bin/activate \\
                     && cd my-project/src \\
                     && uv add --editable {EDITABLE_DIR / "dagster-sling"} \\
@@ -71,6 +71,7 @@ def test_components_docs_adding_attributes_to_assets(
                 ("--python-environment uv_managed --use-editable-dagster ", ""),
                 ("--editable.*dagster-sling", "dagster-sling"),
                 (".*&& source my-project/.venv/bin/activate.*\n", ""),
+                ("create-dagster", "uvx create-dagster"),
             ],
             ignore_output=True,
         )
@@ -215,7 +216,7 @@ def test_components_docs_adding_attributes_to_assets(
                     - path: replication.yaml
                 """),
         )
-        _run_command("dagster asset materialize --select '*' -m my_project.definitions")
+        _run_command("dg launch --assets '*'")
 
         # Add debug logic
         context.create_file(
@@ -250,7 +251,7 @@ def test_components_docs_adding_attributes_to_assets(
         )
 
         # Validate works properly
-        _run_command("dagster asset materialize --select '*' -m my_project.definitions")
+        _run_command("dg launch --assets '*'")
 
         # Add custom scope
         context.create_file(
@@ -307,4 +308,4 @@ def test_components_docs_adding_attributes_to_assets(
             ],
         )
         # Validate works properly
-        _run_command("dagster asset materialize --select '*' -m my_project.definitions")
+        _run_command("dg launch --assets '*'")

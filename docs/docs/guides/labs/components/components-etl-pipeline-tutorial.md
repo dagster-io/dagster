@@ -91,10 +91,10 @@ To ingest data, you will need to set up [Sling](https://slingdata.io/). To make 
 
 <Tabs groupId="package-manager">
   <TabItem value="uv" label="uv">
-    <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/8-uv-add-sling.txt" />
+    <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/5-uv-add-sling.txt" />
   </TabItem>
   <TabItem value="pip" label="pip">
-    <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/8-pip-add-sling.txt" />
+    <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/5-pip-add-sling.txt" />
   </TabItem>
 </Tabs>
 
@@ -103,23 +103,23 @@ To ingest data, you will need to set up [Sling](https://slingdata.io/). To make 
 To confirm that the `dagster_sling.SlingReplicationCollectionComponent` component type is now available, run the `dg list components` command:
 
 <WideContent maxSize={1100}>
-  <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/9-dg-list-components.txt" />
+  <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/6-dg-list-components.txt" />
 </WideContent>
 
 ### 3. Create a new instance of the Sling component
 
 Next, create a new instance of the Sling component type:
 
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/10-dg-scaffold-sling-replication.txt" />
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/7-dg-scaffold-sling-replication.txt" />
 
 This adds a Sling component instance called `ingest_files` to the `src/jaffle_platform/defs` directory of your project:
 
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/11-tree-jaffle-platform.txt" />
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/8-tree-jaffle-platform.txt" />
 
 A single file, `defs.yaml`, was created in the `ingest_files` directory. Every Dagster component has a `defs.yaml` file that specifies the component type and any parameters used to scaffold definitions from the component at runtime:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/components/index/12-defs.yaml"
+  path="docs_snippets/docs_snippets/guides/components/index/9-defs.yaml"
   language="YAML"
   title="jaffle-platform/src/jaffle_platform/defs/ingest_files/defs.yaml"
 />
@@ -136,14 +136,14 @@ The `path` parameter for a replication is relative to the directory that contain
 
 Next, you will need to download some files locally to use your Sling source, since Sling doesn't support reading from the public internet:
 
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/13-curl.txt" />
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/10-curl.txt" />
 
 ### 5. Set up the Sling to DuckDB replication
 
 Once you have downloaded your Sling source files, update the `replication.yaml` file to reference them:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/components/index/14-replication.yaml"
+  path="docs_snippets/docs_snippets/guides/components/index/11-replication.yaml"
   language="YAML"
   title="jaffle-platform/src/jaffle_platform/defs/ingest_files/replication.yaml"
 />
@@ -151,7 +151,7 @@ Once you have downloaded your Sling source files, update the `replication.yaml` 
 Next, modify the `defs.yaml` file to tell the Sling component where replicated data with the `DUCKDB` target should be written:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/components/index/15-component-connections.yaml"
+  path="docs_snippets/docs_snippets/guides/components/index/12-component-connections.yaml"
   language="YAML"
   title="jaffle-platform/src/jaffle_platform/defs/ingest_files/defs.yaml"
 />
@@ -170,7 +170,7 @@ To materialize assets and load tables in the DuckDB instance, click **Materializ
 
 To verify the DuckDB tables were correctly populated, run the following command:
 
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/16-duckdb-select.txt" />
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/13-duckdb-select.txt" />
 
 ## Transform data
 
@@ -180,7 +180,7 @@ To transform the data you downloaded in the previous section, you will need to d
 
 First, clone the sample dbt project and delete the embedded git repository:
 
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/17-jaffle-clone.txt" />
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/14-jaffle-clone.txt" />
 
 :::note
 
@@ -194,29 +194,29 @@ To interface with the dbt project, you will need to instantiate a Dagster dbt pr
 
 <Tabs groupId="package-manager">
   <TabItem value="uv" label="uv">
-    <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/18-uv-add-dbt.txt" />
+    <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/15-uv-add-dbt.txt" />
   </TabItem>
   <TabItem value="pip" label="pip">
-    <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/18-pip-add-dbt.txt" />
+    <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/15-pip-add-dbt.txt" />
   </TabItem>
 </Tabs>
 
 Confirm that the `dagster_dbt.DbtProjectComponent` component type is available by running `dg list components`:
 
 <WideContent maxSize={1100}>
-  <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/19-dg-list-components.txt" />
+  <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/16-dg-list-components.txt" />
 </WideContent>
 
 ### 3. Scaffold a new instance of the dbt project component
 
 Next, scaffold a new instance of the `dagster_dbt.DbtProjectComponent` component, providing the path to the dbt project you cloned earlier as the `project_path` scaffold parameter:
 
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/20-dg-scaffold-jdbt.txt" />
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/17-dg-scaffold-jdbt.txt" />
 
 This creates a new dbt project component instance at `jaffle_platform/defs/jdbt`. To see the component configuration, open `defs.yaml` in that directory:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/components/index/21-component-jdbt.yaml"
+  path="docs_snippets/docs_snippets/guides/components/index/18-component-jdbt.yaml"
   language="YAML"
   title="jaffle-platform/src/jaffle_platform/defs/jdbt/defs.yaml"
 />
@@ -241,7 +241,7 @@ You can see that there appear to be two copies of the `raw_customers`, `raw_orde
 To fix this, you will need to update the dbt project component configuration to match the keys generated by the Sling component. Update `components/jdbt/defs.yaml` with the configuration below:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/components/index/24-project-jdbt.yaml"
+  path="docs_snippets/docs_snippets/guides/components/index/21-project-jdbt.yaml"
   language="YAML"
   title="jaffle-platform/src/jaffle_platform/defs/jdbt/defs.yaml"
 />
@@ -255,7 +255,7 @@ Now the asset keys generated by the Sling and dbt project components match, and 
 To further verify the fix, you can view a sample of the newly materialized assets in DuckDB from the command line:
 
 <WideContent maxSize={1000}>
-  <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/26-duckdb-select-orders.txt" />
+  <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/23-duckdb-select-orders.txt" />
 </WideContent>
 
 ## Visualize data
@@ -268,22 +268,22 @@ First, install the `dagster-evidence` package with either `uv` or `pip`:
 
 <Tabs groupId="package-manager">
   <TabItem value="uv" label="uv">
-    <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/27-uv-add-evidence.txt" />
+    <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/24-uv-add-evidence.txt" />
   </TabItem>
   <TabItem value="pip" label="pip">
-    <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/27-pip-add-evidence.txt" />
+    <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/24-pip-add-evidence.txt" />
   </TabItem>
 </Tabs>
 
 Confirm that the `EvidenceProject` component type is available by running `dg list components`:
 
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/28-dg-list-components.txt" />
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/25-dg-list-components.txt" />
 
 ### 2. Clone the sample Evidence project from GitHub
 
 Clone the example Evidence dashboard project and install the dependencies:
 
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/29-jaffle-dashboard-clone.txt" />
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/26-jaffle-dashboard-clone.txt" />
 
 ```shell
 cd jaffle_dashboard && npm install
@@ -299,12 +299,12 @@ In this tutorial, we have you clone the Evidence project into your Dagster proje
 
 Use the `dg scaffold` command to scaffold a new instance of the Evidence project component:
 
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/30-scaffold-jaffle-dashboard.txt" />
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/27-scaffold-jaffle-dashboard.txt" />
 
 This command will generate an empty YAML file:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/components/index/31-component-jaffle-dashboard.yaml"
+  path="docs_snippets/docs_snippets/guides/components/index/28-component-jaffle-dashboard.yaml"
   language="YAML"
   title="jaffle-platform/jaffle_platform/defs/jaffle_dashboard/defs.yaml"
 />
@@ -314,18 +314,18 @@ This command will generate an empty YAML file:
 Next, update the Evidence project component configuration to target the `jaffle_dashboard` Evidence project, and connect it to the upstream `orders` and `customers` assets:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/components/index/32-project-jaffle-dashboard.yaml"
+  path="docs_snippets/docs_snippets/guides/components/index/29-project-jaffle-dashboard.yaml"
   language="YAML"
   title="jaffle-platform/jaffle_platform/defs/jaffle_dashboard/defs.yaml"
 />
 
 To verify that the YAML is correctly formatted, run `dg check yaml`:
 
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/33-dg-component-check-yaml.txt" />
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/30-dg-component-check-yaml.txt" />
 
 To verify that the definitions load successfully, run `dg check defs`:
 
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/34-dg-component-check-defs.txt" />
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/31-dg-component-check-defs.txt" />
 
 ### 5. Generate and view the Evidence dashboard
 
@@ -347,12 +347,12 @@ Now that you've defined some assets, you can automate them with a schedule.
 
 Make sure you are in the `jaffle-platform` directory, then scaffold a schedule:
 
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/35-scaffold-daily-jaffle.txt" />
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/32-scaffold-daily-jaffle.txt" />
 
 Next, update the schedule to target all assets with `*`, and set `cron_schedule` to `@daily`:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/components/index/36-daily-jaffle.py"
+  path="docs_snippets/docs_snippets/guides/components/index/33-daily-jaffle.py"
   language="Python"
   title="jaffle-platform/src/jaffle_platform/defs/daily_jaffle.py"
 />
@@ -360,7 +360,7 @@ Next, update the schedule to target all assets with `*`, and set `cron_schedule`
 Finally, verify the schedule was added to your Dagster project with `dg list defs`:
 
 <WideContent maxSize={1100}>
-  <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/37-dg-list-defs.txt" />
+  <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/34-dg-list-defs.txt" />
 </WideContent>
 
 ## Next steps

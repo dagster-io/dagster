@@ -1,20 +1,18 @@
+from contextlib import ExitStack
 from pathlib import Path
 
-import pytest
+from dagster_dg_core.utils import activate_venv
 
 from dagster._utils.env import environ
 from docs_snippets_tests.snippet_checks.guides.components.utils import (
     DAGSTER_ROOT,
     EDITABLE_DIR,
     MASK_PLUGIN_CACHE_REBUILD,
-    format_multiline,
-    isolated_snippet_generation_environment,
 )
 from docs_snippets_tests.snippet_checks.utils import (
     _run_command,
     compare_tree_output,
-    create_file,
-    run_command_and_snippet_output,
+    isolated_snippet_generation_environment,
 )
 
 MASK_MY_PROJECT = (r" \/.*?\/my-project", " /.../my-project")
@@ -32,18 +30,22 @@ SNIPPETS_DIR = (
 
 
 def test_setup_basic_auth(update_snippets: bool) -> None:
-    with isolated_snippet_generation_environment() as get_next_snip_number:
+    with ExitStack() as stack:
+        context = stack.enter_context(
+            isolated_snippet_generation_environment(
+                should_update_snippets=update_snippets,
+                snapshot_base_dir=SNIPPETS_DIR / "setup" / "basic_auth",
+            )
+        )
         _run_command(
-            cmd=f"dg scaffold project my-project --python-environment uv_managed --use-editable-dagster && cd my-project && uv add --editable {EDITABLE_DIR / 'dagster-airlift[core]'}",
+            cmd=f"create-dagster project my-project --python-environment uv_managed --use-editable-dagster && cd my-project && uv add --editable {EDITABLE_DIR / 'dagster-airlift[core]'}",
         )
 
-        run_command_and_snippet_output(
+        stack.enter_context(activate_venv(".venv"))
+
+        context.run_command_and_snippet_output(
             cmd="dg scaffold defs dagster_airlift.core.components.AirflowInstanceComponent airflow --name my_airflow --auth-type basic_auth",
-            snippet_path=SNIPPETS_DIR
-            / "setup"
-            / "basic_auth"
-            / f"{get_next_snip_number()}-scaffold.txt",
-            update_snippets=update_snippets,
+            snippet_path=f"{context.get_next_snip_number()}-scaffold.txt",
             snippet_replace_regex=[
                 MASK_MY_PROJECT,
                 MASK_PLUGIN_CACHE_REBUILD,
@@ -53,23 +55,15 @@ def test_setup_basic_auth(update_snippets: bool) -> None:
 
         _run_command(r"find . -type d -name __pycache__ -exec rm -r {} \+")
         _run_command(r"find . -type d -name my-project.egg-info -exec rm -r {} \+")
-        run_command_and_snippet_output(
+        context.run_command_and_snippet_output(
             cmd="tree src/my_project/defs",
-            snippet_path=SNIPPETS_DIR
-            / "setup"
-            / "basic_auth"
-            / f"{get_next_snip_number()}-tree.txt",
-            update_snippets=update_snippets,
+            snippet_path=f"{context.get_next_snip_number()}-tree.txt",
             custom_comparison_fn=compare_tree_output,
         )
 
-        run_command_and_snippet_output(
+        context.run_command_and_snippet_output(
             cmd="cat src/my_project/defs/airflow/defs.yaml",
-            snippet_path=SNIPPETS_DIR
-            / "setup"
-            / "basic_auth"
-            / f"{get_next_snip_number()}-cat.txt",
-            update_snippets=update_snippets,
+            snippet_path=f"{context.get_next_snip_number()}-cat.txt",
         )
 
         _run_command("dg check yaml --no-validate-requirements")
@@ -79,9 +73,12 @@ def test_component_files() -> None:
     """Ensures that our example component yaml files have valid syntax.
     Really this should be pytest parametrized but I wanted to reuse the environment and I was too lazy to create a fixture.
     """
-    with isolated_snippet_generation_environment():
+    with isolated_snippet_generation_environment(
+        should_update_snippets=False,
+        snapshot_base_dir=Path("/tmp"),
+    ):
         _run_command(
-            cmd=f"dg scaffold project my-project --python-environment uv_managed --use-editable-dagster && cd my-project && uv add --editable {EDITABLE_DIR / 'dagster-airlift[core]'}",
+            cmd=f"create-dagster project my-project --python-environment uv_managed --use-editable-dagster && cd my-project && uv add --editable {EDITABLE_DIR / 'dagster-airlift[core]'}",
         )
         _run_command(
             cmd="dg scaffold defs dagster_airlift.core.components.AirflowInstanceComponent airflow --name my_airflow --auth-type basic_auth",

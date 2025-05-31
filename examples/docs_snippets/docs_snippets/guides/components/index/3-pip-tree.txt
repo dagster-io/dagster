@@ -7,10 +7,9 @@ tree
 │       ├── __init__.py
 │       ├── components
 │       │   └── __init__.py
-│       ├── definitions.py
 │       └── defs
 │           └── __init__.py
 └── tests
     └── __init__.py
 
-6 directories, 6 files
+6 directories, 5 files
