@@ -144,6 +144,18 @@ data:
       num_submit_workers: {{ $schedules.numSubmitWorkers }}
       {{- end }}
     {{- end }}
+    
+    {{- $backfills := .Values.dagsterDaemon.backfills }}
+    {{- if and (.Values.dagsterDaemon.enabled) ($backfills.useThreads) }}
+    backfills:
+      use_threads: {{ $backfills.useThreads }}
+      {{- if $backfills.numWorkers }}
+      num_workers: {{ $backfills.numWorkers }}
+      {{- end }}
+      {{- if $backfills.numSubmitWorkers }}
+      num_submit_workers: {{ $backfills.numSubmitWorkers }}
+      {{- end }}
+    {{- end }}
 
     telemetry:
       enabled: {{ .Values.telemetry.enabled }}
