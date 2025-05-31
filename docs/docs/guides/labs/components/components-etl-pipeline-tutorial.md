@@ -221,13 +221,6 @@ This creates a new dbt project component instance at `jaffle_platform/defs/jdbt`
   title="jaffle-platform/src/jaffle_platform/defs/jdbt/defs.yaml"
 />
 
-:::info
-
-A bug in the component scaffolding for `DbtProjectComponent` is currently
-causing the `project_dir` in `src/jaffle_platform/defs/jdbt/defs.yaml` path to be generated as `../../../dbt/jdbt` when it should be `../../../../dbt/jdbt`. Please update the `project_dir` to `../../../../dbt/jdbt` before proceeding. This will be fixed in the next release.
-
-:::
-
 ### 4. Update the dbt project component configuration
 
 To see the new dbt assets in the Dagster UI, run `dg dev`:
