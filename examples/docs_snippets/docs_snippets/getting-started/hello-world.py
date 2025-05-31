@@ -11,8 +11,6 @@ def world(context: dg.AssetExecutionContext):
     context.log.info("World!")
 
 
-defs = dg.Definitions(assets=[hello, world])
-
 if __name__ == "__main__":
     dg.materialize(hello)
     dg.materialize(world)

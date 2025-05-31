@@ -10,5 +10,5 @@ setup(
         "pandas",
         "openai",
     ],
-    extras_require={"dev": ["dagster-webserver", "pytest", "ruff==0.11.5"]},
+    extras_require={"dev": ["dagster-webserver", "pytest", "ruff"]},
 )
