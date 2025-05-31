@@ -7,7 +7,6 @@ from typing import TYPE_CHECKING, Any, Callable, Optional, Union
 
 import pytest
 import yaml
-from click.testing import CliRunner
 from dagster import AssetKey, ComponentLoadContext
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.assets import AssetsDefinition
@@ -26,17 +25,13 @@ from dagster._utils import alter_sys_path
 from dagster._utils.env import environ
 from dagster.components.resolved.context import ResolutionException
 from dagster.components.resolved.core_models import AssetAttributesModel
-from dagster_dg_cli.cli import cli
+from dagster.components.testing import get_underlying_component, scaffold_defs_sandbox
 from dagster_shared import check
 from dagster_sling import SlingReplicationCollectionComponent, SlingResource
 
 ensure_dagster_tests_import()
 
-from dagster_tests.components_tests.utils import (
-    build_component_defs_for_test,
-    get_underlying_component,
-    temp_code_location_bar,
-)
+from dagster_tests.components_tests.utils import build_component_defs_for_test
 
 if TYPE_CHECKING:
     from dagster._core.definitions.assets import AssetsDefinition
@@ -296,24 +291,32 @@ def test_translation_is_comprehensive():
 
 
 def test_scaffold_sling():
-    runner = CliRunner()
+    # <<<<<<< HEAD
+    #     runner = CliRunner()
 
-    with temp_code_location_bar():
-        result = runner.invoke(
-            cli,
-            [
-                "scaffold",
-                "defs",
-                "dagster_sling.SlingReplicationCollectionComponent",
-                "qux",
-                "--format",
-                "yaml",
-            ],
-            catch_exceptions=False,
-        )
-        assert result.exit_code == 0
-        assert Path("bar/defs/qux/replication.yaml").exists()
-        assert Path("bar/defs/qux/defs.yaml").exists()
+    #     with temp_code_location_bar():
+    #         result = runner.invoke(
+    #             cli,
+    #             [
+    #                 "scaffold",
+    #                 "defs",
+    #                 "dagster_sling.SlingReplicationCollectionComponent",
+    #                 "qux",
+    #                 "--format",
+    #                 "yaml",
+    #             ],
+    #             catch_exceptions=False,
+    #         )
+    #         assert result.exit_code == 0
+    #         assert Path("bar/defs/qux/replication.yaml").exists()
+    #         assert Path("bar/defs/qux/defs.yaml").exists()
+    # =======
+    with scaffold_defs_sandbox(component_cls=SlingReplicationCollectionComponent) as defs_sandbox:
+        assert (defs_sandbox.defs_folder_path / "defs.yaml").exists()
+        assert (defs_sandbox.defs_folder_path / "replication.yaml").exists()
+
+
+# >>>>>>> 1dbdf22ea8 (Scaffolding infrastructure)
 
 
 def test_spec_is_available_in_scope() -> None:
