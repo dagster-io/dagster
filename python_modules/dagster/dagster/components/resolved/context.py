@@ -41,7 +41,9 @@ class ResolutionContext:
     scope: Mapping[str, Any]
     path: list[Union[str, int]] = []
     source_position_tree: Optional[SourcePositionTree] = None
-    # dictionay where you can stash arbitrary objects. Used to store references to ComponentLoadContext
+    # dict where you can stash arbitrary objects. Used to store references to ComponentLoadContext
+    # We are structuring this way to make it easier to use Resolved outside of the context of
+    # the component system in the future
     stash: dict[str, Any] = {}
 
     def at_path(self, path_part: Union[str, int]):
