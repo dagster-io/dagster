@@ -1,3 +1,4 @@
+import json
 import os
 import re
 import subprocess
@@ -46,10 +47,10 @@ def _temp_venv(install_args: Sequence[str]) -> Iterator[Path]:
 
 def _get_component_print_script_result(venv_root: Path) -> subprocess.CompletedProcess:
     assert venv_root.exists()
-    dagster_components_path = get_venv_executable(venv_root, "dagster-components")
+    dagster_components_path = get_venv_executable(venv_root, "dg")
     assert dagster_components_path.exists()
     result = subprocess.run(
-        [str(dagster_components_path), "list", "plugins"],
+        [str(dagster_components_path), "list", "components", "--json"],
         capture_output=True,
         text=True,
         check=False,
@@ -59,6 +60,9 @@ def _get_component_print_script_result(venv_root: Path) -> subprocess.CompletedP
 
 def _get_component_types_in_python_environment(venv_root: Path) -> Sequence[str]:
     result = _get_component_print_script_result(venv_root)
+
+    component_type_list = json.loads(result.stdout)
+    return [component_type["key"] for component_type in component_type_list]
     return [
         obj.key.to_typename() for obj in deserialize_value(result.stdout, PluginManifest).objects
     ]
@@ -101,7 +105,13 @@ def _get_editable_package_root(pkg_name: str) -> str:
 
 def test_components_from_dagster():
     common_deps: list[str] = []
-    for pkg_name in ["dagster", "dagster-pipes", "dagster-shared"]:
+    for pkg_name in [
+        "dagster",
+        "dagster-pipes",
+        "dagster-shared",
+        "dagster-dg-cli",
+        "dagster-dg-core",
+    ]:
         common_deps.extend(["-e", _get_editable_package_root(pkg_name)])
 
     dbt_root = _get_editable_package_root("dagster-dbt")
