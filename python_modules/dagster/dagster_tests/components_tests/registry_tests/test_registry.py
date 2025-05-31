@@ -16,9 +16,7 @@ from dagster._utils import pushd
 from dagster.components.core.package_entry import discover_entry_point_package_objects
 from dagster.components.core.snapshot import get_package_entry_snap
 from dagster_dg_core.utils import get_venv_executable
-from dagster_shared.error import SerializableErrorInfo
 from dagster_shared.serdes.objects import PluginObjectKey
-from dagster_shared.serdes.serdes import deserialize_value
 
 ensure_dagster_tests_import()
 
@@ -253,9 +251,8 @@ def test_bad_entry_point_error_message(entry_point_group: str):
         entry_point_group, pre_install_hook=pre_install_hook
     ) as venv_root:
         result = _get_component_print_script_result(venv_root)
-        error = deserialize_value(result.stdout, SerializableErrorInfo)
         assert (
             f"Error loading entry point `fake.module` in group `{entry_point_group}`"
-            in error.message
+            in result.stdout
         )
-        assert result.returncode == 0
+        assert result.returncode == 1
