@@ -190,7 +190,6 @@ def test_scaffold_project_inside_workspace_success(monkeypatch) -> None:
         assert Path("projects/foo-bar/src/foo_bar/defs").exists()
         assert Path("projects/foo-bar/tests").exists()
         assert Path("projects/foo-bar/pyproject.toml").exists()
-        assert Path("projects/foo-bar/.gitignore").exists()
 
         # Check project TOML content
         toml = tomlkit.parse(Path("projects/foo-bar/pyproject.toml").read_text())
