@@ -31,11 +31,17 @@ Build an abandoned cart notification system that ingests customer data (Postgres
     }
   }
 }%%
-    graph LR
-        Postgres ==> dlt
-        dlt ==> Clickhouse
-        Kafka ==> Clickhouse
-        Clickhouse ==> Braze
+graph LR
+    PG[<img src='/images/examples/icons/postgres.svg' width='50' height='50' /> Postgres]
+    CH[<img src='/images/examples/icons/clickhouse.svg' width='50' height='50' /> ClickHouse]
+    DL[<img src='/images/examples/icons/dlthub.jpeg' width='50' height='50' /> dlt]
+    KF[<img src='/images/examples/icons/kafka.svg' width='50' height='50' /> Kafka]
+    BZ[<img src='/images/examples/icons/braze.svg' width='50' height='50' /> Braze]
+
+    PG ==> DL
+    DL ==> CH
+    KF ==> CH
+    CH ==> BZ
 ```
 
 ## Dagster Architecture

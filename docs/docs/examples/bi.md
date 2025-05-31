@@ -29,12 +29,19 @@ Build a platform that ingests data from multiple sources (Postgres and Shopify),
     }
   }
 }%%
-    graph LR
-        Postgres ==> Airbyte
-        Shopify ==> Airbyte
-        Airbyte ==> BigQuery
-        BigQuery ==> Looker
-        BigQuery ==> Hex
+graph LR
+    AB[<img src='/images/examples/icons/airbyte.svg' width='50' height='50' /> Airbyte]
+    PG[<img src='/images/examples/icons/postgres.svg' width='50' height='50' /> Postgres]
+    SP[<img src='/images/examples/icons/shopify.svg' width='50' height='50' /> Shopify]
+    BQ[<img src='/images/examples/icons/gcp-bigquery.svg' width='50' height='50' /> BigQuery]
+    LK[<img src='/images/examples/icons/looker.svg' width='50' height='50' /> Looker]
+    HX[<img src='/images/examples/icons/hex.svg' width='50' height='50' /> Hex]
+
+    PG ==> AB
+    SP ==> AB
+    AB ==> BQ
+    BQ ==> LK
+    BQ ==> HX
 ```
 
 ## Dagster Architecture

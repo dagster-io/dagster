@@ -31,9 +31,13 @@ Build a retrieval-augmented generation (RAG) system that extracts data from GitH
     }
   }
 }%%
-    graph LR
-        Github ==> OpenAI
-        OpenAI <==> Weaviate
+graph LR
+    GH[<img src='/images/examples/icons/github.svg' width='50' height='50' /> Github]
+    OA[<img src='/images/examples/icons/openai.svg' width='50' height='50' /> OpenAI]
+    WV[<img src='/images/examples/icons/weaviate.png' width='50' height='50' /> Weaviate]
+
+    GH ==> OA
+    OA <==> WV
 ```
 
 ## Dagster Architecture
