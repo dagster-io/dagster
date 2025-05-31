@@ -434,3 +434,21 @@ specs:
     """,
             scope=scope,
         )
+
+
+def test_dict():
+    class Target(Resolvable, Model):
+        thing: dict
+        stuff: list
+
+    obj = Target.resolve_from_yaml("""
+thing:
+    a: a
+    2: 2
+stuff:
+    - a
+    - 2
+    - wow: wah
+""")
+    assert obj.thing == {"a": "a", 2: 2}
+    assert obj.stuff == ["a", 2, {"wow": "wah"}]

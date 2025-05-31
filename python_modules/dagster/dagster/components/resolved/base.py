@@ -170,7 +170,7 @@ def derive_model_type(
 
 
 def _is_implicitly_resolved_type(annotation):
-    if annotation in (int, float, str, bool, Any, type(None)):
+    if annotation in (int, float, str, bool, Any, type(None), list, dict):
         return True
 
     if _safe_is_subclass(annotation, Resolvable):
