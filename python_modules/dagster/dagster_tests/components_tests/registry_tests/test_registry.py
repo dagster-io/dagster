@@ -107,7 +107,7 @@ def test_components_from_dagster():
         "dagster-dg-core",
         "dagster-pipes",
         "dagster",
-        "dagster-dg-cli[local]",
+        "dagster-dg-cli",
     ]:
         common_deps.extend(["-e", _get_editable_package_root(pkg_name)])
 
