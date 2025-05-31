@@ -3,11 +3,11 @@ from pathlib import Path
 from types import ModuleType
 from typing import Optional
 
+from dagster_shared import check
 from dagster_shared.serdes.objects.package_entry import json_for_all_components
 
 from dagster._annotations import deprecated, preview, public
 from dagster._core.definitions.definitions_class import Definitions
-from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._utils.warnings import suppress_dagster_warnings
 from dagster.components.core.context import ComponentLoadContext
 from dagster.components.core.tree import ComponentTree
@@ -87,19 +87,19 @@ def load_defs(
     context = ComponentLoadContext.for_module(
         defs_root, project_root, terminate_autoloading_on_keyword_files
     )
+
     # Despite the argument being named defs_root, load_defs supports loading arbitrary components
     # directly, so use get_component instead of DefsFolderComponent.get
-    root_component = get_component(context)
-    if root_component is None:
-        raise DagsterInvalidDefinitionError("Could not resolve root module to a component.")
+    root_component = check.not_none(
+        get_component(context), "Could not resolve root module to a component."
+    )
 
-    tree = None
     # If we did get a folder component back, assume its the root tree
-    if isinstance(root_component, DefsFolderComponent):
-        tree = ComponentTree(
-            defs_module=defs_root,
-            project_root=project_root,
-        )
+    tree = (
+        ComponentTree(defs_module=defs_root, project_root=project_root)
+        if isinstance(root_component, DefsFolderComponent)
+        else None
+    )
 
     return Definitions.merge(
         root_component.build_defs(context),
