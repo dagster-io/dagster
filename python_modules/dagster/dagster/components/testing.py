@@ -149,6 +149,7 @@ class DefsPathSandbox:
     def load(
         self, component_body: Optional[dict[str, Any]] = None
     ) -> Iterator[tuple[Component, Definitions]]:
+        old_text = None
         if component_body is not None:
             check.invariant(
                 self.component_format == "yaml",
@@ -163,7 +164,7 @@ class DefsPathSandbox:
                 yield component, defs
 
         finally:
-            if component_body is not None:
+            if component_body is not None and old_text is not None:
                 (self.defs_folder_path / "defs.yaml").write_text(old_text)
 
     @contextmanager
