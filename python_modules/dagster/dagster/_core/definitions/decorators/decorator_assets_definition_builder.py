@@ -128,6 +128,7 @@ def build_and_validate_named_ins(
             input_manager_key = asset_ins[input_name].input_manager_key
             dagster_type = asset_ins[input_name].dagster_type
         else:
+            # TODO: This is where you would jam in metadata attached to the function parameter
             metadata = {}
             key_prefix = None
             input_manager_key = None
@@ -142,6 +143,7 @@ def build_and_validate_named_ins(
 
     for dep in deps:
         if dep.asset_key not in named_ins_by_asset_key:
+            # TODO: This is where you would jam in metadata on the dep into the In
             named_ins_by_asset_key[dep.asset_key] = NamedIn(
                 stringify_asset_key_to_input_name(dep.asset_key),
                 In(cast("type", Nothing)),
