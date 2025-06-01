@@ -1,7 +1,7 @@
 import json
 import logging
 import sys
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from pathlib import Path
 from traceback import TracebackException
 from typing import Any, Literal, Optional, Union
@@ -223,6 +223,27 @@ def list_definitions_impl(
 # ##### HELPERS
 # ########################
 
+from typing import TypeVar
+
+T = TypeVar("T")
+
+
+def _deduplicate_use_shortest_key(
+    input_mapping: Mapping[PluginObjectKey, T],
+) -> dict[PluginObjectKey, T]:
+    shortest_key_by_component_type_object = {
+        min(
+            (
+                candidate_key
+                for candidate_key in input_mapping
+                if candidate_key.name == key.name and input_mapping[candidate_key] == obj
+            ),
+            key=lambda candidate_key: len(candidate_key.namespace),
+        )
+        for key, obj in input_mapping.items()
+    }
+    return {k: v for k, v in input_mapping.items() if k in shortest_key_by_component_type_object}
+
 
 def _load_plugin_objects(
     entry_points: bool, extra_modules: Sequence[str]
@@ -232,14 +253,15 @@ def _load_plugin_objects(
         objects.update(discover_entry_point_package_objects())
     if extra_modules:
         objects.update(discover_package_objects(extra_modules))
-    return objects
+    return _deduplicate_use_shortest_key(objects)
 
 
 def _load_component_types(
     entry_points: bool, extra_modules: Sequence[str]
 ) -> dict[PluginObjectKey, type[Component]]:
-    return {
+    raw_component_types = {
         key: obj
         for key, obj in _load_plugin_objects(entry_points, extra_modules).items()
         if isinstance(obj, type) and issubclass(obj, Component)
     }
+    return _deduplicate_use_shortest_key(raw_component_types)
