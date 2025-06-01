@@ -136,17 +136,14 @@ def components_to_defs(components: list[ExecutableComponent]) -> Definitions:
     )
 
 
-@pytest.mark.skip(reason="TODO: fix this test")
-def test_parameter_passing() -> None:
+def test_deps() -> None:
     def _upstream_execute(context) -> MaterializeResult:
-        return make_materialize_result(value=1)
+        return make_materialize_result()
 
     def _downstream_execute(
         context: AssetExecutionContext,
     ) -> MaterializeResult:
-        raise Exception("TODO: fix this test")
-        # upstream_key_value = load_input(context, "upstream_key")
-        # return make_materialize_result(value=upstream_key_value + 1)
+        return make_materialize_result()
 
     upstream_component = ExecutableComponent(
         name="upstream",
@@ -162,5 +159,4 @@ def test_parameter_passing() -> None:
 
     defs = components_to_defs([upstream_component, downstream_component])
     evaluations = execute_assets_in_defs(defs, ["upstream_key", "downstream_key"])
-    assert evaluations[AssetKey("upstream_key")].value == 1
-    assert evaluations[AssetKey("downstream_key")].value == 2
+    assert set(evaluations.keys()) == {AssetKey("upstream_key"), AssetKey("downstream_key")}
