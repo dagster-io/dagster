@@ -1,3 +1,6 @@
+from collections import defaultdict
+from collections.abc import Iterator
+from contextlib import contextmanager
 from typing import Any, Optional
 
 import pytest
@@ -7,7 +10,11 @@ from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.events import AssetMaterialization
 from dagster._core.definitions.resource_annotation import ResourceParam
 from dagster._core.definitions.result import MaterializeResult
+from dagster._core.events import DagsterEvent
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
+from dagster._core.execution.context.input import InputContext
+from dagster._core.execution.context.output import OutputContext
+from dagster._core.storage.io_manager import IOManager
 from dagster.components.core.context import ComponentLoadContext
 from dagster.components.lib.executable_component import ExecutableComponent, make_materialize_result
 
@@ -52,13 +59,13 @@ def execute_assets_in_defs(
     job_def = defs.get_implicit_job_def_for_assets(full_asset_keys)
     assert job_def
 
+    result = job_def.execute_in_process()
+    assert result.success
+
     evaluations = {}
     for asset_key in full_asset_keys:
         node_output_handle = job_def.asset_layer.node_output_handle_for_asset(asset_key)
         node_name = node_output_handle.node_handle.name
-
-        result = job_def.execute_in_process()
-        assert result.success
 
         materializations = result.asset_materializations_for_node(node_name)
         for materialization in materializations:
@@ -150,6 +157,64 @@ def test_deps() -> None:
         assets=[AssetSpec("upstream_key")],
         execute_fn=_upstream_execute,
     )
+    downstream_component = ExecutableComponent(
+        name="downstream",
+        assets=[AssetSpec("downstream_key", deps=["upstream_key"])],
+        execute_fn=_downstream_execute,
+    )
+    defs = components_to_defs([upstream_component, downstream_component])
+    evaluations = execute_assets_in_defs(defs, ["upstream_key", "downstream_key"])
+    assert set(evaluations.keys()) == {AssetKey("upstream_key"), AssetKey("downstream_key")}
+
+
+def resource_dict(context: AssetExecutionContext) -> dict[str, Any]:
+    return context.op_execution_context.resources.original_resource_dict
+
+
+@contextmanager
+def load_input(context: AssetExecutionContext, input_name: str) -> Iterator[Any]:
+    step_context = context.get_step_execution_context()
+    step_input = step_context.step.step_input_named(input_name)
+    input_def = step_context.op_def.input_def_named(input_name)
+    iterator = step_input.source.load_input_object(step_context, input_def)
+    for item in iterator:
+        if isinstance(item, DagsterEvent):
+            context.op_execution_context._events.append(item)  # noqa: SLF001
+        else:
+            yield item
+
+
+def test_parameter_passing_using_user_space_io_manager() -> None:
+    class CountingInMemoryIOManager(IOManager):
+        def __init__(self):
+            self.values: dict[tuple[object, ...], object] = {}
+            self.input_call_counts: defaultdict[str, int] = defaultdict(int)
+            self.output_call_counts: defaultdict[str, int] = defaultdict(int)
+
+        def handle_output(self, context: OutputContext, obj: object):
+            keys = tuple(context.get_identifier())
+            self.values[keys] = obj
+            self.output_call_counts[context.asset_key.to_user_string()] += 1
+
+        def load_input(self, context: InputContext) -> object:
+            keys = tuple(context.get_identifier())
+            self.input_call_counts[context.asset_key.to_user_string()] += 1
+            return self.values[keys]
+
+    def _upstream_execute(context) -> MaterializeResult:
+        return make_materialize_result(value=1)
+
+    def _downstream_execute(
+        context: AssetExecutionContext,
+    ) -> MaterializeResult:
+        with load_input(context, "upstream_key") as upstream_key_value:
+            return make_materialize_result(value=upstream_key_value + 1)
+
+    upstream_component = ExecutableComponent(
+        name="upstream",
+        assets=[AssetSpec("upstream_key")],
+        execute_fn=_upstream_execute,
+    )
 
     downstream_component = ExecutableComponent(
         name="downstream",
@@ -157,6 +222,12 @@ def test_deps() -> None:
         execute_fn=_downstream_execute,
     )
 
-    defs = components_to_defs([upstream_component, downstream_component])
+    io_manager = CountingInMemoryIOManager()
+    defs = components_to_defs([upstream_component, downstream_component]).with_resources(
+        {"io_manager": io_manager}
+    )
     evaluations = execute_assets_in_defs(defs, ["upstream_key", "downstream_key"])
-    assert set(evaluations.keys()) == {AssetKey("upstream_key"), AssetKey("downstream_key")}
+    assert io_manager.input_call_counts["upstream_key"] == 1
+    assert io_manager.output_call_counts["upstream_key"] == 1
+    assert evaluations[AssetKey("upstream_key")].value == 1
+    assert evaluations[AssetKey("downstream_key")].value == 2
