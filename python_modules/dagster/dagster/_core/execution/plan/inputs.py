@@ -7,6 +7,7 @@ from typing_extensions import TypeAlias
 
 import dagster._check as check
 from dagster._core.definitions import InputDefinition, JobDefinition, NodeHandle
+from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.utils import DEFAULT_IO_MANAGER_KEY
 from dagster._core.errors import (
     DagsterExecutionLoadInputError,
@@ -102,34 +103,43 @@ class FromLoadableAsset(StepInputSource):
     node_handle: NodeHandle = NodeHandle("", None)
     input_name: str = ""
 
-    def load_input_object(
-        self,
-        step_context: "StepExecutionContext",
-        input_def: InputDefinition,
-    ) -> Iterator[object]:
-        from dagster._core.events import DagsterEvent
-        from dagster._core.execution.context.output import OutputContext
-
+    def get_input_asset_key(
+        self, step_context: "StepExecutionContext", input_def: InputDefinition
+    ) -> AssetKey:
         asset_layer = step_context.job_def.asset_layer
-
-        input_asset_key = asset_layer.asset_key_for_input(
+        asset_key = asset_layer.asset_key_for_input(
             step_context.node_handle, input_name=input_def.name
         )
-        assert input_asset_key is not None
+        assert asset_key is not None
+        return asset_key
+
+    def get_input_manager_key(
+        self, step_context: "StepExecutionContext", input_def: InputDefinition
+    ) -> str:
+        asset_layer = step_context.job_def.asset_layer
 
         input_manager_key = (
             input_def.input_manager_key
             if input_def.input_manager_key
-            else asset_layer.get(input_asset_key).io_manager_key
+            else asset_layer.get(self.get_input_asset_key(step_context, input_def)).io_manager_key
         )
+        return input_manager_key
 
+    def make_input_context(
+        self,
+        step_context: "StepExecutionContext",
+        input_def: InputDefinition,
+    ) -> "InputContext":
+        from dagster._core.execution.context.output import OutputContext
+
+        input_asset_key = self.get_input_asset_key(step_context, input_def)
+        input_manager_key = self.get_input_manager_key(step_context, input_def)
         op_config = step_context.resolved_run_config.ops.get(str(step_context.node_handle))
         config_data = op_config.inputs.get(input_def.name) if op_config else None
 
-        loader = getattr(step_context.resources, input_manager_key)
         resources = build_resources_for_manager(input_manager_key, step_context)
         resource_config = step_context.resolved_run_config.resources[input_manager_key].config
-        load_input_context = step_context.for_input_manager(
+        return step_context.for_input_manager(
             input_def.name,
             config_data,
             definition_metadata=input_def.metadata,
@@ -141,12 +151,23 @@ class FromLoadableAsset(StepInputSource):
                 asset_key=input_asset_key,
                 name=input_asset_key.path[-1],
                 step_key="none",
-                definition_metadata=asset_layer.get(input_asset_key).metadata,
+                definition_metadata=step_context.job_def.asset_layer.get(input_asset_key).metadata,
                 resource_config=resource_config,
                 log_manager=step_context.log,
                 step_context=step_context,
             ),
         )
+
+    def load_input_object(
+        self,
+        step_context: "StepExecutionContext",
+        input_def: InputDefinition,
+    ) -> Iterator[object]:
+        from dagster._core.events import DagsterEvent
+
+        load_input_context = self.make_input_context(step_context, input_def)
+        input_manager_key = self.get_input_manager_key(step_context, input_def)
+        loader = getattr(step_context.resources, input_manager_key)
 
         yield from _load_input_with_input_manager(loader, load_input_context)
 
