@@ -295,6 +295,11 @@ class FromStepOutput(StepInputSource, IHaveNew):
     def step_output_handle_dependencies(self) -> Sequence[StepOutputHandle]:
         return [self.step_output_handle]
 
+    def resolve_io_manager_key(self, step_context: "StepExecutionContext") -> str:
+        return step_context.execution_plan.get_manager_key(
+            self.step_output_handle, step_context.job_def
+        )
+
     def get_load_context(
         self,
         step_context: "StepExecutionContext",
@@ -302,11 +307,7 @@ class FromStepOutput(StepInputSource, IHaveNew):
         io_manager_key: Optional[str] = None,
     ) -> "InputContext":
         resolved_io_manager_key = (
-            step_context.execution_plan.get_manager_key(
-                self.step_output_handle, step_context.job_def
-            )
-            if io_manager_key is None
-            else io_manager_key
+            self.resolve_io_manager_key(step_context) if io_manager_key is None else io_manager_key
         )
 
         resource_config = step_context.resolved_run_config.resources[resolved_io_manager_key].config
