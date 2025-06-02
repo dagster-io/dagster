@@ -140,6 +140,7 @@ def list_definitions(
             sys.exit(1)
 
         all_defs: list[DgDefinitionMetadata] = []
+
         asset_graph = repo_def.asset_graph
 
         asset_selection_obj = (
@@ -164,6 +165,8 @@ def list_definitions(
                     automation_condition=node.automation_condition.get_label()
                     if node.automation_condition
                     else None,
+                    tags=sorted(list(node.tags.items())),
+                    metadata=sorted(list(node.metadata.items())),
                 )
             )
         for key in selected_checks if selected_checks is not None else asset_graph.asset_check_keys:
@@ -183,7 +186,7 @@ def list_definitions(
 
         for job in repo_def.get_all_jobs():
             if not is_reserved_asset_job_name(job.name):
-                all_defs.append(DgJobMetadata(name=job.name))
+                all_defs.append(DgJobMetadata(name=job.name, description=job.description))
         for schedule in repo_def.schedule_defs:
             schedule_str = (
                 schedule.cron_schedule
