@@ -905,7 +905,7 @@ def _core_scaffold(
 @click.pass_context
 @cli_telemetry_wrapper
 def scaffold_component_command(
-    context: click.Context, name: str, model: bool, path: Path, **global_options: object
+    context: click.Context, name: str, model: bool, target_path: Path, **global_options: object
 ) -> None:
     """Scaffold of a custom Dagster component type.
 
@@ -913,7 +913,7 @@ def scaffold_component_command(
     will be placed in submodule `<project_name>.lib.<name>`.
     """
     cli_config = normalize_cli_config(global_options, context)
-    dg_context = DgContext.for_component_library_environment(path, cli_config)
+    dg_context = DgContext.for_component_library_environment(target_path, cli_config)
     registry = RemotePluginRegistry.from_dg_context(dg_context)
 
     module_name = snakecase(name)
