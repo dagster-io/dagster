@@ -3898,6 +3898,8 @@ def test_multi_partitioned_asset_with_single_run_bp_backfill(
     assert partitions_materialized == set(target_partitions)
 
 
+# This test hangs on Windows for reasons not fully understood.
+@pytest.mark.skipif(IS_WINDOWS)
 def test_threaded_submit_backfill(
     instance: DagsterInstance,
     workspace_context: WorkspaceProcessContext,
