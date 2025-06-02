@@ -947,4 +947,4 @@ class Definitions(IHaveNew):
         return Definitions.merge(self, Definitions(resources=resources)) if resources else self
 
     def has_resolved_repository_def(self) -> bool:
-        return len(get_cached_method_cache(self, "get_repository_def")) > 0
+        return len(get_cached_method_cache(self, self.get_repository_def.__name__)) > 0
