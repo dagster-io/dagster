@@ -797,18 +797,28 @@ class Definitions(IHaveNew):
         func: Callable[[AssetSpec], AssetSpec],
         selection: Optional[CoercibleToAssetSelection] = None,
     ) -> "Definitions":
-        return self.map_resolved_asset_specs_inner(
+        non_spec_asset_types = {
+            type(d) for d in self.assets or [] if not isinstance(d, (AssetsDefinition, AssetSpec))
+        }
+
+        if non_spec_asset_types:
+            raise DagsterInvariantViolationError(
+                "Can only map over AssetSpec or AssetsDefinition objects. "
+                "Received objects of types: "
+                f"{non_spec_asset_types}."
+            )
+
+        return self.permissive_map_resolved_asset_specs(
             func=func,
             selection=selection,
-            ignore_non_spec_asset_types=False,
         )
 
-    def map_resolved_asset_specs_inner(
+    def permissive_map_resolved_asset_specs(
         self,
         func: Callable[[AssetSpec], AssetSpec],
         selection: Optional[CoercibleToAssetSelection],
-        ignore_non_spec_asset_types: bool,
     ) -> "Definitions":
+        """This is a permissive version of map_resolved_asset_specs that allows for non-spec asset types, i.e. SourceAssets and CacheableAssetsDefinitions."""
         target_keys = None
         if selection:
             if isinstance(selection, str):
@@ -816,15 +826,6 @@ class Definitions(IHaveNew):
             else:
                 selection = AssetSelection.from_coercible(selection)
             target_keys = selection.resolve(self.get_asset_graph())
-        non_spec_asset_types = {
-            type(d) for d in self.assets or [] if not isinstance(d, (AssetsDefinition, AssetSpec))
-        }
-        if non_spec_asset_types and not ignore_non_spec_asset_types:
-            raise DagsterInvariantViolationError(
-                "Can only map over AssetSpec or AssetsDefinition objects. "
-                "Received objects of types: "
-                f"{non_spec_asset_types}."
-            )
         mappable = iter(
             d for d in self.assets or [] if isinstance(d, (AssetsDefinition, AssetSpec))
         )
