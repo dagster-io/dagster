@@ -1,5 +1,12 @@
-import {Button, Icon, IconName, Menu, MenuItem, Select} from '@dagster-io/ui-components';
-import {DagsterTheme} from '@dagster-io/ui-components/src/theme/theme';
+import {
+  Button,
+  DagsterTheme,
+  Icon,
+  IconName,
+  Menu,
+  MenuItem,
+  Select,
+} from '@dagster-io/ui-components';
 
 interface Props {
   theme: DagsterTheme;

@@ -1,6 +1,6 @@
 ---
 description: Deploy open source Dagster on Kubernetes using Helm charts and customize images from DockerHub for deployment.
-sidebar_position: 100
+sidebar_position: 3100
 title: Deploying Dagster to Kubernetes with Helm
 ---
 

@@ -1,12 +1,12 @@
 ---
 description: Dagster+ Branch Deployments compare asset definitions in the branch deployment against the asset definitions in the main deployment, helping your team identify how changes in a pull request will impact data assets.
-sidebar_position: 200
+sidebar_position: 7320
 title: Change tracking in branch deployments
 ---
 
-:::note
-This guide is applicable to Dagster+.
-:::
+import DagsterPlus from '@site/docs/partials/\_DagsterPlus.md';
+
+<DagsterPlus />
 
 Branch Deployments Change Tracking makes it easier for you and your team to identify how changes in a pull request will impact data assets. By the end of this guide, you'll understand how Change Tracking works and what types of asset changes can be detected.
 
@@ -163,7 +163,7 @@ def fruits_in_stock(): ...
 ### Metadata
 
 {/* Change Tracking can detect when an [asset's definition metadata](/concepts/metadata-tags/asset-metadata#attaching-definition-metadata) has changed, whether it's been added, modified, or removed. */}
-Change Tracking can detect when an [asset's definition metadata](/guides/build/assets/metadata-and-tags/) has changed, whether it's been added, modified, or removed.
+Change Tracking can detect when an [asset's definition metadata](/guides/build/assets/metadata-and-tags) has changed, whether it's been added, modified, or removed.
 
 <Tabs>
 <TabItem value="Asset in the Dagster UI">

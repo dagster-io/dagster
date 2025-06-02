@@ -1,6 +1,6 @@
 ---
 description: Use a workspace.yaml file to configure open source Dagster code locations.
-sidebar_position: 20
+sidebar_position: 200
 title: workspace.yaml reference (Dagster OSS)
 ---
 

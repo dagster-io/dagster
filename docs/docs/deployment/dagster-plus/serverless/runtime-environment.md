@@ -1,7 +1,7 @@
 ---
 description: Customizing the Dagster+ Serverless runtime environment.
 sidebar_label: Runtime environment
-sidebar_position: 100
+sidebar_position: 1000
 title: Serverless runtime environment
 ---
 

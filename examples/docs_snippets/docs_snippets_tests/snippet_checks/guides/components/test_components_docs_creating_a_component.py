@@ -46,7 +46,7 @@ def test_creating_a_component(
 
         # Scaffold code location
         _run_command(
-            cmd="dg scaffold project my-component-library --python-environment uv_managed --use-editable-dagster && cd my-component-library",
+            cmd="create-dagster project my-component-library --python-environment uv_managed --use-editable-dagster && cd my-component-library",
         )
 
         stack.enter_context(activate_venv(".venv"))
@@ -155,6 +155,4 @@ def test_creating_a_component(
             / "script.sh",
             f"{context.get_next_snip_number()}-scaffolded-component-script.sh",
         )
-        _run_command(
-            "uv run dagster asset materialize --select '*' -m my_component_library.definitions"
-        )
+        _run_command("dg launch --assets '*'")

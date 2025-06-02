@@ -46,7 +46,7 @@ def test_components_docs_adding_attributes_to_assets(
         context.run_command_and_snippet_output(
             cmd=textwrap.dedent(
                 """\
-                dg scaffold project my-project --python-environment uv_managed --use-editable-dagster \\
+                create-dagster project my-project --python-environment uv_managed --use-editable-dagster \\
                     && source my-project/.venv/bin/activate \\
                     && cd my-project/src \\
                     && dg scaffold defs dagster.asset team_a/subproject/a.py \\
@@ -58,6 +58,7 @@ def test_components_docs_adding_attributes_to_assets(
             snippet_replace_regex=[
                 ("--python-environment uv_managed --use-editable-dagster ", ""),
                 (".*&& source my-project/.venv/bin/activate.*\n", ""),
+                ("create-dagster", "uvx create-dagster"),
             ],
             ignore_output=True,
         )

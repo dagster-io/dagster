@@ -1,7 +1,7 @@
 ---
 description: Upgrade your Amazon ECS CloudFormation template to use the newest image and Dagster version.
 sidebar_label: Upgrading CloudFormation
-sidebar_position: 500
+sidebar_position: 3500
 title: Upgrading CloudFormation for an Amazon ECS agent
 ---
 

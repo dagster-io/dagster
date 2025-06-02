@@ -1,7 +1,7 @@
 ---
 title: 'Customizing your Kubernetes deployment'
 description: Pass custom configuration to the Kubernetes jobs and pods created by Dagster during execution.
-sidebar_position: 200
+sidebar_position: 3200
 ---
 
 This guide covers common ways to customize your Dagster Helm deployment.

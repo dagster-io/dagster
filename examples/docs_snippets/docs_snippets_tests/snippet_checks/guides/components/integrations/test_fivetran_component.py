@@ -1,8 +1,11 @@
 import shutil
 import textwrap
 from collections.abc import Iterator, Mapping
+from contextlib import ExitStack
 from pathlib import Path
 from typing import Any, Optional
+
+from dagster_dg_core.utils import activate_venv
 
 from dagster._utils.env import environ
 from docs_snippets_tests.snippet_checks.guides.components.utils import (
@@ -44,25 +47,29 @@ def test_components_docs_fivetran_workspace(
     update_screenshots: bool,
     get_selenium_driver,
 ) -> None:
-    with (
-        isolated_snippet_generation_environment(
-            should_update_snippets=update_snippets,
-            snapshot_base_dir=SNIPPETS_DIR,
-            global_snippet_replace_regexes=[
-                MASK_VENV,
-                MASK_USING_LOG_MESSAGE,
-                MASK_MY_PROJECT,
-            ],
-        ) as context,
-        environ({"FIVETRAN_API_KEY": "XX", "FIVETRAN_API_SECRET": "XX"}),
-    ):
+    with ExitStack() as stack:
+        context = stack.enter_context(
+            isolated_snippet_generation_environment(
+                should_update_snippets=update_snippets,
+                snapshot_base_dir=SNIPPETS_DIR,
+                global_snippet_replace_regexes=[
+                    MASK_VENV,
+                    MASK_USING_LOG_MESSAGE,
+                    MASK_MY_PROJECT,
+                ],
+            )
+        )
+        stack.enter_context(
+            environ({"FIVETRAN_API_KEY": "XX", "FIVETRAN_API_SECRET": "XX"})
+        )
         # Scaffold code location
         context.run_command_and_snippet_output(
-            cmd="dg scaffold project my-project --python-environment uv_managed --use-editable-dagster && cd my-project/src",
+            cmd="create-dagster project my-project --python-environment uv_managed --use-editable-dagster && cd my-project/src",
             snippet_path=f"{context.get_next_snip_number()}-scaffold-project.txt",
             snippet_replace_regex=[
                 ("--python-environment uv_managed --use-editable-dagster ", ""),
                 ("--editable.*dagster-fivetran", "dagster-fivetran"),
+                ("create-dagster", "uvx create-dagster"),
             ],
             ignore_output=True,
         )
@@ -73,6 +80,8 @@ def test_components_docs_fivetran_workspace(
             print_cmd="uv add dagster-fivetran",
             ignore_output=True,
         )
+
+        stack.enter_context(activate_venv("../.venv"))
 
         # scaffold fivetran component
         context.run_command_and_snippet_output(

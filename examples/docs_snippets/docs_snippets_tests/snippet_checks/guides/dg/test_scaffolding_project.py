@@ -30,15 +30,16 @@ def test_dg_docs_scaffolding_project(update_snippets: bool) -> None:
         snapshot_base_dir=SNIPPETS_DIR,
     ) as context:
         context.run_command_and_snippet_output(
-            cmd="dg scaffold project my-project --use-editable-dagster",
+            cmd="create-dagster project my-project --use-editable-dagster",
             snippet_path=SNIPPETS_DIR
             / f"{context.get_next_snip_number()}-scaffolding-project.txt",
             snippet_replace_regex=[
                 MASK_EDITABLE_DAGSTER,
                 MASK_USING_ENVIRONMENT,
                 make_project_scaffold_mask("my-project"),
+                ("create-dagster", "uvx create-dagster"),
             ],
-            print_cmd="dg scaffold project my-project",
+            print_cmd="create-dagster project my-project",
             input_str="y\n",
         )
         _run_command(r"find . -type d -name __pycache__ -exec rm -r {} \+")

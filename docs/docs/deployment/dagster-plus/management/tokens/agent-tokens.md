@@ -1,14 +1,8 @@
 ---
 description: Create and revoke agent tokens for authenticating Dagster+ hybrid agents.
-sidebar_position: 200
+sidebar_position: 3200
 title: Managing agent tokens in Dagster+
 ---
-
-:::note
-
-This guide is applicable to Dagster+.
-
-:::
 
 In this guide, we'll walk you through creating and revoking agent tokens in Dagster+.
 
@@ -20,7 +14,7 @@ To manage agent tokens, you need to be an [Organization Admin](/deployment/dagst
 
 :::
 
-Agent tokens are used to authenticate [Hybrid agents](/deployment/dagster-plus/hybrid/) with the Dagster+ Agents API.
+Agent tokens are used to authenticate [Hybrid agents](/deployment/dagster-plus/hybrid) with the Dagster+ Agents API.
 
 ### Creating agent tokens
 

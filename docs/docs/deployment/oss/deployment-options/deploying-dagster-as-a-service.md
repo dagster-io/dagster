@@ -2,7 +2,7 @@
 title: 'Deploying Dagster as a service'
 sidebar_label: Dagster as a service
 description: 'Learn how to deploy open source Dagster as a service on a single machine'
-sidebar_position: 20
+sidebar_position: 2000
 ---
 
 <details>

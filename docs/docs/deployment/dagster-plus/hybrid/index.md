@@ -1,8 +1,8 @@
 ---
 description: In a Dagster+ Hybrid deployment, the orchestration control plane is run by Dagster+ while your Dagster code is executed within your environment.
 sidebar_label: Hybrid deployment
-sidebar_position: 20
-title: Hybrid deployment
+sidebar_position: 400
+title: Dagster+ Hybrid deployment
 ---
 
 In a Dagster+ Hybrid deployment, the orchestration control plane is run by Dagster+ while your Dagster code is executed within your environment.
@@ -19,7 +19,7 @@ To get started with a Hybrid deployment, you'll need to:
 
 1. Create a [Dagster+ organization](https://dagster.cloud/signup)
 2. [Install a Dagster+ Hybrid agent](#dagster-hybrid-agents)
-3. [Add a code location](/deployment/code-locations/), typically using a Git repository and CI/CD
+3. [Add a code location](/deployment/code-locations), typically using a Git repository and CI/CD
 
 ## Dagster+ Hybrid agents
 
@@ -32,7 +32,7 @@ The Dagster+ agent is a long-lived process that polls Dagster+'s API servers for
 
 :::tip
 
-If you're not sure which agent to use, we recommend the [Dagster+ Kubernetes agent](/deployment/dagster-plus/hybrid/kubernetes/) in most cases.
+If you're not sure which agent to use, we recommend the [Dagster+ Kubernetes agent](/deployment/dagster-plus/hybrid/kubernetes) in most cases.
 
 :::
 
@@ -40,13 +40,13 @@ If you're not sure which agent to use, we recommend the [Dagster+ Kubernetes age
 
 ### Code location servers
 
-Dagster+ runs your Dagster projects through code locations. To add a code location, see the [code locations documentation](/deployment/code-locations/).
+Dagster+ runs your Dagster projects through code locations. To add a code location, see the [code locations documentation](/deployment/code-locations).
 
 When you inform Dagster+ about a new code location, we enqueue instructions for your agent to launch a new code server. The agent uses your container image to launch a code server that interacts with your Dagster definitions. The agent will run one long-standing code server for each code location. Once the code server is running, the agent will send Dagster+ metadata about your Dagster definitions that Dagster+ uses to make orchestration decisions.
 
 ### Runs
 
-Your definitions might include [automations](/guides/automate/) that launch runs or materialize assets. Or your developers might launch runs directly with the web UI.
+Your definitions might include [automations](/guides/automate) that launch runs or materialize assets. Or your developers might launch runs directly with the web UI.
 
 When a run needs to be launched, Dagster+ enqueues instructions for your agent to launch a new run. The next time your agent polls Dagster+ for new work, it will see instructions about how to launch your run. It will delegate those instructions to your code server and your code server will launch a run - a new run will typically require its own container.
 
@@ -58,5 +58,5 @@ Your agent will send Dagster+ metadata letting us know the run has been launched
 
 You can do the following to make your Dagster+ Hybrid deployment more secure:
 
-- [Disable log forwarding](/deployment/dagster-plus/management/settings/customizing-agent-settings#disabling-compute-logs)
+- [Disable log forwarding](/deployment/dagster-plus/management/customizing-agent-settings#disabling-compute-logs)
 - [Manage tokens](/deployment/dagster-plus/management/tokens/agent-tokens)

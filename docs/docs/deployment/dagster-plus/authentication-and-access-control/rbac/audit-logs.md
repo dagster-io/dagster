@@ -1,6 +1,6 @@
 ---
 description: The Dagster+ audit log enables Dagster+ Pro organization admins to track and attribute changes to their Dagster deployment with the UI or Dagster+ GraphQL API.
-sidebar_position: 400
+sidebar_position: 8140
 title: Viewing and accessing audit logs
 ---
 

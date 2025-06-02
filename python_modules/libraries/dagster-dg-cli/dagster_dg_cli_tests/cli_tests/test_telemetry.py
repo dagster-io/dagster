@@ -17,13 +17,27 @@ from dagster_dg_core_tests.utils import (
     isolated_example_project_foo_bar,
     modify_environment_variable,
 )
-from dagster_shared.telemetry import get_or_create_dir_from_dagster_home
+from dagster_shared.telemetry import (
+    cleanup_telemetry_logger,
+    get_or_create_dir_from_dagster_home,
+    get_telemetry_logger,
+)
 
 NO_TELEMETRY_COMMANDS = {
     ("utils", "inspect-component"),
     # Is actually instrumented, but since subcommands are dynamically generated we test manually
     ("scaffold",),
 }
+
+
+@pytest.fixture
+def telemetry_caplog(caplog):
+    # telemetry logger doesn't propagate to the root logger, so need to attach the caplog handler
+    get_telemetry_logger().addHandler(caplog.handler)
+    yield caplog
+    get_telemetry_logger().removeHandler(caplog.handler)
+    # Needed to avoid file contention issues on windows with the telemetry log file
+    cleanup_telemetry_logger()
 
 
 def test_telemetry_commands_properly_wrapped():
@@ -45,7 +59,9 @@ def test_telemetry_commands_properly_wrapped():
 
 
 @pytest.mark.parametrize("success", [True, False])
-def test_basic_logging_success_failure(caplog: pytest.LogCaptureFixture, success: bool) -> None:
+def test_basic_logging_success_failure(
+    telemetry_caplog: pytest.LogCaptureFixture, success: bool
+) -> None:
     test_case = BASIC_VALID_VALUE if success else BASIC_INVALID_VALUE
     with (
         ProxyRunner.test() as runner,
@@ -57,7 +73,7 @@ def test_basic_logging_success_failure(caplog: pytest.LogCaptureFixture, success
         TemporaryDirectory() as dagster_home,
         modify_environment_variable("DAGSTER_HOME", dagster_home),
     ):
-        caplog.clear()
+        telemetry_caplog.clear()
         with pushd(tmpdir):
             result = runner.invoke("check", "yaml")
             assert result.exit_code == 0 if success else 1
@@ -65,10 +81,10 @@ def test_basic_logging_success_failure(caplog: pytest.LogCaptureFixture, success
         assert os.path.exists(
             os.path.join(get_or_create_dir_from_dagster_home("logs"), "event.log")
         )
-        assert len(caplog.records) == 2, caplog.records
+        assert len(telemetry_caplog.records) == 2, telemetry_caplog.records
 
-        first_message = json.loads(caplog.records[0].getMessage())
-        second_message = json.loads(caplog.records[1].getMessage())
+        first_message = json.loads(telemetry_caplog.records[0].getMessage())
+        second_message = json.loads(telemetry_caplog.records[1].getMessage())
 
         assert first_message["action"] == "check_yaml_command_started"
         assert second_message["action"] == "check_yaml_command_ended"
@@ -77,7 +93,7 @@ def test_basic_logging_success_failure(caplog: pytest.LogCaptureFixture, success
         )
 
 
-def test_telemetry_disabled_dagster_yaml(caplog: pytest.LogCaptureFixture) -> None:
+def test_telemetry_disabled_dagster_yaml(telemetry_caplog: pytest.LogCaptureFixture) -> None:
     with (
         ProxyRunner.test() as runner,
         create_project_from_components(
@@ -88,7 +104,7 @@ def test_telemetry_disabled_dagster_yaml(caplog: pytest.LogCaptureFixture) -> No
         TemporaryDirectory() as dagster_home,
         modify_environment_variable("DAGSTER_HOME", dagster_home),
     ):
-        caplog.clear()
+        telemetry_caplog.clear()
 
         dagster_yaml = Path(dagster_home) / "dagster.yaml"
         dagster_yaml.write_text(
@@ -104,10 +120,10 @@ def test_telemetry_disabled_dagster_yaml(caplog: pytest.LogCaptureFixture) -> No
         assert not os.path.exists(
             os.path.join(get_or_create_dir_from_dagster_home("logs"), "event.log")
         )
-        assert len(caplog.records) == 0
+        assert len(telemetry_caplog.records) == 0
 
 
-def test_telemetry_disabled_dg_config(caplog: pytest.LogCaptureFixture) -> None:
+def test_telemetry_disabled_dg_config(telemetry_caplog: pytest.LogCaptureFixture) -> None:
     with (
         ProxyRunner.test() as runner,
         create_project_from_components(
@@ -122,7 +138,7 @@ def test_telemetry_disabled_dg_config(caplog: pytest.LogCaptureFixture) -> None:
             "DAGSTER_CLOUD_CLI_CONFIG", str(Path(dagster_cloud_config_folder) / "config.yaml")
         ),
     ):
-        caplog.clear()
+        telemetry_caplog.clear()
         dg_config_path = Path(dg_cli_config_folder) / "dg.toml"
         dg_config_path.write_text(
             """
@@ -135,26 +151,26 @@ def test_telemetry_disabled_dg_config(caplog: pytest.LogCaptureFixture) -> None:
             result = runner.invoke("check", "yaml")
             assert result.exit_code == 0, str(result.exception)
 
-        assert len(caplog.records) == 0
+        assert len(telemetry_caplog.records) == 0
 
 
 @pytest.mark.skip("temp")
-def test_telemetry_scaffold_component(caplog: pytest.LogCaptureFixture) -> None:
+def test_telemetry_scaffold_component(telemetry_caplog: pytest.LogCaptureFixture) -> None:
     with (
         ProxyRunner.test(use_fixed_test_components=True) as runner,
         isolated_example_project_foo_bar(runner),
         TemporaryDirectory() as dagster_home,
         modify_environment_variable("DAGSTER_HOME", dagster_home),
     ):
-        caplog.clear()
+        telemetry_caplog.clear()
         result = runner.invoke(
             "scaffold", "defs", "dagster_test.components.AllMetadataEmptyComponent", "qux"
         )
         assert result.exit_code == 0, result.output + " " + str(result.exception)
         assert Path("foo_bar/defs/qux").exists()
-        assert len(caplog.records) == 2
-        first_message = json.loads(caplog.records[0].getMessage())
-        second_message = json.loads(caplog.records[1].getMessage())
+        assert len(telemetry_caplog.records) == 2
+        first_message = json.loads(telemetry_caplog.records[0].getMessage())
+        second_message = json.loads(telemetry_caplog.records[1].getMessage())
         assert first_message["action"] == "scaffold_component_command_started"
         assert second_message["action"] == "scaffold_component_command_ended"
         assert second_message["metadata"]["command_success"] == "True"
