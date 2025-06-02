@@ -85,7 +85,7 @@ def test_python_params(dbt_path: Path, backfill_policy: Optional[str]) -> None:
             },
         },
     )
-    assert defs.get_asset_graph().get_all_asset_keys() == JAFFLE_SHOP_KEYS
+    assert defs.resolve_asset_graph().get_all_asset_keys() == JAFFLE_SHOP_KEYS
     assets_def = defs.resolve_assets_def("stg_customers")
     assert assets_def.op.name == "some_op"
     assert assets_def.op.tags["tag1"] == "value"
@@ -116,9 +116,9 @@ def test_python_params(dbt_path: Path, backfill_policy: Optional[str]) -> None:
 
 def test_load_from_path(dbt_path: Path) -> None:
     with load_test_component_defs(dbt_path.parent.parent.parent) as defs:
-        assert defs.get_asset_graph().get_all_asset_keys() == JAFFLE_SHOP_KEYS
+        assert defs.resolve_asset_graph().get_all_asset_keys() == JAFFLE_SHOP_KEYS
 
-        for asset_node in defs.get_asset_graph().asset_nodes:
+        for asset_node in defs.resolve_asset_graph().asset_nodes:
             assert asset_node.tags["foo"] == "bar"
 
             assert asset_node.metadata["something"] == 1
@@ -252,7 +252,7 @@ def test_asset_attributes(
             key = AssetKey(["cool_prefix", "stg_customers"])
         else:
             key = AssetKey("stg_customers")
-            assert defs.get_asset_graph().get_all_asset_keys() == JAFFLE_SHOP_KEYS
+            assert defs.resolve_asset_graph().get_all_asset_keys() == JAFFLE_SHOP_KEYS
 
         assets_def = defs.resolve_assets_def(key)
         if assertion:
@@ -280,7 +280,7 @@ def test_subselection(dbt_path: Path) -> None:
         DbtProjectComponent,
         {"project": str(dbt_path), "select": "raw_customers"},
     )
-    assert defs.get_asset_graph().get_all_asset_keys() == {AssetKey("raw_customers")}
+    assert defs.resolve_asset_graph().get_all_asset_keys() == {AssetKey("raw_customers")}
 
 
 def test_exclude(dbt_path: Path) -> None:
@@ -288,7 +288,9 @@ def test_exclude(dbt_path: Path) -> None:
         DbtProjectComponent,
         {"project": str(dbt_path), "exclude": "customers"},
     )
-    assert defs.get_asset_graph().get_all_asset_keys() == JAFFLE_SHOP_KEYS - {AssetKey("customers")}
+    assert defs.resolve_asset_graph().get_all_asset_keys() == JAFFLE_SHOP_KEYS - {
+        AssetKey("customers")
+    }
 
 
 DEPENDENCY_ON_DBT_PROJECT_LOCATION_PATH = (
@@ -306,7 +308,7 @@ def test_dependency_on_dbt_project():
     project.preparer.prepare(project)
 
     defs = build_component_defs(DEPENDENCY_ON_DBT_PROJECT_LOCATION_PATH / "defs")
-    assert AssetKey("downstream_of_customers") in defs.get_asset_graph().get_all_asset_keys()
+    assert AssetKey("downstream_of_customers") in defs.resolve_asset_graph().get_all_asset_keys()
     downstream_of_customers_def = defs.resolve_assets_def("downstream_of_customers")
     assert set(downstream_of_customers_def.asset_deps[AssetKey("downstream_of_customers")]) == {
         AssetKey("customers")

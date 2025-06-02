@@ -624,7 +624,7 @@ class Definitions(IHaveNew):
 
     def resolve_assets_def(self, key: CoercibleToAssetKey) -> AssetsDefinition:
         asset_key = AssetKey.from_coercible(key)
-        for assets_def in self.get_asset_graph().assets_defs:
+        for assets_def in self.resolve_asset_graph().assets_defs:
             if asset_key in assets_def.keys:
                 return assets_def
 
@@ -649,7 +649,7 @@ class Definitions(IHaveNew):
             component_tree=self.component_tree,
         )
 
-    def get_asset_graph(self) -> AssetGraph:
+    def resolve_asset_graph(self) -> AssetGraph:
         """Get the AssetGraph for this set of definitions."""
         return self.get_repository_def().asset_graph
 
@@ -775,7 +775,7 @@ class Definitions(IHaveNew):
     @public
     def resolve_all_asset_specs(self) -> Sequence[AssetSpec]:
         """Returns an AssetSpec object for every asset contained inside the resolved Definitions object."""
-        asset_graph = self.get_asset_graph()
+        asset_graph = self.resolve_asset_graph()
         return [asset_node.to_asset_spec() for asset_node in asset_graph.asset_nodes]
 
     @preview
@@ -916,7 +916,7 @@ class Definitions(IHaveNew):
                 selection = AssetSelection.from_string(selection, include_sources=True)
             else:
                 selection = AssetSelection.from_coercible(selection)
-            target_keys = selection.resolve(self.get_asset_graph())
+            target_keys = selection.resolve(self.resolve_asset_graph())
         mappable = iter(
             d for d in self.assets or [] if isinstance(d, (AssetsDefinition, AssetSpec))
         )

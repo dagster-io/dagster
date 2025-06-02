@@ -105,7 +105,7 @@ def test_basic_component_load(
             defs,
         ),
     ):
-        assert defs.get_asset_graph().get_all_asset_keys() == {
+        assert defs.resolve_asset_graph().get_all_asset_keys() == {
             AssetKey(["schema_name_in_destination_1", "table_name_in_destination_1"]),
             AssetKey(["schema_name_in_destination_1", "table_name_in_destination_2"]),
             AssetKey(["schema_name_in_destination_2", "table_name_in_destination_1"]),
@@ -163,7 +163,7 @@ def test_basic_component_filter(
             defs,
         ),
     ):
-        assert len(defs.get_asset_graph().get_all_asset_keys()) == num_assets
+        assert len(defs.resolve_asset_graph().get_all_asset_keys()) == num_assets
 
 
 @pytest.mark.parametrize(
@@ -195,7 +195,7 @@ def test_custom_filter_fn_python(
         connector_selector=filter_fn,
         translation=None,
     ).build_defs(ComponentLoadContext.for_test())
-    assert len(defs.get_asset_graph().get_all_asset_keys()) == num_assets
+    assert len(defs.resolve_asset_graph().get_all_asset_keys()) == num_assets
 
 
 @pytest.mark.parametrize(

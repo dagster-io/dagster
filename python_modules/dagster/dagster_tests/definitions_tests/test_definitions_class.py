@@ -972,7 +972,7 @@ def test_asset_spec_dependencies_in_graph() -> None:
 
     defs = Definitions(assets=[upstream_asset, downstream_asset])
 
-    assert defs.get_asset_graph().asset_dep_graph["upstream"][downstream_asset.key] == {
+    assert defs.resolve_asset_graph().asset_dep_graph["upstream"][downstream_asset.key] == {
         upstream_asset.key
     }
 
@@ -1130,7 +1130,7 @@ def test_assets_def_with_only_checks():
     assets_def = AssetsDefinition(**check1.get_attributes_dict())
     defs = Definitions(assets=[assets_def])
     check_key = AssetCheckKey(AssetKey("asset1"), "check1")
-    assert defs.get_asset_graph().asset_check_keys == {check_key}
+    assert defs.resolve_asset_graph().asset_check_keys == {check_key}
     assert check_key in defs.get_repository_def().asset_checks_defs_by_key
 
 

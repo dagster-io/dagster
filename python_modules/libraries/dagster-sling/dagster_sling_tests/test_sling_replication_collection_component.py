@@ -96,7 +96,7 @@ def test_python_attributes() -> None:
         op = replications[0].op
         assert op is None
 
-        assert defs.get_asset_graph().get_all_asset_keys() == {
+        assert defs.resolve_asset_graph().get_all_asset_keys() == {
             AssetKey("input_csv"),
             AssetKey("input_duckdb"),
         }
@@ -122,7 +122,7 @@ def test_python_attributes_op_name() -> None:
         op = replications[0].op
         assert op
         assert op.name == "my_op"
-        assert defs.get_asset_graph().get_all_asset_keys() == {
+        assert defs.resolve_asset_graph().get_all_asset_keys() == {
             AssetKey("input_csv"),
             AssetKey("input_duckdb"),
         }
@@ -170,7 +170,7 @@ def test_load_from_path() -> None:
         assert resource.connections[0].type == "duckdb"
         assert resource.connections[0].password == "password"
 
-        assert defs.get_asset_graph().get_all_asset_keys() == {
+        assert defs.resolve_asset_graph().get_all_asset_keys() == {
             AssetKey("input_csv"),
             AssetKey(["foo", "input_duckdb"]),
         }
@@ -187,7 +187,7 @@ def test_sling_subclass() -> None:
         DebugSlingReplicationComponent,
         {"sling": {}, "replications": [{"path": str(REPLICATION_PATH)}]},
     )
-    assert defs.get_asset_graph().get_all_asset_keys() == {
+    assert defs.resolve_asset_graph().get_all_asset_keys() == {
         AssetKey("input_csv"),
         AssetKey("input_duckdb"),
     }
