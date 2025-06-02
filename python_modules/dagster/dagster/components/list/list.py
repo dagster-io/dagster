@@ -21,6 +21,7 @@ from dagster_shared.serdes.objects.definition_metadata import (
 from dagster_shared.serdes.objects.package_entry import PluginManifest
 from pydantic import ConfigDict, TypeAdapter, create_model
 
+from dagster._cli.utils import get_possibly_temporary_instance_for_cli
 from dagster._config.pythonic_config.resource import get_resource_type_name
 from dagster._core.definitions.asset_job import is_reserved_asset_job_name
 from dagster._utils.error import serializable_error_info_from_exc_info
@@ -80,87 +81,92 @@ def list_definitions(
     dg_context: DgContext,
     path: Optional[Path] = None,
 ) -> list[DgDefinitionMetadata]:
-    logger = logging.getLogger("dagster")
+    with get_possibly_temporary_instance_for_cli() as instance:
+        instance.inject_env_vars(dg_context.code_location_name)
 
-    removed_system_frame_hint = (
-        lambda is_first_hidden_frame,
-        i: f"  [{i} dagster system frames hidden, run dg check defs --verbose to see the full stack trace]\n"
-        if is_first_hidden_frame
-        else f"  [{i} dagster system frames hidden]\n"
-    )
+        logger = logging.getLogger("dagster")
 
-    try:
-        tree = ComponentTree.load(dg_context.root_path)
+        removed_system_frame_hint = (
+            lambda is_first_hidden_frame,
+            i: f"  [{i} dagster system frames hidden, run dg check defs --verbose to see the full stack trace]\n"
+            if is_first_hidden_frame
+            else f"  [{i} dagster system frames hidden]\n"
+        )
 
         try:
-            defs = tree.load_defs_at_path(path) if path else tree.load_defs()
-        except Exception as e:
-            path_text = f" at {path}" if path else ""
-            raise click.ClickException(f"Unable to load definitions{path_text}: {e}") from e
+            tree = ComponentTree.load(dg_context.root_path)
 
-        repo_def = defs.get_repository_def()
-    except click.ClickException:
-        raise
-    except Exception:
-        underlying_error = remove_system_frames_from_error(
-            serializable_error_info_from_exc_info(sys.exc_info()),
-            build_system_frame_removed_hint=removed_system_frame_hint,
-        )
+            try:
+                defs = tree.load_defs_at_path(path) if path else tree.load_defs()
+            except Exception as e:
+                path_text = f" at {path}" if path else ""
+                raise click.ClickException(f"Unable to load definitions{path_text}: {e}") from e
 
-        logger.error(
-            f"Loading location {dg_context.project_name} failed:\n\n{underlying_error.to_string()}"
-        )
-        sys.exit(1)
-
-    all_defs: list[DgDefinitionMetadata] = []
-
-    asset_graph = repo_def.asset_graph
-    for key in sorted(list(asset_graph.get_all_asset_keys()), key=lambda key: key.to_user_string()):
-        node = asset_graph.get(key)
-        all_defs.append(
-            DgAssetMetadata(
-                key=key.to_user_string(),
-                deps=sorted([k.to_user_string() for k in node.parent_keys]),
-                group=node.group_name,
-                kinds=sorted(list(node.kinds)),
-                description=node.description,
-                automation_condition=node.automation_condition.get_label()
-                if node.automation_condition
-                else None,
+            repo_def = defs.get_repository_def()
+        except click.ClickException:
+            raise
+        except Exception:
+            underlying_error = remove_system_frames_from_error(
+                serializable_error_info_from_exc_info(sys.exc_info()),
+                build_system_frame_removed_hint=removed_system_frame_hint,
             )
-        )
-    for key in asset_graph.asset_check_keys:
-        node = asset_graph.get(key)
-        all_defs.append(
-            DgAssetCheckMetadata(
-                key=key.to_user_string(),
-                asset_key=key.asset_key.to_user_string(),
-                name=key.name,
-                additional_deps=sorted([k.to_user_string() for k in node.parent_entity_keys]),
-                description=node.description,
-            )
-        )
-    for job in repo_def.get_all_jobs():
-        if not is_reserved_asset_job_name(job.name):
-            all_defs.append(DgJobMetadata(name=job.name))
-    for schedule in repo_def.schedule_defs:
-        schedule_str = (
-            schedule.cron_schedule
-            if isinstance(schedule.cron_schedule, str)
-            else ", ".join(schedule.cron_schedule)
-        )
-        all_defs.append(
-            DgScheduleMetadata(
-                name=schedule.name,
-                cron_schedule=schedule_str,
-            )
-        )
-    for sensor in repo_def.sensor_defs:
-        all_defs.append(DgSensorMetadata(name=sensor.name))
-    for name, resource in repo_def.get_top_level_resources().items():
-        all_defs.append(DgResourceMetadata(name=name, type=get_resource_type_name(resource)))
 
-    return all_defs
+            logger.error(
+                f"Loading location {dg_context.project_name} failed:\n\n{underlying_error.to_string()}"
+            )
+            sys.exit(1)
+
+        all_defs: list[DgDefinitionMetadata] = []
+
+        asset_graph = repo_def.asset_graph
+        for key in sorted(
+            list(asset_graph.get_all_asset_keys()), key=lambda key: key.to_user_string()
+        ):
+            node = asset_graph.get(key)
+            all_defs.append(
+                DgAssetMetadata(
+                    key=key.to_user_string(),
+                    deps=sorted([k.to_user_string() for k in node.parent_keys]),
+                    group=node.group_name,
+                    kinds=sorted(list(node.kinds)),
+                    description=node.description,
+                    automation_condition=node.automation_condition.get_label()
+                    if node.automation_condition
+                    else None,
+                )
+            )
+        for key in asset_graph.asset_check_keys:
+            node = asset_graph.get(key)
+            all_defs.append(
+                DgAssetCheckMetadata(
+                    key=key.to_user_string(),
+                    asset_key=key.asset_key.to_user_string(),
+                    name=key.name,
+                    additional_deps=sorted([k.to_user_string() for k in node.parent_entity_keys]),
+                    description=node.description,
+                )
+            )
+        for job in repo_def.get_all_jobs():
+            if not is_reserved_asset_job_name(job.name):
+                all_defs.append(DgJobMetadata(name=job.name))
+        for schedule in repo_def.schedule_defs:
+            schedule_str = (
+                schedule.cron_schedule
+                if isinstance(schedule.cron_schedule, str)
+                else ", ".join(schedule.cron_schedule)
+            )
+            all_defs.append(
+                DgScheduleMetadata(
+                    name=schedule.name,
+                    cron_schedule=schedule_str,
+                )
+            )
+        for sensor in repo_def.sensor_defs:
+            all_defs.append(DgSensorMetadata(name=sensor.name))
+        for name, resource in repo_def.get_top_level_resources().items():
+            all_defs.append(DgResourceMetadata(name=name, type=get_resource_type_name(resource)))
+
+        return all_defs
 
 
 # ########################
