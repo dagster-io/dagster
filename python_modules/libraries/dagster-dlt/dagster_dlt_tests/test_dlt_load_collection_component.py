@@ -21,7 +21,6 @@ from dagster._core.test_utils import ensure_dagster_tests_import
 from dagster._utils import alter_sys_path, pushd
 from dagster._utils.env import environ
 from dagster.components.cli import cli
-from dagster.components.core.context import use_component_load_context
 from dagster_dg_core.utils import ensure_dagster_dg_tests_import
 from dagster_dlt import DagsterDltResource, DltLoadCollectionComponent
 from dagster_dlt.components.dlt_load_collection.component import DltLoadSpecModel
@@ -79,10 +78,9 @@ def setup_dlt_component(
         project_root = Path.cwd()
 
         context = ComponentLoadContext.for_module(defs_root, project_root)
-        with use_component_load_context(context):
-            component = get_underlying_component(context)
-            assert isinstance(component, DltLoadCollectionComponent)
-            yield component, component.build_defs(context)
+        component = get_underlying_component(context)
+        assert isinstance(component, DltLoadCollectionComponent)
+        yield component, component.build_defs(context)
 
 
 def github_load():
@@ -372,10 +370,9 @@ def test_scaffold_bare_component():
         project_root = Path.cwd()
 
         context = ComponentLoadContext.for_module(defs_root, project_root)
-        with use_component_load_context(context):
-            component = get_underlying_component(context)
-            assert isinstance(component, DltLoadCollectionComponent)
-            defs = component.build_defs(context)
+        component = get_underlying_component(context)
+        assert isinstance(component, DltLoadCollectionComponent)
+        defs = component.build_defs(context)
 
         assert len(component.loads) == 1
         assert defs.get_asset_graph().get_all_asset_keys() == {
@@ -416,9 +413,8 @@ def test_scaffold_component_with_source_and_destination(source: str, destination
         project_root = Path.cwd()
 
         context = ComponentLoadContext.for_module(defs_root, project_root)
-        with use_component_load_context(context):
-            component = get_underlying_component(context)
-            assert isinstance(component, DltLoadCollectionComponent)
+        component = get_underlying_component(context)
+        assert isinstance(component, DltLoadCollectionComponent)
 
         # scaffolder generates a silly sample load right now because the complex parsing logic is flaky
         assert len(component.loads) == 1

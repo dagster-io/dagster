@@ -31,7 +31,7 @@ from dagster._utils.pydantic_yaml import (
 from dagster.components.component.component import Component
 from dagster.components.component.component_loader import is_component_loader
 from dagster.components.component.template_vars import find_inline_template_vars_in_module
-from dagster.components.core.context import ComponentLoadContext, use_component_load_context
+from dagster.components.core.context import ComponentLoadContext
 from dagster.components.core.package_entry import load_package_object
 from dagster.components.definitions import LazyDefinitions
 from dagster.components.resolved.base import Resolvable
@@ -219,9 +219,7 @@ class DefsFolderComponent(Component):
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
         child_defs = []
         for path, child in self.children.items():
-            sub_ctx = context.for_path(path)
-            with use_component_load_context(sub_ctx):
-                child_defs.append(child.build_defs(sub_ctx))
+            child_defs.append(child.build_defs(context.for_path(path)))
         defs = Definitions.merge(*child_defs)
         for post_processor in self.asset_post_processors or []:
             defs = post_processor(defs)
@@ -268,11 +266,9 @@ def find_components_from_context(context: ComponentLoadContext) -> Mapping[Path,
         relative_subpath = subpath.relative_to(context.path)
         if any(relative_subpath.match(pattern) for pattern in EXPLICITLY_IGNORED_GLOB_PATTERNS):
             continue
-        sub_ctx = context.for_path(subpath)
-        with use_component_load_context(sub_ctx):
-            component = get_component(sub_ctx)
-            if component:
-                found[subpath] = component
+        component = get_component(context.for_path(subpath))
+        if component:
+            found[subpath] = component
     return found
 
 

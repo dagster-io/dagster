@@ -18,7 +18,6 @@ from dagster._core.test_utils import ensure_dagster_tests_import
 from dagster._utils import alter_sys_path
 from dagster._utils.env import environ
 from dagster.components.cli import cli
-from dagster.components.core.context import use_component_load_context
 from dagster_fivetran.components.workspace_component.component import FivetranAccountComponent
 from dagster_fivetran.resources import FivetranWorkspace
 from dagster_fivetran.translator import FivetranConnector
@@ -71,10 +70,9 @@ def setup_fivetran_component(
         project_root = Path.cwd()
 
         context = ComponentLoadContext.for_module(defs_root, project_root)
-        with use_component_load_context(context):
-            component = get_underlying_component(context)
-            assert isinstance(component, FivetranAccountComponent)
-            yield component, component.build_defs(context)
+        component = get_underlying_component(context)
+        assert isinstance(component, FivetranAccountComponent)
+        yield component, component.build_defs(context)
 
 
 BASIC_FIVETRAN_COMPONENT_BODY = {
