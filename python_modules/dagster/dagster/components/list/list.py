@@ -81,7 +81,7 @@ def list_all_components_schema(
     return TypeAdapter(union_type).json_schema()
 
 
-def list_definitions_impl(
+def list_definitions(
     location: Optional[str],
     path: Optional[Path] = None,
     **other_opts: object,
