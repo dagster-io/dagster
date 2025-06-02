@@ -191,11 +191,15 @@ class ComponentsDefinitionsHandle(DefinitionsHandle):
     def _map_asset_specs_inner(
         self, func: Callable[[AssetSpec], AssetSpec], selection: Optional[AssetSelection]
     ) -> "ComponentsDefinitionsHandle":
+        # TODO: resolve target keys from cache in subsequent subset loads
         target_keys = selection.resolve(self._defs.resolve_asset_graph()) if selection else None
         new_func = (
             lambda spec: func(spec) if target_keys is None or spec.key in target_keys else spec
         )
-        return ComponentsDefinitionsHandle(self._defs.map_asset_specs(func=new_func), self._context)
+
+        return ComponentsDefinitionsHandle(
+            self._defs.map_resolved_asset_specs(func=new_func), self._context
+        )
 
     @staticmethod
     def apply_post_processing_fn(
