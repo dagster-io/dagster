@@ -809,7 +809,7 @@ class Definitions(IHaveNew):
         Examples:
             .. code-block:: python
 
-                import dagster as
+                import dagster as dg
 
                 my_spec = dg.AssetSpec("asset1")
 
