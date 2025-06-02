@@ -10,26 +10,10 @@ from dagster_dg_core.shared_options import dg_global_options, dg_path_options
 from dagster_dg_core.utils import DgClickCommand, validate_dagster_availability
 from dagster_dg_core.utils.telemetry import cli_telemetry_wrapper
 from dagster_shared import check
-from dagster_shared.cli import WorkspaceOpts, dg_workspace_options
+from dagster_shared.cli import PythonPointerOpts, python_pointer_options
+from dagster_shared.record import as_dict
 
 SINGLETON_REPOSITORY_NAME = "__repository__"
-
-
-def _args_from_workspace_opts(workspace_opts: WorkspaceOpts) -> dict[str, str]:
-    """Converts WorkspaceOpts to a dictionary of arguments of the type that
-    dagster job launch or dagster asset materialize expects.
-    """
-    return {
-        k: v
-        for k, v in {
-            "python_file": next(iter(workspace_opts.python_file or ()), None),
-            "module_name": next(iter(workspace_opts.module_name or ()), None),
-            "package_name": next(iter(workspace_opts.package_name or ()), None),
-            "working_directory": next(iter(workspace_opts.working_directory or ()), None),
-            "attribute": next(iter(workspace_opts.attribute or ()), None),
-        }.items()
-        if v is not None
-    }
 
 
 @click.command(name="launch", cls=DgClickCommand)
@@ -56,7 +40,7 @@ def _args_from_workspace_opts(workspace_opts: WorkspaceOpts) -> dict[str, str]:
 )
 @dg_path_options
 @dg_global_options
-@dg_workspace_options
+@python_pointer_options
 @cli_telemetry_wrapper
 def launch_command(
     assets: Optional[str],
@@ -80,10 +64,10 @@ def launch_command(
     # command.
 
     validate_dagster_availability()
-    workspace_opts = WorkspaceOpts.extract_from_cli_options(copy(other_options))
+    pointer_opts = PythonPointerOpts.extract_from_cli_options(copy(other_options))
 
-    if workspace_opts.specifies_target():
-        extra_workspace_opts = _args_from_workspace_opts(workspace_opts)
+    if pointer_opts.specifies_target():
+        extra_workspace_opts = as_dict(pointer_opts)
     else:
         cli_config = normalize_cli_config(other_options, click.get_current_context())
         dg_context = DgContext.for_project_environment(path, cli_config)

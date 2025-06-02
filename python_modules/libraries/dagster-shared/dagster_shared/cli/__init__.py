@@ -204,3 +204,41 @@ class WorkspaceOpts:
             k for k, v in as_dict(self).items() if v and (k not in {"empty_workspace", "use_ssl"})
         ]
         return bool(set_args)
+
+
+@record
+class PythonPointerOpts:
+    python_file: Optional[str] = None
+    module_name: Optional[str] = None
+    package_name: Optional[str] = None
+    working_directory: Optional[str] = None
+    attribute: Optional[str] = None
+    autoload_defs_module_name: Optional[str] = None
+
+    @classmethod
+    def extract_from_cli_options(cls, cli_options: dict[str, Any]) -> Self:
+        # This is expected to always be called from a click entry point, so all options should be
+        # present in the dictionary. We rely on `@record` for type-checking.
+        return cls(
+            python_file=cli_options.pop("python_file", None),
+            module_name=cli_options.pop("module_name", None),
+            package_name=cli_options.pop("package_name", None),
+            working_directory=cli_options.pop("working_directory", None),
+            attribute=cli_options.pop("attribute", None),
+            autoload_defs_module_name=cli_options.pop("autoload_defs_module_name", None),
+        )
+
+    def to_workspace_opts(self) -> "WorkspaceOpts":
+        return WorkspaceOpts(
+            python_file=(self.python_file,) if self.python_file else None,
+            module_name=(self.module_name,) if self.module_name else None,
+            package_name=(self.package_name,) if self.package_name else None,
+            autoload_defs_module_name=self.autoload_defs_module_name
+            if self.autoload_defs_module_name
+            else None,
+            working_directory=self.working_directory,
+            attribute=self.attribute,
+        )
+
+    def specifies_target(self) -> bool:
+        return bool(self.python_file or self.module_name or self.package_name)
