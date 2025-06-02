@@ -1,3 +1,4 @@
+from collections.abc import Sequence
 from typing import Optional, Union
 
 from typing_extensions import TypeAlias
@@ -15,6 +16,8 @@ class DgAssetMetadata:
     group: Optional[str]
     description: Optional[str]
     automation_condition: Optional[str]
+    tags: Sequence[tuple[str, str]]
+    metadata: Sequence[tuple[str, str]]
 
 
 @whitelist_for_serdes
@@ -34,6 +37,7 @@ class DgScheduleMetadata:
 @record
 class DgJobMetadata:
     name: str
+    description: Optional[str]
 
 
 @whitelist_for_serdes

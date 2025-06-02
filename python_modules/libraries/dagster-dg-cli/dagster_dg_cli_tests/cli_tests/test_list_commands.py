@@ -396,7 +396,7 @@ def test_list_defs_with_path(
         if should_error:
             assert result.returncode != 0
         else:
-            assert result.returncode == 0
+            assert result.returncode == 0, result.stderr.decode("utf-8")
             output = result.stdout.decode("utf-8").strip()
 
             for asset in expected_assets:
@@ -494,6 +494,56 @@ def test_list_defs_complex_assets_succeeds():
             match_terminal_box_output(
                 result.stdout.decode("utf-8").strip(), _EXPECTED_COMPLEX_ASSET_DEFS
             )
+
+
+def test_list_defs_column_selection():
+    with (
+        ProxyRunner.test() as runner,
+        isolated_example_project_foo_bar(
+            runner, in_workspace=False, python_environment="uv_managed"
+        ) as project_dir,
+    ):
+        with activate_venv(project_dir / ".venv"):
+            subprocess.run(
+                ["dg", "scaffold", "defs", "dagster.DefsFolderComponent", "mydefs"],
+                check=True,
+            )
+
+            with Path("src/foo_bar/defs/mydefs/definitions.py").open("w") as f:
+                defs_source = textwrap.dedent(
+                    inspect.getsource(_sample_complex_asset_defs).split("\n", 1)[1]
+                )
+                f.write(defs_source)
+
+            result = subprocess.run(
+                ["dg", "list", "defs", "-c", "key"], check=True, capture_output=True
+            )
+            output = result.stdout.decode("utf-8")
+            assert "alpha" in output
+            assert "alpha:alpha_beta_check" in output
+            assert "dbt" not in output
+            assert "This is beta." not in output
+
+            result = subprocess.run(
+                ["dg", "list", "defs", "-c", "key", "-c", "description"],
+                check=True,
+                capture_output=True,
+            )
+            output = result.stdout.decode("utf-8")
+            assert "alpha" in output
+            assert "alpha:alpha_beta_check" in output
+            assert "dbt" not in output
+            assert "This is beta." in output
+
+            # Ensure key/name is always included
+            result = subprocess.run(
+                ["dg", "list", "defs", "-c", "kinds"], check=True, capture_output=True
+            )
+            output = result.stdout.decode("utf-8")
+            assert "alpha" in output
+            assert "alpha:alpha_beta_check" in output
+            assert "dbt" in output
+            assert "This is beta." not in output
 
 
 def test_list_defs_asset_subselection():
