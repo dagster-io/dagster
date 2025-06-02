@@ -795,6 +795,7 @@ class Definitions(IHaveNew):
         self,
         *,
         func: Callable[[AssetSpec], AssetSpec],
+        selection: Optional[CoercibleToAssetSelection] = None,
     ) -> "Definitions":
         """Map a function over the included AssetSpecs or AssetsDefinitions in this Definitions object, replacing specs in the sequence
         or specs in an AssetsDefinitions with the result of the function.
@@ -829,6 +830,11 @@ class Definitions(IHaveNew):
                 )
 
         """
+        check.invariant(
+            selection is None,
+            "The selection parameter is no longer supported for map_asset_specs, Please use map_resolved_asset_specs instead",
+        )
+
         return self.map_resolved_asset_specs(func=func, selection=None)
 
     @public

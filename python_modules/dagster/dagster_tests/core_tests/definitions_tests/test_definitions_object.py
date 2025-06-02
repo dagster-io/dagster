@@ -13,6 +13,7 @@ from dagster import (
     sensor,
 )
 from dagster._core.definitions.job_definition import JobDefinition
+from dagster_shared.check.functions import CheckError
 
 
 def ensure_get_job_def_warns(defs: Definitions, name: str) -> None:
@@ -228,3 +229,15 @@ def test_resolve_build_schedule_from_partitioned_job_succeeds() -> None:
 
     with pytest.raises(ValueError, match="is an UnresolvedPartitionedAssetScheduleDefinition"):
         defs.get_unresolved_schedule_def("my_schedule")
+
+
+def test_map_asset_specs_fails() -> None:
+    @asset
+    def asset1(): ...
+
+    defs = Definitions(assets=[asset1])
+    with pytest.raises(
+        CheckError,
+        match="The selection parameter is no longer supported for map_asset_specs, Please use map_resolved_asset_specs instead",
+    ):
+        defs.map_asset_specs(func=lambda s: s, selection="something")
