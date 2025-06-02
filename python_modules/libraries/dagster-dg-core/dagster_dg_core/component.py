@@ -118,7 +118,7 @@ class RemotePluginRegistry:
 def all_components_schema_from_dg_context(dg_context: "DgContext") -> Mapping[str, Any]:
     """Generate a schema for all components in the current environment."""
     validate_dagster_availability()
-    from dagster.components.cli.list import list_all_components_schema
+    from dagster.components.list import list_all_components_schema
 
     return list_all_components_schema(entry_points=True, extra_modules=())
 
@@ -163,7 +163,7 @@ def _fetch_plugin_manifest(entry_points: bool, extra_modules: Sequence[str]) -> 
     from rich.panel import Panel
 
     validate_dagster_availability()
-    from dagster.components.cli.list import list_plugins
+    from dagster.components.list import list_plugins
 
     result = list_plugins(entry_points=entry_points, extra_modules=extra_modules)
 

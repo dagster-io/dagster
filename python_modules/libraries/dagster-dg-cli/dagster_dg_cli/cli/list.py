@@ -273,11 +273,11 @@ def list_defs_command(output_json: bool, path: Path, **global_options: object) -
 
     validate_dagster_availability()
 
-    from dagster.components.cli.list import list_definitions_impl
+    from dagster.components.list import list_definitions
 
     # capture stdout during the definitions load so it doesn't pollute the structured output
     with capture_stdout():
-        definitions = list_definitions_impl(
+        definitions = list_definitions(
             location=dg_context.code_location_name,
             **dg_context.target_args,
         )

@@ -1,23 +1,18 @@
-from pathlib import Path
-
 import pytest
 from dagster._core.test_utils import ensure_dagster_tests_import, new_cwd
-from dagster.components.cli.list import list_all_components_schema, list_plugins
-from dagster.components.cli.scaffold import scaffold_object_command_impl
+from dagster.components.list import list_all_components_schema, list_plugins
 from dagster_shared.serdes.objects import (
     ComponentFeatureData,
     PluginObjectKey,
     PluginObjectSnap,
     ScaffoldTargetTypeData,
 )
+from dagster_shared.serdes.objects.package_entry import PluginManifest
 from jsonschema import Draft202012Validator, ValidationError
 
 ensure_dagster_tests_import()
 
-from dagster_tests.components_tests.utils import (
-    create_project_from_components,
-    temp_code_location_bar,
-)
+from dagster_tests.components_tests.utils import create_project_from_components
 
 
 def test_list_plugins_from_entry_points():
@@ -25,12 +20,14 @@ def test_list_plugins_from_entry_points():
     # stable (we are loading from all entry points).
     result = list_plugins(entry_points=True, extra_modules=[])
 
+    assert isinstance(result, PluginManifest)
     assert len(result.objects) > 1
 
 
 def test_list_plugins_from_module():
     # Now check what we get when we load directly from the test library. This has stable results.
     result = list_plugins(entry_points=False, extra_modules=["dagster_test.components"])
+    assert isinstance(result, PluginManifest)
 
     objects = result.objects
     assert [obj.key.to_typename() for obj in objects] == [
@@ -115,8 +112,10 @@ def test_list_plugins_from_project() -> None:
             result = list_plugins(
                 entry_points=False, extra_modules=[f"{location_name}.defs.local_component_sample"]
             )
+            assert isinstance(result, PluginManifest)
 
             objects = result.objects
+
             assert len(objects) == 1
             assert objects[0].key == PluginObjectKey(
                 namespace=f"{location_name}.defs.local_component_sample",
@@ -131,7 +130,7 @@ def test_list_plugins_from_project() -> None:
                     f"{location_name}.defs.other_local_component_sample",
                 ],
             )
-
+            assert isinstance(result, PluginManifest)
             assert len(result.objects) == 2
             assert [obj.key.to_typename() for obj in result.objects] == [
                 f"{location_name}.defs.local_component_sample.MyComponent",
@@ -147,13 +146,14 @@ def test_list_plugins_from_project() -> None:
                     f"{location_name}.defs.single_file",
                 ],
             )
+            assert isinstance(result, PluginManifest)
 
             assert len(result.objects) == 2
 
 
 def test_all_components_schema_command():
     result = list_all_components_schema(
-        entry_points=False, extra_modules=["dagster_test.components"]
+        entry_points=False, extra_modules=("dagster_test.components",)
     )
 
     component_type_keys = [
@@ -196,16 +196,3 @@ def test_all_components_schema_command():
                 "extra_key": "extra_value",
             }
         )
-
-
-def test_scaffold_component_command():
-    with temp_code_location_bar():
-        scaffold_object_command_impl(
-            "dagster_test.components.SimplePipesScriptComponent",
-            Path("bar/components/qux"),
-            '{"asset_key": "my_asset", "filename": "my_asset.py"}',
-            "yaml",
-            project_root=None,
-        )
-
-        assert Path("bar/components/qux/my_asset.py").exists()
