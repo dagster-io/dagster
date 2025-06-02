@@ -40,7 +40,7 @@ def test_dg_docs_workspace(update_snippets: bool) -> None:
         # TODO: Make this use "active" python environment in docs followup
 
         context.run_command_and_snippet_output(
-            cmd="create-dagster workspace --use-editable-dagster dagster-workspace && cd dagster-workspace",
+            cmd="create-dagster workspace dagster-workspace --use-editable-dagster && cd dagster-workspace",
             snippet_path=f"{context.get_next_snip_number()}-dg-scaffold-workspace.txt",
             print_cmd="create-dagster workspace dagster-workspace && cd dagster-workspace",
             snippet_replace_regex=[
