@@ -608,6 +608,18 @@ class Definitions(IHaveNew):
         return self.get_repository_def().get_implicit_job_def_for_assets(asset_keys)
 
     def get_assets_def(self, key: CoercibleToAssetKey) -> AssetsDefinition:
+        key = AssetKey.from_coercible(key)
+        # Sadly both self.assets and self.asset_checks can contain either AssetsDefinition or AssetChecksDefinition
+        # objects. We need to check both collections and exclude the AssetChecksDefinition objects.
+        for asset in [*(self.assets or []), *(self.asset_checks or [])]:
+            if isinstance(asset, AssetsDefinition) and not isinstance(asset, AssetChecksDefinition):
+                if key in asset.keys:
+                    return asset
+
+        warnings.warn(
+            f"Could not find assets_def with key {key} directly passed to Definitions. This will be an error starting in 1.11 and will require a call to resolve_assets_def in dagster 1.11."
+        )
+
         return self.resolve_assets_def(key)
 
     def resolve_assets_def(self, key: CoercibleToAssetKey) -> AssetsDefinition:

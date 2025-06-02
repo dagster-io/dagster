@@ -285,3 +285,26 @@ def test_resolve_all_asset_specs_succeeds() -> None:
     def _the_mosa(): ...
 
     assert Definitions(assets=[_the_mosa]).resolve_all_asset_specs()[0].key == AssetKey("asset1")
+
+
+def test_get_assets_def() -> None:
+    @asset
+    def asset1(): ...
+
+    assert Definitions(assets=[asset1]).get_assets_def("asset1").key == AssetKey("asset1")
+    assert Definitions(asset_checks=[asset1]).get_assets_def("asset1").key == AssetKey("asset1")
+
+    warnings.resetwarnings()
+    with warnings.catch_warnings(record=True) as w:
+        assert Definitions(assets=[AssetSpec("asset1")]).get_assets_def("asset1").key == AssetKey(
+            "asset1"
+        )
+        assert len(w) == 1
+        assert "Could not find assets_def with key" in str(w[0].message)
+
+    warnings.resetwarnings()
+    with warnings.catch_warnings(record=True) as w:
+        assert Definitions(assets=[AssetSpec("asset1")]).resolve_assets_def(
+            "asset1"
+        ).key == AssetKey("asset1")
+        assert len(w) == 0
