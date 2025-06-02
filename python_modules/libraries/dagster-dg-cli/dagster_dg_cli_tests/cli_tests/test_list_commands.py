@@ -496,6 +496,55 @@ def test_list_defs_complex_assets_succeeds():
             )
 
 
+def test_list_defs_asset_subselection():
+    with (
+        ProxyRunner.test() as runner,
+        isolated_example_project_foo_bar(
+            runner, in_workspace=False, python_environment="uv_managed"
+        ) as project_dir,
+    ):
+        with activate_venv(project_dir / ".venv"):
+            subprocess.run(
+                ["dg", "scaffold", "defs", "dagster.DefsFolderComponent", "mydefs"],
+                check=True,
+            )
+
+            result = subprocess.run(["dg", "list", "defs"], check=True, capture_output=True)
+            assert "No definitions are defined" in result.stdout.decode("utf-8")
+            assert "Definitions" not in result.stdout.decode(
+                "utf-8"
+            )  # no table header means no table
+
+            with Path("src/foo_bar/defs/mydefs/definitions.py").open("w") as f:
+                defs_source = textwrap.dedent(
+                    inspect.getsource(_sample_complex_asset_defs).split("\n", 1)[1]
+                )
+                f.write(defs_source)
+
+            result = subprocess.run(
+                ["dg", "list", "defs", "--assets", "group:group_1"], check=True, capture_output=True
+            )
+            assert result.returncode == 0
+            output = result.stdout.decode("utf-8")
+            assert "sling" in output  # proxy for alpha asset in selection
+            assert "This is beta." not in output  # proxy for beta asset in selection
+            assert "delta" not in output
+            assert "epsilon" not in output
+            assert "alpha:alpha_check" in output
+            assert "alpha:alpha_beta_check" in output
+            result = subprocess.run(
+                ["dg", "list", "defs", "--assets", "group:group_2"], check=True, capture_output=True
+            )
+            assert result.returncode == 0
+            output = result.stdout.decode("utf-8")
+            assert "sling" not in output  # proxy for alpha asset in selection
+            assert "This is beta." in output  # proxy for beta asset in selection
+            assert "delta" in output
+            assert "epsilon" in output
+            assert "alpha:alpha_check" not in output, output
+            assert "alpha:alpha_beta_check" not in output
+
+
 def _sample_complex_asset_defs():
     import dagster as dg
 

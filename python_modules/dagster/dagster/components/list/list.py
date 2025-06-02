@@ -166,7 +166,7 @@ def list_definitions(
                     else None,
                 )
             )
-        for key in selected_checks or asset_graph.asset_check_keys:
+        for key in selected_checks if selected_checks is not None else asset_graph.asset_check_keys:
             node = asset_graph.get(key)
             all_defs.append(
                 DgAssetCheckMetadata(
@@ -177,7 +177,6 @@ def list_definitions(
                     description=node.description,
                 )
             )
-
         # If we have an asset selection, we only want to return assets
         if asset_selection:
             return all_defs
