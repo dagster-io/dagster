@@ -1,3 +1,4 @@
+import warnings
 from collections import defaultdict
 from collections.abc import Iterable, Mapping, Sequence
 from typing import TYPE_CHECKING, Annotated, Any, Callable, NamedTuple, Optional, Union
