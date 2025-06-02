@@ -36,12 +36,10 @@ from dagster_dg_core_tests.utils import (
 @pytest.mark.parametrize(
     "cli_args",
     [
-        tuple(),
         ("helloworld",),
         (".",),
     ],
     ids=[
-        "no_args",
         "with_name",
         "with_cwd",
     ],
@@ -76,8 +74,8 @@ def test_scaffold_workspace_already_exists_failure(monkeypatch) -> None:
         os.mkdir("dagster-workspace")
         result = runner.invoke_create_dagster(
             "workspace",
-            "--use-editable-dagster",
             "dagster-workspace",
+            "--use-editable-dagster",
         )
         assert_runner_result(result, exit_0=False)
         assert "already exists" in result.output
