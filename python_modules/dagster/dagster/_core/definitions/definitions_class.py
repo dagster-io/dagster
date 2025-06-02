@@ -4,6 +4,7 @@ from collections.abc import Iterable, Mapping, Sequence
 from typing import TYPE_CHECKING, Annotated, Any, Callable, NamedTuple, Optional, Union
 
 from dagster_shared.record import ImportFrom
+from dagster_shared.utils.cached_method import get_cached_method_cache
 from typing_extensions import Self
 
 import dagster._check as check
@@ -432,7 +433,7 @@ class Definitions(IHaveNew):
         metadata: Optional[RawMetadataMapping] = None,
         component_tree: Optional["ComponentTree"] = None,
     ):
-        return super().__new__(
+        instance = super().__new__(
             cls,
             assets=assets,
             schedules=schedules,
@@ -445,6 +446,13 @@ class Definitions(IHaveNew):
             metadata=normalize_metadata(check.opt_mapping_param(metadata, "metadata")),
             component_tree=component_tree,
         )
+
+        check.invariant(
+            not instance.has_resolved_repository_def(),
+            "Definitions object should not have been resolved",
+        )
+
+        return instance
 
     @public
     def get_job_def(self, name: str) -> JobDefinition:
@@ -749,6 +757,10 @@ class Definitions(IHaveNew):
 
                 component_tree = def_set.component_tree
 
+            check.invariant(
+                not def_set.has_resolved_repository_def(),
+                "Definitions object should have been resolved",
+            )
         return Definitions(
             assets=assets,
             schedules=schedules,
@@ -933,3 +945,6 @@ class Definitions(IHaveNew):
 
     def with_resources(self, resources: Optional[Mapping[str, Any]]) -> "Definitions":
         return Definitions.merge(self, Definitions(resources=resources)) if resources else self
+
+    def has_resolved_repository_def(self) -> bool:
+        return len(get_cached_method_cache(self, self.get_repository_def.__name__)) > 0
