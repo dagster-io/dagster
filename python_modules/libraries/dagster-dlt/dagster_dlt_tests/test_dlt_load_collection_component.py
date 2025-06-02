@@ -20,7 +20,7 @@ from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.test_utils import ensure_dagster_tests_import
 from dagster._utils import alter_sys_path, pushd
 from dagster._utils.env import environ
-from dagster.components.cli import cli
+from dagster_dg_cli.cli import cli
 from dagster_dg_core.utils import ensure_dagster_dg_tests_import
 from dagster_dlt import DagsterDltResource, DltLoadCollectionComponent
 from dagster_dlt.components.dlt_load_collection.component import DltLoadSpecModel
@@ -355,10 +355,10 @@ def test_scaffold_bare_component():
             cli,
             [
                 "scaffold",
-                "object",
+                "defs",
                 "dagster_dlt.DltLoadCollectionComponent",
-                "src/foo_bar/defs/my_barebones_dlt_component",
-                "--scaffold-format",
+                "my_barebones_dlt_component",
+                "--format",
                 "yaml",
             ],
         )
@@ -396,10 +396,10 @@ def test_scaffold_component_with_source_and_destination(source: str, destination
             cli,
             [
                 "scaffold",
-                "object",
+                "defs",
                 "dagster_dlt.DltLoadCollectionComponent",
-                "src/foo_bar/defs/my_barebones_dlt_component",
-                "--scaffold-format",
+                "my_barebones_dlt_component",
+                "--format",
                 "yaml",
                 "--json-params",
                 f'{{"source": "{source}", "destination": "{destination}"}}',

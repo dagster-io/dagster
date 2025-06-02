@@ -103,6 +103,7 @@ def temp_code_location_bar() -> Iterator[None]:
     with TemporaryDirectory() as tmpdir, pushd(tmpdir):
         Path("bar/bar/lib").mkdir(parents=True)
         Path("bar/bar/components").mkdir(parents=True)
+        Path("bar/bar/defs").mkdir(parents=True)
         with open("bar/pyproject.toml", "w") as f:
             f.write(generate_component_lib_pyproject_toml("bar", is_project=True))
         Path("bar/bar/__init__.py").touch()

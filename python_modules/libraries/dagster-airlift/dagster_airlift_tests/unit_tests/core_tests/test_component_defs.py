@@ -13,7 +13,6 @@ from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.test_utils import ensure_dagster_tests_import
 from dagster._utils import pushd
-from dagster.components.cli import cli
 from dagster_airlift.constants import (
     DAG_MAPPING_METADATA_KEY,
     SOURCE_CODE_METADATA_KEY,
@@ -22,6 +21,7 @@ from dagster_airlift.constants import (
 from dagster_airlift.core.components.airflow_instance.component import AirflowInstanceComponent
 from dagster_airlift.test import make_instance
 from dagster_airlift.test.test_utils import asset_spec, get_job_from_defs
+from dagster_dg_cli.cli import cli
 
 ensure_dagster_tests_import()
 from dagster_tests.components_tests.utils import (
@@ -110,12 +110,12 @@ def _scaffold_airlift(scaffold_format: str):
         cli,
         [
             "scaffold",
-            "object",
-            "dagster_airlift.core.components.airflow_instance.component.AirflowInstanceComponent",
-            "bar/components/qux",
+            "defs",
+            "dagster_airlift.core.components.AirflowInstanceComponent",
+            "qux",
             "--json-params",
             json.dumps({"name": "qux", "auth_type": "basic_auth"}),
-            "--scaffold-format",
+            "--format",
             scaffold_format,
         ],
     )
@@ -125,10 +125,10 @@ def _scaffold_airlift(scaffold_format: str):
 def test_scaffold_airlift_yaml():
     with temp_code_location_bar():
         _scaffold_airlift("yaml")
-        assert Path("bar/components/qux/defs.yaml").exists()
-        with open("bar/components/qux/defs.yaml") as f:
+        assert Path("bar/defs/qux/defs.yaml").exists()
+        with open("bar/defs/qux/defs.yaml") as f:
             assert yaml.safe_load(f) == {
-                "type": "dagster_airlift.core.components.airflow_instance.component.AirflowInstanceComponent",
+                "type": "dagster_airlift.core.components.AirflowInstanceComponent",
                 "attributes": {
                     "name": "qux",
                     "auth": {
@@ -144,12 +144,12 @@ def test_scaffold_airlift_yaml():
 def test_scaffold_airlift_python():
     with temp_code_location_bar():
         _scaffold_airlift("python")
-        assert Path("bar/components/qux/component.py").exists()
-        with open("bar/components/qux/component.py") as f:
+        assert Path("bar/defs/qux/component.py").exists()
+        with open("bar/defs/qux/component.py") as f:
             file_contents = f.read()
             assert file_contents == (
                 """from dagster import component, ComponentLoadContext
-from dagster_airlift.core.components.airflow_instance.component import AirflowInstanceComponent
+from dagster_airlift.core.components import AirflowInstanceComponent
 
 @component_instance
 def load(context: ComponentLoadContext) -> AirflowInstanceComponent: ...
