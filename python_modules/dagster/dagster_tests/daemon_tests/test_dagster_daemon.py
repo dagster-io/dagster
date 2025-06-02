@@ -117,6 +117,14 @@ def test_backfill_threadpool():
     with instance_for_test() as instance:
         with daemon_from_instance(instance, "BACKFILL") as backfill_daemon:
             assert isinstance(backfill_daemon, BackfillDaemon)
+            assert backfill_daemon._threadpool_executor  # noqa: SLF001
+            assert not backfill_daemon._submit_threadpool_executor  # noqa: SLF001
+
+    with instance_for_test(
+        overrides={"backfills": {"use_threads": False, "num_workers": 4, "num_submit_workers": 4}}
+    ) as instance:
+        with daemon_from_instance(instance, "BACKFILL") as backfill_daemon:
+            assert isinstance(backfill_daemon, BackfillDaemon)
             assert not backfill_daemon._threadpool_executor  # noqa: SLF001
             assert not backfill_daemon._submit_threadpool_executor  # noqa: SLF001
 
@@ -133,8 +141,8 @@ def test_backfill_threadpool():
     ) as instance:
         with daemon_from_instance(instance, "BACKFILL") as backfill_daemon:
             assert isinstance(backfill_daemon, BackfillDaemon)
-            assert not backfill_daemon._threadpool_executor  # noqa: SLF001
-            assert not backfill_daemon._submit_threadpool_executor  # noqa: SLF001
+            assert backfill_daemon._threadpool_executor  # noqa: SLF001
+            assert backfill_daemon._submit_threadpool_executor  # noqa: SLF001
 
     with instance_for_test(
         overrides={"backfills": {"use_threads": True, "num_workers": 4}}
@@ -149,5 +157,5 @@ def test_backfill_threadpool():
     ) as instance:
         with daemon_from_instance(instance, "BACKFILL") as backfill_daemon:
             assert isinstance(backfill_daemon, BackfillDaemon)
-            assert not backfill_daemon._threadpool_executor  # noqa: SLF001
+            assert backfill_daemon._threadpool_executor  # noqa: SLF001
             assert backfill_daemon._submit_threadpool_executor  # noqa: SLF001
