@@ -1,9 +1,18 @@
+from dagster._core.definitions.asset_key import CoercibleToAssetKey
 from dagster._core.definitions.asset_spec import AssetSpec
+from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.materialize import materialize
 from dagster._core.definitions.metadata.metadata_value import TextMetadataValue
 from dagster._core.definitions.result import MaterializeResult
 from dagster.components.core.context import ComponentLoadContext
 from dagster.components.lib.executable_component.component import ExecutableComponent
+
+
+def asset_in_component(
+    component: ExecutableComponent, key: CoercibleToAssetKey
+) -> AssetsDefinition:
+    defs = component.build_defs(ComponentLoadContext.for_test())
+    return defs.get_assets_def(key)
 
 
 def test_include() -> None:
@@ -57,3 +66,22 @@ def test_basic_singular_asset_from_yaml() -> None:
     )
     assert isinstance(component, ExecutableComponent)
     assert_singular_component(component)
+
+
+def test_resource_usage() -> None:
+    def _execute_fn(context, some_resource) -> MaterializeResult:
+        return MaterializeResult(metadata={"foo": some_resource})
+
+    component = ExecutableComponent(
+        name="op_name",
+        execute_fn=_execute_fn,
+        assets=[AssetSpec(key="asset")],
+    )
+
+    assets_def = asset_in_component(component, "asset")
+
+    result = materialize([assets_def], resources={"some_resource": "some_value"})
+    assert result.success
+    mats = result.asset_materializations_for_node("op_name")
+    assert len(mats) == 1
+    assert mats[0].metadata == {"foo": TextMetadataValue("some_value")}
