@@ -452,32 +452,7 @@ class Definitions(IHaveNew):
         (return value of :py:func:`define_asset_job`) it will be resolved to a :py:class:`JobDefinition` when returned
         from this function, with all resource dependencies fully resolved.
         """
-        for job in self._iterate_possible_job_defs():
-            if job.name == name:
-                if isinstance(job, JobDefinition):
-                    return job
-        warnings.warn(
-            f"JobDefinition with name {name} directly passed to Definitions or referenced by a "
-            "sensor or schedule not found, will attempt to resolve to a JobDefinition. "
-            "This will be an error in a future release and will require a call to "
-            "resolve_job_def in dagster 1.11."
-        )
         return self.resolve_job_def(name)
-
-    def _iterate_possible_job_defs(self) -> Iterable:
-        yield from self.jobs or []
-
-        for sensor in self.sensors or []:
-            for target in sensor.targets:
-                if target.has_job_def:
-                    yield target.resolvable_to_job
-
-        for schedule in self.schedules or []:
-            if isinstance(schedule, ScheduleDefinition):
-                if schedule.target.has_job_def:
-                    yield schedule.target.resolvable_to_job
-            elif isinstance(schedule, UnresolvedPartitionedAssetScheduleDefinition):
-                yield schedule.job
 
     def resolve_job_def(self, name: str) -> JobDefinition:
         check.str_param(name, "name")
