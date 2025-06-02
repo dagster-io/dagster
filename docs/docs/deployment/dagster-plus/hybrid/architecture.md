@@ -10,7 +10,7 @@ The Dagster+ Hybrid architecture is the most flexible and secure way to deploy D
 
 A **hybrid deployment** utilizes a combination of your infrastructure and Dagster-hosted backend services.
 
-The Dagster backend services - including the web frontend, GraphQL API, metadata database, and daemons (responsible for executing schedules and sensors) - are hosted in Dagster+. You are responsible for running an [agent](index.md#dagster-hybrid-agents) in your environment.
+The Dagster backend services - including the web frontend, GraphQL API, metadata database, and daemons (responsible for executing schedules and sensors) - are hosted in Dagster+. You are responsible for running an [agent](/deployment/dagster-plus/hybrid#dagster-hybrid-agents) in your environment.
 
 ![Dagster+ Hybrid deployment architecture](/images/dagster-plus/deployment/hybrid-architecture.png)
 
