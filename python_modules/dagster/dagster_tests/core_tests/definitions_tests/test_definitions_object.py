@@ -130,7 +130,7 @@ def test_sensor_get_direct_job_succeeds() -> None:
     defs = Definitions(sensors=[my_sensor])
 
     ensure_get_job_def_warns(defs, direct_job.name)
-    assert not defs.has_resolved_repository_def()
+    assert defs.has_resolved_repository_def()
 
 
 def test_schedule_target_job_resolve_succeeds() -> None:
@@ -177,7 +177,7 @@ def test_schedule_get_direct_job_succeeds() -> None:
     defs = Definitions(schedules=[my_schedule])
 
     ensure_get_job_def_warns(defs, direct_job.name)
-    assert not defs.has_resolved_repository_def()
+    assert defs.has_resolved_repository_def()
 
 
 def test_get_sensor_def_warns() -> None:
@@ -275,11 +275,11 @@ def test_get_directly_asset_specs_succeeds() -> None:
 
     defs = Definitions(assets=[asset1])
     assert defs.get_all_asset_specs()[0].key == AssetKey("asset1")
-    assert not defs.has_resolved_repository_def()
+    assert defs.has_resolved_repository_def()
 
     defs_with_asset_checks = Definitions(asset_checks=[asset1])
     assert defs_with_asset_checks.get_all_asset_specs()[0].key == AssetKey("asset1")
-    assert not defs_with_asset_checks.has_resolved_repository_def()
+    assert defs_with_asset_checks.has_resolved_repository_def()
 
 
 def test_get_all_asset_specs_warns() -> None:
