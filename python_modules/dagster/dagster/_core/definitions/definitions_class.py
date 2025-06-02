@@ -456,13 +456,8 @@ class Definitions(IHaveNew):
             if job.name == name:
                 if isinstance(job, JobDefinition):
                     return job
-        warnings.warn(
-            f"JobDefinition with name {name} directly passed to Definitions or referenced by a "
-            "sensor or schedule not found, will attempt to resolve to a JobDefinition. "
-            "This will be an error in a future release and will require a call to "
-            "resolve_job_def in dagster 1.11."
-        )
-        return self.resolve_job_def(name)
+
+        raise Exception(f"JobDefinition with name {name} not found")
 
     def _iterate_possible_job_defs(self) -> Iterable:
         yield from self.jobs or []

@@ -72,7 +72,8 @@ def test_get_direct_asset_job_fails() -> None:
 
     defs = Definitions(jobs=[asset_job])
 
-    ensure_get_job_def_warns(defs, "asset_job")
+    with pytest.raises(Exception, match="JobDefinition with name asset_job not found"):
+        defs.get_job_def("asset_job")
 
 
 def test_sensor_target_job_resolve_succeeds() -> None:
@@ -100,7 +101,8 @@ def test_sensor_target_job_get_fails() -> None:
 
     defs = Definitions(sensors=[my_sensor])
 
-    ensure_get_job_def_warns(defs, "asset_job")
+    with pytest.raises(Exception, match="JobDefinition with name asset_job not found"):
+        defs.get_job_def("asset_job")
 
 
 def test_sensor_get_direct_job_succeeds() -> None:
@@ -144,7 +146,8 @@ def test_schedule_target_job_get_fails() -> None:
 
     defs = Definitions(schedules=[my_schedule])
 
-    ensure_get_job_def_warns(defs, "asset_job")
+    with pytest.raises(Exception, match="JobDefinition with name asset_job not found"):
+        defs.get_job_def("asset_job")
 
 
 def test_schedule_get_direct_job_succeeds() -> None:
