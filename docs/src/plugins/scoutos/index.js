@@ -115,7 +115,7 @@ const SCOUTOS_COPILOT_INNER_HTML = `
     copilot.initial_activities = [
       {
         activity_type: 'llm.chat.message',
-        img_url: 'https://dagster.io/images/brand/logos/dagster-primary-mark.svg',
+        img_url: 'https://docs.dagster.io/images/dagster-primary-horizontal.svg',
         role: 'assistant',
         content: 'Welcome to Dagster docs! How can I help you learn about data orchestration today?',
       },
@@ -125,25 +125,25 @@ const SCOUTOS_COPILOT_INNER_HTML = `
         items: [
           {
             action_item_type: 'suggested_query',
-            img_url: 'https://dagster.io/images/brand/logos/dagster-primary-mark.svg',
+            img_url: 'https://docs.dagster.io/images/dagster-primary-horizontal.svg',
             title: 'Getting Started',
             query: 'How do I get started with Dagster?',
           },
           {
             action_item_type: 'suggested_query',
-            img_url: 'https://dagster.io/images/brand/logos/dagster-primary-mark.svg',
+            img_url: 'https://docs.dagster.io/images/dagster-primary-horizontal.svg',
             title: 'What are Assets?',
             query: 'What are software-defined assets in Dagster?',
           },
           {
             action_item_type: 'suggested_query',
-            img_url: 'https://dagster.io/images/brand/logos/dagster-primary-mark.svg',
+            img_url: 'https://docs.dagster.io/images/dagster-primary-horizontal.svg',
             title: 'Dagster and dbt',
             query: 'How do I integrate Dagster with dbt?',
           },
           {
             action_item_type: 'link',
-            img_url: 'https://dagster.io/images/brand/logos/dagster-primary-mark.svg',
+            img_url: 'rttps://docs.dagster.io/images/dagster-primary-horizontal.svg',
             title: 'Join Dagster Community',
             url: 'https://dagster.io/slack',
           }
