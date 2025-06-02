@@ -1,12 +1,18 @@
 from collections.abc import Mapping, Sequence
 from pathlib import Path
-from typing import Any
+from typing import Any, Optional
 
 import click
 from dagster_dg_core.config import normalize_cli_config
 from dagster_dg_core.context import DgContext
 from dagster_dg_core.shared_options import dg_global_options, dg_path_options
-from dagster_dg_core.utils import DgClickCommand, DgClickGroup, pushd, validate_dagster_availability
+from dagster_dg_core.utils import (
+    DgClickCommand,
+    DgClickGroup,
+    exit_with_error,
+    pushd,
+    validate_dagster_availability,
+)
 from dagster_dg_core.utils.telemetry import cli_telemetry_wrapper
 
 from dagster_dg_cli.cli.utils import create_temp_workspace_file
@@ -95,8 +101,8 @@ def check_yaml_command(
 @click.option(
     "--check-yaml/--no-check-yaml",
     flag_value=True,
-    default=True,
     help="Whether to schema-check defs.yaml files for the project before loading and checking all definitions.",
+    default=None,
 )
 @dg_path_options
 @dg_global_options
@@ -108,6 +114,7 @@ def check_definitions_command(
     log_format: str,
     verbose: bool,
     target_path: Path,
+    check_yaml: Optional[bool],
     **global_options: Mapping[str, object],
 ) -> None:
     """Loads and validates your Dagster definitions using a Dagster instance.
@@ -130,11 +137,17 @@ def check_definitions_command(
 
     validate_dagster_availability()
 
+    if check_yaml is True and not dg_context.is_project:
+        exit_with_error("--check-yaml is not currently supported in a workspace context")
+
+    if check_yaml is None:
+        check_yaml = dg_context.is_project
+
     with (
         pushd(dg_context.root_path),
         create_temp_workspace_file(dg_context) as workspace_file,
     ):
-        if check_yaml_fn:
+        if check_yaml:
             overall_check_result = True
             project_dirs = (
                 [dg_context.root_path]
@@ -156,7 +169,7 @@ def check_definitions_command(
         definitions_validate_command_impl(
             log_level=log_level,
             log_format=log_format,
-            load_with_grpc=False,
+            allow_in_process=True,
             verbose=verbose,
             workspace=[workspace_file],
         )
