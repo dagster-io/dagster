@@ -92,7 +92,7 @@ def test_scaffold_workspace_already_exists_failure(monkeypatch) -> None:
 # dagster (i.e. from the same commit), and the only way to achieve this right now is
 # using the editable install variant of `create-dagster project`.
 #
-# Ideally we would have a way to still use the matching dagster-components without using the
+# Ideally we would have a way to still use the matching dagster without using the
 # editable install variant, but this will require somehow configuring uv to ensure that it builds
 # and returns the local version of the package.
 

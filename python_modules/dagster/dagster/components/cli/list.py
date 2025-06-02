@@ -1,13 +1,9 @@
-import json
 import logging
 import sys
 from collections.abc import Sequence
-from pathlib import Path
 from traceback import TracebackException
 from typing import Any, Literal, Optional, Union
 
-import click
-from dagster_shared.cli import python_pointer_options
 from dagster_shared.error import SerializableErrorInfo, remove_system_frames_from_error
 from dagster_shared.serdes.objects import PluginObjectKey
 from dagster_shared.serdes.objects.definition_metadata import (
@@ -20,7 +16,6 @@ from dagster_shared.serdes.objects.definition_metadata import (
     DgSensorMetadata,
 )
 from dagster_shared.serdes.objects.package_entry import PluginManifest
-from dagster_shared.serdes.serdes import serialize_value
 from pydantic import ConfigDict, TypeAdapter, create_model
 
 from dagster._cli.utils import assert_no_remaining_opts, get_possibly_temporary_instance_for_cli
@@ -43,19 +38,6 @@ from dagster.components.core.package_entry import (
 from dagster.components.core.snapshot import get_package_entry_snap
 
 
-@click.group(name="list")
-def list_cli():
-    """Commands for listing Dagster components and related entities."""
-
-
-@list_cli.command(name="plugins")
-@click.option("--entry-points/--no-entry-points", is_flag=True, default=True)
-@click.argument("extra_modules", nargs=-1, type=str)
-def list_plugins_command(entry_points: bool, extra_modules: tuple[str]) -> None:
-    """List registered plugin objects."""
-    click.echo(serialize_value(list_plugins(entry_points, list(extra_modules))))
-
-
 def list_plugins(
     entry_points: bool, extra_modules: Sequence[str]
 ) -> Union[PluginManifest, SerializableErrorInfo]:
@@ -70,16 +52,6 @@ def list_plugins(
     except ComponentsEntryPointLoadError as e:
         tb = TracebackException.from_exception(e)
         return SerializableErrorInfo.from_traceback(tb)
-
-
-@list_cli.command(name="all-components-schema")
-@click.option("--entry-points/--no-entry-points", is_flag=True, default=True)
-@click.argument("extra_modules", nargs=-1, type=str)
-def list_all_components_schema_command(entry_points: bool, extra_modules: tuple[str, ...]) -> None:
-    """Builds a JSON schema which ORs the schema for a component
-    file for all component types available in the current code location.
-    """
-    click.echo(json.dumps(list_all_components_schema(entry_points, extra_modules)))
 
 
 def list_all_components_schema(
@@ -106,32 +78,6 @@ def list_all_components_schema(
     return TypeAdapter(union_type).json_schema()
 
 
-@list_cli.command(name="definitions")
-@python_pointer_options
-@click.option(
-    "--location", "-l", help="Name of the code location, can be used to scope environment variables"
-)
-@click.option(
-    "--output-file",
-    help="Write to file instead of stdout. If not specified, will write to stdout.",
-)
-@click.pass_context
-def list_definitions_command(
-    ctx: click.Context,
-    location: Optional[str],
-    output_file: Optional[str],
-    **other_opts: object,
-) -> None:
-    """List Dagster definitions."""
-    all_defs = list_definitions_impl(location, **other_opts)
-    output = serialize_value(all_defs)
-    if output_file:
-        click.echo("[dagster-components] Writing to file " + output_file)
-        Path(output_file).write_text(output)
-    else:
-        click.echo(output)
-
-
 def list_definitions_impl(
     location: Optional[str],
     **other_opts: object,
@@ -139,9 +85,7 @@ def list_definitions_impl(
     python_pointer_opts = PythonPointerOpts.extract_from_cli_options(other_opts)
     assert_no_remaining_opts(other_opts)
 
-    with get_possibly_temporary_instance_for_cli(
-        "``dagster-components definitions list``"
-    ) as instance:
+    with get_possibly_temporary_instance_for_cli() as instance:
         instance.inject_env_vars(location)
 
         logger = logging.getLogger("dagster")
