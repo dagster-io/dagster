@@ -292,14 +292,14 @@ def apply_post_processor_to_spec(
         check.failed(f"Unsupported operation: {model.operation}")
 
 
-def apply_post_processor_to_defs(
+def apply_post_processor_to_defs_handle(
     model,
-    defs: "DefinitionsHandle",
+    defs_handle: "DefinitionsHandle",
     context: ResolutionContext,
 ) -> "DefinitionsHandle":
     check.inst(model, AssetPostProcessorModel.model())
 
-    return defs.map_asset_specs(
+    return defs_handle.map_asset_specs(
         selection=model.target,
         func=lambda spec: apply_post_processor_to_spec(model, spec, context),
     )
@@ -311,7 +311,7 @@ def resolve_schema_to_post_processor(
 ) -> Callable[["DefinitionsHandle"], "DefinitionsHandle"]:
     check.inst(model, AssetPostProcessorModel.model())
 
-    return lambda defs: apply_post_processor_to_defs(model, defs, context)
+    return lambda defs_handle: apply_post_processor_to_defs_handle(model, defs_handle, context)
 
 
 AssetPostProcessor: TypeAlias = Annotated[
