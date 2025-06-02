@@ -265,7 +265,7 @@ def _get_sensors_table(sensors: Sequence[DgSensorMetadata]) -> "Table":
     "--path",
     "-p",
     type=click.Path(
-        resolve_path=True,
+        resolve_path=False,
         path_type=Path,
     ),
     help="Path to the definitions to list.",
@@ -274,7 +274,7 @@ def _get_sensors_table(sensors: Sequence[DgSensorMetadata]) -> "Table":
 @dg_path_options
 @cli_telemetry_wrapper
 def list_defs_command(
-    output_json: bool, target_path: Path, path: Path, **global_options: object
+    output_json: bool, target_path: Path, path: Optional[Path], **global_options: object
 ) -> None:
     """List registered Dagster definitions in the current project environment."""
     from rich.console import Console
