@@ -133,7 +133,7 @@ def scaffold_project_command(
     │       ├── definitions.py
     │       ├── defs
     │       │   └── __init__.py
-    │       └── lib
+    │       └── components
     │           └── __init__.py
     ├── tests
     │   └── __init__.py
@@ -141,7 +141,7 @@ def scaffold_project_command(
 
     The `src.<project_name>.defs` directory holds Python objects that can be targeted by the
     `dg scaffold` command or have dg-inspectable metadata. Custom component types in the project
-    live in `src.<project_name>.lib`. These types can be created with `dg scaffold component`.
+    live in `src.<project_name>.components`. These types can be created with `dg scaffold component`.
     """
     cli_config = normalize_cli_config(global_options, click.get_current_context())
     dg_context = DgContext.from_file_discovery_and_command_line_config(Path.cwd(), cli_config)
