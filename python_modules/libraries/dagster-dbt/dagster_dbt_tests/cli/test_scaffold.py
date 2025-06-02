@@ -63,8 +63,8 @@ def _assert_scaffold_defs(project_name: str, dagster_project_dir: Path) -> None:
     scaffold_defs_module = importlib.import_module(f"{project_name}.{project_name}.definitions")
     defs: Definitions = getattr(scaffold_defs_module, "defs")
 
-    materialize_dbt_models_job = defs.get_job_def("materialize_dbt_models")
-    materialize_dbt_models_schedule = defs.get_schedule_def("materialize_dbt_models_schedule")
+    materialize_dbt_models_job = defs.resolve_job_def("materialize_dbt_models")
+    materialize_dbt_models_schedule = defs.resolve_schedule_def("materialize_dbt_models_schedule")
 
     result = materialize_dbt_models_job.execute_in_process()
 

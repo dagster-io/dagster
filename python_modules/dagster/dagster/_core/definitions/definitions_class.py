@@ -451,6 +451,9 @@ class Definitions(IHaveNew):
         (return value of :py:func:`define_asset_job`) it will be resolved to a :py:class:`JobDefinition` when returned
         from this function, with all resource dependencies fully resolved.
         """
+        return self.resolve_job_def(name)
+
+    def resolve_job_def(self, name: str) -> JobDefinition:
         check.str_param(name, "name")
         return self.get_repository_def().get_job(name)
 
@@ -460,6 +463,9 @@ class Definitions(IHaveNew):
         If your passed-in sensor had resource dependencies, or the job targeted by the sensor had
         resource dependencies, those resource dependencies will be fully resolved on the returned object.
         """
+        return self.resolve_sensor_def(name)
+
+    def resolve_sensor_def(self, name: str) -> SensorDefinition:
         check.str_param(name, "name")
         return self.get_repository_def().get_sensor_def(name)
 
@@ -469,6 +475,9 @@ class Definitions(IHaveNew):
         If your passed-in schedule had resource dependencies, or the job targeted by the schedule had
         resource dependencies, those resource dependencies will be fully resolved on the returned object.
         """
+        return self.resolve_schedule_def(name)
+
+    def resolve_schedule_def(self, name: str) -> ScheduleDefinition:
         check.str_param(name, "name")
         return self.get_repository_def().get_schedule_def(name)
 
@@ -554,6 +563,9 @@ class Definitions(IHaveNew):
         return self.get_repository_def().get_implicit_job_def_for_assets(asset_keys)
 
     def get_assets_def(self, key: CoercibleToAssetKey) -> AssetsDefinition:
+        return self.resolve_assets_def(key)
+
+    def resolve_assets_def(self, key: CoercibleToAssetKey) -> AssetsDefinition:
         asset_key = AssetKey.from_coercible(key)
         for assets_def in self.get_asset_graph().assets_defs:
             if asset_key in assets_def.keys:
@@ -697,6 +709,9 @@ class Definitions(IHaveNew):
     @preview
     def get_all_asset_specs(self) -> Sequence[AssetSpec]:
         """Returns an AssetSpec object for every asset contained inside the Definitions object."""
+        return self.resolve_all_asset_specs()
+
+    def resolve_all_asset_specs(self) -> Sequence[AssetSpec]:
         asset_graph = self.get_asset_graph()
         return [asset_node.to_asset_spec() for asset_node in asset_graph.asset_nodes]
 
@@ -774,13 +789,21 @@ class Definitions(IHaveNew):
                 )
 
         """
-        return self.map_asset_specs_inner(
+        return self.map_resolved_asset_specs(func=func, selection=selection)
+
+    def map_resolved_asset_specs(
+        self,
+        *,
+        func: Callable[[AssetSpec], AssetSpec],
+        selection: Optional[CoercibleToAssetSelection] = None,
+    ) -> "Definitions":
+        return self.map_resolved_asset_specs_inner(
             func=func,
             selection=selection,
             ignore_non_spec_asset_types=False,
         )
 
-    def map_asset_specs_inner(
+    def map_resolved_asset_specs_inner(
         self,
         func: Callable[[AssetSpec], AssetSpec],
         selection: Optional[CoercibleToAssetSelection],

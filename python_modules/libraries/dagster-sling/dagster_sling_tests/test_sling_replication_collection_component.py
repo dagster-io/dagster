@@ -101,9 +101,9 @@ def test_python_attributes() -> None:
             AssetKey("input_duckdb"),
         }
         # inherited from directory name
-        assert defs.get_assets_def("input_duckdb").op.name == "replication"
+        assert defs.resolve_assets_def("input_duckdb").op.name == "replication"
         refs = check.inst(
-            defs.get_assets_def("input_duckdb").metadata_by_key[AssetKey("input_duckdb")][
+            defs.resolve_assets_def("input_duckdb").metadata_by_key[AssetKey("input_duckdb")][
                 "dagster/code_references"
             ],
             CodeReferencesMetadataValue,
@@ -126,7 +126,7 @@ def test_python_attributes_op_name() -> None:
             AssetKey("input_csv"),
             AssetKey("input_duckdb"),
         }
-        assert defs.get_assets_def("input_duckdb").op.name == "my_op"
+        assert defs.resolve_assets_def("input_duckdb").op.name == "my_op"
 
 
 def test_python_attributes_op_tags() -> None:
@@ -138,7 +138,7 @@ def test_python_attributes_op_tags() -> None:
         op = replications[0].op
         assert op
         assert op.tags == {"tag1": "value1"}
-        assert defs.get_assets_def("input_duckdb").op.tags == {"tag1": "value1"}
+        assert defs.resolve_assets_def("input_duckdb").op.tags == {"tag1": "value1"}
 
 
 def test_python_params_include_metadata() -> None:
@@ -150,7 +150,7 @@ def test_python_params_include_metadata() -> None:
         include_metadata = replications[0].include_metadata
         assert include_metadata == ["column_metadata", "row_count"]
 
-        input_duckdb = defs.get_assets_def("input_duckdb")
+        input_duckdb = defs.resolve_assets_def("input_duckdb")
 
         with instance_for_test() as instance:
             result = materialize([input_duckdb], instance=instance)
@@ -274,7 +274,7 @@ def test_translation(
         if attributes.get("key_prefix"):
             key = key.with_prefix(attributes["key_prefix"])
 
-        assets_def: AssetsDefinition = defs.get_assets_def(key)
+        assets_def: AssetsDefinition = defs.resolve_assets_def(key)
     if assertion:
         assert assertion(assets_def.get_asset_spec(key))
 
@@ -324,7 +324,7 @@ def test_spec_is_available_in_scope() -> None:
             }
         ]
     ) as (_, defs):
-        assets_def: AssetsDefinition = defs.get_assets_def("input_duckdb")
+        assets_def: AssetsDefinition = defs.resolve_assets_def("input_duckdb")
         assert assets_def.get_asset_spec(AssetKey("input_duckdb")).metadata["asset_key"] == [
             "input_duckdb"
         ]
@@ -359,5 +359,5 @@ def test_udf_map_spec(map_fn: Callable[[AssetSpec], Any]) -> None:
         },
     )
 
-    assets_def: AssetsDefinition = defs.get_assets_def(AssetKey("input_duckdb"))
+    assets_def: AssetsDefinition = defs.resolve_assets_def(AssetKey("input_duckdb"))
     assert assets_def.get_asset_spec(AssetKey("input_duckdb")).tags["is_custom_spec"] == "yes"

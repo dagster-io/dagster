@@ -297,7 +297,7 @@ def test_asset_io_manager(storage_account, file_system, credential):
         assets=[upstream, downstream, AssetsDefinition.from_graph(graph_asset)],
         resources={"io_manager": adls2_pickle_io_manager, "adls2": adls2_resource},
         jobs=[define_asset_job("my_asset_job")],
-    ).get_job_def("my_asset_job")
+    ).resolve_job_def("my_asset_job")
 
     run_config = {
         "resources": {

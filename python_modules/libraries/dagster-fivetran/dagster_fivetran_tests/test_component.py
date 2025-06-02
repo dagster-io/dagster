@@ -307,7 +307,7 @@ def test_translation(
             else:
                 key = AssetKey(["schema_name_in_destination_1", "table_name_in_destination_1"])
 
-            assets_def = defs.get_assets_def(key)
+            assets_def = defs.resolve_assets_def(key)
             if assertion:
                 assert assertion(assets_def.get_asset_spec(key))
 

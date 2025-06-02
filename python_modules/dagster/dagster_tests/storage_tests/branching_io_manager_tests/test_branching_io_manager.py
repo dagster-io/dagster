@@ -283,7 +283,7 @@ def test_job_op_usecase() -> Any:
     ) as runner:
         assert (
             cast("DefinitionsRunner", runner)
-            .defs.get_job_def("now_time_job")
+            .defs.resolve_job_def("now_time_job")
             .execute_in_process(instance=runner.instance)
             .success
         )

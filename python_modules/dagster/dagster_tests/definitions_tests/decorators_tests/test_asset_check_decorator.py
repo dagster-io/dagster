@@ -63,7 +63,7 @@ def execute_assets_and_checks(
             )
         ],
     )
-    job_def = defs.get_job_def("job1")
+    job_def = defs.resolve_job_def("job1")
     return job_def.execute_in_process(raise_on_error=raise_on_error, instance=instance)
 
 
@@ -681,7 +681,7 @@ def test_job_only_execute_checks_downstream_of_selected_assets() -> None:
         asset_checks=[check1, check2],
         jobs=[define_asset_job("job1", selection=[asset1])],
     )
-    job_def = defs.get_job_def("job1")
+    job_def = defs.resolve_job_def("job1")
     result = job_def.execute_in_process()
     assert result.success
 

@@ -87,7 +87,7 @@ def test_python_params(dbt_path: Path, backfill_policy: Optional[str]) -> None:
         },
     )
     assert defs.get_asset_graph().get_all_asset_keys() == JAFFLE_SHOP_KEYS
-    assets_def = defs.get_assets_def("stg_customers")
+    assets_def = defs.resolve_assets_def("stg_customers")
     assert assets_def.op.name == "some_op"
     assert assets_def.op.tags["tag1"] == "value"
 
@@ -161,7 +161,7 @@ def test_dbt_subclass_additional_scope_fn(dbt_path: Path) -> None:
             "translation": {"tags": "{{ get_tags_for_node(node) }}"},
         },
     )
-    assets_def = defs.get_assets_def(AssetKey("stg_customers"))
+    assets_def = defs.resolve_assets_def(AssetKey("stg_customers"))
     assert assets_def.get_asset_spec(AssetKey("stg_customers")).tags["model_id"] == "stg-customers"
 
 
@@ -255,7 +255,7 @@ def test_asset_attributes(
             key = AssetKey("stg_customers")
             assert defs.get_asset_graph().get_all_asset_keys() == JAFFLE_SHOP_KEYS
 
-        assets_def = defs.get_assets_def(key)
+        assets_def = defs.resolve_assets_def(key)
         if assertion:
             assert assertion(assets_def.get_asset_spec(key))
 
@@ -308,7 +308,7 @@ def test_dependency_on_dbt_project():
 
     defs = build_component_defs(DEPENDENCY_ON_DBT_PROJECT_LOCATION_PATH / "defs")
     assert AssetKey("downstream_of_customers") in defs.get_asset_graph().get_all_asset_keys()
-    downstream_of_customers_def = defs.get_assets_def("downstream_of_customers")
+    downstream_of_customers_def = defs.resolve_assets_def("downstream_of_customers")
     assert set(downstream_of_customers_def.asset_deps[AssetKey("downstream_of_customers")]) == {
         AssetKey("customers")
     }
@@ -322,7 +322,7 @@ def test_spec_is_available_in_scope(dbt_path: Path) -> None:
             "translation": {"metadata": {"asset_key": "{{ spec.key.path }}"}},
         },
     )
-    assets_def = defs.get_assets_def(AssetKey("stg_customers"))
+    assets_def = defs.resolve_assets_def(AssetKey("stg_customers"))
     assert assets_def.get_asset_spec(AssetKey("stg_customers")).metadata["asset_key"] == [
         "stg_customers"
     ]
@@ -355,7 +355,7 @@ def test_udf_map_spec(dbt_path: Path, map_fn: Callable[[AssetSpec], Any]) -> Non
             "translation": "{{ map_spec(spec) }}",
         },
     )
-    assets_def = defs.get_assets_def(AssetKey("stg_customers"))
+    assets_def = defs.resolve_assets_def(AssetKey("stg_customers"))
     assert assets_def.get_asset_spec(AssetKey("stg_customers")).tags["is_custom_spec"] == "yes"
 
 
@@ -392,7 +392,7 @@ def test_python_interface(dbt_path: Path):
         project=DbtProject(dbt_path),
         translation=lambda spec, _: spec.replace_attributes(tags={"python": "rules"}),
     ).build_defs(context)
-    assets_def = defs.get_assets_def(AssetKey("stg_customers"))
+    assets_def = defs.resolve_assets_def(AssetKey("stg_customers"))
     assert assets_def.get_asset_spec(AssetKey("stg_customers")).tags["python"] == "rules"
 
 

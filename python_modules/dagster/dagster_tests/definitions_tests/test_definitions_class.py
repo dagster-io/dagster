@@ -95,7 +95,7 @@ def test_basic_asset_job_definition():
 
     defs = Definitions(assets=[an_asset], jobs=[define_asset_job(name="an_asset_job")])
 
-    assert isinstance(defs.get_job_def("an_asset_job"), JobDefinition)
+    assert isinstance(defs.resolve_job_def("an_asset_job"), JobDefinition)
 
 
 def test_vanilla_job_definition():
@@ -108,7 +108,7 @@ def test_vanilla_job_definition():
         pass
 
     defs = Definitions(jobs=[a_job])
-    assert isinstance(defs.get_job_def("a_job"), JobDefinition)
+    assert isinstance(defs.resolve_job_def("a_job"), JobDefinition)
 
 
 def test_basic_schedule_definition():
@@ -127,7 +127,7 @@ def test_basic_schedule_definition():
         ],
     )
 
-    assert defs.get_schedule_def("daily_an_asset_schedule")
+    assert defs.resolve_schedule_def("daily_an_asset_schedule")
 
 
 def test_basic_sensor_definition():
@@ -146,7 +146,7 @@ def test_basic_sensor_definition():
         sensors=[a_sensor],
     )
 
-    assert defs.get_sensor_def("an_asset_sensor")
+    assert defs.resolve_sensor_def("an_asset_sensor")
 
 
 def test_with_resource_binding():
@@ -424,24 +424,24 @@ def test_kitchen_sink_on_create_helper_and_definitions():
         loggers={"logger_key": a_logger},
     )
 
-    assert isinstance(defs.get_job_def("a_job"), JobDefinition)
-    assert defs.get_job_def("a_job").executor_def is an_executor
-    assert defs.get_job_def("a_job").loggers == {"logger_key": a_logger}
+    assert isinstance(defs.resolve_job_def("a_job"), JobDefinition)
+    assert defs.resolve_job_def("a_job").executor_def is an_executor
+    assert defs.resolve_job_def("a_job").loggers == {"logger_key": a_logger}
     assert isinstance(defs.get_implicit_global_asset_job_def(), JobDefinition)
     assert defs.get_implicit_global_asset_job_def().executor_def is an_executor
     assert defs.get_implicit_global_asset_job_def().loggers == {"logger_key": a_logger}
-    assert isinstance(defs.get_job_def("another_asset_job"), JobDefinition)
-    assert defs.get_job_def("another_asset_job").executor_def is an_executor
-    assert defs.get_job_def("another_asset_job").loggers == {"logger_key": a_logger}
-    assert isinstance(defs.get_job_def("sensor_target"), JobDefinition)
-    assert defs.get_job_def("sensor_target").executor_def is an_executor
-    assert defs.get_job_def("sensor_target").loggers == {"logger_key": a_logger}
-    assert isinstance(defs.get_job_def("schedule_target"), JobDefinition)
-    assert defs.get_job_def("schedule_target").executor_def is an_executor
-    assert defs.get_job_def("schedule_target").loggers == {"logger_key": a_logger}
+    assert isinstance(defs.resolve_job_def("another_asset_job"), JobDefinition)
+    assert defs.resolve_job_def("another_asset_job").executor_def is an_executor
+    assert defs.resolve_job_def("another_asset_job").loggers == {"logger_key": a_logger}
+    assert isinstance(defs.resolve_job_def("sensor_target"), JobDefinition)
+    assert defs.resolve_job_def("sensor_target").executor_def is an_executor
+    assert defs.resolve_job_def("sensor_target").loggers == {"logger_key": a_logger}
+    assert isinstance(defs.resolve_job_def("schedule_target"), JobDefinition)
+    assert defs.resolve_job_def("schedule_target").executor_def is an_executor
+    assert defs.resolve_job_def("schedule_target").loggers == {"logger_key": a_logger}
 
-    assert isinstance(defs.get_schedule_def("a_schedule"), ScheduleDefinition)
-    assert isinstance(defs.get_sensor_def("a_sensor"), SensorDefinition)
+    assert isinstance(defs.resolve_schedule_def("a_schedule"), ScheduleDefinition)
+    assert isinstance(defs.resolve_sensor_def("a_sensor"), SensorDefinition)
 
 
 def test_with_resources_override():
@@ -497,8 +497,8 @@ def test_implicit_global_job_with_job_defined():
     defs = Definitions(assets=[asset_one], jobs=[define_asset_job("all_assets_job", selection="*")])
 
     assert defs.has_implicit_global_asset_job_def()
-    assert defs.get_job_def("all_assets_job")
-    assert defs.get_job_def("all_assets_job") is not defs.get_implicit_global_asset_job_def()
+    assert defs.resolve_job_def("all_assets_job")
+    assert defs.resolve_job_def("all_assets_job") is not defs.get_implicit_global_asset_job_def()
 
     assert len(defs.get_all_job_defs()) == 2
 
@@ -549,14 +549,14 @@ def test_unresolved_partitioned_asset_schedule():
     schedule1 = build_schedule_from_partitioned_job(job1)
 
     defs_with_explicit_job = Definitions(jobs=[job1], schedules=[schedule1], assets=[asset1])
-    assert defs_with_explicit_job.get_job_def("job1").name == "job1"
-    assert defs_with_explicit_job.get_job_def("job1").partitions_def == partitions_def
-    assert defs_with_explicit_job.get_schedule_def("job1_schedule").cron_schedule == "0 0 * * *"
+    assert defs_with_explicit_job.resolve_job_def("job1").name == "job1"
+    assert defs_with_explicit_job.resolve_job_def("job1").partitions_def == partitions_def
+    assert defs_with_explicit_job.resolve_schedule_def("job1_schedule").cron_schedule == "0 0 * * *"
 
     defs_with_implicit_job = Definitions(schedules=[schedule1], assets=[asset1])
-    assert defs_with_implicit_job.get_job_def("job1").name == "job1"
-    assert defs_with_implicit_job.get_job_def("job1").partitions_def == partitions_def
-    assert defs_with_implicit_job.get_schedule_def("job1_schedule").cron_schedule == "0 0 * * *"
+    assert defs_with_implicit_job.resolve_job_def("job1").name == "job1"
+    assert defs_with_implicit_job.resolve_job_def("job1").partitions_def == partitions_def
+    assert defs_with_implicit_job.resolve_schedule_def("job1_schedule").cron_schedule == "0 0 * * *"
 
 
 def test_bare_executor():
@@ -933,7 +933,7 @@ def test_get_all_asset_specs():
     asset7 = AssetSpec("asset7", tags={"apple": "banana"})
 
     defs = Definitions(assets=[asset1, asset2, assets3_and_4, asset5, asset6, asset7])
-    all_asset_specs = defs.get_all_asset_specs()
+    all_asset_specs = defs.resolve_all_asset_specs()
     assert len(all_asset_specs) == 7
     asset_specs_by_key = {spec.key: spec for spec in all_asset_specs}
     assert asset_specs_by_key.keys() == {
@@ -1029,11 +1029,11 @@ def test_hoist_automation_assets():
 
     defs = Definitions(sensors=[foo_sensor], schedules=[bar_schedule], jobs=[foo_job])
 
-    assert defs.get_assets_def(foo.key) == foo
-    assert defs.get_assets_def(bar.key) == bar
+    assert defs.resolve_assets_def(foo.key) == foo
+    assert defs.resolve_assets_def(bar.key) == bar
 
     # We can define and execute asset jobs that reference assets only defined in targets
-    assert defs.get_job_def(foo_job.name).execute_in_process().success
+    assert defs.resolve_job_def(foo_job.name).execute_in_process().success
 
 
 def test_definitions_failure_on_asset_job_resolve():
@@ -1134,14 +1134,14 @@ def test_map_asset_specs() -> None:
     specs = [AssetSpec("asset1"), AssetSpec("asset2")]
     defs = Definitions(assets=specs)
     spec_lambda = lambda spec: spec.merge_attributes(tags={"foo": "bar"})
-    mapped_defs = defs.map_asset_specs(func=spec_lambda)
+    mapped_defs = defs.map_resolved_asset_specs(func=spec_lambda)
     assert mapped_defs.assets == [
         AssetSpec("asset1", tags={"foo": "bar"}),
         AssetSpec("asset2", tags={"foo": "bar"}),
     ]
 
     # Select only asset 1
-    mapped_defs = defs.map_asset_specs(func=spec_lambda, selection="asset1")
+    mapped_defs = defs.map_resolved_asset_specs(func=spec_lambda, selection="asset1")
     assert mapped_defs.assets == [
         AssetSpec("asset1", tags={"foo": "bar"}),
         AssetSpec("asset2"),
@@ -1149,13 +1149,13 @@ def test_map_asset_specs() -> None:
 
     # Select no assets accidentally
     with pytest.raises(DagsterInvalidSubsetError):
-        mapped_defs = defs.map_asset_specs(func=spec_lambda, selection="asset3")
+        mapped_defs = defs.map_resolved_asset_specs(func=spec_lambda, selection="asset3")
 
     # attempt to map with source asset
     source_asset = SourceAsset("source_asset")
     defs = Definitions(assets=[source_asset])
     with pytest.raises(DagsterInvariantViolationError):
-        defs.map_asset_specs(func=spec_lambda)
+        defs.map_resolved_asset_specs(func=spec_lambda)
 
     class MyCacheableAssetsDefinition(CacheableAssetsDefinition):
         def compute_cacheable_data(self):
@@ -1167,4 +1167,4 @@ def test_map_asset_specs() -> None:
     cacheable_asset = MyCacheableAssetsDefinition("cacheable_asset")
     defs = Definitions(assets=[cacheable_asset])
     with pytest.raises(DagsterInvariantViolationError):
-        defs.map_asset_specs(func=spec_lambda)
+        defs.map_resolved_asset_specs(func=spec_lambda)

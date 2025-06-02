@@ -597,7 +597,7 @@ def test_inherited_io_config_schemas() -> None:
         resources={"io_manager": MyConfigurableIOManager(base_path="my-bucket/")},
         jobs=[my_job],
     )
-    defs.get_job_def("my_job").execute_in_process(
+    defs.resolve_job_def("my_job").execute_in_process(
         run_config={
             "ops": {
                 "op_1": {"outputs": {"result": {"file_name": "table1"}}},

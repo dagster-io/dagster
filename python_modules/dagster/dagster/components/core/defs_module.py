@@ -97,7 +97,7 @@ class CompositeYamlComponent(Component):
 
         return Definitions.merge(
             *(
-                component.build_defs(context).map_asset_specs_inner(
+                component.build_defs(context).map_resolved_asset_specs_inner(
                     func=lambda spec: _add_defs_yaml_code_reference_to_spec(
                         component_yaml_path=component_yaml,
                         load_context=context,

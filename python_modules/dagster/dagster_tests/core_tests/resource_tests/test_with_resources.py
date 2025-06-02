@@ -635,7 +635,7 @@ def create_asset_job():
 
     return Definitions(
         assets=[my_derived_asset], jobs=[define_asset_job("the_job", [my_derived_asset])]
-    ).get_job_def("the_job")
+    ).resolve_job_def("the_job")
 
 
 def test_source_asset_default_io_manager(instance):

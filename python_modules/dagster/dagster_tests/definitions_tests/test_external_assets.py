@@ -184,7 +184,7 @@ def test_how_source_assets_are_backwards_compatible() -> None:
         assets=[create_external_asset_from_source_asset(source_asset), an_asset]
     )
 
-    assert isinstance(defs_with_shim.get_assets_def("source_asset"), AssetsDefinition)
+    assert isinstance(defs_with_shim.resolve_assets_def("source_asset"), AssetsDefinition)
 
     result_two = defs_with_shim.get_implicit_global_asset_job_def().execute_in_process(
         instance=instance,
@@ -247,7 +247,7 @@ def test_how_partitioned_source_assets_are_backwards_compatible() -> None:
     shimmed_source_asset = create_external_asset_from_source_asset(source_asset)
     defs_with_shim = Definitions(assets=[shimmed_source_asset, an_asset])
 
-    assert isinstance(defs_with_shim.get_assets_def("source_asset"), AssetsDefinition)
+    assert isinstance(defs_with_shim.resolve_assets_def("source_asset"), AssetsDefinition)
 
     job_def_with_shim = get_job_for_assets(defs_with_shim, an_asset)
 

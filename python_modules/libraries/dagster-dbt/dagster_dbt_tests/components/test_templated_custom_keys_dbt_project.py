@@ -78,7 +78,7 @@ def test_python_attributes_group(dbt_path: Path) -> None:
     )
     assert defs.get_asset_graph().get_all_asset_keys() == JAFFLE_SHOP_KEYS
     for key in JAFFLE_SHOP_KEYS:
-        assert defs.get_assets_def(key).get_asset_spec(key).group_name == "some_group"
+        assert defs.resolve_assets_def(key).get_asset_spec(key).group_name == "some_group"
 
 
 def test_load_from_path(dbt_path: Path) -> None:
@@ -97,7 +97,7 @@ def test_render_vars_root(dbt_path: Path) -> None:
         )
         assert defs.get_asset_graph().get_all_asset_keys() == JAFFLE_SHOP_KEYS
         for key in JAFFLE_SHOP_KEYS:
-            assert defs.get_assets_def(key).get_asset_spec(key).group_name == "group_in_env"
+            assert defs.resolve_assets_def(key).get_asset_spec(key).group_name == "group_in_env"
 
 
 def test_render_vars_asset_key(dbt_path: Path) -> None:
