@@ -1,6 +1,17 @@
 import warnings
 
-from dagster import Definitions, asset, define_asset_job, job, op, schedule, sensor
+import pytest
+from dagster import (
+    DailyPartitionsDefinition,
+    Definitions,
+    asset,
+    build_schedule_from_partitioned_job,
+    define_asset_job,
+    job,
+    op,
+    schedule,
+    sensor,
+)
 from dagster._core.definitions.job_definition import JobDefinition
 
 
@@ -150,3 +161,70 @@ def test_schedule_get_direct_job_succeeds() -> None:
     defs = Definitions(schedules=[my_schedule])
 
     ensure_get_direct_job_def_succeeds(defs, direct_job)
+
+
+def test_get_sensor_def_warns() -> None:
+    @sensor(name="my_sensor")
+    def my_sensor(context): ...
+
+    defs = Definitions(sensors=[my_sensor])
+
+    warnings.resetwarnings()
+    with warnings.catch_warnings(record=True) as w:
+        defs.get_sensor_def("my_sensor")
+        assert len(w) == 1
+        assert "dagster 1.11" in str(w[0].message)
+
+
+def test_get_unresolved_sensor_def_succeeds() -> None:
+    @sensor(name="my_sensor")
+    def my_sensor(context): ...
+
+    defs = Definitions(sensors=[my_sensor])
+
+    warnings.resetwarnings()
+    with warnings.catch_warnings(record=True) as w:
+        assert defs.get_unresolved_sensor_def("my_sensor") is my_sensor
+        assert len(w) == 0
+
+
+def test_get_schedule_def_warns() -> None:
+    @schedule(name="my_schedule", cron_schedule="* * * * *", target="*")
+    def my_schedule(context): ...
+
+    defs = Definitions(schedules=[my_schedule])
+
+    warnings.resetwarnings()
+    with warnings.catch_warnings(record=True) as w:
+        defs.get_schedule_def("my_schedule")
+        assert len(w) == 1
+        assert "dagster 1.11" in str(w[0].message)
+
+
+def test_get_unresolved_schedule_def_succeeds() -> None:
+    @schedule(name="my_schedule", cron_schedule="* * * * *", target="*")
+    def my_schedule(context): ...
+
+    defs = Definitions(schedules=[my_schedule])
+
+    warnings.resetwarnings()
+    with warnings.catch_warnings(record=True) as w:
+        assert defs.get_unresolved_schedule_def("my_schedule") is my_schedule
+        assert len(w) == 0
+
+
+def test_resolve_build_schedule_from_partitioned_job_succeeds() -> None:
+    @asset(partitions_def=DailyPartitionsDefinition(start_date="2020-01-01"))
+    def asset1(): ...
+
+    asset1_job = define_asset_job("asset1_job", selection=[asset1])
+    schedule = build_schedule_from_partitioned_job(asset1_job, name="my_schedule")
+
+    ensure_resolve_job_succeeds(Definitions(assets=[asset1], schedules=[schedule]), "asset1_job")
+
+    defs = Definitions(assets=[asset1], schedules=[schedule])
+    with pytest.raises(ValueError, match="ScheduleDefinition with name no_schedule not found"):
+        defs.get_unresolved_schedule_def("no_schedule")
+
+    with pytest.raises(ValueError, match="is an UnresolvedPartitionedAssetScheduleDefinition"):
+        defs.get_unresolved_schedule_def("my_schedule")

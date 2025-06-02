@@ -489,7 +489,18 @@ class Definitions(IHaveNew):
         If your passed-in sensor had resource dependencies, or the job targeted by the sensor had
         resource dependencies, those resource dependencies will be fully resolved on the returned object.
         """
+        warnings.warn(
+            "Starting in dagster 1.11, get_sensor_def will return a SensorDefinition without resolving resource dependencies on it or its target."
+        )
+
         return self.resolve_sensor_def(name)
+
+    # TODO: after dagster 1.11, this will become the implementation of get_sensor_def -- schrockn 2025-06-02
+    def get_unresolved_sensor_def(self, name: str) -> SensorDefinition:
+        for sensor in self.sensors or []:
+            if sensor.name == name:
+                return sensor
+        raise ValueError(f"SensorDefinition with name {name} not found")
 
     def resolve_sensor_def(self, name: str) -> SensorDefinition:
         check.str_param(name, "name")
@@ -501,7 +512,22 @@ class Definitions(IHaveNew):
         If your passed-in schedule had resource dependencies, or the job targeted by the schedule had
         resource dependencies, those resource dependencies will be fully resolved on the returned object.
         """
+        warnings.warn(
+            "Starting in dagster 1.11, get_schedule_def will return a ScheduleDefinition without resolving resource dependencies on it or its target."
+        )
         return self.resolve_schedule_def(name)
+
+    # TODO: after dagster 1.11, this will become the implementation of get_schedule_def -- schrockn 2025-06-02
+    def get_unresolved_schedule_def(self, name: str) -> ScheduleDefinition:
+        for schedule in self.schedules or []:
+            if schedule.name == name:
+                if isinstance(schedule, ScheduleDefinition):
+                    return schedule
+                raise ValueError(
+                    f"ScheduleDefinition with name {name} is an UnresolvedPartitionedAssetScheduleDefinition, which is not supported in get_unresolved_schedule_def"
+                )
+
+        raise ValueError(f"ScheduleDefinition with name {name} not found")
 
     def resolve_schedule_def(self, name: str) -> ScheduleDefinition:
         check.str_param(name, "name")
