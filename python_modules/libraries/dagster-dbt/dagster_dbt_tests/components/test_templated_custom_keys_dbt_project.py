@@ -1,7 +1,6 @@
 import shutil
 import tempfile
 from collections.abc import Iterator
-from contextlib import contextmanager
 from pathlib import Path
 
 import pytest
@@ -45,7 +44,6 @@ JAFFLE_SHOP_KEYS_WITH_PREFIX = {
 }
 
 
-@contextmanager
 @pytest.fixture(scope="module")
 def dbt_path() -> Iterator[Path]:
     with tempfile.TemporaryDirectory() as temp_dir:

@@ -2205,7 +2205,7 @@ def _get_assets_defs(use_multi: bool = False, allow_subset: bool = False):
         ("*", False, None),
         ("*", True, None),
         ("e", False, None),
-        ("e", True, (DagsterInvalidSubsetError, "")),
+        ("e", True, (DagsterInvalidSubsetError, None)),
         (
             "x",
             False,
