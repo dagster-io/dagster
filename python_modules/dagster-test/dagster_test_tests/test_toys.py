@@ -324,7 +324,7 @@ def test_software_defined_assets_job():
             assets=software_defined_assets,
             jobs=[define_asset_job("all_assets")],
         )
-        .get_job_def("all_assets")
+        .resolve_job_def("all_assets")
         .execute_in_process()
         .success
     )

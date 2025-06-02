@@ -4410,7 +4410,7 @@ class TestEventLogStorage:
         result = _execute_job_and_store_events(
             instance,
             storage,
-            defs.get_job_def("one_asset_job"),
+            defs.resolve_job_def("one_asset_job"),
             run_id=run_id_1,
         )
         records = storage.get_asset_records([my_asset_key])
@@ -4471,7 +4471,7 @@ class TestEventLogStorage:
         result = _execute_job_and_store_events(
             instance,
             storage,
-            defs.get_job_def("two_asset_job"),
+            defs.resolve_job_def("two_asset_job"),
             run_id=run_id_2,
         )
         records = storage.get_asset_records([my_asset_key])

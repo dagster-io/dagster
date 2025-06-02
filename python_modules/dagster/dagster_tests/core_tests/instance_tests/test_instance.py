@@ -294,7 +294,7 @@ def noop_asset():
 
 noop_asset_job = Definitions(
     assets=[noop_asset], jobs=[define_asset_job("noop_asset_job", [noop_asset])]
-).get_job_def("noop_asset_job")
+).resolve_job_def("noop_asset_job")
 
 
 def test_create_job_snapshot():

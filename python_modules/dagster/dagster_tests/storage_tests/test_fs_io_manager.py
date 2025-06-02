@@ -342,7 +342,7 @@ def test_fs_io_manager_partitioned_multi_asset():
             assets=[upstream_asset, downstream_asset],
             resources={"io_manager": io_manager_def},
             jobs=[define_asset_job("TheJob")],
-        ).get_job_def("TheJob")
+        ).resolve_job_def("TheJob")
 
         result = foo_job.execute_in_process(partition_key="A")
         assert result.success

@@ -325,7 +325,7 @@ def test_translation(
             else:
                 key = AssetKey(["duckdb_issues", "issues"])
 
-            assets_def = defs.get_assets_def(key)
+            assets_def = defs.resolve_assets_def(key)
             if assertion:
                 assert assertion(assets_def.get_asset_spec(key))
 

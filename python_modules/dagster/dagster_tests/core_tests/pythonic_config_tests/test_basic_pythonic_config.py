@@ -787,7 +787,7 @@ def test_structured_run_config_assets():
         assets=[my_asset],
         jobs=[my_asset_job],
     )
-    defs.get_job_def("my_asset_job").execute_in_process()
+    defs.resolve_job_def("my_asset_job").execute_in_process()
     assert executed["yes"]
 
     # materialize

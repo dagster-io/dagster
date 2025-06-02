@@ -90,7 +90,7 @@ def test_bind_resource_to_job_at_defn_time() -> None:
         },
     )
 
-    assert defs.get_job_def("hello_world_job").execute_in_process().success
+    assert defs.resolve_job_def("hello_world_job").execute_in_process().success
     assert out_txt == ["hello, world!"]
 
     out_txt.clear()
@@ -102,7 +102,7 @@ def test_bind_resource_to_job_at_defn_time() -> None:
         },
     )
 
-    assert defs.get_job_def("hello_world_job").execute_in_process().success
+    assert defs.resolve_job_def("hello_world_job").execute_in_process().success
     assert out_txt == ["msg: hello, world!"]
 
 
@@ -131,7 +131,7 @@ def test_bind_resource_to_job_at_defn_time_bind_resources_to_jobs() -> None:
         },
     )
 
-    assert defs.get_job_def("hello_world_job").execute_in_process().success
+    assert defs.resolve_job_def("hello_world_job").execute_in_process().success
     assert out_txt == ["hello, world!"]
 
     out_txt.clear()
@@ -144,7 +144,7 @@ def test_bind_resource_to_job_at_defn_time_bind_resources_to_jobs() -> None:
         },
     )
 
-    assert defs.get_job_def("hello_world_job").execute_in_process().success
+    assert defs.resolve_job_def("hello_world_job").execute_in_process().success
     assert out_txt == ["msg: hello, world!"]
 
 
@@ -179,11 +179,11 @@ def test_bind_resource_to_job_with_job_config() -> None:
         },
     )
 
-    assert defs.get_job_def("hello_world_job").execute_in_process().success
+    assert defs.resolve_job_def("hello_world_job").execute_in_process().success
     assert out_txt == ["msg: hello, world!"]
     out_txt.clear()
 
-    assert defs.get_job_def("hello_earth_job").execute_in_process().success
+    assert defs.resolve_job_def("hello_earth_job").execute_in_process().success
     assert out_txt == ["msg: hello, earth!"]
 
     # Validate that we correctly error
@@ -227,11 +227,11 @@ def test_bind_resource_to_job_at_defn_time_override() -> None:
         },
     )
 
-    assert defs.get_job_def("hello_world_job_with_override").execute_in_process().success
+    assert defs.resolve_job_def("hello_world_job_with_override").execute_in_process().success
     assert out_txt == ["job says: hello, world!"]
     out_txt.clear()
 
-    assert defs.get_job_def("hello_world_job_no_override").execute_in_process().success
+    assert defs.resolve_job_def("hello_world_job_no_override").execute_in_process().success
     assert out_txt == ["definitions says: hello, world!"]
 
 
@@ -271,7 +271,7 @@ def test_bind_resource_to_instigator(include_job_in_definitions) -> None:
     )
 
     assert (
-        cast("JobDefinition", defs.get_sensor_def("hello_world_sensor").job)
+        cast("JobDefinition", defs.resolve_sensor_def("hello_world_sensor").job)
         .execute_in_process()
         .success
     )
@@ -280,7 +280,7 @@ def test_bind_resource_to_instigator(include_job_in_definitions) -> None:
     out_txt.clear()
 
     assert (
-        cast("JobDefinition", defs.get_schedule_def("hello_world_schedule").job)
+        cast("JobDefinition", defs.resolve_schedule_def("hello_world_schedule").job)
         .execute_in_process()
         .success
     )
@@ -324,7 +324,7 @@ def test_bind_resource_to_instigator_by_name() -> None:
     )
 
     assert (
-        defs.get_job_def(cast("str", defs.get_sensor_def("hello_world_sensor").job_name))
+        defs.resolve_job_def(cast("str", defs.resolve_sensor_def("hello_world_sensor").job_name))
         .execute_in_process()
         .success
     )
@@ -333,7 +333,9 @@ def test_bind_resource_to_instigator_by_name() -> None:
     out_txt.clear()
 
     assert (
-        defs.get_job_def(cast("str", defs.get_schedule_def("hello_world_schedule").job_name))
+        defs.resolve_job_def(
+            cast("str", defs.resolve_schedule_def("hello_world_schedule").job_name)
+        )
         .execute_in_process()
         .success
     )
@@ -368,7 +370,7 @@ def test_bind_io_manager_default() -> None:
         },
     )
 
-    assert defs.get_job_def("hello_world_job").execute_in_process().success
+    assert defs.resolve_job_def("hello_world_job").execute_in_process().success
     assert outputs == ["foo"]
 
 
@@ -406,7 +408,7 @@ def test_bind_io_manager_override() -> None:
         },
     )
 
-    assert defs.get_job_def("hello_world_job").execute_in_process().success
+    assert defs.resolve_job_def("hello_world_job").execute_in_process().success
     assert outputs == ["foo"]
 
 
@@ -640,7 +642,7 @@ def test_late_binding_with_resource_defs() -> None:
         resources={"io_manager": FilesystemIOManager()},
     )
 
-    assert defs.get_job_def("do_database_stuff").execute_in_process().success
+    assert defs.resolve_job_def("do_database_stuff").execute_in_process().success
 
     assert queries == ["foo"]
 
@@ -680,6 +682,6 @@ def test_late_binding_with_resource_defs_override() -> None:
         resources={"io_manager": FilesystemIOManager(), "database": bad_database_resource},
     )
 
-    assert defs.get_job_def("do_database_stuff").execute_in_process().success
+    assert defs.resolve_job_def("do_database_stuff").execute_in_process().success
 
     assert queries == ["foo"]

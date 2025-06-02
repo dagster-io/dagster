@@ -422,7 +422,7 @@ def test_monitor_sensor_cursor(init_load_context: None, instance: DagsterInstanc
         assert result.tags["range_end"] == freeze_datetime.isoformat()
         # Create an actual run for the monitoring job that is not finished.
         run = instance.create_run_for_job(
-            job_def=defs.get_job_def(monitoring_job_name(af_instance.name)),
+            job_def=defs.resolve_job_def(monitoring_job_name(af_instance.name)),
             run_id=make_new_run_id(),
             tags=result.tags,
             status=DagsterRunStatus.STARTED,
@@ -569,7 +569,7 @@ def test_monitoring_sensor_run_fails(instance: DagsterInstance) -> None:
         assert result.tags["range_end"] == freeze_datetime.isoformat()
         # Create an actual run for the monitoring job that is failed.
         run = instance.create_run_for_job(
-            job_def=defs.get_job_def(monitoring_job_name(af_instance.name)),
+            job_def=defs.resolve_job_def(monitoring_job_name(af_instance.name)),
             run_id=make_new_run_id(),
             tags=result.tags,
             status=DagsterRunStatus.FAILURE,
@@ -580,7 +580,7 @@ def test_monitoring_sensor_run_fails(instance: DagsterInstance) -> None:
 
         # Create a successful run for the monitoring job within the same run group.
         instance.create_run_for_job(
-            job_def=defs.get_job_def(monitoring_job_name(af_instance.name)),
+            job_def=defs.resolve_job_def(monitoring_job_name(af_instance.name)),
             run_id=make_new_run_id(),
             status=DagsterRunStatus.SUCCESS,
             tags={ROOT_RUN_ID_TAG: run.run_id, **run.tags},

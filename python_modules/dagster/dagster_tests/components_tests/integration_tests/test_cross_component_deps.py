@@ -16,7 +16,7 @@ def test_dependency_between_components():
     assert (
         AssetKey("downstream_of_all_my_python_defs") in defs.get_asset_graph().get_all_asset_keys()
     )
-    downstream_of_all_my_python_defs = defs.get_assets_def("downstream_of_all_my_python_defs")
+    downstream_of_all_my_python_defs = defs.resolve_assets_def("downstream_of_all_my_python_defs")
     assert set(
         downstream_of_all_my_python_defs.asset_deps[AssetKey("downstream_of_all_my_python_defs")]
     ) == set(defs.get_asset_graph().get_all_asset_keys()) - {
@@ -36,7 +36,7 @@ def test_dependency_between_components_with_custom_component():
     assert (
         AssetKey("downstream_of_all_my_python_defs") in defs.get_asset_graph().get_all_asset_keys()
     )
-    downstream_of_all_my_python_defs = defs.get_assets_def("downstream_of_all_my_python_defs")
+    downstream_of_all_my_python_defs = defs.resolve_assets_def("downstream_of_all_my_python_defs")
     assert set(
         downstream_of_all_my_python_defs.asset_deps[AssetKey("downstream_of_all_my_python_defs")]
     ) == set(defs.get_asset_graph().get_all_asset_keys()) - {

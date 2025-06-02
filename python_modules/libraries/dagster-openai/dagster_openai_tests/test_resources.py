@@ -259,7 +259,7 @@ def test_openai_resource_with_partitioned_asset(mock_client, mock_context, mock_
     )
 
     for partition_key in openai_partitions_def.get_partition_keys():
-        result = defs.get_job_def("openai_partitioned_asset_job").execute_in_process(
+        result = defs.resolve_job_def("openai_partitioned_asset_job").execute_in_process(
             partition_key=partition_key
         )
         assert result.success
@@ -573,7 +573,7 @@ def test_openai_wrapper_with_partitioned_asset(mock_client, mock_wrapper):
     )
 
     for partition_key in openai_partitions_def.get_partition_keys():
-        result = defs.get_job_def("openai_partitioned_asset_job").execute_in_process(
+        result = defs.resolve_job_def("openai_partitioned_asset_job").execute_in_process(
             partition_key=partition_key
         )
         assert result.success
