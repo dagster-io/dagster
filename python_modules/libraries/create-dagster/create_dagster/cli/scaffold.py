@@ -8,6 +8,7 @@ from dagster_dg_core.config import (
     DgProjectPythonEnvironmentFlag,
     DgRawWorkspaceConfig,
     DgWorkspaceScaffoldProjectOptions,
+    discover_workspace_root,
     normalize_cli_config,
 )
 from dagster_dg_core.context import DgContext
@@ -25,8 +26,6 @@ from dagster_dg_core.utils.telemetry import cli_telemetry_wrapper
 from typing_extensions import get_args
 
 from create_dagster.scaffold import scaffold_project, scaffold_workspace
-
-DEFAULT_WORKSPACE_NAME = "dagster-workspace"
 
 
 def _print_package_install_warning_message() -> None:
@@ -201,12 +200,12 @@ def scaffold_project_command(
     cls=DgClickCommand,
     context_settings={"help_option_names": ["-h", "--help"]},
 )
-@click.argument("name", type=str, default=DEFAULT_WORKSPACE_NAME)
+@click.argument("path", type=Path)
 @dg_editable_dagster_options
 @dg_global_options
 @cli_telemetry_wrapper
 def scaffold_workspace_command(
-    name: str,
+    path: Path,
     use_editable_dagster: Optional[str],
     **global_options: object,
 ):
@@ -232,4 +231,17 @@ def scaffold_workspace_command(
             use_editable_dagster,
         )
     )
-    scaffold_workspace(name, workspace_config)
+
+    abs_path = path.resolve()
+
+    existing_workspace_path = discover_workspace_root(path)
+    if existing_workspace_path:
+        exit_with_error(
+            f"Workspace already exists at {existing_workspace_path}.  Run `create-dagster project` to add a new project to that workspace."
+        )
+    elif str(path) != "." and path.exists():
+        exit_with_error(f"Folder already exists at {path}.")
+
+    click.echo(f"Creating a Dagster workspace at {path}.")
+
+    scaffold_workspace(abs_path, workspace_config)
