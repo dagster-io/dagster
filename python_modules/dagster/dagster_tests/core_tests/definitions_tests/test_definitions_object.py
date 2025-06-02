@@ -12,7 +12,14 @@ from dagster import (
     schedule,
     sensor,
 )
+from dagster._core.definitions.asset_key import AssetKey
+from dagster._core.definitions.asset_spec import AssetSpec
+from dagster._core.definitions.decorators.source_asset_decorator import (
+    multi_observable_source_asset,
+    observable_source_asset,
+)
 from dagster._core.definitions.job_definition import JobDefinition
+from dagster._core.definitions.source_asset import SourceAsset
 from dagster_shared.check.functions import CheckError
 
 
@@ -241,3 +248,40 @@ def test_map_asset_specs_fails() -> None:
         match="The selection parameter is no longer supported for map_asset_specs, Please use map_resolved_asset_specs instead",
     ):
         defs.map_asset_specs(func=lambda s: s, selection="something")
+
+
+def test_get_directly_asset_specs_succeeds() -> None:
+    assert Definitions(assets=[AssetSpec("asset1")]).get_all_asset_specs()[0].key == AssetKey(
+        "asset1"
+    )
+
+    @asset
+    def asset1(): ...
+
+    assert Definitions(assets=[asset1]).get_all_asset_specs()[0].key == AssetKey("asset1")
+
+    assert Definitions(asset_checks=[asset1]).get_all_asset_specs()[0].key == AssetKey("asset1")
+
+
+def test_get_all_asset_specs_warns() -> None:
+    warnings.resetwarnings()
+    with warnings.catch_warnings(record=True) as w:
+        Definitions(assets=[AssetSpec("asset1")]).get_all_asset_specs()
+        assert len(w) == 1
+        assert "get_all_asset_specs" in str(w[0].message)
+
+
+def test_resolve_all_asset_specs_succeeds() -> None:
+    assert Definitions(assets=[SourceAsset("asset1")]).resolve_all_asset_specs()[0].key == AssetKey(
+        "asset1"
+    )
+
+    @observable_source_asset
+    def asset1(): ...
+
+    assert Definitions(assets=[asset1]).resolve_all_asset_specs()[0].key == AssetKey("asset1")
+
+    @multi_observable_source_asset(specs=[AssetSpec("asset1")])
+    def _the_mosa(): ...
+
+    assert Definitions(assets=[_the_mosa]).resolve_all_asset_specs()[0].key == AssetKey("asset1")
