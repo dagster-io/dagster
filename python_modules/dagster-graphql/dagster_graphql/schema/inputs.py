@@ -197,6 +197,7 @@ class GrapheneAssetBackfillPreviewParams(graphene.InputObjectType):
 
 class GrapheneLaunchBackfillParams(graphene.InputObjectType):
     selector = graphene.InputField(GraphenePartitionSetSelector)
+    partitionConfigs = graphene.JSONString()
     partitionNames = graphene.List(graphene.NonNull(graphene.String))
     partitionsByAssets = graphene.List(GraphenePartitionsByAssetSelector)
     reexecutionSteps = graphene.List(graphene.NonNull(graphene.String))
@@ -319,7 +320,6 @@ class GrapheneExecutionParams(graphene.InputObjectType):
 
 
 class GrapheneReexecutionStrategy(graphene.Enum):
-    FROM_ASSET_FAILURE = "FROM_ASSET_FAILURE"
     FROM_FAILURE = "FROM_FAILURE"
     ALL_STEPS = "ALL_STEPS"
 

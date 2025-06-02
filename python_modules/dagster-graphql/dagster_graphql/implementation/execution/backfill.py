@@ -126,6 +126,8 @@ def create_and_launch_partition_backfill(
 
     tags = {**tags, **graphene_info.context.get_viewer_tags()}
 
+    partition_configs = backfill_params.get("partitionConfigs", {})
+
     title = check_valid_title(backfill_params.get("title"))
 
     if backfill_params.get("selector") is not None:  # job backfill
@@ -184,6 +186,7 @@ def create_and_launch_partition_backfill(
             asset_selection=asset_selection,
             title=title,
             description=backfill_params.get("description"),
+            partition_configs=partition_configs,
         )
         assert_valid_job_partition_backfill(
             graphene_info,
