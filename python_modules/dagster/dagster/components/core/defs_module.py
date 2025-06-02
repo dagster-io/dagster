@@ -106,7 +106,6 @@ class CompositeYamlComponent(Component):
                         asset_spec=spec,
                     ),
                     selection=None,
-                    ignore_non_spec_asset_types=True,
                 )
                 for component, source_position in zip(self.components, self.source_positions)
             )
