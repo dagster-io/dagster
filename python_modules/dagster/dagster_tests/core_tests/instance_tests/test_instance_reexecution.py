@@ -182,19 +182,19 @@ defs = dg.Definitions(
 
 
 def multi_asset_fail_job():
-    return defs.get_job_def("multi_asset_fail_job")
+    return defs.resolve_job_def("multi_asset_fail_job")
 
 
 def multi_asset_with_checks_fail_job():
-    return defs.get_job_def("multi_asset_with_checks_fail_job")
+    return defs.resolve_job_def("multi_asset_with_checks_fail_job")
 
 
 def blocking_check_job():
-    return defs.get_job_def("blocking_check_job")
+    return defs.resolve_job_def("blocking_check_job")
 
 
 def unsubsettable_job():
-    return defs.get_job_def("unsubsettable_job")
+    return defs.resolve_job_def("unsubsettable_job")
 
 
 @pytest.fixture(name="instance", scope="module")

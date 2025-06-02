@@ -25,14 +25,14 @@ if TYPE_CHECKING:
 TranslationFn: TypeAlias = Callable[[AssetSpec, DltResourceTranslatorData], AssetSpec]
 
 
-def _load_object_from_python_path(path: str):
+def _load_object_from_python_path(resolution_context: ResolutionContext, path: str):
     """Loads a Python object from the given import path, accepting
     relative paths.
 
     For example, '.foo_module.bar_object' will find the relative module
     'foo_module' and return 'bar_object'.
     """
-    context = ComponentLoadContext.current()
+    context = ComponentLoadContext.from_resolution_context(resolution_context)
 
     if path.startswith("."):
         path = f"{context.defs_relative_module_name(context.path)}{path}"
@@ -93,12 +93,12 @@ class DltLoadSpecModel(Resolvable):
 
     pipeline: Annotated[
         Pipeline,
-        Resolver(lambda ctx, path: _load_object_from_python_path(path), model_field_type=str),
+        Resolver(lambda ctx, path: _load_object_from_python_path(ctx, path), model_field_type=str),
     ]
     source: Annotated[
         DltSource,
         Resolver(
-            lambda ctx, path: _load_object_from_python_path(path),
+            lambda ctx, path: _load_object_from_python_path(ctx, path),
             model_field_type=str,
         ),
     ]

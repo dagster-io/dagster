@@ -134,7 +134,7 @@ def test_map_asset_specs_attach_internal_freshness_policy() -> None:
     freshness_policy = TimeWindowFreshnessPolicy.from_timedeltas(
         fail_window=timedelta(minutes=10), warn_window=timedelta(minutes=5)
     )
-    mapped_defs = defs.map_asset_specs(
+    mapped_defs = defs.map_resolved_asset_specs(
         func=lambda spec: attach_internal_freshness_policy(spec, freshness_policy)
     )
 

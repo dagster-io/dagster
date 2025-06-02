@@ -300,7 +300,7 @@ def apply_post_processor_to_defs(
 ) -> Definitions:
     check.inst(model, AssetPostProcessorModel.model())
 
-    return defs.map_asset_specs(
+    return defs.map_resolved_asset_specs(
         selection=model.target,
         func=lambda spec: apply_post_processor_to_spec(model, spec, context),
     )

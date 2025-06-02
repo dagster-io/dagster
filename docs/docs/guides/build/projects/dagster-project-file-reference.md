@@ -31,7 +31,7 @@ The following demonstrates a Dagster project using the default project skeleton,
 
 :::note
 
-While this specific example uses a project created by scaffolding, projects created [using an official example](creating-a-new-project#using-an-official-example) will also contain these files. In official examples, `assets.py` will be a subdirectory instead of a Python file.
+While this specific example uses a project created by scaffolding, projects created [using an official example](/guides/build/projects/creating-a-new-project#using-an-official-example) will also contain these files. In official examples, `assets.py` will be a subdirectory instead of a Python file.
 
 :::
 

@@ -33,7 +33,7 @@ def test_typo_asset_selection_one_similar(group_name, asset_key_prefix) -> None:
         match=(rf"did you mean one of the following\?\n\t{re.escape(asset1.key.to_string())}"),
     ):
         defs = Definitions(assets=[asset1], jobs=[my_job])
-        defs.get_job_def("my_job")
+        defs.resolve_job_def("my_job")
 
 
 def test_typo_asset_selection_no_similar() -> None:
@@ -47,7 +47,7 @@ def test_typo_asset_selection_no_similar() -> None:
         match=(r"no AssetsDefinition objects supply these keys."),
     ):
         defs = Definitions(assets=[asset1], jobs=[my_job])
-        defs.get_job_def("my_job")
+        defs.resolve_job_def("my_job")
 
 
 def test_typo_asset_selection_many_similar() -> None:
@@ -71,7 +71,7 @@ def test_typo_asset_selection_many_similar() -> None:
         ),
     ):
         defs = Definitions(assets=[asst, asset1, assets1], jobs=[my_job])
-        defs.get_job_def("my_job")
+        defs.resolve_job_def("my_job")
 
 
 def test_typo_asset_selection_wrong_prefix() -> None:
@@ -85,7 +85,7 @@ def test_typo_asset_selection_wrong_prefix() -> None:
         match=(rf"did you mean one of the following\?\n\t{re.escape(asset1.key.to_string())}"),
     ):
         defs = Definitions(assets=[asset1], jobs=[my_job])
-        defs.get_job_def("my_job")
+        defs.resolve_job_def("my_job")
 
 
 def test_typo_asset_selection_wrong_prefix_and_wrong_key() -> None:
@@ -101,7 +101,7 @@ def test_typo_asset_selection_wrong_prefix_and_wrong_key() -> None:
         match=(r"no AssetsDefinition objects supply these keys."),
     ):
         defs = Definitions(assets=[asset1], jobs=[my_job])
-        defs.get_job_def("my_job")
+        defs.resolve_job_def("my_job")
 
 
 def test_one_off_component_prefix() -> None:
@@ -118,7 +118,7 @@ def test_one_off_component_prefix() -> None:
         match=(rf"did you mean one of the following\?\n\t{re.escape(asset1.key.to_string())}"),
     ):
         defs = Definitions(assets=[asset1], jobs=[my_job])
-        defs.get_job_def("my_job")
+        defs.resolve_job_def("my_job")
 
     my_job = define_asset_job("my_job", selection=AssetSelection.assets(["my", "asset1"]))
 
@@ -127,7 +127,7 @@ def test_one_off_component_prefix() -> None:
         match=(rf"did you mean one of the following\?\n\t{re.escape(asset1.key.to_string())}"),
     ):
         defs = Definitions(assets=[asset1], jobs=[my_job])
-        defs.get_job_def("my_job")
+        defs.resolve_job_def("my_job")
 
 
 def test_select_without_prefix() -> None:
@@ -142,4 +142,4 @@ def test_select_without_prefix() -> None:
         match=(rf"did you mean one of the following\?\n\t{re.escape(asset1.key.to_string())}"),
     ):
         defs = Definitions(assets=[asset1], jobs=[my_job])
-        defs.get_job_def("my_job")
+        defs.resolve_job_def("my_job")

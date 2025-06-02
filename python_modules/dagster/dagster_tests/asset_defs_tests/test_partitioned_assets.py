@@ -222,7 +222,7 @@ def test_assets_job_with_different_partitions_defs():
         Definitions(
             assets=[upstream, downstream],
             jobs=[define_asset_job("my_job", selection=[upstream, downstream])],
-        ).get_job_def("my_job")
+        ).resolve_job_def("my_job")
 
 
 def test_access_partition_keys_from_context_direct_invocation():

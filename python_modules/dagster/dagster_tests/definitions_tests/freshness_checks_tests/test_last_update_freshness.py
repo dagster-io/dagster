@@ -501,7 +501,7 @@ def test_subset_freshness_checks(instance: DagsterInstance):
     defs = Definitions(
         assets=[my_asset, my_other_asset], asset_checks=[check], jobs=[single_check_job]
     )
-    job_def = defs.get_job_def("the_job")
+    job_def = defs.resolve_job_def("the_job")
     result = job_def.execute_in_process(instance=instance)
     assert result.success
     # Only one asset check should have occurred, and it should be for `my_asset`.

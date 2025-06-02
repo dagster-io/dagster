@@ -16,7 +16,7 @@ Dagster supports attaching different types of table metadata to assets, includin
 
 ### For assets defined in Dagster
 
-Column schema metadata can be attached to Dagster assets either as [definition metadata](index.md#definition-time-metadata) or [runtime metadata](index.md#runtime-metadata), which will then be visible in the Dagster UI. For example:
+Column schema metadata can be attached to Dagster assets either as [definition metadata](/guides/build/assets/metadata-and-tags#definition-time-metadata) or [runtime metadata](/guides/build/assets/metadata-and-tags#runtime-metadata), which will then be visible in the Dagster UI. For example:
 
 ![Column schema for an asset in the Dagster UI](/images/guides/build/assets/metadata-tags/metadata-table-schema.png)
 

@@ -41,7 +41,7 @@ def test_make_definition(
         for job_name in expected_job_names:
             assert repo.has_job(job_name)
 
-            job = definitions.get_job_def(job_name)
+            job = definitions.resolve_job_def(job_name)
             result = job.execute_in_process()
             assert result.success
             for event in result.all_events:

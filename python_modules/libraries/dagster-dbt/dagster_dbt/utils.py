@@ -1,6 +1,6 @@
 from argparse import Namespace
 from collections.abc import Mapping
-from typing import AbstractSet, Any, Optional, cast  # noqa: UP035
+from typing import AbstractSet, Any, cast  # noqa: UP035
 
 import dagster_shared.check as check
 from dagster import AssetKey
@@ -23,7 +23,10 @@ def dagster_name_fn(dbt_resource_props: Mapping[str, Any]) -> str:
 
 
 def select_unique_ids_from_manifest(
-    select: str, exclude: str, manifest_json: Mapping[str, Any], selector: Optional[str] = None
+    select: str,
+    exclude: str,
+    selector: str,
+    manifest_json: Mapping[str, Any],
 ) -> AbstractSet[str]:
     """Method to apply a selection string to an existing manifest.json file."""
     import dbt.graph.cli as graph_cli

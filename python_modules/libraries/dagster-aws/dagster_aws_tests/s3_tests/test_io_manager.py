@@ -166,7 +166,7 @@ def define_assets_job(bucket):
             "io_manager": s3_pickle_io_manager.configured({"s3_bucket": bucket}),
             "s3": s3_test_resource,
         },
-    ).get_job_def("assets")
+    ).resolve_job_def("assets")
 
 
 def test_s3_pickle_io_manager_asset_execution(mock_s3_bucket):

@@ -380,7 +380,7 @@ def test_automation_condition_sensor_definition() -> None:
     # will have a default automation condition sensor
     with scoped_definitions_load_context():
         defs = Definitions(assets=[AutomationConditionCacheableAsset("x")])
-        default_sensor = defs.get_sensor_def(DEFAULT_AUTOMATION_CONDITION_SENSOR_NAME)
+        default_sensor = defs.resolve_sensor_def(DEFAULT_AUTOMATION_CONDITION_SENSOR_NAME)
         assert default_sensor.asset_selection == AssetSelection.all()
         assert len(defs.get_repository_def().sensor_defs) == 1
 

@@ -98,9 +98,13 @@ def mock_fetch_last_updated_timestamps():
 
 
 def test_source_data_freshness(mock_fetch_last_updated_timestamps: None):
-    job_def = source_data_freshness_in_pieces_defs.get_implicit_global_asset_job_def()
+    job_def = (
+        source_data_freshness_in_pieces_defs.resolve_implicit_global_asset_job_def()
+    )
     result = job_def.execute_in_process(resources={"snowflake": MagicMock()})
     assert result.success
-    job_def = source_data_freshness_complete_defs.get_implicit_global_asset_job_def()
+    job_def = (
+        source_data_freshness_complete_defs.resolve_implicit_global_asset_job_def()
+    )
     result = job_def.execute_in_process(resources={"snowflake": MagicMock()})
     assert result.success

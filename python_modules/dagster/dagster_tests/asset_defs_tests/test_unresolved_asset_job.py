@@ -651,7 +651,7 @@ def test_hooks_with_resources():
         jobs=[define_asset_job("with_hooks", hooks={foo, bar})],
         resources={"a": 1, "b": 2, "c": 3},
     )
-    assert defs.get_job_def("with_hooks").hook_defs == {foo, bar}
+    assert defs.resolve_job_def("with_hooks").hook_defs == {foo, bar}
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
@@ -661,7 +661,7 @@ def test_hooks_with_resources():
             assets=[a, b],
             jobs=[define_asset_job("with_hooks", hooks={foo, bar})],
             resources={"a": 1, "b": 2},
-        ).get_job_def("with_hooks")
+        ).resolve_job_def("with_hooks")
 
 
 def test_partitioned_schedule():
