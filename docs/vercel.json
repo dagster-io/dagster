@@ -3063,19 +3063,19 @@
       "destination": "/guides/monitor/alerts/:path*"
     },
     {
-      "source": "/dagster-plus/features//dagster-plus/features/authentication-and-access-control",
+      "source": "/dagster-plus/features/authentication-and-access-control",
       "destination": "/deployment/dagster-plus/authentication-and-access-control"
     },
     {
-      "source": "/dagster-plus/features//dagster-plus/features/authentication-and-access-control/:path*",
+      "source": "/dagster-plus/features/authentication-and-access-control/:path*",
       "destination": "/deployment/dagster-plus/authentication-and-access-control/:path*"
     },
     {
-      "source": "/dagster-plus/features//dagster-plus/features/asset-catalog",
+      "source": "/dagster-plus/features/asset-catalog",
       "destination": "/guides/build/assets/asset-catalog"
     },
     {
-      "source": "/dagster-plus/features//dagster-plus/features/asset-catalog/:path*",
+      "source": "/dagster-plus/features/asset-catalog/:path*",
       "destination": "/guides/build/assets/asset-catalog/:path*"
     },
     {
