@@ -207,7 +207,7 @@ def test_custom_asset_specs(
         for asset in Definitions(
             assets=[*load_looker_asset_specs(looker_resource, CustomDagsterLookerApiTranslator())],
         )
-        .get_asset_graph()
+        .resolve_asset_graph()
         .assets_defs
         if not asset.is_auto_created_stub
     )
@@ -244,7 +244,7 @@ def test_custom_asset_specs_legacy(
                     *load_looker_asset_specs(looker_resource, CustomDagsterLookerApiTranslator)
                 ],
             )
-            .get_asset_graph()
+            .resolve_asset_graph()
             .assets_defs
             if not asset.is_auto_created_stub
         )

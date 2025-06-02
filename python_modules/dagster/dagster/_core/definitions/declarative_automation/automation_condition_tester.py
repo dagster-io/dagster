@@ -119,7 +119,7 @@ def evaluate_automation_conditions(
             AssetSelection.all(include_sources=True) | AssetSelection.all_asset_checks()
         )
 
-    asset_graph = defs.get_asset_graph()
+    asset_graph = defs.resolve_asset_graph()
 
     # round-trip the provided cursor to simulate actual usage
     cursor = (

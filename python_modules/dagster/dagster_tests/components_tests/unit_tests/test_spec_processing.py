@@ -33,7 +33,7 @@ def test_replace_attributes() -> None:
     )
 
     newdefs = apply_post_processor_to_defs(model=op, defs=defs, context=ResolutionContext.default())
-    asset_graph = newdefs.get_asset_graph()
+    asset_graph = newdefs.resolve_asset_graph()
     assert asset_graph.get(AssetKey("a")).tags == {}
     assert asset_graph.get(AssetKey("b")).tags == {"newtag": "newval"}
     assert asset_graph.get(AssetKey("c")).tags == {"newtag": "newval"}
@@ -47,7 +47,7 @@ def test_merge_attributes() -> None:
     )
 
     newdefs = apply_post_processor_to_defs(model=op, defs=defs, context=ResolutionContext.default())
-    asset_graph = newdefs.get_asset_graph()
+    asset_graph = newdefs.resolve_asset_graph()
     assert asset_graph.get(AssetKey("a")).tags == {}
     assert asset_graph.get(AssetKey("b")).tags == {"newtag": "newval"}
     assert asset_graph.get(AssetKey("c")).tags == {"tag": "val", "newtag": "newval"}
@@ -59,7 +59,7 @@ def test_render_attributes_asset_context() -> None:
     )
 
     newdefs = apply_post_processor_to_defs(model=op, defs=defs, context=ResolutionContext.default())
-    asset_graph = newdefs.get_asset_graph()
+    asset_graph = newdefs.resolve_asset_graph()
     assert asset_graph.get(AssetKey("a")).tags == {"group_name_tag": "group__g1"}
     assert asset_graph.get(AssetKey("b")).tags == {"group_name_tag": "group__g2"}
     assert asset_graph.get(AssetKey("c")).tags == {"tag": "val", "group_name_tag": "group__g2"}
@@ -87,7 +87,7 @@ def test_render_attributes_custom_context() -> None:
             foo="theval", metadata=metadata, custom_cron=_custom_cron
         ),
     )
-    asset_graph = newdefs.get_asset_graph()
+    asset_graph = newdefs.resolve_asset_graph()
     assert asset_graph.get(AssetKey("a")).tags == {}
     assert asset_graph.get(AssetKey("a")).metadata == {}
     assert asset_graph.get(AssetKey("a")).automation_condition is None

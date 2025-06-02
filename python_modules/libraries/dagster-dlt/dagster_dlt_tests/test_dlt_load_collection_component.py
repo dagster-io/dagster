@@ -126,7 +126,7 @@ def test_basic_component_load() -> None:
         loads = component.loads
         assert len(loads) == 1
 
-        assert defs.get_asset_graph().get_all_asset_keys() == {
+        assert defs.resolve_asset_graph().get_all_asset_keys() == {
             AssetKey(["duckdb_issues", "issues"]),
             AssetKey(["github_reactions_issues"]),
         }
@@ -160,7 +160,7 @@ def test_component_load_abs_path_load_py() -> None:
         loads = component.loads
         assert len(loads) == 1
 
-        assert defs.get_asset_graph().get_all_asset_keys() == {
+        assert defs.resolve_asset_graph().get_all_asset_keys() == {
             AssetKey(["duckdb_issues", "issues"]),
             AssetKey(["github_reactions_issues"]),
         }
@@ -218,7 +218,7 @@ def test_component_load_multiple_pipelines() -> None:
         loads = component.loads
         assert len(loads) == 2
 
-        assert defs.get_asset_graph().get_all_asset_keys() == {
+        assert defs.resolve_asset_graph().get_all_asset_keys() == {
             AssetKey(["duckdb_issues", "issues"]),
             AssetKey(["github_reactions_issues"]),
             AssetKey(["dagster_events", "repo_events"]),
@@ -340,7 +340,7 @@ def test_python_interface(dlt_pipeline: Pipeline):
     ).build_defs(context)
 
     assert defs
-    assert (defs.get_asset_graph().get_all_asset_keys()) == {
+    assert (defs.resolve_asset_graph().get_all_asset_keys()) == {
         AssetKey(["example", "repos"]),
         AssetKey(["example", "repo_issues"]),
         AssetKey(["pipeline_repos"]),
@@ -375,7 +375,7 @@ def test_scaffold_bare_component():
         defs = component.build_defs(context)
 
         assert len(component.loads) == 1
-        assert defs.get_asset_graph().get_all_asset_keys() == {
+        assert defs.resolve_asset_graph().get_all_asset_keys() == {
             AssetKey(["example", "hello_world"]),
             AssetKey(["my_source_hello_world"]),
         }
