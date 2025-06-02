@@ -71,10 +71,7 @@ def launch_command(
     else:
         cli_config = normalize_cli_config(other_options, click.get_current_context())
         dg_context = DgContext.for_project_environment(path, cli_config)
-        extra_workspace_opts = {
-            "working_directory": str(dg_context.root_path),
-            "module_name": dg_context.code_location_target_module_name,
-        }
+        extra_workspace_opts = dg_context.target_args
 
     if assets:
         from dagster._cli.asset import asset_materialize_command_impl

@@ -403,7 +403,7 @@ def test_launch_job_point_to_module_explicitly() -> None:
         assert result.returncode == 0
 
         with Path("src/foo_bar/defs/mydefs/definitions.py").open("w") as f:
-            defs_source = textwrap.dedent(inspect.getsource(_sample_job).split("\n", 1)[1])
+            defs_source = textwrap.dedent(inspect.getsource(_sample_single_job).split("\n", 1)[1])
             f.write(defs_source)
 
         result = subprocess.run(
@@ -411,9 +411,9 @@ def test_launch_job_point_to_module_explicitly() -> None:
                 "dg",
                 "launch",
                 "--module-name",
-                "foo_bar.definitions",
+                "foo_bar.defs.mydefs.definitions",
                 "--job",
-                "my_partitioned_job",
+                "my_job",
             ],
             check=True,
         )
@@ -445,7 +445,7 @@ def test_launch_assets_point_to_module_explicitly() -> None:
                 "dg",
                 "launch",
                 "--module-name",
-                "foo_bar.definitions",
+                "foo_bar.defs.mydefs.definitions",
                 "--assets",
                 "my_asset_1",
             ],
