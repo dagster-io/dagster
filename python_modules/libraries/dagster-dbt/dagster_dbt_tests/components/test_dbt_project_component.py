@@ -2,7 +2,7 @@ import shutil
 import sys
 import tempfile
 from collections.abc import Iterator, Mapping
-from contextlib import contextmanager, nullcontext
+from contextlib import nullcontext
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable, Optional
@@ -51,7 +51,6 @@ JAFFLE_SHOP_KEYS = {
 }
 
 
-@contextmanager
 @pytest.fixture(scope="module")
 def dbt_path() -> Iterator[Path]:
     with tempfile.TemporaryDirectory() as temp_dir:
