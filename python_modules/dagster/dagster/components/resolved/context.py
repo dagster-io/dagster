@@ -128,7 +128,10 @@ class ResolutionContext:
         from jinja2.exceptions import UndefinedError
         from jinja2.nativetypes import NativeTemplate
 
-        if isinstance(val, str):
+        if (
+            isinstance(val, str)
+            and val  # evaluating empty string returns None so skip to preserve empty string values
+        ):
             try:
                 val = NativeTemplate(val).render(**self.scope)
                 if isinstance(val, Undefined):

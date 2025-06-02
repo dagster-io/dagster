@@ -178,7 +178,9 @@ def normalize_tags(
         # Normalize the value
         if not isinstance(value, str):
             if strict:
-                raise DagsterInvalidDefinitionError("Tag values must be strings")
+                raise DagsterInvalidDefinitionError(
+                    f"Tag values must be strings, got type {type(value)} at key {key}."
+                )
             else:
                 normalized_tags[key] = _normalize_value(value, key)
         else:

@@ -452,3 +452,11 @@ stuff:
 """)
     assert obj.thing == {"a": "a", 2: 2}
     assert obj.stuff == ["a", 2, {"wow": "wah"}]
+
+
+def test_empty_str():
+    class Thing(Resolvable, Model):
+        name: str
+
+    t = Thing.resolve_from_dict({"name": ""})
+    assert t.name == ""
