@@ -340,9 +340,6 @@ def test_scaffold_bare_component() -> None:
             }
 
 
-# >>>>>>> 1dbdf22ea8 (Scaffolding infrastructure)
-
-
 @pytest.mark.parametrize(
     "source, destination",
     [

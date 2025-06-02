@@ -291,32 +291,9 @@ def test_translation_is_comprehensive():
 
 
 def test_scaffold_sling():
-    # <<<<<<< HEAD
-    #     runner = CliRunner()
-
-    #     with temp_code_location_bar():
-    #         result = runner.invoke(
-    #             cli,
-    #             [
-    #                 "scaffold",
-    #                 "defs",
-    #                 "dagster_sling.SlingReplicationCollectionComponent",
-    #                 "qux",
-    #                 "--format",
-    #                 "yaml",
-    #             ],
-    #             catch_exceptions=False,
-    #         )
-    #         assert result.exit_code == 0
-    #         assert Path("bar/defs/qux/replication.yaml").exists()
-    #         assert Path("bar/defs/qux/defs.yaml").exists()
-    # =======
     with scaffold_defs_sandbox(component_cls=SlingReplicationCollectionComponent) as defs_sandbox:
         assert (defs_sandbox.defs_folder_path / "defs.yaml").exists()
         assert (defs_sandbox.defs_folder_path / "replication.yaml").exists()
-
-
-# >>>>>>> 1dbdf22ea8 (Scaffolding infrastructure)
 
 
 def test_spec_is_available_in_scope() -> None:
