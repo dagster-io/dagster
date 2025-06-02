@@ -1,4 +1,5 @@
 import subprocess
+import sys
 
 import pytest
 from dagster._utils import file_relative_path
