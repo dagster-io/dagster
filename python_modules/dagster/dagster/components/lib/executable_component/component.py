@@ -9,15 +9,12 @@ from dagster._core.definitions.decorators.asset_decorator import multi_asset
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.time_window_partitions import DailyPartitionsDefinition
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
-from dagster.components import (
-    Component,
-    ComponentLoadContext,
-    Model,
-    ResolutionContext,
-    Resolvable,
-    ResolvedAssetSpec,
-    Resolver,
-)
+from dagster.components.component.component import Component
+from dagster.components.core.context import ComponentLoadContext
+from dagster.components.resolved.base import Resolvable
+from dagster.components.resolved.context import ResolutionContext
+from dagster.components.resolved.core_models import ResolvedAssetSpec
+from dagster.components.resolved.model import Model, Resolver
 
 
 class DailyPartitionDefinitionModel(Resolvable, Model):

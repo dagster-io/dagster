@@ -1,0 +1,59 @@
+from dagster._core.definitions.asset_spec import AssetSpec
+from dagster._core.definitions.materialize import materialize
+from dagster._core.definitions.metadata.metadata_value import TextMetadataValue
+from dagster._core.definitions.result import MaterializeResult
+from dagster.components.core.context import ComponentLoadContext
+from dagster.components.lib.executable_component.component import ExecutableComponent
+
+
+def test_include() -> None:
+    assert ExecutableComponent
+
+
+def test_basic_singular_asset() -> None:
+    def _execute_fn(context) -> MaterializeResult:
+        return MaterializeResult(metadata={"foo": "bar"})
+
+    component = ExecutableComponent(
+        name="op_name",
+        execute_fn=_execute_fn,
+        assets=[AssetSpec(key="asset")],
+    )
+
+    assert isinstance(component, ExecutableComponent)
+    assert_singular_component(component)
+
+
+def assert_singular_component(component: ExecutableComponent) -> None:
+    defs = component.build_defs(ComponentLoadContext.for_test())
+
+    assets_def = defs.get_assets_def("asset")
+
+    assert assets_def.op.name == "op_name"
+    assert assets_def.key.to_user_string() == "asset"
+
+    result = materialize([assets_def])
+    assert result.success
+    mats = result.asset_materializations_for_node("op_name")
+    assert len(mats) == 1
+    assert mats[0].metadata == {"foo": TextMetadataValue("bar")}
+
+
+def execute_singular_asset(context) -> MaterializeResult:
+    return MaterializeResult(metadata={"foo": "bar"})
+
+
+def test_basic_singular_asset_from_yaml() -> None:
+    component = ExecutableComponent.from_attributes_dict(
+        attributes={
+            "name": "op_name",
+            "execute_fn": "dagster_tests.components_tests.executable_component_tests.test_executable_component_in_memory.execute_singular_asset",
+            "assets": [
+                {
+                    "key": "asset",
+                }
+            ],
+        }
+    )
+    assert isinstance(component, ExecutableComponent)
+    assert_singular_component(component)
