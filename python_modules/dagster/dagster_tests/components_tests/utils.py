@@ -16,11 +16,7 @@ from click.testing import Result
 from dagster import Component, ComponentLoadContext, Definitions
 from dagster._utils import alter_sys_path, pushd
 from dagster._utils.pydantic_yaml import enrich_validation_errors_with_source_position
-from dagster.components.core.defs_module import (
-    CompositeYamlComponent,
-    context_with_injected_scope,
-    get_component,
-)
+from dagster.components.core.defs_module import context_with_injected_scope
 from dagster.components.utils import ensure_loadable_path
 from dagster_shared import check
 from dagster_shared.yaml_utils import parse_yaml_with_source_position
@@ -249,14 +245,3 @@ def set_toml_value(doc: tomlkit.TOMLDocument, path: Iterable[str], value: object
     path_list = list(path)
     inner_dict = get_toml_value(doc, path_list[:-1], dict)
     inner_dict[path_list[-1]] = value
-
-
-def get_underlying_component(context: ComponentLoadContext) -> Optional[Component]:
-    """Loads a component from the given context, resolving the underlying component if
-    it is a CompositeYamlComponent.
-    """
-    component = get_component(context)
-    if isinstance(component, CompositeYamlComponent):
-        assert len(component.components) == 1
-        return component.components[0]
-    return component

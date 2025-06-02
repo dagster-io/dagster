@@ -1,11 +1,8 @@
 # ruff: noqa: F841 TID252
 
 import copy
-import importlib
-import json
 from collections.abc import Iterator, Mapping
 from contextlib import contextmanager, nullcontext
-from pathlib import Path
 from typing import Any, Callable, Optional
 
 import pytest
@@ -14,10 +11,8 @@ import yaml
 from dagster import AssetKey, ComponentLoadContext
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.definitions_class import Definitions
-from dagster._core.test_utils import ensure_dagster_tests_import
-from dagster._utils import alter_sys_path
 from dagster._utils.env import environ
-from dagster_dg_cli.cli import cli
+from dagster.components.testing import scaffold_defs_sandbox
 from dagster_fivetran.components.workspace_component.component import FivetranAccountComponent
 from dagster_fivetran.resources import FivetranWorkspace
 from dagster_fivetran.translator import FivetranConnector
@@ -34,45 +29,18 @@ from dagster_fivetran_tests.conftest import (
     TEST_GROUP_ID,
 )
 
-ensure_dagster_tests_import()
-from click.testing import CliRunner
-from dagster_dg_core.utils import ensure_dagster_dg_tests_import
-from dagster_tests.components_tests.utils import get_underlying_component
-
-ensure_dagster_dg_tests_import()
-
-from dagster_dg_core_tests.utils import ProxyRunner, isolated_example_project_foo_bar
-
-
-@contextmanager
-def setup_fivetran_ready_project() -> Iterator[None]:
-    with (
-        ProxyRunner.test(use_fixed_test_components=True) as runner,
-        isolated_example_project_foo_bar(runner, in_workspace=False),
-        alter_sys_path(to_add=[str(Path.cwd() / "src")], to_remove=[]),
-    ):
-        yield
-
 
 @contextmanager
 def setup_fivetran_component(
     component_body: dict[str, Any],
 ) -> Iterator[tuple[FivetranAccountComponent, Definitions]]:
     """Sets up a components project with a fivetran component based on provided params."""
-    with setup_fivetran_ready_project():
-        defs_path = Path.cwd() / "src" / "foo_bar" / "defs"
-        component_path = defs_path / "ingest"
-        component_path.mkdir(parents=True, exist_ok=True)
-
-        (component_path / "defs.yaml").write_text(yaml.safe_dump(component_body))
-
-        defs_root = importlib.import_module("foo_bar.defs.ingest")
-        project_root = Path.cwd()
-
-        context = ComponentLoadContext.for_module(defs_root, project_root)
-        component = get_underlying_component(context)
-        assert isinstance(component, FivetranAccountComponent)
-        yield component, component.build_defs(context)
+    with scaffold_defs_sandbox(
+        component_cls=FivetranAccountComponent,
+    ) as defs_sandbox:
+        with defs_sandbox.load(component_body=component_body) as (component, defs):
+            assert isinstance(component, FivetranAccountComponent)
+            yield component, defs
 
 
 BASIC_FIVETRAN_COMPONENT_BODY = {
@@ -311,7 +279,7 @@ def test_translation(
 
 
 @pytest.mark.parametrize(
-    "json_params",
+    "scaffold_params",
     [
         {},
         {"account_id": "test_account", "api_key": "test_key", "api_secret": "test_secret"},
@@ -320,29 +288,17 @@ def test_translation(
     ],
     ids=["no_params", "all_params", "just_account_id", "just_credentials"],
 )
-def test_scaffold_component_with_params(json_params: dict):
-    runner = CliRunner()
-
-    with setup_fivetran_ready_project():
-        result = runner.invoke(
-            cli,
-            [
-                "scaffold",
-                "defs",
-                "dagster_fivetran.FivetranAccountComponent",
-                "my_fivetran_component",
-                "--format",
-                "yaml",
-                "--json-params",
-                json.dumps(json_params),
-            ],
-        )
-        assert result.exit_code == 0
-        assert Path("src/foo_bar/defs/my_fivetran_component/defs.yaml").exists()
+def test_scaffold_component_with_params(scaffold_params: dict):
+    with scaffold_defs_sandbox(
+        component_cls=FivetranAccountComponent,
+        scaffold_params=scaffold_params,
+    ) as instance_folder:
+        defs_yaml_path = instance_folder.defs_folder_path / "defs.yaml"
+        assert defs_yaml_path.exists()
         assert {
             k: v
-            for k, v in yaml.safe_load(
-                Path("src/foo_bar/defs/my_fivetran_component/defs.yaml").read_text()
-            )["attributes"]["workspace"].items()
+            for k, v in yaml.safe_load(defs_yaml_path.read_text())["attributes"][
+                "workspace"
+            ].items()
             if v is not None
-        } == json_params
+        } == scaffold_params
