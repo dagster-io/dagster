@@ -74,8 +74,7 @@ class ComponentTree:
                 cp.file_path.absolute().as_posix()
                 == (self.root.path / defs_path).absolute().as_posix()
             ):
-                ctx = self.load_context.for_path(cp.file_path)
-                return c.build_defs(ctx)
+                return c.build_defs(self.load_context.for_path(self.root.path))
 
         raise Exception(f"No component found for path {defs_path}")
 
