@@ -591,7 +591,7 @@ class Definitions(IHaveNew):
             instance=instance,
         )
 
-    def get_all_job_defs(self) -> Sequence[JobDefinition]:
+    def resolve_all_job_defs(self) -> Sequence[JobDefinition]:
         """Get all the Job definitions in the code location.
         This includes both jobs passed into the Definitions object and any implicit jobs created.
         All jobs returned from this function will have all resource dependencies resolved.
@@ -602,6 +602,12 @@ class Definitions(IHaveNew):
         return self.get_repository_def().has_implicit_global_asset_job_def()
 
     def get_implicit_global_asset_job_def(self) -> JobDefinition:
+        warnings.warn(
+            "This will be renamed to resolve_implicit_global_asset_job_def in dagster 1.11"
+        )
+        return self.get_repository_def().get_implicit_global_asset_job_def()
+
+    def resolve_implicit_global_asset_job_def(self) -> JobDefinition:
         """A useful conveninence method when there is a single defined global asset job.
         This occurs when all assets in the code location use a single partitioning scheme.
         If there are multiple partitioning schemes you must use get_implicit_job_def_for_assets
@@ -609,7 +615,7 @@ class Definitions(IHaveNew):
         """
         return self.get_repository_def().get_implicit_global_asset_job_def()
 
-    def get_implicit_job_def_for_assets(
+    def resolve_implicit_job_def_def_for_assets(
         self, asset_keys: Iterable[AssetKey]
     ) -> Optional[JobDefinition]:
         return self.get_repository_def().get_implicit_job_def_for_assets(asset_keys)
