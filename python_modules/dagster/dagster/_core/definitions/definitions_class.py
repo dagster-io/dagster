@@ -815,8 +815,10 @@ class Definitions(IHaveNew):
                 my_spec = dg.AssetSpec("asset1")
 
                 @dg.asset
-                def asset2(_): ...
+                def asset1(_): ...
 
+                @dg.asset
+                def asset2(_): ...
 
                 defs = Definitions(
                     assets=[asset1, asset2]
@@ -827,21 +829,47 @@ class Definitions(IHaveNew):
                     func=lambda s: s.merge_attributes(metadata={"new_key": "new_value"}),
                 )
 
-                # Applies only to asset1
-                mapped_defs = defs.map_asset_specs(
-                    func=lambda s: s.replace_attributes(metadata={"new_key": "new_value"}),
-                    selection="asset1",
-                )
-
         """
-        return self.map_resolved_asset_specs(func=func, selection=selection)
+        check.invariant(
+            selection is None,
+            "The selection parameter is no longer supported for map_asset_specs, Please use map_resolved_asset_specs instead",
+        )
 
+        return self.map_resolved_asset_specs(func=func, selection=None)
+
+    @public
+    @preview
     def map_resolved_asset_specs(
         self,
         *,
         func: Callable[[AssetSpec], AssetSpec],
         selection: Optional[CoercibleToAssetSelection] = None,
     ) -> "Definitions":
+        """Map a function over the included AssetSpecs or AssetsDefinitions in this Definitions object, replacing specs in the sequence.
+
+        See map_asset_specs for more details.
+
+        Supports selection and therefore requires resolving the Definitions object to a RepositoryDefinition when there is a selection.
+
+        Examples:
+            .. code-block:: python
+
+                import dagster as dg
+
+                my_spec = dg.AssetSpec("asset1")
+
+                @dg.asset
+                def asset1(_): ...
+
+                @dg.asset
+                def asset2(_): ...
+
+                # Applies only to asset1
+                mapped_defs = defs.map_resolved_asset_specs(
+                    func=lambda s: s.replace_attributes(metadata={"new_key": "new_value"}),
+                    selection="asset1",
+                )
+        """
         non_spec_asset_types = {
             type(d) for d in self.assets or [] if not isinstance(d, (AssetsDefinition, AssetSpec))
         }

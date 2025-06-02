@@ -21,7 +21,7 @@ defs = Definitions(assets=[asset_1, asset_2])
 defs.map_asset_specs(func=lambda spec: attach_internal_freshness_policy(spec, policy))
 
 # Or, you can optionally provide an asset selection string
-defs.map_asset_specs(
+defs.map_resolved_asset_specs(
     func=lambda spec: attach_internal_freshness_policy(spec, policy),
     selection="asset_1",  # will only apply policy to asset_1
 )
