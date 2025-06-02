@@ -3067,7 +3067,7 @@
       "destination": "/deployment/dagster-plus/authentication-and-access-control"
     },
     {
-      "source": "/dagster-plus/features//dagster-plus/features/authentication-and-access-control/:path*",
+      "source": "/dagster-plus/features/dagster-plus/features/authentication-and-access-control/:path*",
       "destination": "/deployment/dagster-plus/authentication-and-access-control/:path*"
     },
     {
