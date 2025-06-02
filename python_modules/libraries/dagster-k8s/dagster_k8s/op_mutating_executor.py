@@ -116,12 +116,18 @@ class K8sMutatingStepHandler(K8sStepHandler):
         load_incluster_config: bool,
         kubeconfig_file: Optional[str],
         k8s_client_batch_api=None,
+        per_step_k8s_config=None,
         op_mutation_enabled: bool = False,
     ):
         self.op_mutation_enabled = op_mutation_enabled
         self.container_ctx_cache = {}
         super().__init__(
-            image, container_context, load_incluster_config, kubeconfig_file, k8s_client_batch_api
+            image=image,
+            container_context=container_context,
+            load_incluster_config=load_incluster_config,
+            kubeconfig_file=kubeconfig_file,
+            k8s_client_batch_api=k8s_client_batch_api,
+            per_step_k8s_config=per_step_k8s_config,
         )
 
     @property
@@ -294,6 +300,7 @@ def k8s_op_mutating_executor(init_context: InitExecutorContext) -> Executor:
             container_context=k8s_container_context,
             load_incluster_config=load_incluster_config,
             kubeconfig_file=kubeconfig_file,
+            per_step_k8s_config=exc_cfg.get("per_step_k8s_config", {}),
             op_mutation_enabled=op_mutation_enabled,
         ),
         retries=RetryMode.from_config(exc_cfg["retries"]),  # type: ignore
