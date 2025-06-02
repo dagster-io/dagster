@@ -22,7 +22,7 @@ In the following example, at the start of each hour, the above check will start 
 - If at least one upstream partition of _all_ upstream assets has been updated since the previous cron schedule tick, and the downstream check has not yet been requested or executed, it will be requested.
 - If all upstream assets **do not** update within the given cron tick, the check will not be requested.
 
-If you would like to customize aspects of this behavior, refer to the [customizing on_cron](customizing-automation-conditions/customizing-on-cron-condition) guide.
+If you would like to customize aspects of this behavior, refer to the [customizing on_cron](/guides/automate/declarative-automation/customizing-automation-conditions/customizing-on-cron-condition) guide.
 
 </TabItem>
 
