@@ -205,7 +205,7 @@ def test_io_manager_asset_metadata(spark) -> None:
             assets=[my_spark_df], resources={"io_manager": pythonic_snowflake_io_manager}
         )
 
-        res = defs.get_implicit_global_asset_job_def().execute_in_process()
+        res = defs.resolve_implicit_global_asset_job_def().execute_in_process()
         assert res.success
 
         mats = res.get_asset_materialization_events()

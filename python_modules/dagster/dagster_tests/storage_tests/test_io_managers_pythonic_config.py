@@ -91,7 +91,7 @@ def test_runtime_config():
     )
 
     assert (
-        defs.get_implicit_global_asset_job_def()
+        defs.resolve_implicit_global_asset_job_def()
         .execute_in_process({"resources": {"io_manager": {"config": {"prefix": ""}}}})
         .success
     )
@@ -100,7 +100,7 @@ def test_runtime_config():
     out_txt.clear()
 
     assert (
-        defs.get_implicit_global_asset_job_def()
+        defs.resolve_implicit_global_asset_job_def()
         .execute_in_process({"resources": {"io_manager": {"config": {"prefix": "greeting: "}}}})
         .success
     )
@@ -133,7 +133,7 @@ def test_nested_resources():
         },
     )
 
-    assert defs.get_implicit_global_asset_job_def().execute_in_process().success
+    assert defs.resolve_implicit_global_asset_job_def().execute_in_process().success
     assert out_txt == ["greeting: hello, world!"]
 
 
@@ -167,7 +167,7 @@ def test_nested_resources_runtime_config():
     )
 
     assert (
-        defs.get_implicit_global_asset_job_def()
+        defs.resolve_implicit_global_asset_job_def()
         .execute_in_process({"resources": {"io_config": {"config": {"prefix": ""}}}})
         .success
     )
@@ -176,7 +176,7 @@ def test_nested_resources_runtime_config():
     out_txt.clear()
 
     assert (
-        defs.get_implicit_global_asset_job_def()
+        defs.resolve_implicit_global_asset_job_def()
         .execute_in_process({"resources": {"io_config": {"config": {"prefix": "greeting: "}}}})
         .success
     )
@@ -196,7 +196,7 @@ def test_pythonic_fs_io_manager() -> None:
         )
 
         assert not os.path.exists(os.path.join(tmpdir_path, "hello_world_asset"))
-        assert defs.get_implicit_global_asset_job_def().execute_in_process().success
+        assert defs.resolve_implicit_global_asset_job_def().execute_in_process().success
         assert os.path.exists(os.path.join(tmpdir_path, "hello_world_asset"))
 
 
@@ -214,7 +214,7 @@ def test_pythonic_fs_io_manager_runtime_config() -> None:
 
         assert not os.path.exists(os.path.join(tmpdir_path, "hello_world_asset"))
         assert (
-            defs.get_implicit_global_asset_job_def()
+            defs.resolve_implicit_global_asset_job_def()
             .execute_in_process(
                 run_config=RunConfig(
                     resources={"io_manager": FilesystemIOManager(base_dir=tmpdir_path)}
@@ -445,7 +445,7 @@ def test_io_manager_def() -> None:
         )
 
         assert not os.path.exists(os.path.join(tmpdir_path, "hello_world_asset"))
-        assert defs.get_implicit_global_asset_job_def().execute_in_process().success
+        assert defs.resolve_implicit_global_asset_job_def().execute_in_process().success
         assert os.path.exists(os.path.join(tmpdir_path, "hello_world_asset"))
 
 
@@ -486,7 +486,7 @@ def test_observable_source_asset_io_manager_def() -> None:
             assets=[my_observable_asset, my_downstream_asset],
         )
 
-        result = defs.get_implicit_global_asset_job_def().execute_in_process()
+        result = defs.resolve_implicit_global_asset_job_def().execute_in_process()
         assert result.success
         assert result.output_for_node("my_downstream_asset") == "foobar"
 

@@ -249,7 +249,7 @@ def test_cacheable_asset_repo():
         assert len(all_assets) == 1
         assert all_assets[0].key.to_user_string() == "foobar"
 
-        assert isinstance(defs.get_implicit_global_asset_job_def(), JobDefinition)
+        assert isinstance(defs.resolve_implicit_global_asset_job_def(), JobDefinition)
 
 
 def test_asset_loading():
@@ -279,7 +279,7 @@ def test_io_manager_coercion():
 
     defs = Definitions(assets=[one], resources={"mem_io_manager": InMemoryIOManager()})
 
-    asset_job = defs.get_implicit_global_asset_job_def()
+    asset_job = defs.resolve_implicit_global_asset_job_def()
     assert isinstance(asset_job.resource_defs["mem_io_manager"], IOManagerDefinition)
     result = asset_job.execute_in_process()
     assert result.output_for_node("one") == 1
@@ -301,7 +301,7 @@ def test_custom_executor_in_definitions():
         return 1
 
     defs = Definitions(assets=[one], executor=an_executor)
-    asset_job = defs.get_implicit_global_asset_job_def()
+    asset_job = defs.resolve_implicit_global_asset_job_def()
     assert asset_job.executor_def is an_executor
 
 
@@ -316,7 +316,7 @@ def test_custom_loggers_in_definitions():
 
     defs = Definitions(assets=[one], loggers={"custom_logger": a_logger})
 
-    asset_job = defs.get_implicit_global_asset_job_def()
+    asset_job = defs.resolve_implicit_global_asset_job_def()
     loggers = asset_job.loggers
     assert len(loggers) == 1
     assert "custom_logger" in loggers
@@ -427,9 +427,9 @@ def test_kitchen_sink_on_create_helper_and_definitions():
     assert isinstance(defs.resolve_job_def("a_job"), JobDefinition)
     assert defs.resolve_job_def("a_job").executor_def is an_executor
     assert defs.resolve_job_def("a_job").loggers == {"logger_key": a_logger}
-    assert isinstance(defs.get_implicit_global_asset_job_def(), JobDefinition)
-    assert defs.get_implicit_global_asset_job_def().executor_def is an_executor
-    assert defs.get_implicit_global_asset_job_def().loggers == {"logger_key": a_logger}
+    assert isinstance(defs.resolve_implicit_global_asset_job_def(), JobDefinition)
+    assert defs.resolve_implicit_global_asset_job_def().executor_def is an_executor
+    assert defs.resolve_implicit_global_asset_job_def().loggers == {"logger_key": a_logger}
     assert isinstance(defs.resolve_job_def("another_asset_job"), JobDefinition)
     assert defs.resolve_job_def("another_asset_job").executor_def is an_executor
     assert defs.resolve_job_def("another_asset_job").loggers == {"logger_key": a_logger}
@@ -472,7 +472,7 @@ def test_with_resources_override():
         resources={"b_resource": "passed-through-definitions"},
     )
 
-    defs.get_implicit_global_asset_job_def().execute_in_process()
+    defs.resolve_implicit_global_asset_job_def().execute_in_process()
 
     assert executed["asset_one"]
     assert executed["asset_two"]
@@ -486,7 +486,7 @@ def test_implicit_global_job():
     defs = Definitions(assets=[asset_one])
 
     assert defs.has_implicit_global_asset_job_def()
-    assert len(defs.get_all_job_defs()) == 1
+    assert len(defs.resolve_all_job_defs()) == 1
 
 
 def test_implicit_global_job_with_job_defined():
@@ -498,9 +498,11 @@ def test_implicit_global_job_with_job_defined():
 
     assert defs.has_implicit_global_asset_job_def()
     assert defs.resolve_job_def("all_assets_job")
-    assert defs.resolve_job_def("all_assets_job") is not defs.get_implicit_global_asset_job_def()
+    assert (
+        defs.resolve_job_def("all_assets_job") is not defs.resolve_implicit_global_asset_job_def()
+    )
 
-    assert len(defs.get_all_job_defs()) == 2
+    assert len(defs.resolve_all_job_defs()) == 2
 
 
 def test_implicit_global_job_with_partitioned_asset():
@@ -520,8 +522,8 @@ def test_implicit_global_job_with_partitioned_asset():
         assets=[daily_partition_asset, unpartitioned_asset, hourly_partition_asset],
     )
 
-    assert len(defs.get_all_job_defs()) == 1
-    defs.get_implicit_global_asset_job_def()
+    assert len(defs.resolve_all_job_defs()) == 1
+    defs.resolve_implicit_global_asset_job_def()
 
 
 def test_implicit_job_with_source_assets():
@@ -532,11 +534,13 @@ def test_implicit_job_with_source_assets():
         raise Exception("not executed")
 
     defs = Definitions(assets=[source_asset, downstream_of_source])
-    assert defs.get_all_job_defs()
-    assert len(defs.get_all_job_defs()) == 1
-    assert defs.get_implicit_job_def_for_assets(asset_keys=[AssetKey("downstream_of_source")])
+    assert defs.resolve_all_job_defs()
+    assert len(defs.resolve_all_job_defs()) == 1
+    assert defs.resolve_implicit_job_def_def_for_assets(
+        asset_keys=[AssetKey("downstream_of_source")]
+    )
     assert defs.has_implicit_global_asset_job_def()
-    assert defs.get_implicit_global_asset_job_def()
+    assert defs.resolve_implicit_global_asset_job_def()
 
 
 def test_unresolved_partitioned_asset_schedule():
@@ -573,7 +577,7 @@ def test_bare_executor():
 
     defs = Definitions(assets=[an_asset], executor=executor_inst)
 
-    job = defs.get_implicit_global_asset_job_def()
+    job = defs.resolve_implicit_global_asset_job_def()
     assert isinstance(job, JobDefinition)
 
     # ignore typecheck because we know our implementation doesn't use the context
@@ -587,7 +591,7 @@ def test_assets_with_io_manager():
 
     defs = Definitions(assets=[single_asset], resources={"io_manager": mem_io_manager})
 
-    asset_group_underlying_job = defs.get_all_job_defs()[0]
+    asset_group_underlying_job = defs.resolve_all_job_defs()[0]
     assert asset_group_underlying_job.resource_defs["io_manager"] == mem_io_manager
 
 
@@ -629,7 +633,7 @@ def test_assets_with_executor():
 
     defs = Definitions(assets=[the_asset], executor=in_process_executor)
 
-    asset_group_underlying_job = defs.get_all_job_defs()[0]
+    asset_group_underlying_job = defs.resolve_all_job_defs()[0]
     assert asset_group_underlying_job.executor_def == in_process_executor
 
 
@@ -660,7 +664,7 @@ def test_resource_defs_on_asset():
         pass
 
     defs = Definitions([the_asset, other_asset], resources={"bar": the_resource})
-    the_job = defs.get_all_job_defs()[0]
+    the_job = defs.resolve_all_job_defs()[0]
     assert the_job.execute_in_process().success
 
 
@@ -684,7 +688,7 @@ def test_conflicting_asset_resource_defs():
             "provided to assets must match by reference equality for a given key."
         ),
     ):
-        Definitions([the_asset, other_asset]).get_all_job_defs()
+        Definitions([the_asset, other_asset]).resolve_all_job_defs()
 
 
 def test_graph_backed_asset_resources():
@@ -722,7 +726,7 @@ def test_graph_backed_asset_resources():
             " reference equality for a given key."
         ),
     ):
-        Definitions([the_asset, other_asset]).get_all_job_defs()
+        Definitions([the_asset, other_asset]).resolve_all_job_defs()
 
 
 def test_job_with_reserved_name():
@@ -757,7 +761,7 @@ def test_asset_cycle():
 
     s = SourceAsset(key="s")
     with pytest.raises(CircularDependencyError):
-        Definitions(assets=[a, b, c, s]).get_all_job_defs()
+        Definitions(assets=[a, b, c, s]).resolve_all_job_defs()
 
 
 def test_unsatisfied_resources():

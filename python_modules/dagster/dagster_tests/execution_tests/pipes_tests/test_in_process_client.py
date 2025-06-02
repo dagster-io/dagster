@@ -28,7 +28,7 @@ from dagster_tests.execution_tests.pipes_tests.in_process_client import InProces
 def execute_asset_through_def(assets_def, resources) -> ExecuteInProcessResult:
     return (
         Definitions(assets=[assets_def], resources={"inprocess_client": InProcessPipesClient()})
-        .get_implicit_global_asset_job_def()
+        .resolve_implicit_global_asset_job_def()
         .execute_in_process()
     )
 
@@ -374,7 +374,7 @@ def test_get_asset_check_result() -> None:
             asset_checks=[an_asset_check],
             resources={"inprocess_client": InProcessPipesClient()},
         )
-        .get_implicit_global_asset_job_def()
+        .resolve_implicit_global_asset_job_def()
         .execute_in_process()
     )
     assert result.success
