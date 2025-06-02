@@ -452,6 +452,18 @@ class Definitions(IHaveNew):
         (return value of :py:func:`define_asset_job`) it will be resolved to a :py:class:`JobDefinition` when returned
         from this function, with all resource dependencies fully resolved.
         """
+        for job in self.jobs or []:
+            if job.name == name:
+                if isinstance(job, JobDefinition):
+                    return job
+
+        warnings.warn(
+            f"JobDefinition with name {name} directly passed to Definitions not found, "
+            "will attempt to resolve to a JobDefinition. "
+            "This will be an error in a future release and will require a call to "
+            "resolve_job_def in dagster 1.11. "
+        )
+
         return self.resolve_job_def(name)
 
     def resolve_job_def(self, name: str) -> JobDefinition:
