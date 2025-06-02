@@ -109,7 +109,7 @@ class Daemon(BaseModel, extra="forbid"):
     runRetries: RunRetries
     sensors: Sensors
     schedules: Schedules
-    backfills: Backfills
+    backfills: Optional[Backfills] = None
     schedulerName: Optional[str] = None
     volumeMounts: Optional[list[kubernetes.VolumeMount]] = None
     volumes: Optional[list[kubernetes.Volume]] = None

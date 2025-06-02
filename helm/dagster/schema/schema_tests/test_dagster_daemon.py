@@ -322,7 +322,7 @@ def test_run_monitoring_set_max_runtime_seconds(
     assert instance["run_monitoring"]["max_runtime_seconds"] == 2
 
 
-def test_sensor_schedule_threading_default(
+def test_sensor_schedule_backfill_threading_default(
     instance_template: HelmTemplate,
 ):
     helm_values = DagsterHelmValues.construct(dagsterDaemon=Daemon.construct())
@@ -338,8 +338,8 @@ def test_sensor_schedule_threading_default(
 
     assert instance["schedules"]["use_threads"] is True
     assert instance["schedules"]["num_workers"] == 4
-    assert instance["backfills"]["use_threads"] is True
-    assert instance["backfills"]["num_workers"] == 4
+
+    assert "backfills" not in instance
 
 
 def test_schedule_threading_disabled(
@@ -357,8 +357,6 @@ def test_schedule_threading_disabled(
 
     assert instance["sensors"]["use_threads"] is True
     assert instance["sensors"]["num_workers"] == 4
-    assert instance["backfills"]["use_threads"] is True
-    assert instance["backfills"]["num_workers"] == 4
 
     assert "schedules" not in instance
 
@@ -377,8 +375,6 @@ def test_sensor_threading_disabled(
 
     assert instance["schedules"]["use_threads"] is True
     assert instance["schedules"]["num_workers"] == 4
-    assert instance["backfills"]["use_threads"] is True
-    assert instance["backfills"]["num_workers"] == 4
 
     assert "sensors" not in instance
 
@@ -401,7 +397,7 @@ def test_backfill_threading_disabled(
     assert instance["schedules"]["use_threads"] is True
     assert instance["schedules"]["num_workers"] == 4
 
-    assert "backfills" not in instance
+    assert instance["backfills"]["use_threads"] is False
 
 
 def test_run_retries_default(

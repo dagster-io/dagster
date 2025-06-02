@@ -900,8 +900,7 @@
                 "runMonitoring",
                 "runRetries",
                 "sensors",
-                "schedules",
-                "backfills"
+                "schedules"
             ],
             "title": "Daemon",
             "type": "object"

@@ -146,7 +146,7 @@ data:
     {{- end }}
     
     {{- $backfills := .Values.dagsterDaemon.backfills }}
-    {{- if and (.Values.dagsterDaemon.enabled) ($backfills.useThreads) }}
+    {{- if and (.Values.dagsterDaemon.enabled) ($backfills) }}
     backfills:
       use_threads: {{ $backfills.useThreads }}
       {{- if $backfills.numWorkers }}
