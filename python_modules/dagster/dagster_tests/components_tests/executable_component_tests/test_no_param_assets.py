@@ -1,6 +1,8 @@
 from collections import defaultdict
+from typing import Callable
 
 import pytest
+from dagster._core.definitions.asset_dep import AssetDep
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.resource_annotation import ResourceParam
@@ -155,3 +157,6 @@ def test_parameter_passing_using_user_space_io_manager() -> None:
     assert io_manager.output_call_counts["upstream_key"] == 1
     assert evaluations[AssetKey("upstream_key")].value == 1
     assert evaluations[AssetKey("downstream_key")].value == 2
+
+
+def deps_from_execute(execute_fn: Callable) -> list[AssetDep]: ...
