@@ -289,8 +289,7 @@ def list_defs_command(
     # capture stdout during the definitions load so it doesn't pollute the structured output
     with capture_stdout():
         definitions = list_definitions(
-            location=dg_context.code_location_name,
-            **dg_context.target_args,
+            dg_context=dg_context,
             path=path,
         )
 

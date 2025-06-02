@@ -24,7 +24,7 @@ class ComponentTree:
     project_root: Path
 
     @staticmethod
-    def load(path_within_project: Path):
+    def load(path_within_project: Path) -> "ComponentTree":
         """Using the provided path, find the nearest parent python project and load the
         ComponentTree using its configuration.
         """
