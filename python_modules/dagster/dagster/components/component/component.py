@@ -4,12 +4,12 @@ from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional
 
+import dagster_shared.check as check
 from dagster_shared.record import IHaveNew, record_custom
 from dagster_shared.yaml_utils.source_position import SourcePosition
 from pydantic import BaseModel, TypeAdapter
 from typing_extensions import Self
 
-import dagster._check as check
 from dagster._annotations import PublicAttr, preview, public
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.metadata.source_code import CodeReference, LocalFileCodeReference

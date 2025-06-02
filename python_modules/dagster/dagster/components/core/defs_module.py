@@ -33,7 +33,7 @@ from dagster.components.component.component_loader import is_component_loader
 from dagster.components.component.template_vars import find_inline_template_vars_in_module
 from dagster.components.core.context import ComponentLoadContext
 from dagster.components.core.package_entry import load_package_object
-from dagster.components.definitions import LazyDefinitions
+from dagster.components.definitions import ComponentsDefinitionsHandle, LazyDefinitions
 from dagster.components.resolved.base import Resolvable
 from dagster.components.resolved.core_models import AssetPostProcessor
 
@@ -222,7 +222,9 @@ class DefsFolderComponent(Component):
             child_defs.append(child.build_defs(context.for_path(path)))
         defs = Definitions.merge(*child_defs)
         for post_processor in self.asset_post_processors or []:
-            defs = post_processor(defs)
+            defs = ComponentsDefinitionsHandle.apply_post_processing_fn(
+                defs, context, post_processor
+            )
         return defs
 
     @classmethod

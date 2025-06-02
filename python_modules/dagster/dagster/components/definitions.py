@@ -1,7 +1,13 @@
+import abc
 import inspect
 from typing import Callable, Generic, Optional, TypeVar, Union, cast
 
+from dagster_shared import check as check
+from typing_extensions import TypeAlias
+
 from dagster._annotations import preview, public
+from dagster._core.definitions.asset_selection import AssetSelection, CoercibleToAssetSelection
+from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.repository_definition.repository_definition import (
     RepositoryDefinition,
@@ -109,3 +115,95 @@ def definitions(
 def lazy_repository(fn: Callable[[], RepositoryDefinition]) -> Callable[[], RepositoryDefinition]:
     lazy_defs = LazyDefinitions[RepositoryDefinition](load_fn=fn, has_context_arg=False)
     return cast("Callable[[],RepositoryDefinition]", lazy_defs)
+
+
+T = TypeVar("T", bound="DefinitionsHandle")
+
+
+class DefinitionsHandle(abc.ABC):
+    """Interface which sits on top of a `Definitions` object and allows modification of the contained
+    defs, with the restriction that transformations must be map-like. This ensures that the transformations
+    are identical in the case that we may subset the input Definitions object.
+    """
+
+    @abc.abstractmethod
+    def map_asset_specs(
+        self: T,
+        *,
+        func: Callable[[AssetSpec], AssetSpec],
+        selection: Optional[CoercibleToAssetSelection] = None,
+    ) -> T:
+        """Map a function over the included AssetSpecs or AssetsDefinitions in this Definitions object, replacing specs in the sequence
+        or specs in an AssetsDefinitions with the result of the function.
+
+        Args:
+            func (Callable[[AssetSpec], AssetSpec]): The function to apply to each AssetSpec.
+            selection (Optional[Union[str, Sequence[str], Sequence[AssetKey], Sequence[Union[AssetsDefinition, SourceAsset]], AssetSelection]]): An asset selection to narrow down the set of assets to apply the function to. If not provided, applies to all assets.
+
+        Returns:
+            DefinitionsHandle: A DefinitionsHandle object where the AssetSpecs have been replaced with the result of the function where the selection applies.
+
+        Examples:
+            .. code-block:: python
+
+                defs_handle: DefinitionsHandle = ...
+
+                # Applies to asset1 and asset2
+                mapped_def_handle = defs_handle.map_asset_specs(
+                    func=lambda s: s.merge_attributes(metadata={"new_key": "new_value"}),
+                )
+
+        """
+        ...
+
+
+PostProcessorFn: TypeAlias = Callable[[DefinitionsHandle], DefinitionsHandle]
+
+
+class ComponentsDefinitionsHandle(DefinitionsHandle):
+    """Interface which sits on top of a `Definitions` object and allows modification of the contained
+    defs, with the restriction that transformations must be map-like. This ensures that the transformations
+    are identical in the case that we may subset the input Definitions object.
+
+    In the future, this class will cache asset selections on the load context so that subsequent loads
+    (e.g. in runs, instigators) can reuse the same asset selection without resolving the entire asset graph.
+    """
+
+    def __init__(self, defs: Definitions, context: ComponentLoadContext):
+        self._defs = defs
+        self._context = context
+
+    def map_asset_specs(
+        self,
+        *,
+        func: Callable[[AssetSpec], AssetSpec],
+        selection: Optional[CoercibleToAssetSelection] = None,
+    ) -> "ComponentsDefinitionsHandle":
+        if selection:
+            if isinstance(selection, str):
+                resolved_selection = AssetSelection.from_string(selection, include_sources=True)
+            else:
+                resolved_selection = AssetSelection.from_coercible(selection)
+        else:
+            resolved_selection = None
+        return self._map_asset_specs_inner(func, resolved_selection)
+
+    def _map_asset_specs_inner(
+        self, func: Callable[[AssetSpec], AssetSpec], selection: Optional[AssetSelection]
+    ) -> "ComponentsDefinitionsHandle":
+        target_keys = selection.resolve(self._defs.resolve_asset_graph()) if selection else None
+        new_func = (
+            lambda spec: func(spec) if target_keys is None or spec.key in target_keys else spec
+        )
+        return ComponentsDefinitionsHandle(self._defs.map_asset_specs(func=new_func), self._context)
+
+    @staticmethod
+    def apply_post_processing_fn(
+        defs: Definitions,
+        context: ComponentLoadContext,
+        post_processing_fn: PostProcessorFn,
+    ) -> Definitions:
+        return check.inst(  # noqa: SLF001
+            post_processing_fn(ComponentsDefinitionsHandle(defs, context)),
+            ComponentsDefinitionsHandle,
+        )._defs
