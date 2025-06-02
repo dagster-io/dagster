@@ -64,9 +64,6 @@ def test_resolve_direct_asset_job() -> None:
     ensure_resolve_job_succeeds(defs, "asset_job")
 
 
-@pytest.mark.skip(
-    reason="This is a bug in the implementation of get_job_def"
-)  # schrockn 2025-06-02
 def test_get_direct_asset_job_fails() -> None:
     @asset
     def _asset(_context): ...
@@ -92,9 +89,6 @@ def test_sensor_target_job_resolve_succeeds() -> None:
     ensure_resolve_job_succeeds(defs, "asset_job")
 
 
-@pytest.mark.skip(
-    reason="This is a bug in the implementation of get_job_def"
-)  # schrockn 2025-06-02
 def test_sensor_target_job_get_fails() -> None:
     @asset
     def _asset(_context): ...
@@ -122,7 +116,7 @@ def test_sensor_get_direct_job_succeeds() -> None:
 
     defs = Definitions(sensors=[my_sensor])
 
-    ensure_get_direct_job_def_succeeds(defs, direct_job)
+    ensure_get_job_def_warns(defs, direct_job.name)
 
 
 def test_schedule_target_job_resolve_succeeds() -> None:
@@ -139,9 +133,6 @@ def test_schedule_target_job_resolve_succeeds() -> None:
     ensure_resolve_job_succeeds(defs, "asset_job")
 
 
-@pytest.mark.skip(
-    reason="This is a bug in the implementation of get_job_def"
-)  # schrockn 2025-06-02
 def test_schedule_target_job_get_fails() -> None:
     @asset
     def _asset(_context): ...
@@ -169,7 +160,7 @@ def test_schedule_get_direct_job_succeeds() -> None:
 
     defs = Definitions(schedules=[my_schedule])
 
-    ensure_get_direct_job_def_succeeds(defs, direct_job)
+    ensure_get_job_def_warns(defs, direct_job.name)
 
 
 def test_get_sensor_def_warns() -> None:
