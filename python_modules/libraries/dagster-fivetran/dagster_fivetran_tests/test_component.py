@@ -17,7 +17,7 @@ from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.test_utils import ensure_dagster_tests_import
 from dagster._utils import alter_sys_path
 from dagster._utils.env import environ
-from dagster.components.cli import cli
+from dagster_dg_cli.cli import cli
 from dagster_fivetran.components.workspace_component.component import FivetranAccountComponent
 from dagster_fivetran.resources import FivetranWorkspace
 from dagster_fivetran.translator import FivetranConnector
@@ -328,10 +328,10 @@ def test_scaffold_component_with_params(json_params: dict):
             cli,
             [
                 "scaffold",
-                "object",
+                "defs",
                 "dagster_fivetran.FivetranAccountComponent",
-                "src/foo_bar/defs/my_fivetran_component",
-                "--scaffold-format",
+                "my_fivetran_component",
+                "--format",
                 "yaml",
                 "--json-params",
                 json.dumps(json_params),

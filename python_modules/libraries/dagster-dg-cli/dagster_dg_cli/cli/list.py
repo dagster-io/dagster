@@ -3,7 +3,7 @@ from collections import defaultdict
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Optional
 
 import click
 from dagster_dg_core.component import RemotePluginRegistry
@@ -20,18 +20,14 @@ from dagster_dg_core.utils import (
 from dagster_dg_core.utils.telemetry import cli_telemetry_wrapper
 from dagster_shared.plus.config import DagsterPlusCliConfig
 from dagster_shared.record import as_dict
-from dagster_shared.serdes import deserialize_value
-from dagster_shared.serdes.errors import DeserializationError
 from dagster_shared.serdes.objects.definition_metadata import (
     DgAssetCheckMetadata,
     DgAssetMetadata,
-    DgDefinitionMetadata,
     DgJobMetadata,
     DgResourceMetadata,
     DgScheduleMetadata,
     DgSensorMetadata,
 )
-from packaging.version import Version
 from rich.console import Console
 
 from dagster_dg_cli.utils.plus import gql
@@ -256,30 +252,6 @@ def _get_sensors_table(sensors: Sequence[DgSensorMetadata]) -> "Table":
     return table
 
 
-# On older versions of `dagster`, `dagster-components list defs` output was written directly to
-# stdout, where it was possibly polluted by other output from user code. This scans raw stdout for
-# the line containing the output.
-def _extract_list_defs_output_from_raw_output(raw_output: str) -> list[Any]:
-    last_decode_error = None
-    for line in raw_output.splitlines():
-        try:
-            defs_list = deserialize_value(line, as_type=list[DgDefinitionMetadata])
-            return defs_list
-        except (json.JSONDecodeError, DeserializationError) as e:
-            last_decode_error = e
-
-    if last_decode_error:
-        raise last_decode_error
-
-    raise Exception(
-        "Did not successfully parse definitions list. Full stdout of subprocess:\n" + raw_output
-    )
-
-
-MIN_DAGSTER_COMPONENTS_LIST_DEFINITIONS_LOCATION_OPTION_VERSION = Version("1.10.8")
-MIN_DAGSTER_COMPONENTS_LIST_DEFINITIONS_OUTPUT_FILE_OPTION_VERSION = Version("1.10.12")
-
-
 @list_group.command(name="defs", aliases=["def"], cls=DgClickCommand)
 @click.option(
     "--json",
@@ -301,11 +273,11 @@ def list_defs_command(output_json: bool, path: Path, **global_options: object) -
 
     validate_dagster_availability()
 
-    from dagster.components.cli.list import list_definitions_impl
+    from dagster.components.list import list_definitions
 
     # capture stdout during the definitions load so it doesn't pollute the structured output
     with capture_stdout():
-        definitions = list_definitions_impl(
+        definitions = list_definitions(
             location=dg_context.code_location_name,
             **dg_context.target_args,
         )

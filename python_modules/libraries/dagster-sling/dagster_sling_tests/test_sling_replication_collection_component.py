@@ -24,9 +24,9 @@ from dagster._core.instance_for_test import instance_for_test
 from dagster._core.test_utils import ensure_dagster_tests_import
 from dagster._utils import alter_sys_path
 from dagster._utils.env import environ
-from dagster.components.cli import cli
 from dagster.components.resolved.context import ResolutionException
 from dagster.components.resolved.core_models import AssetAttributesModel
+from dagster_dg_cli.cli import cli
 from dagster_shared import check
 from dagster_sling import SlingReplicationCollectionComponent, SlingResource
 
@@ -303,16 +303,17 @@ def test_scaffold_sling():
             cli,
             [
                 "scaffold",
-                "object",
+                "defs",
                 "dagster_sling.SlingReplicationCollectionComponent",
-                "bar/components/qux",
-                "--scaffold-format",
+                "qux",
+                "--format",
                 "yaml",
             ],
+            catch_exceptions=False,
         )
         assert result.exit_code == 0
-        assert Path("bar/components/qux/replication.yaml").exists()
-        assert Path("bar/components/qux/defs.yaml").exists()
+        assert Path("bar/defs/qux/replication.yaml").exists()
+        assert Path("bar/defs/qux/defs.yaml").exists()
 
 
 def test_spec_is_available_in_scope() -> None:
