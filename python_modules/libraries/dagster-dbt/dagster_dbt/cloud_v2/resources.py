@@ -20,7 +20,13 @@ from dagster._record import record
 from dagster._utils.cached_method import cached_method
 from pydantic import Field
 
-from dagster_dbt.asset_utils import build_dbt_specs, get_updated_cli_invocation_params_for_context
+from dagster_dbt.asset_utils import (
+    DBT_DEFAULT_EXCLUDE,
+    DBT_DEFAULT_SELECT,
+    DBT_DEFAULT_SELECTOR,
+    build_dbt_specs,
+    get_updated_cli_invocation_params_for_context,
+)
 from dagster_dbt.cloud_v2.cli_invocation import DbtCloudCliInvocation
 from dagster_dbt.cloud_v2.client import DbtCloudWorkspaceClient
 from dagster_dbt.cloud_v2.run_handler import DbtCloudJobRunHandler
@@ -36,10 +42,6 @@ from dagster_dbt.utils import clean_name
 
 DAGSTER_ADHOC_PREFIX = "DAGSTER_ADHOC_JOB__"
 DBT_CLOUD_RECONSTRUCTION_METADATA_KEY_PREFIX = "__dbt_cloud"
-
-DBT_CLOUD_DEFAULT_SELECT = "fqn:*"
-DBT_CLOUD_DEFAULT_EXCLUDE = ""
-DBT_CLOUD_DEFAULT_SELECTOR = ""
 
 
 def get_dagster_adhoc_job_name(
@@ -241,9 +243,9 @@ class DbtCloudWorkspace(ConfigurableResource):
         return DbtCloudWorkspaceDefsLoader(
             workspace=self,
             translator=DagsterDbtTranslator(),
-            select=DBT_CLOUD_DEFAULT_SELECT,
-            exclude=DBT_CLOUD_DEFAULT_EXCLUDE,
-            selector=DBT_CLOUD_DEFAULT_SELECTOR,
+            select=DBT_DEFAULT_SELECT,
+            exclude=DBT_DEFAULT_EXCLUDE,
+            selector=DBT_DEFAULT_SELECTOR,
         ).get_or_fetch_state()
 
     # Cache spec retrieval for a specific translator class.
@@ -363,9 +365,9 @@ class DbtCloudWorkspace(ConfigurableResource):
 def load_dbt_cloud_asset_specs(
     workspace: DbtCloudWorkspace,
     dagster_dbt_translator: Optional[DagsterDbtTranslator] = None,
-    select: str = DBT_CLOUD_DEFAULT_SELECT,
-    exclude: str = DBT_CLOUD_DEFAULT_EXCLUDE,
-    selector: str = DBT_CLOUD_DEFAULT_SELECTOR,
+    select: str = DBT_DEFAULT_SELECT,
+    exclude: str = DBT_DEFAULT_EXCLUDE,
+    selector: str = DBT_DEFAULT_SELECTOR,
 ) -> Sequence[AssetSpec]:
     return workspace.load_asset_specs(
         dagster_dbt_translator=dagster_dbt_translator,
@@ -379,9 +381,9 @@ def load_dbt_cloud_asset_specs(
 def load_dbt_cloud_check_specs(
     workspace: DbtCloudWorkspace,
     dagster_dbt_translator: Optional[DagsterDbtTranslator] = None,
-    select: str = DBT_CLOUD_DEFAULT_SELECT,
-    exclude: str = DBT_CLOUD_DEFAULT_EXCLUDE,
-    selector: str = DBT_CLOUD_DEFAULT_SELECTOR,
+    select: str = DBT_DEFAULT_SELECT,
+    exclude: str = DBT_DEFAULT_EXCLUDE,
+    selector: str = DBT_DEFAULT_SELECTOR,
 ) -> Sequence[AssetCheckSpec]:
     return workspace.load_check_specs(
         dagster_dbt_translator=dagster_dbt_translator,
