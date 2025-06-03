@@ -16,23 +16,30 @@ class DgAssetMetadata:
     automation_condition: Optional[str]
     tags: Sequence[tuple[str, str]]
     metadata: Sequence[tuple[str, str]]
+    owners: Sequence[str]
 
 
 @record
 class DgSensorMetadata:
     name: str
+    target: Optional[str]
+    description: Optional[str]
 
 
 @record
 class DgScheduleMetadata:
     name: str
+    target: Optional[str]
     cron_schedule: str
+    description: Optional[str]
 
 
 @record
 class DgJobMetadata:
     name: str
     description: Optional[str]
+    tags: list[tuple[str, str]]
+    metadata: list[tuple[str, str]]
 
 
 @record

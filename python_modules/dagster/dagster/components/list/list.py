@@ -30,6 +30,8 @@ from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.repository_definition.repository_definition import (
     RepositoryDefinition,
 )
+from dagster._core.definitions.target import ANONYMOUS_ASSET_JOB_PREFIX, AutomationTarget
+from dagster._core.definitions.unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._utils.hosted_user_process import recon_repository_from_origin
 from dagster.components.component.component import Component
@@ -110,6 +112,16 @@ def _load_defs_at_path(dg_context: DgContext, path: Optional[Path]) -> Repositor
 IGNORE_METADATA_KEYS_LIST_DEFINITIONS = ["dagster/code_references"]
 
 
+def _get_target(target: AutomationTarget) -> str:
+    if (
+        target.job_name.startswith(ANONYMOUS_ASSET_JOB_PREFIX)
+        and target.has_job_def
+        and isinstance(target.job_def, UnresolvedAssetJobDefinition)
+    ):
+        return target.job_def.selection.to_selection_str()
+    return target.job_name
+
+
 def list_definitions(
     dg_context: DgContext,
     path: Optional[Path] = None,
@@ -176,6 +188,7 @@ def list_definitions(
                             if k not in IGNORE_METADATA_KEYS_LIST_DEFINITIONS
                         ]
                     ),
+                    owners=sorted(list(node.owners)),
                 )
             )
         for key in selected_checks if selected_checks is not None else asset_graph.asset_check_keys:
@@ -195,7 +208,20 @@ def list_definitions(
 
         for job in repo_def.get_all_jobs():
             if not is_reserved_asset_job_name(job.name):
-                all_defs.append(DgJobMetadata(name=job.name, description=job.description))
+                all_defs.append(
+                    DgJobMetadata(
+                        name=job.name,
+                        description=job.description,
+                        tags=sorted(list(job.tags.items())),
+                        metadata=sorted(
+                            [
+                                (k, str(v))
+                                for k, v in job.metadata.items()
+                                if k not in IGNORE_METADATA_KEYS_LIST_DEFINITIONS
+                            ]
+                        ),
+                    )
+                )
         for schedule in repo_def.schedule_defs:
             schedule_str = (
                 schedule.cron_schedule
@@ -205,11 +231,19 @@ def list_definitions(
             all_defs.append(
                 DgScheduleMetadata(
                     name=schedule.name,
+                    target=_get_target(schedule.target),
                     cron_schedule=schedule_str,
+                    description=schedule.description,
                 )
             )
         for sensor in repo_def.sensor_defs:
-            all_defs.append(DgSensorMetadata(name=sensor.name))
+            all_defs.append(
+                DgSensorMetadata(
+                    name=sensor.name,
+                    target=",".join(_get_target(t) for t in sensor.targets),
+                    description=sensor.description,
+                )
+            )
         for name, resource in repo_def.get_top_level_resources().items():
             all_defs.append(DgResourceMetadata(name=name, type=get_resource_type_name(resource)))
 
