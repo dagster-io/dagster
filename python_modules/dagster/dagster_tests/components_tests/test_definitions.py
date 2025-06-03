@@ -98,7 +98,7 @@ def test_definitions_decorator_with_context_using_context():
 def test_component_tree():
     dagster_test_path = Path(__file__).joinpath("../../../../dagster-test").resolve()
     assert dagster_test_path.exists()
-    defs = ComponentTree.load(dagster_test_path).load_defs()
+    defs = ComponentTree.load(dagster_test_path).build_defs()
 
     repo_snap = RepositorySnap.from_def(defs.get_repository_def())
     assert repo_snap.component_tree
