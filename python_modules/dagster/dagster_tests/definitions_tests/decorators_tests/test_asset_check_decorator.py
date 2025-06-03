@@ -1302,3 +1302,25 @@ def test_asset_check_direct_invocation_ctx_resource() -> None:
     _assert_test_succeeded(
         my_check1(build_asset_check_context(), my_resource=MyResource(name="my_resource"))
     )
+
+
+def test_asset_check_pool() -> None:
+    @asset
+    def asset1() -> int:
+        return 5
+
+    @asset_check(asset=asset1, pool="my_pool")
+    def my_check1(asset1: int) -> AssetCheckResult: ...
+
+    assert my_check1.op.pool == "my_pool"
+
+
+def test_multi_asset_check_pool() -> None:
+    @asset
+    def asset1() -> int:
+        return 5
+
+    @multi_asset_check(specs=[AssetCheckSpec("check1", asset=asset1)], pool="my_pool")
+    def my_check1(asset1: int) -> AssetCheckResult: ...
+
+    assert my_check1.op.pool == "my_pool"
