@@ -28,6 +28,7 @@ from dagster_shared.serdes.objects.definition_metadata import (
     DgScheduleMetadata,
     DgSensorMetadata,
 )
+from dagster_shared.utils.warnings import disable_dagster_warnings
 from rich.console import Console
 
 from dagster_dg_cli.utils.plus import gql
@@ -260,10 +261,30 @@ def _get_sensors_table(sensors: Sequence[DgSensorMetadata]) -> "Table":
     default=False,
     help="Output as JSON instead of a table.",
 )
-@dg_path_options
+@click.option(
+    "--path",
+    "-p",
+    type=click.Path(
+        resolve_path=True,
+        path_type=Path,
+    ),
+    help="Path to the definitions to list.",
+)
+@click.option(
+    "--assets",
+    "-a",
+    help="Asset selection to list.",
+)
 @dg_global_options
+@dg_path_options
 @cli_telemetry_wrapper
-def list_defs_command(output_json: bool, target_path: Path, **global_options: object) -> None:
+def list_defs_command(
+    output_json: bool,
+    target_path: Path,
+    path: Optional[Path],
+    assets: Optional[str],
+    **global_options: object,
+) -> None:
     """List registered Dagster definitions in the current project environment."""
     from rich.console import Console
     from rich.table import Table
@@ -276,10 +297,11 @@ def list_defs_command(output_json: bool, target_path: Path, **global_options: ob
     from dagster.components.list import list_definitions
 
     # capture stdout during the definitions load so it doesn't pollute the structured output
-    with capture_stdout():
+    with capture_stdout(), disable_dagster_warnings():
         definitions = list_definitions(
-            location=dg_context.code_location_name,
-            **dg_context.target_args,
+            dg_context=dg_context,
+            path=path,
+            asset_selection=assets,
         )
 
     # JSON
@@ -289,7 +311,7 @@ def list_defs_command(output_json: bool, target_path: Path, **global_options: ob
 
     # TABLE
     else:
-        assets = [item for item in definitions if isinstance(item, DgAssetMetadata)]
+        _assets = [item for item in definitions if isinstance(item, DgAssetMetadata)]
         asset_checks = [item for item in definitions if isinstance(item, DgAssetCheckMetadata)]
         jobs = [item for item in definitions if isinstance(item, DgJobMetadata)]
         resources = [item for item in definitions if isinstance(item, DgResourceMetadata)]
@@ -306,8 +328,8 @@ def list_defs_command(output_json: bool, target_path: Path, **global_options: ob
         table.add_column("Section", style="bold")
         table.add_column("Definitions")
 
-        if assets:
-            table.add_row("Assets", _get_assets_table(assets))
+        if _assets:
+            table.add_row("Assets", _get_assets_table(_assets))
         if asset_checks:
             table.add_row("Asset Checks", _get_asset_checks_table(asset_checks))
         if jobs:

@@ -1,19 +1,22 @@
 import importlib
 import inspect
-from typing import Annotated, Callable, Literal, Optional
+from functools import cached_property
+from typing import Annotated, Any, Callable, Literal, Optional, Union
 
 from dagster_shared import check
 from typing_extensions import TypeAlias
 
+from dagster._core.definitions.decorators.asset_check_decorator import multi_asset_check
 from dagster._core.definitions.decorators.asset_decorator import multi_asset
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.time_window_partitions import DailyPartitionsDefinition
+from dagster._core.execution.context.asset_check_execution_context import AssetCheckExecutionContext
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster.components.component.component import Component
 from dagster.components.core.context import ComponentLoadContext
 from dagster.components.resolved.base import Resolvable
 from dagster.components.resolved.context import ResolutionContext
-from dagster.components.resolved.core_models import ResolvedAssetSpec
+from dagster.components.resolved.core_models import ResolvedAssetCheckSpec, ResolvedAssetSpec
 from dagster.components.resolved.model import Model, Resolver
 
 
@@ -42,7 +45,13 @@ ResolvedPartitionDefinition: TypeAlias = Annotated[
 
 
 def resolve_callable(context: ResolutionContext, model: str) -> Callable:
-    module_path, fn_name = model.rsplit(".", 1)
+    load_context = ComponentLoadContext.from_resolution_context(context)
+    if model.startswith("."):
+        local_module_path, fn_name = model.rsplit(".", 1)
+        module_path = f"{load_context.defs_module_name}.{local_module_path[1:]}"
+    else:
+        module_path, fn_name = model.rsplit(".", 1)
+
     module = importlib.import_module(module_path)
     return getattr(module, fn_name)
 
@@ -74,26 +83,45 @@ class ExecutableComponent(Component, Resolvable, Model):
     name: Optional[str] = None
     partitions_def: Optional[ResolvedPartitionDefinition] = None
     assets: Optional[list[ResolvedAssetSpec]] = None
+    checks: Optional[list[ResolvedAssetCheckSpec]] = None
     execute_fn: ResolvableCallable
 
-    def get_resource_keys(self) -> set[str]:
+    @cached_property
+    def resource_keys(self) -> set[str]:
         return set(get_resources_from_callable(self.execute_fn))
 
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
-        required_resource_keys = self.get_resource_keys()
+        if self.assets:
 
-        check.invariant(len(self.assets or []) > 0, "assets is required for now")
+            @multi_asset(
+                name=self.name or self.execute_fn.__name__,
+                specs=self.assets,
+                check_specs=self.checks,
+                partitions_def=self.partitions_def,
+                required_resource_keys=self.resource_keys,
+            )
+            def _assets_def(context: AssetExecutionContext, **kwargs):
+                return self.invoke_execute_fn(context)
 
-        @multi_asset(
-            name=self.name or self.execute_fn.__name__,
-            specs=self.assets,
-            partitions_def=self.partitions_def,
-            required_resource_keys=required_resource_keys,
-        )
-        def _assets_def(context: AssetExecutionContext, **kwargs):
-            rd = context.resources.original_resource_dict
-            to_pass = {k: v for k, v in rd.items() if k in required_resource_keys}
-            check.invariant(set(to_pass.keys()) == required_resource_keys, "Resource keys mismatch")
-            return self.execute_fn(context, **to_pass)
+            return Definitions(assets=[_assets_def])
+        elif self.checks:
 
-        return Definitions(assets=[_assets_def])
+            @multi_asset_check(
+                name=self.name or self.execute_fn.__name__,
+                specs=self.checks,
+                required_resource_keys=self.resource_keys,
+            )
+            def _asset_check_def(context: AssetCheckExecutionContext, **kwargs):
+                return self.invoke_execute_fn(context)
+
+            return Definitions(asset_checks=[_asset_check_def])
+        else:
+            check.failed("No assets or checks provided")
+
+    def invoke_execute_fn(
+        self, context: Union[AssetExecutionContext, AssetCheckExecutionContext]
+    ) -> Any:
+        rd = context.resources.original_resource_dict
+        to_pass = {k: v for k, v in rd.items() if k in self.resource_keys}
+        check.invariant(set(to_pass.keys()) == self.resource_keys, "Resource keys mismatch")
+        return self.execute_fn(context, **to_pass)

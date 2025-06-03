@@ -1,9 +1,13 @@
 import logging
 import sys
 from collections.abc import Sequence
+from pathlib import Path
 from traceback import TracebackException
 from typing import Any, Literal, Optional, Union
 
+import click
+from dagster_dg_core.context import DgContext
+from dagster_shared.cli import PythonPointerOpts
 from dagster_shared.error import SerializableErrorInfo, remove_system_frames_from_error
 from dagster_shared.serdes.objects import PluginObjectKey
 from dagster_shared.serdes.objects.definition_metadata import (
@@ -18,13 +22,14 @@ from dagster_shared.serdes.objects.definition_metadata import (
 from dagster_shared.serdes.objects.package_entry import PluginManifest
 from pydantic import ConfigDict, TypeAdapter, create_model
 
-from dagster._cli.utils import assert_no_remaining_opts, get_possibly_temporary_instance_for_cli
-from dagster._cli.workspace.cli_target import (
-    PythonPointerOpts,
-    get_repository_python_origin_from_cli_opts,
-)
+from dagster._cli.utils import get_possibly_temporary_instance_for_cli
+from dagster._cli.workspace.cli_target import get_repository_python_origin_from_cli_opts
 from dagster._config.pythonic_config.resource import get_resource_type_name
 from dagster._core.definitions.asset_job import is_reserved_asset_job_name
+from dagster._core.definitions.asset_selection import AssetSelection
+from dagster._core.definitions.repository_definition.repository_definition import (
+    RepositoryDefinition,
+)
 from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._utils.hosted_user_process import recon_repository_from_origin
 from dagster.components.component.component import Component
@@ -36,6 +41,7 @@ from dagster.components.core.package_entry import (
     get_plugin_entry_points,
 )
 from dagster.components.core.snapshot import get_package_entry_snap
+from dagster.components.core.tree import ComponentTree
 
 
 def list_plugins(
@@ -78,15 +84,36 @@ def list_all_components_schema(
     return TypeAdapter(union_type).json_schema()
 
 
-def list_definitions(
-    location: Optional[str],
-    **other_opts: object,
-) -> list[DgDefinitionMetadata]:
-    python_pointer_opts = PythonPointerOpts.extract_from_cli_options(other_opts)
-    assert_no_remaining_opts(other_opts)
+def _load_defs_at_path(dg_context: DgContext, path: Optional[Path]) -> RepositoryDefinition:
+    """Attempts to load the component tree from the context project root, falling back to
+    resolving the entire repository and using the attached component tree.
+    """
+    if not path:
+        repository_origin = get_repository_python_origin_from_cli_opts(
+            PythonPointerOpts.extract_from_cli_options(dict(dg_context.target_args))
+        )
+        recon_repo = recon_repository_from_origin(repository_origin)
+        repo_def = recon_repo.get_definition()
+        return repo_def
 
+    tree = ComponentTree.load(dg_context.root_path)
+
+    try:
+        defs = tree.load_defs_at_path(path) if path else tree.load_defs()
+    except Exception as e:
+        path_text = f" at {path}" if path else ""
+        raise click.ClickException(f"Unable to load definitions{path_text}: {e}") from e
+
+    return defs.get_repository_def()
+
+
+def list_definitions(
+    dg_context: DgContext,
+    path: Optional[Path] = None,
+    asset_selection: Optional[str] = None,
+) -> list[DgDefinitionMetadata]:
     with get_possibly_temporary_instance_for_cli() as instance:
-        instance.inject_env_vars(location)
+        instance.inject_env_vars(dg_context.code_location_name)
 
         logger = logging.getLogger("dagster")
 
@@ -98,23 +125,33 @@ def list_definitions(
         )
 
         try:
-            repository_origin = get_repository_python_origin_from_cli_opts(python_pointer_opts)
-            recon_repo = recon_repository_from_origin(repository_origin)
-            repo_def = recon_repo.get_definition()
+            repo_def = _load_defs_at_path(dg_context, path)
+        except click.ClickException:
+            raise
         except Exception:
             underlying_error = remove_system_frames_from_error(
                 serializable_error_info_from_exc_info(sys.exc_info()),
                 build_system_frame_removed_hint=removed_system_frame_hint,
             )
 
-            logger.error(f"Loading location {location} failed:\n\n{underlying_error.to_string()}")
+            logger.error(
+                f"Loading location {dg_context.project_name} failed:\n\n{underlying_error.to_string()}"
+            )
             sys.exit(1)
 
         all_defs: list[DgDefinitionMetadata] = []
-
         asset_graph = repo_def.asset_graph
+
+        asset_selection_obj = (
+            AssetSelection.from_string(asset_selection) if asset_selection else None
+        )
+        selected_assets = asset_selection_obj.resolve(asset_graph) if asset_selection_obj else None
+        selected_checks = (
+            asset_selection_obj.resolve_checks(asset_graph) if asset_selection_obj else None
+        )
         for key in sorted(
-            list(asset_graph.get_all_asset_keys()), key=lambda key: key.to_user_string()
+            selected_assets or list(asset_graph.get_all_asset_keys()),
+            key=lambda key: key.to_user_string(),
         ):
             node = asset_graph.get(key)
             all_defs.append(
@@ -129,7 +166,7 @@ def list_definitions(
                     else None,
                 )
             )
-        for key in asset_graph.asset_check_keys:
+        for key in selected_checks if selected_checks is not None else asset_graph.asset_check_keys:
             node = asset_graph.get(key)
             all_defs.append(
                 DgAssetCheckMetadata(
@@ -140,6 +177,10 @@ def list_definitions(
                     description=node.description,
                 )
             )
+        # If we have an asset selection, we only want to return assets
+        if asset_selection:
+            return all_defs
+
         for job in repo_def.get_all_jobs():
             if not is_reserved_asset_job_name(job.name):
                 all_defs.append(DgJobMetadata(name=job.name))

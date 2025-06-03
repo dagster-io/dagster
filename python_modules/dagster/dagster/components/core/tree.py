@@ -24,7 +24,7 @@ class ComponentTree:
     project_root: Path
 
     @staticmethod
-    def load(path_within_project: Path):
+    def load(path_within_project: Path) -> "ComponentTree":
         """Using the provided path, find the nearest parent python project and load the
         ComponentTree using its configuration.
         """
@@ -57,9 +57,23 @@ class ComponentTree:
         )
 
     def load_defs_at_path(self, defs_path: Path) -> Definitions:
+        """Loads definitions from the given defs subdirectory. Currently
+        does not incorporate postprocessing from parent defs modules.
+
+        Args:
+            defs_path: Path to the defs module to load. If relative, resolves relative to the defs root.
+
+        Returns:
+            Definitions: The definitions loaded from the given path.
+        """
         # impl to be fleshed out to flexibly handle different path types (str, list[str], ...)
+        if self.root.path.absolute().as_posix() == defs_path.absolute().as_posix():
+            return self.root.build_defs(self.load_context.for_path(self.root.path))
         for cp, c in self.root.iterate_path_component_pairs():
-            if cp.file_path.relative_to(self.root.path) == defs_path:
+            defs_path_abs = (
+                defs_path if defs_path.is_absolute() else (self.root.path / defs_path).absolute()
+            )
+            if cp.file_path.absolute().as_posix() == defs_path_abs.as_posix():
                 return c.build_defs(self.load_context.for_path(cp.file_path))
 
         raise Exception(f"No component found for path {defs_path}")
