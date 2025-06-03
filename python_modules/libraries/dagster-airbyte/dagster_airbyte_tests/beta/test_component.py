@@ -1,7 +1,6 @@
 # ruff: noqa: F841 TID252
 
 import copy
-import importlib
 from collections.abc import Iterator, Mapping
 from contextlib import contextmanager, nullcontext
 from pathlib import Path
@@ -9,7 +8,6 @@ from typing import Any, Callable, Optional
 
 import pytest
 import responses
-import yaml
 from dagster import AssetKey
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.definitions_class import Definitions
@@ -17,7 +15,7 @@ from dagster._core.test_utils import ensure_dagster_tests_import
 from dagster._utils import alter_sys_path
 from dagster._utils.env import environ
 from dagster.components import ComponentLoadContext
-from dagster.components.core.context import use_component_load_context
+from dagster.components.testing import scaffold_defs_sandbox
 from dagster_airbyte.components.workspace_component.component import AirbyteCloudWorkspaceComponent
 from dagster_airbyte.resources import AirbyteCloudWorkspace
 from dagster_airbyte.translator import AirbyteConnection
@@ -32,7 +30,6 @@ from dagster_airbyte_tests.beta.conftest import (
 )
 
 ensure_dagster_tests_import()
-from dagster_tests.components_tests.utils import get_underlying_component
 
 ensure_dagster_dg_tests_import()
 
@@ -54,21 +51,10 @@ def setup_airbyte_component(
     component_body: dict[str, Any],
 ) -> Iterator[tuple[AirbyteCloudWorkspaceComponent, Definitions]]:
     """Sets up a components project with an airbyte component based on provided params."""
-    with setup_airbyte_ready_project():
-        defs_path = Path.cwd() / "src" / "foo_bar" / "defs"
-        component_path = defs_path / "ingest"
-        component_path.mkdir(parents=True, exist_ok=True)
-
-        (component_path / "component.yaml").write_text(yaml.safe_dump(component_body))
-
-        defs_root = importlib.import_module("foo_bar.defs.ingest")
-        project_root = Path.cwd()
-
-        context = ComponentLoadContext.for_module(defs_root, project_root)
-        with use_component_load_context(context):
-            component = get_underlying_component(context)
+    with scaffold_defs_sandbox(component_cls=AirbyteCloudWorkspaceComponent) as defs_sandbox:
+        with defs_sandbox.load(component_body=component_body) as (component, defs):
             assert isinstance(component, AirbyteCloudWorkspaceComponent)
-            yield component, component.build_defs(context)
+            yield component, defs
 
 
 BASIC_AIRBYTE_COMPONENT_BODY = {
@@ -101,7 +87,7 @@ def test_basic_component_load(
             defs,
         ),
     ):
-        assert defs.get_asset_graph().get_all_asset_keys() == {
+        assert defs.resolve_asset_graph().get_all_asset_keys() == {
             AssetKey(["test_prefix_test_stream"]),
             AssetKey(["test_prefix_test_another_stream"]),
         }
@@ -145,7 +131,7 @@ def test_basic_component_filter(
             defs,
         ),
     ):
-        assert len(defs.get_asset_graph().get_all_asset_keys()) == num_assets
+        assert len(defs.resolve_asset_graph().get_all_asset_keys()) == num_assets
 
 
 @pytest.mark.parametrize(
@@ -175,7 +161,7 @@ def test_custom_filter_fn_python(
         connection_selector=filter_fn,
         translation=None,
     ).build_defs(ComponentLoadContext.for_test())
-    assert len(defs.get_asset_graph().get_all_asset_keys()) == num_assets
+    assert len(defs.resolve_asset_graph().get_all_asset_keys()) == num_assets
 
 
 @pytest.mark.parametrize(
