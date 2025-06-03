@@ -1,3 +1,4 @@
+from collections.abc import Sequence
 from typing import TYPE_CHECKING, Optional
 
 import dagster._check as check
@@ -14,6 +15,7 @@ from dagster._streamline.asset_materialization_health import (
 
 if TYPE_CHECKING:
     from dagster_graphql.schema.asset_health import (
+        GrapheneAssetHealth,
         GrapheneAssetHealthCheckMeta,
         GrapheneAssetHealthFreshnessMeta,
         GrapheneAssetHealthMaterializationMeta,
@@ -21,9 +23,83 @@ if TYPE_CHECKING:
     from dagster_graphql.schema.util import ResolveInfo
 
 
+async def fetch_assets_health(
+    graphene_info: "ResolveInfo", asset_keys: Sequence[AssetKey]
+) -> Sequence["GrapheneAssetHealth"]:
+    from dagster_graphql.schema.asset_health import GrapheneAssetHealth
+
+    if graphene_info.context.instance.streamline_read_asset_health_supported():
+        # use streamline multi_fetch to get the asset health for each asset
+        asset_check_health_states_by_key = (
+            graphene_info.context.instance.get_asset_check_health_states_for_assets(asset_keys)
+        )
+        asset_freshness_health_states_by_key = (
+            graphene_info.context.instance.get_asset_freshness_health_states_for_assets(asset_keys)
+        )
+        asset_materialization_health_states_by_key = (
+            graphene_info.context.instance.get_asset_materialization_health_states_for_assets(
+                asset_keys
+            )
+        )
+
+        results = []
+
+        for asset_key in asset_keys:
+            # if streamline data does not exist for some asset, don't generate the data from the DB now, wait until it is resolved by GrapheneAssetHealth, so that
+            # we only do the computation if the result is requested in the query
+            kwargs_dict = {}
+            asset_check_health_state = asset_check_health_states_by_key.get(asset_key)
+            if asset_check_health_state is not None:
+                (
+                    asset_check_status,
+                    asset_check_status_metadata,
+                ) = await get_asset_check_status_and_metadata(
+                    graphene_info, asset_key, asset_check_health_state
+                )
+                kwargs_dict["assetCheckStatus"] = asset_check_status
+                kwargs_dict["assetCheckStatusMetadata"] = asset_check_status_metadata
+
+            asset_freshness_health_state = asset_freshness_health_states_by_key.get(asset_key)
+            if asset_freshness_health_state is not None:
+                (
+                    freshness_status,
+                    freshness_status_metadata,
+                ) = await get_freshness_status_and_metadata(
+                    graphene_info, asset_key, asset_freshness_health_state
+                )
+                kwargs_dict["freshnessStatus"] = freshness_status
+                kwargs_dict["freshnessStatusMetadata"] = freshness_status_metadata
+
+            asset_materialization_health_state = asset_materialization_health_states_by_key.get(
+                asset_key
+            )
+            if asset_materialization_health_state is not None:
+                (
+                    materialization_status,
+                    materialization_status_metadata,
+                ) = await get_materialization_status_and_metadata(
+                    graphene_info, asset_key, asset_materialization_health_state
+                )
+                kwargs_dict["materializationStatus"] = materialization_status
+                kwargs_dict["materializationStatusMetadata"] = materialization_status_metadata
+
+            results.append(
+                GrapheneAssetHealth(
+                    asset_key, graphene_info.context.dynamic_partitions_loader, **kwargs_dict
+                )
+            )
+        return results
+    else:
+        return [
+            GrapheneAssetHealth(asset_key, graphene_info.context.dynamic_partitions_loader)
+            for asset_key in asset_keys
+        ]
+
+
 async def get_asset_check_status_and_metadata(
     graphene_info: "ResolveInfo",
     asset_key: AssetKey,
+    asset_check_health_state: Optional[AssetCheckHealthState] = None,
 ) -> tuple[str, Optional["GrapheneAssetHealthCheckMeta"]]:
     """Converts an AssetCheckHealthState object to a GrapheneAssetHealthStatus and the metadata
     needed to power the UIs.
@@ -35,8 +111,10 @@ async def get_asset_check_status_and_metadata(
         GrapheneAssetHealthStatus,
     )
 
-    asset_check_health_state = None
-    if graphene_info.context.instance.streamline_read_asset_health_supported():
+    if (
+        asset_check_health_state is None
+        and graphene_info.context.instance.streamline_read_asset_health_supported()
+    ):
         asset_check_health_state = (
             graphene_info.context.instance.get_asset_check_health_state_for_asset(asset_key)
         )
@@ -91,7 +169,9 @@ async def get_asset_check_status_and_metadata(
 
 
 async def get_freshness_status_and_metadata(
-    graphene_info: "ResolveInfo", asset_key: AssetKey
+    graphene_info: "ResolveInfo",
+    asset_key: AssetKey,
+    asset_freshness_health_state: Optional[AssetFreshnessHealthState] = None,
 ) -> tuple[str, Optional["GrapheneAssetHealthFreshnessMeta"]]:
     """Gets an AssetFreshnessHealthState object for an asset, either via streamline or by computing
     it based on the state of the DB. Then converts it to a GrapheneAssetHealthStatus and the metadata
@@ -102,8 +182,10 @@ async def get_freshness_status_and_metadata(
         GrapheneAssetHealthStatus,
     )
 
-    asset_freshness_health_state = None
-    if graphene_info.context.instance.streamline_read_asset_health_supported():
+    if (
+        asset_freshness_health_state is None
+        and graphene_info.context.instance.streamline_read_asset_health_supported()
+    ):
         asset_freshness_health_state = (
             graphene_info.context.instance.get_asset_freshness_health_state_for_asset(asset_key)
         )
@@ -151,7 +233,9 @@ async def get_freshness_status_and_metadata(
 
 
 async def get_materialization_status_and_metadata(
-    graphene_info: "ResolveInfo", asset_key: AssetKey
+    graphene_info: "ResolveInfo",
+    asset_key: AssetKey,
+    asset_materialization_health_state: Optional[AssetMaterializationHealthState] = None,
 ) -> tuple[str, Optional["GrapheneAssetHealthMaterializationMeta"]]:
     """Gets an AssetMaterializationHealthState object for an asset, either via streamline or by computing
     it based on the state of the DB. Then converts it to a GrapheneAssetHealthStatus and the metadata
@@ -165,8 +249,10 @@ async def get_materialization_status_and_metadata(
         GrapheneAssetHealthStatus,
     )
 
-    asset_materialization_health_state = None
-    if graphene_info.context.instance.streamline_read_asset_health_supported():
+    if (
+        asset_materialization_health_state is None
+        and graphene_info.context.instance.streamline_read_asset_health_supported()
+    ):
         asset_materialization_health_state = (
             graphene_info.context.instance.get_asset_materialization_health_state_for_asset(
                 asset_key

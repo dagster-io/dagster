@@ -392,6 +392,7 @@ export type AssetHealth = {
   assetChecksStatus: AssetHealthStatus;
   assetChecksStatusMetadata: Maybe<AssetHealthCheckMeta>;
   assetHealth: AssetHealthStatus;
+  assetKey: AssetKey;
   freshnessStatus: AssetHealthStatus;
   freshnessStatusMetadata: Maybe<AssetHealthFreshnessMeta>;
   materializationStatus: AssetHealthStatus;
@@ -4006,6 +4007,7 @@ export type Query = {
   assetConditionEvaluationForPartition: Maybe<AssetConditionEvaluation>;
   assetConditionEvaluationRecordsOrError: Maybe<AssetConditionEvaluationRecordsOrError>;
   assetConditionEvaluationsForEvaluationId: Maybe<AssetConditionEvaluationRecordsOrError>;
+  assetHealthStatuses: Array<AssetHealth>;
   assetNodeAdditionalRequiredKeys: Array<AssetKey>;
   assetNodeDefinitionCollisions: Array<AssetNodeDefinitionCollision>;
   assetNodeOrError: AssetNodeOrError;
@@ -4094,6 +4096,10 @@ export type QueryAssetConditionEvaluationRecordsOrErrorArgs = {
 
 export type QueryAssetConditionEvaluationsForEvaluationIdArgs = {
   evaluationId: Scalars['ID']['input'];
+};
+
+export type QueryAssetHealthStatusesArgs = {
+  assetKeys: Array<AssetKeyInput>;
 };
 
 export type QueryAssetNodeAdditionalRequiredKeysArgs = {
@@ -6761,6 +6767,12 @@ export const buildAssetHealth = (
       overrides && overrides.hasOwnProperty('assetHealth')
         ? overrides.assetHealth!
         : AssetHealthStatus.DEGRADED,
+    assetKey:
+      overrides && overrides.hasOwnProperty('assetKey')
+        ? overrides.assetKey!
+        : relationshipsToOmit.has('AssetKey')
+          ? ({} as AssetKey)
+          : buildAssetKey({}, relationshipsToOmit),
     freshnessStatus:
       overrides && overrides.hasOwnProperty('freshnessStatus')
         ? overrides.freshnessStatus!
@@ -12878,6 +12890,10 @@ export const buildQuery = (
         : relationshipsToOmit.has('AssetConditionEvaluationRecords')
           ? ({} as AssetConditionEvaluationRecords)
           : buildAssetConditionEvaluationRecords({}, relationshipsToOmit),
+    assetHealthStatuses:
+      overrides && overrides.hasOwnProperty('assetHealthStatuses')
+        ? overrides.assetHealthStatuses!
+        : [],
     assetNodeAdditionalRequiredKeys:
       overrides && overrides.hasOwnProperty('assetNodeAdditionalRequiredKeys')
         ? overrides.assetNodeAdditionalRequiredKeys!

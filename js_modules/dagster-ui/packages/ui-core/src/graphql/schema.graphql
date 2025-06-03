@@ -753,6 +753,7 @@ type AssetNode {
 }
 
 type AssetHealth {
+  assetKey: AssetKey!
   assetHealth: AssetHealthStatus!
   materializationStatus: AssetHealthStatus!
   materializationStatusMetadata: AssetHealthMaterializationMeta
@@ -3581,6 +3582,7 @@ type Query {
   assetNodeOrError(assetKey: AssetKeyInput!): AssetNodeOrError!
   assetNodeAdditionalRequiredKeys(assetKeys: [AssetKeyInput!]!): [AssetKey!]!
   assetNodeDefinitionCollisions(assetKeys: [AssetKeyInput!]!): [AssetNodeDefinitionCollision!]!
+  assetHealthStatuses(assetKeys: [AssetKeyInput!]!): [AssetHealth!]!
   partitionBackfillOrError(backfillId: String!): PartitionBackfillOrError!
   assetBackfillPreview(params: AssetBackfillPreviewParams!): [AssetPartitions!]!
   partitionBackfillsOrError(

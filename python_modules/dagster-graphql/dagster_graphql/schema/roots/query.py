@@ -37,6 +37,7 @@ from dagster_graphql.implementation.fetch_asset_condition_evaluations import (
     fetch_asset_condition_evaluation_records_for_evaluation_id,
     fetch_true_partitions_for_evaluation_node,
 )
+from dagster_graphql.implementation.fetch_asset_health import fetch_assets_health
 from dagster_graphql.implementation.fetch_assets import (
     get_additional_required_keys,
     get_asset,
@@ -108,6 +109,7 @@ from dagster_graphql.schema.asset_graph import (
     GrapheneAssetNodeDefinitionCollision,
     GrapheneAssetNodeOrError,
 )
+from dagster_graphql.schema.asset_health import GrapheneAssetHealth
 from dagster_graphql.schema.auto_materialize_asset_evaluations import (
     GrapheneAutoMaterializeAssetEvaluationRecordsOrError,
 )
@@ -512,6 +514,12 @@ class GrapheneQuery(graphene.ObjectType):
         )
         + "not be defined in more than one repository - this query is used to present warnings and"
         " errors in the Dagster UI.",
+    )
+
+    assetHealthStatuses = graphene.Field(
+        non_null_list(GrapheneAssetHealth),
+        assetKeys=graphene.Argument(non_null_list(GrapheneAssetKeyInput)),
+        description="Get the AssetHealth for a list of assets. Can be more efficient than fetching assets via AssetsOrError and resolving the asset health per asset.",
     )
 
     partitionBackfillOrError = graphene.Field(
@@ -1156,6 +1164,12 @@ class GrapheneQuery(graphene.ObjectType):
 
     def resolve_assetOrError(self, graphene_info: ResolveInfo, assetKey: GrapheneAssetKeyInput):
         return get_asset(graphene_info, AssetKey.from_graphql_input(assetKey))
+
+    async def resolve_assetHealthStatuses(
+        self, graphene_info: ResolveInfo, assetKeys: Sequence[GrapheneAssetKeyInput]
+    ):
+        asset_keys = [AssetKey.from_graphql_input(asset_key) for asset_key in assetKeys]
+        return await fetch_assets_health(graphene_info, asset_keys)
 
     def resolve_assetNodeAdditionalRequiredKeys(
         self,
