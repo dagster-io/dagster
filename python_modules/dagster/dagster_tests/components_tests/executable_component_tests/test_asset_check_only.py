@@ -15,6 +15,10 @@ from dagster.components.lib.executable_component.component import ExecutableComp
 from dagster_shared import check
 
 
+def only_asset_execute_fn(context):
+    return MaterializeResult()
+
+
 def only_asset_check_execute_fn(context):
     return AssetCheckResult(passed=True)
 
@@ -170,7 +174,7 @@ def test_op_tags() -> None:
     component_only_assets = ExecutableComponent.from_attributes_dict(
         attributes={
             "name": "op_name",
-            "execute_fn": "dagster_tests.components_tests.executable_component_tests.test_asset_check_only.only_asset_check_execute_fn",
+            "execute_fn": "dagster_tests.components_tests.executable_component_tests.test_asset_check_only.only_asset_execute_fn",
             "tags": {"op_tag": "op_tag_value"},
             "assets": [
                 {
