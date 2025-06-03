@@ -155,7 +155,7 @@ def test_components_docs_adding_attributes_to_assets(
                 .read_text()
                 .replace(
                     "dagster_sling.SlingReplicationCollectionComponent",
-                    "my_project.components.CustomSlingReplicationComponent",
+                    "my_project.components.custom_sling_replication_component.CustomSlingReplicationComponent",
                 ),
                 snippet_path=SNIPPETS_DIR
                 / component_type

@@ -150,7 +150,6 @@ def test_scaffold_project_success(
 
         assert Path("foo-bar").exists()
         assert Path("foo-bar/src/foo_bar").exists()
-        assert Path("foo-bar/src/foo_bar/components").exists()
         assert Path("foo-bar/src/foo_bar/defs").exists()
         assert Path("foo-bar/tests").exists()
         assert Path("foo-bar/pyproject.toml").exists()
@@ -184,7 +183,6 @@ def test_scaffold_project_inside_workspace_success(monkeypatch) -> None:
         assert_runner_result(result)
         assert Path("projects/foo-bar").exists()
         assert Path("projects/foo-bar/src/foo_bar").exists()
-        assert Path("projects/foo-bar/src/foo_bar/components").exists()
         assert Path("projects/foo-bar/src/foo_bar/defs").exists()
         assert Path("projects/foo-bar/tests").exists()
         assert Path("projects/foo-bar/pyproject.toml").exists()
@@ -400,7 +398,6 @@ def test_scaffold_project_python_environment_uv_managed_success(monkeypatch) -> 
         assert_runner_result(result)
         assert Path("foo-bar").exists()
         assert Path("foo-bar/src/foo_bar").exists()
-        assert Path("foo-bar/src/foo_bar/components").exists()
         assert Path("foo-bar/src/foo_bar/defs").exists()
         assert Path("foo-bar/tests").exists()
         assert Path("foo-bar/pyproject.toml").exists()

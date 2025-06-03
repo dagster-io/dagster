@@ -17,27 +17,38 @@ ScaffoldFormatOptions: TypeAlias = Literal["yaml", "python"]
 def scaffold_component(
     *, dg_context: DgContext, class_name: str, module_name: str, model: bool
 ) -> None:
-    root_path = Path(dg_context.default_registry_module_path)
-    click.echo(f"Creating a Dagster component type at {root_path}/{module_name}.py.")
+    module_parts = module_name.split(".")
+    module_path = dg_context.root_path
+    for i in range(len(module_parts) - 1):
+        module = ".".join(module_parts[: i + 1])
+        module_path = dg_context.get_path_for_local_module(module, require_exists=False)
+        if not module_path.exists():
+            click.echo(f"Creating module at: {module_path}")
+            module_path.mkdir()
+        (module_path / "__init__.py").touch()
 
     scaffold_subtree(
-        path=root_path,
+        path=module_path,
         name_placeholder="COMPONENT_TYPE_NAME_PLACEHOLDER",
         project_template_path=Path(__file__).parent / "templates" / "COMPONENT_TYPE",
-        project_name=module_name,
+        project_name=module_parts[-1],
         name=class_name,
         model=model,
     )
 
-    with open(root_path / "__init__.py") as f:
-        lines = f.readlines()
-    lines.append(
-        f"from {dg_context.default_registry_root_module_name}.{module_name} import {class_name} as {class_name}\n"
-    )
-    with open(root_path / "__init__.py", "w") as f:
-        f.writelines(lines)
+    # backcompat -- dagster_dg_cli.plugin entry point
+    if dg_context.has_registry_module_entry_point:
+        with open(module_path / "__init__.py") as f:
+            lines = f.readlines()
+        lines.append(f"from {module_name} import {class_name} as {class_name}\n")
+        with open(module_path / "__init__.py", "w") as f:
+            f.writelines(lines)
 
-    click.echo(f"Scaffolded files for Dagster component type at {root_path}/{module_name}.py.")
+    # no plugin entry point, add to project plugin modules
+    else:
+        dg_context.add_project_registry_module(module_name)
+
+    click.echo(f"Scaffolded Dagster component at {module_path}/{module_parts[-1]}.py.")
 
 
 # ########################

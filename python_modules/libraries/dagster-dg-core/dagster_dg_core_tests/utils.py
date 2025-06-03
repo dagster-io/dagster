@@ -222,6 +222,7 @@ def isolated_example_project_foo_bar(
     package_layout: PackageLayoutType = "src",
     use_editable_dagster: bool = True,
     python_environment: DgProjectPythonEnvironmentFlag = "active",
+    include_entry_point: bool = False,
     # Only works when python_environment is "active"
     uv_sync: bool = False,
 ) -> Iterator[Path]:
@@ -289,6 +290,13 @@ def isolated_example_project_foo_bar(
                 components_dir.mkdir(parents=True, exist_ok=True)
                 shutil.copytree(src_dir, components_dir, dirs_exist_ok=True)
 
+            # Used for backcompat testing
+            if include_entry_point:
+                _add_python_entry_point("foo_bar.components")
+                # reinstall to venv since we added an entry point
+                if Path(".venv").exists():
+                    install_to_venv(Path(".venv"), ["-e", "."])
+
             # if in "active" mode, add inject the parent directory to sys.path so the modules
             # can be imported in this process
             injected_path = str(module_parent_dir) if python_environment == "active" else None
@@ -306,7 +314,7 @@ def isolated_example_project_foo_bar(
 @contextmanager
 def isolated_example_component_library_foo_bar(
     runner: Union[CliRunner, "ProxyRunner"],
-    components_module_name: Optional[str] = None,
+    components_module_name: str = "foo_bar.components",
 ) -> Iterator[None]:
     runner = ProxyRunner(runner) if isinstance(runner, CliRunner) else runner
     with isolated_example_project_foo_bar(
@@ -318,20 +326,10 @@ def isolated_example_component_library_foo_bar(
         shutil.rmtree(Path("src/foo_bar/defs"))
 
         # Make it not a project
-        with modify_toml(Path("pyproject.toml")) as toml:
+        with modify_toml_as_dict(Path("pyproject.toml")) as toml:
             delete_toml_node(toml, ("tool", "dg"))
 
-            # We need to set any alternative components package name and then install into the
-            # environment, since it affects entry points which are set at install time.
-            if components_module_name:
-                set_toml_node(
-                    toml,
-                    ("project", "entry-points", "dagster_dg_cli.registry_modules", "foo_bar"),
-                    components_module_name,
-                )
-                components_dir = Path("src", *components_module_name.split("."))
-                components_dir.mkdir(exist_ok=True)
-                (components_dir / "__init__.py").touch()
+        _add_python_entry_point(components_module_name)
 
         # Install the component library into our venv
         venv_path = Path(".venv")
@@ -339,6 +337,20 @@ def isolated_example_component_library_foo_bar(
         install_to_venv(venv_path, ["-e", "."])
         with activate_venv(venv_path):
             yield
+
+
+def _add_python_entry_point(module_name: str):
+    with modify_toml_as_dict(Path("pyproject.toml")) as toml:
+        # We need to set any alternative components package name and then install into the
+        # environment, since it affects entry points which are set at install time.
+        create_toml_node(
+            toml,
+            ("project", "entry-points", "dagster_dg_cli.registry_modules", "foo_bar"),
+            module_name,
+        )
+        components_dir = Path("src", *module_name.split("."))
+        components_dir.mkdir(exist_ok=True)
+        (components_dir / "__init__.py").touch()
 
 
 @contextmanager
