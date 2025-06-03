@@ -15,6 +15,10 @@ from dagster.components.lib.executable_component.component import ExecutableComp
 from dagster_shared import check
 
 
+def only_asset_execute_fn(context):
+    return MaterializeResult()
+
+
 def only_asset_check_execute_fn(context):
     return AssetCheckResult(passed=True)
 
@@ -164,3 +168,40 @@ def test_standalone_asset_check_with_resources() -> None:
     assert asset_check_evaluations[0].metadata == {
         "resource_one": TextMetadataValue("resource_value")
     }
+
+
+def test_trivial_properties() -> None:
+    component_only_assets = ExecutableComponent.from_attributes_dict(
+        attributes={
+            "name": "op_name",
+            "execute_fn": "dagster_tests.components_tests.executable_component_tests.test_asset_check_only.only_asset_execute_fn",
+            "description": "op_description",
+            "tags": {"op_tag": "op_tag_value"},
+            "assets": [
+                {
+                    "key": "asset",
+                }
+            ],
+        }
+    )
+
+    assert component_only_assets.build_underlying_assets_def().op.tags == {"op_tag": "op_tag_value"}
+
+    component_only_asset_checks = ExecutableComponent.from_attributes_dict(
+        attributes={
+            "name": "op_name",
+            "description": "op_description",
+            "execute_fn": "dagster_tests.components_tests.executable_component_tests.test_asset_check_only.only_asset_check_execute_fn",
+            "tags": {"op_tag": "op_tag_value"},
+            "checks": [
+                {
+                    "asset": "asset",
+                    "name": "check_name",
+                }
+            ],
+        }
+    )
+
+    for component in [component_only_assets, component_only_asset_checks]:
+        assert component.build_underlying_assets_def().op.tags == {"op_tag": "op_tag_value"}
+        assert component.build_underlying_assets_def().op.description == "op_description"
