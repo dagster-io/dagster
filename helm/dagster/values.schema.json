@@ -791,7 +791,15 @@
                     "$ref": "#/$defs/Schedules"
                 },
                 "backfills": {
-                    "$ref": "#/$defs/Backfills"
+                    "anyOf": [
+                        {
+                            "$ref": "#/$defs/Backfills"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null
                 },
                 "schedulerName": {
                     "anyOf": [
