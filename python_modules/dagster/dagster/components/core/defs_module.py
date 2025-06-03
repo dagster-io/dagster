@@ -6,10 +6,8 @@ from pathlib import Path
 from typing import Any, Optional, TypeVar, Union
 
 from dagster_shared.record import record
-from dagster_shared.serdes.objects import PluginObjectKey
-from dagster_shared.yaml_utils import parse_yamls_with_source_position
 from dagster_shared.yaml_utils.source_position import SourcePosition
-from pydantic import BaseModel, ConfigDict, TypeAdapter
+from pydantic import BaseModel, ConfigDict
 
 import dagster._check as check
 from dagster._annotations import preview, public
@@ -24,15 +22,9 @@ from dagster._core.definitions.module_loaders.load_defs_from_module import (
 )
 from dagster._core.definitions.module_loaders.utils import find_objects_in_module_of_types
 from dagster._core.errors import DagsterInvalidDefinitionError
-from dagster._utils.pydantic_yaml import (
-    _parse_and_populate_model_with_annotated_errors,
-    enrich_validation_errors_with_source_position,
-)
 from dagster.components.component.component import Component
-from dagster.components.component.component_loader import is_component_loader
 from dagster.components.component.template_vars import find_inline_template_vars_in_module
 from dagster.components.core.context import ComponentLoadContext
-from dagster.components.core.package_entry import load_package_object
 from dagster.components.definitions import LazyDefinitions
 from dagster.components.resolved.base import Resolvable
 from dagster.components.resolved.core_models import AssetPostProcessor
@@ -93,7 +85,7 @@ class CompositeYamlComponent(Component):
         self.source_positions = source_positions
 
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
-        component_yaml = check.not_none(_find_defs_or_component_yaml(context.path))
+        component_yaml = check.not_none(find_defs_or_component_yaml(context.path))
 
         return Definitions.merge(
             *(
@@ -122,46 +114,6 @@ class CompositeComponent(Component):
         )
 
 
-def get_component(context: ComponentLoadContext) -> Optional[Component]:
-    """Attempts to load a component from the given context. Iterates through potential component
-    type matches, prioritizing more specific types: YAML, Python, plain Dagster defs, and component
-    folder.
-    """
-    # in priority order
-    # yaml component
-    if _find_defs_or_component_yaml(context.path):
-        return load_yaml_component(context)
-    # pythonic component
-    elif (
-        context.terminate_autoloading_on_keyword_files and (context.path / "component.py").exists()
-    ):
-        return load_pythonic_component(context)
-    # defs
-    elif (
-        context.terminate_autoloading_on_keyword_files
-        and (context.path / "definitions.py").exists()
-    ):
-        return DagsterDefsComponent(path=context.path / "definitions.py")
-    elif context.path.suffix == ".py":
-        return DagsterDefsComponent(path=context.path)
-    # folder
-    elif context.path.is_dir():
-        children = find_components_from_context(context)
-        if children:
-            return DefsFolderComponent(
-                path=context.path,
-                children=children,
-                asset_post_processors=None,
-            )
-
-    return None
-
-
-@dataclass
-class DefsFolderComponentYamlSchema(Resolvable):
-    asset_post_processors: Optional[Sequence[AssetPostProcessor]] = None
-
-
 @record
 class ComponentPath:
     """Identifier for where a Component instance was defined:
@@ -179,6 +131,24 @@ class ComponentPath:
             return f"{key}[{self.instance_key}]"
 
         return key
+
+
+def get_component(context: ComponentLoadContext) -> Optional[Component]:
+    """Attempts to load a component from the given context. Iterates through potential component
+    type matches, prioritizing more specific types: YAML, Python, plain Dagster defs, and component
+    folder.
+    """
+    from dagster.components.core.loaders import get_component_node
+
+    component_node = get_component_node(context)
+    if component_node:
+        return component_node.load_component(context)
+    return None
+
+
+@dataclass
+class DefsFolderComponentYamlSchema(Resolvable):
+    asset_post_processors: Optional[Sequence[AssetPostProcessor]] = None
 
 
 @public
@@ -316,19 +286,9 @@ class DagsterDefsComponent(Component):
 
 
 def load_pythonic_component(context: ComponentLoadContext) -> Component:
-    # backcompat for component.yaml
-    component_def_path = context.path / "component.py"
-    module = context.load_defs_relative_python_module(component_def_path)
-    component_loaders = list(inspect.getmembers(module, is_component_loader))
-    if len(component_loaders) == 0:
-        raise DagsterInvalidDefinitionError("No component loaders found in module")
-    elif len(component_loaders) == 1:
-        _, component_loader = component_loaders[0]
-        return component_loader(context)
-    else:
-        return CompositeComponent(
-            {attr: component_loader(context) for attr, component_loader in component_loaders}
-        )
+    from dagster.components.core.loaders import get_component_node_from_python_file
+
+    return get_component_node_from_python_file(context).load_component(context)
 
 
 def invoke_inline_template_var(context: ComponentLoadContext, tv: Callable) -> Any:
@@ -339,6 +299,21 @@ def invoke_inline_template_var(context: ComponentLoadContext, tv: Callable) -> A
         return tv()
     else:
         raise ValueError(f"Template var must have 0 or 1 parameters, got {len(sig.parameters)}")
+
+
+def load_yaml_component_from_path(context: ComponentLoadContext, component_def_path: Path):
+    from dagster.components.core.loaders import get_component_node_from_yaml_file
+
+    return get_component_node_from_yaml_file(component_def_path).load_component(context)
+
+
+# When we remove component.yaml, we can remove this function for just a defs.yaml check
+def find_defs_or_component_yaml(path: Path) -> Optional[Path]:
+    # Check for defs.yaml has precedence, component.yaml is deprecated
+    return next(
+        (p for p in (path / "defs.yaml", path / "component.yaml") if p.exists()),
+        None,
+    )
 
 
 def context_with_injected_scope(
@@ -375,68 +350,4 @@ def context_with_injected_scope(
                 for name, tv in template_var_fns.items()
             },
         },
-    )
-
-
-def load_yaml_component(context: ComponentLoadContext) -> Component:
-    # parse the yaml file
-    component_def_path = check.not_none(_find_defs_or_component_yaml(context.path))
-    return load_yaml_component_from_path(context, component_def_path)
-
-
-def load_yaml_component_from_path(context: ComponentLoadContext, component_def_path: Path):
-    source_trees = parse_yamls_with_source_position(
-        component_def_path.read_text(), str(component_def_path)
-    )
-    components = []
-    for source_tree in source_trees:
-        component_file_model = _parse_and_populate_model_with_annotated_errors(
-            cls=ComponentFileModel, obj_parse_root=source_tree, obj_key_path_prefix=[]
-        )
-
-        # find the component type
-        type_str = context.normalize_component_type_str(component_file_model.type)
-        key = PluginObjectKey.from_typename(type_str)
-        obj = load_package_object(key)
-        if not isinstance(obj, type) or not issubclass(obj, Component):
-            raise DagsterInvalidDefinitionError(
-                f"Component type {type_str} is of type {type(obj)}, but must be a subclass of dagster.Component"
-            )
-
-        context = context_with_injected_scope(
-            context, obj, component_file_model.template_vars_module
-        )
-
-        context = context.with_source_position_tree(
-            source_tree.source_position_tree,
-        )
-
-        model_cls = obj.get_model_cls()
-
-        # grab the attributes from the yaml file
-        if model_cls is None:
-            attributes = None
-        elif source_tree:
-            attributes_position_tree = source_tree.source_position_tree.children["attributes"]
-            with enrich_validation_errors_with_source_position(
-                attributes_position_tree, ["attributes"]
-            ):
-                attributes = TypeAdapter(model_cls).validate_python(component_file_model.attributes)
-        else:
-            attributes = TypeAdapter(model_cls).validate_python(component_file_model.attributes)
-
-        components.append(obj.load(attributes, context))
-
-    check.invariant(len(components) > 0, "No components found in YAML file")
-    return CompositeYamlComponent(
-        components, [source_tree.source_position_tree.position for source_tree in source_trees]
-    )
-
-
-# When we remove component.yaml, we can remove this function for just a defs.yaml check
-def _find_defs_or_component_yaml(path: Path) -> Optional[Path]:
-    # Check for defs.yaml has precedence, component.yaml is deprecated
-    return next(
-        (p for p in (path / "defs.yaml", path / "component.yaml") if p.exists()),
-        None,
     )

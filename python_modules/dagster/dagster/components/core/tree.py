@@ -2,6 +2,7 @@ import importlib
 from functools import cached_property
 from pathlib import Path
 from types import ModuleType
+from typing import Optional
 
 from dagster_shared.record import record
 from typing_extensions import TypeVar
@@ -10,6 +11,7 @@ from dagster._core.definitions.definitions_class import Definitions
 from dagster.components.component.component import Component
 from dagster.components.core.context import ComponentLoadContext
 from dagster.components.core.defs_module import DefsFolderComponent
+from dagster.components.core.loaders import ComponentNode, DefsFolderComponentNode
 
 PLUGIN_COMPONENT_TYPES_JSON_METADATA_KEY = "plugin_component_types_json"
 
@@ -45,8 +47,12 @@ class ComponentTree:
         )
 
     @cached_property
+    def root_node(self) -> DefsFolderComponentNode:
+        return DefsFolderComponentNode.get(self.load_context)
+
+    @cached_property
     def root(self) -> DefsFolderComponent:
-        return DefsFolderComponent.get(self.load_context)
+        return self.root_node.load_component(self.load_context)
 
     def load_defs(self) -> Definitions:
         from dagster.components.core.load_defs import get_library_json_enriched_defs
@@ -55,6 +61,19 @@ class ComponentTree:
             self.root.build_defs(self.load_context),
             get_library_json_enriched_defs(self),
         )
+
+    def _component_node_at_path(self, defs_path: Path) -> Optional[tuple[Path, ComponentNode]]:
+        if self.root_node.path.absolute().as_posix() == defs_path.absolute().as_posix():
+            return (self.root_node.path, self.root_node)
+        for cp, component_node in self.root_node.iterate_path_component_node_pairs():
+            defs_path_abs = (
+                defs_path
+                if defs_path.is_absolute()
+                else (self.root_node.path / defs_path).absolute()
+            )
+            if cp.file_path.absolute().as_posix() == defs_path_abs.as_posix():
+                return (cp.file_path, component_node)
+        return None
 
     def load_defs_at_path(self, defs_path: Path) -> Definitions:
         """Loads definitions from the given defs subdirectory. Currently
@@ -67,14 +86,11 @@ class ComponentTree:
             Definitions: The definitions loaded from the given path.
         """
         # impl to be fleshed out to flexibly handle different path types (str, list[str], ...)
-        if self.root.path.absolute().as_posix() == defs_path.absolute().as_posix():
-            return self.root.build_defs(self.load_context.for_path(self.root.path))
-        for cp, c in self.root.iterate_path_component_pairs():
-            defs_path_abs = (
-                defs_path if defs_path.is_absolute() else (self.root.path / defs_path).absolute()
-            )
-            if cp.file_path.absolute().as_posix() == defs_path_abs.as_posix():
-                return c.build_defs(self.load_context.for_path(cp.file_path))
+        component_node_and_path = self._component_node_at_path(defs_path)
+        if component_node_and_path:
+            path, component_node = component_node_and_path
+            ctx = self.load_context.for_path(path)
+            return component_node.load_component(ctx).build_defs(ctx)
 
         raise Exception(f"No component found for path {defs_path}")
 
