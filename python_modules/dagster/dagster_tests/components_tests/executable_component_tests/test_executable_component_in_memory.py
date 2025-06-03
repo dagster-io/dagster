@@ -6,6 +6,7 @@ from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.materialize import materialize
 from dagster._core.definitions.metadata.metadata_value import TextMetadataValue
+from dagster._core.definitions.resource_annotation import ResourceParam
 from dagster._core.definitions.result import MaterializeResult
 from dagster.components.core.context import ComponentLoadContext
 from dagster.components.lib.executable_component.component import ExecutableComponent
@@ -73,7 +74,7 @@ def test_basic_singular_asset_from_yaml() -> None:
 
 
 def test_resource_usage() -> None:
-    def _execute_fn(context, some_resource) -> MaterializeResult:
+    def _execute_fn(context, some_resource: ResourceParam[str]) -> MaterializeResult:
         return MaterializeResult(metadata={"foo": some_resource})
 
     component = ExecutableComponent(
