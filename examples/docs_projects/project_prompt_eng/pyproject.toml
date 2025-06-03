@@ -6,6 +6,7 @@ readme = "README.md"
 requires-python = ">=3.9"
 dependencies = [
     "dagster",
+    "dagster-dg-cli",
     "dagster-anthropic",
     "pydantic",
     "requests",
