@@ -105,8 +105,6 @@
   "UsedSolidDetailsQuery": "9f501125e94979298e2b290f5c8dac2fd8aa0e0d4a5d9f6dfde007186a707665",
   "OpsRootQuery": "a8ce0cedc4ebcc5ed0007d8795360ce5635ceefe1882802f88162b457f2058a4",
   "OverviewResourcesQuery": "38594d66ef4f0161f6cd670cb369ce161f1f4a2b012080af70fb446f600b8cf0",
-  "OverviewSchedulesQuery": "04a2e4a6537d8d9de9aecfb08bb82bebf73767cf1858b3eddd0c063779129c39",
-  "OverviewSensorsQuery": "a4165ae0c5e53e870380e53b7cab308203a28d002f81f0d5e4e767c7d91a3029",
   "DaemonNotRunningAlertQuery": "f016870739b8816036750fb916c536889c862b5d591bf7c552f5cdefde693539",
   "BackfillSelectorQuery": "715413ccaeb3a6d4b6d9b6ff9aa6cb98ab40e2d4ee1469a9883182f9d3f540b6",
   "AddDynamicPartitionMutation": "09fbfa963ad43c7fecfc8e4f780e1ca98ffcea9f0b04e916c78061667cb250eb",
