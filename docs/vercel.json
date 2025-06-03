@@ -3157,6 +3157,10 @@
     {
       "source": "/deployment/dagster-plus/serverless/ci-cd-in-serverless",
       "destination": "/deployment/dagster-plus/ci-cd/ci-cd-in-serverless"
+    },
+    {
+      "source": "/guides/labs/dg/dagster-dg-cli",
+      "destination": "/api/dagster/dg-cli"
     }
   ],
   "trailingSlash": false
