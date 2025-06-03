@@ -33,7 +33,7 @@ defs_handle = ComponentsDefinitionsHandle(
 
 
 def get_defs_from_post_processed_handle(
-    model: AssetPostProcessorModel,
+    model: BaseModel,
     defs_handle: ComponentsDefinitionsHandle,
     context: Optional[ResolutionContext] = None,
 ) -> Definitions:
