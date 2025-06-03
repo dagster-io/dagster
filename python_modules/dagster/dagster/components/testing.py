@@ -137,7 +137,9 @@ class DefsPathSandbox:
     component_format: ScaffoldFormatOptions
 
     @contextmanager
-    def swap_defs_file(self, defs_path: Path, component_body: Optional[dict[str, Any]]):
+    def swap_defs_file(
+        self, defs_path: Path, component_bodies: Optional[list[dict[str, Any]]] = None
+    ):
         check.invariant(
             defs_path.suffix == ".yaml",
             "Attributes are only supported for yaml components",
@@ -145,7 +147,7 @@ class DefsPathSandbox:
         check.invariant(defs_path.exists(), "defs.yaml must exist")
 
         # no need to override there is no component body
-        if component_body is None:
+        if component_bodies is None:
             yield
             return
 
@@ -155,7 +157,7 @@ class DefsPathSandbox:
         try:
             shutil.copy2(defs_path, temp_path)
 
-            defs_path.write_text(yaml.safe_dump(component_body))
+            defs_path.write_text(yaml.safe_dump_all(component_bodies, default_flow_style=False))
 
             yield
 
@@ -169,39 +171,44 @@ class DefsPathSandbox:
     def load(
         self, component_body: Optional[dict[str, Any]] = None
     ) -> Iterator[tuple["Component", "Definitions"]]:
-        defs_path = self.defs_folder_path / "defs.yaml"
-
-        with self.swap_defs_file(defs_path, component_body):
-            with self.load_instance(0) as (component, defs):
-                yield component, defs
+        with self.load_instance(0, [component_body] if component_body is not None else None) as (
+            component,
+            defs,
+        ):
+            yield component, defs
 
     @contextmanager
     def load_instance(
-        self, instance_key: Union[int, str]
+        self, instance_key: Union[int, str], component_bodies: Optional[list[dict[str, Any]]] = None
     ) -> Iterator[tuple[Component, Definitions]]:
         assert isinstance(instance_key, int)  # only int for now
-        with self.load_all() as components:
+        with self.load_all(component_bodies) as components:
             yield components[instance_key][0], components[instance_key][1]
 
     @contextmanager
-    def load_all(self) -> Iterator[list[tuple[Component, Definitions]]]:
-        with alter_sys_path(to_add=[str(self.project_root / "src")], to_remove=[]):
-            module_path = f"{self.project_name}.defs.{self.component_path}"
+    def load_all(
+        self, component_bodies: Optional[list[dict[str, Any]]] = None
+    ) -> Iterator[list[tuple[Component, Definitions]]]:
+        with self.swap_defs_file(self.defs_folder_path / "defs.yaml", component_bodies):
+            with alter_sys_path(to_add=[str(self.project_root / "src")], to_remove=[]):
+                module_path = f"{self.project_name}.defs.{self.component_path}"
 
-            try:
-                module = importlib.import_module(module_path)
-                context = ComponentLoadContext.for_module(
-                    defs_module=module,
-                    project_root=self.project_root,
-                    terminate_autoloading_on_keyword_files=False,
-                )
-                components = self.flatten_components(get_component(context))
-                yield [(component, component.build_defs(context)) for component in components]
+                try:
+                    module = importlib.import_module(module_path)
+                    context = ComponentLoadContext.for_module(
+                        defs_module=module,
+                        project_root=self.project_root,
+                        terminate_autoloading_on_keyword_files=False,
+                    )
+                    components = self.flatten_components(get_component(context))
+                    yield [(component, component.build_defs(context)) for component in components]
 
-            finally:
-                modules_to_remove = [name for name in sys.modules if name.startswith(module_path)]
-                for name in modules_to_remove:
-                    del sys.modules[name]
+                finally:
+                    modules_to_remove = [
+                        name for name in sys.modules if name.startswith(module_path)
+                    ]
+                    for name in modules_to_remove:
+                        del sys.modules[name]
 
     def flatten_components(self, parent_component: Optional[Component]) -> list[Component]:
         if isinstance(parent_component, CompositeYamlComponent):

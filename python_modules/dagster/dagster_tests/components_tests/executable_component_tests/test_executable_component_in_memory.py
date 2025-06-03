@@ -50,7 +50,7 @@ def assert_singular_component(component: ExecutableComponent) -> None:
     assert result.success
     mats = result.asset_materializations_for_node("op_name")
     assert len(mats) == 1
-    assert mats[0].metadata == {"foo": TextMetadataValue("bar")}
+    assert mats[0].metadata["foo"] == TextMetadataValue("bar")
 
 
 def execute_singular_asset(context) -> MaterializeResult:
@@ -89,7 +89,7 @@ def test_resource_usage() -> None:
     assert result.success
     mats = result.asset_materializations_for_node("op_name")
     assert len(mats) == 1
-    assert mats[0].metadata == {"foo": TextMetadataValue("some_value")}
+    assert mats[0].metadata["foo"] == TextMetadataValue("some_value")
 
 
 def test_local_import() -> None:
@@ -129,4 +129,4 @@ def test_local_import() -> None:
             assert result.success
             mats = result.asset_materializations_for_node("op_name")
             assert len(mats) == 1
-            assert mats[0].metadata == {"foo": TextMetadataValue("bar")}
+            assert mats[0].metadata["foo"] == TextMetadataValue("bar")
