@@ -22,10 +22,13 @@ from dagster._core.definitions.decorators.asset_decorator import multi_asset
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.events import Output
 from dagster._core.definitions.metadata import RawMetadataMapping
+from dagster._core.definitions.metadata.metadata_value import TextMetadataValue
 from dagster._core.definitions.resource_annotation import get_resource_args
 from dagster._core.definitions.result import MaterializeResult
 from dagster._core.execution.context.asset_check_execution_context import AssetCheckExecutionContext
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
+from dagster._core.execution.execute_in_process_result import ExecuteInProcessResult
+from dagster._core.execution.plan.outputs import StepOutputData
 from dagster._core.types.dagster_type import Any as DagsterAny
 from dagster.components.component.component import Component
 from dagster.components.core.context import ComponentLoadContext
@@ -140,6 +143,11 @@ class ExecutableComponent(Component, Resolvable, Model):
         check.failed("No assets or checks provided")
 
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
+        for asset in self.assets or []:
+            for comp in asset.key.path:
+                if "/" in comp:
+                    raise Exception(f"Asset key {asset.key} contains a '/'")
+
         assets_def = self.underlying_assets_def
         if isinstance(assets_def, AssetChecksDefinition):
             return Definitions(asset_checks=[assets_def])
@@ -163,12 +171,15 @@ class ExecutableComponent(Component, Resolvable, Model):
         for item in self.canonicalize_to_iterator(result):
             if isinstance(item, MaterializeResult):
                 value = {**(result.metadata or {})}.pop(VALUE_METADATA_KEY, None)
-                yield Output(
-                    output_name=self.name_for_asset_key(item.asset_key),
-                    value=value,
-                    metadata=item.metadata,
-                    tags=item.tags,
-                    data_version=item.data_version,
+                yield embellish_output(
+                    Output(
+                        output_name=self.name_for_asset_key(item.asset_key),
+                        value=value,
+                        metadata=item.metadata,
+                        tags=item.tags,
+                        data_version=item.data_version,
+                    ),
+                    asset_key=item.asset_key or self.implicit_asset_key,
                 )
                 if item.check_results:
                     yield from item.check_results
@@ -318,3 +329,28 @@ def materialize_result_with_value(
         data_version=data_version,
         tags=tags,
     )
+
+
+ASSET_KEY_METADATA_KEY = "dagster/asset_key"
+
+
+def embellish_output(output: Output, asset_key: AssetKey) -> Output:
+    return output.with_metadata(
+        {**(output.metadata or {}), ASSET_KEY_METADATA_KEY: asset_key.to_user_string()}
+    )
+
+
+def value_for_asset(result: ExecuteInProcessResult, asset_key: CoercibleToAssetKey) -> Any:
+    asset_key = AssetKey.from_coercible(asset_key)
+    for event in result.all_events:
+        if isinstance(event.event_specific_data, StepOutputData):
+            metadata_entry = event.event_specific_data.metadata.get(ASSET_KEY_METADATA_KEY, None)
+            if (
+                isinstance(metadata_entry, TextMetadataValue)
+                and metadata_entry.value == asset_key.to_user_string()
+            ):
+                step_output_handle = event.event_specific_data.step_output_handle
+                return result.output_for_node(
+                    step_output_handle.step_key, step_output_handle.output_name
+                )
+    return None
