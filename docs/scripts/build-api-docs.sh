@@ -38,9 +38,6 @@ if [ "$VERCEL" = "1" ]; then
   tox -e sphinx-mdx-vercel
   cp -rf sphinx/_build/mdx/sections/api/apidocs/dagster docs/api
   cp -rf sphinx/_build/mdx/sections/api/apidocs/libraries docs/api
-  cp -rf sphinx/_build/mdx/sections/api/apidocs/dagster-dg-cli.mdx docs/guides/labs/dg
-  cp -rf sphinx/_build/mdx/sections/api/apidocs/create-dagster.mdx docs/guides/labs/dg
-
 
   # Parallelize production sphinx-inv build -- see tox.ini
   echo "Running sphinx and copying \`object.inv\` to \`static/\`"
@@ -52,9 +49,7 @@ else
   tox -e sphinx-mdx-local
   cp -rf sphinx/_build/mdx/sections/api/apidocs/dagster docs/api
   cp -rf sphinx/_build/mdx/sections/api/apidocs/libraries docs/api
-  cp -rf sphinx/_build/mdx/sections/api/apidocs/dagster-dg-cli.mdx docs/guides/labs/dg
-  cp -rf sphinx/_build/mdx/sections/api/apidocs/create-dagster.mdx docs/guides/labs/dg
-
+  
   # Do not parallelize local sphinx-inv build -- see tox.ini
   echo "Running sphinx and copying \`object.inv\` to \`static/\`"
   tox -e sphinx-inv-local
