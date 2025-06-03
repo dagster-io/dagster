@@ -508,6 +508,7 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
     ),
     PackageSpec(
         "python_modules/libraries/dagster-dg-cli",
+        name="dagster-dg-cli-mcp",
         pytest_tox_factors=["mcp"],
         unsupported_python_versions=[
             AvailablePythonVersion.V3_9,
