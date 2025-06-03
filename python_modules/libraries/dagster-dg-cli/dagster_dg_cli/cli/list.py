@@ -28,6 +28,7 @@ from dagster_shared.serdes.objects.definition_metadata import (
     DgScheduleMetadata,
     DgSensorMetadata,
 )
+from dagster_shared.utils.warnings import disable_dagster_warnings
 from rich.console import Console
 
 from dagster_dg_cli.utils.plus import gql
@@ -287,7 +288,7 @@ def list_defs_command(
     from dagster.components.list import list_definitions
 
     # capture stdout during the definitions load so it doesn't pollute the structured output
-    with capture_stdout():
+    with capture_stdout(), disable_dagster_warnings():
         definitions = list_definitions(
             dg_context=dg_context,
             path=path,
