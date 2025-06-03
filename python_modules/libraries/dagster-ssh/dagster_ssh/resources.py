@@ -45,11 +45,10 @@ def key_from_str(key_str):
         for key_class in [paramiko.RSAKey, paramiko.Ed25519Key, paramiko.ECDSAKey, paramiko.DSSKey]:
             try:
                 result = key_class.from_private_key(key_file)
-                key_file.close()
                 return result
-            except:
+            except paramiko.ssh_exception.SSHException:
                 key_file.seek(0)  # Reset file pointer for next attempt
-        raise ValueError("Unable to parse the key with any known key type")
+        raise paramiko.ssh_exception.SSHException("Unable to parse the key with any known key type")
     finally:
         key_file.close()
 
