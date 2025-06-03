@@ -207,7 +207,9 @@ class DefsColumn(str, Enum):
     DESCRIPTION = "description"
     TAGS = "tags"
     METADATA = "metadata"
+    OWNERS = "owners"
     CRON = "cron"
+    TARGET = "target"
 
 
 class DefsType(str, Enum):
@@ -224,8 +226,9 @@ DEFAULT_COLUMNS = [
     DefsColumn.GROUP,
     DefsColumn.DEPS,
     DefsColumn.KINDS,
-    DefsColumn.DESCRIPTION,
+    DefsColumn.TARGET,
     DefsColumn.CRON,
+    DefsColumn.DESCRIPTION,
 ]
 
 
@@ -239,13 +242,23 @@ def _supports_column(column: DefsColumn, defs_type: DefsType) -> bool:
     elif column == DefsColumn.KINDS:
         return defs_type in (DefsType.ASSET,)
     elif column == DefsColumn.DESCRIPTION:
-        return defs_type in (DefsType.ASSET, DefsType.ASSET_CHECK, DefsType.JOB)
+        return defs_type in (
+            DefsType.ASSET,
+            DefsType.ASSET_CHECK,
+            DefsType.JOB,
+            DefsType.SENSOR,
+            DefsType.SCHEDULE,
+        )
     elif column == DefsColumn.TAGS:
-        return defs_type in (DefsType.ASSET,)
+        return defs_type in (DefsType.ASSET, DefsType.JOB)
     elif column == DefsColumn.METADATA:
-        return defs_type in (DefsType.ASSET,)
+        return defs_type in (DefsType.ASSET, DefsType.JOB)
     elif column == DefsColumn.CRON:
         return defs_type in (DefsType.SCHEDULE,)
+    elif column == DefsColumn.TARGET:
+        return defs_type in (DefsType.SCHEDULE, DefsType.SENSOR)
+    elif column == DefsColumn.OWNERS:
+        return defs_type in (DefsType.ASSET,)
     else:
         raise ValueError(f"Invalid column: {column}")
 
@@ -265,6 +278,8 @@ def _get_asset_value(column: DefsColumn, asset: DgAssetMetadata) -> Optional[str
         return "\n".join(k if not v else f"{k}: {v}" for k, v in asset.tags)
     elif column == DefsColumn.METADATA:
         return "\n".join(k if not v else f"{k}: {v}" for k, v in asset.metadata)
+    elif column == DefsColumn.OWNERS:
+        return "\n".join(asset.owners)
     else:
         raise ValueError(f"Invalid column: {column}")
 
@@ -285,6 +300,10 @@ def _get_job_value(column: DefsColumn, job: DgJobMetadata) -> Optional[str]:
         return job.name
     elif column == DefsColumn.DESCRIPTION:
         return job.description
+    elif column == DefsColumn.TAGS:
+        return "\n".join(f"{k}: {v}" for k, v in job.tags)
+    elif column == DefsColumn.METADATA:
+        return "\n".join(f"{k}: {v}" for k, v in job.metadata)
     else:
         raise ValueError(f"Invalid column: {column}")
 
@@ -301,6 +320,10 @@ def _get_schedule_value(column: DefsColumn, schedule: DgScheduleMetadata) -> Opt
         return schedule.name
     elif column == DefsColumn.CRON:
         return schedule.cron_schedule
+    elif column == DefsColumn.DESCRIPTION:
+        return schedule.description
+    elif column == DefsColumn.TARGET:
+        return schedule.target
     else:
         raise ValueError(f"Invalid column: {column}")
 
@@ -308,6 +331,10 @@ def _get_schedule_value(column: DefsColumn, schedule: DgScheduleMetadata) -> Opt
 def _get_sensor_value(column: DefsColumn, sensor: DgSensorMetadata) -> Optional[str]:
     if column == DefsColumn.KEY:
         return sensor.name
+    elif column == DefsColumn.DESCRIPTION:
+        return sensor.description
+    elif column == DefsColumn.TARGET:
+        return sensor.target
     else:
         raise ValueError(f"Invalid column: {column}")
 
