@@ -12,6 +12,7 @@ from dagster.components.lib.executable_component.component import (
     Upstream,
     get_upstream_args,
     materialize_result_with_value,
+    value_for_asset,
 )
 
 
@@ -121,8 +122,5 @@ def test_udf_for_dep() -> None:
         resources={"io_manager": io_manager},
     )
     assert result.success
-    assert result.output_for_node("return_hello_execute_fn", output_name="return_hello") == "hello"
-    assert (
-        result.output_for_node("hello_world_execute_fn", output_name="hello_world_asset")
-        == "hello world"
-    )
+    assert value_for_asset(result, "return_hello") == "hello"
+    assert value_for_asset(result, "hello_world_asset") == "hello world"
