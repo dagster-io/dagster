@@ -37,11 +37,11 @@ def resolve_powerbi_credentials(
     credentials,
 ) -> Union[PowerBIToken, PowerBIServicePrincipal]:
     if hasattr(credentials, "token"):
-        return PowerBIToken(api_token=credentials.token)
+        return PowerBIToken(api_token=context.resolve_value(credentials.token, as_type=str))
     return PowerBIServicePrincipal(
-        client_id=credentials.client_id,
-        client_secret=credentials.client_secret,
-        tenant_id=credentials.tenant_id,
+        client_id=context.resolve_value(credentials.client_id, as_type=str),
+        client_secret=context.resolve_value(credentials.client_secret, as_type=str),
+        tenant_id=context.resolve_value(credentials.tenant_id, as_type=str),
     )
 
 
