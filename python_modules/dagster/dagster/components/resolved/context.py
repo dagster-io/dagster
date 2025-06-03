@@ -25,14 +25,10 @@ class EnvScope:
     def __getattr__(self, key: str) -> Optional[str]:
         if key.startswith("jinja"):
             raise AttributeError(f"{key} not found")
-        
+
         raise ResolutionException(
             f"To access environment variables, use the `env` function, e.g. `env('{key}')`"
         )
-
-            raise ResolutionException(
-                f"To access environment variables, use the `env` function, e.g. `env('{key}')`"
-            ) from e
 
 
 def automation_condition_scope() -> Mapping[str, Any]:
