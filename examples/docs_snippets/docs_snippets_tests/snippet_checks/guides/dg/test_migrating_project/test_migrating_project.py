@@ -230,8 +230,8 @@ def test_migrating_project(
                 )
 
             context.run_command_and_snippet_output(
-                cmd="dg list plugin-modules",
-                snippet_path=f"{context.get_next_snip_number()}-list-plugin-modules.txt",
+                cmd="dg list registry-modules",
+                snippet_path=f"{context.get_next_snip_number()}-list-registry-modules.txt",
             )
 
             context.run_command_and_snippet_output(

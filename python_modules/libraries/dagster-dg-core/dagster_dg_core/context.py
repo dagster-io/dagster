@@ -290,7 +290,7 @@ class DgContext:
         """Paths that should be watched for changes to the component registry."""
         return [
             self.root_path / "uv.lock",
-            *([self.default_plugin_module_path] if self.is_plugin else []),
+            *([self.default_registry_module_path] if self.is_plugin else []),
         ]
 
     # Allowing open-ended str data_type for now so we can do module names
@@ -298,7 +298,7 @@ class DgContext:
         path_parts = [str(part) for part in self.root_path.parts if part != self.root_path.anchor]
         paths_to_hash = [
             self.root_path / "uv.lock",
-            *([self.default_plugin_module_path] if self.is_plugin else []),
+            *([self.default_registry_module_path] if self.is_plugin else []),
         ]
         env_hash = hash_paths(paths_to_hash)
         return ("_".join(path_parts), env_hash, data_type)
@@ -354,7 +354,7 @@ class DgContext:
         if self.config.project:
             return self.config.project.root_module
         elif self.is_plugin:
-            return self.default_plugin_module_name.split(".")[0]
+            return self.default_registry_root_module_name.split(".")[0]
         else:
             raise DgError("Cannot determine root package name")
 
@@ -545,7 +545,7 @@ class DgContext:
         return bool(self._dagster_components_entry_points)
 
     @cached_property
-    def default_plugin_module_name(self) -> str:
+    def default_registry_root_module_name(self) -> str:
         if not self._dagster_components_entry_points:
             raise DgError(
                 "`default_component_library_module_name` is only available in a component library context"
@@ -553,12 +553,12 @@ class DgContext:
         return next(iter(self._dagster_components_entry_points.values()))
 
     @cached_property
-    def default_plugin_module_path(self) -> Path:
+    def default_registry_module_path(self) -> Path:
         if not self.is_plugin:
             raise DgError(
                 "`default_plugin_module_path` is only available in a component library context"
             )
-        return self.get_path_for_local_module(self.default_plugin_module_name)
+        return self.get_path_for_local_module(self.default_registry_root_module_name)
 
     @cached_property
     def _dagster_components_entry_points(self) -> Mapping[str, str]:
