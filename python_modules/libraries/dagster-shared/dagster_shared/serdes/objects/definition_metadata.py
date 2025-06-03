@@ -4,10 +4,8 @@ from typing import Optional, Union
 from typing_extensions import TypeAlias
 
 from dagster_shared.record import record
-from dagster_shared.serdes import whitelist_for_serdes
 
 
-@whitelist_for_serdes
 @record
 class DgAssetMetadata:
     key: str
@@ -20,34 +18,29 @@ class DgAssetMetadata:
     metadata: Sequence[tuple[str, str]]
 
 
-@whitelist_for_serdes
 @record
 class DgSensorMetadata:
     name: str
 
 
-@whitelist_for_serdes
 @record
 class DgScheduleMetadata:
     name: str
     cron_schedule: str
 
 
-@whitelist_for_serdes
 @record
 class DgJobMetadata:
     name: str
     description: Optional[str]
 
 
-@whitelist_for_serdes
 @record
 class DgResourceMetadata:
     name: str
     type: str
 
 
-@whitelist_for_serdes
 @record
 class DgAssetCheckMetadata:
     key: str
