@@ -5,7 +5,6 @@ from typing import Annotated, Callable, Literal, Optional
 from dagster_shared import check
 from typing_extensions import TypeAlias
 
-from dagster._core.definitions.asset_check_spec import AssetCheckSpec
 from dagster._core.definitions.decorators.asset_decorator import multi_asset
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.time_window_partitions import DailyPartitionsDefinition
@@ -14,7 +13,7 @@ from dagster.components.component.component import Component
 from dagster.components.core.context import ComponentLoadContext
 from dagster.components.resolved.base import Resolvable
 from dagster.components.resolved.context import ResolutionContext
-from dagster.components.resolved.core_models import ResolvedAssetSpec
+from dagster.components.resolved.core_models import ResolvedAssetCheckSpec, ResolvedAssetSpec
 from dagster.components.resolved.model import Model, Resolver
 
 
@@ -64,12 +63,6 @@ def get_resources_from_callable(func: Callable) -> list[str]:
     return [param.name for param in sig.parameters.values() if param.name != "context"]
 
 
-# TODO: change to ResolvedAssetCheckSpec once alex/roach figure it out
-class AssetCheckKeyOnly(Model):
-    name: str
-    asset: str
-
-
 class ExecutableComponent(Component, Resolvable, Model):
     """Executable Component represents an executable node in the asset graph.
 
@@ -87,7 +80,7 @@ class ExecutableComponent(Component, Resolvable, Model):
     name: Optional[str] = None
     partitions_def: Optional[ResolvedPartitionDefinition] = None
     assets: Optional[list[ResolvedAssetSpec]] = None
-    checks: Optional[list[AssetCheckKeyOnly]] = None
+    checks: Optional[list[ResolvedAssetCheckSpec]] = None
     execute_fn: ResolvableCallable
 
     def get_resource_keys(self) -> set[str]:
@@ -104,10 +97,7 @@ class ExecutableComponent(Component, Resolvable, Model):
         @multi_asset(
             name=self.name or self.execute_fn.__name__,
             specs=self.assets,
-            check_specs=[
-                AssetCheckSpec(name=check_spec.name, asset=check_spec.asset)
-                for check_spec in self.checks or []
-            ],
+            check_specs=self.checks,
             partitions_def=self.partitions_def,
             required_resource_keys=required_resource_keys,
         )

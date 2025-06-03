@@ -25,7 +25,7 @@ def test_parse_asset_check_attributes() -> None:
     assert len(component.checks or []) == 1
     assert component.checks
     assert component.checks[0].name == "check_name"
-    assert component.checks[0].asset == "asset"
+    assert component.checks[0].asset_key.to_user_string() == "asset"
 
     assert component.execute_fn(None).passed is True
 
