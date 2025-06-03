@@ -5,6 +5,7 @@ from typing import Annotated, Callable, Literal, Optional
 from dagster_shared import check
 from typing_extensions import TypeAlias
 
+from dagster._core.definitions.asset_check_spec import AssetCheckSpec
 from dagster._core.definitions.decorators.asset_decorator import multi_asset
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.time_window_partitions import DailyPartitionsDefinition
@@ -63,6 +64,12 @@ def get_resources_from_callable(func: Callable) -> list[str]:
     return [param.name for param in sig.parameters.values() if param.name != "context"]
 
 
+# TODO: change to ResolvedAssetCheckSpec once alex/roach figure it out
+class AssetCheckKeyOnly(Model):
+    name: str
+    asset: str
+
+
 class ExecutableComponent(Component, Resolvable, Model):
     """Executable Component represents an executable node in the asset graph.
 
@@ -80,6 +87,7 @@ class ExecutableComponent(Component, Resolvable, Model):
     name: Optional[str] = None
     partitions_def: Optional[ResolvedPartitionDefinition] = None
     assets: Optional[list[ResolvedAssetSpec]] = None
+    checks: Optional[list[AssetCheckKeyOnly]] = None
     execute_fn: ResolvableCallable
 
     def get_resource_keys(self) -> set[str]:
@@ -88,18 +96,29 @@ class ExecutableComponent(Component, Resolvable, Model):
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
         required_resource_keys = self.get_resource_keys()
 
-        check.invariant(len(self.assets or []) > 0, "assets is required for now")
-
-        @multi_asset(
-            name=self.name or self.execute_fn.__name__,
-            specs=self.assets,
-            partitions_def=self.partitions_def,
-            required_resource_keys=required_resource_keys,
+        check.invariant(
+            len(self.assets or []) > 0,
+            "Assets are required in ExecutableComponent",
         )
-        def _assets_def(context: AssetExecutionContext, **kwargs):
-            rd = context.resources.original_resource_dict
-            to_pass = {k: v for k, v in rd.items() if k in required_resource_keys}
-            check.invariant(set(to_pass.keys()) == required_resource_keys, "Resource keys mismatch")
-            return self.execute_fn(context, **to_pass)
+
+        if self.assets:
+
+            @multi_asset(
+                name=self.name or self.execute_fn.__name__,
+                specs=self.assets,
+                check_specs=[
+                    AssetCheckSpec(name=check_spec.name, asset=check_spec.asset)
+                    for check_spec in self.checks or []
+                ],
+                partitions_def=self.partitions_def,
+                required_resource_keys=required_resource_keys,
+            )
+            def _assets_def(context: AssetExecutionContext, **kwargs):
+                rd = context.resources.original_resource_dict
+                to_pass = {k: v for k, v in rd.items() if k in required_resource_keys}
+                check.invariant(
+                    set(to_pass.keys()) == required_resource_keys, "Resource keys mismatch"
+                )
+                return self.execute_fn(context, **to_pass)
 
         return Definitions(assets=[_assets_def])
