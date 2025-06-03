@@ -1,9 +1,13 @@
+from collections.abc import Mapping
+from typing import Any, Optional
+
 from dagster._core.definitions.asset_check_result import AssetCheckResult
 from dagster._core.definitions.asset_checks import AssetChecksDefinition
 from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.materialize import materialize
+from dagster._core.definitions.metadata.metadata_value import TextMetadataValue
 from dagster._core.definitions.result import MaterializeResult
 from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
 from dagster.components.core.context import ComponentLoadContext
@@ -76,10 +80,14 @@ def test_execute_asset_with_check() -> None:
     assert asset_check_evaluations[0].passed is True
 
 
-def asset_check_job(asset_checks_def: AssetChecksDefinition) -> JobDefinition:
+def asset_check_job(
+    asset_checks_def: AssetChecksDefinition, resources: Optional[Mapping[str, Any]] = None
+) -> JobDefinition:
     job = define_asset_job("job_name", selection=AssetSelection.checks(asset_checks_def))
     return check.inst(
-        Definitions(asset_checks=[asset_checks_def], jobs=[job]).resolve_job_def("job_name"),
+        Definitions(
+            asset_checks=[asset_checks_def], jobs=[job], resources=resources
+        ).resolve_job_def("job_name"),
         JobDefinition,
     )
 
@@ -117,3 +125,42 @@ def test_standalone_asset_check() -> None:
     assert len(asset_check_evaluations) == 1
     assert asset_check_evaluations[0].check_name == "check_name"
     assert asset_check_evaluations[0].passed is True
+
+
+def asset_check_execute_fn_with_resources(context, resource_one):
+    return AssetCheckResult(passed=True, metadata={"resource_one": resource_one})
+
+
+def test_standalone_asset_check_with_resources() -> None:
+    component = ExecutableComponent.from_attributes_dict(
+        attributes={
+            "name": "op_name",
+            "execute_fn": "dagster_tests.components_tests.executable_component_tests.test_asset_check_only.asset_check_execute_fn_with_resources",
+            "checks": [
+                {
+                    "asset": "asset",
+                    "name": "check_name",
+                }
+            ],
+        }
+    )
+
+    defs = component.build_defs(ComponentLoadContext.for_test())
+
+    asset_checks_def = next(iter(defs.asset_checks or []))
+    assert isinstance(asset_checks_def, AssetChecksDefinition)
+
+    job_def = asset_check_job(asset_checks_def, resources={"resource_one": "resource_value"})
+    assert isinstance(job_def, JobDefinition)
+
+    result = job_def.execute_in_process()
+    assert result.success
+
+    asset_check_evaluations = result.get_asset_check_evaluations()
+    assert asset_check_evaluations
+    assert len(asset_check_evaluations) == 1
+    assert asset_check_evaluations[0].check_name == "check_name"
+    assert asset_check_evaluations[0].passed is True
+    assert asset_check_evaluations[0].metadata == {
+        "resource_one": TextMetadataValue("resource_value")
+    }
