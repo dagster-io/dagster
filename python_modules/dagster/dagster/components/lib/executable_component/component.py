@@ -67,12 +67,12 @@ class ExecutableComponent(Component, Resolvable, Model):
     execute_fn: ResolvableCallable
 
     @cached_property
-    def invoker(self) -> "ExecuteInvoker":
-        return ExecuteInvoker(self.execute_fn)
+    def execute_fn_metadata(self) -> "ExecuteFnMetadata":
+        return ExecuteFnMetadata(self.execute_fn)
 
     @cached_property
     def resource_keys(self) -> set[str]:
-        return self.invoker.resource_keys
+        return self.execute_fn_metadata.resource_keys
 
     def build_underlying_assets_def(self) -> AssetsDefinition:
         if self.assets:
@@ -86,7 +86,7 @@ class ExecutableComponent(Component, Resolvable, Model):
                 required_resource_keys=self.resource_keys,
             )
             def _assets_def(context: AssetExecutionContext, **kwargs):
-                return self.invoker.invoke(context)
+                return self.invoke_execute_fn(context)
 
             return _assets_def
         elif self.checks:
@@ -99,7 +99,7 @@ class ExecutableComponent(Component, Resolvable, Model):
                 required_resource_keys=self.resource_keys,
             )
             def _asset_check_def(context: AssetCheckExecutionContext, **kwargs):
-                return self.invoker.invoke(context)
+                return self.invoke_execute_fn(context)
 
             return _asset_check_def
 
@@ -121,7 +121,7 @@ class ExecutableComponent(Component, Resolvable, Model):
         return self.execute_fn(context, **to_pass)
 
 
-class ExecuteInvoker:
+class ExecuteFnMetadata:
     def __init__(self, execute_fn: Callable):
         self.execute_fn = execute_fn
         found_args = {"context"} | self.resource_keys
@@ -139,9 +139,3 @@ class ExecuteInvoker:
     @cached_property
     def function_params_names(self) -> set[str]:
         return {arg.name for arg in get_function_params(self.execute_fn)}
-
-    def invoke(self, context: Union[AssetExecutionContext, AssetCheckExecutionContext]) -> Any:
-        rd = context.resources.original_resource_dict
-        to_pass = {k: v for k, v in rd.items() if k in self.resource_keys}
-        check.invariant(set(to_pass.keys()) == self.resource_keys, "Resource keys mismatch")
-        return self.execute_fn(context, **to_pass)
