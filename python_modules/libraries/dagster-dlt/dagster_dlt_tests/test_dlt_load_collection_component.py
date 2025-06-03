@@ -1,7 +1,6 @@
 # ruff: noqa: F841 TID252
 
 import copy
-import importlib
 import inspect
 import subprocess
 import textwrap
@@ -11,17 +10,13 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Callable, Optional, cast
 
 import pytest
-import yaml
-from click.testing import CliRunner
 from dagster import AssetKey, ComponentLoadContext
 from dagster._core.definitions import materialize
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.definitions_class import Definitions
-from dagster._core.test_utils import ensure_dagster_tests_import
-from dagster._utils import alter_sys_path, pushd
+from dagster._utils import pushd
 from dagster._utils.env import environ
-from dagster.components.cli import cli
-from dagster_dg_core.utils import ensure_dagster_dg_tests_import
+from dagster.components.testing import scaffold_defs_sandbox
 from dagster_dlt import DagsterDltResource, DltLoadCollectionComponent
 from dagster_dlt.components.dlt_load_collection.component import DltLoadSpecModel
 
@@ -29,16 +24,9 @@ if TYPE_CHECKING:
     from dagster._core.definitions.assets import AssetsDefinition
 
 
-ensure_dagster_tests_import()
-from dagster_tests.components_tests.utils import get_underlying_component
 from dlt import Pipeline
 
 from dagster_dlt_tests.dlt_test_sources.duckdb_with_transformer import pipeline as dlt_source
-
-ensure_dagster_tests_import()
-ensure_dagster_dg_tests_import()
-
-from dagster_dg_core_tests.utils import ProxyRunner, isolated_example_project_foo_bar
 
 
 def dlt_init(source: str, dest: str) -> None:
@@ -47,40 +35,29 @@ def dlt_init(source: str, dest: str) -> None:
 
 
 @contextmanager
-def setup_dlt_ready_project() -> Iterator[None]:
-    with (
-        ProxyRunner.test(use_fixed_test_components=True) as runner,
-        isolated_example_project_foo_bar(runner, in_workspace=False),
-        alter_sys_path(to_add=[str(Path.cwd() / "src")], to_remove=[]),
-    ):
-        yield
-
-
-@contextmanager
 def setup_dlt_component(
-    load_py_contents: Callable, component_body: dict[str, Any], setup_dlt_sources: Callable
+    load_py_contents: Callable,
+    component_body: dict[str, Any],
+    setup_dlt_sources: Callable,
+    project_name: Optional[str] = None,
 ) -> Iterator[tuple[DltLoadCollectionComponent, Definitions]]:
     """Sets up a components project with a dlt component based on provided params."""
-    with setup_dlt_ready_project():
-        defs_path = Path.cwd() / "src" / "foo_bar" / "defs"
-        component_path = defs_path / "ingest"
-        component_path.mkdir(parents=True, exist_ok=True)
-
-        with pushd(str(component_path)):
+    with scaffold_defs_sandbox(
+        component_cls=DltLoadCollectionComponent,
+        scaffold_params={"source": "github", "destination": "snowflake"},
+        component_path="ingest",
+        project_name=project_name,
+    ) as defs_sandbox:
+        with pushd(str(defs_sandbox.defs_folder_path)):
             setup_dlt_sources()
 
-        Path(component_path / "load.py").write_text(
+        Path(defs_sandbox.defs_folder_path / "load.py").write_text(
             textwrap.dedent("\n".join(inspect.getsource(load_py_contents).split("\n")[1:]))
         )
-        (component_path / "defs.yaml").write_text(yaml.safe_dump(component_body))
 
-        defs_root = importlib.import_module("foo_bar.defs.ingest")
-        project_root = Path.cwd()
-
-        context = ComponentLoadContext.for_module(defs_root, project_root)
-        component = get_underlying_component(context)
-        assert isinstance(component, DltLoadCollectionComponent)
-        yield component, component.build_defs(context)
+        with defs_sandbox.load(component_body=component_body) as (component, defs):
+            assert isinstance(component, DltLoadCollectionComponent)
+            yield component, defs
 
 
 def github_load():
@@ -126,7 +103,7 @@ def test_basic_component_load() -> None:
         loads = component.loads
         assert len(loads) == 1
 
-        assert defs.get_asset_graph().get_all_asset_keys() == {
+        assert defs.resolve_asset_graph().get_all_asset_keys() == {
             AssetKey(["duckdb_issues", "issues"]),
             AssetKey(["github_reactions_issues"]),
         }
@@ -152,6 +129,7 @@ def test_component_load_abs_path_load_py() -> None:
             load_py_contents=github_load,
             component_body=GITHUB_COMPONENT_BODY_WITH_ABSOLUTE_PATH,
             setup_dlt_sources=lambda: dlt_init("github", "snowflake"),
+            project_name="foo_bar",
         ) as (
             component,
             defs,
@@ -160,7 +138,7 @@ def test_component_load_abs_path_load_py() -> None:
         loads = component.loads
         assert len(loads) == 1
 
-        assert defs.get_asset_graph().get_all_asset_keys() == {
+        assert defs.resolve_asset_graph().get_all_asset_keys() == {
             AssetKey(["duckdb_issues", "issues"]),
             AssetKey(["github_reactions_issues"]),
         }
@@ -218,7 +196,7 @@ def test_component_load_multiple_pipelines() -> None:
         loads = component.loads
         assert len(loads) == 2
 
-        assert defs.get_asset_graph().get_all_asset_keys() == {
+        assert defs.resolve_asset_graph().get_all_asset_keys() == {
             AssetKey(["duckdb_issues", "issues"]),
             AssetKey(["github_reactions_issues"]),
             AssetKey(["dagster_events", "repo_events"]),
@@ -340,45 +318,26 @@ def test_python_interface(dlt_pipeline: Pipeline):
     ).build_defs(context)
 
     assert defs
-    assert (defs.get_asset_graph().get_all_asset_keys()) == {
+    assert (defs.resolve_asset_graph().get_all_asset_keys()) == {
         AssetKey(["example", "repos"]),
         AssetKey(["example", "repo_issues"]),
         AssetKey(["pipeline_repos"]),
     }
 
 
-def test_scaffold_bare_component():
-    runner = CliRunner()
+def test_scaffold_bare_component() -> None:
+    with scaffold_defs_sandbox(component_cls=DltLoadCollectionComponent) as defs_sandbox:
+        assert defs_sandbox.defs_folder_path.exists()
+        assert (defs_sandbox.defs_folder_path / "defs.yaml").exists()
+        assert (defs_sandbox.defs_folder_path / "loads.py").exists()
 
-    with setup_dlt_ready_project() as project_path:
-        result = runner.invoke(
-            cli,
-            [
-                "scaffold",
-                "object",
-                "dagster_dlt.DltLoadCollectionComponent",
-                "src/foo_bar/defs/my_barebones_dlt_component",
-                "--scaffold-format",
-                "yaml",
-            ],
-        )
-        assert result.exit_code == 0
-        assert Path("src/foo_bar/defs/my_barebones_dlt_component/loads.py").exists()
-        assert Path("src/foo_bar/defs/my_barebones_dlt_component/defs.yaml").exists()
-
-        defs_root = importlib.import_module("foo_bar.defs.my_barebones_dlt_component")
-        project_root = Path.cwd()
-
-        context = ComponentLoadContext.for_module(defs_root, project_root)
-        component = get_underlying_component(context)
-        assert isinstance(component, DltLoadCollectionComponent)
-        defs = component.build_defs(context)
-
-        assert len(component.loads) == 1
-        assert defs.get_asset_graph().get_all_asset_keys() == {
-            AssetKey(["example", "hello_world"]),
-            AssetKey(["my_source_hello_world"]),
-        }
+        with defs_sandbox.load() as (component, defs):
+            assert isinstance(component, DltLoadCollectionComponent)
+            assert len(component.loads) == 1
+            assert defs.resolve_asset_graph().get_all_asset_keys() == {
+                AssetKey(["example", "hello_world"]),
+                AssetKey(["my_source_hello_world"]),
+            }
 
 
 @pytest.mark.parametrize(
@@ -388,36 +347,22 @@ def test_scaffold_bare_component():
         ("sql_database", "duckdb"),
     ],
 )
-def test_scaffold_component_with_source_and_destination(source: str, destination: str):
-    runner = CliRunner()
+def test_scaffold_component_with_source_and_destination(source: str, destination: str) -> None:
+    with (
+        scaffold_defs_sandbox(
+            component_cls=DltLoadCollectionComponent,
+            scaffold_params={"source": source, "destination": destination},
+        ) as defs_sandbox,
+        environ({"SOURCES__ACCESS_TOKEN": "fake"}),
+    ):
+        assert defs_sandbox.defs_folder_path.exists()
+        assert (defs_sandbox.defs_folder_path / "defs.yaml").exists()
+        assert (defs_sandbox.defs_folder_path / "loads.py").exists()
 
-    with setup_dlt_ready_project() as project_path, environ({"SOURCES__ACCESS_TOKEN": "fake"}):
-        result = runner.invoke(
-            cli,
-            [
-                "scaffold",
-                "object",
-                "dagster_dlt.DltLoadCollectionComponent",
-                "src/foo_bar/defs/my_barebones_dlt_component",
-                "--scaffold-format",
-                "yaml",
-                "--json-params",
-                f'{{"source": "{source}", "destination": "{destination}"}}',
-            ],
-        )
-        assert result.exit_code == 0, result.output
-        assert Path("src/foo_bar/defs/my_barebones_dlt_component/loads.py").exists()
-        assert Path("src/foo_bar/defs/my_barebones_dlt_component/defs.yaml").exists()
-
-        defs_root = importlib.import_module("foo_bar.defs.my_barebones_dlt_component")
-        project_root = Path.cwd()
-
-        context = ComponentLoadContext.for_module(defs_root, project_root)
-        component = get_underlying_component(context)
-        assert isinstance(component, DltLoadCollectionComponent)
-
-        # scaffolder generates a silly sample load right now because the complex parsing logic is flaky
-        assert len(component.loads) == 1
+        with defs_sandbox.load() as (component, defs):
+            assert isinstance(component, DltLoadCollectionComponent)
+            # scaffolder generates a silly sample load right now because the complex parsing logic is flaky
+            assert len(component.loads) == 1
 
 
 def test_execute_component(dlt_pipeline: Pipeline):

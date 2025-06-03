@@ -41,14 +41,14 @@ def check_yaml_command(
     paths: Sequence[str],
     watch: bool,
     validate_requirements: bool,
-    path: Path,
+    target_path: Path,
     **global_options: object,
 ) -> None:
     """Check defs.yaml files against their schemas, showing validation errors."""
     from dagster_dg_core.utils.filesystem import watch_paths
 
     cli_config = normalize_cli_config(global_options, click.get_current_context())
-    dg_context = DgContext.for_project_environment(path, cli_config)
+    dg_context = DgContext.for_project_environment(target_path, cli_config)
     resolved_paths = [Path(p).absolute() for p in paths]
 
     def run_check(_: Any = None) -> bool:
@@ -107,7 +107,7 @@ def check_definitions_command(
     log_level: str,
     log_format: str,
     verbose: bool,
-    path: Path,
+    target_path: Path,
     **global_options: Mapping[str, object],
 ) -> None:
     """Loads and validates your Dagster definitions using a Dagster instance.
@@ -126,7 +126,7 @@ def check_definitions_command(
     from dagster_dg_core.check import check_yaml as check_yaml_fn
 
     cli_config = normalize_cli_config(global_options, context)
-    dg_context = DgContext.for_workspace_or_project_environment(path, cli_config)
+    dg_context = DgContext.for_workspace_or_project_environment(target_path, cli_config)
 
     validate_dagster_availability()
 

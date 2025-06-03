@@ -92,7 +92,7 @@ class AssetGraphView(LoadingContext):
                 last_event_id=last_event_id or instance.event_log_storage.get_maximum_record_id(),
             ),
             instance=instance,
-            asset_graph=defs.get_asset_graph(),
+            asset_graph=defs.resolve_asset_graph(),
         )
 
     def __init__(

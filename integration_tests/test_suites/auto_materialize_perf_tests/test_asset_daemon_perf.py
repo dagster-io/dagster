@@ -86,7 +86,7 @@ perf_scenarios = [
 
 @pytest.mark.parametrize("scenario", perf_scenarios, ids=[s.name for s in perf_scenarios])
 def test_auto_materialize_perf(scenario: PerfScenario):
-    asset_graph = scenario.defs.get_asset_graph()
+    asset_graph = scenario.defs.resolve_asset_graph()
     with scenario.instance_from_snapshot() as instance:
         start = time.time()
 

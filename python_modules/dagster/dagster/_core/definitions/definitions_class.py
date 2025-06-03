@@ -4,6 +4,7 @@ from collections.abc import Iterable, Mapping, Sequence
 from typing import TYPE_CHECKING, Annotated, Any, Callable, NamedTuple, Optional, Union
 
 from dagster_shared.record import ImportFrom
+from dagster_shared.utils.cached_method import get_cached_method_cache
 from typing_extensions import Self
 
 import dagster._check as check
@@ -432,7 +433,7 @@ class Definitions(IHaveNew):
         metadata: Optional[RawMetadataMapping] = None,
         component_tree: Optional["ComponentTree"] = None,
     ):
-        return super().__new__(
+        instance = super().__new__(
             cls,
             assets=assets,
             schedules=schedules,
@@ -445,6 +446,13 @@ class Definitions(IHaveNew):
             metadata=normalize_metadata(check.opt_mapping_param(metadata, "metadata")),
             component_tree=component_tree,
         )
+
+        check.invariant(
+            not instance.has_resolved_repository_def(),
+            "Definitions object should not have been resolved",
+        )
+
+        return instance
 
     @public
     def get_job_def(self, name: str) -> JobDefinition:
@@ -608,11 +616,23 @@ class Definitions(IHaveNew):
         return self.get_repository_def().get_implicit_job_def_for_assets(asset_keys)
 
     def get_assets_def(self, key: CoercibleToAssetKey) -> AssetsDefinition:
+        key = AssetKey.from_coercible(key)
+        # Sadly both self.assets and self.asset_checks can contain either AssetsDefinition or AssetChecksDefinition
+        # objects. We need to check both collections and exclude the AssetChecksDefinition objects.
+        for asset in [*(self.assets or []), *(self.asset_checks or [])]:
+            if isinstance(asset, AssetsDefinition) and not isinstance(asset, AssetChecksDefinition):
+                if key in asset.keys:
+                    return asset
+
+        warnings.warn(
+            f"Could not find assets_def with key {key} directly passed to Definitions. This will be an error starting in 1.11 and will require a call to resolve_assets_def in dagster 1.11."
+        )
+
         return self.resolve_assets_def(key)
 
     def resolve_assets_def(self, key: CoercibleToAssetKey) -> AssetsDefinition:
         asset_key = AssetKey.from_coercible(key)
-        for assets_def in self.get_asset_graph().assets_defs:
+        for assets_def in self.resolve_asset_graph().assets_defs:
             if asset_key in assets_def.keys:
                 return assets_def
 
@@ -637,7 +657,7 @@ class Definitions(IHaveNew):
             component_tree=self.component_tree,
         )
 
-    def get_asset_graph(self) -> AssetGraph:
+    def resolve_asset_graph(self) -> AssetGraph:
         """Get the AssetGraph for this set of definitions."""
         return self.get_repository_def().asset_graph
 
@@ -737,6 +757,10 @@ class Definitions(IHaveNew):
 
                 component_tree = def_set.component_tree
 
+            check.invariant(
+                not def_set.has_resolved_repository_def(),
+                "Definitions object should have been resolved",
+            )
         return Definitions(
             assets=assets,
             schedules=schedules,
@@ -751,13 +775,19 @@ class Definitions(IHaveNew):
         )
 
     @public
-    @preview
+    @deprecated(
+        breaking_version="1.11",
+        additional_warn_text="Use resolve_all_asset_specs instead",
+        subject="get_all_asset_specs",
+    )
     def get_all_asset_specs(self) -> Sequence[AssetSpec]:
-        """Returns an AssetSpec object for every asset contained inside the Definitions object."""
+        """Returns an AssetSpec object for AssetsDefinitions and AssetSpec passed directly to the Definitions object."""
         return self.resolve_all_asset_specs()
 
+    @public
     def resolve_all_asset_specs(self) -> Sequence[AssetSpec]:
-        asset_graph = self.get_asset_graph()
+        """Returns an AssetSpec object for every asset contained inside the resolved Definitions object."""
+        asset_graph = self.resolve_asset_graph()
         return [asset_node.to_asset_spec() for asset_node in asset_graph.asset_nodes]
 
     @preview
@@ -815,8 +845,10 @@ class Definitions(IHaveNew):
                 my_spec = dg.AssetSpec("asset1")
 
                 @dg.asset
-                def asset2(_): ...
+                def asset1(_): ...
 
+                @dg.asset
+                def asset2(_): ...
 
                 defs = Definitions(
                     assets=[asset1, asset2]
@@ -827,21 +859,47 @@ class Definitions(IHaveNew):
                     func=lambda s: s.merge_attributes(metadata={"new_key": "new_value"}),
                 )
 
-                # Applies only to asset1
-                mapped_defs = defs.map_asset_specs(
-                    func=lambda s: s.replace_attributes(metadata={"new_key": "new_value"}),
-                    selection="asset1",
-                )
-
         """
-        return self.map_resolved_asset_specs(func=func, selection=selection)
+        check.invariant(
+            selection is None,
+            "The selection parameter is no longer supported for map_asset_specs, Please use map_resolved_asset_specs instead",
+        )
 
+        return self.map_resolved_asset_specs(func=func, selection=None)
+
+    @public
+    @preview
     def map_resolved_asset_specs(
         self,
         *,
         func: Callable[[AssetSpec], AssetSpec],
         selection: Optional[CoercibleToAssetSelection] = None,
     ) -> "Definitions":
+        """Map a function over the included AssetSpecs or AssetsDefinitions in this Definitions object, replacing specs in the sequence.
+
+        See map_asset_specs for more details.
+
+        Supports selection and therefore requires resolving the Definitions object to a RepositoryDefinition when there is a selection.
+
+        Examples:
+            .. code-block:: python
+
+                import dagster as dg
+
+                my_spec = dg.AssetSpec("asset1")
+
+                @dg.asset
+                def asset1(_): ...
+
+                @dg.asset
+                def asset2(_): ...
+
+                # Applies only to asset1
+                mapped_defs = defs.map_resolved_asset_specs(
+                    func=lambda s: s.replace_attributes(metadata={"new_key": "new_value"}),
+                    selection="asset1",
+                )
+        """
         non_spec_asset_types = {
             type(d) for d in self.assets or [] if not isinstance(d, (AssetsDefinition, AssetSpec))
         }
@@ -870,7 +928,7 @@ class Definitions(IHaveNew):
                 selection = AssetSelection.from_string(selection, include_sources=True)
             else:
                 selection = AssetSelection.from_coercible(selection)
-            target_keys = selection.resolve(self.get_asset_graph())
+            target_keys = selection.resolve(self.resolve_asset_graph())
         mappable = iter(
             d for d in self.assets or [] if isinstance(d, (AssetsDefinition, AssetSpec))
         )
@@ -887,3 +945,6 @@ class Definitions(IHaveNew):
 
     def with_resources(self, resources: Optional[Mapping[str, Any]]) -> "Definitions":
         return Definitions.merge(self, Definitions(resources=resources)) if resources else self
+
+    def has_resolved_repository_def(self) -> bool:
+        return len(get_cached_method_cache(self, self.get_repository_def.__name__)) > 0

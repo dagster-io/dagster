@@ -323,7 +323,7 @@ def test_external_asset_multi_asset() -> None:
     defs = Definitions(assets=[_generated_asset_def])
     assert defs
 
-    assert defs.get_asset_graph().asset_dep_graph["upstream"][downstream_asset.key] == {
+    assert defs.resolve_asset_graph().asset_dep_graph["upstream"][downstream_asset.key] == {
         upstream_asset.key
     }
 
@@ -335,6 +335,6 @@ def test_external_assets_with_dependencies() -> None:
     defs = Definitions(assets=external_assets_from_specs([upstream_asset, downstream_asset]))
     assert defs
 
-    assert defs.get_asset_graph().asset_dep_graph["upstream"][downstream_asset.key] == {
+    assert defs.resolve_asset_graph().asset_dep_graph["upstream"][downstream_asset.key] == {
         upstream_asset.key
     }

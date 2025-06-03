@@ -36,12 +36,10 @@ from dagster_dg_core_tests.utils import (
 @pytest.mark.parametrize(
     "cli_args",
     [
-        tuple(),
         ("helloworld",),
         (".",),
     ],
     ids=[
-        "no_args",
         "with_name",
         "with_cwd",
     ],
@@ -76,8 +74,8 @@ def test_scaffold_workspace_already_exists_failure(monkeypatch) -> None:
         os.mkdir("dagster-workspace")
         result = runner.invoke_create_dagster(
             "workspace",
-            "--use-editable-dagster",
             "dagster-workspace",
+            "--use-editable-dagster",
         )
         assert_runner_result(result, exit_0=False)
         assert "already exists" in result.output
@@ -92,7 +90,7 @@ def test_scaffold_workspace_already_exists_failure(monkeypatch) -> None:
 # dagster (i.e. from the same commit), and the only way to achieve this right now is
 # using the editable install variant of `create-dagster project`.
 #
-# Ideally we would have a way to still use the matching dagster-components without using the
+# Ideally we would have a way to still use the matching dagster without using the
 # editable install variant, but this will require somehow configuring uv to ensure that it builds
 # and returns the local version of the package.
 

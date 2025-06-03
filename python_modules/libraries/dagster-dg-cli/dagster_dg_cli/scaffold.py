@@ -107,11 +107,11 @@ def scaffold_library_object(
     scaffold_format: ScaffoldFormatOptions,
 ) -> None:
     validate_dagster_availability()
-    from dagster.components.cli.scaffold import scaffold_object_command_impl
+    from dagster.components.component_scaffolding import scaffold_object
 
-    scaffold_object_command_impl(
-        typename,
+    scaffold_object(
         path,
+        typename,
         json.dumps(scaffold_params) if scaffold_params else None,
         scaffold_format,
         dg_context.root_path,

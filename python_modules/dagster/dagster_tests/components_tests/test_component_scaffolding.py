@@ -1,9 +1,15 @@
+from pathlib import Path
 from typing import Optional
 
 import pytest
-from dagster.components.component_scaffolding import parse_params_model
+from dagster._core.test_utils import ensure_dagster_tests_import
+from dagster.components.component_scaffolding import parse_params_model, scaffold_object
 from dagster.components.scaffold.scaffold import NoParams, Scaffolder, scaffold_with
 from pydantic import BaseModel, ValidationError
+
+ensure_dagster_tests_import()
+
+from dagster_tests.components_tests.utils import temp_code_location_bar
 
 
 class TestParamsModelWithDefaults(BaseModel):
@@ -130,3 +136,16 @@ def test_parse_params_model_invalid_json() -> None:
     with pytest.raises(ValidationError) as exc_info:
         parse_params_model(obj=fn_with_scaffolder_with_defaults, json_params="invalid json")
     assert "invalid json" in str(exc_info.value).lower()
+
+
+def test_scaffold_object():
+    with temp_code_location_bar():
+        scaffold_object(
+            Path("bar/components/qux"),
+            "dagster_test.components.SimplePipesScriptComponent",
+            '{"asset_key": "my_asset", "filename": "my_asset.py"}',
+            "yaml",
+            project_root=None,
+        )
+
+        assert Path("bar/components/qux/my_asset.py").exists()

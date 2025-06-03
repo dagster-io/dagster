@@ -7,7 +7,6 @@ from typing import TYPE_CHECKING, Any, Callable, Optional, Union
 
 import pytest
 import yaml
-from click.testing import CliRunner
 from dagster import AssetKey, ComponentLoadContext
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.assets import AssetsDefinition
@@ -24,19 +23,15 @@ from dagster._core.instance_for_test import instance_for_test
 from dagster._core.test_utils import ensure_dagster_tests_import
 from dagster._utils import alter_sys_path
 from dagster._utils.env import environ
-from dagster.components.cli import cli
 from dagster.components.resolved.context import ResolutionException
 from dagster.components.resolved.core_models import AssetAttributesModel
+from dagster.components.testing import get_underlying_component, scaffold_defs_sandbox
 from dagster_shared import check
 from dagster_sling import SlingReplicationCollectionComponent, SlingResource
 
 ensure_dagster_tests_import()
 
-from dagster_tests.components_tests.utils import (
-    build_component_defs_for_test,
-    get_underlying_component,
-    temp_code_location_bar,
-)
+from dagster_tests.components_tests.utils import build_component_defs_for_test
 
 if TYPE_CHECKING:
     from dagster._core.definitions.assets import AssetsDefinition
@@ -96,7 +91,7 @@ def test_python_attributes() -> None:
         op = replications[0].op
         assert op is None
 
-        assert defs.get_asset_graph().get_all_asset_keys() == {
+        assert defs.resolve_asset_graph().get_all_asset_keys() == {
             AssetKey("input_csv"),
             AssetKey("input_duckdb"),
         }
@@ -122,7 +117,7 @@ def test_python_attributes_op_name() -> None:
         op = replications[0].op
         assert op
         assert op.name == "my_op"
-        assert defs.get_asset_graph().get_all_asset_keys() == {
+        assert defs.resolve_asset_graph().get_all_asset_keys() == {
             AssetKey("input_csv"),
             AssetKey("input_duckdb"),
         }
@@ -170,7 +165,7 @@ def test_load_from_path() -> None:
         assert resource.connections[0].type == "duckdb"
         assert resource.connections[0].password == "password"
 
-        assert defs.get_asset_graph().get_all_asset_keys() == {
+        assert defs.resolve_asset_graph().get_all_asset_keys() == {
             AssetKey("input_csv"),
             AssetKey(["foo", "input_duckdb"]),
         }
@@ -187,7 +182,7 @@ def test_sling_subclass() -> None:
         DebugSlingReplicationComponent,
         {"sling": {}, "replications": [{"path": str(REPLICATION_PATH)}]},
     )
-    assert defs.get_asset_graph().get_all_asset_keys() == {
+    assert defs.resolve_asset_graph().get_all_asset_keys() == {
         AssetKey("input_csv"),
         AssetKey("input_duckdb"),
     }
@@ -296,23 +291,9 @@ def test_translation_is_comprehensive():
 
 
 def test_scaffold_sling():
-    runner = CliRunner()
-
-    with temp_code_location_bar():
-        result = runner.invoke(
-            cli,
-            [
-                "scaffold",
-                "object",
-                "dagster_sling.SlingReplicationCollectionComponent",
-                "bar/components/qux",
-                "--scaffold-format",
-                "yaml",
-            ],
-        )
-        assert result.exit_code == 0
-        assert Path("bar/components/qux/replication.yaml").exists()
-        assert Path("bar/components/qux/defs.yaml").exists()
+    with scaffold_defs_sandbox(component_cls=SlingReplicationCollectionComponent) as defs_sandbox:
+        assert (defs_sandbox.defs_folder_path / "defs.yaml").exists()
+        assert (defs_sandbox.defs_folder_path / "replication.yaml").exists()
 
 
 def test_spec_is_available_in_scope() -> None:

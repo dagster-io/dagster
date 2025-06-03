@@ -88,7 +88,7 @@ def test_checks_for_assets_asset_key_coercibles():
         return AssetCheckResult(passed=True)
 
     defs = Definitions(assets=[asset1, asset2], asset_checks=[asset1_check, asset2_check])
-    asset_graph = defs.get_asset_graph()
+    asset_graph = defs.resolve_asset_graph()
 
     assert AssetSelection.checks_for_assets(asset1).resolve_checks(asset_graph) == {
         AssetCheckKey(asset1.key, "asset1_check")
@@ -238,7 +238,7 @@ def test_check_keys_selection():
     assets = [asset1, asset2]
     asset_checks = [asset1_check1, asset1_check2, asset2_check1]
     defs = Definitions(assets=assets, asset_checks=asset_checks)
-    asset_graph = defs.get_asset_graph()
+    asset_graph = defs.resolve_asset_graph()
     keys = {
         AssetCheckKey(asset_key=asset1.key, name="asset1_check1"),
         AssetCheckKey(asset_key=asset1.key, name="asset1_check2"),

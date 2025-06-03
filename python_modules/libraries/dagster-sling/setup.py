@@ -44,6 +44,7 @@ setup(
     extras_require={
         "test": [
             "duckdb",
+            "dagster-dg-cli",
         ]
     },
     entry_points={

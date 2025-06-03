@@ -297,18 +297,6 @@ def generate_missing_plugin_object_error_message(plugin_object_key: str) -> str:
     """
 
 
-def generate_missing_dagster_components_error_message(
-    venv_path: Optional[str] = None,
-) -> str:
-    env_qualifier = f" for the virtual environment at {venv_path}" if venv_path else ""
-    return f"""
-        Could not resolve the `dagster-components` executable{env_qualifier}.
-        The `dagster-components` executable is included with `dagster>=1.10.8`. It is necessary for `dg` to
-        interface with Python environments. Ensure that your Python environment has
-        `dagster>=1.10.8` installed.
-    """
-
-
 def generate_project_and_activated_venv_mismatch_warning(
     project_venv_path: Path,
     active_venv_path: Optional[Path],
@@ -322,13 +310,6 @@ def generate_project_and_activated_venv_mismatch_warning(
             project virtual environment: {project_venv_path}
     """
 
-
-NO_LOCAL_VENV_ERROR_MESSAGE = """
-This command resolves the `dagster-components` executable from a virtual environment in the project root
-directory, but no virtual environment (`.venv` dir) could be found. Please create a virtual
-environment in the project root directory or set tool.dg.project.python_environment = "active"
-in pyproject.toml to allow use of `dagster-components` from the active Python environment.
-"""
 
 NOT_WORKSPACE_ERROR_MESSAGE = """
 This command must be run inside a Dagster workspace directory. Ensure that there is a

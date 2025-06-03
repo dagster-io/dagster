@@ -12,7 +12,15 @@ from dagster import (
     schedule,
     sensor,
 )
+from dagster._core.definitions.asset_key import AssetKey
+from dagster._core.definitions.asset_spec import AssetSpec
+from dagster._core.definitions.decorators.source_asset_decorator import (
+    multi_observable_source_asset,
+    observable_source_asset,
+)
 from dagster._core.definitions.job_definition import JobDefinition
+from dagster._core.definitions.source_asset import SourceAsset
+from dagster_shared.check.functions import CheckError
 
 
 def ensure_get_job_def_warns(defs: Definitions, name: str) -> None:
@@ -51,6 +59,7 @@ def test_direct_job_def() -> None:
     defs = Definitions(jobs=[a_job])
 
     ensure_get_direct_job_def_succeeds(defs, a_job)
+    assert not defs.has_resolved_repository_def()
 
 
 def test_resolve_direct_asset_job() -> None:
@@ -62,6 +71,7 @@ def test_resolve_direct_asset_job() -> None:
     defs = Definitions(jobs=[asset_job])
 
     ensure_resolve_job_succeeds(defs, "asset_job")
+    assert defs.has_resolved_repository_def()
 
 
 def test_get_direct_asset_job_fails() -> None:
@@ -73,6 +83,7 @@ def test_get_direct_asset_job_fails() -> None:
     defs = Definitions(jobs=[asset_job])
 
     ensure_get_job_def_warns(defs, "asset_job")
+    assert defs.has_resolved_repository_def()
 
 
 def test_sensor_target_job_resolve_succeeds() -> None:
@@ -87,6 +98,7 @@ def test_sensor_target_job_resolve_succeeds() -> None:
     defs = Definitions(sensors=[my_sensor])
 
     ensure_resolve_job_succeeds(defs, "asset_job")
+    assert defs.has_resolved_repository_def()
 
 
 def test_sensor_target_job_get_fails() -> None:
@@ -101,6 +113,7 @@ def test_sensor_target_job_get_fails() -> None:
     defs = Definitions(sensors=[my_sensor])
 
     ensure_get_job_def_warns(defs, "asset_job")
+    assert defs.has_resolved_repository_def()
 
 
 def test_sensor_get_direct_job_succeeds() -> None:
@@ -117,6 +130,7 @@ def test_sensor_get_direct_job_succeeds() -> None:
     defs = Definitions(sensors=[my_sensor])
 
     ensure_get_job_def_warns(defs, direct_job.name)
+    assert defs.has_resolved_repository_def()
 
 
 def test_schedule_target_job_resolve_succeeds() -> None:
@@ -131,6 +145,7 @@ def test_schedule_target_job_resolve_succeeds() -> None:
     defs = Definitions(schedules=[my_schedule])
 
     ensure_resolve_job_succeeds(defs, "asset_job")
+    assert defs.has_resolved_repository_def()
 
 
 def test_schedule_target_job_get_fails() -> None:
@@ -145,6 +160,7 @@ def test_schedule_target_job_get_fails() -> None:
     defs = Definitions(schedules=[my_schedule])
 
     ensure_get_job_def_warns(defs, "asset_job")
+    assert defs.has_resolved_repository_def()
 
 
 def test_schedule_get_direct_job_succeeds() -> None:
@@ -161,6 +177,7 @@ def test_schedule_get_direct_job_succeeds() -> None:
     defs = Definitions(schedules=[my_schedule])
 
     ensure_get_job_def_warns(defs, direct_job.name)
+    assert defs.has_resolved_repository_def()
 
 
 def test_get_sensor_def_warns() -> None:
@@ -174,6 +191,7 @@ def test_get_sensor_def_warns() -> None:
         defs.get_sensor_def("my_sensor")
         assert len(w) == 1
         assert "dagster 1.11" in str(w[0].message)
+    assert defs.has_resolved_repository_def()  # this should invert once get_sensor_def does not automatically resolve (2025-06-02 -- schrockn)
 
 
 def test_get_unresolved_sensor_def_succeeds() -> None:
@@ -186,6 +204,7 @@ def test_get_unresolved_sensor_def_succeeds() -> None:
     with warnings.catch_warnings(record=True) as w:
         assert defs.get_unresolved_sensor_def("my_sensor") is my_sensor
         assert len(w) == 0
+    assert not defs.has_resolved_repository_def()
 
 
 def test_get_schedule_def_warns() -> None:
@@ -199,6 +218,7 @@ def test_get_schedule_def_warns() -> None:
         defs.get_schedule_def("my_schedule")
         assert len(w) == 1
         assert "dagster 1.11" in str(w[0].message)
+    assert defs.has_resolved_repository_def()  # this should invert once get_schedule_def does not automatically resolve (2025-06-02 -- schrockn)
 
 
 def test_get_unresolved_schedule_def_succeeds() -> None:
@@ -211,6 +231,7 @@ def test_get_unresolved_schedule_def_succeeds() -> None:
     with warnings.catch_warnings(record=True) as w:
         assert defs.get_unresolved_schedule_def("my_schedule") is my_schedule
         assert len(w) == 0
+    assert not defs.has_resolved_repository_def()
 
 
 def test_resolve_build_schedule_from_partitioned_job_succeeds() -> None:
@@ -228,3 +249,86 @@ def test_resolve_build_schedule_from_partitioned_job_succeeds() -> None:
 
     with pytest.raises(ValueError, match="is an UnresolvedPartitionedAssetScheduleDefinition"):
         defs.get_unresolved_schedule_def("my_schedule")
+
+    assert not defs.has_resolved_repository_def()
+
+
+def test_map_asset_specs_fails() -> None:
+    @asset
+    def asset1(): ...
+
+    defs = Definitions(assets=[asset1])
+    with pytest.raises(
+        CheckError,
+        match="The selection parameter is no longer supported for map_asset_specs, Please use map_resolved_asset_specs instead",
+    ):
+        defs.map_asset_specs(func=lambda s: s, selection="something")
+
+
+def test_get_directly_asset_specs_succeeds() -> None:
+    assert Definitions(assets=[AssetSpec("asset1")]).get_all_asset_specs()[0].key == AssetKey(
+        "asset1"
+    )
+
+    @asset
+    def asset1(): ...
+
+    defs = Definitions(assets=[asset1])
+    assert defs.get_all_asset_specs()[0].key == AssetKey("asset1")
+    assert defs.has_resolved_repository_def()
+
+    defs_with_asset_checks = Definitions(asset_checks=[asset1])
+    assert defs_with_asset_checks.get_all_asset_specs()[0].key == AssetKey("asset1")
+    assert defs_with_asset_checks.has_resolved_repository_def()
+
+
+def test_get_all_asset_specs_warns() -> None:
+    warnings.resetwarnings()
+    with warnings.catch_warnings(record=True) as w:
+        Definitions(assets=[AssetSpec("asset1")]).get_all_asset_specs()
+        assert len(w) == 1
+        assert "get_all_asset_specs" in str(w[0].message)
+
+
+def test_resolve_all_asset_specs_succeeds() -> None:
+    defs = Definitions(assets=[SourceAsset("asset1")])
+    assert defs.resolve_all_asset_specs()[0].key == AssetKey("asset1")
+    assert defs.has_resolved_repository_def()
+
+    @observable_source_asset
+    def asset1(): ...
+
+    assert Definitions(assets=[asset1]).resolve_all_asset_specs()[0].key == AssetKey("asset1")
+
+    @multi_observable_source_asset(specs=[AssetSpec("asset1")])
+    def _the_mosa(): ...
+
+    assert Definitions(assets=[_the_mosa]).resolve_all_asset_specs()[0].key == AssetKey("asset1")
+
+
+def test_get_assets_def() -> None:
+    @asset
+    def asset1(): ...
+
+    defs = Definitions(assets=[asset1])
+    assert defs.get_assets_def("asset1").key == AssetKey("asset1")
+    assert not defs.has_resolved_repository_def()
+
+    defs_with_asset_checks = Definitions(asset_checks=[asset1])
+    assert defs_with_asset_checks.get_assets_def("asset1").key == AssetKey("asset1")
+    assert not defs_with_asset_checks.has_resolved_repository_def()
+
+    warnings.resetwarnings()
+    with warnings.catch_warnings(record=True) as w:
+        defs = Definitions(assets=[AssetSpec("asset1")])
+        assert defs.get_assets_def("asset1").key == AssetKey("asset1")
+        assert len(w) == 1
+        assert "Could not find assets_def with key" in str(w[0].message)
+        assert defs.has_resolved_repository_def()
+
+    warnings.resetwarnings()
+    with warnings.catch_warnings(record=True) as w:
+        defs_with_asset_checks = Definitions(asset_checks=[asset1])
+        assert defs_with_asset_checks.resolve_assets_def("asset1").key == AssetKey("asset1")
+        assert len(w) == 0
+        assert defs_with_asset_checks.has_resolved_repository_def()

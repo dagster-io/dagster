@@ -1,10 +1,6 @@
-import json
-from pathlib import Path
-
 import pytest
-from click.testing import CliRunner
 from dagster._core.test_utils import ensure_dagster_tests_import, new_cwd
-from dagster.components.cli import cli
+from dagster.components.list import list_all_components_schema, list_plugins
 from dagster_shared.serdes.objects import (
     ComponentFeatureData,
     PluginObjectKey,
@@ -12,35 +8,27 @@ from dagster_shared.serdes.objects import (
     ScaffoldTargetTypeData,
 )
 from dagster_shared.serdes.objects.package_entry import PluginManifest
-from dagster_shared.serdes.serdes import deserialize_value
 from jsonschema import Draft202012Validator, ValidationError
 
 ensure_dagster_tests_import()
 
-from dagster_tests.components_tests.utils import (
-    assert_runner_result,
-    create_project_from_components,
-    temp_code_location_bar,
-)
+from dagster_tests.components_tests.utils import create_project_from_components
 
 
 def test_list_plugins_from_entry_points():
-    runner = CliRunner()
-
     # First check the default behavior. We don't check the actual content because that may note be
     # stable (we are loading from all entry points).
-    result = runner.invoke(cli, ["list", "plugins"])
-    assert result.exit_code == 0
-    result = json.loads(result.output)
-    assert len(result) > 1
+    result = list_plugins(entry_points=True, extra_modules=[])
+
+    assert isinstance(result, PluginManifest)
+    assert len(result.objects) > 1
 
 
 def test_list_plugins_from_module():
-    runner = CliRunner()
     # Now check what we get when we load directly from the test library. This has stable results.
-    result = runner.invoke(cli, ["list", "plugins", "--no-entry-points", "dagster_test.components"])
-    assert result.exit_code == 0
-    result = deserialize_value(result.output, as_type=PluginManifest)
+    result = list_plugins(entry_points=False, extra_modules=["dagster_test.components"])
+    assert isinstance(result, PluginManifest)
+
     objects = result.objects
     assert [obj.key.to_typename() for obj in objects] == [
         "dagster_test.components.AllMetadataEmptyComponent",
@@ -114,8 +102,6 @@ def test_list_plugins_from_module():
 
 def test_list_plugins_from_project() -> None:
     """Tests that the list CLI picks components we add."""
-    runner = CliRunner()
-
     # Now create a project and load the component types only from that project.
     with create_project_from_components(
         "definitions/local_component_sample",
@@ -123,20 +109,13 @@ def test_list_plugins_from_project() -> None:
         "definitions/single_file",
     ) as (tmpdir, location_name):
         with new_cwd(str(tmpdir)):
-            result = runner.invoke(
-                cli,
-                [
-                    "list",
-                    "plugins",
-                    "--no-entry-points",
-                    f"{location_name}.defs.local_component_sample",
-                ],
+            result = list_plugins(
+                entry_points=False, extra_modules=[f"{location_name}.defs.local_component_sample"]
             )
+            assert isinstance(result, PluginManifest)
 
-            assert result.exit_code == 0, str(result.stdout)
-
-            result = deserialize_value(result.output, PluginManifest)
             objects = result.objects
+
             assert len(objects) == 1
             assert objects[0].key == PluginObjectKey(
                 namespace=f"{location_name}.defs.local_component_sample",
@@ -144,20 +123,14 @@ def test_list_plugins_from_project() -> None:
             )
 
             # Add a second module
-            result = runner.invoke(
-                cli,
-                [
-                    "list",
-                    "plugins",
-                    "--no-entry-points",
+            result = list_plugins(
+                entry_points=False,
+                extra_modules=[
                     f"{location_name}.defs.local_component_sample",
                     f"{location_name}.defs.other_local_component_sample",
                 ],
             )
-
-            assert result.exit_code == 0, str(result.stdout)
-
-            result = deserialize_value(result.output, PluginManifest)
+            assert isinstance(result, PluginManifest)
             assert len(result.objects) == 2
             assert [obj.key.to_typename() for obj in result.objects] == [
                 f"{location_name}.defs.local_component_sample.MyComponent",
@@ -165,38 +138,23 @@ def test_list_plugins_from_project() -> None:
             ]
 
             # Add another, non-local component directory, which no-ops
-            result = runner.invoke(
-                cli,
-                [
-                    "list",
-                    "plugins",
-                    "--no-entry-points",
+            result = list_plugins(
+                entry_points=False,
+                extra_modules=[
                     f"{location_name}.defs.local_component_sample",
                     f"{location_name}.defs.other_local_component_sample",
                     f"{location_name}.defs.single_file",
                 ],
             )
+            assert isinstance(result, PluginManifest)
 
-            assert result.exit_code == 0, str(result.stdout)
-
-            result = deserialize_value(result.output, PluginManifest)
             assert len(result.objects) == 2
 
 
 def test_all_components_schema_command():
-    runner = CliRunner()
-
-    result = runner.invoke(
-        cli,
-        [
-            "list",
-            "all-components-schema",
-            "--no-entry-points",
-            "dagster_test.components",
-        ],
+    result = list_all_components_schema(
+        entry_points=False, extra_modules=("dagster_test.components",)
     )
-    assert_runner_result(result)
-    result = json.loads(result.output)
 
     component_type_keys = [
         "ComplexAssetComponent",
@@ -238,24 +196,3 @@ def test_all_components_schema_command():
                 "extra_key": "extra_value",
             }
         )
-
-
-def test_scaffold_component_command():
-    runner = CliRunner()
-
-    with temp_code_location_bar():
-        result = runner.invoke(
-            cli,
-            [
-                "scaffold",
-                "object",
-                "dagster_test.components.SimplePipesScriptComponent",
-                "bar/components/qux",
-                "--json-params",
-                '{"asset_key": "my_asset", "filename": "my_asset.py"}',
-                "--scaffold-format",
-                "yaml",
-            ],
-        )
-        assert_runner_result(result)
-        assert Path("bar/components/qux/my_asset.py").exists()

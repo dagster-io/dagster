@@ -72,7 +72,7 @@ def test_migrate_runs_properly_in_dagster(airflow_instance: None, dagster_dev: N
 
     from tutorial_example.dagster_defs.stages.migrate import defs
 
-    all_keys = [spec.key for spec in defs.get_all_asset_specs()]
+    all_keys = [spec.key for spec in defs.resolve_all_asset_specs()]
     assert len(all_keys) == 10
 
     mat_events = instance.get_latest_materialization_events(asset_keys=all_keys)

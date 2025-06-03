@@ -71,7 +71,7 @@ def test_basic_schedule_multiple_assets() -> None:
     )
     assert isinstance(defs.resolve_assets_def("asset_one"), AssetsDefinition)
     assert isinstance(defs.resolve_assets_def("asset_two"), AssetsDefinition)
-    assert not defs.get_asset_graph().has(AssetKey.from_coercible("slkjdfklsjdfl"))
+    assert not defs.resolve_asset_graph().has(AssetKey.from_coercible("slkjdfklsjdfl"))
 
 
 def test_decorator_schedule() -> None:

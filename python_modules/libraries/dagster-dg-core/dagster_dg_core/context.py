@@ -178,7 +178,7 @@ class DgContext:
     ) -> Self:
         context = cls.from_file_discovery_and_command_line_config(path, command_line_config)
 
-        # Commands that operate on a component library need to be run (a) with dagster-components
+        # Commands that operate on a component library need to be run (a) with dagster
         # available; (b) in a component library context.
         validate_dagster_availability()
 
@@ -192,7 +192,7 @@ class DgContext:
     ) -> Self:
         context = cls.from_file_discovery_and_command_line_config(path, command_line_config)
 
-        # Commands that access the component registry need to be run with dagster-components
+        # Commands that access the component registry need to be run with dagster
         # available.
         validate_dagster_availability()
         return context

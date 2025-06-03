@@ -169,7 +169,6 @@ setup(
     entry_points={
         "console_scripts": [
             "dagster = dagster.cli:main",
-            "dagster-components = dagster.components.cli:main",
             "dagster-daemon = dagster.daemon.cli:main",
         ],
         "dagster_dg_cli.plugin": [

@@ -24,5 +24,5 @@ def test_defs() -> None:
 
     defs = Definitions(assets=[my_asset])
 
-    asset_graph_amp = defs.get_asset_graph().get(my_asset.key).auto_materialize_policy
+    asset_graph_amp = defs.resolve_asset_graph().get(my_asset.key).auto_materialize_policy
     assert check.not_none(asset_graph_amp).to_automation_condition() == AutomationCondition.eager()
