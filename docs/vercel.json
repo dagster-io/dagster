@@ -3161,6 +3161,10 @@
     {
       "source": "/guides/labs/dg/dagster-dg-cli",
       "destination": "/api/dagster/dg-cli"
+    },
+    {
+      "source": "/guides/labs/create-dagster",
+      "destination": "/api/dagster/create-dagster"
     }
   ],
   "trailingSlash": false
