@@ -224,78 +224,9 @@ def test_list_plugin_modules_aliases(alias: str):
 # ##### DEFS
 # ########################
 
-_EXPECTED_DEFS = textwrap.dedent("""
-┌───────────┬──────────────────────────────────────────────────────────────┐
-┃ Section   ┃ Definitions                                                  ┃
-┡━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
-│ Assets    │ ┏━━━━━━━━━━━━┳━━━━━━━━━┳━━━━━━┳━━━━━━━┳━━━━━━━━━━━━━┓        │
-│           │ ┃ Key        ┃ Group   ┃ Deps ┃ Kinds ┃ Description ┃        │
-│           │ ┡━━━━━━━━━━━━╇━━━━━━━━━╇━━━━━━╇━━━━━━━╇━━━━━━━━━━━━━┩        │
-│           │ │ my_asset_1 │ default │      │       │             │        │
-│           │ ├────────────┼─────────┼──────┼───────┼─────────────┤        │
-│           │ │ my_asset_2 │ default │      │       │             │        │
-│           │ └────────────┴─────────┴──────┴───────┴─────────────┘        │
-│ Jobs      │ ┏━━━━━━━━┓                                                   │
-│           │ ┃ Name   ┃                                                   │
-│           │ ┡━━━━━━━━┩                                                   │
-│           │ │ my_job │                                                   │
-│           │ └────────┘                                                   │
-│ Schedules │ ┏━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┓                              │
-│           │ ┃ Name        ┃ Cron schedule ┃                              │
-│           │ ┡━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━┩                              │
-│           │ │ my_schedule │ @daily        │                              │
-│           │ └─────────────┴───────────────┘                              │
-│ Sensors   │ ┏━━━━━━━━━━━┓                                                │
-│           │ ┃ Name      ┃                                                │
-│           │ ┡━━━━━━━━━━━┩                                                │
-│           │ │ my_sensor │                                                │
-│           │ └───────────┘                                                │
-│ Resources │ ┌─────────────┬────────────────────────────────────────────┐ │
-│           │ │ Name        │ Type                                       │ │
-│           │ ┡━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩ │
-│           │ │ my_resource │ foo_bar.defs.mydefs.definitions.MyResource │ │
-│           │ └─────────────┴────────────────────────────────────────────┘ │
-└───────────┴──────────────────────────────────────────────────────────────┘
-""").strip()
-
-_EXPECTED_DEFS_JSON = textwrap.dedent("""
-    [
-        {
-            "key": "my_asset_1",
-            "deps": [],
-            "kinds": [],
-            "group": "default",
-            "description": null,
-            "automation_condition": null
-        },
-        {
-            "key": "my_asset_2",
-            "deps": [],
-            "kinds": [],
-            "group": "default",
-            "description": null,
-            "automation_condition": null
-        },
-        {
-            "name": "my_job"
-        },
-        {
-            "name": "my_schedule",
-            "cron_schedule": "@daily"
-        },
-        {
-            "name": "my_sensor"
-        },
-        {
-            "name": "my_resource",
-            "type": "foo_bar.defs.mydefs.definitions.MyResource"
-        }
-    ]
-""").strip()
-
 
 @pytest.mark.parametrize("use_json", [True, False])
-def test_list_defs_succeeds(use_json: bool):
+def test_list_defs_succeeds(use_json: bool, snapshot):
     project_kwargs: dict[str, Any] = {"use_editable_dagster": True}
     with (
         ProxyRunner.test() as runner,
@@ -318,12 +249,12 @@ def test_list_defs_succeeds(use_json: bool):
 
             if use_json:
                 result = subprocess.run(
-                    ["dg", "list", "defs", "--json"], capture_output=True, check=False
+                    ["dg", "list", "defs", "--json"], capture_output=True, check=True
                 )
-                assert result.stdout.decode("utf-8").strip() == _EXPECTED_DEFS_JSON
+                snapshot.assert_match(result.stdout.decode("utf-8").strip())
             else:
                 result = subprocess.run(["dg", "list", "defs"], check=True, capture_output=True)
-                match_terminal_box_output(result.stdout.decode("utf-8").strip(), _EXPECTED_DEFS)
+                snapshot.assert_match(result.stdout.decode("utf-8").strip())
 
 
 def _asset_1():
@@ -437,35 +368,7 @@ def _sample_defs():
     )
 
 
-_EXPECTED_COMPLEX_ASSET_DEFS = textwrap.dedent("""
-┏━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-┃ Section      ┃ Definitions                                                                      ┃
-┡━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
-│ Assets       │ ┏━━━━━━━━━┳━━━━━━━━━┳━━━━━━━┳━━━━━━━┳━━━━━━━━━━━━━━━━━━┓                         │
-│              │ ┃ Key     ┃ Group   ┃ Deps  ┃ Kinds ┃ Description      ┃                         │
-│              │ ┡━━━━━━━━━╇━━━━━━━━━╇━━━━━━━╇━━━━━━━╇━━━━━━━━━━━━━━━━━━┩                         │
-│              │ │ alpha   │ group_1 │       │ sling │                  │                         │
-│              │ ├─────────┼─────────┼───────┼───────┼──────────────────┤                         │
-│              │ │ beta    │ group_2 │       │ dbt   │ This is beta.    │                         │
-│              │ ├─────────┼─────────┼───────┼───────┼──────────────────┤                         │
-│              │ │ delta   │ group_2 │ alpha │ dbt   │                  │                         │
-│              │ │         │         │ beta  │       │                  │                         │
-│              │ ├─────────┼─────────┼───────┼───────┼──────────────────┤                         │
-│              │ │ epsilon │ group_2 │ delta │ dbt   │ This is epsilon. │                         │
-│              │ └─────────┴─────────┴───────┴───────┴──────────────────┘                         │
-│ Asset Checks │ ┏━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓ │
-│              │ ┃ Key                    ┃ Additional Deps ┃ Description                       ┃ │
-│              │ ┡━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩ │
-│              │ │ alpha:alpha_beta_check │ alpha           │ This check is for alpha and beta. │ │
-│              │ │                        │ beta            │                                   │ │
-│              │ ├────────────────────────┼─────────────────┼───────────────────────────────────┤ │
-│              │ │ alpha:alpha_check      │ alpha           │ This check is for alpha.          │ │
-│              │ └────────────────────────┴─────────────────┴───────────────────────────────────┘ │
-└──────────────┴──────────────────────────────────────────────────────────────────────────────────┘
-""").strip()
-
-
-def test_list_defs_complex_assets_succeeds():
+def test_list_defs_complex_assets_succeeds(snapshot):
     with (
         ProxyRunner.test() as runner,
         isolated_example_project_foo_bar(
@@ -491,9 +394,7 @@ def test_list_defs_complex_assets_succeeds():
                 f.write(defs_source)
 
             result = subprocess.run(["dg", "list", "defs"], check=True, capture_output=True)
-            match_terminal_box_output(
-                result.stdout.decode("utf-8").strip(), _EXPECTED_COMPLEX_ASSET_DEFS
-            )
+            snapshot.assert_match(result.stdout.decode("utf-8").strip())
 
 
 def test_list_defs_column_selection():
@@ -632,20 +533,7 @@ def _sample_complex_asset_defs():
         return dg.AssetCheckResult(passed=True)
 
 
-_EXPECTED_ENV_VAR_ASSET_DEFS = textwrap.dedent("""
-┏━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-┃ Section ┃ Definitions                                    ┃
-┡━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
-│ Assets  │ ┏━━━━━━━┳━━━━━━━┳━━━━━━┳━━━━━━━┳━━━━━━━━━━━━━┓ │
-│         │ ┃ Key   ┃ Group ┃ Deps ┃ Kinds ┃ Description ┃ │
-│         │ ┡━━━━━━━╇━━━━━━━╇━━━━━━╇━━━━━━━╇━━━━━━━━━━━━━┩ │
-│         │ │ alpha │ bar   │      │ sling │             │ │
-│         │ └───────┴───────┴──────┴───────┴─────────────┘ │
-└─────────┴────────────────────────────────────────────────┘
-""").strip()
-
-
-def test_list_defs_with_env_file_succeeds():
+def test_list_defs_with_env_file_succeeds(snapshot):
     with (
         ProxyRunner.test() as runner,
         isolated_example_project_foo_bar(
@@ -671,9 +559,7 @@ def test_list_defs_with_env_file_succeeds():
                 f.write(env_file_contents)
 
             result = subprocess.run(["dg", "list", "defs"], check=True, capture_output=True)
-            match_terminal_box_output(
-                result.stdout.decode("utf-8").strip(), _EXPECTED_ENV_VAR_ASSET_DEFS
-            )
+            snapshot.assert_match(result.stdout.decode("utf-8").strip())
 
 
 def _sample_env_var_assets():

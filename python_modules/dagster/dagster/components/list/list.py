@@ -107,6 +107,9 @@ def _load_defs_at_path(dg_context: DgContext, path: Optional[Path]) -> Repositor
     return defs.get_repository_def()
 
 
+IGNORE_METADATA_KEYS_LIST_DEFINITIONS = ["dagster/code_references"]
+
+
 def list_definitions(
     dg_context: DgContext,
     path: Optional[Path] = None,
@@ -166,7 +169,13 @@ def list_definitions(
                     if node.automation_condition
                     else None,
                     tags=sorted(list(node.tags.items())),
-                    metadata=sorted(list(node.metadata.items())),
+                    metadata=sorted(
+                        [
+                            (k, str(v))
+                            for k, v in node.metadata.items()
+                            if k not in IGNORE_METADATA_KEYS_LIST_DEFINITIONS
+                        ]
+                    ),
                 )
             )
         for key in selected_checks if selected_checks is not None else asset_graph.asset_check_keys:
