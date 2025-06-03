@@ -34,7 +34,7 @@ To follow the steps in this guide, you'll need:
 1. Open the terminal and create a new directory for your project:
 
    ```bash
-   dg init dagster-quickstart
+   uvx create-dagster project dagster-quickstart
    cd dagster-quickstart
    ```
 
@@ -57,41 +57,48 @@ To follow the steps in this guide, you'll need:
 
 ## Step 2: Create the Dagster project structure
 
-Next, you'll create a basic Dagster project that looks like this:
+The generated Dagster project should have the following structure:
 
 ```
 .
 ├── pyproject.toml
 ├── src
-│   └── dagster_quickstart
+│   └── dagster-quickstart
 │       ├── __init__.py
-│       ├── definitions.py
-│       ├── defs
+│       ├── components
 │       │   ├── __init__.py
-│       │   ├── assets.py
-│       │   └── data
-│       │       └── sample_data.csv
-│       └── lib
+│       ├── definitions.py
+│       └── defs
 │           └── __init__.py
 ├── tests
 │   └── __init__.py
 └── uv.lock
 ```
 
-1. Create the assets file using `dg`:
+1. Create an assets file using `dg` in the terminal:
 
    ```bash
-   dg scaffold dagster.asset assets.py
+   dg scaffold defs dagster.asset assets.py
    ```
 
-2. Add the `data/sample_data.csv` file:
+   This will add a new file `assets.py` in the `defs` directory:
+
+   ```
+   .
+   └── src
+       └── dagster-quickstart
+           └── defs
+               └── assets.py
+   ```
+
+2. Add the `sample_data.csv` file:
 
    ```bash
-   mkdir src/dagster_quickstart/defs/data
-   touch src/dagster_quickstart/defs/data/sample_data.csv
+   mkdir src/dagster-quickstart/defs/data
+   touch src/dagster-quickstart/defs/data/sample_data.csv
    ```
 
-   With the following content:
+   Within this file add the following content:
 
    ```csv
    id,name,age,city
@@ -105,9 +112,13 @@ Next, you'll create a basic Dagster project that looks like this:
 
 ## Step 3: Define the assets
 
-Now, create the assets for the ETL pipeline. Open `src/dagster_quickstart/defs/assets.py` and add the following code:
+Now, create the assets for the ETL pipeline. Open `src/dagster-quickstart/defs/assets.py` file in your preferred editor and include the following code:
 
-<CodeExample path="docs_snippets/docs_snippets/getting-started/quickstart.py" language="python" />
+<CodeExample
+   path="docs_snippets/docs_snippets/getting-started/quickstart.py"
+   language="python"
+   title="src/dagster-quickstart/defs/assets.py"
+/>
 
 This may seem unusual if you're used to task-based orchestration. In that case, you'd have three separate steps for extracting, transforming, and loading.
 
@@ -140,7 +151,7 @@ However, in Dagster, you'll model your pipelines using assets as the fundamental
 In your terminal, run:
 
 ```bash
-cat src/dagster_quickstart/defs/data/processed_data.csv
+cat src/dagster-quickstart/defs/data/processed_data.csv
 ```
 
 You should see the transformed data, including the new `age_group` column:
