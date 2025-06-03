@@ -267,9 +267,12 @@ class Component(ABC):
     @classmethod
     def load(cls, attributes: Optional[BaseModel], context: "ComponentLoadContext") -> Self:
         if issubclass(cls, Resolvable):
+            context_with_injected_scope = context.with_rendering_scope(
+                {"component_tree": context.component_tree}
+            )
             return (
                 cls.resolve_from_model(
-                    context.resolution_context.at_path("attributes"),
+                    context_with_injected_scope.resolution_context.at_path("attributes"),
                     attributes,
                 )
                 if attributes
