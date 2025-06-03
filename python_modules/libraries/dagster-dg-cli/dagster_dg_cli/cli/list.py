@@ -327,7 +327,7 @@ def _get_value(
     defs_type: DefsType,
     defn: Any,
 ) -> Optional[str]:
-    return GET_VALUE_BY_DEFS_TYPE[defs_type](column, defn)  # type: ignore
+    return GET_VALUE_BY_DEFS_TYPE[defs_type](column, defn)
 
 
 def _get_table(columns: Sequence[DefsColumn], defs_type: DefsType, defs: Sequence[Any]) -> "Table":
