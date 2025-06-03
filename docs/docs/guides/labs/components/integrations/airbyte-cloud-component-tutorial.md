@@ -26,13 +26,13 @@ Now that you have a Dagster project, you can scaffold an Airbyte Cloud component
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/airbyte-cloud-component/3-scaffold-airbyte-component.txt" />
 
-The scaffold call will generate a `component.yaml` file:
+The scaffold call will generate a `defs.yaml` file:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/airbyte-cloud-component/4-tree.txt" />
 
-In its scaffolded form, the `component.yaml` file contains the configuration for your Airbyte Cloud workspace:
+In its scaffolded form, the `defs.yaml` file contains the configuration for your Airbyte Cloud workspace:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/components/integrations/airbyte-cloud-component/5-component.yaml" title="my_project/defs/airbyte_ingest/component.yaml" language="yaml" />
+<CodeExample path="docs_snippets/docs_snippets/guides/components/integrations/airbyte-cloud-component/5-component.yaml" title="my_project/defs/airbyte_ingest/defs.yaml" language="yaml" />
 
 You can check the configuration of your component:
 
@@ -44,7 +44,7 @@ You can check the configuration of your component:
 
 You can select specific Airbyte Cloud connections to include in your component using the `connection_selector` key. This allows you to filter which connections are represented as assets:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/components/integrations/airbyte-cloud-component/7-customized-component.yaml" title="my_project/defs/airbyte_ingest/component.yaml" language="yaml" />
+<CodeExample path="docs_snippets/docs_snippets/guides/components/integrations/airbyte-cloud-component/7-customized-component.yaml" title="my_project/defs/airbyte_ingest/defs.yaml" language="yaml" />
 
 <WideContent maxSize={1100}>
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/airbyte-cloud-component/8-list-defs.txt" />
@@ -52,9 +52,9 @@ You can select specific Airbyte Cloud connections to include in your component u
 
 ## Customizing Airbyte Cloud assets
 
-Properties of the assets emitted by each connection can be customized in the `component.yaml` file using the `translation` key:
+Properties of the assets emitted by each connection can be customized in the `defs.yaml` file using the `translation` key:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/components/integrations/airbyte-cloud-component/9-customized-component.yaml" title="my_project/defs/airbyte_ingest/component.yaml" language="yaml" />
+<CodeExample path="docs_snippets/docs_snippets/guides/components/integrations/airbyte-cloud-component/9-customized-component.yaml" title="my_project/defs/airbyte_ingest/defs.yaml" language="yaml" />
 
 <WideContent maxSize={1100}>
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/airbyte-cloud-component/10-list-defs.txt" />
