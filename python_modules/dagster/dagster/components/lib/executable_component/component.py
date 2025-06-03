@@ -90,6 +90,7 @@ class ExecutableComponent(Component, Resolvable, Model):
 
     # inferred from the function name if not provided
     name: Optional[str] = None
+    description: Optional[str] = None
     tags: Optional[dict[str, Any]] = None
     partitions_def: Optional[ResolvedPartitionDefinition] = None
     assets: Optional[list[ResolvedAssetSpec]] = None
@@ -112,6 +113,7 @@ class ExecutableComponent(Component, Resolvable, Model):
             @multi_asset(
                 name=self.name or self.execute_fn.__name__,
                 op_tags=self.tags,
+                description=self.description,
                 specs=self.assets,
                 check_specs=self.get_check_specs(),
                 partitions_def=self.partitions_def,
@@ -126,6 +128,7 @@ class ExecutableComponent(Component, Resolvable, Model):
             @multi_asset_check(
                 name=self.name or self.execute_fn.__name__,
                 op_tags=self.tags,
+                description=self.description,
                 specs=self.get_check_specs(),
                 required_resource_keys=self.resource_keys,
             )

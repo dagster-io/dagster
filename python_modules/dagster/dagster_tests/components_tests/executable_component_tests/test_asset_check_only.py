@@ -170,11 +170,12 @@ def test_standalone_asset_check_with_resources() -> None:
     }
 
 
-def test_op_tags() -> None:
+def test_trivial_properties() -> None:
     component_only_assets = ExecutableComponent.from_attributes_dict(
         attributes={
             "name": "op_name",
             "execute_fn": "dagster_tests.components_tests.executable_component_tests.test_asset_check_only.only_asset_execute_fn",
+            "description": "op_description",
             "tags": {"op_tag": "op_tag_value"},
             "assets": [
                 {
@@ -189,6 +190,7 @@ def test_op_tags() -> None:
     component_only_asset_checks = ExecutableComponent.from_attributes_dict(
         attributes={
             "name": "op_name",
+            "description": "op_description",
             "execute_fn": "dagster_tests.components_tests.executable_component_tests.test_asset_check_only.only_asset_check_execute_fn",
             "tags": {"op_tag": "op_tag_value"},
             "checks": [
@@ -200,6 +202,6 @@ def test_op_tags() -> None:
         }
     )
 
-    assert component_only_asset_checks.build_underlying_assets_def().op.tags == {
-        "op_tag": "op_tag_value"
-    }
+    for component in [component_only_assets, component_only_asset_checks]:
+        assert component.build_underlying_assets_def().op.tags == {"op_tag": "op_tag_value"}
+        assert component.build_underlying_assets_def().op.description == "op_description"
