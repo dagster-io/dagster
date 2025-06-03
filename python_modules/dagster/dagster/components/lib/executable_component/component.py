@@ -1,6 +1,7 @@
 import importlib
 import inspect
-from typing import Annotated, Callable, Literal, Optional
+from functools import cached_property
+from typing import Annotated, Any, Callable, Literal, Optional, Union
 
 from dagster_shared import check
 from typing_extensions import TypeAlias
@@ -92,7 +93,8 @@ class ExecutableComponent(Component, Resolvable, Model):
     checks: Optional[list[AssetCheckKeyOnly]] = None
     execute_fn: ResolvableCallable
 
-    def get_resource_keys(self) -> set[str]:
+    @cached_property
+    def resource_keys(self) -> set[str]:
         return set(get_resources_from_callable(self.execute_fn))
 
     def get_check_specs(self) -> list[AssetCheckSpec]:
@@ -102,8 +104,6 @@ class ExecutableComponent(Component, Resolvable, Model):
         ]
 
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
-        required_resource_keys = self.get_resource_keys()
-
         if self.assets:
 
             @multi_asset(
@@ -111,25 +111,30 @@ class ExecutableComponent(Component, Resolvable, Model):
                 specs=self.assets,
                 check_specs=self.get_check_specs(),
                 partitions_def=self.partitions_def,
-                required_resource_keys=required_resource_keys,
+                required_resource_keys=self.resource_keys,
             )
             def _assets_def(context: AssetExecutionContext, **kwargs):
-                rd = context.resources.original_resource_dict
-                to_pass = {k: v for k, v in rd.items() if k in required_resource_keys}
-                check.invariant(
-                    set(to_pass.keys()) == required_resource_keys, "Resource keys mismatch"
-                )
-                return self.execute_fn(context, **to_pass)
+                return self.invoke_execute_fn(context)
 
             return Definitions(assets=[_assets_def])
         elif self.checks:
 
             @multi_asset_check(
-                name=self.name or self.execute_fn.__name__, specs=self.get_check_specs()
+                name=self.name or self.execute_fn.__name__,
+                specs=self.get_check_specs(),
+                required_resource_keys=self.resource_keys,
             )
             def _asset_check_def(context: AssetCheckExecutionContext, **kwargs):
-                return self.execute_fn(context)
+                return self.invoke_execute_fn(context)
 
             return Definitions(asset_checks=[_asset_check_def])
         else:
             check.failed("No assets or checks provided")
+
+    def invoke_execute_fn(
+        self, context: Union[AssetExecutionContext, AssetCheckExecutionContext]
+    ) -> Any:
+        rd = context.resources.original_resource_dict
+        to_pass = {k: v for k, v in rd.items() if k in self.resource_keys}
+        check.invariant(set(to_pass.keys()) == self.resource_keys, "Resource keys mismatch")
+        return self.execute_fn(context, **to_pass)
