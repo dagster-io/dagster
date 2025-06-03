@@ -45,6 +45,7 @@ To follow the steps in this guide, you'll need:
        ```source .venv/bin/activate```
      </TabItem>
      <TabItem value="windows" label="Windows">
+      ```.venv\Scripts\activate```
      </TabItem>
    </Tabs>
 
