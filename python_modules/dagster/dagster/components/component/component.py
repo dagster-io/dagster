@@ -109,9 +109,12 @@ class Component(ABC):
     @classmethod
     def load(cls, attributes: Optional[BaseModel], context: "ComponentLoadContext") -> Self:
         if issubclass(cls, Resolvable):
+            ctx = context.resolution_context.at_path("attributes")
+            if context.has_component_tree:
+                ctx = ctx.with_scope(component_tree=context.component_tree)
             return (
                 cls.resolve_from_model(
-                    context.resolution_context.at_path("attributes"),
+                    ctx,
                     attributes,
                 )
                 if attributes

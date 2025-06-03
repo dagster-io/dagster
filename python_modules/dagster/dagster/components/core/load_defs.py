@@ -85,7 +85,10 @@ def load_defs(
 
     # create a top-level DefsModule component from the root module
     context = ComponentLoadContext.for_module(
-        defs_root, project_root, terminate_autoloading_on_keyword_files
+        defs_root,
+        project_root,
+        component_tree=None,
+        terminate_autoloading_on_keyword_files=terminate_autoloading_on_keyword_files,
     )
 
     # Despite the argument being named defs_root, load_defs supports loading arbitrary components
@@ -96,15 +99,21 @@ def load_defs(
 
     # If we did get a folder component back, assume its the root tree
     tree = (
-        ComponentTree(defs_module=defs_root, project_root=project_root)
+        ComponentTree(
+            defs_module=defs_root,
+            project_root=project_root,
+            terminate_autoloading_on_keyword_files=terminate_autoloading_on_keyword_files,
+        )
         if isinstance(root_component, DefsFolderComponent)
         else None
     )
-
-    return Definitions.merge(
-        root_component.build_defs(context),
-        get_library_json_enriched_defs(tree),
-    )
+    if tree:
+        return tree.load_defs()
+    else:
+        return Definitions.merge(
+            root_component.build_defs(context),
+            get_library_json_enriched_defs(tree),
+        )
 
 
 def get_library_json_enriched_defs(tree: Optional[ComponentTree]) -> Definitions:
