@@ -2,8 +2,9 @@ import json
 from collections import defaultdict
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
+from enum import Enum
 from pathlib import Path
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 import click
 from dagster_dg_core.component import RemotePluginRegistry
@@ -185,71 +186,159 @@ def list_plugin_modules_command(
 # ########################
 
 
-def _get_assets_table(assets: Sequence[DgAssetMetadata]) -> "Table":
-    from rich.text import Text
+def _defs_column_from_str(column: str) -> "DefsColumn":
+    if column == "name":
+        return DefsColumn.KEY
+    try:
+        return DefsColumn(column.lower())
+    except ValueError as e:
+        try:
+            # Attempt to pluralize singular inputs
+            return DefsColumn(column.lower() + "s")
+        except ValueError:
+            raise e
 
-    table = DagsterInnerTable(["Key", "Group", "Deps", "Kinds", "Description"])
+
+class DefsColumn(str, Enum):
+    KEY = "key"
+    GROUP = "group"
+    DEPS = "deps"
+    KINDS = "kinds"
+    DESCRIPTION = "description"
+    TAGS = "tags"
+    METADATA = "metadata"
+    CRON = "cron"
+
+
+class DefsType(str, Enum):
+    ASSET = "asset"
+    ASSET_CHECK = "asset_check"
+    JOB = "job"
+    RESOURCE = "resource"
+    SCHEDULE = "schedule"
+    SENSOR = "sensor"
+
+
+DEFAULT_COLUMNS = [
+    DefsColumn.KEY,
+    DefsColumn.GROUP,
+    DefsColumn.DEPS,
+    DefsColumn.KINDS,
+    DefsColumn.DESCRIPTION,
+    DefsColumn.CRON,
+]
+
+
+def _supports_column(column: DefsColumn, defs_type: DefsType) -> bool:
+    if column == DefsColumn.KEY:
+        return True
+    elif column == DefsColumn.GROUP:
+        return defs_type in (DefsType.ASSET,)
+    elif column == DefsColumn.DEPS:
+        return defs_type in (DefsType.ASSET, DefsType.ASSET_CHECK)
+    elif column == DefsColumn.KINDS:
+        return defs_type in (DefsType.ASSET,)
+    elif column == DefsColumn.DESCRIPTION:
+        return defs_type in (DefsType.ASSET, DefsType.ASSET_CHECK, DefsType.JOB)
+    elif column == DefsColumn.TAGS:
+        return defs_type in (DefsType.ASSET,)
+    elif column == DefsColumn.METADATA:
+        return defs_type in (DefsType.ASSET,)
+    elif column == DefsColumn.CRON:
+        return defs_type in (DefsType.SCHEDULE,)
+    else:
+        raise ValueError(f"Invalid column: {column}")
+
+
+def _get_asset_value(column: DefsColumn, asset: DgAssetMetadata) -> Optional[str]:
+    if column == DefsColumn.KEY:
+        return asset.key
+    elif column == DefsColumn.GROUP:
+        return asset.group
+    elif column == DefsColumn.DEPS:
+        return "\n".join(asset.deps)
+    elif column == DefsColumn.KINDS:
+        return "\n".join(asset.kinds)
+    elif column == DefsColumn.DESCRIPTION:
+        return asset.description
+    elif column == DefsColumn.TAGS:
+        return "\n".join(k if not v else f"{k}: {v}" for k, v in asset.tags)
+    elif column == DefsColumn.METADATA:
+        return "\n".join(k if not v else f"{k}: {v}" for k, v in asset.metadata)
+    else:
+        raise ValueError(f"Invalid column: {column}")
+
+
+def _get_asset_check_value(column: DefsColumn, asset_check: DgAssetCheckMetadata) -> Optional[str]:
+    if column == DefsColumn.KEY:
+        return asset_check.key
+    elif column == DefsColumn.DEPS:
+        return "\n".join(asset_check.additional_deps)
+    elif column == DefsColumn.DESCRIPTION:
+        return asset_check.description
+    else:
+        raise ValueError(f"Invalid column: {column}")
+
+
+def _get_job_value(column: DefsColumn, job: DgJobMetadata) -> Optional[str]:
+    if column == DefsColumn.KEY:
+        return job.name
+    elif column == DefsColumn.DESCRIPTION:
+        return job.description
+    else:
+        raise ValueError(f"Invalid column: {column}")
+
+
+def _get_resource_value(column: DefsColumn, resource: DgResourceMetadata) -> Optional[str]:
+    if column == DefsColumn.KEY:
+        return resource.name
+    else:
+        raise ValueError(f"Invalid column: {column}")
+
+
+def _get_schedule_value(column: DefsColumn, schedule: DgScheduleMetadata) -> Optional[str]:
+    if column == DefsColumn.KEY:
+        return schedule.name
+    elif column == DefsColumn.CRON:
+        return schedule.cron_schedule
+    else:
+        raise ValueError(f"Invalid column: {column}")
+
+
+def _get_sensor_value(column: DefsColumn, sensor: DgSensorMetadata) -> Optional[str]:
+    if column == DefsColumn.KEY:
+        return sensor.name
+    else:
+        raise ValueError(f"Invalid column: {column}")
+
+
+GET_VALUE_BY_DEFS_TYPE = {
+    DefsType.ASSET: _get_asset_value,
+    DefsType.ASSET_CHECK: _get_asset_check_value,
+    DefsType.JOB: _get_job_value,
+    DefsType.RESOURCE: _get_resource_value,
+    DefsType.SCHEDULE: _get_schedule_value,
+    DefsType.SENSOR: _get_sensor_value,
+}
+
+
+def _get_value(
+    column: DefsColumn,
+    defs_type: DefsType,
+    defn: Any,
+) -> Optional[str]:
+    return GET_VALUE_BY_DEFS_TYPE[defs_type](column, defn)  # type: ignore
+
+
+def _get_table(columns: Sequence[DefsColumn], defs_type: DefsType, defs: Sequence[Any]) -> "Table":
+    columns_to_display = [column for column in columns if _supports_column(column, defs_type)]
+    table = DagsterInnerTable([column.value.capitalize() for column in columns_to_display])
     table.columns[-1].max_width = 100
 
-    for asset in sorted(assets, key=lambda x: x.key):
-        description = Text(asset.description or "")
-        description.truncate(max_width=100, overflow="ellipsis")
+    for defn in sorted(defs, key=lambda x: _get_value(DefsColumn.KEY, defs_type, x) or ""):
         table.add_row(
-            asset.key,
-            asset.group,
-            "\n".join(asset.deps),
-            "\n".join(asset.kinds),
-            description,
+            *(_get_value(column, defs_type, defn) for column in columns_to_display),
         )
-    return table
-
-
-def _get_asset_checks_table(asset_checks: Sequence[DgAssetCheckMetadata]) -> "Table":
-    from rich.text import Text
-
-    table = DagsterInnerTable(["Key", "Additional Deps", "Description"])
-    table.columns[-1].max_width = 100
-
-    for asset_check in sorted(asset_checks, key=lambda x: x.key):
-        description = Text(asset_check.description or "")
-        description.truncate(max_width=100, overflow="ellipsis")
-        table.add_row(
-            asset_check.key,
-            "\n".join(asset_check.additional_deps),
-            description,
-        )
-    return table
-
-
-def _get_jobs_table(jobs: Sequence[DgJobMetadata]) -> "Table":
-    table = DagsterInnerTable(["Name"])
-
-    for job in sorted(jobs, key=lambda x: x.name):
-        table.add_row(job.name)
-    return table
-
-
-def _get_resources_table(resources: Sequence[DgResourceMetadata]) -> "Table":
-    table = DagsterInnerTable(["Name", "Type"])
-
-    for resource in sorted(resources, key=lambda x: x.name):
-        table.add_row(resource.name, resource.type)
-    return table
-
-
-def _get_schedules_table(schedules: Sequence[DgScheduleMetadata]) -> "Table":
-    table = DagsterInnerTable(["Name", "Cron schedule"])
-
-    for schedule in sorted(schedules, key=lambda x: x.name):
-        table.add_row(schedule.name, schedule.cron_schedule)
-    return table
-
-
-def _get_sensors_table(sensors: Sequence[DgSensorMetadata]) -> "Table":
-    table = DagsterInnerTable(["Name"])
-
-    for sensor in sorted(sensors, key=lambda x: x.name):
-        table.add_row(sensor.name)
     return table
 
 
@@ -275,6 +364,14 @@ def _get_sensors_table(sensors: Sequence[DgSensorMetadata]) -> "Table":
     "-a",
     help="Asset selection to list.",
 )
+@click.option(
+    "--columns",
+    "-c",
+    multiple=True,
+    help="Columns to display. Either a comma-separated list of column names, or multiple "
+    "invocations of the flag. Available columns: "
+    + ", ".join(column.value for column in DefsColumn),
+)
 @dg_global_options
 @dg_path_options
 @cli_telemetry_wrapper
@@ -283,6 +380,7 @@ def list_defs_command(
     target_path: Path,
     path: Optional[Path],
     assets: Optional[str],
+    columns: Optional[Sequence[str]],
     **global_options: object,
 ) -> None:
     """List registered Dagster definitions in the current project environment."""
@@ -296,6 +394,15 @@ def list_defs_command(
 
     from dagster.components.list import list_definitions
 
+    if columns:
+        if len(columns) == 1 and "," in columns[0]:
+            columns = columns[0].split(",")
+        defs_columns = [_defs_column_from_str(column.lower()) for column in columns]
+        if DefsColumn.KEY not in defs_columns:
+            defs_columns = [DefsColumn.KEY] + defs_columns
+    else:
+        defs_columns = DEFAULT_COLUMNS
+
     # capture stdout during the definitions load so it doesn't pollute the structured output
     with capture_stdout(), disable_dagster_warnings():
         definitions = list_definitions(
@@ -306,6 +413,8 @@ def list_defs_command(
 
     # JSON
     if output_json:  # pass it straight through
+        if columns:
+            raise click.UsageError("Cannot use --columns with --json")
         json_output = [as_dict(defn) for defn in definitions]
         click.echo(json.dumps(json_output, indent=4))
 
@@ -329,17 +438,19 @@ def list_defs_command(
         table.add_column("Definitions")
 
         if _assets:
-            table.add_row("Assets", _get_assets_table(_assets))
+            table.add_row("Assets", _get_table(defs_columns, DefsType.ASSET, _assets))
         if asset_checks:
-            table.add_row("Asset Checks", _get_asset_checks_table(asset_checks))
+            table.add_row(
+                "Asset Checks", _get_table(defs_columns, DefsType.ASSET_CHECK, asset_checks)
+            )
         if jobs:
-            table.add_row("Jobs", _get_jobs_table(jobs))
+            table.add_row("Jobs", _get_table(defs_columns, DefsType.JOB, jobs))
         if schedules:
-            table.add_row("Schedules", _get_schedules_table(schedules))
+            table.add_row("Schedules", _get_table(defs_columns, DefsType.SCHEDULE, schedules))
         if sensors:
-            table.add_row("Sensors", _get_sensors_table(sensors))
+            table.add_row("Sensors", _get_table(defs_columns, DefsType.SENSOR, sensors))
         if resources:
-            table.add_row("Resources", _get_resources_table(resources))
+            table.add_row("Resources", _get_table(defs_columns, DefsType.RESOURCE, resources))
 
         console.print(table)
 
