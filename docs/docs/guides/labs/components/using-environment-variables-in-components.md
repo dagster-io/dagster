@@ -40,7 +40,7 @@ Next, we will configure a Sling connection that will sync a local CSV file to a 
   title="src/ingestion/defs/ingest_files/replication.yaml"
 />
 
-We will use the `env` function to template credentials into Sling configuration in our `component.yaml` file. Running `dg check yaml` will highlight that we
+We will use the `env` function to template credentials into Sling configuration in our `defs.yaml` file. Running `dg check yaml` will highlight that we
 need to explicitly encode these environment dependencies at the bottom of the file:
 
 <CodeExample

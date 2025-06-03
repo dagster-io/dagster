@@ -38,7 +38,7 @@ Next, update the `type` field in the `defs.yaml` file to reference this new comp
 <CodeExample
   path="docs_snippets/docs_snippets/guides/components/customizing-existing-component/local/5-defs.yaml"
   language="yaml"
-  title="my_project/defs/my_sling_sync/component.yaml"
+  title="my_project/defs/my_sling_sync/defs.yaml"
 />
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/customizing-existing-component/local/4-tree.txt" />
