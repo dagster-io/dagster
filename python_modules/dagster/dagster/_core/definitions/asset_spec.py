@@ -465,7 +465,7 @@ def attach_internal_freshness_policy(
     if INTERNAL_FRESHNESS_POLICY_METADATA_KEY in spec.metadata:
         if overwrite_existing:
             return spec.merge_attributes(
-                metadata={INTERNAL_FRESHNESS_POLICY_METADATA_KEY: serialize_value(policy)}
+                metadata={INTERNAL_FRESHNESS_POLICY_METADATA_KEY: serialize_value(policy)}  # pyright: ignore[reportArgumentType]
             )
         else:
             return spec
