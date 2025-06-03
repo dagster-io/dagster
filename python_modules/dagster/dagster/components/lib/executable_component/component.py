@@ -13,7 +13,7 @@ from dagster.components.component.component import Component
 from dagster.components.core.context import ComponentLoadContext
 from dagster.components.resolved.base import Resolvable
 from dagster.components.resolved.context import ResolutionContext
-from dagster.components.resolved.core_models import ResolvedAssetSpec
+from dagster.components.resolved.core_models import ResolvedAssetCheckSpec, ResolvedAssetSpec
 from dagster.components.resolved.model import Model, Resolver
 
 
@@ -80,6 +80,7 @@ class ExecutableComponent(Component, Resolvable, Model):
     name: Optional[str] = None
     partitions_def: Optional[ResolvedPartitionDefinition] = None
     assets: Optional[list[ResolvedAssetSpec]] = None
+    checks: Optional[list[ResolvedAssetCheckSpec]] = None
     execute_fn: ResolvableCallable
 
     def get_resource_keys(self) -> set[str]:
@@ -88,11 +89,15 @@ class ExecutableComponent(Component, Resolvable, Model):
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
         required_resource_keys = self.get_resource_keys()
 
-        check.invariant(len(self.assets or []) > 0, "assets is required for now")
+        check.invariant(
+            len(self.assets or []) > 0,
+            "Assets are required in ExecutableComponent",
+        )
 
         @multi_asset(
             name=self.name or self.execute_fn.__name__,
             specs=self.assets,
+            check_specs=self.checks,
             partitions_def=self.partitions_def,
             required_resource_keys=required_resource_keys,
         )
