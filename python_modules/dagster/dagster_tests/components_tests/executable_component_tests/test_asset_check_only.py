@@ -8,6 +8,7 @@ from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.materialize import materialize
 from dagster._core.definitions.metadata.metadata_value import TextMetadataValue
+from dagster._core.definitions.resource_annotation import ResourceParam
 from dagster._core.definitions.result import MaterializeResult
 from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
 from dagster.components.core.context import ComponentLoadContext
@@ -131,7 +132,7 @@ def test_standalone_asset_check() -> None:
     assert asset_check_evaluations[0].passed is True
 
 
-def asset_check_execute_fn_with_resources(context, resource_one):
+def asset_check_execute_fn_with_resources(context, resource_one: ResourceParam[str]):
     return AssetCheckResult(passed=True, metadata={"resource_one": resource_one})
 
 

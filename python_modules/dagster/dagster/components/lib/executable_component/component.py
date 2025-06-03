@@ -6,12 +6,14 @@ from typing import Annotated, Any, Callable, Optional, Union
 from dagster_shared import check
 from typing_extensions import TypeAlias
 
+from dagster._core.decorator_utils import get_function_params
 from dagster._core.definitions.asset_check_spec import AssetCheckSpec
 from dagster._core.definitions.asset_checks import AssetChecksDefinition
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.decorators.asset_check_decorator import multi_asset_check
 from dagster._core.definitions.decorators.asset_decorator import multi_asset
 from dagster._core.definitions.definitions_class import Definitions
+from dagster._core.definitions.resource_annotation import get_resource_args
 from dagster._core.execution.context.asset_check_execution_context import AssetCheckExecutionContext
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster.components.component.component import Component
@@ -72,8 +74,12 @@ class ExecutableComponent(Component, Resolvable, Model):
     execute_fn: ResolvableCallable
 
     @cached_property
+    def invoker(self) -> "ExecuteInvoker":
+        return ExecuteInvoker(self.execute_fn)
+
+    @cached_property
     def resource_keys(self) -> set[str]:
-        return set(get_resources_from_callable(self.execute_fn))
+        return self.invoker.resource_keys
 
     def get_check_specs(self) -> list[AssetCheckSpec]:
         return [
@@ -93,7 +99,7 @@ class ExecutableComponent(Component, Resolvable, Model):
                 required_resource_keys=self.resource_keys,
             )
             def _assets_def(context: AssetExecutionContext, **kwargs):
-                return self.invoke_execute_fn(context)
+                return self.invoker.invoke(context)
 
             return _assets_def
         elif self.checks:
@@ -106,7 +112,7 @@ class ExecutableComponent(Component, Resolvable, Model):
                 required_resource_keys=self.resource_keys,
             )
             def _asset_check_def(context: AssetCheckExecutionContext, **kwargs):
-                return self.invoke_execute_fn(context)
+                return self.invoker.invoke(context)
 
             return _asset_check_def
 
@@ -122,6 +128,32 @@ class ExecutableComponent(Component, Resolvable, Model):
     def invoke_execute_fn(
         self, context: Union[AssetExecutionContext, AssetCheckExecutionContext]
     ) -> Any:
+        rd = context.resources.original_resource_dict
+        to_pass = {k: v for k, v in rd.items() if k in self.resource_keys}
+        check.invariant(set(to_pass.keys()) == self.resource_keys, "Resource keys mismatch")
+        return self.execute_fn(context, **to_pass)
+
+
+class ExecuteInvoker:
+    def __init__(self, execute_fn: Callable):
+        self.execute_fn = execute_fn
+        found_args = {"context"} | self.resource_keys
+        extra_args = self.function_params_names - found_args
+        if extra_args:
+            check.failed(
+                f"Found extra arguments in execute_fn: {extra_args}. "
+                "Arguments must be valid resource params or annotated with Upstream"
+            )
+
+    @cached_property
+    def resource_keys(self) -> set[str]:
+        return {arg.name for arg in get_resource_args(self.execute_fn)}
+
+    @cached_property
+    def function_params_names(self) -> set[str]:
+        return {arg.name for arg in get_function_params(self.execute_fn)}
+
+    def invoke(self, context: Union[AssetExecutionContext, AssetCheckExecutionContext]) -> Any:
         rd = context.resources.original_resource_dict
         to_pass = {k: v for k, v in rd.items() if k in self.resource_keys}
         check.invariant(set(to_pass.keys()) == self.resource_keys, "Resource keys mismatch")
