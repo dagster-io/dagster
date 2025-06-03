@@ -1,6 +1,9 @@
 dg CLI
 ===========
 
+`dg` is available when you create a project with the `create-dagster` CLI and activate
+the virtual environment in that project.
+
 .. currentmodule:: dagster_dg_cli
 
 .. click:: dagster_dg_cli.cli.check:check_group

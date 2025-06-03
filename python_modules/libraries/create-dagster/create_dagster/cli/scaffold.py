@@ -119,29 +119,31 @@ def scaffold_project_command(
     "." may be passed as PATH to create the new project inside the existing working directory.
 
     Examples:
-        create-dagster project PROJECT_NAME
-            Scaffold a new project in new directory PROJECT_NAME. Automatically creates directory
-            and parent directories.
-        create-dagster project .
-            Scaffold a new project in the CWD. The project name is taken from the last component of the CWD.
+
+    :code:`create-dagster project PROJECT_NAME` - Scaffold a new project in new directory :code:`PROJECT_NAME`. Automatically creates directory
+    and parent directories.
+    
+    :code:`create-dagster project .` - Scaffold a new project in the CWD. The project name is taken from the last component of the CWD.
 
     Created projects will have the following structure:
 
-    ├── src
-    │   └── <project_name>
-    │       ├── __init__.py
-    │       ├── definitions.py
-    │       ├── defs
-    │       │   └── __init__.py
-    │       └── lib
-    │           └── __init__.py
-    ├── tests
-    │   └── __init__.py
-    └── pyproject.toml
+    .. code-block:: bash
 
-    The `src.<project_name>.defs` directory holds Python objects that can be targeted by the
+        ├── src
+        │   └── <project_name>
+        │       ├── __init__.py
+        │       ├── definitions.py
+        │       ├── defs
+        │       │   └── __init__.py
+        │       └── lib
+        │           └── __init__.py
+        ├── tests
+        │   └── __init__.py
+        └── pyproject.toml
+
+    The :code:`src.<project_name>.defs` directory holds Python objects that can be targeted by the
     `dg scaffold` command or have dg-inspectable metadata. Custom component types in the project
-    live in `src.<project_name>.lib`. These types can be created with `dg scaffold component`.
+    live in :code:`src.<project_name>.lib`. These types can be created with :code:`dg scaffold component`.
     """
     cli_config = normalize_cli_config(global_options, click.get_current_context())
     dg_context = DgContext.from_file_discovery_and_command_line_config(Path.cwd(), cli_config)
@@ -212,19 +214,21 @@ def scaffold_workspace_command(
 ):
     """Initialize a new Dagster workspace.
 
-    Examples:
-        create-dagster workspace WORKSPACE_NAME
-            Scaffold a new workspace in new directory WORKSPACE_NAME. Automatically creates directory
-            and parent directories.
-        create-dagster workspace .
-            Scaffold a new workspace in the CWD. The workspace name is the last component of the CWD.
+   Examples:
+
+    :code:`create-dagster workspace WORKSPACE_NAME` - Scaffold a new workspace in new directory :code:`WORKSPACE_NAME`. Automatically creates directory
+    and parent directories.
+    :code:`create-dagster workspace .` - Scaffold a new workspace in the CWD. The workspace name is the last component of the CWD.
+
 
     The scaffolded workspace folder has the following structure:
 
-    ├── <workspace_name>
-    │   ├── projects
-    |   |   └── <Dagster projects go here>
-    │   └── dg.toml
+    .. code-block:: bash
+
+        ├── <workspace_name>
+        │   ├── projects
+        |   |   └── <Dagster projects go here>
+        │   └── dg.toml
 
     """
     workspace_config = DgRawWorkspaceConfig(
