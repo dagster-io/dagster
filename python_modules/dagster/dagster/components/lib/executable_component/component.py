@@ -101,24 +101,20 @@ class ExecutableComponent(Component, Resolvable, Model):
             "Assets are required in ExecutableComponent",
         )
 
-        if self.assets:
-
-            @multi_asset(
-                name=self.name or self.execute_fn.__name__,
-                specs=self.assets,
-                check_specs=[
-                    AssetCheckSpec(name=check_spec.name, asset=check_spec.asset)
-                    for check_spec in self.checks or []
-                ],
-                partitions_def=self.partitions_def,
-                required_resource_keys=required_resource_keys,
-            )
-            def _assets_def(context: AssetExecutionContext, **kwargs):
-                rd = context.resources.original_resource_dict
-                to_pass = {k: v for k, v in rd.items() if k in required_resource_keys}
-                check.invariant(
-                    set(to_pass.keys()) == required_resource_keys, "Resource keys mismatch"
-                )
-                return self.execute_fn(context, **to_pass)
+        @multi_asset(
+            name=self.name or self.execute_fn.__name__,
+            specs=self.assets,
+            check_specs=[
+                AssetCheckSpec(name=check_spec.name, asset=check_spec.asset)
+                for check_spec in self.checks or []
+            ],
+            partitions_def=self.partitions_def,
+            required_resource_keys=required_resource_keys,
+        )
+        def _assets_def(context: AssetExecutionContext, **kwargs):
+            rd = context.resources.original_resource_dict
+            to_pass = {k: v for k, v in rd.items() if k in required_resource_keys}
+            check.invariant(set(to_pass.keys()) == required_resource_keys, "Resource keys mismatch")
+            return self.execute_fn(context, **to_pass)
 
         return Definitions(assets=[_assets_def])
