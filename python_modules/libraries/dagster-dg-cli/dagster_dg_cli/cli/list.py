@@ -28,6 +28,7 @@ from dagster_shared.serdes.objects.definition_metadata import (
     DgScheduleMetadata,
     DgSensorMetadata,
 )
+from dagster_shared.utils.warnings import disable_dagster_warnings
 from rich.console import Console
 
 from dagster_dg_cli.utils.plus import gql
@@ -260,10 +261,21 @@ def _get_sensors_table(sensors: Sequence[DgSensorMetadata]) -> "Table":
     default=False,
     help="Output as JSON instead of a table.",
 )
-@dg_path_options
+@click.option(
+    "--path",
+    "-p",
+    type=click.Path(
+        resolve_path=True,
+        path_type=Path,
+    ),
+    help="Path to the definitions to list.",
+)
 @dg_global_options
+@dg_path_options
 @cli_telemetry_wrapper
-def list_defs_command(output_json: bool, target_path: Path, **global_options: object) -> None:
+def list_defs_command(
+    output_json: bool, target_path: Path, path: Path, **global_options: object
+) -> None:
     """List registered Dagster definitions in the current project environment."""
     from rich.console import Console
     from rich.table import Table
@@ -276,10 +288,10 @@ def list_defs_command(output_json: bool, target_path: Path, **global_options: ob
     from dagster.components.list import list_definitions
 
     # capture stdout during the definitions load so it doesn't pollute the structured output
-    with capture_stdout():
+    with capture_stdout(), disable_dagster_warnings():
         definitions = list_definitions(
-            location=dg_context.code_location_name,
-            **dg_context.target_args,
+            dg_context=dg_context,
+            path=path,
         )
 
     # JSON
