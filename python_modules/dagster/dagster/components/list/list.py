@@ -7,6 +7,7 @@ from typing import Any, Literal, Optional, Union
 
 import click
 from dagster_dg_core.context import DgContext
+from dagster_shared.cli import PythonPointerOpts
 from dagster_shared.error import SerializableErrorInfo, remove_system_frames_from_error
 from dagster_shared.serdes.objects import PluginObjectKey
 from dagster_shared.serdes.objects.definition_metadata import (
@@ -22,9 +23,14 @@ from dagster_shared.serdes.objects.package_entry import PluginManifest
 from pydantic import ConfigDict, TypeAdapter, create_model
 
 from dagster._cli.utils import get_possibly_temporary_instance_for_cli
+from dagster._cli.workspace.cli_target import get_repository_python_origin_from_cli_opts
 from dagster._config.pythonic_config.resource import get_resource_type_name
 from dagster._core.definitions.asset_job import is_reserved_asset_job_name
+from dagster._core.definitions.repository_definition.repository_definition import (
+    RepositoryDefinition,
+)
 from dagster._utils.error import serializable_error_info_from_exc_info
+from dagster._utils.hosted_user_process import recon_repository_from_origin
 from dagster.components.component.component import Component
 from dagster.components.core.defs_module import ComponentRequirementsModel
 from dagster.components.core.package_entry import (
@@ -77,6 +83,29 @@ def list_all_components_schema(
     return TypeAdapter(union_type).json_schema()
 
 
+def _load_defs_at_path(dg_context: DgContext, path: Optional[Path]) -> RepositoryDefinition:
+    """Attempts to load the component tree from the context project root, falling back to
+    resolving the entire repository and using the attached component tree.
+    """
+    if not path:
+        repository_origin = get_repository_python_origin_from_cli_opts(
+            PythonPointerOpts.extract_from_cli_options(dict(dg_context.target_args))
+        )
+        recon_repo = recon_repository_from_origin(repository_origin)
+        repo_def = recon_repo.get_definition()
+        return repo_def
+
+    tree = ComponentTree.load(dg_context.root_path)
+
+    try:
+        defs = tree.load_defs_at_path(path) if path else tree.load_defs()
+    except Exception as e:
+        path_text = f" at {path}" if path else ""
+        raise click.ClickException(f"Unable to load definitions{path_text}: {e}") from e
+
+    return defs.get_repository_def()
+
+
 def list_definitions(
     dg_context: DgContext,
     path: Optional[Path] = None,
@@ -94,15 +123,7 @@ def list_definitions(
         )
 
         try:
-            tree = ComponentTree.load(dg_context.root_path)
-
-            try:
-                defs = tree.load_defs_at_path(path) if path else tree.load_defs()
-            except Exception as e:
-                path_text = f" at {path}" if path else ""
-                raise click.ClickException(f"Unable to load definitions{path_text}: {e}") from e
-
-            repo_def = defs.get_repository_def()
+            repo_def = _load_defs_at_path(dg_context, path)
         except click.ClickException:
             raise
         except Exception:
