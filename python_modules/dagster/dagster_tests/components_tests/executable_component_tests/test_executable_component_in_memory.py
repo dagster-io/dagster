@@ -9,7 +9,7 @@ from dagster._core.definitions.metadata.metadata_value import TextMetadataValue
 from dagster._core.definitions.resource_annotation import ResourceParam
 from dagster._core.definitions.result import MaterializeResult
 from dagster.components.core.context import ComponentLoadContext
-from dagster.components.lib.executable_component.component import ExecutableComponent
+from dagster.components.lib.executable_component.component import ExecutableComponent, ExecutionSpec
 from dagster.components.testing import scaffold_defs_sandbox
 
 
@@ -29,10 +29,19 @@ def test_basic_singular_asset() -> None:
         return MaterializeResult(metadata={"foo": "bar"})
 
     component = ExecutableComponent(
-        name="op_name",
-        execute_fn=_execute_fn,
+        execution=ExecutionSpec(name="op_name", fn=_execute_fn),
         assets=[AssetSpec(key="asset")],
     )
+
+    assert isinstance(component, ExecutableComponent)
+    assert_singular_component(component)
+
+
+def test_basic_singular_asset_with_callable() -> None:
+    def op_name(context) -> MaterializeResult:
+        return MaterializeResult(metadata={"foo": "bar"})
+
+    component = ExecutableComponent(execution=op_name, assets=[AssetSpec(key="asset")])
 
     assert isinstance(component, ExecutableComponent)
     assert_singular_component(component)
@@ -57,11 +66,32 @@ def execute_singular_asset(context) -> MaterializeResult:
     return MaterializeResult(metadata={"foo": "bar"})
 
 
+def op_name(context) -> MaterializeResult:
+    return MaterializeResult(metadata={"foo": "bar"})
+
+
 def test_basic_singular_asset_from_yaml() -> None:
     component = ExecutableComponent.from_attributes_dict(
         attributes={
-            "name": "op_name",
-            "execute_fn": "dagster_tests.components_tests.executable_component_tests.test_executable_component_in_memory.execute_singular_asset",
+            "execution": {
+                "name": "op_name",
+                "fn": "dagster_tests.components_tests.executable_component_tests.test_executable_component_in_memory.execute_singular_asset",
+            },
+            "assets": [
+                {
+                    "key": "asset",
+                }
+            ],
+        }
+    )
+    assert isinstance(component, ExecutableComponent)
+    assert_singular_component(component)
+
+
+def test_basic_singular_asset_from_callable() -> None:
+    component = ExecutableComponent.from_attributes_dict(
+        attributes={
+            "execution": "dagster_tests.components_tests.executable_component_tests.test_executable_component_in_memory.op_name",
             "assets": [
                 {
                     "key": "asset",
@@ -78,8 +108,7 @@ def test_resource_usage() -> None:
         return MaterializeResult(metadata={"foo": some_resource})
 
     component = ExecutableComponent(
-        name="op_name",
-        execute_fn=_execute_fn,
+        execution=ExecutionSpec(name="op_name", fn=_execute_fn),
         assets=[AssetSpec(key="asset")],
     )
 
@@ -107,8 +136,10 @@ def test_local_import() -> None:
             component_body={
                 "type": "dagster.components.lib.executable_component.component.ExecutableComponent",
                 "attributes": {
-                    "name": "op_name",
-                    "execute_fn": ".execute.execute_fn_to_copy",
+                    "execution": {
+                        "name": "op_name",
+                        "fn": ".execute.execute_fn_to_copy",
+                    },
                     "assets": [
                         {
                             "key": "asset",
@@ -118,8 +149,9 @@ def test_local_import() -> None:
             }
         ) as (component, defs):
             assert isinstance(component, ExecutableComponent)
-            assert component.execute_fn.__name__ == "execute_fn_to_copy"
-            assert isinstance(component.execute_fn(None), MaterializeResult)
+            assert isinstance(component.execution, ExecutionSpec)
+            assert component.execution.fn.__name__ == "execute_fn_to_copy"
+            assert isinstance(component.execution.fn(None), MaterializeResult)
 
             assets_def = defs.get_assets_def("asset")
             assert assets_def.op.name == "op_name"

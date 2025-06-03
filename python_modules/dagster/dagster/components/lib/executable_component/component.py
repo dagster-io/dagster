@@ -45,6 +45,15 @@ def get_resources_from_callable(func: Callable) -> list[str]:
     return [param.name for param in sig.parameters.values() if param.name != "context"]
 
 
+class ExecutionSpec(Model, Resolvable):
+    # inferred from the function name if not provided
+    name: Optional[str] = None
+    tags: Optional[dict[str, Any]] = None
+    description: Optional[str] = None
+    pool: Optional[str] = None
+    fn: ResolvableCallable
+
+
 class ExecutableComponent(Component, Resolvable, Model):
     """Executable Component represents an executable node in the asset graph.
 
@@ -58,18 +67,21 @@ class ExecutableComponent(Component, Resolvable, Model):
     which can all be expressed as a single ExecutableComponent.
     """
 
-    # inferred from the function name if not provided
-    name: Optional[str] = None
-    description: Optional[str] = None
-    tags: Optional[dict[str, Any]] = None
-    pool: Optional[str] = None
+    execution: Union[ExecutionSpec, ResolvableCallable]
     assets: Optional[list[ResolvedAssetSpec]] = None
     checks: Optional[list[ResolvedAssetCheckSpec]] = None
-    execute_fn: ResolvableCallable
+
+    @cached_property
+    def resolved_execution(self) -> ExecutionSpec:
+        return (
+            self.execution
+            if isinstance(self.execution, ExecutionSpec)
+            else ExecutionSpec(name=self.execution.__name__, fn=self.execution)
+        )
 
     @cached_property
     def execute_fn_metadata(self) -> "ExecuteFnMetadata":
-        return ExecuteFnMetadata(self.execute_fn)
+        return ExecuteFnMetadata(self.resolved_execution.fn)
 
     @cached_property
     def resource_keys(self) -> set[str]:
@@ -79,9 +91,9 @@ class ExecutableComponent(Component, Resolvable, Model):
         if self.assets:
 
             @multi_asset(
-                name=self.name or self.execute_fn.__name__,
-                op_tags=self.tags,
-                description=self.description,
+                name=self.resolved_execution.name,
+                op_tags=self.resolved_execution.tags,
+                description=self.resolved_execution.description,
                 specs=self.assets,
                 check_specs=self.checks,
                 required_resource_keys=self.resource_keys,
@@ -94,10 +106,10 @@ class ExecutableComponent(Component, Resolvable, Model):
         elif self.checks:
 
             @multi_asset_check(
-                name=self.name or self.execute_fn.__name__,
-                op_tags=self.tags,
+                name=self.resolved_execution.name,
+                op_tags=self.resolved_execution.tags,
                 specs=self.checks,
-                description=self.description,
+                description=self.resolved_execution.description,
                 required_resource_keys=self.resource_keys,
                 pool=self.pool,
             )
@@ -121,7 +133,7 @@ class ExecutableComponent(Component, Resolvable, Model):
         rd = context.resources.original_resource_dict
         to_pass = {k: v for k, v in rd.items() if k in self.resource_keys}
         check.invariant(set(to_pass.keys()) == self.resource_keys, "Resource keys mismatch")
-        return self.execute_fn(context, **to_pass)
+        return self.resolved_execution.fn(context, **to_pass)
 
 
 class ExecuteFnMetadata:
