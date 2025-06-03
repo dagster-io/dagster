@@ -200,7 +200,9 @@ class PowerBIWorkspaceComponent(Component, Resolvable):
             dagster_powerbi_translator=self.translator,
             use_workspace_scan=self.use_workspace_scan,
         )
-        workspace_resource_key = f"power_bi_workspace_{self.workspace.workspace_id}"
+        workspace_resource_key = (
+            f"power_bi_workspace_{self.workspace.workspace_id.replace('-', '_')}"
+        )
 
         specs_with_refreshable_semantic_models = [
             build_semantic_model_refresh_asset_definition(
