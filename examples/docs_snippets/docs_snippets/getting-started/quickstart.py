@@ -6,7 +6,7 @@ import dagster as dg
 @dg.asset
 def processed_data():
     ## Read data from the CSV
-    df = pd.read_csv("src/dagster_quickstart/defs/data/sample_data.csv")
+    df = pd.read_csv("src/dagster-quickstart/defs/data/sample_data.csv")
 
     ## Add an age_group column based on the value of age
     df["age_group"] = pd.cut(
@@ -14,5 +14,5 @@ def processed_data():
     )
 
     ## Save processed data
-    df.to_csv("src/dagster_quickstart/defs/data/processed_data.csv", index=False)
+    df.to_csv("src/dagster-quickstart/defs/data/processed_data.csv", index=False)
     return "Data loaded successfully"
