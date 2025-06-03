@@ -23,11 +23,12 @@ class EnvScope:
         return os.environ.get(key)
 
     def __getattr__(self, key: str) -> Optional[str]:
-        try:
-            return object.__getattribute__(self, key)
-        except AttributeError as e:
-            if key.startswith("jinja"):
-                raise
+        if key.startswith("jinja"):
+            raise AttributeError(f"{key} not found")
+        
+        raise ResolutionException(
+            f"To access environment variables, use the `env` function, e.g. `env('{key}')`"
+        )
 
             raise ResolutionException(
                 f"To access environment variables, use the `env` function, e.g. `env('{key}')`"
