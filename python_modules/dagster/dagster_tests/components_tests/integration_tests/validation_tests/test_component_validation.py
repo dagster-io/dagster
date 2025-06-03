@@ -1,7 +1,7 @@
 import pytest
 from dagster._core.test_utils import ensure_dagster_tests_import
 from dagster.components.resolved.context import ResolutionException
-from dagster.components.test.test_cases import (
+from dagster_test.components.test_utils.test_cases import (
     BASIC_COMPONENT_TYPE_FILEPATH,
     COMPONENT_VALIDATION_TEST_CASES,
     ComponentValidationTestCase,
@@ -27,7 +27,7 @@ DEFS_TEST_CASES = [
             "'fake' not found in scope",
             'a_string: "{{ fake.x }}"',
             "                ^ 'fake' is undefined",
-            "component.yaml:4",
+            "defs.yaml:4",
             "available scope is: env, automation_condition",
         ),
     ),
@@ -36,7 +36,7 @@ DEFS_TEST_CASES = [
         component_type_filepath=BASIC_COMPONENT_TYPE_FILEPATH,
         should_error=True,
         validate_error_msg=msg_includes_all_of(
-            "component.yaml:4",
+            "defs.yaml:4",
             'a_string: "{{ error() }}"',
             "                ^ Exception: boom",
             'raise Exception("boom")',
@@ -48,7 +48,7 @@ DEFS_TEST_CASES = [
         component_type_filepath=BASIC_COMPONENT_TYPE_FILEPATH,
         should_error=True,
         validate_error_msg=msg_includes_all_of(
-            "component.yaml:6",
+            "defs.yaml:6",
             "throw: true",
             "         ^ Exception: boom",
             'raise Exception("boom")',

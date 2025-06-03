@@ -230,7 +230,7 @@ def test_asset_io_manager(gcs_bucket):
         },
         jobs=[define_asset_job("my_asset_job")],
     )
-    asset_job = defs.get_job_def("my_asset_job")
+    asset_job = defs.resolve_job_def("my_asset_job")
 
     result = asset_job.execute_in_process(partition_key="apple")
     assert result.success

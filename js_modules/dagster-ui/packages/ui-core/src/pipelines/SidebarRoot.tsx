@@ -24,6 +24,7 @@ interface SidebarRootProps {
   onEnterSubgraph: (arg: OpNameOrPath) => void;
   onClickOp: (arg: OpNameOrPath) => void;
   repoAddress?: RepoAddress;
+  isExternal?: boolean;
 }
 
 export const SidebarRoot = (props: SidebarRootProps) => {
@@ -35,6 +36,7 @@ export const SidebarRoot = (props: SidebarRootProps) => {
     explorerPath,
     opHandleID,
     getInvocations,
+    isExternal,
     parentOpHandleID,
     onEnterSubgraph,
     onClickOp,
@@ -74,20 +76,22 @@ export const SidebarRoot = (props: SidebarRootProps) => {
           <SidebarContainerOverview repoAddress={repoAddress} container={container} />
         ),
     },
-    {
-      name: 'Types',
-      key: 'types' as const,
-      content: () =>
-        typeName ? (
-          <TypeExplorerContainer
-            explorerPath={explorerPath}
-            repoAddress={repoAddress}
-            typeName={typeName}
-          />
-        ) : (
-          <TypeListContainer repoAddress={repoAddress} explorerPath={explorerPath} />
-        ),
-    },
+    isExternal
+      ? null
+      : {
+          name: 'Types',
+          key: 'types' as const,
+          content: () =>
+            typeName ? (
+              <TypeExplorerContainer
+                explorerPath={explorerPath}
+                repoAddress={repoAddress}
+                typeName={typeName}
+              />
+            ) : (
+              <TypeListContainer repoAddress={repoAddress} explorerPath={explorerPath} />
+            ),
+        },
     useJobSidebarAlertsTabConfig({repoAddress, jobName: container.name}),
   ].filter((tab) => tab !== null);
 

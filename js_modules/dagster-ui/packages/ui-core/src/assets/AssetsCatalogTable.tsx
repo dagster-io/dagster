@@ -1,6 +1,6 @@
 import {Box, ButtonGroup} from '@dagster-io/ui-components';
 import * as React from 'react';
-import {useCallback, useContext, useEffect, useLayoutEffect, useMemo, useState} from 'react';
+import {useEffect, useMemo, useState} from 'react';
 import {useRouteMatch} from 'react-router-dom';
 import {useSetRecoilState} from 'recoil';
 import {CreateCatalogViewButton} from 'shared/assets/CreateCatalogViewButton.oss';
@@ -10,189 +10,24 @@ import {AssetTable} from './AssetTable';
 import {ASSET_TABLE_DEFINITION_FRAGMENT, ASSET_TABLE_FRAGMENT} from './AssetTableFragment';
 import {AssetsEmptyState} from './AssetsEmptyState';
 import {AssetTableFragment} from './types/AssetTableFragment.types';
-import {
-  AssetCatalogGroupTableNodeFragment,
-  AssetCatalogGroupTableQuery,
-  AssetCatalogGroupTableQueryVariables,
-  AssetCatalogTableQuery,
-  AssetCatalogTableQueryVariables,
-  AssetCatalogTableQueryVersion,
-} from './types/AssetsCatalogTable.types';
+import {useAllAssets} from './useAllAssets';
 import {AssetViewType, useAssetView} from './useAssetView';
-import {gql, useApolloClient} from '../apollo-client';
-import {AppContext} from '../app/AppContext';
+import {gql} from '../apollo-client';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {FIFTEEN_SECONDS, useRefreshAtInterval} from '../app/QueryRefresh';
 import {currentPageAtom} from '../app/analytics';
-import {PythonErrorFragment} from '../app/types/PythonErrorFragment.types';
 import {tokenForAssetKey} from '../asset-graph/Utils';
 import {useAssetSelectionInput} from '../asset-selection/input/useAssetSelectionInput';
-import {getAssetsByKey} from '../asset-selection/util';
 import {AssetGroupSelector} from '../graphql/types';
-import {useUpdatingRef} from '../hooks/useUpdatingRef';
 import {useBlockTraceUntilTrue} from '../performance/TraceContext';
-import {fetchPaginatedData} from '../runs/fetchPaginatedBucketData';
-import {getCacheManager} from '../search/useIndexedDBCachedQuery';
 import {SyntaxError} from '../selection/CustomErrorListener';
 import {LoadingSpinner} from '../ui/Loading';
 
+export {useAllAssets} from './useAllAssets';
+
 type Asset = AssetTableFragment;
-
-const groupTableCache = new Map();
 const emptyArray: string[] = [];
-
-const DEFAULT_BATCH_LIMIT = 10000;
-
-export function useCachedAssets({
-  onAssetsLoaded,
-}: {
-  onAssetsLoaded: (data: AssetTableFragment[]) => void;
-}) {
-  const {localCacheIdPrefix} = useContext(AppContext);
-  const cacheManager = useMemo(
-    () => getCacheManager<AssetTableFragment[]>(`${localCacheIdPrefix}/allAssetNodes`),
-    [localCacheIdPrefix],
-  );
-
-  useLayoutEffect(() => {
-    cacheManager.get(AssetCatalogTableQueryVersion).then((data) => {
-      if (data) {
-        onAssetsLoaded(data);
-      }
-    });
-  }, [cacheManager, onAssetsLoaded]);
-
-  return {cacheManager};
-}
-
-// Module-level cache variables
-let globalAssetsPromise: Promise<Asset[]> | null = null;
-let cachedAllAssets: Asset[] | null = null;
-let cachedAssetsFetchTime: number = 0;
-
-export function useAllAssets({
-  batchLimit = DEFAULT_BATCH_LIMIT,
-  groupSelector,
-}: {groupSelector?: AssetGroupSelector; batchLimit?: number} = {}) {
-  const client = useApolloClient();
-  const [{error, assets}, setErrorAndAssets] = useState<{
-    error: PythonErrorFragment | undefined;
-    assets: Asset[] | undefined;
-  }>({error: undefined, assets: cachedAllAssets || undefined});
-
-  const assetsRef = useUpdatingRef(assets);
-
-  const {cacheManager} = useCachedAssets({
-    onAssetsLoaded: useCallback(
-      (data) => {
-        if (!assetsRef.current) {
-          setErrorAndAssets({
-            error: undefined,
-            assets: data,
-          });
-        }
-      },
-      [assetsRef],
-    ),
-  });
-
-  // Query function for all assets
-  const fetchAllAssets = useCallback(async () => {
-    if (cachedAllAssets && Date.now() - cachedAssetsFetchTime < 6000) {
-      return cachedAllAssets;
-    }
-    if (!globalAssetsPromise) {
-      globalAssetsPromise = (async () => {
-        const allAssets = await fetchPaginatedData({
-          async fetchData(cursor: string | null | undefined) {
-            const {data} = await client.query<
-              AssetCatalogTableQuery,
-              AssetCatalogTableQueryVariables
-            >({
-              query: ASSET_CATALOG_TABLE_QUERY,
-              fetchPolicy: 'no-cache',
-              variables: {cursor, limit: batchLimit},
-            });
-            if (data.assetsOrError.__typename === 'PythonError') {
-              return {
-                data: [],
-                cursor: undefined,
-                hasMore: false,
-                error: data.assetsOrError,
-              };
-            }
-            const assets = data.assetsOrError.nodes;
-            const hasMoreData = assets.length === batchLimit;
-            const nextCursor = data.assetsOrError.cursor;
-            return {data: assets, cursor: nextCursor, hasMore: hasMoreData, error: undefined};
-          },
-        });
-        cachedAssetsFetchTime = Date.now();
-        cachedAllAssets = allAssets;
-        cacheManager.set(allAssets, AssetCatalogTableQueryVersion);
-        globalAssetsPromise = null;
-        return allAssets;
-      })();
-    }
-    return globalAssetsPromise;
-  }, [batchLimit, cacheManager, client]);
-
-  // Query function for group assets
-  const groupQuery = useCallback(async () => {
-    const cacheKey = JSON.stringify(groupSelector);
-    if (groupTableCache.has(cacheKey)) {
-      const cachedData = groupTableCache.get(cacheKey);
-      setErrorAndAssets({
-        error: undefined,
-        assets: cachedData.assetNodes?.map(definitionToAssetTableFragment),
-      });
-      return;
-    }
-    const {data} = await client.query<
-      AssetCatalogGroupTableQuery,
-      AssetCatalogGroupTableQueryVariables
-    >({
-      query: ASSET_CATALOG_GROUP_TABLE_QUERY,
-      variables: {group: groupSelector},
-      fetchPolicy: 'no-cache',
-    });
-    groupTableCache.set(cacheKey, data);
-    setErrorAndAssets({
-      error: undefined,
-      assets: data.assetNodes?.map(definitionToAssetTableFragment),
-    });
-  }, [client, groupSelector]);
-
-  const query = groupSelector ? groupQuery : fetchAllAssets;
-
-  useEffect(() => {
-    if (groupSelector) {
-      groupQuery();
-    } else {
-      fetchAllAssets()
-        .then((allAssets) => {
-          setErrorAndAssets({error: undefined, assets: allAssets});
-        })
-        .catch((e: any) => {
-          if (e.__typename === 'PythonError') {
-            setErrorAndAssets((prev) => ({error: e, assets: prev.assets}));
-          }
-        });
-    }
-  }, [fetchAllAssets, groupQuery, groupSelector]);
-
-  return useMemo(
-    () => ({
-      assets,
-      assetsByAssetKey: getAssetsByKey(assets ?? []),
-      error,
-      loading: !assets && !error,
-      query,
-    }),
-    [assets, error, query],
-  );
-}
 
 interface AssetCatalogTableProps {
   prefixPath: string[];
@@ -345,13 +180,6 @@ export const ASSET_CATALOG_GROUP_TABLE_QUERY = gql`
 
   ${ASSET_TABLE_DEFINITION_FRAGMENT}
 `;
-
-// When we load the AssetCatalogTable for a particular asset group, we retrieve `assetNodes`,
-// not `assets`. To narrow the scope of this difference we coerce the nodes to look like
-// AssetCatalogTableQuery results.
-function definitionToAssetTableFragment(definition: AssetCatalogGroupTableNodeFragment): Asset {
-  return {__typename: 'Asset', id: definition.id, key: definition.assetKey, definition};
-}
 
 function buildFlatProps(assets: Asset[], _: string[]) {
   return {

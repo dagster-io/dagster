@@ -1,7 +1,9 @@
 import re
 from collections.abc import Sequence
 from datetime import datetime
+from pathlib import Path
 from typing import Any, Optional
+from unittest.mock import Mock
 
 import pytest
 from dagster import (
@@ -65,6 +67,7 @@ from dagster._core.storage.mem_io_manager import InMemoryIOManager
 from dagster._core.test_utils import instance_for_test
 from dagster._core.types.pagination import PaginatedResults
 from dagster._utils.test.definitions import scoped_definitions_load_context
+from dagster.components.core.tree import ComponentTree
 
 
 def get_all_assets_from_defs(defs: Definitions):
@@ -92,7 +95,7 @@ def test_basic_asset_job_definition():
 
     defs = Definitions(assets=[an_asset], jobs=[define_asset_job(name="an_asset_job")])
 
-    assert isinstance(defs.get_job_def("an_asset_job"), JobDefinition)
+    assert isinstance(defs.resolve_job_def("an_asset_job"), JobDefinition)
 
 
 def test_vanilla_job_definition():
@@ -105,7 +108,7 @@ def test_vanilla_job_definition():
         pass
 
     defs = Definitions(jobs=[a_job])
-    assert isinstance(defs.get_job_def("a_job"), JobDefinition)
+    assert isinstance(defs.resolve_job_def("a_job"), JobDefinition)
 
 
 def test_basic_schedule_definition():
@@ -124,7 +127,7 @@ def test_basic_schedule_definition():
         ],
     )
 
-    assert defs.get_schedule_def("daily_an_asset_schedule")
+    assert defs.resolve_schedule_def("daily_an_asset_schedule")
 
 
 def test_basic_sensor_definition():
@@ -143,7 +146,7 @@ def test_basic_sensor_definition():
         sensors=[a_sensor],
     )
 
-    assert defs.get_sensor_def("an_asset_sensor")
+    assert defs.resolve_sensor_def("an_asset_sensor")
 
 
 def test_with_resource_binding():
@@ -246,7 +249,7 @@ def test_cacheable_asset_repo():
         assert len(all_assets) == 1
         assert all_assets[0].key.to_user_string() == "foobar"
 
-        assert isinstance(defs.get_implicit_global_asset_job_def(), JobDefinition)
+        assert isinstance(defs.resolve_implicit_global_asset_job_def(), JobDefinition)
 
 
 def test_asset_loading():
@@ -276,7 +279,7 @@ def test_io_manager_coercion():
 
     defs = Definitions(assets=[one], resources={"mem_io_manager": InMemoryIOManager()})
 
-    asset_job = defs.get_implicit_global_asset_job_def()
+    asset_job = defs.resolve_implicit_global_asset_job_def()
     assert isinstance(asset_job.resource_defs["mem_io_manager"], IOManagerDefinition)
     result = asset_job.execute_in_process()
     assert result.output_for_node("one") == 1
@@ -298,7 +301,7 @@ def test_custom_executor_in_definitions():
         return 1
 
     defs = Definitions(assets=[one], executor=an_executor)
-    asset_job = defs.get_implicit_global_asset_job_def()
+    asset_job = defs.resolve_implicit_global_asset_job_def()
     assert asset_job.executor_def is an_executor
 
 
@@ -313,7 +316,7 @@ def test_custom_loggers_in_definitions():
 
     defs = Definitions(assets=[one], loggers={"custom_logger": a_logger})
 
-    asset_job = defs.get_implicit_global_asset_job_def()
+    asset_job = defs.resolve_implicit_global_asset_job_def()
     loggers = asset_job.loggers
     assert len(loggers) == 1
     assert "custom_logger" in loggers
@@ -421,24 +424,24 @@ def test_kitchen_sink_on_create_helper_and_definitions():
         loggers={"logger_key": a_logger},
     )
 
-    assert isinstance(defs.get_job_def("a_job"), JobDefinition)
-    assert defs.get_job_def("a_job").executor_def is an_executor
-    assert defs.get_job_def("a_job").loggers == {"logger_key": a_logger}
-    assert isinstance(defs.get_implicit_global_asset_job_def(), JobDefinition)
-    assert defs.get_implicit_global_asset_job_def().executor_def is an_executor
-    assert defs.get_implicit_global_asset_job_def().loggers == {"logger_key": a_logger}
-    assert isinstance(defs.get_job_def("another_asset_job"), JobDefinition)
-    assert defs.get_job_def("another_asset_job").executor_def is an_executor
-    assert defs.get_job_def("another_asset_job").loggers == {"logger_key": a_logger}
-    assert isinstance(defs.get_job_def("sensor_target"), JobDefinition)
-    assert defs.get_job_def("sensor_target").executor_def is an_executor
-    assert defs.get_job_def("sensor_target").loggers == {"logger_key": a_logger}
-    assert isinstance(defs.get_job_def("schedule_target"), JobDefinition)
-    assert defs.get_job_def("schedule_target").executor_def is an_executor
-    assert defs.get_job_def("schedule_target").loggers == {"logger_key": a_logger}
+    assert isinstance(defs.resolve_job_def("a_job"), JobDefinition)
+    assert defs.resolve_job_def("a_job").executor_def is an_executor
+    assert defs.resolve_job_def("a_job").loggers == {"logger_key": a_logger}
+    assert isinstance(defs.resolve_implicit_global_asset_job_def(), JobDefinition)
+    assert defs.resolve_implicit_global_asset_job_def().executor_def is an_executor
+    assert defs.resolve_implicit_global_asset_job_def().loggers == {"logger_key": a_logger}
+    assert isinstance(defs.resolve_job_def("another_asset_job"), JobDefinition)
+    assert defs.resolve_job_def("another_asset_job").executor_def is an_executor
+    assert defs.resolve_job_def("another_asset_job").loggers == {"logger_key": a_logger}
+    assert isinstance(defs.resolve_job_def("sensor_target"), JobDefinition)
+    assert defs.resolve_job_def("sensor_target").executor_def is an_executor
+    assert defs.resolve_job_def("sensor_target").loggers == {"logger_key": a_logger}
+    assert isinstance(defs.resolve_job_def("schedule_target"), JobDefinition)
+    assert defs.resolve_job_def("schedule_target").executor_def is an_executor
+    assert defs.resolve_job_def("schedule_target").loggers == {"logger_key": a_logger}
 
-    assert isinstance(defs.get_schedule_def("a_schedule"), ScheduleDefinition)
-    assert isinstance(defs.get_sensor_def("a_sensor"), SensorDefinition)
+    assert isinstance(defs.resolve_schedule_def("a_schedule"), ScheduleDefinition)
+    assert isinstance(defs.resolve_sensor_def("a_sensor"), SensorDefinition)
 
 
 def test_with_resources_override():
@@ -469,7 +472,7 @@ def test_with_resources_override():
         resources={"b_resource": "passed-through-definitions"},
     )
 
-    defs.get_implicit_global_asset_job_def().execute_in_process()
+    defs.resolve_implicit_global_asset_job_def().execute_in_process()
 
     assert executed["asset_one"]
     assert executed["asset_two"]
@@ -483,7 +486,7 @@ def test_implicit_global_job():
     defs = Definitions(assets=[asset_one])
 
     assert defs.has_implicit_global_asset_job_def()
-    assert len(defs.get_all_job_defs()) == 1
+    assert len(defs.resolve_all_job_defs()) == 1
 
 
 def test_implicit_global_job_with_job_defined():
@@ -494,10 +497,12 @@ def test_implicit_global_job_with_job_defined():
     defs = Definitions(assets=[asset_one], jobs=[define_asset_job("all_assets_job", selection="*")])
 
     assert defs.has_implicit_global_asset_job_def()
-    assert defs.get_job_def("all_assets_job")
-    assert defs.get_job_def("all_assets_job") is not defs.get_implicit_global_asset_job_def()
+    assert defs.resolve_job_def("all_assets_job")
+    assert (
+        defs.resolve_job_def("all_assets_job") is not defs.resolve_implicit_global_asset_job_def()
+    )
 
-    assert len(defs.get_all_job_defs()) == 2
+    assert len(defs.resolve_all_job_defs()) == 2
 
 
 def test_implicit_global_job_with_partitioned_asset():
@@ -517,8 +522,8 @@ def test_implicit_global_job_with_partitioned_asset():
         assets=[daily_partition_asset, unpartitioned_asset, hourly_partition_asset],
     )
 
-    assert len(defs.get_all_job_defs()) == 1
-    defs.get_implicit_global_asset_job_def()
+    assert len(defs.resolve_all_job_defs()) == 1
+    defs.resolve_implicit_global_asset_job_def()
 
 
 def test_implicit_job_with_source_assets():
@@ -529,11 +534,13 @@ def test_implicit_job_with_source_assets():
         raise Exception("not executed")
 
     defs = Definitions(assets=[source_asset, downstream_of_source])
-    assert defs.get_all_job_defs()
-    assert len(defs.get_all_job_defs()) == 1
-    assert defs.get_implicit_job_def_for_assets(asset_keys=[AssetKey("downstream_of_source")])
+    assert defs.resolve_all_job_defs()
+    assert len(defs.resolve_all_job_defs()) == 1
+    assert defs.resolve_implicit_job_def_def_for_assets(
+        asset_keys=[AssetKey("downstream_of_source")]
+    )
     assert defs.has_implicit_global_asset_job_def()
-    assert defs.get_implicit_global_asset_job_def()
+    assert defs.resolve_implicit_global_asset_job_def()
 
 
 def test_unresolved_partitioned_asset_schedule():
@@ -546,14 +553,14 @@ def test_unresolved_partitioned_asset_schedule():
     schedule1 = build_schedule_from_partitioned_job(job1)
 
     defs_with_explicit_job = Definitions(jobs=[job1], schedules=[schedule1], assets=[asset1])
-    assert defs_with_explicit_job.get_job_def("job1").name == "job1"
-    assert defs_with_explicit_job.get_job_def("job1").partitions_def == partitions_def
-    assert defs_with_explicit_job.get_schedule_def("job1_schedule").cron_schedule == "0 0 * * *"
+    assert defs_with_explicit_job.resolve_job_def("job1").name == "job1"
+    assert defs_with_explicit_job.resolve_job_def("job1").partitions_def == partitions_def
+    assert defs_with_explicit_job.resolve_schedule_def("job1_schedule").cron_schedule == "0 0 * * *"
 
     defs_with_implicit_job = Definitions(schedules=[schedule1], assets=[asset1])
-    assert defs_with_implicit_job.get_job_def("job1").name == "job1"
-    assert defs_with_implicit_job.get_job_def("job1").partitions_def == partitions_def
-    assert defs_with_implicit_job.get_schedule_def("job1_schedule").cron_schedule == "0 0 * * *"
+    assert defs_with_implicit_job.resolve_job_def("job1").name == "job1"
+    assert defs_with_implicit_job.resolve_job_def("job1").partitions_def == partitions_def
+    assert defs_with_implicit_job.resolve_schedule_def("job1_schedule").cron_schedule == "0 0 * * *"
 
 
 def test_bare_executor():
@@ -570,7 +577,7 @@ def test_bare_executor():
 
     defs = Definitions(assets=[an_asset], executor=executor_inst)
 
-    job = defs.get_implicit_global_asset_job_def()
+    job = defs.resolve_implicit_global_asset_job_def()
     assert isinstance(job, JobDefinition)
 
     # ignore typecheck because we know our implementation doesn't use the context
@@ -584,7 +591,7 @@ def test_assets_with_io_manager():
 
     defs = Definitions(assets=[single_asset], resources={"io_manager": mem_io_manager})
 
-    asset_group_underlying_job = defs.get_all_job_defs()[0]
+    asset_group_underlying_job = defs.resolve_all_job_defs()[0]
     assert asset_group_underlying_job.resource_defs["io_manager"] == mem_io_manager
 
 
@@ -626,7 +633,7 @@ def test_assets_with_executor():
 
     defs = Definitions(assets=[the_asset], executor=in_process_executor)
 
-    asset_group_underlying_job = defs.get_all_job_defs()[0]
+    asset_group_underlying_job = defs.resolve_all_job_defs()[0]
     assert asset_group_underlying_job.executor_def == in_process_executor
 
 
@@ -657,7 +664,7 @@ def test_resource_defs_on_asset():
         pass
 
     defs = Definitions([the_asset, other_asset], resources={"bar": the_resource})
-    the_job = defs.get_all_job_defs()[0]
+    the_job = defs.resolve_all_job_defs()[0]
     assert the_job.execute_in_process().success
 
 
@@ -681,7 +688,7 @@ def test_conflicting_asset_resource_defs():
             "provided to assets must match by reference equality for a given key."
         ),
     ):
-        Definitions([the_asset, other_asset]).get_all_job_defs()
+        Definitions([the_asset, other_asset]).resolve_all_job_defs()
 
 
 def test_graph_backed_asset_resources():
@@ -719,7 +726,7 @@ def test_graph_backed_asset_resources():
             " reference equality for a given key."
         ),
     ):
-        Definitions([the_asset, other_asset]).get_all_job_defs()
+        Definitions([the_asset, other_asset]).resolve_all_job_defs()
 
 
 def test_job_with_reserved_name():
@@ -754,7 +761,7 @@ def test_asset_cycle():
 
     s = SourceAsset(key="s")
     with pytest.raises(CircularDependencyError):
-        Definitions(assets=[a, b, c, s]).get_all_job_defs()
+        Definitions(assets=[a, b, c, s]).resolve_all_job_defs()
 
 
 def test_unsatisfied_resources():
@@ -804,6 +811,11 @@ def test_merge():
     def logger2(_):
         raise Exception("not executed")
 
+    origin = ComponentTree(
+        defs_module=Mock(),
+        project_root=Path(),
+    )
+
     defs1 = Definitions(
         assets=[asset1],
         jobs=[job1],
@@ -822,6 +834,7 @@ def test_merge():
         resources={"resource2": resource2},
         loggers={"logger2": logger2},
         metadata={"bar": 2},
+        component_tree=origin,
     )
 
     merged = Definitions.merge(defs1, defs2)
@@ -835,6 +848,7 @@ def test_merge():
         executor=in_process_executor,
         asset_checks=[],
         metadata={"foo": MetadataValue.int(1), "bar": MetadataValue.int(2)},
+        component_tree=origin,
     )
 
 
@@ -923,7 +937,7 @@ def test_get_all_asset_specs():
     asset7 = AssetSpec("asset7", tags={"apple": "banana"})
 
     defs = Definitions(assets=[asset1, asset2, assets3_and_4, asset5, asset6, asset7])
-    all_asset_specs = defs.get_all_asset_specs()
+    all_asset_specs = defs.resolve_all_asset_specs()
     assert len(all_asset_specs) == 7
     asset_specs_by_key = {spec.key: spec for spec in all_asset_specs}
     assert asset_specs_by_key.keys() == {
@@ -1019,11 +1033,11 @@ def test_hoist_automation_assets():
 
     defs = Definitions(sensors=[foo_sensor], schedules=[bar_schedule], jobs=[foo_job])
 
-    assert defs.get_assets_def(foo.key) == foo
-    assert defs.get_assets_def(bar.key) == bar
+    assert defs.resolve_assets_def(foo.key) == foo
+    assert defs.resolve_assets_def(bar.key) == bar
 
     # We can define and execute asset jobs that reference assets only defined in targets
-    assert defs.get_job_def(foo_job.name).execute_in_process().success
+    assert defs.resolve_job_def(foo_job.name).execute_in_process().success
 
 
 def test_definitions_failure_on_asset_job_resolve():
@@ -1124,14 +1138,14 @@ def test_map_asset_specs() -> None:
     specs = [AssetSpec("asset1"), AssetSpec("asset2")]
     defs = Definitions(assets=specs)
     spec_lambda = lambda spec: spec.merge_attributes(tags={"foo": "bar"})
-    mapped_defs = defs.map_asset_specs(func=spec_lambda)
+    mapped_defs = defs.map_resolved_asset_specs(func=spec_lambda)
     assert mapped_defs.assets == [
         AssetSpec("asset1", tags={"foo": "bar"}),
         AssetSpec("asset2", tags={"foo": "bar"}),
     ]
 
     # Select only asset 1
-    mapped_defs = defs.map_asset_specs(func=spec_lambda, selection="asset1")
+    mapped_defs = defs.map_resolved_asset_specs(func=spec_lambda, selection="asset1")
     assert mapped_defs.assets == [
         AssetSpec("asset1", tags={"foo": "bar"}),
         AssetSpec("asset2"),
@@ -1139,13 +1153,13 @@ def test_map_asset_specs() -> None:
 
     # Select no assets accidentally
     with pytest.raises(DagsterInvalidSubsetError):
-        mapped_defs = defs.map_asset_specs(func=spec_lambda, selection="asset3")
+        mapped_defs = defs.map_resolved_asset_specs(func=spec_lambda, selection="asset3")
 
     # attempt to map with source asset
     source_asset = SourceAsset("source_asset")
     defs = Definitions(assets=[source_asset])
     with pytest.raises(DagsterInvariantViolationError):
-        defs.map_asset_specs(func=spec_lambda)
+        defs.map_resolved_asset_specs(func=spec_lambda)
 
     class MyCacheableAssetsDefinition(CacheableAssetsDefinition):
         def compute_cacheable_data(self):
@@ -1157,4 +1171,4 @@ def test_map_asset_specs() -> None:
     cacheable_asset = MyCacheableAssetsDefinition("cacheable_asset")
     defs = Definitions(assets=[cacheable_asset])
     with pytest.raises(DagsterInvariantViolationError):
-        defs.map_asset_specs(func=spec_lambda)
+        defs.map_resolved_asset_specs(func=spec_lambda)

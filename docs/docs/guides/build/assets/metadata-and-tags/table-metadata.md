@@ -1,6 +1,6 @@
 ---
 title: "Table metadata"
-description: "Table metadata can be used to provide additional context about a tabular asset, such as its schema, row count, and more."
+description: "Table metadata provides additional context about a tabular asset, such as its schema, row count, and more, in order to improve collaboration, debugging, and data quality in your Dagster deployment."
 sidebar_position: 3000
 ---
 
@@ -16,7 +16,7 @@ Dagster supports attaching different types of table metadata to assets, includin
 
 ### For assets defined in Dagster
 
-Column schema metadata can be attached to Dagster assets either as [definition metadata](index.md#definition-time-metadata) or [runtime metadata](index.md#runtime-metadata), which will then be visible in the Dagster UI. For example:
+Column schema metadata can be attached to Dagster assets either as [definition metadata](/guides/build/assets/metadata-and-tags#definition-time-metadata) or [runtime metadata](/guides/build/assets/metadata-and-tags#runtime-metadata), which will then be visible in the Dagster UI. For example:
 
 ![Column schema for an asset in the Dagster UI](/images/guides/build/assets/metadata-tags/metadata-table-schema.png)
 

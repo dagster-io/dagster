@@ -6,6 +6,10 @@ dagster-supported:
   label: 'Dagster supported'
   permalink: '/integrations/dagster-supported'
   description: 'Dagster-supported integrations.'
+ai:
+  label: 'AI'
+  permalink: '/integrations/ai'
+  description: 'AI integrations.'
 etl:
   label: 'ETL'
   permalink: '/integrations/etl'
@@ -38,3 +42,11 @@ other:
   label: 'other'
   permalink: '/integrations/other'
   description: 'Other integrations'
+reference-architecture:
+  label: 'reference-architecture'
+  permalink: '/examples/reference-architecture'
+  description: 'Reference architecture.'
+code-example:
+  label: 'code-example'
+  permalink: '/examples/code-example'
+  description: 'Code example.'

@@ -13,13 +13,17 @@ from typing import Any, Iterable, Optional, TypeVar, Union  # noqa: UP035
 
 import tomlkit
 from click.testing import Result
-from dagster import Definitions
+from dagster import Component, ComponentLoadContext, Definitions
 from dagster._utils import alter_sys_path, pushd
 from dagster._utils.pydantic_yaml import enrich_validation_errors_with_source_position
-from dagster.components import Component, ComponentLoadContext
+from dagster.components.core.defs_module import (
+    CompositeYamlComponent,
+    context_with_injected_scope,
+    get_component,
+)
 from dagster.components.utils import ensure_loadable_path
 from dagster_shared import check
-from dagster_shared.yaml_utils import parse_yaml_with_source_positions
+from dagster_shared.yaml_utils import parse_yaml_with_source_position
 from pydantic import TypeAdapter
 
 T = TypeVar("T")
@@ -27,15 +31,19 @@ T_Component = TypeVar("T_Component", bound=Component)
 
 
 def load_context_and_component_for_test(
-    component_type: type[T_Component], attrs: Union[str, dict[str, Any]]
+    component_type: type[T_Component],
+    attrs: Union[str, dict[str, Any]],
+    template_vars_module: Optional[str] = None,
 ) -> tuple[ComponentLoadContext, T_Component]:
     context = ComponentLoadContext.for_test()
-    context = context.with_rendering_scope(component_type.get_additional_scope())
     model_cls = check.not_none(
         component_type.get_model_cls(), "Component must have schema for direct test"
     )
+
+    context = context_with_injected_scope(context, component_type, template_vars_module)
+
     if isinstance(attrs, str):
-        source_positions = parse_yaml_with_source_positions(attrs)
+        source_positions = parse_yaml_with_source_position(attrs)
         with enrich_validation_errors_with_source_position(
             source_positions.source_position_tree, []
         ):
@@ -75,7 +83,7 @@ def generate_component_lib_pyproject_toml(name: str, is_project: bool = False) -
         ]
 
         [project.entry-points]
-        "dagster_dg.plugin" = {{ {pkg_name} = "{pkg_name}.lib" }}
+        "dagster_dg_cli.plugin" = {{ {pkg_name} = "{pkg_name}.lib" }}
     """)
     if is_project:
         return base + textwrap.dedent(f"""
@@ -131,7 +139,7 @@ def create_project_from_components(
     """Scaffolds a project with the given components in a temporary directory,
     injecting the provided local component defn into each component's __init__.py.
     """
-    location_name = f"my_location_{str(random.random()).replace('.', '')}"
+    location_name = f"my_location_{random.randint(0, 2**32 - 1)}"
 
     # Using mkdtemp instead of TemporaryDirectory so that the directory is accessible
     # from launched procsses (such as duckdb)
@@ -201,7 +209,7 @@ def print_exception_info(
 # ##### TOML MANIPULATION
 # ########################
 
-# Copied from dagster-dg
+# Copied from dagster-dg-core
 
 
 @contextmanager
@@ -240,3 +248,14 @@ def set_toml_value(doc: tomlkit.TOMLDocument, path: Iterable[str], value: object
     path_list = list(path)
     inner_dict = get_toml_value(doc, path_list[:-1], dict)
     inner_dict[path_list[-1]] = value
+
+
+def get_underlying_component(context: ComponentLoadContext) -> Optional[Component]:
+    """Loads a component from the given context, resolving the underlying component if
+    it is a CompositeYamlComponent.
+    """
+    component = get_component(context)
+    if isinstance(component, CompositeYamlComponent):
+        assert len(component.components) == 1
+        return component.components[0]
+    return component

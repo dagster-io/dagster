@@ -1235,7 +1235,7 @@ asset_defs = [foo, ab, bar, foo_bar, baz, unconnected]
 def test_disconnected_subset():
     with instance_for_test() as instance:
         defs = Definitions(assets=asset_defs, jobs=[define_asset_job("foo")])
-        foo_job = defs.get_job_def("foo")
+        foo_job = defs.resolve_job_def("foo")
         result = foo_job.execute_in_process(
             instance=instance, asset_selection=[AssetKey("unconnected"), AssetKey("bar")]
         )
@@ -1251,7 +1251,7 @@ def test_disconnected_subset():
 def test_connected_subset():
     with instance_for_test() as instance:
         defs = Definitions(assets=asset_defs, jobs=[define_asset_job("foo")])
-        foo_job = defs.get_job_def("foo")
+        foo_job = defs.resolve_job_def("foo")
         result = foo_job.execute_in_process(
             instance=instance,
             asset_selection=[AssetKey("foo"), AssetKey("bar"), AssetKey("foo_bar")],
@@ -1270,7 +1270,7 @@ def test_connected_subset():
 def test_subset_of_asset_job():
     with instance_for_test() as instance:
         defs = Definitions(assets=asset_defs, jobs=[define_asset_job("foo", "*baz")])
-        foo_job = defs.get_job_def("foo")
+        foo_job = defs.resolve_job_def("foo")
         result = foo_job.execute_in_process(
             instance=instance,
             asset_selection=[AssetKey("foo"), AssetKey("bar"), AssetKey("foo_bar")],
@@ -1507,7 +1507,7 @@ def test_raise_error_on_incomplete_graph_asset_subset():
         ],
         jobs=[define_asset_job("foo_job")],
     )
-    foo_job = defs.get_job_def("foo_job")
+    foo_job = defs.resolve_job_def("foo_job")
 
     with instance_for_test() as instance:
         with pytest.raises(DagsterInvalidSubsetError, match="complicated_graph"):
@@ -1519,7 +1519,7 @@ def test_raise_error_on_incomplete_graph_asset_subset():
 def test_multi_subset():
     with instance_for_test() as instance:
         defs = Definitions(assets=asset_defs, jobs=[define_asset_job("foo")])
-        foo_job = defs.get_job_def("foo")
+        foo_job = defs.resolve_job_def("foo")
         result = foo_job.execute_in_process(
             instance=instance,
             asset_selection=[AssetKey("foo"), AssetKey("a")],
@@ -1537,7 +1537,7 @@ def test_multi_subset():
 def test_multi_all():
     with instance_for_test() as instance:
         defs = Definitions(assets=asset_defs, jobs=[define_asset_job("foo")])
-        foo_job = defs.get_job_def("foo")
+        foo_job = defs.resolve_job_def("foo")
         result = foo_job.execute_in_process(
             instance=instance,
             asset_selection=[AssetKey("foo"), AssetKey("a"), AssetKey("b")],
@@ -1576,7 +1576,7 @@ def test_subset_with_source_asset():
         assets=[my_derived_asset, my_source_asset],
         resources={"the_manager": the_manager},
         jobs=[define_asset_job("source_asset_job", [my_derived_asset])],
-    ).get_job_def("source_asset_job")
+    ).resolve_job_def("source_asset_job")
 
     result = source_asset_job.execute_in_process(asset_selection=[AssetKey("my_derived_asset")])
     assert result.success
@@ -1619,7 +1619,7 @@ def test_op_outputs_with_default_asset_io_mgr():
         ],
         jobs=[define_asset_job("foo_job", executor_def=in_process_executor)],
     )
-    foo_job = defs.get_job_def("foo_job")
+    foo_job = defs.resolve_job_def("foo_job")
 
     result = foo_job.execute_in_process()
     assert result.success
@@ -1665,7 +1665,7 @@ def test_graph_output_is_input_within_graph():
         ],
         jobs=[define_asset_job("foo_job")],
     )
-    foo_job = defs.get_job_def("foo_job")
+    foo_job = defs.resolve_job_def("foo_job")
 
     result = foo_job.execute_in_process()
     assert result.success
@@ -2006,7 +2006,9 @@ def test_selection_multi_component():
 
     assert Definitions(
         assets=[source_asset, asset1], jobs=[define_asset_job("something", selection="abc/asset1")]
-    ).get_job_def("something").asset_layer.executable_asset_keys == {AssetKey(["abc", "asset1"])}
+    ).resolve_job_def("something").asset_layer.executable_asset_keys == {
+        AssetKey(["abc", "asset1"])
+    }
 
 
 @pytest.mark.parametrize(
@@ -2054,7 +2056,7 @@ def test_asset_subset_io_managers(job_selection, expected_nodes):
         jobs=[asset_job],
     )
 
-    result = defs.get_job_def("test").execute_in_process()
+    result = defs.resolve_job_def("test").execute_in_process()
 
     for node in expected_nodes.split(","):
         assert result.output_for_node(node) == _ACTUAL_OUTPUT_VAL
@@ -2205,7 +2207,7 @@ def _get_assets_defs(use_multi: bool = False, allow_subset: bool = False):
         ("*", False, None),
         ("*", True, None),
         ("e", False, None),
-        ("e", True, (DagsterInvalidSubsetError, "")),
+        ("e", True, (DagsterInvalidSubsetError, None)),
         (
             "x",
             False,
@@ -2261,7 +2263,7 @@ def test_build_subset_job_errors(job_selection, use_multi, expected_error):
     if expected_error:
         expected_class, expected_message = expected_error
         with pytest.raises(expected_class, match=expected_message):
-            Definitions(assets=assets, jobs=[asset_job]).get_all_job_defs()
+            Definitions(assets=assets, jobs=[asset_job]).resolve_all_job_defs()
     else:
         Definitions(assets=assets, jobs=[asset_job])
 
@@ -2313,10 +2315,10 @@ def test_simple_graph_backed_asset_subset(
         resources={"asset_io_manager": io_manager_def},
     )
     # materialize all assets once so values exist to load from
-    defs.get_implicit_global_asset_job_def().execute_in_process()
+    defs.resolve_implicit_global_asset_job_def().execute_in_process()
 
     # now build the subset job
-    job = defs.get_job_def("assets_job")
+    job = defs.resolve_job_def("assets_job")
 
     result = job.execute_in_process()
 
@@ -2381,10 +2383,10 @@ def test_asset_group_build_subset_job(job_selection, expected_assets, use_multi,
     )
 
     # materialize all assets once so values exist to load from
-    defs.get_implicit_global_asset_job_def().execute_in_process()
+    defs.resolve_implicit_global_asset_job_def().execute_in_process()
 
     # now build the subset job
-    job = defs.get_job_def("assets_job")
+    job = defs.resolve_job_def("assets_job")
 
     with instance_for_test() as instance:
         result = job.execute_in_process(instance=instance)
@@ -2525,7 +2527,7 @@ def test_subset_cycle_resolution_embed_assets_in_complex_graph():
     job = Definitions(
         assets=[foo, x, y],
         resources={"io_manager": io_manager_def},
-    ).get_implicit_global_asset_job_def()
+    ).resolve_implicit_global_asset_job_def()
 
     # should produce a job with foo(a,b,c,d,f) -> x -> foo(e,g) -> y -> foo(h)
     assert len(list(job.graph.iterate_op_defs())) == 5
@@ -2597,7 +2599,7 @@ def test_subset_cycle_resolution_complex():
     job = Definitions(
         assets=[foo, x, y],
         resources={"io_manager": io_manager_def},
-    ).get_implicit_global_asset_job_def()
+    ).resolve_implicit_global_asset_job_def()
 
     # should produce a job with foo -> x -> foo -> y -> foo
     assert len(list(job.graph.iterate_op_defs())) == 5
@@ -2658,7 +2660,7 @@ def test_subset_cycle_resolution_basic():
     job = Definitions(
         assets=[foo, foo_prime, s],
         resources={"io_manager": io_manager_def},
-    ).get_implicit_global_asset_job_def()
+    ).resolve_implicit_global_asset_job_def()
 
     # should produce a job with foo -> foo_prime -> foo_2 -> foo_prime_2
     assert len(list(job.graph.iterate_op_defs())) == 4
@@ -2710,7 +2712,7 @@ def test_subset_cycle_resolution_with_checks():
 
     Definitions.validate_loadable(defs)
 
-    job = defs.get_implicit_global_asset_job_def()
+    job = defs.resolve_implicit_global_asset_job_def()
 
     # should produce a job with foo -> foo_prime -> foo_2 -> foo_prime_2
     assert len(list(job.graph.iterate_op_defs())) == 4
@@ -2765,7 +2767,7 @@ def test_subset_cycle_resolution_asset_result():
     job = Definitions(
         assets=[foo, foo_prime, s],
         resources={"io_manager": io_manager_def},
-    ).get_implicit_global_asset_job_def()
+    ).resolve_implicit_global_asset_job_def()
 
     # should produce a job with foo -> foo_prime -> foo_2 -> foo_prime_2
     assert len(list(job.graph.iterate_op_defs())) == 4
@@ -2834,7 +2836,7 @@ def test_subset_cycle_resolution_with_asset_check():
         assets=[foo, foo_prime, s],
         asset_checks=[check_a_prime],
         resources={"io_manager": io_manager_def},
-    ).get_implicit_global_asset_job_def()
+    ).resolve_implicit_global_asset_job_def()
 
     # should produce a job with foo -> foo_prime -> foo_2 -> foo_prime_2
     assert len(list(job.graph.iterate_op_defs())) == 5
@@ -2894,7 +2896,7 @@ def test_subset_cycle_dependencies():
         assets=[foo, python],
         resources={"io_manager": io_manager_def},
     )
-    job = defs.get_implicit_global_asset_job_def()
+    job = defs.resolve_implicit_global_asset_job_def()
 
     # should produce a job with foo -> python -> foo_2
     assert len(list(job.graph.iterate_op_defs())) == 3
@@ -2953,7 +2955,7 @@ def test_subset_recongeal() -> None:
     def b() -> None: ...
 
     defs = dg.Definitions(assets=[acd, b])
-    all_job = defs.get_implicit_global_asset_job_def()
+    all_job = defs.resolve_implicit_global_asset_job_def()
     subset_job = all_job.get_subset(asset_selection={dg.AssetKey("a"), dg.AssetKey("c")})
     assert len(list(subset_job.graph.iterate_op_defs())) == 1
     assert all_job.graph.dependencies == {
@@ -2990,7 +2992,7 @@ def test_exclude_assets_without_keys():
     foo_job = Definitions(
         assets=[foo, ghost],
         jobs=[define_asset_job("foo_job", [foo])],
-    ).get_job_def("foo_job")
+    ).resolve_job_def("foo_job")
 
     assert foo_job.execute_in_process().success
 
@@ -3019,7 +3021,7 @@ def test_mixed_asset_job():
             resources={"io_manager": MyIOManager()},
         )
 
-        job_def = defs.get_job_def("mixed_assets_job")
+        job_def = defs.resolve_job_def("mixed_assets_job")
         result = job_def.execute_in_process()
         assert result.success
         assert len(result.asset_materializations_for_node("foo")) == 0

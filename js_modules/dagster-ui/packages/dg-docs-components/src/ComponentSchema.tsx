@@ -67,11 +67,14 @@ function Property({
     return null;
   }
 
-  const {anyOf, type, description, default: defaultValue, $ref, required, examples} = property;
+  const {anyOf, type, description, $ref, required, examples} = property;
 
   const expandable = isExpandableProperty(property);
 
   const firstExample = examples ? (Array.isArray(examples) ? examples[0] : examples) : null;
+
+  const defaultValue =
+    property.default && property.default !== '__DAGSTER_UNSET_DEFAULT__' ? property.default : null;
 
   return (
     <div className={styles.propertyContainer}>
@@ -83,7 +86,7 @@ function Property({
         <div className={styles.property}>
           <div className={styles.propertyNameAndTypes}>
             <div className={styles.propertyName}>{name}</div>
-            {$ref ? <PropertyRef ref={$ref} defs={defs} /> : null}
+            {$ref ? <PropertyRef $ref={$ref} defs={defs} /> : null}
             {type ? <PropertyType property={property} defs={defs} /> : null}
             {anyOf ? <PropertyAnyOf anyOf={anyOf} defs={defs} /> : null}
             {required ? <div className={styles.required}>required</div> : null}
@@ -246,13 +249,13 @@ function propertyTypeToString(typeName: JSONSchema7TypeName) {
 }
 
 function PropertyRef({
-  ref,
+  $ref,
   defs,
 }: {
-  ref: string;
+  $ref: string;
   defs: Record<string, JSONSchema7Definition> | undefined;
 }) {
-  const refName = ref.split('/').pop();
+  const refName = $ref.split('/').pop();
   if (refName) {
     const definition = defs?.[refName];
     if (definition) {

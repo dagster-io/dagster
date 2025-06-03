@@ -243,8 +243,14 @@ class OpExecutionContext(AbstractComputeExecutionContext):
 
     @public
     @property
-    def has_partition_key(self) -> bool:
+    def has_partitions(self) -> bool:
         """Whether the current run is a partitioned run."""
+        return self._step_execution_context.has_partitions
+
+    @public
+    @property
+    def has_partition_key(self) -> bool:
+        """Whether the current run targets a single partition."""
         return self._step_execution_context.has_partition_key
 
     @public
@@ -319,7 +325,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
     @public
     @property
     def has_partition_key_range(self) -> bool:
-        """Whether the current run is a partitioned run."""
+        """Whether the current run targets a range of partitions."""
         return self._step_execution_context.has_partition_key_range
 
     @public

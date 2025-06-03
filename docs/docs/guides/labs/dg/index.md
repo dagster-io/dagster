@@ -1,6 +1,7 @@
 ---
-title: 'dg'
+description: dg is a new command line interface that provides a streamlined Dagster development experience that can be used in existing Dagster projects or used to scaffold new projects. You can use dg to list, check, and scaffold Dagster definitions and components.
 sidebar_position: 10
+title: dg
 ---
 
 import InstallUv from '@site/docs/partials/\_InstallUv.md';
@@ -8,11 +9,12 @@ import DgComponentsPreview from '@site/docs/partials/\_DgComponentsPreview.md';
 
 <DgComponentsPreview />
 
-`dg` is a new command line interface that provides a streamlined Dagster development experience. It is a drop-in replacement for the Dagster CLI that can be [used in existing projects](/guides/labs/dg/incrementally-adopting-dg/migrating-project) or used to [scaffold new Dagster projects](/guides/labs/dg/scaffolding-a-project). Once a project is set up to use `dg`, you can list, check, and scaffold Dagster definitions and [components](/guides/labs/components/) with ease. `dg` is designed to be usable from an isolated environment and has no dependency on `dagster` itself.
+`dg` is a new command line interface that provides a streamlined Dagster development experience. It is a drop-in replacement for the Dagster CLI that can be [used in existing projects](/guides/labs/dg/incrementally-adopting-dg/migrating-project) or in [new Dagster projects](/guides/labs/dg/creating-a-project) created with the `create-dagster` CLI. Once a project is set up to use `dg`, you can list, check, and scaffold Dagster definitions and [components](/guides/labs/components/) with ease.
 
-## Installation
 
-There are two basic approaches to installing `dg`:
+## Installing the create-dagster CLI
+
+New projects can be created using the `create-dagster` CLI. You can install `create-dagster` from a package manager or via `curl` with our standalone installer script.
 
 <Tabs>
 <TabItem value="uv" label="uv">
@@ -21,39 +23,38 @@ First, install the Python package manager [`uv`](https://docs.astral.sh/uv/) if 
 
 <InstallUv />
 
-Next, use `uv` to install `dg` as a globally available tool:
+We recommend running `create-dagster` using [uvx](https://docs.astral.sh/uv/guides/tools/):
 
-<CliInvocationExample contents="uv tool install dagster-dg" />
+<CliInvocationExample contents="uvx create-dagster project my-project" />
 
-This installs `dg` into a hidden, isolated Python environment. The `dg` executable is always available in the user's `$PATH`, regardless of any virtual environment activation in the shell.
+This runs `create-dagster` in a temporary, isolated Python environment.
 
-While it is possible to create a virtual environment and install `dagster-dg` into it with `uv`, we recommend a global installation for most users. It is simpler, only needs to be done once, and better supports multiple Python projects.
-
-</TabItem>
-<TabItem value="pip" label="pip">
-
-If you are starting a project from scratch:
-
-```
-mkdir my_project && cd my_project
-```
-
-```
-python -m venv .venv && source .venv/bin/activate
-```
-
-If you are not starting a new project, then just activate your desired virtual
-environment. Then:
-
-```
-pip install dagster-dg
-```
+While it is also possible to create a virtual environment and install `create-dagster` into it with `uv`, using `uvx` better supports multiple Python projects and doesn't require an explicit install step.
 
 </TabItem>
+
+<TabItem value="brew" label="Homebrew">
+
+`create-dagster` is available in a Homebrew tap:
+
+<CliInvocationExample contents="brew install dagster-io/tap/create-dagster" />
+
+</TabItem>
+
+<TabItem value="curl" label="curl">
+
+Use `curl` to download a standalone installation script and execute it with `sh`:
+
+<CliInvocationExample contents="curl -LsSf https://dg.dagster.io/create-dagster/install.sh | sh" />
+
+Request a specific version by including it in the URL:
+
+<CliInvocationExample contents="curl -LsSf https://dg.dagster.io/create-dagster/1.10.18/install.sh | sh" />
+
+`create-dagster` is available starting at version 1.10.18.
+
+</TabItem>
+
 </Tabs>
 
-## `dg` API reference
-
-import DgReference from '@site/docs/partials/\_DgReference.md';
-
-<DgReference />
+Once you have `create-dagster` installed (or available to run via `uvx`), see the [creating a new project guide](/guides/labs/dg/creating-a-project) to use it to create `dg` projects.

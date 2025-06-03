@@ -58,7 +58,7 @@ def observe(
             resources=resources,
         )
 
-        return defs.get_job_def("in_process_observation_job").execute_in_process(
+        return defs.resolve_job_def("in_process_observation_job").execute_in_process(
             run_config=run_config,
             instance=instance,
             partition_key=partition_key,

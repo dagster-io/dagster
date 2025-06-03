@@ -29,7 +29,7 @@ def asset_with_time_window_freshness_and_warning():
 
 @dg.asset(
     internal_freshness_policy=InternalFreshnessPolicy.time_window(
-        fail_window=timedelta(seconds=60), warn_window=timedelta(seconds=30)
+        fail_window=timedelta(seconds=120), warn_window=timedelta(seconds=60)
     )
 )
 def asset_with_time_window_freshness_fast_fail():

@@ -1,12 +1,13 @@
 ---
-title: 'Using resources in dg projects'
-sidebar_position: 250 
+title: Using resources in dg projects
+sidebar_label: 'Using resources'
+sidebar_position: 250
+description: Using resources in Dagster dg projects for entities such as assets, asset checks, and sensors.
 ---
 
-Assets, asset checks, and sensors in Dagster frequently require resources that are instantiated elsewhere in the project. 
+Assets, asset checks, and sensors in Dagster frequently require resources that are instantiated elsewhere in the project.
 
 For example you have an asset:
-
 
 <CodeExample path="docs_snippets/docs_snippets/guides/dg/using-resources/1-asset-one.py" />
 
@@ -30,3 +31,23 @@ src
     │   └── resources.py # contains AResource()
     └── resources.py # contains class AResource
 ```
+
+We have a scaffold command that makes this straightforward.
+
+You can run
+
+```
+dg scaffold defs dagster.resources path/to/resources.py
+```
+
+which will create
+
+```
+import dagster as dg
+
+@dg.definitions
+def resources() -> dg.Definitions:
+    return dg.Definitions(resources={})
+```
+
+and you can fill out the resource dictionary as needed.

@@ -25,6 +25,7 @@ import {AssetKey} from '../assets/types';
 import {AssetGroupSelector, PipelineSelector} from '../graphql/types';
 import {useBlockTraceUntilTrue} from '../performance/TraceContext';
 import {useIndexedDBCachedQuery} from '../search/useIndexedDBCachedQuery';
+import {hashObject} from '../util/hashObject';
 import {workerSpawner} from '../workers/workerSpawner';
 
 export interface AssetGraphFetchScope {
@@ -102,7 +103,7 @@ export function useFullAssetGraphData(
         }
       })
       .catch((e) => {
-        // buildGraphData is throttled and rejects promises when another call is made before the throttle delay.
+        // buildGraphData uses spawnBuildGraphDataWorker, which rejects promises when another call is made before the previous one finishes.
         console.warn(e);
       });
   }, [allNodes, options.loading, options.useWorker, spawnBuildGraphDataWorker]);
@@ -240,12 +241,16 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
         }
       })
       .catch((e) => {
-        // computeGraphData is throttled and rejects promises when another call is made before the throttle delay.
+        // computeGraphData uses spawnComputeGraphDataWorker, which rejects promises when another call is made before the previous one finishes.
         console.warn(e);
         if (requestId === currentRequestRef.current) {
           setGraphDataLoading(false);
         }
       });
+    return () => {
+      // increase the last processed request ref to effectively cancel any outstanding request
+      lastProcessedRequestRef.current = requestId;
+    };
   }, [
     repoFilteredNodes,
     graphQueryItems,
@@ -273,9 +278,8 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
 
 const computeGraphData = indexedDBAsyncMemoize<GraphDataState, typeof computeGraphDataWrapper>(
   computeGraphDataWrapper,
-  (props) => {
-    return JSON.stringify(props);
-  },
+  'computeGraphData',
+  (props) => hashObject(props),
 );
 
 const buildGraphQueryItems = (nodes: AssetNode[]) => {
@@ -416,9 +420,13 @@ async function computeGraphDataWrapper(
   spawnComputeGraphDataWorker: () => Worker,
   useWorker: boolean,
 ): Promise<GraphDataState> {
-  if (featureEnabled(FeatureFlag.flagAssetSelectionWorker) && useWorker) {
+  if (
+    featureEnabled(FeatureFlag.flagAssetSelectionWorker) &&
+    useWorker &&
+    typeof window.Worker !== 'undefined'
+  ) {
     const worker = spawnComputeGraphDataWorker();
-    return new Promise<GraphDataState>((resolve) => {
+    return new Promise<GraphDataState>((resolve, reject) => {
       const id = ++_id;
       const removeMessageListener = worker.onMessage((event: MessageEvent) => {
         const data = event.data as GraphDataState & {id: number};
@@ -438,6 +446,9 @@ async function computeGraphDataWrapper(
         resolve(EMPTY_GRAPH_DATA_STATE);
         worker.terminate();
       });
+      worker.onTerminate(() => {
+        reject(new Error('Worker terminated'));
+      });
       worker.postMessage(message);
     });
   }
@@ -446,9 +457,8 @@ async function computeGraphDataWrapper(
 
 const buildGraphData = indexedDBAsyncMemoize<GraphData, typeof buildGraphDataWrapper>(
   buildGraphDataWrapper,
-  (props) => {
-    return JSON.stringify(props);
-  },
+  'buildGraphData',
+  (props) => hashObject(props),
 );
 
 async function buildGraphDataWrapper(
@@ -456,7 +466,11 @@ async function buildGraphDataWrapper(
   spawnBuildGraphDataWorker: () => Worker,
   useWorker: boolean,
 ): Promise<GraphData> {
-  if (featureEnabled(FeatureFlag.flagAssetSelectionWorker) && useWorker) {
+  if (
+    featureEnabled(FeatureFlag.flagAssetSelectionWorker) &&
+    useWorker &&
+    typeof window.Worker !== 'undefined'
+  ) {
     const worker = spawnBuildGraphDataWorker();
     return new Promise<GraphData>((resolve) => {
       const id = ++_id;
@@ -495,6 +509,7 @@ const buildExternalAssetQueryItem = (asset: {
     hasMaterializePermission: false,
     opVersion: null,
     isMaterializable: false,
+    isAutoCreatedStub: true,
     tags: [],
     owners: [],
     id: asset.id,

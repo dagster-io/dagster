@@ -1,6 +1,7 @@
 ---
-title: Asset jobs
+description: An asset job is a type of Dagster job that targets a selection of assets and can be launched manually from the UI, or programmatically by schedules or sensors.
 sidebar_position: 100
+title: Asset jobs
 ---
 
 Jobs are the main unit of execution and monitoring for [asset definitions](/guides/build/assets/defining-assets) in Dagster. An asset job is a type of job that targets a [selection of assets](/guides/build/assets/asset-selection-syntax) and can be launched:
@@ -26,7 +27,7 @@ You can target one or multiple assets, or create multiple jobs that target overl
 
 ## Making asset jobs available to Dagster tools
 
-Including the jobs in a [`Definitions`](/api/dagster/definitions) object located at the top level of a Python module or file makes asset jobs available to the UI, GraphQL, and the command line. The Dagster tool loads that module as a code location. If you include schedules or sensors, the [code location](/guides/deploy/code-locations) will automatically include jobs that those schedules or sensors target.
+Including the jobs in a [`Definitions`](/api/dagster/definitions) object located at the top level of a Python module or file makes asset jobs available to the UI, GraphQL, and the command line. The Dagster tool loads that module as a code location. If you include schedules or sensors, the [code location](/deployment/code-locations) will automatically include jobs that those schedules or sensors target.
 
 <CodeExample path="docs_snippets/docs_snippets/concepts/assets/jobs_to_definitions.py" />
 

@@ -157,17 +157,6 @@ export const AttributeValueTagSuggestion = ({
   return <SuggestionJSXBase label={<MiddleTruncate text={valueText} />} />;
 };
 
-export const FunctionSuggestionJSX = ({
-  functionName,
-  includeParenthesis,
-}: {
-  functionName: string;
-  includeParenthesis?: boolean;
-}) => {
-  const fn = includeParenthesis ? `${functionName}()` : functionName;
-  return <SuggestionJSXBase label={fn} />;
-};
-
 export const SuggestionJSXBase = ({
   label,
   icon,

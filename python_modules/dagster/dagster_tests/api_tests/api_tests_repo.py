@@ -21,6 +21,7 @@ from dagster._core.definitions.metadata.metadata_value import MetadataValue
 from dagster._core.definitions.partition import PartitionedConfig, StaticPartitionsDefinition
 from dagster._core.definitions.sensor_definition import RunRequest
 from dagster._core.errors import DagsterError
+from dagster._core.storage.tags import EXTERNAL_JOB_SOURCE_TAG_KEY
 
 
 @op
@@ -57,6 +58,11 @@ def do_fail():
 @job
 def fail_job():
     do_fail()
+
+
+@job(tags={EXTERNAL_JOB_SOURCE_TAG_KEY: "airflow", "foo": "bar"})
+def job_with_external_tag():
+    pass
 
 
 baz_partitions = StaticPartitionsDefinition(list(string.ascii_lowercase))
@@ -212,6 +218,7 @@ def bar_repo():
             "foo": foo_job,
             "forever": forever_job,
             "pipeline_snapshot": pipeline_snapshot.get_subset(op_selection=["do_something"]),
+            "job_with_external_tag": job_with_external_tag,
         },
         "schedules": define_bar_schedules(),
         "sensors": {

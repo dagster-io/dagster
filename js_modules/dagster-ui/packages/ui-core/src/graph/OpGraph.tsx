@@ -37,6 +37,7 @@ interface OpGraphProps {
   onEnterSubgraph?: (arg: OpNameOrPath) => void;
   onLeaveSubgraph?: () => void;
   onClickBackground?: () => void;
+  isExternal?: boolean;
 }
 
 interface OpGraphContentsProps extends OpGraphProps {
@@ -122,6 +123,7 @@ const OpGraphContents = React.memo((props: OpGraphContentsProps) => {
                 isOpHighlighted(highlighted, op.name) ? highlighted : EmptyHighlightedArray
               }
               dim={highlightedOps.length > 0 && highlightedOps.indexOf(op) === -1}
+              isExternal={props.isExternal}
             />
           ))}
       </foreignObject>

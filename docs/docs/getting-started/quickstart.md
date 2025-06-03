@@ -1,6 +1,6 @@
 ---
 title: Build your first Dagster project
-description: Learn how to quickly get up and running with Dagster
+description: Learn how to set up a Dagster environment, create a project, define assets, and run your first pipeline.
 sidebar_position: 30
 sidebar_label: 'Quickstart'
 ---

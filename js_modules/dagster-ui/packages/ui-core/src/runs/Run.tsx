@@ -12,7 +12,6 @@ import {
 import * as React from 'react';
 import {memo, useLayoutEffect, useMemo, useRef, useState} from 'react';
 import {Link} from 'react-router-dom';
-import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
 import styled from 'styled-components';
 
 import {CapturedOrExternalLogPanel} from './CapturedLogPanel';
@@ -24,7 +23,6 @@ import {RunContext} from './RunContext';
 import {IRunMetadataDict, RunMetadataProvider} from './RunMetadataProvider';
 import {runsPathWithFilters} from './RunsFilterInput';
 import {showCustomAlert} from '../app/CustomAlertProvider';
-import {featureEnabled} from '../app/Flags';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {GanttChart, GanttChartLoadingState, GanttChartMode} from '../gantt/GanttChart';
@@ -191,8 +189,6 @@ const RunWithData = ({
   onSetLogsFilter,
   onSetSelectionQuery,
 }: RunWithDataProps) => {
-  const newRunSelectionSyntax = featureEnabled(FeatureFlag.flagSelectionSyntax);
-
   const [queryLogType, setQueryLogType] = useQueryPersistedState<string>({
     queryKey: 'logType',
     defaults: {logType: LogType.structured},
@@ -246,45 +242,24 @@ const RunWithData = ({
 
   const onClickStep = (stepKey: string, evt: React.MouseEvent<any>) => {
     const index = selectionStepKeys.indexOf(stepKey);
-    let newSelected: string[] = [];
-    const filterForExactStep = `"${stepKey}"`;
     let nextSelectionQuery = selectionQuery;
     if (evt.shiftKey) {
       // shift-click to multi select steps, preserving quotations if present
-      newSelected = [
-        ...selectionStepKeys.map((k) => (selectionQuery.includes(`"${k}"`) ? `"${k}"` : k)),
-      ];
 
       if (index !== -1) {
         // deselect the step if already selected
-        if (newRunSelectionSyntax) {
-          nextSelectionQuery = removeStepFromSelection(nextSelectionQuery, stepKey);
-        } else {
-          newSelected.splice(index, 1);
-        }
+        nextSelectionQuery = removeStepFromSelection(nextSelectionQuery, stepKey);
       } else {
         // select the step otherwise
-        if (newRunSelectionSyntax) {
-          nextSelectionQuery = addStepToSelection(nextSelectionQuery, stepKey);
-        } else {
-          newSelected.push(filterForExactStep);
-        }
+        nextSelectionQuery = addStepToSelection(nextSelectionQuery, stepKey);
       }
     } else {
       // deselect the step if already selected
       if (selectionStepKeys.length === 1 && index !== -1) {
-        if (newRunSelectionSyntax) {
-          nextSelectionQuery = '';
-        } else {
-          newSelected = [];
-        }
+        nextSelectionQuery = '';
       } else {
         // select the step otherwise
-        if (newRunSelectionSyntax) {
-          nextSelectionQuery = `name:"${stepKey}"`;
-        } else {
-          newSelected = [filterForExactStep];
-        }
+        nextSelectionQuery = `name:"${stepKey}"`;
 
         // When only one step is selected, set the compute log key as well.
         const matchingLogKey = matchingComputeLogKeyFromStepKey(metadata.logCaptureSteps, stepKey);
@@ -294,11 +269,7 @@ const RunWithData = ({
       }
     }
 
-    if (newRunSelectionSyntax) {
-      onSetSelectionQuery(nextSelectionQuery);
-    } else {
-      onSetSelectionQuery(newSelected.join(', ') || '*');
-    }
+    onSetSelectionQuery(nextSelectionQuery);
   };
 
   const [expandedPanel, setExpandedPanel] = useState<null | 'top' | 'bottom'>(null);

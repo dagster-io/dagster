@@ -1,4 +1,5 @@
 import json
+from contextlib import contextmanager
 
 import pytest
 from click.testing import CliRunner
@@ -6,7 +7,7 @@ from dagster._core.test_utils import instance_for_test
 from dagster._core.workspace.load_target import EmptyWorkspaceTarget
 from dagster._daemon.cli import run_command
 from dagster._daemon.controller import daemon_controller_from_instance
-from dagster._daemon.daemon import SchedulerDaemon
+from dagster._daemon.daemon import BackfillDaemon, SchedulerDaemon
 from dagster._daemon.run_coordinator.queued_run_coordinator_daemon import QueuedRunCoordinatorDaemon
 from dagster._utils.log import get_structlog_json_formatter
 
@@ -16,6 +17,18 @@ def test_settings(daemon):
     settings = {"use_threads": True, "num_workers": 4}
     with instance_for_test(overrides={daemon: settings}) as thread_inst:
         assert thread_inst.get_settings(daemon) == settings
+
+
+@contextmanager
+def daemon_from_instance(instance, daemon_type):
+    with daemon_controller_from_instance(
+        instance,
+        workspace_load_target=EmptyWorkspaceTarget(),
+    ) as controller:
+        daemons = controller.daemons
+        yield next(
+            iter([daemon for daemon in daemons if daemon.daemon_type() == daemon_type]), None
+        )
 
 
 def test_scheduler_instance():
@@ -98,3 +111,43 @@ def test_daemon_rich_logs() -> None:
             workspace_load_target=EmptyWorkspaceTarget(),
             log_format="rich",
         )
+
+
+def test_backfill_threadpool():
+    with instance_for_test() as instance:
+        with daemon_from_instance(instance, "BACKFILL") as backfill_daemon:
+            assert isinstance(backfill_daemon, BackfillDaemon)
+            assert not backfill_daemon._threadpool_executor  # noqa: SLF001
+            assert not backfill_daemon._submit_threadpool_executor  # noqa: SLF001
+
+    with instance_for_test(
+        overrides={"backfills": {"use_threads": True, "num_workers": 4, "num_submit_workers": 4}}
+    ) as instance:
+        with daemon_from_instance(instance, "BACKFILL") as backfill_daemon:
+            assert isinstance(backfill_daemon, BackfillDaemon)
+            assert backfill_daemon._threadpool_executor  # noqa: SLF001
+            assert backfill_daemon._submit_threadpool_executor  # noqa: SLF001
+
+    with instance_for_test(
+        overrides={"backfills": {"num_workers": 4, "num_submit_workers": 4}}
+    ) as instance:
+        with daemon_from_instance(instance, "BACKFILL") as backfill_daemon:
+            assert isinstance(backfill_daemon, BackfillDaemon)
+            assert not backfill_daemon._threadpool_executor  # noqa: SLF001
+            assert not backfill_daemon._submit_threadpool_executor  # noqa: SLF001
+
+    with instance_for_test(
+        overrides={"backfills": {"use_threads": True, "num_workers": 4}}
+    ) as instance:
+        with daemon_from_instance(instance, "BACKFILL") as backfill_daemon:
+            assert isinstance(backfill_daemon, BackfillDaemon)
+            assert backfill_daemon._threadpool_executor  # noqa: SLF001
+            assert not backfill_daemon._submit_threadpool_executor  # noqa: SLF001
+
+    with instance_for_test(
+        overrides={"backfills": {"use_threads": True, "num_submit_workers": 4}}
+    ) as instance:
+        with daemon_from_instance(instance, "BACKFILL") as backfill_daemon:
+            assert isinstance(backfill_daemon, BackfillDaemon)
+            assert not backfill_daemon._threadpool_executor  # noqa: SLF001
+            assert backfill_daemon._submit_threadpool_executor  # noqa: SLF001

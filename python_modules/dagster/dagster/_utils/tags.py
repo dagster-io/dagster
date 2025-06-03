@@ -5,6 +5,7 @@ from collections.abc import Mapping, Sequence
 from typing import TYPE_CHECKING, Any, Optional, Union
 
 import dagster_shared.seven as seven
+from dagster_shared.utils import get_boolean_string_value
 
 from dagster import _check as check
 from dagster._core.errors import DagsterInvalidDefinitionError
@@ -98,7 +99,7 @@ def get_boolean_tag_value(tag_value: Optional[str], default_value: bool = False)
     if tag_value is None:
         return default_value
 
-    return tag_value.lower() not in {"false", "none", "0", ""}
+    return get_boolean_string_value(tag_value)
 
 
 # ########################
@@ -177,7 +178,9 @@ def normalize_tags(
         # Normalize the value
         if not isinstance(value, str):
             if strict:
-                raise DagsterInvalidDefinitionError("Tag values must be strings")
+                raise DagsterInvalidDefinitionError(
+                    f"Tag values must be strings, got type {type(value)} at key {key}."
+                )
             else:
                 normalized_tags[key] = _normalize_value(value, key)
         else:

@@ -2,6 +2,7 @@ from typing import Any, Callable, Optional
 
 from dagster import AssetsDefinition, multi_asset
 from dagster._annotations import beta
+from dagster._core.errors import DagsterInvariantViolationError
 
 from dagster_airbyte.resources import AirbyteCloudWorkspace
 from dagster_airbyte.translator import AirbyteMetadataSet, DagsterAirbyteTranslator
@@ -99,15 +100,23 @@ def airbyte_assets(
     """
     dagster_airbyte_translator = dagster_airbyte_translator or DagsterAirbyteTranslator()
 
+    specs = [
+        spec
+        for spec in workspace.load_asset_specs(
+            dagster_airbyte_translator=dagster_airbyte_translator
+        )
+        if AirbyteMetadataSet.extract(spec.metadata).connection_id == connection_id
+    ]
+
+    if any([spec for spec in specs if spec.group_name]) and group_name:
+        raise DagsterInvariantViolationError(
+            f"Cannot set group_name parameter on airbyte_assets with connection ID {connection_id} - "
+            f"one or more of the Airbyte asset specs have a group_name defined."
+        )
+
     return multi_asset(
         name=name,
         group_name=group_name,
         can_subset=True,
-        specs=[
-            spec
-            for spec in workspace.load_asset_specs(
-                dagster_airbyte_translator=dagster_airbyte_translator
-            )
-            if AirbyteMetadataSet.extract(spec.metadata).connection_id == connection_id
-        ],
+        specs=specs,
     )

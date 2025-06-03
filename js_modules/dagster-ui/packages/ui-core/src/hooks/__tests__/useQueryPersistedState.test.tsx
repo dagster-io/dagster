@@ -152,7 +152,12 @@ describe('useQueryPersistedState', () => {
     const TestEncoding = () => {
       const [items, setItems] = useQueryPersistedState<string[]>({
         encode: (items) => ({value: items.join(',')}),
-        decode: (q) => q.value.split(',').filter(Boolean),
+        decode: (q) => {
+          if (typeof q.value === 'string') {
+            return q.value.split(',').filter(Boolean);
+          }
+          return [];
+        },
         defaults: {value: ''},
       });
       return (
@@ -217,7 +222,7 @@ describe('useQueryPersistedState', () => {
         enableA?: boolean;
         enableB?: boolean;
       }>({
-        defaults: {enableA: true, enableB: false},
+        defaults: {enableA: 'true', enableB: 'false'},
       });
       return (
         <div onClick={() => setFilters({enableA: !filters.enableA, enableB: !filters.enableB})}>
@@ -239,7 +244,7 @@ describe('useQueryPersistedState', () => {
     });
     await userEvent.click(screen.getByText(`{"enableA":false,"enableB":true}`));
     await waitFor(() => {
-      expect(querySearch).toEqual('');
+      expect(querySearch).toEqual('?enableA=true&enableB=false');
     });
   });
 
@@ -366,7 +371,7 @@ describe('useQueryPersistedState', () => {
     it('correctly encodes arrays alongside other values, using `indices` syntax', async () => {
       const TestArray = () => {
         const [state, setState] = useQueryPersistedState<{hello: boolean; items: string[]}>({
-          defaults: {hello: false, items: []},
+          defaults: {hello: 'false', items: []},
         });
         return (
           <div
@@ -412,7 +417,7 @@ describe('useQueryPersistedState', () => {
       const arr = new Array(1001).fill(0).map((_, i) => `Added${i}`);
       const TestLargeArray = () => {
         const [state, setState] = useQueryPersistedState<{hello: boolean; items: string[]}>({
-          defaults: {hello: false, items: []},
+          defaults: {hello: 'false', items: []},
         });
         return (
           <div onClick={() => setState({hello: true, items: arr})}>{JSON.stringify(state)}</div>
@@ -450,7 +455,7 @@ describe('useQueryPersistedState', () => {
 
       const TestLargeArray = () => {
         const [state, setState] = useQueryPersistedState<{hello: boolean; items: string[]}>({
-          defaults: {hello: false, items: []},
+          defaults: {hello: 'false', items: []},
         });
         return (
           <div onClick={() => setState({hello: true, items: arr})}>{JSON.stringify(state)}</div>

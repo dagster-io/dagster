@@ -106,7 +106,7 @@ def test_last_update_multiple_assets_defs(
     assert len(orders_checks) == 1
     customers_check = next(iter(customers_checks))
     orders_check = next(iter(orders_checks))
-    assert customers_check.check_specs_by_output_name["customers_freshness_check"].metadata[  # type: ignore[attr-defined]
+    assert customers_check.check_specs_by_output_name["customers_freshness_check"].metadata[
         FRESHNESS_PARAMS_METADATA_KEY
     ] == JsonMetadataValue(
         {
@@ -115,7 +115,7 @@ def test_last_update_multiple_assets_defs(
             DEADLINE_CRON_PARAM_KEY: "0 0 * * *",
         }
     )
-    assert orders_check.check_specs_by_output_name["orders_freshness_check"].metadata[  # type: ignore[attr-defined]
+    assert orders_check.check_specs_by_output_name["orders_freshness_check"].metadata[
         FRESHNESS_PARAMS_METADATA_KEY
     ] == JsonMetadataValue(
         {
@@ -163,7 +163,7 @@ def test_time_partition_multiple_assets_defs(
     assert len(orders_checks) == 1
     customers_check = next(iter(customers_checks))
     orders_check = next(iter(orders_checks))
-    assert customers_check.check_specs_by_output_name["customers_freshness_check"].metadata[  # type: ignore[attr-defined]
+    assert customers_check.check_specs_by_output_name["customers_freshness_check"].metadata[
         FRESHNESS_PARAMS_METADATA_KEY
     ] == JsonMetadataValue(
         {
@@ -171,7 +171,7 @@ def test_time_partition_multiple_assets_defs(
             DEADLINE_CRON_PARAM_KEY: "0 0 * * *",
         }
     )
-    assert orders_check.check_specs_by_output_name["orders_freshness_check"].metadata[  # type: ignore[attr-defined]
+    assert orders_check.check_specs_by_output_name["orders_freshness_check"].metadata[
         FRESHNESS_PARAMS_METADATA_KEY
     ] == JsonMetadataValue(
         {
@@ -214,7 +214,7 @@ def test_mixed_freshness(test_dagster_dbt_mixed_freshness_manifest: dict[str, An
     assert len(orders_checks) == 1
     customers_check = next(iter(customers_checks))
     orders_check = next(iter(orders_checks))
-    assert customers_check.check_specs_by_output_name["customers_freshness_check"].metadata[  # type: ignore[attr-defined]
+    assert customers_check.check_specs_by_output_name["customers_freshness_check"].metadata[
         FRESHNESS_PARAMS_METADATA_KEY
     ] == JsonMetadataValue(
         {
@@ -223,7 +223,7 @@ def test_mixed_freshness(test_dagster_dbt_mixed_freshness_manifest: dict[str, An
             DEADLINE_CRON_PARAM_KEY: "0 0 * * *",
         }
     )
-    assert orders_check.check_specs_by_output_name["orders_freshness_check"].metadata[  # type: ignore[attr-defined]
+    assert orders_check.check_specs_by_output_name["orders_freshness_check"].metadata[
         FRESHNESS_PARAMS_METADATA_KEY
     ] == JsonMetadataValue(
         {

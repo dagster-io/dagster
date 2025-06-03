@@ -10,6 +10,7 @@ from dagster._core.definitions.asset_key import AssetCheckKey
 from dagster._core.events.log import DagsterEventType, EventLogEntry
 from dagster._core.loader import LoadableBy, LoadingContext
 from dagster._core.storage.dagster_run import DagsterRunStatus, RunRecord
+from dagster._serdes import whitelist_for_serdes
 from dagster._time import utc_datetime_from_naive
 
 
@@ -37,6 +38,7 @@ COMPLETED_ASSET_CHECK_EXECUTION_RECORD_STATUSES = {
 }
 
 
+@whitelist_for_serdes
 class AssetCheckExecutionResolvedStatus(enum.Enum):
     IN_PROGRESS = "IN_PROGRESS"
     SUCCEEDED = "SUCCEEDED"

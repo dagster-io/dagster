@@ -1,7 +1,7 @@
 ---
 title: Dagster & dlt
 sidebar_label: dlt
-description: Easily ingest and replicate data between systems with dlt through Dagster.
+description: The dltHub open-source library defines a standardized approach for creating data pipelines that load often messy data sources into well-structured data sets.
 tags: [dagster-supported, etl]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-dlt
 pypi: https://pypi.org/project/dagster-dlt/
@@ -10,7 +10,9 @@ sidebar_custom_props:
 partnerlink: https://dlthub.com/
 ---
 
-The [data load tool (dlt)](https://dlthub.com/) open-source library defines a standardized approach for creating data pipelines that load often messy data sources into well-structured data sets. It offers many advanced features, such as:
+<p>{frontMatter.description}</p>
+
+It offers many advanced features, such as:
 
 - Handling connection secrets
 - Converting data into the structure required for a destination
@@ -65,9 +67,7 @@ To follow the steps in this guide, you'll need:
 - **To read the [dlt introduction](https://dlthub.com/docs/intro)**, if you've never worked with dlt before.
 - **[To install](/getting-started/installation) the following libraries**:
 
-  ```bash
-  pip install dagster dagster-dlt
-  ```
+  <PackageInstallInstructions packageName="dagster-dlt" />
 
   Installing `dagster-dlt` will also install the `dlt` package.
 
@@ -154,7 +154,7 @@ DESTINATION__SNOWFLAKE__CREDENTIALS__WAREHOUSE=""
 DESTINATION__SNOWFLAKE__CREDENTIALS__ROLE=""
 ```
 
-Ensure that these variables are defined in your environment, either in your `.env` file when running locally or in the [Dagster deployment's environment variables](/guides/deploy/using-environment-variables-and-secrets).
+Ensure that these variables are defined in your environment, either in your `.env` file when running locally or in the [Dagster deployment's environment variables](/guides/operate/configuration/using-environment-variables-and-secrets).
 
 ## Step 4: Define a DagsterDltResource
 
@@ -248,9 +248,9 @@ For example, let's say we have defined a set of dlt assets named `thinkific_asse
 By default, Dagster sets upstream dependencies when generating asset specs for your dlt assets. To do so, Dagster parses information about assets that are upstream of specific dlt assets from the dlt resource itself. You can customize how upstream dependencies are set on your dlt assets by passing an instance of the custom <PyObject section="libraries" module="dagster_dlt" object="DagsterDltTranslator" /> to the <PyObject section="libraries" module="dagster_dlt" object="build_dlt_asset_specs" /> function.
 
 <CodeExample
-    startAfter="start_upstream_asset"
-    endBefore="end_upstream_asset"
-    path="docs_snippets/docs_snippets/integrations/dlt/customize_upstream_dependencies.py"
+  startAfter="start_upstream_asset"
+  endBefore="end_upstream_asset"
+  path="docs_snippets/docs_snippets/integrations/dlt/customize_upstream_dependencies.py"
 />
 
 Note that `super()` is called in each of the overridden methods to generate the default asset spec. It is best practice to generate the default asset spec before customizing it.
@@ -262,9 +262,9 @@ You can also pass an instance of the custom <PyObject section="libraries" module
 Dagster allows you to define assets that are downstream of specific dlt resources using their asset keys. The asset key for a dlt resource can be retrieved using the <PyObject section="libraries" module="dagster_dlt" object="DagsterDltTranslator" />. The below example defines `example_downstream_asset` as a downstream dependency of `example_dlt_resource`:
 
 <CodeExample
-    startAfter="start_downstream_asset"
-    endBefore="end_downstream_asset"
-    path="docs_snippets/docs_snippets/integrations/dlt/define_downstream_dependencies.py"
+  startAfter="start_downstream_asset"
+  endBefore="end_downstream_asset"
+  path="docs_snippets/docs_snippets/integrations/dlt/define_downstream_dependencies.py"
 />
 
 In the downstream asset, you may want direct access to the contents of the dlt resource. To do so, you can customize the code within your `@asset`-decorated function to load upstream data.
@@ -280,7 +280,6 @@ That said, here is an example of using static named partitions from a dlt source
 ## What's next?
 
 Want to see real-world examples of dlt in production? Check out how we use it internally at Dagster in the [Dagster Open Platform](https://github.com/dagster-io/dagster-open-platform) project.
-
 
 ### About dlt
 

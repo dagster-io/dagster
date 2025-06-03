@@ -13,11 +13,8 @@ import {
   StopScheduleMutation,
   StopScheduleMutationVariables,
 } from './types/ScheduleMutations.types';
-import {
-  ScheduleStateQuery,
-  ScheduleStateQueryVariables,
-  ScheduleSwitchFragment,
-} from './types/ScheduleSwitch.types';
+import {ScheduleStateQuery, ScheduleStateQueryVariables} from './types/ScheduleSwitch.types';
+import {ScheduleSwitchFragment} from './types/ScheduleSwitchFragment.types';
 import {usePermissionsForLocation} from '../app/Permissions';
 import {InstigationStatus} from '../graphql/types';
 import {INSTIGATION_STATE_BASE_FRAGMENT} from '../instigation/InstigationStateBaseFragment';
@@ -155,20 +152,6 @@ export const ScheduleSwitch = (props: Props) => {
     </Tooltip>
   );
 };
-
-export const SCHEDULE_SWITCH_FRAGMENT = gql`
-  fragment ScheduleSwitchFragment on Schedule {
-    id
-    name
-    cronSchedule
-    executionTimezone
-    scheduleState {
-      id
-      selectorId
-      status
-    }
-  }
-`;
 
 const SCHEDULE_STATE_QUERY = gql`
   query ScheduleStateQuery($id: String!, $selector: InstigationSelector!) {

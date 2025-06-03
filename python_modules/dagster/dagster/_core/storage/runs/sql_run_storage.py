@@ -110,7 +110,9 @@ class SqlRunStorage(RunStorage):
             else:
                 return conn.execute(query).fetchone()
 
-    def add_run(self, dagster_run: DagsterRun) -> DagsterRun:
+    def _get_run_insertion_values(
+        self, dagster_run: DagsterRun, run_creation_time: Optional[datetime] = None
+    ) -> dict[str, Any]:
         check.inst_param(dagster_run, "dagster_run", DagsterRun)
 
         if dagster_run.job_snapshot_id and not self.has_job_snapshot(dagster_run.job_snapshot_id):
@@ -132,27 +134,44 @@ class SqlRunStorage(RunStorage):
         }
         if self.has_backfill_id_column():
             values["backfill_id"] = dagster_run.tags.get(BACKFILL_ID_TAG)
+        if run_creation_time:
+            values["create_timestamp"] = run_creation_time
+        return values
 
-        runs_insert = RunsTable.insert().values(**values)
+    def _core_add_run(self, col_values: dict[str, Any], tags: Mapping[str, str]) -> None:
+        run_id = col_values["run_id"]
+        runs_insert = RunsTable.insert().values(**col_values)
         with self.connect() as conn:
             try:
                 conn.execute(runs_insert)
             except db_exc.IntegrityError as exc:
                 raise DagsterRunAlreadyExists from exc
 
-            tags_to_insert = dagster_run.tags_for_storage()
-            if tags_to_insert:
+            if tags:
                 conn.execute(
                     RunTagsTable.insert(),
-                    [
-                        dict(run_id=dagster_run.run_id, key=k, value=v)
-                        for k, v in tags_to_insert.items()
-                    ],
+                    [dict(run_id=run_id, key=k, value=v) for k, v in tags.items()],
                 )
 
+    def add_run(self, dagster_run: DagsterRun) -> DagsterRun:
+        self._core_add_run(
+            self._get_run_insertion_values(dagster_run, get_current_datetime()),
+            dagster_run.tags_for_storage(),
+        )
         return dagster_run
 
-    def handle_run_event(self, run_id: str, event: DagsterEvent) -> None:
+    def add_historical_run(
+        self, dagster_run: DagsterRun, run_creation_time: datetime
+    ) -> DagsterRun:
+        self._core_add_run(
+            self._get_run_insertion_values(dagster_run, run_creation_time),
+            dagster_run.tags_for_storage(),
+        )
+        return dagster_run
+
+    def handle_run_event(
+        self, run_id: str, event: DagsterEvent, update_timestamp: Optional[datetime] = None
+    ) -> None:
         from dagster._core.events import JobFailureData
 
         check.str_param(run_id, "run_id")
@@ -172,19 +191,20 @@ class SqlRunStorage(RunStorage):
 
         kwargs = {}
 
-        # consider changing the `handle_run_event` signature to get timestamp off of the
-        # EventLogEntry instead of the DagsterEvent, for consistency
-        now = get_current_datetime()
+        # Update timestamp represents the time that the event occurred, not the time at which
+        # we're processing the event in the run storage. But we fall back to the current time.
+        # This is specific to the open-source implementation.
+        update_timestamp = update_timestamp or get_current_datetime()
 
         if run_stats_cols_in_index and event.event_type == DagsterEventType.PIPELINE_START:
-            kwargs["start_time"] = now.timestamp()
+            kwargs["start_time"] = update_timestamp.timestamp()
 
         if run_stats_cols_in_index and event.event_type in {
             DagsterEventType.PIPELINE_CANCELED,
             DagsterEventType.PIPELINE_FAILURE,
             DagsterEventType.PIPELINE_SUCCESS,
         }:
-            kwargs["end_time"] = now.timestamp()
+            kwargs["end_time"] = update_timestamp.timestamp()
 
         with self.connect() as conn:
             conn.execute(
@@ -193,7 +213,7 @@ class SqlRunStorage(RunStorage):
                 .values(
                     run_body=serialize_value(run.with_status(new_job_status)),
                     status=new_job_status.value,
-                    update_timestamp=now,
+                    update_timestamp=update_timestamp,
                     **kwargs,
                 )
             )

@@ -1,7 +1,7 @@
 import functools
 import glob
 from collections.abc import Mapping, Sequence
-from typing import Any, cast
+from typing import Any, Optional, cast
 
 import yaml
 
@@ -162,11 +162,11 @@ def dump_run_config_yaml(run_config: Mapping[str, Any], sort_keys: bool = True) 
     )
 
 
-def parse_yaml_with_source_positions(
+def parse_yamls_with_source_position(
     src: str,
     filename: str = "<string>",
     implicits_to_remove: Sequence[str] = [YAML_TIMESTAMP_TAG],
-) -> ValueAndSourcePositionTree:
+) -> list[ValueAndSourcePositionTree]:
     """Parse YAML source with source position information.
     This function takes a YAML source string and an optional filename, and returns a
     `ValueAndSourcePositionTree` object. The `ValueAndSourcePositionTree` contains the
@@ -244,7 +244,7 @@ def parse_yaml_with_source_positions(
         SourcePositionLoader.remove_implicit_resolver(implicit_to_remove)
 
     try:
-        value_and_tree_node = yaml.load(src, Loader=SourcePositionLoader)
+        value_and_tree_nodes = list(yaml.load_all(src, Loader=SourcePositionLoader))
     except yaml.MarkedYAMLError as e:
         if e.context_mark is not None:
             e.context_mark.name = filename
@@ -252,4 +252,32 @@ def parse_yaml_with_source_positions(
             e.problem_mark.name = filename
         raise e
 
-    return value_and_tree_node
+    return check.is_list(value_and_tree_nodes, of_type=ValueAndSourcePositionTree)
+
+
+def try_parse_yaml_with_source_position(
+    src: str,
+    filename: str = "<string>",
+    implicits_to_remove: Sequence[str] = [YAML_TIMESTAMP_TAG],
+) -> Optional[ValueAndSourcePositionTree]:
+    yamls = parse_yamls_with_source_position(
+        src,
+        filename=filename,
+        implicits_to_remove=implicits_to_remove,
+    )
+    return next(iter(yamls)) if yamls else None
+
+
+def parse_yaml_with_source_position(
+    src: str,
+    filename: str = "<string>",
+    implicits_to_remove: Sequence[str] = [YAML_TIMESTAMP_TAG],
+) -> ValueAndSourcePositionTree:
+    return check.not_none(
+        try_parse_yaml_with_source_position(
+            src,
+            filename=filename,
+            implicits_to_remove=implicits_to_remove,
+        ),
+        f"Not able to parse YAML with source position in filename {filename}",
+    )

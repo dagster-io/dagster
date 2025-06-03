@@ -1,6 +1,6 @@
 ---
 title: 'Debugging assets during execution'
-description: 'Debugging assets during execution'
+description: Debug Dagster assets during execution with pdb.
 sidebar_position: 10
 ---
 

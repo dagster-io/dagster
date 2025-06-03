@@ -13,7 +13,7 @@ from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._grpc.__generated__ import dagster_api_pb2
 from dagster._grpc.__generated__.dagster_api_pb2_grpc import DagsterApiServicer
 from dagster._grpc.client import DEFAULT_GRPC_TIMEOUT
-from dagster._grpc.server import GrpcServerCommand
+from dagster._grpc.constants import GrpcServerCommand
 from dagster._grpc.types import (
     CancelExecutionRequest,
     CancelExecutionResult,
@@ -210,7 +210,7 @@ class DagsterProxyApiServicer(DagsterApiServicer):
 
     def _query(self, api_name: str, request, _context, timeout: int = DEFAULT_GRPC_TIMEOUT):
         if not self._client:
-            raise Exception("No available client to code serer")
+            raise Exception("No available client to code server")
         return check.not_none(self._client)._get_response(api_name, request, timeout)  # noqa
 
     def _server_heartbeat_thread(self, heartbeat_timeout: int) -> None:
@@ -223,6 +223,9 @@ class DagsterProxyApiServicer(DagsterApiServicer):
                 break
 
             if self.__last_heartbeat_time < time.time() - heartbeat_timeout:
+                self._logger.warning(
+                    f"No heartbeat received in {heartbeat_timeout} seconds, shutting down"
+                )
                 self._shutdown_once_executions_finish_event.set()
                 self._grpc_server_registry.shutdown_all_processes()
 
@@ -230,7 +233,7 @@ class DagsterProxyApiServicer(DagsterApiServicer):
         self, api_name: str, request, _context, timeout: int = DEFAULT_GRPC_TIMEOUT
     ):
         if not self._client:
-            raise Exception("No available client to code serer")
+            raise Exception("No available client to code server")
         return check.not_none(self._client)._get_streaming_response(api_name, request, timeout)  # noqa
 
     def ExecutionPlanSnapshot(self, request, context):
@@ -261,6 +264,8 @@ class DagsterProxyApiServicer(DagsterApiServicer):
 
     def Heartbeat(self, request, context):
         self.__last_heartbeat_time = time.time()
+        echo = request.echo
+        return dagster_api_pb2.PingReply(echo=echo)
 
     def StreamingPing(self, request, context):
         return self._streaming_query("StreamingPing", request, context)

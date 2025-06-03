@@ -1,7 +1,5 @@
-import {
-  CodeLocationRowStatusType,
-  CodeLocationRowType,
-} from '../workspace/VirtualizedCodeLocationRow';
+import {CodeLocationRowStatusType} from '../workspace/CodeLocationRowStatusType';
+import {CodeLocationRowType} from '../workspace/VirtualizedCodeLocationRow';
 import {
   LocationStatusEntryFragment,
   WorkspaceLocationNodeFragment,
@@ -27,13 +25,13 @@ const flatten = (
     let status: CodeLocationRowStatusType;
 
     if (locationStatus.loadStatus === 'LOADING') {
-      status = 'Updating';
+      status = CodeLocationRowStatusType.Updating;
     } else if (locationEntry?.versionKey !== locationStatus.versionKey) {
-      status = 'Loading';
+      status = CodeLocationRowStatusType.Loading;
     } else if (locationEntry?.locationOrLoadError?.__typename === 'PythonError') {
-      status = 'Failed';
+      status = CodeLocationRowStatusType.Failed;
     } else {
-      status = 'Loaded';
+      status = CodeLocationRowStatusType.Loaded;
     }
 
     if (locationEntry?.locationOrLoadError?.__typename === 'RepositoryLocation') {

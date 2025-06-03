@@ -39,9 +39,7 @@ This guide provides instructions for using Dagster with Airbyte Cloud using the 
 
 To get started, you'll need to install the `dagster` and `dagster-airbyte` Python packages:
 
-```bash
-pip install dagster dagster-airbyte
-```
+<PackageInstallInstructions packageName="dagster-airbyte" />
 
 ## Represent Airbyte Cloud assets in the asset graph
 
@@ -107,7 +105,6 @@ By default, Dagster does not set upstream dependencies when generating asset spe
 Note that `super()` is called in each of the overridden methods to generate the default asset spec. It is best practice to generate the default asset spec before customizing it.
 
 You can pass an instance of the custom <PyObject section="libraries" module="dagster_airbyte" object="DagsterAirbyteTranslator" /> to the <PyObject section="libraries" module="dagster_airbyte" object="airbyte_assets" /> decorator or the <PyObject section="libraries" module="dagster_airbyte" object="build_airbyte_assets_definitions" /> factory.
-
 
 ### Define downstream dependencies
 

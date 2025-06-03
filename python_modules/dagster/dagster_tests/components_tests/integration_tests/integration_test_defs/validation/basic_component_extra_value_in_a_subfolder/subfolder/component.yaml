@@ -1,4 +1,0 @@
-type: dagster.components.DefinitionsComponent
-
-attributes:
-  path: {}

@@ -6,15 +6,12 @@ import {read} from 'to-vfile';
 import {matter} from 'vfile-matter';
 
 import {IntegrationFrontmatter} from './types';
+import {inlineCodeExampleFileReferences} from './codeExampleInliner';
 
 const PATH_TO_INTEGRATION_DOCS = path.resolve('../docs/docs/integrations/libraries');
 const PATH_TO_INTEGRATION_LOGOS = path.resolve('../docs/static');
-const PATH_TO_EXAMPLES = path.resolve('../examples');
 const OUTPUT_TARGET_DIR = path.resolve('./__json__');
 const OUTPUT_TARGET_LOGOS_DIR = path.resolve('./__logos__');
-
-const CODE_EXAMPLE_PATH_REGEX =
-  /<(?:(?:CodeExample)|(?:CliInvocationExample))\s+[^>]*path=["']([^"']+)["'][^>]*language=["']([^"']+)["'][^>]*>/g;
 
 /**
  * This script copies integration documentation and logos from the `docs` project for reuse
@@ -49,11 +46,6 @@ async function main() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const matterResult = file.data.matter as any;
 
-    // Skip any md files that are not for integrations (e.g. index files for categories).
-    if (matterResult.layout !== 'Integration') {
-      continue;
-    }
-
     let kebabCaseFileName = fileName;
 
     if (fileName.includes('/')) {
@@ -65,20 +57,23 @@ async function main() {
 
     kebabCaseFileName = kebabCaseFileName.replace('.md', '');
 
+    // Prevent inclusion of `index.md` pages
+    if (kebabCaseFileName === 'index' || kebabCaseFileName.endsWith('-index')) {
+      continue;
+    }
+
     fullList.push(kebabCaseFileName);
 
     const frontmatter: IntegrationFrontmatter = {
       id: kebabCaseFileName,
-      status: matterResult.status ?? '',
-      name: matterResult.name ?? '',
       title: matterResult.title ?? '',
-      excerpt: matterResult.excerpt ?? '',
-      logoFilename: null,
-      partnerlink: matterResult.partnerlink ?? '',
-      categories: matterResult.categories ?? [],
-      enabledBy: matterResult.enabledBy ?? [],
-      enables: matterResult.enables ?? [],
+      name: matterResult.sidebar_label ?? '',
+      description: matterResult.description ?? '',
       tags: matterResult.tags ?? [],
+      source: matterResult.source ?? '',
+      pypi: matterResult.pypi ?? '',
+      partnerlink: matterResult.partnerlink ?? '',
+      logoFilename: null,
     };
 
     let logoFileExists = false;
@@ -105,41 +100,19 @@ async function main() {
 
     let content = String(file).trim();
 
-    const codeExampleMatches: {
-      fullMatch: string;
-      filePath: string;
-      language: string;
-    }[] = [];
-
-    let foundMatches: RegExpExecArray | null;
-    while ((foundMatches = CODE_EXAMPLE_PATH_REGEX.exec(content)) !== null) {
-      const [fullMatch, filePath, language] = foundMatches;
-      codeExampleMatches.push({fullMatch, filePath, language});
-    }
-
-    for (const {fullMatch, filePath, language} of codeExampleMatches) {
-      if (filePath) {
-        const codeFromFile = await fs.promises.readFile(
-          path.join(PATH_TO_EXAMPLES, filePath),
-          'utf8',
-        );
-
-        content = content.replace(
-          fullMatch,
-          `
-\`\`\`${language}
-${codeFromFile.trim()}
-\`\`\`
-        `,
-        );
+    // Remove partial imports, the app knows how to render <Beta /> and <Deprecated />
+    // and those are the only two partials used by integrations MDX
+    content = content.replace(/import (.*?) from '@site\/docs(.*?);/, (full, group1) => {
+      if (!['Beta', 'Deprecated'].includes(group1)) {
+        throw new Error(`${fileName} imports a partial (${full}) not supported by the app.`);
       }
-    }
+      return '';
+    });
 
-    const packagedObject = {
-      frontmatter,
-      content,
-    };
+    // Convert <CodeExample /> to standard code blocks with inline content
+    content = await inlineCodeExampleFileReferences(content);
 
+    const packagedObject = {frontmatter, content};
     const output = JSON.stringify(packagedObject, null, 2);
     const prettierOutput = await prettier.format(output, {parser: 'json'});
     await fs.promises.writeFile(outputPath, prettierOutput);

@@ -61,13 +61,14 @@ from dagster._core.execution.plan.outputs import StepOutputData
 from dagster._core.log_manager import DagsterLogManager
 from dagster._core.storage.compute_log_manager import CapturedLogContext, LogRetrievalShellCommand
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
+from dagster._core.storage.tags import PARTITION_NAME_TAG
 from dagster._serdes import NamedTupleSerializer, whitelist_for_serdes
 from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 from dagster._utils.timing import format_duration
 
 if TYPE_CHECKING:
     from dagster._core.definitions.events import ObjectStoreOperation
-    from dagster._core.definitions.freshness import FreshnessStateEvaluation
+    from dagster._core.definitions.freshness import FreshnessStateChange, FreshnessStateEvaluation
     from dagster._core.execution.plan.plan import ExecutionPlan
     from dagster._core.execution.plan.step import StepKind
 
@@ -95,6 +96,7 @@ EventSpecificData = Union[
     "AssetFailedToMaterializeData",
     "RunEnqueuedData",
     "FreshnessStateEvaluation",
+    "FreshnessStateChange",
 ]
 
 
@@ -172,6 +174,7 @@ class DagsterEventType(str, Enum):
     LOGS_CAPTURED = "LOGS_CAPTURED"
 
     FRESHNESS_STATE_EVALUATION = "FRESHNESS_STATE_EVALUATION"
+    FRESHNESS_STATE_CHANGE = "FRESHNESS_STATE_CHANGE"
 
 
 EVENT_TYPE_TO_DISPLAY_STRING = {
@@ -746,6 +749,8 @@ class DagsterEvent(
             return self.asset_materialization_planned_data.asset_key
         elif self.event_type == DagsterEventType.ASSET_FAILED_TO_MATERIALIZE:
             return self.asset_failed_to_materialize_data.asset_key
+        elif self.event_type == DagsterEventType.FRESHNESS_STATE_CHANGE:
+            return self.asset_freshness_state_change_data.key
         else:
             return None
 
@@ -843,6 +848,17 @@ class DagsterEvent(
             self.event_type,
         )
         return cast("AssetFailedToMaterializeData", self.event_specific_data)
+
+    @property
+    def asset_freshness_state_change_data(
+        self,
+    ) -> "FreshnessStateChange":
+        _assert_type(
+            "asset_freshness_state_change_data",
+            DagsterEventType.FRESHNESS_STATE_CHANGE,
+            self.event_type,
+        )
+        return cast("FreshnessStateChange", self.event_specific_data)
 
     @property
     def step_expectation_result_data(self) -> "StepExpectationResultData":
@@ -1131,6 +1147,7 @@ class DagsterEvent(
             event_data = RunEnqueuedData(
                 code_location_name=loc_name,
                 repository_name=repo_name,
+                partition_key=run.tags.get(PARTITION_NAME_TAG),
             )
         else:
             event_data = None
@@ -1798,13 +1815,21 @@ class ObjectStoreOperationResultData(
 class RunEnqueuedData(
     NamedTuple(
         "_RunEnqueuedData",
-        [
-            ("code_location_name", str),
-            ("repository_name", str),
-        ],
+        [("code_location_name", str), ("repository_name", str), ("partition_key", Optional[str])],
     )
 ):
-    pass
+    def __new__(
+        cls,
+        code_location_name: str,
+        repository_name: str,
+        partition_key: Optional[str] = None,
+    ):
+        return super().__new__(
+            cls,
+            code_location_name=check.str_param(code_location_name, "code_location_name"),
+            repository_name=check.str_param(repository_name, "repository_name"),
+            partition_key=check.opt_str_param(partition_key, "partition_key"),
+        )
 
 
 @whitelist_for_serdes(

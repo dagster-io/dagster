@@ -51,7 +51,7 @@ def build_tox_step(
     commands = [
         *(extra_commands_pre or []),
         f"cd {root_dir}",
-        f'pip install --force-reinstall "{UV_PIN}"',
+        f'pip install "{UV_PIN}"',
         f"echo -e {shlex.quote(buildkite_section_header)}",
         tox_command,
         *(extra_commands_post or []),
@@ -75,7 +75,7 @@ def _tox_env_to_label_suffix(tox_env: str) -> str:
     if m:
         version_number = m[1]
         number_str = f"{version_number[0]}.{version_number[1:]}"
-        return f" {factor} {number_str}"
+        return f"{factor} {number_str}"
     else:
         return ""
 

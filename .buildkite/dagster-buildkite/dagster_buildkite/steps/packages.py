@@ -19,7 +19,6 @@ from dagster_buildkite.utils import (
     has_dg_changes,
     has_storage_test_fixture_changes,
     network_buildkite_container,
-    skip_if_not_airlift_or_dlift_commit,
     skip_if_not_dagster_dbt_cloud_commit,
 )
 
@@ -36,7 +35,7 @@ def build_example_packages_steps() -> List[BuildkiteStep]:
                 "examples/experimental", custom_example_pkg_roots
             )
         )
-        if pkg != "examples/deploy_ecs"
+        if pkg not in ("examples/deploy_ecs", "examples/starlift-demo")
     ]
 
     example_packages = (
@@ -241,7 +240,11 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         # snippets in all python versions since we are testing the core code exercised by the
         # snippets against all supported python versions.
         unsupported_python_versions=AvailablePythonVersion.get_all_except_default(),
-        pytest_tox_factors=["all", "integrations", "docs_snapshot_test"],
+        pytest_tox_factors=[
+            "all",
+            "integrations",
+            "docs_snapshot_test",
+        ],
         always_run_if=has_dg_changes,
     ),
     PackageSpec(
@@ -303,21 +306,6 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         "examples/quickstart_snowflake",
         pytest_tox_factors=["pypi"],
     ),
-    # Runs against live dbt cloud instance, we only want to run on commits and on the
-    # nightly build
-    PackageSpec(
-        "examples/starlift-demo",
-        skip_if=skip_if_not_airlift_or_dlift_commit,
-        env_vars=[
-            "KS_DBT_CLOUD_ACCOUNT_ID",
-            "KS_DBT_CLOUD_PROJECT_ID",
-            "KS_DBT_CLOUD_TOKEN",
-            "KS_DBT_CLOUD_ACCESS_URL",
-            "KS_DBT_CLOUD_DISCOVERY_API_URL",
-        ],
-        timeout_in_minutes=30,
-        queue=BuildkiteQueue.DOCKER,
-    ),
     PackageSpec(
         "examples/use_case_repository",
         pytest_tox_factors=["source"],
@@ -326,17 +314,21 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
     # beefier instance
     PackageSpec(
         "examples/airlift-federation-tutorial",
-        skip_if=skip_if_not_airlift_or_dlift_commit,
+        always_run_if=has_dagster_airlift_changes,
         timeout_in_minutes=30,
         queue=BuildkiteQueue.DOCKER,
+        unsupported_python_versions=[
+            # airflow
+            AvailablePythonVersion.V3_12,
+        ],
     ),
     PackageSpec(
         "examples/airlift-migration-tutorial",
         always_run_if=has_dagster_airlift_changes,
-    ),
-    PackageSpec(
-        "examples/experimental/dagster-dlift",
-        name="dlift",
+        unsupported_python_versions=[
+            # airflow
+            AvailablePythonVersion.V3_12,
+        ],
     ),
 ]
 
@@ -409,6 +401,7 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
             "storage_tests",
             "storage_tests_sqlalchemy_1_3",
             "storage_tests_sqlalchemy_1_4",
+            "utils_tests",
             "type_signature_tests",
         ]
         + tox_factors_for_folder("execution_tests"),
@@ -471,6 +464,18 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         env_vars=["SNOWFLAKE_ACCOUNT", "SNOWFLAKE_USER", "SNOWFLAKE_PASSWORD"],
     ),
     PackageSpec(
+        "python_modules/libraries/dagster-airlift",
+        unsupported_python_versions=[
+            # airflow
+            AvailablePythonVersion.V3_12,
+        ],
+        env_vars=[
+            "AIRLIFT_MWAA_TEST_ENV_NAME",
+            "AIRLIFT_MWAA_TEST_PROFILE",
+            "AIRLIFT_MWAA_TEST_REGION",
+        ],
+    ),
+    PackageSpec(
         "python_modules/libraries/dagster-airbyte",
         pytest_tox_factors=["unit", "integration"],
     ),
@@ -498,8 +503,15 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         ],
     ),
     PackageSpec(
-        "python_modules/libraries/dagster-dg",
+        "python_modules/libraries/dagster-dg-cli",
         pytest_tox_factors=["general", "docs", "plus"],
+    ),
+    PackageSpec(
+        "python_modules/libraries/dagster-dg-cli",
+        pytest_tox_factors=["mcp"],
+        unsupported_python_versions=[
+            AvailablePythonVersion.V3_9,
+        ],
     ),
     PackageSpec(
         "python_modules/libraries/dagster-aws",
@@ -523,6 +535,10 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
     PackageSpec(
         "python_modules/libraries/dagster-dask",
         env_vars=["AWS_SECRET_ACCESS_KEY", "AWS_ACCESS_KEY_ID", "AWS_DEFAULT_REGION"],
+        unsupported_python_versions=[
+            # dask
+            AvailablePythonVersion.V3_9,
+        ],
     ),
     PackageSpec(
         "python_modules/libraries/dagster-databricks",
@@ -673,10 +689,19 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
     PackageSpec(
         "python_modules/libraries/dagster-airlift/perf-harness",
         always_run_if=has_dagster_airlift_changes,
+        unsupported_python_versions=[
+            # airflow
+            AvailablePythonVersion.V3_12,
+        ],
     ),
     PackageSpec(
         "python_modules/libraries/dagster-airlift/kitchen-sink",
         always_run_if=has_dagster_airlift_changes,
+        unsupported_python_versions=[
+            # airflow
+            AvailablePythonVersion.V3_12,
+        ],
+        queue=BuildkiteQueue.DOCKER,
     ),
     # Runs against live dbt cloud instance, we only want to run on commits and on the
     # nightly build

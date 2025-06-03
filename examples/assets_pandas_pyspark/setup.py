@@ -6,11 +6,11 @@ setup(
     install_requires=[
         "dagster",
         "pandas",
-        "pyspark",
+        "pyspark<4",
         # "pyarrow",
     ],
     extras_require={
         "dev": ["dagster-webserver", "pytest"],
-        "test": ["pandas", "pyarrow; python_version < '3.9'", "pyspark"],
+        "test": ["pandas", "pyarrow; python_version < '3.9'", "pyspark<4"],
     },
 )

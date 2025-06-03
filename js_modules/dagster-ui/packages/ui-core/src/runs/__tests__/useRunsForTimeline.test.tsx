@@ -68,6 +68,7 @@ const defaultOngoingRun = buildRun({
   startTime: 1,
   endTime: 2,
   status: RunStatus.STARTED,
+  externalJobSource: null,
 });
 
 const mockOngoingRuns = ({
@@ -189,6 +190,7 @@ function buildMocks(runsFilter?: RunsFilter) {
                 startTime: updatedAfter,
                 endTime: updatedBefore,
                 status: RunStatus.SUCCESS,
+                externalJobSource: null,
               }),
             ],
           }),
@@ -247,6 +249,7 @@ describe('useRunsForTimeline', () => {
           startTime: buckets[0]![0] * 1000,
           endTime: buckets[0]![1] * 1000,
           automation: null,
+          externalJobSource: null,
         },
       ],
     });
@@ -301,6 +304,7 @@ describe('useRunsForTimeline', () => {
               endTime: initialInterval[1],
               updateTime: initialInterval[1],
               status: RunStatus.SUCCESS,
+              externalJobSource: null,
             }),
           ],
         }),
@@ -323,6 +327,7 @@ describe('useRunsForTimeline', () => {
               endTime: extendedInterval[1],
               updateTime: extendedInterval[1],
               status: RunStatus.SUCCESS,
+              externalJobSource: null,
             }),
           ],
         }),
@@ -428,6 +433,7 @@ describe('useRunsForTimeline', () => {
               endTime: updatedBefore,
               updateTime: updatedBefore,
               status: RunStatus.SUCCESS,
+              externalJobSource: null,
             }),
           ],
         }),
@@ -450,6 +456,7 @@ describe('useRunsForTimeline', () => {
               endTime: updatedBefore,
               updateTime: updatedBefore,
               status: RunStatus.SUCCESS,
+              externalJobSource: null,
             }),
           ],
         }),
@@ -501,6 +508,7 @@ describe('useRunsForTimeline', () => {
       startTime: buckets[0]![0] * 1000,
       endTime: buckets[0]![1] * 1000,
       automation: null,
+      externalJobSource: null,
     });
 
     expect(result.current.jobs[0]!.runs[1]).toEqual({
@@ -509,6 +517,7 @@ describe('useRunsForTimeline', () => {
       startTime: buckets[0]![0] * 1000,
       endTime: buckets[0]![1] * 1000,
       automation: null,
+      externalJobSource: null,
     });
 
     mockCbs.forEach((mockFn) => {
@@ -553,6 +562,7 @@ describe('useRunsForTimeline', () => {
                   endTime: initialRange[1],
                   updateTime: initialRange[1],
                   status: RunStatus.SUCCESS,
+                  externalJobSource: null,
                 }),
               ],
             }),
@@ -597,6 +607,7 @@ describe('useRunsForTimeline', () => {
                     endTime: initialRange[1],
                     updateTime: initialRange[1],
                     status: RunStatus.SUCCESS,
+                    externalJobSource: null,
                   }),
                 ],
               },
@@ -634,6 +645,7 @@ describe('useRunsForTimeline', () => {
           startTime: initialRange[0] * 1000,
           status: RunStatus.SUCCESS,
           automation: null,
+          externalJobSource: null,
         },
         {
           endTime: initialRange[1] * 1000,
@@ -641,6 +653,7 @@ describe('useRunsForTimeline', () => {
           startTime: initialRange[0] * 1000,
           status: RunStatus.SUCCESS,
           automation: null,
+          externalJobSource: null,
         },
       ],
     });
@@ -739,6 +752,7 @@ describe('useRunsForTimeline', () => {
               endTime: updatedBefore,
               updateTime: updatedBefore,
               status: RunStatus.SUCCESS,
+              externalJobSource: null,
             }),
           ],
         }),

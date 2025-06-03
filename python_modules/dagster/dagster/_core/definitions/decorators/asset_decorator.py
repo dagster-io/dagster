@@ -58,13 +58,6 @@ from dagster._utils.warnings import disable_dagster_warnings
 
 @overload
 def asset(
-    compute_fn: Callable[..., Any],
-    **kwargs,
-) -> AssetsDefinition: ...
-
-
-@overload
-def asset(
     *,
     name: Optional[str] = ...,
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
@@ -94,6 +87,13 @@ def asset(
     pool: Optional[str] = ...,
     **kwargs,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]: ...
+
+
+@overload
+def asset(
+    compute_fn: Callable[..., Any],
+    **kwargs,
+) -> AssetsDefinition: ...
 
 
 def _validate_hidden_non_argument_dep_param(
@@ -564,6 +564,12 @@ def create_assets_def_from_fn_and_decorator_args(
     emit_runtime_warning=False,
     breaking_version="1.10.0",
 )
+@hidden_param(
+    param="allow_arbitrary_check_specs",
+    emit_runtime_warning=False,
+    # does this actually need to be set?
+    breaking_version="",
+)
 def multi_asset(
     *,
     outs: Optional[Mapping[str, AssetOut]] = None,
@@ -717,6 +723,7 @@ def multi_asset(
         decorator_name="@multi_asset",
         execution_type=AssetExecutionType.MATERIALIZATION,
         pool=pool,
+        allow_arbitrary_check_specs=kwargs.get("allow_arbitrary_check_specs", False),
     )
 
     def inner(fn: Callable[..., Any]) -> AssetsDefinition:

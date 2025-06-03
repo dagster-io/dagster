@@ -1,6 +1,7 @@
 ---
-title: 'Sensors'
+description: Sensors enable you to take action in response to events that occur either internally within Dagster or in external systems by checking for events at regular intervals and either performing an action or providing an explanation for why the action was skipped.
 sidebar_position: 30
+title: Sensors
 ---
 
 Sensors enable you to take action in response to events that occur either internally within Dagster or in external systems. They check for events at regular intervals and either perform an action or provide an explanation for why the action was skipped.

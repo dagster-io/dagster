@@ -17,6 +17,7 @@ from dagster import (
     observable_source_asset,
 )
 from dagster._time import datetime_from_timestamp
+from dagster_shared.check.functions import ParameterCheckError
 
 from dagster_tests.declarative_automation_tests.scenario_utils.automation_condition_scenario import (
     AutomationConditionScenarioState,
@@ -268,7 +269,7 @@ def test_asset_order_change_doesnt_reset_cursor_state() -> None:
     instance = DagsterInstance.ephemeral()
 
     def _emit_check(defs: Definitions, checks: Set[AssetCheckKey], passed: bool):
-        defs.get_implicit_global_asset_job_def().get_subset(
+        defs.resolve_implicit_global_asset_job_def().get_subset(
             asset_check_selection=checks
         ).execute_in_process(
             tags={"passed": ""} if passed else None, instance=instance, raise_on_error=passed
@@ -308,3 +309,26 @@ def test_asset_order_change_doesnt_reset_cursor_state() -> None:
         evaluation_time=datetime_from_timestamp(start_time),
     )
     assert result.total_requested == 1
+
+
+@pytest.mark.parametrize(
+    "schedule, should_fail",
+    [
+        ("0 0 * * *", False),
+        ("0 */5 * * *", False),
+        ("@daily", False),
+        ("@hourly", False),
+        ("*/15 * * * 1-6", False),
+        ("* /15 * * * 1-6", True),
+        ("totally-invalid", True),
+    ],
+)
+def test_invalid_schedules(schedule: str, should_fail: bool) -> None:
+    if should_fail:
+        with pytest.raises(
+            ParameterCheckError,
+            match="Invalid cron schedule",
+        ):
+            AutomationCondition.on_cron(cron_schedule=schedule)
+    else:
+        AutomationCondition.on_cron(cron_schedule=schedule)

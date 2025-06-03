@@ -1,8 +1,9 @@
-import {Redirect, Route, Switch} from 'react-router';
+import {Redirect, Switch} from 'react-router-dom';
 
 import {MarketplaceRoot} from './MarketplaceRoot';
 import {SingleIntegrationRoot} from './SingleIntegrationRoot';
 import {useFeatureFlags} from '../app/Flags';
+import {Route} from '../app/Route';
 
 const IntegrationsRoot = () => {
   const {flagMarketplace} = useFeatureFlags();

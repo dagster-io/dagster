@@ -1,6 +1,7 @@
 ---
-title: Monitoring sensors in the Dagster UI
+description: You can use the Dagster UI to operate sensors and observe sensor evaluations, skip reasons, and errors.
 sidebar_position: 400
+title: Monitoring sensors in the Dagster UI
 ---
 
 Using the UI, you can monitor and operate sensors. The UI provides multiple views that help with observing sensor evaluations, skip reasons, and errors.

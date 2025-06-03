@@ -1,4 +1,5 @@
 import {tokenizedValueFromString} from '@dagster-io/ui-components';
+import qs from 'qs';
 import {useMemo} from 'react';
 
 import {DefaultLogLevels, LogLevel} from './LogLevel';
@@ -40,11 +41,11 @@ export const DefaultQuerystring: {[key: string]: string} = {
  *   - string (unix timestamp with msec)
  *   - Scrolls directly to log with specified time, if no `logs` filter
  */
-export const decodeRunPageFilters = (qs: {[key: string]: string}) => {
-  const logsQuery = qs['logs'] || '';
-  const focusedTimeQuery = qs['focusedTime'] || '';
-  const hideNonMatchesQuery = qs['hideNonMatches'] || '';
-  const levelsQuery = qs['levels'] || '';
+export const decodeRunPageFilters = (qs: qs.ParsedQs) => {
+  const logsQuery = typeof qs['logs'] === 'string' ? qs['logs'] : '';
+  const focusedTimeQuery = typeof qs['focusedTime'] === 'string' ? qs['focusedTime'] : '';
+  const hideNonMatchesQuery = typeof qs['hideNonMatches'] === 'string' ? qs['hideNonMatches'] : '';
+  const levelsQuery = typeof qs['levels'] === 'string' ? qs['levels'] : '';
 
   const logValues = logsQuery.split(DELIMITER);
   const focusedTime = focusedTimeQuery && !logsQuery ? Number(focusedTimeQuery) : null;
@@ -80,7 +81,7 @@ export function encodeRunPageFilters(filter: LogFilter) {
 
   return {
     hideNonMatches: filter.hideNonMatches ? 'true' : 'false',
-    focusedTime: filter.focusedTime || '',
+    focusedTime: String(filter.focusedTime || ''),
     logs: logQueryTokenStrings.join(DELIMITER),
     levels: levelsToQuery(Object.keys(filter.levels).filter((key) => !!filter.levels[key])),
   };

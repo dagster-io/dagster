@@ -12,14 +12,20 @@ export const MarketplaceRoot = () => {
   useEffect(() => {
     const fetchIntegrations = async () => {
       const res = await fetch(INTEGRATIONS_URL);
-      const data = await res.json();
+      let data: IntegrationFrontmatter[] = await res.json();
+
+      // Filter out articles and sub-pages that do not have integration names
+      data = data.filter((d) => !!d.name);
+
       setIntegrations(data);
     };
     fetchIntegrations();
   }, []);
 
+  // Note: `overflowY: scroll` prevents the page content from jumping slightly when you
+  // apply filters and the viewport height no longer requires a scrollbar.
   return (
-    <Page style={{backgroundColor: Colors.backgroundLight()}}>
+    <Page style={{backgroundColor: Colors.backgroundLight(), overflowY: 'scroll'}}>
       <Box
         padding={{vertical: 32}}
         style={{width: '80vw', maxWidth: '1200px', minWidth: '800px', margin: '0 auto'}}

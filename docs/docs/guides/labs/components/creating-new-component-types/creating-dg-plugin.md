@@ -1,6 +1,7 @@
 ---
-title: 'Creating a `dg` plugin'
-sidebar_position: 200
+description: Create a dg plugin by defining a Python package with dg-legible classes and functions.
+sidebar_position: 300
+title: Creating a dg plugin
 ---
 
 import DgComponentsPreview from '@site/docs/partials/\_DgComponentsPreview.md';
@@ -15,26 +16,26 @@ commands.
 
 Any Python package can be made into a `dg` plugin by declaring an [entry
 point](https://packaging.python.org/en/latest/specifications/entry-points/)
-under the `dagster_dg.plugin` group in its package metadata:
+under the `dagster_dg_cli.plugin` group in its package metadata:
 
 ```toml
 [project.entry-points]
-"dagster_dg.plugin" = { my_package = "my_package"}
+"dagster_dg_cli.plugin" = { my_package = "my_package"}
 ```
 
 The entry point indicates a module within the package that contains references
 to plugin objects. As you can see, an entry points is defined as a key-value pair
-of strings. For `dagster_dg.plugin` entry points:
+of strings. For `dagster_dg_cli.plugin` entry points:
 
 - The entry point value must be the name of a Python module containing plugin
-object references. By convention, this is usually the top-level module name of
-a package, though any submodule may be specified.
+  object references. By convention, this is usually the top-level module name of
+  a package, though any submodule may be specified.
 - The entry point key is arbitrary and does not affect component type
   detection, but by convention should be set to the same string as the value
   (i.e. the module name).
 
 :::note
-New projects scaffolded by `dg` include a `dagster_dg.plugin` entry point,
+New projects scaffolded by `dg` include a `dagster_dg_cli.plugin` entry point,
 and therefore are `dg` plugins out of the box. This allows a project to define
 project-scoped component types etc.
 :::
@@ -44,7 +45,7 @@ project-scoped component types etc.
 Let's step through the process of converting an existing Python package into a `dg` plugin. We'll:
 
 - Define a custom component type in the package
-- Add a `dagster_dg.plugin` entry point to the package metadata
+- Add a `dagster_dg_cli.plugin` entry point to the package metadata
 - Confirm that the custom component type is available to `dg` commands
 
 Let's start with a basic package called `my_library`. `my_library` is intended
@@ -62,7 +63,7 @@ Since the focus of this guide is on exposing rather than authoring plugin object
   title="src/my_library/empty_component.py"
 />
 
-Now we'll add the `dagster_dg.plugin` entry point to the package metadata.
+Now we'll add the `dagster_dg_cli.plugin` entry point to the package metadata.
 
 Following convention, we add the following entry point to the package metadata:
 
@@ -71,7 +72,6 @@ Following convention, we add the following entry point to the package metadata:
   language="toml"
   title="pyproject.toml"
 />
-
 
 This is enough to set up our `my_library` as a `dg` plugin, but it isn't exposing
 `EmptyComponent` yet. That's because `EmptyComponent` is defined in
@@ -86,10 +86,10 @@ This is enough to set up our `my_library` as a `dg` plugin, but it isn't exposin
 />
 
 Now if we install `my_library` into a Python environment and run `dg list
-plugins` against that environment, we'll see
+components` against that environment, we'll see
 `my_library.EmptyComponent`:
 
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/creating-dg-plugin/5-list-plugins.txt" />
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/creating-dg-plugin/5-list-components.txt" />
 
 That's all there is to it. Any other plugin objects that we'd like to add to
 `my_library` can be exposed by importing them in the top-level `my_library`
@@ -98,7 +98,7 @@ module.
 :::note
 Python entry points are registered at package installation time. If you are
 developing a library that has already been installed as an editable, and you
-add a `dagster_dg.plugin` entry point to it, the entry point will not be
+add a `dagster_dg_cli.plugin` entry point to it, the entry point will not be
 detected by `dg` until the package is reinstalled with `pip install -e
 path/to/my_library`, `uv pip install path/to/my_library`, or an equivalent command.
 :::

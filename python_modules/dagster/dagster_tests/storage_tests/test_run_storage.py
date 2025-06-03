@@ -55,6 +55,9 @@ class TestSqliteRunStorage(TestRunStorage):
     def supports_backfills_count(self):  # pyright: ignore[reportIncompatibleMethodOverride]
         return True
 
+    def supports_add_historical_run(self):  # pyright: ignore[reportIncompatibleMethodOverride]
+        return True
+
     @pytest.fixture(name="instance", scope="function")
     def instance(self):  # pyright: ignore[reportIncompatibleMethodOverride]
         with tempfile.TemporaryDirectory(dir=os.getcwd()) as tmpdir_path:
@@ -83,6 +86,9 @@ class TestInMemoryRunStorage(TestRunStorage):
     def supports_backfills_count(self):  # pyright: ignore[reportIncompatibleMethodOverride]
         return True
 
+    def supports_add_historical_run(self):  # pyright: ignore[reportIncompatibleMethodOverride]
+        return True
+
     @pytest.fixture(name="instance", scope="function")
     def instance(self):  # pyright: ignore[reportIncompatibleMethodOverride]
         with DagsterInstance.ephemeral() as the_instance:
@@ -109,6 +115,9 @@ class TestLegacyRunStorage(TestRunStorage):
         return True
 
     def supports_backfills_count(self):  # pyright: ignore[reportIncompatibleMethodOverride]
+        return True
+
+    def supports_add_historical_run(self):  # pyright: ignore[reportIncompatibleMethodOverride]
         return True
 
     @pytest.fixture(name="instance", scope="function")

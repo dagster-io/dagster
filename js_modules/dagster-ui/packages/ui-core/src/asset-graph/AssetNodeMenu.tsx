@@ -1,11 +1,9 @@
 import {Box, Menu, MenuDivider, MenuItem, Spinner} from '@dagster-io/ui-components';
 import * as React from 'react';
-import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
 import {AddToFavoritesMenuItem} from 'shared/assets/AddToFavoritesMenuItem.oss';
 
 import {GraphData, tokenForAssetKey} from './Utils';
 import {StatusDot} from './sidebar/StatusDot';
-import {featureEnabled} from '../app/Flags';
 import {useAssetBaseData} from '../asset-data/AssetBaseDataProvider';
 import {useExecuteAssetMenuItem} from '../assets/AssetActionMenu';
 import {
@@ -225,15 +223,9 @@ const UpstreamDownstreamDialog = ({
 };
 
 function upstreamGraphQuery(assetKey: AssetKeyInput) {
-  if (featureEnabled(FeatureFlag.flagSelectionSyntax)) {
-    return `+key:"${tokenForAssetKey(assetKey)}"`;
-  }
-  return `*\"${tokenForAssetKey(assetKey)}\"`;
+  return `+key:"${tokenForAssetKey(assetKey)}"`;
 }
 
 function downstreamGraphQuery(assetKey: AssetKeyInput) {
-  if (featureEnabled(FeatureFlag.flagSelectionSyntax)) {
-    return `key:"${tokenForAssetKey(assetKey)}"+`;
-  }
-  return `\"${tokenForAssetKey(assetKey)}\"*`;
+  return `key:"${tokenForAssetKey(assetKey)}"+`;
 }

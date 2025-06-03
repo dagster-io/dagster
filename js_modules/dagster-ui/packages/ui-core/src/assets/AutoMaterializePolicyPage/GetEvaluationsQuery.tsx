@@ -1,6 +1,20 @@
 import {gql} from '../../apollo-client';
 import {METADATA_ENTRY_FRAGMENT} from '../../metadata/MetadataEntryFragment';
 
+export const ENTITY_KEY_FRAGMENT = gql`
+  fragment EntityKeyFragment on EntityKey {
+    ... on AssetKey {
+      path
+    }
+    ... on AssetCheckhandle {
+      name
+      assetKey {
+        path
+      }
+    }
+  }
+`;
+
 const SpecificPartitionAssetConditionEvaluationNodeFragment = gql`
   fragment SpecificPartitionAssetConditionEvaluationNodeFragment on SpecificPartitionAssetConditionEvaluationNode {
     description
@@ -10,13 +24,20 @@ const SpecificPartitionAssetConditionEvaluationNodeFragment = gql`
     metadataEntries {
       ...MetadataEntryFragment
     }
+    entityKey {
+      ...EntityKeyFragment
+    }
   }
   ${METADATA_ENTRY_FRAGMENT}
+  ${ENTITY_KEY_FRAGMENT}
 `;
 
 const UnpartitionedAssetConditionEvaluationNodeFragment = gql`
   fragment UnpartitionedAssetConditionEvaluationNodeFragment on UnpartitionedAssetConditionEvaluationNode {
     description
+    entityKey {
+      ...EntityKeyFragment
+    }
     startTimestamp
     endTimestamp
     status
@@ -27,6 +48,7 @@ const UnpartitionedAssetConditionEvaluationNodeFragment = gql`
     }
   }
   ${METADATA_ENTRY_FRAGMENT}
+  ${ENTITY_KEY_FRAGMENT}
 `;
 const PartitionedAssetConditionEvaluationNodeFragment = gql`
   fragment PartitionedAssetConditionEvaluationNodeFragment on PartitionedAssetConditionEvaluationNode {
@@ -38,7 +60,11 @@ const PartitionedAssetConditionEvaluationNodeFragment = gql`
     childUniqueIds
     numTrue
     numCandidates
+    entityKey {
+      ...EntityKeyFragment
+    }
   }
+  ${ENTITY_KEY_FRAGMENT}
 `;
 
 const NEW_EVALUATION_NODE_FRAGMENT = gql`
@@ -52,7 +78,12 @@ const NEW_EVALUATION_NODE_FRAGMENT = gql`
     numTrue
     isPartitioned
     childUniqueIds
+    operatorType
+    entityKey {
+      ...EntityKeyFragment
+    }
   }
+  ${ENTITY_KEY_FRAGMENT}
 `;
 
 export const ASSET_CONDITION_EVALUATION_RECORD_FRAGMENT = gql`
@@ -95,7 +126,6 @@ export const GET_EVALUATIONS_QUERY = gql`
     $cursor: String
   ) {
     assetNodeOrError(assetKey: $assetKey) {
-      __typename
       ... on AssetNode {
         id
         autoMaterializePolicy {
@@ -180,4 +210,26 @@ export const GET_EVALUATIONS_SPECIFIC_PARTITION_QUERY = gql`
   ${UnpartitionedAssetConditionEvaluationNodeFragment}
   ${PartitionedAssetConditionEvaluationNodeFragment}
   ${SpecificPartitionAssetConditionEvaluationNodeFragment}
+`;
+
+export const ASSET_LAST_EVALUATION_FRAGMENT = gql`
+  fragment AssetLastEvaluationFragment on AutoMaterializeAssetEvaluationRecord {
+    id
+    evaluationId
+    timestamp
+  }
+`;
+export const GET_ASSET_EVALUATION_DETAILS_QUERY = gql`
+  query GetAssetEvaluationDetailsQuery($assetKeys: [AssetKeyInput!]!, $asOfEvaluationId: ID!) {
+    assetNodes(assetKeys: $assetKeys) {
+      id
+      assetKey {
+        path
+      }
+      lastAutoMaterializationEvaluationRecord(asOfEvaluationId: $asOfEvaluationId) {
+        ...AssetLastEvaluationFragment
+      }
+    }
+  }
+  ${ASSET_LAST_EVALUATION_FRAGMENT}
 `;

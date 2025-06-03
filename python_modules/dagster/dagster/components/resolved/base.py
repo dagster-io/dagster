@@ -8,12 +8,13 @@ from typing import Annotated, Any, Final, Literal, Optional, TypeVar, Union, get
 
 import yaml
 from dagster_shared.record import get_record_annotations, get_record_defaults, is_record, record
-from dagster_shared.yaml_utils import parse_yaml_with_source_positions
+from dagster_shared.yaml_utils import try_parse_yaml_with_source_position
 from pydantic import BaseModel, PydanticSchemaGenerationError, create_model
 from pydantic.fields import Field, FieldInfo
 from typing_extensions import TypeGuard
 
 from dagster import _check as check
+from dagster._annotations import preview, public
 from dagster._utils.pydantic_yaml import _parse_and_populate_model_with_annotated_errors
 from dagster.components.resolved.context import ResolutionContext
 from dagster.components.resolved.errors import ResolutionException
@@ -34,14 +35,16 @@ class _TypeContainer(Enum):
 _DERIVED_MODEL_REGISTRY = {}
 
 
+@public
+@preview(emit_runtime_warning=False)
 class Resolvable:
     """This base class makes something able to "resolve" from yaml.
 
     This is done by:
     1) Deriving a pydantic model to provide as schema for the yaml.
     2) Resolving an instance of the class by recursing over an instance
-        of the derived model loaded from schema compliant yaml and
-        evaluating any template strings.
+    of the derived model loaded from schema compliant yaml and
+    evaluating any template strings.
 
     The fields/__init__ arguments of the class can be Annotated with
     Resolver to customize the resolution or model derivation.
@@ -56,8 +59,13 @@ class Resolvable:
         return cls(**resolve_fields(model, cls, context))
 
     @classmethod
-    def resolve_from_yaml(cls, yaml: str):
-        parsed_and_src_tree = parse_yaml_with_source_positions(yaml)
+    def resolve_from_yaml(
+        cls,
+        yaml: str,
+        *,
+        scope: Optional[Mapping[str, Any]] = None,
+    ):
+        parsed_and_src_tree = try_parse_yaml_with_source_position(yaml)
         model_cls = cls.model()
         if parsed_and_src_tree:
             model = _parse_and_populate_model_with_annotated_errors(
@@ -67,10 +75,14 @@ class Resolvable:
             )
         else:  # yaml parsed as None
             model = model_cls()
-        # support adding scopes
+
         context = ResolutionContext.default(
             parsed_and_src_tree.source_position_tree if parsed_and_src_tree else None
         )
+
+        if scope:
+            context = context.with_scope(**scope)
+
         return cls.resolve_from_model(context, model)
 
     @classmethod
@@ -106,7 +118,9 @@ def derive_model_type(
             field_name = field_resolver.model_field_name or name
             field_type = field_resolver.model_field_type or annotation_info.type
 
-            field_infos = [annotation_info.field_info] if annotation_info.field_info else []
+            field_infos = []
+            if annotation_info.field_info:
+                field_infos.append(annotation_info.field_info)
 
             if annotation_info.has_default:
                 # if the annotation has a serializable default
@@ -120,10 +134,22 @@ def derive_model_type(
                     else _Unset
                 )
                 field_infos.append(
-                    Field(default=default_value),  # type: ignore # Field() is typed weird
+                    Field(
+                        default=default_value,
+                        description=field_resolver.description,
+                        examples=field_resolver.examples,
+                    ),
+                )
+            elif field_resolver.description or field_resolver.examples:
+                field_infos.append(
+                    Field(
+                        description=field_resolver.description,
+                        examples=field_resolver.examples,
+                    )
                 )
 
-            if field_resolver.can_inject:  # derive and serve via model_field_type
+            # make all fields injectable
+            if field_type != str:
                 field_type = Union[field_type, str]
 
             model_fields[field_name] = (
@@ -144,7 +170,7 @@ def derive_model_type(
 
 
 def _is_implicitly_resolved_type(annotation):
-    if annotation in (int, float, str, bool, Any, type(None)):
+    if annotation in (int, float, str, bool, Any, type(None), list, dict):
         return True
 
     if _safe_is_subclass(annotation, Resolvable):
@@ -184,7 +210,10 @@ def _get_annotations(
         for f in fields(resolved_type):
             has_default = f.default is not MISSING or f.default_factory is not MISSING
             annotations[f.name] = AnnotationInfo(
-                type=f.type, default=f.default, has_default=has_default, field_info=None
+                type=f.type,
+                default=f.default,
+                has_default=has_default,
+                field_info=None,
             )
         return annotations
     elif _safe_is_subclass(resolved_type, BaseModel):
@@ -209,15 +238,13 @@ def _get_annotations(
         return annotations
     elif init_kwargs is not None:
         return init_kwargs
-    # can update to support:
-    # * @record
     else:
         raise ResolutionException(
-            f"Invalid Resolvable type {resolved_type} could not determine fields, expected:\n"
+            f"Invalid Resolvable type {resolved_type}, could not determine fields. Resolved subclasses must be one of the following:\n"
             "* class with __init__\n"
             "* @dataclass\n"
             "* pydantic Model\n"
-            "* @record\n"
+            "* @dagster_shared.record.record\n"
         )
 
 
@@ -295,9 +322,15 @@ def _get_resolver(annotation: Any, field_name: str) -> "Resolver":
     if origin is Annotated:
         resolver = next((arg for arg in args if isinstance(arg, Resolver)), None)
         if resolver:
+            # if the outer resolver is default, see if there is a nested one
+            if resolver.is_default:
+                nested = _dig_for_resolver(args[0], [])
+                if nested:
+                    return nested.with_outer_resolver(resolver)
+
             check.invariant(
                 _is_implicitly_resolved_type(args[0]) or resolver.model_field_type,
-                f"Resolver for {field_name} must define model_field_type {args[0]} is not model compliant.",
+                f"Resolver for {field_name} must define model_field_type, {args[0]} is not model compliant.",
             )
             return resolver
 
@@ -308,6 +341,13 @@ def _get_resolver(annotation: Any, field_name: str) -> "Resolver":
     res = _dig_for_resolver(annotation, [])
     if res:
         return res
+
+    from dagster.components.resolved.core_models import CORE_MODEL_SUGGESTIONS
+
+    core_model_suggestion = ""
+    if annotation in CORE_MODEL_SUGGESTIONS:
+        core_model_suggestion = f"\n\nAn annotated resolver for {annotation.__name__} is available, you may wish to use it instead: {CORE_MODEL_SUGGESTIONS[annotation]}"
+
     raise ResolutionException(
         "Could not derive resolver for annotation\n"
         f"  {field_name}: {annotation}\n"
@@ -315,11 +355,13 @@ def _get_resolver(annotation: Any, field_name: str) -> "Resolver":
         "* serializable types such as str, float, int, bool, list, etc\n"
         "* Resolvable subclasses\n"
         "* pydantic Models\n"
-        "* Annotated with an appropriate Resolver"
+        "* Annotated with an appropriate dagster.components.Resolver\n"
+        f"  e.g. Annotated[{annotation.__name__}, Resolver(fn=..., model_field_type=...)]"
+        f"{core_model_suggestion}"
     )
 
 
-def _dig_for_resolver(annotation, path: Sequence[_TypeContainer]):
+def _dig_for_resolver(annotation, path: Sequence[_TypeContainer]) -> Optional[Resolver]:
     origin = get_origin(annotation)
     args = get_args(annotation)
     if _safe_is_subclass(annotation, Resolvable):
@@ -340,6 +382,12 @@ def _dig_for_resolver(annotation, path: Sequence[_TypeContainer]):
                 f"Nested resolver must define model_field_type {args[0]} is not model compliant.",
             )
             # need to ensure nested resolvers set their model type
+            if resolver.resolves_from_parent_object and path:
+                raise ResolutionException(
+                    f"Resolver.from_model found nested within {list(p.name for p in path)}. "
+                    "Resolver.from_model can only be used on the outer most Annotated wrapper."
+                )
+
             return Resolver(
                 resolver.fn.__class__(
                     partial(
@@ -349,7 +397,13 @@ def _dig_for_resolver(annotation, path: Sequence[_TypeContainer]):
                     )
                 ),
                 model_field_type=_wrap(resolver.model_field_type or args[0], path),
+                inject_before_resolve=resolver.inject_before_resolve,
             )
+        annotated_type = args[0]
+        if _is_implicitly_resolved_type(annotated_type):
+            return Resolver.default()
+
+        return _dig_for_resolver(annotated_type, path)
 
     if origin in (Union, UnionType) and len(args) == 2:
         left_t, right_t = args
@@ -357,6 +411,13 @@ def _dig_for_resolver(annotation, path: Sequence[_TypeContainer]):
             res = _dig_for_resolver(left_t, [*path, _TypeContainer.OPTIONAL])
             if res:
                 return res
+
+    if origin in (Union, UnionType):
+        resolvers = [_dig_for_resolver(arg, path) for arg in args]
+        if all(r is not None for r in resolvers):
+            return Resolver.union(
+                *check.is_list(resolvers, of_type=Resolver),
+            )
 
     elif origin in (
         Sequence,

@@ -4,6 +4,7 @@ description: Learn how to build an ETL pipeline with Dagster
 last_update:
   author: Alex Noonan
 sidebar_class_name: hidden
+sidebar_position: 10
 ---
 
 # Build your first ETL pipeline

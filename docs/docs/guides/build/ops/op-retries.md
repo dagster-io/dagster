@@ -1,8 +1,9 @@
 ---
 title: 'Op retries'
-description: Retry ops on exception using RetryPolicy and RetryRequested
+description: Retry Dagster ops on exception using RetryPolicy and RetryRequested
 sidebar_position: 300
 ---
+
 
 import OpsNote from '@site/docs/partials/\_OpsNote.md';
 
@@ -23,7 +24,7 @@ When an exception occurs during op execution, Dagster provides tools to retry th
 
 In Dagster, code is executed within an [op](/guides/build/ops/). Sometimes this code can fail for transient reasons, and the desired behavior is to retry and run the function again.
 
-Dagster provides both declarative <PyObject section="ops" module="dagster" object="RetryPolicy"  />s as well as manual <PyObject section="ops" module="dagster" object="RetryRequested" /> exceptions to enable this behavior.
+Dagster provides both declarative <PyObject section="ops" module="dagster" object="RetryPolicy"  /> as well as manual <PyObject section="ops" module="dagster" object="RetryRequested" /> exceptions to enable this behavior.
 
 ## Using op retries
 
@@ -44,6 +45,14 @@ This improves the situation, but we may need additional configuration to control
 In addition to being able to set the policy directly on the op definition, it can also be set on specific invocations of an op, or a <PyObject section="jobs" module="dagster" object="job" decorator /> to apply to all ops contained within.
 
 <CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/retries.py" startAfter="policy3_start" endBefore="policy3_end" />
+
+:::info
+
+Retry policies also work for asset jobs.
+
+<CodeExample path="docs_snippets/docs_snippets/deploying/asset_job_retries.py" />
+
+:::
 
 ### `RetryRequested`
 

@@ -47,7 +47,10 @@ describe('useQueryAndLocalStoragePersistedState', () => {
             return {'open-nodes': Array.from(val)};
           },
           decode: (qs) => {
-            return new Set(qs['open-nodes']);
+            if (Array.isArray(qs['open-nodes'])) {
+              return new Set(qs['open-nodes'].map(String));
+            }
+            return new Set();
           },
           isEmptyState: (val) => val.size === 0,
         }),
@@ -107,7 +110,10 @@ describe('useQueryAndLocalStoragePersistedState', () => {
             return {'open-nodes': Array.from(val)};
           },
           decode: (qs) => {
-            return new Set(qs['open-nodes']);
+            if (Array.isArray(qs['open-nodes'])) {
+              return new Set(qs['open-nodes'].map(String));
+            }
+            return new Set();
           },
           isEmptyState: (val) => val.size === 0,
         }),

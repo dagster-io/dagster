@@ -36,5 +36,10 @@ setup(
         "pandas",
         "great_expectations>=0.17.15,<1.0.0",  # need to migrate from DataContext
     ],
+    extras_require={
+        "test": [
+            "great-expectations>=0.18.22",  # lower bound to test version for consistent snapshots
+        ],
+    },
     zip_safe=False,
 )

@@ -1,6 +1,6 @@
 ---
 title: Backfilling data
-description: Dagster supports data backfills for each partition or subsets of partitions.
+description: Backfilling is the process of running partitions for assets that either don't exist or updating existing records. Dagster supports data backfills for each partition or subsets of partitions.
 sidebar_position: 300
 ---
 
@@ -24,9 +24,6 @@ To observe the progress of an asset backfill, navigate to the **Runs details** p
 
 ## Launching single-run backfills using backfill policies
 
-import Beta from '@site/docs/partials/\_Beta.md';
-
-<Beta />
 
 By default, if you launch a backfill that covers `N` partitions, Dagster will launch `N` separate runs, one for each partition. This approach can help avoid overwhelming Dagster or resources with large amounts of data. However, if you're using a parallel-processing engine like Spark and Snowflake, you often don't need Dagster to help with parallelism, so splitting up the backfill into multiple runs just adds extra overhead.
 

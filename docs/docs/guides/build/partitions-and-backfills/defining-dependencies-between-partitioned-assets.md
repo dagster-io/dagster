@@ -17,7 +17,7 @@ Partitioned assets in Dagster can have dependencies on other partitioned assets,
 A few rules govern default partition-to-partition dependencies:
 
 - When the upstream asset and downstream asset have the same <PyObject section="partitions" module="dagster" object="PartitionsDefinition" />, each partition in the downstream asset will depend on the same partition in the upstream asset.
-- When the upstream asset and downstream asset are both [time window-partitioned](partitioning-assets#time-based), each partition in the downstream asset will depend on all partitions in the upstream asset that intersect its time window.
+- When the upstream asset and downstream asset are both [time window-partitioned](/guides/build/partitions-and-backfills/partitioning-assets#time-based), each partition in the downstream asset will depend on all partitions in the upstream asset that intersect its time window.
 
 For example, if an asset with a <PyObject section="partitions" module="dagster" object="DailyPartitionsDefinition" /> depends on an asset with an <PyObject section="partitions" module="dagster" object="HourlyPartitionsDefinition" />, then partition `2024-04-12` of the daily asset would depend on 24 partitions of the hourly asset: `2024-04-12-00:00` through `2024-04-12-23:00`.
 

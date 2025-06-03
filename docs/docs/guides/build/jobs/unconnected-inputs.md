@@ -1,6 +1,6 @@
 ---
 title: 'Unconnected inputs in op jobs'
-description: "Learn to work with unconnected inputs in op jobs."
+description: "Learn to work with unconnected inputs in Dagster op jobs."
 sidebar_position: 400
 ---
 

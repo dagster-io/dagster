@@ -18,7 +18,7 @@ class AvailablePythonVersion(Enum):
 
     @classmethod
     def get_default(cls) -> "AvailablePythonVersion":
-        return cls["V3_11"]
+        return cls["V3_12"]
 
     # Useful for providing to `PackageSpec.unsupported_python_versions` when you only want to test
     # the default version.

@@ -1,6 +1,7 @@
 ---
-title: 'Testing your component type'
-sidebar_position: 300
+description: How to test component types.
+sidebar_position: 500
+title: Testing your component type
 unlisted: true
 ---
 

@@ -1,0 +1,241 @@
+import os
+from collections.abc import Sequence
+from dataclasses import asdict
+from pathlib import Path
+from typing import Optional
+
+import click
+from dagster_dg_core.config import (
+    DgProjectPythonEnvironment,
+    DgRawWorkspaceConfig,
+    DgWorkspaceScaffoldProjectOptions,
+    discover_workspace_root,
+    modify_dg_toml_config,
+)
+from dagster_dg_core.context import DgContext
+from dagster_dg_core.utils import exit_with_error, get_toml_node, has_toml_node, set_toml_node
+from dagster_shared.libraries import parse_package_version
+from dagster_shared.scaffold import scaffold_subtree
+
+
+def scaffold_workspace(
+    dirname: str,
+    workspace_config: Optional[DgRawWorkspaceConfig] = None,
+) -> Path:
+    # Can't create a workspace that is a child of another workspace
+    import tomlkit
+    import tomlkit.items
+
+    new_workspace_path = Path.cwd() if dirname == "." else Path.cwd() / dirname
+    existing_workspace_path = discover_workspace_root(new_workspace_path)
+    if existing_workspace_path:
+        exit_with_error(
+            f"Workspace already exists at {existing_workspace_path}.  Run `create-dagster project` to add a new project to that workspace."
+        )
+    elif dirname != "." and new_workspace_path.exists():
+        exit_with_error(f"Folder already exists at {new_workspace_path}.")
+
+    scaffold_subtree(
+        path=new_workspace_path,
+        name_placeholder="WORKSPACE_NAME_PLACEHOLDER",
+        project_template_path=Path(
+            os.path.join(os.path.dirname(__file__), "templates", "WORKSPACE_NAME_PLACEHOLDER")
+        ),
+        project_name=dirname,
+    )
+
+    if workspace_config is not None:
+        with modify_dg_toml_config(new_workspace_path / "dg.toml") as toml:
+            for k, v in workspace_config.items():
+                # Ignore empty collections and None, but not False
+                if v != {} and v != [] and v is not None:
+                    get_toml_node(toml, ("workspace",), (tomlkit.items.Table)).add(tomlkit.nl())
+                    set_toml_node(toml, ("workspace", k), v)
+
+    click.echo(f"Scaffolded files for Dagster workspace at {new_workspace_path}.")
+    return new_workspace_path
+
+
+def scaffold_project(
+    path: Path,
+    dg_context: DgContext,
+    use_editable_dagster: Optional[str],
+    python_environment: Optional[DgProjectPythonEnvironment] = None,
+) -> None:
+    import tomlkit
+    import tomlkit.items
+
+    click.echo(f"Creating a Dagster project at {path}.")
+
+    cli_options = DgWorkspaceScaffoldProjectOptions.get_raw_from_cli(use_editable_dagster)
+    workspace_options = (
+        dg_context.config.workspace.scaffold_project_options
+        if dg_context.config.workspace
+        else None
+    )
+
+    final_use_editable_dagster = cli_options.get(
+        "use_editable_dagster",
+        workspace_options.use_editable_dagster if workspace_options else None,
+    )
+
+    if final_use_editable_dagster:
+        editable_dagster_root = (
+            _get_editable_dagster_from_env()
+            if final_use_editable_dagster is True
+            else final_use_editable_dagster
+        )
+        deps = EDITABLE_DAGSTER_DEPENDENCIES
+        dev_deps = EDITABLE_DAGSTER_DEV_DEPENDENCIES
+        sources = _gather_dagster_packages(Path(editable_dagster_root))
+    else:
+        editable_dagster_root = None
+        dev_deps = PYPI_DAGSTER_DEV_DEPENDENCIES
+
+        from create_dagster.version import __version__
+
+        create_dagster_version = parse_package_version(__version__)
+        if create_dagster_version.release[0] >= 1:
+            # Pin scaffolded libraries to match create-dagster version
+            deps = [f"dagster=={__version__}"]
+        else:
+            deps = ["dagster"]
+
+        sources = []
+
+    dependencies_str = _get_pyproject_toml_dependencies(deps)
+    dev_dependencies_str = _get_pyproject_toml_dev_dependencies(dev_deps)
+    uv_sources_str = _get_pyproject_toml_uv_sources(sources) if sources else ""
+
+    scaffold_subtree(
+        path=path,
+        name_placeholder="PROJECT_NAME_PLACEHOLDER",
+        project_template_path=Path(
+            os.path.join(os.path.dirname(__file__), "templates", "PROJECT_NAME_PLACEHOLDER")
+        ),
+        dependencies=dependencies_str,
+        dev_dependencies=dev_dependencies_str,
+        uv_sources=uv_sources_str,
+    )
+    click.echo(f"Scaffolded files for Dagster project at {path}.")
+
+    if python_environment:
+        with modify_dg_toml_config(dg_context.with_root_path(path).config_file_path) as toml:
+            python_environment_dict = asdict(python_environment)
+            used_key = next((k for k, v in python_environment_dict.items() if v), None)
+            if used_key:
+                set_toml_node(toml, ("project", "python_environment"), {})
+                set_toml_node(
+                    toml,
+                    ("project", "python_environment", used_key),
+                    python_environment_dict[used_key],
+                )
+
+    # Build the venv
+    cl_dg_context = dg_context.with_root_path(path)
+    if cl_dg_context.use_dg_managed_environment:
+        cl_dg_context.ensure_uv_lock()
+
+    # Update pyproject.toml
+    if cl_dg_context.is_workspace:
+        entry = {
+            "path": str(cl_dg_context.root_path.relative_to(cl_dg_context.workspace_root_path)),
+        }
+
+        with modify_dg_toml_config(dg_context.config_file_path) as toml:
+            if not has_toml_node(toml, ("workspace", "projects")):
+                projects = tomlkit.aot()
+                set_toml_node(toml, ("workspace", "projects"), projects)
+                item = tomlkit.table()
+            else:
+                projects = get_toml_node(
+                    toml,
+                    ("workspace", "projects"),
+                    (tomlkit.items.AoT, tomlkit.items.Array),
+                )
+                if isinstance(projects, tomlkit.items.Array):
+                    item = tomlkit.inline_table()
+                else:
+                    item = tomlkit.table()
+
+            # item.trivia.indent is the preceding whitespace-- this ensures there is always a blank
+            # line before the new entry
+            item.trivia.indent = item.trivia.indent + "\n"
+            for key, value in entry.items():
+                item[key] = value
+            projects.append(item)
+
+
+# Despite the fact that editable dependencies are resolved through tool.uv.sources, we need to set
+# the dependencies themselves differently depending on whether we are using editable dagster or
+# not. This is because `tool.uv.sources` only seems to apply to direct dependencies of the package,
+# so any 2+-order Dagster dependency of our package needs to be listed as a direct dependency in the
+# editable case. See: https://github.com/astral-sh/uv/issues/9446
+EDITABLE_DAGSTER_DEPENDENCIES = [
+    "dagster",
+    "dagster-pipes",
+    "dagster-shared",
+    "dagster-test",  # we include dagster-test for testing purposes
+]
+EDITABLE_DAGSTER_DEV_DEPENDENCIES = [
+    "dagster-webserver",
+    "dagster-graphql",
+    "dagster-dg-core",
+    "dagster-dg-cli",
+    "dagster-cloud-cli",
+]
+
+
+PYPI_DAGSTER_DEV_DEPENDENCIES = [
+    "dagster-webserver",
+    "dagster-dg-cli[local]",
+]
+
+
+def _get_editable_dagster_from_env() -> str:
+    if not os.environ.get("DAGSTER_GIT_REPO_DIR"):
+        exit_with_error(
+            "The `--use-editable-dagster` option "
+            "requires the `DAGSTER_GIT_REPO_DIR` environment variable to be set."
+        )
+    return os.environ["DAGSTER_GIT_REPO_DIR"]
+
+
+def _get_pyproject_toml_dependencies(deps: Sequence[str]) -> str:
+    return "\n".join(
+        [
+            "dependencies = [",
+            *[f'    "{dep}",' for dep in deps],
+            "]",
+        ]
+    )
+
+
+def _get_pyproject_toml_dev_dependencies(deps: Sequence[str]) -> str:
+    return "\n".join(
+        [
+            "dev = [",
+            *[f'    "{dep}",' for dep in deps],
+            "]",
+        ]
+    )
+
+
+def _get_pyproject_toml_uv_sources(lib_paths: list[Path]) -> str:
+    lib_lines = [f"{path.name} = {{ path = '{path}', editable = true }}" for path in lib_paths]
+    return "\n".join(
+        [
+            "[tool.uv.sources]",
+            *lib_lines,
+        ]
+    )
+
+
+def _gather_dagster_packages(editable_dagster_root: Path) -> list[Path]:
+    return [
+        p.parent
+        for p in (
+            *editable_dagster_root.glob("python_modules/dagster*/setup.py"),
+            *editable_dagster_root.glob("python_modules/libraries/dagster*/setup.py"),
+        )
+    ]

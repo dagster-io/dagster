@@ -7,7 +7,8 @@ export class Worker {
   private worker: globalThis.Worker;
 
   private errorHandlers = Array<(error: ErrorEvent) => void>();
-
+  private terminateHandlers = Array<() => void>();
+  private _terminated = false;
   constructor(url: string | URL, options?: WorkerOptions) {
     this.worker = new globalThis.Worker(url, options);
     this.worker.postMessage({
@@ -41,6 +42,10 @@ export class Worker {
     };
   }
 
+  public onTerminate(handler: () => void) {
+    this.terminateHandlers.push(handler);
+  }
+
   public onMessage(handler: (event: MessageEvent) => void) {
     const wrappedHandler = this.messageHandlerWrapper(handler);
     this.worker.addEventListener('message', wrappedHandler);
@@ -52,6 +57,15 @@ export class Worker {
   }
 
   public terminate() {
+    if (this._terminated) {
+      return;
+    }
+    this._terminated = true;
     this.worker.terminate();
+    this.terminateHandlers.forEach((handler) => handler());
+  }
+
+  public isTerminated() {
+    return this._terminated;
   }
 }

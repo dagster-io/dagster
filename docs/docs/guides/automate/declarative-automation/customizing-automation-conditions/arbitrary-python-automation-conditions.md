@@ -1,9 +1,14 @@
 ---
-title: 'Arbitrary Python automation conditions'
-sidebar_position: 400
+description: Define custom AutomationConditions in Dagster to execute arbitrary Python code to handle complex business logic.
+sidebar_position: 600
+title: Arbitrary Python automation conditions
 ---
 
-Some automation use cases require custom business logic that cannot be expressed with off-the-shelf components. In these cases, you can define AutomationConditions which execute arbitrary python code, and compose them with the built-in conditions.
+import Preview from '@site/docs/partials/\_Preview.md';
+
+<Preview />
+
+Some automation use cases require custom business logic that cannot be expressed with off-the-shelf components. In these cases, you can define AutomationConditions which execute arbitrary Python code, and compose them with the built-in conditions.
 
 ## Setup
 

@@ -18,7 +18,7 @@ from dagster._core.errors import DagsterError
 from dagster.components.resolved.context import ResolutionContext
 from dagster.components.resolved.core_models import (
     AssetAttributesModel,
-    resolve_asset_attributes_to_mapping,
+    resolve_asset_spec_update_kwargs_to_mapping,
 )
 
 T = TypeVar("T")
@@ -115,15 +115,27 @@ class TranslatorResolvingInfo:
         if isinstance(resolved_asset_attributes, AssetSpec):
             return resolved_asset_attributes
 
-        resolved_attributes = resolve_asset_attributes_to_mapping(
-            model=resolved_asset_attributes,
-            context=self.resolution_context.at_path(self.model_key).with_scope(**context),
+        resolved_attributes = dict(
+            resolve_asset_spec_update_kwargs_to_mapping(
+                model=resolved_asset_attributes,
+                context=self.resolution_context.at_path(self.model_key).with_scope(**context),
+            )
         )
         if "code_version" in resolved_attributes:
             resolved_attributes = {
                 **resolved_attributes,
                 "code_version": str(resolved_attributes["code_version"]),
             }
+
+        if "key_prefix" in resolved_attributes:
+            prefix = resolved_attributes.pop("key_prefix")
+            if "key" in resolved_attributes:
+                key = resolved_attributes.pop("key")
+            else:
+                key = base_spec.key
+            key = key.with_prefix(prefix)
+            resolved_attributes["key"] = key
+
         return base_spec.replace_attributes(
             **{k: v for k, v in resolved_attributes.items() if k not in TRANSLATOR_MERGE_ATTRIBUTES}
         ).merge_attributes(

@@ -40,6 +40,5 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# Generated dagster-dg JSON
+# Generated dagster-dg-cli JSON
 contents/
-

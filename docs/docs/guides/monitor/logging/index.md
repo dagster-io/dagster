@@ -1,6 +1,7 @@
 ---
-title: 'Logging'
+description: Dagster supports a variety of built-in logging options, as well as the ability to extend and customize them. Logs can be produced by runs, sensor and schedule evaluations, and processes like the Dagster webserver and daemon.
 sidebar_position: 10
+title: Logging
 ---
 
 Dagster supports a variety of [built-in logging options](/api/dagster/loggers#built-in-loggers), as well as the ability to extend and customize them. Logs can be produced by runs, sensor and schedule evaluations, and processes like the [Dagster webserver](/guides/operate/webserver) and daemon.

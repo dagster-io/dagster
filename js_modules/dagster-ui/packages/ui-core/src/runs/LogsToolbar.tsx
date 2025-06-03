@@ -175,7 +175,8 @@ export const ComputeLogToolbar = ({
           <div style={{width: 200}}>
             <Suggest
               resetOnClose
-              inputProps={{placeholder: 'Select a step…'}}
+              inputProps={{placeholder: 'Select a step…', style: {width: 500}}}
+              popoverProps={{matchTargetWidth: true}}
               activeItem={computeLogFileKey}
               selectedItem={computeLogFileKey}
               disabled={!steps.length}
@@ -193,6 +194,7 @@ export const ComputeLogToolbar = ({
                   key={item}
                 />
               )}
+              menuWidth={500}
               onItemSelect={(fileKey) => {
                 onSetComputeLogKey(fileKey);
               }}

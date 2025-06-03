@@ -5,15 +5,8 @@ from typing import Optional
 
 import dagster as dg
 import duckdb
-from dagster.components import (
-    Component,
-    ComponentLoadContext,
-    Model,
-    Resolvable,
-    Scaffolder,
-    ScaffoldRequest,
-    scaffold_component,
-)
+from dagster import Component, ComponentLoadContext, Model, Resolvable, Scaffolder, ScaffoldRequest
+from dagster.components.component_scaffolding import scaffold_component
 from dagster.components.resolved.core_models import ResolvedAssetSpec
 from dagster.components.scaffold.scaffold import scaffold_with
 from pydantic import BaseModel
@@ -24,11 +17,11 @@ class DuckDbScaffolderParams(BaseModel):
     asset_key: Optional[str]
 
 
-class DuckDbComponentScaffolder(Scaffolder):
-    def scaffold(self, request: ScaffoldRequest, params: DuckDbScaffolderParams) -> None:
+class DuckDbComponentScaffolder(Scaffolder[DuckDbScaffolderParams]):
+    def scaffold(self, request: ScaffoldRequest[DuckDbScaffolderParams]) -> None:
         root_name = request.target_path.stem
-        asset_key = params.asset_key or f"{root_name}"
-        sql_file = params.sql_file or f"{root_name}.sql"
+        asset_key = request.params.asset_key or f"{root_name}"
+        sql_file = request.params.sql_file or f"{root_name}.sql"
 
         Path(sql_file).touch()
 

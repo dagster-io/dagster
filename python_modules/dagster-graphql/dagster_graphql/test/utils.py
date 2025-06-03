@@ -58,19 +58,7 @@ def main_repo_name() -> str:
 SCHEMA = create_schema()
 
 
-def execute_dagster_graphql(
-    context: WorkspaceRequestContext,
-    query: str,
-    variables: Optional[GqlVariables] = None,
-    schema: graphene.Schema = SCHEMA,
-) -> GqlResult:
-    result = asyncio.run(
-        schema.execute_async(
-            query,
-            context_value=context,
-            variable_values=variables,
-        )
-    )
+def _process_query_results(context: WorkspaceRequestContext, result) -> GqlResult:
     # It would be cleaner if we instead passed in a process context
     # and made a request context for this invocation.
     # For now just ensure we don't shared loaders between requests.
@@ -84,6 +72,37 @@ def execute_dagster_graphql(
         raise result.errors[0]
 
     return result
+
+
+def execute_dagster_graphql(
+    context: WorkspaceRequestContext,
+    query: str,
+    variables: Optional[GqlVariables] = None,
+    schema: graphene.Schema = SCHEMA,
+) -> GqlResult:
+    result = asyncio.run(
+        schema.execute_async(
+            query,
+            context_value=context,
+            variable_values=variables,
+        )
+    )
+    return _process_query_results(context, result)
+
+
+async def async_execute_dagster_graphql(
+    context: WorkspaceRequestContext,
+    query: str,
+    variables: Optional[GqlVariables] = None,
+    schema: graphene.Schema = SCHEMA,
+) -> GqlResult:
+    result = await schema.execute_async(
+        query,
+        context_value=context,
+        variable_values=variables,
+    )
+
+    return _process_query_results(context, result)
 
 
 def execute_dagster_graphql_subscription(

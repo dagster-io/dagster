@@ -1,6 +1,7 @@
 ---
 title: 'dagster-dbt integration reference'
 description: Dagster can orchestrate dbt alongside other technologies.
+sidebar_position: 600
 ---
 
 :::note
@@ -11,13 +12,13 @@ Using dbt Cloud? Check out the [dbt Cloud with Dagster guide](/integrations/libr
 
 This reference provides a high-level look at working with dbt models through Dagster's [software-defined assets](/guides/build/assets/) framework using the [`dagster-dbt` integration library](/api/libraries/dagster-dbt).
 
-For a step-by-step implementation walkthrough, refer to the [Using dbt with Dagster asset definitions tutorial](/integrations/libraries/dbt/using-dbt-with-dagster).
+For a step-by-step implementation walkthrough, refer to the [Using dbt with Dagster asset definitions tutorial](/integrations/libraries/dbt/creating-a-dbt-project-in-dagster).
 
 ## Relevant APIs
 
 | Name                                                                                                    | Description                                                                                                                                                                     |
 | ------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [`dagster-dbt project scaffold`](/api/libraries/dagster-dbt#scaffold)                        | A CLI command to initialize a new Dagster project for an existing dbt project.                                                                                                  |
+| [`dagster-dbt project scaffold`](/api/libraries/dagster-dbt#scaffold)                                   | A CLI command to initialize a new Dagster project for an existing dbt project.                                                                                                  |
 | <PyObject section="libraries" module="dagster_dbt" object="dbt_assets" decorator />                     | A decorator used to define Dagster assets for dbt models defined in a dbt manifest.                                                                                             |
 | <PyObject section="libraries" module="dagster_dbt" object="DbtCliResource" />                           | A class that defines a Dagster resource used to execute dbt CLI commands.                                                                                                       |
 | <PyObject section="libraries" module="dagster_dbt" object="DbtCliInvocation" />                         | A class that defines the representation of an invoked dbt command.                                                                                                              |
@@ -41,7 +42,7 @@ Dagster’s [asset definitions](/guides/build/assets/) bear several similarities
 
 These similarities make it natural to interact with dbt models as asset definitions. Let’s take a look at a dbt model and an asset definition, in code:
 
-![Comparison of a dbt model and Dagster asset in code](/images/integrations/dbt/using-dbt-with-dagster/asset-dbt-model-comparison.png)
+![Comparison of a dbt model and Dagster asset in code](/images/integrations/dbt/creating-a-dbt-project-in-dagster/asset-dbt-model-comparison.png)
 
 Here's what's happening in this example:
 
@@ -56,7 +57,7 @@ Here's what's happening in this example:
 
 :::note
 
-Check out [part two of the dbt & Dagster tutorial](/integrations/libraries/dbt/using-dbt-with-dagster/load-dbt-models) to see this concept in context.
+Check out [part two of the dbt & Dagster tutorial](/integrations/libraries/dbt/creating-a-dbt-project-in-dagster/load-dbt-models) to see this concept in context.
 
 :::
 
@@ -72,7 +73,7 @@ This creates a directory called `project_dagster/` inside the current directory.
 
 :::note
 
-Check out [part two of the dbt & Dagster tutorial](/integrations/libraries/dbt/using-dbt-with-dagster/load-dbt-models) to see this concept in context.
+Check out [part two of the dbt & Dagster tutorial](/integrations/libraries/dbt/creating-a-dbt-project-in-dagster/load-dbt-models) to see this concept in context.
 
 :::
 
@@ -142,7 +143,12 @@ In your CI/CD workflows for your Dagster project:
    - Create a dbt manifest for your Dagster project, and
    - Package your dbt project
 
-In the CI/CD workflows for your dbt project, set up a dispatch action to trigger a deployment of your Dagster project when your dbt project changes.
+:::note
+If you are using [Components](/guides/labs/components), you can prepare your `DbtProjectComponent` using `dagster-dbt project prepare-and-package --components path/to/project-root`
+:::
+
+In the CI/CD workflows for your dbt project, set up a dispatch action to trigger a deployment of your Dagster project
+when your dbt project changes.
 
 ### Deploying a dbt project from a monorepo
 
@@ -162,11 +168,17 @@ In your CI/CD workflows for your Dagster and dbt project:
    - Create a dbt manifest for your Dagster project, and
    - Package your dbt project
 
+:::note
+If you are using [Components](/guides/labs/components), you can prepare your `DbtProjectComponent` using `dagster-dbt project prepare-and-package --components path/to/project-root`
+:::
+
 ## Leveraging dbt defer with branch deployments
 
 :::note
 
-This feature requires the `DAGSTER_BUILD_STATEDIR` environment variable to be set in your CI/CD. Learn more about required environment variables in CI/CD for Dagster+ [here](/dagster-plus/features/ci-cd/configuring-ci-cd).
+This feature requires the `DAGSTER_BUILD_STATEDIR` environment variable to be set in your CI/CD. Learn more about required environment variables in CI/CD for Dagster+ [here](/deployment/dagster-plus/ci-cd/ci-cd-in-hybrid).
+
+You will also need to run the `dagster-cloud ci dagster-dbt project manage-state` command in your prod deployment before it can be run in branch deployments. This will create the baseline for comparison in the branch deployments.
 
 :::
 
@@ -435,7 +447,7 @@ To override the <PyObject section="assets" module="dagster" object="AutomationCo
 
 :::note
 
-Ensure that the [`default_automation_condition_sensor` is enabled](/guides/automate/declarative-automation/#using-declarative-automation) for automation conditions to be evaluated.
+Ensure that the [`default_automation_condition_sensor` is enabled](/guides/automate/declarative-automation/automation-condition-sensors) for automation conditions to be evaluated.
 
 :::
 
@@ -453,7 +465,7 @@ Note that Dagster allows the optional specification of a [`code_version`](/guide
 
 :::
 
-Dagster loads your dbt tests as [asset checks](/guides/test/asset-checks).
+Dagster automatically loads your dbt tests on _models_ as [asset checks](/guides/test/asset-checks). To load dbt tests on sources as asset checks as well, see [Loading dbt source tests as asset checks](#loading-dbt-source-tests-as-asset-checks) section.
 
 ### Indirect selection
 
@@ -493,6 +505,18 @@ You can disable modeling your dbt tests as asset checks. The tests will still ru
 <CodeExample
   startAfter="start_disable_asset_check_dagster_dbt_translator"
   endBefore="end_disable_asset_check_dagster_dbt_translator"
+  path="docs_snippets/docs_snippets/integrations/dbt/dbt.py"
+/>
+
+### Loading dbt source tests as asset checks
+
+It's common to have the body of your dbt assets execute a `dbt build` command. In addition to executing all of your dbt models and their tests, this will also execute any dbt tests on sources that are upstream of your dbt models.
+
+By default, Dagster does not load dbt source tests as asset checks. To enable this feature, you can define a <PyObject section="libraries" module="dagster_dbt" object="DagsterDbtTranslator" /> with <PyObject section="libraries" module="dagster_dbt" object="DagsterDbtTranslatorSettings" /> that have source tests enabled. The following example enables loading dbt source tests as asset checks:
+
+<CodeExample
+  startAfter="start_enable_source_tests_as_checks_dagster_dbt_translator"
+  endBefore="end_enable_source_tests_as_checks_dagster_dbt_translator"
   path="docs_snippets/docs_snippets/integrations/dbt/dbt.py"
 />
 
@@ -557,27 +581,9 @@ Metadata fetching methods such as <PyObject section="libraries" object="core.dbt
 
 ### Upstream dependencies
 
-#### Defining an asset as an upstream dependency of a dbt model
-
-Dagster allows you to define existing assets as upstream dependencies of dbt models. For example, say you have the following asset with asset key `upstream`:
-
-<CodeExample
-  startAfter="start_upstream_dagster_asset"
-  endBefore="end_upstream_dagster_asset"
-  path="docs_snippets/docs_snippets/integrations/dbt/dbt.py"
-/>
-
-Then, in the downstream model, you can select from this source data. This defines a dependency relationship between your upstream asset and dbt model:
-
-```sql
-select *
-  from {{ source("dagster", "upstream") }}
- where foo=1
-```
-
 #### Defining a dbt source as a Dagster asset
 
-Dagster parses information about assets that are upstream of specific dbt models from the dbt project itself. Whenever a model is downstream of a [dbt source](https://docs.getdbt.com/docs/building-a-dbt-project/using-sources), that source will be parsed as an upstream asset.
+Dagster parses information about assets that are upstream of specific dbt models from the dbt project itself. Whenever a model is downstream of a [dbt source](https://docs.getdbt.com/docs/building-a-dbt-project/using-sources), that upstream source will be parsed as an upstream asset.
 
 For example, if you defined a source in your `sources.yml` file like this:
 
@@ -625,6 +631,60 @@ You can use define a <PyObject section="assets" module="dagster" object="multi_a
   endBefore="end_upstream_multi_asset"
   path="docs_snippets/docs_snippets/integrations/dbt/dbt.py"
 />
+
+#### Defining an asset as an upstream data dependency of a dbt model
+
+Dagster allows you to define existing assets as upstream data dependencies of dbt models, meaning that an upstream Dagster asset creates data for the dbt model to read. For example, say you have the following asset with asset key `upstream`:
+
+<CodeExample
+  startAfter="start_upstream_dagster_asset"
+  endBefore="end_upstream_dagster_asset"
+  path="docs_snippets/docs_snippets/integrations/dbt/dbt.py"
+/>
+
+You can define that asset as a source in your `sources.yml` file:
+
+```yaml
+sources:
+  - name: dagster
+    tables:
+      - name: upstream
+```
+
+Then, in the downstream model, you can select from this source data. This defines a data dependency relationship between your upstream asset and dbt model:
+
+```sql
+select *
+  from {{ source("dagster", "upstream") }}
+ where foo=1
+```
+
+#### Defining an asset as an upstream temporal dependency of a dbt model
+
+Dagster allows you to define existing assets as upstream temporal dependencies of dbt models, meaning that Dagster needs to schedule the dbt model after a Dagster asset has materialized, but that the model does not need to read data from the asset. For example, say you have the following asset with asset key `upstream`:
+
+<CodeExample
+  startAfter="start_upstream_dagster_asset"
+  endBefore="end_upstream_dagster_asset"
+  path="docs_snippets/docs_snippets/integrations/dbt/dbt.py"
+/>
+
+First, define that asset as a source in your `sources.yml` file:
+
+```yaml
+sources:
+  - name: dagster
+    tables:
+      - name: upstream
+```
+
+Then, in the downstream model, you can specify that the downstream model depends on the upstream Dagster asset.  This defines a temporal dependency relationship between your upstream asset and dbt model:
+
+```
+-- depends_on: {{ source('dagster','upstream') }}
+
+SELECT ...
+```
 
 ### Downstream dependencies
 

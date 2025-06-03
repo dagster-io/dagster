@@ -45,8 +45,9 @@ import Deprecated from '@site/docs/partials/\_Deprecated.md';
 API documentation lives in reStructuredText files in the [/docs/sphinx/sections/api/apidocs](https://github.com/dagster-io/dagster/tree/master/docs/sphinx/sections/api/apidocs) directory. These files reference modules, classes, and methods from Python files in the [python_modules](https://github.com/dagster-io/dagster/tree/master/python_modules) directory (mainly the `dagster`, `dagster-pipes`, and `libraries` directories). When the API docs are built, Sphinx populates them with the docstrings from those modules, classes, and methods.
 
 When you make changes to the API, you may need to do some or all of the following:
-* Add or update docstrings in Python files
-* Update reStructuredText files to reference new modules, classes, or methods
+
+- Add or update docstrings in Python files
+- Update reStructuredText files to reference new modules, classes, or methods
 
 #### Formatting API documentation
 
@@ -65,30 +66,39 @@ H3 heading
 
 ## Formatting
 
-### PyObject references
+### Linking to API docs with `PyObject`
 
-To create a link to the Python API docs, use the `PyObject` component. Previously, we were able to parse the Sphinx search index to determine the section that the module resides. As we no longer have this, a `section` prop was added to the component:
-
-Before:
+To create a link to the Python API docs, use the [`PyObject` component](https://github.com/dagster-io/dagster/blob/master/docs/src/components/PyObject.tsx). The following `PyObject` will result in a URL of `https://docs.dagster.io/api/dagster/assets#dagster.MaterializeResult`:
 
 ```
-<PyObject
-  module="dagster"
-  object="MaterializeResult"
-/>
+<PyObject module="dagster" section="assets" object="MaterializeResult" />
 ```
 
-After:
+Note that if the class name is different from the module, you will need to prepend the class name to the object:
 
 ```
-<PyObject
-  section="assets"
-  module="dagster"
-  object="MaterializeResult"
-/>
+<PyObject module="dagster_aws" section="libraries" object="s3.s3_pickle_io_manager" />
 ```
 
-Note that the `method` property causes the build to break -- use `object` instead, and prepend the class name to the method, if it is different from the module.
+#### Properties
+
+Required properties:
+
+* `module`: The module name
+* `section`: The section name in the docs (i.e. the name of the page)
+* `object`: The class or method
+
+Optional properties:
+
+* pluralize
+* displayText
+* decorator
+
+The following example creates a link like this: [@assets](https://docs.dagster.io/api/dagster/assets#dagster.asset):
+
+```
+<PyObject module="dagster" section="assets" object="asset" decorator pluralize />
+```
 
 ### Images
 
@@ -334,7 +344,7 @@ Use `**strong**` to emphasize content in tabs. Do not use Markdown headings, sin
 
 #### Synced tabs
 
-Groups of tabs can be synced by using the `groupId` parameter.
+Groups of tabs can be synced with the `groupId` parameter:
 
 ```html
 <Tabs groupId="operating-systems">
@@ -348,4 +358,47 @@ Groups of tabs can be synced by using the `groupId` parameter.
 </Tabs>
 ```
 
-For more information refer to the [Docusaurus documentation](https://docusaurus.io/docs/markdown-features/tabs#syncing-tab-choices).
+For more information, see the [Docusaurus documentation](https://docusaurus.io/docs/markdown-features/tabs#syncing-tab-choices).
+
+## Front matter
+
+Each Docusaurus doc can include [front matter](https://docusaurus.io/docs/markdown-features#front-matter), which is metadata about the doc. For a list of accepted fields, see the [Docusaurus docs](https://docusaurus.io/docs/api/plugins/@docusaurus/plugin-content-docs#markdown-front-matter).
+
+### Descriptions
+
+The llms-txt plugin recreates llms.txt and llms-full.txt in the `build` folder every time `yarn build` is run. This plugin appends each page's title and front matter description to llms.txt, and the entire contents of each page to llms-full.txt.
+
+### Integrations pages front matter
+
+The front matter for integration pages (e.g. [Databricks](https://docs.dagster.io/integrations/libraries/databricks) or [Delta Lake](https://docs.dagster.io/integrations/libraries/deltalake/)) is aligned with the public API that is used in the integrations marketplace -- please check with the @dagster-io/docs team before changing it.
+
+Dagster-supported integrations pages use the following front matter:
+
+```
+title: Dagster & CoolIntegration
+sidebar_label: CoolIntegration
+description: A very cool integration.
+tags: [dagster-supported, etl]
+source: https://github.com/tree/master/path/to/coolintegration/code
+pypi: https://pypi.org/project/cool-integration/
+sidebar_custom_props:
+  logo: images/integrations/coolintegration.svg
+```
+
+Community-supported integrations have a slightly different set of tags and sidebar_custom_props:
+
+```
+title: Dagster & CoolIntegration
+sidebar_label: CoolIntegration
+description: A very cool integration from the community.
+tags: [community-supported, etl]
+source: https://github.com/tree/master/path/to/coolintegration/code
+pypi: https://pypi.org/project/cool-integration/
+sidebar_custom_props:
+  logo: images/integrations/coolintegration.svg
+  community: true
+```
+
+[Tags](https://docusaurus.io/docs/create-doc#doc-tags) can be defined inline or in [tags.yml](https://github.com/dagster-io/dagster/blob/master/docs/docs/tags.yml). Tags defined in tags.yml allow creation of tag landing pages, like https://docs.dagster.io/tags/integrations/etl. If you create a new kind of tag, be sure to update tags.yml so a landing page is created for the tag.
+
+The `sidebar_custom_props` values are used to render the doc cards on the integrations index page.

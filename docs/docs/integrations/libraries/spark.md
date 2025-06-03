@@ -1,7 +1,7 @@
 ---
 title: Dagster & Spark
 sidebar_label: Spark
-description: Configure and run Spark jobs.
+description: Running Spark code often requires submitting code to a Databricks or EMR cluster. The Pyspark integration provides a Spark class with methods for configuration and constructing the spark-submit command for a Spark job.
 tags: [dagster-supported, compute]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-pyspark
 pypi: https://pypi.org/project/dagster-pyspark
@@ -10,13 +10,11 @@ sidebar_custom_props:
 partnerlink:
 ---
 
-Spark jobs typically execute on infrastructure that's specialized for Spark. Spark applications are typically not containerized or executed on Kubernetes.
-
-Running Spark code often requires submitting code to a Databricks or EMR cluster. `dagster-pyspark` provides a Spark class with methods for configuration and constructing the `spark-submit` command for a Spark job.
+<p>{frontMatter.description}</p>
 
 This page is focused on using Pipes with specific Spark providers, such as AWS EMR or Databricks. Our guide about [Building pipelines with PySpark](/guides/build/external-pipelines/pyspark-pipeline) provides more information on using Dagster Pipes to launch & monitor general PySpark jobs.
 
-### About Apache Spark
+## About Apache Spark
 
 **Apache Spark** is an open source unified analytics engine for large-scale data processing. Spark provides an interface for programming clusters with implicit data parallelism and fault tolerance. It also provides libraries for graph computation, SQL for structured data processing, ML, and data science.
 

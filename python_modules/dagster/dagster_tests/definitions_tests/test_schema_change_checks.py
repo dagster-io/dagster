@@ -23,7 +23,7 @@ def execute_checks(asset_checks, instance=None) -> ExecuteInProcessResult:
         asset_checks=asset_checks,
         jobs=[define_asset_job("job1", selection=AssetSelection.all_asset_checks())],
     )
-    job_def = defs.get_job_def("job1")
+    job_def = defs.resolve_job_def("job1")
     return job_def.execute_in_process(instance=instance)
 
 

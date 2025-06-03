@@ -36,6 +36,7 @@ export type AssetViewDefinitionQuery = {
           isPartitioned: boolean;
           isObservable: boolean;
           isMaterializable: boolean;
+          isAutoCreatedStub: boolean;
           kinds: Array<string>;
           automationCondition: {
             __typename: 'AutomationCondition';
@@ -16504,6 +16505,7 @@ export type AssetViewDefinitionNodeFragment = {
   isPartitioned: boolean;
   isObservable: boolean;
   isMaterializable: boolean;
+  isAutoCreatedStub: boolean;
   kinds: Array<string>;
   automationCondition: {
     __typename: 'AutomationCondition';
@@ -32735,4 +32737,4 @@ export type AssetViewDefinitionNodeFragment = {
     | null;
 };
 
-export const AssetViewDefinitionQueryVersion = 'e51fcb5fc812fd33e5785da95568e6aa54866d33cd1b4b1c8d5928ce43017c1f';
+export const AssetViewDefinitionQueryVersion = '8e46a21b763fd574fabad6551f7497d66b9c4f22faa2da4eff198a9e68053860';

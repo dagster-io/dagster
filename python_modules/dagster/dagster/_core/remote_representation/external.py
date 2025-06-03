@@ -72,6 +72,7 @@ from dagster._core.remote_representation.origin import (
 from dagster._core.remote_representation.represented import RepresentedJob
 from dagster._core.snap import ExecutionPlanSnapshot
 from dagster._core.snap.job_snapshot import JobSnap
+from dagster._core.storage.tags import EXTERNAL_JOB_SOURCE_TAG_KEY
 from dagster._core.utils import toposort
 from dagster._serdes import create_snapshot_id
 from dagster._utils.cached_method import cached_method
@@ -658,6 +659,16 @@ class RemoteJob(RepresentedJob):
 
     def get_remote_origin_id(self) -> str:
         return self.get_remote_origin().get_id()
+
+    def get_external_job_source(self) -> Optional[str]:
+        """Retrieve the external job source from the job.
+
+        Prefers retrieval from the JobRefSnap, to avoid an expensive retrieval of the JobDataSnap.
+        """
+        if self._job_ref_snap is not None:
+            return self._job_ref_snap.get_preview_tags().get(EXTERNAL_JOB_SOURCE_TAG_KEY)
+        # If JobRefSnap is not available, fall back to the JobDataSnap.
+        return self.tags.get(EXTERNAL_JOB_SOURCE_TAG_KEY)
 
     def get_subset_selector(
         self, asset_selection: Set[AssetKey], asset_check_selection: Set[AssetCheckKey]

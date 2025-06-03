@@ -1,6 +1,7 @@
 ---
-title: Defining schedules
+description: Define schedules in Dagster using ScheduleDefinition or the @schedule decorator.
 sidebar_position: 100
+title: Defining schedules
 ---
 
 ## Defining basic schedules
@@ -68,6 +69,6 @@ This example demonstrates how to emit log messages from a schedule during its ev
 
 :::note
 
-Schedule logs are stored in your [Dagster instance's compute log storage](/guides/deploy/dagster-instance-configuration#compute-log-storage). You should ensure that your compute log storage is configured to view your schedule logs.
+Schedule logs are stored in your [Dagster instance's compute log storage](/deployment/oss/oss-instance-configuration#compute-log-storage). You should ensure that your compute log storage is configured to view your schedule logs.
 
 :::

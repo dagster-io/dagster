@@ -16,10 +16,8 @@ from dagster._core.errors import (
     user_code_error_boundary,
 )
 from dagster._core.test_utils import environ, instance_for_test
-from dagster._utils.error import (
-    _serializable_error_info_from_tb,
-    serializable_error_info_from_exc_info,
-)
+from dagster._utils.error import serializable_error_info_from_exc_info
+from dagster_shared.error import SerializableErrorInfo
 
 from dagster_tests.api_tests.utils import get_bar_repo_handle
 
@@ -276,7 +274,7 @@ def test_config_mapping_error(enable_masking_user_code_errors, caplog) -> None:
 
     assert any(
         "hunter2"
-        in str(_serializable_error_info_from_tb(traceback.TracebackException(*record.exc_info)))
+        in str(SerializableErrorInfo.from_traceback(traceback.TracebackException(*record.exc_info)))
         for record in caplog.records
         if record.exc_info
     )

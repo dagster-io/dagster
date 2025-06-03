@@ -20,10 +20,6 @@ export interface DagsterRepoOption {
   repository: Repository;
 }
 
-export function locationWorkspaceKey(name: string) {
-  return `/LocationWorkspace/${name}`;
-}
-
 /**
  * useVisibleRepos returns `{reposForKeys, toggleVisible, setVisible, setHidden}` and internally
  * mirrors the current selection into localStorage so that the default selection in new browser
@@ -185,6 +181,16 @@ export const isThisThingAnAssetJob = (
     (pipelineOrJob) => pipelineOrJob.name === pipelineOrJobName,
   );
   return !!pipelineOrJob?.isAssetJob;
+};
+
+export const isThisThingAnExternalJob = (
+  repo: DagsterRepoOption | null,
+  pipelineOrJobName: string,
+) => {
+  const pipelineOrJob = repo?.repository.pipelines.find(
+    (pipelineOrJob) => pipelineOrJob.name === pipelineOrJobName,
+  );
+  return !!pipelineOrJob?.externalJobSource;
 };
 
 export const buildPipelineSelector = (

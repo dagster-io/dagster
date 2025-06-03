@@ -3,7 +3,12 @@ from typing import Optional
 
 from dagster import AssetSpec
 
-from dagster_dbt.asset_utils import build_dbt_specs
+from dagster_dbt.asset_utils import (
+    DBT_DEFAULT_EXCLUDE,
+    DBT_DEFAULT_SELECT,
+    DBT_DEFAULT_SELECTOR,
+    build_dbt_specs,
+)
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator, validate_translator
 from dagster_dbt.dbt_manifest import DbtManifestParam, validate_manifest
 from dagster_dbt.dbt_project import DbtProject
@@ -13,8 +18,9 @@ def build_dbt_asset_specs(
     *,
     manifest: DbtManifestParam,
     dagster_dbt_translator: Optional[DagsterDbtTranslator] = None,
-    select: str = "fqn:*",
-    exclude: Optional[str] = None,
+    select: str = DBT_DEFAULT_SELECT,
+    exclude: Optional[str] = DBT_DEFAULT_EXCLUDE,
+    selector: Optional[str] = DBT_DEFAULT_SELECTOR,
     project: Optional[DbtProject] = None,
 ) -> Sequence[AssetSpec]:
     """Build a list of asset specs from a set of dbt resources selected from a dbt manifest.
@@ -30,6 +36,8 @@ def build_dbt_asset_specs(
             to include. Defaults to ``fqn:*``.
         exclude (Optional[str]): A dbt selection string for the models in a project that you want
             to exclude. Defaults to "".
+        selector (Optional[str]): A dbt selector for the models in a project that you want
+            to include. Defaults to None.
         project (Optional[DbtProject]): A DbtProject instance which provides a pointer to the dbt
             project location and manifest. Not required, but needed to attach code references from
             model code to Dagster assets.
@@ -44,7 +52,8 @@ def build_dbt_asset_specs(
         manifest=manifest,
         translator=dagster_dbt_translator,
         select=select,
-        exclude=exclude or "",
+        exclude=exclude or DBT_DEFAULT_EXCLUDE,
+        selector=selector or DBT_DEFAULT_SELECTOR,
         io_manager_key=None,
         project=project,
     )

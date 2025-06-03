@@ -1,8 +1,9 @@
 import {gql} from '../../apollo-client';
 import {PYTHON_ERROR_FRAGMENT} from '../../app/PythonErrorFragment';
+import {ASSET_TABLE_DEFINITION_FRAGMENT} from '../../assets/AssetTableFragment';
 import {BASIC_INSTIGATION_STATE_FRAGMENT} from '../../overview/BasicInstigationStateFragment';
 import {RESOURCE_ENTRY_FRAGMENT} from '../../resources/WorkspaceResourcesQuery';
-import {SENSOR_SWITCH_FRAGMENT} from '../../sensors/SensorSwitch';
+import {SENSOR_SWITCH_FRAGMENT} from '../../sensors/SensorSwitchFragment';
 import {REPOSITORY_INFO_FRAGMENT} from '../RepositoryInformation';
 
 export const LOCATION_WORKSPACE_QUERY = gql`
@@ -79,6 +80,10 @@ export const LOCATION_WORKSPACE_QUERY = gql`
       id
       groupName
     }
+    assetNodes {
+      id
+      ...AssetTableDefinitionFragment
+    }
     allTopLevelResourceDetails {
       id
       ...ResourceEntryFragment
@@ -91,6 +96,7 @@ export const LOCATION_WORKSPACE_QUERY = gql`
     name
     isJob
     isAssetJob
+    externalJobSource
     pipelineSnapshotId
   }
 
@@ -137,6 +143,7 @@ export const LOCATION_WORKSPACE_QUERY = gql`
   ${REPOSITORY_INFO_FRAGMENT}
   ${RESOURCE_ENTRY_FRAGMENT}
   ${PYTHON_ERROR_FRAGMENT}
+  ${ASSET_TABLE_DEFINITION_FRAGMENT}
 `;
 
 export const CODE_LOCATION_STATUS_QUERY = gql`

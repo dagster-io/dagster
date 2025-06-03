@@ -27,8 +27,10 @@ from dagster._core.definitions.metadata.metadata_value import (
 )
 from dagster._core.definitions.metadata.table import TableColumn, TableSchema
 from dagster._core.definitions.tags import build_kind_tag, has_kind
+from dagster._core.errors import DagsterInvariantViolationError
 from dagster_dlt import DagsterDltResource, DagsterDltTranslator, dlt_assets
 from dagster_dlt.translator import DltResourceTranslatorData
+from dagster_shared import check
 from dlt import Pipeline
 from dlt.common.destination import Destination
 from dlt.extract.resource import DltResource
@@ -829,3 +831,45 @@ def test_backfill_policy(
     def my_dlt_assets(): ...
 
     assert my_dlt_assets.backfill_policy == expected_backfill_policy
+
+
+def test_reference_pipeline(dlt_pipeline: Pipeline) -> None:
+    class CustomDagsterDltTranslator(DagsterDltTranslator):
+        def get_asset_spec(self, data: DltResourceTranslatorData) -> AssetSpec:
+            default_spec = super().get_asset_spec(data)
+            return default_spec.replace_attributes(
+                key=AssetKey([check.not_none(data.pipeline).dataset_name, data.resource.name])
+            )
+
+    @dlt_assets(
+        dlt_source=dlt_source(),
+        dlt_pipeline=dlt_pipeline,
+        dagster_dlt_translator=CustomDagsterDltTranslator(),
+    )
+    def my_dlt_assets(dlt_pipeline_resource: DagsterDltResource): ...
+
+    assert my_dlt_assets.asset_deps.keys()
+    assert my_dlt_assets.keys == {
+        AssetKey(["example", "repo_issues"]),
+        AssetKey(["example", "repos"]),
+    }
+
+
+def test_translator_invariant_group_name_with_asset_decorator(dlt_pipeline: Pipeline) -> None:
+    class CustomDagsterDltTranslator(DagsterDltTranslator):
+        def get_asset_spec(self, data: DltResourceTranslatorData) -> AssetSpec:
+            default_spec = super().get_asset_spec(data)
+            return default_spec.replace_attributes(group_name="my_group_name")
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="Cannot set group_name parameter on dlt_assets",
+    ):
+
+        @dlt_assets(
+            dlt_source=dlt_source(),
+            dlt_pipeline=dlt_pipeline,
+            group_name="my_asset_decorator_group_name",
+            dagster_dlt_translator=CustomDagsterDltTranslator(),
+        )
+        def my_dlt_assets(dlt_pipeline_resource: DagsterDltResource): ...

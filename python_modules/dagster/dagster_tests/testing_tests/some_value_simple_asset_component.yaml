@@ -1,0 +1,4 @@
+type: dagster_test.components.simple_asset.SimpleAssetComponent
+attributes:
+  asset_key: an_asset
+  value: some_value

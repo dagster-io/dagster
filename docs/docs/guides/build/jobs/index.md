@@ -1,6 +1,6 @@
 ---
 title: Jobs
-description: Jobs are the main unit of execution and monitoring in Dagster.
+description: Jobs are the main unit of execution and monitoring in Dagster, and allow you to execute a portion of a graph of asset definitions or ops based on a schedule or external trigger.
 sidebar_position: 90
 ---
 
@@ -13,7 +13,7 @@ When a job begins, it kicks off a run. A run is a single execution of a job in D
 Using jobs provides the following benefits:
 
 - **Automation**: With [schedules](/guides/automate/schedules/) and [sensors](/guides/automate/sensors/), jobs can be used to automate the execution of your Dagster pipelines. Refer to the [Automation guide](/guides/automate/) for more info.
-- **Control job run priority**: If using a [run queue](/guides/deploy/execution/run-coordinators), you can apply custom prioritization rules to how job runs are prioritized and executed.
+- **Control job run priority**: If using a [run queue](/deployment/execution/run-coordinators), you can apply custom prioritization rules to how job runs are prioritized and executed.
 - **Potential for improved efficency**: By applying concurrency limits to job runs, there may be benefits to your pipeline's efficiency. Refer to the [Managing concurrency guide](/guides/operate/managing-concurrency) for more info and examples.
 
 ## Uses

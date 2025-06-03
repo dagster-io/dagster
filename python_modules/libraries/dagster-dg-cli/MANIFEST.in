@@ -1,0 +1,11 @@
+include README.md
+include LICENSE
+include dagster_dg_cli/py.typed
+recursive-include dagster_dg_cli/templates *
+recursive-include dagster_dg_cli/docs *
+recursive-exclude dagster_dg_cli/docs/.next *
+recursive-exclude dagster_dg_cli/docs/node_modules *
+recursive-exclude dagster_dg_cli/docs/packages/dg-docs-components/.next *
+recursive-exclude dagster_dg_cli/docs/packages/dg-docs-components/node_modules *
+recursive-exclude dagster_dg_cli/docs/packages/dg-docs-site/.next *
+recursive-exclude dagster_dg_cli/docs/packages/dg-docs-site/node_modules *

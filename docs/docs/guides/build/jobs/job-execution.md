@@ -1,12 +1,12 @@
 ---
 title: Job execution
-description: Dagster provides several methods to execute jobs.
+description: Dagster provides several methods to execute op and asset jobs using the UI, command line, Python APIs, or via schedules or sensors.
 sidebar_position: 300
 ---
 
 :::note
 
-This guide is applicable to both [ops](/guides/build/ops/) and [jobs](/guides/build/jobs/)
+This guide is applicable to both [ops](/guides/build/ops/) and [jobs](/guides/build/jobs/).
 
 :::
 
@@ -56,7 +56,7 @@ The Launchpad also offers a configuration editor to let you interactively build 
 The dagster CLI includes the following commands for job execution:
 
 - [`dagster job execute`](/api/dagster/cli#dagster-job) for direct execution
-- [`dagster job launch`](/api/dagster/cli#dagster-job) for launching runs asynchronously using the [run launcher](/guides/deploy/execution/run-launchers) on your instance
+- [`dagster job launch`](/api/dagster/cli#dagster-job) for launching runs asynchronously using the [run launcher](/deployment/execution/run-launchers) on your instance
 
 To execute your job directly, run:
 

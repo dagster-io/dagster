@@ -198,8 +198,8 @@ class ClientConfig(Config):
     proxy_url: Optional[str] = None
     """HTTP proxy to use for requests"""
 
-    timeout: Optional[int] = None
-    """Request timeout
+    timeout: Optional[str] = None
+    """Request timeout (e.g. "120s")
 
     The timeout is applied from when the request starts connecting until the response body has finished
     """

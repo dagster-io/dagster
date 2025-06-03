@@ -577,6 +577,15 @@ def get_notebook_data(notebook_path):
             " '.ipynb'."
         )
 
-    with open(os.path.abspath(notebook_path), "rb") as f:
+    requested_path = os.path.abspath(notebook_path)
+    working_dir = os.path.abspath(os.getcwd())
+
+    common_prefix = os.path.commonpath([requested_path, working_dir])
+    if common_prefix != working_dir:
+        raise Exception(
+            "Access denied. Notebook path must be within the current working directory."
+        )
+
+    with open(requested_path, "rb") as f:
         content = f.read()
         return content

@@ -1,0 +1,5 @@
+tasks:
+  - id: print_task
+    proxied: True
+  - id: downstream_print_task
+    proxied: True

@@ -174,6 +174,9 @@ class ExecutionResult(ABC):
     def get_asset_materialization_events(self) -> Sequence[DagsterEvent]:
         return [event for event in self.all_events if event.is_step_materialization]
 
+    def get_asset_materialization_planned_events(self) -> Sequence[DagsterEvent]:
+        return [event for event in self.all_events if event.is_asset_materialization_planned]
+
     def get_asset_observation_events(self) -> Sequence[DagsterEvent]:
         return [event for event in self.all_events if event.is_asset_observation]
 

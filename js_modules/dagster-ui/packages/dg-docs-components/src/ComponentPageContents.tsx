@@ -24,7 +24,7 @@ export default function ComponentPageContents({componentConfig}: Props) {
           </li>
           <li>
             <a href="#example">
-              Example <code>component.yaml</code>
+              Example <code>defs.yaml</code>
             </a>
           </li>
         </ol>

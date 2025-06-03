@@ -266,6 +266,7 @@ class PowerBIWorkspace(ConfigurableResource):
             endpoint=f"admin/workspaces/scanResult/{scan_id}", group_scoped=False
         )
 
+    @cached_method
     def _fetch_powerbi_workspace_data(self, use_workspace_scan: bool) -> PowerBIWorkspaceData:
         """Retrieves all Power BI content from the workspace and returns it as a PowerBIWorkspaceData object.
         Future work will cache this data to avoid repeated calls to the Power BI API.

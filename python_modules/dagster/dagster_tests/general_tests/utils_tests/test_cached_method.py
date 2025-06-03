@@ -168,3 +168,16 @@ def test_async_cached_method() -> None:
     assert asyncio.run(obj2.my_method(arg1="a")) == ("a", 5)
     assert asyncio.run(obj2.my_method(arg1="b")) == ("b", 5)
     assert obj2.calls == ["a", "b"]
+
+
+def test_cached_property():
+    class Bar: ...
+
+    class Foo:
+        @property
+        @cached_method
+        def bomp(self):
+            return Bar()
+
+    f = Foo()
+    assert f.bomp is f.bomp

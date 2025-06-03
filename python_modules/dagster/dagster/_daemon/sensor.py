@@ -991,7 +991,7 @@ def _handle_run_reactions(
         origin_run_id = check.not_none(run_reaction.dagster_run).run_id
         if run_reaction.error:
             context.logger.warning(
-                f"Got a reaction request for run {origin_run_id} but execution errorred:"
+                f"Got a reaction request for run {origin_run_id} but execution errored:"
                 f" {run_reaction.error}"
             )
             context.update_state(

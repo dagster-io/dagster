@@ -2,16 +2,14 @@ import min from 'lodash/min';
 import uniqBy from 'lodash/uniqBy';
 import React, {useCallback, useEffect, useMemo, useState} from 'react';
 
-import {clipEventsToSharedMinimumTime} from './clipEventsToSharedMinimumTime';
 import {AssetKey, AssetViewParams} from './types';
 import {
-  AssetObservationFragment,
   RecentAssetEventsQuery,
   RecentAssetEventsQueryVariables,
 } from './types/useRecentAssetEvents.types';
-import {AssetMaterializationFragment, RECENT_ASSET_EVENTS_QUERY} from './useRecentAssetEvents';
+import {AssetEventFragment, RECENT_ASSET_EVENTS_QUERY} from './useRecentAssetEvents';
 import {useApolloClient} from '../apollo-client';
-import {MaterializationHistoryEventTypeSelector} from '../graphql/types';
+import {AssetEventHistoryEventTypeSelector} from '../graphql/types';
 import {useBlockTraceUntilTrue} from '../performance/TraceContext';
 
 /** Note: This hook paginates through an asset's events, optionally beginning at ?asOf=.
@@ -30,17 +28,14 @@ export function usePaginatedAssetEvents(
   params: Pick<AssetViewParams, 'asOf'> & {
     before?: number;
     after?: number;
-    status?: MaterializationHistoryEventTypeSelector;
+    statuses?: AssetEventHistoryEventTypeSelector[];
   },
 ) {
   const initialAsOf = params.asOf ? `${Number(params.asOf) + 1}` : undefined;
   const afterParam = params.after ? `${params.after + 1}` : undefined;
   const beforeParam = params.before ? `${params.before - 1}` : undefined;
 
-  const [observations, setObservations] = React.useState<AssetObservationFragment[]>([]);
-  const [materializations, setMaterializations] = React.useState<AssetMaterializationFragment[]>(
-    [],
-  );
+  const [events, setEvents] = React.useState<AssetEventFragment[]>([]);
 
   const client = useApolloClient();
   const [loading, setLoading] = useState(false);
@@ -48,10 +43,9 @@ export function usePaginatedAssetEvents(
   const [cursor, setCursor] = useState<string | undefined>(undefined);
 
   useEffect(() => {
-    setObservations([]);
-    setMaterializations([]);
+    setEvents([]);
     setCursor(undefined);
-  }, [assetKey, params.before, params.after, params.status]);
+  }, [assetKey, params.before, params.after, params.statuses]);
 
   const fetch = useCallback(
     async (before = initialAsOf ?? beforeParam, cursor: string | undefined = undefined) => {
@@ -70,42 +64,38 @@ export function usePaginatedAssetEvents(
           cursor,
           before,
           after: afterParam,
-          eventTypeSelector: params.status ?? MaterializationHistoryEventTypeSelector.ALL,
+          eventTypeSelectors: params.statuses ?? [
+            AssetEventHistoryEventTypeSelector.MATERIALIZATION,
+            AssetEventHistoryEventTypeSelector.OBSERVATION,
+            AssetEventHistoryEventTypeSelector.FAILED_TO_MATERIALIZE,
+          ],
         },
       });
       setLoading(false);
 
       const asset = data?.assetOrError.__typename === 'Asset' ? data?.assetOrError : null;
 
-      const {materializations, observations} = clipEventsToSharedMinimumTime(
-        asset?.assetMaterializationHistory?.results || [],
-        asset?.assetObservations || [],
-        100,
+      setLoaded(true);
+      setEvents((loaded) =>
+        uniqBy(
+          [...loaded, ...(asset?.assetEventHistory?.results || [])],
+          (e) => `${e.runId}${e.timestamp}.${e.__typename}`,
+        ),
       );
 
-      setLoaded(true);
-      setMaterializations((loaded) =>
-        uniqBy([...loaded, ...materializations], (e) => `${e.runId}${e.timestamp}`),
-      );
-      setObservations((loaded) =>
-        uniqBy([...loaded, ...observations], (e) => `${e.runId}${e.timestamp}`),
-      );
-      setCursor(asset?.assetMaterializationHistory?.cursor);
+      setCursor(asset?.assetEventHistory?.cursor);
     },
-    [initialAsOf, beforeParam, assetKey, client, afterParam, params.status],
+    [initialAsOf, beforeParam, assetKey, client, afterParam, params.statuses],
   );
 
   useBlockTraceUntilTrue('AssetEventsQuery', loaded);
 
   return useMemo(() => {
-    const all = [...materializations, ...observations];
-
     return {
       loading,
-      materializations,
-      observations,
+      events,
       fetchLatest: fetch,
-      fetchMore: () => fetch(`${min(all.map((e) => Number(e.timestamp)))}`, cursor),
+      fetchMore: () => fetch(`${min(events.map((e) => Number(e.timestamp)))}`, cursor),
     };
-  }, [materializations, observations, loading, fetch, cursor]);
+  }, [events, loading, fetch, cursor]);
 }

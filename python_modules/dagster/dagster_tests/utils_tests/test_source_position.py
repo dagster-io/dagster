@@ -1,4 +1,4 @@
-from dagster_shared.yaml_utils import parse_yaml_with_source_positions
+from dagster_shared.yaml_utils import parse_yaml_with_source_position
 from dagster_shared.yaml_utils.source_position import (
     HasSourcePositionAndKeyPath,
     KeyPath,
@@ -7,7 +7,7 @@ from dagster_shared.yaml_utils.source_position import (
 )
 
 
-def test_parse_yaml_with_source_positions() -> None:
+def test_parse_yaml_with_source_position() -> None:
     source = """
 foo:
   bar: 1
@@ -20,7 +20,7 @@ foo:
   c: "d"
 """
 
-    value_and_tree = parse_yaml_with_source_positions(source, filename="foo.yaml")
+    value_and_tree = parse_yaml_with_source_position(source, filename="foo.yaml")
 
     assert value_and_tree.value == {
         "foo": {
@@ -72,7 +72,7 @@ def test_populate_source_position_and_key_paths() -> None:
         def __init__(self):
             self.child = Child()
 
-    parsed = parse_yaml_with_source_positions(
+    parsed = parse_yaml_with_source_position(
         """
 child:
   dicts:

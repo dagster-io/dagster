@@ -684,5 +684,8 @@ class DagsterDefinitionChangedDeserializationError(DagsterError):
     """
 
 
-class DagsterPipesExecutionError(DagsterError):
+# Not a subclass of DagsterError, since DagsterError is treated as a framework error and bypasses
+# user error driven handling such as retries. This error is raised when user code in a pipes
+# execution raises an error.
+class DagsterPipesExecutionError(Exception):
     """Indicates that an error occurred during the execution of an external process."""

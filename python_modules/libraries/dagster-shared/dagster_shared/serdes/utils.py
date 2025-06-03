@@ -33,6 +33,11 @@ class SerializableTimeDelta(NamedTuple):
     """A Dagster-serializable version of a datetime.timedelta. The datetime.timedelta class
     internally stores values as an integer number of days, seconds, and microseconds. This class
     handles converting between the in-memory and serializable formats.
+
+    This class should not be used directly in application code. Any place it pops up should be converted to `datetime.timedelta`
+    using `to_timedelta()`.
+
+    Consequently, also do not rely on `days`, `seconds`, or `microseconds` attributes for any datetime arithmetic.
     """
 
     days: int

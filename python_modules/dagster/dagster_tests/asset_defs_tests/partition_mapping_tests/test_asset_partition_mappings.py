@@ -88,7 +88,7 @@ def test_access_partition_keys_from_context_non_identity_partition_mapping():
         def validate_partition_mapping(
             self,
             upstream_partitions_def: PartitionsDefinition,
-            downstream_partitions_def: PartitionsDefinition,
+            downstream_partitions_def: Optional[PartitionsDefinition],
         ):
             pass
 
@@ -997,3 +997,46 @@ def test_last_partition_mapping_get_downstream_partitions():
         )
         == downstream_partitions_def.empty_subset()
     )
+
+
+def test_invalid_mappings_with_asset_deps():
+    @asset(
+        partitions_def=DailyPartitionsDefinition(start_date="2023-01-21"),
+    )
+    def daily_partitioned_asset():
+        pass
+
+    @asset(
+        ins={
+            "daily_partitioned_asset": AssetIn(
+                partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1),
+            )
+        },
+    )
+    def unpartitioned_mapped_asset(daily_partitioned_asset):
+        # this asset is not partitioned, so this mapping is invalid
+        pass
+
+    @asset(partitions_def=StaticPartitionsDefinition(["alpha", "beta"]))
+    def static_mapped_asset(context: AssetExecutionContext, daily_partitioned_asset) -> None:
+        pass
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="Invalid partition mapping from unpartitioned_mapped_asset to daily_partitioned_asset",
+    ):
+        Definitions.validate_loadable(
+            Definitions(
+                assets=[daily_partitioned_asset, unpartitioned_mapped_asset],
+            )
+        )
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="Invalid partition mapping from static_mapped_asset to daily_partitioned_asset",
+    ):
+        Definitions.validate_loadable(
+            Definitions(
+                assets=[daily_partitioned_asset, static_mapped_asset],
+            )
+        )

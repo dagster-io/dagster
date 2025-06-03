@@ -121,7 +121,7 @@ from dagster._core.storage.tags import (
     ASSET_PARTITION_RANGE_START_TAG,
     MULTIDIMENSIONAL_PARTITION_PREFIX,
 )
-from dagster._core.test_utils import create_run_for_test, instance_for_test
+from dagster._core.test_utils import create_run_for_test, freeze_time, instance_for_test
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.utils import make_new_run_id
 from dagster._loggers import colored_console_logger
@@ -302,7 +302,7 @@ def _synthesize_events(
             loggers=_default_loggers(_append_event),
             resources=_default_resources(),
             executor=in_process_executor,
-        ).get_implicit_job_def_for_assets([k for a in ops_fn_or_assets for k in a.keys])
+        ).resolve_implicit_job_def_def_for_assets([k for a in ops_fn_or_assets for k in a.keys])
         assert job_def
         a_job = job_def
     else:  # op_fn
@@ -1406,7 +1406,7 @@ class TestEventLogStorage:
 
         asset_job = Definitions(
             assets=[asset_one, never_runs_asset],
-        ).get_implicit_global_asset_job_def()
+        ).resolve_implicit_global_asset_job_def()
 
         # test with only one asset selected
         result = asset_job.execute_in_process(
@@ -1432,7 +1432,7 @@ class TestEventLogStorage:
 
         asset_job = Definitions(
             assets=[asset_one, never_runs_asset],
-        ).get_implicit_global_asset_job_def()
+        ).resolve_implicit_global_asset_job_def()
 
         result = asset_job.execute_in_process(instance=instance, raise_on_error=False)
         run_id = result.run_id
@@ -2776,7 +2776,7 @@ class TestEventLogStorage:
         assert asset_key.to_string() == '["path", "to", "asset_4"]'
         assert asset_key.path == ["path", "to", "asset_4"]
 
-    def test_asset_wipe(self, storage, instance):
+    def test_asset_wipe(self, storage, instance, test_run_id):
         one_run_id = make_new_run_id()
         two_run_id = make_new_run_id()
         _synthesize_events(lambda: one_asset_op(), run_id=one_run_id, instance=instance)
@@ -2784,7 +2784,28 @@ class TestEventLogStorage:
 
         asset_keys = storage.all_asset_keys()
         assert len(asset_keys) == 3
+
         assert storage.has_asset_key(AssetKey("asset_1"))
+
+        for asset_key in asset_keys:
+            event_to_store = DagsterEvent.build_asset_failed_to_materialize_event(
+                job_name="the_job",
+                step_key="the_step",
+                asset_materialization_failure=AssetMaterializationFailure(
+                    asset_key=asset_key,
+                    partition=None,
+                    failure_type=AssetMaterializationFailureType.FAILED,
+                    reason=AssetMaterializationFailureReason.FAILED_TO_MATERIALIZE,
+                ),
+            )
+            instance.report_dagster_event(event_to_store, test_run_id)
+
+        if storage.can_store_asset_failure_events:
+            for asset_key in asset_keys:
+                all_failed_records_result = storage.fetch_failed_materializations(
+                    records_filter=asset_key, limit=10
+                )
+                assert len(all_failed_records_result.records) == 1
 
         log_count = len(storage.get_logs_for_run(one_run_id))
         for asset_key in asset_keys:
@@ -2794,6 +2815,12 @@ class TestEventLogStorage:
         assert len(asset_keys) == 0
         assert not storage.has_asset_key(AssetKey("asset_1"))
         assert log_count == len(storage.get_logs_for_run(one_run_id))
+
+        for asset_key in asset_keys:
+            all_failed_records_result = storage.fetch_failed_materializations(
+                records_filter=asset_key, limit=10
+            )
+            assert len(all_failed_records_result.records) == 0
 
         one_run_id = make_new_run_id()
         _synthesize_events(
@@ -3097,6 +3124,44 @@ class TestEventLogStorage:
                 )
 
             assert failed_partitions_by_step_key == failed_partitions
+
+    def test_timestamp_overrides(self, storage, instance: DagsterInstance) -> None:
+        frozen_time = get_current_datetime()
+        frozen_time = get_current_datetime()
+        with freeze_time(frozen_time):
+            instance.report_dagster_event(
+                run_id="",
+                dagster_event=DagsterEvent(
+                    event_type_value=DagsterEventType.ASSET_MATERIALIZATION.value,
+                    job_name="",
+                    event_specific_data=StepMaterializationData(
+                        AssetMaterialization(asset_key="foo")
+                    ),
+                ),
+            )
+
+            record = instance.get_asset_records([AssetKey("foo")])[0]
+            assert (
+                record.asset_entry.last_materialization_record.timestamp == frozen_time.timestamp()  # type: ignore
+            )
+
+            report_date = datetime.datetime(2025, 1, 1, tzinfo=datetime.timezone.utc)
+
+            instance.report_dagster_event(
+                run_id="",
+                dagster_event=DagsterEvent(
+                    event_type_value=DagsterEventType.ASSET_MATERIALIZATION.value,
+                    job_name="",
+                    event_specific_data=StepMaterializationData(
+                        AssetMaterialization(asset_key="foo")
+                    ),
+                ),
+                timestamp=report_date.timestamp(),
+            )
+            record = instance.get_asset_records([AssetKey("foo")])[0]
+            assert (
+                record.asset_entry.last_materialization_record.timestamp == report_date.timestamp()  # type: ignore
+            )
 
     def test_get_latest_storage_ids_by_partition(self, storage, instance):
         a = AssetKey(["a"])
@@ -4345,7 +4410,7 @@ class TestEventLogStorage:
         result = _execute_job_and_store_events(
             instance,
             storage,
-            defs.get_job_def("one_asset_job"),
+            defs.resolve_job_def("one_asset_job"),
             run_id=run_id_1,
         )
         records = storage.get_asset_records([my_asset_key])
@@ -4406,7 +4471,7 @@ class TestEventLogStorage:
         result = _execute_job_and_store_events(
             instance,
             storage,
-            defs.get_job_def("two_asset_job"),
+            defs.resolve_job_def("two_asset_job"),
             run_id=run_id_2,
         )
         records = storage.get_asset_records([my_asset_key])
@@ -4516,7 +4581,7 @@ class TestEventLogStorage:
         asset_key = AssetKey("never_materializes_asset")
         never_materializes_job = Definitions(
             assets=[never_materializes_asset],
-        ).get_implicit_global_asset_job_def()
+        ).resolve_implicit_global_asset_job_def()
 
         result = _execute_job_and_store_events(
             instance, storage, never_materializes_job, run_id=run_id_1
@@ -5832,6 +5897,11 @@ class TestEventLogStorage:
         assert latest_checks[check_key_1].run_id == run_id_2
         assert latest_checks[check_key_2].status == AssetCheckExecutionRecordStatus.PLANNED
         assert latest_checks[check_key_2].run_id == run_id_3
+
+        storage.wipe_asset(AssetKey(["my_asset"]))
+
+        latest_checks = storage.get_latest_asset_check_execution_by_key([check_key_1, check_key_2])
+        assert len(latest_checks) == 0
 
     def test_duplicate_asset_check_planned_events(self, storage: EventLogStorage):
         run_id = make_new_run_id()

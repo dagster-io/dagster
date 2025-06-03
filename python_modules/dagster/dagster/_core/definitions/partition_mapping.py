@@ -22,6 +22,7 @@ from dagster._core.definitions.partition import (
     StaticPartitionsDefinition,
 )
 from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
+from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.instance import DynamicPartitionsStore
 from dagster._record import record
 from dagster._serdes import whitelist_for_serdes
@@ -80,7 +81,7 @@ class PartitionMapping(ABC):
     def validate_partition_mapping(
         self,
         upstream_partitions_def: PartitionsDefinition,
-        downstream_partitions_def: PartitionsDefinition,
+        downstream_partitions_def: Optional[PartitionsDefinition],
     ) -> None:
         """Raises an exception if the mapping is not valid for the two partitions definitions
         due to some incompatibility between the definitions (ignoring specific keys or subsets).
@@ -125,9 +126,13 @@ class IdentityPartitionMapping(PartitionMapping, NamedTuple("_IdentityPartitionM
     def validate_partition_mapping(
         self,
         upstream_partitions_def: PartitionsDefinition,
-        downstream_partitions_def: PartitionsDefinition,
+        downstream_partitions_def: Optional[PartitionsDefinition],
     ):
-        pass
+        if type(upstream_partitions_def) != type(downstream_partitions_def):
+            raise DagsterInvalidDefinitionError(
+                "Upstream and downstream partitions definitions must match, or a different partition mapping must be provided. "
+                f"Got upstream definition {type(upstream_partitions_def)} and downstream definition {type(downstream_partitions_def)}",
+            )
 
     def get_upstream_mapped_partitions_result_for_partitions(
         self,
@@ -210,7 +215,7 @@ class AllPartitionMapping(PartitionMapping, NamedTuple("_AllPartitionMapping", [
     def validate_partition_mapping(
         self,
         upstream_partitions_def: PartitionsDefinition,
-        downstream_partitions_def: PartitionsDefinition,
+        downstream_partitions_def: Optional[PartitionsDefinition],
     ):
         pass
 
@@ -271,7 +276,7 @@ class LastPartitionMapping(PartitionMapping, NamedTuple("_LastPartitionMapping",
     def validate_partition_mapping(
         self,
         upstream_partitions_def: PartitionsDefinition,
-        downstream_partitions_def: PartitionsDefinition,
+        downstream_partitions_def: Optional[PartitionsDefinition],
     ):
         pass
 
@@ -349,7 +354,7 @@ class SpecificPartitionsPartitionMapping(
     def validate_partition_mapping(
         self,
         upstream_partitions_def: PartitionsDefinition,
-        downstream_partitions_def: PartitionsDefinition,
+        downstream_partitions_def: Optional[PartitionsDefinition],
     ):
         pass
 
@@ -690,8 +695,12 @@ class MultiToSingleDimensionPartitionMapping(
     def validate_partition_mapping(
         self,
         upstream_partitions_def: PartitionsDefinition,
-        downstream_partitions_def: PartitionsDefinition,
+        downstream_partitions_def: Optional[PartitionsDefinition],
     ):
+        if not downstream_partitions_def:
+            raise DagsterInvalidDefinitionError(
+                "downstream_partitions_def must be provided for MultiToSingleDimensionPartitionMapping"
+            )
         infer_mapping_result = _get_infer_single_to_multi_dimension_deps_result(
             upstream_partitions_def, downstream_partitions_def
         )
@@ -863,7 +872,7 @@ class MultiPartitionMapping(
     def validate_partition_mapping(
         self,
         upstream_partitions_def: PartitionsDefinition,
-        downstream_partitions_def: PartitionsDefinition,
+        downstream_partitions_def: Optional[PartitionsDefinition],
     ):
         self._check_all_dimensions_accounted_for(
             upstream_partitions_def,
@@ -892,7 +901,7 @@ class MultiPartitionMapping(
     def _check_all_dimensions_accounted_for(
         self,
         upstream_partitions_def: PartitionsDefinition,
-        downstream_partitions_def: PartitionsDefinition,
+        downstream_partitions_def: Optional[PartitionsDefinition],
     ) -> None:
         if any(
             not isinstance(partitions_def, MultiPartitionsDefinition)
@@ -981,16 +990,16 @@ class StaticPartitionMapping(
     def validate_partition_mapping(
         self,
         upstream_partitions_def: PartitionsDefinition,
-        downstream_partitions_def: PartitionsDefinition,
+        downstream_partitions_def: Optional[PartitionsDefinition],
     ):
-        check.invariant(
-            isinstance(upstream_partitions_def, StaticPartitionsDefinition),
-            "Upstream partitions definition must be a StaticPartitionsDefinition",
-        )
-        check.invariant(
-            isinstance(downstream_partitions_def, StaticPartitionsDefinition),
-            "Downstream partitions definition must be a StaticPartitionsDefinition",
-        )
+        if not isinstance(upstream_partitions_def, StaticPartitionsDefinition):
+            raise DagsterInvalidDefinitionError(
+                "Upstream partitions definition must be a StaticPartitionsDefinition"
+            )
+        if not isinstance(downstream_partitions_def, StaticPartitionsDefinition):
+            raise DagsterInvalidDefinitionError(
+                "Downstream partitions definition must be a StaticPartitionsDefinition",
+            )
         self._check_upstream(
             upstream_partitions_def=cast("StaticPartitionsDefinition", upstream_partitions_def)
         )

@@ -9,7 +9,7 @@ sidebar_position: 40
 With an output in our desired schema, we can use the [NREL](https://www.nrel.gov/) API to lookup nearby alternative fuel stations. The NREL API is a standard REST API. In Dagster, we will create a resource with a single method to retrieve fuel stations. This method (`alt_fuel_stations`) will take in the three parameters from our prompt engineering asset (latitude, longitude, and fuel type).
 
 <CodeExample
-  path="docs_projects/project_prompt_eng/project_prompt_eng/resources.py"
+  path="docs_projects/project_prompt_eng/project_prompt_eng/defs/resources.py"
   language="python"
   startAfter="start_resource"
   endBefore="end_resource"
@@ -18,7 +18,7 @@ With an output in our desired schema, we can use the [NREL](https://www.nrel.gov
 Now we can use our custom resource in another asset (`nearest_fuel_station`) and query the API. The [response of the API](https://developer.nrel.gov/docs/transportation/alt-fuel-stations-v1/nearest/#fuel-station-record-fields) gives some very rich data about these fuel stations. One field that would be particularly interesting for the user is `access_days_time` which shows when the fuel station is open.
 
 <CodeExample
-  path="docs_projects/project_prompt_eng/project_prompt_eng/assets.py"
+  path="docs_projects/project_prompt_eng/project_prompt_eng/defs/assets.py"
   language="python"
   startAfter="start_nearest_fuel_stations"
   endBefore="end_nearest_fuel_stations"

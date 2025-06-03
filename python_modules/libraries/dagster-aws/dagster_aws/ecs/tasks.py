@@ -7,6 +7,9 @@ import requests
 from dagster._utils.backoff import backoff
 from dagster._utils.merger import merge_dicts
 
+# https://docs.aws.amazon.com/AmazonECS/latest/developerguide/fargate-task-storage.html
+DEFAULT_EPHEMERAL_STORAGE = 20
+
 
 def _arns_match(arn1: Optional[str], arn2: Optional[str]):
     arn1 = arn1 or ""
@@ -20,6 +23,12 @@ def _arns_match(arn1: Optional[str], arn2: Optional[str]):
         arn2 = "/".join(arn2.split("/")[1:])
 
     return arn1 == arn2
+
+
+def _ephemeral_storage_matches(storage1: Optional[int], storage2: Optional[int]):
+    if (storage1 or DEFAULT_EPHEMERAL_STORAGE) == (storage2 or DEFAULT_EPHEMERAL_STORAGE):
+        return True
+    return False
 
 
 class DagsterEcsTaskDefinitionConfig(
@@ -169,6 +178,7 @@ class DagsterEcsTaskDefinitionConfig(
             and self.environment == other.environment
             and self.cpu == other.cpu
             and self.memory == other.memory
+            and _ephemeral_storage_matches(self.ephemeral_storage, other.ephemeral_storage)
             and _arns_match(self.execution_role_arn, other.execution_role_arn)
             and _arns_match(self.task_role_arn, other.task_role_arn)
         ):

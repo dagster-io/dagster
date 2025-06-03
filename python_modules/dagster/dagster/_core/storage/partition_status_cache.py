@@ -516,3 +516,80 @@ def get_and_update_asset_status_cache_value(
         instance.update_asset_cached_status_data(asset_key, updated_cache_value)
 
     return updated_cache_value
+
+
+def get_partition_subsets(
+    instance: DagsterInstance,
+    loading_context: LoadingContext,
+    asset_key: AssetKey,
+    dynamic_partitions_loader: DynamicPartitionsStore,
+    partitions_def: Optional[PartitionsDefinition] = None,
+) -> tuple[Optional[PartitionsSubset], Optional[PartitionsSubset], Optional[PartitionsSubset]]:
+    """Returns a tuple of PartitionSubset objects: the first is the materialized partitions,
+    the second is the failed partitions, and the third are in progress.
+    """
+    from dagster._core.storage.event_log.base import AssetRecord
+
+    if not partitions_def:
+        return None, None, None
+
+    if instance.can_read_asset_status_cache() and is_cacheable_partition_type(partitions_def):
+        # When the "cached_status_data" column exists in storage, update the column to contain
+        # the latest partition status values
+        updated_cache_value = get_and_update_asset_status_cache_value(
+            instance,
+            asset_key,
+            partitions_def,
+            dynamic_partitions_loader,
+            loading_context,
+        )
+        materialized_subset = (
+            updated_cache_value.deserialize_materialized_partition_subsets(partitions_def)
+            if updated_cache_value
+            else partitions_def.empty_subset()
+        )
+        failed_subset = (
+            updated_cache_value.deserialize_failed_partition_subsets(partitions_def)
+            if updated_cache_value
+            else partitions_def.empty_subset()
+        )
+        in_progress_subset = (
+            updated_cache_value.deserialize_in_progress_partition_subsets(partitions_def)
+            if updated_cache_value
+            else partitions_def.empty_subset()
+        )
+
+        return materialized_subset, failed_subset, in_progress_subset
+
+    else:
+        # If the partition status can't be cached, fetch partition status from storage
+        if isinstance(partitions_def, MultiPartitionsDefinition):
+            materialized_keys = get_materialized_multipartitions(
+                instance, asset_key, partitions_def
+            )
+        else:
+            materialized_keys = instance.get_materialized_partitions(asset_key)
+
+        validated_keys = get_validated_partition_keys(
+            dynamic_partitions_loader, partitions_def, set(materialized_keys)
+        )
+
+        materialized_subset = (
+            partitions_def.empty_subset().with_partition_keys(validated_keys)
+            if validated_keys
+            else partitions_def.empty_subset()
+        )
+
+        asset_record = AssetRecord.blocking_get(loading_context, asset_key)
+
+        failed_subset, in_progress_subset, _ = build_failed_and_in_progress_partition_subset(
+            instance,
+            asset_key,
+            partitions_def,
+            dynamic_partitions_loader,
+            last_planned_materialization_storage_id=get_last_planned_storage_id(
+                instance, asset_key, asset_record
+            ),
+        )
+
+        return materialized_subset, failed_subset, in_progress_subset

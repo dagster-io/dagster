@@ -6,7 +6,8 @@ import {
   PopoverContentStyle,
   PopoverWrapperStyle,
 } from '@dagster-io/ui-components';
-import {useLayoutEffect, useMemo, useState} from 'react';
+import debounce from 'lodash/debounce';
+import {useCallback, useLayoutEffect, useMemo, useRef, useState} from 'react';
 import ReactDOM from 'react-dom';
 import styled from 'styled-components';
 
@@ -23,23 +24,52 @@ export const useSelectionInputLintingAndHighlighting = ({
 }) => {
   const instance = cmInstance.current;
 
-  const [errors, setErrors] = useState<SyntaxError[]>([]);
-  const errorsRef = useUpdatingRef(errors);
+  const errorsRef = useRef<SyntaxError[]>([]);
+
+  const lintErrors = useMemo(() => {
+    const debouncedApplyErrors = debounce(() => {
+      const instance = cmInstance.current;
+      if (!instance) {
+        return;
+      }
+      errorsRef.current = linter(instance.getValue());
+      applyStaticSyntaxHighlighting(instance, errorsRef.current);
+    }, 1000);
+
+    return () => {
+      const instance = cmInstance.current;
+      if (!instance) {
+        return;
+      }
+      const errors = linter(instance.getValue());
+      if (!errors.length) {
+        errorsRef.current = errors;
+        applyStaticSyntaxHighlighting(instance, errors);
+      } else {
+        // Only debounce if there are errors to apply
+        debouncedApplyErrors();
+      }
+    };
+  }, [linter, cmInstance]);
+
+  const highlighter = useCallback(
+    (instance: CodeMirror.Editor) => {
+      lintErrors();
+      applyStaticSyntaxHighlighting(instance, errorsRef.current);
+    },
+    [errorsRef, lintErrors],
+  );
+
   useLayoutEffect(() => {
     if (!instance) {
       return;
     }
-    const callback = (instance: CodeMirror.Editor) => {
-      const errors = linter(instance.getValue());
-      setErrors(errors);
-      applyStaticSyntaxHighlighting(instance, errors);
-    };
-    instance.on('change', callback);
-    callback(instance);
+    instance.on('change', highlighter);
+    highlighter(instance);
     return () => {
-      instance.off('change', callback);
+      instance.off('change', highlighter);
     };
-  }, [instance, linter]);
+  }, [highlighter, instance]);
 
   const [error, setError] = useState<{
     error: SyntaxError;

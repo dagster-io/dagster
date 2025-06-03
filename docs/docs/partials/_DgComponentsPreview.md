@@ -1,5 +1,5 @@
 :::info
 
-This feature is considered in a preview stage and is under active development. There may be API changes and feature gaps. Please go to the #dg-components channel in our [Slack](https://www.dagster.io/slack/) to report issues or give feedback.
+`dg` and Dagster Components are under active development. You may encounter feature gaps, and the APIs may change. To report issues or give feedback, please join the #dg-components channel in the [Dagster Community Slack](https://www.dagster.io/slack/).
 
 :::

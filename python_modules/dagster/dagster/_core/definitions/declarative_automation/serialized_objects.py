@@ -4,6 +4,7 @@ from typing import (  # noqa: UP035
     TYPE_CHECKING,
     AbstractSet,
     Generic,
+    Literal,
     NamedTuple,
     Optional,
     TypeVar,
@@ -11,6 +12,7 @@ from typing import (  # noqa: UP035
 )
 
 from dagster_shared.serdes import whitelist_for_serdes
+from typing_extensions import TypeAlias
 
 from dagster._core.asset_graph_view.asset_graph_view import TemporalContext
 from dagster._core.asset_graph_view.serializable_entity_subset import SerializableEntitySubset
@@ -52,6 +54,9 @@ def get_serializable_candidate_subset(
     return candidate_subset
 
 
+OperatorType: TypeAlias = Union[Literal["and"], Literal["or"], Literal["not"], Literal["identity"]]
+
+
 @whitelist_for_serdes(storage_name="AssetConditionSnapshot")
 class AutomationConditionNodeSnapshot(NamedTuple):
     """A serializable snapshot of a node in the AutomationCondition tree."""
@@ -61,6 +66,7 @@ class AutomationConditionNodeSnapshot(NamedTuple):
     unique_id: str
     label: Optional[str] = None
     name: Optional[str] = None
+    operator_type: OperatorType = "identity"
 
 
 @whitelist_for_serdes
@@ -99,6 +105,7 @@ class AutomationConditionEvaluation(Generic[T_EntityKey]):
     subsets_with_metadata: Sequence[AssetSubsetWithMetadata]
 
     child_evaluations: Sequence["AutomationConditionEvaluation"]
+    metadata: Optional[MetadataMapping] = None
 
     @property
     def key(self) -> T_EntityKey:
@@ -152,6 +159,7 @@ class AutomationConditionNodeCursor(Generic[T_EntityKey]):
     ]
     subsets_with_metadata: Sequence[AssetSubsetWithMetadata]
     extra_state: Optional[StructuredCursor]
+    metadata: Optional[MetadataMapping] = None
 
     def get_structured_cursor(
         self, as_type: type[T_StructuredCursor]

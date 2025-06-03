@@ -4,7 +4,7 @@ import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
 
 import {AssetKey} from './types';
 import {featureEnabled} from '../app/Flags';
-import {MaterializationHistoryEventTypeSelector} from '../graphql/types';
+import {AssetEventHistoryEventTypeSelector} from '../graphql/types';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {TruncatedTextWithFullTextOnHover} from '../nav/getLeftNavItemsForOption';
 import {useFilters} from '../ui/BaseFilters';
@@ -42,21 +42,30 @@ export const useAssetEventsFilters = ({assetKey, assetNode}: Config) => {
           type: typeValues.map((t) => t.key),
         };
       }
+
+      let dateRange: {start: number | null; end: number | null} | undefined;
+      if (raw?.dateRange && typeof raw.dateRange !== 'string' && !Array.isArray(raw.dateRange)) {
+        dateRange = {
+          start: typeof raw.dateRange.start === 'string' ? parseInt(raw.dateRange.start) : null,
+          end: typeof raw.dateRange.end === 'string' ? parseInt(raw.dateRange.end) : null,
+        };
+      }
+
       return {
-        partitions: raw?.partitions,
-        dateRange: raw?.dateRange
-          ? {
-              start: raw.dateRange.start ? parseInt(raw.dateRange.start) : null,
-              end: raw.dateRange.end ? parseInt(raw.dateRange.end) : null,
-            }
-          : undefined,
-        status: raw?.status,
-        type: raw?.type,
+        partitions: Array.isArray(raw?.partitions) ? raw.partitions.map(String) : [],
+        dateRange,
+        status: Array.isArray(raw?.status) ? raw.status.map(String) : [],
+        type: Array.isArray(raw?.type) ? raw.type.map(String) : [],
       };
     },
     encode: (raw) => ({
       partitions: raw.partitions,
-      dateRange: raw.dateRange,
+      dateRange: raw.dateRange
+        ? {
+            start: raw.dateRange.start ? String(raw.dateRange.start) : undefined,
+            end: raw.dateRange.end ? String(raw.dateRange.end) : undefined,
+          }
+        : undefined,
       status: raw.status,
       type: raw.type,
     }),
@@ -109,9 +118,9 @@ export const useAssetEventsFilters = ({assetKey, assetNode}: Config) => {
       </Box>
     ),
     getStringValue: (x) => {
-      if (x === MaterializationHistoryEventTypeSelector.MATERIALIZATION) {
+      if (x === AssetEventHistoryEventTypeSelector.MATERIALIZATION) {
         return 'Success';
-      } else if (x === MaterializationHistoryEventTypeSelector.FAILED_TO_MATERIALIZE) {
+      } else if (x === AssetEventHistoryEventTypeSelector.FAILED_TO_MATERIALIZE) {
         return 'Failure';
       }
       return x;
@@ -195,13 +204,13 @@ export const useAssetEventsFilters = ({assetKey, assetNode}: Config) => {
 
 const statusValues = [
   {
-    key: MaterializationHistoryEventTypeSelector.MATERIALIZATION,
-    value: MaterializationHistoryEventTypeSelector.MATERIALIZATION,
+    key: AssetEventHistoryEventTypeSelector.MATERIALIZATION,
+    value: AssetEventHistoryEventTypeSelector.MATERIALIZATION,
     match: ['Success'],
   },
   {
-    key: MaterializationHistoryEventTypeSelector.FAILED_TO_MATERIALIZE,
-    value: MaterializationHistoryEventTypeSelector.FAILED_TO_MATERIALIZE,
+    key: AssetEventHistoryEventTypeSelector.FAILED_TO_MATERIALIZE,
+    value: AssetEventHistoryEventTypeSelector.FAILED_TO_MATERIALIZE,
     match: ['Failure'],
   },
 ];

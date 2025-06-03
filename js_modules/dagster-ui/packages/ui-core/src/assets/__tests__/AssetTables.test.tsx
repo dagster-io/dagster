@@ -1,28 +1,44 @@
 import {MockedProvider} from '@apollo/client/testing';
-import {render, screen} from '@testing-library/react';
+import {act, render, screen} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {MemoryRouter} from 'react-router';
 import {RecoilRoot} from 'recoil';
 
 import {useAssetSelectionInput} from '../../asset-selection/input/useAssetSelectionInput';
+import {
+  buildRepository,
+  buildRepositoryLocation,
+  buildWorkspaceLocationEntry,
+} from '../../graphql/types';
 import {mockViewportClientRect, restoreViewportClientRect} from '../../testing/mocking';
 import {WorkspaceProvider} from '../../workspace/WorkspaceContext/WorkspaceContext';
 import {buildWorkspaceMocks} from '../../workspace/WorkspaceContext/__fixtures__/Workspace.fixtures';
 import {AssetsCatalogTable} from '../AssetsCatalogTable';
 import {
-  AssetCatalogGroupTableMock,
   AssetCatalogTableMock,
+  AssetCatalogTableMockAssets,
   SingleAssetQueryLastRunFailed,
   SingleAssetQueryMaterializedStaleAndLate,
   SingleAssetQueryMaterializedWithLatestRun,
   SingleAssetQueryTrafficDashboard,
 } from '../__fixtures__/AssetTables.fixtures';
 
-const workspaceMocks = buildWorkspaceMocks([]);
+const workspaceMocks = buildWorkspaceMocks([
+  buildWorkspaceLocationEntry({
+    locationOrLoadError: buildRepositoryLocation({
+      repositories: [
+        buildRepository({
+          assetNodes: AssetCatalogTableMockAssets.filter((asset) => asset.definition).map(
+            (asset) => asset.definition!,
+          ),
+        }),
+      ],
+    }),
+  }),
+]);
 
 const MOCKS = [
   AssetCatalogTableMock,
-  AssetCatalogGroupTableMock,
   SingleAssetQueryTrafficDashboard,
   SingleAssetQueryMaterializedWithLatestRun,
   SingleAssetQueryMaterializedStaleAndLate,
@@ -79,7 +95,9 @@ describe('AssetTable', () => {
           </RecoilRoot>
         );
       };
-      render(<Test />);
+      await act(async () => {
+        render(<Test />);
+      });
 
       expect(await screen.findByTestId('materialize-button')).toBeDisabled();
       expect(await screen.findByTestId('materialize-button')).toHaveTextContent(

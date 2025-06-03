@@ -23,6 +23,7 @@ from dagster_test.toys.auto_materializing.repo_1 import (
 from dagster_test.toys.auto_materializing.repo_2 import (
     auto_materialize_repo_2 as auto_materialize_repo_2,
 )
+from dagster_test.toys.big_honkin_asset_graph import big_honkin_assets_job
 from dagster_test.toys.branches import branch_failed_job, branch_job
 from dagster_test.toys.composition import composition_job
 from dagster_test.toys.cross_repo_assets import (
@@ -185,9 +186,7 @@ def long_asset_keys_repository():
 
 @repository
 def big_honkin_assets_repository():
-    return cast(
-        "Sequence[AssetsDefinition]", [load_assets_from_modules([big_honkin_asset_graph_module])]
-    )
+    return [load_assets_from_modules([big_honkin_asset_graph_module]), big_honkin_assets_job]
 
 
 @repository

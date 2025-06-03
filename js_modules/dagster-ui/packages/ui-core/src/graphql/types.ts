@@ -100,7 +100,8 @@ export type ArrayConfigType = ConfigType &
 
 export type Asset = {
   __typename: 'Asset';
-  assetMaterializationHistory: MaterializationHistoryConnection;
+  assetEventHistory: AssetResultEventHistoryConnection;
+  assetHealth: Maybe<AssetHealth>;
   assetMaterializations: Array<MaterializationEvent>;
   assetObservations: Array<ObservationEvent>;
   definition: Maybe<AssetNode>;
@@ -109,12 +110,12 @@ export type Asset = {
   latestEventSortKey: Maybe<Scalars['ID']['output']>;
 };
 
-export type AssetAssetMaterializationHistoryArgs = {
+export type AssetAssetEventHistoryArgs = {
   afterTimestampMillis?: InputMaybe<Scalars['String']['input']>;
   beforeTimestampMillis?: InputMaybe<Scalars['String']['input']>;
   cursor?: InputMaybe<Scalars['String']['input']>;
-  eventTypeSelector?: InputMaybe<MaterializationHistoryEventTypeSelector>;
-  limit?: InputMaybe<Scalars['Int']['input']>;
+  eventTypeSelectors: Array<AssetEventHistoryEventTypeSelector>;
+  limit: Scalars['Int']['input'];
   partitionInLast?: InputMaybe<Scalars['Int']['input']>;
   partitions?: InputMaybe<Array<Scalars['String']['input']>>;
 };
@@ -355,6 +356,12 @@ export type AssetDependency = {
   partitionMapping: Maybe<PartitionMapping>;
 };
 
+export enum AssetEventHistoryEventTypeSelector {
+  FAILED_TO_MATERIALIZE = 'FAILED_TO_MATERIALIZE',
+  MATERIALIZATION = 'MATERIALIZATION',
+  OBSERVATION = 'OBSERVATION',
+}
+
 export enum AssetEventType {
   ASSET_MATERIALIZATION = 'ASSET_MATERIALIZATION',
   ASSET_OBSERVATION = 'ASSET_OBSERVATION',
@@ -432,16 +439,16 @@ export type AssetHealthMaterializationDegradedPartitionedMeta = {
   totalNumPartitions: Scalars['Int']['output'];
 };
 
-export type AssetHealthMaterializationMeta =
-  | AssetHealthMaterializationDegradedNotPartitionedMeta
-  | AssetHealthMaterializationDegradedPartitionedMeta
-  | AssetHealthMaterializationWarningPartitionedMeta;
-
-export type AssetHealthMaterializationWarningPartitionedMeta = {
-  __typename: 'AssetHealthMaterializationWarningPartitionedMeta';
+export type AssetHealthMaterializationHealthyPartitionedMeta = {
+  __typename: 'AssetHealthMaterializationHealthyPartitionedMeta';
   numMissingPartitions: Scalars['Int']['output'];
   totalNumPartitions: Scalars['Int']['output'];
 };
+
+export type AssetHealthMaterializationMeta =
+  | AssetHealthMaterializationDegradedNotPartitionedMeta
+  | AssetHealthMaterializationDegradedPartitionedMeta
+  | AssetHealthMaterializationHealthyPartitionedMeta;
 
 export enum AssetHealthStatus {
   DEGRADED = 'DEGRADED',
@@ -475,8 +482,6 @@ export type AssetLineageInfo = {
   assetKey: AssetKey;
   partitions: Array<Scalars['String']['output']>;
 };
-
-export type AssetMaterializationEventType = FailedToMaterializeEvent | MaterializationEvent;
 
 export enum AssetMaterializationFailureReason {
   FAILED_TO_MATERIALIZE = 'FAILED_TO_MATERIALIZE',
@@ -544,6 +549,7 @@ export type AssetNode = {
   hasReportRunlessAssetEventPermission: Scalars['Boolean']['output'];
   id: Scalars['ID']['output'];
   internalFreshnessPolicy: Maybe<InternalFreshnessPolicy>;
+  isAutoCreatedStub: Scalars['Boolean']['output'];
   isExecutable: Scalars['Boolean']['output'];
   isMaterializable: Scalars['Boolean']['output'];
   isObservable: Scalars['Boolean']['output'];
@@ -551,6 +557,7 @@ export type AssetNode = {
   jobNames: Array<Scalars['String']['output']>;
   jobs: Array<Pipeline>;
   kinds: Array<Scalars['String']['output']>;
+  lastAutoMaterializationEvaluationRecord: Maybe<AutoMaterializeAssetEvaluationRecord>;
   latestMaterializationByPartition: Array<Maybe<MaterializationEvent>>;
   latestRunForPartition: Maybe<Run>;
   metadataEntries: Array<
@@ -624,6 +631,10 @@ export type AssetNodeDataVersionArgs = {
 
 export type AssetNodeDataVersionByPartitionArgs = {
   partitions?: InputMaybe<Array<Scalars['String']['input']>>;
+};
+
+export type AssetNodeLastAutoMaterializationEvaluationRecordArgs = {
+  asOfEvaluationId?: InputMaybe<Scalars['ID']['input']>;
 };
 
 export type AssetNodeLatestMaterializationByPartitionArgs = {
@@ -703,6 +714,31 @@ export type AssetPartitionsStatusCounts = {
   numPartitionsMaterialized: Scalars['Int']['output'];
   numPartitionsTargeted: Scalars['Int']['output'];
 };
+
+export type AssetRecord = {
+  __typename: 'AssetRecord';
+  id: Scalars['String']['output'];
+  key: AssetKey;
+};
+
+export type AssetRecordConnection = {
+  __typename: 'AssetRecordConnection';
+  assets: Array<AssetRecord>;
+  cursor: Maybe<Scalars['String']['output']>;
+};
+
+export type AssetRecordsOrError = AssetRecordConnection | PythonError;
+
+export type AssetResultEventHistoryConnection = {
+  __typename: 'AssetResultEventHistoryConnection';
+  cursor: Scalars['String']['output'];
+  results: Array<AssetResultEventType>;
+};
+
+export type AssetResultEventType =
+  | FailedToMaterializeEvent
+  | MaterializationEvent
+  | ObservationEvent;
 
 export type AssetSelection = {
   __typename: 'AssetSelection';
@@ -807,10 +843,12 @@ export type AutomationConditionEvaluationNode = {
   __typename: 'AutomationConditionEvaluationNode';
   childUniqueIds: Array<Scalars['String']['output']>;
   endTimestamp: Maybe<Scalars['Float']['output']>;
+  entityKey: EntityKey;
   expandedLabel: Array<Scalars['String']['output']>;
   isPartitioned: Scalars['Boolean']['output'];
   numCandidates: Maybe<Scalars['Int']['output']>;
   numTrue: Scalars['Int']['output'];
+  operatorType: Scalars['String']['output'];
   startTimestamp: Maybe<Scalars['Float']['output']>;
   uniqueId: Scalars['String']['output'];
   userLabel: Maybe<Scalars['String']['output']>;
@@ -1062,6 +1100,7 @@ export enum DagsterEventType {
   ASSET_OBSERVATION = 'ASSET_OBSERVATION',
   ASSET_STORE_OPERATION = 'ASSET_STORE_OPERATION',
   ENGINE_EVENT = 'ENGINE_EVENT',
+  FRESHNESS_STATE_CHANGE = 'FRESHNESS_STATE_CHANGE',
   FRESHNESS_STATE_EVALUATION = 'FRESHNESS_STATE_EVALUATION',
   HANDLED_OUTPUT = 'HANDLED_OUTPUT',
   HOOK_COMPLETED = 'HOOK_COMPLETED',
@@ -1523,6 +1562,7 @@ export type ExecutionParams = {
 export type ExecutionPlan = {
   __typename: 'ExecutionPlan';
   artifactsPersisted: Scalars['Boolean']['output'];
+  assetSelection: Array<Scalars['String']['output']>;
   steps: Array<ExecutionStep>;
 };
 
@@ -2238,6 +2278,7 @@ export type Job = IPipelineSnapshot &
     dagsterTypeOrError: DagsterTypeOrError;
     dagsterTypes: Array<ListDagsterType | NullableDagsterType | RegularDagsterType>;
     description: Maybe<Scalars['String']['output']>;
+    externalJobSource: Maybe<Scalars['String']['output']>;
     graphName: Scalars['String']['output'];
     id: Scalars['ID']['output'];
     isAssetJob: Scalars['Boolean']['output'];
@@ -2729,18 +2770,6 @@ export type MaterializationEvent = DisplayableEvent &
     tags: Array<EventTag>;
     timestamp: Scalars['String']['output'];
   };
-
-export type MaterializationHistoryConnection = {
-  __typename: 'MaterializationHistoryConnection';
-  cursor: Scalars['String']['output'];
-  results: Array<AssetMaterializationEventType>;
-};
-
-export enum MaterializationHistoryEventTypeSelector {
-  ALL = 'ALL',
-  FAILED_TO_MATERIALIZE = 'FAILED_TO_MATERIALIZE',
-  MATERIALIZATION = 'MATERIALIZATION',
-}
 
 export type MaterializationUpstreamDataVersion = {
   __typename: 'MaterializationUpstreamDataVersion';
@@ -3555,6 +3584,7 @@ export type PartitionedAssetConditionEvaluationNode = {
   childUniqueIds: Array<Scalars['String']['output']>;
   description: Scalars['String']['output'];
   endTimestamp: Maybe<Scalars['Float']['output']>;
+  entityKey: EntityKey;
   numCandidates: Maybe<Scalars['Int']['output']>;
   numTrue: Scalars['Int']['output'];
   startTimestamp: Maybe<Scalars['Float']['output']>;
@@ -3607,6 +3637,7 @@ export type Pipeline = IPipelineSnapshot &
     dagsterTypeOrError: DagsterTypeOrError;
     dagsterTypes: Array<ListDagsterType | NullableDagsterType | RegularDagsterType>;
     description: Maybe<Scalars['String']['output']>;
+    externalJobSource: Maybe<Scalars['String']['output']>;
     graphName: Scalars['String']['output'];
     id: Scalars['ID']['output'];
     isAssetJob: Scalars['Boolean']['output'];
@@ -3848,6 +3879,7 @@ export type PipelineSnapshot = IPipelineSnapshot &
     dagsterTypeOrError: DagsterTypeOrError;
     dagsterTypes: Array<ListDagsterType | NullableDagsterType | RegularDagsterType>;
     description: Maybe<Scalars['String']['output']>;
+    externalJobSource: Maybe<Scalars['String']['output']>;
     graphName: Scalars['String']['output'];
     id: Scalars['ID']['output'];
     metadataEntries: Array<
@@ -3979,6 +4011,7 @@ export type Query = {
   assetNodeOrError: AssetNodeOrError;
   assetNodes: Array<AssetNode>;
   assetOrError: AssetOrError;
+  assetRecordsOrError: AssetRecordsOrError;
   assetsLatestInfo: Array<AssetLatestInfo>;
   assetsOrError: AssetsOrError;
   autoMaterializeAssetEvaluationsOrError: Maybe<AutoMaterializeAssetEvaluationRecordsOrError>;
@@ -4086,11 +4119,18 @@ export type QueryAssetOrErrorArgs = {
   assetKey: AssetKeyInput;
 };
 
+export type QueryAssetRecordsOrErrorArgs = {
+  cursor?: InputMaybe<Scalars['String']['input']>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  prefix?: InputMaybe<Array<Scalars['String']['input']>>;
+};
+
 export type QueryAssetsLatestInfoArgs = {
   assetKeys: Array<AssetKeyInput>;
 };
 
 export type QueryAssetsOrErrorArgs = {
+  assetKeys?: InputMaybe<Array<AssetKeyInput>>;
   cursor?: InputMaybe<Scalars['String']['input']>;
   limit?: InputMaybe<Scalars['Int']['input']>;
   prefix?: InputMaybe<Array<Scalars['String']['input']>>;
@@ -4297,6 +4337,7 @@ export type ReexecutionParams = {
 
 export enum ReexecutionStrategy {
   ALL_STEPS = 'ALL_STEPS',
+  FROM_ASSET_FAILURE = 'FROM_ASSET_FAILURE',
   FROM_FAILURE = 'FROM_FAILURE',
 }
 
@@ -4723,6 +4764,7 @@ export type Run = PipelineRun &
     endTime: Maybe<Scalars['Float']['output']>;
     eventConnection: EventConnection;
     executionPlan: Maybe<ExecutionPlan>;
+    externalJobSource: Maybe<Scalars['String']['output']>;
     hasConcurrencyKeySlots: Scalars['Boolean']['output'];
     hasDeletePermission: Scalars['Boolean']['output'];
     hasReExecutePermission: Scalars['Boolean']['output'];
@@ -5469,6 +5511,7 @@ export type SpecificPartitionAssetConditionEvaluationNode = {
   __typename: 'SpecificPartitionAssetConditionEvaluationNode';
   childUniqueIds: Array<Scalars['String']['output']>;
   description: Scalars['String']['output'];
+  entityKey: EntityKey;
   metadataEntries: Array<
     | AssetMetadataEntry
     | BoolMetadataEntry
@@ -5907,6 +5950,7 @@ export type UnpartitionedAssetConditionEvaluationNode = {
   childUniqueIds: Array<Scalars['String']['output']>;
   description: Scalars['String']['output'];
   endTimestamp: Maybe<Scalars['Float']['output']>;
+  entityKey: EntityKey;
   metadataEntries: Array<
     | AssetMetadataEntry
     | BoolMetadataEntry
@@ -6175,12 +6219,18 @@ export const buildAsset = (
   relationshipsToOmit.add('Asset');
   return {
     __typename: 'Asset',
-    assetMaterializationHistory:
-      overrides && overrides.hasOwnProperty('assetMaterializationHistory')
-        ? overrides.assetMaterializationHistory!
-        : relationshipsToOmit.has('MaterializationHistoryConnection')
-          ? ({} as MaterializationHistoryConnection)
-          : buildMaterializationHistoryConnection({}, relationshipsToOmit),
+    assetEventHistory:
+      overrides && overrides.hasOwnProperty('assetEventHistory')
+        ? overrides.assetEventHistory!
+        : relationshipsToOmit.has('AssetResultEventHistoryConnection')
+          ? ({} as AssetResultEventHistoryConnection)
+          : buildAssetResultEventHistoryConnection({}, relationshipsToOmit),
+    assetHealth:
+      overrides && overrides.hasOwnProperty('assetHealth')
+        ? overrides.assetHealth!
+        : relationshipsToOmit.has('AssetHealth')
+          ? ({} as AssetHealth)
+          : buildAssetHealth({}, relationshipsToOmit),
     assetMaterializations:
       overrides && overrides.hasOwnProperty('assetMaterializations')
         ? overrides.assetMaterializations!
@@ -6842,24 +6892,24 @@ export const buildAssetHealthMaterializationDegradedPartitionedMeta = (
   };
 };
 
-export const buildAssetHealthMaterializationWarningPartitionedMeta = (
-  overrides?: Partial<AssetHealthMaterializationWarningPartitionedMeta>,
+export const buildAssetHealthMaterializationHealthyPartitionedMeta = (
+  overrides?: Partial<AssetHealthMaterializationHealthyPartitionedMeta>,
   _relationshipsToOmit: Set<string> = new Set(),
 ): {
-  __typename: 'AssetHealthMaterializationWarningPartitionedMeta';
-} & AssetHealthMaterializationWarningPartitionedMeta => {
+  __typename: 'AssetHealthMaterializationHealthyPartitionedMeta';
+} & AssetHealthMaterializationHealthyPartitionedMeta => {
   const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
-  relationshipsToOmit.add('AssetHealthMaterializationWarningPartitionedMeta');
+  relationshipsToOmit.add('AssetHealthMaterializationHealthyPartitionedMeta');
   return {
-    __typename: 'AssetHealthMaterializationWarningPartitionedMeta',
+    __typename: 'AssetHealthMaterializationHealthyPartitionedMeta',
     numMissingPartitions:
       overrides && overrides.hasOwnProperty('numMissingPartitions')
         ? overrides.numMissingPartitions!
-        : 1286,
+        : 9751,
     totalNumPartitions:
       overrides && overrides.hasOwnProperty('totalNumPartitions')
         ? overrides.totalNumPartitions!
-        : 8637,
+        : 4020,
   };
 };
 
@@ -7123,6 +7173,10 @@ export const buildAssetNode = (
         : relationshipsToOmit.has('TimeWindowFreshnessPolicy')
           ? ({} as TimeWindowFreshnessPolicy)
           : buildTimeWindowFreshnessPolicy({}, relationshipsToOmit),
+    isAutoCreatedStub:
+      overrides && overrides.hasOwnProperty('isAutoCreatedStub')
+        ? overrides.isAutoCreatedStub!
+        : false,
     isExecutable:
       overrides && overrides.hasOwnProperty('isExecutable') ? overrides.isExecutable! : false,
     isMaterializable:
@@ -7136,6 +7190,12 @@ export const buildAssetNode = (
     jobNames: overrides && overrides.hasOwnProperty('jobNames') ? overrides.jobNames! : [],
     jobs: overrides && overrides.hasOwnProperty('jobs') ? overrides.jobs! : [],
     kinds: overrides && overrides.hasOwnProperty('kinds') ? overrides.kinds! : [],
+    lastAutoMaterializationEvaluationRecord:
+      overrides && overrides.hasOwnProperty('lastAutoMaterializationEvaluationRecord')
+        ? overrides.lastAutoMaterializationEvaluationRecord!
+        : relationshipsToOmit.has('AutoMaterializeAssetEvaluationRecord')
+          ? ({} as AutoMaterializeAssetEvaluationRecord)
+          : buildAutoMaterializeAssetEvaluationRecord({}, relationshipsToOmit),
     latestMaterializationByPartition:
       overrides && overrides.hasOwnProperty('latestMaterializationByPartition')
         ? overrides.latestMaterializationByPartition!
@@ -7334,6 +7394,50 @@ export const buildAssetPartitionsStatusCounts = (
       overrides && overrides.hasOwnProperty('numPartitionsTargeted')
         ? overrides.numPartitionsTargeted!
         : 5211,
+  };
+};
+
+export const buildAssetRecord = (
+  overrides?: Partial<AssetRecord>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'AssetRecord'} & AssetRecord => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('AssetRecord');
+  return {
+    __typename: 'AssetRecord',
+    id: overrides && overrides.hasOwnProperty('id') ? overrides.id! : 'nemo',
+    key:
+      overrides && overrides.hasOwnProperty('key')
+        ? overrides.key!
+        : relationshipsToOmit.has('AssetKey')
+          ? ({} as AssetKey)
+          : buildAssetKey({}, relationshipsToOmit),
+  };
+};
+
+export const buildAssetRecordConnection = (
+  overrides?: Partial<AssetRecordConnection>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'AssetRecordConnection'} & AssetRecordConnection => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('AssetRecordConnection');
+  return {
+    __typename: 'AssetRecordConnection',
+    assets: overrides && overrides.hasOwnProperty('assets') ? overrides.assets! : [],
+    cursor: overrides && overrides.hasOwnProperty('cursor') ? overrides.cursor! : 'voluptatem',
+  };
+};
+
+export const buildAssetResultEventHistoryConnection = (
+  overrides?: Partial<AssetResultEventHistoryConnection>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'AssetResultEventHistoryConnection'} & AssetResultEventHistoryConnection => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('AssetResultEventHistoryConnection');
+  return {
+    __typename: 'AssetResultEventHistoryConnection',
+    cursor: overrides && overrides.hasOwnProperty('cursor') ? overrides.cursor! : 'vero',
+    results: overrides && overrides.hasOwnProperty('results') ? overrides.results! : [],
   };
 };
 
@@ -7550,6 +7654,12 @@ export const buildAutomationConditionEvaluationNode = (
       overrides && overrides.hasOwnProperty('childUniqueIds') ? overrides.childUniqueIds! : [],
     endTimestamp:
       overrides && overrides.hasOwnProperty('endTimestamp') ? overrides.endTimestamp! : 4.53,
+    entityKey:
+      overrides && overrides.hasOwnProperty('entityKey')
+        ? overrides.entityKey!
+        : relationshipsToOmit.has('AssetCheckhandle')
+          ? ({} as AssetCheckhandle)
+          : buildAssetCheckhandle({}, relationshipsToOmit),
     expandedLabel:
       overrides && overrides.hasOwnProperty('expandedLabel') ? overrides.expandedLabel! : [],
     isPartitioned:
@@ -7557,6 +7667,8 @@ export const buildAutomationConditionEvaluationNode = (
     numCandidates:
       overrides && overrides.hasOwnProperty('numCandidates') ? overrides.numCandidates! : 6123,
     numTrue: overrides && overrides.hasOwnProperty('numTrue') ? overrides.numTrue! : 5212,
+    operatorType:
+      overrides && overrides.hasOwnProperty('operatorType') ? overrides.operatorType! : 'modi',
     startTimestamp:
       overrides && overrides.hasOwnProperty('startTimestamp') ? overrides.startTimestamp! : 5.42,
     uniqueId: overrides && overrides.hasOwnProperty('uniqueId') ? overrides.uniqueId! : 'sit',
@@ -8626,6 +8738,8 @@ export const buildExecutionPlan = (
       overrides && overrides.hasOwnProperty('artifactsPersisted')
         ? overrides.artifactsPersisted!
         : true,
+    assetSelection:
+      overrides && overrides.hasOwnProperty('assetSelection') ? overrides.assetSelection! : [],
     steps: overrides && overrides.hasOwnProperty('steps') ? overrides.steps! : [],
   };
 };
@@ -9813,6 +9927,10 @@ export const buildJob = (
       overrides && overrides.hasOwnProperty('dagsterTypes') ? overrides.dagsterTypes! : [],
     description:
       overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'occaecati',
+    externalJobSource:
+      overrides && overrides.hasOwnProperty('externalJobSource')
+        ? overrides.externalJobSource!
+        : 'suscipit',
     graphName:
       overrides && overrides.hasOwnProperty('graphName') ? overrides.graphName! : 'eveniet',
     id:
@@ -10585,19 +10703,6 @@ export const buildMaterializationEvent = (
           : buildRunStepStats({}, relationshipsToOmit),
     tags: overrides && overrides.hasOwnProperty('tags') ? overrides.tags! : [],
     timestamp: overrides && overrides.hasOwnProperty('timestamp') ? overrides.timestamp! : 'id',
-  };
-};
-
-export const buildMaterializationHistoryConnection = (
-  overrides?: Partial<MaterializationHistoryConnection>,
-  _relationshipsToOmit: Set<string> = new Set(),
-): {__typename: 'MaterializationHistoryConnection'} & MaterializationHistoryConnection => {
-  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
-  relationshipsToOmit.add('MaterializationHistoryConnection');
-  return {
-    __typename: 'MaterializationHistoryConnection',
-    cursor: overrides && overrides.hasOwnProperty('cursor') ? overrides.cursor! : 'omnis',
-    results: overrides && overrides.hasOwnProperty('results') ? overrides.results! : [],
   };
 };
 
@@ -11993,6 +12098,12 @@ export const buildPartitionedAssetConditionEvaluationNode = (
       overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'quam',
     endTimestamp:
       overrides && overrides.hasOwnProperty('endTimestamp') ? overrides.endTimestamp! : 9.74,
+    entityKey:
+      overrides && overrides.hasOwnProperty('entityKey')
+        ? overrides.entityKey!
+        : relationshipsToOmit.has('AssetCheckhandle')
+          ? ({} as AssetCheckhandle)
+          : buildAssetCheckhandle({}, relationshipsToOmit),
     numCandidates:
       overrides && overrides.hasOwnProperty('numCandidates') ? overrides.numCandidates! : 9986,
     numTrue: overrides && overrides.hasOwnProperty('numTrue') ? overrides.numTrue! : 3015,
@@ -12124,6 +12235,10 @@ export const buildPipeline = (
       overrides && overrides.hasOwnProperty('dagsterTypes') ? overrides.dagsterTypes! : [],
     description:
       overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'quisquam',
+    externalJobSource:
+      overrides && overrides.hasOwnProperty('externalJobSource')
+        ? overrides.externalJobSource!
+        : 'quis',
     graphName: overrides && overrides.hasOwnProperty('graphName') ? overrides.graphName! : 'eius',
     id:
       overrides && overrides.hasOwnProperty('id')
@@ -12553,6 +12668,10 @@ export const buildPipelineSnapshot = (
       overrides && overrides.hasOwnProperty('dagsterTypes') ? overrides.dagsterTypes! : [],
     description:
       overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'corporis',
+    externalJobSource:
+      overrides && overrides.hasOwnProperty('externalJobSource')
+        ? overrides.externalJobSource!
+        : 'ut',
     graphName:
       overrides && overrides.hasOwnProperty('graphName') ? overrides.graphName! : 'dolorum',
     id:
@@ -12780,6 +12899,12 @@ export const buildQuery = (
         : relationshipsToOmit.has('Asset')
           ? ({} as Asset)
           : buildAsset({}, relationshipsToOmit),
+    assetRecordsOrError:
+      overrides && overrides.hasOwnProperty('assetRecordsOrError')
+        ? overrides.assetRecordsOrError!
+        : relationshipsToOmit.has('AssetRecordConnection')
+          ? ({} as AssetRecordConnection)
+          : buildAssetRecordConnection({}, relationshipsToOmit),
     assetsLatestInfo:
       overrides && overrides.hasOwnProperty('assetsLatestInfo') ? overrides.assetsLatestInfo! : [],
     assetsOrError:
@@ -13780,6 +13905,10 @@ export const buildRun = (
         : relationshipsToOmit.has('ExecutionPlan')
           ? ({} as ExecutionPlan)
           : buildExecutionPlan({}, relationshipsToOmit),
+    externalJobSource:
+      overrides && overrides.hasOwnProperty('externalJobSource')
+        ? overrides.externalJobSource!
+        : 'similique',
     hasConcurrencyKeySlots:
       overrides && overrides.hasOwnProperty('hasConcurrencyKeySlots')
         ? overrides.hasConcurrencyKeySlots!
@@ -15177,6 +15306,12 @@ export const buildSpecificPartitionAssetConditionEvaluationNode = (
       overrides && overrides.hasOwnProperty('childUniqueIds') ? overrides.childUniqueIds! : [],
     description:
       overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'ut',
+    entityKey:
+      overrides && overrides.hasOwnProperty('entityKey')
+        ? overrides.entityKey!
+        : relationshipsToOmit.has('AssetCheckhandle')
+          ? ({} as AssetCheckhandle)
+          : buildAssetCheckhandle({}, relationshipsToOmit),
     metadataEntries:
       overrides && overrides.hasOwnProperty('metadataEntries') ? overrides.metadataEntries! : [],
     status:
@@ -15961,6 +16096,12 @@ export const buildUnpartitionedAssetConditionEvaluationNode = (
       overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'veniam',
     endTimestamp:
       overrides && overrides.hasOwnProperty('endTimestamp') ? overrides.endTimestamp! : 3.21,
+    entityKey:
+      overrides && overrides.hasOwnProperty('entityKey')
+        ? overrides.entityKey!
+        : relationshipsToOmit.has('AssetCheckhandle')
+          ? ({} as AssetCheckhandle)
+          : buildAssetCheckhandle({}, relationshipsToOmit),
     metadataEntries:
       overrides && overrides.hasOwnProperty('metadataEntries') ? overrides.metadataEntries! : [],
     startTimestamp:

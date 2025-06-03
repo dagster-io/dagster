@@ -15,6 +15,13 @@ from typing_extensions import TypeAlias, TypeVar
 import dagster._check as check
 from dagster._annotations import PublicAttr, deprecated, deprecated_param
 from dagster._core.definitions.asset_key import AssetKey
+from dagster._core.definitions.metadata.external_metadata import (
+    EXTERNAL_METADATA_TYPE_INFER as EXTERNAL_METADATA_TYPE_INFER,
+    ExternalMetadataType as ExternalMetadataType,
+    ExternalMetadataValue as ExternalMetadataValue,
+    metadata_map_from_external as metadata_map_from_external,
+    metadata_value_from_external as metadata_value_from_external,
+)
 from dagster._core.definitions.metadata.metadata_set import (
     NamespacedMetadataSet as NamespacedMetadataSet,
     TableMetadataSet as TableMetadataSet,

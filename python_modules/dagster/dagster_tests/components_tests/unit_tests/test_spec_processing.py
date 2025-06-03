@@ -4,9 +4,11 @@ import pytest
 from dagster import AssetKey, AssetSpec, AutomationCondition, Definitions
 from dagster.components.resolved.context import ResolutionContext
 from dagster.components.resolved.core_models import (
+    AssetAttributesModel,
     AssetPostProcessorModel,
     apply_post_processor_to_defs,
 )
+from dagster.components.utils import TranslatorResolvingInfo
 from pydantic import BaseModel, TypeAdapter
 
 
@@ -135,3 +137,45 @@ def test_load_attributes(python, expected) -> None:
     loaded = TypeAdapter(Sequence[AssetPostProcessorModel.model()]).validate_python([python])
     assert len(loaded) == 1
     assert loaded[0] == expected
+
+
+def test_prefixing():
+    prefix = ["sweet_prefix"]
+    translated = TranslatorResolvingInfo(
+        obj_name="",
+        resolution_context=ResolutionContext.default(),
+        asset_attributes=AssetAttributesModel(
+            key_prefix=prefix,
+        ),
+    ).get_asset_spec(AssetSpec("a"), {})
+
+    assert translated.key.has_prefix(prefix)
+
+
+def test_key_set():
+    spec = AssetSpec("a")
+    translated = TranslatorResolvingInfo(
+        obj_name="",
+        resolution_context=ResolutionContext.default(),
+        asset_attributes=AssetAttributesModel(
+            key="{{ spec.key.to_user_string() + '_key' }}",
+        ),
+    ).get_asset_spec(spec, {"spec": spec})
+
+    assert translated.key.to_user_string().endswith("_key")
+
+
+def test_key_and_prefix():
+    prefix = ["sweet_prefix"]
+    spec = AssetSpec("a")
+    translated = TranslatorResolvingInfo(
+        obj_name="",
+        resolution_context=ResolutionContext.default(),
+        asset_attributes=AssetAttributesModel(
+            key="{{ spec.key.to_user_string() + '_key' }}",
+            key_prefix=prefix,
+        ),
+    ).get_asset_spec(spec, {"spec": spec})
+
+    assert translated.key.to_user_string().endswith("_key")
+    assert translated.key.has_prefix(prefix)

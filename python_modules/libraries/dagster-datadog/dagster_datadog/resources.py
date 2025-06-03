@@ -31,6 +31,8 @@ class DatadogClient:
             "service_check",
             "timed",
             "timing",
+            "flush",
+            "wait_for_pending",
         ]:
             setattr(self, method, getattr(statsd, method))
 

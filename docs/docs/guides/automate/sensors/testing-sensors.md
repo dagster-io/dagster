@@ -1,6 +1,7 @@
 ---
-title: Testing sensors
+description: Test sensors via the Dagster UI, CLI, or Python.
 sidebar_position: 300
+title: Testing sensors
 ---
 
 <Tabs>

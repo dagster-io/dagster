@@ -23,6 +23,7 @@ from dagster._core.remote_representation.external_data import (
 )
 from dagster._core.remote_representation.handle import RepositoryHandle
 from dagster._core.remote_representation.origin import RemoteRepositoryOrigin
+from dagster._core.storage.tags import EXTERNAL_JOB_SOURCE_TAG_KEY
 from dagster._core.test_utils import instance_for_test
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._utils.env import environ
@@ -163,7 +164,7 @@ def test_defer_snapshots(instance: DagsterInstance, env):
             return job_data_snap
 
         repository_snap = deserialize_value(ser_repo_data, RepositorySnap)
-        assert repository_snap.job_refs and len(repository_snap.job_refs) == 7
+        assert repository_snap.job_refs and len(repository_snap.job_refs) == 8
         assert repository_snap.job_datas is None
 
         repo = RemoteRepository(
@@ -173,7 +174,7 @@ def test_defer_snapshots(instance: DagsterInstance, env):
             ref_to_data_fn=_ref_to_data,
         )
         jobs = repo.get_all_jobs()
-        assert len(jobs) == 7
+        assert len(jobs) == 8
         assert _state.get("cnt", 0) == 0
 
         job = jobs[0]
@@ -201,6 +202,13 @@ def test_defer_snapshots(instance: DagsterInstance, env):
             _ = job.job_snapshot
             assert _state.get("cnt", 0) == expected
             expected += 1
+
+        # Test that the external job source is available on the relevant job ref snap.
+        external_job_ref = next(
+            ref for ref in repository_snap.job_refs if ref.name == "job_with_external_tag"
+        )
+        assert external_job_ref.get_preview_tags().get(EXTERNAL_JOB_SOURCE_TAG_KEY) == "airflow"
+        assert "foo" not in external_job_ref.get_preview_tags()
 
 
 def test_job_data_snap_layout():

@@ -1,6 +1,6 @@
 ---
 title: 'Op hooks'
-description: Op hooks let you define success and failure handling policies on ops.
+description: Op hooks let you define success and failure handling policies on Dagster ops.
 sidebar_position: 200
 ---
 

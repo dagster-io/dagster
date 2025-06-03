@@ -13,7 +13,6 @@ For local development:
 import datetime
 import hashlib
 import inspect
-import logging
 import os
 import uuid
 from collections.abc import Mapping, Sequence
@@ -199,18 +198,6 @@ def _check_telemetry_instance_param(
             DagsterInstance,
             f"'instance' argument at position {instance_index} must be a DagsterInstance",
         )
-
-
-# For use in test teardown
-def cleanup_telemetry_logger() -> None:
-    logger = logging.getLogger("dagster_telemetry_logger")
-    if len(logger.handlers) == 0:
-        return
-
-    check.invariant(len(logger.handlers) == 1)
-    handler = next(iter(logger.handlers))
-    handler.close()
-    logger.removeHandler(handler)
 
 
 def _get_instance_telemetry_info(

@@ -9,7 +9,6 @@ from typing_extensions import TypeAlias
 
 from dagster_shared.record import record
 from dagster_shared.serdes.serdes import whitelist_for_serdes
-from dagster_shared.yaml_utils.sample_yaml import generate_sample_yaml
 
 
 def _generate_invalid_component_typename_error_message(typename: str) -> str:
@@ -78,8 +77,10 @@ class ScaffoldTargetTypeData(PluginObjectFeatureData):
 
 
 ###############
-# PACKAGE ENTRY
+# PLUGIN MANIFEST
 ###############
+
+
 @whitelist_for_serdes
 @record
 class PluginObjectSnap:
@@ -117,6 +118,29 @@ class PluginObjectSnap:
     def component_schema(self) -> Optional[dict[str, Any]]:
         component_data = self.get_feature_data("component")
         return component_data.schema if component_data else None
+
+
+@whitelist_for_serdes
+@record
+class PluginManifest:
+    """A manifest of all components in a package.
+
+    This is used to generate the component registry and to validate that the package entry point
+    is valid.
+    """
+
+    modules: Sequence[str]  # List of modules scanned
+    objects: Sequence[PluginObjectSnap]
+
+    def merge(self, other: "PluginManifest") -> "PluginManifest":
+        """Merge another manifest with this one and return a new instance."""
+        shared_modules = set(self.modules).intersection(other.modules)
+        if shared_modules:
+            raise ValueError(f"Cannot merge manifests with overlapping modules: {shared_modules}.")
+        return PluginManifest(
+            modules=[*self.modules, *other.modules],
+            objects=[*self.objects, *other.objects],
+        )
 
 
 ###################################
@@ -171,6 +195,8 @@ def json_for_component_type(
     entry: PluginObjectSnap,
     component_type_data: ComponentFeatureData,
 ) -> ComponentTypeJson:
+    from dagster_shared.yaml_utils.sample_yaml import generate_sample_yaml
+
     typename = key.to_typename()
     sample_yaml = generate_sample_yaml(typename, component_type_data.schema or {})
     return ComponentTypeJson(

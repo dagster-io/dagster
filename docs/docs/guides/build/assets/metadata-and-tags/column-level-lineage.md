@@ -1,10 +1,8 @@
 ---
 title: "Column-level lineage"
-description: "Column lineage enables data and analytics engineers alike to understand how a column is created and used in your data platform."
+description: "Column lineage enables data and analytics engineers to understand how a column is created and used in your data platform."
 sidebar_position: 4000
 ---
-
-# Column-level lineage
 
 For assets that produce database tables, column-level lineage can be a powerful tool for improving collaboration and debugging issues. Column lineage enables data and analytics engineers alike to understand how a column is created and used in your data platform.
 

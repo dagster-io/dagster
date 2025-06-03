@@ -80,6 +80,12 @@ Contexts
 
 .. autofunction:: build_asset_context
 
+.. autoclass:: AssetCheckExecutionContext
+  :members:
+  :inherited-members:
+
+.. autofunction:: build_asset_check_context
+
 .. autoclass:: TypeCheckContext
   :members:
   :inherited-members:

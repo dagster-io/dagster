@@ -37,7 +37,11 @@ from dagster._core.execution.context.compute import AssetExecutionContext
 from dagster._core.types.dagster_type import DagsterType, Nothing
 from dagster_dbt.asset_decorator import dbt_assets
 from dagster_dbt.asset_specs import build_dbt_asset_specs
-from dagster_dbt.asset_utils import DUPLICATE_ASSET_KEY_ERROR_MESSAGE
+from dagster_dbt.asset_utils import (
+    DBT_DEFAULT_EXCLUDE,
+    DBT_DEFAULT_SELECT,
+    DUPLICATE_ASSET_KEY_ERROR_MESSAGE,
+)
 from dagster_dbt.core.resource import DbtCliResource
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator, DagsterDbtTranslatorSettings
 from dbt.version import __version__ as dbt_version
@@ -212,19 +216,19 @@ def test_selections(
     exclude: Optional[str],
     expected_dbt_resource_names: set[str],
 ) -> None:
-    select = select or "fqn:*"
+    select = select or DBT_DEFAULT_SELECT
 
     expected_asset_keys = {AssetKey(key) for key in expected_dbt_resource_names}
     expected_specs = build_dbt_asset_specs(
         manifest=test_jaffle_shop_manifest,
         select=select,
-        exclude=exclude,
+        exclude=exclude or DBT_DEFAULT_EXCLUDE,
     )
 
     @dbt_assets(
         manifest=test_jaffle_shop_manifest,
         select=select,
-        exclude=exclude,
+        exclude=exclude or DBT_DEFAULT_EXCLUDE,
     )
     def my_dbt_assets(): ...
 
@@ -241,7 +245,7 @@ def _get_snapshot_id(manifest, _):
     )
     def my_dbt_assets(): ...
 
-    job = Definitions(assets=[my_dbt_assets]).get_implicit_global_asset_job_def()
+    job = Definitions(assets=[my_dbt_assets]).resolve_implicit_global_asset_job_def()
     return job.get_job_snapshot_id()
 
 
@@ -1092,7 +1096,7 @@ def test_dbt_with_python_interleaving(
         assets=[my_dbt_assets, python_augmented_customers],
         resources={"dbt": DbtCliResource(project_dir=os.fspath(test_dbt_python_interleaving_path))},
     )
-    global_job = defs.get_implicit_global_asset_job_def()
+    global_job = defs.resolve_implicit_global_asset_job_def()
     # my_dbt_assets gets split up
     assert global_job.dependencies == {
         # no dependencies for the first invocation of my_dbt_assets
@@ -1136,8 +1140,11 @@ def test_dbt_with_python_interleaving(
     assert len(result.asset_materializations_for_node("my_dbt_assets")) == 2
 
 
-def test_dbt_with_semantic_models(test_dbt_semantic_models_manifest: dict[str, Any]) -> None:
-    @dbt_assets(manifest=test_dbt_semantic_models_manifest)
+@pytest.mark.parametrize("select", ["fqn:*", "tag:test"])
+def test_dbt_with_semantic_models_and_saved_queries(
+    test_dbt_semantic_models_manifest: dict[str, Any], select: str
+) -> None:
+    @dbt_assets(manifest=test_dbt_semantic_models_manifest, select=select)
     def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
         yield from dbt.cli(["build"], context=context).stream()
 

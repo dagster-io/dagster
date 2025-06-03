@@ -2,6 +2,7 @@ import {
   Box,
   Button,
   ButtonLink,
+  CaptionMono,
   Colors,
   FontFamily,
   Icon,
@@ -15,7 +16,6 @@ import styled from 'styled-components';
 
 import {RepositoryLocationNonBlockingErrorDialog} from './RepositoryLocationErrorDialog';
 import {WorkspaceRepositoryLocationNode} from './WorkspaceContext/WorkspaceContext';
-import {showSharedToaster} from '../app/DomUtils';
 import {useCopyToClipboard} from '../app/browser';
 import {
   NO_RELOAD_PERMISSION_TEXT,
@@ -32,25 +32,29 @@ import {
 
 export const ImageName = ({metadata}: {metadata: WorkspaceDisplayMetadataFragment[]}) => {
   const copy = useCopyToClipboard();
+  const [didCopy, setDidCopy] = useState(false);
   const imageKV = metadata.find(({key}) => key === 'image');
   const value = imageKV?.value || '';
 
   const onClick = useCallback(async () => {
     copy(value);
-    await showSharedToaster({
-      intent: 'success',
-      icon: 'done',
-      message: 'Image string copied!',
-    });
+    setDidCopy(true);
+    const timer = setTimeout(() => {
+      setDidCopy(false);
+    }, 3000);
+    return () => clearTimeout(timer);
   }, [copy, value]);
 
   if (imageKV) {
     return (
-      <ImageNameBox flex={{direction: 'row', gap: 4}}>
-        <span style={{fontWeight: 500}}>image:</span>
-        <Tooltip content="Click to copy" placement="top" display="block">
-          <UnstyledButton onClick={onClick} style={MetadataValueButtonStyle}>
-            <MiddleTruncate text={imageKV.value} />
+      <ImageNameBox>
+        <span style={{fontWeight: 500}}>image: </span>
+        <span style={{marginRight: '4px'}}>
+          <CaptionMono>{imageKV.value}</CaptionMono>
+        </span>
+        <Tooltip content={didCopy ? 'Copied!' : 'Click to copy image string'} placement="top">
+          <UnstyledButton onClick={onClick}>
+            <Icon name={didCopy ? 'done' : 'copy'} size={12} />
           </UnstyledButton>
         </Tooltip>
       </ImageNameBox>
@@ -65,7 +69,10 @@ const ImageNameBox = styled(Box)`
   font-size: 12px;
 
   .bp5-popover-target {
+    display: inline;
     overflow: hidden;
+    position: relative;
+    top: 1px;
   }
 `;
 

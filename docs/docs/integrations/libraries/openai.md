@@ -1,7 +1,7 @@
 ---
 title: Dagster & OpenAI
 sidebar_label: OpenAI
-description: Integrate OpenAI calls into your Dagster pipelines, without breaking the bank.
+description: The OpenAI library allows you to easily interact with the OpenAI REST API using the OpenAI Python API to build AI steps into your Dagster pipelines. You can also log OpenAI API usage metadata in Dagster Insights, giving you detailed observability on API call credit consumption.
 tags: [dagster-supported]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-openai
 pypi: https://pypi.org/project/dagster-openai
@@ -10,7 +10,7 @@ sidebar_custom_props:
 partnerlink: https://platform.openai.com/docs/introduction
 ---
 
-The `dagster-openai` library allows you to easily interact with the OpenAI REST API using the OpenAI Python API to build AI steps into your Dagster pipelines. You can also log OpenAI API usage metadata in [Dagster Insights](/dagster-plus/features/insights), giving you detailed observability on API call credit consumption.
+<p>{frontMatter.description}</p>
 
 Using this library's <PyObject section="libraries" module="dagster_openai" object="OpenAIResource" />, you can easily interact with the [OpenAI REST API](https://platform.openai.com/docs/introduction) via the [OpenAI Python API](https://github.com/openai/openai-python).
 
@@ -24,9 +24,7 @@ Before you get started with the `dagster-openai` library, we recommend familiari
 
 To get started, install the `dagster` and `dagster-openai` Python packages:
 
-```bash
-pip install dagster dagster-openai
-```
+<PackageInstallInstructions packageName="dagster-openai" />
 
 Note that you will need an OpenAI [API key](https://platform.openai.com/api-keys) to use the resource, which can be generated in your OpenAI account.
 
@@ -34,7 +32,7 @@ Note that you will need an OpenAI [API key](https://platform.openai.com/api-keys
 
 The first step in using OpenAI with Dagster is to tell Dagster how to connect to an OpenAI client using an OpenAI [resource](/guides/build/external-resources/). This resource contains the credentials needed to interact with OpenAI API.
 
-We will supply our credentials as environment variables by adding them to a `.env` file. For more information on setting environment variables in a production setting, see [Using environment variables and secrets](/guides/deploy/using-environment-variables-and-secrets).
+We will supply our credentials as environment variables by adding them to a `.env` file. For more information on setting environment variables in a production setting, see [Using environment variables and secrets](/guides/operate/configuration/using-environment-variables-and-secrets).
 
 ```bash
 # .env
@@ -60,7 +58,7 @@ The OpenAI resource can be used in assets in order to interact with the OpenAI A
   endBefore="end_example"
 />
 
-After materializing your asset, your OpenAI API usage metadata will be available in the **Events** and **Plots** tabs of your asset in the Dagster UI. If you are using [Dagster+](/dagster-plus), your usage metadata will also be available in [Dagster Insights](/dagster-plus/features/insights). {/* Refer to the [Viewing and materializing assets in the UI guide](https://docs.dagster.io/guides/build/assets/defining-assets#viewing-and-materializing-assets-in-the-ui) for more information. */}
+After materializing your asset, your OpenAI API usage metadata will be available in the **Events** and **Plots** tabs of your asset in the Dagster UI. If you are using [Dagster+](/deployment/dagster-plus), your usage metadata will also be available in [Dagster Insights](/guides/monitor/insights). {/* Refer to the [Viewing and materializing assets in the UI guide](https://docs.dagster.io/guides/build/assets/defining-assets#viewing-and-materializing-assets-in-the-ui) for more information. */}
 
 ## Using the OpenAI resource with ops
 

@@ -27,6 +27,9 @@
   font-size: 32px;
   font-weight: 600;
   margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .chartChange {

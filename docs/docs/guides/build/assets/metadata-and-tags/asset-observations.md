@@ -1,6 +1,6 @@
 ---
 title: "Asset observations"
-description: Dagster provides functionality to record metadata about assets.
+description: Dagster allows you to log asset observation events in the event log at runtime from within ops and assets.
 sidebar_position: 5000
 ---
 

@@ -16,6 +16,7 @@ from dagster._core.definitions.declarative_automation.automation_context import 
 from dagster._core.definitions.declarative_automation.operators.dep_operators import (
     EntityMatchesCondition,
 )
+from dagster._core.definitions.declarative_automation.serialized_objects import OperatorType
 from dagster._record import copy, record
 from dagster._utils.security import non_secure_md5_hash_str
 
@@ -97,9 +98,9 @@ class ChecksAutomationCondition(BuiltinAutomationCondition[AssetKey]):
         if self.blocking_only:
             check_keys = {ck for ck in check_keys if asset_graph.get(ck).blocking}
         if self.allow_selection is not None:
-            check_keys &= self.allow_selection.resolve_checks(asset_graph)
+            check_keys &= self.allow_selection.resolve_checks(asset_graph, allow_missing=True)
         if self.ignore_selection is not None:
-            check_keys -= self.ignore_selection.resolve_checks(asset_graph)
+            check_keys -= self.ignore_selection.resolve_checks(asset_graph, allow_missing=True)
 
         return check_keys
 
@@ -110,6 +111,10 @@ class AnyChecksCondition(ChecksAutomationCondition):
     @property
     def base_name(self) -> str:
         return "ANY_CHECKS_MATCH"
+
+    @property
+    def operator_type(self) -> OperatorType:
+        return "or"
 
     async def evaluate(self, context: AutomationContext[AssetKey]) -> AutomationResult[AssetKey]:  # pyright: ignore[reportIncompatibleMethodOverride]
         true_subset = context.get_empty_subset()
@@ -142,6 +147,10 @@ class AllChecksCondition(ChecksAutomationCondition):
     @property
     def base_name(self) -> str:
         return "ALL_CHECKS_MATCH"
+
+    @property
+    def operator_type(self) -> OperatorType:
+        return "and"
 
     async def evaluate(self, context: AutomationContext[AssetKey]) -> AutomationResult[AssetKey]:  # pyright: ignore[reportIncompatibleMethodOverride]
         check_results = []

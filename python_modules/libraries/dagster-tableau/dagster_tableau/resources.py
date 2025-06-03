@@ -28,6 +28,7 @@ from dagster._utils.warnings import deprecation_warning
 from pydantic import Field, PrivateAttr
 from tableauserverclient.server.endpoint.auth_endpoint import Auth
 
+from dagster_tableau.asset_utils import create_data_source_asset_event, create_view_asset_event
 from dagster_tableau.translator import (
     DagsterTableauTranslator,
     TableauContentData,
@@ -35,6 +36,7 @@ from dagster_tableau.translator import (
     TableauMetadataSet,
     TableauTagSet,
     TableauTranslatorData,
+    TableauViewMetadataSet,
     TableauWorkspaceData,
 )
 
@@ -73,6 +75,18 @@ class BaseTableauClient:
         return get_dagster_logger()
 
     @cached_method
+    def get_data_source(
+        self,
+        data_source_id: str,
+    ) -> TSC.DatasourceItem:
+        """Fetches information for a given data source."""
+        return self._server.datasources.get_by_id(data_source_id)
+
+    def refresh_data_source(self, data_source_id) -> TSC.JobItem:
+        """Refreshes all extracts for a given data source and return the JobItem object."""
+        return self._server.datasources.refresh(data_source_id)
+
+    @cached_method
     def get_workbooks(self) -> list[TSC.WorkbookItem]:
         """Fetches a list of all Tableau workbooks in the workspace."""
         workbooks, _ = self._server.workbooks.get()
@@ -84,6 +98,10 @@ class BaseTableauClient:
         return self._server.metadata.query(
             query=self.workbook_graphql_query, variables={"luid": workbook_id}
         )
+
+    def refresh_workbook(self, workbook_id) -> TSC.JobItem:
+        """Refreshes all extracts for a given workbook and return the JobItem object."""
+        return self._server.workbooks.refresh(workbook_id)
 
     @cached_method
     def get_view(
@@ -109,68 +127,104 @@ class BaseTableauClient:
 
     def refresh_and_materialize_workbooks(
         self, specs: Sequence[AssetSpec], refreshable_workbook_ids: Optional[Sequence[str]]
-    ):
+    ) -> Iterator[Union[Output, ObserveResult]]:
         """Refreshes workbooks for the given workbook IDs and materializes workbook views given the asset specs."""
-        refreshed_workbooks = set()
+        refreshed_workbook_ids = set()
         for refreshable_workbook_id in refreshable_workbook_ids or []:
-            refreshed_workbooks.add(self.refresh_and_poll(refreshable_workbook_id))
+            refreshed_workbook_ids.add(self.refresh_and_poll_workbook(refreshable_workbook_id))
+
         for spec in specs:
             view_id = check.inst(TableauMetadataSet.extract(spec.metadata).id, str)
-            data = self.get_view(view_id)
-            asset_key = spec.key
-            workbook_id = TableauMetadataSet.extract(spec.metadata).workbook_id
-            if workbook_id and workbook_id in refreshed_workbooks:
-                yield Output(
-                    value=None,
-                    output_name="__".join(asset_key.path),
-                    metadata={
-                        "workbook_id": data.workbook_id,
-                        "owner_id": data.owner_id,
-                        "name": data.name,
-                        "contentUrl": data.content_url,
-                        "createdAt": data.created_at.strftime("%Y-%m-%dT%H:%M:%S")
-                        if data.created_at
-                        else None,
-                        "updatedAt": data.updated_at.strftime("%Y-%m-%dT%H:%M:%S")
-                        if data.updated_at
-                        else None,
-                    },
-                )
-            else:
-                yield ObserveResult(
-                    asset_key=asset_key,
-                    metadata={
-                        "workbook_id": data.workbook_id,
-                        "owner_id": data.owner_id,
-                        "name": data.name,
-                        "contentUrl": data.content_url,
-                        "createdAt": data.created_at.strftime("%Y-%m-%dT%H:%M:%S")
-                        if data.created_at
-                        else None,
-                        "updatedAt": data.updated_at.strftime("%Y-%m-%dT%H:%M:%S")
-                        if data.updated_at
-                        else None,
-                    },
-                )
+            yield from create_view_asset_event(
+                view=self.get_view(view_id),
+                spec=spec,
+                refreshed_workbook_ids=refreshed_workbook_ids,
+            )
 
-    def refresh_workbook(self, workbook_id) -> TSC.JobItem:
-        """Refreshes all extracts for a given workbook and return the JobItem object."""
-        return self._server.workbooks.refresh(workbook_id)
-
-    def refresh_and_poll(
+    def refresh_and_poll_workbook(
         self,
         workbook_id: str,
         poll_interval: Optional[float] = None,
         poll_timeout: Optional[float] = None,
     ) -> Optional[str]:
         job = self.refresh_workbook(workbook_id)
+        self._log.info(f"Job {job.id} initialized for workbook_id={workbook_id}.")
 
+        job = self.poll_job(job_id=job.id, poll_interval=poll_interval, poll_timeout=poll_timeout)
+        return job.workbook_id
+
+    def refresh_and_materialize(
+        self, specs: Sequence[AssetSpec], refreshable_data_source_ids: Optional[Sequence[str]]
+    ) -> Iterator[Union[Output, ObserveResult]]:
+        """Refreshes data sources for the given data source IDs and materializes Tableau assets given the asset specs.
+        Only data sources with extracts can be refreshed.
+        """
+        refreshed_data_source_ids = set()
+        for refreshable_data_source_id in refreshable_data_source_ids or []:
+            refreshed_data_source_ids.add(
+                self.refresh_and_poll_data_source(refreshable_data_source_id)
+            )
+
+        # If a sheet depends on a refreshed data source, then its workbook is considered refreshed
+        refreshed_workbook_ids = set()
+        specs_by_asset_key = {spec.key: spec for spec in specs}
+        for spec in specs:
+            if TableauTagSet.extract(spec.tags).asset_type == "sheet":
+                for dep in spec.deps:
+                    # Only materializable data sources are included in materializable asset specs,
+                    # so we must verify for None values - data sources that are external specs are not available here.
+                    dep_spec = specs_by_asset_key.get(dep.asset_key, None)
+                    if (
+                        dep_spec
+                        and TableauMetadataSet.extract(dep_spec.metadata).id
+                        in refreshed_data_source_ids
+                    ):
+                        refreshed_workbook_ids.add(
+                            TableauViewMetadataSet.extract(spec.metadata).workbook_id
+                        )
+                        break
+
+        for spec in specs:
+            asset_type = check.inst(TableauTagSet.extract(spec.tags).asset_type, str)
+            asset_id = check.inst(TableauMetadataSet.extract(spec.metadata).id, str)
+
+            if asset_type == "data_source":
+                yield from create_data_source_asset_event(
+                    data_source=self.get_data_source(asset_id),
+                    spec=spec,
+                    refreshed_data_source_ids=refreshed_data_source_ids,
+                )
+            else:
+                yield from create_view_asset_event(
+                    view=self.get_view(asset_id),
+                    spec=spec,
+                    refreshed_workbook_ids=refreshed_workbook_ids,
+                )
+
+    def refresh_and_poll_data_source(
+        self,
+        data_source_id: str,
+        poll_interval: Optional[float] = None,
+        poll_timeout: Optional[float] = None,
+    ) -> Optional[str]:
+        job = self.refresh_data_source(data_source_id)
+        self._log.info(f"Job {job.id} initialized for data_source_id={data_source_id}.")
+
+        job = self.poll_job(job_id=job.id, poll_interval=poll_interval, poll_timeout=poll_timeout)
+        return job.datasource_id
+
+    def poll_job(
+        self,
+        job_id: str,
+        poll_interval: Optional[float] = None,
+        poll_timeout: Optional[float] = None,
+    ) -> TSC.JobItem:
         if not poll_interval:
             poll_interval = DEFAULT_POLL_INTERVAL_SECONDS
         if not poll_timeout:
             poll_timeout = DEFAULT_POLL_TIMEOUT
 
-        self._log.info(f"Job {job.id} initialized for workbook_id={workbook_id}.")
+        job = self.get_job(job_id=job_id)
         start = time.monotonic()
 
         try:
@@ -187,7 +241,7 @@ class BaseTableauClient:
                     # -1 is the default value for JobItem.finish_code, when the job is in progress
                     continue
                 elif job.finish_code == TSC.JobItem.FinishCode.Success:
-                    break
+                    return job
                 elif job.finish_code == TSC.JobItem.FinishCode.Failed:
                     raise Failure(f"Job failed: {job.id}")
                 elif job.finish_code == TSC.JobItem.FinishCode.Cancelled:
@@ -205,8 +259,6 @@ class BaseTableauClient:
                 TSC.JobItem.FinishCode.Cancelled,
             ):
                 self.cancel_job(job.id)
-
-        return job.workbook_id
 
     def add_data_quality_warning_to_data_source(
         self,
@@ -250,7 +302,7 @@ class BaseTableauClient:
                 "jti": str(uuid.uuid4()),
                 "aud": "tableau",
                 "sub": self.username,
-                "scp": ["tableau:content:read", "tableau:tasks:run"],
+                "scp": ["tableau:content:read", "tableau:tasks:run", "tableau:jobs:read"],
             },
             self.connected_app_secret_value,
             algorithm="HS256",
@@ -424,6 +476,7 @@ class BaseTableauWorkspace(ConfigurableResource):
         with client.sign_in():
             yield client
 
+    @cached_method
     def fetch_tableau_workspace_data(
         self,
     ) -> TableauWorkspaceData:
