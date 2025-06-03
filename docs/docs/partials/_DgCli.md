@@ -1,5 +1,5 @@
-:::note
+:::tip
 
-You can also scaffold Dagster definitions from the command line with the `dg` CLI. For more information, see the [`dg` CLI API documentation](/api/dagster/dg-cli).
+You can scaffold Dagster definitions from the command line with the [`dg` CLI](/api/dagster/dg-cli#dg-scaffold).
 
 :::
