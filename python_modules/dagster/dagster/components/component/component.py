@@ -112,14 +112,7 @@ class Component(ABC):
             ctx = context.resolution_context.at_path("attributes")
             if context.has_component_tree:
                 ctx = ctx.with_scope(component_tree=context.component_tree)
-            return (
-                cls.resolve_from_model(
-                    ctx,
-                    attributes,
-                )
-                if attributes
-                else cls()
-            )
+            return cls.resolve_from_model(ctx, attributes) if attributes else cls()
         else:
             # If the Component does not implement anything from Resolved, try to instantiate it without
             # argument.

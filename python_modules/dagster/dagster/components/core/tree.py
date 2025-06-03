@@ -97,7 +97,7 @@ class ComponentTree:
         defs_path_abs = (
             defs_path_obj
             if defs_path_obj.is_absolute()
-            else (self.root.path / defs_path_obj).absolute()
+            else (self.load_context.defs_module_path / defs_path_obj).absolute()
         )
         return self._load_defs_at_path_inner(defs_path_abs.as_posix())
 
