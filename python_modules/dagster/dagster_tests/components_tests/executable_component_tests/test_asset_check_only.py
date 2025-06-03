@@ -164,3 +164,38 @@ def test_standalone_asset_check_with_resources() -> None:
     assert asset_check_evaluations[0].metadata == {
         "resource_one": TextMetadataValue("resource_value")
     }
+
+
+def test_op_tags() -> None:
+    component_only_assets = ExecutableComponent.from_attributes_dict(
+        attributes={
+            "name": "op_name",
+            "execute_fn": "dagster_tests.components_tests.executable_component_tests.test_asset_check_only.only_asset_check_execute_fn",
+            "tags": {"op_tag": "op_tag_value"},
+            "assets": [
+                {
+                    "key": "asset",
+                }
+            ],
+        }
+    )
+
+    assert component_only_assets.build_underlying_assets_def().op.tags == {"op_tag": "op_tag_value"}
+
+    component_only_asset_checks = ExecutableComponent.from_attributes_dict(
+        attributes={
+            "name": "op_name",
+            "execute_fn": "dagster_tests.components_tests.executable_component_tests.test_asset_check_only.only_asset_check_execute_fn",
+            "tags": {"op_tag": "op_tag_value"},
+            "checks": [
+                {
+                    "asset": "asset",
+                    "name": "check_name",
+                }
+            ],
+        }
+    )
+
+    assert component_only_asset_checks.build_underlying_assets_def().op.tags == {
+        "op_tag": "op_tag_value"
+    }

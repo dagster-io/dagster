@@ -7,6 +7,8 @@ from dagster_shared import check
 from typing_extensions import TypeAlias
 
 from dagster._core.definitions.asset_check_spec import AssetCheckSpec
+from dagster._core.definitions.asset_checks import AssetChecksDefinition
+from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.decorators.asset_check_decorator import multi_asset_check
 from dagster._core.definitions.decorators.asset_decorator import multi_asset
 from dagster._core.definitions.definitions_class import Definitions
@@ -88,6 +90,7 @@ class ExecutableComponent(Component, Resolvable, Model):
 
     # inferred from the function name if not provided
     name: Optional[str] = None
+    tags: Optional[dict[str, Any]] = None
     partitions_def: Optional[ResolvedPartitionDefinition] = None
     assets: Optional[list[ResolvedAssetSpec]] = None
     checks: Optional[list[AssetCheckKeyOnly]] = None
@@ -103,11 +106,12 @@ class ExecutableComponent(Component, Resolvable, Model):
             for check_spec in self.checks or []
         ]
 
-    def build_defs(self, context: ComponentLoadContext) -> Definitions:
+    def build_underlying_assets_def(self) -> AssetsDefinition:
         if self.assets:
 
             @multi_asset(
                 name=self.name or self.execute_fn.__name__,
+                op_tags=self.tags,
                 specs=self.assets,
                 check_specs=self.get_check_specs(),
                 partitions_def=self.partitions_def,
@@ -116,20 +120,28 @@ class ExecutableComponent(Component, Resolvable, Model):
             def _assets_def(context: AssetExecutionContext, **kwargs):
                 return self.invoke_execute_fn(context)
 
-            return Definitions(assets=[_assets_def])
+            return _assets_def
         elif self.checks:
 
             @multi_asset_check(
                 name=self.name or self.execute_fn.__name__,
+                op_tags=self.tags,
                 specs=self.get_check_specs(),
                 required_resource_keys=self.resource_keys,
             )
             def _asset_check_def(context: AssetCheckExecutionContext, **kwargs):
                 return self.invoke_execute_fn(context)
 
-            return Definitions(asset_checks=[_asset_check_def])
+            return _asset_check_def
+
+        check.failed("No assets or checks provided")
+
+    def build_defs(self, context: ComponentLoadContext) -> Definitions:
+        assets_def = self.build_underlying_assets_def()
+        if isinstance(assets_def, AssetChecksDefinition):
+            return Definitions(asset_checks=[assets_def])
         else:
-            check.failed("No assets or checks provided")
+            return Definitions(assets=[assets_def])
 
     def invoke_execute_fn(
         self, context: Union[AssetExecutionContext, AssetCheckExecutionContext]
