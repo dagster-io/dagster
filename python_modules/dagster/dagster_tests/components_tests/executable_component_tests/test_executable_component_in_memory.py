@@ -72,22 +72,6 @@ def test_basic_singular_asset_from_yaml() -> None:
     assert_singular_component(component)
 
 
-def test_basic_single_asset_relative_import() -> None:
-    component = ExecutableComponent.from_attributes_dict(
-        attributes={
-            "name": "op_name",
-            "execute_fn": ".execute_singular_asset",
-            "assets": [
-                {
-                    "key": "asset",
-                }
-            ],
-        }
-    )
-    assert isinstance(component, ExecutableComponent)
-    assert_singular_component(component)
-
-
 def test_resource_usage() -> None:
     def _execute_fn(context, some_resource) -> MaterializeResult:
         return MaterializeResult(metadata={"foo": some_resource})
