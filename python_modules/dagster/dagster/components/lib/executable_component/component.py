@@ -42,7 +42,13 @@ ResolvedPartitionDefinition: TypeAlias = Annotated[
 
 
 def resolve_callable(context: ResolutionContext, model: str) -> Callable:
-    module_path, fn_name = model.rsplit(".", 1)
+    load_context = ComponentLoadContext.from_resolution_context(context)
+    if model.startswith("."):
+        local_module_path, fn_name = model.rsplit(".", 1)
+        module_path = f"{load_context.defs_module_name}.{local_module_path[1:]}"
+    else:
+        module_path, fn_name = model.rsplit(".", 1)
+
     module = importlib.import_module(module_path)
     return getattr(module, fn_name)
 
