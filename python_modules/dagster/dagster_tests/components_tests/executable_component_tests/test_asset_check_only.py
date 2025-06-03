@@ -186,7 +186,7 @@ def test_trivial_properties() -> None:
         }
     )
 
-    assert component_only_assets.build_underlying_assets_def().op.tags == {"op_tag": "op_tag_value"}
+    assert component_only_assets.underlying_assets_def.op.tags == {"op_tag": "op_tag_value"}
 
     component_only_asset_checks = ExecutableComponent.from_attributes_dict(
         attributes={
@@ -204,5 +204,5 @@ def test_trivial_properties() -> None:
     )
 
     for component in [component_only_assets, component_only_asset_checks]:
-        assert component.build_underlying_assets_def().op.tags == {"op_tag": "op_tag_value"}
-        assert component.build_underlying_assets_def().op.description == "op_description"
+        assert component.underlying_assets_def.op.tags == {"op_tag": "op_tag_value"}
+        assert component.underlying_assets_def.op.description == "op_description"
