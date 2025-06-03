@@ -14,7 +14,7 @@ from dagster_dg_core.config import (
     DgProjectPythonEnvironmentFlag,
     get_type_str,
 )
-from dagster_dg_core.context import DgContext
+from dagster_dg_core.context import OLD_DG_PLUGIN_ENTRY_POINT_GROUPS, DgContext
 from dagster_dg_core.utils import (
     TomlPath,
     activate_venv,
@@ -215,13 +215,13 @@ def test_setup_cfg_entry_point():
     ):
         # Delete the entry point section from pyproject.toml
         with modify_toml_as_dict(Path("pyproject.toml")) as toml:
-            delete_toml_node(toml, ("project", "entry-points", "dagster_dg_cli.plugin"))
+            delete_toml_node(toml, ("project", "entry-points", "dagster_dg_cli.registry_modules"))
         # Create a setup.cfg file with the entry point
         with open("setup.cfg", "w") as f:
             f.write(
                 textwrap.dedent("""
                 [options.entry_points]
-                dagster_dg_cli.plugin =
+                dagster_dg_cli.registry_modules =
                     foo_bar = foo_bar.lib
                 """)
             )
@@ -229,7 +229,7 @@ def test_setup_cfg_entry_point():
         assert context.is_plugin
 
 
-@pytest.mark.parametrize("deprecated_group", ["dagster_dg.library", "dagster_dg.plugin"])
+@pytest.mark.parametrize("deprecated_group", OLD_DG_PLUGIN_ENTRY_POINT_GROUPS)
 def test_deprecated_entry_point_group_warning(deprecated_group: str):
     with (
         ProxyRunner.test() as runner,
@@ -237,12 +237,14 @@ def test_deprecated_entry_point_group_warning(deprecated_group: str):
     ):
         with modify_toml_as_dict(Path("pyproject.toml")) as toml_dict:
             plugin_entry_points = get_toml_node(
-                toml_dict, ("project", "entry-points", "dagster_dg_cli.plugin"), dict
+                toml_dict, ("project", "entry-points", "dagster_dg_cli.registry_modules"), dict
             )
             set_toml_node(
                 toml_dict, ("project", "entry-points", deprecated_group), plugin_entry_points
             )
-            delete_toml_node(toml_dict, ("project", "entry-points", "dagster_dg_cli.plugin"))
+            delete_toml_node(
+                toml_dict, ("project", "entry-points", "dagster_dg_cli.registry_modules")
+            )
 
         expected_match = f"deprecated `{deprecated_group}` entry point group"
         with dg_warns(expected_match):
@@ -262,7 +264,7 @@ def test_deprecated_dg_toml_location_warning(tmp_path, monkeypatch):
         DgContext.from_file_discovery_and_command_line_config(Path.cwd(), {})
 
 
-def test_missing_dg_plugin_module_in_manifest_warning():
+def test_missing_dg_registry_module_in_manifest_warning():
     # Create a project with a venv that does not have the project installed into it.
     with (
         ProxyRunner.test() as runner,
@@ -276,7 +278,7 @@ def test_missing_dg_plugin_module_in_manifest_warning():
         )
         with activate_venv(Path(".venv")):
             context = DgContext.for_project_environment(Path.cwd(), {})
-            with dg_warns("Your package defines a `dagster_dg_cli.plugin` entry point"):
+            with dg_warns("Your package defines a `dagster_dg_cli.registry_modules` entry point"):
                 RemotePluginRegistry.from_dg_context(context)
 
 

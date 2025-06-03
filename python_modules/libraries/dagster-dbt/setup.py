@@ -65,7 +65,7 @@ setup(
             "dagster-dbt-cloud = dagster_dbt.cloud.cli:app",
             "dagster-dbt = dagster_dbt.cli.app:app",
         ],
-        "dagster_dg_cli.plugin": [
+        "dagster_dg_cli.registry_modules": [
             "dagster_dbt = dagster_dbt",
         ],
     },
