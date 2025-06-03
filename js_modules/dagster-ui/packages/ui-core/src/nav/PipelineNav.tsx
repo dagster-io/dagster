@@ -1,4 +1,4 @@
-import {Box, Heading, PageHeader, Tag} from '@dagster-io/ui-components';
+import {Box, PageHeader, Subtitle1, Tag} from '@dagster-io/ui-components';
 import {Link, useRouteMatch} from 'react-router-dom';
 import {buildJobTabs} from 'shared/pipelines/buildJobTabs.oss';
 
@@ -48,11 +48,11 @@ export const PipelineNav = (props: Props) => {
     <>
       <PageHeader
         title={
-          <Heading style={{display: 'flex', flexDirection: 'row', gap: 4}}>
+          <Subtitle1 style={{display: 'flex', flexDirection: 'row', gap: 4}}>
             <Link to="/jobs">Jobs</Link>
             <span>/</span>
             {pipelineName}
-          </Heading>
+          </Subtitle1>
         }
         tags={
           <Box flex={{direction: 'row', alignItems: 'center', gap: 8, wrap: 'wrap'}}>

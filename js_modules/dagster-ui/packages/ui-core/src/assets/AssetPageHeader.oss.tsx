@@ -1,6 +1,6 @@
 // eslint-disable-next-line no-restricted-imports
 import {BreadcrumbProps, Breadcrumbs} from '@blueprintjs/core';
-import {Box, Colors, Heading, Icon, MiddleTruncate, PageHeader} from '@dagster-io/ui-components';
+import {Box, Colors, Icon, MiddleTruncate, PageHeader, Subtitle1} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {useContext} from 'react';
 import {Link, useHistory, useLocation} from 'react-router-dom';
@@ -128,7 +128,7 @@ export const AssetPageHeader = ({
   );
 };
 
-const TruncatedHeading = styled(Heading)`
+const TruncatedHeading = styled(Subtitle1)`
   max-width: 300px;
   overflow: hidden;
 `;
