@@ -1195,15 +1195,15 @@
     },
     {
       "source": "/dagster-plus/account",
-      "destination": "/deployment/dagster-plus/management/tokens/"
+      "destination": "/deployment/dagster-plus/management/tokens"
     },
     {
       "source": "/dagster-plus/account/managing-user-agent-tokens",
-      "destination": "/deployment/dagster-plus/management/tokens/"
+      "destination": "/deployment/dagster-plus/management/tokens"
     },
     {
       "source": "/dagster-plus/account/authentication",
-      "destination": "/deployment/dagster-plus/authentication-and-access-control/"
+      "destination": "/deployment/dagster-plus/authentication-and-access-control"
     },
     {
       "source": "/dagster-plus/account/managing-users",
@@ -1230,8 +1230,8 @@
       "destination": "/deployment/dagster-plus/authentication-and-access-control/sso/azure-ad-sso"
     },
     {
-      "source": "dagster-plus/features/authentication-and-access-control/scim/azure-active-directory",
-      "destination": "dagster-plus/features/authentication-and-access-control/scim/entra-id-scim"
+      "source": "/dagster-plus/features/authentication-and-access-control/scim/azure-active-directory",
+      "destination": "/dagster-plus/features/authentication-and-access-control/scim/entra-id-scim"
     },
     {
       "source": "/dagster-plus/account/authentication/setting-up-google-workspace-saml-sso",
@@ -1255,7 +1255,7 @@
     },
     {
       "source": "/dagster-plus/managing-deployments",
-      "destination": "/deployment/dagster-plus/management/deployments/managing-deployments"
+      "destination": "/deployment/dagster-plus/management"
     },
     {
       "source": "/dagster-plus/managing-deployments/alerts",
@@ -1299,7 +1299,7 @@
     },
     {
       "source": "/dagster-plus/managing-deployments/deployment-settings-reference",
-      "destination": "/deployment/dagster-plus/management/deployments/deployment-settings-reference"
+      "destination": "/deployment/dagster-plus/full-deployments/deployment-settings-reference"
     },
     {
       "source": "/dagster-plus/managing-deployments/code-locations",
@@ -2836,7 +2836,7 @@
     },
     {
       "source": "/dagster-cloud/developing-testing/deployment-settings-reference",
-      "destination": "/deployment/dagster-plus/management/deployments/deployment-settings-reference"
+      "destination": "/deployment/dagster-plus/full-deployments/deployment-settings-reference"
     },
     {
       "source": "/concepts/dagster-pipes/pyspark",
@@ -3107,20 +3107,20 @@
       "destination": "/deployment/dagster-plus/hybrid/:path*"
     },
     {
-      "source": "/dagster-plus/deployment/management",
-      "destination": "/deployment/dagster-plus/management"
-    },
-    {
-      "source": "/dagster-plus/deployment/management/:path*",
-      "destination": "/deployment/dagster-plus/management/:path*"
-    },
-    {
       "source": "/dagster-plus/deployment/management/deployments",
       "destination": "/deployment/dagster-plus/full-deployments"
     },
     {
       "source": "/dagster-plus/deployment/management/deployments/:path*",
       "destination": "/deployment/dagster-plus/full-deployments/:path*"
+    },
+    {
+      "source": "/dagster-plus/deployment/management",
+      "destination": "/deployment/dagster-plus/management"
+    },
+    {
+      "source": "/dagster-plus/deployment/management/:path*",
+      "destination": "/deployment/dagster-plus/management/:path*"
     },
     {
       "source": "/dagster-plus/deployment/code-locations",
