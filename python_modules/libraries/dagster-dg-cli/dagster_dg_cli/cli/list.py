@@ -193,8 +193,8 @@ def _defs_column_from_str(column: str) -> "DefsColumn":
         return DefsColumn(column.lower())
     except ValueError as e:
         try:
-            # Attempt to singularize plural inputs
-            return DefsColumn(column.lower().rstrip("s"))
+            # Attempt to pluralize singular inputs
+            return DefsColumn(column.lower() + "s")
         except ValueError:
             raise e
 
@@ -202,10 +202,10 @@ def _defs_column_from_str(column: str) -> "DefsColumn":
 class DefsColumn(str, Enum):
     KEY = "key"
     GROUP = "group"
-    DEP = "dep"
-    KIND = "kind"
+    DEPS = "deps"
+    KINDS = "kinds"
     DESCRIPTION = "description"
-    TAG = "tag"
+    TAGS = "tags"
     METADATA = "metadata"
     CRON = "cron"
 
@@ -222,8 +222,8 @@ class DefsType(str, Enum):
 DEFAULT_COLUMNS = [
     DefsColumn.KEY,
     DefsColumn.GROUP,
-    DefsColumn.DEP,
-    DefsColumn.KIND,
+    DefsColumn.DEPS,
+    DefsColumn.KINDS,
     DefsColumn.DESCRIPTION,
     DefsColumn.CRON,
 ]
@@ -234,13 +234,13 @@ def _supports_column(column: DefsColumn, defs_type: DefsType) -> bool:
         return True
     elif column == DefsColumn.GROUP:
         return defs_type in (DefsType.ASSET,)
-    elif column == DefsColumn.DEP:
+    elif column == DefsColumn.DEPS:
         return defs_type in (DefsType.ASSET, DefsType.ASSET_CHECK)
-    elif column == DefsColumn.KIND:
+    elif column == DefsColumn.KINDS:
         return defs_type in (DefsType.ASSET,)
     elif column == DefsColumn.DESCRIPTION:
         return defs_type in (DefsType.ASSET, DefsType.ASSET_CHECK, DefsType.JOB)
-    elif column == DefsColumn.TAG:
+    elif column == DefsColumn.TAGS:
         return defs_type in (DefsType.ASSET,)
     elif column == DefsColumn.METADATA:
         return defs_type in (DefsType.ASSET,)
@@ -255,13 +255,13 @@ def _get_asset_value(column: DefsColumn, asset: DgAssetMetadata) -> Optional[str
         return asset.key
     elif column == DefsColumn.GROUP:
         return asset.group
-    elif column == DefsColumn.DEP:
+    elif column == DefsColumn.DEPS:
         return "\n".join(asset.deps)
-    elif column == DefsColumn.KIND:
+    elif column == DefsColumn.KINDS:
         return "\n".join(asset.kinds)
     elif column == DefsColumn.DESCRIPTION:
         return asset.description
-    elif column == DefsColumn.TAG:
+    elif column == DefsColumn.TAGS:
         return "\n".join(k if not v else f"{k}: {v}" for k, v in asset.tags)
     elif column == DefsColumn.METADATA:
         return "\n".join(k if not v else f"{k}: {v}" for k, v in asset.metadata)
@@ -272,7 +272,7 @@ def _get_asset_value(column: DefsColumn, asset: DgAssetMetadata) -> Optional[str
 def _get_asset_check_value(column: DefsColumn, asset_check: DgAssetCheckMetadata) -> Optional[str]:
     if column == DefsColumn.KEY:
         return asset_check.key
-    elif column == DefsColumn.DEP:
+    elif column == DefsColumn.DEPS:
         return "\n".join(asset_check.additional_deps)
     elif column == DefsColumn.DESCRIPTION:
         return asset_check.description
