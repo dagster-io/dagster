@@ -212,19 +212,19 @@ class TestTimeWindowFreshnessPolicy:
 
 
 class TestCronFreshnessPolicy:
-    def test_internal_freshness_policy_cron_policy_validation(self) -> None:
-        """Can we define a cron freshness policy?"""
-        # Valid cron string and lookback, daily
+    def test_cron_freshness_policy_validation_basic(self) -> None:
+        """Can we define a cron freshness policy with valid parameters?"""
+        # Valid cron string and lower bound delta
         policy = InternalFreshnessPolicy.cron(
             deadline_cron="0 10 * * *",
             lower_bound_delta=timedelta(hours=1),
         )
         assert isinstance(policy, CronFreshnessPolicy)
         assert policy.deadline_cron == "0 10 * * *"
-        assert policy.lower_bound_delta == SerializableTimeDelta.from_timedelta(timedelta(hours=1))
+        assert policy.lower_bound_delta == timedelta(hours=1)
         assert policy.timezone == "UTC"
 
-        # Valid cron string and lookback and timezone
+    def test_cron_freshness_policy_validation_with_timezone(self) -> None:
         policy = InternalFreshnessPolicy.cron(
             deadline_cron="0 10 * * *",
             lower_bound_delta=timedelta(hours=1),
@@ -232,17 +232,71 @@ class TestCronFreshnessPolicy:
         )
         assert isinstance(policy, CronFreshnessPolicy)
         assert policy.deadline_cron == "0 10 * * *"
-        assert policy.lower_bound_delta == SerializableTimeDelta.from_timedelta(timedelta(hours=1))
+        assert policy.lower_bound_delta == timedelta(hours=1)
         assert policy.timezone == "America/New_York"
 
-        # Invalid cron string
+    def test_cron_freshness_policy_validation_invalid_cron(self) -> None:
         with pytest.raises(CheckError):
             InternalFreshnessPolicy.cron(
                 deadline_cron="0 10 * * * *",  # we don't support seconds resolution in the cron
                 lower_bound_delta=timedelta(hours=1),
             )
 
-    def test_internal_freshness_policy_apply_to_asset(self) -> None:
+    def test_cron_freshness_policy_validation_invalid_timezone(self) -> None:
+        with pytest.raises(CheckError):
+            InternalFreshnessPolicy.cron(
+                deadline_cron="0 10 * * *",
+                lower_bound_delta=timedelta(hours=1),
+                timezone="Invalid/Timezone",
+            )
+
+    def test_cron_freshness_policy_validation_lower_bound_minimum(self) -> None:
+        with pytest.raises(CheckError):
+            InternalFreshnessPolicy.cron(
+                deadline_cron="0 10 * * *",
+                lower_bound_delta=timedelta(seconds=59),
+            )
+
+    def test_cron_freshness_policy_validation_zero_lower_bound(self) -> None:
+        policy = InternalFreshnessPolicy.cron(
+            deadline_cron="0 10 * * *",
+            lower_bound_delta=timedelta(seconds=0),
+        )
+        assert isinstance(policy, CronFreshnessPolicy)
+        assert policy.lower_bound_delta == timedelta(seconds=0)
+
+    def test_cron_freshness_policy_validation_lower_bound_too_large(self) -> None:
+        with pytest.raises(CheckError):
+            InternalFreshnessPolicy.cron(
+                deadline_cron="0 10 * * *",
+                lower_bound_delta=timedelta(hours=25),
+            )
+
+    def test_cron_freshness_policy_validation_lower_bound_exceeds_smallest_interval(self) -> None:
+        """Does the policy reject lower bound deltas that exceed the smallest cron interval?"""
+        # 0 10 * * 1-5 means 10am on Monday through Friday
+        # 30 hours lower bound delta will work over the weekend, but not during the week
+        with pytest.raises(CheckError):
+            InternalFreshnessPolicy.cron(
+                deadline_cron="0 10 * * 1-5",
+                lower_bound_delta=timedelta(hours=30),
+            )
+
+    def test_cron_freshness_policy_serdes(self) -> None:
+        """Can we serialize and deserialize a cron freshness policy?"""
+        policy = InternalFreshnessPolicy.cron(
+            deadline_cron="0 10 * * *",
+            lower_bound_delta=timedelta(hours=1),
+            timezone="America/New_York",
+        )
+        serialized = serialize_value(policy)
+        deserialized = deserialize_value(serialized)
+        assert isinstance(deserialized, CronFreshnessPolicy)
+        assert deserialized.deadline_cron == "0 10 * * *"
+        assert deserialized.lower_bound_delta == timedelta(hours=1)
+        assert deserialized.timezone == "America/New_York"
+
+    def test_cron_freshness_policy_apply_to_asset(self) -> None:
         @asset(
             internal_freshness_policy=InternalFreshnessPolicy.cron(
                 deadline_cron="0 10 * * *",
@@ -259,12 +313,11 @@ class TestCronFreshnessPolicy:
         deserialized = deserialize_value(policy)
         assert isinstance(deserialized, CronFreshnessPolicy)
         assert deserialized.deadline_cron == "0 10 * * *"
-        assert deserialized.lower_bound_delta == SerializableTimeDelta.from_timedelta(
-            timedelta(hours=1)
-        )
+        assert deserialized.lower_bound_delta == timedelta(hours=1)
         assert deserialized.timezone == "UTC"
 
-    def test_internal_freshness_policy_apply_to_asset_spec(self) -> None:
+    def test_cron_freshness_policy_apply_to_asset_spec(self) -> None:
+        """Can we apply a cron freshness policy to an asset spec?"""
         asset_spec = AssetSpec(
             key="foo",
             internal_freshness_policy=InternalFreshnessPolicy.cron(
@@ -286,7 +339,5 @@ class TestCronFreshnessPolicy:
         )
         assert isinstance(deserialized, CronFreshnessPolicy)
         assert deserialized.deadline_cron == "0 10 * * *"
-        assert deserialized.lower_bound_delta == SerializableTimeDelta.from_timedelta(
-            timedelta(hours=1)
-        )
+        assert deserialized.lower_bound_delta == timedelta(hours=1)
         assert deserialized.timezone == "UTC"
