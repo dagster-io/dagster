@@ -110,7 +110,7 @@ The metadata format shown above (`{"raw_value": value, "type": type}`) is part o
 
 :::
 
-Before we go any futher, let's review what this script does:
+Before we go any further, let's review what this script does:
 
 - **Imports `PipesDbfsContextLoader`, `PipesDbfsMessageWriter`, and `open_dagster_pipes` from `dagster_pipes`.** The <PyObject section="libraries" object="PipesDbfsContextLoader" module="dagster_pipes" /> and <PyObject section="libraries" object="PipesDbfsMessageWriter" module="dagster_pipes" /> are DBFS-specific implementations of the <PyObject section="libraries" module="dagster_pipes" object="PipesContextLoader" /> and <PyObject section="libraries" module="dagster_pipes" object="PipesMessageWriter" />. Refer to the [Dagster Pipes details and customization Guide](/guides/build/external-pipelines/dagster-pipes-details-and-customization) for protocol details.
 
