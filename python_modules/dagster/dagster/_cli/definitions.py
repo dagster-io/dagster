@@ -111,8 +111,6 @@ def definitions_validate_command_impl(
             allow_in_process=allow_in_process,
             log_level=log_level,
         ) as workspace:
-            if logger.parent:
-                logger.parent.handlers.clear()
             invalid_locations = [
                 entry
                 for entry in workspace.get_code_location_entries().values()

@@ -112,6 +112,7 @@ from dagster._utils.container import (
 )
 from dagster._utils.env import use_verbose, using_dagster_dev
 from dagster._utils.error import serializable_error_info_from_exc_info, unwrap_user_code_error
+from dagster._utils.log import remove_root_logger_stream_handlers
 from dagster._utils.path import is_likely_venv_executable
 from dagster._utils.typed_dict import init_optional_typeddict
 
@@ -303,6 +304,10 @@ class LoadedRepositories:
                         repository_name=repo_def.name,
                     )
                 )
+
+            # remove any extra logger handlers that may have been added to the
+            # root logger during the import
+            remove_root_logger_stream_handlers()
 
     @property
     def loadable_repository_symbols(self) -> Sequence[LoadableRepositorySymbol]:

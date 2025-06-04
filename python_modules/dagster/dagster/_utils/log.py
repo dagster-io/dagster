@@ -331,6 +331,16 @@ def configure_loggers(
     warnings.showwarning = custom_warning_handler
 
 
+def remove_root_logger_stream_handlers():
+    # workaround for issues like https://github.com/snowplow/snowplow-python-tracker/issues/373
+    # where importing code adds a handler to the root logger, producing unwanted logspew from
+    # dagster loggers
+    root_logger = logging.getLogger()
+    for handler in root_logger.handlers:
+        if isinstance(handler, logging.StreamHandler):
+            root_logger.removeHandler(handler)
+
+
 def create_console_logger(name: str, level: Union[str, int]) -> logging.Logger:
     klass = logging.getLoggerClass()
     logger = klass(name, level=level)
