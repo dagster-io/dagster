@@ -496,7 +496,7 @@ def test_to_job_incomplete_default_config():
             DagsterInvalidConfigError,
             match=error_msg,
         ):
-            my_graph.to_job(name="my_job", config=invalid_config)
+            my_graph.to_job(name="my_job", config=invalid_config).execute_in_process()
 
 
 class TestEnum(enum.Enum):
@@ -849,7 +849,7 @@ def test_top_level_graph_outer_config_failure():
         my_graph.to_job().execute_in_process(run_config={"ops": {"config": {"bad_type": "foo"}}})
 
     with pytest.raises(DagsterInvalidConfigError, match="Invalid scalar at path root:config"):
-        my_graph.to_job(config={"ops": {"config": {"bad_type": "foo"}}})
+        my_graph.to_job(config={"ops": {"config": {"bad_type": "foo"}}}).execute_in_process()
 
 
 def test_graph_dict_config():
