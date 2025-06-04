@@ -168,8 +168,8 @@ class TestTimeWindowFreshnessPolicy:
         InternalFreshnessPolicy.time_window(
             fail_window=timedelta(seconds=61), warn_window=timedelta(minutes=1)
         )
-    
-    def test_attach_time_window_freshness_policy_overwrite_existing() -> None:
+
+    def test_attach_time_window_freshness_policy_overwrite_existing(self) -> None:
         """Does overwrite_existing respect existing freshness policy on an asset?"""
 
         @asset
