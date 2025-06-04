@@ -97,7 +97,7 @@ class ExecutableComponent(Component, Resolvable, Model):
                 specs=self.assets,
                 check_specs=self.checks,
                 required_resource_keys=self.resource_keys,
-                pool=self.pool,
+                pool=self.resolved_execution.pool,
             )
             def _assets_def(context: AssetExecutionContext, **kwargs):
                 return self.invoke_execute_fn(context)
@@ -111,7 +111,7 @@ class ExecutableComponent(Component, Resolvable, Model):
                 specs=self.checks,
                 description=self.resolved_execution.description,
                 required_resource_keys=self.resource_keys,
-                pool=self.pool,
+                pool=self.resolved_execution.pool,
             )
             def _asset_check_def(context: AssetCheckExecutionContext, **kwargs):
                 return self.invoke_execute_fn(context)
