@@ -125,7 +125,7 @@ def scaffold_project(
         cl_dg_context.ensure_uv_lock()
 
     # Update pyproject.toml
-    if cl_dg_context.is_workspace:
+    if cl_dg_context.is_in_workspace:
         entry = {
             "path": str(cl_dg_context.root_path.relative_to(cl_dg_context.workspace_root_path)),
         }

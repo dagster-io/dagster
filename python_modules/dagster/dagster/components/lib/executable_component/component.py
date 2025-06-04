@@ -1,17 +1,18 @@
 import importlib
 import inspect
 from functools import cached_property
-from typing import Annotated, Any, Callable, Literal, Optional, Union
+from typing import Annotated, Any, Callable, Optional, Union
 
 from dagster_shared import check
 from typing_extensions import TypeAlias
 
+from dagster._core.decorator_utils import get_function_params
 from dagster._core.definitions.asset_checks import AssetChecksDefinition
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.decorators.asset_check_decorator import multi_asset_check
 from dagster._core.definitions.decorators.asset_decorator import multi_asset
 from dagster._core.definitions.definitions_class import Definitions
-from dagster._core.definitions.time_window_partitions import DailyPartitionsDefinition
+from dagster._core.definitions.resource_annotation import get_resource_args
 from dagster._core.execution.context.asset_check_execution_context import AssetCheckExecutionContext
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster.components.component.component import Component
@@ -20,30 +21,6 @@ from dagster.components.resolved.base import Resolvable
 from dagster.components.resolved.context import ResolutionContext
 from dagster.components.resolved.core_models import ResolvedAssetCheckSpec, ResolvedAssetSpec
 from dagster.components.resolved.model import Model, Resolver
-
-
-class DailyPartitionDefinitionModel(Resolvable, Model):
-    type: Literal["daily"] = "daily"
-    start_date: str
-    end_offset: int = 0
-
-
-def resolve_partition_definition(
-    context: ResolutionContext, model: DailyPartitionDefinitionModel
-) -> DailyPartitionsDefinition:
-    return DailyPartitionsDefinition(
-        start_date=model.start_date,
-        end_offset=model.end_offset,
-    )
-
-
-ResolvedPartitionDefinition: TypeAlias = Annotated[
-    DailyPartitionsDefinition,
-    Resolver(
-        resolve_partition_definition,
-        model_field_type=DailyPartitionDefinitionModel,
-    ),
-]
 
 
 def resolve_callable(context: ResolutionContext, model: str) -> Callable:
@@ -85,14 +62,17 @@ class ExecutableComponent(Component, Resolvable, Model):
     name: Optional[str] = None
     description: Optional[str] = None
     tags: Optional[dict[str, Any]] = None
-    partitions_def: Optional[ResolvedPartitionDefinition] = None
     assets: Optional[list[ResolvedAssetSpec]] = None
     checks: Optional[list[ResolvedAssetCheckSpec]] = None
     execute_fn: ResolvableCallable
 
     @cached_property
+    def execute_fn_metadata(self) -> "ExecuteFnMetadata":
+        return ExecuteFnMetadata(self.execute_fn)
+
+    @cached_property
     def resource_keys(self) -> set[str]:
-        return set(get_resources_from_callable(self.execute_fn))
+        return self.execute_fn_metadata.resource_keys
 
     def build_underlying_assets_def(self) -> AssetsDefinition:
         if self.assets:
@@ -103,7 +83,6 @@ class ExecutableComponent(Component, Resolvable, Model):
                 description=self.description,
                 specs=self.assets,
                 check_specs=self.checks,
-                partitions_def=self.partitions_def,
                 required_resource_keys=self.resource_keys,
             )
             def _assets_def(context: AssetExecutionContext, **kwargs):
@@ -140,3 +119,23 @@ class ExecutableComponent(Component, Resolvable, Model):
         to_pass = {k: v for k, v in rd.items() if k in self.resource_keys}
         check.invariant(set(to_pass.keys()) == self.resource_keys, "Resource keys mismatch")
         return self.execute_fn(context, **to_pass)
+
+
+class ExecuteFnMetadata:
+    def __init__(self, execute_fn: Callable):
+        self.execute_fn = execute_fn
+        found_args = {"context"} | self.resource_keys
+        extra_args = self.function_params_names - found_args
+        if extra_args:
+            check.failed(
+                f"Found extra arguments in execute_fn: {extra_args}. "
+                "Arguments must be valid resource params or annotated with Upstream"
+            )
+
+    @cached_property
+    def resource_keys(self) -> set[str]:
+        return {arg.name for arg in get_resource_args(self.execute_fn)}
+
+    @cached_property
+    def function_params_names(self) -> set[str]:
+        return {arg.name for arg in get_function_params(self.execute_fn)}

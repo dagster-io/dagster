@@ -115,7 +115,7 @@ def dev_command(
     cli_config = normalize_cli_config(other_options, click.get_current_context())
     dg_context = DgContext.for_workspace_or_project_environment(target_path, cli_config)
 
-    if dg_context.is_workspace:
+    if dg_context.is_in_workspace:
         os.environ["DAGSTER_PROJECT_ENV_FILE_PATHS"] = json.dumps(
             {
                 dg_context.with_root_path(
@@ -137,7 +137,7 @@ def dev_command(
             overall_check_result = True
             project_dirs = (
                 [project.path for project in dg_context.project_specs]
-                if dg_context.is_workspace
+                if dg_context.is_in_workspace
                 else [dg_context.root_path]
             )
             for project_dir in project_dirs:

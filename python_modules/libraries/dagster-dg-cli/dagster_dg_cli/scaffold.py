@@ -17,7 +17,7 @@ ScaffoldFormatOptions: TypeAlias = Literal["yaml", "python"]
 def scaffold_component(
     *, dg_context: DgContext, class_name: str, module_name: str, model: bool
 ) -> None:
-    root_path = Path(dg_context.default_plugin_module_path)
+    root_path = Path(dg_context.default_registry_module_path)
     click.echo(f"Creating a Dagster component at {root_path}/{module_name}.py.")
 
     scaffold_subtree(
@@ -32,7 +32,7 @@ def scaffold_component(
     with open(root_path / "__init__.py") as f:
         lines = f.readlines()
     lines.append(
-        f"from {dg_context.default_plugin_module_name}.{module_name} import {class_name} as {class_name}\n"
+        f"from {dg_context.default_registry_root_module_name}.{module_name} import {class_name} as {class_name}\n"
     )
     with open(root_path / "__init__.py", "w") as f:
         f.writelines(lines)

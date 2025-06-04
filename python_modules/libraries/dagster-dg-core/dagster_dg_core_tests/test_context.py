@@ -62,6 +62,7 @@ def test_context_in_workspace(config_file: ConfigFileType):
         context = DgContext.for_workspace_environment(path_arg, {})
         assert context.root_path == Path.cwd()
         assert context.workspace_root_path == Path.cwd()
+        assert context.is_in_workspace is True
 
         # Test config properly set
         with modify_dg_toml_config_as_dict(Path(config_file)) as toml_dict:
@@ -92,6 +93,7 @@ def test_context_in_project_in_workspace(
         assert context.root_path == project_path
         assert context.workspace_root_path == Path.cwd()
         assert context.config.cli.verbose is False  # default
+        assert context.is_in_workspace is True
 
         # Test config inheritance from workspace
         with modify_dg_toml_config_as_dict(Path(workspace_config_file)) as toml_dict:
@@ -122,7 +124,7 @@ def test_context_in_project_outside_workspace(config_file: ConfigFileType):
 
         context = DgContext.for_project_environment(path_arg, {})
         assert context.root_path == project_path
-        assert context.is_workspace is False
+        assert context.is_in_workspace is False
         assert context.config.cli.verbose is False
 
         # Test CLI setting is used in project outside of workspace
@@ -136,7 +138,7 @@ def test_context_outside_project_or_workspace():
     with ProxyRunner.test() as runner, isolated_components_venv(runner):
         context = DgContext.from_file_discovery_and_command_line_config(Path.cwd(), {})
         assert context.root_path == Path.cwd()
-        assert context.is_workspace is False
+        assert context.is_in_workspace is False
         assert context.config.cli.verbose is False
 
 

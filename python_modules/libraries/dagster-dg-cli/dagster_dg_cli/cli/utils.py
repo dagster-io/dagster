@@ -235,7 +235,7 @@ def create_temp_workspace_file(dg_context: DgContext) -> Iterator[str]:
         entries = []
         if dg_context.is_project:
             entries.append(_workspace_entry_for_project(dg_context))
-        elif dg_context.is_workspace:
+        elif dg_context.is_in_workspace:
             for spec in dg_context.project_specs:
                 project_root = dg_context.root_path / spec.path
                 project_context: DgContext = dg_context.with_root_path(project_root)
@@ -290,7 +290,7 @@ def create_temp_dagster_cloud_yaml_file(dg_context: DgContext, statedir: str) ->
         entries = []
         if dg_context.is_project:
             entries.append(_dagster_cloud_entry_for_project(dg_context, None))
-        elif dg_context.is_workspace:
+        elif dg_context.is_in_workspace:
             for spec in dg_context.project_specs:
                 project_root = dg_context.root_path / spec.path
                 project_context: DgContext = dg_context.with_root_path(project_root)
