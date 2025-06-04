@@ -456,10 +456,7 @@ class Definitions(IHaveNew):
 
     @public
     def get_job_def(self, name: str) -> JobDefinition:
-        """Get a job definition by name. If you passed in a an :py:class:`UnresolvedAssetJobDefinition`
-        (return value of :py:func:`define_asset_job`) it will be resolved to a :py:class:`JobDefinition` when returned
-        from this function, with all resource dependencies fully resolved.
-        """
+        """Get a job definition by name. This will only return a `JobDefinition` if it was directly passed in to the `Definitions` object."""
         for job in self.jobs or []:
             if job.name == name:
                 if isinstance(job, JobDefinition):
@@ -475,6 +472,10 @@ class Definitions(IHaveNew):
         return self.resolve_job_def(name)
 
     def resolve_job_def(self, name: str) -> JobDefinition:
+        """Resolve a job definition by name. If you passed in an :py:class:`UnresolvedAssetJobDefinition`
+        (return value of :py:func:`define_asset_job`) it will be resolved to a :py:class:`JobDefinition` when returned
+        from this function, with all resource dependencies fully resolved.
+        """
         check.str_param(name, "name")
         return self.get_repository_def().get_job(name)
 
