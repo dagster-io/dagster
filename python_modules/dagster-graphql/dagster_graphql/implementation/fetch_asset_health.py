@@ -31,13 +31,13 @@ async def fetch_assets_health(
     if graphene_info.context.instance.streamline_read_asset_health_supported():
         # use streamline multi_fetch to get the asset health for each asset
         asset_check_health_states_by_key = (
-            graphene_info.context.instance.get_asset_check_health_states_for_assets(asset_keys)
+            graphene_info.context.instance.get_asset_check_health_state_for_assets(asset_keys)
         )
         asset_freshness_health_states_by_key = (
-            graphene_info.context.instance.get_asset_freshness_health_states_for_assets(asset_keys)
+            graphene_info.context.instance.get_asset_freshness_health_state_for_assets(asset_keys)
         )
         asset_materialization_health_states_by_key = (
-            graphene_info.context.instance.get_asset_materialization_health_states_for_assets(
+            graphene_info.context.instance.get_asset_materialization_health_state_for_assets(
                 asset_keys
             )
         )
@@ -48,7 +48,11 @@ async def fetch_assets_health(
             # if streamline data does not exist for some asset, don't generate the data from the DB now, wait until it is resolved by GrapheneAssetHealth, so that
             # we only do the computation if the result is requested in the query
             kwargs_dict = {}
-            asset_check_health_state = asset_check_health_states_by_key.get(asset_key)
+            asset_check_health_state = (
+                asset_check_health_states_by_key.get(asset_key)
+                if asset_check_health_states_by_key is not None
+                else None
+            )
             if asset_check_health_state is not None:
                 (
                     asset_check_status,
@@ -59,7 +63,11 @@ async def fetch_assets_health(
                 kwargs_dict["assetCheckStatus"] = asset_check_status
                 kwargs_dict["assetCheckStatusMetadata"] = asset_check_status_metadata
 
-            asset_freshness_health_state = asset_freshness_health_states_by_key.get(asset_key)
+            asset_freshness_health_state = (
+                asset_freshness_health_states_by_key.get(asset_key)
+                if asset_freshness_health_states_by_key is not None
+                else None
+            )
             if asset_freshness_health_state is not None:
                 (
                     freshness_status,
@@ -70,8 +78,10 @@ async def fetch_assets_health(
                 kwargs_dict["freshnessStatus"] = freshness_status
                 kwargs_dict["freshnessStatusMetadata"] = freshness_status_metadata
 
-            asset_materialization_health_state = asset_materialization_health_states_by_key.get(
-                asset_key
+            asset_materialization_health_state = (
+                asset_materialization_health_states_by_key.get(asset_key)
+                if asset_materialization_health_states_by_key is not None
+                else None
             )
             if asset_materialization_health_state is not None:
                 (
@@ -115,8 +125,13 @@ async def get_asset_check_status_and_metadata(
         asset_check_health_state is None
         and graphene_info.context.instance.streamline_read_asset_health_supported()
     ):
+        asset_check_health_state_dict = (
+            graphene_info.context.instance.get_asset_check_health_state_for_assets([asset_key])
+        )
         asset_check_health_state = (
-            graphene_info.context.instance.get_asset_check_health_state_for_asset(asset_key)
+            asset_check_health_state_dict.get(asset_key)
+            if asset_check_health_state_dict is not None
+            else None
         )
     # captures streamline disabled or consumer state doesn't exist
     if asset_check_health_state is None:
@@ -186,8 +201,13 @@ async def get_freshness_status_and_metadata(
         asset_freshness_health_state is None
         and graphene_info.context.instance.streamline_read_asset_health_supported()
     ):
+        asset_freshness_health_state_dict = (
+            graphene_info.context.instance.get_asset_freshness_health_state_for_assets([asset_key])
+        )
         asset_freshness_health_state = (
-            graphene_info.context.instance.get_asset_freshness_health_state_for_asset(asset_key)
+            asset_freshness_health_state_dict.get(asset_key)
+            if asset_freshness_health_state_dict is not None
+            else None
         )
     if (
         asset_freshness_health_state is None
@@ -253,10 +273,15 @@ async def get_materialization_status_and_metadata(
         asset_materialization_health_state is None
         and graphene_info.context.instance.streamline_read_asset_health_supported()
     ):
-        asset_materialization_health_state = (
-            graphene_info.context.instance.get_asset_materialization_health_state_for_asset(
-                asset_key
+        asset_materialization_health_state_dict = (
+            graphene_info.context.instance.get_asset_materialization_health_state_for_assets(
+                [asset_key]
             )
+        )
+        asset_materialization_health_state = (
+            asset_materialization_health_state_dict.get(asset_key)
+            if asset_materialization_health_state_dict is not None
+            else None
         )
     # captures streamline disabled or consumer state doesn't exist
     if asset_materialization_health_state is None:
