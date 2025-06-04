@@ -10,8 +10,7 @@ import DgComponentsPreview from '@site/docs/partials/\_DgComponentsPreview.md';
 
 :::note
 
-We are working on streamlining the configuration of the `uv` integration, and it
-is likely to change in the next few releases.
+The configuration of the `uv` integration is under active development and will likely to change in the next few releases.
 
 :::
 
@@ -40,8 +39,8 @@ The Python environment used for a project is determined by the `tool.dg.project.
   </TabItem>
 </Tabs>
 
-If the setting is `active` (the default), then it is up to the user to manage their own Python environments. If individual project-scoped environments are desired, the user must create them, and ensure the appropriate one is activated when running `dg` commands against that project. We try to guide users in this direction when they run `create-dagster project`. After a project is scaffolded by `create-dagster project`, we prompt the user for permission to automatically run `uv sync`, and recommend they immediately activate the newly created virtual environment.
+If the setting is `active` (the default), then it is up to you to manage your own Python environments. If individual project-scoped environments are desired, you must create them, and ensure the appropriate one is activated when running `dg` commands against that project. We try to guide you in this direction when you run `create-dagster project`. After a project is scaffolded by `create-dagster project`, we prompt you for permission to automatically run `uv sync`, and recommend you immediately activate the newly created virtual environment.
 
 If the setting is `uv_managed`, then `dg` will ignore any activated virtual environments. Subprocesses will be launched using `uv run`, which handles resolution of the project-scoped `.venv` environment and ensures subprocesses are launched in that environment. It also ensures that the environment is up to date with the project's specified dependencies before launching a subprocess.
 
-The `uv_managed` setting is intended to ease development friction by removing the burden of juggling virtual environments from the user. It is our recommended configuration. However, we are still developing its functionality, and some users may prefer to totally opt out of any environment management "magic". For this reason the default is currently `active`.
+The `uv_managed` setting is intended to ease development friction by removing the burden of juggling virtual environments from you. It is our recommended configuration. However, we are still developing its functionality, and some users may prefer to totally opt out of any environment management "magic". For this reason, the default is currently `active`.
