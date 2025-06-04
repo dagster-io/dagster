@@ -1,6 +1,6 @@
-tree my_project/defs
+tree src/my_project/defs
 
-my_project/defs
+src/my_project/defs
 ├── __init__.py
 └── fivetran_ingest
     └── defs.yaml

@@ -15,11 +15,9 @@ The [dagster-airlift](/integrations/libraries/airlift) library provides an `Airf
 
 ### 1. Create a Dagster project
 
-To begin, you'll need a components-ready Dagster project. To create one, use the `uvx create-dagster` command:
+To begin, you'll need a Dagster project. You can use an [existing components-ready project](/guides/labs/dg/incrementally-adopting-dg/migrating-project) or create a new one:
 
-```
 uvx create-dagster project my-project && cd my-project
-```
 
 Activate the project virtual environment:
 
@@ -30,7 +28,7 @@ source .venv/bin/activate
 Finally, add the `dagster-airlift` library to the project:
 
 ```
-uv add 'dagster-airlift==0.26.18rc3'
+uv add 'dagster-airlift'
 ```
 
 ### 2. Scaffold an AirflowInstanceComponent

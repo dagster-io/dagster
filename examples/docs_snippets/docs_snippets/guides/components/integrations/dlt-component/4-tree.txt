@@ -1,6 +1,6 @@
-tree my_project/defs
+tree src/my_project/defs
 
-my_project/defs
+src/my_project/defs
 ├── __init__.py
 └── github_snowflake_ingest
     ├── defs.yaml

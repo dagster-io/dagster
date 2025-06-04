@@ -10,17 +10,23 @@ import DgComponentsPreview from '@site/docs/partials/\_DgComponentsPreview.md';
 
 The [dagster-dlt](/integrations/libraries/dlt) library provides a `DltLoadCollectionComponent` which can be used to easily represent a collection of dlt sources and pipelines as assets in Dagster.
 
-## Preparing a Dagster project
+## 1. Prepare a Dagster project
 
-To begin, you'll need a Dagster project. You can use an existing project [ready for components](/guides/labs/dg/incrementally-adopting-dg/migrating-project) or scaffold a new one:
+To begin, you'll need a Dagster project. You can use an [existing components-ready project](/guides/labs/dg/incrementally-adopting-dg/migrating-project) or create a new one:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/dlt-component/1-scaffold-project.txt" />
 
-Next, you will need to add the `dagster-dlt` library to the project:
+Activate the project virtual environment:
+
+```
+source .venv/bin/activate
+```
+
+Finally, add the `dagster-dlt` library to the project:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/dlt-component/2-add-dlt.txt" />
 
-## Scaffolding a dlt component
+## 2. Scaffold a dlt component
 
 Now that you have a Dagster project, you can scaffold a dlt component. You may optionally provide the source and destination types, which will pull in the appropriate dlt source:
 
@@ -46,7 +52,7 @@ Each of these sources and pipelines are referenced by a fully scoped Python iden
   language="yaml"
 />
 
-## Configuring dlt loads
+## 3. Configure dlt loads
 
 Next, you can fill in the template `loads.py` file with your own dlt sources and pipelines:
 
@@ -68,7 +74,7 @@ You can use `dg list defs` to list the assets produced by the load:
   <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/dlt-component/9-list-defs.txt" />
 </WideContent>
 
-## Customizing Dagster assets
+## 4. Customize Dagster assets
 
 Properties of the assets emitted by each load can be customized in the `defs.yaml` file using the `translation` key:
 
