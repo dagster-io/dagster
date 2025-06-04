@@ -473,6 +473,12 @@ class DagsterEvent(
         step_key (Optional[str]): DEPRECATED
     """
 
+    def redact_errors(self) -> "DagsterEvent":
+        if self.event_specific_data:
+            return self._replace(event_specific_data=self.event_specific_data.redact_errors())
+
+        return self
+
     @staticmethod
     def from_step(
         event_type: "DagsterEventType",
@@ -1648,6 +1654,9 @@ class AssetObservationData(
             ),
         )
 
+    def redact_errors(self) -> "AssetObservationData":
+        return self
+
 
 @whitelist_for_serdes
 class AssetFailedToMaterializeData(
@@ -1716,6 +1725,9 @@ class StepMaterializationData(
             ),
         )
 
+    def redact_errors(self) -> "StepMaterializationData":
+        return self
+
 
 @whitelist_for_serdes
 class AssetMaterializationPlannedData(
@@ -1753,6 +1765,9 @@ class AssetMaterializationPlannedData(
             partitions_subset=partitions_subset,
         )
 
+    def redact_errors(self) -> "AssetMaterializationPlannedData":
+        return self
+
 
 @whitelist_for_serdes
 class StepExpectationResultData(
@@ -1770,6 +1785,9 @@ class StepExpectationResultData(
                 expectation_result, "expectation_result", ExpectationResult
             ),
         )
+
+    def redact_errors(self) -> "StepExpectationResultData":
+        return self
 
 
 @whitelist_for_serdes(
@@ -1809,6 +1827,9 @@ class ObjectStoreOperationResultData(
             version=check.opt_str_param(version, "version"),
             mapping_key=check.opt_str_param(mapping_key, "mapping_key"),
         )
+
+    def redact_errors(self) -> "ObjectStoreOperationResultData":
+        return self
 
 
 @whitelist_for_serdes
@@ -1867,6 +1888,9 @@ class EngineEventData(
             marker_start=check.opt_str_param(marker_start, "marker_start"),
             marker_end=check.opt_str_param(marker_end, "marker_end"),
         )
+
+    def redact_errors(self) -> "EngineEventData":
+        return self._replace(error=redact_error_info(self.error) if self.error else None)
 
     @staticmethod
     def in_process(
@@ -1935,6 +1959,14 @@ class JobFailureData(
             ),
         )
 
+    def redact_errors(self) -> "JobFailureData":
+        return self._replace(
+            error=redact_error_info(self.error) if self.error else None,
+            first_step_failure_event=self.first_step_failure_event.redact_errors()
+            if self.first_step_failure_event
+            else None,
+        )
+
 
 @whitelist_for_serdes(storage_name="PipelineCanceledData")
 class JobCanceledData(
@@ -1950,6 +1982,11 @@ class JobCanceledData(
             cls, error=check.opt_inst_param(error, "error", SerializableErrorInfo)
         )
 
+    def redact_errors(self) -> "JobFailureData":
+        return self._replace(
+            error=redact_error_info(self.error) if self.error else None,
+        )
+
 
 @whitelist_for_serdes
 class HookErroredData(
@@ -1962,6 +1999,9 @@ class HookErroredData(
 ):
     def __new__(cls, error: SerializableErrorInfo):
         return super().__new__(cls, error=check.inst_param(error, "error", SerializableErrorInfo))
+
+    def redact_errors(self) -> "HookErroredData":
+        return self._replace(error=redact_error_info(self.error) if self.error else None)
 
 
 @whitelist_for_serdes(
@@ -1992,6 +2032,9 @@ class HandledOutputData(
                 check.opt_mapping_param(metadata, "metadata", key_type=str)
             ),
         )
+
+    def redact_errors(self) -> "HandledOutputData":
+        return self
 
 
 @whitelist_for_serdes(
@@ -2029,6 +2072,9 @@ class LoadedInputData(
             ),
         )
 
+    def redact_errors(self) -> "LoadedInputData":
+        return self
+
 
 @whitelist_for_serdes(storage_field_names={"file_key": "log_key"})
 class ComputeLogsCaptureData(
@@ -2062,6 +2108,9 @@ class ComputeLogsCaptureData(
             external_stderr_url=check.opt_str_param(external_stderr_url, "external_stderr_url"),
             shell_cmd=check.opt_inst_param(shell_cmd, "shell_cmd", LogRetrievalShellCommand),
         )
+
+    def redact_errors(self) -> "ComputeLogsCaptureData":
+        return self
 
 
 ###################################################################################################
