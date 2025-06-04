@@ -29,9 +29,9 @@ To avoid naming conflicts with the legacy API during this migration, we've prefi
 
 Currently, we support time window-based freshness policies, which are suitable for most use cases. We plan to add more policy types in the future.
 
-### Time window policy
+### Time window
 
-A time window freshness policy is useful when you expect an asset to have new data, or be recalculated with some frequency. An asset that does not meet this condition will be considered failing its freshness policy. You can set an optional warning window on a freshness policy; if the asset does not successfully materialize within this window, it will enter a `warning` freshness state.
+A time window freshness policy is useful when you expect an asset to have new data or be recalculated with some frequency. An asset that does not meet this condition will be considered failing its freshness policy. You can set an optional warning window on a freshness policy; if the asset does not successfully materialize within this window, it will enter a `warning` freshness state.
 
 For example, the policy below states that there should be a successful materialization of the asset at least every 24 hours for it to be considered fresh, with a warning window of 12 hours:
 
@@ -42,6 +42,29 @@ For example, the policy below states that there should be a successful materiali
 - `fail_window` and `warn_window` cannot be shorter than 60 seconds.
 - `warn_window` must be less than `fail_window`.
 
+:::
+
+### Cron
+
+A cron freshness policy is useful when you expect an asset to have new data or be recalculated on a known schedule.
+
+The policy defines a cron schedule `deadline_cron` that denotes the deadline for the asset materialization.
+To account for the time to actually materialize, a `lower_bound_delta` time delta is also specified, which denotes an amount of time
+before each cron tick when the asset should start materializing.
+Together, `deadline_cron` and `lower_bound_delta` define a recurring time window in which the asset is expected to materialize.
+
+The asset is fresh if it materializes in this time window, and will remain fresh until at least the next deadline.
+If the asset has not materialized in the window after the deadline passes, it will fail freshness until it materializes again.
+
+Example:
+
+<CodeExample path="docs_snippets/docs_snippets/guides/freshness/cron_policy.py" language="python" />
+
+:::info
+- `deadline_cron` must be a valid cron string and has a minimum resolution of 1 minute.
+- `lower_bound_delta` cannot be shorter than 1 minute, and must fit within the smallest interval of `deadline_cron`.
+Example: for `deadline_cron="0 10 * * 1-5"` (weekdays at 10am), `lower_bound_delta` must be between 1 minute and 24 hours.
+- `timezone` is optional. [IANA timezones](https://www.iana.org/time-zones) are supported. If not provided, defaults to UTC.
 :::
 
 ## Setting freshness policies
@@ -67,6 +90,13 @@ You can also use `map_asset_specs` directly on the asset specs before creating a
 Applying a freshness policy in this way to an asset with an existing freshness policy (for example, if it was defined in the `@asset` decorator) will overwrite the existing policy.
 
 :::
+
+### Setting a default freshness policy
+Often it's useful to set a default freshness policy across all assets, and override the policy on individual assets.
+
+You can also use `map_asset_specs` for this with `overwrite_existing` set to `False` on the mapped function to avoid overwriting any pre-defined freshness policies:
+
+<CodeExample path="docs_snippets/docs_snippets/guides/freshness/default_freshness.py" language="python" />
 
 ### Limitations
 
