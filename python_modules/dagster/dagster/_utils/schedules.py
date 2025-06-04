@@ -862,9 +862,8 @@ def get_smallest_cron_interval(
 ) -> datetime.timedelta:
     """Find the smallest interval between cron ticks for a given cron schedule.
 
-    This method first attempts to recognize common schedule patterns (hourly, daily,
-    weekly, monthly) and calculate their minimum intervals directly. For irregular
-    patterns, it falls back to a sampling approach.
+    Uses a naive, sampling-based approach to find the minimum interval by generating
+    consecutive cron ticks and measuring the gaps between them.
 
     Args:
         cron_string: A cron string
@@ -876,208 +875,19 @@ def get_smallest_cron_interval(
     Raises:
         CheckError: If the cron string is invalid or not recognized by Dagster
     """
-    from dagster._core.definitions.partition import ScheduleType
-
     check.invariant(
         is_valid_cron_string(cron_string), desc=f"{cron_string} must be a valid cron string"
     )
 
-    # Use existing schedule type detection logic from cron_string_iterator
     execution_timezone = execution_timezone or "UTC"
 
-    # Croniter < 1.4 returns 2 items, >= 1.4 returns 3 items
-    cron_parts, nth_weekday_of_month, *_ = CroniterShim.expand(cron_string)
-
-    is_numeric = [len(part) == 1 and isinstance(part[0], int) for part in cron_parts]
-    is_wildcard = [len(part) == 1 and part[0] == "*" for part in cron_parts]
-
-    all_numeric_minutes = len(cron_parts[0]) > 0 and all(
-        cron_part != "*" for cron_part in cron_parts[0]
-    )
-
-    known_schedule_type: Optional[ScheduleType] = None
-
-    # Detect known schedule types using same logic as cron_string_iterator
-    if not nth_weekday_of_month:
-        if (
-            all(is_numeric[0:3])
-            and all(is_wildcard[3:])
-            and cron_parts[2][0] <= MAX_DAY_OF_MONTH_WITH_GUARANTEED_MONTHLY_INTERVAL
-        ):  # monthly
-            known_schedule_type = ScheduleType.MONTHLY
-        elif all(is_numeric[0:2]) and is_numeric[4] and all(is_wildcard[2:4]):  # weekly
-            known_schedule_type = ScheduleType.WEEKLY
-        elif all(is_numeric[0:2]) and all(is_wildcard[2:]):  # daily
-            known_schedule_type = ScheduleType.DAILY
-        elif all_numeric_minutes and all(is_wildcard[1:]):  # hourly
-            known_schedule_type = ScheduleType.HOURLY
-
-    # Calculate interval directly for known schedule types
-    if known_schedule_type == ScheduleType.HOURLY:
-        return _calculate_hourly_interval(cron_parts[0])
-    elif known_schedule_type == ScheduleType.DAILY:
-        # For DST timezones, fall back to sampling to correctly capture 23-hour intervals
-        dst_timezones = {
-            "America/New_York",
-            "America/Chicago",
-            "America/Denver",
-            "America/Los_Angeles",
-            "America/Toronto",
-            "America/Vancouver",
-            "US/Eastern",
-            "US/Central",
-            "US/Mountain",
-            "US/Pacific",
-            "Europe/London",
-            "Europe/Berlin",
-            "Europe/Paris",
-            "Europe/Rome",
-            "Europe/Madrid",
-            "Europe/Amsterdam",
-            "Europe/Brussels",
-            "Europe/Vienna",
-            "Europe/Prague",
-            "Europe/Warsaw",
-            "Europe/Stockholm",
-            "Europe/Oslo",
-            "Europe/Copenhagen",
-            "Europe/Helsinki",
-            "Europe/Athens",
-            "Europe/Budapest",
-            "Australia/Sydney",
-            "Australia/Melbourne",
-            "Australia/Brisbane",
-            "Australia/Perth",
-            "Australia/Adelaide",
-            "Australia/Darwin",
-            "Australia/Hobart",
-        }
-
-        if execution_timezone in dst_timezones:
-            # Use sampling for DST timezones to correctly detect 23-hour intervals
-            return _sample_cron_interval(cron_string, execution_timezone)
-        else:
-            return _calculate_daily_interval(execution_timezone)
-    elif known_schedule_type == ScheduleType.WEEKLY:
-        return datetime.timedelta(days=7)
-    elif known_schedule_type == ScheduleType.MONTHLY:
-        return _calculate_monthly_interval()
-
-    # Fall back to sampling for irregular patterns
-    return _sample_cron_interval(cron_string, execution_timezone)
-
-
-def _calculate_hourly_interval(minute_parts: Sequence[Union[int, str]]) -> datetime.timedelta:
-    """Calculate minimum interval for hourly schedules."""
-    if len(minute_parts) == 1:
-        # Single minute value - interval is always 1 hour
-        return datetime.timedelta(hours=1)
-
-    # Multiple minute values - find minimum gap
-    minutes = [int(m) for m in minute_parts if isinstance(m, int)]
-    minutes.sort()
-
-    min_gap = 60  # Maximum possible gap (full hour)
-    for i in range(len(minutes)):
-        # Calculate gap to next minute (wrapping around at 60)
-        next_minute = minutes[(i + 1) % len(minutes)]
-        if i == len(minutes) - 1:
-            # Wrap around case: last minute to first minute next hour
-            gap = (60 - minutes[i]) + next_minute
-        else:
-            gap = next_minute - minutes[i]
-        min_gap = min(min_gap, gap)
-
-    return datetime.timedelta(minutes=min_gap)
-
-
-def _calculate_daily_interval(execution_timezone: str) -> datetime.timedelta:
-    """Calculate minimum interval for daily schedules.
-
-    Normally 24 hours, but 23 hours during DST spring forward.
-    """
-    # Check if timezone has DST transitions
-    if execution_timezone in {"UTC", "GMT"}:
-        return datetime.timedelta(days=1)
-
-    # For DST timezones, the minimum interval occurs during spring forward (23 hours)
-    # Check known DST timezones
-    dst_timezones = {
-        "America/New_York",
-        "America/Chicago",
-        "America/Denver",
-        "America/Los_Angeles",
-        "America/Toronto",
-        "America/Vancouver",
-        "US/Eastern",
-        "US/Central",
-        "US/Mountain",
-        "US/Pacific",
-        "Europe/London",
-        "Europe/Berlin",
-        "Europe/Paris",
-        "Europe/Rome",
-        "Europe/Madrid",
-        "Europe/Amsterdam",
-        "Europe/Brussels",
-        "Europe/Vienna",
-        "Europe/Prague",
-        "Europe/Warsaw",
-        "Europe/Stockholm",
-        "Europe/Oslo",
-        "Europe/Copenhagen",
-        "Europe/Helsinki",
-        "Europe/Athens",
-        "Europe/Budapest",
-        "Australia/Sydney",
-        "Australia/Melbourne",
-        "Australia/Brisbane",
-        "Australia/Perth",
-        "Australia/Adelaide",
-        "Australia/Darwin",
-        "Australia/Hobart",
-    }
-
-    if execution_timezone in dst_timezones:
-        return datetime.timedelta(hours=23)
-
-    # More robust DST detection - check if timezone has different offsets throughout the year
-    try:
-        tz = get_timezone(execution_timezone)
-
-        # Create two dates: one in winter, one in summer
-        winter_date = datetime.datetime(2023, 1, 15, 12, 0, 0, tzinfo=tz)
-        summer_date = datetime.datetime(2023, 7, 15, 12, 0, 0, tzinfo=tz)
-
-        # If the UTC offsets are different, the timezone has DST
-        if winter_date.utcoffset() != summer_date.utcoffset():
-            return datetime.timedelta(hours=23)
-    except Exception:
-        # If we can't determine DST status, fall back to sampling
-        # This ensures we don't return wrong results for unknown timezones
-        pass
-
-    # Default to 24 hours if no DST detected
-    return datetime.timedelta(days=1)
-
-
-def _calculate_monthly_interval() -> datetime.timedelta:
-    """Calculate minimum interval for monthly schedules.
-
-    The shortest month is February with 28 days in non-leap years.
-    """
-    return datetime.timedelta(days=28)
-
-
-def _sample_cron_interval(cron_string: str, execution_timezone: str) -> datetime.timedelta:
-    """Fall back to sampling approach for irregular cron patterns."""
     # Always start at current time in the specified timezone
     start_time = datetime.datetime.now(tz=get_timezone(execution_timezone))
 
     # Start sampling from a year ago to capture seasonal variations (DST, leap years)
     sampling_start = start_time - datetime.timedelta(days=365)
 
-    # Generate consecutive cron ticks with default sample size
+    # Generate consecutive cron ticks
     cron_iter = schedule_execution_time_iterator(
         start_timestamp=sampling_start.timestamp(),
         cron_schedule=cron_string,
@@ -1089,7 +899,7 @@ def _sample_cron_interval(cron_string: str, execution_timezone: str) -> datetime
     prev_tick = next(cron_iter)
     min_interval = None
 
-    # Sample 1000 ticks by default to cover various edge cases
+    # Sample 1000 ticks to cover various edge cases
     for _ in range(999):
         try:
             current_tick = next(cron_iter)
