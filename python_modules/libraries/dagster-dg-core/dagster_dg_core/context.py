@@ -97,7 +97,7 @@ class DgContext:
         context = cls.from_file_discovery_and_command_line_config(path, command_line_config)
 
         # Commands that operate on a workspace need to be run inside a workspace context.
-        if not context.is_workspace:
+        if not context.is_in_workspace:
             potential_paths = cls._locate_potential_projects_or_workspaces(
                 path, command_line_config, allow_projects=False, allow_workspaces=True
             )
@@ -143,7 +143,7 @@ class DgContext:
         matching_paths = []
         for path in potential_paths:
             context = cls.from_file_discovery_and_command_line_config(path, command_line_config)
-            if context.is_workspace and allow_workspaces:
+            if context.is_in_workspace and allow_workspaces:
                 matching_paths.append(path)
             elif context.is_project and allow_projects:
                 matching_paths.append(path)
@@ -157,7 +157,7 @@ class DgContext:
 
         # Commands that operate on a workspace need to be run inside a workspace or project
         # context.
-        if not (context.is_workspace or context.is_project):
+        if not (context.is_in_workspace or context.is_project):
             potential_paths = cls._locate_potential_projects_or_workspaces(
                 path, commmand_line_config, allow_projects=True, allow_workspaces=True
             )
@@ -320,7 +320,7 @@ class DgContext:
     # ########################
 
     @property
-    def is_workspace(self) -> bool:
+    def is_in_workspace(self) -> bool:
         return self._workspace_root_path is not None
 
     @property
@@ -330,7 +330,7 @@ class DgContext:
         return self._workspace_root_path
 
     def has_project(self, relative_path: Path) -> bool:
-        if not self.is_workspace:
+        if not self.is_in_workspace:
             raise DgError("`has_project` is only available in a workspace context")
         return bool(
             next(

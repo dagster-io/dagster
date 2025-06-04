@@ -526,7 +526,7 @@ def scaffold_build_artifacts_command(
                     # registry: '...'
                     """
                 )
-                if dg_context.is_workspace
+                if dg_context.is_in_workspace
                 else textwrap.dedent(
                     """
                     directory: .
@@ -658,7 +658,7 @@ REGISTRY_INFOS = [
 
 
 def _get_project_contexts(dg_context: DgContext, cli_config: DgRawCliConfig) -> list[DgContext]:
-    if dg_context.is_workspace:
+    if dg_context.is_in_workspace:
         return [
             dg_context.for_project_environment(project.path, cli_config)
             for project in dg_context.project_specs
