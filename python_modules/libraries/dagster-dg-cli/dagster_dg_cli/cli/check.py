@@ -137,9 +137,9 @@ def check_definitions_command(
         if check_yaml_fn:
             overall_check_result = True
             project_dirs = (
-                [project.path for project in dg_context.project_specs]
-                if dg_context.is_in_workspace
-                else [dg_context.root_path]
+                [dg_context.root_path]
+                if dg_context.is_project
+                else [project.path for project in dg_context.project_specs]
             )
             for project_dir in project_dirs:
                 check_result = check_yaml_fn(

@@ -331,7 +331,7 @@ class DgContext:
 
     def has_project(self, relative_path: Path) -> bool:
         if not self.is_in_workspace:
-            raise DgError("`has_project` is only available in a workspace context")
+            raise DgError("`has_project` is only available within a workspace")
         return bool(
             next(
                 (spec for spec in self.project_specs if spec.path == relative_path),
@@ -342,7 +342,7 @@ class DgContext:
     @property
     def project_specs(self) -> list[DgWorkspaceProjectSpec]:
         if not self.config.workspace:
-            raise DgError("`project_specs` is only available in a workspace context")
+            raise DgError("`project_specs` is only available within a workspace")
         return self.config.workspace.projects
 
     # ########################
