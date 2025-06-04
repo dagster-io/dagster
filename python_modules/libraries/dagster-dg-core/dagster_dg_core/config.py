@@ -315,6 +315,7 @@ class DgProjectConfig:
     python_environment: DgProjectPythonEnvironment = field(
         default_factory=lambda: DgProjectPythonEnvironment(active=True)
     )
+    registry_modules: list[str] = field(default_factory=list)
 
     @classmethod
     def from_raw(cls, raw: "DgRawProjectConfig") -> Self:
@@ -332,6 +333,9 @@ class DgProjectConfig:
                 if "python_environment" in raw
                 else cls.__dataclass_fields__["python_environment"].default_factory()
             ),
+            registry_modules=raw.get(
+                "registry_modules", cls.__dataclass_fields__["registry_modules"].default_factory()
+            ),
         )
 
 
@@ -342,6 +346,7 @@ class DgRawProjectConfig(TypedDict):
     code_location_target_module: NotRequired[str]
     code_location_name: NotRequired[str]
     python_environment: NotRequired[DgRawProjectPythonEnvironment]
+    registry_modules: NotRequired[list[str]]
 
 
 # ########################
