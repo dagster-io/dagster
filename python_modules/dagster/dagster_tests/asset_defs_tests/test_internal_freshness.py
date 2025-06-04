@@ -198,7 +198,7 @@ def test_attach_internal_freshness_policy_overwrite_existing() -> None:
 
     specs = mapped_defs.get_all_asset_specs()
 
-    # Should see new policy overwritten
+    # Should see new policy applied to asset without existing policy
     spec_no_policy = next(spec for spec in specs if spec.key == AssetKey("asset_no_policy"))
     assert spec_no_policy.metadata.get(INTERNAL_FRESHNESS_POLICY_METADATA_KEY) is not None
     assert spec_no_policy.metadata[INTERNAL_FRESHNESS_POLICY_METADATA_KEY] == serialize_value(
