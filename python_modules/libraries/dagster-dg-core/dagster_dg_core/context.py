@@ -58,7 +58,11 @@ _DEFAULT_PROJECT_CODE_LOCATION_TARGET_MODULE: Final = "definitions"
 _EXCLUDED_COMPONENT_DIRECTORIES: Final = {"__pycache__"}
 DG_PLUGIN_ENTRY_POINT_GROUP: Final = "dagster_dg_cli.registry_modules"
 # Remove in future, in place for backcompat
-OLD_DG_PLUGIN_ENTRY_POINT_GROUPS = ["dagster_dg.library", "dagster_dg.plugin", "dagster_dg_cli.plugin"]
+OLD_DG_PLUGIN_ENTRY_POINT_GROUPS = [
+    "dagster_dg.library",
+    "dagster_dg.plugin",
+    "dagster_dg_cli.plugin",
+]
 
 
 def _should_capture_components_cli_stderr() -> bool:
