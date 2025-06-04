@@ -1915,11 +1915,11 @@
     },
     {
       "source": "/guides/labs/components/creating-a-component",
-      "destination": "/guides/labs/components/creating-new-component-types/creating-and-registering-a-component-type"
+      "destination": "/guides/labs/components/creating-new-components/creating-and-registering-a-component"
     },
     {
       "source": "/guides/labs/components/creating-new-component-types/customizing-components",
-      "destination": "/guides/labs/components/creating-new-component-types/subclassing-components"
+      "destination": "/guides/labs/components/creating-new-components/subclassing-components"
     },
     {
       "source": "/guides/labs/components/existing-code-location",
@@ -3165,6 +3165,26 @@
     {
       "source": "/guides/labs/create-dagster",
       "destination": "/api/dagster/create-dagster"
+    },
+    {
+      "source": "/guides/labs/components/creating-new-component-types",
+      "destination": "/guides/labs/components/creating-new-components"
+    },
+    {
+      "source": "/guides/labs/components/creating-new-component-types/testing-your-component-type",
+      "destination": "/guides/labs/components/creating-new-components/testing-your-component"
+    },
+    {
+      "source": "/guides/labs/components/creating-new-component-types/creating-and-registering-a-component-type",
+      "destination": "/guides/labs/components/creating-new-components/creating-and-registering-a-component"
+    },
+    {
+      "source": "/guides/labs/components/creating-new-component-types/subclassing-component-types",
+      "destination": "/guides/labs/components/creating-new-components/subclassing-components"
+    },
+    {
+      "source": "/guides/labs/components/creating-new-component-types/component-type-customization",
+      "destination": "/guides/labs/components/creating-new-components/component-customization"
     }
   ],
   "trailingSlash": false

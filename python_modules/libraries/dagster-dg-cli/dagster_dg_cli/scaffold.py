@@ -18,7 +18,7 @@ def scaffold_component(
     *, dg_context: DgContext, class_name: str, module_name: str, model: bool
 ) -> None:
     root_path = Path(dg_context.default_plugin_module_path)
-    click.echo(f"Creating a Dagster component type at {root_path}/{module_name}.py.")
+    click.echo(f"Creating a Dagster component at {root_path}/{module_name}.py.")
 
     scaffold_subtree(
         path=root_path,
@@ -37,7 +37,7 @@ def scaffold_component(
     with open(root_path / "__init__.py", "w") as f:
         f.writelines(lines)
 
-    click.echo(f"Scaffolded files for Dagster component type at {root_path}/{module_name}.py.")
+    click.echo(f"Scaffolded files for Dagster component at {root_path}/{module_name}.py.")
 
 
 # ########################
