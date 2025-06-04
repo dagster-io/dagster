@@ -565,6 +565,10 @@
       "destination": "/migration/:path*"
     },
     {
+      "source": "/migration/version-migration",
+      "destination": "/migration/upgrading"
+    },
+    {
       "source": "/dagster-plus/deployment/migration/serverless-to-hybrid",
       "destination": "/migration/serverless-to-hybrid"
     },

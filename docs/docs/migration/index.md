@@ -1,6 +1,6 @@
 ---
-title: Migration
-description: Migrating to Dagster.
+title: Migration & upgrading
+description: Guides for migrating to Dagster or upgrading versions.
 sidebar_class_name: hidden
 ---
 
