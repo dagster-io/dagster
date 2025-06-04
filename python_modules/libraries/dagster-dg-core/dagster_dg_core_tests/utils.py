@@ -733,6 +733,7 @@ def create_project_from_components(
     *src_paths: str,
     local_component_defn_to_inject: Optional[Path] = None,
     python_environment: DgProjectPythonEnvironmentFlag = "active",
+    in_workspace: bool = True,
 ) -> Iterator[Path]:
     """Scaffolds a project with the given components in a temporary directory,
     injecting the provided local component defn into each component's __init__.py.
@@ -742,6 +743,7 @@ def create_project_from_components(
         runner,
         component_dirs=origin_paths,
         python_environment=python_environment,
+        in_workspace=in_workspace,
     ):
         for src_path in src_paths:
             components_dir = Path.cwd() / "src" / "foo_bar" / "defs" / src_path.split("/")[-1]

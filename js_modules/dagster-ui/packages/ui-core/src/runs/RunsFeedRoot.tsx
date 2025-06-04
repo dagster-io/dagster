@@ -200,7 +200,7 @@ export const RunsFeedRoot = () => {
     <Box style={{height: '100%', display: 'grid', gridTemplateRows: 'auto minmax(0, 1fr)'}}>
       <Box
         border="bottom"
-        background={Colors.backgroundLight()}
+        background={Colors.backgroundDefault()}
         padding={{left: 24, right: 20}}
         flex={{direction: 'row', justifyContent: 'space-between'}}
       >

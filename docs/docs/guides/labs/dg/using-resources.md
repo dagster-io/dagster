@@ -52,12 +52,6 @@ dg scaffold defs dagster.resources path/to/resources.py
 
 which will create
 
-```
-import dagster as dg
-
-@dg.definitions
-def resources() -> dg.Definitions:
-    return dg.Definitions(resources={})
-```
+<CodeExample path="docs_snippets/docs_snippets/guides/dg/using-resources/4-scaffolded-resource-defs.py" />
 
 and you can fill out the resource dictionary as needed.

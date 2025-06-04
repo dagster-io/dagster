@@ -4,10 +4,10 @@ import {
   Box,
   Code,
   Colors,
-  Heading,
   PageHeader,
   Spinner,
   Subheading,
+  Subtitle1,
 } from '@dagster-io/ui-components';
 import {StyledRawCodeMirror} from '@dagster-io/ui-components/editor';
 import CodeMirror from 'codemirror';
@@ -109,7 +109,7 @@ export const InstanceConfigRoot = () => {
   const {pageTitle} = useContext(InstancePageContext);
   return (
     <>
-      <PageHeader title={<Heading>{pageTitle}</Heading>} tabs={<InstanceTabs tab="config" />} />
+      <PageHeader title={<Subtitle1>{pageTitle}</Subtitle1>} tabs={<InstanceTabs tab="config" />} />
       <InstanceConfigContent />
     </>
   );

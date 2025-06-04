@@ -456,25 +456,34 @@ class Definitions(IHaveNew):
 
     @public
     def get_job_def(self, name: str) -> JobDefinition:
-        """Get a job definition by name. If you passed in a an :py:class:`UnresolvedAssetJobDefinition`
-        (return value of :py:func:`define_asset_job`) it will be resolved to a :py:class:`JobDefinition` when returned
-        from this function, with all resource dependencies fully resolved.
+        """Get a job definition by name. This will only return a `JobDefinition` if it was directly passed in to the `Definitions` object.
+
+        If that is not found, the Definitions object is resolved (transforming UnresolvedAssetJobDefinitions to JobDefinitions and an example). It
+        also finds jobs passed to sensors and schedules and retrieves them from the repository.
+
+        After dagster 1.11, this resolution step will not happen, and will throw an error if the job is not found.
         """
+        found_direct = False
         for job in self.jobs or []:
             if job.name == name:
                 if isinstance(job, JobDefinition):
-                    return job
+                    found_direct = True
 
-        warnings.warn(
-            f"JobDefinition with name {name} directly passed to Definitions not found, "
-            "will attempt to resolve to a JobDefinition. "
-            "This will be an error in a future release and will require a call to "
-            "resolve_job_def in dagster 1.11. "
-        )
+        if not found_direct:
+            warnings.warn(
+                f"JobDefinition with name {name} directly passed to Definitions not found, "
+                "will attempt to resolve to a JobDefinition. "
+                "This will be an error in a future release and will require a call to "
+                "resolve_job_def in dagster 1.11. "
+            )
 
         return self.resolve_job_def(name)
 
     def resolve_job_def(self, name: str) -> JobDefinition:
+        """Resolve a job definition by name. If you passed in an :py:class:`UnresolvedAssetJobDefinition`
+        (return value of :py:func:`define_asset_job`) it will be resolved to a :py:class:`JobDefinition` when returned
+        from this function, with all resource dependencies fully resolved.
+        """
         check.str_param(name, "name")
         return self.get_repository_def().get_job(name)
 
