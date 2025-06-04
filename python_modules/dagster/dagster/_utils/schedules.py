@@ -8,7 +8,7 @@ from typing import Optional, Union
 
 import dagster._check as check
 from dagster._core.definitions.partition import ScheduleType
-from dagster._time import get_timezone
+from dagster._time import get_current_datetime, get_timezone
 from dagster._vendored.croniter import croniter as _croniter
 from dagster._vendored.dateutil.relativedelta import relativedelta
 from dagster._vendored.dateutil.tz import datetime_ambiguous, datetime_exists
@@ -882,7 +882,7 @@ def get_smallest_cron_interval(
     execution_timezone = execution_timezone or "UTC"
 
     # Always start at current time in the specified timezone
-    start_time = datetime.datetime.now(tz=get_timezone(execution_timezone))
+    start_time = get_current_datetime(tz=execution_timezone)
 
     # Start sampling from a year ago to capture seasonal variations (DST, leap years)
     sampling_start = start_time - datetime.timedelta(days=365)
