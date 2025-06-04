@@ -106,8 +106,8 @@ class CronFreshnessPolicy(InternalFreshnessPolicy, IHaveNew):
     Args:
         deadline_cron: a cron string that defines a deadline for the asset to be materialized.
         lower_bound_delta: a timedelta that defines the lower bound for when the asset could have been materialized.
-        If the most recent materialization is older than the lower bound delta, the asset is considered stale.
-        timezone: the timezone for cron evaluation. IANA time zone strings are supported. If not provided, defaults to UTC.
+        If a deadline cron tick has passed and the most recent materialization is older than (deadline cron tick timestamp - lower bound delta), the asset is considered stale until it materializes again.
+        timezone: optionally provide a timezone for cron evaluation. IANA time zone strings are supported. If not provided, defaults to UTC.
 
     Example:
     policy = InternalFreshnessPolicy.cron(
@@ -123,7 +123,7 @@ class CronFreshnessPolicy(InternalFreshnessPolicy, IHaveNew):
     If the asset is then materialized at 10:30AM, it becomes fresh again until at least the deadline the next day (10AM).
 
     Keep in mind that the policy will always look at the last completed cron tick.
-    So in our example, if asset freshness is evaluated at 9:59 AM, the policy will consider the previous day's 9-10AM window.
+    So in the example above, if asset freshness is evaluated at 9:59 AM, the policy will still consider the previous day's 9-10AM window.
     """
 
     deadline_cron: str
@@ -150,19 +150,22 @@ class CronFreshnessPolicy(InternalFreshnessPolicy, IHaveNew):
             serializable_lower_bound_delta = SerializableTimeDelta.from_timedelta(lower_bound_delta)
 
         check.invariant(
-            actual_lower_bound_delta >= timedelta(minutes=1)
-            or actual_lower_bound_delta == timedelta(seconds=0),
-            "Lower bound delta must either be 0 or at least 1 minute.",
+            actual_lower_bound_delta >= timedelta(minutes=1),
+            f"lower_bound_delta must be greater than or equal to 1 minute, was {actual_lower_bound_delta.total_seconds()} seconds",
         )
+        smallest_cron_interval = get_smallest_cron_interval(deadline_cron)
         check.invariant(
-            actual_lower_bound_delta <= get_smallest_cron_interval(deadline_cron),
-            "Lower bound delta must fit within the cron schedule.",
+            actual_lower_bound_delta <= smallest_cron_interval,
+            f"lower_bound_delta must be less than or equal to the smallest cron interval of ({smallest_cron_interval.total_seconds()} seconds for deadline_cron {deadline_cron}). Provided lower_bound_delta is {actual_lower_bound_delta.total_seconds()} seconds",
         )
 
         try:
             get_timezone(timezone)
-        except:
-            raise check.CheckError(f"Invalid timezone: {timezone}")
+        # Would be better to catch a specific exception type here,
+        # but it's more complicated because we use different timezone libraries
+        # depending on the Python version.
+        except Exception:
+            raise check.CheckError(f"Invalid IANA timezone: {timezone}")
         return super().__new__(
             cls,
             deadline_cron=deadline_cron,
@@ -172,6 +175,9 @@ class CronFreshnessPolicy(InternalFreshnessPolicy, IHaveNew):
 
     @property
     def lower_bound_delta(self) -> timedelta:
+        """Returns the lower bound delta as a timedelta.
+        Use this instead of accessing the serializable_lower_bound_delta directly.
+        """
         return SerializableTimeDelta.to_timedelta(self.serializable_lower_bound_delta)
 
 

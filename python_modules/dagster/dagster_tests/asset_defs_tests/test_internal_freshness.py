@@ -236,14 +236,14 @@ class TestCronFreshnessPolicy:
         assert policy.timezone == "America/New_York"
 
     def test_cron_freshness_policy_validation_invalid_cron(self) -> None:
-        with pytest.raises(CheckError):
+        with pytest.raises(CheckError, match="Invalid cron string"):
             InternalFreshnessPolicy.cron(
                 deadline_cron="0 10 * * * *",  # we don't support seconds resolution in the cron
                 lower_bound_delta=timedelta(hours=1),
             )
 
     def test_cron_freshness_policy_validation_invalid_timezone(self) -> None:
-        with pytest.raises(CheckError):
+        with pytest.raises(CheckError, match="Invalid IANA timezone"):
             InternalFreshnessPolicy.cron(
                 deadline_cron="0 10 * * *",
                 lower_bound_delta=timedelta(hours=1),
@@ -251,22 +251,28 @@ class TestCronFreshnessPolicy:
             )
 
     def test_cron_freshness_policy_validation_lower_bound_minimum(self) -> None:
-        with pytest.raises(CheckError):
+        with pytest.raises(
+            CheckError, match="lower_bound_delta must be greater than or equal to 1 minute"
+        ):
             InternalFreshnessPolicy.cron(
                 deadline_cron="0 10 * * *",
                 lower_bound_delta=timedelta(seconds=59),
             )
 
     def test_cron_freshness_policy_validation_zero_lower_bound(self) -> None:
-        policy = InternalFreshnessPolicy.cron(
-            deadline_cron="0 10 * * *",
-            lower_bound_delta=timedelta(seconds=0),
-        )
-        assert isinstance(policy, CronFreshnessPolicy)
-        assert policy.lower_bound_delta == timedelta(seconds=0)
+        with pytest.raises(
+            CheckError, match="lower_bound_delta must be greater than or equal to 1 minute"
+        ):
+            InternalFreshnessPolicy.cron(
+                deadline_cron="0 10 * * *",
+                lower_bound_delta=timedelta(seconds=0),
+            )
 
     def test_cron_freshness_policy_validation_lower_bound_too_large(self) -> None:
-        with pytest.raises(CheckError):
+        with pytest.raises(
+            CheckError,
+            match="lower_bound_delta must be less than or equal to the smallest cron interval",
+        ):
             InternalFreshnessPolicy.cron(
                 deadline_cron="0 10 * * *",
                 lower_bound_delta=timedelta(hours=25),
@@ -276,7 +282,10 @@ class TestCronFreshnessPolicy:
         """Does the policy reject lower bound deltas that exceed the smallest cron interval?"""
         # 0 10 * * 1-5 means 10am on Monday through Friday
         # 30 hours lower bound delta will work over the weekend, but not during the week
-        with pytest.raises(CheckError):
+        with pytest.raises(
+            CheckError,
+            match="lower_bound_delta must be less than or equal to the smallest cron interval",
+        ):
             InternalFreshnessPolicy.cron(
                 deadline_cron="0 10 * * 1-5",
                 lower_bound_delta=timedelta(hours=30),
