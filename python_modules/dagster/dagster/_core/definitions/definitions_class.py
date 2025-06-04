@@ -463,17 +463,19 @@ class Definitions(IHaveNew):
 
         After dagster 1.11, this resolution step will not happen, and will throw an error if the job is not found.
         """
+        found_direct = False
         for job in self.jobs or []:
             if job.name == name:
                 if isinstance(job, JobDefinition):
-                    return job
+                    found_direct = True
 
-        warnings.warn(
-            f"JobDefinition with name {name} directly passed to Definitions not found, "
-            "will attempt to resolve to a JobDefinition. "
-            "This will be an error in a future release and will require a call to "
-            "resolve_job_def in dagster 1.11. "
-        )
+        if not found_direct:
+            warnings.warn(
+                f"JobDefinition with name {name} directly passed to Definitions not found, "
+                "will attempt to resolve to a JobDefinition. "
+                "This will be an error in a future release and will require a call to "
+                "resolve_job_def in dagster 1.11. "
+            )
 
         return self.resolve_job_def(name)
 

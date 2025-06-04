@@ -59,7 +59,8 @@ def test_direct_job_def() -> None:
     defs = Definitions(jobs=[a_job])
 
     ensure_get_direct_job_def_succeeds(defs, a_job)
-    assert not defs.has_resolved_repository_def()
+    # resolves job anyway til 1.11
+    assert defs.has_resolved_repository_def()
 
 
 def test_resolve_direct_asset_job() -> None:
