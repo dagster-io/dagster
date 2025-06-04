@@ -185,7 +185,7 @@ def get_component_node(context: ComponentLoadContext) -> Optional[ComponentNode]
     # in priority order
     # yaml component
     if find_defs_or_component_yaml(context.path):
-        return get_component_node_from_yaml_file(context.path)
+        return load_yaml_component_node(context)
     # pythonic component
     elif (
         context.terminate_autoloading_on_keyword_files and (context.path / "component.py").exists()
@@ -244,6 +244,11 @@ def get_component_node_from_python_file(
                 for attr, component_loader in component_loaders
             }
         )
+
+
+def load_yaml_component_node(context: ComponentLoadContext) -> ComponentNode:
+    component_def_path = check.not_none(find_defs_or_component_yaml(context.path))
+    return get_component_node_from_yaml_file(component_def_path)
 
 
 def get_component_node_from_yaml_file(component_def_path: Path) -> ComponentNode:
