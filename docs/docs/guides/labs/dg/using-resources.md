@@ -15,7 +15,7 @@ Before following this guide, you will need to [create a project](/guides/labs/dg
 
 :::
 
-[Assets](/guides/build/assets),[asset checks](/guides/test/asset-checks), and [sensors](/guides/automate/sensors) in Dagster frequently require resources that are instantiated elsewhere in the project.
+[Assets](/guides/build/assets), [asset checks](/guides/test/asset-checks), and [sensors](/guides/automate/sensors) in Dagster frequently require resources that are instantiated elsewhere in the project.
 
 For example, if you have an asset:
 

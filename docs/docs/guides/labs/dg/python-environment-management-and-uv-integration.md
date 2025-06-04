@@ -10,7 +10,7 @@ import DgComponentsPreview from '@site/docs/partials/\_DgComponentsPreview.md';
 
 :::note
 
-The configuration of the `uv` integration is under active development and will likely to change in the next few releases.
+The configuration of the `uv` integration is under active development and will likely change in the next few releases.
 
 :::
 
