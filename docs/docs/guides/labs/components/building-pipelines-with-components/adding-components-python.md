@@ -25,7 +25,7 @@ Then install the dbt project component:
     <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/16-uv-add-dbt.txt" />
   </TabItem>
   <TabItem value="pip" label="pip">
-    <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/16-pip-install-dbt.txt" />
+    <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/16-pip-add-dbt.txt" />
   </TabItem>
 </Tabs>
 

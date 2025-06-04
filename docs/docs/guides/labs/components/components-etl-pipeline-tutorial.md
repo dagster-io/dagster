@@ -94,7 +94,7 @@ To ingest data, you will need to set up [Sling](https://slingdata.io/). To make 
     <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/5-uv-add-sling.txt" />
   </TabItem>
   <TabItem value="pip" label="pip">
-    <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/5-pip-install-sling.txt" />
+    <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/5-pip-add-sling.txt" />
   </TabItem>
 </Tabs>
 
@@ -147,7 +147,7 @@ We will use [`duckdb`](https://duckdb.org/docs/installation/?version=stable&envi
     <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/11-uv-add-duckdb.txt" />
   </TabItem>
   <TabItem value="pip" label="pip">
-    <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/11-pip-install-duckdb.txt" />
+    <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/11-pip-add-duckdb.txt" />
   </TabItem>
 </Tabs>
 
@@ -210,7 +210,7 @@ To interface with the dbt project, you will need to instantiate a Dagster dbt pr
     <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/16-uv-add-dbt.txt" />
   </TabItem>
   <TabItem value="pip" label="pip">
-    <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/16-pip-install-dbt.txt" />
+    <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/16-pip-add-dbt.txt" />
   </TabItem>
 </Tabs>
 
@@ -277,7 +277,7 @@ First, install the `dagster-evidence` package with either `uv` or `pip`:
     <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/25-uv-add-evidence.txt" />
   </TabItem>
   <TabItem value="pip" label="pip">
-    <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/25-pip-install-evidence.txt" />
+    <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/25-pip-add-evidence.txt" />
   </TabItem>
 </Tabs>
 
