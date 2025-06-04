@@ -109,7 +109,7 @@ You can also view automatically generated documentation describing your new comp
 
 <CliInvocationExample contents="dg dev" />
 
-![Docs tab in Dagster webserver](/images/guides/labs/components/docs-in-ui.png)
+![Docs tab in Dagster webserver](/images/guides/labs/components/docs-in-UI.png)
 
 ## Instantiating the new component in your project
 
