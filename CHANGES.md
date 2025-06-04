@@ -1,5 +1,43 @@
 # Changelog
 
+## 1.10.19 (core) / 0.26.19 (libraries)
+
+### New
+
+- The database table used by the `DbIOManager` is now configurable via `"table"` output (asset) metadata key [#30310](https://github.com/dagster-io/oss/pull/30310)
+- Change default settings for backfill daemon to `use_threads=True`, `num_workers=4`. Thanks [@HynekBlaha](https://github.com/HynekBlaha)!
+- A new function `build_asset_check_context` can be used to build asset check contexts for direct invocation.
+- Changed `Definitions.get_all_asset_specs` to only return assets directly passed in as AssetSpecs or AssetsDefinitions.
+- Removed `selection` argument from `Definitions.map_asset_specs`. If selection is needed use the new `Definitions.map_resolved_asset_specs`.
+- `Definitions.get_job_def` now warns when it finds an unresolved job or no job.
+- Changed `Definitions.get_assets_def` to return an AssetsDefinition without resolving if it was passed in directly.
+- [dagster-dbt] `build_schedule_from_dbt_selection` now supports a `selector` argument, allowing you to use yaml-based selectors.
+- [dagster-k8s] Pods created by the Kubernetes run launcher and executor from Dagster Plus now include the `dagster/deployment-name` label.
+- [dagster-pipes] Pipes execution errors are no longer treated as framework errors, meaning they properly invoke RetryPolicies.
+- [helm] Backfill daemon configuration now supported. Thanks [@HynekBlaha](https://github.com/HynekBlaha)!
+- [ui] Show relative start time on runs in run timeline hover lists. [#30327](https://github.com/dagster-io/oss/pull/30327)
+
+### Bugfixes
+
+- [ui] Fix live updating of asset materialization statuses in asset graph.
+
+### dg & Components (Preview)
+
+- Running dg commands like `dg check defs` and `dg dev` in a project folder that is part of the workspace will now only apply to that project, instead of every project in the workspace.
+- `dg list defs` now supports the `--assets/-a` option, to show only assets matching the provided selection.
+- `dg list defs` now supports a `--path` argument to subset the defs files shown.
+- The `create-dagster workspace` command now accepts the same required path argument as the `create-dagster project` command, instead of defaulting to a `dagster-workspace` subfolder of the current working directory.
+- The entry point group used by shared libraries exposing custom components to dg has been renamed from `dagster_dg_cli.plugin` to `dagster_dg_cli.registry_modules` (projects no longer need to define an entry point group at all).
+- `dg list plugin-modules` has been renamed to `dg list registry-modules`.
+- Newly scaffolded projects no longer contain a "components" directory or a Python `dagster_dg_cli.plugin` entry point.
+- Newly scaffolded components can now be placed anywhere within a project module hierarchy.
+- `Resolvable` subclasses can now use bare `dict` and `list` as field types.
+- Resolving a `Resolvable` subclass will no longer change empty strings to `None`.
+- Users can define multiple `@definitions`-decorated functions in a single module in the `defs` hierarchy and they are automatically merged and incorporated into the project.
+- Added `@component_instance` to replace `@component`. This allows multiple component instances in a python file.
+- Fixed an issue where `dg` commands would sometimes output extra `dagster_telemetry_logger` lines to stdout at the end of commands.
+- Added `@template_var` as an alternative approach for defining variables in a templating context.
+
 ## 1.10.18 (core) / 0.26.18 (libraries)
 
 ### New
