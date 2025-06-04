@@ -28,6 +28,7 @@ from dagster_dg_core.config import (
     load_dg_root_file_config,
     load_dg_user_file_config,
     load_dg_workspace_file_config,
+    modify_dg_toml_config,
 )
 from dagster_dg_core.error import DgError
 from dagster_dg_core.utils import (
@@ -46,6 +47,7 @@ from dagster_dg_core.utils import (
     msg_with_potential_paths,
     pushd,
     resolve_local_venv,
+    set_toml_node,
     strip_activated_venv_from_env_vars,
     validate_dagster_availability,
 )
@@ -55,6 +57,8 @@ from dagster_dg_core.utils.warnings import emit_warning
 # Project
 _DEFAULT_PROJECT_DEFS_SUBMODULE: Final = "defs"
 _DEFAULT_PROJECT_CODE_LOCATION_TARGET_MODULE: Final = "definitions"
+_DEFAULT_PROJECT_PLUGIN_MODULE: Final = "components"
+_DEFAULT_PROJECT_PLUGIN_MODULE_REGISTRY_FILE: Final = "plugin_modules.json"
 _EXCLUDED_COMPONENT_DIRECTORIES: Final = {"__pycache__"}
 DG_PLUGIN_ENTRY_POINT_GROUP: Final = "dagster_dg_cli.registry_modules"
 # Remove in future, in place for backcompat
@@ -183,7 +187,7 @@ class DgContext:
         # available; (b) in a component library context.
         validate_dagster_availability()
 
-        if not context.is_plugin:
+        if not context.has_registry_module_entry_point and not context.is_project:
             exit_with_error(NOT_COMPONENT_LIBRARY_ERROR_MESSAGE)
         return context
 
@@ -291,7 +295,7 @@ class DgContext:
         """Paths that should be watched for changes to the component registry."""
         return [
             self.root_path / "uv.lock",
-            *([self.default_registry_module_path] if self.is_plugin else []),
+            *([self.default_registry_module_path] if self.has_registry_module_entry_point else []),
         ]
 
     # Allowing open-ended str data_type for now so we can do module names
@@ -299,7 +303,7 @@ class DgContext:
         path_parts = [str(part) for part in self.root_path.parts if part != self.root_path.anchor]
         paths_to_hash = [
             self.root_path / "uv.lock",
-            *([self.default_registry_module_path] if self.is_plugin else []),
+            *([self.default_registry_module_path] if self.has_registry_module_entry_point else []),
         ]
         env_hash = hash_paths(paths_to_hash)
         return ("_".join(path_parts), env_hash, data_type)
@@ -354,7 +358,7 @@ class DgContext:
     def root_module_name(self) -> str:
         if self.config.project:
             return self.config.project.root_module
-        elif self.is_plugin:
+        elif self.has_registry_module_entry_point:
             return self.default_registry_root_module_name.split(".")[0]
         else:
             raise DgError("Cannot determine root package name")
@@ -542,24 +546,61 @@ class DgContext:
     # it uses for all component type scaffolding operations.
 
     @property
-    def is_plugin(self) -> bool:
+    def has_registry_module_entry_point(self) -> bool:
         return bool(self._dagster_components_entry_points)
 
     @cached_property
     def default_registry_root_module_name(self) -> str:
-        if not self._dagster_components_entry_points:
+        if self._dagster_components_entry_points:
+            return next(iter(self._dagster_components_entry_points.values()))
+        elif self.is_project:
+            return f"{self.root_module_name}.{_DEFAULT_PROJECT_PLUGIN_MODULE}"
+        else:
             raise DgError(
                 "`default_component_library_module_name` is only available in a component library context"
             )
-        return next(iter(self._dagster_components_entry_points.values()))
 
     @cached_property
     def default_registry_module_path(self) -> Path:
-        if not self.is_plugin:
+        if not self.has_registry_module_entry_point and not self.is_project:
             raise DgError(
                 "`default_plugin_module_path` is only available in a component library context"
             )
-        return self.get_path_for_local_module(self.default_registry_root_module_name)
+        return self.get_path_for_local_module(
+            self.default_registry_root_module_name, require_exists=False
+        )
+
+    @property
+    def project_registry_modules(self) -> list[str]:
+        """Return a mapping of plugin object references for the current project."""
+        if not self.config.project:
+            raise DgError(
+                "`project_registry_modules` is only available in a Dagster project context"
+            )
+        return self.config.project.registry_modules
+
+    def add_project_registry_module(self, module_name: str) -> None:
+        """Add a module name to the project plugin module registry."""
+        import tomlkit
+        import tomlkit.items
+
+        if not self.is_project:
+            raise DgError(
+                "`add_project_registry_module` is only available in a Dagster project context"
+            )
+        with modify_dg_toml_config(self.config_file_path) as toml:
+            if has_toml_node(toml, ("project", "registry_modules")):
+                registry_modules = get_toml_node(
+                    toml, ("project", "registry_modules"), tomlkit.items.Array
+                )
+                registry_modules.add_line(module_name)
+            else:
+                set_toml_node(toml, ("project", "registry_modules"), tomlkit.array())
+                registry_modules = get_toml_node(
+                    toml, ("project", "registry_modules"), tomlkit.items.Array
+                )
+                registry_modules.add_line(module_name)
+                registry_modules.add_line(indent="")
 
     @cached_property
     def _dagster_components_entry_points(self) -> Mapping[str, str]:
@@ -707,8 +748,8 @@ class DgContext:
     def setup_cfg_path(self) -> Path:
         return self.root_path / "setup.cfg"
 
-    def get_path_for_local_module(self, module_name: str) -> Path:
-        if not self.is_project and not self.is_plugin:
+    def get_path_for_local_module(self, module_name: str, require_exists: bool = True) -> Path:
+        if not self.is_project and not self.has_registry_module_entry_point:
             raise DgError(
                 "`get_path_for_local_module` is only available in a project or component library context"
             )
@@ -718,14 +759,17 @@ class DgContext:
         # Attempt to resolve the path for a local module by looking in both `src` and the root
         # level. Unfortunately there is no setting reliably present in pyproject.toml or setup.py
         # that can be relied on to know in advance the package root (src or root level).
-        for path in [
-            self.root_path / "src" / Path(*module_name.split(".")),
-            self.root_path / Path(*module_name.split(".")),
-        ]:
-            if path.exists():
-                return path
-            elif path.with_suffix(".py").exists():
-                return path.with_suffix(".py")
+
+        base_path = self.root_path / "src" if (self.root_path / "src").exists() else self.root_path
+        path = base_path / Path(*module_name.split("."))
+        if path.with_suffix(".py").exists():
+            return path.with_suffix(".py")
+
+        # Note that when `require_exists` is False, the returned path assumes a directory
+        # instead of a py file.
+        elif path.exists() or not require_exists:
+            return path
+
         exit_with_error(f"Cannot find module `{module_name}` in the current project.")
 
 

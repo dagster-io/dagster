@@ -203,7 +203,7 @@ def test_list_registry_modules_json_success():
 def test_list_registry_modules_includes_modules_with_no_objects():
     with (
         ProxyRunner.test() as runner,
-        isolated_example_project_foo_bar(runner, in_workspace=False),
+        isolated_example_component_library_foo_bar(runner),
     ):
         result = runner.invoke("list", "registry-modules")
         assert_runner_result(result)
