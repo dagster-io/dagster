@@ -1,6 +1,7 @@
 from collections.abc import Sequence
 
 import dagster as dg
+from dagster import AssetKey as AssetKey
 from dagster_shared.record import record
 
 
