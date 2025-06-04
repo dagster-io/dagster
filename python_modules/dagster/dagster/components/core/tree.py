@@ -9,9 +9,9 @@ from typing_extensions import TypeVar
 
 from dagster._core.definitions.definitions_class import Definitions
 from dagster.components.component.component import Component
+from dagster.components.core.component_node import ComponentNode, DefsFolderComponentNode
 from dagster.components.core.context import ComponentLoadContext
 from dagster.components.core.defs_module import DefsFolderComponent
-from dagster.components.core.loaders import ComponentNode, DefsFolderComponentNode
 
 PLUGIN_COMPONENT_TYPES_JSON_METADATA_KEY = "plugin_component_types_json"
 
