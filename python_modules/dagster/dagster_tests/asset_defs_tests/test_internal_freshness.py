@@ -12,7 +12,7 @@ from dagster._core.definitions.freshness import (
     InternalFreshnessPolicy,
     TimeWindowFreshnessPolicy,
 )
-from dagster._serdes import deserialize_value
+from dagster._serdes import deserialize_value, serialize_value
 from dagster_shared.serdes.utils import SerializableTimeDelta
 
 from dagster_tests.core_tests.host_representation_tests.test_external_data import (
@@ -167,4 +167,46 @@ def test_internal_freshness_policy_fail_window_validation() -> None:
     InternalFreshnessPolicy.time_window(fail_window=timedelta(seconds=60))
     InternalFreshnessPolicy.time_window(
         fail_window=timedelta(seconds=61), warn_window=timedelta(minutes=1)
+    )
+
+
+def test_attach_internal_freshness_policy_overwrite_existing() -> None:
+    """Does overwrite_existing respect existing freshness policy on an asset?"""
+
+    @asset
+    def asset_no_policy():
+        pass
+
+    @asset(
+        internal_freshness_policy=InternalFreshnessPolicy.time_window(
+            fail_window=timedelta(hours=24)
+        )
+    )
+    def asset_with_policy():
+        pass
+
+    defs = Definitions(assets=[asset_no_policy, asset_with_policy])
+
+    # If no policy is attached, overwrite with new policy containing fail window of 10 minutes
+    mapped_defs = defs.map_asset_specs(
+        func=lambda spec: attach_internal_freshness_policy(
+            spec,
+            InternalFreshnessPolicy.time_window(fail_window=timedelta(minutes=10)),
+            overwrite_existing=False,
+        )
+    )
+
+    specs = mapped_defs.get_all_asset_specs()
+
+    # Should see new policy applied to asset without existing policy
+    spec_no_policy = next(spec for spec in specs if spec.key == AssetKey("asset_no_policy"))
+    assert spec_no_policy.metadata.get(INTERNAL_FRESHNESS_POLICY_METADATA_KEY) is not None
+    assert spec_no_policy.metadata[INTERNAL_FRESHNESS_POLICY_METADATA_KEY] == serialize_value(
+        InternalFreshnessPolicy.time_window(fail_window=timedelta(minutes=10))
+    )
+
+    spec_with_policy = next(spec for spec in specs if spec.key == AssetKey("asset_with_policy"))
+    assert spec_with_policy.metadata.get(INTERNAL_FRESHNESS_POLICY_METADATA_KEY) is not None
+    assert spec_with_policy.metadata[INTERNAL_FRESHNESS_POLICY_METADATA_KEY] == serialize_value(
+        InternalFreshnessPolicy.time_window(fail_window=timedelta(hours=24))
     )
