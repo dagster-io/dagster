@@ -458,7 +458,7 @@ class Definitions(IHaveNew):
     def get_job_def(self, name: str) -> JobDefinition:
         """Get a job definition by name. This will only return a `JobDefinition` if it was directly passed in to the `Definitions` object.
 
-        If that is not found, the Definitions object is resolved (tranforming UnresolvedAssetJobDefinitions to JobDefinitions and an example). It
+        If that is not found, the Definitions object is resolved (transforming UnresolvedAssetJobDefinitions to JobDefinitions and an example). It
         also finds jobs passed to sensors and schedules and retrieves them from the repository.
 
         After dagster 1.11, this resolution step will not happen, and will throw an error if the job is not found.
