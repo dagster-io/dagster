@@ -5,9 +5,19 @@ sidebar_position: 250
 description: Using resources in Dagster dg projects for entities such as assets, asset checks, and sensors.
 ---
 
-Assets, asset checks, and sensors in Dagster frequently require resources that are instantiated elsewhere in the project.
+import DgComponentsPreview from '@site/docs/partials/\_DgComponentsPreview.md';
 
-For example you have an asset:
+<DgComponentsPreview />
+
+:::note Prerequisites
+
+Before following this guide, you will need to [create a project](/guides/labs/dg/creating-a-project) with the `create-dagster` CLI.
+
+:::
+
+[Assets](/guides/build/assets),[asset checks](/guides/test/asset-checks), and [sensors](/guides/automate/sensors) in Dagster frequently require resources that are instantiated elsewhere in the project.
+
+For example, if you have an asset:
 
 <CodeExample path="docs_snippets/docs_snippets/guides/dg/using-resources/1-asset-one.py" />
 
