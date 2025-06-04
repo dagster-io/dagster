@@ -11,7 +11,7 @@ The following examples demonstrate how to define some basic schedules.
 <Tabs>
   <TabItem value="Using ScheduleDefinition">
 
-This example demonstrates how to define a schedule using <PyObject section="schedules-sensors" module="dagster" object="ScheduleDefinition" /> that will run  all assets every day at midnight.
+This example demonstrates how to define a schedule using <PyObject section="schedules-sensors" module="dagster" object="ScheduleDefinition" /> that will run all assets every day at midnight.
 
 <CodeExample
   path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/schedules/schedules.py"
