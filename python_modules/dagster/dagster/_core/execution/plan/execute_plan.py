@@ -130,17 +130,17 @@ def _trigger_hook(
     step_context: StepExecutionContext, step_event_list: Sequence[DagsterEvent]
 ) -> Iterator[DagsterEvent]:
     """Trigger hooks and record hook's operatonal events."""
-    job_hook_defs = step_context.job_def.get_all_hooks_for_handle(step_context.node_handle)
+    hook_defs = step_context.job_def.get_all_hooks_for_handle(step_context.node_handle)
 
     # when the solid doesn't have a hook configured
-    if job_hook_defs is None:
+    if hook_defs is None:
         return
 
     op_label = step_context.describe_op()
 
     # when there are multiple hooks set on a solid, the hooks will run sequentially for the solid.
     # * we will not able to execute hooks asynchronously until we drop python 2.
-    for hook_def in job_hook_defs:
+    for hook_def in hook_defs:
         hook_context = step_context.for_hook(hook_def)
 
         try:
