@@ -138,7 +138,7 @@ def get_component(context: ComponentLoadContext) -> Optional[Component]:
     type matches, prioritizing more specific types: YAML, Python, plain Dagster defs, and component
     folder.
     """
-    from dagster.components.core.loaders import get_component_node
+    from dagster.components.core.component_node import get_component_node
 
     component_node = get_component_node(context)
     if component_node:
@@ -286,7 +286,7 @@ class DagsterDefsComponent(Component):
 
 
 def load_pythonic_component(context: ComponentLoadContext) -> Component:
-    from dagster.components.core.loaders import get_component_node_from_python_file
+    from dagster.components.core.component_node import get_component_node_from_python_file
 
     return get_component_node_from_python_file(context).load_component(context)
 
@@ -302,7 +302,7 @@ def invoke_inline_template_var(context: ComponentLoadContext, tv: Callable) -> A
 
 
 def load_yaml_component_from_path(context: ComponentLoadContext, component_def_path: Path):
-    from dagster.components.core.loaders import get_component_node_from_yaml_file
+    from dagster.components.core.component_node import get_component_node_from_yaml_file
 
     return get_component_node_from_yaml_file(component_def_path).load_component(context)
 
