@@ -16,16 +16,16 @@ Before adding a component with Python, you will need to either [create a compone
 
 Additionally, to run the example below, you will need to clone the sample dbt project and delete the embedded git repository:
 
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/14-jaffle-clone.txt" />
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/15-jaffle-clone.txt" />
 
 Then install the dbt project component:
 
 <Tabs groupId="package-manager">
   <TabItem value="uv" label="uv">
-    <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/15-uv-add-dbt.txt" />
+    <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/16-uv-add-dbt.txt" />
   </TabItem>
   <TabItem value="pip" label="pip">
-    <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/15-pip-add-dbt.txt" />
+    <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/16-pip-install-dbt.txt" />
   </TabItem>
 </Tabs>
 
