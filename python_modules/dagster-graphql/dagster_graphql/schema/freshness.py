@@ -18,9 +18,9 @@ class GrapheneCronFreshnessPolicy(graphene.ObjectType):
     class Meta:
         name = "CronFreshnessPolicy"
 
-    deadlineCron = graphene.String()
-    lowerBoundDeltaSeconds = graphene.Int()
-    timezone = graphene.String()
+    deadlineCron = graphene.NonNull(graphene.String)
+    lowerBoundDeltaSeconds = graphene.NonNull(graphene.Int)
+    timezone = graphene.NonNull(graphene.String)
 
 
 class GrapheneInternalFreshnessPolicy(graphene.Union):

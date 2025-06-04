@@ -24,9 +24,9 @@ export type RepoAssetTableFragment = {
   internalFreshnessPolicy:
     | {
         __typename: 'CronFreshnessPolicy';
-        deadlineCron: string | null;
-        lowerBoundDeltaSeconds: number | null;
-        timezone: string | null;
+        deadlineCron: string;
+        lowerBoundDeltaSeconds: number;
+        timezone: string;
       }
     | {
         __typename: 'TimeWindowFreshnessPolicy';
@@ -103,9 +103,9 @@ export type WorkspaceAssetsQuery = {
           internalFreshnessPolicy:
             | {
                 __typename: 'CronFreshnessPolicy';
-                deadlineCron: string | null;
-                lowerBoundDeltaSeconds: number | null;
-                timezone: string | null;
+                deadlineCron: string;
+                lowerBoundDeltaSeconds: number;
+                timezone: string;
               }
             | {
                 __typename: 'TimeWindowFreshnessPolicy';

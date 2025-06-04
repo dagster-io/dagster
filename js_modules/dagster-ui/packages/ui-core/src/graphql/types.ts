@@ -1069,9 +1069,9 @@ export type ConflictingExecutionParamsError = Error & {
 
 export type CronFreshnessPolicy = {
   __typename: 'CronFreshnessPolicy';
-  deadlineCron: Maybe<Scalars['String']['output']>;
-  lowerBoundDeltaSeconds: Maybe<Scalars['Int']['output']>;
-  timezone: Maybe<Scalars['String']['output']>;
+  deadlineCron: Scalars['String']['output'];
+  lowerBoundDeltaSeconds: Scalars['Int']['output'];
+  timezone: Scalars['String']['output'];
 };
 
 export type DaemonHealth = {

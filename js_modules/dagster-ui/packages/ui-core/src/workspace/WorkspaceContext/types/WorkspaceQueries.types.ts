@@ -130,9 +130,9 @@ export type LocationWorkspaceQuery = {
                   internalFreshnessPolicy:
                     | {
                         __typename: 'CronFreshnessPolicy';
-                        deadlineCron: string | null;
-                        lowerBoundDeltaSeconds: number | null;
-                        timezone: string | null;
+                        deadlineCron: string;
+                        lowerBoundDeltaSeconds: number;
+                        timezone: string;
                       }
                     | {
                         __typename: 'TimeWindowFreshnessPolicy';
@@ -302,9 +302,9 @@ export type WorkspaceLocationNodeFragment = {
             internalFreshnessPolicy:
               | {
                   __typename: 'CronFreshnessPolicy';
-                  deadlineCron: string | null;
-                  lowerBoundDeltaSeconds: number | null;
-                  timezone: string | null;
+                  deadlineCron: string;
+                  lowerBoundDeltaSeconds: number;
+                  timezone: string;
                 }
               | {
                   __typename: 'TimeWindowFreshnessPolicy';
@@ -454,9 +454,9 @@ export type WorkspaceLocationFragment = {
       internalFreshnessPolicy:
         | {
             __typename: 'CronFreshnessPolicy';
-            deadlineCron: string | null;
-            lowerBoundDeltaSeconds: number | null;
-            timezone: string | null;
+            deadlineCron: string;
+            lowerBoundDeltaSeconds: number;
+            timezone: string;
           }
         | {
             __typename: 'TimeWindowFreshnessPolicy';
@@ -586,9 +586,9 @@ export type WorkspaceRepositoryFragment = {
     internalFreshnessPolicy:
       | {
           __typename: 'CronFreshnessPolicy';
-          deadlineCron: string | null;
-          lowerBoundDeltaSeconds: number | null;
-          timezone: string | null;
+          deadlineCron: string;
+          lowerBoundDeltaSeconds: number;
+          timezone: string;
         }
       | {
           __typename: 'TimeWindowFreshnessPolicy';

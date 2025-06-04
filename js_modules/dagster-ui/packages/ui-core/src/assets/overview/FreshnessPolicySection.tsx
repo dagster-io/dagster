@@ -128,22 +128,12 @@ const TimeWindowFreshnessPolicyDetails = ({policy}: {policy: TimeWindowFreshness
 );
 
 const CronFreshnessPolicyDetails = ({policy}: {policy: CronFreshnessPolicy}) => {
-  const humanReadableDeadlineCron = policy.deadlineCron
-    ? humanCronString(policy.deadlineCron, {
-        longTimezoneName: policy.timezone || 'UTC',
-      })
-    : null;
-  const humanReadableLowerBoundDelta = policy.lowerBoundDeltaSeconds
-    ? dayjs.duration(policy.lowerBoundDeltaSeconds, 'seconds').humanize()
-    : null;
-
-  if (!humanReadableDeadlineCron || !humanReadableLowerBoundDelta) {
-    return (
-      <BodySmall color={Colors.textLight()}>
-        Cron freshness policy configuration incomplete
-      </BodySmall>
-    );
-  }
+  const humanReadableDeadlineCron = humanCronString(policy.deadlineCron, {
+    longTimezoneName: policy.timezone,
+  });
+  const humanReadableLowerBoundDelta = dayjs
+    .duration(policy.lowerBoundDeltaSeconds, 'seconds')
+    .humanize();
 
   return (
     <>

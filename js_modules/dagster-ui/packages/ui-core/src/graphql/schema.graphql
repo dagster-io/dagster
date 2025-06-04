@@ -936,9 +936,9 @@ type TimeWindowFreshnessPolicy {
 }
 
 type CronFreshnessPolicy {
-  deadlineCron: String
-  lowerBoundDeltaSeconds: Int
-  timezone: String
+  deadlineCron: String!
+  lowerBoundDeltaSeconds: Int!
+  timezone: String!
 }
 
 type AutoMaterializePolicy {

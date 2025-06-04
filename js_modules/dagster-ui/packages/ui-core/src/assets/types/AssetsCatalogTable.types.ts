@@ -39,9 +39,9 @@ export type AssetCatalogTableQuery = {
             internalFreshnessPolicy:
               | {
                   __typename: 'CronFreshnessPolicy';
-                  deadlineCron: string | null;
-                  lowerBoundDeltaSeconds: number | null;
-                  timezone: string | null;
+                  deadlineCron: string;
+                  lowerBoundDeltaSeconds: number;
+                  timezone: string;
                 }
               | {
                   __typename: 'TimeWindowFreshnessPolicy';
@@ -117,9 +117,9 @@ export type AssetCatalogGroupTableQuery = {
     internalFreshnessPolicy:
       | {
           __typename: 'CronFreshnessPolicy';
-          deadlineCron: string | null;
-          lowerBoundDeltaSeconds: number | null;
-          timezone: string | null;
+          deadlineCron: string;
+          lowerBoundDeltaSeconds: number;
+          timezone: string;
         }
       | {
           __typename: 'TimeWindowFreshnessPolicy';
@@ -176,9 +176,9 @@ export type AssetCatalogGroupTableNodeFragment = {
   internalFreshnessPolicy:
     | {
         __typename: 'CronFreshnessPolicy';
-        deadlineCron: string | null;
-        lowerBoundDeltaSeconds: number | null;
-        timezone: string | null;
+        deadlineCron: string;
+        lowerBoundDeltaSeconds: number;
+        timezone: string;
       }
     | {
         __typename: 'TimeWindowFreshnessPolicy';
