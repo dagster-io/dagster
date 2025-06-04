@@ -11,7 +11,7 @@ from dagster._core.definitions.metadata.metadata_value import TextMetadataValue
 from dagster._core.definitions.resource_annotation import ResourceParam
 from dagster._core.definitions.result import MaterializeResult
 from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
-from dagster.components.core.context import ComponentLoadContext
+from dagster.components.core.tree import ComponentTree
 from dagster.components.lib.executable_component.function_component import (
     FunctionComponent,
     FunctionSpec,
@@ -78,7 +78,7 @@ def test_execute_asset_with_check() -> None:
         }
     )
 
-    defs = component.build_defs(ComponentLoadContext.for_test())
+    defs = component.build_defs(ComponentTree.for_test().load_context)
 
     assets_def = defs.get_assets_def("asset")
     assert assets_def
@@ -126,7 +126,7 @@ def test_standalone_asset_check() -> None:
     assert isinstance(component.execution, FunctionSpec)
     assert isinstance(component.execution.fn(None), AssetCheckResult)
 
-    defs = component.build_defs(ComponentLoadContext.for_test())
+    defs = component.build_defs(ComponentTree.for_test().load_context)
     assert defs.asset_checks
     asset_checks_def = next(iter(defs.asset_checks))
     assert isinstance(asset_checks_def, AssetChecksDefinition)
@@ -163,7 +163,7 @@ def test_standalone_asset_check_with_resources() -> None:
         }
     )
 
-    defs = component.build_defs(ComponentLoadContext.for_test())
+    defs = component.build_defs(ComponentTree.for_test().load_context)
 
     asset_checks_def = next(iter(defs.asset_checks or []))
     assert isinstance(asset_checks_def, AssetChecksDefinition)
@@ -203,7 +203,7 @@ def test_trivial_properties() -> None:
     )
 
     assert component_only_assets.build_underlying_assets_def(
-        ComponentLoadContext.for_test()
+        ComponentTree.for_test().load_context
     ).op.tags == {"op_tag": "op_tag_value"}
 
     component_only_asset_checks = FunctionComponent.from_attributes_dict(
@@ -225,14 +225,16 @@ def test_trivial_properties() -> None:
     )
 
     for component in [component_only_assets, component_only_asset_checks]:
-        assert component.build_underlying_assets_def(ComponentLoadContext.for_test()).op.tags == {
-            "op_tag": "op_tag_value"
-        }
+        assert component.build_underlying_assets_def(
+            ComponentTree.for_test().load_context
+        ).op.tags == {"op_tag": "op_tag_value"}
         assert (
-            component.build_underlying_assets_def(ComponentLoadContext.for_test()).op.description
+            component.build_underlying_assets_def(
+                ComponentTree.for_test().load_context
+            ).op.description
             == "op_description"
         )
         assert (
-            component.build_underlying_assets_def(ComponentLoadContext.for_test()).op.pool
+            component.build_underlying_assets_def(ComponentTree.for_test().load_context).op.pool
             == "op_pool"
         )
