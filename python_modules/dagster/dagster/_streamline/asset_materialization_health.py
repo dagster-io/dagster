@@ -1,3 +1,4 @@
+from collections.abc import Iterable
 from typing import Optional
 
 from dagster_shared import record
@@ -7,7 +8,7 @@ import dagster._check as check
 from dagster._core.asset_graph_view.serializable_entity_subset import SerializableEntitySubset
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.partition import PartitionsDefinition
-from dagster._core.loader import LoadingContext
+from dagster._core.loader import LoadableBy, LoadingContext
 from dagster._core.remote_representation.external_data import PartitionsSnap
 from dagster._core.storage.dagster_run import RunRecord
 from dagster._core.storage.event_log.base import AssetRecord
@@ -17,7 +18,7 @@ from dagster._streamline.asset_health import AssetHealthStatus
 
 @whitelist_for_serdes
 @record.record
-class AssetMaterializationHealthState:
+class AssetMaterializationHealthState(LoadableBy[AssetKey]):
     """For tracking the materialization health of an asset, we only care about the most recent
     completed materialization attempt for each asset/partition. This record keeps track of the
     assets/partitions that have ever been successfully materialized and those that are currently in
@@ -144,6 +145,21 @@ class AssetMaterializationHealthState:
             partitions_snap=None,
             latest_terminal_run_id=latest_terminal_run_id,
         )
+
+    @classmethod
+    def _blocking_batch_load(
+        cls, keys: Iterable[AssetKey], context: LoadingContext
+    ) -> Iterable[Optional["AssetMaterializationHealthState"]]:
+        asset_materialization_health_states = None
+        if context.instance.streamline_read_asset_health_supported():
+            asset_materialization_health_states = (
+                context.instance.get_asset_materialization_health_state_for_assets(list(keys))
+            )
+
+        if asset_materialization_health_states is None:
+            return [None for _ in keys]
+        else:
+            return [asset_materialization_health_states.get(key) for key in keys]
 
 
 async def _get_is_currently_failed_and_latest_terminal_run_id(
