@@ -21,11 +21,19 @@ export type RepoAssetTableFragment = {
   jobNames: Array<string>;
   kinds: Array<string>;
   assetKey: {__typename: 'AssetKey'; path: Array<string>};
-  internalFreshnessPolicy: {
-    __typename: 'TimeWindowFreshnessPolicy';
-    failWindowSeconds: number;
-    warnWindowSeconds: number | null;
-  } | null;
+  internalFreshnessPolicy:
+    | {
+        __typename: 'CronFreshnessPolicy';
+        deadlineCron: string;
+        lowerBoundDeltaSeconds: number;
+        timezone: string;
+      }
+    | {
+        __typename: 'TimeWindowFreshnessPolicy';
+        failWindowSeconds: number;
+        warnWindowSeconds: number | null;
+      }
+    | null;
   partitionDefinition: {
     __typename: 'PartitionDefinition';
     description: string;
@@ -92,11 +100,19 @@ export type WorkspaceAssetsQuery = {
           jobNames: Array<string>;
           kinds: Array<string>;
           assetKey: {__typename: 'AssetKey'; path: Array<string>};
-          internalFreshnessPolicy: {
-            __typename: 'TimeWindowFreshnessPolicy';
-            failWindowSeconds: number;
-            warnWindowSeconds: number | null;
-          } | null;
+          internalFreshnessPolicy:
+            | {
+                __typename: 'CronFreshnessPolicy';
+                deadlineCron: string;
+                lowerBoundDeltaSeconds: number;
+                timezone: string;
+              }
+            | {
+                __typename: 'TimeWindowFreshnessPolicy';
+                failWindowSeconds: number;
+                warnWindowSeconds: number | null;
+              }
+            | null;
           partitionDefinition: {
             __typename: 'PartitionDefinition';
             description: string;
@@ -127,4 +143,4 @@ export type WorkspaceAssetsQuery = {
     | {__typename: 'RepositoryNotFoundError'};
 };
 
-export const WorkspaceAssetsQueryVersion = '908c14a37f5b6e18787dc75b91df4ea06a7aa452a342809a85f099336bc91705';
+export const WorkspaceAssetsQueryVersion = '8d26343f4d47bf0bd6e3f6d32d865687ad7530ca8d44b72d06bc459b9883e0e9';

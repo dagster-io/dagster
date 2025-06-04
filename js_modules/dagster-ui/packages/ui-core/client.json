@@ -16,9 +16,9 @@
   "AssetMaterializationUpstreamQuery": "754bab88738acc8d310c71f577ac3cf06dc57950bb1f98a18844e6e00bae756d",
   "AssetPartitionDetailQuery": "a5a3c782894d7365cbf791c57bdec279cbccd809cd2d0dc5fd31df1e6237b927",
   "AssetPartitionStaleQuery": "4215f4014e9d7592142e1775c4b07377703e913389396f9ca14dc6bb779ce764",
-  "AssetViewDefinitionQuery": "8e46a21b763fd574fabad6551f7497d66b9c4f22faa2da4eff198a9e68053860",
-  "AssetCatalogTableQuery": "231aae66f6663ee5a67e3305fd8c8564d0b8f5a48613b8e36683a08094724ee6",
-  "AssetCatalogGroupTableQuery": "3fa824256df35a3dc9f89c09dd785f4688c20f29619c667a71731fb0ebe62896",
+  "AssetViewDefinitionQuery": "1bc39b27e9080474973f7426813abf75782273dd4d95bea8ee97ab92b83d3023",
+  "AssetCatalogTableQuery": "f5abe0feb0b3b66b28c825dfad0cfe8f41dab1b3469eed5d51041efb350af6a1",
+  "AssetCatalogGroupTableQuery": "9288d38ac6970055480818a9026d52e650b0001964109c09d3a7a71a506eae34",
   "AssetsOverviewRootQuery": "77ab0417c979b92c9ec01cd76a0f49b59f5b8ce7af775cab7e9b3e57b7871f7d",
   "RunStatusAndPartitionKey": "4642abda7da52fb70cc0a47c19cd5bf2fd8b854bb104b6a73eb8545fcd0146b2",
   "RunStatusOnlyQuery": "e0000c8f2600dbe29f305febb04cca005e08da6a7ce03ec20476c59d607495c0",
@@ -179,8 +179,8 @@
   "SingleNonSDAAssetQuery": "29857d908046c996dc1d44a6b08b20d025aa63a0cd689a5962d29cca71d12894",
   "SingleScheduleQuery": "508a47e32ce04ba5be52c66cd592b74147bf98ec85b9f5d0e4db45172bd9a897",
   "SingleSensorQuery": "dbda5ba47d4ba10f8c527c9a7cd45fba0811276441a17a8ac6f173ed588f025b",
-  "WorkspaceAssetsQuery": "908c14a37f5b6e18787dc75b91df4ea06a7aa452a342809a85f099336bc91705",
-  "LocationWorkspaceQuery": "7f245dce7fdd6dbec23e968ace9da09fb005a55d60e717f6e3981b53e0453210",
+  "WorkspaceAssetsQuery": "8d26343f4d47bf0bd6e3f6d32d865687ad7530ca8d44b72d06bc459b9883e0e9",
+  "LocationWorkspaceQuery": "62bd7c8c7ca687ca6e2a87ec367ab9f40c276a407b7665c6233ed9d789f57767",
   "CodeLocationStatusQuery": "f92885e073b8b4b9bd588bf248df7b06025e2a1f6e74c082233ac7863f5eef8e",
   "WorkspaceGraphsQuery": "ccbef870f327b56beb0d781a476c8afbbc22ff2621181c8576861daaf7667ecf"
 }

@@ -17,6 +17,11 @@ query GetInternalFreshnessPolicy($assetKey: AssetKeyInput!) {
                 failWindowSeconds
                 warnWindowSeconds
             }
+            ... on CronFreshnessPolicy {
+                deadlineCron
+                lowerBoundDeltaSeconds
+                timezone
+            }
         }
     }
 }
