@@ -3050,6 +3050,17 @@
               "description": null,
               "is_dynamic": false,
               "is_required": true,
+              "metadata_entries": [
+                {
+                  "__class__": "EventMetadataEntry",
+                  "description": null,
+                  "entry_data": {
+                    "__class__": "TextMetadataEntryData",
+                    "text": "{\"__class__\": \"TimeWindowFreshnessPolicy\", \"fail_window\": {\"__class__\": \"SerializableTimeDelta\", \"days\": 0, \"microseconds\": 0, \"seconds\": 600}, \"warn_window\": {\"__class__\": \"SerializableTimeDelta\", \"days\": 0, \"microseconds\": 0, \"seconds\": 300}}"
+                  },
+                  "label": "dagster/internal_freshness_policy"
+                }
+              ],
               "name": "result"
             }
           ],
@@ -36554,7 +36565,7 @@
   'd9f6d85793df3d9df94d4aedb21bb659c1202bda'
 # ---
 # name: test_all_snapshot_ids[1]
-  '06194a2bfd72c3683124ac3696e9ea4834bbfd7e'
+  '1d6c9718bf1545096f309a0578bc57dae6d8d4f8'
 # ---
 # name: test_all_snapshot_ids[20]
   '''
@@ -51541,6 +51552,17 @@
               "description": null,
               "is_dynamic": false,
               "is_required": true,
+              "metadata_entries": [
+                {
+                  "__class__": "EventMetadataEntry",
+                  "description": null,
+                  "entry_data": {
+                    "__class__": "TextMetadataEntryData",
+                    "text": "{\"__class__\": \"TimeWindowFreshnessPolicy\", \"fail_window\": {\"__class__\": \"SerializableTimeDelta\", \"days\": 0, \"microseconds\": 0, \"seconds\": 600}, \"warn_window\": {\"__class__\": \"SerializableTimeDelta\", \"days\": 0, \"microseconds\": 0, \"seconds\": 300}}"
+                  },
+                  "label": "dagster/internal_freshness_policy"
+                }
+              ],
               "name": "result"
             }
           ],
@@ -51622,7 +51644,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[45]
-  '27aa1c25caf492245ba26705514d968ddfbb675b'
+  'a7dcecbf610ef7d95e088fef65491f28c6143ad4'
 # ---
 # name: test_all_snapshot_ids[46]
   '''
