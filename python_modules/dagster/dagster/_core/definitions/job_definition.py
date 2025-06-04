@@ -364,7 +364,7 @@ class JobDefinition(IHasInternalInit):
         return self._resource_defs
 
     @public
-    @cached_property
+    @property
     def partitioned_config(self) -> Optional[PartitionedConfig]:
         """The partitioned config for the job, if it has one.
 
