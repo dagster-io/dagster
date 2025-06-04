@@ -917,7 +917,9 @@ def scaffold_component_command(
     registry = RemotePluginRegistry.from_dg_context(dg_context)
 
     module_name = snakecase(name)
-    component_key = PluginObjectKey(name=name, namespace=dg_context.default_plugin_module_name)
+    component_key = PluginObjectKey(
+        name=name, namespace=dg_context.default_registry_root_module_name
+    )
     if registry.has(component_key):
         exit_with_error(f"Component type`{component_key.to_typename()}` already exists.")
 

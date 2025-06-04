@@ -148,7 +148,7 @@ def list_components_command(
 FEATURE_COLOR_MAP = {"component": "deep_sky_blue3", "scaffold-target": "khaki1"}
 
 
-@list_group.command(name="plugin-modules", aliases=["plugin-module"], cls=DgClickCommand)
+@list_group.command(name="registry-modules", aliases=["registry-module"], cls=DgClickCommand)
 @click.option(
     "--json",
     "output_json",
@@ -159,7 +159,7 @@ FEATURE_COLOR_MAP = {"component": "deep_sky_blue3", "scaffold-target": "khaki1"}
 @dg_path_options
 @dg_global_options
 @cli_telemetry_wrapper
-def list_plugin_modules_command(
+def list_registry_modules_command(
     output_json: bool,
     target_path: Path,
     **global_options: object,

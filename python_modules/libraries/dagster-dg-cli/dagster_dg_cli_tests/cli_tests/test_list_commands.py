@@ -177,45 +177,45 @@ _EXPECTED_PLUGIN_JSON = textwrap.dedent("""
 """).strip()
 
 
-def test_list_plugin_modules_success():
+def test_list_registry_modules_success():
     with (
         ProxyRunner.test(use_fixed_test_components=True) as runner,
         isolated_components_venv(runner),
     ):
         with fixed_panel_width(width=120):
-            result = runner.invoke("list", "plugin-modules")
+            result = runner.invoke("list", "registry-modules")
             assert_runner_result(result)
 
             match_terminal_box_output(result.output.strip(), _EXPECTED_PLUGINS_TABLE)
 
 
-def test_list_plugin_modules_json_success():
+def test_list_registry_modules_json_success():
     with (
         ProxyRunner.test(use_fixed_test_components=True) as runner,
         isolated_components_venv(runner),
     ):
-        result = runner.invoke("list", "plugin-modules", "--json")
+        result = runner.invoke("list", "registry-modules", "--json")
         assert_runner_result(result)
 
         assert match_json_output(result.output.strip(), _EXPECTED_PLUGIN_JSON)
 
 
-def test_list_plugin_modules_includes_modules_with_no_objects():
+def test_list_registry_modules_includes_modules_with_no_objects():
     with (
         ProxyRunner.test() as runner,
         isolated_example_project_foo_bar(runner, in_workspace=False),
     ):
-        result = runner.invoke("list", "plugin-modules")
+        result = runner.invoke("list", "registry-modules")
         assert_runner_result(result)
         assert "foo_bar" in result.output
 
 
-def test_list_plugin_modules_bad_entry_point_fails():
-    _assert_entry_point_error(["list", "plugin-modules"])
+def test_list_registry_modules_bad_entry_point_fails():
+    _assert_entry_point_error(["list", "registry-modules"])
 
 
-@pytest.mark.parametrize("alias", ["plugin-module", "plugin-modules"])
-def test_list_plugin_modules_aliases(alias: str):
+@pytest.mark.parametrize("alias", ["registry-module", "registry-modules"])
+def test_list_registry_modules_aliases(alias: str):
     with ProxyRunner.test() as runner:
         assert_runner_result(runner.invoke("list", alias, "--help"))
 
