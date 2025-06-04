@@ -2,6 +2,8 @@ import {BodySmall, Box, Colors, Popover, Skeleton, Tag} from '@dagster-io/ui-com
 import dayjs from 'dayjs';
 
 import {useAssetHealthData} from '../../asset-data/AssetHealthDataProvider';
+import {CronFreshnessPolicy, TimeWindowFreshnessPolicy} from '../../graphql/types';
+import {humanCronString} from '../../schedules/humanCronString';
 import {TimeFromNow} from '../../ui/TimeFromNow';
 import {statusToIconAndColor} from '../AssetHealthSummary';
 import {AssetKey} from '../types';
@@ -23,11 +25,8 @@ export const FreshnessPolicySection = ({
   }
 
   const freshnessStatus = liveData?.assetHealth?.freshnessStatus;
-
   const metadata = liveData?.assetHealth?.freshnessStatusMetadata;
-
   const lastMaterializedTimestamp = metadata?.lastMaterializedTimestamp;
-
   const {iconName2, intent, text2} = statusToIconAndColor[freshnessStatus ?? 'undefined'];
 
   return (
@@ -52,16 +51,11 @@ export const FreshnessPolicySection = ({
         )}
       </Box>
       <Box flex={{direction: 'column', gap: 4}}>
-        <BodySmall color={Colors.textLight()}>
-          Fails if more than {dayjs.duration(policy.failWindowSeconds, 'seconds').humanize()} since
-          last materialization
-        </BodySmall>
-        {policy.warnWindowSeconds ? (
-          <BodySmall color={Colors.textLight()}>
-            Warns if more than {dayjs.duration(policy.warnWindowSeconds, 'seconds').humanize()}{' '}
-            since last materialization
-          </BodySmall>
-        ) : null}
+        {policy.__typename === 'TimeWindowFreshnessPolicy' ? (
+          <TimeWindowFreshnessPolicyDetails policy={policy} />
+        ) : (
+          <CronFreshnessPolicyDetails policy={policy} />
+        )}
       </Box>
     </Box>
   );
@@ -81,11 +75,8 @@ export const FreshnessTag = ({
   }
 
   const freshnessStatus = liveData?.assetHealth?.freshnessStatus;
-
   const metadata = liveData?.assetHealth?.freshnessStatusMetadata;
-
   const lastMaterializedTimestamp = metadata?.lastMaterializedTimestamp;
-
   const {iconName2, intent, text2} = statusToIconAndColor[freshnessStatus ?? 'undefined'];
 
   return (
@@ -104,17 +95,11 @@ export const FreshnessTag = ({
               )}
             </Box>
             <Box flex={{direction: 'column', gap: 4}} padding={{vertical: 8, horizontal: 12}}>
-              <BodySmall color={Colors.textLight()}>
-                Fails if more than {dayjs.duration(policy.failWindowSeconds, 'seconds').humanize()}{' '}
-                since last materialization
-              </BodySmall>
-              {policy.warnWindowSeconds ? (
-                <BodySmall color={Colors.textLight()}>
-                  Warns if more than{' '}
-                  {dayjs.duration(policy.warnWindowSeconds, 'seconds').humanize()} since last
-                  materialization
-                </BodySmall>
-              ) : null}
+              {policy.__typename === 'TimeWindowFreshnessPolicy' ? (
+                <TimeWindowFreshnessPolicyDetails policy={policy} />
+              ) : (
+                <CronFreshnessPolicyDetails policy={policy} />
+              )}
             </Box>
           </div>
         }
@@ -124,5 +109,48 @@ export const FreshnessTag = ({
         </Tag>
       </Popover>
     </div>
+  );
+};
+
+const TimeWindowFreshnessPolicyDetails = ({policy}: {policy: TimeWindowFreshnessPolicy}) => (
+  <>
+    <BodySmall color={Colors.textLight()}>
+      Fails if more than {dayjs.duration(policy.failWindowSeconds, 'seconds').humanize()} since last
+      materialization
+    </BodySmall>
+    {policy.warnWindowSeconds && (
+      <BodySmall color={Colors.textLight()}>
+        Warns if more than {dayjs.duration(policy.warnWindowSeconds, 'seconds').humanize()} since
+        last materialization
+      </BodySmall>
+    )}
+  </>
+);
+
+const CronFreshnessPolicyDetails = ({policy}: {policy: CronFreshnessPolicy}) => {
+  const humanReadableDeadlineCron = policy.deadlineCron
+    ? humanCronString(policy.deadlineCron, {
+        longTimezoneName: policy.timezone || 'UTC',
+      })
+    : null;
+  const humanReadableLowerBoundDelta = policy.lowerBoundDeltaSeconds
+    ? dayjs.duration(policy.lowerBoundDeltaSeconds, 'seconds').humanize()
+    : null;
+
+  if (!humanReadableDeadlineCron || !humanReadableLowerBoundDelta) {
+    return (
+      <BodySmall color={Colors.textLight()}>
+        Cron freshness policy configuration incomplete
+      </BodySmall>
+    );
+  }
+
+  return (
+    <>
+      <BodySmall color={Colors.textLight()}>Deadline: {humanReadableDeadlineCron}</BodySmall>
+      <BodySmall color={Colors.textLight()}>
+        Fresh if materialized no earlier than {humanReadableLowerBoundDelta} before each deadline.
+      </BodySmall>
+    </>
   );
 };

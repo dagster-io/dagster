@@ -22,6 +22,11 @@ export const ASSET_TABLE_DEFINITION_FRAGMENT = gql`
         failWindowSeconds
         warnWindowSeconds
       }
+      ... on CronFreshnessPolicy {
+        deadlineCron
+        lowerBoundDeltaSeconds
+        timezone
+      }
     }
     partitionDefinition {
       description

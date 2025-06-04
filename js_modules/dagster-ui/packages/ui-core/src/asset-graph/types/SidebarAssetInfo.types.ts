@@ -164,11 +164,14 @@ export type SidebarAssetFragment = {
     cronSchedule: string | null;
     cronScheduleTimezone: string | null;
   } | null;
-  internalFreshnessPolicy: {
-    __typename: 'TimeWindowFreshnessPolicy';
-    failWindowSeconds: number;
-    warnWindowSeconds: number | null;
-  } | null;
+  internalFreshnessPolicy:
+    | {__typename: 'CronFreshnessPolicy'}
+    | {
+        __typename: 'TimeWindowFreshnessPolicy';
+        failWindowSeconds: number;
+        warnWindowSeconds: number | null;
+      }
+    | null;
   backfillPolicy: {__typename: 'BackfillPolicy'; description: string} | null;
   partitionDefinition: {__typename: 'PartitionDefinition'; description: string} | null;
   assetKey: {__typename: 'AssetKey'; path: Array<string>};
@@ -16390,11 +16393,14 @@ export type SidebarAssetQuery = {
           cronSchedule: string | null;
           cronScheduleTimezone: string | null;
         } | null;
-        internalFreshnessPolicy: {
-          __typename: 'TimeWindowFreshnessPolicy';
-          failWindowSeconds: number;
-          warnWindowSeconds: number | null;
-        } | null;
+        internalFreshnessPolicy:
+          | {__typename: 'CronFreshnessPolicy'}
+          | {
+              __typename: 'TimeWindowFreshnessPolicy';
+              failWindowSeconds: number;
+              warnWindowSeconds: number | null;
+            }
+          | null;
         backfillPolicy: {__typename: 'BackfillPolicy'; description: string} | null;
         partitionDefinition: {__typename: 'PartitionDefinition'; description: string} | null;
         assetKey: {__typename: 'AssetKey'; path: Array<string>};

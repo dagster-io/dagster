@@ -1067,6 +1067,13 @@ export type ConflictingExecutionParamsError = Error & {
   message: Scalars['String']['output'];
 };
 
+export type CronFreshnessPolicy = {
+  __typename: 'CronFreshnessPolicy';
+  deadlineCron: Maybe<Scalars['String']['output']>;
+  lowerBoundDeltaSeconds: Maybe<Scalars['Int']['output']>;
+  timezone: Maybe<Scalars['String']['output']>;
+};
+
 export type DaemonHealth = {
   __typename: 'DaemonHealth';
   allDaemonStatuses: Array<DaemonStatus>;
@@ -2248,7 +2255,7 @@ export type IntMetadataEntry = MetadataEntry & {
   label: Scalars['String']['output'];
 };
 
-export type InternalFreshnessPolicy = TimeWindowFreshnessPolicy;
+export type InternalFreshnessPolicy = CronFreshnessPolicy | TimeWindowFreshnessPolicy;
 
 export type InvalidOutputError = {
   __typename: 'InvalidOutputError';
@@ -7170,9 +7177,9 @@ export const buildAssetNode = (
     internalFreshnessPolicy:
       overrides && overrides.hasOwnProperty('internalFreshnessPolicy')
         ? overrides.internalFreshnessPolicy!
-        : relationshipsToOmit.has('TimeWindowFreshnessPolicy')
-          ? ({} as TimeWindowFreshnessPolicy)
-          : buildTimeWindowFreshnessPolicy({}, relationshipsToOmit),
+        : relationshipsToOmit.has('CronFreshnessPolicy')
+          ? ({} as CronFreshnessPolicy)
+          : buildCronFreshnessPolicy({}, relationshipsToOmit),
     isAutoCreatedStub:
       overrides && overrides.hasOwnProperty('isAutoCreatedStub')
         ? overrides.isAutoCreatedStub!
@@ -8042,6 +8049,24 @@ export const buildConflictingExecutionParamsError = (
   return {
     __typename: 'ConflictingExecutionParamsError',
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'pariatur',
+  };
+};
+
+export const buildCronFreshnessPolicy = (
+  overrides?: Partial<CronFreshnessPolicy>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'CronFreshnessPolicy'} & CronFreshnessPolicy => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('CronFreshnessPolicy');
+  return {
+    __typename: 'CronFreshnessPolicy',
+    deadlineCron:
+      overrides && overrides.hasOwnProperty('deadlineCron') ? overrides.deadlineCron! : 'mollitia',
+    lowerBoundDeltaSeconds:
+      overrides && overrides.hasOwnProperty('lowerBoundDeltaSeconds')
+        ? overrides.lowerBoundDeltaSeconds!
+        : 1084,
+    timezone: overrides && overrides.hasOwnProperty('timezone') ? overrides.timezone! : 'vero',
   };
 };
 

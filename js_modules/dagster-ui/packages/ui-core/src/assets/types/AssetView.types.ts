@@ -72,11 +72,19 @@ export type AssetViewDefinitionQuery = {
             cronSchedule: string | null;
             cronScheduleTimezone: string | null;
           } | null;
-          internalFreshnessPolicy: {
-            __typename: 'TimeWindowFreshnessPolicy';
-            failWindowSeconds: number;
-            warnWindowSeconds: number | null;
-          } | null;
+          internalFreshnessPolicy:
+            | {
+                __typename: 'CronFreshnessPolicy';
+                deadlineCron: string | null;
+                lowerBoundDeltaSeconds: number | null;
+                timezone: string | null;
+              }
+            | {
+                __typename: 'TimeWindowFreshnessPolicy';
+                failWindowSeconds: number;
+                warnWindowSeconds: number | null;
+              }
+            | null;
           backfillPolicy: {__typename: 'BackfillPolicy'; description: string} | null;
           requiredResources: Array<{__typename: 'ResourceRequirement'; resourceKey: string}>;
           repository: {
@@ -16540,11 +16548,19 @@ export type AssetViewDefinitionNodeFragment = {
     cronSchedule: string | null;
     cronScheduleTimezone: string | null;
   } | null;
-  internalFreshnessPolicy: {
-    __typename: 'TimeWindowFreshnessPolicy';
-    failWindowSeconds: number;
-    warnWindowSeconds: number | null;
-  } | null;
+  internalFreshnessPolicy:
+    | {
+        __typename: 'CronFreshnessPolicy';
+        deadlineCron: string | null;
+        lowerBoundDeltaSeconds: number | null;
+        timezone: string | null;
+      }
+    | {
+        __typename: 'TimeWindowFreshnessPolicy';
+        failWindowSeconds: number;
+        warnWindowSeconds: number | null;
+      }
+    | null;
   backfillPolicy: {__typename: 'BackfillPolicy'; description: string} | null;
   requiredResources: Array<{__typename: 'ResourceRequirement'; resourceKey: string}>;
   repository: {
@@ -32737,4 +32753,4 @@ export type AssetViewDefinitionNodeFragment = {
     | null;
 };
 
-export const AssetViewDefinitionQueryVersion = '8e46a21b763fd574fabad6551f7497d66b9c4f22faa2da4eff198a9e68053860';
+export const AssetViewDefinitionQueryVersion = '1bc39b27e9080474973f7426813abf75782273dd4d95bea8ee97ab92b83d3023';

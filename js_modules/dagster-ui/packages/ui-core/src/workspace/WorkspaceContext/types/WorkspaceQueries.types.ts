@@ -127,11 +127,19 @@ export type LocationWorkspaceQuery = {
                   jobNames: Array<string>;
                   kinds: Array<string>;
                   assetKey: {__typename: 'AssetKey'; path: Array<string>};
-                  internalFreshnessPolicy: {
-                    __typename: 'TimeWindowFreshnessPolicy';
-                    failWindowSeconds: number;
-                    warnWindowSeconds: number | null;
-                  } | null;
+                  internalFreshnessPolicy:
+                    | {
+                        __typename: 'CronFreshnessPolicy';
+                        deadlineCron: string | null;
+                        lowerBoundDeltaSeconds: number | null;
+                        timezone: string | null;
+                      }
+                    | {
+                        __typename: 'TimeWindowFreshnessPolicy';
+                        failWindowSeconds: number;
+                        warnWindowSeconds: number | null;
+                      }
+                    | null;
                   partitionDefinition: {
                     __typename: 'PartitionDefinition';
                     description: string;
@@ -291,11 +299,19 @@ export type WorkspaceLocationNodeFragment = {
             jobNames: Array<string>;
             kinds: Array<string>;
             assetKey: {__typename: 'AssetKey'; path: Array<string>};
-            internalFreshnessPolicy: {
-              __typename: 'TimeWindowFreshnessPolicy';
-              failWindowSeconds: number;
-              warnWindowSeconds: number | null;
-            } | null;
+            internalFreshnessPolicy:
+              | {
+                  __typename: 'CronFreshnessPolicy';
+                  deadlineCron: string | null;
+                  lowerBoundDeltaSeconds: number | null;
+                  timezone: string | null;
+                }
+              | {
+                  __typename: 'TimeWindowFreshnessPolicy';
+                  failWindowSeconds: number;
+                  warnWindowSeconds: number | null;
+                }
+              | null;
             partitionDefinition: {
               __typename: 'PartitionDefinition';
               description: string;
@@ -435,11 +451,19 @@ export type WorkspaceLocationFragment = {
       jobNames: Array<string>;
       kinds: Array<string>;
       assetKey: {__typename: 'AssetKey'; path: Array<string>};
-      internalFreshnessPolicy: {
-        __typename: 'TimeWindowFreshnessPolicy';
-        failWindowSeconds: number;
-        warnWindowSeconds: number | null;
-      } | null;
+      internalFreshnessPolicy:
+        | {
+            __typename: 'CronFreshnessPolicy';
+            deadlineCron: string | null;
+            lowerBoundDeltaSeconds: number | null;
+            timezone: string | null;
+          }
+        | {
+            __typename: 'TimeWindowFreshnessPolicy';
+            failWindowSeconds: number;
+            warnWindowSeconds: number | null;
+          }
+        | null;
       partitionDefinition: {
         __typename: 'PartitionDefinition';
         description: string;
@@ -559,11 +583,19 @@ export type WorkspaceRepositoryFragment = {
     jobNames: Array<string>;
     kinds: Array<string>;
     assetKey: {__typename: 'AssetKey'; path: Array<string>};
-    internalFreshnessPolicy: {
-      __typename: 'TimeWindowFreshnessPolicy';
-      failWindowSeconds: number;
-      warnWindowSeconds: number | null;
-    } | null;
+    internalFreshnessPolicy:
+      | {
+          __typename: 'CronFreshnessPolicy';
+          deadlineCron: string | null;
+          lowerBoundDeltaSeconds: number | null;
+          timezone: string | null;
+        }
+      | {
+          __typename: 'TimeWindowFreshnessPolicy';
+          failWindowSeconds: number;
+          warnWindowSeconds: number | null;
+        }
+      | null;
     partitionDefinition: {
       __typename: 'PartitionDefinition';
       description: string;
@@ -683,6 +715,6 @@ export type LocationStatusEntryFragment = {
   versionKey: string;
 };
 
-export const LocationWorkspaceQueryVersion = '7f245dce7fdd6dbec23e968ace9da09fb005a55d60e717f6e3981b53e0453210';
+export const LocationWorkspaceQueryVersion = '62bd7c8c7ca687ca6e2a87ec367ab9f40c276a407b7665c6233ed9d789f57767';
 
 export const CodeLocationStatusQueryVersion = 'f92885e073b8b4b9bd588bf248df7b06025e2a1f6e74c082233ac7863f5eef8e';
