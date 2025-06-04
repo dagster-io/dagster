@@ -37,7 +37,7 @@ First, set up a new Dagster project.
 
 First, set up a new Dagster project.
 
-1. Clone the the [Dagster repo](https://github.com/dagster-io/dagster) and navigate to the project:
+1. Clone the [Dagster repo](https://github.com/dagster-io/dagster) and navigate to the project:
 
    ```bash
    cd examples/docs_projects/project_ask_ai_dagster

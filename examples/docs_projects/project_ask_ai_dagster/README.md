@@ -6,7 +6,7 @@ This project implements a support bot using Retrieval-Augmented Generation (RAG)
 
 ### Example Asset Lineage
 
-![Screenshot Dagster Lineage](_static/screenshot_dagster_lineage.png)
+![Screenshot Dagster Lineage](_static/screenshot_dagster_lineage.svg)
 
 ## Getting started
 
@@ -25,8 +25,6 @@ dg dev
 Open http://localhost:3000 in your browser.
 
 ## References
-
-Dagster
 
 - [Dagster Docs](https://docs.dagster.io/)
 - [Dagster Docs: DuckDB](https://docs.dagster.io/_apidocs/libraries/dagster-duckdb)

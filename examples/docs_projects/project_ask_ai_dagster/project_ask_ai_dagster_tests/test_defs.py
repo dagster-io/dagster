@@ -1,4 +1,4 @@
-from project_ask_ai.definitions import defs
+from project_ask_ai_dagster.definitions import defs
 
 
 def test_def():
