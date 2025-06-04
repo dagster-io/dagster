@@ -4,16 +4,18 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
 from types import ModuleType
-from typing import Any
+from typing import TYPE_CHECKING, Any, Optional
 
 from dagster_shared import check
 from dagster_shared.yaml_utils.source_position import SourcePositionTree
 
 from dagster._annotations import PublicAttr, preview, public
-from dagster._core.definitions.definitions_class import Definitions
 from dagster._utils import pushd
 from dagster.components.resolved.context import ResolutionContext
 from dagster.components.utils import get_path_from_module
+
+if TYPE_CHECKING:
+    from dagster.components.core.tree import ComponentTree
 
 RESOLUTION_CONTEXT_STASH_KEY = "component_load_context"
 
@@ -29,11 +31,22 @@ class ComponentLoadContext:
     defs_module_path: PublicAttr[Path]
     defs_module_name: PublicAttr[str]
     resolution_context: PublicAttr[ResolutionContext]
+    _component_tree: PublicAttr[Optional["ComponentTree"]]
     terminate_autoloading_on_keyword_files: bool
 
     def __post_init__(self):
         self.resolution_context = self.resolution_context.with_stashed_value(
             RESOLUTION_CONTEXT_STASH_KEY, self
+        )
+
+    @property
+    def has_component_tree(self) -> bool:
+        return self._component_tree is not None
+
+    @property
+    def component_tree(self) -> "ComponentTree":
+        return check.not_none(
+            self._component_tree, "ComponentLoadContext was not initialized with a ComponentTree"
         )
 
     @staticmethod
@@ -46,6 +59,7 @@ class ComponentLoadContext:
     def for_module(
         defs_module: ModuleType,
         project_root: Path,
+        component_tree: Optional["ComponentTree"] = None,
         terminate_autoloading_on_keyword_files: bool = True,
     ) -> "ComponentLoadContext":
         path = get_path_from_module(defs_module)
@@ -55,17 +69,19 @@ class ComponentLoadContext:
             defs_module_path=path,
             defs_module_name=defs_module.__name__,
             resolution_context=ResolutionContext.default(),
+            _component_tree=component_tree,
             terminate_autoloading_on_keyword_files=terminate_autoloading_on_keyword_files,
         )
 
     @staticmethod
-    def for_test() -> "ComponentLoadContext":
+    def for_test(component_tree: Optional["ComponentTree"] = None) -> "ComponentLoadContext":
         return ComponentLoadContext(
             path=Path.cwd(),
             project_root=Path.cwd(),
             defs_module_path=Path.cwd(),
             defs_module_name="test",
             resolution_context=ResolutionContext.default(),
+            _component_tree=component_tree,
             terminate_autoloading_on_keyword_files=True,
         )
 
@@ -116,18 +132,6 @@ class ComponentLoadContext:
             if type_str.startswith(".")
             else type_str
         )
-
-    def load_defs(self, module: ModuleType) -> Definitions:
-        """Builds the set of Dagster definitions for a component module.
-
-        This is useful for resolving dependencies on other components.
-        """
-        # FIXME: This should go through the component loader system
-        # to allow for this value to be cached and more selectively
-        # loaded. This is just a temporary hack to keep tests passing.
-        from dagster.components.core.load_defs import load_defs
-
-        return load_defs(module, self.project_root)
 
     def load_defs_relative_python_module(self, path: Path) -> ModuleType:
         """Load a python module relative to the defs's context path. This is useful for loading code

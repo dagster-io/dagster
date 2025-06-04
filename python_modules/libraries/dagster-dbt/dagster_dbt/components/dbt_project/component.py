@@ -17,6 +17,7 @@ from dagster.components.resolved.core_models import AssetAttributesModel, OpSpec
 from dagster.components.resolved.model import Resolver
 from dagster.components.scaffold.scaffold import scaffold_with
 from dagster.components.utils import TranslatorResolvingInfo
+from dagster_shared import check
 from typing_extensions import TypeAlias
 
 from dagster_dbt.asset_decorator import dbt_assets
@@ -219,7 +220,9 @@ def get_asset_key_for_model_from_module(
             def cleaned_customers():
                 ...
     """
-    defs = context.load_defs(dbt_component_module)
+    defs = context.component_tree.load_defs_at_path(
+        Path(check.not_none(dbt_component_module.__file__))
+    )
     return get_asset_key_for_model(cast("Sequence[AssetsDefinition]", defs.assets), model_name)
 
 
