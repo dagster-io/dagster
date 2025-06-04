@@ -3,7 +3,7 @@ import inspect
 from collections.abc import Callable, Iterator, Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Optional, TypeVar, Union
+from typing import TYPE_CHECKING, Any, Optional, TypeVar, Union
 
 from dagster_shared.record import record
 from dagster_shared.yaml_utils.source_position import SourcePosition
@@ -30,6 +30,9 @@ from dagster.components.resolved.base import Resolvable
 from dagster.components.resolved.context import ResolutionContext
 from dagster.components.resolved.core_models import AssetPostProcessor, post_process_defs
 from dagster.components.resolved.model import Model
+
+if TYPE_CHECKING:
+    from dagster.components.core.decl import ComponentDecl
 
 T = TypeVar("T", bound=BaseModel)
 
@@ -162,9 +165,9 @@ def get_component(context: ComponentLoadContext) -> Optional[Component]:
     type matches, prioritizing more specific types: YAML, Python, plain Dagster defs, and component
     folder.
     """
-    from dagster.components.core.decl import get_component_decl
+    from dagster.components.core.decl import build_component_decl_from_context
 
-    component_decl = get_component_decl(context)
+    component_decl = build_component_decl_from_context(context)
     if component_decl:
         return component_decl._load_component()  # noqa: SLF001
     return None
@@ -272,6 +275,12 @@ class DefsFolderComponent(Component):
     children: Mapping[Path, Component]
 
     @classmethod
+    def get_decl_type(cls) -> type["ComponentDecl"]:
+        from dagster.components.core.decl import DefsFolderDecl
+
+        return DefsFolderDecl
+
+    @classmethod
     def get_model_cls(cls):
         return DefsFolderComponentYamlSchema.model()
 
@@ -377,12 +386,6 @@ class DagsterDefsComponent(Component):
         return load_definitions_from_module(module)
 
 
-def load_pythonic_component(context: ComponentLoadContext) -> Component:
-    from dagster.components.core.decl import get_component_decl_from_python_file
-
-    return get_component_decl_from_python_file(context)._load_component()  # noqa: SLF001
-
-
 def invoke_inline_template_var(context: ComponentLoadContext, tv: Callable) -> Any:
     sig = inspect.signature(tv)
     if len(sig.parameters) == 1:
@@ -394,9 +397,9 @@ def invoke_inline_template_var(context: ComponentLoadContext, tv: Callable) -> A
 
 
 def load_yaml_component_from_path(context: ComponentLoadContext, component_def_path: Path):
-    from dagster.components.core.decl import get_component_decl_from_yaml_file
+    from dagster.components.core.decl import build_component_decl_from_yaml_file
 
-    return get_component_decl_from_yaml_file(context, component_def_path)._load_component()  # noqa: SLF001
+    return build_component_decl_from_yaml_file(context, component_def_path)._load_component()  # noqa: SLF001
 
 
 # When we remove component.yaml, we can remove this function for just a defs.yaml check

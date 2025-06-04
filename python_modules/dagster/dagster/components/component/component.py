@@ -21,6 +21,7 @@ from dagster.components.scaffold.scaffold import scaffold_with
 
 if TYPE_CHECKING:
     from dagster.components.core.context import ComponentLoadContext
+    from dagster.components.core.decl import ComponentDecl
 
 
 @public
@@ -226,6 +227,12 @@ class Component(ABC):
         - :py:func:`dagster.scaffold_with`: Decorator for custom scaffolding
 
     """
+
+    @classmethod
+    def get_decl_type(cls) -> type["ComponentDecl"]:
+        from dagster.components.core.decl import YamlDecl
+
+        return YamlDecl
 
     @classmethod
     def __dg_package_entry__(cls) -> None: ...
