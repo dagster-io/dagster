@@ -9,7 +9,7 @@ sidebar_position: 50
 The final asset will query our RAG system. Since the pipeline is designed to answer any question related to Dagster, we will make this asset configurable by including a <PyObject section="config" module="dagster" object="Config" />. This configuration only consists of the question we want to ask the AI system:
 
 <CodeExample
-  path="docs_projects/project_ask_ai_dagster/project_ask_ai_dagster/assets/retrieval.py"
+  path="docs_projects/project_ask_ai_dagster/project_ask_ai_dagster/defs/assets/retrieval.py"
   language="python"
   startAfter="start_config"
   endBefore="end_config"
@@ -18,7 +18,7 @@ The final asset will query our RAG system. Since the pipeline is designed to ans
 In order to do similarity searches, the input question will need to be embedded in the same way as the source embeddings sent to Pinecone. Again, we will use OpenAI and the same model (`text-embedding-3-small`) to turn a question into vectors. Next we can use Pinecone to search for similar vectors within the index that most closely match the input question. As we are searching within our index, we will limit the namespace to "dagster-github" and "dagster-docs" (the two sources we ingested data from). Filtering data like this shows how vector databases still support many of the same functions as traditional databases:
 
 <CodeExample
-  path="docs_projects/project_ask_ai_dagster/project_ask_ai_dagster/assets/retrieval.py"
+  path="docs_projects/project_ask_ai_dagster/project_ask_ai_dagster/defs/assets/retrieval.py"
   language="python"
   startAfter="start_query"
   endBefore="end_query"
@@ -27,7 +27,7 @@ In order to do similarity searches, the input question will need to be embedded 
 With the relevant information retrieved from Pinecone, we can add some prompt engineering to combine that context extracted from Pinecone with the original question (in text). The full prompt is then sent to Open AI again (now using the `gpt-4-turbo-preview` model) to get the final answer which is recorded as a <PyObject section="assets" module="dagster" object="MaterializeResult" /> in the Dagster Catalog:
 
 <CodeExample
-  path="docs_projects/project_ask_ai_dagster/project_ask_ai_dagster/assets/retrieval.py"
+  path="docs_projects/project_ask_ai_dagster/project_ask_ai_dagster/defs/assets/retrieval.py"
   language="python"
   startAfter="start_prompt"
   endBefore="end_prompt"

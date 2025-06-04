@@ -17,7 +17,7 @@ The next step in our pipeline will be creating this Pinecone resource to manage 
 The `PineconeResource` will need the ability to create an index if it does not already exist and retrieve that index so we can upload our embeddings. Creating an index is relatively simple using the Pinecone client. We just need to provide a name, the dimensions (how big the embedding will be), and a metric type (how the distance will be compared across vector embeddings). Finally, there is the cloud infrastructure that Pinecone will use to store the data (we will default to AWS):
 
 <CodeExample
-  path="docs_projects/project_ask_ai_dagster/project_ask_ai_dagster/resources/pinecone.py"
+  path="docs_projects/project_ask_ai_dagster/project_ask_ai_dagster/defs/resources/pinecone.py"
   language="python"
   startAfter="start_resource"
   endBefore="end_resource"
@@ -26,7 +26,7 @@ The `PineconeResource` will need the ability to create an index if it does not a
 Like our other resources, we will initialize the `PineconeResource` so it can be used by our Dagster assets:
 
 <CodeExample
-  path="docs_projects/project_ask_ai_dagster/project_ask_ai_dagster/resources/pinecone.py"
+  path="docs_projects/project_ask_ai_dagster/project_ask_ai_dagster/defs/resources/pinecone.py"
   language="python"
   startAfter="start_resource_int"
   endBefore="end_resource_int"

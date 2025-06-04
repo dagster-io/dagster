@@ -13,6 +13,7 @@ dependencies = [
     "langchain-openai",
     "langchain-chroma",
     "dagster",
+    "dagster-dg-cli",
     "dagster-webserver",
     "dagster-openai",
     "dagster_duckdb",
@@ -32,13 +33,9 @@ dev = [
     "ruff",
 ]
 
-[build-system]
-requires = ["setuptools"]
-build-backend = "setuptools.build_meta"
+[tool.dg]
+directory_type = "project"
 
-[tool.dagster]
-module_name = "project_ask_ai_dagster.definitions"
-project_name = "project_ask_ai_dagster"
-
-[tool.setuptools.packages.find]
-exclude=["project_ask_ai_dagster_tests"]
+[tool.dg.project]
+root_module = "project_ask_ai_dagster"
+code_location_target_module = "project_ask_ai_dagster.definitions"
