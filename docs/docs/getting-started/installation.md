@@ -19,12 +19,14 @@ There are many ways to do this, but this guide will use `venv` as it doesn't req
 <Tabs>
   <TabItem value="macos" label="MacOS">
     ```bash
-    python -m venv venv source venv/bin/activate
+    python -m venv venv
+    source venv/bin/activate
     ```
   </TabItem>
   <TabItem value="windows" label="Windows">
     ```bash
-    python -m venv venv source venv\Scripts\activate
+    python -m venv venv
+    source venv\Scripts\activate
     ```
   </TabItem>
 </Tabs>
