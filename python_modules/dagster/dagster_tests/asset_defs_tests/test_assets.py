@@ -2854,11 +2854,11 @@ def test_complex_graph_structure_hooks():
 
     # Asset hook should be applied only to the regular_asset
     assert len(asset_hook_events) == 1
-    assert "regular_asset" == next(e.step_key for e in asset_hook_events)
+    assert "regular_asset" == asset_hook_events[0].step_key
 
     # Op hook should be applied only to the middle_op in the graph asset
     assert len(op_hook_events) == 1
-    assert "complex_graph_asset.middle_op" == next(e.step_key for e in op_hook_events)
+    assert "complex_graph_asset.middle_op" == op_hook_events[0].step_key
 
     # Verify the resource requirements were correctly propagated
     # Check if asset_resource is included in regular_asset's required_resource_keys
