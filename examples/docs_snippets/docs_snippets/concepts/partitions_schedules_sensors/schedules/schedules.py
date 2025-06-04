@@ -18,11 +18,11 @@ def my_asset():
 # start_basic_asset_schedule
 import dagster as dg
 
-asset_job = dg.define_asset_job(
-    "asset_job", dg.AssetSelection.groups("some_asset_group")
+basic_schedule = dg.ScheduleDefinition(
+    name="basic_asset_schedule",
+    cron_schedule="0 0 * * *",
+    target=dg.AssetSelection.groups("some_asset_group"),
 )
-
-basic_schedule = dg.ScheduleDefinition(job=asset_job, cron_schedule="0 0 * * *")
 
 # end_basic_asset_schedule
 
