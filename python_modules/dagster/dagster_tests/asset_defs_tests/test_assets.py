@@ -2832,8 +2832,6 @@ def test_complex_graph_structure_hooks():
         event for event in result.all_events if "HOOK_COMPLETED" == event.event_type_value
     ]
 
-    print(hook_events[0])
-
     # Check that all hooks were executed
     job_hook_events = [e for e in hook_events if "job_hook" in str(e.message)]
     asset_hook_events = [e for e in hook_events if "asset_hook" in str(e.message)]
