@@ -131,7 +131,6 @@ def _trigger_hook(
 ) -> Iterator[DagsterEvent]:
     """Trigger hooks and record hook's operatonal events."""
     hook_defs = step_context.job_def.get_all_hooks_for_handle(step_context.node_handle)
-
     # when the solid doesn't have a hook configured
     if hook_defs is None:
         return
