@@ -797,56 +797,6 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
             execution_type=AssetExecutionType.MATERIALIZATION,
         )
 
-    def get_all_hooks_for_handle(self, handle: NodeHandle) -> AbstractSet[HookDefinition]:
-        """Gather all the hooks for the given node from all places possibly attached with a hook.
-
-        A hook can be attached to any of the following objects
-        * Node (node invocation)
-        * AssetsDefinition
-        * JobDefinition (handled externally)
-
-        Args:
-            handle (NodeHandle): The node's handle
-
-        Returns:
-            FrozenSet[HookDefinition]
-        """
-        from dagster._core.definitions.graph_definition import GraphDefinition
-
-        check.inst_param(handle, "handle", NodeHandle)
-        hook_defs: set[HookDefinition] = set()
-
-        if not isinstance(self.node_def, GraphDefinition):
-            # If not a graph asset, we can just get the hooks
-            # from the asset and return
-            return frozenset(self.hook_defs)
-
-        current = handle
-        lineage = []
-        while current.parent:
-            # Does not contain the upper node since this will be the asset itself.
-            # We only need the ops to merge the hooks with the asset hooks.
-            lineage.append(current.name)
-            current = current.parent
-
-        # hooks on top-level node
-        name = lineage.pop()
-        node = self.node_def.node_named(name)
-        hook_defs = hook_defs.union(node.hook_defs)
-
-        # hooks on non-top-level nodes
-        while lineage:
-            name = lineage.pop()
-            # While lineage is non-empty, definition is guaranteed to be a graph
-            definition = cast("GraphDefinition", node.definition)
-            node = definition.node_named(name)
-            hook_defs = hook_defs.union(node.hook_defs)
-
-        # hooks applied to an assets definition will run on every node
-        hook_defs = hook_defs.union(self.hook_defs)
-
-        return frozenset(hook_defs)
-
     @public
     @property
     def can_subset(self) -> bool:

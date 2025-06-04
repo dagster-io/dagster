@@ -1,8 +1,7 @@
 import sys
 from collections.abc import Iterator, Sequence
 from contextlib import ExitStack
-from itertools import chain
-from typing import TYPE_CHECKING, AbstractSet, Optional, cast  # noqa: UP035
+from typing import Optional, cast
 
 import dagster._check as check
 from dagster._core.definitions import Failure, HookExecutionResult, RetryRequested
@@ -28,9 +27,6 @@ from dagster._core.execution.plan.objects import (
 )
 from dagster._core.execution.plan.plan import ExecutionPlan
 from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
-
-if TYPE_CHECKING:
-    from dagster._core.definitions.hook_definition import HookDefinition
 
 
 def inner_plan_execution_iterator(
@@ -135,21 +131,16 @@ def _trigger_hook(
 ) -> Iterator[DagsterEvent]:
     """Trigger hooks and record hook's operatonal events."""
     job_hook_defs = step_context.job_def.get_all_hooks_for_handle(step_context.node_handle)
-    asset_hook_defs = (
-        step_context.assets_def.get_all_hooks_for_handle(step_context.node_handle)
-        if step_context.assets_def
-        else cast("AbstractSet[HookDefinition]", set())
-    )
 
     # when the solid doesn't have a hook configured
-    if job_hook_defs is None and asset_hook_defs is None:
+    if job_hook_defs is None:
         return
 
     op_label = step_context.describe_op()
 
     # when there are multiple hooks set on a solid, the hooks will run sequentially for the solid.
     # * we will not able to execute hooks asynchronously until we drop python 2.
-    for hook_def in chain(job_hook_defs, asset_hook_defs):
+    for hook_def in job_hook_defs:
         hook_context = step_context.for_hook(hook_def)
 
         try:

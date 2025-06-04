@@ -2699,3 +2699,172 @@ def test_graph_asset_hooks():
     assert len(hook_completed) == 2
     assert hook_completed[0].step_key == "my_graph_asset.fetch_files_from_slack"
     assert hook_completed[1].step_key == "my_graph_asset.store_files"
+
+
+def test_hook_requirements_forwarding():
+    @success_hook(required_resource_keys={"my_resource"})
+    def hook_with_requirements(context: HookContext):
+        assert context.resources.my_resource == "blah"
+        context.log.info("Hook executed with required resources")
+
+    @asset(hooks={hook_with_requirements})
+    def asset_with_hook(context):
+        context.log.info("Asset executed")
+        return 1
+
+    # Verify that the resource requirements from the hook are included in the asset's requirements
+    assert "my_resource" in asset_with_hook.required_resource_keys
+
+    # Execute the asset with the required resources
+    result = materialize(
+        [asset_with_hook],
+        resources={"my_resource": ResourceDefinition.hardcoded_resource("blah")},
+    )
+
+    # Verify that the hook was executed
+    hook_events = [
+        event for event in result.all_events if "HOOK_COMPLETED" == event.event_type_value
+    ]
+    assert len(hook_events) == 1
+
+
+def test_complex_graph_structure_hooks():
+    # Create resources for testing requirements
+    @resource
+    def job_resource(_):
+        return "job_resource"
+
+    @resource
+    def asset_resource(_):
+        return "asset_resource"
+
+    @resource
+    def op_resource(_):
+        return "op_resource"
+
+    # Create hooks with different resource requirements
+    @success_hook(required_resource_keys={"job_resource"})
+    def job_hook(context: HookContext):
+        assert context.resources.job_resource == "job_resource"
+        context.log.info("Job hook executed")
+
+    @success_hook(required_resource_keys={"asset_resource"})
+    def asset_hook(context: HookContext):
+        assert context.resources.asset_resource == "asset_resource"
+        context.log.info("Asset hook executed")
+
+    @success_hook(required_resource_keys={"op_resource"})
+    def op_hook(context: HookContext):
+        assert context.resources.op_resource == "op_resource"
+        context.log.info("Op hook executed")
+
+    # Create a regular asset with a hook
+    @asset(hooks={asset_hook})
+    def regular_asset(context):
+        context.log.info("Regular asset executed")
+        return 1
+
+    # Create a multi-asset with no hooks
+    @multi_asset(
+        outs={
+            "multi_out1": AssetOut(),
+            "multi_out2": AssetOut(),
+        }
+    )
+    def multi_asset_no_hooks(context):
+        context.log.info("Multi-asset executed")
+        return 1, 2
+
+    # Create a graph asset where one of the ops has a hook
+    @op
+    def first_op():
+        return 1
+
+    @op
+    def middle_op(value):
+        return value + 1
+
+    @op
+    def last_op(value):
+        return value + 1
+
+    @op
+    def sum_op(a, b):
+        return a + b
+
+    @graph_asset(
+        ins={
+            "regular_asset": AssetIn("regular_asset"),
+            "multi_out1": AssetIn("multi_out1"),
+        },
+    )
+    def complex_graph_asset(regular_asset, multi_out1):
+        # Use inputs from other assets
+        middle_result = middle_op.with_hooks({op_hook})(
+            sum_op(first_op(), sum_op(regular_asset, multi_out1))
+        )
+        return last_op(middle_result)
+
+    # Create a job with a hook
+    job = define_asset_job(
+        name="complex_job",
+        selection=[regular_asset, multi_asset_no_hooks, complex_graph_asset],
+        hooks={job_hook},
+    )
+
+    # Create definitions
+    defs = Definitions(
+        assets=[regular_asset, multi_asset_no_hooks, complex_graph_asset],
+        jobs=[job],
+        resources={
+            "job_resource": job_resource,
+            "asset_resource": asset_resource,
+            "op_resource": op_resource,
+        },
+    )
+
+    # Execute the job
+    result = defs.get_job_def("complex_job").execute_in_process()
+    assert result.success
+
+    # Extract hook events
+    hook_events = [
+        event for event in result.all_events if "HOOK_COMPLETED" == event.event_type_value
+    ]
+
+    print(hook_events[0])
+
+    # Check that all hooks were executed
+    job_hook_events = [e for e in hook_events if "job_hook" in str(e.message)]
+    asset_hook_events = [e for e in hook_events if "asset_hook" in str(e.message)]
+    op_hook_events = [e for e in hook_events if "op_hook" in str(e.message)]
+
+    # Job hook should be applied to all steps
+    # 7 ops => regular_asset, multi_asset_no_hooks,
+    #    first_op, middle_op, last_op, sum_op (x2)
+
+    step_keys_job_hook = [e.step_key for e in job_hook_events]
+    assert set(step_keys_job_hook) == {
+        "regular_asset",
+        "multi_asset_no_hooks",
+        "complex_graph_asset.first_op",
+        "complex_graph_asset.middle_op",
+        "complex_graph_asset.last_op",
+        "complex_graph_asset.sum_op",
+        "complex_graph_asset.sum_op_2",
+    }
+
+    # Asset hook should be applied only to the regular_asset
+    assert len(asset_hook_events) == 1
+    assert "regular_asset" == next(e.step_key for e in asset_hook_events)
+
+    # Op hook should be applied only to the middle_op in the graph asset
+    assert len(op_hook_events) == 1
+    assert "complex_graph_asset.middle_op" == next(e.step_key for e in op_hook_events)
+
+    # Verify the resource requirements were correctly propagated
+    # Check if asset_resource is included in regular_asset's required_resource_keys
+    assert "asset_resource" in regular_asset.required_resource_keys
+
+    # Check if op_resource is included in complex_graph_asset's required_resource_keys
+    assert "op_resource" in complex_graph_asset.required_resource_keys
