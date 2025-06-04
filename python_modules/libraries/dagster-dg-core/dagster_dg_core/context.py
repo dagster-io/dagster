@@ -56,8 +56,9 @@ from dagster_dg_core.utils.warnings import emit_warning
 _DEFAULT_PROJECT_DEFS_SUBMODULE: Final = "defs"
 _DEFAULT_PROJECT_CODE_LOCATION_TARGET_MODULE: Final = "definitions"
 _EXCLUDED_COMPONENT_DIRECTORIES: Final = {"__pycache__"}
+DG_PLUGIN_ENTRY_POINT_GROUP: Final = "dagster_dg_cli.registry_modules"
 # Remove in future, in place for backcompat
-OLD_DG_PLUGIN_ENTRY_POINT_GROUPS = ["dagster_dg.library", "dagster_dg.plugin"]
+OLD_DG_PLUGIN_ENTRY_POINT_GROUPS = ["dagster_dg.library", "dagster_dg.plugin", "dagster_dg_cli.plugin"]
 
 
 def _should_capture_components_cli_stderr() -> bool:
@@ -537,7 +538,7 @@ class DgContext:
     # ########################
 
     # It is possible for a single package to define multiple entry points under the
-    # `dagster_dg_cli.plugin` entry point group. At present, `dg` only cares about the first one, which
+    # `dagster_dg_cli.registry_modules` entry point group. At present, `dg` only cares about the first one, which
     # it uses for all component type scaffolding operations.
 
     @property
@@ -568,10 +569,10 @@ class DgContext:
 
         if self.pyproject_toml_path.exists():
             toml = tomlkit.parse(self.pyproject_toml_path.read_text())
-            if has_toml_node(toml, ("project", "entry-points", "dagster_dg_cli.plugin")):
+            if has_toml_node(toml, ("project", "entry-points", DG_PLUGIN_ENTRY_POINT_GROUP)):
                 return get_toml_node(
                     toml,
-                    ("project", "entry-points", "dagster_dg_cli.plugin"),
+                    ("project", "entry-points", DG_PLUGIN_ENTRY_POINT_GROUP),
                     (tomlkit.items.Table, tomlkit.items.InlineTable),
                 ).unwrap()
             # Keeping for backwards compatibility. Should be removed eventually.
@@ -593,14 +594,15 @@ class DgContext:
                 warnings.simplefilter("ignore", category=SetuptoolsDeprecationWarning)
                 config = read_configuration("setup.cfg")
             entry_points = config.get("options", {}).get("entry_points", {})
-            if "dagster_dg_cli.plugin" in entry_points:
-                raw_plugin_entry_points = entry_points["dagster_dg_cli.plugin"]
-            elif "dagster_dg.plugin" in entry_points:
-                raw_plugin_entry_points = entry_points["dagster_dg.plugin"]
-            elif "dagster_dg.library" in entry_points:
-                raw_plugin_entry_points = entry_points["dagster_dg.library"]
-            else:
-                raw_plugin_entry_points = []
+            group = next(
+                (
+                    group
+                    for group in (DG_PLUGIN_ENTRY_POINT_GROUP, *OLD_DG_PLUGIN_ENTRY_POINT_GROUPS)
+                    if group in entry_points
+                ),
+                None,
+            )
+            raw_plugin_entry_points = entry_points[group] if group else []
             plugin_entry_points = {}
             for entry_point in raw_plugin_entry_points:
                 k, v = re.split(r"\s*=\s*", entry_point, 1)
@@ -768,7 +770,7 @@ def _validate_plugin_entry_point(context: DgContext) -> None:
                 Found deprecated `{entry_point_group}` entry point group in:
                     {context.pyproject_toml_path}
 
-                Please update the group name to `dagster_dg_cli.plugin`. Package reinstallation is required
+                Please update the group name to `dagster_dg_cli.registry_modules`. Package reinstallation is required
                 because entry points are registered at install time. Reinstall your package to your
                 environment using:
 
