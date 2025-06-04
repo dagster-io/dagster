@@ -5,6 +5,7 @@ setup(
     packages=find_packages(exclude=["project_dagster_modal_pipes_tests"]),
     install_requires=[
         "dagster",
+        "dagster-dg-cli",
         "dagster-aws",
         "dagster-modal>=0.0.2",
         "dagster-openai",

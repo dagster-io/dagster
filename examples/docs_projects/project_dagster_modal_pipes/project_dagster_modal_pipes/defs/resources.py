@@ -5,7 +5,7 @@ from dagster_aws.s3 import S3Resource
 from dagster_modal import ModalClient
 from dagster_openai import OpenAIResource
 
-modal_resource = ModalClient(project_directory=Path(__file__).parent.parent)
+modal_resource = ModalClient(project_directory=Path(__file__).parent.parent.parent)
 
 openai_resource = OpenAIResource(api_key=dg.EnvVar("OPENAI_API_KEY"))
 

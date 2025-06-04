@@ -11,7 +11,7 @@ Dagster encourages software engineering best practices, one of which is keeping 
 If you look at the `rss_pipeline_factory` function, it returns a <PyObject section="definitions" module="dagster" object="Definitions" /> object containing the four assets, a job for those assets, and the sensor for the specific podcast feed:
 
 <CodeExample
-  path="docs_projects/project_dagster_modal_pipes/project_dagster_modal_pipes/pipeline_factory.py"
+  path="docs_projects/project_dagster_modal_pipes/project_dagster_modal_pipes/defs/pipeline_factory.py"
   language="python"
   startAfter="start_def"
   endBefore="end_def"

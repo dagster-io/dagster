@@ -5,7 +5,7 @@ from typing import Optional
 
 from botocore.exceptions import ClientError
 
-from project_dagster_modal_pipes.constants import BROWSER_USER_AGENT, DATA_PATH
+from project_dagster_modal_pipes.defs.constants import BROWSER_USER_AGENT, DATA_PATH
 
 
 def download_transcript_if_exists(entry) -> Optional[str]:
