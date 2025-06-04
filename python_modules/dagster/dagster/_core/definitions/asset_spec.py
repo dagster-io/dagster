@@ -455,11 +455,21 @@ def map_asset_specs(
     ]
 
 
-def attach_internal_freshness_policy(spec: AssetSpec, policy: InternalFreshnessPolicy) -> AssetSpec:
+def attach_internal_freshness_policy(
+    spec: AssetSpec, policy: InternalFreshnessPolicy, overwrite_existing=True
+) -> AssetSpec:
     """Apply a freshness policy to an asset spec, attaching it to the spec's metadata.
 
     You can use this in Definitions.map_asset_specs to attach a freshness policy to an asset spec.
     """
+    if INTERNAL_FRESHNESS_POLICY_METADATA_KEY in spec.metadata:
+        if overwrite_existing:
+            return spec.merge_attributes(
+                metadata={INTERNAL_FRESHNESS_POLICY_METADATA_KEY: serialize_value(policy)}  # pyright: ignore[reportArgumentType]
+            )
+        else:
+            return spec
+
     return spec.merge_attributes(
         metadata={INTERNAL_FRESHNESS_POLICY_METADATA_KEY: serialize_value(policy)}  # pyright: ignore[reportArgumentType]
     )
