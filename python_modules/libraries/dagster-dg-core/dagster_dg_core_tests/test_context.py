@@ -6,6 +6,7 @@ from collections.abc import Sequence
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Any, Union
+from unittest.mock import patch
 
 import pytest
 from dagster_dg_core.component import RemotePluginRegistry
@@ -590,3 +591,26 @@ def _set_and_detect_missing_required_key(
         delete_toml_node(toml, path)
     with dg_exits(re.escape(error_message)):
         DgContext.from_file_discovery_and_command_line_config(Path.cwd(), {})
+
+
+def test_project_registry_modules_wildcard_resolution(runner: ProxyRunner):
+    """Test that project_registry_modules resolves wildcard patterns."""
+    with isolated_example_project_foo_bar() as project_dir:
+        with pushd(project_dir):
+            # Set up project with wildcard registry modules
+            with modify_dg_toml_config_as_dict(project_dir / "pyproject.toml") as toml:
+                toml["tool"]["dg"]["project"]["registry_modules"] = ["foo.*", "explicit.module"]
+
+            context = DgContext.from_file_discovery_and_command_line_config(Path.cwd(), {})
+
+            # Mock the wildcard resolution to test the integration
+            with patch("dagster_dg_core.context.resolve_wildcard_modules") as mock_resolve:
+                mock_resolve.return_value = ["foo.utils", "foo.helpers", "explicit.module"]
+
+                result = context.project_registry_modules
+
+                # Should have called resolve_wildcard_modules with the raw config
+                mock_resolve.assert_called_once_with(["foo.*", "explicit.module"])
+
+                # Should return the resolved modules
+                assert result == ["foo.utils", "foo.helpers", "explicit.module"]
