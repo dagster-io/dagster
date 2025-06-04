@@ -73,7 +73,7 @@ def definitions_validate_command(
     definitions_validate_command_impl(
         log_level=log_level,
         log_format=log_format,
-        load_with_grpc=load_with_grpc,
+        allow_in_process=not load_with_grpc,
         verbose=verbose,
         **other_opts,
     )
@@ -82,7 +82,7 @@ def definitions_validate_command(
 def definitions_validate_command_impl(
     log_level: str,
     log_format: str,
-    load_with_grpc: bool,
+    allow_in_process: bool,
     verbose: bool,
     **other_opts: object,
 ):
@@ -108,7 +108,7 @@ def definitions_validate_command_impl(
             instance=instance,
             version=dagster_version,
             workspace_opts=workspace_opts,
-            allow_in_process=not load_with_grpc,
+            allow_in_process=allow_in_process,
             log_level=log_level,
         ) as workspace:
             if logger.parent:

@@ -264,6 +264,7 @@ def test_implicit_yaml_check_from_dg_dev() -> None:
             BASIC_MISSING_VALUE.component_path,
             BASIC_INVALID_VALUE.component_path,
             local_component_defn_to_inject=BASIC_MISSING_VALUE.component_type_filepath,
+            in_workspace=False,
         ) as tmpdir,
     ):
         with pushd(str(tmpdir)):
@@ -275,18 +276,30 @@ def test_implicit_yaml_check_from_dg_dev() -> None:
             BASIC_MISSING_VALUE.check_error_msg(str(result.stdout))
 
 
-def test_implicit_yaml_check_from_dg_dev_workspace() -> None:
+def test_implicit_yaml_check_from_dg_dev_in_workspace_context() -> None:
     with (
         ProxyRunner.test() as runner,
         create_project_from_components(
             runner,
             BASIC_MISSING_VALUE.component_path,
+            BASIC_INVALID_VALUE.component_path,
             local_component_defn_to_inject=BASIC_MISSING_VALUE.component_type_filepath,
+            in_workspace=True,
         ) as tmpdir,
     ):
         with pushd(Path(tmpdir).parent):
-            result = runner.invoke("dev")
+            result = runner.invoke("dev", "--check-yaml")
             assert result.exit_code != 0, str(result.stdout)
 
-            assert BASIC_MISSING_VALUE.check_error_msg
+            assert "--check-yaml is not currently supported in a workspace context" in str(
+                result.stdout
+            )
+
+        # It is supported and is the default in a project context within a workspace
+        with pushd(tmpdir):
+            result = runner.invoke("dev", "--check-yaml")
+            assert result.exit_code != 0, str(result.stdout)
+
+            assert BASIC_INVALID_VALUE.check_error_msg and BASIC_MISSING_VALUE.check_error_msg
+            BASIC_INVALID_VALUE.check_error_msg(str(result.stdout))
             BASIC_MISSING_VALUE.check_error_msg(str(result.stdout))
