@@ -47,6 +47,7 @@ from dagster_dg_core.utils import (
     msg_with_potential_paths,
     pushd,
     resolve_local_venv,
+    resolve_wildcard_modules,
     set_toml_node,
     strip_activated_venv_from_env_vars,
     validate_dagster_availability,
@@ -576,12 +577,16 @@ class DgContext:
 
     @property
     def project_registry_modules(self) -> list[str]:
-        """Return a mapping of plugin object references for the current project."""
+        """Return a list of resolved plugin module references for the current project.
+
+        This resolves any wildcard patterns in the raw registry_modules configuration
+        into actual module names.
+        """
         if not self.config.project:
             raise DgError(
                 "`project_registry_modules` is only available in a Dagster project context"
             )
-        return self.config.project.registry_modules
+        return resolve_wildcard_modules(self.config.project.registry_modules)
 
     def add_project_registry_module(self, module_name: str) -> None:
         """Add a module name to the project plugin module registry."""

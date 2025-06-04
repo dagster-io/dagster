@@ -662,6 +662,92 @@ def _get_new_container_node(
     return [] if isinstance(representative_key, int) else {}
 
 
+def resolve_wildcard_modules(module_patterns: Sequence[str]) -> list[str]:
+    """Resolve wildcard patterns in module names to actual module names.
+
+    Args:
+        module_patterns: List of module patterns, which may include wildcards (*).
+                        The * character matches any characters within a single module segment.
+
+    Returns:
+        List of resolved module names with wildcards expanded.
+
+    Examples:
+        resolve_wildcard_modules(["foo.bar", "foo.*", "baz.*.models"])
+        # might return ["foo.bar", "foo.utils", "foo.helpers", "baz.core.models", "baz.web.models"]
+    """
+    resolved_modules = []
+
+    for pattern in module_patterns:
+        if "*" not in pattern:
+            # No wildcard, add as-is
+            resolved_modules.append(pattern)
+            continue
+
+        # Split pattern into segments
+        pattern_segments = pattern.split(".")
+
+        # Find all combinations that match the pattern
+        matching_modules = _find_matching_modules(pattern_segments)
+        resolved_modules.extend(matching_modules)
+
+    # Remove duplicates while preserving order
+    seen = set()
+    return [m for m in resolved_modules if not (m in seen or seen.add(m))]
+
+
+def _find_matching_modules(pattern_segments: list[str]) -> list[str]:
+    """Find all modules that match the given pattern segments.
+
+    Args:
+        pattern_segments: List of pattern segments, where * matches any segment name.
+
+    Returns:
+        List of matching module names.
+    """
+    import importlib
+    import pkgutil
+
+    def _explore_modules(current_segments: list[str], remaining_pattern: list[str]) -> list[str]:
+        if not remaining_pattern:
+            # We've matched the full pattern, return the current module path
+            module_name = ".".join(current_segments)
+            try:
+                # Verify the module actually exists and can be imported
+                importlib.import_module(module_name)
+                return [module_name]
+            except (ImportError, ModuleNotFoundError):
+                return []
+
+        current_pattern = remaining_pattern[0]
+        rest_pattern = remaining_pattern[1:]
+
+        if current_pattern == "*":
+            # Wildcard - explore all available submodules
+            if not current_segments:
+                # Top-level wildcard - explore all top-level packages
+                matches = []
+                for _, name, _ in pkgutil.iter_modules():
+                    matches.extend(_explore_modules([name], rest_pattern))
+                return matches
+            else:
+                # Explore submodules of the current path
+                try:
+                    parent_module_name = ".".join(current_segments)
+                    parent_module = importlib.import_module(parent_module_name)
+                    matches = []
+                    for _, name, _ in pkgutil.iter_modules(parent_module.__path__):
+                        matches.extend(_explore_modules(current_segments + [name], rest_pattern))
+                    return matches
+                except (ImportError, ModuleNotFoundError, AttributeError):
+                    return []
+        else:
+            # Literal segment - add it and continue
+            return _explore_modules(current_segments + [current_pattern], rest_pattern)
+
+    return _explore_modules([], pattern_segments)
+
+
 def validate_dagster_availability() -> None:
     try:
         import dagster  # noqa

@@ -857,13 +857,21 @@ def test_scaffold_component_succeeds_scaffolded_no_model() -> None:
         "class_name_only",
     ],
 )
+@pytest.mark.parametrize(
+    "is_first_component", [True, False], ids=["first_component", "nth_component"]
+)
 def test_scaffold_component_no_entry_point_success(
-    component_name: str,
+    component_name: str, is_first_component: bool
 ) -> None:
     with (
         ProxyRunner.test() as runner,
         isolated_example_project_foo_bar(runner),
     ):
+        if not is_first_component:
+            # First scaffold some other component
+            result = runner.invoke("scaffold", "component", "Qux")
+            assert_runner_result(result)
+
         if "." not in component_name:
             component_key = "foo_bar.components.baz.Baz"
         else:
@@ -882,10 +890,19 @@ def test_scaffold_component_no_entry_point_success(
 
         assert any(json_entry["key"] == component_key for json_entry in result_json)
 
-        registry_modules_str = textwrap.dedent(f"""
-            registry_modules = [
-                "{component_module}",
-            ]
-         """).strip()
+        if is_first_component:
+            registry_modules_str = textwrap.dedent(f"""
+                registry_modules = [
+                    "{component_module}",
+                ]
+             """).strip()
+        else:
+            registry_modules_str = textwrap.dedent(f"""
+                registry_modules = [
+                    "foo_bar.components.qux",
+                    "{component_module}",
+                ]
+             """).strip()
+
         pyproject_toml = Path("pyproject.toml").read_text()
         assert registry_modules_str in pyproject_toml
