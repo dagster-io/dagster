@@ -6,7 +6,9 @@ import dagster as dg
 def my_job(): ...
 
 
-basic_schedule = dg.ScheduleDefinition(job=my_job, cron_schedule="0 0 * * *")
+basic_schedule = dg.ScheduleDefinition(
+    name="basic_schedule", job=my_job, cron_schedule="0 0 * * *"
+)
 # end_basic_schedule
 
 
