@@ -50,11 +50,9 @@ class AssetFreshnessHealthState(LoadableBy[AssetKey]):
     def _blocking_batch_load(
         cls, keys: Iterable[AssetKey], context: LoadingContext
     ) -> Iterable[Optional["AssetFreshnessHealthState"]]:
-        asset_freshness_health_states = None
-        if context.instance.streamline_read_asset_health_supported():
-            asset_freshness_health_states = (
-                context.instance.get_asset_freshness_health_state_for_assets(list(keys))
-            )
+        asset_freshness_health_states = (
+            context.instance.get_asset_freshness_health_state_for_assets(list(keys))
+        )
 
         if asset_freshness_health_states is None:
             return [None for _ in keys]
