@@ -147,12 +147,12 @@ registry-modules` and see the module `my_existing_project.components`, which we 
 path="docs_snippets/docs_snippets/guides/dg/migrating-project/9-list-registry-modules.txt"
 />
 
-We can now scaffold a new component type in our project and it will be
-available to `dg` commands. First create the component type:
+We can now scaffold a new component in our project and it will be
+available to `dg` commands. First create the component:
 
 <CodeExample path="docs_snippets/docs_snippets/guides/dg/migrating-project/10-scaffold-component.txt" />
 
-Then run `dg list components` to confirm that the new component type is available:
+Then run `dg list components` to confirm that the new component is available:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/migrating-project/11-list-components.txt" />
 
