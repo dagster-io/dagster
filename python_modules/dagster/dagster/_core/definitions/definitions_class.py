@@ -471,21 +471,9 @@ class Definitions(IHaveNew):
                 if isinstance(job, JobDefinition):
                     return job
 
-        check.failed(f"JobDefinition with name {name} not found")
-
-        # if not found_direct:
-        #     warning = self.dig_for_warning(name)
-        #     if warning:
-        #         warnings.warn(warning)
-        #     else:
-        #         warnings.warn(
-        #             f"JobDefinition with name {name} directly passed to Definitions not found, "
-        #             "will attempt to resolve to a JobDefinition. "
-        #             "This will be an error in a future release and will require a call to "
-        #             "resolve_job_def in dagster 1.11. "
-        #         )
-
-        # return self.resolve_job_def(name)
+        warning = self.dig_for_warning(name)
+        reason = f" Reason: {warning}" if warning else None
+        check.failed(f"JobDefinition with name {name} not found.{reason}")
 
     def resolve_job_def(self, name: str) -> JobDefinition:
         """Resolve a job definition by name. If you passed in an :py:class:`UnresolvedAssetJobDefinition`
