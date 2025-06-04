@@ -61,9 +61,11 @@ class InternalFreshnessPolicy(ABC):
 
     @staticmethod
     def cron(
-        deadline_cron: str, lookback_window: timedelta, timezone: str = "UTC"
+        deadline_cron: str, lower_bound_delta: timedelta, timezone: str = "UTC"
     ) -> "CronFreshnessPolicy":
-        return CronFreshnessPolicy(deadline_cron, lookback_window, timezone)
+        return CronFreshnessPolicy(
+            deadline_cron=deadline_cron, lower_bound_delta=lower_bound_delta, timezone=timezone
+        )
 
 
 @whitelist_for_serdes
@@ -122,22 +124,25 @@ class CronFreshnessPolicy(InternalFreshnessPolicy, IHaveNew):
     """
 
     deadline_cron: str
-    lookback_window: SerializableTimeDelta
+    lower_bound_delta: SerializableTimeDelta
     timezone: str
 
-    def __new__(cls, deadline_cron: str, lookback_window: timedelta, timezone: str = "UTC"):
+    def __new__(cls, deadline_cron: str, lower_bound_delta: timedelta, timezone: str = "UTC"):
         check.str_param(deadline_cron, "deadline_cron")
         check.invariant(is_valid_cron_string(deadline_cron), "Invalid cron string.")
 
-        # TODO validate lookback window fits within the cron
+        # TODO validate lower bound delta fits within the cron
         # This will require a method to find the minimum cycle length of the cron schedule
 
         return super().__new__(
             cls,
             deadline_cron=deadline_cron,
-            lookback_window=SerializableTimeDelta.from_timedelta(lookback_window),
+            lower_bound_delta=SerializableTimeDelta.from_timedelta(lower_bound_delta),
             timezone=timezone,
         )
+
+    def get_lower_bound_delta(self) -> timedelta:
+        return SerializableTimeDelta.to_timedelta(self.lower_bound_delta)
 
 
 @whitelist_for_serdes

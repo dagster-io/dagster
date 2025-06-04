@@ -174,29 +174,29 @@ def test_internal_freshness_policy_cron_policy_validation() -> None:
     # Valid cron string and lookback, daily
     policy = InternalFreshnessPolicy.cron(
         deadline_cron="0 10 * * *",
-        lookback_window=timedelta(hours=1),
+        lower_bound_delta=timedelta(hours=1),
     )
     assert isinstance(policy, CronFreshnessPolicy)
     assert policy.deadline_cron == "0 10 * * *"
-    assert policy.lookback_window == SerializableTimeDelta.from_timedelta(timedelta(hours=1))
+    assert policy.lower_bound_delta == SerializableTimeDelta.from_timedelta(timedelta(hours=1))
     assert policy.timezone == "UTC"
 
     # Valid cron string and lookback and timezone
     policy = InternalFreshnessPolicy.cron(
         deadline_cron="0 10 * * *",
-        lookback_window=timedelta(hours=1),
+        lower_bound_delta=timedelta(hours=1),
         timezone="America/New_York",
     )
     assert isinstance(policy, CronFreshnessPolicy)
     assert policy.deadline_cron == "0 10 * * *"
-    assert policy.lookback_window == SerializableTimeDelta.from_timedelta(timedelta(hours=1))
+    assert policy.lower_bound_delta == SerializableTimeDelta.from_timedelta(timedelta(hours=1))
     assert policy.timezone == "America/New_York"
 
     # Invalid cron string
     with pytest.raises(CheckError):
         InternalFreshnessPolicy.cron(
             deadline_cron="0 10 * * * *",  # we don't support seconds resolution in the cron
-            lookback_window=timedelta(hours=1),
+            lower_bound_delta=timedelta(hours=1),
         )
 
 
@@ -246,7 +246,7 @@ def test_internal_freshness_policy_apply_to_asset() -> None:
     @asset(
         internal_freshness_policy=InternalFreshnessPolicy.cron(
             deadline_cron="0 10 * * *",
-            lookback_window=timedelta(hours=1),
+            lower_bound_delta=timedelta(hours=1),
             timezone="UTC",
         )
     )
@@ -259,7 +259,9 @@ def test_internal_freshness_policy_apply_to_asset() -> None:
     deserialized = deserialize_value(policy)
     assert isinstance(deserialized, CronFreshnessPolicy)
     assert deserialized.deadline_cron == "0 10 * * *"
-    assert deserialized.lookback_window == SerializableTimeDelta.from_timedelta(timedelta(hours=1))
+    assert deserialized.lower_bound_delta == SerializableTimeDelta.from_timedelta(
+        timedelta(hours=1)
+    )
     assert deserialized.timezone == "UTC"
 
 
@@ -268,15 +270,14 @@ def test_internal_freshness_policy_apply_to_asset_spec() -> None:
         key="foo",
         internal_freshness_policy=InternalFreshnessPolicy.cron(
             deadline_cron="0 10 * * *",
-            lookback_window=timedelta(hours=1),
-            timezone="UTC",
+            lower_bound_delta=timedelta(hours=1),
         ),
     )
     asset_spec = attach_internal_freshness_policy(
         asset_spec,
         InternalFreshnessPolicy.cron(
             deadline_cron="0 10 * * *",
-            lookback_window=timedelta(hours=1),
+            lower_bound_delta=timedelta(hours=1),
             timezone="UTC",
         ),
     )
@@ -284,5 +285,7 @@ def test_internal_freshness_policy_apply_to_asset_spec() -> None:
     deserialized = deserialize_value(asset_spec.metadata[INTERNAL_FRESHNESS_POLICY_METADATA_KEY])
     assert isinstance(deserialized, CronFreshnessPolicy)
     assert deserialized.deadline_cron == "0 10 * * *"
-    assert deserialized.lookback_window == SerializableTimeDelta.from_timedelta(timedelta(hours=1))
+    assert deserialized.lower_bound_delta == SerializableTimeDelta.from_timedelta(
+        timedelta(hours=1)
+    )
     assert deserialized.timezone == "UTC"
