@@ -11,7 +11,7 @@ import DgComponentsPreview from '@site/docs/partials/\_DgComponentsPreview.md';
 
 :::note
 
-If you're just getting started, we recommend [scaffolding a single project](/guides/labs/dg/creating-a-project) instead of a workspace with multiple projects.
+If you're just getting started, we recommend [creating a single project](/guides/labs/dg/creating-a-project) instead of a workspace with multiple projects.
 
 :::
 
@@ -25,13 +25,13 @@ A workspace does not define a Python environment by default. Instead, Python env
 
 :::
 
-## Scaffold a new workspace and first project
+## 1. Create a new workspace and first project
 
-To scaffold a new workspace called `dagster-workspace`, run `uvx create-dagster workspace`:
+To create a new workspace called `dagster-workspace`, run `uvx create-dagster workspace`:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/workspace/1-dg-scaffold-workspace.txt" />
 
-Now we'll create a project inside our workspace called `project-1`. Run `uvx create-dagster project` with the `--python-environment uv_managed` option. You will be prompted for the name of the project:
+Now, create a project inside the workspace called `project-1`. Run `uvx create-dagster project` with the `--python-environment uv_managed` option. You will be prompted for the name of the project:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/workspace/2-dg-scaffold-project.txt" />
 
@@ -80,19 +80,20 @@ Let's create another project:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/workspace/6-scaffold-project.txt" />
 
-Now we have two projects. We can list them with:
+Now there are two projects. You can list them with:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/workspace/7-project-list.txt" />
 
 ## Load workspace with `dg`
 
-Finally, let's load up our two projects with `dg dev`. When we run `dg dev` from the workspace root, it will automatically recognize the projects in your workspace and launch them in their respective environments. However, since the workspace root does not have an associated Python environment, we'll need to use the `dg` executable from one of our project environments. We'll use `project-1`. Let's activate that virtual environment and then launch `dg dev`:
+Finally, let's load up our two projects with `dg dev`. When you run `dg dev` from the workspace root, it will automatically recognize the projects in your workspace and launch them in their respective environments. However, since the workspace root does not have an associated Python environment, you'll need to use the `dg` executable from one of the project environments. Activate the `project-1` virtual environment, then launch `dg dev`:
 
 <CliInvocationExample contents="source projects/project-1/.venv/bin/activate && dg dev" />
 
 :::note
-More streamlined python environment management at the workspace level is under
-development.
+
+More streamlined Python environment management at the workspace level is under active development.
+
 :::
 
 ![](/images/guides/build/projects-and-components/setting-up-a-workspace/two-projects.png)
