@@ -174,13 +174,13 @@ def reconcile_sources(
             initialized_sources[source_name] = existing_source
             continue
 
-        diff = diff.join(
-            diff_sources(  # type: ignore
-                configured_source,
-                existing_source.source if existing_source else None,
-                ignore_secrets,
-            )
+        sources_diff = diff_sources(
+            configured_source,
+            existing_source.source if existing_source else None,
+            ignore_secrets,
         )
+        assert isinstance(sources_diff, ManagedElementDiff)
+        diff = diff.join(sources_diff)
 
         if existing_source and (
             not configured_source or (configured_source.must_be_recreated(existing_source.source))
@@ -261,13 +261,13 @@ def reconcile_destinations(
             initialized_destinations[destination_name] = existing_destination
             continue
 
-        diff = diff.join(
-            diff_destinations(  # type: ignore
-                configured_destination,
-                existing_destination.destination if existing_destination else None,
-                ignore_secrets,
-            )
+        destinations_diff = diff_destinations(
+            configured_destination,
+            existing_destination.destination if existing_destination else None,
+            ignore_secrets,
         )
+        assert isinstance(destinations_diff, ManagedElementDiff)
+        diff = diff.join(destinations_diff)
 
         if existing_destination and (
             not configured_destination
@@ -404,7 +404,11 @@ def reconcile_config(
             dry_run,
         )
 
-        return ManagedElementDiff().join(sources_diff).join(dests_diff).join(connections_diff)  # type: ignore
+        assert isinstance(dests_diff, ManagedElementDiff)
+        assert isinstance(connections_diff, ManagedElementDiff)
+        assert isinstance(sources_diff, ManagedElementDiff)
+
+        return ManagedElementDiff().join(sources_diff).join(dests_diff).join(connections_diff)
 
 
 def reconcile_normalization(
@@ -512,9 +516,11 @@ def reconcile_connections_pre(
         if not should_delete and not config_conn:
             continue
 
-        diff = diff.join(
-            diff_connections(config_conn, existing_conn.connection if existing_conn else None)  # type: ignore
+        connections_diff = diff_connections(
+            config_conn, existing_conn.connection if existing_conn else None
         )
+        assert isinstance(connections_diff, ManagedElementDiff)
+        diff = diff.join(connections_diff)
 
         if existing_conn and (
             not config_conn or config_conn.must_be_recreated(existing_conn.connection)
