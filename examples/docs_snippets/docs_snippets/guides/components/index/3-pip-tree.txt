@@ -7,7 +7,7 @@ tree
 │       ├── __init__.py
 │       ├── components
 │       │   └── __init__.py
-|       ├── definitions.py
+│       ├── definitions.py
 │       └── defs
 │           └── __init__.py
 └── tests
