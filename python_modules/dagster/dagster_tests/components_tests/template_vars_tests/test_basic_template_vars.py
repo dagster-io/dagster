@@ -1,5 +1,7 @@
+import sys
 from collections.abc import Callable
 
+import pytest
 from dagster._core.definitions.definitions_class import Definitions
 from dagster.components.component.component import Component
 from dagster.components.component.template_vars import template_var
@@ -55,6 +57,9 @@ def test_basic_additional_scope_scope_udf_no_args():
     assert component.value == "a_udf_value"
 
 
+@pytest.mark.skipif(
+    sys.version_info < (3, 10), reason="staticmethod behavior differs on python 3.9"
+)
 def test_basic_additional_scope_scope_udf_with_args():
     load_context, component = load_context_and_component_for_test(
         ComponentWithAdditionalScope, {"value": "{{ a_udf_with_args('1') }}"}
