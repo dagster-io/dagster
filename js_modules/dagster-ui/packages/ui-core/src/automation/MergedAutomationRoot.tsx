@@ -2,11 +2,11 @@ import {
   Body2,
   Box,
   Colors,
-  Heading,
   Icon,
   NonIdealState,
   PageHeader,
   SpinnerWithText,
+  Subtitle1,
   TextInput,
   Tooltip,
 } from '@dagster-io/ui-components';
@@ -348,7 +348,7 @@ export const MergedAutomationRoot = () => {
 
   return (
     <Box flex={{direction: 'column'}} style={{height: '100%', overflow: 'hidden'}}>
-      <PageHeader title={<Heading>Automation</Heading>} />
+      <PageHeader title={<Subtitle1>Automation</Subtitle1>} />
       <Box
         padding={{horizontal: 24, vertical: 12}}
         flex={{
