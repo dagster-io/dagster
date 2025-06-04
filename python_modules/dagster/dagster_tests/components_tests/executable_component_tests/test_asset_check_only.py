@@ -178,6 +178,7 @@ def test_trivial_properties() -> None:
             "execute_fn": "dagster_tests.components_tests.executable_component_tests.test_asset_check_only.only_asset_execute_fn",
             "description": "op_description",
             "tags": {"op_tag": "op_tag_value"},
+            "pool": "op_pool",
             "assets": [
                 {
                     "key": "asset",
@@ -194,6 +195,7 @@ def test_trivial_properties() -> None:
             "description": "op_description",
             "execute_fn": "dagster_tests.components_tests.executable_component_tests.test_asset_check_only.only_asset_check_execute_fn",
             "tags": {"op_tag": "op_tag_value"},
+            "pool": "op_pool",
             "checks": [
                 {
                     "asset": "asset",
@@ -206,3 +208,4 @@ def test_trivial_properties() -> None:
     for component in [component_only_assets, component_only_asset_checks]:
         assert component.build_underlying_assets_def().op.tags == {"op_tag": "op_tag_value"}
         assert component.build_underlying_assets_def().op.description == "op_description"
+        assert component.build_underlying_assets_def().op.pool == "op_pool"

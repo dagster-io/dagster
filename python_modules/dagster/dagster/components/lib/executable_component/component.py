@@ -62,6 +62,7 @@ class ExecutableComponent(Component, Resolvable, Model):
     name: Optional[str] = None
     description: Optional[str] = None
     tags: Optional[dict[str, Any]] = None
+    pool: Optional[str] = None
     assets: Optional[list[ResolvedAssetSpec]] = None
     checks: Optional[list[ResolvedAssetCheckSpec]] = None
     execute_fn: ResolvableCallable
@@ -84,6 +85,7 @@ class ExecutableComponent(Component, Resolvable, Model):
                 specs=self.assets,
                 check_specs=self.checks,
                 required_resource_keys=self.resource_keys,
+                pool=self.pool,
             )
             def _assets_def(context: AssetExecutionContext, **kwargs):
                 return self.invoke_execute_fn(context)
@@ -97,6 +99,7 @@ class ExecutableComponent(Component, Resolvable, Model):
                 specs=self.checks,
                 description=self.description,
                 required_resource_keys=self.resource_keys,
+                pool=self.pool,
             )
             def _asset_check_def(context: AssetCheckExecutionContext, **kwargs):
                 return self.invoke_execute_fn(context)
