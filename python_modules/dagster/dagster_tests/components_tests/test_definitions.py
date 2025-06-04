@@ -5,7 +5,7 @@ import pytest
 from dagster import AssetSpec, ComponentLoadContext, Definitions
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.remote_representation.external_data import RepositorySnap
-from dagster.components.core.tree import ComponentTree
+from dagster.components.core.tree import ComponentTree, LegacyAutoloadingComponentTree
 from dagster.components.definitions import definitions
 from dagster_shared import check
 
@@ -36,7 +36,7 @@ def test_definitions_decorator_with_context():
         assert isinstance(context, ComponentLoadContext)
         return Definitions(assets=[AssetSpec(key="asset1")])
 
-    context = ComponentLoadContext.for_test()
+    context = ComponentTree.for_test().load_context
     result = my_defs_with_context(context)
     assert isinstance(result, Definitions)
     assets = list(result.assets or [])
@@ -86,7 +86,7 @@ def test_definitions_decorator_with_context_using_context():
             ]
         )
 
-    context = ComponentLoadContext.for_test()
+    context = ComponentTree.for_test().load_context
     result = my_defs_with_context(context)
     assert isinstance(result, Definitions)
     assets = list(result.assets or [])
@@ -98,7 +98,7 @@ def test_definitions_decorator_with_context_using_context():
 def test_component_tree():
     dagster_test_path = Path(__file__).joinpath("../../../../dagster-test").resolve()
     assert dagster_test_path.exists()
-    defs = ComponentTree.load(dagster_test_path).build_defs()
+    defs = LegacyAutoloadingComponentTree.load(dagster_test_path).build_defs()
 
     repo_snap = RepositorySnap.from_def(defs.get_repository_def())
     assert repo_snap.component_tree

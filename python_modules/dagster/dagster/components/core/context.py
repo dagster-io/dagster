@@ -4,7 +4,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
 from types import ModuleType
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from dagster_shared import check
 from dagster_shared.yaml_utils.source_position import SourcePositionTree
@@ -13,7 +13,10 @@ from dagster._annotations import PublicAttr, preview, public
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._utils import pushd
 from dagster.components.resolved.context import ResolutionContext
-from dagster.components.utils import get_path_from_module
+
+if TYPE_CHECKING:
+    from dagster.components.core.tree import ComponentTree
+
 
 RESOLUTION_CONTEXT_STASH_KEY = "component_load_context"
 
@@ -29,6 +32,7 @@ class ComponentLoadContext:
     defs_module_path: PublicAttr[Path]
     defs_module_name: PublicAttr[str]
     resolution_context: PublicAttr[ResolutionContext]
+    component_tree: "ComponentTree"
     terminate_autoloading_on_keyword_files: bool
 
     def __post_init__(self):
@@ -40,33 +44,6 @@ class ComponentLoadContext:
     def from_resolution_context(resolution_context: ResolutionContext) -> "ComponentLoadContext":
         return check.inst(
             resolution_context.stash.get(RESOLUTION_CONTEXT_STASH_KEY), ComponentLoadContext
-        )
-
-    @staticmethod
-    def for_module(
-        defs_module: ModuleType,
-        project_root: Path,
-        terminate_autoloading_on_keyword_files: bool = True,
-    ) -> "ComponentLoadContext":
-        path = get_path_from_module(defs_module)
-        return ComponentLoadContext(
-            path=path,
-            project_root=project_root,
-            defs_module_path=path,
-            defs_module_name=defs_module.__name__,
-            resolution_context=ResolutionContext.default(),
-            terminate_autoloading_on_keyword_files=terminate_autoloading_on_keyword_files,
-        )
-
-    @staticmethod
-    def for_test() -> "ComponentLoadContext":
-        return ComponentLoadContext(
-            path=Path.cwd(),
-            project_root=Path.cwd(),
-            defs_module_path=Path.cwd(),
-            defs_module_name="test",
-            resolution_context=ResolutionContext.default(),
-            terminate_autoloading_on_keyword_files=True,
         )
 
     def _with_resolution_context(
