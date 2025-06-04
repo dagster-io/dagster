@@ -487,6 +487,29 @@ class Definitions(IHaveNew):
         check.str_param(name, "name")
         return self.get_repository_def().get_job(name)
 
+    def dig_for_warnings(self, name: str) -> None:
+        for job in self.jobs or []:
+            if job.name == name:
+                if isinstance(job, JobDefinition):
+                    continue
+                check.failed(
+                    f"Found asset job named {job.name} passed to `jobs` parameter. You must now use Definitions.resolve_job_def correctly resolve retrieve this job definition."
+                )
+
+        for sensor in self.sensors or []:
+            for job in sensor.jobs:
+                if job.name == name:
+                    check.failed(
+                        f"Found job or graph named {job.name} passed to sensor named {sensor.name} that was passed to Definitions in the sensors param. You must call Definitions.resolve_job_def to retrieve this job definition."
+                    )
+
+        for schedule in self.schedules or []:
+            job = schedule.job
+            if job.name == name:
+                check.failed(
+                    f"Found job named {job.name} passed to schedule named {schedule.name} that was passed to Definitions in the schedules param. You must call Definitions.resolve_job_def to retrieve this job definition."
+                )
+
     @public
     def get_sensor_def(self, name: str) -> SensorDefinition:
         """Get a :py:class:`SensorDefinition` by name.
