@@ -498,8 +498,8 @@ class Definitions(IHaveNew):
                     return None
                 return (
                     f"Found asset job named {job.name} of type {type(job)} passed to `jobs` parameter. Starting in "
-                    "dagster 1.11, you must now use Definitions.resolve_job_def correctly "
-                    "resolve retrieve this job definition."
+                    "dagster 1.11, you must now use Definitions.resolve_job_def to correctly "
+                    "retrieve this job definition."
                 )
 
         for sensor in self.sensors or []:
