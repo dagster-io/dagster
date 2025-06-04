@@ -29,10 +29,12 @@ def assert_tree_node_structure_matches(
 ):
     nodes_by_path = {
         ComponentPath(
-            file_path=node_path.file_path.relative_to(tree.find_root_decl().path),
+            file_path=node_path.file_path.relative_to(tree.defs_module_path),
             instance_key=node_path.instance_key,
         ): node
-        for node_path, node in tree.find_root_decl().iterate_path_component_decl_pairs()
+        for node_path, node in check.inst(
+            tree.find_root_decl(), DefsFolderDecl
+        ).iterate_path_component_decl_pairs()
     }
     unrepresented_paths = set(nodes_by_path.keys())
 
