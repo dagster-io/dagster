@@ -12,6 +12,6 @@ from docs_snippets.concepts.assets.graph_backed_asset import defs
         "explicit_deps_job",
     ],
 )
-def test_jobs(job):
-    job = defs.get_job_def(job)
-    assert job.execute_in_process().success
+def test_jobs(job: str) -> None:
+    job_def = defs.resolve_job_def(job)
+    assert job_def.execute_in_process().success
