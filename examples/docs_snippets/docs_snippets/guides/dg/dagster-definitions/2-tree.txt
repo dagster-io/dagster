@@ -5,8 +5,6 @@ tree
 ├── src
 │   └── my_project
 │       ├── __init__.py
-│       ├── components
-│       │   └── __init__.py
 │       └── defs
 │           ├── __init__.py
 │           └── assets
@@ -15,4 +13,4 @@ tree
 │   └── __init__.py
 └── uv.lock
 
-7 directories, 7 files
+6 directories, 6 files

@@ -1,5 +1,4 @@
 import json
-import shutil
 import subprocess
 import textwrap
 from pathlib import Path
@@ -81,7 +80,7 @@ def test_scaffold_defs_classname_conflict_no_alias() -> None:
             assert Path("src/foo_bar/defs/qux").exists()
             defs_yaml_path = Path("src/foo_bar/defs/qux/defs.yaml")
             assert defs_yaml_path.exists()
-            full_type = "foo_bar.components.DefsFolderComponent"
+            full_type = "foo_bar.components.defs_folder_component.DefsFolderComponent"
             assert f"type: {full_type}" in defs_yaml_path.read_text()
 
 
@@ -328,14 +327,16 @@ def test_scaffold_defs_component_succeeds_scaffolded_component_type() -> None:
         ) as project_dir,
     ):
         with activate_venv(project_dir / ".venv"):
-            subprocess.run(["dg", "scaffold", "component", "Baz"], check=True)
+            runner.invoke("scaffold", "component", "Baz")
             assert Path("src/foo_bar/components/baz.py").exists()
 
-            subprocess.run(["dg", "scaffold", "defs", "foo_bar.components.Baz", "qux"], check=True)
+            subprocess.run(
+                ["dg", "scaffold", "defs", "foo_bar.components.baz.Baz", "qux"], check=True
+            )
             assert Path("src/foo_bar/defs/qux").exists()
             defs_yaml_path = Path("src/foo_bar/defs/qux/defs.yaml")
             assert defs_yaml_path.exists()
-            assert "type: foo_bar.components.Baz" in defs_yaml_path.read_text()
+            assert "type: foo_bar.components.baz.Baz" in defs_yaml_path.read_text()
 
 
 # ########################
@@ -770,9 +771,12 @@ def test_scaffold_component_type_success() -> None:
 
         assert any(json_entry["key"] == "foo_bar.components.Baz" for json_entry in result_json)
 
-        assert Path("src/foo_bar/components/__init__.py").read_text() == textwrap.dedent("""
+        assert (
+            Path("src/foo_bar/components/__init__.py").read_text().strip()
+            == textwrap.dedent("""
             from foo_bar.components.baz import Baz as Baz
-        """)
+        """).strip()
+        )
 
 
 def test_scaffold_component_type_already_exists_fails() -> None:
@@ -783,11 +787,11 @@ def test_scaffold_component_type_already_exists_fails() -> None:
         subprocess.run(["dg", "scaffold", "component", "Baz"], check=True)
 
         result = subprocess.run(
-            ["dg", "scaffold", "component", "Baz"], check=False, capture_output=True
+            ["dg", "scaffold", "component", "Baz"], check=False, capture_output=True, text=True
         )
 
         assert result.returncode != 0
-        assert "already exists" in result.stderr.decode("utf-8")
+        assert "already exists" in result.stderr
 
 
 def test_scaffold_component_type_succeeds_non_default_component_components_package() -> None:
@@ -806,21 +810,6 @@ def test_scaffold_component_type_succeeds_non_default_component_components_packa
         result_json = json.loads(result.stdout.decode("utf-8"))
 
         assert any(json_entry["key"] == "foo_bar._components.Baz" for json_entry in result_json)
-
-
-def test_scaffold_component_type_fails_components_lib_package_does_not_exist(capfd) -> None:
-    with (
-        ProxyRunner.test() as runner,
-        isolated_example_component_library_foo_bar(runner, components_module_name="foo_bar.fake"),
-    ):
-        # Delete the entry point module
-        shutil.rmtree("src/foo_bar/fake")
-
-        # An entry point load error will occur before we even get to component type scaffolding
-        # code, because the entry points are loaded first.
-        result = runner.invoke("scaffold", "component", "Baz")
-        assert_runner_result(result, exit_0=False)
-        assert "Cannot find module `foo_bar.fake`" in result.output
 
 
 def test_scaffold_component_succeeds_scaffolded_no_model() -> None:
@@ -853,3 +842,50 @@ def test_scaffold_component_succeeds_scaffolded_no_model() -> None:
         ''').strip()
 
         assert Path("src/foo_bar/components/baz.py").read_text().strip() == output
+
+
+@pytest.mark.parametrize(
+    "component_name",
+    [
+        "foo_bar.components.baz.Baz",
+        "foo_bar._components.baz.Baz",
+        "Baz",
+    ],
+    ids=[
+        "with_module_in_default",
+        "with_module_in_alternative",
+        "class_name_only",
+    ],
+)
+def test_scaffold_component_no_entry_point_success(
+    component_name: str,
+) -> None:
+    with (
+        ProxyRunner.test() as runner,
+        isolated_example_project_foo_bar(runner),
+    ):
+        if "." not in component_name:
+            component_key = "foo_bar.components.baz.Baz"
+        else:
+            component_key = component_name
+
+        result = runner.invoke("scaffold", "component", component_name)
+        assert_runner_result(result)
+
+        component_module = component_key.rsplit(".", 1)[0]
+        module_file = (Path("src") / "/".join(component_module.split("."))).with_suffix(".py")
+        assert module_file.exists()
+
+        result = runner.invoke("list", "components", "--json")
+        assert_runner_result(result)
+        result_json = json.loads(result.output)
+
+        assert any(json_entry["key"] == component_key for json_entry in result_json)
+
+        registry_modules_str = textwrap.dedent(f"""
+            registry_modules = [
+                "{component_module}",
+            ]
+         """).strip()
+        pyproject_toml = Path("pyproject.toml").read_text()
+        assert registry_modules_str in pyproject_toml

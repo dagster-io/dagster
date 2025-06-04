@@ -88,7 +88,7 @@ Now that these settings are in place, you can interact with your project using `
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/migrating-project/5-list-defs.txt" />
 
-### Add a `dagster_dg_cli.plugin` entry point
+### Add a `dagster_dg_cli.registry_modules` entry point
 
 We're not quite done adding configuration. `dg` uses the Python [entry
 point](https://packaging.python.org/en/latest/specifications/entry-points/) API
@@ -104,7 +104,7 @@ Let's create this submodule now:
 See the [plugin guide](/guides/labs/components/creating-new-component-types/creating-dg-plugin) for more on `dg` plugins.
 :::
 
-We'll need to add a `dagster_dg_cli.plugin` entry point to our project and then
+We'll need to add a `dagster_dg_cli.registry_modules` entry point to our project and then
 reinstall the project package into our virtual environment. The reinstallation
 step is crucial. Python entry points are registered at package installation
 time, so if you simply add a new entry point to an existing editable-installed
@@ -141,10 +141,10 @@ Entry points can be declared in either `pyproject.toml` or `setup.py`:
 </Tabs>
 
 If we've done everything correctly, we should now be able to run `dg list
-plugin-modules` and see the module `my_existing_project.components`, which we have registered as an entry point, listed in the output.
+registry-modules` and see the module `my_existing_project.components`, which we have registered as an entry point, listed in the output.
 
 <CliInvocationExample
-path="docs_snippets/docs_snippets/guides/dg/migrating-project/9-list-plugin-modules.txt"
+path="docs_snippets/docs_snippets/guides/dg/migrating-project/9-list-registry-modules.txt"
 />
 
 We can now scaffold a new component type in our project and it will be

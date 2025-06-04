@@ -138,7 +138,7 @@ def check_definitions_command(
             overall_check_result = True
             project_dirs = (
                 [project.path for project in dg_context.project_specs]
-                if dg_context.is_workspace
+                if dg_context.is_in_workspace
                 else [dg_context.root_path]
             )
             for project_dir in project_dirs:

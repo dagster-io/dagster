@@ -26,41 +26,48 @@ class RemotePluginRegistry:
     def from_dg_context(
         dg_context: "DgContext", extra_modules: Optional[Sequence[str]] = None
     ) -> "RemotePluginRegistry":
-        """Fetches the set of available plugin objects. The default set includes everything
-        discovered under the "dagster_dg_cli.plugin" entry point group in the target environment. If
+        """Fetches the set of available registry objects. The default set includes everything
+        discovered under the "dagster_dg_cli.registry_modules" entry point group in the target environment. If
         `extra_modules` is provided, these will also be searched for component types.
         """
         if dg_context.use_dg_managed_environment:
             dg_context.ensure_uv_lock()
 
         if dg_context.config.cli.use_component_modules:
-            plugin_manifest = _load_module_library_objects(
+            plugin_manifest = _load_module_registry_objects(
                 dg_context, dg_context.config.cli.use_component_modules
             )
         else:
-            plugin_manifest = _load_entry_point_components(dg_context)
+            plugin_manifest = _load_entry_point_registry_objects(dg_context)
 
         if extra_modules:
             plugin_manifest = plugin_manifest.merge(
-                _load_module_library_objects(dg_context, extra_modules)
+                _load_module_registry_objects(dg_context, extra_modules)
             )
 
+        # Only load project plugin modules if there is no entry point
+        if dg_context.is_project and not dg_context.has_registry_module_entry_point:
+            if dg_context.project_registry_modules:
+                plugin_manifest = plugin_manifest.merge(
+                    _load_module_registry_objects(dg_context, dg_context.project_registry_modules)
+                )
+
         if (
-            dg_context.is_plugin
+            dg_context.has_registry_module_entry_point
             and not dg_context.config.cli.use_component_modules
-            and dg_context.default_plugin_module_name not in plugin_manifest.modules
+            and dg_context.default_registry_root_module_name not in plugin_manifest.modules
         ):
             emit_warning(
                 "missing_dg_plugin_module_in_manifest",
                 f"""
-                Your package defines a `dagster_dg_cli.plugin` entry point, but this module was not
+                Your package defines a `dagster_dg_cli.registry_modules` entry point, but this module was not
                 found in the plugin manifest for the current environment. This means either that
                 your project is not installed in the current environment, or that the entry point
                 metadata was added after your module was installed. Python entry points are
                 registered at package install time. Please reinstall your package into the current
                 environment to ensure the entry point is registered.
 
-                Entry point module: `{dg_context.default_plugin_module_name}`
+                Entry point module: `{dg_context.default_registry_root_module_name}`
                 """,
                 suppress_warnings=dg_context.config.cli.suppress_warnings,
             )
@@ -130,13 +137,15 @@ def all_components_schema_from_dg_context(dg_context: "DgContext") -> Mapping[st
 MIN_DAGSTER_COMPONENTS_LIST_PLUGINS_VERSION = Version("1.10.12")
 
 
-def _load_entry_point_components(
+def _load_entry_point_registry_objects(
     dg_context: "DgContext",
 ) -> PluginManifest:
     return _fetch_plugin_manifest(entry_points=True, extra_modules=[])
 
 
-def _load_module_library_objects(dg_context: "DgContext", modules: Sequence[str]) -> PluginManifest:
+def _load_module_registry_objects(
+    dg_context: "DgContext", modules: Sequence[str]
+) -> PluginManifest:
     modules_to_fetch = set(modules)
     objects: list[PluginObjectSnap] = []
 
@@ -188,11 +197,6 @@ def _fetch_plugin_manifest(entry_points: bool, extra_modules: Sequence[str]) -> 
         console.print(panel)
         sys.exit(1)
     return result
-
-
-def _plugin_objects_to_manifest(objects: list[PluginObjectSnap]) -> PluginManifest:
-    modules = {obj.key.package for obj in objects}
-    return PluginManifest(modules=sorted(modules), objects=objects)
 
 
 def get_specified_env_var_deps(component_data: Mapping[str, Any]) -> set[str]:

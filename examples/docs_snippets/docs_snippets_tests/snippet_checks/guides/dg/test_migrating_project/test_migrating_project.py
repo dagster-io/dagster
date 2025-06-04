@@ -185,7 +185,7 @@ def test_migrating_project(
                 snippet_path=f"{context.get_next_snip_number()}-create-lib.txt",
             )
 
-            # Add dagster_dg_cli.plugin to pyproject.toml
+            # Add dagster_dg_cli.registry_modules to pyproject.toml
             if package_manager == "uv":
                 pyproject_toml_content = Path("pyproject.toml").read_text()
                 pyproject_toml_content = insert_before_matching_line(
@@ -193,7 +193,7 @@ def test_migrating_project(
                     "\n"
                     + format_multiline("""
                         [project.entry-points]
-                        "dagster_dg_cli.plugin" = { my_existing_project = "my_existing_project.components"}
+                        "dagster_dg_cli.registry_modules" = { my_existing_project = "my_existing_project.components"}
                     """),
                     r"\[build-system\]",
                 )
@@ -215,7 +215,7 @@ def test_migrating_project(
             elif package_manager == "pip":
                 setup_cfg_content = format_multiline("""
                     [options.entry_points]
-                    dagster_dg_cli.plugin =
+                    dagster_dg_cli.registry_modules =
                         my_existing_project = my_existing_project.components
                 """)
                 Path("setup.cfg").write_text(setup_cfg_content)
@@ -230,8 +230,8 @@ def test_migrating_project(
                 )
 
             context.run_command_and_snippet_output(
-                cmd="dg list plugin-modules",
-                snippet_path=f"{context.get_next_snip_number()}-list-plugin-modules.txt",
+                cmd="dg list registry-modules",
+                snippet_path=f"{context.get_next_snip_number()}-list-registry-modules.txt",
             )
 
             context.run_command_and_snippet_output(

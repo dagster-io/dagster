@@ -526,7 +526,7 @@ def scaffold_build_artifacts_command(
                     # registry: '...'
                     """
                 )
-                if dg_context.is_workspace
+                if dg_context.is_in_workspace
                 else textwrap.dedent(
                     """
                     directory: .
@@ -658,7 +658,7 @@ REGISTRY_INFOS = [
 
 
 def _get_project_contexts(dg_context: DgContext, cli_config: DgRawCliConfig) -> list[DgContext]:
-    if dg_context.is_workspace:
+    if dg_context.is_in_workspace:
         return [
             dg_context.for_project_environment(project.path, cli_config)
             for project in dg_context.project_specs
@@ -884,7 +884,7 @@ def _core_scaffold(
 
 
 # ########################
-# ##### COMPONENT TYPE
+# ##### COMPONENT
 # ########################
 
 
@@ -916,9 +916,41 @@ def scaffold_component_command(
     dg_context = DgContext.for_component_library_environment(target_path, cli_config)
     registry = RemotePluginRegistry.from_dg_context(dg_context)
 
-    module_name = snakecase(name)
-    component_key = PluginObjectKey(name=name, namespace=dg_context.default_plugin_module_name)
-    if registry.has(component_key):
-        exit_with_error(f"Component type`{component_key.to_typename()}` already exists.")
+    module_name, class_name = _parse_component_name(dg_context, name)
 
-    scaffold_component(dg_context=dg_context, class_name=name, module_name=module_name, model=model)
+    component_key = PluginObjectKey(name=class_name, namespace=module_name)
+    if registry.has(component_key):
+        exit_with_error(f"Component type `{component_key.to_typename()}` already exists.")
+
+    path = dg_context.get_path_for_local_module(module_name, require_exists=False).with_suffix(
+        ".py"
+    )
+    if path.exists():
+        exit_with_error(f"A module at `{path}` already exists. Please choose a different name.")
+
+    scaffold_component(
+        dg_context=dg_context, class_name=class_name, module_name=module_name, model=model
+    )
+
+
+def _parse_component_name(dg_context: DgContext, name: str) -> tuple[str, str]:
+    """Parse the name into a module name and class name."""
+    if "." in name:
+        module_name, class_name = name.rsplit(".", 1)
+        if not module_name.startswith(dg_context.root_module_name):
+            exit_with_error(
+                f"Component `{name}` must be nested under the root module `{dg_context.root_module_name}`."
+            )
+        elif dg_context.has_registry_module_entry_point and not module_name.startswith(
+            dg_context.default_registry_root_module_name
+        ):
+            exit_with_error(
+                f"Component `{name}` must be nested under the declared entry point module `{dg_context.default_registry_root_module_name}`."
+            )
+    else:
+        final_module = snakecase(name)
+        module_name, class_name = (
+            f"{dg_context.default_registry_root_module_name}.{final_module}",
+            name,
+        )
+    return module_name, class_name
