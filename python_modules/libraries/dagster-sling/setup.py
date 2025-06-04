@@ -48,7 +48,7 @@ setup(
         ]
     },
     entry_points={
-        "dagster_dg_cli.plugin": [
+        "dagster_dg_cli.registry_modules": [
             "dagster_sling = dagster_sling",
         ],
     },

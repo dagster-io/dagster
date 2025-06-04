@@ -11,10 +11,14 @@ from dagster._core.errors import DagsterError
 from dagster.components.utils import format_error_message
 
 PACKAGE_ENTRY_ATTR = "__dg_package_entry__"
-DG_PLUGIN_ENTRY_POINT_GROUP = "dagster_dg_cli.plugin"
+DG_PLUGIN_ENTRY_POINT_GROUP = "dagster_dg_cli.registry_modules"
 
 # Remove in future, in place for backcompat
-OLD_DG_PLUGIN_ENTRY_POINT_GROUPS = ["dagster_dg.library", "dagster_dg.plugin"]
+OLD_DG_PLUGIN_ENTRY_POINT_GROUPS = [
+    "dagster_dg.library",
+    "dagster_dg.plugin",
+    "dagster_dg_cli.plugin",
+]
 
 
 class ComponentsEntryPointLoadError(DagsterError):
@@ -40,7 +44,7 @@ def get_plugin_entry_points() -> Sequence[importlib.metadata.EntryPoint]:
 
 def discover_entry_point_package_objects() -> dict[PluginObjectKey, object]:
     """Discover package entries registered in the Python environment via the
-    `dagster_dg_cli.plugin` entry point group.
+    `dagster_dg_cli.registry_modules` entry point group.
     """
     objects: dict[PluginObjectKey, object] = {}
 

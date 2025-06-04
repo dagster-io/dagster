@@ -203,7 +203,7 @@ def test_list_registry_modules_json_success():
 def test_list_registry_modules_includes_modules_with_no_objects():
     with (
         ProxyRunner.test() as runner,
-        isolated_example_project_foo_bar(runner, in_workspace=False),
+        isolated_example_component_library_foo_bar(runner),
     ):
         result = runner.invoke("list", "registry-modules")
         assert_runner_result(result)
@@ -713,7 +713,7 @@ def _assert_entry_point_error(cmd: list[str]):
         output = standardize_box_characters(result.stdout.decode("utf-8"))
 
         expected_header_message = format_error_message("""
-            Error loading entry point `foo_bar.components` in group `dagster_dg_cli.plugin`.
+            Error loading entry point `foo_bar.components` in group `dagster_dg_cli.registry_modules`.
         """)
         assert expected_header_message in output
 

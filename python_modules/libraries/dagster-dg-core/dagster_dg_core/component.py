@@ -26,8 +26,8 @@ class RemotePluginRegistry:
     def from_dg_context(
         dg_context: "DgContext", extra_modules: Optional[Sequence[str]] = None
     ) -> "RemotePluginRegistry":
-        """Fetches the set of available plugin objects. The default set includes everything
-        discovered under the "dagster_dg_cli.plugin" entry point group in the target environment. If
+        """Fetches the set of available registry objects. The default set includes everything
+        discovered under the "dagster_dg_cli.registry_modules" entry point group in the target environment. If
         `extra_modules` is provided, these will also be searched for component types.
         """
         if dg_context.use_dg_managed_environment:
@@ -45,15 +45,22 @@ class RemotePluginRegistry:
                 _load_module_registry_objects(dg_context, extra_modules)
             )
 
+        # Only load project plugin modules if there is no entry point
+        if dg_context.is_project and not dg_context.has_registry_module_entry_point:
+            if dg_context.project_registry_modules:
+                plugin_manifest = plugin_manifest.merge(
+                    _load_module_registry_objects(dg_context, dg_context.project_registry_modules)
+                )
+
         if (
-            dg_context.is_plugin
+            dg_context.has_registry_module_entry_point
             and not dg_context.config.cli.use_component_modules
             and dg_context.default_registry_root_module_name not in plugin_manifest.modules
         ):
             emit_warning(
                 "missing_dg_plugin_module_in_manifest",
                 f"""
-                Your package defines a `dagster_dg_cli.plugin` entry point, but this module was not
+                Your package defines a `dagster_dg_cli.registry_modules` entry point, but this module was not
                 found in the plugin manifest for the current environment. This means either that
                 your project is not installed in the current environment, or that the entry point
                 metadata was added after your module was installed. Python entry points are
