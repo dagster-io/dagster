@@ -3,7 +3,7 @@ import json
 import warnings
 from collections import defaultdict
 from collections.abc import Iterable, Iterator, Mapping, Sequence
-from functools import cached_property, update_wrapper
+from functools import cached_property
 from typing import (  # noqa: UP035
     TYPE_CHECKING,
     AbstractSet,
@@ -1314,6 +1314,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
             Union[AutomationCondition, Mapping[AssetKey, AutomationCondition]]
         ] = None,
         backfill_policy: Optional[BackfillPolicy] = None,
+        hook_defs: Optional[AbstractSet[HookDefinition]] = None,
     ) -> "AssetsDefinition":
         conflicts_by_attr_name: dict[str, set[AssetKey]] = defaultdict(set)
         replaced_specs = []
@@ -1402,6 +1403,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
             check_specs_by_output_name=check_specs_by_output_name,
             selected_asset_check_keys=selected_asset_check_keys,
             specs=replaced_specs,
+            hook_defs=hook_defs if hook_defs else self.hook_defs,
         )
 
         merged_attrs = merge_dicts(self.get_attributes_dict(), replaced_attributes)
@@ -1636,35 +1638,13 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         with disable_dagster_warnings():
             return self.__class__(**attributes_dict)
 
-    def _copy(self, **kwargs: Any) -> "AssetsDefinition":
-        # dict() calls copy dict props
-        base_kwargs = dict(
-            keys_by_input_name=self.node_keys_by_input_name,
-            keys_by_output_name=self.node_keys_by_output_name,
-            node_def=self._computation.node_def if self._computation else None,
-            selected_asset_keys=self.keys,
-            can_subset=self.can_subset,
-            resource_defs=self._resource_defs,
-            hook_defs=self._hook_defs,
-            backfill_policy=self.backfill_policy,
-            check_specs_by_output_name=self._check_specs_by_output_name,
-            selected_asset_check_keys=self.check_keys,
-            specs=self.specs,
-            is_subset=self.is_subset,
-            execution_type=self._computation.execution_type if self._computation else None,
-        )
-        resolved_kwargs = {**base_kwargs, **kwargs}  # base kwargs overwritten for conflicts
-        asset_def = AssetsDefinition.dagster_internal_init(**resolved_kwargs)
-        update_wrapper(asset_def, self, updated=())
-        return asset_def
-
     @public
     def with_hooks(self, hook_defs: AbstractSet[HookDefinition]) -> "AssetsDefinition":
         """Apply a set of hooks to all op instances within the asset."""
         from dagster._core.definitions.hook_definition import HookDefinition
 
         hook_defs = check.set_param(hook_defs, "hook_defs", of_type=HookDefinition)
-        return self._copy(hook_defs=(hook_defs | self.hook_defs))
+        return self.with_attributes(hook_defs=(hook_defs | self.hook_defs))
 
     def get_attributes_dict(self) -> dict[str, Any]:
         return dict(
