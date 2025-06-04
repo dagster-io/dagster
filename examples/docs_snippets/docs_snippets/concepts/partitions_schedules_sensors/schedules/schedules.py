@@ -1,13 +1,8 @@
 import dagster as dg
 
-
 # start_basic_schedule
-@dg.job
-def my_job(): ...
-
-
 basic_schedule = dg.ScheduleDefinition(
-    name="basic_schedule", job=my_job, cron_schedule="0 0 * * *"
+    name="basic_schedule", cron_schedule="0 0 * * *", target="*"
 )
 # end_basic_schedule
 
@@ -57,14 +52,18 @@ def configurable_job_schedule(context: dg.ScheduleEvaluationContext):
 
 # start_timezone
 my_timezone_schedule = dg.ScheduleDefinition(
-    job=my_job, cron_schedule="0 9 * * *", execution_timezone="America/Los_Angeles"
+    name="my_timezone_schedule",
+    target="*",
+    cron_schedule="0 9 * * *",
+    execution_timezone="America/Los_Angeles",
 )
 
 # end_timezone
 
 # start_running_in_code
 my_running_schedule = dg.ScheduleDefinition(
-    job=my_job,
+    name="my_running_schedule",
+    target="*",
     cron_schedule="0 9 * * *",
     default_status=dg.DefaultScheduleStatus.RUNNING,
 )
@@ -73,7 +72,7 @@ my_running_schedule = dg.ScheduleDefinition(
 
 
 # start_schedule_logging
-@dg.schedule(job=my_job, cron_schedule="* * * * *")
+@dg.schedule(target="*", cron_schedule="* * * * *")
 def logs_then_skips(context):
     context.log.info("Logging from a dg.schedule!")
     return dg.SkipReason("Nothing to do")
