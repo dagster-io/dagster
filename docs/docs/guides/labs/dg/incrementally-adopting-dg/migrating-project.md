@@ -101,7 +101,7 @@ Let's create this submodule now:
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/migrating-project/6-create-lib.txt" />
 
 :::tip
-See the [plugin guide](/guides/labs/components/creating-new-component-types/creating-dg-plugin) for more on `dg` plugins.
+See the [plugin guide](/guides/labs/components/creating-new-components/creating-dg-plugin) for more on `dg` plugins.
 :::
 
 We'll need to add a `dagster_dg_cli.plugin` entry point to our project and then
