@@ -1,7 +1,9 @@
 """Internal py2/3 compatibility library. A little more than six."""
 
+import importlib.util
 import inspect
 import os
+import pkgutil
 import shlex
 import sys
 import time
@@ -126,3 +128,87 @@ def is_subclass(child_type: type[Any], parent_type: type[Any]):
         return issubclass(child_type, parent_type)
     except TypeError:
         return False
+
+
+def resolve_module_pattern(pattern: str) -> list[str]:
+    """Find all modules that match the given pattern segments.
+
+    Note that this will only return modules that have been verified to exist using
+    importlib.util.find_spec. This means that a pure literal pattern like "foo.bar" will
+    return an empty list if the module does not exist.
+
+    Args:
+        pattern_segments: List of pattern segments, where * matches any segment name.
+
+    Returns:
+        List of matching module names.
+    """
+    pattern_segments = pattern.split(".")
+    return _gather_modules([], pattern_segments)
+
+
+def _gather_modules(current_segments: list[str], remaining_pattern: list[str]) -> list[str]:
+    if not remaining_pattern:
+        # We've matched the full pattern, return the current module path
+        module_name = ".".join(current_segments)
+        # Verify the module actually exists and can be imported
+        if importlib.util.find_spec(module_name) is not None:
+            return [module_name]
+        else:
+            return []
+
+    current_pattern = remaining_pattern[0]
+    rest_pattern = remaining_pattern[1:]
+
+    # Wildcard
+    if current_pattern == "*":
+        if len(current_segments) == 0:  # top-level wildcard
+            current_module_path = None
+        else:
+            current_module_name = ".".join(current_segments)
+            current_module_spec = importlib.util.find_spec(current_module_name)
+            if (
+                current_module_spec is None
+                or current_module_spec.submodule_search_locations is None
+            ):
+                return []
+            else:
+                current_module_path = current_module_spec.submodule_search_locations
+
+        # Explore all top-level packages
+        matches = []
+        for _, name, _ in pkgutil.iter_modules(current_module_path):
+            matches.extend(_gather_modules([*current_segments, name], rest_pattern))
+        return matches
+
+    # Literal
+    else:
+        # Literal segment - add it and continue
+        return _gather_modules([*current_segments, current_pattern], rest_pattern)
+
+
+def match_module_pattern(module_name: str, pattern: str) -> bool:
+    """Check if a module name matches a given pattern."""
+    pattern_segments = pattern.split(".")
+    module_segments = module_name.split(".")
+
+    if len(pattern_segments) != len(module_segments):
+        return False
+
+    for pattern_segment, module_segment in zip(pattern_segments, module_segments):
+        if pattern_segment != "*" and pattern_segment != module_segment:
+            return False
+
+    return True
+
+
+def is_valid_module_pattern(pattern: str) -> bool:
+    """Check if a module pattern is valid."""
+    if not pattern:
+        return False
+
+    for segment in pattern.split("."):
+        if not (segment.isidentifier() or segment == "*"):
+            return False
+
+    return True

@@ -391,6 +391,16 @@ def test_invalid_config_project(config_file: ConfigFileType):
             with _reset_config_file(config_file):
                 _set_and_detect_missing_required_key(config_file, path, expected_type)
 
+        with _reset_config_file(config_file):
+            full_registry_modules_key = _get_full_str_path(config_file, "project.registry_modules")
+            err_msg = f"Invalid module pattern `foo.*bar` at `{full_registry_modules_key}`"
+            _set_and_detect_error(
+                config_file,
+                ("project", "registry_modules"),
+                ["foo.*bar"],
+                err_msg,
+            )
+
 
 @pytest.mark.parametrize("config_file", ["dg.toml", "pyproject.toml"])
 def test_deprecated_config_project(config_file: ConfigFileType):
