@@ -26,7 +26,7 @@ There are many ways to do this, but this guide will use `venv` as it doesn't req
   <TabItem value="windows" label="Windows">
     ```bash
     python -m venv venv
-    source venv\Scripts\activate
+    venv\Scripts\activate
     ```
   </TabItem>
 </Tabs>
