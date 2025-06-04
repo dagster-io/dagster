@@ -101,31 +101,29 @@ class TimeWindowFreshnessPolicy(InternalFreshnessPolicy, IHaveNew):
     }
 )
 class CronFreshnessPolicy(InternalFreshnessPolicy, IHaveNew):
-    """Defines a cron schedule on which the asset is expected to materialize.
+    """Defines freshness with reference to a predetermined cron schedule.
 
     Args:
         deadline_cron: a cron string that defines a deadline for the asset to be materialized.
-            Seconds resolution in the cron string is not supported.
-            Ex: "0 10 * * *" means we expect the asset to be materialized by 10:00 AM every day
-        lookback_window: the asset must be materialized within this time window before the deadline.
-        timezone: the timezone to use for the cron schedule. IANA time zone database strings are supported. Defaults to UTC.
+        lower_bound_delta: a timedelta that defines the lower bound for when the asset could have been materialized.
+        If the most recent materialization is older than the lower bound delta, the asset is considered stale.
+        timezone: the timezone for cron evaluation. IANA time zone strings are supported. If not provided, defaults to UTC.
 
     Example:
     policy = InternalFreshnessPolicy.cron(
         deadline_cron="0 10 * * *", # 10am daily
-        lookback_window=timedelta(hours=1),
+        lower_bound_delta=timedelta(hours=1),
     )
 
     This policy expects the asset to materialize every day between 9:00 AM and 10:00 AM.
-    The asset is stale if it materializes outside of this time window.
 
-    Until 9:00 AM, the asset's freshness state will not change.
+    If the asset is materialized at 9:30 AM, the asset is fresh, and will continue to be fresh until at least the deadline next day (10AM)
+    If the asset is materialized at 9:59 AM, the asset is fresh, and will continue to be fresh until at least the deadline next day (10AM)
+    If the asset is not materialized by 10:00 AM, the asset is stale, and will continue to be stale until it is materialized.
+    If the asset is then materialized at 10:30AM, it becomes fresh again until at least the deadline the next day (10AM).
 
-    If the asset is materialized at 9:30 AM, the asset is fresh
-    If the asset is materialized at 9:59 AM, the asset is fresh
-    If the asset is not materialized by 10:00 AM, the asset is stale (freshness state is FAIL)
-    If the asset is materialized at 10:01AM, the asset is still stale.
-
+    Keep in mind that the policy will always look at the last completed cron tick.
+    So in our example, if asset freshness is evaluated at 9:59 AM, the policy will consider the previous day's 9-10AM window.
     """
 
     deadline_cron: str
