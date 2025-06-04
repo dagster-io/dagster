@@ -162,7 +162,7 @@ def scaffold_project_command(
         """)
 
     abs_path = path.resolve()
-    if dg_context.is_workspace and dg_context.has_project(
+    if dg_context.is_in_workspace and dg_context.has_project(
         abs_path.relative_to(dg_context.workspace_root_path)
     ):
         exit_with_error(f"The current workspace already specifies a project at {abs_path}.")

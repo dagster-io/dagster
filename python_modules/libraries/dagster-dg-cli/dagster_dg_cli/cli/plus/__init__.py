@@ -123,7 +123,7 @@ def pull_env_command(target_path: Path, **global_options: object) -> None:
     config = _get_config_or_error()
 
     project_ctxs = []
-    if dg_context.is_workspace:
+    if dg_context.is_in_workspace:
         project_ctxs = [
             dg_context.for_project_environment(project_spec.path, cli_config)
             for project_spec in dg_context.project_specs
@@ -242,7 +242,7 @@ def create_env_command(
     cli_config = normalize_cli_config(global_options, click.get_current_context())
 
     dg_context = DgContext.for_workspace_or_project_environment(target_path, cli_config)
-    if dg_context.is_workspace:
+    if dg_context.is_in_workspace:
         global_ = True
 
     if from_local_env:
