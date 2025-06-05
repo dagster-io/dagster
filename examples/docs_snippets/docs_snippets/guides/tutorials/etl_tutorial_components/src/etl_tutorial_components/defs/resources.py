@@ -1,5 +1,6 @@
 from dagster_duckdb import DuckDBResource
 from dagster_sling import SlingConnectionResource, SlingResource
+from dagster_evidence import EvidenceResource
 
 
 import dagster as dg
@@ -17,6 +18,11 @@ destination = SlingConnectionResource(
     connection_string="duckdb:///var/tmp/duckdb.db",
 )
 
+evidence_resource = EvidenceResource(
+    project_path="../../../../jaffle_dashboard",
+    deploy_command='echo "Dashboard built at $EVIDENCE_BUILD_PATH"',
+)
+
 
 defs = dg.Definitions(
     resources={
@@ -27,5 +33,6 @@ defs = dg.Definitions(
                 destination,
             ]
         ),
+        "evidence": evidence_resource
     }
 )
