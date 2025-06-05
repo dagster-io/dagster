@@ -19,8 +19,9 @@ In Dagster, [Resources](/api/dagster/resources) are the external services, tools
 We will create a file in the `defs` directory
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/defs/resources.py"
+  path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial_components/src/etl_tutorial_components/defs/assets.py"
   language="python"
+  title="src/etl_tutorial_components/defs/assets.py"
 />
 
 ## 2. Create assets
@@ -47,10 +48,11 @@ dg scaffold dagster.asset assets.py
 Copy the following code into the `defs/assets.py` file:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/defs/assets.py"
+  path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial_components/src/etl_tutorial_components/defs/assets.py"
   language="python"
   startAfter="start_asset_products"
   endBefore="end_asset_products"
+  title="src/etl_tutorial_components/defs/assets.py"
 />
 
 ### Sales reps asset
@@ -58,10 +60,11 @@ Copy the following code into the `defs/assets.py` file:
 The code for the sales reps asset is similar to the product asset code. In the `definitions.py` file, copy the following code below the product asset code:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/defs/assets.py"
+  path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial_components/src/etl_tutorial_components/defs/assets.py"
   language="python"
   startAfter="start_asset_sales_reps"
   endBefore="end_asset_sales_reps"
+  title="src/etl_tutorial_components/defs/assets.py"
 />
 
 ### Sales data asset
@@ -69,10 +72,11 @@ The code for the sales reps asset is similar to the product asset code. In the `
 To add the sales data asset, copy the following code into your `definitions.py` file below the sales reps asset:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/defs/assets.py"
+  path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial_components/src/etl_tutorial_components/defs/assets.py"
   language="python"
   startAfter="start_asset_sales_data"
   endBefore="end_asset_sales_data"
+  title="src/etl_tutorial_components/defs/assets.py"
 />
 
 ## 3. Materialize assets

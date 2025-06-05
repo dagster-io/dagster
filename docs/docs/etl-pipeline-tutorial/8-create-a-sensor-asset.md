@@ -3,7 +3,7 @@ title: Create a sensor asset
 description: Use sensors to create event driven pipelines
 last_update:
   author: Alex Noonan
-sidebar_position: 60
+sidebar_position: 80
 ---
 
 [Sensors](/guides/automate/sensors) allow you to automate workflows based on external events or conditions, making them useful for event-driven automation, especially in situations where jobs occur at irregular cadences or in rapid succession.
@@ -28,10 +28,11 @@ For this asset, we need to define the structure of the request that it is expect
 Other than that, defining this asset is the same as our previous assets. Copy the following code beneath `product_performance`.
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/defs/assets.py"
+  path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial_components/src/etl_tutorial_components/defs/assets.py"
   language="python"
   startAfter="start_adhoc_asset"
   endBefore="end_adhoc_asset"
+  title="src/etl_tutorial_components/defs/assets.py"
 />
 
 ## 2. Build the sensor
@@ -52,8 +53,9 @@ dg scaffold dagster.sensor sensors.py
 Now copy the following sensor code in the `defs/sensors.py` file:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/defs/sensors.py"
+  path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial_components/src/etl_tutorial_components/defs/sensors.py"
   language="python"
+  title="src/etl_tutorial_components/defs/sensors.py"
 />
 
 ## 3. Materialize the sensor asset

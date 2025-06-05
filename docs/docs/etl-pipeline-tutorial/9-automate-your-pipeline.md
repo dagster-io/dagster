@@ -26,8 +26,9 @@ dg scaffold dagster.schedule schedules.py
 Copy the following code in the `defs/schedules.py` file created by the `dg` command:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/defs/schedules.py"
+  path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial_components/src/etl_tutorial_components/defs/schedules.py"
   language="python"
+  title="src/etl_tutorial_components/defs/assets.py"
 />
 
 ## 2. Automate asset materialization

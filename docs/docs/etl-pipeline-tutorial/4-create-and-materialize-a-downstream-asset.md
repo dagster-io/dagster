@@ -20,10 +20,11 @@ To accomplish this in SQL, we will bring in our `sales_data` table and then left
 As you can see, the new `joined_data` asset looks a lot like our previous ones, with a few small changes. We put this asset into a different group. To make this asset dependent on the raw tables, we add the asset keys to the `deps` parameter in the asset definition.
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/defs/assets.py"
+  path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial_components/src/etl_tutorial_components/defs/assets.py"
   language="python"
   startAfter="start_asset_joined_data"
   endBefore="end_asset_joined_data"
+  title="src/etl_tutorial_components/defs/assets/py"
 />
 
 In the Dagster UI, reload definitions and materialize the `joined_data` asset.

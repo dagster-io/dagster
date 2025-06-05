@@ -2,9 +2,14 @@ from dagster_duckdb import DuckDBResource
 
 import dagster as dg
 
+# start_monthly_partition
 monthly_partition = dg.MonthlyPartitionsDefinition(start_date="2018-01-01")
 
 
+# end_monthly_partition
+
+
+# start_monthly_sales_performance_asset
 @dg.asset(
     partitions_def=monthly_partition,
     compute_kind="duckdb",
@@ -59,11 +64,19 @@ def monthly_orders(context: dg.AssetExecutionContext, duckdb: DuckDBResource):
     )
 
 
+# end_monthly_sales_performance_asset
+
+
+# start_product_category_partition
 payment_method_partition = dg.StaticPartitionsDefinition(
     ["credit_card", "coupon", "bank_transfer", "gift_card"]
 )
 
 
+# end_product_category_partition
+
+
+# start_product_performance_asset
 @dg.asset(
     deps=[dg.AssetKey("stg_payments")],
     partitions_def=payment_method_partition,
@@ -112,6 +125,9 @@ def payment_performance(context: dg.AssetExecutionContext, duckdb: DuckDBResourc
             "preview": dg.MetadataValue.md(preview_df.to_markdown(index=False)),
         }
     )
+
+
+# end_product_performance_asset
 
 
 class AdhocRequestConfig(dg.Config):
