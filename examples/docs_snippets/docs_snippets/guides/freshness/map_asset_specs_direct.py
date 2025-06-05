@@ -2,6 +2,7 @@ from datetime import timedelta
 
 from dagster import asset, map_asset_specs
 from dagster._core.definitions.asset_spec import attach_internal_freshness_policy
+from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.freshness import InternalFreshnessPolicy
 
 
@@ -21,3 +22,5 @@ assets = [asset_1, asset_2]
 assets_with_policies = map_asset_specs(
     func=lambda spec: attach_internal_freshness_policy(spec, policy), iterable=assets
 )
+
+defs = Definitions(assets=assets_with_policies)
