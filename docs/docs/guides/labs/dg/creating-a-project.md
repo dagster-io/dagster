@@ -59,3 +59,9 @@ To use `tree`, install it with `brew install tree` (Mac), or follow the [install
   to the regular Python package metadata, it contains a `tool.dg` section
   for `dg`-specific settings.
 - `uv.lock` is the [lockfile](https://docs.astral.sh/uv/concepts/projects/layout/#the-lockfile) for the Python package manager [`uv`](https://docs.astral.sh/uv/). `dg` projects use `uv` by default. For more information, see [`uv` integration](/guides/labs/dg/python-environment-management-and-uv-integration).
+
+## Next steps
+
+* [Add Dagster definitions to your project](/guides/labs/dg/dagster-definitions)
+* [Add Dagster Component definitions to your project](/guides/labs/components/building-pipelines-with-components/adding-component-definitions)
+* [Create custom Dagster Components](/guides/labs/components/creating-new-components/creating-and-registering-a-component)

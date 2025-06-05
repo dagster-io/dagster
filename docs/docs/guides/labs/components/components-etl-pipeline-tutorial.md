@@ -85,7 +85,7 @@ To learn more about the files, directories, and default settings in a project cr
 
 ## Ingest data
 
-### 1. Add the Sling component to your environment
+### 1. Install the Sling component in your environment
 
 To ingest data, you will need to set up [Sling](https://slingdata.io/). To make the Sling component available in your environment, install the `dagster-sling` package:
 
@@ -108,7 +108,7 @@ To confirm that the `dagster_sling.SlingReplicationCollectionComponent` componen
 
 ### 3. Scaffold a Sling component definition
 
-Next, scaffold a Sling component definition:
+Next, scaffold a Sling component definition in your project:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/7-dg-scaffold-sling-replication.txt" />
 
@@ -303,7 +303,7 @@ In this tutorial, we have you clone the Evidence project into your Dagster proje
 
 ### 3. Scaffold an Evidence project component definition
 
-Use the `dg scaffold` command to scaffold an Evidence project component definition:
+Use the `dg scaffold` command to add an Evidence project component definition to your project:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/28-scaffold-jaffle-dashboard.txt" />
 
