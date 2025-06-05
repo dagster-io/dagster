@@ -8,7 +8,7 @@ import DgComponentsPreview from '@site/docs/partials/\_DgComponentsPreview.md';
 
 <DgComponentsPreview />
 
-To add components to your project, you can instantiate them from the command line, which will create a new directory inside your `defs/` folder that contains a `defs.yaml` file.
+To add components to your project, you can scaffold them from the command line, which will create a new directory inside your `defs/` folder that contains a `defs.yaml` file.
 
 If you want to use Python to add components to your project instead, see "[Adding components to your project with Python](/guides/labs/components/building-pipelines-with-components/adding-components-python)".
 
@@ -26,20 +26,20 @@ You can view the available components in your environment by running the followi
 dg list components
 ```
 
-This will display a list of all the components that are available in your project. To see more information about a specific component, you can run:
+To see more information about a specific component, you can run:
 
 ```bash
 dg docs serve
 ```
 
-This will display a webpage containing documentation for the specified component.
+This will display a webpage containing documentation for the components.
 
-## Instantiating a component
+## Scaffolding a component
 
-Once you've decided on the component that you'd like to use, you can instantiate it by running:
+Once you've decided on the component that you'd like to use, you can scaffold a definition for it by running:
 
 ```bash
-dg scaffold <component-type> <component-path>
+dg scaffold defs <component> <component-path>
 ```
 
 This will create a new directory inside your `defs/` folder that contains a `defs.yaml` file. Some components may also generate additional files as needed.
