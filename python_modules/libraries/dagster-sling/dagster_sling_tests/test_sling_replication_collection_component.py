@@ -68,37 +68,36 @@ def temp_sling_component_instance(
     the proper temp path.
     """
     with (
-        tempfile.TemporaryDirectory() as temp_dir,
-        alter_sys_path(to_add=[str(temp_dir)], to_remove=[]),
+        scaffold_defs_sandbox(
+            component_cls=SlingReplicationCollectionComponent,
+        ) as defs_sandbox,
+        environ({"HOME": str(defs_sandbox.defs_folder_path), "SOME_PASSWORD": "password"}),
     ):
-        with environ({"HOME": temp_dir, "SOME_PASSWORD": "password"}):
-            shutil.copytree(
-                STUB_LOCATION_PATH_LEGACY if legacy_format else STUB_LOCATION_PATH,
-                temp_dir,
-                dirs_exist_ok=True,
+        shutil.copytree(
+            STUB_LOCATION_PATH / "defs" / "ingest",
+            defs_sandbox.defs_folder_path,
+            dirs_exist_ok=True,
+        )
+        shutil.copy(STUB_LOCATION_PATH / "input.csv", defs_sandbox.defs_folder_path / "input.csv")
+
+        # update the replication yaml to reference a CSV file in the tempdir
+        with _modify_yaml(defs_sandbox.defs_folder_path / "replication.yaml") as data:
+            placeholder_data = data["streams"].pop("<PLACEHOLDER>")
+            data["streams"][f"file://{defs_sandbox.defs_folder_path}/input.csv"] = placeholder_data
+
+        with _modify_yaml(defs_sandbox.defs_folder_path / "defs.yaml") as data:
+            # If replication specs were provided, overwrite the default one in the defs.yaml
+            if replication_specs:
+                data["attributes"]["replications"] = replication_specs
+
+            # update the defs yaml to add a duckdb instance
+            data["attributes"]["sling"]["connections"][0]["instance"] = (
+                f"{defs_sandbox.defs_folder_path}/duckdb"
             )
-            component_path = Path(temp_dir) / COMPONENT_RELPATH
 
-            # update the replication yaml to reference a CSV file in the tempdir
-            with _modify_yaml(component_path / "replication.yaml") as data:
-                placeholder_data = data["streams"].pop("<PLACEHOLDER>")
-                data["streams"][f"file://{temp_dir}/input.csv"] = placeholder_data
-
-            with _modify_yaml(component_path / "defs.yaml") as data:
-                # If replication specs were provided, overwrite the default one in the defs.yaml
-                if replication_specs:
-                    data["attributes"]["replications"] = replication_specs
-
-                # update the defs yaml to add a duckdb instance
-                if legacy_format:
-                    data["attributes"]["sling"]["connections"][0]["instance"] = f"{temp_dir}/duckdb"
-                else:
-                    data["attributes"]["connections"]["DUCKDB"]["instance"] = f"{temp_dir}/duckdb"
-
-            context = ComponentTree.for_test().load_context.for_path(component_path)
-            component = get_underlying_component(context)
+        with defs_sandbox.load() as (component, defs):
             assert isinstance(component, SlingReplicationCollectionComponent)
-            yield component, component.build_defs(context)
+            yield component, defs
 
 
 def test_python_attributes() -> None:
