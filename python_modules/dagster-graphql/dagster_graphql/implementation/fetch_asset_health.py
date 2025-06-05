@@ -4,6 +4,7 @@ import dagster._check as check
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.freshness import FreshnessState
 from dagster._core.storage.event_log.base import AssetRecord
+from dagster._core.workspace.context import BaseWorkspaceRequestContext
 from dagster._streamline.asset_check_health import AssetCheckHealthState
 from dagster._streamline.asset_freshness_health import AssetFreshnessHealthState
 from dagster._streamline.asset_health import AssetHealthStatus
@@ -13,16 +14,17 @@ from dagster._streamline.asset_materialization_health import (
 )
 
 if TYPE_CHECKING:
+    from dagster._core.workspace.context import BaseWorkspaceRequestContext
+
     from dagster_graphql.schema.asset_health import (
         GrapheneAssetHealthCheckMeta,
         GrapheneAssetHealthFreshnessMeta,
         GrapheneAssetHealthMaterializationMeta,
     )
-    from dagster_graphql.schema.util import ResolveInfo
 
 
 async def get_asset_check_status_and_metadata(
-    graphene_info: "ResolveInfo",
+    context: "BaseWorkspaceRequestContext",
     asset_key: AssetKey,
 ) -> tuple[str, Optional["GrapheneAssetHealthCheckMeta"]]:
     """Converts an AssetCheckHealthState object to a GrapheneAssetHealthStatus and the metadata
@@ -35,17 +37,17 @@ async def get_asset_check_status_and_metadata(
         GrapheneAssetHealthStatus,
     )
 
-    asset_check_health_state = await AssetCheckHealthState.gen(graphene_info.context, asset_key)
+    asset_check_health_state = await AssetCheckHealthState.gen(context, asset_key)
     # captures streamline disabled or consumer state doesn't exist
     if asset_check_health_state is None:
         # Note - this will only compute check health if there is a definition for the asset and checks in the
         # asset graph. If check results are reported for assets or checks that are not in the asset graph, those
         # results will not be picked up. If we add storage methods to get all check results for an asset by
         # asset key, rather than by check keys, we could compute check health for the asset in this case.
-        remote_check_nodes = graphene_info.context.asset_graph.get_checks_for_asset(asset_key)
+        remote_check_nodes = context.asset_graph.get_checks_for_asset(asset_key)
         asset_check_health_state = await AssetCheckHealthState.compute_for_asset_checks(
             {remote_check_node.asset_check.key for remote_check_node in remote_check_nodes},
-            graphene_info.context,
+            context,
         )
 
     if asset_check_health_state.health_status == AssetHealthStatus.HEALTHY:
@@ -87,7 +89,7 @@ async def get_asset_check_status_and_metadata(
 
 
 async def get_freshness_status_and_metadata(
-    graphene_info: "ResolveInfo", asset_key: AssetKey
+    context: "BaseWorkspaceRequestContext", asset_key: AssetKey
 ) -> tuple[str, Optional["GrapheneAssetHealthFreshnessMeta"]]:
     """Gets an AssetFreshnessHealthState object for an asset, either via streamline or by computing
     it based on the state of the DB. Then converts it to a GrapheneAssetHealthStatus and the metadata
@@ -98,23 +100,21 @@ async def get_freshness_status_and_metadata(
         GrapheneAssetHealthStatus,
     )
 
-    asset_freshness_health_state = await AssetFreshnessHealthState.gen(
-        graphene_info.context, asset_key
-    )
+    asset_freshness_health_state = await AssetFreshnessHealthState.gen(context, asset_key)
     if (
         asset_freshness_health_state is None
     ):  # if streamline reads are off or no streamline state exists for the asset compute it from the DB
         if (
-            not graphene_info.context.asset_graph.has(asset_key)
-            or graphene_info.context.asset_graph.get(asset_key).internal_freshness_policy is None
+            not context.asset_graph.has(asset_key)
+            or context.asset_graph.get(asset_key).internal_freshness_policy is None
         ):
             return GrapheneAssetHealthStatus.NOT_APPLICABLE, None
         asset_freshness_health_state = AssetFreshnessHealthState.compute_for_asset(
             asset_key,
-            graphene_info.context,
+            context,
         )
 
-    asset_record = await AssetRecord.gen(graphene_info.context, asset_key)
+    asset_record = await AssetRecord.gen(context, asset_key)
     materialization_timestamp = (
         asset_record.asset_entry.last_materialization.timestamp
         if asset_record
@@ -145,7 +145,7 @@ async def get_freshness_status_and_metadata(
 
 
 async def get_materialization_status_and_metadata(
-    graphene_info: "ResolveInfo", asset_key: AssetKey
+    context: "BaseWorkspaceRequestContext", asset_key: AssetKey
 ) -> tuple[str, Optional["GrapheneAssetHealthMaterializationMeta"]]:
     """Gets an AssetMaterializationHealthState object for an asset, either via streamline or by computing
     it based on the state of the DB. Then converts it to a GrapheneAssetHealthStatus and the metadata
@@ -160,19 +160,19 @@ async def get_materialization_status_and_metadata(
     )
 
     asset_materialization_health_state = await AssetMaterializationHealthState.gen(
-        graphene_info.context, asset_key
+        context, asset_key
     )
     # captures streamline disabled or consumer state doesn't exist
     if asset_materialization_health_state is None:
-        if not graphene_info.context.asset_graph.has(asset_key):
+        if not context.asset_graph.has(asset_key):
             # if the asset is not in the asset graph, it could be because materializations are reported by
             # an external system, determine the status as best we can based on the asset record
-            asset_record = await AssetRecord.gen(graphene_info.context, asset_key)
+            asset_record = await AssetRecord.gen(context, asset_key)
             if asset_record is None:
                 return GrapheneAssetHealthStatus.UNKNOWN, None
             has_ever_materialized = asset_record.asset_entry.last_materialization is not None
             is_currently_failed, run_id = await _get_is_currently_failed_and_latest_terminal_run_id(
-                graphene_info.context, asset_record
+                context, asset_record
             )
             if is_currently_failed:
                 meta = GrapheneAssetHealthMaterializationDegradedNotPartitionedMeta(
@@ -186,10 +186,10 @@ async def get_materialization_status_and_metadata(
                     return GrapheneAssetHealthStatus.HEALTHY, None
                 return GrapheneAssetHealthStatus.UNKNOWN, None
 
-        node_snap = graphene_info.context.asset_graph.get(asset_key)
+        node_snap = context.asset_graph.get(asset_key)
         if node_snap.is_observable and not node_snap.is_materializable:  # observable source asset
             # get the asset record to see if there is an observation event
-            asset_record = await AssetRecord.gen(graphene_info.context, asset_key)
+            asset_record = await AssetRecord.gen(context, asset_key)
             if asset_record and asset_record.asset_entry.last_observation is not None:
                 return GrapheneAssetHealthStatus.HEALTHY, None
             return GrapheneAssetHealthStatus.UNKNOWN, None
@@ -198,7 +198,7 @@ async def get_materialization_status_and_metadata(
             await AssetMaterializationHealthState.compute_for_asset(
                 asset_key,
                 node_snap.partitions_def,
-                graphene_info.context,
+                context,
             )
         )
 
@@ -208,7 +208,7 @@ async def get_materialization_status_and_metadata(
         if asset_materialization_health_state.partitions_def is not None:
             total_num_partitions = (
                 asset_materialization_health_state.partitions_def.get_num_partitions(
-                    dynamic_partitions_store=graphene_info.context.instance
+                    dynamic_partitions_store=context.instance
                 )
             )
             # asset is health, so no partitions are failed
@@ -229,7 +229,7 @@ async def get_materialization_status_and_metadata(
         if asset_materialization_health_state.partitions_def is not None:
             total_num_partitions = (
                 asset_materialization_health_state.partitions_def.get_num_partitions(
-                    dynamic_partitions_store=graphene_info.context.instance
+                    dynamic_partitions_store=context.instance
                 )
             )
             num_failed = len(asset_materialization_health_state.failed_subset.subset_value)
