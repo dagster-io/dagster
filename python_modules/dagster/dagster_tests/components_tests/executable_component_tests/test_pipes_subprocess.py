@@ -7,8 +7,8 @@ from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.materialize import materialize
 from dagster._core.definitions.metadata.metadata_value import TextMetadataValue
 from dagster.components.lib.executable_component.subprocess_component import (
+    ScriptSpec,
     SubprocessComponent,
-    SubprocessSpec,
 )
 from dagster.components.testing import scaffold_defs_sandbox
 
@@ -42,7 +42,7 @@ def test_pipes_subprocess_script_hello_world() -> None:
             }
         ) as (component, defs):
             assert isinstance(component, SubprocessComponent)
-            assert isinstance(component.execution, SubprocessSpec)
+            assert isinstance(component.execution, ScriptSpec)
             assets_def = defs.get_assets_def("asset")
             result = materialize([assets_def])
             assert result.success
@@ -82,7 +82,7 @@ def test_pipes_subprocess_script_with_custom_materialize_result() -> None:
             }
         ) as (component, defs):
             assert isinstance(component, SubprocessComponent)
-            assert isinstance(component.execution, SubprocessSpec)
+            assert isinstance(component.execution, ScriptSpec)
             assets_def = defs.get_assets_def("asset")
             result = materialize([assets_def])
             assert result.success
@@ -146,7 +146,7 @@ def test_pipes_subprocess_script_with_checks_only() -> None:
             }
         ) as (component, defs):
             assert isinstance(component, SubprocessComponent)
-            assert isinstance(component.execution, SubprocessSpec)
+            assert isinstance(component.execution, ScriptSpec)
             asset_check_key = AssetCheckKey(AssetKey("asset"), "check_name")
             check_def = defs.get_asset_checks_def(asset_check_key)
             result = materialize([check_def], selection=AssetSelection.all_asset_checks())
@@ -200,7 +200,7 @@ def test_pipes_subprocess_with_args() -> None:
             }
         ) as (component, defs):
             assert isinstance(component, SubprocessComponent)
-            assert isinstance(component.execution, SubprocessSpec)
+            assert isinstance(component.execution, ScriptSpec)
             assert component.execution.args == ["arg_value"]
             assets_def = defs.get_assets_def("asset")
             result = materialize([assets_def])
@@ -240,7 +240,7 @@ def test_pipes_subprocess_with_inline_str() -> None:
             }
         ) as (component, defs):
             assert isinstance(component, SubprocessComponent)
-            assert isinstance(component.execution, SubprocessSpec)
+            assert isinstance(component.execution, ScriptSpec)
             assert component.execution.args == "arg_value"
             assets_def = defs.get_assets_def("asset")
             result = materialize([assets_def])
