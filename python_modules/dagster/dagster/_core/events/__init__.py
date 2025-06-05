@@ -1098,6 +1098,13 @@ class DagsterEvent(
             event_type=DagsterEventType.ASSET_CHECK_EVALUATION,
             step_context=step_context,
             event_specific_data=asset_check_evaluation,
+            message=f"Asset check '{asset_check_evaluation.check_name}' on '{asset_check_evaluation.asset_key.to_user_string()}' "
+            + ("passed." if asset_check_evaluation.passed else "did not pass.")
+            + (
+                ""
+                if asset_check_evaluation.description is None
+                else f" Description: '{asset_check_evaluation.description}'"
+            ),
         )
 
     @staticmethod
