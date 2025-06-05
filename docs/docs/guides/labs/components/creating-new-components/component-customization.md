@@ -1,6 +1,6 @@
 ---
-title: Advanced component type customization
-description: Advanced customization for component types you have created.
+title: Advanced component customization
+description: Advanced customization for components you have created.
 sidebar_position: 200
 ---
 
@@ -10,11 +10,11 @@ import DgComponentsPreview from '@site/docs/partials/\_DgComponentsPreview.md';
 
 ## Prerequisites
 
-Before following the steps below, you will need to [create and register a component type](/guides/labs/components/creating-new-components/creating-and-registering-a-component).
+Before following the steps below, you will need to [create and register a component](/guides/labs/components/creating-new-components/creating-and-registering-a-component).
 
 ## Customizing scaffolding behavior
 
-By default, when you instantiate a component type, `dg scaffold` will create a new directory alongside an unpopulated `defs.yaml` file. However, you can customize this behavior by decorating your component type with `@scaffold_with`.
+By default, when you instantiate a component, `dg scaffold` will create a new directory alongside an unpopulated `defs.yaml` file. However, you can customize this behavior by decorating your component with `@scaffold_with`.
 
 In the example below, the custom `ShellCommandScaffolder` class scaffolds a template shell script alongside a populated `defs.yaml` file:
 

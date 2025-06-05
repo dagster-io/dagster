@@ -85,7 +85,7 @@ To learn more about the files, directories, and default settings in a project cr
 
 ## Ingest data
 
-### 1. Add the Sling component type to your environment
+### 1. Add the Sling component to your environment
 
 To ingest data, you will need to set up [Sling](https://slingdata.io/). To make the Sling component available in your environment, install the `dagster-sling` package:
 
@@ -98,9 +98,9 @@ To ingest data, you will need to set up [Sling](https://slingdata.io/). To make 
   </TabItem>
 </Tabs>
 
-### 2. Confirm availability of the Sling component type
+### 2. Confirm availability of the Sling component
 
-To confirm that the `dagster_sling.SlingReplicationCollectionComponent` component type is now available, run the `dg list components` command:
+To confirm that the `dagster_sling.SlingReplicationCollectionComponent` component is now available, run the `dg list components` command:
 
 <WideContent maxSize={1100}>
   <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/6-dg-list-components.txt" />
@@ -108,7 +108,7 @@ To confirm that the `dagster_sling.SlingReplicationCollectionComponent` componen
 
 ### 3. Create a new instance of the Sling component
 
-Next, create a new instance of the Sling component type:
+Next, create a new instance of the Sling component:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/7-dg-scaffold-sling-replication.txt" />
 
@@ -116,7 +116,7 @@ This adds a Sling component instance called `ingest_files` to the `src/jaffle_pl
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/8-tree-jaffle-platform.txt" />
 
-A single file, `defs.yaml`, was created in the `ingest_files` directory. Every Dagster component has a `defs.yaml` file that specifies the component type and any parameters used to scaffold definitions from the component at runtime:
+A single file, `defs.yaml`, was created in the `ingest_files` directory. Every Dagster component has a `defs.yaml` file that specifies the component and any parameters used to scaffold definitions from the component at runtime:
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/components/index/9-defs.yaml"
@@ -188,9 +188,9 @@ In this tutorial, we have you clone the dbt project into your Dagster project. H
 
 :::
 
-### 2. Install the dbt project component type
+### 2. Install the dbt project component
 
-To interface with the dbt project, you will need to instantiate a Dagster dbt project component. To make the dbt project component type available, install the dbt integrations `dagster-dbt` and `dbt-duckdb`:
+To interface with the dbt project, you will need to instantiate a Dagster dbt project component. To make the dbt project component available, install the dbt integrations `dagster-dbt` and `dbt-duckdb`:
 
 <Tabs groupId="package-manager">
   <TabItem value="uv" label="uv">
@@ -201,7 +201,7 @@ To interface with the dbt project, you will need to instantiate a Dagster dbt pr
   </TabItem>
 </Tabs>
 
-Confirm that the `dagster_dbt.DbtProjectComponent` component type is available by running `dg list components`:
+Confirm that the `dagster_dbt.DbtProjectComponent` component is available by running `dg list components`:
 
 <WideContent maxSize={1100}>
   <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/16-dg-list-components.txt" />
@@ -268,7 +268,7 @@ First, install the `dagster-evidence` package with either `uv` or `pip`:
   </TabItem>
 </Tabs>
 
-Confirm that the `EvidenceProject` component type is available by running `dg list components`:
+Confirm that the `EvidenceProject` component is available by running `dg list components`:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/25-dg-list-components.txt" />
 

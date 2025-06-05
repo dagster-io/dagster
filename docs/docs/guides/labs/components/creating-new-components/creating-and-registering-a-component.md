@@ -99,7 +99,7 @@ The `@multi_asset` decorator is used to provide the flexibility of assigning mul
   title="components/shell_command.py"
 />
 
-## Registering a new component
+## Registering a new component in your environment
 
 Following the steps above will automatically register your component in your environment. To see your new component in the list of available components, run `dg list components`:
 
