@@ -12,6 +12,7 @@ from dagster._annotations import deprecated, preview, public
 from dagster._core.definitions import AssetSelection
 from dagster._core.definitions.asset_checks import AssetChecksDefinition
 from dagster._core.definitions.asset_graph import AssetGraph
+from dagster._core.definitions.asset_key import AssetCheckKey
 from dagster._core.definitions.asset_selection import CoercibleToAssetSelection
 from dagster._core.definitions.asset_spec import AssetSpec, map_asset_specs
 from dagster._core.definitions.assets import AssetsDefinition, SourceAsset
@@ -672,6 +673,16 @@ class Definitions(IHaveNew):
         )
 
         return self.resolve_assets_def(key)
+
+    def get_asset_checks_def(self, key: AssetCheckKey) -> AssetChecksDefinition:
+        for possible_assets_check_def in [*(self.assets or []), *(self.asset_checks or [])]:
+            if (
+                isinstance(possible_assets_check_def, AssetChecksDefinition)
+                and key in possible_assets_check_def.asset_and_check_keys
+            ):
+                return possible_assets_check_def
+
+        raise DagsterInvariantViolationError(f"Could not find asset checks defs for {key}")
 
     def resolve_assets_def(self, key: CoercibleToAssetKey) -> AssetsDefinition:
         asset_key = AssetKey.from_coercible(key)

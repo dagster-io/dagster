@@ -1,6 +1,6 @@
 import pytest
 from dagster._core.definitions.resource_annotation import ResourceParam
-from dagster.components.lib.executable_component.component import ExecuteFnMetadata
+from dagster.components.lib.executable_component.function_component import ExecuteFnMetadata
 from dagster_shared.check import CheckError
 
 
