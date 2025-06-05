@@ -19,7 +19,7 @@
 
 ### Bugfixes
 
-- [ui] Fix live updating of asset materialization statuses in asset graph.
+- [ui] Fixed live updating of asset materialization statuses in asset graph.
 
 ### dg & Components (Preview)
 
