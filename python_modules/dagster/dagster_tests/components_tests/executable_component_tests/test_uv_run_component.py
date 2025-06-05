@@ -1,6 +1,6 @@
 from dagster._core.definitions.materialize import materialize
 from dagster._core.definitions.metadata.metadata_value import TextMetadataValue
-from dagster.components.lib.executable_component.subprocess_component import ScriptSpec
+from dagster.components.lib.executable_component.script_utils import ScriptSpec
 from dagster.components.lib.executable_component.uv_run_component import UvRunComponent
 from dagster.components.testing import scaffold_defs_sandbox
 
