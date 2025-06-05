@@ -568,6 +568,14 @@ class JobDefinition(IHasInternalInit):
                 for hook_def in self._hook_defs
                 for req in hook_def.get_resource_requirements(attached_to=f"job '{self._name}'")
             ],
+            *[
+                req
+                for assets_def in self.asset_layer.asset_graph.assets_defs
+                for hook_def in assets_def.hook_defs
+                for req in hook_def.get_resource_requirements(
+                    attached_to=f"asset '{assets_def.node_def.name}'"
+                )
+            ],
         ]
 
     def validate_resource_requirements_satisfied(self) -> None:
@@ -586,6 +594,7 @@ class JobDefinition(IHasInternalInit):
 
         A hook can be attached to any of the following objects
         * Node (node invocation)
+        * AssetsDefinition
         * JobDefinition
 
         Args:
@@ -595,7 +604,11 @@ class JobDefinition(IHasInternalInit):
             FrozenSet[HookDefinition]
         """
         check.inst_param(handle, "handle", NodeHandle)
-        hook_defs: set[HookDefinition] = set()
+        hook_defs = set(
+            self.asset_layer.assets_defs_by_node_handle[handle].hook_defs
+            if handle in self.asset_layer.assets_defs_by_node_handle
+            else []
+        )
 
         current = handle
         lineage = []
