@@ -1,9 +1,9 @@
 from dagster_duckdb import DuckDBResource
-from dagster_sling import SlingConnectionResource, SlingResource
 from dagster_evidence import EvidenceResource
-
+from dagster_sling import SlingConnectionResource, SlingResource
 
 import dagster as dg
+from etl_tutorial_components.defs.dbt_assets import dbt_resource
 
 database_resource = DuckDBResource(database="duckdb:///var/tmp/duckdb.db")
 
@@ -33,6 +33,7 @@ defs = dg.Definitions(
                 destination,
             ]
         ),
-        "evidence": evidence_resource
+        "evidence": evidence_resource,
+        "dbt": dbt_resource,
     }
 )

@@ -8,9 +8,15 @@ replication_config = {
         "object": "{stream_table}",
     },
     "streams": {
-        "https://raw.githubusercontent.com/dbt-labs/jaffle-shop-classic/refs/heads/main/seeds/raw_customers.csv": {"object": "main.raw_customers"},
-        "https://raw.githubusercontent.com/dbt-labs/jaffle-shop-classic/refs/heads/main/seeds/raw_orders.csv": {"object": "main.raw_orders"},
-        "https://raw.githubusercontent.com/dbt-labs/jaffle-shop-classic/refs/heads/main/seeds/raw_payments.csv": {"object": "main.raw_payments"},
+        "https://raw.githubusercontent.com/dbt-labs/jaffle-shop-classic/refs/heads/main/seeds/raw_customers.csv": {
+            "object": "main.raw_customers"
+        },
+        "https://raw.githubusercontent.com/dbt-labs/jaffle-shop-classic/refs/heads/main/seeds/raw_orders.csv": {
+            "object": "main.raw_orders"
+        },
+        "https://raw.githubusercontent.com/dbt-labs/jaffle-shop-classic/refs/heads/main/seeds/raw_payments.csv": {
+            "object": "main.raw_payments"
+        },
     },
 }
 

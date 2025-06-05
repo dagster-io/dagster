@@ -143,7 +143,6 @@ def adhoc_request(
     )
 
 
-
 @dg.asset_check(asset=monthly_orders)
 def adhoc_request_check(duckdb: DuckDBResource) -> dg.AssetCheckResult:
     with duckdb.get_connection() as conn:
