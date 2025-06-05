@@ -119,7 +119,7 @@ class ComponentTree:
 
     @cached_method
     def load_root_component(self) -> Component:
-        return self.find_root_decl()._load_component()  # noqa: SLF001
+        return self.load_component_at_path(self.defs_module_path)
 
     @cached_method
     def build_defs(self) -> Definitions:
