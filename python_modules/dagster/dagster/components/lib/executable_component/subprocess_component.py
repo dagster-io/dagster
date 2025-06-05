@@ -1,9 +1,10 @@
 import os
+import shlex
 import shutil
 from collections.abc import Sequence
 from functools import cached_property
 from pathlib import Path
-from typing import Literal, Union
+from typing import Literal, Optional, Union
 
 from dagster._core.execution.context.asset_check_execution_context import AssetCheckExecutionContext
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
@@ -19,6 +20,7 @@ from dagster.components.lib.executable_component.component import (
 class SubprocessSpec(OpMetadataSpec):
     type: Literal["subprocess"] = "subprocess"
     path: str
+    args: Optional[Union[list[str], str]] = None
 
 
 class SubprocessComponent(ExecutableComponent):
@@ -39,11 +41,26 @@ class SubprocessComponent(ExecutableComponent):
         component_load_context: ComponentLoadContext,
     ) -> Sequence[PipesExecutionResult]:
         assert not self.resource_keys, "Pipes subprocess scripts cannot have resources"
-        path = (
+        return (
+            PipesSubprocessClient()
+            .run(
+                context=context.op_execution_context,
+                command=self.get_cmd(component_load_context.path),
+            )
+            .get_results()
+        )
+
+    def get_cmd(self, path: Path) -> list[str]:
+        abs_path = (
             self.execution.path
             if os.path.isabs(self.execution.path)
-            else os.path.join(component_load_context.path, self.execution.path)
+            else os.path.join(str(path), self.execution.path)
         )
-        cmd = [shutil.which("python"), path]
-        invocation = PipesSubprocessClient().run(context=context.op_execution_context, command=cmd)
-        return invocation.get_results()
+        which_python = shutil.which("python")
+        assert which_python is not None
+        if isinstance(self.execution.args, str):
+            return [which_python, abs_path, *shlex.split(self.execution.args)]
+        elif isinstance(self.execution.args, list):
+            return [which_python, abs_path, *self.execution.args]
+        else:
+            return [which_python, abs_path]
