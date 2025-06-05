@@ -532,14 +532,33 @@ class ScheduleDefinition(IHasInternalInit):
             new_job (ExecutableDefinition): The job that should execute when this
                 schedule runs.
         """
+        return self.with_attributes(job=new_job)
+
+    def with_attributes(
+        self,
+        *,
+        job: Optional[ExecutableDefinition] = None,
+        metadata: Optional[RawMetadataMapping] = None,
+    ) -> "ScheduleDefinition":
+        """Returns a copy of this schedule with attributes replaced."""
+        if job:
+            job_name = None  # job name will be derived from the passed job if provided
+            job_to_use = job
+        elif self._target.has_job_def:
+            job_name = None
+            job_to_use = self.job
+        else:
+            job_name = self.job_name
+            job_to_use = None
+
         return ScheduleDefinition.dagster_internal_init(
             name=self.name,
             cron_schedule=self._cron_schedule,
-            job_name=None,  # job name will be derived from the passed job
+            job_name=job_name,
             execution_timezone=self.execution_timezone,
             execution_fn=self._execution_fn,
             description=self.description,
-            job=new_job,
+            job=job_to_use,
             default_status=self.default_status,
             environment_vars=self._environment_vars,
             required_resource_keys=self._raw_required_resource_keys,
@@ -552,7 +571,7 @@ class ScheduleDefinition(IHasInternalInit):
             run_config_fn=None,
             tags=self.tags,
             tags_fn=None,
-            metadata=self.metadata,
+            metadata=metadata if metadata is not None else self.metadata,
             should_execute=None,
             target=None,
         )
