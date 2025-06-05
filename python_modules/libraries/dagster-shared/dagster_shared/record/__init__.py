@@ -107,6 +107,7 @@ def _namedtuple_record_transform(
     decorator_frames: int,
     field_to_new_mapping: Optional[Mapping[str, str]],
     kw_only: bool,
+    runtime_check_overrides: Mapping[str, Any],
 ) -> TType:
     """Transforms the input class in to one that inherits a generated NamedTuple base class
     and:
@@ -120,13 +121,22 @@ def _namedtuple_record_transform(
 
     generated_new = None
     if checked:
+        type_check_field_set = dict(field_set)
+        for k, v in runtime_check_overrides.items():
+            check.invariant(
+                k in type_check_field_set,
+                f"runtime_check_overrides set for unknown field {k}",
+            )
+            type_check_field_set[k] = v
+
         eval_ctx = EvalContext.capture_from_frame(
             1 + decorator_frames,
             # inject default values in to the local namespace for reference in generated __new__
             add_to_local_ns={INJECTED_DEFAULT_VALS_LOCAL_VAR: defaults},
         )
+
         generated_new = JitCheckedNew(
-            field_set,
+            type_check_field_set,
             defaults,
             eval_ctx,
             new_frames=1 if with_new else 0,
@@ -244,6 +254,7 @@ def record(
     *,
     checked: bool = True,
     kw_only: bool = True,
+    runtime_check_overrides: Optional[Mapping[str, Any]] = None,
 ) -> Callable[[TType], TType]: ...  # Overload for using decorator used with args.
 
 
@@ -256,12 +267,15 @@ def record(
     *,
     checked: bool = True,
     kw_only: bool = True,
+    runtime_check_overrides: Optional[Mapping[str, Any]] = None,
 ) -> Union[TType, Callable[[TType], TType]]:
     """A class decorator that will create an immutable record class based on the defined fields.
 
     Args:
         checked: Whether or not to generate runtime type checked construction (default True).
         kw_only: Whether or not the generated __new__ is kwargs only (default True).
+        runtime_check_overrides: Override the type used for a given field when generating
+            the runtime type checks. Useful for working around issues.
     """
     if cls:
         return _namedtuple_record_transform(
@@ -271,6 +285,7 @@ def record(
             decorator_frames=1,
             field_to_new_mapping=None,
             kw_only=kw_only,
+            runtime_check_overrides=runtime_check_overrides or {},
         )
     else:
         return partial(
@@ -280,6 +295,7 @@ def record(
             decorator_frames=0,
             field_to_new_mapping=None,
             kw_only=kw_only,
+            runtime_check_overrides=runtime_check_overrides or {},
         )
 
 
@@ -294,6 +310,7 @@ def record_custom(
     *,
     checked: bool = True,
     field_to_new_mapping: Optional[Mapping[str, str]] = None,
+    runtime_check_overrides: Optional[Mapping[str, Any]] = None,
 ) -> Callable[[TType], TType]: ...  # Overload for using decorator used with args.
 
 
@@ -302,6 +319,7 @@ def record_custom(
     *,
     checked: bool = True,
     field_to_new_mapping: Optional[Mapping[str, str]] = None,
+    runtime_check_overrides: Optional[Mapping[str, Any]] = None,
 ) -> Union[TType, Callable[[TType], TType]]:
     """Variant of the record decorator to use to opt out of the dataclass_transform decorator behavior.
     This is done when overriding __new__ so that the type checker knows that is what is used.
@@ -333,6 +351,7 @@ def record_custom(
             decorator_frames=1,
             field_to_new_mapping=field_to_new_mapping,
             kw_only=True,
+            runtime_check_overrides=runtime_check_overrides or {},
         )
     else:
         return partial(
@@ -342,6 +361,7 @@ def record_custom(
             decorator_frames=0,
             field_to_new_mapping=field_to_new_mapping,
             kw_only=True,
+            runtime_check_overrides=runtime_check_overrides or {},
         )
 
 

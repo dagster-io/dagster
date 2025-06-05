@@ -476,6 +476,51 @@ def test_lazy_import():
     assert _out_of_scope()
 
 
+def test_check_override():
+    @record
+    class DoesNotWork:
+        foos: list["TestType"]
+        num: int
+
+    with pytest.raises(check.CheckError, match="Unable to resolve"):
+        DoesNotWork(foos=[], num=1)
+
+    @record(
+        runtime_check_overrides={"foos": list[Any]},
+    )
+    class Override:
+        foos: list["TestType"]
+        num: int
+
+    assert Override(foos=[], num=1)
+
+    with pytest.raises(check.CheckError, match='Param "num" is not a int'):
+        Override(foos=[], num="two")  # type: ignore # good job type checker
+
+    with pytest.raises(check.CheckError, match='Param "foos" is not a list'):
+        Override(foos={}, num=2)  # type: ignore # good job type checker
+
+    with pytest.raises(
+        check.CheckError, match=" runtime_check_overrides set for unknown field foo"
+    ):
+
+        @record(
+            runtime_check_overrides={"foo": list[Any]},
+        )
+        class Oops:
+            foos: list["TestType"]
+            num: int
+
+    @record(
+        runtime_check_overrides={"foos": Any},
+    )
+    class Generous:
+        foos: list["TestType"]
+        num: int
+
+    assert Generous(foos=4, num=4)  # type: ignore # good job type checker
+
+
 class Complex:
     def __init__(self, s: str):
         self.s = s
