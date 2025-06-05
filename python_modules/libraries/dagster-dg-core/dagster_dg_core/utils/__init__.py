@@ -87,10 +87,12 @@ def clear_screen():
         os.system("clear")
 
 
-def get_venv_activation_cmd(venv_dir: Path) -> str:
+def get_venv_activation_cmd(venv_dir: Path, project_path: Path) -> str:
     if is_windows():
         return str(venv_dir / "Scripts" / "activate.bat")
     else:
+        relative_venv_path = venv_dir.relative_to(project_path)
+        return f"cd {get_shortest_path_repr(project_path)} && source {relative_venv_path / 'bin' / 'activate'}"
         return f"source {venv_dir / 'bin' / 'activate'}"
 
 
