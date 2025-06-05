@@ -95,6 +95,7 @@ Applying a freshness policy in this way to an asset with an existing freshness p
 :::
 
 ### Setting a default freshness policy
+
 Often, it's useful to set a default freshness policy across all assets, and override the default on individual assets.
 
 To do so, you can use `map_asset_specs` with `overwrite_existing` set to `False` on the mapped function to avoid overwriting any pre-defined freshness policies:
