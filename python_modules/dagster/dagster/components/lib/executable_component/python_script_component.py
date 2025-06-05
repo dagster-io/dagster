@@ -20,15 +20,15 @@ from dagster.components.lib.executable_component.script_utils import (
 )
 
 
-class UvRunComponent(ExecutableComponent):
+class PythonScriptComponent(ExecutableComponent):
     execution: ScriptSpec
 
     @property
     def op_metadata_spec(self) -> OpMetadataSpec:
-        return self._script_spec
+        return self._subprocess_spec
 
     @cached_property
-    def _script_spec(self) -> ScriptSpec:
+    def _subprocess_spec(self) -> ScriptSpec:
         return ScriptSpec.with_script_stem_as_default_name(self.execution)
 
     def invoke_execute_fn(
@@ -37,9 +37,11 @@ class UvRunComponent(ExecutableComponent):
         component_load_context: ComponentLoadContext,
     ) -> Sequence[PipesExecutionResult]:
         assert not self.resource_keys, "Pipes subprocess scripts cannot have resources"
-        command = get_cmd(
-            script_runner_exe=[check.not_none(shutil.which("uv"), "uv not found"), "run"],
-            spec=self.execution,
-            path=str(component_load_context.path),
+        return invoke_runner(
+            context=context,
+            command=get_cmd(
+                script_runner_exe=[check.not_none(shutil.which("python"), "python not found")],
+                spec=self.execution,
+                path=str(component_load_context.path),
+            ),
         )
-        return invoke_runner(context=context, command=command)
