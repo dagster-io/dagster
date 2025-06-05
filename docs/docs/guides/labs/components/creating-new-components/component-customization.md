@@ -14,7 +14,7 @@ Before following the steps below, you will need to [create and register a compon
 
 ## Customizing scaffolding behavior
 
-By default, when you instantiate a component, `dg scaffold` will create a new directory alongside an unpopulated `defs.yaml` file. However, you can customize this behavior by decorating your component with `@scaffold_with`.
+By default, when you scaffold a component definition, `dg scaffold defs` will create a new directory alongside an unpopulated `defs.yaml` file. However, you can customize this behavior by decorating your component with `@scaffold_with`.
 
 In the example below, the custom `ShellCommandScaffolder` class scaffolds a template shell script alongside a populated `defs.yaml` file:
 
@@ -24,7 +24,7 @@ In the example below, the custom `ShellCommandScaffolder` class scaffolds a temp
   title="my_component_library/lib/shell_command.py"
 />
 
-Now, when you run `dg scaffold`, you should see a template shell script created along with a populated `defs.yaml` file:
+Now, when you run `dg scaffold defs`, you should see a template shell script created along with a populated `defs.yaml` file:
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/components/shell-script-component/5-scaffolded-defs.yaml"
@@ -62,7 +62,7 @@ You can define custom values that will be made available to the templating engin
   language="python"
 />
 
-When a user instantiates this component, they will be able to use this custom scope in their `defs.yaml` file:
+When a user scaffolds this component definition, they will be able to use this custom scope in their `defs.yaml` file:
 
 ```yaml
 component_type: my_component

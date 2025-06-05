@@ -106,13 +106,13 @@ To confirm that the `dagster_sling.SlingReplicationCollectionComponent` componen
   <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/6-dg-list-components.txt" />
 </WideContent>
 
-### 3. Create a new instance of the Sling component
+### 3. Scaffold a Sling component definition
 
-Next, create a new instance of the Sling component:
+Next, scaffold a Sling component definition:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/7-dg-scaffold-sling-replication.txt" />
 
-This adds a Sling component instance called `ingest_files` to the `src/jaffle_platform/defs` directory of your project:
+This adds a Sling component folder called `ingest_files` to the `src/jaffle_platform/defs` directory of your project:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/8-tree-jaffle-platform.txt" />
 
@@ -220,13 +220,13 @@ Confirm that the `dagster_dbt.DbtProjectComponent` component is available by run
   <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/17-dg-list-components.txt" />
 </WideContent>
 
-### 3. Scaffold a new instance of the dbt project component
+### 3. Scaffold a dbt project component definition
 
-Next, scaffold a new instance of the `dagster_dbt.DbtProjectComponent` component, providing the path to the dbt project you cloned earlier as the `project_path` scaffold parameter:
+Next, scaffold a `dagster_dbt.DbtProjectComponent` component definition, providing the path to the dbt project you cloned earlier as the `project_path` scaffold parameter:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/18-dg-scaffold-jdbt.txt" />
 
-This creates a new dbt project component instance at `jaffle_platform/defs/jdbt`. To see the component configuration, open `defs.yaml` in that directory:
+This creates a new directory at `jaffle_platform/defs/jdbt`. To see the component configuration, open `defs.yaml` in that directory:
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/components/index/19-component-jdbt.yaml"
@@ -301,9 +301,9 @@ In this tutorial, we have you clone the Evidence project into your Dagster proje
 
 :::
 
-### 3. Scaffold a new instance of the Evidence project component
+### 3. Scaffold an Evidence project component definition
 
-Use the `dg scaffold` command to scaffold a new instance of the Evidence project component:
+Use the `dg scaffold` command to scaffold an Evidence project component definition:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/28-scaffold-jaffle-dashboard.txt" />
 
