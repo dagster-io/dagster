@@ -10,7 +10,7 @@ import DgComponentsPreview from '@site/docs/partials/\_DgComponentsPreview.md';
 
 ## Testing custom components
 
-Component authors need to test their components in various contexts. The Dagster framework provides utilities in order to faciliate this process
+Component authors need to test their components in various contexts. The Dagster framework provides utilities in order to facilitate this process
 
 ### The core workhorse: `scaffold_defs_sandbox`
 
