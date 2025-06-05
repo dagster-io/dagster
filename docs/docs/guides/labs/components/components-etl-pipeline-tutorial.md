@@ -169,7 +169,7 @@ Next, modify the `defs.yaml` file to tell the Sling component where replicated d
   title="jaffle-platform/src/jaffle_platform/defs/ingest_files/defs.yaml"
 />
 
-### 6. View and materialize assets in the Dagster UI
+### 7. View and materialize assets in the Dagster UI
 
 To see what you've built so far, you can load your project in the Dagster UI:
 
@@ -179,7 +179,11 @@ To materialize assets and load tables in the DuckDB instance, click **Materializ
 
 ![](/images/guides/build/projects-and-components/components/sling.png)
 
-### 7. Verify the DuckDB tables
+To see documentation for all the components available in your project environment, navigate to the `Docs` tab for your project's code location:
+
+![Docs tab in UI](/images/guides/labs/components/etl-tutorial-docs-tab.png)
+
+### 8. Verify the DuckDB tables
 
 To verify the DuckDB tables were correctly populated, run the following command:
 
