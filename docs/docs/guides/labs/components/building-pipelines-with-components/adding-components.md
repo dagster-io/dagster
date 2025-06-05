@@ -1,5 +1,5 @@
 ---
-title: 'Adding components to your project with YAML'
+title: 'Adding component definitions to your project'
 sidebar_position: 200
 description: Add Dagster components to your project with YAML using the dg scaffold defs command.
 ---
@@ -8,9 +8,7 @@ import DgComponentsPreview from '@site/docs/partials/\_DgComponentsPreview.md';
 
 <DgComponentsPreview />
 
-To add components to your project, you can scaffold them from the command line, which will create a new directory inside your `defs/` folder that contains a `defs.yaml` file.
-
-If you want to use Python to add components to your project instead, see "[Adding components to your project with Python](/guides/labs/components/building-pipelines-with-components/adding-components-python)".
+In your Dagster project, you can scaffold component definitions from the command line, which will create a new directory inside your `defs/` folder that contains a `defs.yaml` file.
 
 :::note Prerequisites
 
@@ -18,15 +16,13 @@ Before adding a component, you must either [create a Dagster project with compon
 
 :::
 
-## Finding a component
+## Viewing available components
 
 You can view the available components in your environment by running the following command:
 
 ```bash
 dg list components
 ```
-
-:::note
 
 If the component you want to use is not available in your environment, you will need to install it with `uv add` or `pip install`. For example, to install the dbt project component, you would run:
 
@@ -39,40 +35,52 @@ If the component you want to use is not available in your environment, you will 
   </TabItem>
 </Tabs>
 
+### Viewing component documentation
+
+To see automatically generated documentation for all components in your environment, you can run `dg dev` to start the webserver and navigate to the `Docs` tab for your project's code location:
+
+<CliInvocationExample contents="dg dev" />
+
+![Docs tab in Dagster webserver](/images/guides/labs/components/docs-in-UI.png)
+
+## Adding a component definition
+
+Once you've decided on the component that you'd like to use, you can scaffold a definition for it by running `dg scaffold defs <component> <component-path>`. This will create a new directory inside your `defs/` folder that contains a `defs.yaml` file.
+
+For example, to scaffold a dbt project component definition, you would run:
+
+```
+dg scaffold defs dagster_dbt.DbtProjectComponent jdbt --project-path dbt/jdbt
+```
+
+:::note
+
+Some components may require different arguments to be passed on the command line, or generate additional files as needed.
+
 :::
 
-To see more information about a specific component, you can run:
+:::tip Python-formatted component definitions
 
-```bash
-dg docs serve
+To scaffold a component definition formatted in Python instead of YAML, you can use the `dg scaffold defs` command with the `--format python` option. For example, the following command will generate a `component.py` file for the dbt project component rather than a `defs.yaml` file:
+
+```
+dg scaffold defs dagster_dbt.DbtProjectComponent jdbt --project-path dbt/jdbt --format python
 ```
 
-This will display a webpage containing documentation for the components.
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/python-components/tree.txt" title="component.py" />
 
-## Scaffolding a component
-
-Once you've decided on the component that you'd like to use, you can scaffold a definition for it by running:
-
-```bash
-dg scaffold defs <component> <component-path>
-```
-
-This will create a new directory inside your `defs/` folder that contains a `defs.yaml` file. Some components may require different arguments to be passed on the command line, or generate additional files as needed.
+:::
 
 ## Configuration
 
 ### Basic configuration
 
-The `defs.yaml` is the primary configuration file for a component. It contains two top-level fields:
+`defs.yaml` is the primary configuration file for a component. It contains two top-level fields:
 
-- `type`: The type of the component defined in this directory
-- `attributes`: A dictionary of attributes that are specific to this component. The schema for these attributes is defined by attributes on the `Component` and totally customized by overriding `get_model_cls` method on the component class.
+- `type`: The type of the component defined in this directory.
+- `attributes`: A dictionary of attributes that are specific to this component. The schema for these attributes is defined by attributes on the `Component` and customized by overriding `get_model_cls` method on the component class.
 
-To see a sample `defs.yaml` file for your specific component, you can run:
-
-```bash
-dg docs serve
-```
+To see a sample `defs.yaml` file for your specific component, you can [view the component documentation](#viewing-component-documentation) in the Docs tab of the Dagster UI.
 
 ### Component templating
 
@@ -82,13 +90,7 @@ Each `defs.yaml` file supports a rich templating syntax, powered by `jinja2`.
 
 A common use case for templating is to avoid exposing environment variables (particularly secrets) in your YAML files. The Jinja scope for a `defs.yaml` file contains an `env` function that can be used to insert environment variables into the template:
 
-```yaml
-type: snowflake_lib.SnowflakeComponent
-
-attributes:
-  account: "{{ env('SNOWFLAKE_ACCOUNT') }}"
-  password: "{{ env('SNOWFLAKE_PASSWORD') }}"
-```
+<CodeExample path="docs_snippets/docs_snippets/guides/components/integrations/fivetran-component/9-customized-component.yaml" title="my_project/defs/fivetran_ingest/defs.yaml" language="yaml" />
 
 #### Multiple component instances in the same file
 
