@@ -8,11 +8,11 @@ import DgComponentsPreview from '@site/docs/partials/\_DgComponentsPreview.md';
 
 <DgComponentsPreview />
 
-In your Dagster project, you can scaffold component definitions from the command line, which will create a new directory inside your `defs/` folder that contains a `defs.yaml` file.
+You can add component definitions to your project from the command line with the `dg scaffold defs` command, which will create a new directory inside your `defs/` folder that contains a `defs.yaml` file.
 
 :::note Prerequisites
 
-Before adding a component, you must either [create a Dagster project with components](/guides/labs/components/building-pipelines-with-components/creating-a-project-with-components) or [migrate an existing project to `dg`](/guides/labs/dg/incrementally-adopting-dg/migrating-project).
+Before adding a component definition, you must either [create a components-ready Dagster project](/guides/labs/dg/creating-a-project) or [migrate an existing project to `dg`](/guides/labs/dg/incrementally-adopting-dg/migrating-project).
 
 :::
 
@@ -45,9 +45,9 @@ To see automatically generated documentation for all components in your environm
 
 ## Adding a component definition
 
-Once you've decided on the component that you'd like to use, you can scaffold a definition for it by running `dg scaffold defs <component> <component-path>`. This will create a new directory inside your `defs/` folder that contains a `defs.yaml` file.
+Once you've decided on the component that you'd like to use, you can add a definition for it by running `dg scaffold defs <component> <component-path>`. This will create a new directory inside your `defs/` folder that contains a `defs.yaml` file.
 
-For example, to scaffold a dbt project component definition, you would run:
+For example, to add a dbt project component definition, you would run:
 
 ```
 dg scaffold defs dagster_dbt.DbtProjectComponent jdbt --project-path dbt/jdbt
@@ -55,13 +55,13 @@ dg scaffold defs dagster_dbt.DbtProjectComponent jdbt --project-path dbt/jdbt
 
 :::note
 
-Some components may require different arguments to be passed on the command line, or generate additional files as needed.
+Some components may require different arguments to be passed on the command line, or generate additional files when scaffolded.
 
 :::
 
 :::tip Python-formatted component definitions
 
-To scaffold a component definition formatted in Python instead of YAML, you can use the `dg scaffold defs` command with the `--format python` option. For example, the following command will generate a `component.py` file for the dbt project component rather than a `defs.yaml` file:
+To add a component definition formatted in Python instead of YAML, you can use the `dg scaffold defs` command with the `--format python` option. For example, the following command will generate a `component.py` file for the dbt project component rather than a `defs.yaml` file:
 
 ```
 dg scaffold defs dagster_dbt.DbtProjectComponent jdbt --project-path dbt/jdbt --format python

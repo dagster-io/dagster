@@ -111,8 +111,8 @@ You can also view automatically generated documentation describing your new comp
 
 ![Docs tab in Dagster webserver](/images/guides/labs/components/docs-in-UI.png)
 
-## Scaffolding the new component definition in your project
+## Adding component definition to your project
 
-After you register your new component, you can scaffold definitions from it in your Dagster project with the `dg scaffold defs` command:
+After you create and register your new component, you can use it to add component definitions to your Dagster project with the `dg scaffold defs` command:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/shell-script-component/4-scaffold-instance-of-component.txt" />
