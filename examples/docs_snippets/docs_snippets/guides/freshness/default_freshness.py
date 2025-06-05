@@ -26,8 +26,8 @@ defs = Definitions(assets=[default_asset, override_asset])
 
 default_policy = InternalFreshnessPolicy.time_window(fail_window=timedelta(hours=24))
 
-# Apply the default freshness policy to all assets without overwriting any existing policies
-defs_with_policies = defs.map_asset_specs(
+# This will apply default_policy to default_asset, but retain the cron policy on override_asset
+defs = defs.map_asset_specs(
     func=lambda spec: attach_internal_freshness_policy(
         spec, default_policy, overwrite_existing=False
     ),

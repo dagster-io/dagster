@@ -49,8 +49,8 @@ For example, the policy below states that there should be a successful materiali
 A cron freshness policy is useful when you expect an asset to have new data or be recalculated on a known schedule.
 
 The policy defines a cron schedule `deadline_cron` that denotes the deadline for the asset materialization.
-To account for the time to actually materialize, a `lower_bound_delta` time delta is also specified, which denotes an amount of time
-before each cron tick when the asset should start materializing.
+To account for the time it takes to materialize the asset, a `lower_bound_delta` time delta is also specified,
+which denotes an amount of time prior to each cron tick.
 Together, `deadline_cron` and `lower_bound_delta` define a recurring time window in which the asset is expected to materialize.
 
 The asset is fresh if it materializes in this time window, and will remain fresh until at least the next deadline.
@@ -77,7 +77,8 @@ You can configure a freshness policy directly on an asset:
 
 ### Across multiple assets
 
-To apply freshness policies to multiple or all assets in your deployment, you can use `map_asset_specs`:
+To apply freshness policies to multiple or all assets in your deployment, you can use `map_asset_specs`.
+Use `map_resolved_asset_specs` to apply a policy to an asset selection.
 
 <CodeExample path="docs_snippets/docs_snippets/guides/freshness/multiple_assets_policy.py" language="python" />
 
@@ -92,7 +93,7 @@ Applying a freshness policy in this way to an asset with an existing freshness p
 :::
 
 ### Setting a default freshness policy
-Often it's useful to set a default freshness policy across all assets, and override the policy on individual assets.
+Often it's useful to set a default freshness policy across all assets, and override the default on individual assets.
 
 You can use `map_asset_specs` for this with `overwrite_existing` set to `False` on the mapped function to avoid overwriting any pre-defined freshness policies:
 
