@@ -35,11 +35,7 @@ async def get_asset_check_status_and_metadata(
         GrapheneAssetHealthStatus,
     )
 
-    asset_check_health_state = None
-    if graphene_info.context.instance.streamline_read_asset_health_supported():
-        asset_check_health_state = (
-            graphene_info.context.instance.get_asset_check_health_state_for_asset(asset_key)
-        )
+    asset_check_health_state = await AssetCheckHealthState.gen(graphene_info.context, asset_key)
     # captures streamline disabled or consumer state doesn't exist
     if asset_check_health_state is None:
         # Note - this will only compute check health if there is a definition for the asset and checks in the
@@ -102,11 +98,9 @@ async def get_freshness_status_and_metadata(
         GrapheneAssetHealthStatus,
     )
 
-    asset_freshness_health_state = None
-    if graphene_info.context.instance.streamline_read_asset_health_supported():
-        asset_freshness_health_state = (
-            graphene_info.context.instance.get_asset_freshness_health_state_for_asset(asset_key)
-        )
+    asset_freshness_health_state = await AssetFreshnessHealthState.gen(
+        graphene_info.context, asset_key
+    )
     if (
         asset_freshness_health_state is None
     ):  # if streamline reads are off or no streamline state exists for the asset compute it from the DB
@@ -165,13 +159,9 @@ async def get_materialization_status_and_metadata(
         GrapheneAssetHealthStatus,
     )
 
-    asset_materialization_health_state = None
-    if graphene_info.context.instance.streamline_read_asset_health_supported():
-        asset_materialization_health_state = (
-            graphene_info.context.instance.get_asset_materialization_health_state_for_asset(
-                asset_key
-            )
-        )
+    asset_materialization_health_state = await AssetMaterializationHealthState.gen(
+        graphene_info.context, asset_key
+    )
     # captures streamline disabled or consumer state doesn't exist
     if asset_materialization_health_state is None:
         if not graphene_info.context.asset_graph.has(asset_key):
