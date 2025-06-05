@@ -10,7 +10,7 @@ import DgComponentsPreview from '@site/docs/partials/\_DgComponentsPreview.md';
 
 ## Testing custom components
 
-Component authors need to test their components in various contexts. The Dagster framework provides utilities in order to facilitate this process
+Component authors need to test their components in various contexts. The Dagster framework provides utilities in order to facilitate this process.
 
 ### The core workhorse: `scaffold_defs_sandbox`
 
@@ -30,16 +30,16 @@ def scaffold_defs_sandbox(
 ) -> Iterator[DefsPathSandbox]: ...
 ```
 
-For the purposes of this guide we will only concern ourselves with `component_cls` and `scaffold_params`. Users are highly unlikely to require the other parameters.
+For the purposes of this guide, we will only concern ourselves with `component_cls` and `scaffold_params`. Users are highly unlikely to require the other parameters.
 
-`scaffold_defs_sandbox` creates a lightweight sandbox to scaffold and instantiate a component. in three steps:
-1. Creates an empty folder structure (with an auto-generated project name and component path by default) that mimics the defs folder portion of a real dagster project. Practicaly speaking this means a single folder at `src/<<project_name>>/defs/<<component_path>>` and then the scaffolded files lie within that leaf directory.
+`scaffold_defs_sandbox` creates a lightweight sandbox to scaffold and instantiate a component in three steps:
+1. Creates an empty folder structure (with an auto-generated project name and component path by default) that mimics the `defs/` folder portion of a real Dagster project. Practically speaking, this means a single folder at `src/<<project_name>>/defs/<<component_path>>` and which contains the scaffolded files within that leaf directory.
 2. It then invokes the scaffolder on the component class in the context of that folder.
 3. `scaffold_defs_sandbox` yields a `DefsPathSandbox` object, which the user programs against.
 
-Within the `with` block you are free to assert facts about the scaffolded files.
+Within the `with` block, you are free to assert facts about the scaffolded files.
 
-For example, in our test of our sling component (which scaffolds a `replication.yaml` file):
+For example, in our test of our Sling component (which scaffolds a `replication.yaml` file):
 
 ```python
 def test_scaffold_sling():
@@ -48,11 +48,11 @@ def test_scaffold_sling():
         assert (defs_sandbox.defs_folder_path / "replication.yaml").exists()
 ```
 
-### DefsPathSandbox
+### DefsPathSandbox object
 
-`scaffold_defs_sandbox` yields an object of type `DefsPathSandbox` as a context manager. You can use the sandbox object to load the component instance and the definitions it produces
+`scaffold_defs_sandbox` yields an object of type `DefsPathSandbox` as a context manager. You can use the object to load the component instance and the definitions it produces.
 
-For example this is real code from our tests of our `dlt` component on already-created `DefsPathSandbox`. In this case we ensure that the definitions have loaded and that the correct asset keys have been created.
+For example, the following is code from our tests of our [dlt component](https://docs.dagster.io/guides/labs/components/integrations/dlt-component-tutorial) on already-created `DefsPathSandbox`. In this case, we ensure that the definitions have loaded, and that the correct asset keys have been created:
 
 ```python
 with defs_sandbox.load() as (component, defs):
@@ -64,9 +64,7 @@ with defs_sandbox.load() as (component, defs):
     }
 ```
 
-However that is just using the default `defs.yaml` file. Usually you will want to customize the body of `defs.yaml`. For that there is the `component_body` argument to `load`.
-
-Here is code that tests our `PythonScriptComponent`:
+However, that is just using the default `defs.yaml` file. Usually, you will want to customize the body of `defs.yaml`. For that, there is the `component_body` argument to `load`, demonstrated in the code that tests our `PythonScriptComponent`:
 
 ```python
 
@@ -103,5 +101,3 @@ def test_pipes_subprocess_script_hello_world() -> None:
             mats = result.asset_materializations_for_node("op_name")
             assert len(mats) == 1
 ```
-
-With these tools you have the flexibility to test both scaffolding and runtime execution of custom components.
