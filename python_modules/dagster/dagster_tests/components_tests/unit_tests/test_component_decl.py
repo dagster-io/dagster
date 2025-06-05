@@ -63,13 +63,11 @@ def test_composite_python_decl(component_tree: MockComponentTree):
     my_component = MyComponent()
     loader_decl = ComponentLoaderDecl(
         context=component_tree.load_context,
-        path=ComponentPath(
-            file_path=Path(__file__).parent / "components.py", instance_key="my_component"
-        ),
+        path=ComponentPath(file_path=Path(__file__).parent, instance_key="my_component"),
         component_node_fn=lambda context: my_component,
     )
     decl = CompositePythonDecl(
-        path=ComponentPath(file_path=Path(__file__).parent / "components.py", instance_key=None),
+        path=ComponentPath(file_path=Path(__file__).parent, instance_key=None),
         context=component_tree.load_context,
         decls={"my_component": loader_decl},
     )
