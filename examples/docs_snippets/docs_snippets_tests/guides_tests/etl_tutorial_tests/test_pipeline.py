@@ -2,8 +2,8 @@ import pytest
 from dagster_duckdb import DuckDBResource
 
 import dagster as dg
-import docs_snippets.guides.tutorials.etl_tutorial.defs.assets as assets
-from docs_snippets.guides.tutorials.etl_tutorial.defs.resources import database_resource
+import docs_snippets.guides.tutorials.etl_tutorial_components.src.etl_tutorial_components.defs.assets as assets
+from docs_snippets.guides.tutorials.etl_tutorial_components.src.etl_tutorial_components.defs.resources import database_resource
 
 
 @pytest.fixture()
