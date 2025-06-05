@@ -5,8 +5,9 @@ from collections import defaultdict
 from collections.abc import Iterable, Iterator, Mapping, Sequence
 from contextlib import ExitStack
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Callable, NamedTuple, Optional, TypeVar, Union, cast
+from typing import TYPE_CHECKING, Any, Callable, Optional, TypeVar, Union, cast
 
+from dagster_shared.record import IHaveNew, record_custom
 from typing_extensions import TypeAlias
 
 import dagster._check as check
@@ -1134,30 +1135,18 @@ class SensorDefinition(IHasInternalInit):
         "log_key": "captured_log_key",
     },
 )
-class SensorExecutionData(
-    NamedTuple(
-        "_SensorExecutionData",
-        [
-            ("run_requests", Optional[Sequence[RunRequest]]),
-            ("skip_message", Optional[str]),
-            ("cursor", Optional[str]),
-            ("dagster_run_reactions", Optional[Sequence[DagsterRunReaction]]),
-            ("log_key", Optional[Sequence[str]]),
-            (
-                "dynamic_partitions_requests",
-                Optional[
-                    Sequence[Union[AddDynamicPartitionsRequest, DeleteDynamicPartitionsRequest]]
-                ],
-            ),
-            (
-                "asset_events",
-                Sequence[Union[AssetMaterialization, AssetObservation, AssetCheckEvaluation]],
-            ),
-            ("automation_condition_evaluations", Sequence[AutomationConditionEvaluation]),
-        ],
-    )
-):
-    dagster_run_reactions: Optional[Sequence[DagsterRunReaction]]  # pyright: ignore[reportIncompatibleVariableOverride]
+@record_custom
+class SensorExecutionData(IHaveNew):
+    run_requests: Optional[Sequence[RunRequest]]
+    skip_message: Optional[str]
+    cursor: Optional[str]
+    dagster_run_reactions: Optional[Sequence[DagsterRunReaction]]
+    log_key: Optional[Sequence[str]]
+    dynamic_partitions_requests: Optional[
+        Sequence[Union[AddDynamicPartitionsRequest, DeleteDynamicPartitionsRequest]]
+    ]
+    asset_events: Sequence[Union[AssetMaterialization, AssetObservation, AssetCheckEvaluation]]
+    automation_condition_evaluations: Sequence[AutomationConditionEvaluation]
 
     def __new__(
         cls,
@@ -1174,26 +1163,6 @@ class SensorExecutionData(
         ] = None,
         automation_condition_evaluations: Optional[Sequence[AutomationConditionEvaluation]] = None,
     ):
-        check.opt_sequence_param(run_requests, "run_requests", RunRequest)
-        check.opt_str_param(skip_message, "skip_message")
-        check.opt_str_param(cursor, "cursor")
-        check.opt_sequence_param(dagster_run_reactions, "dagster_run_reactions", DagsterRunReaction)
-        check.opt_list_param(log_key, "log_key", str)
-        check.opt_sequence_param(
-            dynamic_partitions_requests,
-            "dynamic_partitions_requests",
-            (AddDynamicPartitionsRequest, DeleteDynamicPartitionsRequest),
-        )
-        asset_events = check.opt_sequence_param(
-            asset_events,
-            "asset_events",
-            (AssetMaterialization, AssetObservation, AssetCheckEvaluation),
-        )
-        automation_condition_evaluations = check.opt_sequence_param(
-            automation_condition_evaluations,
-            "automation_condition_evaluations",
-            AutomationConditionEvaluation,
-        )
         check.invariant(
             not (run_requests and skip_message), "Found both skip data and run request data"
         )
