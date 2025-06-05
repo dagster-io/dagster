@@ -928,11 +928,17 @@ type FreshnessPolicy {
   lastEvaluationTimestamp: String
 }
 
-union InternalFreshnessPolicy = TimeWindowFreshnessPolicy
+union InternalFreshnessPolicy = TimeWindowFreshnessPolicy | CronFreshnessPolicy
 
 type TimeWindowFreshnessPolicy {
   failWindowSeconds: Int!
   warnWindowSeconds: Int
+}
+
+type CronFreshnessPolicy {
+  deadlineCron: String!
+  lowerBoundDeltaSeconds: Int!
+  timezone: String!
 }
 
 type AutoMaterializePolicy {

@@ -12,6 +12,7 @@ from dagster._annotations import deprecated, preview, public
 from dagster._core.definitions import AssetSelection
 from dagster._core.definitions.asset_checks import AssetChecksDefinition
 from dagster._core.definitions.asset_graph import AssetGraph
+from dagster._core.definitions.asset_key import AssetCheckKey
 from dagster._core.definitions.asset_selection import CoercibleToAssetSelection
 from dagster._core.definitions.asset_spec import AssetSpec, map_asset_specs
 from dagster._core.definitions.assets import AssetsDefinition, SourceAsset
@@ -470,12 +471,16 @@ class Definitions(IHaveNew):
                     found_direct = True
 
         if not found_direct:
-            warnings.warn(
-                f"JobDefinition with name {name} directly passed to Definitions not found, "
-                "will attempt to resolve to a JobDefinition. "
-                "This will be an error in a future release and will require a call to "
-                "resolve_job_def in dagster 1.11. "
-            )
+            warning = self.dig_for_warning(name)
+            if warning:
+                warnings.warn(warning)
+            else:
+                warnings.warn(
+                    f"JobDefinition with name {name} directly passed to Definitions not found, "
+                    "will attempt to resolve to a JobDefinition. "
+                    "This will be an error in a future release and will require a call to "
+                    "resolve_job_def in dagster 1.11. "
+                )
 
         return self.resolve_job_def(name)
 
@@ -486,6 +491,36 @@ class Definitions(IHaveNew):
         """
         check.str_param(name, "name")
         return self.get_repository_def().get_job(name)
+
+    def dig_for_warning(self, name: str) -> Optional[str]:
+        for job in self.jobs or []:
+            if job.name == name:
+                if isinstance(job, JobDefinition):
+                    return None
+                return (
+                    f"Found asset job named {job.name} of type {type(job)} passed to `jobs` parameter. Starting in "
+                    "dagster 1.11, you must now use Definitions.resolve_job_def to correctly "
+                    "retrieve this job definition."
+                )
+
+        for sensor in self.sensors or []:
+            for job in sensor.jobs:
+                if job.name == name:
+                    return (
+                        f"Found job or graph named {job.name} passed to sensor named {sensor.name} "
+                        "that was passed to Definitions in the sensors param. Starting in dagster 1.11, "
+                        "you must call Definitions.resolve_job_def to retrieve this job definition."
+                    )
+
+        for schedule in self.schedules or []:
+            job = schedule.job
+            if job.name == name:
+                return (
+                    f"Found job named {job.name} passed to schedule named {schedule.name} "
+                    "that was passed to Definitions in the schedules param. Starting in dagster 1.11, "
+                    "you must call Definitions.resolve_job_def to retrieve this job definition."
+                )
+        return None
 
     @public
     def get_sensor_def(self, name: str) -> SensorDefinition:
@@ -638,6 +673,16 @@ class Definitions(IHaveNew):
         )
 
         return self.resolve_assets_def(key)
+
+    def get_asset_checks_def(self, key: AssetCheckKey) -> AssetChecksDefinition:
+        for possible_assets_check_def in [*(self.assets or []), *(self.asset_checks or [])]:
+            if (
+                isinstance(possible_assets_check_def, AssetChecksDefinition)
+                and key in possible_assets_check_def.asset_and_check_keys
+            ):
+                return possible_assets_check_def
+
+        raise DagsterInvariantViolationError(f"Could not find asset checks defs for {key}")
 
     def resolve_assets_def(self, key: CoercibleToAssetKey) -> AssetsDefinition:
         asset_key = AssetKey.from_coercible(key)
