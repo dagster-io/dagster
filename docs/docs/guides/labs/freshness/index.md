@@ -61,6 +61,7 @@ Example:
 <CodeExample path="docs_snippets/docs_snippets/guides/freshness/cron_policy.py" language="python" />
 
 :::info
+
 - `deadline_cron` must be a valid cron string and has a minimum resolution of 1 minute.
 - `lower_bound_delta` cannot be shorter than 1 minute, and must fit within the smallest interval of `deadline_cron`.
 Example: for `deadline_cron="0 10 * * 1-5"` (weekdays at 10am), `lower_bound_delta` must be between 1 minute and 24 hours.
