@@ -6,6 +6,7 @@ from dagster.components.testing import scaffold_defs_sandbox
 
 SCRIPT_CONTENT = """# /// script
 # dependencies = [
+#   "dagster_pipes",
 #   "pycowsay",
 # ]
 # ///
@@ -18,7 +19,9 @@ assert main
 
 if __name__ == "__main__":
     with open_dagster_pipes() as context:
-        context.report_asset_materialization(metadata={"arg": sys.argv[1]})
+        context.report_asset_materialization(
+            metadata={"arg": sys.argv[1], "pycowsay_module_name": sys.modules["pycowsay"].__name__}
+        )
 # """
 
 
@@ -51,4 +54,7 @@ def test_pipes_subprocess_script_hello_world() -> None:
             assert result.success
             mats = result.asset_materializations_for_node("op_name")
             assert len(mats) == 1
-            assert next(iter(mats)).metadata == {"arg": TextMetadataValue("hello")}
+            assert next(iter(mats)).metadata == {
+                "arg": TextMetadataValue("hello"),
+                "pycowsay_module_name": TextMetadataValue("pycowsay"),
+            }

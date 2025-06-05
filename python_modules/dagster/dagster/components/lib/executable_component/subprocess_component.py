@@ -28,12 +28,13 @@ class ScriptSpec(OpMetadataSpec):
     def with_script_stem_as_default_name(
         script_runner_spec: "ScriptSpec",
     ) -> "ScriptSpec":
-        name = (
-            script_runner_spec.name
-            if script_runner_spec.name
-            else Path(script_runner_spec.path).stem
+        return script_runner_spec.model_copy(
+            update={
+                "name": script_runner_spec.name
+                if script_runner_spec.name
+                else Path(script_runner_spec.path).stem
+            }
         )
-        return script_runner_spec.model_copy(update={"name": name})
 
 
 def invoke_runner(
@@ -48,14 +49,14 @@ def invoke_runner(
     )
 
 
-def get_cmd(script_runner_exe: str, spec: ScriptSpec, path: str) -> list[str]:
+def get_cmd(script_runner_exe: list[str], spec: ScriptSpec, path: str) -> list[str]:
     abs_path = spec.path if os.path.isabs(spec.path) else os.path.join(path, spec.path)
     if isinstance(spec.args, str):
-        return [script_runner_exe, abs_path, *shlex.split(spec.args)]
+        return [*script_runner_exe, abs_path, *shlex.split(spec.args)]
     elif isinstance(spec.args, list):
-        return [script_runner_exe, abs_path, *spec.args]
+        return [*script_runner_exe, abs_path, *spec.args]
     else:
-        return [script_runner_exe, abs_path]
+        return [*script_runner_exe, abs_path]
 
 
 class SubprocessComponent(ExecutableComponent):
@@ -78,7 +79,7 @@ class SubprocessComponent(ExecutableComponent):
         return invoke_runner(
             context=context,
             command=get_cmd(
-                script_runner_exe=check.not_none(shutil.which("python"), "python not found"),
+                script_runner_exe=[check.not_none(shutil.which("python"), "python not found")],
                 spec=self.execution,
                 path=str(component_load_context.path),
             ),
