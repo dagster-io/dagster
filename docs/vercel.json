@@ -1939,15 +1939,19 @@
     },
     {
       "source": "/guides/labs/components/using-a-component",
-      "destination": "/guides/labs/components/building-pipelines-with-components/adding-components"
+      "destination": "/guides/labs/components/building-pipelines-with-components/adding-component-definitions"
     },
     {
       "source": "/guides/labs/components/using-a-component-python",
-      "destination": "/guides/labs/components/building-pipelines-with-components/adding-components"
+      "destination": "/guides/labs/components/building-pipelines-with-components/adding-component-definitions"
     },
     {
       "source": "/guides/labs/components/building-pipelines-with-components/adding-components-python",
-      "destination": "/guides/labs/components/building-pipelines-with-components/adding-components"
+      "destination": "/guides/labs/components/building-pipelines-with-components/adding-component-definitions"
+    },
+    {
+      "source": "/guides/labs/components/building-pipelines-with-components/adding-component-definitions",
+      "destination": "/guides/labs/components/building-pipelines-with-components/adding-component-definitions"
     },
     {
       "source": "/guides/labs/components/incrementally-adopting-components/existing-code-location",
