@@ -222,6 +222,13 @@ def test_components_docs_index(
                 ignore_output=True,
             )
 
+            context.run_command_and_snippet_output(
+                cmd=f"{install_cmd} duckdb",
+                snippet_path=f"{next_snip_no()}-{package_manager}-add-duckdb.txt",
+                print_cmd=f"{install_cmd} duckdb",
+                ignore_output=True,
+            )
+
             context.create_file(
                 file_path=Path("src")
                 / "jaffle_platform"

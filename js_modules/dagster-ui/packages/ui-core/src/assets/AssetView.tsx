@@ -479,6 +479,11 @@ export const ASSET_VIEW_DEFINITION_QUERY = gql`
         failWindowSeconds
         warnWindowSeconds
       }
+      ... on CronFreshnessPolicy {
+        deadlineCron
+        lowerBoundDeltaSeconds
+        timezone
+      }
     }
     backfillPolicy {
       description

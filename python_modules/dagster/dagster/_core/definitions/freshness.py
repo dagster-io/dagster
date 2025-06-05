@@ -2,14 +2,16 @@ from abc import ABC
 from collections.abc import Mapping
 from datetime import datetime, timedelta
 from enum import Enum
-from typing import Any, Optional
+from typing import Any, Optional, Union
 
 from dagster_shared.serdes.utils import SerializableTimeDelta
 
 from dagster._core.definitions.asset_key import AssetKey
-from dagster._record import IHaveNew, record
+from dagster._record import IHaveNew, record, record_custom
 from dagster._serdes import deserialize_value, whitelist_for_serdes
+from dagster._time import get_timezone
 from dagster._utils import check
+from dagster._utils.schedules import get_smallest_cron_interval, is_valid_cron_string
 
 
 @whitelist_for_serdes
@@ -58,6 +60,14 @@ class InternalFreshnessPolicy(ABC):
     ) -> "TimeWindowFreshnessPolicy":
         return TimeWindowFreshnessPolicy.from_timedeltas(fail_window, warn_window)
 
+    @staticmethod
+    def cron(
+        deadline_cron: str, lower_bound_delta: timedelta, timezone: str = "UTC"
+    ) -> "CronFreshnessPolicy":
+        return CronFreshnessPolicy(
+            deadline_cron=deadline_cron, lower_bound_delta=lower_bound_delta, timezone=timezone
+        )
+
 
 @whitelist_for_serdes
 @record
@@ -82,6 +92,93 @@ class TimeWindowFreshnessPolicy(InternalFreshnessPolicy, IHaveNew):
             fail_window=SerializableTimeDelta.from_timedelta(fail_window),
             warn_window=SerializableTimeDelta.from_timedelta(warn_window) if warn_window else None,
         )
+
+
+@whitelist_for_serdes
+@record_custom(
+    field_to_new_mapping={
+        "serializable_lower_bound_delta": "lower_bound_delta",
+    }
+)
+class CronFreshnessPolicy(InternalFreshnessPolicy, IHaveNew):
+    """Defines freshness with reference to a predetermined cron schedule.
+
+    Args:
+        deadline_cron: a cron string that defines a deadline for the asset to be materialized.
+        lower_bound_delta: a timedelta that defines the lower bound for when the asset could have been materialized.
+        If a deadline cron tick has passed and the most recent materialization is older than (deadline cron tick timestamp - lower bound delta), the asset is considered stale until it materializes again.
+        timezone: optionally provide a timezone for cron evaluation. IANA time zone strings are supported. If not provided, defaults to UTC.
+
+    Example:
+    policy = InternalFreshnessPolicy.cron(
+        deadline_cron="0 10 * * *", # 10am daily
+        lower_bound_delta=timedelta(hours=1),
+    )
+
+    This policy expects the asset to materialize every day between 9:00 AM and 10:00 AM.
+
+    If the asset is materialized at 9:30 AM, the asset is fresh, and will continue to be fresh until at least the deadline next day (10AM)
+    If the asset is materialized at 9:59 AM, the asset is fresh, and will continue to be fresh until at least the deadline next day (10AM)
+    If the asset is not materialized by 10:00 AM, the asset is stale, and will continue to be stale until it is materialized.
+    If the asset is then materialized at 10:30AM, it becomes fresh again until at least the deadline the next day (10AM).
+
+    Keep in mind that the policy will always look at the last completed cron tick.
+    So in the example above, if asset freshness is evaluated at 9:59 AM, the policy will still consider the previous day's 9-10AM window.
+    """
+
+    deadline_cron: str
+    serializable_lower_bound_delta: SerializableTimeDelta
+    timezone: str
+
+    def __new__(
+        cls,
+        deadline_cron: str,
+        lower_bound_delta: Union[timedelta, SerializableTimeDelta],
+        timezone: str = "UTC",
+    ):
+        check.str_param(deadline_cron, "deadline_cron")
+        check.invariant(is_valid_cron_string(deadline_cron), "Invalid cron string.")
+
+        # Handle both construction (with timedelta) and deserialization (with SerializableTimeDelta)
+        if isinstance(lower_bound_delta, SerializableTimeDelta):
+            # During deserialization, we already have a SerializableTimeDelta
+            serializable_lower_bound_delta = lower_bound_delta
+            actual_lower_bound_delta = lower_bound_delta.to_timedelta()
+        else:
+            # During normal construction, we have a timedelta and need to convert it
+            actual_lower_bound_delta = lower_bound_delta
+            serializable_lower_bound_delta = SerializableTimeDelta.from_timedelta(lower_bound_delta)
+
+        check.invariant(
+            actual_lower_bound_delta >= timedelta(minutes=1),
+            f"lower_bound_delta must be greater than or equal to 1 minute, was {actual_lower_bound_delta.total_seconds()} seconds",
+        )
+        smallest_cron_interval = get_smallest_cron_interval(deadline_cron)
+        check.invariant(
+            actual_lower_bound_delta <= smallest_cron_interval,
+            f"lower_bound_delta must be less than or equal to the smallest cron interval of ({smallest_cron_interval.total_seconds()} seconds for deadline_cron {deadline_cron}). Provided lower_bound_delta is {actual_lower_bound_delta.total_seconds()} seconds",
+        )
+
+        try:
+            get_timezone(timezone)
+        # Would be better to catch a specific exception type here,
+        # but it's more complicated because we use different timezone libraries
+        # depending on the Python version.
+        except Exception:
+            raise check.CheckError(f"Invalid IANA timezone: {timezone}")
+        return super().__new__(
+            cls,
+            deadline_cron=deadline_cron,
+            serializable_lower_bound_delta=serializable_lower_bound_delta,
+            timezone=timezone,
+        )
+
+    @property
+    def lower_bound_delta(self) -> timedelta:
+        """Returns the lower bound delta as a timedelta.
+        Use this instead of accessing the serializable_lower_bound_delta directly.
+        """
+        return SerializableTimeDelta.to_timedelta(self.serializable_lower_bound_delta)
 
 
 @whitelist_for_serdes
