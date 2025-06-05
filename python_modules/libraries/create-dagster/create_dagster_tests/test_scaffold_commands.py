@@ -34,17 +34,27 @@ from dagster_dg_core_tests.utils import (
 
 
 @pytest.mark.parametrize(
-    "cli_args",
+    "cli_args,input_str",
     [
-        ("helloworld",),
-        (".",),
+        (("helloworld",), "y\n"),
+        ((".",), "y\n"),
+        # skip the uv sync prompt and automatically uv sync
+        (("--uv-sync", "--", "."), None),
+        # skip the uv sync prompt and don't uv sync
+        (("--no-uv-sync", "--", "."), None),
     ],
     ids=[
         "with_name",
         "with_cwd",
+        "with_cwd_explicit_uv_sync",
+        "with_cwd_explicit_no_uv_sync",
     ],
 )
-def test_scaffold_workspace_command_success(monkeypatch, cli_args: tuple[str, ...]) -> None:
+def test_scaffold_workspace_command_success(
+    monkeypatch, cli_args: tuple[str, ...], input_str: Optional[str]
+) -> None:
+    monkeypatch.setattr("create_dagster.cli.scaffold.is_uv_installed", lambda: True)
+
     with ProxyRunner.test() as runner, runner.isolated_filesystem():
         if "." in cli_args:
             os.mkdir("helloworld")
@@ -55,7 +65,7 @@ def test_scaffold_workspace_command_success(monkeypatch, cli_args: tuple[str, ..
         else:
             expected_name = "dagster-workspace"
 
-        result = runner.invoke_create_dagster("workspace", *cli_args)
+        result = runner.invoke_create_dagster("workspace", *cli_args, input=input_str)
         assert_runner_result(result)
 
         if "." in cli_args:
@@ -64,6 +74,7 @@ def test_scaffold_workspace_command_success(monkeypatch, cli_args: tuple[str, ..
         assert Path(expected_name).exists()
         assert Path(f"{expected_name}/dg.toml").exists()
         assert Path(f"{expected_name}/projects").exists()
+        assert Path(f"{expected_name}/deployments/local/pyproject.toml").exists()
 
 
 def test_scaffold_workspace_already_exists_failure(monkeypatch) -> None:
@@ -122,7 +133,6 @@ def test_scaffold_workspace_already_exists_failure(monkeypatch) -> None:
         "dirname_arg_no_venv",
     ],
 )
-# def test_scaffold_project_outside_workspace_success(monkeypatch) -> None:
 def test_scaffold_project_success(
     monkeypatch, cli_args: tuple[str, ...], input_str: Optional[str], opts: dict[str, object]
 ) -> None:

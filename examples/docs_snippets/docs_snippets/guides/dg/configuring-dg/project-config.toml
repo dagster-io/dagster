@@ -12,7 +12,7 @@ root_module = "my_project" # this is required
 # definitions are scaffolded.
 #
 # Defaults to `<root_module>.defs`.
-defs_module = "my_project.defs" #
+defs_module = "my_project.defs"
 
 # (string, optional) Specifies the project submodule containing the top-level `Definitions`
 # object that is targeted when loading the project as a code location.

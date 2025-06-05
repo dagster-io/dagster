@@ -4,11 +4,7 @@ from pathlib import Path
 from typing import Optional
 
 import click
-from dagster_dg_core.config import (
-    DgRawWorkspaceConfig,
-    DgWorkspaceScaffoldProjectOptions,
-    modify_dg_toml_config,
-)
+from dagster_dg_core.config import DgWorkspaceScaffoldProjectOptions, modify_dg_toml_config
 from dagster_dg_core.context import DgContext
 from dagster_dg_core.utils import exit_with_error, get_toml_node, has_toml_node, set_toml_node
 from dagster_shared.libraries import parse_package_version
@@ -17,29 +13,96 @@ from dagster_shared.scaffold import scaffold_subtree
 
 def scaffold_workspace(
     path: Path,
-    workspace_config: Optional[DgRawWorkspaceConfig] = None,
+    use_editable_dagster: Optional[str],
 ) -> None:
-    # Can't create a workspace that is a child of another workspace
-    import tomlkit
-    import tomlkit.items
-
     scaffold_subtree(
         path=path,
         name_placeholder="WORKSPACE_NAME_PLACEHOLDER",
         project_template_path=Path(
             os.path.join(os.path.dirname(__file__), "templates", "WORKSPACE_NAME_PLACEHOLDER")
         ),
+        excludes=None,
+        **get_dependencies_template_params(
+            use_editable_dagster,
+            scaffold_project_options=None,
+            pypi_deps=_get_pypi_local_workspace_environment_deps(),
+            # add create-dagster to editable installs so you can scaffold projects in the
+            # workspace editable venv, since if you are installing editably you probably have
+            # create-dagster installed in your current venv editably
+            editable_deps=(
+                EDITABLE_DAGSTER_DEPENDENCIES
+                + EDITABLE_DAGSTER_DEV_DEPENDENCIES
+                + ["create-dagster"]
+            ),
+            pypi_dev_deps=[],  # no dev extra
+            editable_dev_deps=[],
+        ),
     )
 
-    if workspace_config is not None:
+    if use_editable_dagster:
         with modify_dg_toml_config(path / "dg.toml") as toml:
-            for k, v in workspace_config.items():
-                # Ignore empty collections and None, but not False
-                if v != {} and v != [] and v is not None:
-                    get_toml_node(toml, ("workspace",), (tomlkit.items.Table)).add(tomlkit.nl())
-                    set_toml_node(toml, ("workspace", k), v)
+            set_toml_node(toml, ("workspace", "scaffold_project_options"), {})
+            set_toml_node(
+                toml,
+                ("workspace", "scaffold_project_options", "use_editable_dagster"),
+                True if use_editable_dagster == "TRUE" else use_editable_dagster,
+            )
 
-    click.echo(f"Scaffolded files for Dagster workspace at {path}.")
+
+def get_dependencies_template_params(
+    use_editable_dagster: Optional[str],
+    scaffold_project_options: Optional[DgWorkspaceScaffoldProjectOptions],
+    *,
+    editable_deps: list[str],
+    editable_dev_deps: list[str],
+    pypi_deps: list[str],
+    pypi_dev_deps: list[str],
+) -> dict[str, str]:
+    cli_options = DgWorkspaceScaffoldProjectOptions.get_raw_from_cli(use_editable_dagster)
+
+    final_use_editable_dagster = cli_options.get(
+        "use_editable_dagster",
+        scaffold_project_options.use_editable_dagster if scaffold_project_options else None,
+    )
+
+    if final_use_editable_dagster:
+        editable_dagster_root = (
+            _get_editable_dagster_from_env()
+            if final_use_editable_dagster is True
+            else final_use_editable_dagster
+        )
+        deps = editable_deps
+        dev_deps = editable_dev_deps
+        sources = _gather_dagster_packages(Path(editable_dagster_root))
+    else:
+        dev_deps = pypi_dev_deps
+        deps = pypi_deps
+        sources = []
+
+    dependencies_str = _get_pyproject_toml_dependencies(deps)
+    dev_dependencies_str = _get_pyproject_toml_dev_dependencies(dev_deps)
+    uv_sources_str = _get_pyproject_toml_uv_sources(sources) if sources else ""
+
+    return {
+        "dependencies": dependencies_str,
+        "dev_dependencies": dev_dependencies_str,
+        "uv_sources": uv_sources_str,
+    }
+
+
+def _get_pypi_project_deps() -> list[str]:
+    from create_dagster.version import __version__
+
+    create_dagster_version = parse_package_version(__version__)
+    if create_dagster_version.release[0] >= 1:
+        # Pin scaffolded libraries to match create-dagster version
+        return [f"dagster=={__version__}"]
+    else:
+        return ["dagster"]
+
+
+def _get_pypi_local_workspace_environment_deps() -> list[str]:
+    return _get_pypi_project_deps() + PYPI_DAGSTER_DEV_DEPENDENCIES
 
 
 def scaffold_project(
@@ -52,45 +115,11 @@ def scaffold_project(
 
     click.echo(f"Creating a Dagster project at {path}.")
 
-    cli_options = DgWorkspaceScaffoldProjectOptions.get_raw_from_cli(use_editable_dagster)
-    workspace_options = (
+    scaffold_project_options = (
         dg_context.config.workspace.scaffold_project_options
         if dg_context.config.workspace
         else None
     )
-
-    final_use_editable_dagster = cli_options.get(
-        "use_editable_dagster",
-        workspace_options.use_editable_dagster if workspace_options else None,
-    )
-
-    if final_use_editable_dagster:
-        editable_dagster_root = (
-            _get_editable_dagster_from_env()
-            if final_use_editable_dagster is True
-            else final_use_editable_dagster
-        )
-        deps = EDITABLE_DAGSTER_DEPENDENCIES
-        dev_deps = EDITABLE_DAGSTER_DEV_DEPENDENCIES
-        sources = _gather_dagster_packages(Path(editable_dagster_root))
-    else:
-        editable_dagster_root = None
-        dev_deps = PYPI_DAGSTER_DEV_DEPENDENCIES
-
-        from create_dagster.version import __version__
-
-        create_dagster_version = parse_package_version(__version__)
-        if create_dagster_version.release[0] >= 1:
-            # Pin scaffolded libraries to match create-dagster version
-            deps = [f"dagster=={__version__}"]
-        else:
-            deps = ["dagster"]
-
-        sources = []
-
-    dependencies_str = _get_pyproject_toml_dependencies(deps)
-    dev_dependencies_str = _get_pyproject_toml_dev_dependencies(dev_deps)
-    uv_sources_str = _get_pyproject_toml_uv_sources(sources) if sources else ""
 
     scaffold_subtree(
         path=path,
@@ -98,9 +127,15 @@ def scaffold_project(
         project_template_path=Path(
             os.path.join(os.path.dirname(__file__), "templates", "PROJECT_NAME_PLACEHOLDER")
         ),
-        dependencies=dependencies_str,
-        dev_dependencies=dev_dependencies_str,
-        uv_sources=uv_sources_str,
+        excludes=None,
+        **get_dependencies_template_params(
+            use_editable_dagster,
+            scaffold_project_options,
+            pypi_deps=_get_pypi_project_deps(),
+            pypi_dev_deps=PYPI_DAGSTER_DEV_DEPENDENCIES,
+            editable_deps=EDITABLE_DAGSTER_DEPENDENCIES,
+            editable_dev_deps=EDITABLE_DAGSTER_DEV_DEPENDENCIES,
+        ),
     )
     click.echo(f"Scaffolded files for Dagster project at {path}.")
 
@@ -208,5 +243,6 @@ def _gather_dagster_packages(editable_dagster_root: Path) -> list[Path]:
         for p in (
             *editable_dagster_root.glob("python_modules/dagster*/setup.py"),
             *editable_dagster_root.glob("python_modules/libraries/dagster*/setup.py"),
+            *editable_dagster_root.glob("python_modules/libraries/create-dagster/setup.py"),
         )
     ]
