@@ -7,6 +7,7 @@ requires-python = ">=3.9,<3.13"
 dependencies = [
     "atproto",
     "dagster",
+    "dagster-dg-cli",
     "dagster-aws",
     "dagster-dbt",
     "dagster-duckdb",
@@ -23,13 +24,9 @@ dev = [
     "ruff",
 ]
 
-[build-system]
-requires = ["setuptools"]
-build-backend = "setuptools.build_meta"
+[tool.dg]
+directory_type = "project"
 
-[tool.dagster]
-module_name = "project_atproto_dashboard.definitions"
-project_name = "project_atproto_dashboard"
-
-[tool.setuptools.packages.find]
-exclude=["project_atproto_dashboard_tests"]
+[tool.dg.project]
+root_module = "project_atproto_dashboard"
+code_location_target_module = "project_atproto_dashboard.definitions"
