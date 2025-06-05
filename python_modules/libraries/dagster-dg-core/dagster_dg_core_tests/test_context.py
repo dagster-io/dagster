@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Any, Union
 
 import pytest
-from dagster_dg_core.component import RemotePluginRegistry
+from dagster_dg_core.component import DgRegistry
 from dagster_dg_core.config import DgFileConfigDirectoryType, get_type_str
 from dagster_dg_core.context import OLD_DG_PLUGIN_ENTRY_POINT_GROUPS, DgContext
 from dagster_dg_core.utils import (
@@ -279,7 +279,7 @@ def test_missing_dg_registry_module_in_manifest_warning():
         with activate_venv(Path(".venv")):
             context = DgContext.for_project_environment(Path.cwd(), {})
             with dg_warns("Your package defines a `dagster_dg_cli.registry_modules` entry point"):
-                RemotePluginRegistry.from_dg_context(context)
+                DgRegistry.from_dg_context(context)
 
 
 # ########################

@@ -111,8 +111,8 @@ def get_library_json_enriched_defs(tree: Optional[ComponentTree]) -> Definitions
     from dagster.components.core.package_entry import discover_entry_point_package_objects
     from dagster.components.core.snapshot import get_package_entry_snap
 
-    library_objects = discover_entry_point_package_objects()
-    snaps = [get_package_entry_snap(key, obj) for key, obj in library_objects.items()]
+    registry_objects = discover_entry_point_package_objects()
+    snaps = [get_package_entry_snap(key, obj) for key, obj in registry_objects.items()]
     components_json = json_for_all_components(snaps)
 
     return Definitions(

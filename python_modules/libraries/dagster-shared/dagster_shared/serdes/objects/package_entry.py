@@ -20,7 +20,7 @@ def _generate_invalid_component_typename_error_message(typename: str) -> str:
 
 @whitelist_for_serdes
 @record(kw_only=False)
-class PluginObjectKey:
+class DgRegistryKey:
     namespace: str
     name: str
 
@@ -32,7 +32,7 @@ class PluginObjectKey:
         return f"{self.namespace}.{self.name}"
 
     @staticmethod
-    def from_typename(typename: str) -> "PluginObjectKey":
+    def from_typename(typename: str) -> "DgRegistryKey":
         parts = typename.split(".")
         for part in parts:
             if not part.isidentifier():
@@ -40,39 +40,39 @@ class PluginObjectKey:
         if len(parts) < 2:
             raise ValueError(_generate_invalid_component_typename_error_message(typename))
         namespace, _, name = typename.rpartition(".")
-        return PluginObjectKey(name=name, namespace=namespace)
+        return DgRegistryKey(name=name, namespace=namespace)
 
 
 ###########
 # TYPE DATA
 ###########
-PluginObjectFeature: TypeAlias = Literal["component", "scaffold-target"]
+DgRegistryObjectFeature: TypeAlias = Literal["component", "scaffold-target"]
 
 
-class PluginObjectFeatureData(ABC):
+class DgRegistryObjectFeatureData(ABC):
     @property
     @abstractmethod
-    def feature(self) -> PluginObjectFeature:
+    def feature(self) -> DgRegistryObjectFeature:
         pass
 
 
 @whitelist_for_serdes
 @record
-class ComponentFeatureData(PluginObjectFeatureData):
+class ComponentFeatureData(DgRegistryObjectFeatureData):
     schema: Optional[dict[str, Any]]
 
     @property
-    def feature(self) -> PluginObjectFeature:
+    def feature(self) -> DgRegistryObjectFeature:
         return "component"
 
 
 @whitelist_for_serdes
 @record
-class ScaffoldTargetTypeData(PluginObjectFeatureData):
+class ScaffoldTargetTypeData(DgRegistryObjectFeatureData):
     schema: Optional[dict[str, Any]]
 
     @property
-    def feature(self) -> PluginObjectFeature:
+    def feature(self) -> DgRegistryObjectFeature:
         return "scaffold-target"
 
 
@@ -83,17 +83,17 @@ class ScaffoldTargetTypeData(PluginObjectFeatureData):
 
 @whitelist_for_serdes
 @record
-class PluginObjectSnap:
-    key: PluginObjectKey
-    aliases: Sequence[PluginObjectKey]
+class DgRegistryObjectSnap:
+    key: DgRegistryKey
+    aliases: Sequence[DgRegistryKey]
     summary: Optional[str]
     description: Optional[str]
     owners: Optional[Sequence[str]]
     tags: Optional[Sequence[str]]
-    feature_data: Sequence[PluginObjectFeatureData]
+    feature_data: Sequence[DgRegistryObjectFeatureData]
 
     @property
-    def features(self) -> Sequence[PluginObjectFeature]:
+    def features(self) -> Sequence[DgRegistryObjectFeature]:
         return [type_data.feature for type_data in self.feature_data]
 
     @overload
@@ -104,7 +104,9 @@ class PluginObjectSnap:
         self, feature: Literal["scaffold-target"]
     ) -> Optional[ScaffoldTargetTypeData]: ...
 
-    def get_feature_data(self, feature: PluginObjectFeature) -> Optional[PluginObjectFeatureData]:
+    def get_feature_data(
+        self, feature: DgRegistryObjectFeature
+    ) -> Optional[DgRegistryObjectFeatureData]:
         for feature_data in self.feature_data:
             if feature_data.feature == feature:
                 return feature_data
@@ -121,14 +123,14 @@ class PluginObjectSnap:
         return component_data.schema if component_data else None
 
     @property
-    def all_keys(self) -> Sequence[PluginObjectKey]:
+    def all_keys(self) -> Sequence[DgRegistryKey]:
         """Return all keys associated with this plugin object, including aliases."""
         return [self.key, *self.aliases]
 
 
 @whitelist_for_serdes
 @record
-class PluginManifest:
+class DgRegistryManifest:
     """A manifest of all components in a package.
 
     This is used to generate the component registry and to validate that the package entry point
@@ -136,14 +138,14 @@ class PluginManifest:
     """
 
     modules: Sequence[str]  # List of modules scanned
-    objects: Sequence[PluginObjectSnap]
+    objects: Sequence[DgRegistryObjectSnap]
 
-    def merge(self, other: "PluginManifest") -> "PluginManifest":
+    def merge(self, other: "DgRegistryManifest") -> "DgRegistryManifest":
         """Merge another manifest with this one and return a new instance."""
         shared_modules = set(self.modules).intersection(other.modules)
         if shared_modules:
             raise ValueError(f"Cannot merge manifests with overlapping modules: {shared_modules}.")
-        return PluginManifest(
+        return DgRegistryManifest(
             modules=[*self.modules, *other.modules],
             objects=[*self.objects, *other.objects],
         )
@@ -173,7 +175,7 @@ class ComponentTypeNamespaceJson(TypedDict):
 
 
 def json_for_all_components(
-    components: Sequence[PluginObjectSnap],
+    components: Sequence[DgRegistryObjectSnap],
 ) -> list[ComponentTypeNamespaceJson]:
     """Returns a list of JSON representations of all component types in the registry."""
     component_json = []
@@ -197,8 +199,8 @@ def json_for_all_components(
 
 
 def json_for_component_type(
-    key: PluginObjectKey,
-    entry: PluginObjectSnap,
+    key: DgRegistryKey,
+    entry: DgRegistryObjectSnap,
     component_type_data: ComponentFeatureData,
 ) -> ComponentTypeJson:
     from dagster_shared.yaml_utils.sample_yaml import generate_sample_yaml
