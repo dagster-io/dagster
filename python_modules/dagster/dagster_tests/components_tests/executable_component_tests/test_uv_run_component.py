@@ -22,7 +22,7 @@ if __name__ == "__main__":
         context.report_asset_materialization(
             metadata={"arg": sys.argv[1], "pycowsay_module_name": sys.modules["pycowsay"].__name__}
         )
-# """
+"""
 
 
 def test_pipes_subprocess_script_hello_world() -> None:
