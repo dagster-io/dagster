@@ -11,7 +11,7 @@ from dagster import (
     op,
 )
 from dagster._core.definitions.job_definition import JobDefinition
-from dagster._core.definitions.metadata.metadata_value import MetadataValue
+from dagster._core.definitions.metadata.metadata_value import MetadataValue, TextMetadataValue
 from dagster._core.definitions.run_config import RunConfig
 from dagster._core.definitions.run_request import RunRequest
 
@@ -197,3 +197,18 @@ def test_with_updated_job():
     assert my_schedule_2.cron_schedule == "@daily"
     assert my_schedule_2.tags == {"foo": "bar"}
     assert my_schedule_2.metadata == {"baz": MetadataValue.text("qux")}
+
+
+def test_with_updated_metadata():
+    schedule = ScheduleDefinition(job_name="job", cron_schedule="@daily", metadata={"baz": "qux"})
+    assert schedule.metadata == {"baz": MetadataValue.text("qux")}
+
+    blanked = schedule.with_attributes(metadata={})
+    assert blanked.metadata == {}
+
+    @job
+    def my_job(): ...
+
+    schedule = ScheduleDefinition(job=my_job, cron_schedule="@daily", metadata={"foo": "bar"})
+    updated = schedule.with_attributes(metadata={**schedule.metadata, "foo": "baz"})
+    assert updated.metadata["foo"] == TextMetadataValue("baz")
