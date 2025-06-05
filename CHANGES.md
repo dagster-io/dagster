@@ -5,7 +5,7 @@
 ### New
 
 - The database table used by the `DbIOManager` is now configurable via `"table"` output (asset) metadata key [#30310](https://github.com/dagster-io/oss/pull/30310)
-- Change default settings for backfill daemon to `use_threads=True`, `num_workers=4`. Thanks [@HynekBlaha](https://github.com/HynekBlaha)!
+- Changed default settings for backfill daemon to `use_threads=True`, `num_workers=4`. Thanks [@HynekBlaha](https://github.com/HynekBlaha)!
 - A new function `build_asset_check_context` can be used to build asset check contexts for direct invocation.
 - Changed `Definitions.get_all_asset_specs` to only return assets directly passed in as AssetSpecs or AssetsDefinitions.
 - Removed `selection` argument from `Definitions.map_asset_specs`. If selection is needed use the new `Definitions.map_resolved_asset_specs`.
