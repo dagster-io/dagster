@@ -35,7 +35,7 @@ setup(
     packages=find_packages(exclude=["dagster_dg_core_tests*"]),
     install_requires=[
         "Jinja2",
-        "tomlkit",
+        "tomlkit<0.13.3",  # bug in this version
         "click>=8,<8.2",
         "click-aliases",
         "typing_extensions>=4.4.0,<5",
