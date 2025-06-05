@@ -143,6 +143,8 @@ class AssetSpec(IHasInternalInit, IHaveNew, LegacyNamedTupleMixin):
         owners (Optional[Sequence[str]]): A list of strings representing owners of the asset. Each
             string can be a user's email address, or a team name prefixed with `team:`,
             e.g. `team:finops`.
+        automation_condition (Optional[AutomationCondition]): The automation condition to apply to
+            the asset.
         tags (Optional[Mapping[str, str]]): Tags for filtering and organizing. These tags are not
             attached to runs of the asset.
         kinds: (Optional[Set[str]]): A set of strings representing the kinds of the asset. These
