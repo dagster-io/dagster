@@ -11,5 +11,5 @@ dg list components
 │ dagster.PipesSubprocessScriptCollectionComponent           │ Assets that wrap Python scripts executed with Dagster's │
 │                                                            │ PipesSubprocessClient.                                  │
 ├────────────────────────────────────────────────────────────┼─────────────────────────────────────────────────────────┤
-│ my_component_library.components.shell_command.ShellCommand │ Models a shell script as a Dagster asset.               │
+│ my_project.components.shell_command.ShellCommand           │ Models a shell script as a Dagster asset.               │
 └────────────────────────────────────────────────────────────┴─────────────────────────────────────────────────────────┘
