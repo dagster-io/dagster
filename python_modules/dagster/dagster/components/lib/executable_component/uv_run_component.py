@@ -1,31 +1,35 @@
-import os
 import shutil
 from collections.abc import Sequence
 from functools import cached_property
 from typing import Union
 
+from dagster_shared import check
+
 from dagster._core.execution.context.asset_check_execution_context import AssetCheckExecutionContext
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster._core.pipes.context import PipesExecutionResult
-from dagster._core.pipes.subprocess import PipesSubprocessClient
 from dagster.components.core.context import ComponentLoadContext
 from dagster.components.lib.executable_component.component import (
     ExecutableComponent,
     OpMetadataSpec,
 )
-from dagster.components.lib.executable_component.subprocess_component import ScriptRunnerSpec
+from dagster.components.lib.executable_component.subprocess_component import (
+    ScriptSpec,
+    get_cmd,
+    invoke_runner,
+)
 
 
 class UvRunComponent(ExecutableComponent):
-    execution: ScriptRunnerSpec
+    execution: ScriptSpec
 
     @property
     def op_metadata_spec(self) -> OpMetadataSpec:
-        return self._script_runner_spec
+        return self._script_spec
 
     @cached_property
-    def _script_runner_spec(self) -> ScriptRunnerSpec:
-        return ScriptRunnerSpec.with_script_stem_as_default_name(self.execution)
+    def _script_spec(self) -> ScriptSpec:
+        return ScriptSpec.with_script_stem_as_default_name(self.execution)
 
     def invoke_execute_fn(
         self,
@@ -33,13 +37,11 @@ class UvRunComponent(ExecutableComponent):
         component_load_context: ComponentLoadContext,
     ) -> Sequence[PipesExecutionResult]:
         assert not self.resource_keys, "Pipes subprocess scripts cannot have resources"
-        path = (
-            self.execution.path
-            if os.path.isabs(self.execution.path)
-            else os.path.join(component_load_context.path, self.execution.path)
+        return invoke_runner(
+            context=context,
+            command=get_cmd(
+                script_runner_exe=check.not_none(shutil.which("uv"), "uv not found"),
+                spec=self.execution,
+                path=str(component_load_context.path),
+            ),
         )
-        cmd = [shutil.which("uv"), "run", "--active", "--script", path] + (
-            self.execution.args or []
-        )
-        invocation = PipesSubprocessClient().run(context=context.op_execution_context, command=cmd)
-        return invocation.get_results()

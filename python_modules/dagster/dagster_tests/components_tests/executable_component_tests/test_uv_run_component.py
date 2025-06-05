@@ -1,6 +1,6 @@
 from dagster._core.definitions.materialize import materialize
 from dagster._core.definitions.metadata.metadata_value import TextMetadataValue
-from dagster.components.lib.executable_component.subprocess_component import ScriptRunnerSpec
+from dagster.components.lib.executable_component.subprocess_component import ScriptSpec
 from dagster.components.lib.executable_component.uv_run_component import UvRunComponent
 from dagster.components.testing import scaffold_defs_sandbox
 
@@ -45,7 +45,7 @@ def test_pipes_subprocess_script_hello_world() -> None:
             }
         ) as (component, defs):
             assert isinstance(component, UvRunComponent)
-            assert isinstance(component.execution, ScriptRunnerSpec)
+            assert isinstance(component.execution, ScriptSpec)
             assets_def = defs.get_assets_def("asset")
             result = materialize([assets_def])
             assert result.success
