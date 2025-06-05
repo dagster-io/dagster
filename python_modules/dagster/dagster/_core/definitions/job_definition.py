@@ -1119,6 +1119,9 @@ class JobDefinition(IHasInternalInit):
     def with_logger_defs(self, logger_defs: Mapping[str, LoggerDefinition]) -> "JobDefinition":
         return self._copy(logger_defs=logger_defs)
 
+    def with_metadata(self, metadata: Mapping[str, RawMetadataValue]) -> "JobDefinition":
+        return self._copy(metadata=normalize_metadata(metadata))
+
     @property
     def op_selection(self) -> Optional[AbstractSet[str]]:
         return set(self.op_selection_data.op_selection) if self.op_selection_data else None
