@@ -106,6 +106,10 @@ To confirm that the `dagster_sling.SlingReplicationCollectionComponent` componen
   <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/6-dg-list-components.txt" />
 </WideContent>
 
+You can also view automatically generated documentation for the Sling component (and all components available in your project environment) by running `dg dev` to start the webserver, then navigating to the `Docs` tab for your project's code location:
+
+![Docs tab in UI](/images/guides/labs/components/etl-tutorial-docs-tab.png)
+
 ### 3. Scaffold a Sling component definition
 
 Next, scaffold a Sling component definition in your project:
@@ -178,10 +182,6 @@ To see what you've built so far, you can load your project in the Dagster UI:
 To materialize assets and load tables in the DuckDB instance, click **Materialize All**:
 
 ![](/images/guides/build/projects-and-components/components/sling.png)
-
-To see documentation for all the components available in your project environment, navigate to the `Docs` tab for your project's code location:
-
-![Docs tab in UI](/images/guides/labs/components/etl-tutorial-docs-tab.png)
 
 ### 8. Verify the DuckDB tables
 
@@ -339,7 +339,13 @@ To verify that the definitions load successfully, run `dg check defs`:
 
 ### 5. Generate and view the Evidence dashboard
 
-To generate a static website for your Evidence dashboard, materialize the `jaffle_dashboard` asset in the Dagster UI. The website will be created in the `jaffle_dashboard/build` directory.
+To generate a static website for your Evidence dashboard, first load your project in the Dagster UI:
+
+<CliInvocationExample contents="dg dev" />
+
+Next reload definitions and materialize the `jaffle_dashboard` asset to create the website in the `jaffle_dashboard/build` directory:
+
+![Materialize assets in Dagster UI](/images/guides/labs/components/materialize-all-assets.png)
 
 To view the dashboard in your browser, run the following commands:
 
@@ -349,7 +355,7 @@ cd jaffle_dashboard/build && python -m http.server
 
 You should see a dashboard like the following at `http://localhost:8000/`:
 
-![](/images/guides/build/projects-and-components/components/evidence.png)
+![Evidence dashboard](/images/guides/build/projects-and-components/components/evidence.png)
 
 ## Automate your pipeline
 

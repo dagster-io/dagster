@@ -5,6 +5,7 @@ description: Add Dagster components to your project with YAML using the dg scaff
 ---
 
 import DgComponentsPreview from '@site/docs/partials/\_DgComponentsPreview.md';
+import DgScaffoldDefsTip from '@site/docs/partials/\_DgScaffoldDefsTip.md';
 
 <DgComponentsPreview />
 
@@ -55,13 +56,11 @@ For example, to scaffold a dbt project component definition, you would run:
 dg scaffold defs dagster_dbt.DbtProjectComponent jdbt --project-path dbt/jdbt
 ```
 
-:::note
-
 Some components may require different arguments to be passed on the command line, or generate additional files when scaffolded.
 
-:::
+<DgScaffoldDefsTip />
 
-:::tip Python-formatted component definitions
+### Python-formatted component definitions
 
 To scaffold a component definition formatted in Python instead of YAML, you can use the `dg scaffold defs` command with the `--format python` option. For example, the following command will generate a `component.py` file for the dbt project component rather than a `defs.yaml` file:
 
@@ -70,8 +69,6 @@ dg scaffold defs dagster_dbt.DbtProjectComponent jdbt --project-path dbt/jdbt --
 ```
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/python-components/tree.txt" title="component.py" />
-
-:::
 
 ## Configuration
 

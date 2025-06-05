@@ -6,6 +6,7 @@ sidebar_position: 200
 ---
 
 import DgComponentsPreview from '@site/docs/partials/\_DgComponentsPreview.md';
+import DgScaffoldDefsTip from '@site/docs/partials/\_DgScaffoldDefsTip.md';
 
 <DgComponentsPreview />
 
@@ -23,7 +24,7 @@ Before scaffolding definitions with `dg`, you must [create a project](/guides/la
 
 ## 1. Scaffold an asset
 
-You can use the `dg scaffold` command to scaffold a new asset underneath the `defs` folder. In this example, we scaffold an asset named `my_asset.py` and write it to the `defs/assets` directory:
+You can use the `dg scaffold defs` command to scaffold a new asset underneath the `defs` folder. In this example, we scaffold an asset named `my_asset.py` and write it to the `defs/assets` directory:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/dagster-definitions/1-scaffold.txt" />
 
@@ -40,6 +41,8 @@ Once the asset has been scaffolded, we can see that a new file has been added to
 
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/dagster-definitions/3-cat.txt" />
+
+<DgScaffoldDefsTip />
 
 ## 2. Write an asset definition
 
