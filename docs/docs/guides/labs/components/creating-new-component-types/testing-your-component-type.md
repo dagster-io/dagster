@@ -10,7 +10,7 @@ import DgComponentsPreview from '@site/docs/partials/\_DgComponentsPreview.md';
 
 ## Testing custom components
 
-Component authors need to test their components in various contexts. The Dagster framework provides utilities in order to facilitate this process.
+After you [create a new component](https://docs.dagster.io/guides/labs/components/creating-new-component-types/creating-and-registering-a-component-type), we recommend testing scaffolding and runtime execution with the Dagster framework utilities outlined below.
 
 ### The core workhorse: `scaffold_defs_sandbox`
 
@@ -35,7 +35,7 @@ For the purposes of this guide, we will only concern ourselves with `component_c
 `scaffold_defs_sandbox` creates a lightweight sandbox to scaffold and instantiate a component in three steps:
 1. Creates an empty folder structure (with an auto-generated project name and component path by default) that mimics the `defs/` folder portion of a real Dagster project. Practically speaking, this means a single folder at `src/<<project_name>>/defs/<<component_path>>` and which contains the scaffolded files within that leaf directory.
 2. It then invokes the scaffolder on the component class in the context of that folder.
-3. `scaffold_defs_sandbox` yields a `DefsPathSandbox` object, which the user programs against.
+3. `scaffold_defs_sandbox` yields a `DefsPathSandbox` object, which you can program against.
 
 Within the `with` block, you are free to assert facts about the scaffolded files.
 
