@@ -93,7 +93,6 @@ def get_venv_activation_cmd(venv_dir: Path, project_path: Path) -> str:
     else:
         relative_venv_path = venv_dir.relative_to(project_path)
         return f"cd {get_shortest_path_repr(project_path)} && source {relative_venv_path / 'bin' / 'activate'}"
-        return f"source {venv_dir / 'bin' / 'activate'}"
 
 
 def get_venv_executable(venv_dir: Path, executable: str = "python") -> Path:
