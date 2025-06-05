@@ -13,7 +13,7 @@ The [dagster-airlift](/integrations/libraries/airlift) library provides an `Airf
 
 ## Setup and peering
 
-### 1. Create a Dagster project
+### 1. Prepare a Dagster project
 
 To begin, you'll need a Dagster project. You can use an [existing components-ready project](/guides/labs/dg/incrementally-adopting-dg/migrating-project) or create a new one:
 
