@@ -40,6 +40,7 @@ ResolvableCallable: TypeAlias = Annotated[
 ]
 
 
+# some comments to trigger BK
 def get_resources_from_callable(func: Callable) -> list[str]:
     sig = inspect.signature(func)
     return [param.name for param in sig.parameters.values() if param.name != "context"]
