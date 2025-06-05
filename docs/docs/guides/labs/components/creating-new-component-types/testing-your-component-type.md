@@ -14,7 +14,7 @@ Component authors need to test their components in various contexts. The Dagster
 
 ### The core workhorse: `scaffold_defs_sandbox`
 
-The function at the core of our testing workflows is `scaffold_defs_sandbox.`
+The function at the core of our testing workflows is `scaffold_defs_sandbox`.
 
 The function signature is the following:
 
