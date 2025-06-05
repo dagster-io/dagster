@@ -17,23 +17,57 @@ from dagster.components.lib.executable_component.component import (
 )
 
 
-class SubprocessSpec(OpMetadataSpec):
+class ScriptRunnerSpec(OpMetadataSpec):
     type: Literal["subprocess"] = "subprocess"
     path: str
     args: Optional[Union[list[str], str]] = None
 
+    @staticmethod
+    def with_script_stem_as_default_name(
+        script_runner_spec: "ScriptRunnerSpec",
+    ) -> "ScriptRunnerSpec":
+        name = (
+            script_runner_spec.name
+            if script_runner_spec.name
+            else Path(script_runner_spec.path).stem
+        )
+        return script_runner_spec.model_copy(update={"name": name})
+
+
+def invoke_runner(
+    *,
+    context: Union[AssetExecutionContext, AssetCheckExecutionContext],
+    command: list[str],
+) -> Sequence[PipesExecutionResult]:
+    return (
+        PipesSubprocessClient()
+        .run(context=context.op_execution_context, command=command)
+        .get_results()
+    )
+
+
+def get_cmd(script_runner_exec, execution: ScriptRunnerSpec, path: str) -> list[str]:
+    abs_path = (
+        execution.path if os.path.isabs(execution.path) else os.path.join(path, execution.path)
+    )
+    if isinstance(execution.args, str):
+        return [script_runner_exec, abs_path, *shlex.split(execution.args)]
+    elif isinstance(execution.args, list):
+        return [script_runner_exec, abs_path, *execution.args]
+    else:
+        return [script_runner_exec, abs_path]
+
 
 class SubprocessComponent(ExecutableComponent):
-    execution: SubprocessSpec
+    execution: ScriptRunnerSpec
 
     @property
     def op_metadata_spec(self) -> OpMetadataSpec:
         return self._subprocess_spec
 
     @cached_property
-    def _subprocess_spec(self) -> SubprocessSpec:
-        name = self.execution.name if self.execution.name else Path(self.execution.path).stem
-        return self.execution.model_copy(update={"name": name})
+    def _subprocess_spec(self) -> ScriptRunnerSpec:
+        return ScriptRunnerSpec.with_script_stem_as_default_name(self.execution)
 
     def invoke_execute_fn(
         self,
@@ -41,26 +75,13 @@ class SubprocessComponent(ExecutableComponent):
         component_load_context: ComponentLoadContext,
     ) -> Sequence[PipesExecutionResult]:
         assert not self.resource_keys, "Pipes subprocess scripts cannot have resources"
-        return (
-            PipesSubprocessClient()
-            .run(
-                context=context.op_execution_context,
-                command=self.get_cmd(component_load_context.path),
-            )
-            .get_results()
-        )
-
-    def get_cmd(self, path: Path) -> list[str]:
-        abs_path = (
-            self.execution.path
-            if os.path.isabs(self.execution.path)
-            else os.path.join(str(path), self.execution.path)
-        )
         which_python = shutil.which("python")
         assert which_python is not None
-        if isinstance(self.execution.args, str):
-            return [which_python, abs_path, *shlex.split(self.execution.args)]
-        elif isinstance(self.execution.args, list):
-            return [which_python, abs_path, *self.execution.args]
-        else:
-            return [which_python, abs_path]
+        return invoke_runner(
+            context=context,
+            command=get_cmd(
+                script_runner_exec=which_python,
+                execution=self.execution,
+                path=str(component_load_context.path),
+            ),
+        )
