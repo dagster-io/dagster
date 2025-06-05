@@ -52,7 +52,7 @@ from dagster._core.definitions.asset_spec import (
     AssetSpec,
 )
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
-from dagster._core.definitions.decorators.hook_decorator import failure_hook, success_hook
+from dagster._core.definitions.decorators.hook_decorator import success_hook
 from dagster._core.definitions.events import AssetMaterialization
 from dagster._core.definitions.metadata.metadata_value import TextMetadataValue
 from dagster._core.definitions.result import MaterializeResult
