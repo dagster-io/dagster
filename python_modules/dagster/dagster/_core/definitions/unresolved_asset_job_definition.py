@@ -4,7 +4,7 @@ from datetime import datetime
 from itertools import groupby
 from typing import TYPE_CHECKING, AbstractSet, Any, Optional, Union  # noqa: UP035
 
-from dagster_shared.record import IHaveNew, record_custom
+from dagster_shared.record import IHaveNew, record_custom, replace
 
 import dagster._check as check
 from dagster._annotations import deprecated, deprecated_param
@@ -227,6 +227,11 @@ class UnresolvedAssetJobDefinition(IHaveNew):
             resource_defs=resource_defs,
             allow_different_partitions_defs=False,
         )
+
+    def with_metadata(
+        self, metadata: Mapping[str, "RawMetadataValue"]
+    ) -> "UnresolvedAssetJobDefinition":
+        return replace(self, metadata=metadata)
 
 
 @deprecated_param(
