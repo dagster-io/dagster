@@ -1,51 +1,108 @@
 ---
 title: Installing Dagster
-description: Learn how to install Dagster in a virtual environment.
+description: Learn how to install Dagster and create projects with the new dg CLI.
 sidebar_position: 20
 sidebar_label: Installation
 ---
 
+import InstallUv from '@site/docs/partials/\_InstallUv.md';
+
 To follow the steps in this guide, you'll need:
 
 - To install Python 3.9 or higher. **Python 3.12 is recommended**.
-- To install `pip`, a Python package installer
 
-## Setting up a virtual environment
+## Recommended: Creating a new project with create-dagster
 
-After installing Python, it's recommended that you set up a virtual environment. This will isolate your Dagster project from the rest of your system and make it easier to manage dependencies.
+The recommended way to get started with Dagster is to create a project using the `create-dagster` command line utility. This will scaffold a Dagster project with our recommended structure, and required dependencies.
 
-There are many ways to do this, but this guide will use `venv` as it doesn't require additional dependencies.
+### Using `create-dagster`
+
+The `create-dagster` utility can be installed using [Homebrew](https://brew.sh/), `curl` or invoked without installation using `uvx`.
 
 <Tabs>
-  <TabItem value="macos" label="MacOS">
-    ```bash
-    python -m venv venv
-    source venv/bin/activate
-    ```
-  </TabItem>
-  <TabItem value="windows" label="Windows">
-    ```bash
-    python -m venv venv
-    venv\Scripts\activate
-    ```
-  </TabItem>
-</Tabs>
+<TabItem value="uvx" label="uvx (Recommended)">
 
-:::tip
-**Looking for something more powerful than `venv`?** Try `pyenv` or `pyenv-virtualenv`, which can help you manage multiple versions of Python on a single machine. Learn more in the [pyenv GitHub repository](https://github.com/pyenv/pyenv).
-:::
+First, install the Python package manager [`uv`](https://docs.astral.sh/uv/) if you don't have it:
 
-## Installing Dagster
+<InstallUv />
 
-To install Dagster in your virtual environment, open your terminal and run the following command:
+Then run the `create-dagster` command using `uvx`:
 
 ```bash
-pip install dagster dagster-webserver
+uvx create-dagster project my-project
 ```
 
-This command will install the core Dagster library and the webserver, which is used to serve the Dagster UI.
+</TabItem>
 
-## Verifying installation
+<TabItem value="brew" label="Homebrew">
+
+`create-dagster` is available in a Homebrew tap:
+
+```bash
+brew install dagster-io/tap/create-dagster
+```
+
+Then run the `create-dagster` command:
+
+```bash
+create-dagster project my-project
+```
+
+</TabItem>
+
+<TabItem value="curl" label="curl">
+
+Use `curl` to download a standalone installation script and execute it with `sh`:
+
+```bash
+curl -LsSf https://dg.dagster.io/create-dagster/install.sh | sh
+```
+
+Then run the `create-dagster` command:
+
+```bash
+create-dagster project my-project
+```
+
+</TabItem>
+
+</Tabs>
+
+### Verifying your new project
+
+After creating your project, navigate to the project directory, activate the Python virtual environment, and verify the installation:
+
+```bash
+cd my-project
+source .venv/bin/activate
+dg --version
+```
+
+## Alternative: Manual installation in a virtual environment
+
+If you prefer to set up Dagster manually or are installing it into an existing project, you can install Dagster in a virtual environment.
+
+### Installing Dagster
+
+<Tabs>
+<TabItem value="uv" label="uv">
+
+```bash
+uv add dagster dagster-webserver dagster-dg-cli
+```
+
+</TabItem>
+
+<TabItem value="pip" label="pip">
+
+```bash
+pip install dagster dagster-webserver dagster-dg-cli
+```
+
+</TabItem>
+</Tabs>
+
+### Verifying installation
 
 To verify that Dagster is installed correctly, run the following command:
 
@@ -70,4 +127,5 @@ If you encounter any issues during the installation process:
 ## Next steps
 
 - Get up and running with your first Dagster project in the [Quickstart](/getting-started/quickstart)
+- Learn more about the [`dg` CLI and modern Dagster development](/guides/labs/dg)
 - Learn to [create data assets in Dagster](/guides/build/assets/defining-assets)
