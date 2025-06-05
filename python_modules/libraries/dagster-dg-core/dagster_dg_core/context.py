@@ -13,7 +13,7 @@ from packaging.version import Version
 from typing_extensions import Self
 
 from dagster_dg_core.cache import CachableDataType, DgCache
-from dagster_dg_core.component import RemotePluginRegistry
+from dagster_dg_core.component import EnvRegistry
 from dagster_dg_core.config import (
     DgConfig,
     DgRawBuildConfig,
@@ -89,7 +89,7 @@ class DgContext:
         self._workspace_root_path = workspace_root_path
         self.cli_opts = cli_opts
         self._cache = None if config.cli.disable_cache else DgCache.from_config(config)
-        self.component_registry = RemotePluginRegistry.empty()
+        self.component_registry = EnvRegistry.empty()
 
         # Always run this check, its a no-op if there is no pyproject.toml.
         _validate_plugin_entry_point(self)

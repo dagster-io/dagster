@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any, Optional, TypeVar, Union
 
 from dagster_shared.record import record
-from dagster_shared.serdes.objects import PluginObjectKey
+from dagster_shared.serdes.objects import EnvRegistryKey
 from dagster_shared.yaml_utils import parse_yamls_with_source_position
 from dagster_shared.yaml_utils.source_position import SourcePosition
 from pydantic import BaseModel, ConfigDict, TypeAdapter
@@ -396,7 +396,7 @@ def load_yaml_component_from_path(context: ComponentLoadContext, component_def_p
 
         # find the component type
         type_str = context.normalize_component_type_str(component_file_model.type)
-        key = PluginObjectKey.from_typename(type_str)
+        key = EnvRegistryKey.from_typename(type_str)
         obj = load_package_object(key)
         if not isinstance(obj, type) or not issubclass(obj, Component):
             raise DagsterInvalidDefinitionError(

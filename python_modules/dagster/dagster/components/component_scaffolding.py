@@ -6,7 +6,7 @@ from typing import Any, Optional, cast
 import click
 import yaml
 from dagster_shared import check
-from dagster_shared.serdes.objects import PluginObjectKey
+from dagster_shared.serdes.objects import EnvRegistryKey
 from pydantic import BaseModel, TypeAdapter
 
 from dagster.components.core.package_entry import load_package_object
@@ -78,7 +78,7 @@ def scaffold_object(
     if not path.exists():
         path.mkdir(parents=True)
 
-    key = PluginObjectKey.from_typename(typename)
+    key = EnvRegistryKey.from_typename(typename)
     obj = load_package_object(key)
 
     scaffolder = get_scaffolder(obj)
