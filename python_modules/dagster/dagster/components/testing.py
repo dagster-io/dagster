@@ -236,10 +236,6 @@ def get_component_defs_within_project(
     all_component_defs = get_all_components_defs_within_project(
         project_root=project_root, component_path=component_path
     )
-    check.invariant(
-        len(all_component_defs) == 1,
-        "Only one component is supported. To get all components use get_all_components_defs_within_project.",
-    )
     return all_component_defs[instance_key][0], all_component_defs[instance_key][1]
 
 
