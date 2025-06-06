@@ -1,3 +1,4 @@
+from dagster._core.definitions.asset_group_context import asset_group
 from dagster._core.definitions.decorators.asset_decorator import (
     asset as asset,
     multi_asset as multi_asset,
