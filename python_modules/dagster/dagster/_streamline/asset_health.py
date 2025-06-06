@@ -2,6 +2,8 @@ import enum
 
 from dagster_shared.serdes import whitelist_for_serdes
 
+# TODO - probably move this to _core definitions or something
+
 
 @whitelist_for_serdes
 class AssetHealthStatus(enum.Enum):
