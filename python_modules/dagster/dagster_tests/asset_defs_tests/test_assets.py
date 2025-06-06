@@ -26,6 +26,7 @@ from dagster import (
     Output,
     ResourceDefinition,
     _check as check,
+    asset_check,
     build_asset_context,
     define_asset_job,
     failure_hook,
@@ -3395,3 +3396,64 @@ def test_cyclic_dependencies_hooks(hook_testing_utils):
         "cycle_layer2_b_another_hook",
         "cycle_layer3_b_third_hook",
     }
+
+
+def test_metadata_update():
+    @asset(metadata={"foo": "bar", "four": 4})
+    def single(): ...
+
+    assert single.metadata_by_key[single.key]["foo"] == "bar"  # gets normalized later?
+    assert single.metadata_by_key[single.key]["four"] == 4
+
+    updated = single.with_attributes(
+        metadata_by_key={
+            single.key: {
+                **single.metadata_by_key[single.key],
+                "foo": "baz",
+            }
+        }
+    )
+    assert updated.metadata_by_key[updated.key]["foo"] == "baz"
+    assert updated.metadata_by_key[updated.key]["four"] == 4
+
+    # cant blank out metadata for this condition
+    # * @asset creates an OpDefinition with the metadata set on the output
+    # * The AssetsDefinition constructor merges the output metadata with the spec metadata
+    tried_to_blank = single.with_attributes(metadata_by_key={single.key: {}})
+    # so here we still get back the metadata from the op def output node
+    assert tried_to_blank.metadata_by_key[tried_to_blank.key] == {"foo": "bar", "four": 4}
+
+    asset_a = AssetSpec("a", metadata={"a": "foo"})
+    asset_b = AssetSpec("b", metadata={"b": 3})
+
+    @multi_asset(specs=[asset_a, asset_b])
+    def multi(): ...
+
+    assert multi.metadata_by_key[asset_a.key]["a"] == "foo"
+    assert multi.metadata_by_key[asset_b.key]["b"] == 3
+
+    updated = multi.with_attributes(
+        metadata_by_key={
+            asset_a.key: {
+                **multi.metadata_by_key[asset_a.key],
+                "a": "bar",
+            }
+        }
+    )
+    assert updated.metadata_by_key[asset_a.key]["a"] == "bar"
+
+    # same as above
+    tried_to_blank = multi.with_attributes(metadata_by_key={asset_a.key: {}, asset_b.key: {}})
+    assert tried_to_blank.metadata_by_key == {asset_a.key: {"a": "foo"}, asset_b.key: {"b": 3}}
+
+    @asset_check(asset=single, metadata={"foo": "bar"})
+    def my_check():
+        return AssetCheckResult(passed=True)
+
+    assert next(iter(my_check.check_specs)).metadata["foo"] == "bar"
+
+    blanked = my_check.with_attributes(metadata_by_key={my_check.check_key: {}})
+    assert next(iter(blanked.check_specs)).metadata == {}
+
+    updated = my_check.with_attributes(metadata_by_key={my_check.check_key: {"foo": "baz"}})
+    assert next(iter(updated.check_specs)).metadata["foo"] == "baz"
