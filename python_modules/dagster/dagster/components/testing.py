@@ -401,6 +401,24 @@ def scaffold_defs_sandbox(
 
 
 def copy_code_to_file(fn: Callable, file_path: Path) -> None:
+    """Takes a function and writes the body of the function to a file.
+
+    Args:
+        fn: The function to write to the file.
+        file_path: The path to the file to write the function to.
+
+    Example:
+
+    .. code-block:: python
+
+        def code_to_copy() -> None:
+            import dagster as dg
+
+            def execute_fn(context) -> dg.MaterializeResult:
+                return dg.MaterializeResult()
+
+        copy_code_to_file(code_to_copy, sandbox.defs_folder_path / "execute.py")
+    """
     source_code_text = inspect.getsource(fn)
     source_code_text = "\n".join(source_code_text.split("\n")[1:])
     dedented_source_code_text = textwrap.dedent(source_code_text)
