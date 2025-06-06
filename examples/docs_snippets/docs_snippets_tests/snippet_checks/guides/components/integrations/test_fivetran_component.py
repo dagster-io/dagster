@@ -92,7 +92,7 @@ def test_components_docs_fivetran_workspace(
 
         # Tree the project
         context.run_command_and_snippet_output(
-            cmd="tree my_project/defs",
+            cmd="tree src/my_project/defs",
             snippet_path=f"{context.get_next_snip_number()}-tree.txt",
             custom_comparison_fn=compare_tree_output,
         )
