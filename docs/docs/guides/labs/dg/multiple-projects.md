@@ -27,11 +27,11 @@ A workspace does not define a Python environment by default. Instead, Python env
 
 ## 1. Create a new workspace and first project
 
-To create a new workspace called `dagster-workspace`, run `uvx create-dagster workspace`:
+To create a new workspace called `dagster-workspace`, run `uvx -U create-dagster workspace`:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/workspace/1-dg-scaffold-workspace.txt" />
 
-Now, create a project inside the workspace called `project-1`. Run `uvx create-dagster project` with the `--python-environment uv_managed` option. You will be prompted for the name of the project:
+Now, create a project inside the workspace called `project-1`. Run `uvx -U create-dagster project` with the `--python-environment uv_managed` option. You will be prompted for the name of the project:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/workspace/2-dg-scaffold-project.txt" />
 

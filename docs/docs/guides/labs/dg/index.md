@@ -25,7 +25,7 @@ First, install the Python package manager [`uv`](https://docs.astral.sh/uv/) if 
 
 We recommend running `create-dagster` using [uvx](https://docs.astral.sh/uv/guides/tools/):
 
-<CliInvocationExample contents="uvx create-dagster project my-project" />
+<CliInvocationExample contents="uvx -U create-dagster project my-project" />
 
 This runs `create-dagster` in a temporary, isolated Python environment.
 

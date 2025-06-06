@@ -45,7 +45,7 @@ See the [`tree`](https://oldmanprogrammer.net/source.php?dir=projects/tree/INSTA
 
 ### 2. Install `create-dagster`
 
-The `create-dagster` CLI allows you to quickly create a components-ready Dagster project. We recommend using `uv`, which allows you to run `uvx create-dagster` without a separate installation step. If you're not using `uv`, follow the [`create-dagster` installation steps](/guides/labs/dg#installing-the-create-dagster-cli) to install the `create-dagster` command line tool.
+The `create-dagster` CLI allows you to quickly create a components-ready Dagster project. We recommend using `uv`, which allows you to run `uvx -U create-dagster` without a separate installation step. If you're not using `uv`, follow the [`create-dagster` installation steps](/guides/labs/dg#installing-the-create-dagster-cli) to install the `create-dagster` command line tool.
 
 ### 3. Create a new Dagster project
 

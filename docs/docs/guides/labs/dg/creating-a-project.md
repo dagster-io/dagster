@@ -19,7 +19,7 @@ Before creating a project, you must [install `create-dagster`](/guides/labs/dg#i
 
 <Tabs>
   <TabItem value="uv" label="uv">
-    ``` uvx create-dagster project my-project ```
+    ``` uvx -U create-dagster project my-project ```
   </TabItem>
   <TabItem value="non-uv" label="Homebrew, curl, or pip">
     ``` create-dagster project my-project ```

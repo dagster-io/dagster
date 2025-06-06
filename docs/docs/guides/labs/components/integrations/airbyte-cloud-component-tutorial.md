@@ -19,7 +19,7 @@ To begin, you'll need a Dagster project. You can use an [existing components-rea
 Activate the project virtual environment:
 
 ```
-source .venv/bin/activate
+source ../.venv/bin/activate
 ```
 
 Finally, add the `dagster-airbyte` library to the project:
