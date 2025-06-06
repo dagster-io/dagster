@@ -18,7 +18,7 @@ If you look at the `rss_pipeline_factory` function, it returns a <PyObject secti
   title="project_dagster_modal_pipes/project_dagster_modal_pipes/defs/resources.py"
 />
 
-With the resources set, the last step will be to to initialize our three podcasts:
+With the resources set, the last step will be to initialize our three podcasts:
 
 <CodeExample
   path="docs_projects/project_dagster_modal_pipes/project_dagster_modal_pipes/defs/feeds.py"
