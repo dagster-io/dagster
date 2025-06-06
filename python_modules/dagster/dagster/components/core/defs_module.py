@@ -92,17 +92,19 @@ class CompositeYamlComponent(Component):
 
         return Definitions.merge(
             *(
-                component.build_defs(context).permissive_map_resolved_asset_specs(
+                context.build_defs_at_path(child_decl.path).permissive_map_resolved_asset_specs(
                     func=lambda spec: _add_defs_yaml_code_reference_to_spec(
                         component_yaml_path=component_yaml,
                         load_context=context,
-                        component=component,
+                        component=context.load_component_at_path(child_decl.path),
                         source_position=source_position,
                         asset_spec=spec,
                     ),
                     selection=None,
                 )
-                for component, source_position in zip(self.components, self.source_positions)
+                for child_decl, source_position in zip(
+                    context.component_decl.iterate_child_component_decls(), self.source_positions
+                )
             )
         )
 
@@ -113,7 +115,10 @@ class CompositeComponent(Component):
 
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
         return Definitions.merge(
-            *[component.build_defs(context) for component in self.components.values()]
+            *[
+                context.build_defs_at_path(child_decl.path)
+                for child_decl in context.component_decl.iterate_child_component_decls()
+            ]
         )
 
 
@@ -196,9 +201,10 @@ class DefsFolderComponent(Component):
         )
 
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
-        child_defs = []
-        for path, child in self.children.items():
-            child_defs.append(child.build_defs(context.for_path(path)))
+        child_defs = [
+            context.build_defs_at_path(child_decl.path)
+            for child_decl in context.component_decl.iterate_child_component_decls()
+        ]
         defs = Definitions.merge(*child_defs)
         for post_processor in self.asset_post_processors or []:
             defs = post_processor(defs)

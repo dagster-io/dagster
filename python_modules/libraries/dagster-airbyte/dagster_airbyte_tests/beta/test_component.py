@@ -160,7 +160,7 @@ def test_custom_filter_fn_python(
         ),
         connection_selector=filter_fn,
         translation=None,
-    ).build_defs(ComponentTree.for_test().load_context)
+    ).build_defs(ComponentTree.for_test().decl_load_context)
     assert len(defs.resolve_asset_graph().get_all_asset_keys()) == num_assets
 
 

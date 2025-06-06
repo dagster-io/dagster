@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Any, Union
 
 from dagster_shared import check
 from dagster_shared.yaml_utils.source_position import SourcePositionTree
+from typing_extensions import Self
 
 from dagster._annotations import PublicAttr, preview, public
 from dagster._core.definitions.definitions_class import Definitions
@@ -16,6 +17,7 @@ from dagster.components.resolved.context import ResolutionContext
 
 if TYPE_CHECKING:
     from dagster.components.component.component import Component
+    from dagster.components.core.decl import ComponentDecl
     from dagster.components.core.defs_module import ComponentPath
     from dagster.components.core.tree import ComponentTree
 
@@ -26,9 +28,7 @@ RESOLUTION_CONTEXT_STASH_KEY = "component_load_context"
 @public
 @preview(emit_runtime_warning=False)
 @dataclass
-class ComponentLoadContext:
-    """Context available when instantiating Components."""
-
+class ComponentDeclLoadContext:
     path: PublicAttr[Path]
     project_root: PublicAttr[Path]
     defs_module_path: PublicAttr[Path]
@@ -43,17 +43,17 @@ class ComponentLoadContext:
         )
 
     @staticmethod
-    def from_resolution_context(resolution_context: ResolutionContext) -> "ComponentLoadContext":
+    def from_resolution_context(
+        resolution_context: ResolutionContext,
+    ) -> "ComponentDeclLoadContext":
         return check.inst(
-            resolution_context.stash.get(RESOLUTION_CONTEXT_STASH_KEY), ComponentLoadContext
+            resolution_context.stash.get(RESOLUTION_CONTEXT_STASH_KEY), ComponentDeclLoadContext
         )
 
-    def _with_resolution_context(
-        self, resolution_context: ResolutionContext
-    ) -> "ComponentLoadContext":
+    def _with_resolution_context(self, resolution_context: ResolutionContext) -> "Self":
         return dataclasses.replace(self, resolution_context=resolution_context)
 
-    def with_rendering_scope(self, rendering_scope: Mapping[str, Any]) -> "ComponentLoadContext":
+    def with_rendering_scope(self, rendering_scope: Mapping[str, Any]) -> "Self":
         return self._with_resolution_context(
             self.resolution_context.with_scope(
                 **rendering_scope,
@@ -63,14 +63,12 @@ class ComponentLoadContext:
             )
         )
 
-    def with_source_position_tree(
-        self, source_position_tree: SourcePositionTree
-    ) -> "ComponentLoadContext":
+    def with_source_position_tree(self, source_position_tree: SourcePositionTree) -> "Self":
         return self._with_resolution_context(
             self.resolution_context.with_source_position_tree(source_position_tree)
         )
 
-    def for_path(self, path: Path) -> "ComponentLoadContext":
+    def for_path(self, path: Path) -> "Self":
         return dataclasses.replace(self, path=path)
 
     def defs_relative_module_name(self, path: Path) -> str:
@@ -143,3 +141,40 @@ class ComponentLoadContext:
             Component: The component loaded from the given path.
         """
         return self.component_tree.load_component_at_path(defs_path)
+
+
+@public
+@preview(emit_runtime_warning=False)
+@dataclass
+class ComponentLoadContext(ComponentDeclLoadContext):
+    """Context available when instantiating Components."""
+
+    component_decl: "ComponentDecl"
+
+    @staticmethod
+    def from_decl_load_context(
+        decl_load_context: ComponentDeclLoadContext,
+        component_decl: "ComponentDecl",
+    ) -> "ComponentLoadContext":
+        return ComponentLoadContext(
+            path=decl_load_context.path,
+            project_root=decl_load_context.project_root,
+            defs_module_path=decl_load_context.defs_module_path,
+            defs_module_name=decl_load_context.defs_module_name,
+            resolution_context=decl_load_context.resolution_context,
+            component_tree=decl_load_context.component_tree,
+            terminate_autoloading_on_keyword_files=decl_load_context.terminate_autoloading_on_keyword_files,
+            component_decl=component_decl,
+        )
+
+    def build_defs_at_path(self, defs_path: Union[Path, "ComponentPath"]) -> Definitions:
+        """Builds definitions from the given defs subdirectory. Currently
+        does not incorporate postprocessing from parent defs modules.
+
+        Args:
+            defs_path: Path to the defs module to load. If relative, resolves relative to the defs root.
+
+        Returns:
+            Definitions: The definitions loaded from the given path.
+        """
+        return self.component_tree.build_defs_at_path(defs_path)
