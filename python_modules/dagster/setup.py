@@ -1,3 +1,4 @@
+import sys
 from pathlib import Path
 
 from setuptools import find_packages, setup
@@ -24,9 +25,12 @@ def get_version() -> str:
     return version["__version__"]
 
 
-# grpcio 1.44.0 is the min version compatible with both protobuf 3 and 4
 # grpcio 1.66.2 is the min version compatible with python 3.13
-GRPC_VERSION_FLOOR = "1.66.2"
+if sys.version_info >= (3, 13):
+    GRPC_VERSION_FLOOR = "1.66.2"
+# grpcio 1.44.0 is the min version compatible with both protobuf 3 and 4
+else:
+    GRPC_VERSION_FLOOR = "1.44.0"
 
 ver = get_version()
 # dont pin dev installs to avoid pip dep resolver issues
