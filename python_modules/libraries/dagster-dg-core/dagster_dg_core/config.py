@@ -622,6 +622,15 @@ class _DgConfigValidator:
         self._validate_file_config_no_extraneous_keys(
             set(DgRawProjectConfig.__annotations__.keys()), section, "project"
         )
+        if "code_location_target_module" in section and section.get("autoload_defs"):
+            autoload_defs_key = self._get_full_key("project.autoload_defs")
+            code_location_target_module_key = self._get_full_key(
+                "project.code_location_target_module"
+            )
+            raise DgValidationError(
+                f"Cannot specify `{code_location_target_module_key}` when `{autoload_defs_key}` is True. These options are mutually exclusive."
+                " Please set `autoload_defs` to False or remove the `code_location_target_module`."
+            )
 
     def _validate_file_config_workspace_section(self, section: object) -> None:
         if not isinstance(section, dict):
