@@ -86,7 +86,7 @@ def test_defs_folder_decl(component_tree: MockComponentTree):
         component_node_fn=lambda context: my_other_component,
     )
 
-    defs_path = Path(__file__).parent / "defs"
+    defs_path = Path(__file__).parent
     decl = DefsFolderDecl(
         context=component_tree.load_context,
         path=defs_path,

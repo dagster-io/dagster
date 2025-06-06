@@ -1942,7 +1942,9 @@ class ComponentTreeSnap:
     def from_tree(tree: ComponentTree) -> "ComponentTreeSnap":
         leaves = []
 
-        for comp_path, comp_inst in tree.load_root_component().iterate_path_component_pairs():
+        for comp_path, comp_inst in check.inst(
+            tree.load_root_component(), DefsFolderComponent
+        ).iterate_path_component_pairs():
             if not isinstance(
                 comp_inst,
                 (
@@ -1955,7 +1957,7 @@ class ComponentTreeSnap:
                 cls = comp_inst.__class__
                 leaves.append(
                     ComponentInstanceSnap(
-                        key=comp_path.get_relative_key(tree.load_root_component().path),
+                        key=comp_path.get_relative_key(tree.defs_module_path),
                         full_type_name=f"{cls.__module__}.{cls.__qualname__}",
                     )
                 )

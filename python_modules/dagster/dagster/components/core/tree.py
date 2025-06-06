@@ -6,6 +6,7 @@ from types import ModuleType
 from typing import Optional
 from unittest import mock
 
+from dagster_shared import check
 from dagster_shared.record import record
 from typing_extensions import Self, TypeVar
 
@@ -13,7 +14,7 @@ from dagster._core.definitions.definitions_class import Definitions
 from dagster._utils.cached_method import cached_method
 from dagster.components.component.component import Component
 from dagster.components.core.context import ComponentLoadContext
-from dagster.components.core.decl import ComponentDecl, DefsFolderDecl
+from dagster.components.core.decl import ComponentDecl, DefsFolderDecl, get_component_decl
 from dagster.components.core.defs_module import ComponentPath, DefsFolderComponent
 from dagster.components.resolved.context import ResolutionContext
 from dagster.components.utils import get_path_from_module
@@ -105,11 +106,11 @@ class ComponentTree:
         )
 
     @cached_method
-    def find_root_decl(self) -> DefsFolderDecl:
-        return DefsFolderDecl.get(self.load_context)
+    def find_root_decl(self) -> ComponentDecl:
+        return check.not_none(get_component_decl(self.load_context))
 
     @cached_method
-    def load_root_component(self) -> DefsFolderComponent:
+    def load_root_component(self) -> Component:
         return self.find_root_decl()._load_component()  # noqa: SLF001
 
     @cached_method
@@ -124,8 +125,12 @@ class ComponentTree:
     @cached_method
     def _component_decl_tree(self) -> Sequence[tuple[ComponentPath, ComponentDecl]]:
         """Constructs or returns the full component declaration tree from cache."""
-        tree = list(self.find_root_decl().iterate_path_component_decl_pairs())
-        return tree
+        root_decl = self.find_root_decl()
+        if not isinstance(root_decl, DefsFolderDecl):
+            raise Exception(
+                "Root component is not a DefsFolderComponent"
+            )  # TODO: eliminate this instance check/restriction
+        return list(root_decl.iterate_path_component_decl_pairs())
 
     @cached_method
     def _component_decl_at_posix_path(
@@ -133,8 +138,8 @@ class ComponentTree:
     ) -> Optional[tuple[Path, ComponentDecl]]:
         """Locates a component declaration matching the given canonical string path."""
         root_decl = self.find_root_decl()
-        if root_decl.path.absolute().as_posix() == defs_path_posix:
-            return (root_decl.path, root_decl)
+        if self.defs_module_path.absolute().as_posix() == defs_path_posix:
+            return (self.defs_module_path, root_decl)
         for cp, component_decl in self._component_decl_tree():
             if cp.file_path.absolute().as_posix() == defs_path_posix:
                 return (cp.file_path, component_decl)
@@ -166,7 +171,7 @@ class ComponentTree:
             ComponentDecl: The component declaration loaded from the given path.
         """
         component_decl_and_path = self._component_decl_at_posix_path(
-            _get_canonical_path_string(self.find_root_decl().path, defs_path)
+            _get_canonical_path_string(self.defs_module_path, defs_path)
         )
         if component_decl_and_path is None:
             raise Exception(f"No component decl found for path {defs_path}")
@@ -182,7 +187,7 @@ class ComponentTree:
             Component: The component loaded from the given path.
         """
         component = self._component_at_posix_path(
-            _get_canonical_path_string(self.find_root_decl().path, defs_path)
+            _get_canonical_path_string(self.defs_module_path, defs_path)
         )
         if component is None:
             raise Exception(f"No component found for path {defs_path}")
@@ -200,7 +205,7 @@ class ComponentTree:
             Definitions: The definitions loaded from the given path.
         """
         defs = self._defs_at_posix_path(
-            _get_canonical_path_string(self.find_root_decl().path, defs_path)
+            _get_canonical_path_string(self.defs_module_path, defs_path)
         )
         if defs is None:
             raise Exception(f"No definitions found for path {defs_path}")
@@ -211,9 +216,12 @@ class ComponentTree:
         of_type: type[TComponent],
     ) -> list[TComponent]:
         """Get all components from this context that are instance of the specified type."""
+        root_component = self.load_root_component()
+        if not isinstance(root_component, DefsFolderComponent):
+            raise Exception("Root component is not a DefsFolderComponent")
         return [
             component
-            for component in self.load_root_component().iterate_components()
+            for component in root_component.iterate_components()
             if isinstance(component, of_type)
         ]
 
