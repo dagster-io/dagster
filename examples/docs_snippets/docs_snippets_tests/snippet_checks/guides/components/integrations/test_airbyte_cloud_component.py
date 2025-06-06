@@ -29,6 +29,7 @@ class MockAirbyteWorkspace(AirbyteCloudWorkspace):
         # connections_by_id = {}
         # destinations_by_id = {}
 
+
 def test_components_docs_airbyte_workspace(
     update_snippets: bool,
     update_screenshots: bool,
