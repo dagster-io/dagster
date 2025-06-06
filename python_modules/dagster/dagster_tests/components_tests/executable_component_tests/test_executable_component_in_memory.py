@@ -20,7 +20,7 @@ from dagster.components.testing import scaffold_defs_sandbox
 def asset_in_component(
     component: ExecutableComponent, key: CoercibleToAssetKey
 ) -> AssetsDefinition:
-    defs = component.build_defs(ComponentTree.for_test().load_context)
+    defs = component.build_defs(ComponentTree.for_test().decl_load_context)
     return defs.get_assets_def(key)
 
 
@@ -52,7 +52,7 @@ def test_basic_singular_asset_with_callable() -> None:
 
 
 def assert_singular_component(component: FunctionComponent) -> None:
-    defs = component.build_defs(ComponentTree.for_test().load_context)
+    defs = component.build_defs(ComponentTree.for_test().decl_load_context)
 
     assets_def = defs.get_assets_def("asset")
 
