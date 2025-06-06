@@ -27,6 +27,7 @@ We can write a prompt that tells the models our desired outcome and provide an e
   language="python"
   startAfter="start_location_prompt"
   endBefore="end_location_prompt"
+  title="project_prompt_eng/project_prompt_eng/defs/assets.py"
 />
 
 Now we can use this prompt with Claude. Within our Dagster asset (`user_input_prompt`) we can use the `AnthropicResource` to easily interact with the Anthropic client. We will also want to include a [run configuration](/guides/operate/configuration/run-configuration) for the asset so we can reuse this same pipeline with slightly different inputs. Finally, since we can ensure the response format from Claude with our prompt engineering, we can define a more specific output for the asset. Using [Pydantic](https://docs.pydantic.dev/latest/), we can define the exact schema we expect.
@@ -36,6 +37,7 @@ Now we can use this prompt with Claude. Within our Dagster asset (`user_input_pr
   language="python"
   startAfter="start_user_input_prompt"
   endBefore="end_user_input_prompt"
+  title="project_prompt_eng/project_prompt_eng/defs/assets.py"
 />
 
 Looking at the final asset, you can see the pieces working in unison. We combine the input from the run configuration into our prompt, which returns a result we can assume is JSON. Then we can unpack that JSON into our `UserInputSchema` schema to get further validation that our result matches what we expected.

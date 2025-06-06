@@ -13,6 +13,7 @@ For our final prompt engineering asset, we can reuse many of the concepts we hav
   language="python"
   startAfter="start_fuel_station_prompt"
   endBefore="end_fuel_station_prompt"
+  title="project_prompt_eng/project_prompt_eng/defs/assets.py"
 />
 
 Now that we have the prompt, we can create our asset. The asset will combine the current time with the alternative fuel stations data. It will then generate a prompt for each fuel station to ask the AI model and determine if the fuel station is currently available.
@@ -22,6 +23,7 @@ Now that we have the prompt, we can create our asset. The asset will combine the
   language="python"
   startAfter="start_available_fuel_stations"
   endBefore="end_available_fuel_stations"
+  title="project_prompt_eng/project_prompt_eng/defs/assets.py"
 />
 
 ## Running the pipeline
