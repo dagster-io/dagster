@@ -21,6 +21,7 @@ from dagster.components.scaffold.scaffold import scaffold_with
 
 if TYPE_CHECKING:
     from dagster.components.core.context import ComponentLoadContext
+    from dagster.components.core.decl import ComponentDecl
 
 
 @public
@@ -75,6 +76,12 @@ class Component(ABC):
     inherit from Resolvable or implement get_model_cls to support instantiation
     via yaml.
     """
+
+    @classmethod
+    def get_decl_type(cls) -> type["ComponentDecl"]:
+        from dagster.components.core.decl import YamlDecl
+
+        return YamlDecl
 
     @classmethod
     def __dg_package_entry__(cls) -> None: ...
