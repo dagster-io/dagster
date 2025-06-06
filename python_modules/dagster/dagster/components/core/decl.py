@@ -26,7 +26,7 @@ from dagster.components.core.defs_module import (
     EXPLICITLY_IGNORED_GLOB_PATTERNS,
     ComponentFileModel,
     ComponentPath,
-    CompositeComponent,
+    CompositePyComponent,
     CompositeYamlComponent,
     DagsterDefsComponent,
     DefsFolderComponent,
@@ -80,15 +80,15 @@ class ComponentLoaderDecl(ComponentDecl[Component]):
 
 
 @record
-class CompositePythonDecl(ComponentDecl[CompositeComponent]):
+class CompositePythonDecl(ComponentDecl[CompositePyComponent]):
     """Declaration of a Python CompositeComponent, corresponding to a Python file with one or more
     ComponentLoaderDecls.
     """
 
     decls: Mapping[str, ComponentLoaderDecl]
 
-    def _load_component(self) -> "CompositeComponent":
-        return CompositeComponent(
+    def _load_component(self) -> "CompositePyComponent":
+        return CompositePyComponent(
             components={
                 attr: self.context.load_component_at_path(decl.path)
                 for attr, decl in self.decls.items()
@@ -342,13 +342,6 @@ def build_component_decl_from_python_file(
     component_loaders = list(inspect.getmembers(module, is_component_loader))
     if len(component_loaders) == 0:
         raise DagsterInvalidDefinitionError("No component nodes found in module")
-    elif len(component_loaders) == 1:
-        _, component_loader = component_loaders[0]
-        return ComponentLoaderDecl(
-            context=context,
-            component_node_fn=component_loader,
-            path=ComponentPath(file_path=context.path, instance_key=None),
-        )
     else:
         return CompositePythonDecl(
             path=ComponentPath(file_path=context.path, instance_key=None),

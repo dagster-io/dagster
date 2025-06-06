@@ -11,7 +11,7 @@ from dagster.components.core.decl import (
     CompositePythonDecl,
     DefsFolderDecl,
 )
-from dagster.components.core.defs_module import ComponentPath, CompositeComponent
+from dagster.components.core.defs_module import ComponentPath, CompositePyComponent
 from dagster.components.core.tree import ComponentTree
 from dagster_shared.record import record
 
@@ -69,7 +69,7 @@ def test_composite_python_decl(component_tree: MockComponentTree):
 
     component_tree.set_root_decl(decl)
     loaded_component = component_tree.load_root_component()
-    assert isinstance(loaded_component, CompositeComponent)
+    assert isinstance(loaded_component, CompositePyComponent)
     assert loaded_component.components["my_component"] == my_component
 
 

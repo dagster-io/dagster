@@ -96,11 +96,43 @@ def test_component_tree():
     assert dagster_test_path.exists()
     defs = LegacyAutoloadingComponentTree.load(dagster_test_path).build_defs()
 
-    repo_snap = RepositorySnap.from_def(defs.get_repository_def())
+    repo_def = defs.get_repository_def()
+    asset = repo_def.asset_graph.get(dg.AssetKey("first_yaml"))
+    assert asset is not None
+    assert asset.metadata["dagster/component_origin"]
+    assert (
+        asset.metadata["dagster/component_origin"].instance.__class__.__name__
+        == "SimpleAssetComponent"
+    )
+
+    asset = repo_def.asset_graph.get(dg.AssetKey("solo_yaml"))
+    assert asset is not None
+    assert asset.metadata["dagster/component_origin"]
+    assert (
+        asset.metadata["dagster/component_origin"].instance.__class__.__name__
+        == "SimpleAssetComponent"
+    )
+
+    asset = repo_def.asset_graph.get(dg.AssetKey("first_py"))
+    assert asset is not None
+    assert asset.metadata["dagster/component_origin"]
+    assert asset.metadata["dagster/component_origin"].instance.__class__.__name__ == "PyComponent"
+
+    asset = repo_def.asset_graph.get(dg.AssetKey("solo_py"))
+    assert asset is not None
+    assert asset.metadata["dagster/component_origin"]
+    assert (
+        asset.metadata["dagster/component_origin"].instance.__class__.__name__
+        == "FunctionComponent"
+    )
+
+    repo_snap = RepositorySnap.from_def(repo_def)
     assert repo_snap.component_tree
 
     inst_map = {snap.key: snap.full_type_name for snap in repo_snap.component_tree.leaf_instances}
     assert inst_map == {
+        "python[only]": "dagster.components.lib.executable_component.function_component.FunctionComponent",
+        "yaml[0]": "dagster_test.components.simple_asset.SimpleAssetComponent",
         "composites/python[first]": "dagster_test.dg_defs.composites.python.component.PyComponent",
         "composites/python[second]": "dagster_test.dg_defs.composites.python.component.PyComponent",
         "composites/yaml[0]": "dagster_test.components.simple_asset.SimpleAssetComponent",
