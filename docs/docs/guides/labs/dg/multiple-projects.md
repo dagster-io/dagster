@@ -31,7 +31,7 @@ To scaffold a new workspace called `dagster-workspace`, run `uvx create-dagster 
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/workspace/1-dg-scaffold-workspace.txt" />
 
-Now we'll create a project inside our workspace called `project-1`. Run `uvx create-dagster project` with the `--python-environment uv_managed` option. You will be prompted for the name of the project:
+Now we'll create a project inside our workspace called `project-1`. Run `uvx create-dagster project`. You will be prompted for the name of the project:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/workspace/2-dg-scaffold-project.txt" />
 

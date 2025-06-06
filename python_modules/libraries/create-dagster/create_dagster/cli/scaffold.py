@@ -4,8 +4,6 @@ from typing import Optional
 
 import click
 from dagster_dg_core.config import (
-    DgProjectPythonEnvironment,
-    DgProjectPythonEnvironmentFlag,
     DgRawWorkspaceConfig,
     DgWorkspaceScaffoldProjectOptions,
     discover_workspace_root,
@@ -23,7 +21,6 @@ from dagster_dg_core.utils import (
     pushd,
 )
 from dagster_dg_core.utils.telemetry import cli_telemetry_wrapper
-from typing_extensions import get_args
 
 from create_dagster.scaffold import scaffold_project, scaffold_workspace
 
@@ -44,16 +41,11 @@ def _print_package_install_warning_message() -> None:
 
 
 def _should_run_uv_sync(
-    python_environment: DgProjectPythonEnvironmentFlag,
     venv_path: Path,
     uv_sync_flag: Optional[bool],
 ) -> bool:
-    # This already will have occurred during the scaffolding step
-    if python_environment == "uv_managed" or uv_sync_flag is False:
-        return False
-    # This can force running `uv sync` even if a venv already exists
-    elif uv_sync_flag is True:
-        return True
+    if uv_sync_flag is not None:
+        return uv_sync_flag
     elif venv_path.exists():
         _print_package_install_warning_message()
         return False
@@ -87,12 +79,6 @@ def _should_run_uv_sync(
 )
 @click.argument("path", type=Path)
 @click.option(
-    "--python-environment",
-    default="active",
-    type=click.Choice(get_args(DgProjectPythonEnvironmentFlag)),
-    help="Type of Python environment in which to launch subprocesses for this project.",
-)
-@click.option(
     "--uv-sync/--no-uv-sync",
     is_flag=True,
     default=None,
@@ -106,7 +92,6 @@ def _should_run_uv_sync(
 def scaffold_project_command(
     path: Path,
     use_editable_dagster: Optional[str],
-    python_environment: DgProjectPythonEnvironmentFlag,
     uv_sync: Optional[bool],
     **global_options: object,
 ) -> None:
@@ -151,15 +136,6 @@ def scaffold_project_command(
             uv is not installed. Please install uv to use the `--uv-sync` option.
             See https://docs.astral.sh/uv/getting-started/installation/.
         """)
-    elif uv_sync is False and python_environment == "uv_managed":
-        exit_with_error(
-            "The `--uv-sync` option cannot be set to False when using the `--python-environment uv_managed` option."
-        )
-    elif python_environment == "uv_managed" and not is_uv_installed():
-        exit_with_error("""
-            uv is not installed. Please install uv to use the `--python-environment uv_managed` option.
-            See https://docs.astral.sh/uv/getting-started/installation/.
-        """)
 
     abs_path = path.resolve()
     if dg_context.is_in_workspace and dg_context.has_project(
@@ -173,11 +149,10 @@ def scaffold_project_command(
         abs_path,
         dg_context,
         use_editable_dagster=use_editable_dagster,
-        python_environment=DgProjectPythonEnvironment.from_flag(python_environment),
     )
 
     venv_path = path / ".venv"
-    if _should_run_uv_sync(python_environment, venv_path, uv_sync):
+    if _should_run_uv_sync(venv_path, uv_sync):
         click.echo("Running `uv sync --group dev`...")
         with pushd(path):
             subprocess.run(["uv", "sync", "--group", "dev"], check=True)

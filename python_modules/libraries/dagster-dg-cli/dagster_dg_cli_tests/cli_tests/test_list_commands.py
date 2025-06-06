@@ -233,8 +233,8 @@ def test_list_defs_succeeds(use_json: bool, snapshot):
         isolated_example_project_foo_bar(
             runner,
             in_workspace=False,
-            python_environment="uv_managed",
             **project_kwargs,
+            uv_sync=True,
         ) as project_dir,
     ):
         with activate_venv(project_dir / ".venv"):
@@ -305,7 +305,7 @@ def test_list_defs_with_path(
         isolated_example_project_foo_bar(
             runner,
             in_workspace=False,
-            python_environment="uv_managed",
+            uv_sync=True,
             **project_kwargs,
         ) as project_dir,
         activate_venv(project_dir / ".venv"),
@@ -371,9 +371,7 @@ def _sample_defs():
 def test_list_defs_complex_assets_succeeds(snapshot):
     with (
         ProxyRunner.test() as runner,
-        isolated_example_project_foo_bar(
-            runner, in_workspace=False, python_environment="uv_managed"
-        ) as project_dir,
+        isolated_example_project_foo_bar(runner, in_workspace=False, uv_sync=True) as project_dir,
     ):
         with activate_venv(project_dir / ".venv"):
             subprocess.run(
@@ -400,9 +398,7 @@ def test_list_defs_complex_assets_succeeds(snapshot):
 def test_list_defs_column_selection():
     with (
         ProxyRunner.test() as runner,
-        isolated_example_project_foo_bar(
-            runner, in_workspace=False, python_environment="uv_managed"
-        ) as project_dir,
+        isolated_example_project_foo_bar(runner, in_workspace=False, uv_sync=True) as project_dir,
     ):
         with activate_venv(project_dir / ".venv"):
             subprocess.run(
@@ -450,9 +446,7 @@ def test_list_defs_column_selection():
 def test_list_defs_asset_subselection():
     with (
         ProxyRunner.test() as runner,
-        isolated_example_project_foo_bar(
-            runner, in_workspace=False, python_environment="uv_managed"
-        ) as project_dir,
+        isolated_example_project_foo_bar(runner, in_workspace=False, uv_sync=True) as project_dir,
     ):
         with activate_venv(project_dir / ".venv"):
             subprocess.run(
@@ -536,9 +530,7 @@ def _sample_complex_asset_defs():
 def test_list_defs_with_env_file_succeeds(snapshot):
     with (
         ProxyRunner.test() as runner,
-        isolated_example_project_foo_bar(
-            runner, in_workspace=False, python_environment="uv_managed"
-        ) as project_dir,
+        isolated_example_project_foo_bar(runner, in_workspace=False, uv_sync=True) as project_dir,
     ):
         with activate_venv(project_dir / ".venv"):
             subprocess.run(
@@ -584,8 +576,8 @@ def test_list_defs_fails_compact(capture_stderr_from_components_cli_invocations)
         isolated_example_project_foo_bar(
             runner,
             in_workspace=False,
-            python_environment="uv_managed",
             use_editable_dagster=True,
+            uv_sync=True,
         ) as project_dir,
     ):
         with activate_venv(project_dir / ".venv"):

@@ -46,7 +46,7 @@ def test_creating_a_component(
 
         # Scaffold code location
         _run_command(
-            cmd="create-dagster project my-component-library --python-environment uv_managed --use-editable-dagster && cd my-component-library",
+            cmd="create-dagster project my-component-library --uv-sync --use-editable-dagster && cd my-component-library",
         )
 
         stack.enter_context(activate_venv(".venv"))

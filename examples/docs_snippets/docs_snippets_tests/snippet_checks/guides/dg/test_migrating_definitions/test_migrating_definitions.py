@@ -1,5 +1,7 @@
 from pathlib import Path
 
+from dagster_dg_core.utils import activate_venv
+
 from dagster._utils.env import environ
 from docs_snippets_tests.snippet_checks.guides.components.utils import (
     DAGSTER_ROOT,
@@ -147,9 +149,10 @@ def test_components_docs_migrating_definitions(update_snippets: bool) -> None:
             "uv pip freeze && uv run dagster asset materialize --select '*' -m 'my_existing_project.definitions'"
         )
 
-        context.run_command_and_snippet_output(
-            cmd="dg list defs",
-            snippet_path=SNIPPETS_DIR
-            / f"{context.get_next_snip_number()}-list-defs-after-all.txt",
-            snippet_replace_regex=[MASK_VENV, MASK_USING_LOG_MESSAGE],
-        )
+        with activate_venv(".venv"):
+            context.run_command_and_snippet_output(
+                cmd="dg list defs",
+                snippet_path=SNIPPETS_DIR
+                / f"{context.get_next_snip_number()}-list-defs-after-all.txt",
+                snippet_replace_regex=[MASK_VENV, MASK_USING_LOG_MESSAGE],
+            )

@@ -9,11 +9,7 @@ from typing import Any, Union
 
 import pytest
 from dagster_dg_core.component import RemotePluginRegistry
-from dagster_dg_core.config import (
-    DgFileConfigDirectoryType,
-    DgProjectPythonEnvironmentFlag,
-    get_type_str,
-)
+from dagster_dg_core.config import DgFileConfigDirectoryType, get_type_str
 from dagster_dg_core.context import OLD_DG_PLUGIN_ENTRY_POINT_GROUPS, DgContext
 from dagster_dg_core.utils import (
     TomlPath,
@@ -21,7 +17,6 @@ from dagster_dg_core.utils import (
     create_toml_node,
     delete_toml_node,
     get_toml_node,
-    get_venv_executable,
     is_windows,
     modify_toml_as_dict,
     pushd,
@@ -31,7 +26,6 @@ from dagster_dg_core.utils import (
 )
 from dagster_dg_core.utils.warnings import DgWarningIdentifier
 from dagster_shared.utils.config import get_default_dg_user_config_path
-from packaging.version import Version
 
 from dagster_dg_core_tests.utils import (
     ConfigFileType,
@@ -235,7 +229,7 @@ def test_deprecated_entry_point_group_warning(deprecated_group: str):
     with (
         ProxyRunner.test() as runner,
         isolated_example_project_foo_bar(
-            runner, include_entry_point=True, in_workspace=False, python_environment="uv_managed"
+            runner, include_entry_point=True, in_workspace=False, uv_sync=True
         ),
     ):
         with modify_toml_as_dict(Path("pyproject.toml")) as toml_dict:
@@ -274,7 +268,6 @@ def test_missing_dg_registry_module_in_manifest_warning():
         isolated_example_project_foo_bar(
             runner,
             in_workspace=False,
-            python_environment="active",
             uv_sync=False,
             include_entry_point=True,
         ),
@@ -287,41 +280,6 @@ def test_missing_dg_registry_module_in_manifest_warning():
             context = DgContext.for_project_environment(Path.cwd(), {})
             with dg_warns("Your package defines a `dagster_dg_cli.registry_modules` entry point"):
                 RemotePluginRegistry.from_dg_context(context)
-
-
-@pytest.mark.parametrize("python_environment", ["active", "uv_managed"])
-def test_dagster_version(python_environment: DgProjectPythonEnvironmentFlag):
-    with (
-        ProxyRunner.test() as runner,
-        isolated_example_project_foo_bar(
-            runner,
-            in_workspace=False,
-            python_environment=python_environment,
-            uv_sync=True,
-        ),
-    ):
-        assert Path(".venv").exists()
-        external_venv_path = Path.cwd().parent / ".venv"
-        subprocess.check_output(["uv", "venv", str(external_venv_path)])
-        subprocess.check_output(
-            [
-                "uv",
-                "pip",
-                "install",
-                "dagster==1.10.10",
-                "--python",
-                str(get_venv_executable(external_venv_path)),
-            ]
-        )
-
-        with activate_venv(external_venv_path):
-            context = DgContext.for_project_environment(Path.cwd(), {})
-            # uses activated venv even though we have a different venv in the current directory
-            if python_environment == "active":
-                assert context.dagster_version == Version("1.10.10")
-            # ignore active enviroment, use project venv
-            elif python_environment == "uv_managed":
-                assert context.dagster_version == Version("1!0+dev")
 
 
 # ########################
@@ -409,7 +367,6 @@ def test_invalid_config_project(config_file: ConfigFileType):
         paths = [
             "invalid_key",
             "project.invalid_key",
-            "project.python_environment.invalid_key",
             "cli.invalid_key",
         ]
         for case in paths:
@@ -422,10 +379,6 @@ def test_invalid_config_project(config_file: ConfigFileType):
             ["project.defs_module", str, 1],
             ["project.code_location_name", str, 1],
             ["project.code_location_target_module", str, 1],
-            ["project.python_environment", dict, 1],
-            ["project.python_environment.path", str, 1],
-            ["project.python_environment.active", bool, 1],
-            ["project.python_environment.uv_managed", bool, 1],
         ]
         for path, expected_type, val in cases:
             with _reset_config_file(config_file):
@@ -437,15 +390,6 @@ def test_invalid_config_project(config_file: ConfigFileType):
         for path, expected_type in cases:
             with _reset_config_file(config_file):
                 _set_and_detect_missing_required_key(config_file, path, expected_type)
-
-        # Multiple conflicting settings
-        with _reset_config_file(config_file):
-            python_env_full_key = _get_full_str_path(config_file, "project.python_environment")
-            with modify_dg_toml_config_as_dict(Path(config_file)) as toml:
-                toml["project"]["python_environment"]["active"] = True
-                toml["project"]["python_environment"]["uv_managed"] = True
-            with dg_exits(f"Found conflicting settings in `{python_env_full_key}`"):
-                DgContext.from_file_discovery_and_command_line_config(Path.cwd(), {})
 
 
 @pytest.mark.parametrize("config_file", ["dg.toml", "pyproject.toml"])
@@ -459,12 +403,8 @@ def test_deprecated_config_project(config_file: ConfigFileType):
             with _reset_config_file(config_file):
                 with modify_dg_toml_config_as_dict(Path(config_file)) as toml:
                     create_toml_node(toml, ("project", "python_environment"), value)
-                with dg_warns(f'`{full_key} = "{value}"` is deprecated'):
-                    context = DgContext.from_file_discovery_and_command_line_config(Path.cwd(), {})
-                if value == "persistent_uv":
-                    assert context.config.project.python_environment.uv_managed is True  # type: ignore
-                elif value == "active":
-                    assert context.config.project.python_environment.active is True  # type: ignore
+                with dg_warns(f"Setting `{full_key}` is deprecated. This key can be removed."):
+                    DgContext.from_file_discovery_and_command_line_config(Path.cwd(), {})
 
 
 @pytest.mark.parametrize("config_file", ["dg.toml", "pyproject.toml"])
@@ -504,7 +444,6 @@ def test_virtual_env_mismatch_warning():
         isolated_example_project_foo_bar(
             runner,
             in_workspace=False,
-            python_environment="active",
             uv_sync=True,
         ),
     ):

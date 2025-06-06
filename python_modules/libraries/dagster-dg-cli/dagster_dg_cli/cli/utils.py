@@ -199,7 +199,9 @@ def _serialize_json_schema(schema: Mapping[str, Any]) -> str:
     return json.dumps(schema, indent=4)
 
 
-def _workspace_entry_for_project(dg_context: DgContext) -> dict[str, dict[str, str]]:
+def _workspace_entry_for_project(
+    dg_context: DgContext, use_executable_path: bool
+) -> dict[str, dict[str, str]]:
     if not dg_context.config.project:
         exit_with_error("Unexpected empty project config.")
 
@@ -217,7 +219,7 @@ def _workspace_entry_for_project(dg_context: DgContext) -> dict[str, dict[str, s
         "module_name": module_name,
         "location_name": dg_context.code_location_name,
     }
-    if dg_context.use_dg_managed_environment:
+    if use_executable_path:
         entry["executable_path"] = str(dg_context.project_python_executable)
     return {key: entry}
 
@@ -240,22 +242,15 @@ def create_temp_workspace_file(dg_context: DgContext) -> Iterator[str]:
 
         entries = []
         if dg_context.is_project:
-            entries.append(_workspace_entry_for_project(dg_context))
+            entries.append(_workspace_entry_for_project(dg_context, use_executable_path=False))
         else:
             for spec in dg_context.project_specs:
                 project_root = dg_context.root_path / spec.path
                 project_context: DgContext = dg_context.with_root_path(project_root)
 
-                if (
-                    project_context.use_dg_managed_environment
-                    and (project_context.root_path / ".env").exists()
-                    and project_context.dagster_version < MIN_ENV_VAR_INJECTION_VERSION
-                ):
-                    click.echo(
-                        f"Warning: Dagster version {project_context.dagster_version} is less than the minimum required version for .env file environment "
-                        f"variable injection ({MIN_ENV_VAR_INJECTION_VERSION}). Environment variables will not be injected for location {project_context.code_location_name}."
-                    )
-                entries.append(_workspace_entry_for_project(project_context))
+                entries.append(
+                    _workspace_entry_for_project(project_context, use_executable_path=True)
+                )
 
         temp_workspace_file.write_text(yaml.dump({"load_from": entries}))
         yield str(temp_workspace_file)
