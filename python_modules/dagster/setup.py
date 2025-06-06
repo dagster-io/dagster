@@ -25,7 +25,8 @@ def get_version() -> str:
 
 
 # grpcio 1.44.0 is the min version compatible with both protobuf 3 and 4
-GRPC_VERSION_FLOOR = "1.44.0"
+# grpcio 1.66.2 is the min version compatible with python 3.13
+GRPC_VERSION_FLOOR = "1.66.2"
 
 ver = get_version()
 # dont pin dev installs to avoid pip dep resolver issues
