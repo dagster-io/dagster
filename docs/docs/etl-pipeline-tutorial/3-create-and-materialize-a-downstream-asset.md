@@ -1,9 +1,7 @@
 ---
 title: Create and materialize a downstream asset
 description: Reference Assets as dependencies to other assets
-last_update:
-  author: Alex Noonan
-sidebar_position: 20
+sidebar_position: 40
 ---
 
 Now that we have the raw data loaded into DuckDB, we need to create a [downstream asset](/guides/build/assets/defining-assets-with-asset-dependencies) that combines the upstream assets together. In this step, you will:

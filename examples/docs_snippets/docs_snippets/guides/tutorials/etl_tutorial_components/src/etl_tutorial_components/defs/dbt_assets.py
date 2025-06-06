@@ -7,7 +7,9 @@ from dagster_dbt import DagsterDbtTranslator, DbtCliResource, DbtProject, dbt_as
 import dagster as dg
 
 dbt_project = DbtProject(
-    project_dir=Path(__file__).joinpath("..", "..", "..", "..", "dbt", "jdbt").resolve(),
+    project_dir=Path(__file__)
+    .joinpath("..", "..", "..", "..", "dbt", "jdbt")
+    .resolve(),
 )
 
 dbt_project.prepare_if_dev()

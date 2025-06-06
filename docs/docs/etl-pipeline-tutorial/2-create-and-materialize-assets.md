@@ -1,9 +1,7 @@
 ---
 title: Create and materialize assets
-description: Load project data and create and materialize assets
-last_update:
-  author: Alex Noonan
-sidebar_position: 10
+description: Create and materialize assets
+sidebar_position: 30
 ---
 
 In the first step of the tutorial, you created your Dagster project with the raw data files. In this step, you will:
