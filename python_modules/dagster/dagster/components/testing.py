@@ -189,9 +189,9 @@ class DefsPathSandbox:
             module_path = f"{self.project_name}.defs.{self.component_path}"
             try:
                 yield get_all_components_defs_from_defs_path(
-                    project_name=self.project_name,
                     project_root=self.project_root,
                     component_path=self.component_path,
+                    project_name=self.project_name,
                 )
 
             finally:
@@ -209,13 +209,41 @@ def flatten_components(parent_component: Optional[Component]) -> list[Component]
         return []
 
 
+def get_all_components_defs_within_project(
+    *,
+    project_root: Path,
+    component_path: Path,
+) -> list[tuple[Component, Definitions]]:
+    try:
+        from dagster_dg_core.config import discover_config_file
+        from dagster_dg_core.context import DgContext
+    except ImportError:
+        raise Exception(
+            "dagster_dg_core is not installed. Please install it to use to get default project_name and defs module from pyproject.toml or dg.toml."
+        )
+
+    config_file = discover_config_file(project_root)
+    check.not_none(config_file, "No project config file found. ")
+    assert config_file
+    dg_context = DgContext.from_file_discovery_and_command_line_config(
+        path=config_file, command_line_config={}
+    )
+    return get_all_components_defs_from_defs_path(
+        project_name=dg_context.project_name,
+        project_root=project_root,
+        component_path=component_path,
+        defs_module_name=dg_context.defs_module_name,
+    )
+
+
 def get_all_components_defs_from_defs_path(
     *,
     project_name: str,
     project_root: Path,
     component_path: Path,
+    defs_module_name: str = "defs",
 ) -> list[tuple[Component, Definitions]]:
-    module_path = f"{project_name}.defs.{component_path}"
+    module_path = f"{project_name}.{defs_module_name}.{component_path}"
     module = importlib.import_module(module_path)
     context = ComponentLoadContext.for_module(
         defs_module=module,
@@ -224,6 +252,22 @@ def get_all_components_defs_from_defs_path(
     )
     components = flatten_components(get_component(context))
     return [(component, component.build_defs(context)) for component in components]
+
+
+def get_component_defs_from_defs_path(
+    *,
+    project_name: str,
+    project_root: Path,
+    component_path: Path,
+) -> tuple[Component, Definitions]:
+    components = get_all_components_defs_from_defs_path(
+        project_name=project_name, project_root=project_root, component_path=component_path
+    )
+    check.invariant(
+        len(components) == 1,
+        "Only one component is supported. To get all components use get_all_components_defs_from_defs_path.",
+    )
+    return components[0]
 
 
 @contextmanager
