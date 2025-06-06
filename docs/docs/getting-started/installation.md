@@ -38,15 +38,11 @@ Now, you can run the `create-dagster` command using `uvx` like so:
 
 `create-dagster` is available in a Homebrew tap:
 
-```bash
-brew install dagster-io/tap/create-dagster
-```
+<CliInvocationExample contents="brew install dagster-io/tap/create-dagster" />
 
 Then run the `create-dagster` command:
 
-```bash
-create-dagster project my-project
-```
+<CliInvocationExample contents="create-dagster project my-project" />
 
 </TabItem>
 
@@ -54,15 +50,11 @@ create-dagster project my-project
 
 Use `curl` to download a standalone installation script and execute it with `sh`:
 
-```bash
-curl -LsSf https://dg.dagster.io/create-dagster/install.sh | sh
-```
+<CliInvocationExample contents="curl -LsSf https://dg.dagster.io/create-dagster/install.sh | sh" />
 
 Then run the `create-dagster` command:
 
-```bash
-create-dagster project my-project
-```
+<CliInvocationExample contents="create-dagster project my-project" />
 
 </TabItem>
 
