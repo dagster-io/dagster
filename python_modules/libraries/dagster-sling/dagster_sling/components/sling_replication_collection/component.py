@@ -1,4 +1,4 @@
-from collections.abc import Iterator, Mapping, Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from functools import cached_property
 from pathlib import Path
@@ -6,23 +6,29 @@ from typing import Annotated, Any, Callable, Literal, Optional, Union
 
 from dagster import Resolvable, Resolver
 from dagster._core.definitions.asset_spec import AssetSpec
-from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.definitions_class import Definitions
-from dagster._core.definitions.events import AssetMaterialization
 from dagster._core.definitions.metadata.source_code import (
     LocalFileCodeReference,
     merge_code_references,
 )
-from dagster._core.definitions.result import MaterializeResult
 from dagster.components.component.component import Component
 from dagster.components.core.context import ComponentLoadContext
+from dagster.components.lib.executable_component.function_component import (
+    FunctionComponent,
+    FunctionSpec,
+)
 from dagster.components.resolved.context import ResolutionContext
-from dagster.components.resolved.core_models import AssetAttributesModel, AssetPostProcessor, OpSpec
+from dagster.components.resolved.core_models import (
+    AssetAttributesModel,
+    AssetPostProcessor,
+    OpSpec,
+    process_defs,
+)
 from dagster.components.scaffold.scaffold import scaffold_with
 from dagster.components.utils import TranslatorResolvingInfo
 from typing_extensions import TypeAlias
 
-from dagster_sling.asset_decorator import sling_assets
+from dagster_sling.asset_decorator import get_sling_specs
 from dagster_sling.components.sling_replication_collection.scaffolder import (
     SlingReplicationComponentScaffolder,
 )
@@ -90,6 +96,19 @@ def resolve_resource(
     return SlingResource(**context.resolve_value(sling.model_dump())) if sling else SlingResource()
 
 
+class ReplicationTranslatorWithCodeReferences(DagsterSlingTranslator):
+    def __init__(self, path: Path, replication_spec_model: SlingReplicationSpecModel):
+        self.path = path
+        self.replication_spec_model = replication_spec_model
+
+    def get_asset_spec(self, stream_definition: Mapping[str, Any]) -> AssetSpec:
+        asset_spec = self.replication_spec_model.translator.get_asset_spec(stream_definition)
+        return merge_code_references(
+            asset_spec,
+            [LocalFileCodeReference(file_path=str(self.path / self.replication_spec_model.path))],
+        )
+
+
 @scaffold_with(SlingReplicationComponentScaffolder)
 @dataclass
 class SlingReplicationCollectionComponent(Component, Resolvable):
@@ -114,43 +133,33 @@ class SlingReplicationCollectionComponent(Component, Resolvable):
     replications: Sequence[SlingReplicationSpecModel] = field(default_factory=list)
     asset_post_processors: Optional[Sequence[AssetPostProcessor]] = None
 
-    def build_asset(
-        self, context: ComponentLoadContext, replication_spec_model: SlingReplicationSpecModel
-    ) -> AssetsDefinition:
-        op_spec = replication_spec_model.op or OpSpec()
-
-        class ReplicationTranslatorWithCodeReferences(DagsterSlingTranslator):
-            def get_asset_spec(self, stream_definition: Mapping[str, Any]) -> AssetSpec:
-                asset_spec = replication_spec_model.translator.get_asset_spec(stream_definition)
-                return merge_code_references(
-                    asset_spec,
+    def build_defs(self, context: ComponentLoadContext) -> Definitions:
+        return Definitions.merge(
+            process_defs(
+                merge_component_defs(
+                    context,
                     [
-                        LocalFileCodeReference(
-                            file_path=str(context.path / replication_spec_model.path)
-                        )
+                        replication_component(replication, context)
+                        for replication in self.replications
                     ],
-                )
-
-        @sling_assets(
-            name=op_spec.name or Path(replication_spec_model.path).stem,
-            op_tags=op_spec.tags,
-            replication_config=context.path / replication_spec_model.path,
-            dagster_sling_translator=ReplicationTranslatorWithCodeReferences(),
-            backfill_policy=op_spec.backfill_policy,
+                ),
+                self.asset_post_processors or [],
+            ),
+            Definitions(resources={"sling": self.resource}),
         )
-        def _asset(context: AssetExecutionContext):
-            yield from self.execute(
-                context=context, sling=self.resource, replication_spec_model=replication_spec_model
-            )
 
-        return _asset
 
-    def execute(
-        self,
-        context: AssetExecutionContext,
-        sling: SlingResource,
-        replication_spec_model: SlingReplicationSpecModel,
-    ) -> Iterator[Union[AssetMaterialization, MaterializeResult]]:
+def merge_component_defs(
+    context: ComponentLoadContext, components: Sequence[Component]
+) -> Definitions:
+    return Definitions.merge(*[component.build_defs(context) for component in components])
+
+
+def replication_component(
+    replication_spec_model: SlingReplicationSpecModel,
+    context: ComponentLoadContext,
+) -> FunctionComponent:
+    def _execute_fn(context: AssetExecutionContext, sling: SlingResource):
         iterator = sling.replicate(context=context)
         if "column_metadata" in replication_spec_model.include_metadata:
             iterator = iterator.fetch_column_metadata()
@@ -158,10 +167,22 @@ class SlingReplicationCollectionComponent(Component, Resolvable):
             iterator = iterator.fetch_row_count()
         yield from iterator
 
-    def build_defs(self, context: ComponentLoadContext) -> Definitions:
-        defs = Definitions(
-            assets=[self.build_asset(context, replication) for replication in self.replications],
-        )
-        for post_processor in self.asset_post_processors or []:
-            defs = post_processor(defs)
-        return defs
+    component = FunctionComponent(
+        execution=FunctionSpec(
+            name=replication_spec_model.op.name
+            if replication_spec_model.op and replication_spec_model.op.name
+            else Path(replication_spec_model.path).stem,
+            tags=replication_spec_model.op.tags if replication_spec_model.op else None,
+            fn=_execute_fn,
+        ),
+        assets=get_sling_specs(
+            replication_config=context.path / replication_spec_model.path,
+            dagster_sling_translator=ReplicationTranslatorWithCodeReferences(
+                path=context.path,
+                replication_spec_model=replication_spec_model,
+            ),
+            partitions_def=None,
+        ),
+    )
+
+    return component
