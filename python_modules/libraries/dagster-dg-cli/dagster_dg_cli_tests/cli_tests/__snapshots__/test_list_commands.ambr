@@ -113,7 +113,7 @@
           {
               "name": "my_job",
               "description": null,
-              "source": null
+              "source": "src/foo_bar/defs/mydefs/defs.yaml:1"
           }
       ],
       "resources": [
@@ -126,13 +126,13 @@
           {
               "name": "my_schedule",
               "cron_schedule": "@daily",
-              "source": null
+              "source": "src/foo_bar/defs/mydefs/defs.yaml:1"
           }
       ],
       "sensors": [
           {
               "name": "my_sensor",
-              "source": null
+              "source": "src/foo_bar/defs/mydefs/defs.yaml:1"
           }
       ]
   }
