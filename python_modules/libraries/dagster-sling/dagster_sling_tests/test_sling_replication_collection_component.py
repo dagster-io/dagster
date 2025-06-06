@@ -92,8 +92,6 @@ def test_python_attributes() -> None:
     with temp_sling_component_instance([{"path": "./replication.yaml"}]) as (component, defs):
         replications = component.replications
         assert len(replications) == 1
-        op = replications[0].op
-        assert op is None
 
         assert defs.resolve_asset_graph().get_all_asset_keys() == {
             AssetKey("input_csv"),
@@ -124,9 +122,35 @@ class TestSlingOpCustomization(TestOpCustomization):
         ):
             replications = component.replications
             assert len(replications) == 1
-            op = replications[0].op
-            assert op
-            assert assertion(op)
+            # TODO any additional assertions?
+
+
+def test_python_attributes_op_name() -> None:
+    with temp_sling_component_instance(
+        [{"path": "./replication.yaml", "execution": {"name": "my_op"}}]
+    ) as (component, defs):
+        replications = component.replications
+        assert len(replications) == 1
+        op = replications[0].execution
+        assert op
+        assert op.name == "my_op"
+        assert defs.resolve_asset_graph().get_all_asset_keys() == {
+            AssetKey("input_csv"),
+            AssetKey("input_duckdb"),
+        }
+        assert defs.resolve_assets_def("input_duckdb").op.name == "my_op"
+
+
+def test_python_attributes_op_tags() -> None:
+    with temp_sling_component_instance(
+        [{"path": "./replication.yaml", "execution": {"tags": {"tag1": "value1"}}}]
+    ) as (component, defs):
+        replications = component.replications
+        assert len(replications) == 1
+        op = replications[0].execution
+        assert op
+        assert op.tags == {"tag1": "value1"}
+        assert defs.resolve_assets_def("input_duckdb").op.tags == {"tag1": "value1"}
 
 
 def test_python_params_include_metadata() -> None:
