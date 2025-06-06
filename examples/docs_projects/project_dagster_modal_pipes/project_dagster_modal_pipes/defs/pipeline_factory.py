@@ -9,7 +9,7 @@ from dagster_aws.s3 import S3Resource
 from dagster_modal import ModalClient
 from dagster_openai import OpenAIResource
 
-from project_dagster_modal_pipes.constants import DEFAULT_POLLING_INTERVAL, R2_BUCKET_NAME
+from project_dagster_modal_pipes.defs.constants import DEFAULT_POLLING_INTERVAL, R2_BUCKET_NAME
 from project_dagster_modal_pipes.utils import (
     download_bytes,
     file_size,
