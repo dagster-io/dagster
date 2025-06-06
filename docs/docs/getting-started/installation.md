@@ -28,7 +28,7 @@ This will also install the `uvx` command, which allows you to execute commands w
 
 <InstallUv />
 
-Now, you can run the `create-dagster` command using `uvx` like so:
+Now, you can run the `create-dagster` command using `uvx`:
 
 <CliInvocationExample contents="uvx create-dagster project my-project" />
 
