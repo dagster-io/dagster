@@ -220,8 +220,9 @@ def flatten_components(parent_component: Optional[Component]) -> list[Component]
 
 def get_component_defs_within_project(
     *,
-    project_root: Path,
-    component_path: Path,
+    project_root: Union[str, Path],
+    component_path: Union[str, Path],
+    instance_key: int = 0,
 ) -> tuple[Component, Definitions]:
     """Get the component defs for a component within a project. This only works if dagster_dg_core is installed.
 
@@ -239,13 +240,13 @@ def get_component_defs_within_project(
         len(all_component_defs) == 1,
         "Only one component is supported. To get all components use get_all_components_defs_within_project.",
     )
-    return all_component_defs[0][0], all_component_defs[0][1]
+    return all_component_defs[instance_key][0], all_component_defs[instance_key][1]
 
 
 def get_all_components_defs_within_project(
     *,
-    project_root: Path,
-    component_path: Path,
+    project_root: Union[str, Path],
+    component_path: Union[str, Path],
 ) -> list[tuple[Component, Definitions]]:
     """Get all the component defs for a component within a project. This only works if dagster_dg_core is installed.
 
@@ -264,6 +265,9 @@ def get_all_components_defs_within_project(
             "dagster_dg_core is not installed. Please install it to use to get default project_name and defs module from pyproject.toml or dg.toml."
         )
 
+    project_root = Path(project_root)
+    component_path = Path(component_path)
+
     dg_context = DgContext.from_file_discovery_and_command_line_config(
         path=check.not_none(discover_config_file(project_root), "No project config file found."),
         command_line_config={},
@@ -278,12 +282,12 @@ def get_all_components_defs_within_project(
 def get_all_components_defs_from_defs_path(
     *,
     module_path: str,
-    project_root: Path,
+    project_root: Union[str, Path],
 ) -> list[tuple[Component, Definitions]]:
     module = importlib.import_module(module_path)
     context = ComponentLoadContext.for_module(
         defs_module=module,
-        project_root=project_root,
+        project_root=Path(project_root),
         terminate_autoloading_on_keyword_files=False,
     )
     components = flatten_components(get_component(context))
@@ -291,7 +295,7 @@ def get_all_components_defs_from_defs_path(
 
 
 def get_component_defs_from_defs_path(
-    *, project_name: str, project_root: Path, module_path: str
+    *, module_path: str, project_root: Union[str, Path]
 ) -> tuple[Component, Definitions]:
     components = get_all_components_defs_from_defs_path(
         project_root=project_root,
