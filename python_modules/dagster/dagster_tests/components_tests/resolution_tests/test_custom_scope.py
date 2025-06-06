@@ -37,5 +37,5 @@ asset_attributes:
     foo: ''
 """)
 
-    defs = c.build_defs(ComponentTree.for_test().load_context)
+    defs = c.build_defs(ComponentTree.for_test().decl_load_context)
     assert defs.assets

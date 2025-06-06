@@ -24,7 +24,7 @@ from dagster._core.definitions.module_loaders.utils import find_objects_in_modul
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster.components.component.component import Component
 from dagster.components.component.template_vars import find_inline_template_vars_in_module
-from dagster.components.core.context import ComponentLoadContext
+from dagster.components.core.context import ComponentDeclLoadContext, ComponentLoadContext
 from dagster.components.definitions import LazyDefinitions
 from dagster.components.resolved.base import Resolvable
 from dagster.components.resolved.context import ResolutionContext
@@ -109,12 +109,17 @@ class CompositeYamlComponent(Component):
         component_yaml = check.not_none(find_defs_or_component_yaml(context.path))
 
         defs_list = []
-        for component, source_position, asset_post_processors in zip(
-            self.components, self.source_positions, self.asset_post_processors_list
+        for component_decl, component, source_position, asset_post_processors in zip(
+            context.component_decl.iterate_child_component_decls(),
+            self.components,
+            self.source_positions,
+            self.asset_post_processors_list,
         ):
             defs_list.append(
                 post_process_defs(
-                    component.build_defs(context).permissive_map_resolved_asset_specs(
+                    context.build_defs_at_path(
+                        component_decl.path
+                    ).permissive_map_resolved_asset_specs(
                         func=lambda spec: _add_defs_yaml_code_reference_to_spec(
                             component_yaml_path=component_yaml,
                             load_context=context,
@@ -137,7 +142,10 @@ class CompositeComponent(Component):
 
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
         return Definitions.merge(
-            *[component.build_defs(context) for component in self.components.values()]
+            *[
+                context.build_defs_at_path(child_decl.path)
+                for child_decl in context.component_decl.iterate_child_component_decls()
+            ]
         )
 
 
@@ -292,9 +300,11 @@ class DefsFolderComponent(Component):
         )
 
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
-        return Definitions.merge(
-            *[child.build_defs(context.for_path(path)) for path, child in self.children.items()]
-        )
+        child_defs = [
+            context.build_defs_at_path(child_decl.path)
+            for child_decl in context.component_decl.iterate_child_component_decls()
+        ]
+        return Definitions.merge(*child_defs)
 
     @classmethod
     def get(cls, context: ComponentLoadContext) -> "DefsFolderComponent":
@@ -386,7 +396,7 @@ class DagsterDefsComponent(Component):
         return load_definitions_from_module(module)
 
 
-def invoke_inline_template_var(context: ComponentLoadContext, tv: Callable) -> Any:
+def invoke_inline_template_var(context: ComponentDeclLoadContext, tv: Callable) -> Any:
     sig = inspect.signature(tv)
     if len(sig.parameters) == 1:
         return tv(context)
@@ -413,10 +423,10 @@ def find_defs_or_component_yaml(path: Path) -> Optional[Path]:
 
 
 def context_with_injected_scope(
-    context: ComponentLoadContext,
+    context: ComponentDeclLoadContext,
     component_cls: type[Component],
     template_vars_module: Optional[str],
-) -> ComponentLoadContext:
+) -> ComponentDeclLoadContext:
     context = context.with_rendering_scope(
         component_cls.get_additional_scope(),
     )

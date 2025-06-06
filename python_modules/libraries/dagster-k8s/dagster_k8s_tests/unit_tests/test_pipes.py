@@ -481,7 +481,7 @@ assets:
   - key: foo
 image: my_foo_image:latest
 """)
-    defs = c.build_defs(ComponentTree.for_test().load_context)
+    defs = c.build_defs(ComponentTree.for_test().decl_load_context)
     assert defs
     assert len(defs.resolve_all_asset_specs()) == 1
 
@@ -503,6 +503,6 @@ base_pod_spec:
           memory: "128Mi"
           cpu: "500m"
 """)
-    defs = c.build_defs(ComponentTree.for_test().load_context)
+    defs = c.build_defs(ComponentTree.for_test().decl_load_context)
     assert defs
     assert len(defs.resolve_all_asset_specs()) == 2

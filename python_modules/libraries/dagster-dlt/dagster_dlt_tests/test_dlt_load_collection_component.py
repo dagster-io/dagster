@@ -235,7 +235,7 @@ class TestDltTranslation(TestTranslationBatched):
 
 
 def test_python_interface(dlt_pipeline: Pipeline):
-    context = ComponentTree.for_test().load_context
+    context = ComponentTree.for_test().decl_load_context
     defs = DltLoadCollectionComponent(
         loads=[
             DltLoadSpecModel(
@@ -301,7 +301,7 @@ def test_execute_component(dlt_pipeline: Pipeline):
                 pipeline=dlt_pipeline,
             )
         ]
-    ).build_defs(ComponentTree.for_test().load_context)
+    ).build_defs(ComponentTree.for_test().decl_load_context)
 
     asset_def = cast("AssetsDefinition", next(iter(defs.assets or [])))
     result = materialize(
