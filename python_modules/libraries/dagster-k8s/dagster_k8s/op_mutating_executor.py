@@ -7,7 +7,6 @@ from dagster import (
     Field,
     JsonMetadataValue,
     Output,
-    _check as check,
     executor,
     usable_as_dagster_type,
 )
@@ -20,13 +19,14 @@ from dagster._core.execution.plan.inputs import (
     FromStepOutput,
     StepInput,
 )
-from dagster._core.execution.plan.outputs import StepOutputData
+from dagster._core.execution.plan.outputs import StepOutputData, StepOutputHandle
 from dagster._core.execution.retries import RetryMode
 from dagster._core.executor.base import Executor
 from dagster._core.executor.init import InitExecutorContext
 from dagster._core.executor.step_delegating import StepDelegatingExecutor, StepHandlerContext
 from dagster._core.storage.event_log import SqlEventLogStorage
 from dagster._utils.merger import merge_dicts
+from dagster_shared import check
 
 from dagster_k8s.container_context import K8sContainerContext
 from dagster_k8s.executor import _K8S_EXECUTOR_CONFIG_SCHEMA, K8sStepHandler
@@ -65,10 +65,10 @@ class K8sOpMutatingWrapper(Generic[T]):
 def coerce_k8s_configs(
     k8s_config: Union[UserDefinedDagsterK8sConfig, Mapping[str, Any]],
 ) -> UserDefinedDagsterK8sConfig:
-    if not isinstance(k8s_config, UserDefinedDagsterK8sConfig):
-        check.mapping_param(k8s_config, "k8s_config", str)
-        return UserDefinedDagsterK8sConfig.from_dict(k8s_config)
-    return k8s_config
+    if isinstance(k8s_config, UserDefinedDagsterK8sConfig):
+        return k8s_config
+    check.mapping_param(k8s_config, "k8s_config", str)
+    return UserDefinedDagsterK8sConfig.from_dict(k8s_config)
 
 
 class K8sMutatingOutput(Output, Generic[T]):
@@ -101,6 +101,57 @@ class K8sMutatingDynamicOutput(DynamicOutput, Generic[T]):
             output_name,
             metadata={USER_DEFINED_K8S_CONFIG_KEY: JsonMetadataValue(k8s_config.to_dict())},
         )
+
+
+def get_upstream_output_record(
+    event_log: SqlEventLogStorage, output_handle: StepOutputHandle, run_id: str
+) -> Optional[StepOutputData]:
+    """Fetch step output record given a particular output handle."""
+    upstream_record: Optional[StepOutputData] = None
+    has_more = True
+    batch_limit = 1_000
+    cursor = None
+
+    while upstream_record is None and has_more:
+        record_conn = event_log.get_records_for_run(
+            run_id, cursor, DagsterEventType.STEP_OUTPUT, batch_limit
+        )
+        has_more = record_conn.has_more
+        cursor = record_conn.cursor
+        step_output_events = (
+            e.get_dagster_event().step_output_data
+            for e in map(lambda r: r.event_log_entry, record_conn.records)
+            if e.step_key == output_handle.step_key
+            and e.is_dagster_event
+            and e.get_dagster_event().is_successful_output
+        )
+        upstream_record = next(
+            (output for output in step_output_events if output.step_output_handle == output_handle),
+            None,
+        )
+    return upstream_record
+
+
+def walk_runs_for_output_record(
+    step_context: StepOrchestrationContext, output_handle: StepOutputHandle
+) -> Optional[StepOutputData]:
+    """Upon a retry, dagster will launch a new run. Walk the run and it's corresponding parents for the latest output step."""
+    event_log = step_context.instance.event_log_storage
+    if not isinstance(event_log, SqlEventLogStorage):
+        return step_context.log.error(
+            f"can only use executor with log type {type(SqlEventLogStorage)}"
+        )
+    instance = step_context.instance
+    run_id = step_context.dagster_run.run_id
+    while run_id:
+        output_record = get_upstream_output_record(event_log, output_handle, run_id)
+        if output_record:
+            return output_record
+        dagster_run = instance.get_run_by_id(run_id)
+        if dagster_run is None:
+            return step_context.log.error(f"failure to find run: {run_id}")
+        run_id = dagster_run.parent_run_id
+    return None
 
 
 class K8sMutatingStepHandler(K8sStepHandler):
@@ -151,11 +202,6 @@ class K8sMutatingStepHandler(K8sStepHandler):
         input_mutation_enabled |= step_input.dagster_type_key == K8sOpMutatingWrapper.name()
         if not input_mutation_enabled:
             return None
-        event_log = step_context.instance.event_log_storage
-        if not isinstance(event_log, SqlEventLogStorage):
-            return step_context.log.error(
-                f"can only use executor with log type {type(SqlEventLogStorage)}"
-            )
         source = step_input.source
         if isinstance(source, FromPendingDynamicStepOutput):
             upstream_output_handle = source.step_output_handle
@@ -169,32 +215,7 @@ class K8sMutatingStepHandler(K8sStepHandler):
         if source.fan_in:
             return step_context.log.error("fan in step input not supported")
         output_handle = source.step_output_handle
-        upstream_record: Optional[StepOutputData] = None
-        has_more = True
-        batch_limit = 1_000
-        cursor = None
-
-        while upstream_record is None and has_more:
-            record_conn = event_log.get_records_for_run(
-                step_context.run_id, cursor, DagsterEventType.STEP_OUTPUT, batch_limit
-            )
-            has_more = record_conn.has_more
-            cursor = record_conn.cursor
-            step_output_events = (
-                e.get_dagster_event().step_output_data
-                for e in map(lambda r: r.event_log_entry, record_conn.records)
-                if e.step_key == output_handle.step_key
-                and e.is_dagster_event
-                and e.get_dagster_event().is_successful_output
-            )
-            upstream_record = next(
-                (
-                    output
-                    for output in step_output_events
-                    if output.step_output_handle == output_handle
-                ),
-                None,
-            )
+        upstream_record = walk_runs_for_output_record(step_context, output_handle)
         if upstream_record is None:
             return step_context.log.error(
                 f"unable to find output event for input {step_input.name}"
@@ -227,9 +248,10 @@ class K8sMutatingStepHandler(K8sStepHandler):
         k8s_context = super()._get_container_context(step_handler_context)
         for step_input in step_context.step.step_inputs:
             op_metadata_config = self._get_input_metadata(step_input, step_context)
-            if not op_metadata_config:
-                continue
-            k8s_context = k8s_context.merge(K8sContainerContext(run_k8s_config=op_metadata_config))
+            if op_metadata_config:
+                k8s_context = k8s_context.merge(
+                    K8sContainerContext(run_k8s_config=op_metadata_config)
+                )
 
         return k8s_context
 
