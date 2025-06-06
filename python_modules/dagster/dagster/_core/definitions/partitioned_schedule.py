@@ -1,9 +1,13 @@
 from collections.abc import Mapping
-from typing import Callable, NamedTuple, Optional, Union, cast
+from typing import Any, Callable, Optional, Union, cast
+
+from dagster_shared.record import copy, record
+from typing_extensions import Self
 
 import dagster._check as check
 from dagster._core.definitions.decorators.schedule_decorator import schedule
 from dagster._core.definitions.job_definition import JobDefinition
+from dagster._core.definitions.metadata import RawMetadataMapping
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
 from dagster._core.definitions.partition import PartitionsDefinition, StaticPartitionsDefinition
 from dagster._core.definitions.run_request import RunRequest, SkipReason
@@ -22,7 +26,8 @@ from dagster._core.definitions.unresolved_asset_job_definition import Unresolved
 from dagster._core.errors import DagsterInvalidDefinitionError
 
 
-class UnresolvedPartitionedAssetScheduleDefinition(NamedTuple):
+@record
+class UnresolvedPartitionedAssetScheduleDefinition:
     """Points to an unresolved asset job. The asset selection isn't resolved yet, so we can't resolve
     the PartitionsDefinition, so we can't resolve the schedule cadence.
     """
@@ -36,6 +41,7 @@ class UnresolvedPartitionedAssetScheduleDefinition(NamedTuple):
     day_of_week: Optional[int]
     day_of_month: Optional[int]
     tags: Optional[Mapping[str, str]]
+    metadata: Optional[Mapping[str, Any]]
 
     def resolve(self, resolved_job: JobDefinition) -> ScheduleDefinition:
         partitions_def = resolved_job.partitions_def
@@ -57,7 +63,11 @@ class UnresolvedPartitionedAssetScheduleDefinition(NamedTuple):
             default_status=self.default_status,
             execution_timezone=time_partitions_def.timezone,
             description=self.description,
+            metadata=self.metadata,
         )(_get_schedule_evaluation_fn(partitions_def, resolved_job, self.tags))
+
+    def with_metadata(self, metadata: RawMetadataMapping) -> Self:
+        return copy(self, metadata=metadata)
 
 
 def build_schedule_from_partitioned_job(
@@ -72,6 +82,7 @@ def build_schedule_from_partitioned_job(
     tags: Optional[Mapping[str, str]] = None,
     cron_schedule: Optional[str] = None,
     execution_timezone: Optional[str] = None,
+    metadata: Optional[RawMetadataMapping] = None,
 ) -> Union[UnresolvedPartitionedAssetScheduleDefinition, ScheduleDefinition]:
     """Creates a schedule from a job that targets
     time window-partitioned or statically-partitioned assets. The job can also be
@@ -161,6 +172,7 @@ def build_schedule_from_partitioned_job(
             day_of_week=day_of_week,
             day_of_month=day_of_month,
             tags=tags,
+            metadata=metadata,
         )
     else:
         partitions_def = job.partitions_def
