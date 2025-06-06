@@ -11,10 +11,6 @@ dg CLI
     :prog: dg dev
     :nested:
 
-.. click:: dagster_dg_cli.cli.docs:docs_group
-    :prog: dg docs
-    :nested:
-
 .. click:: dagster_dg_cli.cli.launch:launch_command
     :prog: dg launch
     :nested:

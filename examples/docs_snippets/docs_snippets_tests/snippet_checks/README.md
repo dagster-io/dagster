@@ -1,9 +1,8 @@
-## Docs Snippet Checks
+## Docs snippet checks
 
-This directory contains tests which check that the contents of files in the `./docs_snippets/` directory match the expected output.
+This directory contains tests that check that the contents of files in the `./docs_snippets/` directory match the expected output. These tests can also be used to regenerate the contents of the snippet files.
 
-Currently, this is used to validate user-facing guides which primarily consist of CLI invocations. This lets us ensure that guides do
-not break when we make changes to the CLI, and allows us to easily regenerate the snippets if we change the output format.
+Currently, these tests are used to validate user-facing guides in `/docs/docs` that contain a lot of CLI invocations. This lets us ensure that guides do not break when we make changes to the CLI, and allows us to easily regenerate the snippets if we change the output format.
 
 ### Running the tests
 
@@ -13,11 +12,15 @@ To run the tests, invoke the `docs_snapshot_test` tox environment in `examples/d
 tox -e docs_snapshot_test
 ```
 
-To update the snippets, instead invoke the `docs_snapshot_update` environment:
+### Regenerating snippets
+
+To update the snippets, invoke the `docs_snapshot_update` environment:
 
 ```bash
 tox -e docs_snapshot_update
 ```
+
+### Running the commands with make
 
 These commands are aliased in the `/docs` directory, through the Makefile, for convenience:
 

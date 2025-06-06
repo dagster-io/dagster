@@ -10,17 +10,23 @@ import DgComponentsPreview from '@site/docs/partials/\_DgComponentsPreview.md';
 
 The [dagster-fivetran](/integrations/libraries/fivetran) library provides a `FivetranAccountComponent` which can be used to easily represent Fivetran connectors as assets in Dagster.
 
-## Preparing a Dagster project
+## 1. Prepare a Dagster project
 
-To begin, you'll need a Dagster project. You can use an existing project [ready for components](/guides/labs/dg/incrementally-adopting-dg/migrating-project) or scaffold a new one:
+To begin, you'll need a Dagster project. You can use an [existing components-ready project](/guides/labs/dg/incrementally-adopting-dg/migrating-project) or create a new one:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/fivetran-component/1-scaffold-project.txt" />
 
-Next, you will need to add the `dagster-fivetran` library to the project:
+Activate the project virtual environment:
+
+```
+source ../.venv/bin/activate
+```
+
+Finally, add the `dagster-fivetran` library to the project:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/fivetran-component/2-add-fivetran.txt" />
 
-## Scaffolding a Fivetran component
+## 2. Scaffold a Fivetran component
 
 Now that you have a Dagster project, you can scaffold a Fivetran component. You'll need to provide your Fivetran account ID and API credentials:
 
@@ -40,7 +46,7 @@ You can check the configuration of your component:
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/fivetran-component/6-list-defs.txt" />
 </WideContent>
 
-## Selecting specific connectors
+## 3. Select specific connectors
 
 You can select specific Fivetran connectors to include in your component using the `connector_selector` key. This allows you to filter which connectors are represented as assets:
 
@@ -50,7 +56,7 @@ You can select specific Fivetran connectors to include in your component using t
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/fivetran-component/8-list-defs.txt" />
 </WideContent>
 
-## Customizing Fivetran assets
+## 4. Customize Fivetran assets
 
 Properties of the assets emitted by each connector can be customized in the `defs.yaml` file using the `translation` key:
 

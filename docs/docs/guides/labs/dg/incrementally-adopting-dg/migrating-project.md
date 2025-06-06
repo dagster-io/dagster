@@ -101,7 +101,7 @@ Let's create this submodule now:
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/migrating-project/6-create-lib.txt" />
 
 :::tip
-See the [plugin guide](/guides/labs/components/creating-new-component-types/creating-dg-plugin) for more on `dg` plugins.
+See the [plugin guide](/guides/labs/components/creating-new-components/creating-dg-plugin) for more on `dg` plugins.
 :::
 
 We'll need to add a `dagster_dg_cli.registry_modules` entry point to our project and then
@@ -147,12 +147,12 @@ registry-modules` and see the module `my_existing_project.components`, which we 
 path="docs_snippets/docs_snippets/guides/dg/migrating-project/9-list-registry-modules.txt"
 />
 
-We can now scaffold a new component type in our project and it will be
-available to `dg` commands. First create the component type:
+We can now scaffold a new component in our project and it will be
+available to `dg` commands. First create the component:
 
 <CodeExample path="docs_snippets/docs_snippets/guides/dg/migrating-project/10-scaffold-component.txt" />
 
-Then run `dg list components` to confirm that the new component type is available:
+Then run `dg list components` to confirm that the new component is available:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/migrating-project/11-list-components.txt" />
 

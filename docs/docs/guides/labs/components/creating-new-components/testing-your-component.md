@@ -1,7 +1,7 @@
 ---
-description: How to test component types.
+description: How to test components.
 sidebar_position: 500
-title: Testing your component type
+title: Testing your component
 ---
 
 import DgComponentsPreview from '@site/docs/partials/\_DgComponentsPreview.md';
@@ -10,7 +10,7 @@ import DgComponentsPreview from '@site/docs/partials/\_DgComponentsPreview.md';
 
 ## Testing custom components
 
-After you [create a new component](https://docs.dagster.io/guides/labs/components/creating-new-component-types/creating-and-registering-a-component-type), we recommend testing scaffolding and runtime execution with the Dagster framework utilities outlined below.
+After you [create a new component](https://docs.dagster.io/guides/labs/components/creating-new-components/creating-and-registering-a-component), we recommend testing scaffolding and runtime execution with the Dagster framework utilities outlined below.
 
 ### The core workhorse: `scaffold_defs_sandbox`
 

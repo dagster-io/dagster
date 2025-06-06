@@ -1,7 +1,6 @@
 ---
-title: 'Creating a dg project'
+title: 'Creating a components-ready Dagster project'
 description: dg allows you to create a special type of Python package, called a project, that defines a Dagster code location.
-sidebar_label: 'Creating a project'
 sidebar_position: 100
 ---
 
@@ -20,7 +19,7 @@ Before creating a project, you must [install `create-dagster`](/guides/labs/dg#i
 
 <Tabs>
   <TabItem value="uv" label="uv">
-    ``` uvx create-dagster project my-project ```
+    ``` uvx -U create-dagster project my-project ```
   </TabItem>
   <TabItem value="non-uv" label="Homebrew, curl, or pip">
     ``` create-dagster project my-project ```
@@ -46,16 +45,16 @@ To use `tree`, install it with `brew install tree` (Mac), or follow the [install
 
 :::
 
-- The Python package `my-project` lives in `src/my-project` and contains the deployable code that defines
+- The Python package `my_project` lives in `src/my_project` and contains the deployable code that defines
   your Dagster pipelines.
-- `my-project/defs` will contain your Dagster definitions.
-- `my-project/lib` is where you will define custom component types, and
+- `my_project/defs` will contain your Dagster definitions.
+- `my_project/components` is where you will define custom component types, and
   optionally other code you wish to share across Dagster definitions.
-- `my-project/definitions.py` is the entry point that Dagster will load when
+- `my_project/definitions.py` is the entry point that Dagster will load when
   deploying your code location. It is configured to load all definitions from
-  `my-project/defs`. You should not need to modify this file.
+  `my_project/defs`. You should not need to modify this file.
 - `tests` is a separate Python package defined at the top level (outside
-  `src`). It should contain tests for the `my-project` package.
+  `src`). It should contain tests for the `my_project` package.
 - `pyproject.toml` is a standard Python package configuration file. In addition
   to the regular Python package metadata, it contains a `tool.dg` section
   for `dg`-specific settings.

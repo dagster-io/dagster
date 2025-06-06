@@ -1,4 +1,4 @@
-type: my_component_library.components.shell_command.ShellCommand
+type: my_project.components.shell_command.ShellCommand
 
 attributes:
   script_path: script.sh

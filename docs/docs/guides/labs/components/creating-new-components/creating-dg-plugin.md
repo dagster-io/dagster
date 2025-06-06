@@ -10,7 +10,7 @@ import DgComponentsPreview from '@site/docs/partials/\_DgComponentsPreview.md';
 
 A `dg` plugin is a Python package that defines and exposes `dg`-legible
 classes and functions (which we call _plugin objects_). Plugin objects include custom
-component types, scaffolding classes, and more. Plugin objects that are exposed
+components, scaffolding classes, and more. Plugin objects that are exposed
 by an installed `dg` plugin can be inspected and interacted with by `dg`
 commands.
 
@@ -30,32 +30,32 @@ of strings. For `dagster_dg_cli.registry_modules` entry points:
 - The entry point value must be the name of a Python module containing plugin
   object references. By convention, this is usually the top-level module name of
   a package, though any submodule may be specified.
-- The entry point key is arbitrary and does not affect component type
+- The entry point key is arbitrary and does not affect component
   detection, but by convention should be set to the same string as the value
   (i.e. the module name).
 
 :::note
 New projects scaffolded by `dg` include a `dagster_dg_cli.registry_modules` entry point,
 and therefore are `dg` plugins out of the box. This allows a project to define
-project-scoped component types etc.
+project-scoped components etc.
 :::
 
 ## Converting an existing package into a `dg` plugin
 
 Let's step through the process of converting an existing Python package into a `dg` plugin. We'll:
 
-- Define a custom component type in the package
+- Define a custom component in the package
 - Add a `dagster_dg_cli.registry_modules` entry point to the package metadata
-- Confirm that the custom component type is available to `dg` commands
+- Confirm that the custom component is available to `dg` commands
 
 Let's start with a basic package called `my_library`. `my_library` is intended
 to be a shared library across multiple Dagster projects. Currently it contains
-assorted plain Python utilities, but we want to add a custom component type
+assorted plain Python utilities, but we want to add a custom component
 that is discoverable by `dg`.
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/creating-dg-plugin/1-tree.txt" />
 
-Since the focus of this guide is on exposing rather than authoring plugin objects, we'll use a dummy `EmptyComponent` for our custom component type. Let's put this in a new submodule at `src/my_library/empty_component.py`:
+Since the focus of this guide is on exposing rather than authoring plugin objects, we'll use a dummy `EmptyComponent` for our custom component. Let's put this in a new submodule at `src/my_library/empty_component.py`:
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/dg/creating-dg-plugin/2-empty-component.py"

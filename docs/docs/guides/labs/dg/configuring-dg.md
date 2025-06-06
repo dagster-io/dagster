@@ -20,6 +20,7 @@ There are three kinds of settings:
   be set in the configuration file for a workspace.
 
 :::tip
+
 The application-level settings used in any given invocation of `dg` are the
 result of merging settings from one or more configuration files and the command
 line. The order of precedence is:
@@ -34,6 +35,7 @@ sourced from the workspace configuration file and disallowed in the constituent
 project configuration files. In other words, application-level settings are
 only allowed in project configuration files if the project is not inside a
 workspace.
+
 :::
 
 ## Configuration files

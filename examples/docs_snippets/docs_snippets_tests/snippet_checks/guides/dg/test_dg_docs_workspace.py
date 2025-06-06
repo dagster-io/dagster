@@ -41,7 +41,7 @@ def test_dg_docs_workspace(update_snippets: bool) -> None:
             snippet_path=f"{context.get_next_snip_number()}-dg-scaffold-workspace.txt",
             print_cmd="create-dagster workspace dagster-workspace && cd dagster-workspace",
             snippet_replace_regex=[
-                ("create-dagster", "uvx create-dagster"),
+                ("create-dagster", "uvx -U create-dagster"),
             ],
         )
 
@@ -50,7 +50,7 @@ def test_dg_docs_workspace(update_snippets: bool) -> None:
             snippet_path=f"{context.get_next_snip_number()}-dg-scaffold-project.txt",
             print_cmd="create-dagster project projects/project-1",
             snippet_replace_regex=[
-                ("create-dagster", "uvx create-dagster"),
+                ("create-dagster", "uvx -U create-dagster"),
             ],
         )
 
@@ -94,7 +94,7 @@ def test_dg_docs_workspace(update_snippets: bool) -> None:
             snippet_path=f"{context.get_next_snip_number()}-scaffold-project.txt",
             print_cmd="create-dagster project projects/project-2",
             snippet_replace_regex=[
-                ("create-dagster", "uvx create-dagster"),
+                ("create-dagster", "uvx -U create-dagster"),
             ],
         )
 
