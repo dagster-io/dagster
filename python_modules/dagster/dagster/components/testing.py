@@ -209,33 +209,6 @@ def flatten_components(parent_component: Optional[Component]) -> list[Component]
         return []
 
 
-def get_all_components_defs_within_project(
-    *,
-    project_root: Path,
-    component_path: Path,
-) -> list[tuple[Component, Definitions]]:
-    try:
-        from dagster_dg_core.config import discover_config_file
-        from dagster_dg_core.context import DgContext
-    except ImportError:
-        raise Exception(
-            "dagster_dg_core is not installed. Please install it to use to get default project_name and defs module from pyproject.toml or dg.toml."
-        )
-
-    config_file = discover_config_file(project_root)
-    check.not_none(config_file, "No project config file found. ")
-    assert config_file
-    dg_context = DgContext.from_file_discovery_and_command_line_config(
-        path=config_file, command_line_config={}
-    )
-    return get_all_components_defs_from_defs_path(
-        project_name=dg_context.project_name,
-        project_root=project_root,
-        component_path=component_path,
-        defs_module_name=dg_context.defs_module_name,
-    )
-
-
 def get_all_components_defs_from_defs_path(
     *,
     project_name: str,
