@@ -46,6 +46,7 @@ With the image and R2 mount ready, we can define our Modal functions. The first 
   language="python"
   startAfter="start_transcribe_segment"
   endBefore="end_transcribe_segment"
+  title="project_dagster_modal_pipes/modal_project/transcribe.py"
 />
 
 The next function, `transcribe_episode`, will split an audio file into smaller segments and then apply the `transcribe_segment` function. After all the segments have been processed, it will write the transcribed text into JSON files within the R2 bucket:
@@ -55,6 +56,7 @@ The next function, `transcribe_episode`, will split an audio file into smaller s
   language="python"
   startAfter="start_segment"
   endBefore="end_segment"
+  title="project_dagster_modal_pipes/modal_project/transcribe.py"
 />
 
 With the Modal functions in place, we can define the entry point `main`. This is what Dagster will use to interact with Modal:
@@ -64,6 +66,7 @@ With the Modal functions in place, we can define the entry point `main`. This is
   language="python"
   startAfter="start_main"
   endBefore="end_main"
+  title="project_dagster_modal_pipes/modal_project/transcribe.py"
 />
 
 ## Next steps
