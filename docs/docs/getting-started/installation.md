@@ -22,11 +22,13 @@ The `create-dagster` utility can be installed using [Homebrew](https://brew.sh/)
 <Tabs>
 <TabItem value="uvx" label="uvx (Recommended)">
 
-First, install the Python package manager [`uv`](https://docs.astral.sh/uv/) if you don't have it:
+First, install the Python package manager [`uv`](https://docs.astral.sh/uv/) if you don't have it.
+
+This will also install the `uvx` command, which allows you to execute commands without having to install packages directly.
 
 <InstallUv />
 
-Then run the `create-dagster` command using `uvx`:
+Now, you can run the `create-dagster` command using `uvx` like so:
 
 <CliInvocationExample contents="uvx create-dagster project my-project" />
 
@@ -70,12 +72,23 @@ create-dagster project my-project
 
 After creating your project, navigate to the project directory, activate the Python virtual environment, and verify the installation:
 
-
-<CliInvocationExample contents="cd my-project" />
-
-<CliInvocationExample contents="source .venv/bin/activate" />
-
-<CliInvocationExample contents="dg --version" />
+<Tabs groupId="os">
+  <TabItem value="mac" label="Mac">
+    <CliInvocationExample contents="cd my-project" />
+    <CliInvocationExample contents="source .venv/bin/activate" />
+    <CliInvocationExample contents="dg --version" />
+  </TabItem>
+  <TabItem value="windows" label="Windows">
+    <CliInvocationExample contents="cd my-project" />
+    <CliInvocationExample contents=".venv\Scripts\activate" />
+    <CliInvocationExample contents="dg --version" />
+  </TabItem>
+  <TabItem value="linux" label="Linux">
+    <CliInvocationExample contents="cd my-project" />
+    <CliInvocationExample contents="source .venv/bin/activate" />
+    <CliInvocationExample contents="dg --version" />
+  </TabItem>
+</Tabs>
 
 ## Alternative: Manual installation in a virtual environment
 
