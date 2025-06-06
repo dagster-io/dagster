@@ -8,7 +8,7 @@ import DgComponentsPreview from '@site/docs/partials/\_DgComponentsPreview.md';
 
 <DgComponentsPreview />
 
-After creating components in your `defs` folder you will want to test them. Components provides testing utilities that makes this simple.
+After creating components in your `defs` folder you will want to test them. Dagster provides testing utilities that makes testing components simple.
 
 The core function is `get_component_defs_within_project` and it has the following signature:
 
