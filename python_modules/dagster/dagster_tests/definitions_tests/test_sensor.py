@@ -1,7 +1,8 @@
 import pytest
-from dagster import AssetKey, SensorDefinition, asset, graph
+from dagster import AssetKey, SensorDefinition, asset, graph, job
 from dagster._core.definitions.decorators.op_decorator import op
 from dagster._core.definitions.job_definition import JobDefinition
+from dagster._core.definitions.metadata.metadata_value import IntMetadataValue, TextMetadataValue
 from dagster._core.errors import DagsterInvalidDefinitionError
 
 
@@ -83,3 +84,24 @@ def test_coerce_graph_def_to_job():
 
     assert isinstance(my_sensor.job, JobDefinition)
     assert my_sensor.job.name == "bar"
+
+
+def test_with_attributes():
+    @job
+    def one(): ...
+
+    @job
+    def two(): ...
+
+    def fn(): ...
+
+    sensor = SensorDefinition(job=one, metadata={"foo": "bar", "four": 4}, evaluation_fn=fn)
+
+    blanked = sensor.with_attributes(metadata={})
+    assert blanked.metadata == {}
+
+    sensor = SensorDefinition(jobs=[one, two], metadata={"foo": "bar", "four": 4}, evaluation_fn=fn)
+    updated = sensor.with_attributes(metadata={**sensor.metadata, "foo": "baz"})
+
+    assert updated.metadata["foo"] == TextMetadataValue("baz")
+    assert updated.metadata["four"] == IntMetadataValue(4)

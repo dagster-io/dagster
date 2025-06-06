@@ -8,6 +8,7 @@ from dagster._core.definitions.asset_selection import AssetSelection, CoercibleT
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationCondition,
 )
+from dagster._core.definitions.metadata import RawMetadataMapping
 from dagster._core.definitions.run_request import SensorResult
 from dagster._core.definitions.sensor_definition import (
     DefaultSensorStatus,
@@ -151,7 +152,7 @@ class AutomationConditionSensorDefinition(SensorDefinition):
         default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
         minimum_interval_seconds: Optional[int] = None,
         description: Optional[str] = None,
-        metadata: Optional[Mapping[str, object]] = None,
+        metadata: Optional[RawMetadataMapping] = None,
         emit_backfills: bool = True,
         use_user_code_server: bool = False,
         default_condition: Optional[AutomationCondition] = None,
