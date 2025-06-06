@@ -8,9 +8,9 @@ import DgComponentsPreview from '@site/docs/partials/\_DgComponentsPreview.md';
 
 <DgComponentsPreview />
 
-After created components in your `defs` file you will want to test them. Components provides testing utilities that makes this simple.
+After created components in your `defs` folder you will want to test them. Components provides testing utilities that makes this simple.
 
-The core function is `get_component_defs_within_project` that has the following signature:
+The core function is `get_component_defs_within_project` and it has the following signature:
 
 ```python
 def get_component_defs_within_project(
@@ -25,12 +25,12 @@ def get_component_defs_within_project(
 
 ```python
 def my_project_component_defs(component_path) -> tuple[dg.Component, dg.Definitions]:
-    # This file is as my_project/tests/my_test.py so two parents up is the root
+    # This file is as my_project/tests/my_test.py so two parents up from the test file 
     project_root = Path(__file__).parent.parent
     return get_component_defs_within_project(project_root, component_path)
 ```
 
-Once you do this you can load the component and its definitions. This component lives at `my_project/src/my_project/defs/path/to/component`:
+Once you do this you can load the component and its definitions. This component lives at `my_project/src/my_project/defs/path/to/component`. You only need to specify the path relative to the `defs` folder.
 
 ```python
 def test_metadata() -> None:
