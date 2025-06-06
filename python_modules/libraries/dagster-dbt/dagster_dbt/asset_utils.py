@@ -781,12 +781,11 @@ def build_dbt_specs(
             if not child_unique_id.startswith("test"):
                 continue
 
-            check_spec = default_asset_check_fn(
-                manifest,
-                translator,
-                spec.key,
-                child_unique_id,
-                project,
+            check_spec = translator.get_asset_check_spec(
+                manifest=manifest,
+                asset_key=spec.key,
+                test_unique_id=child_unique_id,
+                project=project,
             )
             if check_spec:
                 check_specs[check_spec.get_python_identifier()] = check_spec
@@ -807,13 +806,14 @@ def build_dbt_specs(
                 for child_unique_id in manifest["child_map"][upstream_id]:
                     if not child_unique_id.startswith("test"):
                         continue
-                    check_spec = default_asset_check_fn(
+
+                    check_spec = translator.get_asset_check_spec(
                         manifest=manifest,
-                        dagster_dbt_translator=translator,
                         asset_key=key_by_unique_id[upstream_id],
                         test_unique_id=child_unique_id,
                         project=project,
                     )
+
                     if check_spec:
                         check_specs[check_spec.get_python_identifier()] = check_spec
 

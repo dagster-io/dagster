@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional
 
 from dagster import (
+    AssetCheckSpec,
     AssetDep,
     AssetKey,
     AssetSpec,
@@ -29,6 +30,7 @@ from dagster_dbt.asset_utils import (
     DAGSTER_DBT_MANIFEST_METADATA_KEY,
     DAGSTER_DBT_TRANSLATOR_METADATA_KEY,
     DAGSTER_DBT_UNIQUE_ID_METADATA_KEY,
+    default_asset_check_fn,
     default_asset_key_fn,
     default_auto_materialize_policy_fn,
     default_code_version_fn,
@@ -184,6 +186,22 @@ class DagsterDbtTranslator:
         self._resolved_specs[memo_id] = spec
 
         return self._resolved_specs[memo_id]
+
+    def get_asset_check_spec(
+        self,
+        manifest: Mapping[str, Any],
+        asset_key: AssetKey,
+        test_unique_id: str,
+        project: Optional["DbtProject"],
+    ) -> Optional[AssetCheckSpec]:
+        """Returns an AssetCheckSpec representing a specific dbt test as an asset check."""
+        return default_asset_check_fn(
+            manifest=manifest,
+            dagster_dbt_translator=self,
+            asset_key=asset_key,
+            test_unique_id=test_unique_id,
+            project=project,
+        )
 
     @public
     def get_asset_key(self, dbt_resource_props: Mapping[str, Any]) -> AssetKey:
