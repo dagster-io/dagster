@@ -48,6 +48,16 @@ export const BuiltByDagsterLabs = () => (
   </Box>
 );
 
+export const PrivateIntegration = () => (
+  <Box
+    flex={{direction: 'row', alignItems: 'center', gap: 4}}
+    style={{fontSize: 12, color: Colors.textLight()}}
+  >
+    <Icon name="lock" size={12} color={Colors.textLight()} />
+    Private
+  </Box>
+);
+
 export const IntegrationTags = ({tags}: {tags: string[]}) => (
   <>
     {tags
