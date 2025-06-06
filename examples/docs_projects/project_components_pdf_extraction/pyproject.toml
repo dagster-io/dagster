@@ -31,7 +31,6 @@ directory_type = "project"
 
 [tool.dg.project]
 root_module = "project_components_pdf_extraction"
-python_environment = "persistent_uv"
 defs_module = "project_components_pdf_extraction.defs"
 
 [tool.setuptools.packages.find]

@@ -1,12 +1,10 @@
 import os
 from collections.abc import Sequence
-from dataclasses import asdict
 from pathlib import Path
 from typing import Optional
 
 import click
 from dagster_dg_core.config import (
-    DgProjectPythonEnvironment,
     DgRawWorkspaceConfig,
     DgWorkspaceScaffoldProjectOptions,
     modify_dg_toml_config,
@@ -48,7 +46,6 @@ def scaffold_project(
     path: Path,
     dg_context: DgContext,
     use_editable_dagster: Optional[str],
-    python_environment: Optional[DgProjectPythonEnvironment] = None,
 ) -> None:
     import tomlkit
     import tomlkit.items
@@ -106,18 +103,6 @@ def scaffold_project(
         uv_sources=uv_sources_str,
     )
     click.echo(f"Scaffolded files for Dagster project at {path}.")
-
-    if python_environment:
-        with modify_dg_toml_config(dg_context.with_root_path(path).config_file_path) as toml:
-            python_environment_dict = asdict(python_environment)
-            used_key = next((k for k, v in python_environment_dict.items() if v), None)
-            if used_key:
-                set_toml_node(toml, ("project", "python_environment"), {})
-                set_toml_node(
-                    toml,
-                    ("project", "python_environment", used_key),
-                    python_environment_dict[used_key],
-                )
 
     # Build the venv
     cl_dg_context = dg_context.with_root_path(path)

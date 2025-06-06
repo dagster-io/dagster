@@ -5,10 +5,8 @@ from pathlib import Path
 import pytest
 from dagster_dg_core.utils import (
     activate_venv,
-    create_toml_node,
     discover_git_root,
     ensure_dagster_dg_tests_import,
-    install_to_venv,
     is_windows,
     pushd,
 )
@@ -25,7 +23,6 @@ from dagster_dg_core_tests.utils import (
     isolated_example_project_foo_bar,
     isolated_example_workspace,
     launch_dev_command,
-    modify_dg_toml_config_as_dict,
 )
 from dagster_test.components.test_utils.test_cases import BASIC_INVALID_VALUE, BASIC_MISSING_VALUE
 
@@ -46,18 +43,16 @@ def test_dev_workspace_context_success(monkeypatch):
                 "project",
                 "--use-editable-dagster",
                 dagster_git_repo_dir,
-                "--python-environment",
-                "uv_managed",
                 "project-1",
+                "--uv-sync",
             )
             assert_runner_result(result)
             result = runner.invoke_create_dagster(
                 "project",
                 "--use-editable-dagster",
                 dagster_git_repo_dir,
-                "--python-environment",
-                "uv_managed",
                 "project-2",
+                "--uv-sync",
             )
             assert_runner_result(result)
 
@@ -84,18 +79,16 @@ def test_dev_workspace_load_env_files(monkeypatch):
                 "project",
                 "--use-editable-dagster",
                 dagster_git_repo_dir,
-                "--python-environment",
-                "uv_managed",
                 "project-1",
+                "--uv-sync",
             )
             assert_runner_result(result)
             result = runner.invoke_create_dagster(
                 "project",
                 "--use-editable-dagster",
                 dagster_git_repo_dir,
-                "--python-environment",
-                "uv_managed",
                 "project-2",
+                "--uv-sync",
             )
             assert_runner_result(result)
 
@@ -125,94 +118,10 @@ def test_dev_workspace_load_env_files(monkeypatch):
 
 
 @pytest.mark.skipif(is_windows(), reason="Temporarily skipping (signal issues in CLI)..")
-def test_dev_workspace_load_env_files_backcompat(monkeypatch):
-    """Test that when .env files are not loaded, for backcompat reasons (e.g. the PerProjectEnvFileLoader
-    is not yet available), we issue a warning.
-    """
-    dagster_git_repo_dir = str(discover_git_root(Path(__file__)))
-    with (
-        ProxyRunner.test() as runner,
-        isolated_example_workspace(runner, create_venv=True) as workspace_path,
-    ):
-        with activate_venv(workspace_path / ".venv"):
-            Path(".env").write_text("WORKSPACE_ENV_VAR=1\nOVERWRITTEN_ENV_VAR=3")
-            result = runner.invoke_create_dagster(
-                "project",
-                "--use-editable-dagster",
-                dagster_git_repo_dir,
-                "--python-environment",
-                "uv_managed",
-                "project-1",
-            )
-            assert_runner_result(result)
-            result = runner.invoke_create_dagster(
-                "project",
-                "--python-environment",
-                "uv_managed",
-                "project-2",
-            )
-            assert_runner_result(result)
-
-            with pushd(Path("project-2")):
-                install_to_venv(
-                    Path(".venv"),
-                    [
-                        "dagster==1.10.7",
-                        "dagster-webserver==1.10.7",
-                        "dagster-shared==0.26.7",
-                        "dagster-components==0.26.7",
-                    ],
-                )
-            with modify_dg_toml_config_as_dict(Path("project-2/pyproject.toml")) as toml:
-                create_toml_node(
-                    toml,
-                    ("project", "autoload_defs"),
-                    False,
-                )
-
-            (Path("project-2") / ".env").write_text("PROJECT_ENV_VAR=2\nOVERWRITTEN_ENV_VAR=4")
-
-            # Expect that the project env vars are not loaded, since the Dagster version is old
-            # enough
-            (Path("project-2") / "src" / "project_2" / "definitions.py").write_text(
-                textwrap.dedent("""
-                import os
-
-                from dagster import __version__
-
-                assert __version__ == "1.10.7"
-                assert os.getenv("PROJECT_ENV_VAR") is None
-                assert os.environ["WORKSPACE_ENV_VAR"] == "1"
-                assert os.environ["OVERWRITTEN_ENV_VAR"] == "3"
-
-                import dagster as dg
-                defs = dg.Definitions()
-                """).strip()
-            )
-            port = find_free_port()
-
-            with (
-                tempfile.NamedTemporaryFile() as stdout_file,
-                open(stdout_file.name, "w") as stdout,
-            ):
-                dev_process = launch_dev_command(
-                    ["--port", str(port), "--no-check-yaml"], stdout=stdout
-                )
-                projects = {"project-1", "project-2"}
-
-                assert_projects_loaded_and_exit(projects, port, dev_process)
-
-                assert (
-                    "Warning: Dagster version 1.10.7 is less than the minimum required version for .env file environment variable injection "
-                    "(1.10.8). Environment variables will not be injected for location project-2."
-                ) in Path(stdout_file.name).read_text()
-
-
-@pytest.mark.skipif(is_windows(), reason="Temporarily skipping (signal issues in CLI)..")
 def test_dev_project_context_success():
     with (
         ProxyRunner.test() as runner,
-        isolated_example_project_foo_bar(runner, python_environment="uv_managed") as project_path,
+        isolated_example_project_foo_bar(runner, uv_sync=True) as project_path,
     ):
         venv_path = project_path / ".venv"
         install_editable_dg_dev_packages_to_venv(venv_path)

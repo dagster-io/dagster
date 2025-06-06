@@ -220,7 +220,7 @@ def test_build_docs_success_matches_graphql():
         ProxyRunner.test() as runner,
         isolated_example_project_foo_bar(
             runner,
-            python_environment="uv_managed",
+            uv_sync=True,
         ) as project_path,
     ):
         result = runner.invoke("docs", "build", str(Path.cwd() / "built_docs"))

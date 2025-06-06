@@ -15,7 +15,6 @@ from dagster_dg_core.cache import CachableDataType, DgCache
 from dagster_dg_core.component import RemotePluginRegistry
 from dagster_dg_core.config import (
     DgConfig,
-    DgProjectPythonEnvironment,
     DgRawBuildConfig,
     DgRawCliConfig,
     DgWorkspaceProjectSpec,
@@ -485,12 +484,6 @@ class DgContext:
             raise DgError("`code_location_name` is only available in a Dagster project context")
         return self.config.project.code_location_name or self.project_name
 
-    @property
-    def python_environment(self) -> DgProjectPythonEnvironment:
-        if not self.config.project:
-            raise DgError("`python_environment` is only available in a Dagster project context")
-        return self.config.project.python_environment
-
     # ########################
     # ##### PLUGIN METHODS
     # ########################
@@ -678,11 +671,7 @@ def _validate_project_venv_activated(context: DgContext) -> None:
         )
     activated_venv = get_activated_venv()
     project_venv = context.root_path / ".venv"
-    if (
-        context.config.project.python_environment.active
-        and project_venv.exists()
-        and project_venv != activated_venv
-    ):
+    if project_venv.exists() and project_venv != activated_venv:
         msg = generate_project_and_activated_venv_mismatch_warning(project_venv, activated_venv)
         emit_warning(
             "project_and_activated_venv_mismatch",

@@ -86,7 +86,7 @@ def test_launch_assets() -> None:
         isolated_example_project_foo_bar(
             runner,
             in_workspace=False,
-            python_environment="uv_managed",
+            uv_sync=True,
         ) as project_dir,
     ):
         with activate_venv(project_dir / ".venv"):
@@ -172,7 +172,7 @@ def test_launch_assets_config_files() -> None:
         isolated_example_project_foo_bar(
             runner,
             in_workspace=False,
-            python_environment="uv_managed",
+            uv_sync=True,
         ) as project_dir,
         activate_venv(project_dir / ".venv"),
     ):
@@ -224,7 +224,7 @@ def test_launch_job_partitioned() -> None:
         isolated_example_project_foo_bar(
             runner,
             in_workspace=False,
-            python_environment="uv_managed",
+            uv_sync=True,
         ) as project_dir,
     ):
         with activate_venv(project_dir / ".venv"):
@@ -281,7 +281,7 @@ def test_launch_job_configured() -> None:
         isolated_example_project_foo_bar(
             runner,
             in_workspace=False,
-            python_environment="uv_managed",
+            uv_sync=True,
         ) as project_dir,
     ):
         with activate_venv(project_dir / ".venv"):
@@ -324,7 +324,7 @@ def test_launch_job_config_files() -> None:
         isolated_example_project_foo_bar(
             runner,
             in_workspace=False,
-            python_environment="uv_managed",
+            uv_sync=True,
         ) as project_dir,
         activate_venv(project_dir / ".venv"),
     ):
@@ -392,7 +392,7 @@ def test_launch_job_point_to_module_explicitly() -> None:
         isolated_example_project_foo_bar(
             runner,
             in_workspace=False,
-            python_environment="uv_managed",
+            uv_sync=True,
         ) as project_dir,
         activate_venv(project_dir / ".venv"),
     ):
@@ -426,7 +426,7 @@ def test_launch_assets_point_to_module_explicitly() -> None:
         isolated_example_project_foo_bar(
             runner,
             in_workspace=False,
-            python_environment="uv_managed",
+            uv_sync=True,
         ) as project_dir,
         activate_venv(project_dir / ".venv"),
     ):

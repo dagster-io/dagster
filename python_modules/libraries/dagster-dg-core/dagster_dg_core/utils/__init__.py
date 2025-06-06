@@ -302,9 +302,8 @@ def generate_project_and_activated_venv_mismatch_warning(
     active_venv_path: Optional[Path],
 ) -> str:
     return f"""
-        Your project is configured with `project.python_environment.active = true`, but the active
-        virtual environment does not match the virtual environment found in the project root
-        directory. This may lead to unexpected behavior when running `dg` commands.
+        The active virtual environment does not match the virtual environment found in the project
+        root directory. This may lead to unexpected behavior when running `dg` commands.
 
             active virtual environment: {active_venv_path}
             project virtual environment: {project_venv_path}
