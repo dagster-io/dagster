@@ -121,8 +121,6 @@ def scaffold_project(
 
     # Build the venv
     cl_dg_context = dg_context.with_root_path(path)
-    if cl_dg_context.use_dg_managed_environment:
-        cl_dg_context.ensure_uv_lock()
 
     # Update pyproject.toml
     if cl_dg_context.is_in_workspace:

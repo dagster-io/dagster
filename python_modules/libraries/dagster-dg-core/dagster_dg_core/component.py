@@ -30,9 +30,6 @@ class RemotePluginRegistry:
         discovered under the "dagster_dg_cli.registry_modules" entry point group in the target environment. If
         `extra_modules` is provided, these will also be searched for component types.
         """
-        if dg_context.use_dg_managed_environment:
-            dg_context.ensure_uv_lock()
-
         if dg_context.config.cli.use_component_modules:
             plugin_manifest = _load_module_registry_objects(
                 dg_context, dg_context.config.cli.use_component_modules

@@ -1,10 +1,6 @@
 import datetime
-import json
 import logging
-import os
 import re
-import shutil
-import subprocess
 from collections.abc import Iterable, Mapping
 from functools import cached_property
 from pathlib import Path
@@ -45,10 +41,7 @@ from dagster_dg_core.utils import (
     get_venv_executable,
     has_toml_node,
     msg_with_potential_paths,
-    pushd,
-    resolve_local_venv,
     set_toml_node,
-    strip_activated_venv_from_env_vars,
     validate_dagster_availability,
 )
 from dagster_dg_core.utils.paths import hash_paths
@@ -381,49 +374,6 @@ class DgContext:
             raise DgError("`project_name` is only available in a Dagster project context")
         return self.root_path.name
 
-    def resolve_package_manager_executable(self) -> list[str]:
-        if self.has_uv_lock:
-            return ["uv", "pip"]
-
-        executable = self.get_executable("python")
-        has_pip = (
-            subprocess.run(
-                [str(executable), "-m", "pip"],
-                check=False,
-                capture_output=True,
-            ).returncode
-            == 0
-        )
-        return [str(executable), "-m", "pip"] if has_pip else ["uv", "pip"]
-
-    @cached_property
-    def dagster_version(self) -> Version:
-        return self._get_module_version("dagster")
-
-    def _get_module_version(self, module_name: str) -> Version:
-        with pushd(self.root_path):
-            args = [
-                "list",
-                "--format",
-                "json",
-            ]
-            python_args = ["--python", str(self._resolve_executable("python"))]
-            executable_args = self.resolve_package_manager_executable()
-            if executable_args[0] == "uv":
-                all_args = [*executable_args, *args, *python_args]
-            else:
-                all_args = [*executable_args, *python_args, *args]
-
-            result = subprocess.check_output(
-                all_args,
-                env=strip_activated_venv_from_env_vars(os.environ),
-            )
-        modules = json.loads(result)
-        for module in modules:
-            if module["name"] == module_name:
-                return Version(module["version"])
-        raise DgError(f"Module `{module_name}` not found")
-
     @property
     def project_python_executable(self) -> Path:
         if not self.is_project:
@@ -674,67 +624,6 @@ class DgContext:
     # ########################
     # ##### HELPERS
     # ########################
-
-    @property
-    def has_uv_lock(self) -> bool:
-        """Check if the uv.lock file exists in the root path."""
-        return (self.root_path / "uv.lock").exists()
-
-    def ensure_uv_lock(self, path: Optional[Path] = None) -> None:
-        path = path or self.root_path
-        if not (path / "uv.lock").exists():
-            self.ensure_uv_sync(path)
-
-    def ensure_uv_sync(self, path: Optional[Path] = None) -> None:
-        path = path or self.root_path
-        with pushd(path):
-            if not (path / "uv.lock").exists():
-                subprocess.check_output(
-                    ["uv", "sync"],
-                    env=strip_activated_venv_from_env_vars(os.environ),
-                )
-
-    @property
-    def use_dg_managed_environment(self) -> bool:
-        return bool(self.config.project and self.config.project.python_environment.uv_managed)
-
-    @property
-    def has_venv(self) -> bool:
-        return self.use_dg_managed_environment and (resolve_local_venv(self.root_path) is not None)
-
-    @cached_property
-    def venv_path(self) -> Path:
-        path = resolve_local_venv(self.root_path)
-        if not path:
-            raise DgError("Cannot find .venv")
-        return path
-
-    def has_executable(self, command: str) -> bool:
-        return self._resolve_executable(command) is not None
-
-    def get_executable(self, command: str) -> Path:
-        if not (executable := self._resolve_executable(command)):
-            raise DgError(f"Cannot find executable {command}")
-        return executable
-
-    def _resolve_executable(self, command: str) -> Optional[Path]:
-        if (
-            self.has_venv
-            and (venv_exec := get_venv_executable(self.venv_path, command))
-            and venv_exec.exists()
-        ):
-            return venv_exec
-        elif not self.use_dg_managed_environment and (global_exec := shutil.which(command)):
-            return Path(global_exec)
-        else:
-            return None
-
-    @property
-    def environment_desc(self) -> str:
-        if self.has_venv:
-            return f"Python environment at {self.venv_path}"
-        else:
-            return "active Python environment"
 
     @property
     def config_file_path(self) -> Path:

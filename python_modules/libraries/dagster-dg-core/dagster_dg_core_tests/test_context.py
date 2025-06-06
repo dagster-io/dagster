@@ -9,11 +9,7 @@ from typing import Any, Union
 
 import pytest
 from dagster_dg_core.component import RemotePluginRegistry
-from dagster_dg_core.config import (
-    DgFileConfigDirectoryType,
-    DgProjectPythonEnvironmentFlag,
-    get_type_str,
-)
+from dagster_dg_core.config import DgFileConfigDirectoryType, get_type_str
 from dagster_dg_core.context import OLD_DG_PLUGIN_ENTRY_POINT_GROUPS, DgContext
 from dagster_dg_core.utils import (
     TomlPath,
@@ -21,7 +17,6 @@ from dagster_dg_core.utils import (
     create_toml_node,
     delete_toml_node,
     get_toml_node,
-    get_venv_executable,
     is_windows,
     modify_toml_as_dict,
     pushd,
@@ -31,7 +26,6 @@ from dagster_dg_core.utils import (
 )
 from dagster_dg_core.utils.warnings import DgWarningIdentifier
 from dagster_shared.utils.config import get_default_dg_user_config_path
-from packaging.version import Version
 
 from dagster_dg_core_tests.utils import (
     ConfigFileType,
@@ -287,41 +281,6 @@ def test_missing_dg_registry_module_in_manifest_warning():
             context = DgContext.for_project_environment(Path.cwd(), {})
             with dg_warns("Your package defines a `dagster_dg_cli.registry_modules` entry point"):
                 RemotePluginRegistry.from_dg_context(context)
-
-
-@pytest.mark.parametrize("python_environment", ["active", "uv_managed"])
-def test_dagster_version(python_environment: DgProjectPythonEnvironmentFlag):
-    with (
-        ProxyRunner.test() as runner,
-        isolated_example_project_foo_bar(
-            runner,
-            in_workspace=False,
-            python_environment=python_environment,
-            uv_sync=True,
-        ),
-    ):
-        assert Path(".venv").exists()
-        external_venv_path = Path.cwd().parent / ".venv"
-        subprocess.check_output(["uv", "venv", str(external_venv_path)])
-        subprocess.check_output(
-            [
-                "uv",
-                "pip",
-                "install",
-                "dagster==1.10.10",
-                "--python",
-                str(get_venv_executable(external_venv_path)),
-            ]
-        )
-
-        with activate_venv(external_venv_path):
-            context = DgContext.for_project_environment(Path.cwd(), {})
-            # uses activated venv even though we have a different venv in the current directory
-            if python_environment == "active":
-                assert context.dagster_version == Version("1.10.10")
-            # ignore active enviroment, use project venv
-            elif python_environment == "uv_managed":
-                assert context.dagster_version == Version("1!0+dev")
 
 
 # ########################
