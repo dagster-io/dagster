@@ -227,7 +227,7 @@ class GrapheneRunlessAssetEventType(graphene.Enum):
         elif self == GrapheneRunlessAssetEventType.ASSET_OBSERVATION:
             return DagsterEventType.ASSET_OBSERVATION
         else:
-            check.assert_never(self)
+            check.failed(f"unhandled type {self}")
 
 
 class GrapheneReportRunlessAssetEventsParams(graphene.InputObjectType):
