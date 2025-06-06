@@ -205,7 +205,9 @@ def get_job_fixture(embedded_data_source_id, workbook_id, job_id):
         type(mocked_function.return_value).id = PropertyMock(return_value=job_id)
         type(mocked_function.return_value).finish_code = PropertyMock(return_value=0)
         type(mocked_function.return_value).workbook_id = PropertyMock(return_value=workbook_id)
-        type(mocked_function.return_value).datasource_id = PropertyMock(return_value=embedded_data_source_id)
+        type(mocked_function.return_value).datasource_id = PropertyMock(
+            return_value=embedded_data_source_id
+        )
         yield mocked_function
 
 
