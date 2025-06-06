@@ -142,7 +142,8 @@ class DagsterTableauTranslator:
         elif data.content_type == TableauContentType.DATA_SOURCE:
             return self.get_data_source_spec(data)
         else:
-            check.assert_never(data.content_type)
+            # switch back to check.assert_never when TableauContentType.WORKBOOK is handled
+            check.failed(f"unhandled type {data.content_type}")
 
     @deprecated(
         breaking_version="1.10",

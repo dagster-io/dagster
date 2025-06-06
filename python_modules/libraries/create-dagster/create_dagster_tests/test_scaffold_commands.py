@@ -384,29 +384,6 @@ def test_scaffold_project_use_editable_dagster_env_var_succeeds(monkeypatch) -> 
             )
 
 
-def test_scaffold_project_python_environment_uv_managed_success(monkeypatch) -> None:
-    dagster_git_repo_dir = discover_git_root(Path(__file__))
-    monkeypatch.setenv("DAGSTER_GIT_REPO_DIR", str(dagster_git_repo_dir))
-    with ProxyRunner.test() as runner, runner.isolated_filesystem():
-        result = runner.invoke_create_dagster(
-            "project",
-            "foo-bar",
-            "--python-environment",
-            "uv_managed",
-            "--use-editable-dagster",
-        )
-        assert_runner_result(result)
-        assert Path("foo-bar").exists()
-        assert Path("foo-bar/src/foo_bar").exists()
-        assert Path("foo-bar/src/foo_bar/defs").exists()
-        assert Path("foo-bar/tests").exists()
-        assert Path("foo-bar/pyproject.toml").exists()
-
-        # Check venv not created
-        assert Path("foo-bar/.venv").exists()
-        assert Path("foo-bar/uv.lock").exists()
-
-
 @pytest.mark.parametrize("option", get_args(EditableOption))
 def test_scaffold_project_editable_dagster_no_env_var_no_value_fails(
     option: EditableOption, monkeypatch

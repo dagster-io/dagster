@@ -29,70 +29,39 @@ class MockAirbyteWorkspace(AirbyteCloudWorkspace):
         # connections_by_id = {}
         # destinations_by_id = {}
 
-        # client = self.get_client()
-        # connections = client.get_connections()["data"]
-
-        # for partial_connection_details in connections:
-        #     full_connection_details = client.get_connection_details(
-        #         connection_id=partial_connection_details["connectionId"]
-        #     )
-        #     connection = AirbyteConnection.from_connection_details(
-        #         connection_details=full_connection_details
-        #     )
-        #     connections_by_id[connection.id] = connection
-
-        #     destination_details = client.get_destination_details(
-        #         destination_id=connection.destination_id
-        #     )
-        #     destination = AirbyteDestination.from_destination_details(
-        #         destination_details=destination_details
-        #     )
-        #     destinations_by_id[destination.id] = destination
-
-        return AirbyteWorkspaceData(
-            connections_by_id={
-                "my_salesforce_connection": AirbyteConnection(
-                    id="my_salesforce_connection",
-                    name="salesforce_to_snowflake",
-                    streams={
-                        name: AirbyteStream(
-                            name=name,
-                            selected=True,
-                            json_schema={
-                                "type": "object",
-                                "$schema": "http://json-schema.org/draft-07/schema#",
-                                "properties": {},
-                            },
-                        )
-                        for name in {"user", "task", "opportunity", "account"}
-                    },
-                    destination_id="snowflake",
-                    stream_prefix=None,
-                ),
-                "my_hubspot_connection": AirbyteConnection(
-                    id="my_hubspot_connection",
-                    name="Hubspot to Snowflake",
-                    streams={
-                        name: AirbyteStream(
-                            name=name,
-                            selected=True,
-                            json_schema={
-                                "type": "object",
-                                "$schema": "http://json-schema.org/draft-07/schema#",
-                                "properties": {},
-                            },
-                        )
-                        for name in {"contact", "company"}
-                    },
-                    destination_id="snowflake",
-                    stream_prefix=None,
-                ),
-            },
-            destinations_by_id={
-                "snowflake": AirbyteDestination(
-                    id="snowflake", type="snowflake", database="snowflake", schema=None
-                )
-            },
+def test_components_docs_airbyte_workspace(
+    update_snippets: bool,
+    update_screenshots: bool,
+    get_selenium_driver,
+) -> None:
+    with (
+        isolated_snippet_generation_environment(
+            should_update_snippets=update_snippets,
+            snapshot_base_dir=SNIPPETS_DIR,
+            global_snippet_replace_regexes=[
+                MASK_VENV,
+                MASK_USING_LOG_MESSAGE,
+                MASK_MY_PROJECT,
+            ],
+        ) as context,
+        environ(
+            {
+                "AIRBYTE_CLIENT_ID": "XX",
+                "AIRBYTE_CLIENT_SECRET": "XX",
+                "AIRBYTE_WORKSPACE_ID": "XX",
+            }
+        ),
+        ExitStack() as stack,
+    ):
+        # Scaffold code location
+        context.run_command_and_snippet_output(
+            cmd="create-dagster project my-project --uv-sync --use-editable-dagster && cd my-project/src",
+            snippet_path=f"{context.get_next_snip_number()}-scaffold-project.txt",
+            snippet_replace_regex=[
+                ("--uv-sync --use-editable-dagster ", ""),
+                ("--editable.*dagster-airbyte", "dagster-airbyte"),
+            ],
+            ignore_output=True,
         )
 
 

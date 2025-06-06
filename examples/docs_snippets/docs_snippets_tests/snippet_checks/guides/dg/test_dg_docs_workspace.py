@@ -36,9 +36,6 @@ def test_dg_docs_workspace(update_snippets: bool) -> None:
             MASK_USING_LOG_MESSAGE,
         ],
     ) as context:
-        # Scaffold workspace
-        # TODO: Make this use "active" python environment in docs followup
-
         context.run_command_and_snippet_output(
             cmd="create-dagster workspace dagster-workspace --use-editable-dagster && cd dagster-workspace",
             snippet_path=f"{context.get_next_snip_number()}-dg-scaffold-workspace.txt",
@@ -49,9 +46,9 @@ def test_dg_docs_workspace(update_snippets: bool) -> None:
         )
 
         context.run_command_and_snippet_output(
-            cmd="create-dagster project --use-editable-dagster --python-environment uv_managed projects/project-1",
+            cmd="create-dagster project --use-editable-dagster --uv-sync projects/project-1",
             snippet_path=f"{context.get_next_snip_number()}-dg-scaffold-project.txt",
-            print_cmd="create-dagster project --python-environment uv_managed projects/project-1",
+            print_cmd="create-dagster project projects/project-1",
             snippet_replace_regex=[
                 ("create-dagster", "uvx -U create-dagster"),
             ],
@@ -93,9 +90,9 @@ def test_dg_docs_workspace(update_snippets: bool) -> None:
 
         # Scaffold new project
         context.run_command_and_snippet_output(
-            cmd="create-dagster project projects/project-2 --python-environment uv_managed --use-editable-dagster",
+            cmd="create-dagster project projects/project-2 --uv-sync --use-editable-dagster",
             snippet_path=f"{context.get_next_snip_number()}-scaffold-project.txt",
-            print_cmd="create-dagster project projects/project-2 --python-environment uv_managed",
+            print_cmd="create-dagster project projects/project-2",
             snippet_replace_regex=[
                 ("create-dagster", "uvx -U create-dagster"),
             ],

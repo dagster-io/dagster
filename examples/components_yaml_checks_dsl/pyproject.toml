@@ -27,7 +27,6 @@ directory_type = "project"
 
 [tool.dg.project]
 root_module = "components_yaml_checks_dsl"
-python_environment = "persistent_uv"
 
 [tool.setuptools.packages.find]
 exclude=["components_yaml_checks_dsl_tests"]

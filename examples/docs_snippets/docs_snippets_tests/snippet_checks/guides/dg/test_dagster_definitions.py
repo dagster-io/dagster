@@ -39,7 +39,7 @@ def test_dagster_definitions(update_snippets: bool) -> None:
         ],
     ) as context:
         _run_command(
-            cmd="create-dagster project my-project --python-environment uv_managed --use-editable-dagster && cd my-project",
+            cmd="create-dagster project my-project --uv-sync --use-editable-dagster && cd my-project",
         )
 
         with activate_venv(".venv") as venv_path:

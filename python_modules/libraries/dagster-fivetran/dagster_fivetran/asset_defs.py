@@ -41,6 +41,7 @@ from dagster_fivetran.translator import (
     FivetranSchemaConfig,
 )
 from dagster_fivetran.utils import (
+    clean_name,
     generate_materializations,
     get_fivetran_connector_url,
     metadata_for_table,
@@ -814,7 +815,7 @@ def build_fivetran_assets_definitions(
         @fivetran_assets(
             connector_id=connector_id,
             workspace=workspace,
-            name=connector_name,
+            name=clean_name(connector_name),
             dagster_fivetran_translator=dagster_fivetran_translator,
             connector_selector_fn=connector_selector_fn,
         )

@@ -15,6 +15,8 @@ from typing import (  # noqa: UP035
     cast,
 )
 
+from dagster_shared.record import replace
+
 import dagster._check as check
 from dagster._annotations import beta_param, public
 from dagster._core.definitions.asset_check_spec import AssetCheckSpec
@@ -331,7 +333,8 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
             )
 
             normalized_specs.append(
-                spec._replace(
+                replace(
+                    spec,
                     group_name=group_name,
                     code_version=code_version,
                     metadata=metadata,
@@ -1265,6 +1268,9 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         ] = None,
         backfill_policy: Optional[BackfillPolicy] = None,
         hook_defs: Optional[AbstractSet[HookDefinition]] = None,
+        metadata_by_key: Optional[
+            Mapping[Union[AssetKey, AssetCheckKey], ArbitraryMetadataMapping]
+        ] = None,
     ) -> "AssetsDefinition":
         conflicts_by_attr_name: dict[str, set[AssetKey]] = defaultdict(set)
         replaced_specs = []
@@ -1300,6 +1306,9 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
                 default_value=DEFAULT_GROUP_NAME,
             )
 
+            if metadata_by_key and key in metadata_by_key:
+                replace_dict["metadata"] = metadata_by_key[key]
+
             if key in asset_key_replacements:
                 replace_dict["key"] = asset_key_replacements[key]
 
@@ -1314,7 +1323,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
 
                 replace_dict["deps"] = new_deps
 
-            replaced_specs.append(spec._replace(**replace_dict))
+            replaced_specs.append(replace(spec, **replace_dict))
 
         for attr_name, conflicting_asset_keys in conflicts_by_attr_name.items():
             raise DagsterInvalidDefinitionError(
@@ -1322,14 +1331,21 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
                 f" {', '.join(asset_key.to_user_string() for asset_key in conflicting_asset_keys)}"
             )
 
-        check_specs_by_output_name = {
-            output_name: check_spec.replace_key(
-                key=check_spec.key.replace_asset_key(
-                    asset_key_replacements.get(check_spec.asset_key, check_spec.asset_key)
+        check_specs_by_output_name = {}
+        for output_name, check_spec in self.node_check_specs_by_output_name.items():
+            updated_check_spec = check_spec
+            if check_spec.asset_key in asset_key_replacements:
+                updated_check_spec = updated_check_spec.replace_key(
+                    key=check_spec.key.replace_asset_key(
+                        asset_key_replacements[check_spec.asset_key]
+                    )
                 )
-            )
-            for output_name, check_spec in self.node_check_specs_by_output_name.items()
-        }
+            if metadata_by_key and check_spec.key in metadata_by_key:
+                updated_check_spec = updated_check_spec.with_metadata(
+                    metadata_by_key[check_spec.key]
+                )
+
+            check_specs_by_output_name[output_name] = updated_check_spec
 
         selected_asset_check_keys = {
             check_key.replace_asset_key(

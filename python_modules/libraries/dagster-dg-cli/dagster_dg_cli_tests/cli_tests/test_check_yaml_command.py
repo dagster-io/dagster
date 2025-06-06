@@ -146,13 +146,13 @@ def test_check_yaml_with_watch() -> None:
             runner,
             BASIC_VALID_VALUE.component_path,
             local_component_defn_to_inject=BASIC_VALID_VALUE.component_type_filepath,
-            python_environment="uv_managed",
+            uv_sync=True,
         ) as tmpdir_valid,
         create_project_from_components(
             runner,
             BASIC_INVALID_VALUE.component_path,
             local_component_defn_to_inject=BASIC_INVALID_VALUE.component_type_filepath,
-            python_environment="uv_managed",
+            uv_sync=True,
         ) as tmpdir,
     ):
         with pushd(tmpdir), activate_venv(tmpdir / ".venv"):

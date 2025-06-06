@@ -1,5 +1,6 @@
-uvx -U create-dagster project projects/project-2 --python-environment uv_managed
+uvx -U create-dagster project projects/project-2
 
 Creating a Dagster project at /.../dagster-workspace/projects/project-2.
 Scaffolded files for Dagster project at /.../dagster-workspace/projects/project-2.
+Running `uv sync --group dev`...
 ...

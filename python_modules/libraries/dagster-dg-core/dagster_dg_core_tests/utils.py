@@ -27,7 +27,7 @@ import tomlkit
 import tomlkit.items
 from click.testing import CliRunner, Result
 from create_dagster.cli import cli as create_dagster_cli
-from dagster_dg_core.config import DgProjectPythonEnvironmentFlag, detect_dg_config_file_format
+from dagster_dg_core.config import detect_dg_config_file_format
 from dagster_dg_core.utils import (
     DG_CLI_MAX_OUTPUT_WIDTH,
     activate_venv,
@@ -221,9 +221,7 @@ def isolated_example_project_foo_bar(
     config_file_type: ConfigFileType = "pyproject.toml",
     package_layout: PackageLayoutType = "src",
     use_editable_dagster: bool = True,
-    python_environment: DgProjectPythonEnvironmentFlag = "active",
     include_entry_point: bool = False,
-    # Only works when python_environment is "active"
     uv_sync: bool = False,
 ) -> Iterator[Path]:
     """Scaffold a project named foo_bar in an isolated filesystem.
@@ -237,10 +235,7 @@ def isolated_example_project_foo_bar(
         component_dirs: A list of component directories that will be copied into the project component root.
         use_editable_dagster: Whether to use an editable install of dagster.
     """
-    if python_environment == "active":
-        uv_sync_args = ["--uv-sync"] if uv_sync else ["--no-uv-sync"]
-    else:
-        uv_sync_args = []
+    uv_sync_args = ["--uv-sync"] if uv_sync else ["--no-uv-sync"]
 
     runner = ProxyRunner(runner) if isinstance(runner, CliRunner) else runner
     dagster_git_repo_dir = str(discover_git_root(Path(__file__)))
@@ -254,7 +249,6 @@ def isolated_example_project_foo_bar(
             "project",
             "foo-bar",
             *uv_sync_args,
-            *["--python-environment", python_environment],
             *(["--use-editable-dagster", dagster_git_repo_dir] if use_editable_dagster else []),
         ]
         result = runner.invoke_create_dagster(*args)
@@ -279,7 +273,7 @@ def isolated_example_project_foo_bar(
             with modify_toml_as_dict(Path("foo-bar/pyproject.toml")) as toml:
                 create_toml_node(toml, ("tool", "hatch", "build", "packages"), ["foo_bar"])
 
-            if python_environment == "active" and not uv_sync:
+            if not uv_sync:
                 # Reinstall to venv since package root changed
                 install_to_venv(Path("foo-bar/.venv"), ["-e", "foo-bar"])
 
@@ -297,9 +291,9 @@ def isolated_example_project_foo_bar(
                 if Path(".venv").exists():
                     install_to_venv(Path(".venv"), ["-e", "."])
 
-            # if in "active" mode, add inject the parent directory to sys.path so the modules
+            # inject the parent directory to sys.path so the modules
             # can be imported in this process
-            injected_path = str(module_parent_dir) if python_environment == "active" else None
+            injected_path = str(module_parent_dir)
 
             # dont insert at 0 to avoid removal by defensive code in load_python_module
             if injected_path:
@@ -320,8 +314,7 @@ def isolated_example_component_library_foo_bar(
     with isolated_example_project_foo_bar(
         runner,
         in_workspace=False,
-        # need to pip install to register plugins
-        python_environment="uv_managed",
+        uv_sync=True,
     ):
         shutil.rmtree(Path("src/foo_bar/defs"))
 
@@ -732,8 +725,8 @@ def create_project_from_components(
     runner: ProxyRunner,
     *src_paths: str,
     local_component_defn_to_inject: Optional[Path] = None,
-    python_environment: DgProjectPythonEnvironmentFlag = "active",
     in_workspace: bool = True,
+    uv_sync: bool = False,
 ) -> Iterator[Path]:
     """Scaffolds a project with the given components in a temporary directory,
     injecting the provided local component defn into each component's __init__.py.
@@ -742,8 +735,8 @@ def create_project_from_components(
     with isolated_example_project_foo_bar(
         runner,
         component_dirs=origin_paths,
-        python_environment=python_environment,
         in_workspace=in_workspace,
+        uv_sync=uv_sync,
     ):
         for src_path in src_paths:
             components_dir = Path.cwd() / "src" / "foo_bar" / "defs" / src_path.split("/")[-1]
