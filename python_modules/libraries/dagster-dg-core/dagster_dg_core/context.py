@@ -124,6 +124,7 @@ class DgContext:
                 )
             exit_with_error(NOT_PROJECT_ERROR_MESSAGE)
         _validate_project_venv_activated(context)
+        _validate_autoload_defs(context)
         return context
 
     @classmethod
@@ -360,6 +361,10 @@ class DgContext:
         else:
             raise DgError("Cannot determine root package name")
 
+    @property
+    def root_module_path(self) -> Path:
+        return self.get_path_for_local_module(self.root_module_name)
+
     # ########################
     # ##### PROJECT METHODS
     # ########################
@@ -465,10 +470,6 @@ class DgContext:
         if not self.config.project:
             raise DgError(
                 "`code_location_target_module_name` is only available in a Dagster project context"
-            )
-        if self.config.project.autoload_defs:
-            raise DgError(
-                "`code_location_target_module_name` is not valid when autoload_defs is enabled"
             )
         return (
             self.config.project.code_location_target_module
@@ -719,6 +720,33 @@ def _validate_plugin_entry_point(context: DgContext) -> None:
                 """,
                 context.config.cli.suppress_warnings,
             )
+
+
+def _validate_autoload_defs(context: DgContext) -> None:
+    """If the project has autoload_defs enabled, warn on the presence of a sibling definitions.py."""
+    if not context.config.project:
+        raise DgError("`_validate_autoload_defs` is only available in a Dagster project context")
+
+    # We only issue this warning for the default code location target module setting, since we catch
+    # a non-default setting during config validation.
+    if (
+        context.config.project.autoload_defs
+        and (
+            context.root_module_path / f"{_DEFAULT_PROJECT_CODE_LOCATION_TARGET_MODULE}.py"
+        ).exists()
+    ):
+        emit_warning(
+            "autoload_defs_with_definitions_py",
+            f"""
+            `project.autoload_defs` is enabled, but a code location load target module was also found at:
+
+                {context.code_location_target_path}
+
+            When `project.autoload_defs` is enabled, the code location load target module is not
+            automatically loaded. Consider removing the module at the above path to avoid confusion.
+        """,
+            context.config.cli.suppress_warnings,
+        )
 
 
 DG_UPDATE_CHECK_INTERVAL = datetime.timedelta(hours=1)
