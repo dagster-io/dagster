@@ -17,6 +17,7 @@ from dagster import Component, ComponentLoadContext, Definitions
 from dagster._utils import alter_sys_path, pushd
 from dagster._utils.pydantic_yaml import enrich_validation_errors_with_source_position
 from dagster.components.core.defs_module import context_with_injected_scope
+from dagster.components.core.tree import ComponentTree
 from dagster.components.utils import ensure_loadable_path
 from dagster_shared import check
 from dagster_shared.yaml_utils import parse_yaml_with_source_position
@@ -31,7 +32,7 @@ def load_context_and_component_for_test(
     attrs: Union[str, dict[str, Any]],
     template_vars_module: Optional[str] = None,
 ) -> tuple[ComponentLoadContext, T_Component]:
-    context = ComponentLoadContext.for_test()
+    context = ComponentTree.for_test().load_context
     model_cls = check.not_none(
         component_type.get_model_cls(), "Component must have schema for direct test"
     )

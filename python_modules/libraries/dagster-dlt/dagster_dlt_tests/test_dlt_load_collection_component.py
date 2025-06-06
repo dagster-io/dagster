@@ -10,12 +10,13 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Callable, Optional, cast
 
 import pytest
-from dagster import AssetKey, ComponentLoadContext
+from dagster import AssetKey
 from dagster._core.definitions import materialize
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._utils import pushd
 from dagster._utils.env import environ
+from dagster.components.core.tree import ComponentTree
 from dagster.components.testing import scaffold_defs_sandbox
 from dagster_dlt import DagsterDltResource, DltLoadCollectionComponent
 from dagster_dlt.components.dlt_load_collection.component import DltLoadSpecModel
@@ -307,7 +308,7 @@ def test_translation(
 
 
 def test_python_interface(dlt_pipeline: Pipeline):
-    context = ComponentLoadContext.for_test()
+    context = ComponentTree.for_test().load_context
     defs = DltLoadCollectionComponent(
         loads=[
             DltLoadSpecModel(
@@ -373,7 +374,7 @@ def test_execute_component(dlt_pipeline: Pipeline):
                 pipeline=dlt_pipeline,
             )
         ]
-    ).build_defs(ComponentLoadContext.for_test())
+    ).build_defs(ComponentTree.for_test().load_context)
 
     asset_def = cast("AssetsDefinition", next(iter(defs.assets or [])))
     result = materialize(
