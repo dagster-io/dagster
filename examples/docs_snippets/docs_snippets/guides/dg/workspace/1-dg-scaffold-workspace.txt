@@ -1,4 +1,4 @@
-uvx create-dagster workspace dagster-workspace && cd dagster-workspace
+uvx -U create-dagster workspace dagster-workspace && cd dagster-workspace
 
 Creating a Dagster workspace at dagster-workspace.
 Scaffolded files for Dagster workspace at /.../dagster-workspace.

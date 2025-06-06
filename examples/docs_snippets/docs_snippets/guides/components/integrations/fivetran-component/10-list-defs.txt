@@ -1,5 +1,14 @@
 dg list defs
 
+Your project is configured with `project.python_environment.active = true`, but the active
+virtual environment does not match the virtual environment found in the project root
+directory. This may lead to unexpected behavior when running `dg` commands.
+
+    active virtual environment: /.../my-project/src/../.venv
+    project virtual environment: /.../my-project/.venv
+
+To suppress this warning, add "project_and_activated_venv_mismatch" to the `cli.suppress_warnings` list in your configuration.
+
 ┏━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
 ┃ Section ┃ Definitions                                                                                                ┃
 ┡━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
