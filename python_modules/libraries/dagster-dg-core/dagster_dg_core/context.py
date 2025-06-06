@@ -671,7 +671,9 @@ def _validate_project_venv_activated(context: DgContext) -> None:
         )
     activated_venv = get_activated_venv()
     project_venv = context.root_path / ".venv"
-    if project_venv.exists() and project_venv != activated_venv:
+    if project_venv.exists() and (
+        not activated_venv or project_venv.resolve() != activated_venv.resolve()
+    ):
         msg = generate_project_and_activated_venv_mismatch_warning(project_venv, activated_venv)
         emit_warning(
             "project_and_activated_venv_mismatch",
