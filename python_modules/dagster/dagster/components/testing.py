@@ -257,9 +257,11 @@ def get_all_components_defs_within_project(
         from dagster_dg_core.config import discover_config_file
         from dagster_dg_core.context import DgContext
     except ImportError:
+
         raise Exception(
-            "dagster_dg_core is not installed. Please install it to use to get default project_name and defs module from pyproject.toml or dg.toml."
+            "dagster_dg_core is not installed. Please install it to use default project_name and defs module from pyproject.toml or dg.toml."
         )
+
 
     project_root = Path(project_root)
     component_path = Path(component_path)
