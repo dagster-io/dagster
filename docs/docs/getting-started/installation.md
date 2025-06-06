@@ -68,9 +68,24 @@ create-dagster project my-project
 
 </Tabs>
 
-### Verifying your new project
+## Alternative: Manual installation in a virtual environment
 
-After creating your project, navigate to the project directory, activate the Python virtual environment, and verify the installation:
+If you prefer to set up Dagster manually or are installing it into an existing project, you can install Dagster directly into your Python environment.
+
+### Installing Dagster
+
+<Tabs>
+<TabItem value="uv" label="uv">
+  <CliInvocationExample contents="uv add dagster dagster-webserver dagster-dg-cli" />
+</TabItem>
+<TabItem value="pip" label="pip">
+  <CliInvocationExample contents="pip install dagster dagster-webserver dagster-dg-cli" />
+</TabItem>
+</Tabs>
+
+## Verifying your new project
+
+To verify that Dagster is installed correctly, run the following command:
 
 <Tabs groupId="os">
   <TabItem value="mac" label="Mac">
@@ -90,26 +105,7 @@ After creating your project, navigate to the project directory, activate the Pyt
   </TabItem>
 </Tabs>
 
-## Alternative: Manual installation in a virtual environment
-
-If you prefer to set up Dagster manually or are installing it into an existing project, you can install Dagster directly into your Python environment.
-
-### Installing Dagster
-
-<Tabs>
-<TabItem value="uv" label="uv">
-  <CliInvocationExample contents="uv add dagster dagster-webserver dagster-dg-cli" />
-</TabItem>
-<TabItem value="pip" label="pip">
-  <CliInvocationExample contents="pip install dagster dagster-webserver dagster-dg-cli" />
-</TabItem>
-</Tabs>
-
-### Verifying installation
-
-To verify that Dagster is installed correctly, run the following command:
-
-<CliInvocationExample contents="dg --version" />
+You should be presented with the version number of `dg` in your environment.
 
 ## Troubleshooting
 
