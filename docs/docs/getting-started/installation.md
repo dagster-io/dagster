@@ -17,7 +17,7 @@ The recommended way to get started with Dagster is to create a project using the
 
 ### Using `create-dagster`
 
-The `create-dagster` utility can be installed using [Homebrew](https://brew.sh/), `curl` or invoked without installation using `uvx`.
+The `create-dagster` utility can be installed with [Homebrew](https://brew.sh/) or `curl`, or invoked without installation using `uvx`.
 
 <Tabs>
 <TabItem value="uvx" label="uvx (Recommended)">
