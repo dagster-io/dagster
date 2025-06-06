@@ -83,7 +83,7 @@ If you prefer to set up Dagster manually or are installing it into an existing p
 </TabItem>
 </Tabs>
 
-## Verifying your new project
+## Verifying your project
 
 To verify that Dagster is installed correctly, run the following command:
 
