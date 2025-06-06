@@ -187,29 +187,60 @@ class DefsPathSandbox:
     def load_all(self) -> Iterator[list[tuple[Component, Definitions]]]:
         with alter_sys_path(to_add=[str(self.project_root / "src")], to_remove=[]):
             module_path = f"{self.project_name}.defs.{self.component_path}"
-
             try:
-                module = importlib.import_module(module_path)
-                context = ComponentLoadContext.for_module(
-                    defs_module=module,
+                yield get_all_components_defs_from_defs_path(
                     project_root=self.project_root,
-                    terminate_autoloading_on_keyword_files=False,
+                    component_path=self.component_path,
+                    project_name=self.project_name,
                 )
-                components = self.flatten_components(get_component(context))
-                yield [(component, component.build_defs(context)) for component in components]
 
             finally:
                 modules_to_remove = [name for name in sys.modules if name.startswith(module_path)]
                 for name in modules_to_remove:
                     del sys.modules[name]
 
-    def flatten_components(self, parent_component: Optional[Component]) -> list[Component]:
-        if isinstance(parent_component, CompositeYamlComponent):
-            return list(parent_component.components)
-        elif isinstance(parent_component, Component):
-            return [parent_component]
-        else:
-            return []
+
+def flatten_components(parent_component: Optional[Component]) -> list[Component]:
+    if isinstance(parent_component, CompositeYamlComponent):
+        return list(parent_component.components)
+    elif isinstance(parent_component, Component):
+        return [parent_component]
+    else:
+        return []
+
+
+def get_all_components_defs_from_defs_path(
+    *,
+    project_name: str,
+    project_root: Path,
+    component_path: Path,
+    defs_module_name: str = "defs",
+) -> list[tuple[Component, Definitions]]:
+    module_path = f"{project_name}.{defs_module_name}.{component_path}"
+    module = importlib.import_module(module_path)
+    context = ComponentLoadContext.for_module(
+        defs_module=module,
+        project_root=project_root,
+        terminate_autoloading_on_keyword_files=False,
+    )
+    components = flatten_components(get_component(context))
+    return [(component, component.build_defs(context)) for component in components]
+
+
+def get_component_defs_from_defs_path(
+    *,
+    project_name: str,
+    project_root: Path,
+    component_path: Path,
+) -> tuple[Component, Definitions]:
+    components = get_all_components_defs_from_defs_path(
+        project_name=project_name, project_root=project_root, component_path=component_path
+    )
+    check.invariant(
+        len(components) == 1,
+        "Only one component is supported. To get all components use get_all_components_defs_from_defs_path.",
+    )
+    return components[0]
 
 
 @contextmanager
