@@ -1786,3 +1786,22 @@ def test_forward_ref_flow() -> None:
     # now it works
     call = build_check_call(ttype, "ok", eval_ctx)
     call([Late()])
+
+
+def test_never():
+    def _val() -> Union[int, str]:
+        return 4
+
+    v = _val()
+    if isinstance(v, str):
+        ...
+    elif isinstance(v, int):
+        ...
+    else:
+        check.assert_never(v)
+
+    with pytest.raises(check.CheckError, match=r"Unhandled value: 4 \(int\)"):
+        if isinstance(v, str):
+            ...
+        else:
+            check.assert_never(v)  # type: ignore # good job type checker

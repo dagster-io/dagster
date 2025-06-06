@@ -92,4 +92,4 @@ In Dagster+, you can set up alerts to notify you when assets are overdue for an 
 ## Next steps
 
 - Explore more [asset checks](/guides/test/asset-checks)
-- Explore how to [raise alerts when assets are overdue]/guides/monitor/alerts) (Dagster+ Pro)
+- Explore how to [raise alerts when assets are overdue](/guides/monitor/alerts) (Dagster+ Pro)

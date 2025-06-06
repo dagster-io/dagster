@@ -185,6 +185,9 @@ async def _get_is_currently_failed_and_latest_terminal_run_id(
             latest_record.run_id if latest_record else None,
         )
 
+    if asset_entry.last_run_id is None:
+        return False, None
+
     # if failure events are not stored, we usually have to fetch the run record to check if the
     # asset is currently failed. However, if the latest run id is the same as the last materialization run id,
     # then we know the asset is in a successfully materialized state.
@@ -194,8 +197,8 @@ async def _get_is_currently_failed_and_latest_terminal_run_id(
     ):
         return False, asset_entry.last_materialization.run_id
 
-    run_record = await RunRecord.gen(loading_context, check.not_none(asset_entry.last_run_id))
-    if run_record is None or not run_record.dagster_run.is_finished:
+    run_record = await RunRecord.gen(loading_context, asset_entry.last_run_id)
+    if run_record is None or not run_record.dagster_run.is_finished or run_record.end_time is None:
         # the run is deleted or in progress. With the information we have available, we cannot know
         # if the asset is in a failed state prior to this run. Historically, we have resorted to
         # reporting the asset as materialized if it has ever been materialized, and otherwise report it
@@ -205,10 +208,9 @@ async def _get_is_currently_failed_and_latest_terminal_run_id(
             asset_entry.last_materialization.run_id if asset_entry.last_materialization else None,
         )
 
-    run_end_time = check.not_none(run_record.end_time)
     if (
         asset_entry.last_materialization
-        and asset_entry.last_materialization.timestamp > run_end_time
+        and asset_entry.last_materialization.timestamp > run_record.end_time
     ):
         # the latest materialization was reported manually
         return False, asset_entry.last_materialization.run_id

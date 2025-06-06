@@ -7,7 +7,6 @@ from dagster.components.component_scaffolding import scaffold_component as scaff
 from dagster.components.components import (
     DefinitionsComponent as DefinitionsComponent,  # back-compat
     DefsFolderComponent as DefsFolderComponent,
-    PipesSubprocessScriptCollectionComponent as PipesSubprocessScriptCollectionComponent,
 )
 from dagster.components.core.context import ComponentLoadContext as ComponentLoadContext
 from dagster.components.core.load_defs import (

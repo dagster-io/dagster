@@ -1,25 +1,33 @@
 import inspect
 from textwrap import dedent
+from typing import Callable
 
 from dagster._core.definitions.asset_key import AssetCheckKey, AssetKey
 from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.materialize import materialize
 from dagster._core.definitions.metadata.metadata_value import TextMetadataValue
-from dagster.components.lib.executable_component.subprocess_component import (
-    SubprocessComponent,
-    SubprocessSpec,
+from dagster.components.lib.executable_component.python_script_component import (
+    PythonScriptComponent,
+    ScriptSpec,
 )
 from dagster.components.testing import scaffold_defs_sandbox
 
 
+def get_function_content(fn: Callable) -> str:
+    raw_source = inspect.getsource(fn)
+    raw_source = "\n".join(raw_source.split("\n")[1:])
+    raw_source = dedent(raw_source)
+    return raw_source
+
+
 def test_pipes_subprocess_script_hello_world() -> None:
-    with scaffold_defs_sandbox(component_cls=SubprocessComponent) as sandbox:
+    with scaffold_defs_sandbox(component_cls=PythonScriptComponent) as sandbox:
         execute_path = sandbox.defs_folder_path / "script.py"
         execute_path.write_text("print('hello world')")
 
         with sandbox.load(
             component_body={
-                "type": "dagster.components.lib.executable_component.subprocess_component.SubprocessComponent",
+                "type": "dagster.components.lib.executable_component.python_script_component.PythonScriptComponent",
                 "attributes": {
                     "execution": {
                         "name": "op_name",
@@ -33,8 +41,8 @@ def test_pipes_subprocess_script_hello_world() -> None:
                 },
             }
         ) as (component, defs):
-            assert isinstance(component, SubprocessComponent)
-            assert isinstance(component.execution, SubprocessSpec)
+            assert isinstance(component, PythonScriptComponent)
+            assert isinstance(component.execution, ScriptSpec)
             assets_def = defs.get_assets_def("asset")
             result = materialize([assets_def])
             assert result.success
@@ -50,7 +58,7 @@ def test_pipes_subprocess_script_with_custom_materialize_result() -> None:
             with open_dagster_pipes() as context:
                 context.report_asset_materialization(metadata={"foo": "bar"})
 
-    with scaffold_defs_sandbox(component_cls=SubprocessComponent) as sandbox:
+    with scaffold_defs_sandbox(component_cls=PythonScriptComponent) as sandbox:
         raw_source = inspect.getsource(code_to_copy)
         raw_source = "\n".join(raw_source.split("\n")[1:])
         raw_source = dedent(raw_source)
@@ -60,7 +68,7 @@ def test_pipes_subprocess_script_with_custom_materialize_result() -> None:
 
         with sandbox.load(
             component_body={
-                "type": "dagster.components.lib.executable_component.subprocess_component.SubprocessComponent",
+                "type": "dagster.components.lib.executable_component.python_script_component.PythonScriptComponent",
                 "attributes": {
                     "execution": {
                         "path": "op_name.py",
@@ -73,8 +81,8 @@ def test_pipes_subprocess_script_with_custom_materialize_result() -> None:
                 },
             }
         ) as (component, defs):
-            assert isinstance(component, SubprocessComponent)
-            assert isinstance(component.execution, SubprocessSpec)
+            assert isinstance(component, PythonScriptComponent)
+            assert isinstance(component.execution, ScriptSpec)
             assets_def = defs.get_assets_def("asset")
             result = materialize([assets_def])
             assert result.success
@@ -85,10 +93,10 @@ def test_pipes_subprocess_script_with_custom_materialize_result() -> None:
 
 
 def test_pipes_subprocess_script_with_name_override() -> None:
-    with scaffold_defs_sandbox(component_cls=SubprocessComponent) as sandbox:
+    with scaffold_defs_sandbox(component_cls=PythonScriptComponent) as sandbox:
         with sandbox.load(
             component_body={
-                "type": "dagster.components.lib.executable_component.subprocess_component.SubprocessComponent",
+                "type": "dagster.components.lib.executable_component.python_script_component.PythonScriptComponent",
                 "attributes": {
                     "execution": {
                         "name": "op_name_override",
@@ -117,17 +125,13 @@ def test_pipes_subprocess_script_with_checks_only() -> None:
                     passed=True,
                 )
 
-    with scaffold_defs_sandbox(component_cls=SubprocessComponent) as sandbox:
-        raw_source = inspect.getsource(code_to_copy)
-        raw_source = "\n".join(raw_source.split("\n")[1:])
-        raw_source = dedent(raw_source)
-
+    with scaffold_defs_sandbox(component_cls=PythonScriptComponent) as sandbox:
         execute_path = sandbox.defs_folder_path / "only_checks.py"
-        execute_path.write_text(raw_source)
+        execute_path.write_text(get_function_content(code_to_copy))
 
         with sandbox.load(
             component_body={
-                "type": "dagster.components.lib.executable_component.subprocess_component.SubprocessComponent",
+                "type": "dagster.components.lib.executable_component.python_script_component.PythonScriptComponent",
                 "attributes": {
                     "execution": {
                         "path": "only_checks.py",
@@ -141,8 +145,8 @@ def test_pipes_subprocess_script_with_checks_only() -> None:
                 },
             }
         ) as (component, defs):
-            assert isinstance(component, SubprocessComponent)
-            assert isinstance(component.execution, SubprocessSpec)
+            assert isinstance(component, PythonScriptComponent)
+            assert isinstance(component.execution, ScriptSpec)
             asset_check_key = AssetCheckKey(AssetKey("asset"), "check_name")
             check_def = defs.get_asset_checks_def(asset_check_key)
             result = materialize([check_def], selection=AssetSelection.all_asset_checks())
@@ -154,3 +158,93 @@ def test_pipes_subprocess_script_with_checks_only() -> None:
             assert evaluation.passed
             assert evaluation.asset_key == AssetKey("asset")
             assert evaluation.check_name == "check_name"
+
+
+def test_pipes_subprocess_with_args() -> None:
+    def op_name_contents():
+        import sys
+
+        from dagster_pipes import open_dagster_pipes
+
+        if __name__ == "__main__":
+            with open_dagster_pipes() as context:
+                context.report_asset_materialization(metadata={"arg": sys.argv[1]})
+
+    def template_vars_content():
+        from dagster.components.component.template_vars import template_var
+
+        @template_var
+        def arg_list():
+            return ["arg_value"]
+
+    with scaffold_defs_sandbox(component_cls=PythonScriptComponent) as sandbox:
+        execute_path = sandbox.defs_folder_path / "op_name.py"
+        execute_path.write_text(get_function_content(op_name_contents))
+        template_vars_path = sandbox.defs_folder_path / "template_vars.py"
+        template_vars_path.write_text(get_function_content(template_vars_content))
+        with sandbox.load(
+            component_body={
+                "type": "dagster.components.lib.executable_component.python_script_component.PythonScriptComponent",
+                "attributes": {
+                    "execution": {
+                        "path": "op_name.py",
+                        "args": "{{ arg_list }}",
+                    },
+                    "assets": [
+                        {
+                            "key": "asset",
+                        }
+                    ],
+                },
+                "template_vars_module": ".template_vars",
+            }
+        ) as (component, defs):
+            assert isinstance(component, PythonScriptComponent)
+            assert isinstance(component.execution, ScriptSpec)
+            assert component.execution.args == ["arg_value"]
+            assets_def = defs.get_assets_def("asset")
+            result = materialize([assets_def])
+            assert result.success
+            mats = result.asset_materializations_for_node("op_name")
+            assert len(mats) == 1
+            assert mats[0].metadata == {"arg": TextMetadataValue("arg_value")}
+
+
+def test_pipes_subprocess_with_inline_str() -> None:
+    def op_name_contents():
+        import sys
+
+        from dagster_pipes import open_dagster_pipes
+
+        if __name__ == "__main__":
+            with open_dagster_pipes() as context:
+                context.report_asset_materialization(metadata={"arg": sys.argv[1]})
+
+    with scaffold_defs_sandbox(component_cls=PythonScriptComponent) as sandbox:
+        execute_path = sandbox.defs_folder_path / "op_name.py"
+        execute_path.write_text(get_function_content(op_name_contents))
+        with sandbox.load(
+            component_body={
+                "type": "dagster.components.lib.executable_component.python_script_component.PythonScriptComponent",
+                "attributes": {
+                    "execution": {
+                        "path": "op_name.py",
+                        "args": "arg_value",
+                    },
+                    "assets": [
+                        {
+                            "key": "asset",
+                        }
+                    ],
+                },
+            }
+        ) as (component, defs):
+            assert isinstance(component, PythonScriptComponent)
+            assert isinstance(component.execution, ScriptSpec)
+            assert component.execution.args == "arg_value"
+            assets_def = defs.get_assets_def("asset")
+            result = materialize([assets_def])
+            assert result.success
+            mats = result.asset_materializations_for_node("op_name")
+            assert len(mats) == 1
+            assert mats[0].metadata == {"arg": TextMetadataValue("arg_value")}
