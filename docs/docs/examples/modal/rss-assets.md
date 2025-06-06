@@ -13,6 +13,7 @@ The Modal application is ready, so we can return to Dagster and define the upstr
   language="python"
   startAfter="start_podcast_audio"
   endBefore="end_podcast_audio"
+  title="project_dagster_modal_pipes/project_dagster_modal_pipes/defs/pipeline_factory.py"
 />
 
 Now that the data is in R2, as Modal expects, we can invoke the Modal application via Dagster. We will do this using [Dagster Pipes](/guides/build/external-pipelines/). Pipes provide a wrapper around a subprocess. This is ideal for executing code in other environments, and also allows us to pass Dagster any necessary context or environment variables to Modal. This is particularly helpful for things like the access keys for the R2 Bucket. Using the Dagster `ModalClient` from the [`dagster-modal`](/integrations/libraries/modal) integration, we can invoke the Modal application:
@@ -22,6 +23,7 @@ Now that the data is in R2, as Modal expects, we can invoke the Modal applicatio
   language="python"
   startAfter="start_transcription"
   endBefore="end_transcription"
+  title="project_dagster_modal_pipes/project_dagster_modal_pipes/defs/pipeline_factory.py"
 />
 
 Using pipes, Modal will emit events back to Dagster so Dagster can monitor and wait for the Modal application to finish running. Dagster will then continue the orchestration of our assets and move on to the next step after the transcribed text files are uploaded to R2.
@@ -33,6 +35,7 @@ The next asset will take those new files and summarize them with OpenAI. After a
   language="python"
   startAfter="start_summary"
   endBefore="end_summary"
+  title="project_dagster_modal_pipes/project_dagster_modal_pipes/defs/pipeline_factory.py"
 />
 
 The final step in our DAG pipeline emails the summary to the user with [yagmail](https://github.com/kootenpv/yagmail).

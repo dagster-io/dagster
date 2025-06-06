@@ -30,4 +30,7 @@ directory_type = "project"
 
 [tool.dg.project]
 root_module = "project_dagster_modal_pipes"
-code_location_target_module = "project_dagster_modal_pipes.definitions"
+autoload_defs = true
+
+[tool.dg.project.python_environment]
+active = true
