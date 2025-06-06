@@ -2,7 +2,6 @@ import importlib
 import secrets
 import shutil
 import string
-import sys
 
 import yaml
 from dagster_shared import check
@@ -185,31 +184,38 @@ class DefsPathSandbox:
 
     @contextmanager
     def load_all(self) -> Iterator[list[tuple[Component, Definitions]]]:
-        with alter_sys_path(to_add=[str(self.project_root / "src")], to_remove=[]):
-            module_path = f"{self.project_name}.defs.{self.component_path}"
+        with load_all_components_defs_from_defs_path(
+            context=ComponentLoadContext.for_test(),
+            defs_path=self.defs_folder_path / "defs.yaml",
+        ) as components:
+            yield components
 
-            try:
-                module = importlib.import_module(module_path)
-                context = ComponentLoadContext.for_module(
-                    defs_module=module,
-                    project_root=self.project_root,
-                    terminate_autoloading_on_keyword_files=False,
-                )
-                components = self.flatten_components(get_component(context))
-                yield [(component, component.build_defs(context)) for component in components]
 
-            finally:
-                modules_to_remove = [name for name in sys.modules if name.startswith(module_path)]
-                for name in modules_to_remove:
-                    del sys.modules[name]
+def flatten_components(parent_component: Optional[Component]) -> list[Component]:
+    if isinstance(parent_component, CompositeYamlComponent):
+        return list(parent_component.components)
+    elif isinstance(parent_component, Component):
+        return [parent_component]
+    else:
+        return []
 
-    def flatten_components(self, parent_component: Optional[Component]) -> list[Component]:
-        if isinstance(parent_component, CompositeYamlComponent):
-            return list(parent_component.components)
-        elif isinstance(parent_component, Component):
-            return [parent_component]
-        else:
-            return []
+
+@contextmanager
+def load_all_components_defs_from_defs_path(
+    *,
+    context: ComponentLoadContext,
+    defs_path: Path,
+) -> Iterator[list[tuple[Component, Definitions]]]:
+    with alter_sys_path(to_add=[str(context.project_root / "src")], to_remove=[]):
+        module_path = f"{context.project_root.name}.defs.{defs_path.name}"
+        module = importlib.import_module(module_path)
+        context_for_module = ComponentLoadContext.for_module(
+            defs_module=module,
+            project_root=context.project_root,
+            terminate_autoloading_on_keyword_files=False,
+        )
+        components = flatten_components(get_component(context_for_module))
+        yield [(component, component.build_defs(context_for_module)) for component in components]
 
 
 @contextmanager
