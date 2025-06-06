@@ -28,9 +28,7 @@ First, install the Python package manager [`uv`](https://docs.astral.sh/uv/) if 
 
 Then run the `create-dagster` command using `uvx`:
 
-```bash
-uvx create-dagster project my-project
-```
+<CliInvocationExample contents="uvx create-dagster project my-project" />
 
 </TabItem>
 
@@ -72,33 +70,25 @@ create-dagster project my-project
 
 After creating your project, navigate to the project directory, activate the Python virtual environment, and verify the installation:
 
-```bash
-cd my-project
-source .venv/bin/activate
-dg --version
-```
+
+<CliInvocationExample contents="cd my-project" />
+
+<CliInvocationExample contents="source .venv/bin/activate" />
+
+<CliInvocationExample contents="dg --version" />
 
 ## Alternative: Manual installation in a virtual environment
 
-If you prefer to set up Dagster manually or are installing it into an existing project, you can install Dagster in a virtual environment.
+If you prefer to set up Dagster manually or are installing it into an existing project, you can install Dagster directly into your Python environment.
 
 ### Installing Dagster
 
 <Tabs>
 <TabItem value="uv" label="uv">
-
-```bash
-uv add dagster dagster-webserver dagster-dg-cli
-```
-
+  <CliInvocationExample contents="uv add dagster dagster-webserver dagster-dg-cli" />
 </TabItem>
-
 <TabItem value="pip" label="pip">
-
-```bash
-pip install dagster dagster-webserver dagster-dg-cli
-```
-
+  <CliInvocationExample contents="pip install dagster dagster-webserver dagster-dg-cli" />
 </TabItem>
 </Tabs>
 
@@ -106,16 +96,7 @@ pip install dagster dagster-webserver dagster-dg-cli
 
 To verify that Dagster is installed correctly, run the following command:
 
-```bash
-dagster --version
-```
-
-The version numbers of Dagster should be printed in the terminal:
-
-```bash
-> dagster --version
-dagster, version 1.8.4
-```
+<CliInvocationExample contents="dg --version" />
 
 ## Troubleshooting
 
