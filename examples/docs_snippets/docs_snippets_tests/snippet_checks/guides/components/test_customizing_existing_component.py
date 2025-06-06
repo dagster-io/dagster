@@ -71,7 +71,7 @@ def test_components_docs_adding_attributes_to_assets(
                 ("--python-environment uv_managed --use-editable-dagster ", ""),
                 ("--editable.*dagster-sling", "dagster-sling"),
                 (".*&& source my-project/.venv/bin/activate.*\n", ""),
-                ("create-dagster", "uvx create-dagster"),
+                ("create-dagster", "uvx-U create-dagster"),
             ],
             ignore_output=True,
         )
