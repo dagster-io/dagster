@@ -1190,8 +1190,8 @@ class SensorExecutionData(IHaveNew):
             dagster_run_reactions=dagster_run_reactions,
             log_key=log_key,
             dynamic_partitions_requests=dynamic_partitions_requests,
-            asset_events=asset_events,
-            automation_condition_evaluations=automation_condition_evaluations,
+            asset_events=asset_events or [],
+            automation_condition_evaluations=automation_condition_evaluations or [],
         )
 
 
