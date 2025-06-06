@@ -1,6 +1,3 @@
-import inspect
-from textwrap import dedent
-
 from dagster._core.definitions.asset_key import CoercibleToAssetKey
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.assets import AssetsDefinition
@@ -13,7 +10,7 @@ from dagster.components.lib.executable_component.function_component import (
     FunctionComponent,
     FunctionSpec,
 )
-from dagster.components.testing import scaffold_defs_sandbox
+from dagster.components.testing import copy_code_to_file, scaffold_defs_sandbox
 
 
 def asset_in_component(component: FunctionComponent, key: CoercibleToAssetKey) -> AssetsDefinition:
@@ -123,15 +120,15 @@ def test_resource_usage() -> None:
 
 
 def test_local_import() -> None:
-    def execute_fn_to_copy(context):
-        from dagster import MaterializeResult
+    def code_to_copy():
+        def execute_fn_to_copy(context):
+            from dagster import MaterializeResult
 
-        return MaterializeResult(metadata={"foo": "bar"})
+            return MaterializeResult(metadata={"foo": "bar"})
 
     with scaffold_defs_sandbox(component_cls=FunctionComponent) as sandbox:
-        execute_fn_content = inspect.getsource(execute_fn_to_copy)
         execute_path = sandbox.defs_folder_path / "execute.py"
-        execute_path.write_text(dedent(execute_fn_content))
+        copy_code_to_file(code_to_copy, execute_path)
 
         with sandbox.load(
             component_body={
