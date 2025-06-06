@@ -13,7 +13,7 @@ To follow the steps in this guide, you'll need:
 
 ## Recommended: Creating a new project with create-dagster
 
-The recommended way to get started with Dagster is to create a project using the `create-dagster` command line utility. This will scaffold a Dagster project with our recommended structure, and required dependencies.
+The recommended way to get started with Dagster is to create a project using the `create-dagster` command line utility. This will scaffold a Dagster project with our recommended structure and required dependencies.
 
 ### Using `create-dagster`
 
