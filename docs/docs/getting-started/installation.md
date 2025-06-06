@@ -40,7 +40,7 @@ Now, you can run the `create-dagster` command using `uvx`:
 
 <CliInvocationExample contents="brew install dagster-io/tap/create-dagster" />
 
-Then run the `create-dagster` command:
+After installation, run the `create-dagster` command:
 
 <CliInvocationExample contents="create-dagster project my-project" />
 
