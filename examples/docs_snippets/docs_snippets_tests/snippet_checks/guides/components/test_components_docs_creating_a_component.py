@@ -140,19 +140,11 @@ def test_creating_a_component(
         )
 
         context.check_file(
-            Path("src")
-            / "my_project"
-            / "defs"
-            / "my_shell_command"
-            / "defs.yaml",
+            Path("src") / "my_project" / "defs" / "my_shell_command" / "defs.yaml",
             f"{context.get_next_snip_number()}-scaffolded-defs.yaml",
         )
         context.check_file(
-            Path("src")
-            / "my_project"
-            / "defs"
-            / "my_shell_command"
-            / "script.sh",
+            Path("src") / "my_project" / "defs" / "my_shell_command" / "script.sh",
             f"{context.get_next_snip_number()}-scaffolded-component-script.sh",
         )
         _run_command("dg launch --assets '*'")
