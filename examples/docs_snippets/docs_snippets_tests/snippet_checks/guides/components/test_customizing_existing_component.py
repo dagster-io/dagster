@@ -296,9 +296,10 @@ def test_components_docs_adding_attributes_to_assets(
                         instance: /tmp/jaffle_platform.duckdb
                   replications:
                     - path: replication.yaml
-                  asset_post_processors:
+                post_processing:
+                  processors:
                     - attributes:
-                        automation_condition: "{{{{ custom_cron('@daily') }}}}"
+                        automation_condition: "{{ custom_cron('@daily') }}"
                 """),
             snippet_path=SNIPPETS_DIR
             / component_type

@@ -16,7 +16,11 @@ from click.testing import Result
 from dagster import Component, ComponentLoadContext, Definitions
 from dagster._utils import alter_sys_path, pushd
 from dagster._utils.pydantic_yaml import enrich_validation_errors_with_source_position
-from dagster.components.core.defs_module import context_with_injected_scope
+from dagster.components.core.defs_module import (
+    context_with_injected_scope,
+    from_post_processing_dict,
+)
+from dagster.components.resolved.core_models import post_process_defs
 from dagster.components.utils import ensure_loadable_path
 from dagster_shared import check
 from dagster_shared.yaml_utils import parse_yaml_with_source_position
@@ -58,10 +62,15 @@ def load_component_for_test(
 
 
 def build_component_defs_for_test(
-    component_type: type[Component], attrs: dict[str, Any]
+    component_type: type[Component],
+    attrs: dict[str, Any],
+    post_processing: Optional[dict[str, Any]] = None,
 ) -> Definitions:
     context, component = load_context_and_component_for_test(component_type, attrs)
-    return component.build_defs(context)
+    return post_process_defs(
+        component.build_defs(context),
+        from_post_processing_dict(context.resolution_context, post_processing),
+    )
 
 
 def generate_component_lib_pyproject_toml(name: str, is_project: bool = False) -> str:
