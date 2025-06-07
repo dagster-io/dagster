@@ -5,9 +5,9 @@ import dagster as dg
 from dagster_openai import OpenAIResource
 from langchain_core.documents import Document
 
-from project_ask_ai_dagster.resources.github import GithubResource
-from project_ask_ai_dagster.resources.pinecone import PineconeResource
-from project_ask_ai_dagster.resources.scraper import SitemapScraper
+from project_ask_ai_dagster.defs.resources.github import GithubResource
+from project_ask_ai_dagster.defs.resources.pinecone import PineconeResource
+from project_ask_ai_dagster.defs.resources.scraper import SitemapScraper
 
 # start_partition
 START_TIME = "2023-01-01"

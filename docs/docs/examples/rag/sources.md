@@ -15,7 +15,7 @@ To begin we need our specific context. Our RAG system will combine two different
 To retrieve data from GitHub, we are going to borrow code from the [dagster-open-platform](https://github.com/dagster-io/dagster-open-platform). The open platform repository shows how we use Dagster internally, and GitHub is one of the data sources we use, and we wrote a resource to manage pulling that data. The [`GithubResource`](/api/libraries/dagster-github#resources) allows us to query GitHub using GraphQL. We are most interested in issues and discussions, so our resource will have two methods to retrieve that information over a given date range:
 
 <CodeExample
-  path="docs_projects/project_ask_ai_dagster/project_ask_ai_dagster/resources/github.py"
+  path="docs_projects/project_ask_ai_dagster/project_ask_ai_dagster/defs/resources/github.py"
   language="python"
   startAfter="start_resource"
   endBefore="end_resource"
@@ -28,7 +28,7 @@ Documents also allow us to add metadata. Because the metadata is unique to discu
 We now have everything we need for the `GithubResource` so we can initialize it using our `GITHUB_TOKEN`:
 
 <CodeExample
-  path="docs_projects/project_ask_ai_dagster/project_ask_ai_dagster/resources/github.py"
+  path="docs_projects/project_ask_ai_dagster/project_ask_ai_dagster/defs/resources/github.py"
   language="python"
   startAfter="start_resource_init"
   endBefore="end_resource_init"
@@ -41,7 +41,7 @@ To scrape the Dagster documentation website, we will create a separate resource.
 The first step will be taking in the sitemap URL and parsing the XML into a list of all the individual pages:
 
 <CodeExample
-  path="docs_projects/project_ask_ai_dagster/project_ask_ai_dagster/resources/scraper.py"
+  path="docs_projects/project_ask_ai_dagster/project_ask_ai_dagster/defs/resources/scraper.py"
   language="python"
   startAfter="start_sitemap"
   endBefore="end_sitemap"
@@ -50,7 +50,7 @@ The first step will be taking in the sitemap URL and parsing the XML into a list
 The next function uses `BeautifulSoup` to scrape the primary content of individual pages. As with the GitHub resource, we will use the data as a Langchain `Document`.
 
 <CodeExample
-  path="docs_projects/project_ask_ai_dagster/project_ask_ai_dagster/resources/scraper.py"
+  path="docs_projects/project_ask_ai_dagster/project_ask_ai_dagster/defs/resources/scraper.py"
   language="python"
   startAfter="start_scrape"
   endBefore="end_scrape"
@@ -59,7 +59,7 @@ The next function uses `BeautifulSoup` to scrape the primary content of individu
 Finally, we can initialize the resource:
 
 <CodeExample
-  path="docs_projects/project_ask_ai_dagster/project_ask_ai_dagster/resources/scraper.py"
+  path="docs_projects/project_ask_ai_dagster/project_ask_ai_dagster/defs/resources/scraper.py"
   language="python"
   startAfter="start_resource_init"
   endBefore="end_resource_init"
