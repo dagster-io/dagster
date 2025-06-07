@@ -8,7 +8,7 @@ import click
 from dagster_dg_core.context import DgContext
 from dagster_dg_core.utils import snakecase, validate_dagster_availability
 from dagster_shared.scaffold import scaffold_subtree
-from dagster_shared.serdes.objects.package_entry import PluginObjectKey
+from dagster_shared.serdes.objects.package_entry import DgRegistryKey
 from typing_extensions import TypeAlias
 
 ScaffoldFormatOptions: TypeAlias = Literal["yaml", "python"]
@@ -70,7 +70,7 @@ def scaffold_inline_component(
 
     component_path = full_path / f"{snakecase(typename)}.py"
     if superclass:
-        key = PluginObjectKey.from_typename(superclass)
+        key = DgRegistryKey.from_typename(superclass)
         superclass_import_lines = [
             f"from {key.namespace} import {key.name}",
         ]
@@ -106,11 +106,11 @@ def scaffold_inline_component(
 
 
 # ####################
-# ##### LIBRARY OBJECT
+# ##### REGISTRY OBJECT
 # ####################
 
 
-def scaffold_library_object(
+def scaffold_registry_object(
     path: Path,
     typename: str,
     scaffold_params: Optional[Mapping[str, Any]],
