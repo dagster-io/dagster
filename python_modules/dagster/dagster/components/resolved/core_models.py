@@ -323,6 +323,13 @@ AssetPostProcessor: TypeAlias = Annotated[
     ),
 ]
 
+
+def post_process_defs(defs: Definitions, post_processors: Optional[list[AssetPostProcessor]]):
+    for post_processor in post_processors or []:
+        defs = post_processor(defs)
+    return defs
+
+
 CORE_MODEL_SUGGESTIONS = {
     AssetKey: "ResolvedAssetKey",
     AssetSpec: "ResolvedAssetSpec",
