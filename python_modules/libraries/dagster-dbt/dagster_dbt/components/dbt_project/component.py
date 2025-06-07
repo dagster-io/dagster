@@ -13,7 +13,11 @@ from dagster._core.execution.context.asset_execution_context import AssetExecuti
 from dagster.components.component.component import Component
 from dagster.components.core.context import ComponentLoadContext
 from dagster.components.core.tree import ComponentTree
-from dagster.components.resolved.core_models import AssetAttributesModel, OpSpec, ResolutionContext
+from dagster.components.resolved.core_models import (
+    AssetAttributesModel,
+    OpMetadataSpec,
+    ResolutionContext,
+)
 from dagster.components.resolved.model import Resolver
 from dagster.components.scaffold.scaffold import scaffold_with
 from dagster.components.utils import TranslatorResolvingInfo
@@ -140,7 +144,7 @@ class DbtProjectComponent(Component, Resolvable):
     """
 
     project: ResolvedDbtProject
-    op: Optional[OpSpec] = None
+    op: Optional[OpMetadataSpec] = None
     translation: Optional[ResolvedTranslationFn] = None
     select: str = DBT_DEFAULT_SELECT
     exclude: str = DBT_DEFAULT_EXCLUDE
