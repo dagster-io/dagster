@@ -3,6 +3,7 @@ import logging
 import os
 import time
 from collections.abc import Mapping, Sequence
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta
 from functools import partial
 from typing import Any, Callable, Optional, Union
@@ -27,6 +28,7 @@ from dagster._config.pythonic_config import ConfigurableResource
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.definitions_load_context import StateBackedDefinitionsLoader
 from dagster._core.definitions.resource_definition import dagster_maintained_resource
+from dagster._core.utils import imap
 from dagster._record import as_dict, record
 from dagster._utils.cached_method import cached_method
 from dagster._vendored.dateutil import parser
@@ -64,6 +66,8 @@ FIVETRAN_CONNECTOR_PATH = f"{FIVETRAN_CONNECTOR_ENDPOINT}/"
 
 # default polling interval (in seconds)
 DEFAULT_POLL_INTERVAL = 10
+
+DEFAULT_MAX_THREADPOOL_WORKERS = 10
 
 FIVETRAN_RECONSTRUCTION_METADATA_KEY_PREFIX = "dagster-fivetran/reconstruction_metadata"
 
@@ -992,7 +996,10 @@ class FivetranWorkspace(ConfigurableResource):
             destinations_by_id[destination.id] = destination
 
             connectors_details = client.list_connectors_for_group(group_id=group_id)
-            for connector_details in connectors_details:
+
+            def _get_connector_and_schema_config_from_connector_details(
+                connector_details: Mapping[str, Any],
+            ) -> tuple[Optional[FivetranConnector], Optional[FivetranSchemaConfig]]:
                 connector = FivetranConnector.from_connector_details(
                     connector_details=connector_details,
                 )
@@ -1001,7 +1008,7 @@ class FivetranWorkspace(ConfigurableResource):
                         f"Ignoring incomplete or broken connector `{connector.name}`. "
                         f"Dagster requires a connector to be connected before fetching its data."
                     )
-                    continue
+                    return None, None
 
                 schema_config_details = client.get_schema_config_for_connector(
                     connector_id=connector.id, raise_on_not_found_error=False
@@ -1023,10 +1030,22 @@ class FivetranWorkspace(ConfigurableResource):
                         f"Dagster requires connector schema information to represent this connector, "
                         f"which is not available until this connector has been run for the first time."
                     )
-                    continue
+                    return None, None
 
-                connectors_by_id[connector.id] = connector
-                schema_configs_by_connector_id[connector.id] = schema_config
+                return connector, schema_config
+
+            with ThreadPoolExecutor(
+                max_workers=DEFAULT_MAX_THREADPOOL_WORKERS,
+                thread_name_prefix=f"fivetran_{group_id}",
+            ) as executor:
+                for connector, schema_config in imap(
+                    executor=executor,
+                    iterable=connectors_details,
+                    func=_get_connector_and_schema_config_from_connector_details,
+                ):
+                    if connector and schema_config:
+                        connectors_by_id[connector.id] = connector
+                        schema_configs_by_connector_id[connector.id] = schema_config
 
         return FivetranWorkspaceData(
             connectors_by_id=connectors_by_id,
