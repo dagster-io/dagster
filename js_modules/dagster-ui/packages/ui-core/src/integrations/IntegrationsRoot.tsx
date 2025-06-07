@@ -1,6 +1,6 @@
 import {Redirect, Switch} from 'react-router-dom';
 
-import {MarketplaceRoot} from './MarketplaceRoot';
+import {IntegrationListRoot} from './IntegrationListRoot';
 import {SingleIntegrationRoot} from './SingleIntegrationRoot';
 import {useFeatureFlags} from '../app/Flags';
 import {Route} from '../app/Route';
@@ -14,8 +14,8 @@ const IntegrationsRoot = () => {
 
   return (
     <Switch>
-      <Route path="/integrations" component={MarketplaceRoot} exact />
-      <Route path="/integrations/:integrationName" component={SingleIntegrationRoot} />
+      <Route path="/integrations" component={IntegrationListRoot} exact />
+      <Route path="/integrations/:integrationId" component={SingleIntegrationRoot} />
     </Switch>
   );
 };
