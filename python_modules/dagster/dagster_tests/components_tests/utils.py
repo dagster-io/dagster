@@ -74,10 +74,6 @@ def build_component_defs_for_test(
         pp = resolve_schema_to_post_processor(context.resolution_context, model)
         pp_list.append(pp)
 
-    import code
-
-    code.interact(local=dict(globals(), **locals()))
-
     return post_process_defs(component.build_defs(context), pp_list)
 
 
