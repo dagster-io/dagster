@@ -11,7 +11,10 @@ from dagster._core.definitions.metadata.source_code import (
 )
 from dagster.components.lib.enclosing_component import EnclosingComponent
 from dagster.components.lib.executable_component.component import OpMetadataSpec
-from dagster.components.lib.executable_component.function_component import FunctionComponent
+from dagster.components.lib.executable_component.function_component import (
+    FunctionComponent,
+    FunctionSpec,
+)
 from dagster.components.resolved.core_models import AssetAttributesModel
 from dagster.components.utils import TranslatorResolvingInfo
 from pydantic import Field
@@ -140,8 +143,8 @@ def replication_component(
         yield from iterator
 
     return FunctionComponent(
-        execution=replication_spec_model.execution.to_function_spec(
-            _execute_fn, Path(replication_spec_model.path).stem
+        execution=FunctionSpec.to_function_spec(
+            replication_spec_model.execution, _execute_fn, Path(replication_spec_model.path).stem
         ),
         assets=get_sling_asset_specs(
             replication_config=context.path / replication_spec_model.path,
