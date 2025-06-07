@@ -12,7 +12,6 @@ dbt_project = DbtProject(
     target=os.getenv("DBT_TARGET"),
 )
 dbt_project.prepare_if_dev()
-dbt_resource = DbtCliResource(project_dir=dbt_project)
 # end_dbt_project
 
 
@@ -43,8 +42,6 @@ def dbt_bluesky(context: dg.AssetExecutionContext, dbt: DbtCliResource):
 
 defs = dg.Definitions(
     assets=[dbt_bluesky],
-    resources={
-        "dbt": dbt_resource,
-    },
+    resources={},
 )
 # end_dbt_assets

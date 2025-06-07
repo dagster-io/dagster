@@ -9,7 +9,7 @@ sidebar_position: 30
 One of the hurdles in getting data from Bluesky is working within the rate limits. Let's go back and look at the `get_all_feed_items` function that extracts feed information. This function uses [tenacity](https://tenacity.readthedocs.io/en/latest/) to handle retries for the function `_get_feed_with_retries` and will back off requests if we begin to hit our limits.
 
 <CodeExample
-  path="docs_projects/project_atproto_dashboard/project_atproto_dashboard/ingestion/utils/atproto.py"
+  path="docs_projects/project_atproto_dashboard/project_atproto_dashboard/defs/assets/utils/atproto.py"
   language="python"
   startAfter="start_all_feed_items"
   endBefore="end_all_feed_items"
@@ -18,7 +18,7 @@ One of the hurdles in getting data from Bluesky is working within the rate limit
 Then if we look at the `actor_feed_snapshot` asset that uses `get_all_feed_items`, you will see one additional parameter in the decorator.
 
 <CodeExample
-  path="docs_projects/project_atproto_dashboard/project_atproto_dashboard/ingestion/definitions.py"
+  path="docs_projects/project_atproto_dashboard/project_atproto_dashboard/defs/assets/ingestion.py"
   language="python"
   startAfter="start_concurrency"
   endBefore="end_concurrency"

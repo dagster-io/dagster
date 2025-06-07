@@ -3,12 +3,11 @@ from datetime import datetime
 
 import dagster as dg
 from dagster_aws.s3 import S3Resource
-
-from project_atproto_dashboard.ingestion.resources import ATProtoResource
-from project_atproto_dashboard.ingestion.utils.atproto import (
+from project_atproto_dashboard.defs.assets.utils.atproto import (
     get_all_feed_items,
     get_all_starter_pack_members,
 )
+from project_atproto_dashboard.defs.resources import ATProtoResource
 
 AWS_BUCKET_NAME = os.environ.get("AWS_BUCKET_NAME", "dagster-demo")
 
@@ -129,24 +128,3 @@ def actor_feed_snapshot(
 
 
 # end_actor_feed_snapshot
-
-atproto_resource = ATProtoResource(
-    login=dg.EnvVar("BSKY_LOGIN"), password=dg.EnvVar("BSKY_APP_PASSWORD")
-)
-
-s3_resource = S3Resource(
-    endpoint_url=dg.EnvVar("AWS_ENDPOINT_URL"),
-    aws_access_key_id=dg.EnvVar("AWS_ACCESS_KEY_ID"),
-    aws_secret_access_key=dg.EnvVar("AWS_SECRET_ACCESS_KEY"),
-    region_name="auto",
-)
-
-# start_def
-defs = dg.Definitions(
-    assets=[starter_pack_snapshot, actor_feed_snapshot],
-    resources={
-        "atproto_resource": atproto_resource,
-        "s3_resource": s3_resource,
-    },
-)
-# end_def

@@ -51,12 +51,12 @@ Within the dbt project the `analysis` directory builds out the rest of the model
   endBefore="end_latest_feed_cte"
 />
 
-### dbt assets
+## dbt assets
 
 Moving back into Dagster, there is not too much we need to do to turn the dbt models into assets. Dagster can parse a dbt project and generate all the assets by using a path to the project directory.
 
 <CodeExample
-  path="docs_projects/project_atproto_dashboard/project_atproto_dashboard/modeling/definitions.py"
+  path="docs_projects/project_atproto_dashboard/project_atproto_dashboard/defs/assets/modeling.py"
   language="python"
   startAfter="start_dbt_project"
   endBefore="end_dbt_project"
@@ -65,7 +65,7 @@ Moving back into Dagster, there is not too much we need to do to turn the dbt mo
 We will use the `DagsterDbtTranslator` to map our ingestion assets that bring in the Bluesky data to the tables we defined in the `sources.yml`. This will ensure that everything exists as part of the same DAG and lineage within Dagster. Next we will combine the translator and dbt project to generate our Dagster assets.
 
 <CodeExample
-  path="docs_projects/project_atproto_dashboard/project_atproto_dashboard/modeling/definitions.py"
+  path="docs_projects/project_atproto_dashboard/project_atproto_dashboard/defs/assets/modeling.py"
   language="python"
   startAfter="start_dbt_assets"
   endBefore="end_dbt_assets"
