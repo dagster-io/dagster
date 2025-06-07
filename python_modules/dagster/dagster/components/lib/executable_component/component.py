@@ -21,14 +21,14 @@ from dagster.components.resolved.model import Model
 
 
 # Base class for all execution metadata
-class OpMetadataSpecBase(Model, Resolvable, ABC):
+class ExecutionMetadataSpecBase(Model, Resolvable, ABC):
     name: Optional[str] = None
     tags: Optional[dict[str, Any]] = None
     description: Optional[str] = None
     pool: Optional[str] = None
 
 
-class OpMetadataSpec(OpMetadataSpecBase): ...
+class ExecutionMetadataSpec(ExecutionMetadataSpecBase): ...
 
 
 T = TypeVar("T", bound=Union[MaterializeResult, AssetCheckResult])
@@ -66,7 +66,7 @@ class ExecutableComponent(Component, Resolvable, Model, ABC):
 
     @property
     @abstractmethod
-    def op_metadata_spec(self) -> OpMetadataSpecBase: ...
+    def op_metadata_spec(self) -> ExecutionMetadataSpecBase: ...
 
     @property
     def resource_keys(self) -> set[str]:

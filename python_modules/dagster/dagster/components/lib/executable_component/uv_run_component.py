@@ -11,7 +11,7 @@ from dagster._core.pipes.context import PipesExecutionResult
 from dagster.components.core.context import ComponentLoadContext
 from dagster.components.lib.executable_component.component import (
     ExecutableComponent,
-    OpMetadataSpecBase,
+    ExecutionMetadataSpecBase,
 )
 from dagster.components.lib.executable_component.script_utils import (
     ScriptSpec,
@@ -24,7 +24,7 @@ class UvRunComponent(ExecutableComponent):
     execution: ScriptSpec
 
     @property
-    def op_metadata_spec(self) -> OpMetadataSpecBase:
+    def op_metadata_spec(self) -> ExecutionMetadataSpecBase:
         return self._script_spec
 
     @cached_property

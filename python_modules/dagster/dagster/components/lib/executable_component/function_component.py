@@ -15,8 +15,8 @@ from dagster._core.execution.context.asset_execution_context import AssetExecuti
 from dagster.components.core.context import ComponentLoadContext
 from dagster.components.lib.executable_component.component import (
     ExecutableComponent,
-    OpMetadataSpec,
-    OpMetadataSpecBase,
+    ExecutionMetadataSpec,
+    ExecutionMetadataSpecBase,
 )
 from dagster.components.resolved.context import ResolutionContext
 from dagster.components.resolved.model import Resolver
@@ -39,13 +39,13 @@ ResolvableCallable: TypeAlias = Annotated[
 ]
 
 
-class FunctionSpec(OpMetadataSpecBase):
+class FunctionSpec(ExecutionMetadataSpecBase):
     type: Literal["function"] = "function"
     fn: ResolvableCallable
 
     @staticmethod
     def to_function_spec(
-        op_metadata_spec: OpMetadataSpec, execute_fn: Callable, default_name: str
+        op_metadata_spec: ExecutionMetadataSpec, execute_fn: Callable, default_name: str
     ) -> "FunctionSpec":
         from dagster.components.lib.executable_component.function_component import FunctionSpec
 
@@ -83,7 +83,7 @@ class FunctionComponent(ExecutableComponent):
     execution: Union[FunctionSpec, ResolvableCallable]
 
     @property
-    def op_metadata_spec(self) -> OpMetadataSpecBase:
+    def op_metadata_spec(self) -> ExecutionMetadataSpecBase:
         return (
             self.execution
             if isinstance(self.execution, FunctionSpec)

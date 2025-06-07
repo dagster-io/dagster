@@ -10,7 +10,7 @@ from dagster._core.definitions.metadata.source_code import (
     merge_code_references,
 )
 from dagster.components.lib.enclosing_component import EnclosingComponent
-from dagster.components.lib.executable_component.component import OpMetadataSpec
+from dagster.components.lib.executable_component.component import ExecutionMetadataSpec
 from dagster.components.lib.executable_component.function_component import (
     FunctionComponent,
     FunctionSpec,
@@ -70,7 +70,7 @@ class ProxyDagsterSlingTranslator(DagsterSlingTranslator):
 @dataclass
 class SlingReplicationSpecModel(dg.Resolvable):
     path: str
-    execution: OpMetadataSpec = field(default_factory=OpMetadataSpec)
+    execution: ExecutionMetadataSpec = field(default_factory=ExecutionMetadataSpec)
     translation: Optional[ResolvedTranslationFn] = None
     include_metadata: list[SlingMetadataAddons] = field(default_factory=list)
 

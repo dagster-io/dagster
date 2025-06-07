@@ -8,10 +8,10 @@ from dagster._core.execution.context.asset_check_execution_context import AssetC
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster._core.pipes.context import PipesExecutionResult
 from dagster._core.pipes.subprocess import PipesSubprocessClient
-from dagster.components.lib.executable_component.component import OpMetadataSpecBase
+from dagster.components.lib.executable_component.component import ExecutionMetadataSpecBase
 
 
-class ScriptSpec(OpMetadataSpecBase):
+class ScriptSpec(ExecutionMetadataSpecBase):
     type: Literal["script"] = "script"
     path: str
     args: Optional[Union[list[str], str]] = None
