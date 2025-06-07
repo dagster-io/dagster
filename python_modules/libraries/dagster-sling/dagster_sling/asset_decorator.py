@@ -109,14 +109,14 @@ def sling_assets(
         op_tags=op_tags,
         backfill_policy=backfill_policy,
         pool=pool,
-        specs=get_sling_specs(replication_config, dagster_sling_translator, partitions_def),
+        specs=get_sling_asset_specs(replication_config, dagster_sling_translator, partitions_def),
     )
 
 
-def get_sling_specs(
+def get_sling_asset_specs(
     replication_config: SlingReplicationParam,
-    dagster_sling_translator: Optional[DagsterSlingTranslator],
-    partitions_def: Optional[PartitionsDefinition],
+    dagster_sling_translator: Optional[DagsterSlingTranslator] = None,
+    partitions_def: Optional[PartitionsDefinition] = None,
 ) -> list[AssetSpec]:
     replication_config = validate_replication(replication_config)
 

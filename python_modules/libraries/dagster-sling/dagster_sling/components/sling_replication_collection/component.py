@@ -13,18 +13,16 @@ from dagster._core.definitions.metadata.source_code import (
 from dagster.components.component.component import Component
 from dagster.components.core.context import ComponentLoadContext
 from dagster.components.lib.enclosing_component import EnclosingComponent
-from dagster.components.lib.executable_component.function_component import (
-    FunctionComponent,
-    FunctionSpec,
-)
+from dagster.components.lib.executable_component.component import OpMetadataSpec
+from dagster.components.lib.executable_component.function_component import FunctionComponent
 from dagster.components.resolved.context import ResolutionContext
-from dagster.components.resolved.core_models import AssetAttributesModel, OpSpec
+from dagster.components.resolved.core_models import AssetAttributesModel
 from dagster.components.scaffold.scaffold import scaffold_with
 from dagster.components.utils import TranslatorResolvingInfo
 from pydantic import Field
 from typing_extensions import TypeAlias
 
-from dagster_sling.asset_decorator import get_sling_specs
+from dagster_sling.asset_decorator import get_sling_asset_specs
 from dagster_sling.components.sling_replication_collection.scaffolder import (
     SlingReplicationComponentScaffolder,
 )
@@ -74,7 +72,7 @@ class ProxyDagsterSlingTranslator(DagsterSlingTranslator):
 @dataclass
 class SlingReplicationSpecModel(Resolvable):
     path: str
-    op: Optional[OpSpec] = None
+    execution: OpMetadataSpec = field(default_factory=OpMetadataSpec)
     translation: Optional[ResolvedTranslationFn] = None
     include_metadata: list[SlingMetadataAddons] = field(default_factory=list)
 
@@ -147,14 +145,10 @@ def replication_component(
         yield from iterator
 
     return FunctionComponent(
-        execution=FunctionSpec(
-            name=replication_spec_model.op.name
-            if replication_spec_model.op and replication_spec_model.op.name
-            else Path(replication_spec_model.path).stem,
-            tags=replication_spec_model.op.tags if replication_spec_model.op else None,
-            fn=_execute_fn,
+        execution=replication_spec_model.execution.to_function_spec(
+            _execute_fn, Path(replication_spec_model.path).stem
         ),
-        assets=get_sling_specs(
+        assets=get_sling_asset_specs(
             replication_config=context.path / replication_spec_model.path,
             dagster_sling_translator=ReplicationTranslatorWithCodeReferences(
                 path=context.path,

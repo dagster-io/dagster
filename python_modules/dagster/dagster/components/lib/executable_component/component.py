@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from collections.abc import Generator, Iterable
-from typing import Any, Optional, TypeVar, Union
+from typing import Any, Callable, Optional, TypeVar, Union
 
 from dagster_shared import check
 
@@ -15,17 +15,29 @@ from dagster._core.execution.context.asset_check_execution_context import AssetC
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster.components.component.component import Component
 from dagster.components.core.context import ComponentLoadContext
+from dagster.components.lib.executable_component.function_component import FunctionSpec
 from dagster.components.resolved.base import Resolvable
 from dagster.components.resolved.core_models import ResolvedAssetCheckSpec, ResolvedAssetSpec
 from dagster.components.resolved.model import Model
 
 
 # Base class for all execution metadata
-class OpMetadataSpec(Model, Resolvable, ABC):
+class OpMetadataSpecBase(Model, Resolvable, ABC):
     name: Optional[str] = None
     tags: Optional[dict[str, Any]] = None
     description: Optional[str] = None
     pool: Optional[str] = None
+
+
+class OpMetadataSpec(OpMetadataSpecBase):
+    def to_function_spec(self, execute_fn: Callable, default_name: str) -> FunctionSpec:
+        return FunctionSpec(
+            name=self.name or default_name,
+            tags=self.tags,
+            description=self.description,
+            pool=self.pool,
+            fn=execute_fn,
+        )
 
 
 T = TypeVar("T", bound=Union[MaterializeResult, AssetCheckResult])
@@ -63,7 +75,7 @@ class ExecutableComponent(Component, Resolvable, Model, ABC):
 
     @property
     @abstractmethod
-    def op_metadata_spec(self) -> OpMetadataSpec: ...
+    def op_metadata_spec(self) -> OpMetadataSpecBase: ...
 
     @property
     def resource_keys(self) -> set[str]:
