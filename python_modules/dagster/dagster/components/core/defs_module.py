@@ -13,8 +13,8 @@ from pydantic import BaseModel, ConfigDict, TypeAdapter
 
 import dagster._check as check
 from dagster._annotations import preview, public
-from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.definitions_class import Definitions
+from dagster._core.definitions.metadata import ArbitraryMetadataMapping
 from dagster._core.definitions.metadata.source_code import (
     CodeReferencesMetadataSet,
     CodeReferencesMetadataValue,
@@ -55,14 +55,14 @@ class ComponentFileModel(BaseModel):
     requirements: Optional[ComponentRequirementsModel] = None
 
 
-def _add_defs_yaml_code_reference_to_spec(
+def _add_defs_yaml_metadata(
     component_yaml_path: Path,
     load_context: ComponentLoadContext,
     component: Component,
     source_position: SourcePosition,
-    asset_spec: AssetSpec,
-) -> AssetSpec:
-    existing_references_meta = CodeReferencesMetadataSet.extract(asset_spec.metadata)
+    metadata: ArbitraryMetadataMapping,
+) -> ArbitraryMetadataMapping:
+    existing_references_meta = CodeReferencesMetadataSet.extract(metadata)
 
     references = (
         existing_references_meta.code_references.code_references
@@ -73,18 +73,19 @@ def _add_defs_yaml_code_reference_to_spec(
         component_yaml_path, source_position, load_context
     )
 
-    return asset_spec.merge_attributes(
-        metadata={
-            **CodeReferencesMetadataSet(
-                code_references=CodeReferencesMetadataValue(
-                    code_references=[
-                        *references,
-                        *references_to_add,
-                    ],
-                )
-            ),
-        }
-    )
+    return {
+        **metadata,
+        **CodeReferencesMetadataSet(
+            code_references=CodeReferencesMetadataValue(
+                code_references=[
+                    *references,
+                    *references_to_add,
+                ],
+            )
+        ),
+        "dagster/component_origin": component,
+        # maybe ComponentPath.get_relative_key too
+    }
 
 
 class CompositeYamlComponent(Component):
@@ -97,15 +98,14 @@ class CompositeYamlComponent(Component):
 
         return Definitions.merge(
             *(
-                component.build_defs(context).permissive_map_resolved_asset_specs(
-                    func=lambda spec: _add_defs_yaml_code_reference_to_spec(
+                component.build_defs(context).with_definition_metadata_update(
+                    lambda metadata: _add_defs_yaml_metadata(
                         component_yaml_path=component_yaml,
                         load_context=context,
                         component=component,
                         source_position=source_position,
-                        asset_spec=spec,
-                    ),
-                    selection=None,
+                        metadata=metadata,
+                    )
                 )
                 for component, source_position in zip(self.components, self.source_positions)
             )
