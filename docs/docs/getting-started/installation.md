@@ -7,7 +7,7 @@ sidebar_label: Installation
 
 To follow the steps in this guide, you'll need:
 
-- To install Python 3.9 or higher. **Python 3.12 is recommended**.
+- To install Python 3.9 or higher. **Python 3.13 is recommended**.
 - To install pip, a Python package installer
 
 ## Setting up a virtual environment
