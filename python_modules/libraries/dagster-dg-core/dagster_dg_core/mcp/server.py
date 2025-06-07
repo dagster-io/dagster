@@ -5,6 +5,8 @@ from mcp.server.fastmcp import FastMCP
 
 mcp = FastMCP("dagster-dg-cli")
 
+_SUBPROCESS_TIMEOUT = 60  # seconds
+
 
 def _subprocess(command: Sequence[str], cwd: str) -> str:
     """Call to `subprocess.check_output` with exception output exposed.
@@ -18,14 +20,28 @@ def _subprocess(command: Sequence[str], cwd: str) -> str:
     Returns:
         Decoded command output.
     """
+    import shutil
+
+    # Log what we're trying to execute
+    print(f"Executing: {command} in {cwd}")
+
+    # Check if command exists
+    cmd_path = shutil.which(command[0])
+    print(f"Command path: {cmd_path}")
+
+    if not cmd_path:
+        raise Exception(f"Command not found: {command[0]}")
+
     try:
         return subprocess.check_output(
             command,
             cwd=cwd,
-            stderr=subprocess.STDOUT,
+            timeout=_SUBPROCESS_TIMEOUT,
         ).decode("utf-8")
+    except subprocess.TimeoutExpired:
+        raise Exception(f"Command timed out after {_SUBPROCESS_TIMEOUT}")
     except subprocess.CalledProcessError as e:
-        raise Exception(e.output)
+        raise Exception(f"Command failed with exit code {e.returncode}: {e.output.decode()}")
 
 
 @mcp.tool()

@@ -70,6 +70,8 @@ def test_docs_component_type_success(get_port: Optional[Callable]):
                     *(["--port", str(port)] if port else []),
                     catch_exceptions=True,
                 )
+                assert_runner_result(server_result)
+                print(server_result.output)
                 exited.set()
 
             check_thread = threading.Thread(target=run_docs, args=(runner,))

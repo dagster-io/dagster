@@ -184,7 +184,7 @@ def _fetch_plugin_manifest(entry_points: bool, extra_modules: Sequence[str]) -> 
         )
         header_message = message_match.group(1)
         entry_point_module = message_match.group(2)
-        console = Console()
+        console = Console(legacy_windows=False)
         console.print(header_message)
         console.line()
         panel = Panel(

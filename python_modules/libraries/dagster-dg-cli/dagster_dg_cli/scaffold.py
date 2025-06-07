@@ -1,4 +1,5 @@
 import json
+import os
 import textwrap
 from collections.abc import Mapping
 from pathlib import Path
@@ -92,7 +93,7 @@ def scaffold_inline_component(
     containing_module = ".".join(
         [
             dg_context.defs_module_name,
-            str(path).replace("/", "."),
+            str(path).replace(os.sep, "."),
             f"{snakecase(typename)}",
         ]
     )

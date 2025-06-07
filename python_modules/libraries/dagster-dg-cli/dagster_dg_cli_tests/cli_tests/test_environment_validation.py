@@ -1,3 +1,4 @@
+import os.path
 import subprocess
 from pathlib import Path
 
@@ -153,7 +154,7 @@ def test_no_project_failure(spec: CommandSpec) -> None:
         assert_runner_result(result, exit_0=False)
         assert "must be run inside a Dagster project directory" in result.output
         assert "You may have wanted to" in result.output
-        assert "/foo" in result.output
+        assert f"{os.sep}foo" in result.output
 
 
 @pytest.mark.parametrize(
@@ -187,7 +188,7 @@ def test_no_workspace_failure(spec: CommandSpec) -> None:
         assert_runner_result(result, exit_0=False)
         assert "must be run inside a Dagster workspace directory" in result.output
         assert "You may have wanted to" in result.output
-        assert "/foo" in result.output
+        assert f"{os.sep}foo" in result.output
 
 
 @pytest.mark.parametrize(
@@ -208,7 +209,7 @@ def test_no_workspace_or_project_failure(spec: CommandSpec) -> None:
         assert_runner_result(result, exit_0=False)
         assert "must be run inside a Dagster workspace or project directory" in result.output
         assert "You may have wanted to" in result.output
-        assert "/foo" in result.output
+        assert f"{os.sep}foo" in result.output
 
 
 # ########################
