@@ -179,8 +179,7 @@ def get_component(context: ComponentLoadContext) -> Optional[Component]:
 
 
 @dataclass
-class DefsFolderComponentYamlSchema(Resolvable):
-    asset_post_processors: Optional[Sequence[AssetPostProcessor]] = None
+class DefsFolderComponentYamlSchema(Resolvable): ...
 
 
 @record
