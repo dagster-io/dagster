@@ -20,9 +20,12 @@ from dagster._utils.merger import merge_dicts
 from dagster_k8s import K8sRunLauncher
 from dagster_k8s.job import DAGSTER_PG_PASSWORD_ENV_VAR, get_job_name_from_run_id
 from kubernetes import __version__ as kubernetes_version
-from kubernetes.client.models.v1_job import V1Job
+from kubernetes.client.models.v1_job import V1Job, V1JobSpec
 from kubernetes.client.models.v1_job_status import V1JobStatus
 from kubernetes.client.models.v1_object_meta import V1ObjectMeta
+from kubernetes.client.models.v1_pod import V1Pod
+from kubernetes.client.models.v1_pod_list import V1PodList
+from kubernetes.client.models.v1_pod_status import V1PodStatus
 
 if kubernetes_version >= "13":
     from kubernetes.client.models.core_v1_event import CoreV1Event
@@ -825,3 +828,132 @@ def test_get_run_worker_debug_info(kubeconfig_file):
             assert f"Debug information for job {running_job_name}" in debug_info  # pyright: ignore[reportOperatorIssue]
             assert "Job status:" in debug_info  # pyright: ignore[reportOperatorIssue]
             assert "Testing: test message" in debug_info  # pyright: ignore[reportOperatorIssue]
+
+
+def test_check_run_worker_health_preemption(kubeconfig_file):
+    mock_api_client = mock.MagicMock()
+
+    # Create fake external job for run context
+    recon_job = reconstructable(fake_job)
+    loadable_target_origin = LoadableTargetOrigin(python_file=__file__)
+
+    with instance_for_test() as instance:
+        with in_process_test_workspace(instance, loadable_target_origin) as workspace:
+            location = workspace.get_code_location(workspace.code_location_names[0])
+            repo_handle = RepositoryHandle.from_location(
+                repository_name=recon_job.repository.name,
+                code_location=location,
+            )
+            fake_remote_job = remote_job_from_recon_job(
+                recon_job,
+                op_selection=None,
+                repository_handle=repo_handle,
+            )
+            run = create_run_for_test(
+                instance,
+                job_name="fake_job",
+                remote_job_origin=fake_remote_job.get_remote_origin(),
+                job_code_origin=fake_remote_job.get_python_origin(),
+                status=DagsterRunStatus.STARTED,
+            )
+
+            launcher_retry_true = K8sRunLauncher(
+                service_account_name="test-sa",
+                instance_config_map="test-cm",
+                dagster_home="/test/dagster_home",
+                kubeconfig_file=kubeconfig_file,
+                load_incluster_config=False,
+                k8s_client_batch_api=mock_api_client, # Used by get_job_status via DКС_client
+                k8s_client_core_api=mock_api_client.core_api, # Used by list_namespaced_pod
+                retry_on_preemption=True,
+            )
+            launcher_retry_true.register_instance(instance)
+            launcher_retry_true._api_client = mock_api_client # Override internal client
+
+            launcher_retry_false = K8sRunLauncher(
+                service_account_name="test-sa",
+                instance_config_map="test-cm",
+                dagster_home="/test/dagster_home",
+                kubeconfig_file=kubeconfig_file,
+                load_incluster_config=False,
+                retry_on_preemption=False,
+            )
+            launcher_retry_false.register_instance(instance)
+            launcher_retry_false._api_client = mock_api_client
+
+
+            # Common failed job status
+            failed_job_status = V1JobStatus(failed=1, active=0, succeeded=0)
+
+            # Pod Evicted
+            evicted_pod = V1Pod(status=V1PodStatus(reason="Evicted"))
+            evicted_pod_list = V1PodList(items=[evicted_pod])
+
+            # Pod Not Evicted (e.g. normal error)
+            error_pod = V1Pod(status=V1PodStatus(reason="Error"))
+            error_pod_list = V1PodList(items=[error_pod])
+            
+            # --- Tests for retry_on_preemption = True ---
+            # Case 1: Preempted, backoff_limit > 0, failures < backoff_limit -> RUNNING
+            mock_api_client.get_job_status.return_value = failed_job_status
+            mock_api_client.get_job.return_value = V1Job(
+                metadata=V1ObjectMeta(uid="job-uid-1"),
+                spec=V1JobSpec(backoff_limit=5)
+            )
+            mock_api_client.core_api.list_namespaced_pod.return_value = evicted_pod_list
+            result = launcher_retry_true.check_run_worker_health(run)
+            assert result.status == WorkerStatus.RUNNING
+            assert "preempted, will retry" in result.msg
+
+            # Case 2: Preempted, backoff_limit = 0 -> FAILED
+            mock_api_client.get_job_status.return_value = failed_job_status
+            mock_api_client.get_job.return_value = V1Job(
+                metadata=V1ObjectMeta(uid="job-uid-2"),
+                spec=V1JobSpec(backoff_limit=0) # backoff_limit is 0
+            )
+            mock_api_client.core_api.list_namespaced_pod.return_value = evicted_pod_list
+            result = launcher_retry_true.check_run_worker_health(run)
+            assert result.status == WorkerStatus.FAILED
+            assert "preempted but backoffLimit is 0" in result.msg
+
+            # Case 3: Preempted, backoff_limit > 0, failures >= backoff_limit -> FAILED
+            # status.failed (1) >= backoff_limit (1)
+            mock_api_client.get_job_status.return_value = failed_job_status # failed_pods = 1
+            mock_api_client.get_job.return_value = V1Job(
+                metadata=V1ObjectMeta(uid="job-uid-3"),
+                spec=V1JobSpec(backoff_limit=1) # backoff_limit is 1
+            )
+            mock_api_client.core_api.list_namespaced_pod.return_value = evicted_pod_list
+            result = launcher_retry_true.check_run_worker_health(run)
+            assert result.status == WorkerStatus.FAILED
+            assert "failed after 1 attempts (backoffLimit: 1)" in result.msg
+
+
+            # Case 4: Not preempted (pod status is Error) -> FAILED
+            mock_api_client.get_job_status.return_value = failed_job_status
+            mock_api_client.get_job.return_value = V1Job(
+                metadata=V1ObjectMeta(uid="job-uid-4"),
+                spec=V1JobSpec(backoff_limit=5)
+            )
+            mock_api_client.core_api.list_namespaced_pod.return_value = error_pod_list
+            result = launcher_retry_true.check_run_worker_health(run)
+            assert result.status == WorkerStatus.FAILED
+            assert "failed (not due to preemption)" in result.msg
+            
+            # --- Tests for retry_on_preemption = False ---
+            # Case 5: Preempted, but retry_on_preemption is False -> FAILED
+            # (mocks from Case 1 are mostly reusable, just call with launcher_retry_false)
+            mock_api_client.get_job_status.return_value = failed_job_status
+            # get_job and list_namespaced_pod would not be called if retry_on_preemption is False
+            # and job status is failed. So no need to set mocks for them particularly for this path.
+            result = launcher_retry_false.check_run_worker_health(run)
+            assert result.status == WorkerStatus.FAILED
+            assert f"K8s job {get_job_name_from_run_id(run.run_id)} failed" in result.msg
+
+            # Case 6: Job succeeded (sanity check, retry_on_preemption should not affect this)
+            succeeded_job_status = V1JobStatus(failed=0, active=0, succeeded=1)
+            mock_api_client.get_job_status.return_value = succeeded_job_status
+            result_retry_true = launcher_retry_true.check_run_worker_health(run)
+            assert result_retry_true.status == WorkerStatus.SUCCESS
+            result_retry_false = launcher_retry_false.check_run_worker_health(run)
+            assert result_retry_false.status == WorkerStatus.SUCCESS
