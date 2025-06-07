@@ -1,6 +1,7 @@
 type: dagster.components.DefsFolderComponent
 
-post_processors:
-  - target: "*"
-    attributes:
-      group_name: "team_a"
+post_processing:
+  processors:
+    - target: "*"
+      attributes:
+        group_name: "team_a"
