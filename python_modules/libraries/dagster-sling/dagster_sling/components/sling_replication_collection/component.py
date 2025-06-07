@@ -1,4 +1,4 @@
-from collections.abc import Mapping, Sequence
+from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass, field
 from functools import cached_property
 from pathlib import Path
@@ -6,26 +6,22 @@ from typing import Annotated, Any, Callable, Literal, Optional, Union
 
 from dagster import Resolvable, Resolver
 from dagster._core.definitions.asset_spec import AssetSpec
-from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.metadata.source_code import (
     LocalFileCodeReference,
     merge_code_references,
 )
 from dagster.components.component.component import Component
 from dagster.components.core.context import ComponentLoadContext
+from dagster.components.lib.enclosing_component import EnclosingComponent
 from dagster.components.lib.executable_component.function_component import (
     FunctionComponent,
     FunctionSpec,
 )
 from dagster.components.resolved.context import ResolutionContext
-from dagster.components.resolved.core_models import (
-    AssetAttributesModel,
-    AssetPostProcessor,
-    OpSpec,
-    post_process_defs,
-)
+from dagster.components.resolved.core_models import AssetAttributesModel, OpSpec
 from dagster.components.scaffold.scaffold import scaffold_with
 from dagster.components.utils import TranslatorResolvingInfo
+from pydantic import Field
 from typing_extensions import TypeAlias
 
 from dagster_sling.asset_decorator import get_sling_specs
@@ -36,12 +32,6 @@ from dagster_sling.dagster_sling_translator import DagsterSlingTranslator
 from dagster_sling.resources import AssetExecutionContext, SlingResource
 
 SlingMetadataAddons: TypeAlias = Literal["column_metadata", "row_count"]
-
-
-def merge_component_defs(
-    context: ComponentLoadContext, components: Sequence[Component]
-) -> Definitions:
-    return Definitions.merge(*[component.build_defs(context) for component in components])
 
 
 def resolve_translation(context: ResolutionContext, model):
@@ -116,8 +106,7 @@ class ReplicationTranslatorWithCodeReferences(DagsterSlingTranslator):
 
 
 @scaffold_with(SlingReplicationComponentScaffolder)
-@dataclass
-class SlingReplicationCollectionComponent(Component, Resolvable):
+class SlingReplicationCollectionComponent(EnclosingComponent):
     """Expose one or more Sling replications to Dagster as assets.
 
     [Sling](https://slingdata.io/) is a Powerful Data Integration tool enabling seamless ELT
@@ -135,18 +124,14 @@ class SlingReplicationCollectionComponent(Component, Resolvable):
             resolve_resource,
             model_field_name="sling",
         ),
-    ] = field(default_factory=SlingResource)
-    replications: Sequence[SlingReplicationSpecModel] = field(default_factory=list)
-    asset_post_processors: Optional[Sequence[AssetPostProcessor]] = None
+    ] = Field(SlingResource())
+    replications: Sequence[SlingReplicationSpecModel] = Field([])
 
-    def build_defs(self, context: ComponentLoadContext) -> Definitions:
-        return post_process_defs(
-            merge_component_defs(
-                context,
-                [replication_component(replication, context) for replication in self.replications],
-            ),
-            self.asset_post_processors,
-        ).with_resources({"sling": self.resource})
+    def build_components(self, context: ComponentLoadContext) -> Iterable[Component]:
+        return [replication_component(replication, context) for replication in self.replications]
+
+    def resources(self) -> Mapping[str, Any]:
+        return {"sling": self.resource}
 
 
 def replication_component(
