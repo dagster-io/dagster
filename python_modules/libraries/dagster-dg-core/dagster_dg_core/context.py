@@ -8,12 +8,11 @@ from typing import Any, Final, Optional, Union
 
 from dagster_shared.record import record
 from dagster_shared.serdes.serdes import whitelist_for_serdes
-from dagster_shared.seven import resolve_module_pattern
 from packaging.version import Version
 from typing_extensions import Self
 
 from dagster_dg_core.cache import CachableDataType, DgCache
-from dagster_dg_core.component import EnvRegistry
+from dagster_dg_core.component import RemotePluginRegistry
 from dagster_dg_core.config import (
     DgConfig,
     DgRawBuildConfig,
@@ -89,7 +88,7 @@ class DgContext:
         self._workspace_root_path = workspace_root_path
         self.cli_opts = cli_opts
         self._cache = None if config.cli.disable_cache else DgCache.from_config(config)
-        self.component_registry = EnvRegistry.empty()
+        self.component_registry = RemotePluginRegistry.empty()
 
         # Always run this check, its a no-op if there is no pyproject.toml.
         _validate_plugin_entry_point(self)
@@ -124,7 +123,6 @@ class DgContext:
                 )
             exit_with_error(NOT_PROJECT_ERROR_MESSAGE)
         _validate_project_venv_activated(context)
-        _validate_autoload_defs(context)
         return context
 
     @classmethod
@@ -361,10 +359,6 @@ class DgContext:
         else:
             raise DgError("Cannot determine root package name")
 
-    @property
-    def root_module_path(self) -> Path:
-        return self.get_path_for_local_module(self.root_module_name)
-
     # ########################
     # ##### PROJECT METHODS
     # ########################
@@ -471,6 +465,10 @@ class DgContext:
             raise DgError(
                 "`code_location_target_module_name` is only available in a Dagster project context"
             )
+        if self.config.project.autoload_defs:
+            raise DgError(
+                "`code_location_target_module_name` is not valid when autoload_defs is enabled"
+            )
         return (
             self.config.project.code_location_target_module
             or f"{self.root_module_name}.{_DEFAULT_PROJECT_CODE_LOCATION_TARGET_MODULE}"
@@ -519,24 +517,14 @@ class DgContext:
             self.default_registry_root_module_name, require_exists=False
         )
 
-    @cached_property
+    @property
     def project_registry_modules(self) -> list[str]:
-        """Return a list of resolved plugin module references for the current project.
-
-        This resolves any wildcard patterns in the raw registry_modules configuration
-        into actual module names.
-        """
+        """Return a mapping of plugin object references for the current project."""
         if not self.config.project:
             raise DgError(
                 "`project_registry_modules` is only available in a Dagster project context"
             )
-        return sorted(
-            set(
-                mod
-                for pattern in self.config.project.registry_modules
-                for mod in resolve_module_pattern(pattern)
-            )
-        )
+        return self.config.project.registry_modules
 
     def add_project_registry_module(self, module_name: str) -> None:
         """Add a module name to the project plugin module registry."""
@@ -720,33 +708,6 @@ def _validate_plugin_entry_point(context: DgContext) -> None:
                 """,
                 context.config.cli.suppress_warnings,
             )
-
-
-def _validate_autoload_defs(context: DgContext) -> None:
-    """If the project has autoload_defs enabled, warn on the presence of a sibling definitions.py."""
-    if not context.config.project:
-        raise DgError("`_validate_autoload_defs` is only available in a Dagster project context")
-
-    # We only issue this warning for the default code location target module setting, since we catch
-    # a non-default setting during config validation.
-    if (
-        context.config.project.autoload_defs
-        and (
-            context.root_module_path / f"{_DEFAULT_PROJECT_CODE_LOCATION_TARGET_MODULE}.py"
-        ).exists()
-    ):
-        emit_warning(
-            "autoload_defs_with_definitions_py",
-            f"""
-            `project.autoload_defs` is enabled, but a code location load target module was also found at:
-
-                {context.code_location_target_path}
-
-            When `project.autoload_defs` is enabled, the code location load target module is not
-            automatically loaded. Consider removing the module at the above path to avoid confusion.
-        """,
-            context.config.cli.suppress_warnings,
-        )
 
 
 DG_UPDATE_CHECK_INTERVAL = datetime.timedelta(hours=1)
