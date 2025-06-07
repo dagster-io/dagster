@@ -338,6 +338,40 @@ def test_scaffold_defs_component_succeeds_scaffolded_component_type() -> None:
             assert "type: foo_bar.components.baz.Baz" in defs_yaml_path.read_text()
 
 
+# Make sure that we can always refer to a component in its defining module
+def test_scaffold_defs_component_succeeds_scaffolded_component_type_defining_module() -> None:
+    with (
+        ProxyRunner.test() as runner,
+        isolated_example_project_foo_bar(runner, uv_sync=True) as project_dir,
+    ):
+        with activate_venv(project_dir / ".venv"):
+            subprocess.run(["dg", "scaffold", "component", "Baz"], check=True)
+            # runner.invoke("scaffold", "component", "Baz")
+            # assert_runner_result(runner.invoke("scaffold", "component", "Baz"))
+            component_path = Path("src/foo_bar/components/baz.py")
+            assert component_path.exists()
+
+            # We scaffolded at foo_bar.components.baz, so that is what has been added as a registry module. We are now
+            # going to move the actual definition into a separate module, and ensure that we can
+            # still reference our component by its defining module reference, even though this
+            # module is not in the registry.
+            component_path.rename("src/foo_bar/baz.py")
+            component_path.write_text(
+                textwrap.dedent("""
+                from foo_bar.baz import Baz
+            """)
+            )
+
+            # target the defining module foo_bar.baz, not the registry module foo_bar.components.baz
+            subprocess.run(["dg", "scaffold", "defs", "foo_bar.baz.Baz", "qux"], check=True)
+            assert Path("src/foo_bar/defs/qux").exists()
+            defs_yaml_path = Path("src/foo_bar/defs/qux/defs.yaml")
+            assert defs_yaml_path.exists()
+
+            # The canonical name is still used in the scaffolded defs.yaml
+            assert "type: foo_bar.components.baz.Baz" in defs_yaml_path.read_text()
+
+
 # ########################
 # ##### DEFS INLINE-COMPONENT
 # ########################

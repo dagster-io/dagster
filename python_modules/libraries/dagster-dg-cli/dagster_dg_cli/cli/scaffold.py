@@ -121,11 +121,16 @@ class ScaffoldDefsGroup(DgClickGroup):
     ) -> None:
         # We need to "reset" the help option names to the default ones because we inherit the parent
         # value of context settings from the parent group, which has been customized.
+        aliases = [
+            *[alias.to_typename() for alias in obj.aliases],
+            *([key.name] if use_typename_alias else []),
+        ]
+
         @self.command(
             cls=ScaffoldDefsSubCommand,
             name=key.to_typename(),
             context_settings={"help_option_names": ["-h", "--help"]},
-            aliases=[key.name] if use_typename_alias else None,
+            aliases=aliases,
         )
         @click.argument("instance_name", type=str)
         @click.option(

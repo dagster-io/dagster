@@ -1,4 +1,3 @@
-import copy
 import re
 import sys
 from collections.abc import Iterable, Mapping, Sequence, Set
@@ -72,8 +71,8 @@ class RemotePluginRegistry:
         return RemotePluginRegistry(plugin_manifest)
 
     def __init__(self, plugin_manifest: PluginManifest):
-        self._modules = copy.copy(plugin_manifest.modules)
-        self._objects = {obj.key: obj for obj in plugin_manifest.objects}
+        self._plugin_manifest = plugin_manifest
+        self._object_lookup = {key: obj for obj in plugin_manifest.objects for key in obj.all_keys}
 
     @staticmethod
     def empty() -> "RemotePluginRegistry":
@@ -81,42 +80,44 @@ class RemotePluginRegistry:
 
     @property
     def modules(self) -> Sequence[str]:
-        return self._modules
+        return self._plugin_manifest.modules
 
     def module_entries(self, module: str) -> Set[PluginObjectKey]:
-        return {key for key in self._objects.keys() if key.package == module}
+        return {obj.key for obj in self._plugin_manifest.objects if obj.key.package == module}
 
     # This differs from "modules" in that it is a list of root modules-- so if there are two entry
     # points foo.lib and foo.lib2, this will return ["foo"].
     @property
     def packages(self) -> Sequence[str]:
-        return sorted({m.split(".")[0] for m in self._modules})
+        return sorted({m.split(".")[0] for m in self._plugin_manifest.modules})
 
     def get_objects(
         self, package: Optional[str] = None, feature: Optional[PluginObjectFeature] = None
     ) -> Sequence[PluginObjectSnap]:
         return [
             entry
-            for entry in self._objects.values()
+            for entry in self._plugin_manifest.objects
             if (package is None or package == entry.key.package)
             and (feature is None or feature in entry.features)
         ]
 
     def get(self, key: PluginObjectKey) -> PluginObjectSnap:
         """Resolves a library object within the scope of a given component directory."""
-        return self._objects[key]
+        return self._object_lookup[key]
 
     def has(self, key: PluginObjectKey) -> bool:
-        return key in self._objects
+        return key in self._object_lookup
 
     def keys(self) -> Iterable[PluginObjectKey]:
-        yield from sorted(self._objects.keys(), key=lambda k: k.to_typename())
+        yield from sorted(
+            (obj.key for obj in self._plugin_manifest.objects), key=lambda k: k.to_typename()
+        )
 
     def items(self) -> Iterable[tuple[PluginObjectKey, PluginObjectSnap]]:
-        yield from self._objects.items()
+        yield from ((obj.key, obj) for obj in self._plugin_manifest.objects)
 
     def __repr__(self) -> str:
-        return f"<RemotePluginRegistry {list(self._objects.keys())}>"
+        return f"<RemotePluginRegistry {list(self.keys())}>"
 
 
 def all_components_schema_from_dg_context(dg_context: "DgContext") -> Mapping[str, Any]:
