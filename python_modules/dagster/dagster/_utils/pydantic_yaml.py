@@ -1,6 +1,6 @@
 import contextlib
 from collections.abc import Generator, Sequence
-from typing import Optional, TypeVar
+from typing import Callable, Optional, TypeVar
 
 from dagster_shared.yaml_utils import parse_yaml_with_source_position
 from dagster_shared.yaml_utils.source_position import (
@@ -20,6 +20,7 @@ def _parse_and_populate_model_with_annotated_errors(
     cls: type[T],
     obj_parse_root: ValueAndSourcePositionTree,
     obj_key_path_prefix: KeyPath,
+    parse_fn: Callable = parse_obj_as,
 ) -> T:
     """Helper function to parse the Pydantic model from the parsed YAML object and populate source
     position information on the model and its sub-objects.
@@ -36,7 +37,7 @@ def _parse_and_populate_model_with_annotated_errors(
             both error reporting and populating source position information.
     """
     try:
-        model = parse_obj_as(cls, obj_parse_root.value)
+        model = parse_fn(cls, obj_parse_root.value)
     except ValidationError as e:
         line_errors = []
         for error in e.errors():
@@ -101,8 +102,12 @@ def parse_yaml_file_to_pydantic(cls: type[T], src: str, filename: str = "<string
 
 @contextlib.contextmanager
 def enrich_validation_errors_with_source_position(
-    source_position_tree: SourcePositionTree, obj_key_path_prefix: KeyPath
+    source_position_tree: Optional[SourcePositionTree], obj_key_path_prefix: KeyPath
 ) -> Generator[None, None, None]:
+    if source_position_tree is None:
+        yield
+        return
+
     err: Optional[ValidationError] = None
     try:
         yield

@@ -1,7 +1,7 @@
 import importlib
 import inspect
 from collections.abc import Callable, Iterator, Mapping, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Any, Optional, TypeVar, Union
 
@@ -35,24 +35,26 @@ from dagster.components.core.context import ComponentLoadContext
 from dagster.components.core.package_entry import load_package_object
 from dagster.components.definitions import LazyDefinitions
 from dagster.components.resolved.base import Resolvable
-from dagster.components.resolved.core_models import AssetPostProcessor
+from dagster.components.resolved.core_models import AssetPostProcessor, post_process_defs
+from dagster.components.resolved.model import Model
 
 T = TypeVar("T", bound=BaseModel)
 
 
-class ComponentRequirementsModel(BaseModel):
+class ComponentRequirementsModel(Model, Resolvable):
     """Describes dependencies for a component to load."""
 
     env: Optional[list[str]] = None
 
 
-class ComponentFileModel(BaseModel):
+class ComponentFileModel(Model, Resolvable):
     model_config = ConfigDict(extra="forbid")
 
     type: str
     attributes: Optional[Mapping[str, Any]] = None
     template_vars_module: Optional[str] = None
     requirements: Optional[ComponentRequirementsModel] = None
+    post_processors: Optional[Sequence["AssetPostProcessor"]] = None
 
 
 def _add_defs_yaml_code_reference_to_spec(
@@ -88,28 +90,50 @@ def _add_defs_yaml_code_reference_to_spec(
 
 
 class CompositeYamlComponent(Component):
-    def __init__(self, components: Sequence[Component], source_positions: Sequence[SourcePosition]):
+    def __init__(
+        self,
+        components: Sequence[Component],
+        source_positions: Sequence[SourcePosition],
+        post_processors: Optional[Sequence[Sequence[AssetPostProcessor]]],
+    ):
         self.components = components
         self.source_positions = source_positions
+        if post_processors is not None:
+            check.invariant(
+                len(components) == len(post_processors),
+                "Number of components and post processors must match",
+            )
+        else:
+            post_processors = []
+            for i in range(len(components)):
+                post_processors.append([])
+
+        self.list_of_list_of_post_processors = post_processors
 
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
         component_yaml = check.not_none(_find_defs_or_component_yaml(context.path))
 
-        return Definitions.merge(
-            *(
-                component.build_defs(context).permissive_map_resolved_asset_specs(
-                    func=lambda spec: _add_defs_yaml_code_reference_to_spec(
-                        component_yaml_path=component_yaml,
-                        load_context=context,
-                        component=component,
-                        source_position=source_position,
-                        asset_spec=spec,
+        defs_list = []
+        for component, source_position, post_processors in zip(
+            self.components, self.source_positions, self.list_of_list_of_post_processors
+        ):
+            defs_list.append(
+                post_process_defs(
+                    component.build_defs(context).permissive_map_resolved_asset_specs(
+                        func=lambda spec: _add_defs_yaml_code_reference_to_spec(
+                            component_yaml_path=component_yaml,
+                            load_context=context,
+                            component=component,
+                            source_position=source_position,
+                            asset_spec=spec,
+                        ),
+                        selection=None,
                     ),
-                    selection=None,
+                    list(post_processors),
                 )
-                for component, source_position in zip(self.components, self.source_positions)
             )
-        )
+
+        return Definitions.merge(*defs_list)
 
 
 class CompositeComponent(Component):
@@ -195,6 +219,11 @@ class DefsFolderComponent(Component):
     path: Path
     children: Mapping[Path, Component]
     asset_post_processors: Optional[Sequence[AssetPostProcessor]]
+
+    def with_post_processors(
+        self, post_processors: Sequence[AssetPostProcessor]
+    ) -> "DefsFolderComponent":
+        return replace(self, asset_post_processors=post_processors)
 
     @classmethod
     def get_model_cls(cls):
@@ -389,9 +418,19 @@ def load_yaml_component_from_path(context: ComponentLoadContext, component_def_p
         component_def_path.read_text(), str(component_def_path)
     )
     components = []
+    post_processors: list[list[AssetPostProcessor]] = []
     for source_tree in source_trees:
-        component_file_model = _parse_and_populate_model_with_annotated_errors(
-            cls=ComponentFileModel, obj_parse_root=source_tree, obj_key_path_prefix=[]
+        # import code
+
+        # code.interact(local=dict(globals(), **locals()))
+
+        component_file_model_schema = _parse_and_populate_model_with_annotated_errors(
+            cls=ComponentFileModel.model(), obj_parse_root=source_tree, obj_key_path_prefix=[]
+        )
+
+        component_file_model = ComponentFileModel.resolve_from_model(
+            context.resolution_context,
+            component_file_model_schema,
         )
 
         # find the component type
@@ -417,19 +456,37 @@ def load_yaml_component_from_path(context: ComponentLoadContext, component_def_p
         if model_cls is None:
             attributes = None
         elif source_tree:
-            attributes_position_tree = source_tree.source_position_tree.children["attributes"]
+            attributes_position_tree = source_tree.source_position_tree.children.get(
+                "attributes", None
+            )
             with enrich_validation_errors_with_source_position(
                 attributes_position_tree, ["attributes"]
             ):
+                # if not attributes_position_tree:
+                #     import code
+
+                #     code.interact(local=dict(globals(), **locals()))
                 attributes = TypeAdapter(model_cls).validate_python(component_file_model.attributes)
-        else:
+            # else:
             attributes = TypeAdapter(model_cls).validate_python(component_file_model.attributes)
 
+        component = obj.load(attributes, context)
+        if isinstance(component, DefsFolderComponent):
+            component = component.with_post_processors(component_file_model.post_processors or [])
+            post_processors.append([])
+        else:
+            post_processors.append(
+                list(component_file_model.post_processors)
+                if component_file_model.post_processors
+                else []
+            )
         components.append(obj.load(attributes, context))
 
     check.invariant(len(components) > 0, "No components found in YAML file")
     return CompositeYamlComponent(
-        components, [source_tree.source_position_tree.position for source_tree in source_trees]
+        components,
+        [source_tree.source_position_tree.position for source_tree in source_trees],
+        post_processors,
     )
 
 

@@ -13,6 +13,7 @@ from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.test_utils import ensure_dagster_tests_import
 from dagster._utils import pushd
+from dagster.components.resolved.core_models import AssetPostProcessorModel
 from dagster_airlift.constants import (
     DAG_MAPPING_METADATA_KEY,
     SOURCE_CODE_METADATA_KEY,
@@ -88,6 +89,16 @@ def test_load_dags_basic(component_for_test: type[AirflowInstanceComponent]) -> 
                 }
             ],
         },
+        post_processors=[
+            AssetPostProcessorModel(
+                target="*",
+                attributes={
+                    "metadata": {
+                        "foo": "bar",
+                    },
+                },
+            )
+        ],
     )
 
     for asset_key in ["example1", "example2"]:
