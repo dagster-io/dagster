@@ -324,7 +324,11 @@ AssetPostProcessor: TypeAlias = Annotated[
 ]
 
 
-def process_defs(defs: Definitions, post_processors: Sequence[AssetPostProcessor]) -> Definitions:
+def post_process_defs(
+    defs: Definitions, post_processors: Optional[Sequence[AssetPostProcessor]]
+) -> Definitions:
+    if not post_processors:
+        return defs
     for post_processor in post_processors:
         defs = post_processor(defs)
     return defs

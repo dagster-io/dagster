@@ -22,7 +22,7 @@ from dagster.components.resolved.core_models import (
     AssetAttributesModel,
     AssetPostProcessor,
     OpSpec,
-    process_defs,
+    post_process_defs,
 )
 from dagster.components.scaffold.scaffold import scaffold_with
 from dagster.components.utils import TranslatorResolvingInfo
@@ -36,6 +36,12 @@ from dagster_sling.dagster_sling_translator import DagsterSlingTranslator
 from dagster_sling.resources import AssetExecutionContext, SlingResource
 
 SlingMetadataAddons: TypeAlias = Literal["column_metadata", "row_count"]
+
+
+def merge_component_defs(
+    context: ComponentLoadContext, components: Sequence[Component]
+) -> Definitions:
+    return Definitions.merge(*[component.build_defs(context) for component in components])
 
 
 def resolve_translation(context: ResolutionContext, model):
@@ -134,25 +140,13 @@ class SlingReplicationCollectionComponent(Component, Resolvable):
     asset_post_processors: Optional[Sequence[AssetPostProcessor]] = None
 
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
-        return Definitions.merge(
-            process_defs(
-                merge_component_defs(
-                    context,
-                    [
-                        replication_component(replication, context)
-                        for replication in self.replications
-                    ],
-                ),
-                self.asset_post_processors or [],
+        return post_process_defs(
+            merge_component_defs(
+                context,
+                [replication_component(replication, context) for replication in self.replications],
             ),
-            Definitions(resources={"sling": self.resource}),
-        )
-
-
-def merge_component_defs(
-    context: ComponentLoadContext, components: Sequence[Component]
-) -> Definitions:
-    return Definitions.merge(*[component.build_defs(context) for component in components])
+            self.asset_post_processors,
+        ).with_resources({"sling": self.resource})
 
 
 def replication_component(
@@ -167,7 +161,7 @@ def replication_component(
             iterator = iterator.fetch_row_count()
         yield from iterator
 
-    component = FunctionComponent(
+    return FunctionComponent(
         execution=FunctionSpec(
             name=replication_spec_model.op.name
             if replication_spec_model.op and replication_spec_model.op.name
@@ -184,5 +178,3 @@ def replication_component(
             partitions_def=None,
         ),
     )
-
-    return component
