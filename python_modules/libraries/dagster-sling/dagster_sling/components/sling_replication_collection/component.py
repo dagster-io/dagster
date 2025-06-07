@@ -130,6 +130,10 @@ class SlingReplicationCollectionComponent(Component, Resolvable):
     # TODO: deprecate and then delete -- schrockn 2025-06-10
     asset_post_processors: Optional[Sequence[AssetPostProcessor]] = None
 
+    @cached_property
+    def sling_resource(self) -> SlingResource:
+        return SlingResource(connections=self.connections)
+
     def build_asset(
         self, context: ComponentLoadContext, replication_spec_model: SlingReplicationSpecModel
     ) -> AssetsDefinition:
