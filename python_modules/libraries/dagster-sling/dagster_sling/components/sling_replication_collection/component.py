@@ -27,7 +27,7 @@ from dagster_sling.components.sling_replication_collection.scaffolder import (
     SlingReplicationComponentScaffolder,
 )
 from dagster_sling.dagster_sling_translator import DagsterSlingTranslator
-from dagster_sling.resources import AssetExecutionContext, SlingResource
+from dagster_sling.resources import AssetExecutionContext, SlingConnectionResource, SlingResource
 
 SlingMetadataAddons: TypeAlias = Literal["column_metadata", "row_count"]
 
@@ -90,6 +90,26 @@ def resolve_resource(
     return SlingResource(**context.resolve_value(sling.model_dump())) if sling else SlingResource()
 
 
+def resolve_connection(
+    context: ResolutionContext,
+    connection: SlingConnectionResource,
+) -> SlingConnectionResource:
+    return SlingConnectionResource(**context.resolve_value(connection.model_dump()))
+
+
+def replicate(
+    context: AssetExecutionContext,
+    connections: list[SlingConnectionResource],
+) -> Iterator[Union[AssetMaterialization, MaterializeResult]]:
+    sling = SlingResource(connections=connections)
+    yield from sling.replicate(context=context)
+
+
+ResolvedSlingConnection: TypeAlias = Annotated[
+    SlingConnectionResource, Resolver(resolve_connection)
+]
+
+
 @scaffold_with(SlingReplicationComponentScaffolder)
 @dataclass
 class SlingReplicationCollectionComponent(Component, Resolvable):
@@ -104,15 +124,13 @@ class SlingReplicationCollectionComponent(Component, Resolvable):
     file. See Sling's [documentation](https://docs.slingdata.io/concepts/replication#overview) on `replication.yaml`.
     """
 
-    resource: Annotated[
-        SlingResource,
-        Resolver(
-            resolve_resource,
-            model_field_name="sling",
-        ),
-    ] = field(default_factory=SlingResource)
+    connections: list[ResolvedSlingConnection] = field(default_factory=list)
     replications: Sequence[SlingReplicationSpecModel] = field(default_factory=list)
     asset_post_processors: Optional[Sequence[AssetPostProcessor]] = None
+
+    @cached_property
+    def sling_resource(self) -> SlingResource:
+        return SlingResource(connections=self.connections)
 
     def build_asset(
         self, context: ComponentLoadContext, replication_spec_model: SlingReplicationSpecModel
@@ -140,7 +158,8 @@ class SlingReplicationCollectionComponent(Component, Resolvable):
         )
         def _asset(context: AssetExecutionContext):
             yield from self.execute(
-                context=context, sling=self.resource, replication_spec_model=replication_spec_model
+                context=context,
+                replication_spec_model=replication_spec_model,
             )
 
         return _asset
@@ -148,10 +167,9 @@ class SlingReplicationCollectionComponent(Component, Resolvable):
     def execute(
         self,
         context: AssetExecutionContext,
-        sling: SlingResource,
         replication_spec_model: SlingReplicationSpecModel,
     ) -> Iterator[Union[AssetMaterialization, MaterializeResult]]:
-        iterator = sling.replicate(context=context)
+        iterator = self.sling_resource.replicate(context=context)
         if "column_metadata" in replication_spec_model.include_metadata:
             iterator = iterator.fetch_column_metadata()
         if "row_count" in replication_spec_model.include_metadata:
