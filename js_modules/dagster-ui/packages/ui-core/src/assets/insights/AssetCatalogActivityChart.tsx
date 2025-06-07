@@ -172,8 +172,8 @@ const ActivityChartRow = React.memo(
                       }
                       onClick={() => {
                         onClick({
-                          before: date / 1000 + (index + 1) * 60 * 60,
-                          after: date / 1000 + index * 60 * 60,
+                          before: date / 1000 + index * 60 * 60,
+                          after: date / 1000 + (index - 1) * 60 * 60,
                           metric,
                           unit,
                         });
