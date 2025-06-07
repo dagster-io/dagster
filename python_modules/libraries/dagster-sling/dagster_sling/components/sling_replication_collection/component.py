@@ -17,7 +17,7 @@ from dagster._core.definitions.result import MaterializeResult
 from dagster.components.component.component import Component
 from dagster.components.core.context import ComponentLoadContext
 from dagster.components.resolved.context import ResolutionContext
-from dagster.components.resolved.core_models import AssetAttributesModel, AssetPostProcessor, OpSpec
+from dagster.components.resolved.core_models import AssetAttributesModel, OpSpec
 from dagster.components.scaffold.scaffold import scaffold_with
 from dagster.components.utils import TranslatorResolvingInfo
 from typing_extensions import TypeAlias
@@ -112,7 +112,6 @@ class SlingReplicationCollectionComponent(Component, Resolvable):
         ),
     ] = field(default_factory=SlingResource)
     replications: Sequence[SlingReplicationSpecModel] = field(default_factory=list)
-    asset_post_processors: Optional[Sequence[AssetPostProcessor]] = None
 
     def build_asset(
         self, context: ComponentLoadContext, replication_spec_model: SlingReplicationSpecModel
@@ -159,9 +158,6 @@ class SlingReplicationCollectionComponent(Component, Resolvable):
         yield from iterator
 
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
-        defs = Definitions(
+        return Definitions(
             assets=[self.build_asset(context, replication) for replication in self.replications],
         )
-        for post_processor in self.asset_post_processors or []:
-            defs = post_processor(defs)
-        return defs
