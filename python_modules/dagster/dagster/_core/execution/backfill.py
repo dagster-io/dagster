@@ -118,6 +118,7 @@ class PartitionBackfill(
             ("submitting_run_requests", Sequence[RunRequest]),
             ("reserved_run_ids", Sequence[str]),
             ("backfill_end_timestamp", Optional[float]),
+            ("partition_configs", Optional[dict[str, str]]),
         ],
     ),
 ):
@@ -142,6 +143,7 @@ class PartitionBackfill(
         submitting_run_requests: Optional[Sequence[RunRequest]] = None,
         reserved_run_ids: Optional[Sequence[str]] = None,
         backfill_end_timestamp: Optional[float] = None,
+        partition_configs: Optional[dict[str, str]] = None,
     ):
         check.invariant(
             not (asset_selection and reexecution_steps),
@@ -194,6 +196,9 @@ class PartitionBackfill(
             ),
             backfill_end_timestamp=check.opt_float_param(
                 backfill_end_timestamp, "backfill_end_timestamp"
+            ),
+            partition_configs=check.opt_dict_param(
+                partition_configs, "partition_configs", key_type=str, value_type=str
             ),
         )
 

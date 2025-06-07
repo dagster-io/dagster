@@ -43,7 +43,6 @@ import {
 } from '../instance/backfill/types/BackfillUtils.types';
 import {LaunchButton} from '../launchpad/LaunchButton';
 import {TagContainer, TagEditor} from '../launchpad/TagEditor';
-import {tagsWithUIExecutionTags} from '../launchpad/uiExecutionTags';
 import {explodeCompositesInHandleGraph} from '../pipelines/CompositeSupport';
 import {GRAPH_EXPLORER_SOLID_HANDLE_FRAGMENT} from '../pipelines/GraphExplorer';
 import {GraphQueryInput} from '../ui/GraphQueryInput';
@@ -97,6 +96,14 @@ export const BackfillPartitionSelector = ({
     reexecute: false,
     fromFailure: false,
   });
+
+  const [partitionConfigs, setPartitionConfigs] = React.useState<{ [key: string]: string }>({});
+  const handlePartitionConfigChange = (partition: string, value: string) => {
+    setPartitionConfigs((prevConfigs) => ({
+      ...prevConfigs,
+      [partition]: value,
+    }));
+  };
   const repositorySelector = repoAddressToSelector(repoAddress);
 
   const {data} = useQuery<BackfillSelectorQuery, BackfillSelectorQueryVariables>(
@@ -108,7 +115,7 @@ export const BackfillPartitionSelector = ({
           pipelineName,
         },
       },
-      fetchPolicy: 'network-only',
+      fetchPolicy: 'network-only', // Ensure fresh data each time
     },
   );
 
@@ -311,6 +318,58 @@ export const BackfillPartitionSelector = ({
             )}
           </Section>
 
+          <Section title="Per partition config">
+            {selected.length > 0 ? (
+              <Box flex={{direction: 'column', gap: 8}}>
+                {selected.map((partition) => {
+                  const configStr = partitionConfigs[partition] || '';
+                  let errorMessage = '';
+
+                  try {
+                    const parsed = JSON.parse(configStr);
+                  } catch (e) {
+                    errorMessage = 'Invalid JSON';
+                  }
+
+                  return (
+                    <Box
+                      key={partition}
+                      flex={{direction: 'column', gap: 4}}
+                      style={{
+                        border: `1px solid ${Colors.borderDefault()}`,
+                        borderRadius: 8,
+                        padding: 8,
+                      }}
+                    >
+                      <Box flex={{direction: 'row', alignItems: 'center', gap: 12}}>
+                        <div style={{flex: 1}}>{partition}</div>
+                        <input
+                          type="text"
+                          placeholder='e.g. {"ops":{"op1":{"config":{"letter":"A"}}}}'
+                          value={configStr}
+                          onChange={(e) => handlePartitionConfigChange(partition, e.target.value)}
+                          style={{
+                            flex: 2,
+                            padding: '4px 8px',
+                            border: `1px solid ${Colors.borderDefault()}`,
+                            borderRadius: 4,
+                          }}
+                        />
+                      </Box>
+                      {errorMessage && (
+                        <div style={{color: Colors.textRed(), fontSize: '12px', marginLeft: '8px'}}>
+                          ⚠ {errorMessage}
+                        </div>
+                      )}
+                    </Box>
+                  );
+                })}
+              </Box>
+            ) : (
+              <div style={{color: Colors.textLight()}}>No partitions selected</div>
+            )}
+          </Section>
+
           <Box flex={{direction: 'column', gap: 16}}>
             {!isBackfillDaemonHealthy(instance) ? <DaemonNotRunningAlert /> : null}
 
@@ -336,12 +395,12 @@ export const BackfillPartitionSelector = ({
           onSuccess={onSuccess}
           onError={onError}
           repoAddress={repoAddress}
+          partitionConfigs={partitionConfigs}
         />
       </DialogFooter>
     </>
   );
 };
-
 const LaunchBackfillButton = ({
   partitionSetName,
   partitionNames,
@@ -352,6 +411,7 @@ const LaunchBackfillButton = ({
   onError,
   onSubmit,
   repoAddress,
+  partitionConfigs,
 }: {
   partitionSetName: string;
   partitionNames: string[];
@@ -362,6 +422,7 @@ const LaunchBackfillButton = ({
   onError: (data: LaunchPartitionBackfillMutation | null | undefined) => void;
   onSubmit: () => void;
   repoAddress: RepoAddress;
+  partitionConfigs: { [key: string]: string };
 }) => {
   const repositorySelector = repoAddressToSelector(repoAddress);
   const mounted = React.useRef(true);
@@ -389,7 +450,8 @@ const LaunchBackfillButton = ({
           partitionNames,
           reexecutionSteps,
           fromFailure,
-          tags: tagsWithUIExecutionTags(tags),
+          tags,
+          partitionConfigs: JSON.stringify(partitionConfigs),
         },
       },
     });

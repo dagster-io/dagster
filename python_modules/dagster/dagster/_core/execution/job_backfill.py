@@ -1,8 +1,9 @@
+import json
 import logging
 import time
 from collections.abc import Iterable, Mapping, Sequence
-from concurrent.futures import ThreadPoolExecutor
 from typing import TYPE_CHECKING, Any, Callable, Optional, Union, cast
+from concurrent.futures import ThreadPoolExecutor
 
 import dagster._check as check
 from dagster._core.definitions.partition import PartitionsDefinition
@@ -19,6 +20,10 @@ from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.instance import DagsterInstance
 from dagster._core.remote_representation import CodeLocation, RemoteJob, RemotePartitionSet
 from dagster._core.remote_representation.external_data import PartitionSetExecutionParamSnap
+
+if TYPE_CHECKING:
+    from dagster._core.remote_representation.origin import RemotePartitionSetOrigin
+
 from dagster._core.storage.dagster_run import (
     NOT_FINISHED_STATUSES,
     DagsterRun,
@@ -36,26 +41,15 @@ from dagster._core.storage.tags import (
 from dagster._core.telemetry import BACKFILL_RUN_CREATED, hash_name, log_action
 from dagster._core.utils import make_new_run_id
 from dagster._core.workspace.context import BaseWorkspaceRequestContext, IWorkspaceProcessContext
-from dagster._record import record
 from dagster._time import get_current_timestamp
 from dagster._utils import check_for_debug_crash
 from dagster._utils.error import SerializableErrorInfo
 from dagster._utils.merger import merge_dicts
 
-if TYPE_CHECKING:
-    from dagster._core.remote_representation.origin import RemotePartitionSetOrigin
-
 # out of abundance of caution, sleep at checkpoints in case we are pinning CPU by submitting lots
 # of jobs all at once
 CHECKPOINT_INTERVAL = 1
 CHECKPOINT_COUNT = 25
-
-
-@record
-class BackfillRunRequest:
-    key_or_range: Union[str, PartitionKeyRange]
-    run_tags: Mapping[str, str]
-    run_config: Mapping[str, Any]
 
 
 def execute_job_backfill_iteration(
@@ -117,7 +111,6 @@ def execute_job_backfill_iteration(
                 lambda: workspace_process_context.create_request_context(),
                 backfill,
                 chunk,
-                submit_threadpool_executor,
             ):
                 yield None
                 # before submitting, refetch the backfill job to check for status changes
@@ -332,7 +325,6 @@ def submit_backfill_runs(
     create_workspace: Callable[[], BaseWorkspaceRequestContext],
     backfill_job: PartitionBackfill,
     partition_names_or_ranges: Optional[Sequence[Union[str, PartitionKeyRange]]] = None,
-    submit_threadpool_executor: Optional[ThreadPoolExecutor] = None,
 ) -> Iterable[Optional[str]]:
     """Returns the run IDs of the submitted runs."""
     origin = cast("RemotePartitionSetOrigin", backfill_job.partition_set_origin)
@@ -404,14 +396,30 @@ def submit_backfill_runs(
             for r in check.is_list(partition_names_or_ranges, of_type=PartitionKeyRange)
         }
     else:
-        run_config_by_key_or_range = {
-            pd.name: pd.run_config for pd in partition_set_execution_data.partition_data
-        }
+        run_config_by_key_or_range = {}
+        for pd in partition_set_execution_data.partition_data:
+            base_config = pd.run_config or {}
+
+            partition_config_str = (
+                backfill_job.partition_configs.get(pd.name)
+                if backfill_job.partition_configs
+                else None
+            )
+            try:
+                partition_config = json.loads(partition_config_str) if partition_config_str else {}
+            except json.JSONDecodeError:
+                partition_config = {}
+
+            # Merge user-defined config into base config
+            merged_config = {**base_config, **partition_config}
+
+            run_config_by_key_or_range[pd.name] = merged_config
         tags_by_key_or_range = {
             pd.name: pd.tags for pd in partition_set_execution_data.partition_data
         }
 
-    def create_and_submit_partition_run(backfill_run_request: BackfillRunRequest) -> Optional[str]:
+    for key_or_range in partition_names_or_ranges:
+        # Refresh the code location in case the workspace has reloaded mid-backfill
         workspace = create_workspace()
         code_location = workspace.get_code_location(location_name)
 
@@ -421,35 +429,17 @@ def submit_backfill_runs(
             remote_job,
             partition_set,
             backfill_job,
-            backfill_run_request.key_or_range,
-            backfill_run_request.run_tags,
-            backfill_run_request.run_config,
+            key_or_range,
+            run_tags=tags_by_key_or_range[key_or_range],
+            run_config=run_config_by_key_or_range[key_or_range],
         )
-
         if dagster_run:
             # we skip runs in certain cases, e.g. we are running a `from_failure` backfill job
             # and the partition has had a successful run since the time the backfill was
             # scheduled
             instance.submit_run(dagster_run.run_id, workspace)
-            return dagster_run.run_id
-
-        return None
-
-    batch_run_requests = [
-        BackfillRunRequest(
-            key_or_range=key_or_range,
-            run_tags=tags_by_key_or_range[key_or_range],
-            run_config=run_config_by_key_or_range[key_or_range],
-        )
-        for key_or_range in partition_names_or_ranges
-    ]
-
-    if submit_threadpool_executor:
-        yield from submit_threadpool_executor.map(
-            create_and_submit_partition_run, batch_run_requests
-        )
-    else:
-        yield from map(create_and_submit_partition_run, batch_run_requests)
+            yield dagster_run.run_id
+        yield None
 
 
 def create_backfill_run(
