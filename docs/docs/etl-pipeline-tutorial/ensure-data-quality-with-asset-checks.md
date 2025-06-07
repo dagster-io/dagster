@@ -20,29 +20,11 @@ In this case we want to create a check to identify if there are any rows in `joi
 Copy the following code beneath the `joined_data` asset.
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/etl_tutorial/definitions.py"
+  path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/defs/assets.py"
   language="python"
-  lineStart="134"
-  lineEnd="150"
+  startAfter="start_asset_check"
+  endBefore="end_asset_check"
 />
-
-## 2. Run the asset check
-
-Before you can run the asset check, you need to add it to the Definitions object. Like assets, asset checks are added to their own list.
-
-Your Definitions object should look like this now:
-
-```python
-defs = dg.Definitions(
-    assets=[products,
-        sales_reps,
-        sales_data,
-        joined_data,
-    ],
-    asset_checks=[missing_dimension_check],
-    resources={"duckdb": DuckDBResource(database="data/mydb.duckdb")},
-)
-```
 
 Asset checks will run when an asset is materialized, but asset checks can also be executed manually in the UI:
 
