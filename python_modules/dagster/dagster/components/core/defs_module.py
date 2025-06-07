@@ -1,6 +1,7 @@
 import importlib
 import inspect
 from collections.abc import Callable, Iterator, Mapping, Sequence
+from contextlib import nullcontext
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Optional, TypeVar, Union
@@ -402,24 +403,14 @@ def load_yaml_component_from_path(context: ComponentLoadContext, component_def_p
         )
 
         # find the component type
-        type_str = context.normalize_component_type_str(component_file_model.type)
-        key = PluginObjectKey.from_typename(type_str)
-        obj = load_package_object(key)
-        if not isinstance(obj, type) or not issubclass(obj, Component):
-            raise DagsterInvalidDefinitionError(
-                f"Component type {type_str} is of type {type(obj)}, but must be a subclass of dagster.Component"
-            )
+        obj = get_package_obj_for_type(
+            context.normalize_component_type_str(component_file_model.type)
+        )
 
         context = context_with_injected_scope(
             context, obj, component_file_model.template_vars_module
-        )
-
-        context = context.with_source_position_tree(
-            source_tree.source_position_tree,
-        )
-
+        ).with_source_position_tree(source_tree.source_position_tree)
         model_cls = obj.get_model_cls()
-
         attributes_model = get_attributes_model(component_file_model, model_cls, source_tree)
 
         post_processors_list.append(
@@ -427,7 +418,6 @@ def load_yaml_component_from_path(context: ComponentLoadContext, component_def_p
                 context.resolution_context, component_file_model.post_processing
             )
         )
-
         components.append(obj.load(attributes_model, context))
 
     check.invariant(len(components) > 0, "No components found in YAML file")
@@ -438,28 +428,30 @@ def load_yaml_component_from_path(context: ComponentLoadContext, component_def_p
     )
 
 
+def get_package_obj_for_type(type_str: str) -> type[Component]:
+    key = PluginObjectKey.from_typename(type_str)
+    obj = load_package_object(key)
+    if not isinstance(obj, type) or not issubclass(obj, Component):
+        raise DagsterInvalidDefinitionError(
+            f"Component type {type_str} is of type {type(obj)}, but must be a subclass of dagster.Component"
+        )
+    return obj
+
+
 def get_attributes_model(
     component_file_model: ComponentFileModel,
     model_cls: Optional[type[BaseModel]],
     source_tree: Optional[ValueAndSourcePositionTree],
 ) -> Optional[BaseModel]:
-    # grab the attributes from the yaml file
-    if model_cls is None:
-        return None
-
-    if not source_tree:
-        return None
-
-    if not component_file_model.attributes:
+    if model_cls is None or not source_tree or not component_file_model.attributes:
         return None
 
     attributes_position_tree = source_tree.source_position_tree.children.get("attributes", None)
-    if attributes_position_tree:
-        with enrich_validation_errors_with_source_position(
-            attributes_position_tree, ["attributes"]
-        ):
-            return TypeAdapter(model_cls).validate_python(component_file_model.attributes)
-    else:
+    with (
+        enrich_validation_errors_with_source_position(attributes_position_tree, ["attributes"])
+        if attributes_position_tree
+        else nullcontext()
+    ):
         return TypeAdapter(model_cls).validate_python(component_file_model.attributes)
 
 
@@ -468,14 +460,11 @@ def from_post_processing_dict(
 ) -> list[AssetPostProcessor]:
     if not post_processing:
         return []
-    parsed_model = TypeAdapter(ComponentPostProcessingModel.model()).validate_python(
-        post_processing
+    post_processing_model = ComponentPostProcessingModel.resolve_from_model(
+        context=resolution_context,
+        model=TypeAdapter(ComponentPostProcessingModel.model()).validate_python(post_processing),
     )
-    resolved_model = ComponentPostProcessingModel.resolve_from_model(
-        resolution_context,
-        parsed_model,
-    )
-    return list(resolved_model.processors or [])
+    return list(post_processing_model.processors or [])
 
 
 # When we remove component.yaml, we can remove this function for just a defs.yaml check
