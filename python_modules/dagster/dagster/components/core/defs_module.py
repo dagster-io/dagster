@@ -417,7 +417,6 @@ def load_yaml_component_from_path(context: ComponentLoadContext, component_def_p
                 context.resolution_context, component_file_model.post_processing
             )
         )
-
         components.append(obj.load(attributes_model, context))
 
     check.invariant(len(components) > 0, "No components found in YAML file")
