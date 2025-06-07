@@ -25,16 +25,31 @@ def cacheable_fivetran_workspace_data():
     )
 
 
+@definitions
+def cacheable_fivetran_workspace_data_no_account_id():
+    workspace = FivetranWorkspace(api_key=TEST_API_KEY, api_secret=TEST_API_SECRET)
+
+    workspace.get_or_fetch_workspace_data()
+
+    return Definitions(
+        resources={"fivetran": workspace},
+    )
+
+
+@pytest.mark.parametrize(
+    "definitions_fn_name",
+    ["cacheable_fivetran_workspace_data", "cacheable_fivetran_workspace_data_no_account_id"],
+)
 @pytest.mark.order("last")
 def test_cacheable_fivetran_workspace_data(
-    fetch_workspace_data_api_mocks: responses.RequestsMock,
+    fetch_workspace_data_api_mocks: responses.RequestsMock, definitions_fn_name: str
 ) -> None:
     assert len(fetch_workspace_data_api_mocks.calls) == 0
 
     # first, we resolve the repository to generate our cached metadata
     pointer = CodePointer.from_python_file(
         __file__,
-        "cacheable_fivetran_workspace_data",
+        definitions_fn_name,
         None,
     )
     init_repository_def = initialize_repository_def_from_pointer(
