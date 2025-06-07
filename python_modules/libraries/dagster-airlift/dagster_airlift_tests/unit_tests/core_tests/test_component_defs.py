@@ -77,7 +77,9 @@ def test_load_dags_basic(component_for_test: type[AirflowInstanceComponent]) -> 
                 "password": "admin",
             },
             "name": "test_instance",
-            "asset_post_processors": [
+        },
+        post_processing={
+            "processors": [
                 {
                     "target": "*",
                     "attributes": {
@@ -86,7 +88,7 @@ def test_load_dags_basic(component_for_test: type[AirflowInstanceComponent]) -> 
                         },
                     },
                 }
-            ],
+            ]
         },
     )
 
@@ -209,7 +211,9 @@ def test_mapped_assets(component_for_test: type[AirflowInstanceComponent], temp_
                     "assets": [{"by_key": "my_asset_2"}, {"spec": {"key": "my_ext_asset_2"}}],
                 }
             ],
-            "asset_post_processors": [
+        },
+        post_processing={
+            "processors": [
                 {
                     "target": "*",
                     "attributes": {
@@ -218,7 +222,7 @@ def test_mapped_assets(component_for_test: type[AirflowInstanceComponent], temp_
                         },
                     },
                 }
-            ],
+            ]
         },
     )
 
