@@ -1,6 +1,6 @@
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
-from typing import Annotated, Any, Callable, Literal, Optional, Union
+from typing import TYPE_CHECKING, Annotated, Any, Callable, Literal, Optional, Union
 
 from dagster_shared.record import record
 from typing_extensions import TypeAlias
@@ -14,10 +14,12 @@ from dagster._core.definitions.backfill_policy import BackfillPolicy
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationCondition,
 )
-from dagster._core.definitions.definitions_class import Definitions
 from dagster.components.resolved.base import Resolvable, resolve_fields
 from dagster.components.resolved.context import ResolutionContext
 from dagster.components.resolved.model import Injected, Model, Resolver
+
+if TYPE_CHECKING:
+    from dagster.components.definitions import DefinitionsHandle, PostProcessorFn
 
 
 def _resolve_asset_key(context: ResolutionContext, key: str) -> AssetKey:
@@ -25,9 +27,6 @@ def _resolve_asset_key(context: ResolutionContext, key: str) -> AssetKey:
     return (
         AssetKey.from_user_string(resolved_val) if isinstance(resolved_val, str) else resolved_val
     )
-
-
-PostProcessorFn: TypeAlias = Callable[[Definitions], Definitions]
 
 
 class SingleRunBackfillPolicyModel(Resolvable, Model):
@@ -293,14 +292,14 @@ def apply_post_processor_to_spec(
         check.failed(f"Unsupported operation: {model.operation}")
 
 
-def apply_post_processor_to_defs(
+def apply_post_processor_to_defs_handle(
     model,
-    defs: Definitions,
+    defs_handle: "DefinitionsHandle",
     context: ResolutionContext,
-) -> Definitions:
+) -> "DefinitionsHandle":
     check.inst(model, AssetPostProcessorModel.model())
 
-    return defs.map_resolved_asset_specs(
+    return defs_handle.map_asset_specs(
         selection=model.target,
         func=lambda spec: apply_post_processor_to_spec(model, spec, context),
     )
@@ -309,14 +308,14 @@ def apply_post_processor_to_defs(
 def resolve_schema_to_post_processor(
     context: ResolutionContext,
     model,
-) -> Callable[[Definitions], Definitions]:
+) -> Callable[["DefinitionsHandle"], "DefinitionsHandle"]:
     check.inst(model, AssetPostProcessorModel.model())
 
-    return lambda defs: apply_post_processor_to_defs(model, defs, context)
+    return lambda defs_handle: apply_post_processor_to_defs_handle(model, defs_handle, context)
 
 
 AssetPostProcessor: TypeAlias = Annotated[
-    PostProcessorFn,
+    "PostProcessorFn",
     Resolver(
         resolve_schema_to_post_processor,
         model_field_type=AssetPostProcessorModel.model(),

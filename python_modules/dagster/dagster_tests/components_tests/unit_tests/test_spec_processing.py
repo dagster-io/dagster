@@ -1,14 +1,18 @@
 from collections.abc import Sequence
+from typing import Optional
 
 import pytest
 from dagster import AssetKey, AssetSpec, AutomationCondition, Definitions
+from dagster.components.core.context import ComponentLoadContext
+from dagster.components.definitions import ComponentsDefinitionsHandle
 from dagster.components.resolved.context import ResolutionContext
 from dagster.components.resolved.core_models import (
     AssetAttributesModel,
     AssetPostProcessorModel,
-    apply_post_processor_to_defs,
+    apply_post_processor_to_defs_handle,
 )
 from dagster.components.utils import TranslatorResolvingInfo
+from dagster_shared import check
 from pydantic import BaseModel, TypeAdapter
 
 
@@ -16,13 +20,29 @@ class M(BaseModel):
     asset_attributes: Sequence[AssetPostProcessorModel] = []
 
 
-defs = Definitions(
-    assets=[
-        AssetSpec("a", group_name="g1"),
-        AssetSpec("b", group_name="g2"),
-        AssetSpec("c", group_name="g2", tags={"tag": "val"}),
-    ],
+defs_handle = ComponentsDefinitionsHandle(
+    defs=Definitions(
+        assets=[
+            AssetSpec("a", group_name="g1"),
+            AssetSpec("b", group_name="g2"),
+            AssetSpec("c", group_name="g2", tags={"tag": "val"}),
+        ],
+    ),
+    context=ComponentLoadContext.for_test(),
 )
+
+
+def get_defs_from_post_processed_handle(
+    model: BaseModel,
+    defs_handle: ComponentsDefinitionsHandle,
+    context: Optional[ResolutionContext] = None,
+) -> Definitions:
+    return check.inst(  # noqa:SLF001
+        apply_post_processor_to_defs_handle(
+            model=model, defs_handle=defs_handle, context=context or ResolutionContext.default()
+        ),
+        ComponentsDefinitionsHandle,
+    )._defs
 
 
 def test_replace_attributes() -> None:
@@ -32,7 +52,7 @@ def test_replace_attributes() -> None:
         attributes={"tags": {"newtag": "newval"}},
     )
 
-    newdefs = apply_post_processor_to_defs(model=op, defs=defs, context=ResolutionContext.default())
+    newdefs = get_defs_from_post_processed_handle(model=op, defs_handle=defs_handle)
     asset_graph = newdefs.resolve_asset_graph()
     assert asset_graph.get(AssetKey("a")).tags == {}
     assert asset_graph.get(AssetKey("b")).tags == {"newtag": "newval"}
@@ -46,7 +66,7 @@ def test_merge_attributes() -> None:
         attributes={"tags": {"newtag": "newval"}},
     )
 
-    newdefs = apply_post_processor_to_defs(model=op, defs=defs, context=ResolutionContext.default())
+    newdefs = get_defs_from_post_processed_handle(model=op, defs_handle=defs_handle)
     asset_graph = newdefs.resolve_asset_graph()
     assert asset_graph.get(AssetKey("a")).tags == {}
     assert asset_graph.get(AssetKey("b")).tags == {"newtag": "newval"}
@@ -58,7 +78,7 @@ def test_render_attributes_asset_context() -> None:
         attributes={"tags": {"group_name_tag": "group__{{ asset.group_name }}"}}
     )
 
-    newdefs = apply_post_processor_to_defs(model=op, defs=defs, context=ResolutionContext.default())
+    newdefs = get_defs_from_post_processed_handle(model=op, defs_handle=defs_handle)
     asset_graph = newdefs.resolve_asset_graph()
     assert asset_graph.get(AssetKey("a")).tags == {"group_name_tag": "group__g1"}
     assert asset_graph.get(AssetKey("b")).tags == {"group_name_tag": "group__g2"}
@@ -80,9 +100,9 @@ def test_render_attributes_custom_context() -> None:
         return AutomationCondition.cron_tick_passed(s) & ~AutomationCondition.in_progress()
 
     metadata = {"a": 1, "b": "str", "d": 1.23}
-    newdefs = apply_post_processor_to_defs(
+    newdefs = get_defs_from_post_processed_handle(
         model=op,
-        defs=defs,
+        defs_handle=defs_handle,
         context=ResolutionContext.default().with_scope(
             foo="theval", metadata=metadata, custom_cron=_custom_cron
         ),

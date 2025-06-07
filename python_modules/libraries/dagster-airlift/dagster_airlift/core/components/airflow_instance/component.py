@@ -11,6 +11,7 @@ from dagster._core.definitions.asset_spec import (
 from dagster._core.definitions.definitions_class import Definitions
 from dagster.components.component_scaffolding import scaffold_component
 from dagster.components.core.defs_module import DefsFolderComponent, find_components_from_context
+from dagster.components.definitions import ComponentsDefinitionsHandle
 from dagster.components.resolved.base import resolve_fields
 from dagster.components.resolved.context import ResolutionContext
 from dagster.components.resolved.core_models import (
@@ -212,7 +213,9 @@ class AirflowInstanceComponent(Component, Resolvable):
             retrieval_filter=self.filter or AirflowFilter(),
         )
         for post_processor in self.asset_post_processors or []:
-            defs = post_processor(defs)
+            defs = ComponentsDefinitionsHandle.apply_post_processing_fn(
+                defs, context, post_processor
+            )
         return defs
 
 
