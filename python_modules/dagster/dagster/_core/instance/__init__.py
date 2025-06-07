@@ -2454,9 +2454,19 @@ class DagsterInstance(DynamicPartitionsStore):
         Args:
             asset_keys (Sequence[AssetKey]): Asset keys to wipe.
         """
+        from dagster._core.events import AssetWipedData, DagsterEvent, DagsterEventType
+
         check.list_param(asset_keys, "asset_keys", of_type=AssetKey)
         for asset_key in asset_keys:
             self._event_storage.wipe_asset(asset_key)
+            self.report_dagster_event(
+                run_id=RUNLESS_RUN_ID,
+                dagster_event=DagsterEvent(
+                    event_type_value=DagsterEventType.ASSET_WIPED.value,
+                    event_specific_data=AssetWipedData(asset_key=asset_key, partition_keys=None),
+                    job_name=RUNLESS_JOB_NAME,
+                ),
+            )
 
     def wipe_asset_partitions(
         self,
@@ -2469,7 +2479,19 @@ class DagsterInstance(DynamicPartitionsStore):
             asset_key (Sequence[AssetKey]): Asset key to wipe.
             partition_keys (Sequence[str]): Partition keys to wipe.
         """
+        from dagster._core.events import AssetWipedData, DagsterEvent, DagsterEventType
+
         self._event_storage.wipe_asset_partitions(asset_key, partition_keys)
+        self.report_dagster_event(
+            run_id=RUNLESS_RUN_ID,
+            dagster_event=DagsterEvent(
+                event_type_value=DagsterEventType.ASSET_WIPED.value,
+                event_specific_data=AssetWipedData(
+                    asset_key=asset_key, partition_keys=partition_keys
+                ),
+                job_name=RUNLESS_JOB_NAME,
+            ),
+        )
 
     @traced
     def get_materialized_partitions(
