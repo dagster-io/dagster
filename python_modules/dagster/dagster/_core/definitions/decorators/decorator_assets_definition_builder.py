@@ -99,7 +99,6 @@ def build_and_validate_named_ins(
     deps = check.opt_iterable_param(deps, "deps", AssetDep)
 
     new_input_args = get_function_params_without_context_or_config_or_resources(fn)
-
     non_var_input_param_names = [
         param.name for param in new_input_args if param.kind == Parameter.POSITIONAL_OR_KEYWORD
     ]
@@ -119,7 +118,21 @@ def build_and_validate_named_ins(
                 )
 
     named_ins_by_asset_key: dict[AssetKey, NamedIn] = {}
+
+    set_input_names = set()
+    for dep in deps:
+        if dep.asset_key not in named_ins_by_asset_key:
+            input_name = dep.input_name or stringify_asset_key_to_input_name(dep.asset_key)
+            set_input_names.add(input_name)
+            named_ins_by_asset_key[dep.asset_key] = NamedIn(
+                input_name,
+                In(cast("type", DagsterAny)) if dep.input_name else In(cast("type", Nothing)),
+            )
+
     for input_name in all_input_names:
+        if input_name in set_input_names:
+            continue
+
         asset_key = None
 
         if input_name in asset_ins:
@@ -140,13 +153,6 @@ def build_and_validate_named_ins(
             input_name.replace("-", "_"),
             In(metadata=metadata, input_manager_key=input_manager_key, dagster_type=dagster_type),
         )
-
-    for dep in deps:
-        if dep.asset_key not in named_ins_by_asset_key:
-            named_ins_by_asset_key[dep.asset_key] = NamedIn(
-                stringify_asset_key_to_input_name(dep.asset_key),
-                In(cast("type", Nothing)),
-            )
 
     return named_ins_by_asset_key
 
