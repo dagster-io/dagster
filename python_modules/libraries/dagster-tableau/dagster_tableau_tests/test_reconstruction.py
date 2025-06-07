@@ -338,7 +338,12 @@ def test_load_assets_workspace_data_refreshable_data_sources(
         asset_materializations = [
             event for event in events if event.event_type == DagsterEventType.ASSET_MATERIALIZATION
         ]
-        assert len(asset_materializations) == 4
+        assert len(asset_materializations) == 0
+
+        asset_observations = [
+            event for event in events if event.event_type == DagsterEventType.ASSET_OBSERVATION
+        ]
+        assert len(asset_observations) == 4
 
         # 3 calls to create the defs + 8 calls to materialize the Tableau assets
         # with 1 data source to refresh, 2 sheets and 1 dashboard
@@ -441,7 +446,12 @@ def test_load_assets_workspace_data(
         asset_materializations = [
             event for event in events if event.event_type == DagsterEventType.ASSET_MATERIALIZATION
         ]
-        assert len(asset_materializations) == 3
+        assert len(asset_materializations) == 0
+
+        asset_observations = [
+            event for event in events if event.event_type == DagsterEventType.ASSET_OBSERVATION
+        ]
+        assert len(asset_observations) == 3
 
         # 3 calls to create the defs + 3 calls to materialize the Tableau assets
         # with 1 workbook, 2 sheets and 1 dashboard
