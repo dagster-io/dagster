@@ -3,7 +3,6 @@ type: my_project.components.custom_sling_replication_component.CustomSlingReplic
 attributes:
   replications:
     - path: replication.yaml
-
 post_processing:
   processors:
     - attributes:

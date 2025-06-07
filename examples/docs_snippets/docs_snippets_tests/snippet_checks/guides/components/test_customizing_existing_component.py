@@ -299,7 +299,7 @@ def test_components_docs_adding_attributes_to_assets(
                 post_processing:
                   processors:
                     - attributes:
-                        automation_condition: "{{ custom_cron('@daily') }}"
+                        automation_condition: "{{{{ custom_cron('@daily') }}}}"
                 """),
             snippet_path=SNIPPETS_DIR
             / component_type

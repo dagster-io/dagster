@@ -3,9 +3,7 @@ type: my_project.defs.my_sling_sync.component.CustomSlingReplicationComponent
 attributes:
   replications:
     - path: replication.yaml
-
 post_processing:
   processors:
-    - target: "*"
-      attributes:
+    - attributes:
         automation_condition: "{{ custom_cron('@daily') }}"
