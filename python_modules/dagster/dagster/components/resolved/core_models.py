@@ -70,19 +70,6 @@ class OpMetadataSpec(Model, Resolvable):
     ] = None
 
 
-# @dataclass
-# class OpSpec(Resolvable):
-#     name: Optional[str] = None
-#     tags: Optional[dict[str, str]] = None
-#     backfill_policy: Annotated[
-#         Optional[BackfillPolicy],
-#         Resolver(
-#             resolve_backfill_policy,
-#             model_field_type=Union[SingleRunBackfillPolicyModel, MultiRunBackfillPolicyModel],
-#         ),
-#     ] = None
-
-
 def _expect_injected(context, val):
     return check.opt_inst_param(val, "val", AutomationCondition)
 
