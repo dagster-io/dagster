@@ -1,5 +1,4 @@
 from collections.abc import Mapping, Sequence
-from dataclasses import dataclass
 from typing import Annotated, Any, Callable, Literal, Optional, Union
 
 from dagster_shared.record import record
@@ -56,10 +55,12 @@ def resolve_backfill_policy(
     raise ValueError(f"Invalid backfill policy: {backfill_policy}")
 
 
-@dataclass
-class OpSpec(Resolvable):
+# Base class for all execution metadata
+class OpMetadataSpec(Model, Resolvable):
     name: Optional[str] = None
-    tags: Optional[dict[str, str]] = None
+    tags: Optional[dict[str, Any]] = None
+    description: Optional[str] = None
+    pool: Optional[str] = None
     backfill_policy: Annotated[
         Optional[BackfillPolicy],
         Resolver(
@@ -67,6 +68,19 @@ class OpSpec(Resolvable):
             model_field_type=Union[SingleRunBackfillPolicyModel, MultiRunBackfillPolicyModel],
         ),
     ] = None
+
+
+# @dataclass
+# class OpSpec(Resolvable):
+#     name: Optional[str] = None
+#     tags: Optional[dict[str, str]] = None
+#     backfill_policy: Annotated[
+#         Optional[BackfillPolicy],
+#         Resolver(
+#             resolve_backfill_policy,
+#             model_field_type=Union[SingleRunBackfillPolicyModel, MultiRunBackfillPolicyModel],
+#         ),
+#     ] = None
 
 
 def _expect_injected(context, val):

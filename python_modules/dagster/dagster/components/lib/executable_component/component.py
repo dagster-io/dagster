@@ -16,17 +16,12 @@ from dagster._core.execution.context.asset_execution_context import AssetExecuti
 from dagster.components.component.component import Component
 from dagster.components.core.context import ComponentLoadContext
 from dagster.components.resolved.base import Resolvable
-from dagster.components.resolved.core_models import ResolvedAssetCheckSpec, ResolvedAssetSpec
+from dagster.components.resolved.core_models import (
+    OpMetadataSpec,
+    ResolvedAssetCheckSpec,
+    ResolvedAssetSpec,
+)
 from dagster.components.resolved.model import Model
-
-
-# Base class for all execution metadata
-class OpMetadataSpec(Model, Resolvable, ABC):
-    name: Optional[str] = None
-    tags: Optional[dict[str, Any]] = None
-    description: Optional[str] = None
-    pool: Optional[str] = None
-
 
 T = TypeVar("T", bound=Union[MaterializeResult, AssetCheckResult])
 

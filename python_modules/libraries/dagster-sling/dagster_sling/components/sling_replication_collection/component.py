@@ -17,7 +17,11 @@ from dagster._core.definitions.result import MaterializeResult
 from dagster.components.component.component import Component
 from dagster.components.core.context import ComponentLoadContext
 from dagster.components.resolved.context import ResolutionContext
-from dagster.components.resolved.core_models import AssetAttributesModel, AssetPostProcessor, OpSpec
+from dagster.components.resolved.core_models import (
+    AssetAttributesModel,
+    AssetPostProcessor,
+    OpMetadataSpec,
+)
 from dagster.components.scaffold.scaffold import scaffold_with
 from dagster.components.utils import TranslatorResolvingInfo
 from typing_extensions import TypeAlias
@@ -72,7 +76,7 @@ class ProxyDagsterSlingTranslator(DagsterSlingTranslator):
 @dataclass
 class SlingReplicationSpecModel(Resolvable):
     path: str
-    op: Optional[OpSpec] = None
+    op: Optional[OpMetadataSpec] = None
     translation: Optional[ResolvedTranslationFn] = None
     include_metadata: list[SlingMetadataAddons] = field(default_factory=list)
 
@@ -135,7 +139,7 @@ class SlingReplicationCollectionComponent(Component, Resolvable):
     def build_asset(
         self, context: ComponentLoadContext, replication_spec_model: SlingReplicationSpecModel
     ) -> AssetsDefinition:
-        op_spec = replication_spec_model.op or OpSpec()
+        op_spec = replication_spec_model.op or OpMetadataSpec()
 
         class ReplicationTranslatorWithCodeReferences(DagsterSlingTranslator):
             def get_asset_spec(self, stream_definition: Mapping[str, Any]) -> AssetSpec:

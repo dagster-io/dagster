@@ -8,7 +8,7 @@ from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster.components.resolved.core_models import (
     AssetPostProcessor,
-    OpSpec,
+    OpMetadataSpec,
     ResolvedAssetAttributes,
 )
 
@@ -20,7 +20,7 @@ class ComplexAssetComponent(Component, Resolvable):
     value: str
     list_value: list[str]
     obj_value: dict[str, str]
-    op: Optional[OpSpec] = None
+    op: Optional[OpMetadataSpec] = None
     asset_attributes: Optional[ResolvedAssetAttributes] = None
     asset_post_processors: Optional[Sequence[AssetPostProcessor]] = None
 
