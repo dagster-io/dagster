@@ -11,6 +11,7 @@ from dagster_dg_core.utils import (
     pushd,
 )
 from dagster_shared.ipc import interrupt_ipc_subprocess
+from dagster_shared.seven import IS_WINDOWS
 
 ensure_dagster_dg_tests_import()
 from dagster_dg_core.utils import activate_venv
@@ -136,6 +137,7 @@ def test_check_yaml_succeeds_non_default_defs_module() -> None:
         assert_runner_result(result, exit_0=True)
 
 
+@pytest.mark.skipif(IS_WINDOWS, reason="process interruption causes problems")
 def test_check_yaml_with_watch() -> None:
     """Tests that the check CLI prints rich error messages when attempting to
     load components with errors.
