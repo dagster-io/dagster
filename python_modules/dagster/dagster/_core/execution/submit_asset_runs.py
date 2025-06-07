@@ -54,7 +54,7 @@ def _get_execution_plan_entity_keys(
     return output_entity_keys
 
 
-def _get_job_execution_data_from_run_request(
+def get_job_execution_data_from_run_request(
     asset_graph: RemoteWorkspaceAssetGraph,
     run_request: RunRequest,
     instance: DagsterInstance,
@@ -116,6 +116,7 @@ def _create_asset_run(
     instance: DagsterInstance,
     run_request_execution_data_cache: dict[JobSubsetSelector, RunRequestExecutionData],
     workspace_process_context: IWorkspaceProcessContext,
+    workspace: BaseWorkspaceRequestContext,
     debug_crash_flags: SingleInstigatorDebugCrashFlags,
     logger: logging.Logger,
 ) -> DagsterRun:
@@ -134,11 +135,8 @@ def _create_asset_run(
 
         # retry until the execution plan targets the asset selection
         try:
-            # create a new request context for each run in case the code location server
-            # is swapped out in the middle of the submission process
-            workspace = workspace_process_context.create_request_context()
             asset_graph = workspace.asset_graph
-            execution_data = _get_job_execution_data_from_run_request(
+            execution_data = get_job_execution_data_from_run_request(
                 asset_graph,
                 run_request,
                 instance,
@@ -244,6 +242,7 @@ def submit_asset_run(
     run_request_index: int,
     instance: DagsterInstance,
     workspace_process_context: IWorkspaceProcessContext,
+    workspace: BaseWorkspaceRequestContext,
     run_request_execution_data_cache: dict[JobSubsetSelector, RunRequestExecutionData],
     debug_crash_flags: SingleInstigatorDebugCrashFlags,
     logger: logging.Logger,
@@ -285,6 +284,7 @@ def submit_asset_run(
             instance,
             run_request_execution_data_cache,
             workspace_process_context,
+            workspace,
             debug_crash_flags,
             logger,
         )
