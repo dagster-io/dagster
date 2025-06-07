@@ -11,7 +11,7 @@ from dagster._core.pipes.context import PipesExecutionResult
 from dagster.components.core.context import ComponentLoadContext
 from dagster.components.lib.executable_component.component import (
     ExecutableComponent,
-    OpMetadataSpec,
+    ExecutionMetadataSpecBase,
 )
 from dagster.components.lib.executable_component.script_utils import (
     ScriptSpec,
@@ -24,7 +24,7 @@ class PythonScriptComponent(ExecutableComponent):
     execution: ScriptSpec
 
     @property
-    def op_metadata_spec(self) -> OpMetadataSpec:
+    def op_metadata_spec(self) -> ExecutionMetadataSpecBase:
         return self._subprocess_spec
 
     @cached_property
