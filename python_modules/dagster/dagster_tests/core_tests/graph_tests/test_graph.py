@@ -9,6 +9,7 @@ from dagster import (
     ConfigMapping,
     DagsterInstance,
     DagsterTypeCheckDidNotPass,
+    Definitions,
     DynamicOut,
     DynamicOutput,
     Enum,
@@ -37,6 +38,7 @@ from dagster._core.errors import (
     DagsterInvalidConfigError,
     DagsterInvalidDefinitionError,
 )
+from dagster._core.storage.fs_io_manager import FilesystemIOManager
 from dagster._core.test_utils import instance_for_test
 from dagster._loggers import json_console_logger
 from dagster._time import parse_time_string
@@ -496,7 +498,7 @@ def test_to_job_incomplete_default_config():
             DagsterInvalidConfigError,
             match=error_msg,
         ):
-            my_graph.to_job(name="my_job", config=invalid_config)
+            my_graph.to_job(name="my_job", config=invalid_config).execute_in_process()
 
 
 class TestEnum(enum.Enum):
@@ -849,7 +851,7 @@ def test_top_level_graph_outer_config_failure():
         my_graph.to_job().execute_in_process(run_config={"ops": {"config": {"bad_type": "foo"}}})
 
     with pytest.raises(DagsterInvalidConfigError, match="Invalid scalar at path root:config"):
-        my_graph.to_job(config={"ops": {"config": {"bad_type": "foo"}}})
+        my_graph.to_job(config={"ops": {"config": {"bad_type": "foo"}}}).execute_in_process()
 
 
 def test_graph_dict_config():
@@ -865,6 +867,22 @@ def test_graph_dict_config():
     assert result.success
 
     assert result.output_value() == "foo"
+
+
+def test_graph_dict_config_resource_defs():
+    @op(out=Out(io_manager_key="dummy"))
+    def my_op(x: int) -> int:
+        return x
+
+    @graph
+    def my_graph(x: int) -> int:
+        return my_op(x)
+
+    my_job = my_graph.to_job(name="my_job", config={"inputs": {"x": 1}})
+
+    defs = Definitions(jobs=[my_job], resources={"dummy": FilesystemIOManager(base_dir=".")})
+    result = defs.resolve_job_def("my_job").execute_in_process()
+    assert result.success
 
 
 def test_graph_with_configured():

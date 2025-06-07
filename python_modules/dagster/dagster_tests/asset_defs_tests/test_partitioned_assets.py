@@ -732,7 +732,7 @@ def test_mismatched_job_partitioned_config_with_asset_partitions():
     ):
         define_asset_job("job", config=myconfig).resolve(
             asset_graph=AssetGraph.from_assets([asset1])
-        )
+        ).execute_in_process()
 
 
 def test_partition_range_single_run() -> None:
