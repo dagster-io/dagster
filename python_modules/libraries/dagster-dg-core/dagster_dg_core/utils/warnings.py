@@ -11,11 +11,12 @@ DgWarningIdentifier: TypeAlias = Literal[
     "autoload_defs_with_definitions_py",
     "cli_config_in_workspace_project",
     "deprecated_user_config_location",
-    "dg_outdated",
     "deprecated_python_environment",
     "deprecated_dagster_dg_library_entry_point",
     "missing_dg_plugin_module_in_manifest",
     "project_and_activated_venv_mismatch",
+    # create-dagster
+    "create_dagster_outdated",
 ]
 
 

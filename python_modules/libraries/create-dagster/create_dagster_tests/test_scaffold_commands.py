@@ -3,7 +3,7 @@ import subprocess
 from pathlib import Path
 from typing import Literal, Optional, get_args
 
-import create_dagster
+import create_dagster.version_check
 import dagster_shared.check as check
 import pytest
 import tomlkit
@@ -16,6 +16,7 @@ from dagster_dg_core.utils import (
     has_toml_node,
     modify_toml_as_dict,
 )
+from dagster_shared.libraries import get_published_pypi_versions
 from typing_extensions import TypeAlias
 
 ensure_dagster_dg_tests_import()
@@ -415,3 +416,45 @@ def test_scaffold_project_already_exists_fails() -> None:
         result = runner.invoke_create_dagster("project", "bar", "--uv-sync")
         assert_runner_result(result, exit_0=False)
         assert "already specifies a project at" in result.output
+
+
+# ########################
+# ##### VERSION WARNINGS
+# ########################
+
+
+@pytest.mark.parametrize("command", ["workspace", "project"])
+def test_dg_up_to_date_warning(monkeypatch, command: str) -> None:
+    versions = get_published_pypi_versions("create-dagster")
+    previous_version = versions[-2]
+
+    orig_version = create_dagster.version_check.__version__
+    monkeypatch.setattr(create_dagster.version_check, "__version__", str(previous_version))
+
+    # We have to set this because we turn it off for the rest of the test suite in root conftest.py
+    # to avoid bombing the PyPI API.
+    monkeypatch.setenv(
+        create_dagster.version_check.CREATE_DAGSTER_UPDATE_CHECK_ENABLED_ENV_VAR, "1"
+    )
+    with ProxyRunner.test() as runner:
+        warning_str = "There is a new version of `create-dagster` available"
+        pypi_log_str = "Checking for the latest version"
+
+        # Warns when version is outdated
+        with runner.isolated_filesystem():
+            result = runner.invoke_create_dagster(command, "foo", "--no-uv-sync", "--verbose")
+            assert_runner_result(result)
+            assert warning_str in result.output and pypi_log_str in result.output
+
+        # No log message when not verbose
+        with runner.isolated_filesystem():
+            result = runner.invoke_create_dagster(command, "foo", "--no-uv-sync")
+            assert_runner_result(result)
+            assert warning_str in result.output and pypi_log_str not in result.output
+
+        # Does not warn after resetting the version
+        monkeypatch.setattr(create_dagster.version_check, "__version__", orig_version)
+        with runner.isolated_filesystem():
+            result = runner.invoke_create_dagster(command, "foo", "--no-uv-sync")
+            assert_runner_result(result)
+            assert warning_str not in result.output and pypi_log_str not in result.output
