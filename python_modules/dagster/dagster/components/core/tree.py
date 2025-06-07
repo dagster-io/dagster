@@ -1,19 +1,30 @@
 import importlib
+from collections.abc import Sequence
 from functools import cached_property
 from pathlib import Path
 from types import ModuleType
+from typing import Optional
 
 from dagster_shared.record import record
 from typing_extensions import TypeVar
 
 from dagster._core.definitions.definitions_class import Definitions
+from dagster._utils.cached_method import cached_method
 from dagster.components.component.component import Component
 from dagster.components.core.context import ComponentLoadContext
-from dagster.components.core.defs_module import DefsFolderComponent
+from dagster.components.core.decl import ComponentDecl, DefsFolderDecl
+from dagster.components.core.defs_module import ComponentPath, DefsFolderComponent
 
 PLUGIN_COMPONENT_TYPES_JSON_METADATA_KEY = "plugin_component_types_json"
 
 TComponent = TypeVar("TComponent", bound=Component)
+
+
+def _get_canonical_path_string(root_path: Path, path: Path) -> str:
+    """Returns a canonical string representation of the given path (the absolute, POSIX path)
+    to use for e.g. dict keys or path comparisons.
+    """
+    return (root_path / path if not path.is_absolute() else path).absolute().as_posix()
 
 
 @record(
@@ -44,20 +55,93 @@ class ComponentTree:
             defs_module=self.defs_module, project_root=self.project_root
         )
 
-    @cached_property
-    def root(self) -> DefsFolderComponent:
-        return DefsFolderComponent.get(self.load_context)
+    @cached_method
+    def find_root_decl(self) -> DefsFolderDecl:
+        return DefsFolderDecl.get(self.load_context)
 
-    def load_defs(self) -> Definitions:
+    @cached_method
+    def load_root_component(self) -> DefsFolderComponent:
+        return self.find_root_decl()._load_component()  # noqa: SLF001
+
+    @cached_method
+    def build_defs(self) -> Definitions:
         from dagster.components.core.load_defs import get_library_json_enriched_defs
 
         return Definitions.merge(
-            self.root.build_defs(self.load_context),
+            self.load_root_component().build_defs(self.load_context),
             get_library_json_enriched_defs(self),
         )
 
-    def load_defs_at_path(self, defs_path: Path) -> Definitions:
-        """Loads definitions from the given defs subdirectory. Currently
+    @cached_method
+    def _component_decl_tree(self) -> Sequence[tuple[ComponentPath, ComponentDecl]]:
+        """Constructs or returns the full component declaration tree from cache."""
+        tree = list(self.find_root_decl().iterate_path_component_decl_pairs())
+        return tree
+
+    @cached_method
+    def _component_decl_at_posix_path(
+        self, defs_path_posix: str
+    ) -> Optional[tuple[Path, ComponentDecl]]:
+        """Locates a component declaration matching the given canonical string path."""
+        root_decl = self.find_root_decl()
+        if root_decl.path.absolute().as_posix() == defs_path_posix:
+            return (root_decl.path, root_decl)
+        for cp, component_decl in self._component_decl_tree():
+            if cp.file_path.absolute().as_posix() == defs_path_posix:
+                return (cp.file_path, component_decl)
+        return None
+
+    @cached_method
+    def _component_at_posix_path(self, defs_path_posix: str) -> Optional[tuple[Path, Component]]:
+        component_decl_and_path = self._component_decl_at_posix_path(defs_path_posix)
+        if component_decl_and_path:
+            path, component_decl = component_decl_and_path
+            return (path, component_decl._load_component())  # noqa: SLF001
+        return None
+
+    @cached_method
+    def _defs_at_posix_path(self, defs_path_posix: str) -> Optional[Definitions]:
+        component = self._component_at_posix_path(defs_path_posix)
+        if component is None:
+            return None
+        path, component = component
+        return component.build_defs(self.load_context.for_path(path))
+
+    def find_decl_at_path(self, defs_path: Path) -> ComponentDecl:
+        """Loads a component declaration from the given path.
+
+        Args:
+            defs_path: Path to the component declaration to load. If relative, resolves relative to the defs root.
+
+        Returns:
+            ComponentDecl: The component declaration loaded from the given path.
+        """
+        component_decl_and_path = self._component_decl_at_posix_path(
+            _get_canonical_path_string(self.find_root_decl().path, defs_path)
+        )
+        if component_decl_and_path is None:
+            raise Exception(f"No component decl found for path {defs_path}")
+        return component_decl_and_path[1]
+
+    def load_component_at_path(self, defs_path: Path) -> Component:
+        """Loads a component from the given path.
+
+        Args:
+            defs_path: Path to the component to load. If relative, resolves relative to the defs root.
+
+        Returns:
+            Component: The component loaded from the given path.
+        """
+        component = self._component_at_posix_path(
+            _get_canonical_path_string(self.find_root_decl().path, defs_path)
+        )
+        if component is None:
+            raise Exception(f"No component found for path {defs_path}")
+        path, component = component
+        return component
+
+    def build_defs_at_path(self, defs_path: Path) -> Definitions:
+        """Builds definitions from the given defs subdirectory. Currently
         does not incorporate postprocessing from parent defs modules.
 
         Args:
@@ -66,17 +150,12 @@ class ComponentTree:
         Returns:
             Definitions: The definitions loaded from the given path.
         """
-        # impl to be fleshed out to flexibly handle different path types (str, list[str], ...)
-        if self.root.path.absolute().as_posix() == defs_path.absolute().as_posix():
-            return self.root.build_defs(self.load_context.for_path(self.root.path))
-        for cp, c in self.root.iterate_path_component_pairs():
-            defs_path_abs = (
-                defs_path if defs_path.is_absolute() else (self.root.path / defs_path).absolute()
-            )
-            if cp.file_path.absolute().as_posix() == defs_path_abs.as_posix():
-                return c.build_defs(self.load_context.for_path(cp.file_path))
-
-        raise Exception(f"No component found for path {defs_path}")
+        defs = self._defs_at_posix_path(
+            _get_canonical_path_string(self.find_root_decl().path, defs_path)
+        )
+        if defs is None:
+            raise Exception(f"No definitions found for path {defs_path}")
+        return defs
 
     def get_all_components(
         self,
@@ -85,6 +164,6 @@ class ComponentTree:
         """Get all components from this context that are instance of the specified type."""
         return [
             component
-            for component in self.root.iterate_components()
+            for component in self.load_root_component().iterate_components()
             if isinstance(component, of_type)
         ]
