@@ -108,7 +108,7 @@ In production, a precompiled manifest should be used. Using <PyObject section="l
 
 ## Selecting a profiles directory, profile and target for your dbt project
 
-You can specify which connection information dbt should use when parsing and executing your models. This can be done by passing the profiles directory, profile and target to your when creating your <PyObject section="libraries" object="DbtProject" module="dagster_dbt" /> object. These fields are optional - the default values defined in your dbt project will be used for each parameter that is not passed.
+You can specify which connection information dbt should use when parsing and executing your models. This can be done by passing the profiles directory, profile and target when creating your <PyObject section="libraries" object="DbtProject" module="dagster_dbt" /> object. These fields are optional - the default values defined in your dbt project will be used for each parameter that is not passed.
 
 <CodeExample
   path="docs_snippets/docs_snippets/integrations/dbt/dbt.py"
@@ -453,7 +453,7 @@ Ensure that the [`default_automation_condition_sensor` is enabled](/guides/autom
 
 ## dbt models, code versions, and "Unsynced"
 
-Note that Dagster allows the optional specification of a [`code_version`](/guides/build/assets/defining-assets#asset-code-versions) for each asset definition, which are used to track changes. The `code_version` for an asset arising from a dbt model is defined automatically as the hash of the SQL defining the DBT model. This allows the asset graph in the UI to use the "Unsynced" status to indicate which dbt models have new SQL since they were last materialized.
+Note that Dagster allows the optional specification of a [`code_version`](/guides/build/assets/defining-assets#asset-code-versions) for each asset definition, which is used to track changes. The `code_version` for an asset arising from a dbt model is defined automatically as the hash of the SQL defining the DBT model. This allows the asset graph in the UI to use the "Unsynced" status to indicate which dbt models have new SQL since they were last materialized.
 
 ## Loading dbt tests as asset checks
 
@@ -485,7 +485,7 @@ Dagster will load both generic and singular tests as asset checks. In the event 
             'dagster': {
                 'ref': {
                     'name': 'customers',
-                    'package_name': 'my_dbt_assets'
+                    'package': 'my_dbt_assets',
                     'version': 1,
                 },
             }
@@ -496,7 +496,7 @@ Dagster will load both generic and singular tests as asset checks. In the event 
 
 `dbt-core` version 1.6 or later is required for Dagster to read this metadata.
 
-If this metadata isn't provided, Dagster won't ingest the test as an asset check. It will still run the test and emit a <PyObject section="assets" module="dagster" object="AssetObservation" /> events with the test results.
+If this metadata isn't provided, Dagster won't ingest the test as an asset check. It will still run the test and emit a <PyObject section="assets" module="dagster" object="AssetObservation" /> event with the test results.
 
 ### Disabling asset checks
 
