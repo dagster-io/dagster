@@ -42,8 +42,12 @@ class AssetValueLoader:
         self._assets_defs_by_key = assets_defs_by_key
         self._resource_instance_cache: dict[str, object] = {}
         self._exit_stack: ExitStack = ExitStack().__enter__()
-        if not instance and is_dagster_home_set():
-            self._instance = self._exit_stack.enter_context(DagsterInstance.get())
+        if not instance:
+            if is_dagster_home_set():
+                instance = DagsterInstance.get()
+            else:
+                instance = DagsterInstance.ephemeral()
+            self._instance = self._exit_stack.enter_context(instance)
         else:
             self._instance = instance
 
