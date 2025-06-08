@@ -47,9 +47,9 @@ BASIC_FIVETRAN_COMPONENT_BODY = {
     "type": "dagster_fivetran.FivetranAccountComponent",
     "attributes": {
         "workspace": {
-            "api_key": "{{ env('FIVETRAN_API_KEY') }}",
-            "api_secret": "{{ env('FIVETRAN_API_SECRET') }}",
-            "account_id": "{{ env('FIVETRAN_ACCOUNT_ID') }}",
+            "api_key": "{{ env.FIVETRAN_API_KEY }}",
+            "api_secret": "{{ env.FIVETRAN_API_SECRET }}",
+            "account_id": "{{ env.FIVETRAN_ACCOUNT_ID }}",
         },
     },
 }
