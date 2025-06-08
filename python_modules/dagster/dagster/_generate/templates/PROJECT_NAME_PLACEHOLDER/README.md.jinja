@@ -16,6 +16,12 @@ Then, start the Dagster UI web server:
 dagster dev
 ```
 
+Alternatively, you can start the Dagster UI web server without installing the project as a package:
+
+```bash
+dagster dev --project .
+```
+
 Open http://localhost:3000 with your browser to see the project.
 
 You can start writing assets in `{{ project_name }}/assets.py`. The assets are automatically loaded into the Dagster code location as you define them.
