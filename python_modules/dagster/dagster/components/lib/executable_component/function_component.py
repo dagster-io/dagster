@@ -6,6 +6,8 @@ from typing import Annotated, Callable, Literal, Union
 from dagster_shared import check
 from typing_extensions import TypeAlias
 
+from dagster._config.pythonic_config.config import Config
+from dagster._config.pythonic_config.type_check_utils import safe_is_subclass
 from dagster._core.decorator_utils import get_function_params
 from dagster._core.definitions.asset_check_result import AssetCheckResult
 from dagster._core.definitions.resource_annotation import get_resource_args
@@ -43,10 +45,30 @@ class FunctionSpec(OpMetadataSpec):
     fn: ResolvableCallable
 
 
+def get_config_param_type(fn: Callable) -> Union[type, None]:
+    """Get the type annotation of the 'config' parameter if it exists.
+
+    Args:
+        fn: The function to check
+
+    Returns:
+        The type annotation of the config parameter if it exists, None otherwise
+    """
+    params = get_function_params(fn)
+    for param in params:
+        if param.name == "config":
+            if not safe_is_subclass(param.annotation, Config):
+                check.failed(
+                    f"Config parameter must be annotated with Config, got {param.annotation}"
+                )
+            return param.annotation
+    return None
+
+
 class ExecuteFnMetadata:
     def __init__(self, execute_fn: Callable):
         self.execute_fn = execute_fn
-        found_args = {"context"} | self.resource_keys
+        found_args = {"context"} | self.resource_keys | ({"config"} if self.config_type else set())
         extra_args = self.function_params_names - found_args
         if extra_args:
             check.failed(
@@ -61,6 +83,10 @@ class ExecuteFnMetadata:
     @cached_property
     def function_params_names(self) -> set[str]:
         return {arg.name for arg in get_function_params(self.execute_fn)}
+
+    @cached_property
+    def config_type(self) -> Union[type, None]:
+        return get_config_param_type(self.execute_fn)
 
 
 class FunctionComponent(ExecutableComponent):

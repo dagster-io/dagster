@@ -163,3 +163,19 @@ def test_local_import() -> None:
             mats = result.asset_materializations_for_node("op_name")
             assert len(mats) == 1
             assert mats[0].metadata == {"foo": TextMetadataValue("bar")}
+
+
+# def test_asset_with_config() -> None:
+#     class MyConfig(Config):
+#         foo: str
+
+#     def execute_fn(context, config: MyConfig) -> MaterializeResult:
+#         return MaterializeResult(metadata={"foo": config.foo})
+
+#     component = FunctionComponent(
+#         execution=FunctionSpec(name="op_name", fn=execute_fn),
+#         assets=[AssetSpec(key="asset")],
+#     )
+
+#     defs = component.build_defs(ComponentLoadContext.for_test())
+#     assert defs.get_assets_def("asset").op.config_schema == MyConfig

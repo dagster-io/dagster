@@ -26,6 +26,7 @@ class OpMetadataSpec(Model, Resolvable, ABC):
     tags: Optional[dict[str, Any]] = None
     description: Optional[str] = None
     pool: Optional[str] = None
+    config_type: Optional[type] = None
 
 
 T = TypeVar("T", bound=Union[MaterializeResult, AssetCheckResult])
@@ -89,6 +90,7 @@ class ExecutableComponent(Component, Resolvable, Model, ABC):
                 check_specs=self.checks,
                 required_resource_keys=self.resource_keys,
                 pool=self.op_metadata_spec.pool,
+                config_schema=self.op_metadata_spec.config_type,
             )
             def _assets_def(context: AssetExecutionContext, **kwargs):
                 return to_iterable(
@@ -106,6 +108,7 @@ class ExecutableComponent(Component, Resolvable, Model, ABC):
                 description=self.op_metadata_spec.description,
                 required_resource_keys=self.resource_keys,
                 pool=self.op_metadata_spec.pool,
+                config_schema=self.op_metadata_spec.config_type,
             )
             def _asset_check_def(context: AssetCheckExecutionContext, **kwargs):
                 return to_iterable(
