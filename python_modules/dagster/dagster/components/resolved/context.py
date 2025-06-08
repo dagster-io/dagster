@@ -18,7 +18,7 @@ from dagster.components.resolved.errors import ResolutionException
 T = TypeVar("T")
 
 
-class EnvScope:
+class EnvTemplateVar:
     def __call__(self, key: str) -> Optional[str]:
         return os.environ.get(key)
 
@@ -56,7 +56,7 @@ class ResolutionContext:
     @staticmethod
     def default(source_position_tree: Optional[SourcePositionTree] = None) -> "ResolutionContext":
         return ResolutionContext(
-            scope={"env": EnvScope(), "automation_condition": automation_condition_scope()},
+            scope={"env": EnvTemplateVar(), "automation_condition": automation_condition_scope()},
             source_position_tree=source_position_tree,
         )
 
