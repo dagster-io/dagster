@@ -65,14 +65,14 @@ Each `defs.yaml` file supports a rich templating syntax, powered by `jinja2`.
 
 #### Templating environment variables
 
-A common use case for templating is to avoid exposing environment variables (particularly secrets) in your YAML files. The Jinja scope for a `defs.yaml` file contains an `env` function that can be used to insert environment variables into the template:
+A common use case for templating is to avoid exposing environment variables (particularly secrets) in your YAML files. The Jinja scope for a `defs.yaml` file contains an `env` template variable that can be used to insert environment variables into the template:
 
 ```yaml
 type: snowflake_lib.SnowflakeComponent
 
 attributes:
-  account: "{{ env('SNOWFLAKE_ACCOUNT') }}"
-  password: "{{ env('SNOWFLAKE_PASSWORD') }}"
+  account: "{{ env.SNOWFLAKE_ACCOUNT }}"
+  password: "{{ env.SNOWFLAKE_PASSWORD }}"
 ```
 
 #### Multiple component instances in the same file
@@ -84,12 +84,12 @@ To configure multiple instances of a component in the same `defs.yaml` file, add
 type: snowflake_lib.SnowflakeComponent
 
 attributes:
-  account: "{{ env('SNOWFLAKE_INSTANCE_ONE_ACCOUNT') }}"
-  password: "{{ env('SNOWFLAKE_INSTANCE_ONE_PASSWORD') }}"
+  account: "{{ env.SNOWFLAKE_INSTANCE_ONE_ACCOUNT }}"
+  password: "{{ env.SNOWFLAKE_INSTANCE_ONE_PASSWORD }}"
 ---
 type: snowflake_lib.SnowflakeComponent
 
 attributes:
-  account: "{{ env('SNOWFLAKE_INSTANCE_TWO_ACCOUNT') }}"
-  password: "{{ env('SNOWFLAKE_INSTANCE_TWO_PASSWORD') }}"
+  account: "{{ env.SNOWFLAKE_INSTANCE_TWO_ACCOUNT }}"
+  password: "{{ env.SNOWFLAKE_INSTANCE_TWO_PASSWORD }}"
 ```
