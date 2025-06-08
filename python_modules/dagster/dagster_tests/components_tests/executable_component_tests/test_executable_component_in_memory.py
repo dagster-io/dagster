@@ -1,6 +1,9 @@
 import inspect
+from collections.abc import Mapping
 from textwrap import dedent
+from typing import Any, Optional
 
+from dagster._config.pythonic_config.config import Config
 from dagster._core.definitions.asset_key import CoercibleToAssetKey
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.assets import AssetsDefinition
@@ -48,15 +51,16 @@ def test_basic_singular_asset_with_callable() -> None:
     assert_singular_component(component)
 
 
-def assert_singular_component(component: FunctionComponent) -> None:
+def assert_singular_component(
+    component: FunctionComponent, resources: Optional[Mapping[str, Any]] = None
+) -> None:
     defs = component.build_defs(ComponentLoadContext.for_test())
-
     assets_def = defs.get_assets_def("asset")
 
     assert assets_def.op.name == "op_name"
     assert assets_def.key.to_user_string() == "asset"
 
-    result = materialize([assets_def])
+    result = materialize([assets_def], resources=resources)
     assert result.success
     mats = result.asset_materializations_for_node("op_name")
     assert len(mats) == 1
@@ -89,6 +93,30 @@ def test_basic_singular_asset_from_yaml() -> None:
     assert_singular_component(component)
 
 
+def execute_singular_asset_with_resource(
+    context, a_resource: ResourceParam[str]
+) -> MaterializeResult:
+    return MaterializeResult(metadata={"foo": "bar"})
+
+
+def test_basic_singular_asset_with_resource_from_yaml() -> None:
+    component = FunctionComponent.from_attributes_dict(
+        attributes={
+            "execution": {
+                "name": "op_name",
+                "fn": "dagster_tests.components_tests.executable_component_tests.test_executable_component_in_memory.execute_singular_asset_with_resource",
+            },
+            "assets": [
+                {
+                    "key": "asset",
+                }
+            ],
+        }
+    )
+    assert isinstance(component, FunctionComponent)
+    assert_singular_component(component, resources={"a_resource": "a_value"})
+
+
 def test_basic_singular_asset_from_callable() -> None:
     component = FunctionComponent.from_attributes_dict(
         attributes={
@@ -102,6 +130,37 @@ def test_basic_singular_asset_from_callable() -> None:
     )
     assert isinstance(component, FunctionComponent)
     assert_singular_component(component)
+
+
+class MyConfig(Config):
+    config_value: str
+
+
+def execute_fn_with_config(context, config: MyConfig):
+    return MaterializeResult(metadata={"config_value": config.config_value})
+
+
+def test_singular_asset_with_config() -> None:
+    component = FunctionComponent.from_attributes_dict(
+        attributes={
+            "execution": {
+                "name": "op_name",
+                "fn": "dagster_tests.components_tests.executable_component_tests.test_executable_component_in_memory.execute_fn_with_config",
+            },
+            "assets": [
+                {
+                    "key": "asset",
+                },
+            ],
+        }
+    )
+
+    assert isinstance(component, FunctionComponent)
+    assets_def = asset_in_component(component, "asset")
+    result = materialize(
+        [assets_def], run_config={"ops": {"op_name": {"config": {"config_value": "bar"}}}}
+    )
+    assert result.success
 
 
 def test_resource_usage() -> None:
