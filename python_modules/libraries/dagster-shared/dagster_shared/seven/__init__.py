@@ -8,9 +8,10 @@ import shlex
 import sys
 import time
 from collections.abc import Sequence
+from importlib.machinery import ModuleSpec
 from pathlib import Path
 from types import ModuleType
-from typing import Any, Callable, List, Type, Union  # noqa: F401, UP035
+from typing import Any, Callable, List, Optional, Type, Union  # noqa: F401, UP035
 
 from typing_extensions import TypeGuard
 
@@ -152,7 +153,7 @@ def _gather_modules(current_segments: list[str], remaining_pattern: list[str]) -
         # We've matched the full pattern, return the current module path
         module_name = ".".join(current_segments)
         # Verify the module actually exists and can be imported
-        if importlib.util.find_spec(module_name) is not None:
+        if _get_module_spec(module_name) is not None:
             return [module_name]
         else:
             return []
@@ -166,7 +167,7 @@ def _gather_modules(current_segments: list[str], remaining_pattern: list[str]) -
             current_module_path = None
         else:
             current_module_name = ".".join(current_segments)
-            current_module_spec = importlib.util.find_spec(current_module_name)
+            current_module_spec = _get_module_spec(current_module_name)
             if (
                 current_module_spec is None
                 or current_module_spec.submodule_search_locations is None
@@ -185,6 +186,16 @@ def _gather_modules(current_segments: list[str], remaining_pattern: list[str]) -
     else:
         # Literal segment - add it and continue
         return _gather_modules([*current_segments, current_pattern], rest_pattern)
+
+
+def _get_module_spec(module_name: str) -> Optional[ModuleSpec]:
+    try:
+        return importlib.util.find_spec(module_name)
+
+    # ModuleNotFoundError gets thrown if you try to find a spec where one of the parent modules does
+    # not exist, e.g. "foo.bar.baz" when "foo" does not exist.
+    except ModuleNotFoundError:
+        return None
 
 
 def match_module_pattern(module_name: str, pattern: str) -> bool:

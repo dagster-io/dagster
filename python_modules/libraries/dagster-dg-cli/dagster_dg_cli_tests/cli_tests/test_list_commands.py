@@ -1,3 +1,4 @@
+import importlib
 import inspect
 import json
 import re
@@ -156,6 +157,7 @@ def test_list_components_project_wildcard_pattern():
         result = runner.invoke(
             "scaffold", "component", "foo_bar.components.my_component.MyComponent"
         )
+        importlib.invalidate_caches()  # Needed to make sure new submodule is discoverable
         assert_runner_result(result)
 
         # Remove the generated registry module entry, confirm that our scaffolded component is not
@@ -185,6 +187,7 @@ def test_list_components_project_wildcard_pattern_no_duplicates():
         result = runner.invoke(
             "scaffold", "component", "foo_bar.components.my_component.MyComponent"
         )
+        importlib.invalidate_caches()  # Needed to make sure new submodule is discoverable
         assert_runner_result(result)
 
         # Add a wildcard that will match a component already in the list
