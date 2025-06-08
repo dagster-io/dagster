@@ -85,6 +85,7 @@ class ScaffoldTargetTypeData(PluginObjectFeatureData):
 @record
 class PluginObjectSnap:
     key: PluginObjectKey
+    aliases: Sequence[PluginObjectKey]
     summary: Optional[str]
     description: Optional[str]
     owners: Optional[Sequence[str]]
@@ -118,6 +119,11 @@ class PluginObjectSnap:
     def component_schema(self) -> Optional[dict[str, Any]]:
         component_data = self.get_feature_data("component")
         return component_data.schema if component_data else None
+
+    @property
+    def all_keys(self) -> Sequence[PluginObjectKey]:
+        """Return all keys associated with this plugin object, including aliases."""
+        return [self.key, *self.aliases]
 
 
 @whitelist_for_serdes
