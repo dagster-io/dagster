@@ -4,9 +4,13 @@ from textwrap import dedent
 from typing import Any, Optional
 
 from dagster._config.pythonic_config.config import Config
-from dagster._core.definitions.asset_key import CoercibleToAssetKey
+from dagster._core.definitions.asset_check_result import AssetCheckResult
+from dagster._core.definitions.asset_check_spec import AssetCheckSpec
+from dagster._core.definitions.asset_key import AssetCheckKey, AssetKey, CoercibleToAssetKey
+from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.materialize import materialize
 from dagster._core.definitions.metadata.metadata_value import TextMetadataValue
 from dagster._core.definitions.resource_annotation import ResourceParam
@@ -52,7 +56,9 @@ def test_basic_singular_asset_with_callable() -> None:
 
 
 def assert_singular_component(
-    component: FunctionComponent, resources: Optional[Mapping[str, Any]] = None
+    component: FunctionComponent,
+    resources: Optional[Mapping[str, Any]] = None,
+    run_config: Optional[Mapping[str, Any]] = None,
 ) -> None:
     defs = component.build_defs(ComponentLoadContext.for_test())
     assets_def = defs.get_assets_def("asset")
@@ -60,7 +66,7 @@ def assert_singular_component(
     assert assets_def.op.name == "op_name"
     assert assets_def.key.to_user_string() == "asset"
 
-    result = materialize([assets_def], resources=resources)
+    result = materialize([assets_def], resources=resources, run_config=run_config)
     assert result.success
     mats = result.asset_materializations_for_node("op_name")
     assert len(mats) == 1
@@ -224,17 +230,57 @@ def test_local_import() -> None:
             assert mats[0].metadata == {"foo": TextMetadataValue("bar")}
 
 
-# def test_asset_with_config() -> None:
-#     class MyConfig(Config):
-#         foo: str
+def test_asset_with_config() -> None:
+    class MyConfig(Config):
+        foo: str
 
-#     def execute_fn(context, config: MyConfig) -> MaterializeResult:
-#         return MaterializeResult(metadata={"foo": config.foo})
+    def execute_fn(context, config: MyConfig) -> MaterializeResult:
+        return MaterializeResult(metadata={"foo": config.foo})
 
-#     component = FunctionComponent(
-#         execution=FunctionSpec(name="op_name", fn=execute_fn),
-#         assets=[AssetSpec(key="asset")],
-#     )
+    component = FunctionComponent(
+        execution=FunctionSpec(name="op_name", fn=execute_fn),
+        assets=[AssetSpec(key="asset")],
+    )
 
-#     defs = component.build_defs(ComponentLoadContext.for_test())
-#     assert defs.get_assets_def("asset").op.config_schema == MyConfig
+    defs = component.build_defs(ComponentLoadContext.for_test())
+    assert defs.get_assets_def("asset").op.config_schema
+
+    assert_singular_component(
+        component, run_config={"ops": {"op_name": {"config": {"foo": "bar"}}}}
+    )
+
+
+def test_asset_check_with_config() -> None:
+    class MyConfig(Config):
+        foo: str
+
+    def execute_fn(context, config: MyConfig) -> AssetCheckResult:
+        return AssetCheckResult(
+            passed=True,
+            metadata={"foo": config.foo},
+        )
+
+    component = FunctionComponent(
+        execution=FunctionSpec(name="op_name", fn=execute_fn),
+        checks=[AssetCheckSpec(name="asset_check", asset="asset")],
+    )
+
+    defs = component.build_defs(ComponentLoadContext.for_test())
+    checks_def = defs.get_asset_checks_def(
+        AssetCheckKey(asset_key=AssetKey("asset"), name="asset_check")
+    )
+    defs = Definitions(asset_checks=[checks_def])
+    result = materialize(
+        [checks_def],
+        run_config={"ops": {"op_name": {"config": {"foo": "bar"}}}},
+        selection=AssetSelection.all_asset_checks(),
+    )
+    assert result.success
+    assert checks_def.op.config_schema
+
+    aces = result.get_asset_check_evaluations()
+    assert len(aces) == 1
+    assert aces[0].check_name == "asset_check"
+    assert aces[0].asset_key == AssetKey("asset")
+    assert aces[0].passed
+    assert aces[0].metadata == {"foo": TextMetadataValue("bar")}
