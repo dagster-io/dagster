@@ -19,8 +19,14 @@ T = TypeVar("T")
 
 
 class EnvScope:
-    def __call__(self, key: str) -> Optional[str]:
-        return os.environ.get(key)
+    def __call__(self, key: str, default: Optional[Union[str, Any]] = ...) -> Optional[str]:
+        value = os.environ.get(key, default=default)
+        if value is ...:
+            raise ResolutionException(
+                f"Environment variable {key} is not set and no default value was provided."
+                f" To provide a default value, use e.g. `env('{key}', 'default_value')`."
+            )
+        return value
 
     def __getattr__(self, key: str) -> Optional[str]:
         # jinja2 applies a hasattr check to any scope fn - we avoid raising our own exception
