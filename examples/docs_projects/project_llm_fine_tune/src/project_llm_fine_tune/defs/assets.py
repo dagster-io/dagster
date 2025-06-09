@@ -1,7 +1,7 @@
 import json
 import time
 from collections import Counter, defaultdict
-from collections.abc import Iterable
+from collections.abc import Generator, Iterable
 from textwrap import dedent
 
 import dagster as dg
@@ -11,7 +11,38 @@ from dagster_openai import OpenAIResource
 from openai import OpenAI
 
 import project_llm_fine_tune.defs.constants as constants
-import project_llm_fine_tune.defs.utils as utils
+
+
+def write_openai_file(file_name: str, data: list):
+    """Writes the contents of list to file.
+
+    Args:
+        file_name (str): name of the output file
+        data (list): data to write to file
+
+    """
+    with open(file_name, "w") as output_file:
+        for i, row in enumerate(data):
+            output_file.write(json.dumps(row))
+            if i < len(data) - 1:
+                output_file.write("\n")
+
+
+def read_openai_file(file_name: str) -> Generator:
+    """Reads the contents of a file.
+
+    Args:
+        file_name (str): name of the input file
+
+    Returns:
+        Generator: records of the jsonl file as dicts
+
+    """
+    with open(file_name) as training_file:
+        for line in training_file:
+            if line.strip():
+                yield json.loads(line)
+
 
 goodreads = dg.AssetSpec(
     "goodreads_source_dataset",
