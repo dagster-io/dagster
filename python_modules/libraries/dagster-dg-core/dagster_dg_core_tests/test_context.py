@@ -282,6 +282,17 @@ def test_missing_dg_registry_module_in_manifest_warning():
                 RemotePluginRegistry.from_dg_context(context)
 
 
+def test_context_with_autoload_defs_and_definitions_py():
+    with (
+        ProxyRunner.test() as runner,
+        isolated_example_project_foo_bar(runner, in_workspace=False, uv_sync=True),
+    ):
+        # New project has autoload_defs enabled by default, now let's create an empty definitions.py
+        Path("src/foo_bar/definitions.py").touch()
+        with dg_warns("`project.autoload_defs` is enabled, but a code location load target"):
+            DgContext.for_project_environment(Path.cwd(), {})
+
+
 # ########################
 # ##### CONFIG TESTS
 # ########################
@@ -357,8 +368,7 @@ def test_invalid_config_workspace(config_file: ConfigFileType):
                 _set_and_detect_missing_required_key(config_file, path, expected_type)
 
 
-# @pytest.mark.parametrize("config_file", ["dg.toml", "pyproject.toml"])
-@pytest.mark.parametrize("config_file", ["dg.toml"])
+@pytest.mark.parametrize("config_file", ["dg.toml", "pyproject.toml"])
 def test_invalid_config_project(config_file: ConfigFileType):
     with (
         ProxyRunner.test() as runner,
@@ -398,6 +408,18 @@ def test_invalid_config_project(config_file: ConfigFileType):
                 config_file,
                 ("project", "registry_modules"),
                 ["foo.*bar"],
+                err_msg,
+            )
+
+        with _reset_config_file(config_file):
+            full_code_location_key = _get_full_str_path(
+                config_file, "project.code_location_target_module"
+            )
+            err_msg = f"Cannot specify `{full_code_location_key}`"
+            _set_and_detect_error(
+                config_file,
+                ("project", "code_location_target_module"),
+                "foo_bar._definitions",
                 err_msg,
             )
 
