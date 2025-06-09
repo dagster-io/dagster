@@ -1,33 +1,45 @@
-from collections.abc import Sequence
-from functools import cached_property
-from typing import Optional
+import shutil
+import textwrap
+from collections.abc import Iterator, Mapping
+from contextlib import ExitStack
+from pathlib import Path
+from typing import Any, Optional
 
-from dagster_airbyte import AirbyteCloudWorkspace
-from dagster_airbyte.components.workspace_component.component import (
-    AirbyteCloudWorkspaceComponent,
+from dagster_dg_core.utils import activate_venv
+
+from dagster._utils.env import environ
+from docs_snippets_tests.snippet_checks.guides.components.utils import (
+    DAGSTER_ROOT,
+    EDITABLE_DIR,
 )
-from dagster_airbyte.translator import (
-    AirbyteConnection,
-    AirbyteDestination,
-    AirbyteStream,
-    AirbyteWorkspaceData,
+from docs_snippets_tests.snippet_checks.utils import (
+    compare_tree_output,
+    isolated_snippet_generation_environment,
 )
 
-from dagster._utils.cached_method import cached_method
+MASK_MY_PROJECT = (r" \/.*?\/my-project", " /.../my-project")
+MASK_VENV = (r"Using.*\.venv.*", "")
+MASK_USING_LOG_MESSAGE = (r"Using.*\n", "")
+
+SNIPPETS_DIR = (
+    DAGSTER_ROOT
+    / "examples"
+    / "docs_snippets"
+    / "docs_snippets"
+    / "guides"
+    / "components"
+    / "integrations"
+    / "airbyte-cloud-component"
+)
 
 
-class MockAirbyteWorkspace(AirbyteCloudWorkspace):
-    @cached_method
-    def fetch_airbyte_workspace_data(
-        self,
-    ) -> AirbyteWorkspaceData:
-        """Retrieves all Airbyte content from the workspace and returns it as a AirbyteWorkspaceData object.
-
-        Returns:
-            AirbyteWorkspaceData: A snapshot of the Airbyte workspace's content.
-        """
-        # connections_by_id = {}
-        # destinations_by_id = {}
+def _swap_to_mock_airbyte_component(path: Path) -> None:
+    path.write_text(
+        path.read_text().replace(
+            "dagster_airbyte.AirbyteCloudWorkspaceComponent",
+            "my_project.defs.airbyte_ingest.test_airbyte_utils.MockAirbyteComponent",
+        )
+    )
 
 
 def test_components_docs_airbyte_workspace(
@@ -65,8 +77,102 @@ def test_components_docs_airbyte_workspace(
             ignore_output=True,
         )
 
+        stack.enter_context(activate_venv("../.venv"))
+        context.run_command_and_snippet_output(
+            cmd=f"uv add --editable {EDITABLE_DIR / 'dagster-airbyte'}",
+            snippet_path=f"{context.get_next_snip_number()}-add-airbyte.txt",
+            print_cmd="uv add dagster-airbyte",
+            ignore_output=True,
+        )
 
-class MockAirbyteComponent(AirbyteCloudWorkspaceComponent):
-    @cached_property
-    def workspace_resource(self) -> MockAirbyteWorkspace:
-        return MockAirbyteWorkspace(**self.workspace.model_dump())
+        # scaffold airbyte component
+        context.run_command_and_snippet_output(
+            cmd="dg scaffold defs dagster_airbyte.AirbyteCloudWorkspaceComponent airbyte_ingest \\\n  --workspace-id test_workspace --client-id \"{{ env('AIRBYTE_CLIENT_ID') }}\" --client-secret \"{{ env('AIRBYTE_CLIENT_SECRET') }}\"",
+            snippet_path=SNIPPETS_DIR
+            / f"{context.get_next_snip_number()}-scaffold-airbyte-component.txt",
+        )
+
+        # Tree the project
+        context.run_command_and_snippet_output(
+            cmd="tree my_project/defs",
+            snippet_path=f"{context.get_next_snip_number()}-tree.txt",
+            custom_comparison_fn=compare_tree_output,
+        )
+
+        context.check_file(
+            Path("my_project") / "defs" / "airbyte_ingest" / "defs.yaml",
+            snippet_path=f"{context.get_next_snip_number()}-component.yaml",
+        )
+
+        # copy test_utils.py to my-project
+        shutil.copy(
+            Path(__file__).parent / "test_airbyte_utils.py",
+            Path("my_project") / "defs" / "airbyte_ingest" / "test_airbyte_utils.py",
+        )
+
+        _swap_to_mock_airbyte_component(
+            Path("my_project") / "defs" / "airbyte_ingest" / "defs.yaml"
+        )
+        context.run_command_and_snippet_output(
+            cmd="dg list defs",
+            snippet_path=f"{context.get_next_snip_number()}-list-defs.txt",
+        )
+
+        # Update component.yaml with connection selector
+        context.create_file(
+            Path("my_project") / "defs" / "airbyte_ingest" / "defs.yaml",
+            contents=textwrap.dedent(
+                """\
+                type: dagster_airbyte.AirbyteCloudWorkspaceComponent
+
+                attributes:
+                  workspace:
+                    workspace_id: test_workspace
+                    client_id: "{{ env('AIRBYTE_CLIENT_ID') }}"
+                    client_secret: "{{ env('AIRBYTE_CLIENT_SECRET') }}"
+                  connection_selector:
+                    by_name:
+                      - salesforce_to_snowflake
+                """
+            ),
+            snippet_path=f"{context.get_next_snip_number()}-customized-component.yaml",
+        )
+
+        _swap_to_mock_airbyte_component(
+            Path("my_project") / "defs" / "airbyte_ingest" / "defs.yaml"
+        )
+        context.run_command_and_snippet_output(
+            cmd="dg list defs",
+            snippet_path=f"{context.get_next_snip_number()}-list-defs.txt",
+        )
+
+        # Update component.yaml with translation
+        context.create_file(
+            Path("my_project") / "defs" / "airbyte_ingest" / "defs.yaml",
+            contents=textwrap.dedent(
+                """\
+                type: dagster_airbyte.AirbyteCloudWorkspaceComponent
+
+                attributes:
+                  workspace:
+                    workspace_id: test_workspace
+                    client_id: "{{ env('AIRBYTE_CLIENT_ID') }}"
+                    client_secret: "{{ env('AIRBYTE_CLIENT_SECRET') }}"
+                  connection_selector:
+                    by_name:
+                      - salesforce_to_snowflake
+                  translation:
+                    group_name: airbyte_data
+                    description: "Loads data from Airbyte connection {{ props.connection_name }}"
+                """
+            ),
+            snippet_path=f"{context.get_next_snip_number()}-customized-component.yaml",
+        )
+
+        _swap_to_mock_airbyte_component(
+            Path("my_project") / "defs" / "airbyte_ingest" / "defs.yaml"
+        )
+        context.run_command_and_snippet_output(
+            cmd="dg list defs",
+            snippet_path=f"{context.get_next_snip_number()}-list-defs.txt",
+        )
