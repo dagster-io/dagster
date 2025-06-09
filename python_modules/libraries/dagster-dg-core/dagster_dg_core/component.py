@@ -37,15 +37,19 @@ class RemotePluginRegistry:
             plugin_manifest = _load_entry_point_registry_objects(dg_context)
 
         if extra_modules:
+            deduped_extra_modules = set(extra_modules).difference(plugin_manifest.modules)
             plugin_manifest = plugin_manifest.merge(
-                _load_module_registry_objects(dg_context, extra_modules)
+                _load_module_registry_objects(dg_context, deduped_extra_modules)
             )
 
         # Only load project plugin modules if there is no entry point
         if dg_context.is_project and not dg_context.has_registry_module_entry_point:
             if dg_context.project_registry_modules:
+                deduped_project_modules = set(dg_context.project_registry_modules).difference(
+                    plugin_manifest.modules
+                )
                 plugin_manifest = plugin_manifest.merge(
-                    _load_module_registry_objects(dg_context, dg_context.project_registry_modules)
+                    _load_module_registry_objects(dg_context, deduped_project_modules)
                 )
 
         if (
@@ -142,7 +146,7 @@ def _load_entry_point_registry_objects(
 
 
 def _load_module_registry_objects(
-    dg_context: "DgContext", modules: Sequence[str]
+    dg_context: "DgContext", modules: Iterable[str]
 ) -> PluginManifest:
     modules_to_fetch = set(modules)
     objects: list[PluginObjectSnap] = []
@@ -157,7 +161,7 @@ def _load_module_registry_objects(
             ]
             objects.extend(objects_for_module)
 
-    return PluginManifest(modules=modules, objects=objects)
+    return PluginManifest(modules=list(modules), objects=objects)
 
 
 # Prior to MIN_DAGSTER_COMPONENTS_LIST_PLUGINS_VERSION, the relevant command was named

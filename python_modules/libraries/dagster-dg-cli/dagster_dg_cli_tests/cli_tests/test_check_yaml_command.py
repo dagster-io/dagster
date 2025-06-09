@@ -1,3 +1,5 @@
+import importlib
+import json
 import shutil
 import subprocess
 import time
@@ -134,6 +136,32 @@ def test_check_yaml_succeeds_non_default_defs_module() -> None:
 
         result = runner.invoke("check", "yaml")
         assert_runner_result(result, exit_0=True)
+
+
+def test_check_yaml_succeeds_unregistered_component() -> None:
+    """Ensure that a valid python symbol reference to a component type still works even if it is not registered."""
+    with ProxyRunner.test() as runner, create_project_from_components(runner):
+        result = runner.invoke("scaffold", "component", "Baz")
+        assert_runner_result(result, exit_0=True)
+        importlib.invalidate_caches()  # Ensure component discovery not blocked by python import cache
+
+        # Create component instance
+        result = runner.invoke("scaffold", "defs", "foo_bar.components.baz.Baz", "qux")
+        assert_runner_result(result, exit_0=True)
+
+        # Remove registry module entry that would make the newly scaffolded component discoverable
+        with modify_toml_as_dict(Path("pyproject.toml")) as toml_dict:
+            create_toml_node(toml_dict, ("tool", "dg", "project", "registry_modules"), [])
+
+        # Make sure the new component is not registered
+        result = runner.invoke("list", "components", "--json")
+        assert_runner_result(result)
+        component_keys = [c["key"] for c in json.loads(result.stdout)]
+        assert "foo_bar.components.baz.Baz" not in component_keys
+
+        # Check YAML should pass anyway, since we support unregistered components
+        result = runner.invoke("check", "yaml")
+        assert_runner_result(result)
 
 
 def test_check_yaml_with_watch() -> None:
