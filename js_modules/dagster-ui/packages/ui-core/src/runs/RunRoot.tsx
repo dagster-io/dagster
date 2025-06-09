@@ -31,6 +31,7 @@ import {AutomaterializeTagWithEvaluation} from '../assets/AutomaterializeTagWith
 import {InstigationSelector} from '../graphql/types';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {PipelineReference} from '../pipelines/PipelineReference';
+import {CopyIconButton} from '../ui/CopyButton';
 import {isThisThingAJob} from '../workspace/WorkspaceContext/util';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {useRepositoryForRunWithParentSnapshot} from '../workspace/useRepositoryForRun';
@@ -250,7 +251,10 @@ const RunHeaderTitle = ({run, runId}: {run: RunPageFragment | null; runId: strin
           {backfillTag.value}
         </Link>
         {' / '}
-        {runId.slice(0, 8)}
+        <Box flex={{direction: 'row', gap: 6, alignItems: 'center'}}>
+          <span style={{fontFamily: FontFamily.monospace}}>{runId.slice(0, 8)}</span>
+          <CopyIconButton value={runId} />
+        </Box>
       </Subtitle1>
     );
   }
@@ -260,6 +264,7 @@ const RunHeaderTitle = ({run, runId}: {run: RunPageFragment | null; runId: strin
       <Link to="/runs">Runs</Link>
       <span>/</span>
       <span style={{fontFamily: FontFamily.monospace}}>{runId.slice(0, 8)}</span>
+      <CopyIconButton value={runId} />
     </Subtitle1>
   );
 };

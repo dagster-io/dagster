@@ -2,6 +2,7 @@ import {
   Alert,
   Box,
   Colors,
+  FontFamily,
   Heading,
   NonIdealState,
   PageHeader,
@@ -31,6 +32,7 @@ import {
   useIsBackfillDaemonHealthy,
 } from '../../partitions/BackfillMessaging';
 import {testId} from '../../testing/testId';
+import { CopyIconButton } from 'shared/ui/CopyButton';
 
 export const RunsFeedBackfillPage = () => {
   const {featureContext} = useContext(CloudOSSContext);
@@ -131,7 +133,10 @@ export const RunsFeedBackfillPage = () => {
               Runs
             </Link>
             {' / '}
-            {backfillId}
+            <Box flex={{direction: 'row', gap: 6, alignItems: 'center'}}>
+              <span style={{fontFamily: FontFamily.monospace}}>{backfillId}</span>
+              <CopyIconButton value={backfillId} />
+          </Box>
           </Heading>
         }
         right={
