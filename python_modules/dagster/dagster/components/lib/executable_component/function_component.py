@@ -1,17 +1,21 @@
 import importlib
 from collections.abc import Iterable
 from functools import cached_property
-from typing import Annotated, Callable, Literal, Union
+from typing import Annotated, Any, Callable, Literal, Optional, Union
 
 from dagster_shared import check
 from typing_extensions import TypeAlias
 
+from dagster._config.field import Field
+from dagster._config.pythonic_config.config import Config
+from dagster._config.pythonic_config.type_check_utils import safe_is_subclass
 from dagster._core.decorator_utils import get_function_params
 from dagster._core.definitions.asset_check_result import AssetCheckResult
 from dagster._core.definitions.resource_annotation import get_resource_args
 from dagster._core.definitions.result import MaterializeResult
 from dagster._core.execution.context.asset_check_execution_context import AssetCheckExecutionContext
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
+from dagster._core.execution.plan.compute_generator import construct_config_from_context
 from dagster.components.core.context import ComponentLoadContext
 from dagster.components.lib.executable_component.component import (
     ExecutableComponent,
@@ -43,10 +47,30 @@ class FunctionSpec(OpMetadataSpec):
     fn: ResolvableCallable
 
 
+def get_config_param_type(fn: Callable) -> Union[type[Config], None]:
+    """Get the type annotation of the 'config' parameter if it exists.
+
+    Args:
+        fn: The function to check
+
+    Returns:
+        The type annotation of the config parameter if it exists, None otherwise
+    """
+    params = get_function_params(fn)
+    for param in params:
+        if param.name == "config":
+            if not safe_is_subclass(param.annotation, Config):
+                check.failed(
+                    f"Config parameter must be annotated with Config, got {param.annotation}"
+                )
+            return param.annotation
+    return None
+
+
 class ExecuteFnMetadata:
     def __init__(self, execute_fn: Callable):
         self.execute_fn = execute_fn
-        found_args = {"context"} | self.resource_keys
+        found_args = {"context"} | self.resource_keys | ({"config"} if self.config_cls else set())
         extra_args = self.function_params_names - found_args
         if extra_args:
             check.failed(
@@ -61,6 +85,14 @@ class ExecuteFnMetadata:
     @cached_property
     def function_params_names(self) -> set[str]:
         return {arg.name for arg in get_function_params(self.execute_fn)}
+
+    @cached_property
+    def config_cls(self) -> Union[type, None]:
+        return get_config_param_type(self.execute_fn)
+
+    @cached_property
+    def config_fields(self) -> Optional[dict[str, Field]]:
+        return self.config_cls.to_fields_dict() if self.config_cls else None
 
 
 class FunctionComponent(ExecutableComponent):
@@ -79,15 +111,40 @@ class FunctionComponent(ExecutableComponent):
     def resource_keys(self) -> set[str]:
         return self.execute_fn_metadata.resource_keys
 
+    @cached_property
+    def config_fields(self) -> Optional[dict[str, Field]]:
+        return self.execute_fn_metadata.config_fields
+
+    @property
+    def config_cls(self) -> Optional[type]:
+        return self.execute_fn_metadata.config_cls
+
     def invoke_execute_fn(
         self,
         context: Union[AssetExecutionContext, AssetCheckExecutionContext],
         component_load_context: ComponentLoadContext,
     ) -> Iterable[Union[MaterializeResult, AssetCheckResult]]:
         rd = context.resources.original_resource_dict
-        fn_kwargs = {k: v for k, v in rd.items() if k in self.resource_keys}
-        check.invariant(set(fn_kwargs.keys()) == self.resource_keys, "Resource keys mismatch")
+        expected_fn_kwargs = self.resource_keys | ({"config"} if self.config_cls else set())
+
+        fn_kwargs = {
+            **{k: v for k, v in rd.items() if k in self.resource_keys},
+            **self.get_config_param_dict(context),
+        }
+
+        check.invariant(
+            set(fn_kwargs.keys()) == expected_fn_kwargs, "Expected function param mismatch"
+        )
         return self.execute_fn_metadata.execute_fn(context, **fn_kwargs)
+
+    def get_config_param_dict(
+        self, context: Union[AssetExecutionContext, AssetCheckExecutionContext]
+    ) -> dict[str, Any]:
+        if not self.config_cls:
+            return {}
+        return {
+            "config": construct_config_from_context(self.config_cls, context.op_execution_context)
+        }
 
     ## End overloads
 
