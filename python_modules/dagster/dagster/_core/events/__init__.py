@@ -99,6 +99,7 @@ EventSpecificData = Union[
     "RunEnqueuedData",
     "FreshnessStateEvaluation",
     "FreshnessStateChange",
+    "AssetHealthChangedData",
 ]
 
 
