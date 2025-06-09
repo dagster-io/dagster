@@ -23,6 +23,8 @@ class EnvScope:
         return os.environ.get(key)
 
     def __getattr__(self, key: str) -> Optional[str]:
+        # jinja2 applies a hasattr check to any scope fn - we avoid raising our own exception
+        # for this access
         if key.startswith("jinja"):
             raise AttributeError(f"{key} not found")
 

@@ -35,3 +35,19 @@ def test_env_typo():
             MyNewThing.resolve_from_yaml("""
     name: "{{ env.MY_ENV_VAR }}"
     """)
+
+
+def test_env_indexing():
+    with environ({"MY_ENV_VAR": "my_value"}):
+
+        @dataclass
+        class MyNewThing(Resolvable):
+            name: str
+
+        with pytest.raises(
+            ResolutionException,
+            match=r".*To access environment variables, use the `env` function, e.g. `env\('MY_ENV_VAR'\)`.*",
+        ):
+            MyNewThing.resolve_from_yaml("""
+    name: "{{ env['MY_ENV_VAR'] }}"
+    """)
