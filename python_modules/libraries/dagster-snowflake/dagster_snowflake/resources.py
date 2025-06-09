@@ -425,11 +425,17 @@ class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext)
             adbc_engine_args["adbc.snowflake.sql.auth_type"] = auth_type
 
         if config.get("private_key") or config.get("private_key_path"):
-            private_key_bytes = self._snowflake_private_key(config)
             # ADBC expects the raw private key value as bytes for jwt_private_key_pkcs8_value
-            adbc_engine_args["adbc.snowflake.sql.client_option.jwt_private_key_pkcs8_value"] = (
-                private_key_bytes
-            )
+            adbc_engine_args["adbc.snowflake.sql.auth_type"] = "auth_jwt"
+            if config.get("private_key"):
+                adbc_engine_args["adbc.snowflake.sql.client_option.jwt_private_key_pkcs8_value"] = (
+                    config["private_key"]
+                )
+            elif config.get("private_key_path"):
+                adbc_engine_args["adbc.snowflake.sql.client_option.jwt_private_key"] = config[
+                    "private_key_path"
+                ]
+
             if config.get("private_key_password"):
                 adbc_engine_args[
                     "adbc.snowflake.sql.client_option.jwt_private_key_pkcs8_password"
