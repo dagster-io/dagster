@@ -47,6 +47,9 @@ if TYPE_CHECKING:
     from dagster._core.definitions.declarative_automation.operators.dep_operators import (
         DepsAutomationCondition,
     )
+    from dagster._core.definitions.declarative_automation.operators.since_operator import (
+        SinceCondition,
+    )
 
 
 class AutomationCondition(ABC, Generic[T_EntityKey]):
@@ -261,7 +264,7 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
 
     def since(
         self, reset_condition: "AutomationCondition[T_EntityKey]"
-    ) -> "BuiltinAutomationCondition[T_EntityKey]":
+    ) -> "SinceCondition[T_EntityKey]":
         """Returns an AutomationCondition that is true if this condition has ever been
         true since the last time the reset condition became true.
         """
