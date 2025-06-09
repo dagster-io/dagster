@@ -37,7 +37,7 @@ ENV_VAR_TEST_CASES = [
         should_error=True,
         check_error_msg=msg_includes_all_of(
             "defs.yaml:1",
-            "Component uses environment variables that are not specified in the component file: A_STRING",
+            "Component uses environment variables that are not specified in the component file: AN_INT, A_STRING",
         ),
     ),
 ]
