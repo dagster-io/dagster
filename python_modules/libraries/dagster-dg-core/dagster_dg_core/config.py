@@ -243,36 +243,6 @@ class DgRawCliConfig(TypedDict, total=False):
 # ##### PROJECT
 # ########################
 
-DgProjectPythonEnvironmentFlag = Literal["active", "uv_managed"]
-
-
-@dataclass
-class DgProjectPythonEnvironment:
-    active: bool = False
-    path: Optional[str] = None
-    uv_managed: bool = False
-
-    @classmethod
-    def from_flag(cls, flag: DgProjectPythonEnvironmentFlag) -> Self:
-        if flag == "active":
-            return cls(active=True)
-        else:
-            return cls(uv_managed=True)
-
-    @classmethod
-    def from_raw(cls, raw: "DgRawProjectPythonEnvironment") -> Self:
-        return cls(
-            active=raw.get("active", DgProjectPythonEnvironment.active),
-            path=raw.get("path", DgProjectPythonEnvironment.path),
-            uv_managed=raw.get("uv_managed", DgProjectPythonEnvironment.uv_managed),
-        )
-
-
-class DgRawProjectPythonEnvironment(TypedDict, total=False):
-    active: bool
-    path: str
-    uv_managed: bool
-
 
 class DgRawBuildConfig(TypedDict):
     registry: Optional[str]
@@ -312,9 +282,6 @@ class DgProjectConfig:
     autoload_defs: bool = False
     code_location_target_module: Optional[str] = None
     code_location_name: Optional[str] = None
-    python_environment: DgProjectPythonEnvironment = field(
-        default_factory=lambda: DgProjectPythonEnvironment(active=True)
-    )
     registry_modules: list[str] = field(default_factory=list)
 
     @classmethod
@@ -328,11 +295,6 @@ class DgProjectConfig:
                 "code_location_target_module",
                 DgProjectConfig.code_location_target_module,
             ),
-            python_environment=(
-                DgProjectPythonEnvironment.from_raw(raw["python_environment"])
-                if "python_environment" in raw
-                else cls.__dataclass_fields__["python_environment"].default_factory()
-            ),
             registry_modules=raw.get(
                 "registry_modules", cls.__dataclass_fields__["registry_modules"].default_factory()
             ),
@@ -345,7 +307,6 @@ class DgRawProjectConfig(TypedDict):
     defs_module: NotRequired[str]
     code_location_target_module: NotRequired[str]
     code_location_name: NotRequired[str]
-    python_environment: NotRequired[DgRawProjectPythonEnvironment]
     registry_modules: NotRequired[list[str]]
 
 
@@ -613,25 +574,11 @@ class _DgConfigValidator:
 
         if has_toml_node(raw_dict, ("project", "python_environment")):
             full_key = self._get_full_key("project.python_environment")
-            python_environment = get_toml_node(raw_dict, ("project", "python_environment"), object)
-            if python_environment == "active":
-                msg = textwrap.dedent(f"""
-                    Setting `{full_key} = "active"` is deprecated. Please update to:
-
-                        [{full_key}]
-                        active = true
-                """).strip()
-                emit_warning("deprecated_python_environment", msg, suppress_warnings)
-                raw_dict["project"]["python_environment"] = {"active": True}
-            elif python_environment == "persistent_uv":
-                msg = textwrap.dedent(f"""
-                    Setting `{full_key} = "persistent_uv"` is deprecated. Please update to:
-
-                        [{full_key}]
-                        uv_managed = true
-                """).strip()
-                emit_warning("deprecated_python_environment", msg, suppress_warnings)
-                raw_dict["project"]["python_environment"] = {"uv_managed": True}
+            msg = textwrap.dedent(f"""
+                Setting `{full_key}` is deprecated. This key can be removed.
+            """).strip()
+            emit_warning("deprecated_python_environment", msg, suppress_warnings)
+            del raw_dict["project"]["python_environment"]
 
     def validate(self, raw_dict: dict[str, Any]) -> DgFileConfig:
         self.normalize_deprecated_settings(raw_dict)
@@ -671,34 +618,10 @@ class _DgConfigValidator:
         if not isinstance(section, dict):
             self._raise_mistyped_key_error("project", get_type_str(dict), section)
         for key, type_ in DgRawProjectConfig.__annotations__.items():
-            if key == "python_environment" and "python_environment" in section:
-                self._validate_file_config_project_python_environment(section["python_environment"])
-            else:
-                self._validate_file_config_setting(section, key, type_, "project")
+            self._validate_file_config_setting(section, key, type_, "project")
         self._validate_file_config_no_extraneous_keys(
             set(DgRawProjectConfig.__annotations__.keys()), section, "project"
         )
-
-    def _validate_file_config_project_python_environment(self, section: object) -> None:
-        if not isinstance(section, dict):
-            self._raise_mistyped_key_error(
-                "project.python_environment", get_type_str(dict), section
-            )
-        for key, type_ in DgRawProjectPythonEnvironment.__annotations__.items():
-            self._validate_file_config_setting(section, key, type_, "project.python_environment")
-        self._validate_file_config_no_extraneous_keys(
-            set(DgRawProjectPythonEnvironment.__annotations__.keys()),
-            section,
-            "project.python_environment",
-        )
-        if not sum(1 for value in section.values() if value) == 1:
-            full_key = self._get_full_key("project.python_environment")
-            raise DgValidationError(
-                textwrap.dedent(f"""
-                Found conflicting settings in `{full_key}`. If this section is defined, exactly one of the following keys must be set:
-                    {DgRawProjectPythonEnvironment.__annotations__.keys()}
-            """).strip()
-            )
 
     def _validate_file_config_workspace_section(self, section: object) -> None:
         if not isinstance(section, dict):

@@ -64,10 +64,10 @@ def test_components_docs_fivetran_workspace(
         )
         # Scaffold code location
         context.run_command_and_snippet_output(
-            cmd="create-dagster project my-project --python-environment uv_managed --use-editable-dagster && cd my-project/src",
+            cmd="create-dagster project my-project --uv-sync --use-editable-dagster && cd my-project/src",
             snippet_path=f"{context.get_next_snip_number()}-scaffold-project.txt",
             snippet_replace_regex=[
-                ("--python-environment uv_managed --use-editable-dagster ", ""),
+                ("--uv-sync --use-editable-dagster ", ""),
                 ("--editable.*dagster-fivetran", "dagster-fivetran"),
                 ("create-dagster", "uvx create-dagster"),
             ],

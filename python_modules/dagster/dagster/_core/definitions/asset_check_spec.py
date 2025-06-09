@@ -2,7 +2,13 @@ from collections.abc import Iterable, Mapping
 from enum import Enum
 from typing import TYPE_CHECKING, Annotated, Any, Optional, Union
 
-from dagster_shared.record import IHaveNew, ImportFrom, LegacyNamedTupleMixin, record_custom
+from dagster_shared.record import (
+    IHaveNew,
+    ImportFrom,
+    LegacyNamedTupleMixin,
+    record_custom,
+    replace,
+)
 from dagster_shared.serdes import whitelist_for_serdes
 from typing_extensions import TypeAlias
 
@@ -119,4 +125,7 @@ class AssetCheckSpec(IHaveNew, LegacyNamedTupleMixin):
         return AssetCheckKey(self.asset_key, self.name)
 
     def replace_key(self, key: AssetCheckKey) -> "AssetCheckSpec":
-        return self._replace(asset_key=key.asset_key, name=key.name)
+        return replace(self, asset_key=key.asset_key, name=key.name)
+
+    def with_metadata(self, metadata: Mapping[str, Any]) -> "AssetCheckSpec":
+        return replace(self, metadata=metadata)

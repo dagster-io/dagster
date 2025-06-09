@@ -3,7 +3,9 @@ from docs_snippets_tests.snippet_checks.guides.components.utils import (
     DAGSTER_ROOT,
     EDITABLE_DIR,
     MASK_EDITABLE_DAGSTER,
+    MASK_USING_ENVIRONMENT,
     format_multiline,
+    make_project_scaffold_mask,
 )
 from docs_snippets_tests.snippet_checks.utils import (
     _run_command,
@@ -36,25 +38,29 @@ def test_dg_docs_workspace(update_snippets: bool) -> None:
             MASK_USING_LOG_MESSAGE,
         ],
     ) as context:
-        # Scaffold workspace
-        # TODO: Make this use "active" python environment in docs followup
-
         context.run_command_and_snippet_output(
             cmd="create-dagster workspace dagster-workspace --use-editable-dagster && cd dagster-workspace",
             snippet_path=f"{context.get_next_snip_number()}-dg-scaffold-workspace.txt",
-            print_cmd="create-dagster workspace dagster-workspace && cd dagster-workspace",
-            snippet_replace_regex=[
-                ("create-dagster", "uvx create-dagster"),
-            ],
+            print_cmd="uvx create-dagster workspace dagster-workspace && cd dagster-workspace",
+            input_str="y\n",
+            ignore_output=True,
         )
 
         context.run_command_and_snippet_output(
-            cmd="create-dagster project --use-editable-dagster --python-environment uv_managed projects/project-1",
+            cmd="source deployments/local/.venv/bin/activate",
+            snippet_path=f"{context.get_next_snip_number()}-activate-workspace-venv.txt",
+            ignore_output=True,
+        )
+
+        context.run_command_and_snippet_output(
+            cmd="create-dagster project projects/project-1 --use-editable-dagster ",
             snippet_path=f"{context.get_next_snip_number()}-dg-scaffold-project.txt",
-            print_cmd="create-dagster project --python-environment uv_managed projects/project-1",
+            print_cmd="uvx create-dagster project projects/project-1",
             snippet_replace_regex=[
-                ("create-dagster", "uvx create-dagster"),
+                MASK_EDITABLE_DAGSTER,
+                MASK_USING_ENVIRONMENT,
             ],
+            input_str="y\n",
         )
 
         # Remove files we don't want to show up in the tree
@@ -93,12 +99,14 @@ def test_dg_docs_workspace(update_snippets: bool) -> None:
 
         # Scaffold new project
         context.run_command_and_snippet_output(
-            cmd="create-dagster project projects/project-2 --python-environment uv_managed --use-editable-dagster",
+            cmd="create-dagster project projects/project-2 --use-editable-dagster",
             snippet_path=f"{context.get_next_snip_number()}-scaffold-project.txt",
-            print_cmd="create-dagster project projects/project-2 --python-environment uv_managed",
+            print_cmd="uvx create-dagster project projects/project-2",
             snippet_replace_regex=[
-                ("create-dagster", "uvx create-dagster"),
+                MASK_EDITABLE_DAGSTER,
+                MASK_USING_ENVIRONMENT,
             ],
+            input_str="y\n",
         )
 
         # List projects
@@ -106,26 +114,3 @@ def test_dg_docs_workspace(update_snippets: bool) -> None:
             cmd="dg list project",
             snippet_path=f"{context.get_next_snip_number()}-project-list.txt",
         )
-
-        # Create workspace.yaml file
-        context.create_file(
-            "workspace.yaml",
-            format_multiline("""
-                load_from:
-                  - python_file:
-                      relative_path: projects/project-1/src/project_1/definitions.py
-                      location_name: project_1
-                      executable_path: projects/project-1/.venv/bin/python
-                  - python_file:
-                      relative_path: projects/project-2/src/project_2/definitions.py
-                      location_name: project_2
-                      executable_path: projects/project-2/.venv/bin/python
-            """),
-            DG_SNIPPETS_DIR / f"{context.get_next_snip_number()}-workspace.yaml",
-        )
-
-        # Ensure dagster loads
-        # Fix this once workspace venvs are in a good state
-        # output = _run_command("dg check defs")
-        # assert "Validation successful for code location project_1" in output
-        # assert "Validation successful for code location project_2" in output

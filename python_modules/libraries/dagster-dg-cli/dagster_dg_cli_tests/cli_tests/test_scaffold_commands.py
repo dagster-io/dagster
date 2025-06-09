@@ -66,7 +66,7 @@ def test_scaffold_defs_classname_alias(component_arg: str) -> None:
 def test_scaffold_defs_classname_conflict_no_alias() -> None:
     with (
         ProxyRunner.test(use_fixed_test_components=True) as runner,
-        isolated_example_project_foo_bar(runner, python_environment="uv_managed") as project_dir,
+        isolated_example_project_foo_bar(runner, uv_sync=True) as project_dir,
     ):
         # Need to use subprocess here because of cached in-process state
         with activate_venv(project_dir / ".venv"):
@@ -88,7 +88,7 @@ def test_scaffold_defs_classname_conflict_no_alias() -> None:
 def test_scaffold_defs_component_no_params_success(in_workspace: bool) -> None:
     with (
         ProxyRunner.test(use_fixed_test_components=True) as runner,
-        isolated_example_project_foo_bar(runner, in_workspace),
+        isolated_example_project_foo_bar(runner, in_workspace, uv_sync=True),
     ):
         result = runner.invoke(
             "scaffold", "defs", "dagster_test.components.AllMetadataEmptyComponent", "qux"
@@ -110,7 +110,7 @@ def test_scaffold_defs_component_no_params_success(in_workspace: bool) -> None:
 def test_scaffold_defs_component_substring_single_match_success(selection: str) -> None:
     with (
         ProxyRunner.test(use_fixed_test_components=True) as runner,
-        isolated_example_project_foo_bar(runner),
+        isolated_example_project_foo_bar(runner, uv_sync=True),
     ):
         result = runner.invoke(
             "scaffold",
@@ -322,8 +322,7 @@ def test_scaffold_defs_component_succeeds_scaffolded_component_type() -> None:
         ProxyRunner.test() as runner,
         isolated_example_project_foo_bar(
             runner,
-            # plugins not discoverable in process due to not doing a proper install
-            python_environment="uv_managed",
+            uv_sync=True,
         ) as project_dir,
     ):
         with activate_venv(project_dir / ".venv"):
@@ -336,6 +335,40 @@ def test_scaffold_defs_component_succeeds_scaffolded_component_type() -> None:
             assert Path("src/foo_bar/defs/qux").exists()
             defs_yaml_path = Path("src/foo_bar/defs/qux/defs.yaml")
             assert defs_yaml_path.exists()
+            assert "type: foo_bar.components.baz.Baz" in defs_yaml_path.read_text()
+
+
+# Make sure that we can always refer to a component in its defining module
+def test_scaffold_defs_component_succeeds_scaffolded_component_type_defining_module() -> None:
+    with (
+        ProxyRunner.test() as runner,
+        isolated_example_project_foo_bar(runner, uv_sync=True) as project_dir,
+    ):
+        with activate_venv(project_dir / ".venv"):
+            subprocess.run(["dg", "scaffold", "component", "Baz"], check=True)
+            # runner.invoke("scaffold", "component", "Baz")
+            # assert_runner_result(runner.invoke("scaffold", "component", "Baz"))
+            component_path = Path("src/foo_bar/components/baz.py")
+            assert component_path.exists()
+
+            # We scaffolded at foo_bar.components.baz, so that is what has been added as a registry module. We are now
+            # going to move the actual definition into a separate module, and ensure that we can
+            # still reference our component by its defining module reference, even though this
+            # module is not in the registry.
+            component_path.rename("src/foo_bar/baz.py")
+            component_path.write_text(
+                textwrap.dedent("""
+                from foo_bar.baz import Baz
+            """)
+            )
+
+            # target the defining module foo_bar.baz, not the registry module foo_bar.components.baz
+            subprocess.run(["dg", "scaffold", "defs", "foo_bar.baz.Baz", "qux"], check=True)
+            assert Path("src/foo_bar/defs/qux").exists()
+            defs_yaml_path = Path("src/foo_bar/defs/qux/defs.yaml")
+            assert defs_yaml_path.exists()
+
+            # The canonical name is still used in the scaffolded defs.yaml
             assert "type: foo_bar.components.baz.Baz" in defs_yaml_path.read_text()
 
 
@@ -720,9 +753,7 @@ def test_scaffold_dbt_project_instance(params) -> None:
 
     with (
         ProxyRunner.test() as runner,
-        isolated_example_project_foo_bar(
-            runner, python_environment="uv_managed", **project_kwargs
-        ) as project_path,
+        isolated_example_project_foo_bar(runner, uv_sync=True, **project_kwargs) as project_path,
     ):
         # We need to add dagster-dbt also because we are using editable installs. Only
         # direct dependencies will be resolved by uv.tool.sources.

@@ -1,6 +1,10 @@
-cd dagster-workspace && tree
+tree
 
 .
+├── deployments
+│   └── local
+│       ├── pyproject.toml
+│       └── uv.lock
 ├── dg.toml
 └── projects
     └── project-1
@@ -8,10 +12,7 @@ cd dagster-workspace && tree
         ├── src
         │   └── project_1
         │       ├── __init__.py
-        │       ├── definitions.py
-        │       ├── defs
-        │       │   └── __init__.py
-        │       └── lib
+        │       └── defs
         │           └── __init__.py
         ├── tests
         │   └── __init__.py
