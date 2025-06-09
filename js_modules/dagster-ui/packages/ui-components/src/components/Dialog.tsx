@@ -6,8 +6,8 @@ import styled, {createGlobalStyle} from 'styled-components';
 import {Box} from './Box';
 import {Colors} from './Color';
 import {ErrorBoundary} from './ErrorBoundary';
-import {Group} from './Group';
 import {Icon, IconName} from './Icon';
+import {UnstyledButton} from './UnstyledButton';
 
 interface Props
   extends Omit<
@@ -20,37 +20,52 @@ interface Props
 }
 
 export const Dialog = (props: Props) => {
-  const {icon, title, children, ...rest} = props;
+  const {icon, title, children, isCloseButtonShown, onClose, ...rest} = props;
   return (
     <BlueprintDialog
       {...rest}
       portalClassName={`dagster-portal${props.portalClassName ? ` ${props.portalClassName}` : ''}`}
       backdropClassName="dagster-backdrop"
       className={`dagster-dialog${props.className ? ` ${props.className}` : ''}`}
+      onClose={onClose}
     >
-      {title ? <DialogHeader icon={icon} label={title} /> : null}
+      {title ? (
+        <DialogHeader
+          icon={icon}
+          label={title}
+          isCloseButtonShown={isCloseButtonShown}
+          onClose={onClose}
+        />
+      ) : null}
       <ErrorBoundary region="dialog">{children}</ErrorBoundary>
     </BlueprintDialog>
   );
 };
 
 interface HeaderProps {
-  icon?: IconName;
   label: React.ReactNode;
+  icon?: IconName;
+  isCloseButtonShown?: boolean;
+  onClose?: Props['onClose'];
 }
 
 export const DialogHeader = (props: HeaderProps) => {
-  const {icon, label} = props;
+  const {icon, label, isCloseButtonShown, onClose} = props;
   return (
     <Box
       background={Colors.backgroundDefault()}
       padding={{vertical: 16, horizontal: 20}}
       border="bottom"
     >
-      <Group direction="row" spacing={8} alignItems="center">
+      <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
         {icon ? <Icon name={icon} color={Colors.accentPrimary()} /> : null}
         <DialogHeaderText>{label}</DialogHeaderText>
-      </Group>
+        {isCloseButtonShown ? (
+          <UnstyledButton onClick={onClose}>
+            <Icon name="close" />
+          </UnstyledButton>
+        ) : null}
+      </Box>
     </Box>
   );
 };
