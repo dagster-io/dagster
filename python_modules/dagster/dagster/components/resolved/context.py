@@ -19,7 +19,7 @@ T = TypeVar("T")
 
 
 class EnvScope:
-    def __call__(self, key: str, default: Optional[Union[str, Ellipsis]] = ...) -> Optional[str]:
+    def __call__(self, key: str, default: Optional[Union[str, Any]] = ...) -> Optional[str]:
         value = os.environ.get(key, default=default)
         if value is ...:
             raise ResolutionException(
