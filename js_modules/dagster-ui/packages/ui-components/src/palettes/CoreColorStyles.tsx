@@ -21,7 +21,7 @@ export const CoreColorStyles = createGlobalStyle`
     --color-core-red800: rgba(85, 30, 34, 1);
     --color-core-red700: rgba(127, 42, 41, 1);
     --color-core-red600: rgba(168, 54, 47, 1);
-    --color-core-red500: rgba(210, 66, 53, 1);
+    --color-core-red500: rgba(199, 42, 28, 1);
     --color-core-red400: rgba(219, 104, 93, 1);
     --color-core-red300: rgba(228, 142, 134, 1);
     --color-core-red200: rgba(237, 179, 174, 1);
