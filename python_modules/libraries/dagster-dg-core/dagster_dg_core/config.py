@@ -23,6 +23,7 @@ from click.core import ParameterSource
 from dagster_shared.match import match_type
 from dagster_shared.merger import deep_merge_dicts
 from dagster_shared.plus.config import load_config
+from dagster_shared.seven import is_valid_module_pattern
 from dagster_shared.utils import remove_none_recursively
 from dagster_shared.utils.config import does_dg_config_file_exist, get_dg_config_path
 from typing_extensions import Never, NotRequired, Required, Self, TypeAlias, TypeGuard
@@ -622,6 +623,15 @@ class _DgConfigValidator:
         self._validate_file_config_no_extraneous_keys(
             set(DgRawProjectConfig.__annotations__.keys()), section, "project"
         )
+        if "registry_modules" in section:
+            for pattern in section["registry_modules"]:
+                if not is_valid_module_pattern(pattern):
+                    full_key = self._get_full_key("project.registry_modules")
+                    raise DgValidationError(
+                        f"Invalid module pattern `{pattern}` at `{full_key}`. "
+                        "Module patterns must consist of '.'-separated segments that are either "
+                        "valid Python identifiers or wildcards ('*')."
+                    )
 
     def _validate_file_config_workspace_section(self, section: object) -> None:
         if not isinstance(section, dict):

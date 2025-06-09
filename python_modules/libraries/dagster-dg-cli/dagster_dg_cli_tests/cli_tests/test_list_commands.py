@@ -1,4 +1,5 @@
 import inspect
+import json
 import re
 import shutil
 import subprocess
@@ -9,7 +10,7 @@ from typing import Any
 
 import pytest
 from dagster.components.utils import format_error_message
-from dagster_dg_core.utils import activate_venv, ensure_dagster_dg_tests_import
+from dagster_dg_core.utils import activate_venv, ensure_dagster_dg_tests_import, set_toml_node
 
 ensure_dagster_dg_tests_import()
 
@@ -26,6 +27,7 @@ from dagster_dg_core_tests.utils import (
     isolated_example_workspace,
     match_json_output,
     match_terminal_box_output,
+    modify_dg_toml_config_as_dict,
     standardize_box_characters,
 )
 
@@ -144,6 +146,59 @@ def test_list_components_filtered():
             result = runner.invoke("list", "components", "--json", "--package", module)
             assert_runner_result(result)
             assert match_json_output(result.output.strip(), _EXPECTED_COMPONENTS_JSON)
+
+
+def test_list_components_project_wildcard_pattern():
+    with (
+        ProxyRunner.test() as runner,
+        isolated_example_project_foo_bar(runner),
+    ):
+        result = runner.invoke(
+            "scaffold", "component", "foo_bar.components.my_component.MyComponent"
+        )
+        assert_runner_result(result)
+
+        # Remove the generated registry module entry, confirm that our scaffolded component is not
+        # listed
+        with modify_dg_toml_config_as_dict(Path("pyproject.toml")) as config:
+            set_toml_node(config, ("project", "registry_modules"), [])
+        result = runner.invoke("list", "components", "--json")
+        assert_runner_result(result)
+        components = [entry["key"] for entry in json.loads(result.output.strip())]
+        assert "foo_bar.components.my_component.MyComponent" not in components
+
+        # Add a wildcard matching our scaffolded component, confirm that it is listed
+        with modify_dg_toml_config_as_dict(Path("pyproject.toml")) as config:
+            set_toml_node(config, ("project", "registry_modules"), ["foo_bar.components.*"])
+        result = runner.invoke("list", "components", "--json")
+        assert_runner_result(result)
+        components = [entry["key"] for entry in json.loads(result.output.strip())]
+
+        assert "foo_bar.components.my_component.MyComponent" in components
+
+
+def test_list_components_project_wildcard_pattern_no_duplicates():
+    with (
+        ProxyRunner.test() as runner,
+        isolated_example_project_foo_bar(runner),
+    ):
+        result = runner.invoke(
+            "scaffold", "component", "foo_bar.components.my_component.MyComponent"
+        )
+        assert_runner_result(result)
+
+        # Add a wildcard that will match a component already in the list
+        with modify_dg_toml_config_as_dict(Path("pyproject.toml")) as config:
+            existing_value = config["project"]["registry_modules"]
+            set_toml_node(
+                config, ("project", "registry_modules"), [*existing_value, "foo_bar.components.*"]
+            )
+        result = runner.invoke("list", "components", "--json")
+        assert_runner_result(result)
+        components = [entry["key"] for entry in json.loads(result.output.strip())]
+        assert (
+            len([c for c in components if c == "foo_bar.components.my_component.MyComponent"]) == 1
+        )
 
 
 def test_list_components_bad_entry_point_fails():

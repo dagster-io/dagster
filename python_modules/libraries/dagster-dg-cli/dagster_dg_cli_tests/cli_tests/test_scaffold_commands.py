@@ -5,12 +5,14 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+import tomlkit
 from dagster_dg_core.utils import (
     activate_venv,
     create_toml_node,
     cross_platfrom_string_path,
     ensure_dagster_dg_tests_import,
     modify_toml_as_dict,
+    set_toml_node,
 )
 
 ensure_dagster_dg_tests_import()
@@ -21,6 +23,7 @@ from dagster_dg_core_tests.utils import (
     assert_runner_result,
     isolated_example_component_library_foo_bar,
     isolated_example_project_foo_bar,
+    modify_dg_toml_config_as_dict,
     standardize_box_characters,
 )
 
@@ -920,3 +923,21 @@ def test_scaffold_component_no_entry_point_success(
          """).strip()
         pyproject_toml = Path("pyproject.toml").read_text()
         assert registry_modules_str in pyproject_toml
+
+
+def test_scaffold_component_no_entry_point_registry_module_already_match() -> None:
+    with (
+        ProxyRunner.test() as runner,
+        isolated_example_project_foo_bar(runner),
+    ):
+        # Add a pattern that already matches the component module
+        with modify_dg_toml_config_as_dict(Path("pyproject.toml")) as config:
+            set_toml_node(config, ("project", "registry_modules"), ["foo_bar.components.*"])
+
+        result = runner.invoke("scaffold", "component", "Baz")
+        assert_runner_result(result)
+
+        # Ensure we did not add the module to registry_modules, since the pattern already matches it
+        toml = tomlkit.parse(Path("pyproject.toml").read_text()).unwrap()
+        registry_modules = toml["tool"]["dg"]["project"]["registry_modules"]
+        assert registry_modules == ["foo_bar.components.*"]
