@@ -2,9 +2,9 @@ import dagster as dg
 from dagster_aws.s3 import S3Resource
 from dagster_dbt import DbtCliResource
 
-from project_atproto_dashboard.defs.modeling import dbt_project
 from project_atproto_dashboard.defs.atproto import ATProtoResource
 from project_atproto_dashboard.defs.dashboard import power_bi_workspace
+from project_atproto_dashboard.defs.modeling import dbt_project
 
 dbt_resource = DbtCliResource(project_dir=dbt_project)
 

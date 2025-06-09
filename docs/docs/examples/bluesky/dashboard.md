@@ -42,6 +42,6 @@ With the dashboard assets set, we have all three layers of the end-to-end projec
   title="src/project_atproto_dashboard/defs/resources.py"
 />
 
-Defining our `Definitons` this way will automatically load all the assets defined in the project. The only thing that needs to be set explicitly are the resources used by those assets.
+Defining our `Definitions` this way will automatically load all the assets defined in the project. The only thing that needs to be set explicitly are the resources used by those assets.
 
 You can see that organizing your project into domain specific definitions leads to a clean definition. We do this with our own [internal Dagster project](https://github.com/dagster-io/dagster-open-platform/blob/main/dagster_open_platform/definitions.py) that combines over a dozen domain specific definitions for the various tools and services we use.
