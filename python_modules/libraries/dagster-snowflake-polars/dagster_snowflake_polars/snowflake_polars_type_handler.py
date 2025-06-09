@@ -1,60 +1,12 @@
 from collections.abc import Mapping, Sequence
-from contextlib import contextmanager
 from typing import Optional
 
 import polars as pl
-from adbc_driver_manager import ProgrammingError
-from adbc_driver_snowflake import dbapi
 from dagster import InputContext, MetadataValue, OutputContext, TableColumn, TableSchema, io_manager
 from dagster._annotations import beta
 from dagster._core.definitions.metadata import RawMetadataValue, TableMetadataSet
 from dagster._core.storage.db_io_manager import DbIOManager, DbTypeHandler, TableSlice
-from dagster_snowflake import SnowflakeResource
-from dagster_snowflake.snowflake_io_manager import (
-    SnowflakeDbClient,
-    SnowflakeIOManager,
-    _get_cleanup_statement,
-)
-
-
-class SnowflakeAdbcClient(SnowflakeDbClient):
-    @staticmethod
-    @contextmanager
-    def connect(context, table_slice):
-        no_schema_config = (
-            {k: v for k, v in context.resource_config.items() if k != "schema"}
-            if context.resource_config
-            else {}
-        )
-        with SnowflakeResource(
-            schema=table_slice.schema, connector="adbc", **no_schema_config
-        ).get_connection(raw_conn=False) as conn:
-            yield conn
-
-    @staticmethod
-    def ensure_schema_exists(
-        context: OutputContext, table_slice: TableSlice, connection: dbapi.Connection
-    ) -> None:
-        with connection.cursor() as cursor:
-            cursor.execute(
-                f"show schemas like '{table_slice.schema}' in database {table_slice.database}"
-            )
-            schemas = cursor.fetchall()
-
-        if len(schemas) == 0:
-            with connection.cursor() as cursor:
-                cursor.execute(f"create schema {table_slice.schema};")
-
-    @staticmethod
-    def delete_table_slice(context: OutputContext, table_slice: TableSlice, connection) -> None:
-        try:
-            connection.cursor().execute(_get_cleanup_statement(table_slice))
-        except ProgrammingError as e:
-            if any("does not exist" in arg for arg in e.args):
-                # table doesn't exist yet, so ignore the error
-                return
-            else:
-                raise
+from dagster_snowflake.snowflake_io_manager import SnowflakeDbClient, SnowflakeIOManager
 
 
 def _table_exists(table_slice: TableSlice, connection):
@@ -270,6 +222,8 @@ class SnowflakePolarsIOManager(SnowflakeIOManager):
 
     """
 
+    connector: str = "adbc"
+
     @classmethod
     def _is_dagster_maintained(cls) -> bool:
         return False
@@ -281,16 +235,6 @@ class SnowflakePolarsIOManager(SnowflakeIOManager):
     @staticmethod
     def default_load_type() -> Optional[type]:
         return pl.DataFrame
-
-    def create_io_manager(self, context) -> DbIOManager:
-        return DbIOManager(
-            db_client=SnowflakeAdbcClient(),
-            io_manager_name="SnowflakePolarsIOManager",
-            database=self.database,
-            schema=self.schema_,
-            type_handlers=self.type_handlers(),
-            default_load_type=self.default_load_type(),
-        )
 
 
 @beta
@@ -387,8 +331,8 @@ def snowflake_polars_io_manager(init_context):
     """
     return DbIOManager(
         type_handlers=[SnowflakePolarsTypeHandler()],
-        db_client=SnowflakeAdbcClient(),
-        io_manager_name="SnowflakePolarsIOManager",
+        db_client=SnowflakeDbClient(),
+        io_manager_name="SnowflakeIOManager",
         database=init_context.resource_config["database"],
         schema=init_context.resource_config.get("schema"),
         default_load_type=pl.DataFrame,
