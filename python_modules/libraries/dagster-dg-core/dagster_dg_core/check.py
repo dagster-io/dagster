@@ -152,10 +152,10 @@ def check_yaml(
             key = PluginObjectKey.from_typename(qualified_key)
             component_contents_by_key[key] = component_doc_tree
 
-            # We need to fetch components from any modules local to the project because these are
-            # not cached with the components from the general environment.
-            if key.namespace.startswith(dg_context.defs_module_name):
-                modules_to_fetch.add(key.namespace)
+            # Add every module referenced to be explicitly fetched. If we don't do this, only
+            # modules that are explicitly declared as registry modules will work.
+            # `from_dg_context()` on the registry ensures that modules aren't double-fetched.
+            modules_to_fetch.add(key.namespace)
 
     # Fetch the local component types, if we need any local components
     component_registry = RemotePluginRegistry.from_dg_context(
