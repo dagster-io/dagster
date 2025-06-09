@@ -342,7 +342,7 @@ def snowflake_polars_io_manager(init_context):
             )
 
 
-        On individual assets, you an also specify the schema where they should be stored using metadata or
+        On individual assets, you can also specify the schema where they should be stored using metadata or
         by adding a ``key_prefix`` to the asset key. If both ``key_prefix`` and metadata are defined, the metadata will
         take precedence.
 
