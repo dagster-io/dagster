@@ -21,14 +21,25 @@ def load_test_component_defs(
     available in that component's __init__.py.
     """
     src_path = Path(src_path)
+    with construct_component_tree_for_test(src_path, local_component_defn_to_inject) as tree:
+        yield tree.build_defs_at_path(Path(src_path.stem))
+
+
+@contextmanager
+def construct_component_tree_for_test(
+    src_path: Union[str, Path], local_component_defn_to_inject: Optional[Path] = None
+) -> Iterator[ComponentTree]:
+    """Loads a component from a test component project, making the provided local component defn
+    available in that component's __init__.py.
+    """
+    src_path = Path(src_path)
     with create_project_from_components(
         str(src_path), local_component_defn_to_inject=local_component_defn_to_inject
     ) as (_, project_name):
-        tree = ComponentTree(
+        yield ComponentTree(
             defs_module=importlib.import_module(f"{project_name}.defs"),
             project_root=src_path.parent.parent,
         )
-        yield tree.load_defs_at_path(Path(src_path.stem))
 
 
 def sync_load_test_component_defs(
