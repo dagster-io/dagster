@@ -1,9 +1,9 @@
 [project]
 name = "project_ask_ai_dagster"
-version = "0.1.0"
-description = "Add your description here"
+version = "0.0.1"
+description = "Project RAG"
 readme = "README.md"
-requires-python = ">=3.9,<3.13"
+requires-python = ">=3.9"
 dependencies = [
     "langchain",
     "langchain-core",
@@ -14,7 +14,6 @@ dependencies = [
     "langchain-chroma",
     "dagster",
     "dagster-dg-cli",
-    "dagster-webserver",
     "dagster-openai",
     "dagster_duckdb",
     "chromadb",
@@ -25,12 +24,13 @@ dependencies = [
     "lxml",
     "openai",
     "pinecone",
-    ]
+]
 
 [project.optional-dependencies]
 dev = [
-    "pytest",
     "ruff",
+    "pytest",
+    "dagster-webserver",
 ]
 
 [tool.dg]
@@ -38,4 +38,7 @@ directory_type = "project"
 
 [tool.dg.project]
 root_module = "project_ask_ai_dagster"
-code_location_target_module = "project_ask_ai_dagster.definitions"
+autoload_defs = true
+
+[tool.dg.project.python_environment]
+active = true

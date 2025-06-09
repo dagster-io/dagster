@@ -5,7 +5,7 @@ import gql
 from gql.transport.requests import RequestsHTTPTransport
 from langchain_core.documents import Document
 
-from project_ask_ai_dagster.defs.resources.github_gql_queries import (
+from project_ask_ai_dagster.defs.github_gql_queries import (
     GITHUB_DISCUSSIONS_QUERY,
     GITHUB_ISSUES_QUERY,
 )
