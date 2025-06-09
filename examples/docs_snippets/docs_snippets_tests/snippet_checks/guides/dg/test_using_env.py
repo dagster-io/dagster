@@ -238,7 +238,7 @@ def test_component_docs_using_env(
                     # we simulate the input we don't get the newline we get in terminal so we
                     # slide it in here.
                     (r"Running `uv sync`\.\.\.", "\nRunning `uv sync`..."),
-                    ("create-dagster", "uvx create-dagster"),
+                    ("create-dagster", "uvx -U create-dagster"),
                 ],
                 input_str="y\n",
                 ignore_output=True,

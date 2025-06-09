@@ -1,4 +1,3 @@
-# src/resources.py
 import dagster as dg
 
 

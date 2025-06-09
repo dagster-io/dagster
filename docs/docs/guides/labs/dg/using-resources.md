@@ -5,21 +5,33 @@ sidebar_position: 250
 description: Using resources in Dagster dg projects for entities such as assets, asset checks, and sensors.
 ---
 
-Assets, asset checks, and sensors in Dagster frequently require resources that are instantiated elsewhere in the project.
+import DgComponentsPreview from '@site/docs/partials/\_DgComponentsPreview.md';
 
-For example you have an asset:
+<DgComponentsPreview />
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dg/using-resources/1-asset-one.py" />
+:::note Prerequisites
 
-And a separately defined resource at the root of the project:
+Before following this guide, you will need to [create a project](/guides/labs/dg/creating-a-project) with the `create-dagster` CLI.
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dg/using-resources/2-resources-at-defs-root.py" />
+:::
 
-Resources can be added at any level in the `defs` hierarchy by creating a `Definitions` object.
+[Assets](/guides/build/assets), [asset checks](/guides/test/asset-checks), and [sensors](/guides/automate/sensors) in Dagster frequently require resources that are instantiated elsewhere in the project.
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dg/using-resources/3-resource-defs-at-project-root.py" />
+For example, if you have a resource defined at the root of your project in `src/resources.py`:
 
-Resource binding can happen at any level of the hierarchy. Which means that if you moved `asset_one` in this example to be in a subdirectory, you could leave the existing `resources.py` file at `src/defs/resources.py`.
+<CodeExample path="docs_snippets/docs_snippets/guides/dg/using-resources/2-resources-at-defs-root.py" title="src/resources.py" />
+
+You can make that resource available anywhere else in your project by creating a `Definitions` object that returns that resource:
+
+<CodeExample path="docs_snippets/docs_snippets/guides/dg/using-resources/3-resource-defs-at-project-root.py" title="src/resources.py" />
+
+You can now use the resource elsewhere in your project - for example, in an asset defined in `defs/asset_one.py`:
+
+<CodeExample path="docs_snippets/docs_snippets/guides/dg/using-resources/1-asset-one.py" title="defs/asset_one.py"
+ />
+
+
+Resource binding can happen at any level of the `defs` hierarchy. If you moved `asset_one` in this example to a subdirectory, you could leave the existing `resources.py` file at `src/defs/resources.py`:
 
 ```
 src
@@ -32,9 +44,9 @@ src
     └── resources.py # contains class AResource
 ```
 
-We have a scaffold command that makes this straightforward.
+## Scaffolding resources
 
-You can run
+To create a resource dictionary like the above, you can run the following:
 
 ```
 dg scaffold defs dagster.resources path/to/resources.py

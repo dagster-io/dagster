@@ -45,7 +45,7 @@ See the [`tree`](https://oldmanprogrammer.net/source.php?dir=projects/tree/INSTA
 
 ### 2. Install `create-dagster`
 
-The `create-dagster` CLI allows you to quickly create a components-ready Dagster project. We recommend using `uv`, which allows you to run `uvx create-dagster` without a separate installation step. If you're not using `uv`, follow the [`create-dagster` installation steps](/guides/labs/dg#installing-the-create-dagster-cli) to install the `create-dagster` command line tool.
+The `create-dagster` CLI allows you to quickly create a components-ready Dagster project. We recommend using `uv`, which allows you to run `uvx -U create-dagster` without a separate installation step. If you're not using `uv`, follow the [`create-dagster` installation steps](/guides/labs/dg#installing-the-create-dagster-cli) to install the `create-dagster` command line tool.
 
 ### 3. Create a new Dagster project
 
@@ -85,7 +85,7 @@ To learn more about the files, directories, and default settings in a project cr
 
 ## Ingest data
 
-### 1. Add the Sling component type to your environment
+### 1. Install the Sling component in your environment
 
 To ingest data, you will need to set up [Sling](https://slingdata.io/). To make the Sling component available in your environment, install the `dagster-sling` package:
 
@@ -98,25 +98,29 @@ To ingest data, you will need to set up [Sling](https://slingdata.io/). To make 
   </TabItem>
 </Tabs>
 
-### 2. Confirm availability of the Sling component type
+### 2. Confirm availability of the Sling component
 
-To confirm that the `dagster_sling.SlingReplicationCollectionComponent` component type is now available, run the `dg list components` command:
+To confirm that the `dagster_sling.SlingReplicationCollectionComponent` component is now available, run the `dg list components` command:
 
 <WideContent maxSize={1100}>
   <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/6-dg-list-components.txt" />
 </WideContent>
 
-### 3. Create a new instance of the Sling component
+You can also view automatically generated documentation for the Sling component (and all components available in your project environment) by running `dg dev` to start the webserver, then navigating to the `Docs` tab for your project's code location:
 
-Next, create a new instance of the Sling component type:
+![Docs tab in UI](/images/guides/labs/components/etl-tutorial-docs-tab.png)
+
+### 3. Scaffold a Sling component definition
+
+Next, scaffold a Sling component definition in your project:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/7-dg-scaffold-sling-replication.txt" />
 
-This adds a Sling component instance called `ingest_files` to the `src/jaffle_platform/defs` directory of your project:
+This adds a Sling component folder called `ingest_files` to the `src/jaffle_platform/defs` directory of your project:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/8-tree-jaffle-platform.txt" />
 
-A single file, `defs.yaml`, was created in the `ingest_files` directory. Every Dagster component has a `defs.yaml` file that specifies the component type and any parameters used to scaffold definitions from the component at runtime:
+A single file, `defs.yaml`, was created in the `ingest_files` directory. Every Dagster component has a `defs.yaml` file that specifies the component and any parameters used to scaffold definitions from the component at runtime:
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/components/index/9-defs.yaml"
@@ -169,7 +173,7 @@ Next, modify the `defs.yaml` file to tell the Sling component where replicated d
   title="jaffle-platform/src/jaffle_platform/defs/ingest_files/defs.yaml"
 />
 
-### 6. View and materialize assets in the Dagster UI
+### 7. View and materialize assets in the Dagster UI
 
 To see what you've built so far, you can load your project in the Dagster UI:
 
@@ -179,7 +183,7 @@ To materialize assets and load tables in the DuckDB instance, click **Materializ
 
 ![](/images/guides/build/projects-and-components/components/sling.png)
 
-### 7. Verify the DuckDB tables
+### 8. Verify the DuckDB tables
 
 To verify the DuckDB tables were correctly populated, run the following command:
 
@@ -201,9 +205,9 @@ In this tutorial, we have you clone the dbt project into your Dagster project. H
 
 :::
 
-### 2. Install the dbt project component type
+### 2. Install the dbt project component
 
-To interface with the dbt project, you will need to instantiate a Dagster dbt project component. To make the dbt project component type available, install the dbt integrations `dagster-dbt` and `dbt-duckdb`:
+To interface with the dbt project, you will need to instantiate a Dagster dbt project component. To make the dbt project component available, install the dbt integrations `dagster-dbt` and `dbt-duckdb`:
 
 <Tabs groupId="package-manager">
   <TabItem value="uv" label="uv">
@@ -214,19 +218,19 @@ To interface with the dbt project, you will need to instantiate a Dagster dbt pr
   </TabItem>
 </Tabs>
 
-Confirm that the `dagster_dbt.DbtProjectComponent` component type is available by running `dg list components`:
+Confirm that the `dagster_dbt.DbtProjectComponent` component is available by running `dg list components`:
 
 <WideContent maxSize={1100}>
   <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/17-dg-list-components.txt" />
 </WideContent>
 
-### 3. Scaffold a new instance of the dbt project component
+### 3. Scaffold a dbt project component definition
 
-Next, scaffold a new instance of the `dagster_dbt.DbtProjectComponent` component, providing the path to the dbt project you cloned earlier as the `project_path` scaffold parameter:
+Next, scaffold a `dagster_dbt.DbtProjectComponent` component definition, providing the path to the dbt project you cloned earlier as the `project_path` scaffold parameter:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/18-dg-scaffold-jdbt.txt" />
 
-This creates a new dbt project component instance at `jaffle_platform/defs/jdbt`. To see the component configuration, open `defs.yaml` in that directory:
+This creates a new directory at `jaffle_platform/defs/jdbt`. To see the component configuration, open `defs.yaml` in that directory:
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/components/index/19-component-jdbt.yaml"
@@ -281,7 +285,7 @@ First, install the `dagster-evidence` package with either `uv` or `pip`:
   </TabItem>
 </Tabs>
 
-Confirm that the `EvidenceProject` component type is available by running `dg list components`:
+Confirm that the `EvidenceProject` component is available by running `dg list components`:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/26-dg-list-components.txt" />
 
@@ -301,9 +305,9 @@ In this tutorial, we have you clone the Evidence project into your Dagster proje
 
 :::
 
-### 3. Scaffold a new instance of the Evidence project component
+### 3. Scaffold an Evidence project component definition
 
-Use the `dg scaffold` command to scaffold a new instance of the Evidence project component:
+Use the `dg scaffold` command to add an Evidence project component definition to your project:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/28-scaffold-jaffle-dashboard.txt" />
 
@@ -335,7 +339,13 @@ To verify that the definitions load successfully, run `dg check defs`:
 
 ### 5. Generate and view the Evidence dashboard
 
-To generate a static website for your Evidence dashboard, materialize the `jaffle_dashboard` asset in the Dagster UI. The website will be created in the `jaffle_dashboard/build` directory.
+To generate a static website for your Evidence dashboard, first load your project in the Dagster UI:
+
+<CliInvocationExample contents="dg dev" />
+
+Next reload definitions and materialize the `jaffle_dashboard` asset to create the website in the `jaffle_dashboard/build` directory:
+
+![Materialize assets in Dagster UI](/images/guides/labs/components/materialize-all-assets.png)
 
 To view the dashboard in your browser, run the following commands:
 
@@ -345,7 +355,7 @@ cd jaffle_dashboard/build && python -m http.server
 
 You should see a dashboard like the following at `http://localhost:8000/`:
 
-![](/images/guides/build/projects-and-components/components/evidence.png)
+![Evidence dashboard](/images/guides/build/projects-and-components/components/evidence.png)
 
 ## Automate your pipeline
 
@@ -371,4 +381,4 @@ Finally, verify the schedule was added to your Dagster project with `dg list def
 
 ## Next steps
 
-To continue your journey with components, you can [add more components to your project](/guides/labs/components/building-pipelines-with-components/adding-components) or learn how to [manage multiple components-ready projects with `dg`](/guides/labs/dg/multiple-projects).
+To continue your journey with components, you can [add more component definitions to your project](/guides/labs/components/building-pipelines-with-components/adding-component-definitions) or learn how to [manage multiple components-ready projects with `dg`](/guides/labs/dg/multiple-projects).

@@ -11,7 +11,7 @@ import DgComponentsPreview from '@site/docs/partials/\_DgComponentsPreview.md';
 
 :::note
 
-If you're just getting started, we recommend [scaffolding a single project](/guides/labs/dg/creating-a-project) instead of a workspace with multiple projects.
+If you're just getting started, we recommend [creating a single project](/guides/labs/dg/creating-a-project) instead of a workspace with multiple projects.
 
 :::
 
@@ -23,7 +23,7 @@ When a `dg` command runs in a workspace, it will create a subprocess for each pr
 
 ![Diagram showing the virtual environments used by a workspace and 2 projects](/images/guides/build/projects-and-components/setting-up-a-workspace/workspace-venvs.png)
 
-## Scaffold a new workspace and first project
+## 1. Create a new workspace and first project
 
 To scaffold a new workspace called `dagster-workspace`, run `uvx create-dagster workspace` and respond yes to the prompt to run `uv sync` after scaffolding:
 
@@ -47,7 +47,7 @@ Now we'll create a project inside our workspace called `project-1`. Run `uvx cre
 
 This will create a new Python environment for this project and associate that project with the workspace.
 
-### Review workspace structure
+### Workspace structure
 
 The new workspace has the following structure:
 
@@ -76,7 +76,7 @@ The `project-1` directory contains a `pyproject.toml` file with a
   title="dagster-workspace/projects/project-1/pyproject.toml"
 />
 
-## Add a second project to the workspace
+## 3. Add a second project to the workspace
 
 As noted above, environments are scoped per project. `dg` commands will only use the environment of `project-1` when you are inside the `project-1` directory.
 
@@ -84,11 +84,11 @@ Let's create another project:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/workspace/7-scaffold-project.txt" />
 
-Now we have two projects. We can list them with:
+Now there are two projects. You can list them with:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/workspace/8-project-list.txt" />
 
-## Load workspace with `dg`
+The workspace now has the following structure:
 
 Finally, let's load up our two projects with `dg dev`. When we run `dg dev` from the workspace root, it will automatically recognize the projects in your workspace and launch each project in a separate process in its virtual environment found in the `.venv` folder in the project.
 

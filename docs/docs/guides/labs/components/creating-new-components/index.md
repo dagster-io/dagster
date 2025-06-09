@@ -1,7 +1,7 @@
 ---
-description: Learn how to create new component types.
+description: Learn how to create new components.
 sidebar_position: 30
-title: Creating new component types
+title: Creating new components
 ---
 
 import DgComponentsPreview from '@site/docs/partials/\_DgComponentsPreview.md';
