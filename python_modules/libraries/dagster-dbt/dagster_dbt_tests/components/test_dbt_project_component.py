@@ -417,7 +417,7 @@ translation_settings:
 
 def test_resolution(dbt_path: Path):
     with environ({"DBT_TARGET": "prod"}):
-        target = """target: "{{ env('DBT_TARGET') }}" """
+        target = """target: "{{ env.DBT_TARGET }}" """
         c = DbtProjectComponent.resolve_from_yaml(f"""
 project:
   project_dir: {dbt_path!s}

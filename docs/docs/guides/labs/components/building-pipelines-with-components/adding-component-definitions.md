@@ -100,12 +100,12 @@ To configure multiple instances of a component in the same `defs.yaml` file, add
 type: snowflake_lib.SnowflakeComponent
 
 attributes:
-  account: "{{ env('SNOWFLAKE_INSTANCE_ONE_ACCOUNT') }}"
-  password: "{{ env('SNOWFLAKE_INSTANCE_ONE_PASSWORD') }}"
+  account: "{{ env.SNOWFLAKE_INSTANCE_ONE_ACCOUNT }}"
+  password: "{{ env.SNOWFLAKE_INSTANCE_ONE_PASSWORD }}"
 ---
 type: snowflake_lib.SnowflakeComponent
 
 attributes:
-  account: "{{ env('SNOWFLAKE_INSTANCE_TWO_ACCOUNT') }}"
-  password: "{{ env('SNOWFLAKE_INSTANCE_TWO_PASSWORD') }}"
+  account: "{{ env.SNOWFLAKE_INSTANCE_TWO_ACCOUNT }}"
+  password: "{{ env.SNOWFLAKE_INSTANCE_TWO_PASSWORD }}"
 ```

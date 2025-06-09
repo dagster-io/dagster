@@ -87,7 +87,7 @@ def test_components_docs_airbyte_workspace(
 
         # scaffold airbyte component
         context.run_command_and_snippet_output(
-            cmd="dg scaffold defs dagster_airbyte.AirbyteCloudWorkspaceComponent airbyte_ingest \\\n  --workspace-id test_workspace --client-id \"{{ env('AIRBYTE_CLIENT_ID') }}\" --client-secret \"{{ env('AIRBYTE_CLIENT_SECRET') }}\"",
+            cmd='dg scaffold defs dagster_airbyte.AirbyteCloudWorkspaceComponent airbyte_ingest \\\n  --workspace-id test_workspace --client-id "{{ env.AIRBYTE_CLIENT_ID }}" --client-secret "{{ env.AIRBYTE_CLIENT_SECRET }}"',
             snippet_path=SNIPPETS_DIR
             / f"{context.get_next_snip_number()}-scaffold-airbyte-component.txt",
         )
@@ -128,8 +128,8 @@ def test_components_docs_airbyte_workspace(
                 attributes:
                   workspace:
                     workspace_id: test_workspace
-                    client_id: "{{ env('AIRBYTE_CLIENT_ID') }}"
-                    client_secret: "{{ env('AIRBYTE_CLIENT_SECRET') }}"
+                    client_id: "{{ env.AIRBYTE_CLIENT_ID }}"
+                    client_secret: "{{ env.AIRBYTE_CLIENT_SECRET }}"
                   connection_selector:
                     by_name:
                       - salesforce_to_snowflake
@@ -156,8 +156,8 @@ def test_components_docs_airbyte_workspace(
                 attributes:
                   workspace:
                     workspace_id: test_workspace
-                    client_id: "{{ env('AIRBYTE_CLIENT_ID') }}"
-                    client_secret: "{{ env('AIRBYTE_CLIENT_SECRET') }}"
+                    client_id: "{{ env.AIRBYTE_CLIENT_ID }}"
+                    client_secret: "{{ env.AIRBYTE_CLIENT_SECRET }}"
                   connection_selector:
                     by_name:
                       - salesforce_to_snowflake
