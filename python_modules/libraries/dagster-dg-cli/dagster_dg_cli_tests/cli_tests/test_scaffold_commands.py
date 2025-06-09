@@ -1,3 +1,4 @@
+import importlib
 import json
 import subprocess
 import textwrap
@@ -902,6 +903,7 @@ def test_scaffold_component_no_entry_point_success(
 
         result = runner.invoke("scaffold", "component", component_name)
         assert_runner_result(result)
+        importlib.invalidate_caches()  # Needed to make sure new submodule is discoverable
 
         component_module = component_key.rsplit(".", 1)[0]
         module_file = (Path("src") / "/".join(component_module.split("."))).with_suffix(".py")
@@ -913,10 +915,20 @@ def test_scaffold_component_no_entry_point_success(
 
         assert any(json_entry["key"] == component_key for json_entry in result_json)
 
-        registry_modules_str = textwrap.dedent(f"""
-            registry_modules = [
-                "{component_module}",
+        # Only the module that adds to the _component will add a line to registry modules. That's
+        # because the other cases are already covered by the default scaffolded wildcard
+        # `foo_bar.components.*`.
+        expected_registry_modules = [
+            "foo_bar.components.*",
+        ]
+        if "_components" in component_name:
+            expected_registry_modules.append("foo_bar._components.baz")
+        registry_modules_str = "\n".join(
+            [
+                "registry_modules = [",
+                *[f'    "{module}",' for module in expected_registry_modules],
+                "]",
             ]
-         """).strip()
+        )
         pyproject_toml = Path("pyproject.toml").read_text()
         assert registry_modules_str in pyproject_toml

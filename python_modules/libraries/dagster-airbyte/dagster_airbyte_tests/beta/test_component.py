@@ -61,9 +61,9 @@ BASIC_AIRBYTE_COMPONENT_BODY = {
     "type": "dagster_airbyte.AirbyteCloudWorkspaceComponent",
     "attributes": {
         "workspace": {
-            "client_id": "{{ env('AIRBYTE_CLIENT_ID') }}",
-            "client_secret": "{{ env('AIRBYTE_CLIENT_SECRET') }}",
-            "workspace_id": "{{ env('AIRBYTE_WORKSPACE_ID') }}",
+            "client_id": "{{ env.AIRBYTE_CLIENT_ID }}",
+            "client_secret": "{{ env.AIRBYTE_CLIENT_SECRET }}",
+            "workspace_id": "{{ env.AIRBYTE_WORKSPACE_ID }}",
         },
     },
 }

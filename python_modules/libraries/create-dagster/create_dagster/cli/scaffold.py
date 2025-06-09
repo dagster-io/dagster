@@ -18,6 +18,7 @@ from dagster_dg_core.utils import (
 from dagster_dg_core.utils.telemetry import cli_telemetry_wrapper
 
 from create_dagster.scaffold import scaffold_project, scaffold_workspace
+from create_dagster.version_check import check_create_dagster_up_to_date
 
 
 def _project_package_install_warning_message() -> str:
@@ -156,6 +157,7 @@ def scaffold_project_command(
     """
     cli_config = normalize_cli_config(global_options, click.get_current_context())
     dg_context = DgContext.from_file_discovery_and_command_line_config(Path.cwd(), cli_config)
+    check_create_dagster_up_to_date(dg_context)
 
     if uv_sync is True and not is_uv_installed():
         exit_with_error("""
@@ -247,6 +249,10 @@ def scaffold_workspace_command(
             Scaffold a new workspace in the CWD. The workspace name is the last component of the CWD.
 
     """
+    cli_config = normalize_cli_config(global_options, click.get_current_context())
+    dg_context = DgContext.from_file_discovery_and_command_line_config(Path.cwd(), cli_config)
+    check_create_dagster_up_to_date(dg_context)
+
     abs_path = path.resolve()
 
     existing_workspace_path = discover_workspace_root(path)

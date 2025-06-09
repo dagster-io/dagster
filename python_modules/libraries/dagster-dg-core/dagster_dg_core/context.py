@@ -8,6 +8,7 @@ from typing import Any, Final, Optional, Union
 
 from dagster_shared.record import record
 from dagster_shared.serdes.serdes import whitelist_for_serdes
+from dagster_shared.seven import resolve_module_pattern
 from packaging.version import Version
 from typing_extensions import Self
 
@@ -517,14 +518,24 @@ class DgContext:
             self.default_registry_root_module_name, require_exists=False
         )
 
-    @property
+    @cached_property
     def project_registry_modules(self) -> list[str]:
-        """Return a mapping of plugin object references for the current project."""
+        """Return a list of resolved plugin module references for the current project.
+
+        This resolves any wildcard patterns in the raw registry_modules configuration
+        into actual module names.
+        """
         if not self.config.project:
             raise DgError(
                 "`project_registry_modules` is only available in a Dagster project context"
             )
-        return self.config.project.registry_modules
+        return sorted(
+            set(
+                mod
+                for pattern in self.config.project.registry_modules
+                for mod in resolve_module_pattern(pattern)
+            )
+        )
 
     def add_project_registry_module(self, module_name: str) -> None:
         """Add a module name to the project plugin module registry."""
