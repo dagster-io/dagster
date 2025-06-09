@@ -47,7 +47,7 @@ class FunctionSpec(OpMetadataSpec):
     fn: ResolvableCallable
 
 
-def get_config_param_type(fn: Callable) -> Union[type, None]:
+def get_config_param_type(fn: Callable) -> Union[type[Config], None]:
     """Get the type annotation of the 'config' parameter if it exists.
 
     Args:
@@ -97,6 +97,13 @@ class ExecuteFnMetadata:
             return config_type.to_config_schema()
         return None
 
+    @cached_property
+    def config_fields(self) -> Optional[dict[str, Field]]:
+        config_type = get_config_param_type(self.execute_fn)
+        if config_type:
+            return config_type.to_fields_dict()
+        return None
+
 
 class FunctionComponent(ExecutableComponent):
     ## Begin overloads
@@ -114,13 +121,9 @@ class FunctionComponent(ExecutableComponent):
     def resource_keys(self) -> set[str]:
         return self.execute_fn_metadata.resource_keys
 
-    @property
-    def config_field(self) -> Optional[Field]:
-        return (
-            self.execute_fn_metadata.config_schema.as_field()
-            if self.execute_fn_metadata.config_schema
-            else None
-        )
+    @cached_property
+    def config_fields(self) -> Optional[dict[str, Field]]:
+        return self.execute_fn_metadata.config_fields
 
     @property
     def config_cls(self) -> Optional[type]:

@@ -71,7 +71,7 @@ class ExecutableComponent(Component, Resolvable, Model, ABC):
         return set()
 
     @property
-    def config_field(self) -> Optional[Field]:
+    def config_fields(self) -> Optional[dict[str, Field]]:
         return None
 
     @abstractmethod
@@ -94,7 +94,7 @@ class ExecutableComponent(Component, Resolvable, Model, ABC):
                 check_specs=self.checks,
                 required_resource_keys=self.resource_keys,
                 pool=self.op_metadata_spec.pool,
-                config_schema=self.config_field,
+                config_schema=self.config_fields,
             )
             def _assets_def(context: AssetExecutionContext, **kwargs):
                 return to_iterable(
@@ -112,7 +112,7 @@ class ExecutableComponent(Component, Resolvable, Model, ABC):
                 description=self.op_metadata_spec.description,
                 required_resource_keys=self.resource_keys,
                 pool=self.op_metadata_spec.pool,
-                config_schema=self.config_field,
+                config_schema=self.config_fields,
             )
             def _asset_check_def(context: AssetCheckExecutionContext, **kwargs):
                 return to_iterable(
