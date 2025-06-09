@@ -11,7 +11,6 @@ from dagster._config.pythonic_config.config import Config
 from dagster._config.pythonic_config.type_check_utils import safe_is_subclass
 from dagster._core.decorator_utils import get_function_params
 from dagster._core.definitions.asset_check_result import AssetCheckResult
-from dagster._core.definitions.definition_config_schema import DefinitionConfigSchema
 from dagster._core.definitions.resource_annotation import get_resource_args
 from dagster._core.definitions.result import MaterializeResult
 from dagster._core.execution.context.asset_check_execution_context import AssetCheckExecutionContext
@@ -91,18 +90,8 @@ class ExecuteFnMetadata:
         return get_config_param_type(self.execute_fn)
 
     @cached_property
-    def config_schema(self) -> Union[DefinitionConfigSchema, None]:
-        config_type = get_config_param_type(self.execute_fn)
-        if config_type:
-            return config_type.to_config_schema()
-        return None
-
-    @cached_property
     def config_fields(self) -> Optional[dict[str, Field]]:
-        config_type = get_config_param_type(self.execute_fn)
-        if config_type:
-            return config_type.to_fields_dict()
-        return None
+        return self.config_cls.to_fields_dict() if self.config_cls else None
 
 
 class FunctionComponent(ExecutableComponent):
