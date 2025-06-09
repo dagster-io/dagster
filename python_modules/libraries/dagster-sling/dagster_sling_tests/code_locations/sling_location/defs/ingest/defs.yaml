@@ -10,4 +10,4 @@ attributes:
       - name: DUCKDB
         type: duckdb
         instance: <PLACEHOLDER>
-        password: "{{ env('SOME_PASSWORD') }}"
+        password: "{{ env.SOME_PASSWORD }}"
