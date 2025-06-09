@@ -28,8 +28,11 @@ class EnvScope:
         if key.startswith("jinja"):
             raise AttributeError(f"{key} not found")
 
+        return os.environ.get(key)
+
+    def __getitem__(self, key: str) -> Optional[str]:
         raise ResolutionException(
-            f"To access environment variables, use the `env` function, e.g. `env('{key}')`"
+            f"To access environment variables, use dot access or the `env` function, e.g. `env.{key}` or `env('{key}')`"
         )
 
 
