@@ -1,9 +1,9 @@
 [project]
 name = "project_atproto_dashboard"
-version = "0.1.0"
-description = "Add your description here"
+version = "0.0.1"
+description = "Project Bluesky BI"
 readme = "README.md"
-requires-python = ">=3.9,<3.13"
+requires-python = ">=3.9"
 dependencies = [
     "atproto",
     "dagster",
@@ -29,4 +29,7 @@ directory_type = "project"
 
 [tool.dg.project]
 root_module = "project_atproto_dashboard"
-code_location_target_module = "project_atproto_dashboard.definitions"
+autoload_defs = true
+
+[tool.dg.project.python_environment]
+active = true

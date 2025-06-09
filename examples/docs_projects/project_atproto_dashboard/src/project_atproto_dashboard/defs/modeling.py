@@ -40,8 +40,4 @@ def dbt_bluesky(context: dg.AssetExecutionContext, dbt: DbtCliResource):
     yield from (dbt.cli(["build"], context=context).stream().fetch_row_counts())
 
 
-defs = dg.Definitions(
-    assets=[dbt_bluesky],
-    resources={},
-)
 # end_dbt_assets
