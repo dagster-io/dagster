@@ -216,14 +216,14 @@ class SnowflakePolarsIOManager(SnowflakeIOManager):
         .. code-block:: python
 
             defs = Definitions(
-                assets=[my_table]
+                assets=[my_table],
                 resources={
-                    "io_manager" SnowflakePolarsIOManager(database="my_database", schema="my_schema", ...)
+                    "io_manager": SnowflakePolarsIOManager(database="my_database", schema="my_schema", ...)
                 }
             )
 
 
-        On individual assets, you an also specify the schema where they should be stored using metadata or
+        On individual assets, you can also specify the schema where they should be stored using metadata or
         by adding a ``key_prefix`` to the asset key. If both ``key_prefix`` and metadata are defined, the metadata will
         take precedence.
 
@@ -319,7 +319,7 @@ def snowflake_polars_io_manager(init_context):
                 resources={
                     "io_manager": snowflake_polars_io_manager.configured({
                         "database": "my_database",
-                        "account" : {"env": "SNOWFLAKE_ACCOUNT"}
+                        "account" : {"env": "SNOWFLAKE_ACCOUNT"},
                         ...
                     })
                 }
@@ -331,8 +331,8 @@ def snowflake_polars_io_manager(init_context):
         .. code-block:: python
 
             defs = Definitions(
-                assets=[my_table]
-                resources={"io_manager" snowflake_polars_io_manager.configured(
+                assets=[my_table],
+                resources={"io_manager": snowflake_polars_io_manager.configured(
                     {"database": "my_database", "schema": "my_schema", ...} # will be used as the schema
                 )}
             )
