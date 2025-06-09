@@ -10,17 +10,23 @@ import DgComponentsPreview from '@site/docs/partials/\_DgComponentsPreview.md';
 
 The [dagster-airbyte](/integrations/libraries/airbyte) library provides an `AirbyteCloudWorkspaceComponent` which can be used to easily represent Airbyte Cloud connections as assets in Dagster.
 
-## Preparing a Dagster project
+## 1. Prepare a Dagster project
 
-To begin, you'll need a Dagster project. You can use an existing project [ready for components](/guides/labs/dg/incrementally-adopting-dg/migrating-project) or scaffold a new one:
+To begin, you'll need a Dagster project. You can use an [existing components-ready project](/guides/labs/dg/incrementally-adopting-dg/migrating-project) or create a new one:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/airbyte-cloud-component/1-scaffold-project.txt" />
 
-Next, you will need to add the `dagster-airbyte` library to the project:
+Activate the project virtual environment:
+
+```
+source ../.venv/bin/activate
+```
+
+Finally, add the `dagster-airbyte` library to the project:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/airbyte-cloud-component/2-add-airbyte.txt" />
 
-## Scaffolding an Airbyte Cloud component
+## 2. Scaffold an Airbyte Cloud component
 
 Now that you have a Dagster project, you can scaffold an Airbyte Cloud component. You'll need to provide your Airbyte Cloud workspace ID and API credentials:
 
@@ -40,7 +46,7 @@ You can check the configuration of your component:
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/airbyte-cloud-component/6-list-defs.txt" />
 </WideContent>
 
-## Selecting specific connections
+## 3. Select specific connections
 
 You can select specific Airbyte Cloud connections to include in your component using the `connection_selector` key. This allows you to filter which connections are represented as assets:
 
@@ -50,7 +56,7 @@ You can select specific Airbyte Cloud connections to include in your component u
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/airbyte-cloud-component/8-list-defs.txt" />
 </WideContent>
 
-## Customizing Airbyte Cloud assets
+## 4. Customize Airbyte Cloud assets
 
 Properties of the assets emitted by each connection can be customized in the `defs.yaml` file using the `translation` key:
 

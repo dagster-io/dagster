@@ -1911,15 +1911,19 @@
     },
     {
       "source": "/guides/labs/components/building-pipelines-with-components/creating-a-code-location-with-components",
-      "destination": "/guides/labs/components/building-pipelines-with-components/creating-a-project-with-components"
+      "destination": "/guides/labs/components/building-pipelines-with-components"
+    },
+    {
+      "source": "/guides/labs/components/building-pipelines-with-components/creating-a-project-with-components",
+      "destination": "/guides/labs/components/building-pipelines-with-components"
     },
     {
       "source": "/guides/labs/components/creating-a-component",
-      "destination": "/guides/labs/components/creating-new-component-types/creating-and-registering-a-component-type"
+      "destination": "/guides/labs/components/creating-new-components/creating-and-registering-a-component"
     },
     {
       "source": "/guides/labs/components/creating-new-component-types/customizing-components",
-      "destination": "/guides/labs/components/creating-new-component-types/subclassing-components"
+      "destination": "/guides/labs/components/creating-new-components/subclassing-components"
     },
     {
       "source": "/guides/labs/components/existing-code-location",
@@ -1935,11 +1939,19 @@
     },
     {
       "source": "/guides/labs/components/using-a-component",
-      "destination": "/guides/labs/components/building-pipelines-with-components/adding-components"
+      "destination": "/guides/labs/components/building-pipelines-with-components/adding-component-definitions"
     },
     {
       "source": "/guides/labs/components/using-a-component-python",
-      "destination": "/guides/labs/components/building-pipelines-with-components/adding-components-python"
+      "destination": "/guides/labs/components/building-pipelines-with-components/adding-component-definitions"
+    },
+    {
+      "source": "/guides/labs/components/building-pipelines-with-components/adding-components-python",
+      "destination": "/guides/labs/components/building-pipelines-with-components/adding-component-definitions"
+    },
+    {
+      "source": "/guides/labs/components/building-pipelines-with-components/adding-component-definitions",
+      "destination": "/guides/labs/components/building-pipelines-with-components/adding-component-definitions"
     },
     {
       "source": "/guides/labs/components/incrementally-adopting-components/existing-code-location",
@@ -3165,6 +3177,26 @@
     {
       "source": "/guides/labs/create-dagster",
       "destination": "/api/dagster/create-dagster"
+    },
+    {
+      "source": "/guides/labs/components/creating-new-component-types",
+      "destination": "/guides/labs/components/creating-new-components"
+    },
+    {
+      "source": "/guides/labs/components/creating-new-component-types/testing-your-component-type",
+      "destination": "/guides/labs/components/creating-new-components/testing-your-component"
+    },
+    {
+      "source": "/guides/labs/components/creating-new-component-types/creating-and-registering-a-component-type",
+      "destination": "/guides/labs/components/creating-new-components/creating-and-registering-a-component"
+    },
+    {
+      "source": "/guides/labs/components/creating-new-component-types/subclassing-component-types",
+      "destination": "/guides/labs/components/creating-new-components/subclassing-components"
+    },
+    {
+      "source": "/guides/labs/components/creating-new-component-types/component-type-customization",
+      "destination": "/guides/labs/components/creating-new-components/component-customization"
     }
   ],
   "trailingSlash": false
