@@ -716,11 +716,7 @@ def multi_asset(
         retry_policy=retry_policy,
         code_version=code_version,
         op_tags=op_tags,
-        config_schema=check.opt_mapping_param(
-            config_schema,  # type: ignore
-            "config_schema",
-            additional_message="Only dicts are supported for asset config_schema.",
-        ),
+        config_schema=config_schema,
         compute_kind=check.opt_str_param(kwargs.get("compute_kind"), "compute_kind"),
         required_resource_keys=check.opt_set_param(
             required_resource_keys, "required_resource_keys", of_type=str

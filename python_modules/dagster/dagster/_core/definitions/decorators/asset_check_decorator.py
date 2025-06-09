@@ -344,11 +344,6 @@ def multi_asset_check(
     resource_defs = wrap_resources_for_execution(
         check.opt_mapping_param(resource_defs, "resource_defs", key_type=str)
     )
-    config_schema = check.opt_mapping_param(
-        config_schema,  # type: ignore
-        "config_schema",
-        additional_message="Only dicts are supported for asset config_schema.",
-    )
 
     def inner(fn: MultiAssetCheckFunction) -> AssetChecksDefinition:
         op_name = name or fn.__name__
