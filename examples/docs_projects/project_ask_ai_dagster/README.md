@@ -26,11 +26,14 @@ Open http://localhost:3000 in your browser.
 
 ## References
 
+Dagster
+
 - [Dagster Docs](https://docs.dagster.io/)
 - [Dagster Docs: DuckDB](https://docs.dagster.io/_apidocs/libraries/dagster-duckdb)
 - [Dagster Docs: OpenAI Integration](https://docs.dagster.io/integrations/openai)
 
 Pinecone
+
 - [Pinecone](https://www.pinecone.io/)
 
 OpenAI
