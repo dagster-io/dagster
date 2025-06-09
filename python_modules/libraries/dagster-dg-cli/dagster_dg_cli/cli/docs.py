@@ -71,11 +71,8 @@ def serve_docs_command(
             json.dumps(json_for_all_components([v for _, v in registry.items()]), indent=2)
         )
         with yaspin(text="Verifying docs dependencies", color="blue") as spinner:
-            yes = subprocess.Popen(["yes", "y"], stdout=subprocess.PIPE)
-            try:
-                subprocess.check_output(["yarn", "install"], stdin=yes.stdout)
-            finally:
-                yes.terminate()
+            input_str = "y\n" * 100  # equivalent to answering yes to all prompts
+            subprocess.check_output(["yarn", "install"], input=input_str, text=True)
             spinner.ok("✓")
 
         spinner = yaspin(text="Starting docs server", color="blue")
@@ -132,13 +129,9 @@ def build_docs_command(
             json.dumps(json_for_all_components([v for _, v in registry.items()]), indent=2)
         )
         with yaspin(text="Verifying docs dependencies", color="blue") as spinner:
-            yes = subprocess.Popen(["yes", "y"], stdout=subprocess.PIPE)
-            try:
-                subprocess.check_output(["yarn", "install"], stdin=yes.stdout)
-            finally:
-                yes.terminate()
+            input_str = "y\n" * 100  # equivalent to answering yes to all prompts
+            subprocess.check_output(["yarn", "install"], input=input_str, text=True)
             spinner.ok("✓")
-
         with yaspin(text="Building docs", color="blue") as spinner:
             spinner.start()
             subprocess.check_output(["yarn", "build"])

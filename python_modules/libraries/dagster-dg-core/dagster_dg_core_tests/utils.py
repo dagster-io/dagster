@@ -558,8 +558,15 @@ def fixed_panel_width(width: int = 80) -> Iterator[None]:
 # Also, windows tends to output different box drawing characters than Unix. Therefore we sub out any
 # of the windows box drawing characters here for the Unix ones so that we can have standard test
 # output.
-def match_terminal_box_output(output: str, expected_output: str):
+#
+# Finally, we also sub out backslashes with forward slashes in the output, in order to standardize
+# the appearance of paths for the expected output. Windows uses backslashes in paths.
+def match_terminal_box_output(
+    output: str, expected_output: str, substitute_backslashes: bool = True
+):
     standardized_output = standardize_box_characters(output)
+    if substitute_backslashes:
+        standardized_output = standardized_output.replace("\\", "/")
     standardized_expected_output = standardize_box_characters(expected_output)
     standardized_output_lines = standardized_output.split("\n")
     standardized_expected_output_lines = standardized_expected_output.split("\n")

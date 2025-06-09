@@ -58,10 +58,10 @@ def test_list_project_success():
         assert_runner_result(result)
         assert (
             result.output.strip()
-            == textwrap.dedent("""
+            == textwrap.dedent(f"""
                 foo
-                projects/bar
-                more_projects/baz
+                {Path("projects/bar")}
+                {Path("more_projects/baz")}
             """).strip()
         )
 
@@ -311,8 +311,10 @@ def test_list_defs_succeeds(use_json: bool, snapshot):
                 )
                 snapshot.assert_match(result.stdout.decode("utf-8").strip())
             else:
-                result = subprocess.run(["dg", "list", "defs"], check=True, capture_output=True)
-                snapshot.assert_match(result.stdout.decode("utf-8").strip())
+                result = subprocess.run(
+                    ["dg", "list", "defs"], check=True, capture_output=True, text=True
+                )
+                snapshot.assert_match(standardize_box_characters(result.stdout.strip()))
 
 
 def _asset_1():
@@ -449,8 +451,10 @@ def test_list_defs_complex_assets_succeeds(snapshot):
                 )
                 f.write(defs_source)
 
-            result = subprocess.run(["dg", "list", "defs"], check=True, capture_output=True)
-            snapshot.assert_match(result.stdout.decode("utf-8").strip())
+            result = subprocess.run(
+                ["dg", "list", "defs"], check=True, capture_output=True, text=True
+            )
+            snapshot.assert_match(standardize_box_characters(result.stdout.strip()))
 
 
 def test_list_defs_column_selection():
@@ -608,8 +612,10 @@ def test_list_defs_with_env_file_succeeds(snapshot):
             with Path(".env").open("w") as f:
                 f.write(env_file_contents)
 
-            result = subprocess.run(["dg", "list", "defs"], check=True, capture_output=True)
-            snapshot.assert_match(result.stdout.decode("utf-8").strip())
+            result = subprocess.run(
+                ["dg", "list", "defs"], check=True, capture_output=True, text=True
+            )
+            snapshot.assert_match(standardize_box_characters(result.stdout.strip()))
 
 
 def _sample_env_var_assets():
@@ -691,15 +697,15 @@ def test_list_env_succeeds(monkeypatch):
         Path(".env").write_text("FOO=bar")
         result = runner.invoke("list", "env")
         assert_runner_result(result)
-        assert (
-            result.output.strip()
-            == textwrap.dedent("""
+        assert match_terminal_box_output(
+            result.output.strip(),
+            textwrap.dedent("""
                ┏━━━━━━━━━┳━━━━━━━┳━━━━━━━━━━━━┓
                ┃ Env Var ┃ Value ┃ Components ┃
                ┡━━━━━━━━━╇━━━━━━━╇━━━━━━━━━━━━┩
                │ FOO     │ ✓     │            │
                └─────────┴───────┴────────────┘
-        """).strip()
+            """).strip(),
         )
 
         result = runner.invoke(
@@ -721,15 +727,15 @@ def test_list_env_succeeds(monkeypatch):
 
         result = runner.invoke("list", "env")
         assert_runner_result(result)
-        assert (
-            result.output.strip()
-            == textwrap.dedent("""
+        assert match_terminal_box_output(
+            result.output.strip(),
+            textwrap.dedent("""
                ┏━━━━━━━━━┳━━━━━━━┳━━━━━━━━━━━━━━━━━━┓
                ┃ Env Var ┃ Value ┃ Components       ┃
                ┡━━━━━━━━━╇━━━━━━━╇━━━━━━━━━━━━━━━━━━┩
                │ FOO     │ ✓     │ subfolder/mydefs │
                └─────────┴───────┴──────────────────┘
-        """).strip()
+            """).strip(),
         )
 
 
@@ -750,7 +756,7 @@ def _assert_entry_point_error(cmd: list[str]):
         isolated_example_component_library_foo_bar(runner),
     ):
         # Delete the components package referenced by the entry point
-        shutil.rmtree("src/foo_bar/components")
+        shutil.rmtree(Path("src/foo_bar/components"))
 
         # Disable cache to force re-discovery of deleted entry point
         result = subprocess.run(
@@ -774,4 +780,5 @@ def _assert_entry_point_error(cmd: list[str]):
         """).strip()
         )
 
+        print(output)
         assert re.search(panel_title_pattern, output)

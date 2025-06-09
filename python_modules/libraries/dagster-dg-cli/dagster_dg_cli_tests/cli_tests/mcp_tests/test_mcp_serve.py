@@ -46,7 +46,9 @@ async def test_list_dagster_components():
 
     with ProxyRunner.test() as runner, isolated_example_project_foo_bar(runner):
         async with mcp_server() as session:
+            print("CALLING TOOL")
             response = await session.call_tool("list_available_components", {"project_path": "."})
+            print("CALLED TOOL")
             assert not response.isError
             assert len(response.content) == 1
             text_content = cast("TextContent", response.content[0])

@@ -278,6 +278,7 @@ def test_scaffold_github_actions_command_success_serverless(
     assert not Path("dagster_cloud.yaml").exists()
     assert "https://github.com/hooli/example-repo/settings/secrets/actions" in result.output
 
+    print(Path(".github/workflows/dagster-plus-deploy.yml").read_text())
     validate_github_actions_workflow(Path(".github/workflows/dagster-plus-deploy.yml"))
 
 

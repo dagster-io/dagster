@@ -2,6 +2,7 @@ import os
 from pathlib import Path
 
 import click
+import rich
 from dagster_dg_core.config import normalize_cli_config
 from dagster_dg_core.context import DgContext
 from dagster_dg_core.shared_options import dg_global_options, dg_path_options
@@ -17,6 +18,11 @@ from dagster_dg_cli.cli.plus import plus_group
 from dagster_dg_cli.cli.scaffold import scaffold_group
 from dagster_dg_cli.cli.utils import utils_group
 from dagster_dg_cli.version import __version__
+
+# Prevent rich from thinking it's in a legacy Windows terminal, which causes it to output primitive
+# box characters instead of Unicode. This can cause problems in CI. We put this here instead of in
+# test code because tests often launch subprocesses.
+rich.reconfigure(legacy_windows=False)
 
 
 def create_dg_cli():

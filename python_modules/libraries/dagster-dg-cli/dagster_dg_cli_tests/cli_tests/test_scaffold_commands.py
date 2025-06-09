@@ -566,7 +566,7 @@ def test_scaffold_defs_asset() -> None:
         ProxyRunner.test() as runner,
         isolated_example_project_foo_bar(runner),
     ):
-        result = runner.invoke("scaffold", "defs", "dagster.asset", "assets/foo.py")
+        result = runner.invoke("scaffold", "defs", "dagster.asset", str(Path("assets/foo.py")))
         assert_runner_result(result)
         assert Path("src/foo_bar/defs/assets/foo.py").exists()
         assert Path("src/foo_bar/defs/assets/foo.py").read_text().startswith("import dagster as dg")
