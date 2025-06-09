@@ -18,8 +18,22 @@ from dagster.components.resolved.errors import ResolutionException
 T = TypeVar("T")
 
 
-def env_scope(key: str) -> Optional[str]:
-    return os.environ.get(key)
+class EnvScope:
+    def __call__(self, key: str) -> Optional[str]:
+        return os.environ.get(key)
+
+    def __getattr__(self, key: str) -> Optional[str]:
+        # jinja2 applies a hasattr check to any scope fn - we avoid raising our own exception
+        # for this access
+        if key.startswith("jinja"):
+            raise AttributeError(f"{key} not found")
+
+        return os.environ.get(key)
+
+    def __getitem__(self, key: str) -> Optional[str]:
+        raise ResolutionException(
+            f"To access environment variables, use dot access or the `env` function, e.g. `env.{key}` or `env('{key}')`"
+        )
 
 
 def automation_condition_scope() -> Mapping[str, Any]:
@@ -52,7 +66,7 @@ class ResolutionContext:
     @staticmethod
     def default(source_position_tree: Optional[SourcePositionTree] = None) -> "ResolutionContext":
         return ResolutionContext(
-            scope={"env": env_scope, "automation_condition": automation_condition_scope()},
+            scope={"env": EnvScope(), "automation_condition": automation_condition_scope()},
             source_position_tree=source_position_tree,
         )
 
