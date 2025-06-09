@@ -11,8 +11,8 @@ Now that we are confident in the files we have generated, we can kick off our Op
 We have an asset for each file to upload, but as in the file creation step, they will look similar:
 
 <CodeExample
-  path="docs_projects/project_llm_fine_tune/src/project_llm_fine_tune/defs/assets.py
-  language="python""
+  path="docs_projects/project_llm_fine_tune/src/project_llm_fine_tune/defs/assets.py"
+  language="python"
   startAfter="start_upload_file"
   endBefore="end_upload_file"
   title="src/project_llm_fine_tune/defs/assets.py"

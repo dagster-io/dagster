@@ -10,7 +10,24 @@ import pandas as pd
 from dagster_openai import OpenAIResource
 from openai import OpenAI
 
-import project_llm_fine_tune.defs.constants as constants
+MODEL_NAME = "gpt-4o-mini-2024-07-18"
+TRAINING_FILE_NUM = 50
+VALIDATION_FILE_NUM = 50
+VALIDATION_SAMPLE_SIZE = 100
+CATEGORIES = [
+    "fantasy",
+    "horror",
+    "humor",
+    "adventure",
+    "action",
+    "romance",
+    "ya",
+    "superheroes",
+    "comedy",
+    "mystery",
+    "supernatural",
+    "drama",
+]
 
 
 def write_openai_file(file_name: str, data: list):
@@ -107,7 +124,7 @@ def book_category(
     duckdb_resource: dg_duckdb.DuckDBResource,
     graphic_novels,
 ):
-    sql_categories = ", ".join([f"'{s}'" for s in constants.CATEGORIES])
+    sql_categories = ", ".join([f"'{s}'" for s in CATEGORIES])
     query = f"""
         create table if not exists book_category as (
             select
@@ -210,13 +227,13 @@ def create_prompt_record(data: dict, categories: list):
 def training_file(
     enriched_graphic_novels,
 ) -> str:
-    graphic_novels = enriched_graphic_novels.sample(n=constants.TRAINING_FILE_NUM)
+    graphic_novels = enriched_graphic_novels.sample(n=TRAINING_FILE_NUM)
     prompt_data = []
     for record in [row for _, row in graphic_novels.iterrows()]:
-        prompt_data.append(create_prompt_record(record, constants.CATEGORIES))
+        prompt_data.append(create_prompt_record(record, CATEGORIES))
 
     file_name = "goodreads-training.jsonl"
-    utils.write_openai_file(file_name, prompt_data)
+    write_openai_file(file_name, prompt_data)
     return file_name
 
 
@@ -231,13 +248,13 @@ def training_file(
 def validation_file(
     enriched_graphic_novels,
 ) -> str:
-    graphic_novels = enriched_graphic_novels.sample(n=constants.VALIDATION_FILE_NUM)
+    graphic_novels = enriched_graphic_novels.sample(n=VALIDATION_FILE_NUM)
     prompt_data = []
     for record in [row for _, row in graphic_novels.iterrows()]:
-        prompt_data.append(create_prompt_record(record, constants.CATEGORIES))
+        prompt_data.append(create_prompt_record(record, CATEGORIES))
 
     file_name = "goodreads-validation.jsonl"
-    utils.write_openai_file(file_name, prompt_data)
+    write_openai_file(file_name, prompt_data)
     return file_name
 
 
@@ -301,7 +318,7 @@ def openai_file_validation(data: Iterable) -> dg.AssetCheckResult:
     },
 )
 def training_file_format_check() -> dg.AssetCheckResult:
-    data = utils.read_openai_file("goodreads-training.jsonl")
+    data = read_openai_file("goodreads-training.jsonl")
     return openai_file_validation(data)
 
 
@@ -316,7 +333,7 @@ def training_file_format_check() -> dg.AssetCheckResult:
     },
 )
 def validation_file_format_check() -> dg.AssetCheckResult:
-    data = utils.read_openai_file("goodreads-validation.jsonl")
+    data = read_openai_file("goodreads-validation.jsonl")
     return openai_file_validation(data)
 
 
@@ -372,7 +389,7 @@ def fine_tuned_model(
         create_job_resp = client.fine_tuning.jobs.create(
             training_file=upload_training_file,
             validation_file=upload_validation_file,
-            model=constants.MODEL_NAME,
+            model=MODEL_NAME,
             suffix="goodreads",
         )
 
@@ -459,10 +476,10 @@ def fine_tuned_model_accuracy(
     fine_tuned_model,
     data,
 ) -> dg.AssetCheckResult:
-    validation = data.sample(n=constants.VALIDATION_SAMPLE_SIZE)
+    validation = data.sample(n=VALIDATION_SAMPLE_SIZE)
 
     models = Counter()
-    base_model = constants.MODEL_NAME
+    base_model = MODEL_NAME
     with openai.get_client(context) as client:
         for data in [row for _, row in validation.iterrows()]:
             for model in [fine_tuned_model, base_model]:
@@ -470,14 +487,14 @@ def fine_tuned_model_accuracy(
                     client,
                     model,
                     data,
-                    categories=constants.CATEGORIES,
+                    categories=CATEGORIES,
                 )
                 if model_answer == data["category"]:
                     models[model] += 1
 
     model_accuracy = {
-        fine_tuned_model: models[fine_tuned_model] / constants.VALIDATION_SAMPLE_SIZE,
-        base_model: models[base_model] / constants.VALIDATION_SAMPLE_SIZE,
+        fine_tuned_model: models[fine_tuned_model] / VALIDATION_SAMPLE_SIZE,
+        base_model: models[base_model] / VALIDATION_SAMPLE_SIZE,
     }
 
     if model_accuracy[fine_tuned_model] < model_accuracy[base_model]:
