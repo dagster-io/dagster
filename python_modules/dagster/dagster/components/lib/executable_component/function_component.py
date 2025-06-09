@@ -15,6 +15,7 @@ from dagster._core.definitions.resource_annotation import get_resource_args
 from dagster._core.definitions.result import MaterializeResult
 from dagster._core.execution.context.asset_check_execution_context import AssetCheckExecutionContext
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
+from dagster._core.execution.plan.compute_generator import construct_config_from_context
 from dagster.components.core.context import ComponentLoadContext
 from dagster.components.lib.executable_component.component import (
     ExecutableComponent,
@@ -141,13 +142,8 @@ class FunctionComponent(ExecutableComponent):
     ) -> dict[str, Any]:
         if not self.config_cls:
             return {}
-        # copied from invoke_compute_fn in compute_generator.py
         return {
-            "config": self.config_cls(
-                **self.config_cls._get_non_default_public_field_values_cls(  # noqa: SLF001
-                    context.op_execution_context.op_config
-                )
-            )
+            "config": construct_config_from_context(self.config_cls, context.op_execution_context)
         }
 
     ## End overloads
