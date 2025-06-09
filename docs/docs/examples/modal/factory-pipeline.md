@@ -11,21 +11,21 @@ Dagster encourages software engineering best practices, one of which is keeping 
 If you look at the `rss_pipeline_factory` function, it returns a <PyObject section="definitions" module="dagster" object="Definitions" /> object containing the four assets, a job for those assets, and the sensor for the specific podcast feed. All of those pipelines use the same <PyObject section="resources" module="dagster" object="ConfigurableResource"/> which we can set at the project level:
 
 <CodeExample
-  path="docs_projects/project_dagster_modal_pipes/project_dagster_modal_pipes/defs/resources.py"
+  path="docs_projects/project_dagster_modal_pipes/src/project_dagster_modal_pipes/defs/resources.py"
   language="python"
   startAfter="start_resources"
   endBefore="end_resources"
-  title="project_dagster_modal_pipes/project_dagster_modal_pipes/defs/resources.py"
+  title="src/project_dagster_modal_pipes/defs/resources.py"
 />
 
 With the resources set, the last step will be to initialize our three podcasts:
 
 <CodeExample
-  path="docs_projects/project_dagster_modal_pipes/project_dagster_modal_pipes/defs/feeds.py"
+  path="docs_projects/project_dagster_modal_pipes/src/project_dagster_modal_pipes/defs/feeds.py"
   language="python"
   startAfter="start_def"
   endBefore="end_def"
-  title="project_dagster_modal_pipes/project_dagster_modal_pipes/defs/feeds.py"
+  title="src/project_dagster_modal_pipes/defs/feeds.py"
 />
 
 We can now see all the assets in Dagster and know that we will ingest any new podcasts going forward.
