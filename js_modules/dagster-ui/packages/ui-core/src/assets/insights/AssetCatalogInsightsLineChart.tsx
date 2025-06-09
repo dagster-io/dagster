@@ -1,4 +1,12 @@
-import {BodySmall, Box, Colors, Mono, Spinner, Subheading} from '@dagster-io/ui-components';
+import {
+  BodySmall,
+  Box,
+  CaptionMono,
+  Colors,
+  FontFamily,
+  Spinner,
+  Subheading,
+} from '@dagster-io/ui-components';
 import {
   CategoryScale,
   ChartData,
@@ -17,8 +25,11 @@ import {AssetCatalogMetricNames} from './AssetCatalogMetricUtils';
 import {Context, useRenderChartTooltip} from './renderChartTooltip';
 import {useRGBColorsForTheme} from '../../app/useRGBColorsForTheme';
 import {TooltipCard} from '../../insights/InsightsChartShared';
+import {formatMetric} from '../../insights/formatMetric';
+import {ReportingUnitType} from '../../insights/types';
 import {numberFormatter, percentFormatter} from '../../ui/formatters';
 import {useFormatDateTime} from '../../ui/useFormatDateTime';
+
 ChartJS.register(LineElement, CategoryScale, LinearScale, PointElement, Tooltip);
 
 export type LineChartMetrics = {
@@ -93,7 +104,7 @@ export const AssetCatalogInsightsLineChart = React.memo(
   }: {
     metrics: LineChartMetrics;
     loading: boolean;
-    unitType: string;
+    unitType: ReportingUnitType;
     openMetricDialog: (data: {
       after: number;
       before: number;
@@ -123,50 +134,57 @@ export const AssetCatalogInsightsLineChart = React.memo(
           const currentPeriodMetric = metrics.currentPeriod.data[currentPeriodDataPoint.dataIndex];
           return (
             <TooltipCard>
-              <Box flex={{direction: 'column', gap: 4}} padding={{vertical: 8, horizontal: 12}}>
-                <Box border="bottom" padding={{bottom: 4}} margin={{bottom: 4}}>
+              <Box flex={{direction: 'column', gap: 8}} padding={{vertical: 8, horizontal: 12}}>
+                <Box border="bottom" padding={{bottom: 8}}>
                   <Subheading>{date}</Subheading>
                 </Box>
-                <Box flex={{direction: 'row', justifyContent: 'space-between'}}>
-                  <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
-                    <div
-                      style={{
-                        width: 12,
-                        height: 12,
-                        backgroundColor: metrics.currentPeriod.color,
-                        border: `1px solid ${rgbColors[Colors.textDefault()]}`,
-                      }}
-                    />
-                    <div>Current Period:</div>
+                <div>
+                  <Box
+                    flex={{direction: 'row', justifyContent: 'space-between'}}
+                    margin={{bottom: 4}}
+                  >
+                    <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
+                      <div
+                        style={{
+                          width: 12,
+                          height: 12,
+                          backgroundColor: metrics.currentPeriod.color,
+                          borderRadius: '50%',
+                        }}
+                      />
+                      <BodySmall>Current period</BodySmall>
+                    </Box>
+                    <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
+                      <CaptionMono>{currentPeriodDataPoint?.formattedValue ?? 0}</CaptionMono>
+                      <BodySmall color={Colors.textLight()}>{unitTypeToLabel[unitType]}</BodySmall>
+                    </Box>
                   </Box>
-                  <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
-                    <Mono>{currentPeriodDataPoint?.formattedValue ?? 0}</Mono>
-                    <BodySmall color={Colors.textLight()}>{unitType}</BodySmall>
+                  <Box flex={{direction: 'row', justifyContent: 'space-between'}}>
+                    <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
+                      <div
+                        style={{
+                          width: 12,
+                          height: 12,
+                          backgroundColor: metrics.prevPeriod.color,
+                          borderRadius: '50%',
+                        }}
+                      />
+                      <BodySmall>Previous period</BodySmall>
+                    </Box>
+                    <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
+                      <CaptionMono>{prevPeriodDataPoint?.formattedValue ?? 0}</CaptionMono>
+                      <BodySmall color={Colors.textLight()}>{unitTypeToLabel[unitType]}</BodySmall>
+                    </Box>
                   </Box>
-                </Box>
-                <Box flex={{direction: 'row', justifyContent: 'space-between'}}>
-                  <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
-                    <div
-                      style={{
-                        width: 12,
-                        height: 12,
-                        backgroundColor: metrics.prevPeriod.color,
-                        border: `1px solid ${rgbColors[Colors.textDefault()]}`,
-                      }}
-                    />
-                    <div>Previous Period:</div>
-                  </Box>
-                  <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
-                    <Mono>{prevPeriodDataPoint?.formattedValue ?? 0}</Mono>
-                    <BodySmall color={Colors.textLight()}>{unitType}</BodySmall>
-                  </Box>
-                </Box>
-                {currentPeriodMetric ? <BodySmall>Click for asset breakdown</BodySmall> : null}
+                </div>
+                {currentPeriodMetric ? (
+                  <BodySmall color={Colors.textLight()}>Click for asset breakdown</BodySmall>
+                ) : null}
               </Box>
             </TooltipCard>
           );
         },
-        [formatDatetime, metrics, rgbColors, unitType],
+        [formatDatetime, metrics, unitType],
       ),
       useMemo(() => ({side: 'top', sideOffset: 50, align: 'start', alignOffset: 50}), []),
     );
@@ -199,12 +217,26 @@ export const AssetCatalogInsightsLineChart = React.memo(
           y: {
             grid: {color: rgbColors[Colors.keylineDefault()]},
             beginAtZero: true,
+            ticks: {
+              color: rgbColors[Colors.textLight()],
+              font: {
+                size: 12,
+                family: FontFamily.monospace,
+              },
+              callback(value: string | number) {
+                return formatMetric(value, unitType, {
+                  integerFormat: 'compact',
+                  floatPrecision: 'maximum-precision',
+                  floatFormat: 'compact-above-threshold',
+                });
+              },
+            },
           },
         },
         responsive: true,
         maintainAspectRatio: false,
       }),
-      [renderTooltipFn, rgbColors],
+      [renderTooltipFn, rgbColors, unitType],
     );
 
     const chartRef = useRef(null);
@@ -224,6 +256,7 @@ export const AssetCatalogInsightsLineChart = React.memo(
         {axis: 'x', intersect: false},
         false, // get elements in the clicked position even if animations are not completed
       );
+
       if (clickedElements.length > 0) {
         const element = clickedElements[0];
         if (element) {
@@ -267,7 +300,7 @@ export const AssetCatalogInsightsLineChart = React.memo(
             {metrics.currentPeriod.aggregateValue
               ? numberFormatter.format(Math.round(metrics.currentPeriod.aggregateValue))
               : 0}
-            <BodySmall color={Colors.textLight()}>{unitType}</BodySmall>
+            <BodySmall color={Colors.textLight()}>{unitTypeToLabel[unitType]}</BodySmall>
           </div>
           <div className={styles.chartChange}>
             {percentFormatter.format(metrics.pctChange ?? 0)}
@@ -287,3 +320,9 @@ export const AssetCatalogInsightsLineChart = React.memo(
     );
   },
 );
+
+const unitTypeToLabel: Record<ReportingUnitType, string> = {
+  [ReportingUnitType.TIME_MS]: 'ms',
+  [ReportingUnitType.INTEGER]: '',
+  [ReportingUnitType.FLOAT]: '',
+};
