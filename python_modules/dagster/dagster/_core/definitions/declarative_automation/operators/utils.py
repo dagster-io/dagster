@@ -13,6 +13,7 @@ if TYPE_CHECKING:
         DepsAutomationCondition,
         NotAutomationCondition,
         OrAutomationCondition,
+        SinceCondition,
     )
 
 
@@ -25,6 +26,7 @@ def has_allow_ignore(
         "DepsAutomationCondition",
         "NotAutomationCondition",
         "OrAutomationCondition",
+        "SinceCondition",
     ]
 ]:
     from dagster._core.definitions.declarative_automation.operators import (
@@ -33,6 +35,7 @@ def has_allow_ignore(
         DepsAutomationCondition,
         NotAutomationCondition,
         OrAutomationCondition,
+        SinceCondition,
     )
 
     return isinstance(
@@ -43,5 +46,6 @@ def has_allow_ignore(
             DepsAutomationCondition,
             NotAutomationCondition,
             OrAutomationCondition,
+            SinceCondition,
         ),
     )

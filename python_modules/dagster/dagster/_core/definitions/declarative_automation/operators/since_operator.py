@@ -1,10 +1,12 @@
 import asyncio
 from collections.abc import Mapping, Sequence
-from typing import Optional, Union
+from typing import TYPE_CHECKING, Optional, Union
 
 from dagster_shared.record import replace
 from dagster_shared.serdes import whitelist_for_serdes
 
+import dagster._check as check
+from dagster._annotations import public
 from dagster._core.definitions.asset_key import T_EntityKey
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationCondition,
@@ -12,9 +14,13 @@ from dagster._core.definitions.declarative_automation.automation_condition impor
     BuiltinAutomationCondition,
 )
 from dagster._core.definitions.declarative_automation.automation_context import AutomationContext
+from dagster._core.definitions.declarative_automation.operators.utils import has_allow_ignore
 from dagster._core.definitions.metadata import MetadataMapping
 from dagster._core.definitions.metadata.metadata_value import FloatMetadataValue, IntMetadataValue
 from dagster._record import copy, record
+
+if TYPE_CHECKING:
+    from dagster._core.definitions.asset_selection import AssetSelection
 
 
 @record
@@ -150,4 +156,48 @@ class SinceCondition(BuiltinAutomationCondition[T_EntityKey]):
                 trigger_condition=self.trigger_condition.replace(old, new),
                 reset_condition=self.reset_condition.replace(old, new),
             )
+        )
+
+    @public
+    def allow(self, selection: "AssetSelection") -> "SinceCondition":
+        """Applies the ``.allow()`` method across all sub-conditions.
+
+        This impacts any dep-related sub-conditions.
+
+        Args:
+            selection (AssetSelection): The selection to allow.
+        """
+        from dagster._core.definitions.asset_selection import AssetSelection
+
+        check.inst_param(selection, "selection", AssetSelection)
+        return copy(
+            self,
+            trigger_condition=self.trigger_condition.allow(selection)
+            if has_allow_ignore(self.trigger_condition)
+            else self.trigger_condition,
+            reset_condition=self.reset_condition.allow(selection)
+            if has_allow_ignore(self.reset_condition)
+            else self.reset_condition,
+        )
+
+    @public
+    def ignore(self, selection: "AssetSelection") -> "SinceCondition":
+        """Applies the ``.ignore()`` method across all sub-conditions.
+
+        This impacts any dep-related sub-conditions.
+
+        Args:
+            selection (AssetSelection): The selection to ignore.
+        """
+        from dagster._core.definitions.asset_selection import AssetSelection
+
+        check.inst_param(selection, "selection", AssetSelection)
+        return copy(
+            self,
+            trigger_condition=self.trigger_condition.ignore(selection)
+            if has_allow_ignore(self.trigger_condition)
+            else self.trigger_condition,
+            reset_condition=self.reset_condition.ignore(selection)
+            if has_allow_ignore(self.reset_condition)
+            else self.reset_condition,
         )
