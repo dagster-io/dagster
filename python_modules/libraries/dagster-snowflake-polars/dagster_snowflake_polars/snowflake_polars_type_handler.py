@@ -6,6 +6,7 @@ import polars as pl
 from adbc_driver_manager import ProgrammingError
 from adbc_driver_snowflake import dbapi
 from dagster import InputContext, MetadataValue, OutputContext, TableColumn, TableSchema, io_manager
+from dagster._annotations import beta
 from dagster._core.definitions.metadata import RawMetadataValue, TableMetadataSet
 from dagster._core.storage.db_io_manager import DbIOManager, DbTypeHandler, TableSlice
 from dagster_snowflake import SnowflakeResource
@@ -67,6 +68,7 @@ def _table_exists(table_slice: TableSlice, connection):
     return len(tables) > 0
 
 
+@beta
 class SnowflakePolarsTypeHandler(DbTypeHandler[pl.DataFrame]):
     """Plugin for the Snowflake I/O Manager that can store and load Polars DataFrames as Snowflake tables.
 
@@ -181,6 +183,7 @@ class SnowflakePolarsTypeHandler(DbTypeHandler[pl.DataFrame]):
         return [pl.DataFrame]
 
 
+@beta
 class SnowflakePolarsIOManager(SnowflakeIOManager):
     """An I/O manager definition that reads inputs from and writes Polars DataFrames to Snowflake. When
     using the SnowflakePolarsIOManager, any inputs and outputs without type annotations will be loaded
@@ -290,6 +293,7 @@ class SnowflakePolarsIOManager(SnowflakeIOManager):
         )
 
 
+@beta
 @io_manager(config_schema=SnowflakePolarsIOManager.to_config_schema())
 def snowflake_polars_io_manager(init_context):
     """An I/O manager definition that reads inputs from and writes Polars DataFrames to Snowflake. When
