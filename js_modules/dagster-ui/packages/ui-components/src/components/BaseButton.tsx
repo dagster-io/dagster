@@ -3,7 +3,7 @@ import * as React from 'react';
 import {Colors} from './Color';
 import {StyledButton, StyledButtonText} from './StyledButton';
 
-interface CommonButtonProps {
+export interface CommonButtonProps {
   icon?: React.ReactNode;
   label?: React.ReactNode;
   loading?: boolean;
@@ -16,7 +16,7 @@ interface CommonButtonProps {
   textColor?: string;
 }
 
-interface BaseButtonProps extends CommonButtonProps, React.ComponentPropsWithRef<'button'> {}
+export interface BaseButtonProps extends CommonButtonProps, React.ComponentPropsWithRef<'button'> {}
 
 export const BaseButton = React.forwardRef(
   (props: BaseButtonProps, ref: React.ForwardedRef<HTMLButtonElement>) => {
