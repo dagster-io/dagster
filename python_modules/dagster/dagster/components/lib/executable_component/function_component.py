@@ -133,7 +133,7 @@ class FunctionComponent(ExecutableComponent):
         }
 
         check.invariant(
-            set(fn_kwargs.keys()) == expected_fn_kwargs, "Excepted function param mismatch"
+            set(fn_kwargs.keys()) == expected_fn_kwargs, "Expected function param mismatch"
         )
         return self.execute_fn_metadata.execute_fn(context, **fn_kwargs)
 
