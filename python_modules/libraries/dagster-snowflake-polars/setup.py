@@ -11,8 +11,6 @@ def get_version() -> str:
     return version["__version__"]
 
 
-# TODO - add your package to scripts/install_dev_python_modules.py
-
 ver = get_version()
 # dont pin dev installs to avoid pip dep resolver issues
 pin = "" if ver == "1!0+dev" else f"=={ver}"
