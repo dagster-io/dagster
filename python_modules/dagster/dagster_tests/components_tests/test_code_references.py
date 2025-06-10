@@ -42,6 +42,7 @@ def test_composite_yaml_component_code_references():
                     filename="test.py", start=LineCol(line=1, col=1), end=LineCol(line=1, col=1)
                 )
             ],
+            asset_post_processor_lists=[[]],
         )
 
         defs = component.build_defs(ComponentLoadContext.for_test())

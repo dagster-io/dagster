@@ -31,6 +31,13 @@ COMPONENT_FILE_SCHEMA = {
             "additionalProperties": False,
         },
         "template_vars_module": {"type": "string"},
+        "post_processing": {
+            "type": "object",
+            "properties": {
+                "assets": {"type": "array", "items": {"type": "object"}},
+            },
+            "additionalProperties": False,
+        },
     },
     "additionalProperties": False,
 }
