@@ -8,7 +8,7 @@ import DgComponentsPreview from '@site/docs/partials/\_DgComponentsPreview.md';
 
 <DgComponentsPreview />
 
-After creating components in your `defs` folder you will want to test them. Dagster provides testing utilities that makes testing components simple.
+After creating components in your `defs` folder, you will want to test them. Dagster provides testing utilities that makes testing components simple.
 
 The core function is `get_component_defs_within_project` and it has the following signature:
 
@@ -21,27 +21,37 @@ def get_component_defs_within_project(
 ) -> tuple[Component, Definitions]:
 ```
 
-`project_root` is the root of the project, typically the folder that contains `pyproject.toml` or `setup.py`. In test cases it is very convenient to setup a lightweight wrapper so you only have to set the project root once:
+:::note
 
-```python
+`project_root` is the root of the project, typically the folder that contains `pyproject.toml` or `setup.py`. 
+
+:::
+
+## Create wrapper function
+
+In your test file, it is very convenient to set up a lightweight wrapper function so you only have to set the project root once:
+
+```python title="my-project/tests/my_test.py"
 def my_project_component_defs(component_path) -> tuple[dg.Component, dg.Definitions]:
-    # This file is as my_project/tests/my_test.py so two parents up from the test file 
+    # Project root is two parents up from the test file 
     project_root = Path(__file__).parent.parent
 return get_component_defs_within_project(project_root=project_root, component_path=component_path)
 ```
 
-Once you do this you can load the component and its definitions. This component lives at `my_project/src/my_project/defs/path/to/component`. You only need to specify the path relative to the `defs` folder.
+Once you do this, you can load the component and its definitions. This component lives at `my-project/src/my_project/defs/path/to/component`. You only need to specify the path relative to the `defs` folder:
 
-```python
+```python title="my-project/tests/my_test.py"
 def test_metadata() -> None:
     component, defs = my_project_component_defs("path/to/component")
 ```
 
-The component instance is useful if you want to test that the appropriate metadata was created by yaml frontend. You can assert against whatever schema that component author has provided. 
+## Testing metadata
 
-For example if you are creating a `FunctionComponent` you may want to assert facts about its assets:
+The `component` instance is useful if you want to test that the appropriate metadata was created by the YAML frontend. You can assert against the schema that the component author has provided. 
 
-```python
+For example, if you are using a `FunctionComponent` in your project, you may want to assert facts about its assets:
+
+```python title="my-project/tests/my_test.py"
 def test_function_component_metadata() -> None:
     component, defs = my_project_component_defs("path/to/function_component")
     assert isinstance(component, dg.FunctionComponent)
@@ -49,9 +59,11 @@ def test_function_component_metadata() -> None:
     assert component.assets[0] == dg.AssetKey("some_asset")
 ```
 
-With the `Definitions` object you can do actual execution against the definitions
+## Test component definition execution
 
-```python
+With the `Definitions` object, you can do actual execution against the component definitions:
+
+```python title="my-project/tests/my_test.py"
 def test_function_component_execution() -> None:
     component, defs = my_project_component_defs("path/to/function_component")
     assert dg.materialize(defs.get_assets_def("some_asset")).success
