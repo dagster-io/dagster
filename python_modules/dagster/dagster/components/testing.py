@@ -8,7 +8,6 @@ import textwrap
 from pathlib import Path
 from typing import Callable
 
-import pytest
 import yaml
 from dagster_shared import check
 
@@ -34,6 +33,18 @@ from dagster.components.core.defs_module import (
     load_yaml_component_from_path,
 )
 from dagster.components.scaffold.scaffold import ScaffoldFormatOptions
+
+try:
+    import pytest  # type: ignore
+except ImportError:
+
+    class pytest:
+        @staticmethod
+        def fixture(*args, **kwargs) -> Callable:
+            def wrapper(fn):
+                return fn
+
+            return wrapper
 
 
 def component_defs(
