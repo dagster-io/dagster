@@ -35,7 +35,7 @@ In your test file, it is very convenient to set up a lightweight wrapper functio
 def my_project_component_defs(component_path) -> tuple[dg.Component, dg.Definitions]:
     # Project root is two parents up from the test file 
     project_root = Path(__file__).parent.parent
-return get_component_defs_within_project(project_root=project_root, component_path=component_path)
+    return get_component_defs_within_project(project_root=project_root, component_path=component_path)
 ```
 
 Once you do this, you can load the component and its definitions. This component lives at `my-project/src/my_project/defs/path/to/component`. You only need to specify the path relative to the `defs` folder:
@@ -69,4 +69,4 @@ def test_function_component_execution() -> None:
     assert dg.materialize(defs.get_assets_def("some_asset")).success
 ```
 
-See (some link) for more information about testing definitions.
+See [Unit Testing Assets and Ops](https://docs.dagster.io/guides/test/unit-testing-assets-and-ops) for more information about testing definitions.
