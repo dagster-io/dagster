@@ -6,14 +6,13 @@ title: Customizing Dagster's built-in loggers
 
 Custom loggers are used to alter the structure of the logs being produced by your Dagster pipelines. For example, JSON logs can be produced to more easily be processed by log management systems. For a list of all built-in loggers, see the [API documentation](/api/dagster/loggers#built-in-loggers).
 
-:::note Limitations
+:::info Limitations
 
 It's not currently possible to globally configure the logger for all jobs in a repository.
 
 :::
 
-<details>
-  <summary>Prerequisites</summary>
+:::note Prerequisites
 
 To follow the steps in this guide, you'll need:
 
@@ -21,7 +20,7 @@ To follow the steps in this guide, you'll need:
 - A basic understanding of Dagster concepts such as [assets](/guides/build/assets), [jobs](/guides/build/jobs) and [definitions](/api/dagster/definitions)
 - A working knowledge of the [Python logging module](https://docs.python.org/3/library/logging.html)
 
-</details>
+:::
 
 ## Step 1: Add a prebuilt custom logger to your jobs
 
