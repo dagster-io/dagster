@@ -8,8 +8,11 @@ import textwrap
 from pathlib import Path
 from typing import Callable
 
+import pytest
 import yaml
 from dagster_shared import check
+
+from dagster._core.definitions.asset_key import AssetKey
 
 """Testing utilities for components."""
 
@@ -423,3 +426,112 @@ def copy_code_to_file(fn: Callable, file_path: Path) -> None:
     source_code_text = "\n".join(source_code_text.split("\n")[1:])
     dedented_source_code_text = textwrap.dedent(source_code_text)
     file_path.write_text(dedented_source_code_text)
+
+
+class TestTranslation:
+    @pytest.fixture(
+        params=[
+            (
+                {"group_name": "group"},
+                lambda asset_spec: asset_spec.group_name == "group",
+                False,
+                None,
+            ),
+            (
+                {"owners": ["team:analytics"]},
+                lambda asset_spec: asset_spec.owners == ["team:analytics"],
+                False,
+                None,
+            ),
+            (
+                {"tags": {"foo": "bar"}},
+                lambda asset_spec: asset_spec.tags.get("foo") == "bar",
+                False,
+                None,
+            ),
+            (
+                {"kinds": ["snowflake", "dbt"]},
+                lambda asset_spec: "snowflake" in asset_spec.kinds and "dbt" in asset_spec.kinds,
+                False,
+                None,
+            ),
+            (
+                {"tags": {"foo": "bar"}, "kinds": ["snowflake", "dbt"]},
+                lambda asset_spec: "snowflake" in asset_spec.kinds
+                and "dbt" in asset_spec.kinds
+                and asset_spec.tags.get("foo") == "bar",
+                False,
+                None,
+            ),
+            ({"code_version": "1"}, lambda asset_spec: asset_spec.code_version == "1", False, None),
+            (
+                {"description": "some description"},
+                lambda asset_spec: asset_spec.description == "some description",
+                False,
+                None,
+            ),
+            (
+                {"metadata": {"foo": "bar"}},
+                lambda asset_spec: asset_spec.metadata.get("foo") == "bar",
+                False,
+                None,
+            ),
+            (
+                {"deps": ["customers"]},
+                lambda asset_spec: len(asset_spec.deps) == 1
+                and asset_spec.deps[0].asset_key == AssetKey("customers"),
+                False,
+                None,
+            ),
+            (
+                {"automation_condition": "{{ automation_condition.eager() }}"},
+                lambda asset_spec: asset_spec.automation_condition is not None,
+                False,
+                None,
+            ),
+            (
+                {"key": "{{ spec.key.to_user_string() + '_suffix' }}"},
+                lambda asset_spec: asset_spec.key.path[-1].endswith("_suffix"),
+                False,
+                lambda key: AssetKey(path=key.path[:-1] + [f"{key.path[-1]}_suffix"]),
+            ),
+            (
+                {"key_prefix": "cool_prefix"},
+                lambda asset_spec: asset_spec.key.has_prefix(["cool_prefix"]),
+                False,
+                lambda key: AssetKey(path=["cool_prefix"] + key.path),
+            ),
+        ],
+        ids=[
+            "group_name",
+            "owners",
+            "tags",
+            "kinds",
+            "tags-and-kinds",
+            "code-version",
+            "description",
+            "metadata",
+            "deps",
+            "automation_condition",
+            "key",
+            "key_prefix",
+        ],
+    )
+    def translation_params(self, request):
+        return request.param
+
+    @pytest.fixture
+    def attributes(self, translation_params):
+        return translation_params[0]
+
+    @pytest.fixture
+    def assertion(self, translation_params):
+        return translation_params[1]
+
+    @pytest.fixture
+    def should_error(self, translation_params):
+        return translation_params[2]
+
+    @pytest.fixture
+    def key_modifier(self, translation_params):
+        return translation_params[3]
