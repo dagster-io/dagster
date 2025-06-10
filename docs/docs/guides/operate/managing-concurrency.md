@@ -32,7 +32,6 @@ You can assign assets and ops to concurrency pools which allow you to limit the 
   path="docs_snippets/docs_snippets/guides/operate/concurrency-pool-api.py"
   title="src/my_project/defs/my_asset_and_graph_asset.py"
   language="python"
-  title="Specifying pools on assets and ops"
 />
 
 You should be able to verify that you have set the pool correctly by viewing the details pane for the asset or op in the Dagster UI.
@@ -116,7 +115,7 @@ limit concurrency for ops and assets in runs, by using `max_concurrent` in the r
 <CodeExample
   path="docs_snippets/docs_snippets/guides/operate/concurrency-run-scoped-op-concurrency.py"
   language="python"
-  title="Limit concurrent op execution for a single run"
+  title="src/my_project/defs/limit_concurrent_ops.py"
 />
 
 The default limit for op execution within a run depends on which executor you are using. For example, the <PyObject section="execution" module="dagster" object="multiprocess_executor" /> by default limits the number of ops executing to the value of `multiprocessing.cpu_count()` in the launched run.
@@ -128,7 +127,7 @@ You can use Dagster's rich metadata to use a schedule or a sensor to only start 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/operate/concurrency-no-more-than-1-job.py"
   language="python"
-  title="No more than 1 running job from a schedule"
+  title="src/my_project/defs/one_job.py"
 />
 
 ## Troubleshooting
