@@ -19,6 +19,14 @@ from dagster_tests.core_tests.host_representation_tests.test_external_data impor
 )
 
 
+class TestInternalFreshnessPolicy:
+    def test_internal_freshness_policy_from_asset_spec_metadata_handles_null(self) -> None:
+        """Special case handling for asset metadata that was set to "null" string literal."""
+        metadata = {"internal_freshness_policy": "null"}
+        policy = InternalFreshnessPolicy.from_asset_spec_metadata(metadata)
+        assert policy is None
+
+
 class TestAttachInternalFreshnessPolicy:
     def test_attach_internal_freshness_policy_explicit_none_fails(self) -> None:
         """Check that we cannot apply a null policy to assets."""

@@ -50,7 +50,7 @@ class InternalFreshnessPolicy(ABC):
         cls, metadata: Mapping[str, Any]
     ) -> Optional["InternalFreshnessPolicy"]:
         serialized_policy = metadata.get(INTERNAL_FRESHNESS_POLICY_METADATA_KEY)
-        if serialized_policy is None:
+        if serialized_policy is None or serialized_policy == "null":
             return None
         return deserialize_value(serialized_policy.value, cls)  # pyright: ignore
 
