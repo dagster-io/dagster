@@ -171,7 +171,7 @@ class TestFivetranTranslation(TestTranslation):
         self,
         fetch_workspace_data_multiple_connectors_mocks,
         attributes: Mapping[str, Any],
-        assertion: Optional[Callable[[AssetSpec], bool]],
+        assertion: Callable[[AssetSpec], bool],
         key_modifier: Optional[Callable[[AssetKey], AssetKey]],
     ) -> None:
         body = copy.deepcopy(BASIC_FIVETRAN_COMPONENT_BODY)
@@ -196,8 +196,7 @@ class TestFivetranTranslation(TestTranslation):
                 key = key_modifier(key)
 
             assets_def = defs.resolve_assets_def(key)
-            if assertion:
-                assert assertion(assets_def.get_asset_spec(key))
+            assert assertion(assets_def.get_asset_spec(key))
 
 
 @pytest.mark.parametrize(

@@ -195,19 +195,22 @@ class TestSlingTranslation(TestTranslation):
     def test_translation(
         self,
         attributes: Mapping[str, Any],
-        assertion: Optional[Callable[[AssetSpec], bool]],
+        assertion: Callable[[AssetSpec], bool],
         key_modifier: Optional[Callable[[AssetKey], AssetKey]],
     ) -> None:
-        with temp_sling_component_instance(
-            [{"path": "./replication.yaml", "translation": attributes}]
-        ) as (component, defs):
-            key = AssetKey("input_duckdb")
-            if key_modifier:
-                key = key_modifier(key)
+        defs = build_component_defs_for_test(
+            SlingReplicationCollectionComponent,
+            {
+                "sling": {},
+                "replications": [{"path": str(REPLICATION_PATH), "translation": attributes}],
+            },
+        )
+        key = AssetKey("input_duckdb")
+        if key_modifier:
+            key = key_modifier(key)
 
-            assets_def: AssetsDefinition = defs.resolve_assets_def(key)
-            if assertion:
-                assert assertion(assets_def.get_asset_spec(key))
+        assets_def = defs.resolve_assets_def(key)
+        assert assertion(assets_def.get_asset_spec(key))
 
 
 def test_scaffold_sling():

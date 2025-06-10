@@ -169,7 +169,7 @@ class TestAirbyteTranslation(TestTranslation):
         self,
         fetch_workspace_data_api_mocks,
         attributes: Mapping[str, Any],
-        assertion: Optional[Callable[[AssetSpec], bool]],
+        assertion: Callable[[AssetSpec], bool],
         key_modifier: Optional[Callable[[AssetKey], AssetKey]],
     ) -> None:
         body = copy.deepcopy(BASIC_AIRBYTE_COMPONENT_BODY)
@@ -194,5 +194,4 @@ class TestAirbyteTranslation(TestTranslation):
                 key = key_modifier(key)
 
             assets_def = defs.get_assets_def(key)
-            if assertion:
-                assert assertion(assets_def.get_asset_spec(key))
+            assert assertion(assets_def.get_asset_spec(key))

@@ -173,7 +173,7 @@ class TestDbtTranslation(TestTranslation):
         self,
         dbt_path: Path,
         attributes: Mapping[str, Any],
-        assertion: Optional[Callable[[AssetSpec], bool]],
+        assertion: Callable[[AssetSpec], bool],
         key_modifier: Optional[Callable[[AssetKey], AssetKey]],
     ) -> None:
         defs = build_component_defs_for_test(
@@ -189,8 +189,7 @@ class TestDbtTranslation(TestTranslation):
             key = key_modifier(key)
 
         assets_def = defs.resolve_assets_def(key)
-        if assertion:
-            assert assertion(assets_def.get_asset_spec(key))
+        assert assertion(assets_def.get_asset_spec(key))
 
 
 def test_subselection(dbt_path: Path) -> None:
