@@ -457,7 +457,7 @@ class TestTranslation:
     """
 
     @staticmethod
-    def test_cases():
+    def get_test_cases():
         return [
             TranslationTestCase(
                 name="group_name",
@@ -539,7 +539,7 @@ class TestTranslation:
             ),
         ]
 
-    @pytest.fixture(params=test_cases(), ids=[case.name for case in test_cases()])
+    @pytest.fixture(params=get_test_cases(), ids=[case.name for case in get_test_cases()])
     def translation_test_case(self, request):
         return request.param
 
@@ -564,7 +564,7 @@ class TestTranslationBatched(TestTranslation):
 
     @pytest.fixture()
     def translation_test_case(self, request):
-        test_cases = TestTranslation.test_cases()
+        test_cases = TestTranslation.get_test_cases()
         deep_merge_all_attributes = {}
         for case in test_cases:
             deep_merge_all_attributes = deep_merge_dicts(deep_merge_all_attributes, case.attributes)
