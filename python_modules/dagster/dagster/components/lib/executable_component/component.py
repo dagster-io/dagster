@@ -18,17 +18,12 @@ from dagster._core.execution.context.asset_execution_context import AssetExecuti
 from dagster.components.component.component import Component
 from dagster.components.core.context import ComponentLoadContext
 from dagster.components.resolved.base import Resolvable
-from dagster.components.resolved.core_models import ResolvedAssetCheckSpec, ResolvedAssetSpec
+from dagster.components.resolved.core_models import (
+    OpSpec,
+    ResolvedAssetCheckSpec,
+    ResolvedAssetSpec,
+)
 from dagster.components.resolved.model import Model
-
-
-# Base class for all execution metadata
-class OpMetadataSpec(Model, Resolvable, ABC):
-    name: Optional[str] = None
-    tags: Optional[dict[str, Any]] = None
-    description: Optional[str] = None
-    pool: Optional[str] = None
-
 
 T = TypeVar("T", bound=Union[MaterializeResult, AssetCheckResult])
 
@@ -65,7 +60,7 @@ class ExecutableComponent(Component, Resolvable, Model, ABC):
 
     @property
     @abstractmethod
-    def op_metadata_spec(self) -> OpMetadataSpec: ...
+    def op_spec(self) -> OpSpec: ...
 
     @property
     def resource_keys(self) -> set[str]:
@@ -88,13 +83,13 @@ class ExecutableComponent(Component, Resolvable, Model, ABC):
         if self.assets:
 
             @multi_asset(
-                name=self.op_metadata_spec.name,
-                op_tags=self.op_metadata_spec.tags,
-                description=self.op_metadata_spec.description,
+                name=self.op_spec.name,
+                op_tags=self.op_spec.tags,
+                description=self.op_spec.description,
                 specs=self.assets,
                 check_specs=self.checks,
                 required_resource_keys=self.resource_keys,
-                pool=self.op_metadata_spec.pool,
+                pool=self.op_spec.pool,
                 config_schema=self.config_fields,
             )
             def _assets_def(context: AssetExecutionContext, **kwargs):
@@ -107,12 +102,12 @@ class ExecutableComponent(Component, Resolvable, Model, ABC):
         elif self.checks:
 
             @multi_asset_check(
-                name=self.op_metadata_spec.name,
-                op_tags=self.op_metadata_spec.tags,
+                name=self.op_spec.name,
+                op_tags=self.op_spec.tags,
                 specs=self.checks,
-                description=self.op_metadata_spec.description,
+                description=self.op_spec.description,
                 required_resource_keys=self.resource_keys,
-                pool=self.op_metadata_spec.pool,
+                pool=self.op_spec.pool,
                 config_schema=self.config_fields,
             )
             def _asset_check_def(context: AssetCheckExecutionContext, **kwargs):

@@ -9,10 +9,7 @@ from dagster._core.execution.context.asset_check_execution_context import AssetC
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster._core.pipes.context import PipesExecutionResult
 from dagster.components.core.context import ComponentLoadContext
-from dagster.components.lib.executable_component.component import (
-    ExecutableComponent,
-    OpMetadataSpec,
-)
+from dagster.components.lib.executable_component.component import ExecutableComponent, OpSpec
 from dagster.components.lib.executable_component.script_utils import (
     ScriptSpec,
     get_cmd,
@@ -24,7 +21,7 @@ class PythonScriptComponent(ExecutableComponent):
     execution: ScriptSpec
 
     @property
-    def op_metadata_spec(self) -> OpMetadataSpec:
+    def op_spec(self) -> OpSpec:
         return self._subprocess_spec
 
     @cached_property
