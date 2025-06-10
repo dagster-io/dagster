@@ -5,9 +5,9 @@ import sys
 from collections.abc import Iterable, Sequence
 from types import ModuleType
 
+from dagster_shared.error import DagsterError
 from dagster_shared.serdes.objects import EnvRegistryKey
 
-from dagster._core.errors import DagsterError
 from dagster.components.utils import format_error_message
 
 PACKAGE_ENTRY_ATTR = "__dg_package_entry__"

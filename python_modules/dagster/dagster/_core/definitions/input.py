@@ -3,6 +3,8 @@ from collections.abc import Mapping
 from types import FunctionType
 from typing import TYPE_CHECKING, Any, Callable, NamedTuple, Optional, TypeVar, Union
 
+from dagster_shared.error import DagsterError
+
 import dagster._check as check
 from dagster._annotations import PublicAttr, deprecated_param, superseded
 from dagster._core.definitions.events import AssetKey
@@ -14,7 +16,7 @@ from dagster._core.definitions.metadata import (
     normalize_metadata,
 )
 from dagster._core.definitions.utils import NoValueSentinel, check_valid_name
-from dagster._core.errors import DagsterError, DagsterInvalidDefinitionError
+from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.types.dagster_type import (  # BuiltinScalarDagsterType,
     DagsterType,
     resolve_dagster_type,

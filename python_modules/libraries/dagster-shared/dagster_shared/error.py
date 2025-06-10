@@ -8,6 +8,18 @@ from typing_extensions import Self
 from dagster_shared.serdes.serdes import whitelist_for_serdes
 
 
+class DagsterError(Exception):
+    """Base class for all errors thrown by the Dagster framework.
+
+    Users should not subclass this base class for their own exceptions.
+    """
+
+    @property
+    def is_user_code_error(self):
+        """Returns true if this error is attributable to user code."""
+        return False
+
+
 # TODO: Eventually we need to move the rest of the code in dagster._utils.error into dagster_shared,
 # but that is a significant refactor. Currently we're just moving SerializableErrorInfo so that we
 # can use it with the dg packages`.

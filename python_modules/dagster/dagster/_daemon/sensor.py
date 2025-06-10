@@ -11,6 +11,7 @@ from types import TracebackType
 from typing import TYPE_CHECKING, Callable, NamedTuple, Optional, Union, cast
 
 import dagster_shared.seven as seven
+from dagster_shared.error import DagsterError
 from typing_extensions import Self
 
 import dagster._check as check
@@ -29,7 +30,6 @@ from dagster._core.definitions.selector import JobSubsetSelector
 from dagster._core.definitions.sensor_definition import DefaultSensorStatus, SensorType
 from dagster._core.errors import (
     DagsterCodeLocationLoadError,
-    DagsterError,
     DagsterInvalidInvocationError,
     DagsterUserCodeUnreachableError,
 )
