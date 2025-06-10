@@ -112,7 +112,7 @@ class SlingReplicationCollectionComponent(Component, Resolvable):
         ),
     ] = field(default_factory=SlingResource)
     replications: Sequence[SlingReplicationSpecModel] = field(default_factory=list)
-    # TODO: deprecate and then delete
+    # TODO: deprecate and then delete -- schrockn 2025-06-10
     asset_post_processors: Optional[Sequence[AssetPostProcessor]] = None
 
     def build_asset(
