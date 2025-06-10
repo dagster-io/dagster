@@ -5,7 +5,7 @@ import inspect
 import subprocess
 import textwrap
 from collections.abc import Iterator, Mapping
-from contextlib import contextmanager, nullcontext
+from contextlib import contextmanager
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Callable, Optional, cast
 
@@ -209,31 +209,28 @@ class TestDltTranslation(TestTranslation):
         self,
         attributes: Mapping[str, Any],
         assertion: Optional[Callable[[AssetSpec], bool]],
-        should_error: bool,
         key_modifier: Optional[Callable[[AssetKey], AssetKey]],
     ) -> None:
-        wrapper = pytest.raises(Exception) if should_error else nullcontext()
-        with wrapper:
-            body = copy.deepcopy(BASIC_GITHUB_COMPONENT_BODY)
-            body["attributes"]["loads"][0]["translation"] = attributes
-            with (
-                environ({"SOURCES__ACCESS_TOKEN": "fake"}),
-                setup_dlt_component(
-                    load_py_contents=github_load,
-                    component_body=body,
-                    setup_dlt_sources=lambda: dlt_init("github", "snowflake"),
-                ) as (
-                    component,
-                    defs,
-                ),
-            ):
-                key = AssetKey(["duckdb_issues", "issues"])
-                if key_modifier:
-                    key = key_modifier(key)
+        body = copy.deepcopy(BASIC_GITHUB_COMPONENT_BODY)
+        body["attributes"]["loads"][0]["translation"] = attributes
+        with (
+            environ({"SOURCES__ACCESS_TOKEN": "fake"}),
+            setup_dlt_component(
+                load_py_contents=github_load,
+                component_body=body,
+                setup_dlt_sources=lambda: dlt_init("github", "snowflake"),
+            ) as (
+                component,
+                defs,
+            ),
+        ):
+            key = AssetKey(["duckdb_issues", "issues"])
+            if key_modifier:
+                key = key_modifier(key)
 
-                assets_def = defs.resolve_assets_def(key)
-                if assertion:
-                    assert assertion(assets_def.get_asset_spec(key))
+            assets_def = defs.resolve_assets_def(key)
+            if assertion:
+                assert assertion(assets_def.get_asset_spec(key))
 
 
 def test_python_interface(dlt_pipeline: Pipeline):

@@ -2,7 +2,7 @@
 
 import copy
 from collections.abc import Iterator, Mapping
-from contextlib import contextmanager, nullcontext
+from contextlib import contextmanager
 from typing import Any, Callable, Optional
 
 import pytest
@@ -172,35 +172,32 @@ class TestFivetranTranslation(TestTranslation):
         fetch_workspace_data_multiple_connectors_mocks,
         attributes: Mapping[str, Any],
         assertion: Optional[Callable[[AssetSpec], bool]],
-        should_error: bool,
         key_modifier: Optional[Callable[[AssetKey], AssetKey]],
     ) -> None:
-        wrapper = pytest.raises(Exception) if should_error else nullcontext()
-        with wrapper:
-            body = copy.deepcopy(BASIC_FIVETRAN_COMPONENT_BODY)
-            body["attributes"]["translation"] = attributes
-            with (
-                environ(
-                    {
-                        "FIVETRAN_API_KEY": TEST_API_KEY,
-                        "FIVETRAN_API_SECRET": TEST_API_SECRET,
-                        "FIVETRAN_ACCOUNT_ID": TEST_ACCOUNT_ID,
-                    }
-                ),
-                setup_fivetran_component(
-                    component_body=body,
-                ) as (
-                    component,
-                    defs,
-                ),
-            ):
-                key = AssetKey(["schema_name_in_destination_1", "table_name_in_destination_1"])
-                if key_modifier:
-                    key = key_modifier(key)
+        body = copy.deepcopy(BASIC_FIVETRAN_COMPONENT_BODY)
+        body["attributes"]["translation"] = attributes
+        with (
+            environ(
+                {
+                    "FIVETRAN_API_KEY": TEST_API_KEY,
+                    "FIVETRAN_API_SECRET": TEST_API_SECRET,
+                    "FIVETRAN_ACCOUNT_ID": TEST_ACCOUNT_ID,
+                }
+            ),
+            setup_fivetran_component(
+                component_body=body,
+            ) as (
+                component,
+                defs,
+            ),
+        ):
+            key = AssetKey(["schema_name_in_destination_1", "table_name_in_destination_1"])
+            if key_modifier:
+                key = key_modifier(key)
 
-                assets_def = defs.resolve_assets_def(key)
-                if assertion:
-                    assert assertion(assets_def.get_asset_spec(key))
+            assets_def = defs.resolve_assets_def(key)
+            if assertion:
+                assert assertion(assets_def.get_asset_spec(key))
 
 
 @pytest.mark.parametrize(

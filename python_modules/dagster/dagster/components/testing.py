@@ -434,25 +434,21 @@ class TestTranslation:
             (
                 {"group_name": "group"},
                 lambda asset_spec: asset_spec.group_name == "group",
-                False,
                 None,
             ),
             (
                 {"owners": ["team:analytics"]},
                 lambda asset_spec: asset_spec.owners == ["team:analytics"],
-                False,
                 None,
             ),
             (
                 {"tags": {"foo": "bar"}},
                 lambda asset_spec: asset_spec.tags.get("foo") == "bar",
-                False,
                 None,
             ),
             (
                 {"kinds": ["snowflake", "dbt"]},
                 lambda asset_spec: "snowflake" in asset_spec.kinds and "dbt" in asset_spec.kinds,
-                False,
                 None,
             ),
             (
@@ -460,45 +456,38 @@ class TestTranslation:
                 lambda asset_spec: "snowflake" in asset_spec.kinds
                 and "dbt" in asset_spec.kinds
                 and asset_spec.tags.get("foo") == "bar",
-                False,
                 None,
             ),
-            ({"code_version": "1"}, lambda asset_spec: asset_spec.code_version == "1", False, None),
+            ({"code_version": "1"}, lambda asset_spec: asset_spec.code_version == "1", None),
             (
                 {"description": "some description"},
                 lambda asset_spec: asset_spec.description == "some description",
-                False,
                 None,
             ),
             (
                 {"metadata": {"foo": "bar"}},
                 lambda asset_spec: asset_spec.metadata.get("foo") == "bar",
-                False,
                 None,
             ),
             (
                 {"deps": ["customers"]},
                 lambda asset_spec: len(asset_spec.deps) == 1
                 and asset_spec.deps[0].asset_key == AssetKey("customers"),
-                False,
                 None,
             ),
             (
                 {"automation_condition": "{{ automation_condition.eager() }}"},
                 lambda asset_spec: asset_spec.automation_condition is not None,
-                False,
                 None,
             ),
             (
                 {"key": "{{ spec.key.to_user_string() + '_suffix' }}"},
                 lambda asset_spec: asset_spec.key.path[-1].endswith("_suffix"),
-                False,
                 lambda key: AssetKey(path=key.path[:-1] + [f"{key.path[-1]}_suffix"]),
             ),
             (
                 {"key_prefix": "cool_prefix"},
                 lambda asset_spec: asset_spec.key.has_prefix(["cool_prefix"]),
-                False,
                 lambda key: AssetKey(path=["cool_prefix"] + key.path),
             ),
         ],
@@ -527,10 +516,6 @@ class TestTranslation:
     @pytest.fixture
     def assertion(self, translation_params):
         return translation_params[1]
-
-    @pytest.fixture
-    def should_error(self, translation_params):
-        return translation_params[2]
 
     @pytest.fixture
     def key_modifier(self, translation_params):

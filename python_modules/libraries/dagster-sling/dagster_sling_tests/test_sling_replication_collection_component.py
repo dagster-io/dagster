@@ -1,7 +1,7 @@
 import shutil
 import tempfile
 from collections.abc import Iterator, Mapping
-from contextlib import contextmanager, nullcontext
+from contextlib import contextmanager
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Callable, Optional, Union
 
@@ -23,7 +23,6 @@ from dagster._core.instance_for_test import instance_for_test
 from dagster._core.test_utils import ensure_dagster_tests_import
 from dagster._utils import alter_sys_path
 from dagster._utils.env import environ
-from dagster.components.resolved.context import ResolutionException
 from dagster.components.resolved.core_models import AssetAttributesModel
 from dagster.components.testing import (
     TestTranslation,
@@ -197,16 +196,11 @@ class TestSlingTranslation(TestTranslation):
         self,
         attributes: Mapping[str, Any],
         assertion: Optional[Callable[[AssetSpec], bool]],
-        should_error: bool,
         key_modifier: Optional[Callable[[AssetKey], AssetKey]],
     ) -> None:
-        wrapper = pytest.raises(ResolutionException) if should_error else nullcontext()
-        with (
-            wrapper,
-            temp_sling_component_instance(
-                [{"path": "./replication.yaml", "translation": attributes}]
-            ) as (component, defs),
-        ):
+        with temp_sling_component_instance(
+            [{"path": "./replication.yaml", "translation": attributes}]
+        ) as (component, defs):
             key = AssetKey("input_duckdb")
             if key_modifier:
                 key = key_modifier(key)

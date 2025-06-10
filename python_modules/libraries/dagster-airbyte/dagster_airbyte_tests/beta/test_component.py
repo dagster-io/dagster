@@ -2,7 +2,7 @@
 
 import copy
 from collections.abc import Iterator, Mapping
-from contextlib import contextmanager, nullcontext
+from contextlib import contextmanager
 from pathlib import Path
 from typing import Any, Callable, Optional
 
@@ -170,32 +170,29 @@ class TestAirbyteTranslation(TestTranslation):
         fetch_workspace_data_api_mocks,
         attributes: Mapping[str, Any],
         assertion: Optional[Callable[[AssetSpec], bool]],
-        should_error: bool,
         key_modifier: Optional[Callable[[AssetKey], AssetKey]],
     ) -> None:
-        wrapper = pytest.raises(Exception) if should_error else nullcontext()
-        with wrapper:
-            body = copy.deepcopy(BASIC_AIRBYTE_COMPONENT_BODY)
-            body["attributes"]["translation"] = attributes
-            with (
-                environ(
-                    {
-                        "AIRBYTE_CLIENT_ID": TEST_CLIENT_ID,
-                        "AIRBYTE_CLIENT_SECRET": TEST_CLIENT_SECRET,
-                        "AIRBYTE_WORKSPACE_ID": TEST_WORKSPACE_ID,
-                    }
-                ),
-                setup_airbyte_component(
-                    component_body=body,
-                ) as (
-                    component,
-                    defs,
-                ),
-            ):
-                key = AssetKey(["test_prefix_test_stream"])
-                if key_modifier:
-                    key = key_modifier(key)
+        body = copy.deepcopy(BASIC_AIRBYTE_COMPONENT_BODY)
+        body["attributes"]["translation"] = attributes
+        with (
+            environ(
+                {
+                    "AIRBYTE_CLIENT_ID": TEST_CLIENT_ID,
+                    "AIRBYTE_CLIENT_SECRET": TEST_CLIENT_SECRET,
+                    "AIRBYTE_WORKSPACE_ID": TEST_WORKSPACE_ID,
+                }
+            ),
+            setup_airbyte_component(
+                component_body=body,
+            ) as (
+                component,
+                defs,
+            ),
+        ):
+            key = AssetKey(["test_prefix_test_stream"])
+            if key_modifier:
+                key = key_modifier(key)
 
-                assets_def = defs.get_assets_def(key)
-                if assertion:
-                    assert assertion(assets_def.get_asset_spec(key))
+            assets_def = defs.get_assets_def(key)
+            if assertion:
+                assert assertion(assets_def.get_asset_spec(key))
