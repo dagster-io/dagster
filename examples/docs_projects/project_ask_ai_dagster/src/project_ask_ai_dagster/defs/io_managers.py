@@ -2,21 +2,7 @@ import json
 import os
 
 import dagster as dg
-from dagster_openai import OpenAIResource
 from langchain_core.documents import Document
-
-from project_ask_ai_dagster.assets.ingestion import (
-    docs_embedding,
-    docs_scrape_raw,
-    github_discussions_embeddings,
-    github_discussions_raw,
-    github_issues_embeddings,
-    github_issues_raw,
-)
-from project_ask_ai_dagster.assets.retrieval import query
-from project_ask_ai_dagster.resources.github import github_resource
-from project_ask_ai_dagster.resources.pinecone import pinecone_resource
-from project_ask_ai_dagster.resources.scraper import scraper_resource
 
 
 # start_io_manager
@@ -59,25 +45,3 @@ class DocumentIOManager(dg.IOManager):
 @dg.io_manager(config_schema={"base_dir": str})
 def document_io_manager(init_context):
     return DocumentIOManager(base_dir=init_context.resource_config["base_dir"])
-
-
-# start_def
-defs = dg.Definitions(
-    assets=[
-        docs_embedding,
-        docs_scrape_raw,
-        github_discussions_embeddings,
-        github_discussions_raw,
-        github_issues_embeddings,
-        github_issues_raw,
-        query,
-    ],
-    resources={
-        "github": github_resource,
-        "scraper": scraper_resource,
-        "pinecone": pinecone_resource,
-        "openai": OpenAIResource(api_key=dg.EnvVar("OPENAI_API_KEY")),
-        "document_io_manager": document_io_manager.configured({"base_dir": "data/documents"}),
-    },
-)
-# end_def

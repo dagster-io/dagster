@@ -5,9 +5,9 @@ import dagster as dg
 from dagster_openai import OpenAIResource
 from langchain_core.documents import Document
 
-from project_ask_ai_dagster.resources.github import GithubResource
-from project_ask_ai_dagster.resources.pinecone import PineconeResource
-from project_ask_ai_dagster.resources.scraper import SitemapScraper
+from project_ask_ai_dagster.defs.github import GithubResource
+from project_ask_ai_dagster.defs.pinecone import PineconeResource
+from project_ask_ai_dagster.defs.scraper import SitemapScraper
 
 # start_partition
 START_TIME = "2023-01-01"
@@ -95,8 +95,8 @@ def github_issues_raw(
 )
 def github_issues_embeddings(
     context: dg.AssetExecutionContext,
-    openai: OpenAIResource,
     pinecone: PineconeResource,
+    openai: OpenAIResource,
     github_issues_raw: list[Document],
 ) -> dg.MaterializeResult:
     # Create index if doesn't exist
@@ -204,8 +204,8 @@ def github_discussions_raw(
 )
 def github_discussions_embeddings(
     context: dg.AssetExecutionContext,
-    openai: OpenAIResource,
     pinecone: PineconeResource,
+    openai: OpenAIResource,
     github_discussions_raw: list[Document],
 ) -> dg.MaterializeResult:
     BATCH_SIZE = 20

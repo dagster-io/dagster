@@ -1,12 +1,12 @@
 import dagster as dg
 from dagster_openai import OpenAIResource
 
-from project_ask_ai_dagster.assets.ingestion import (
+from project_ask_ai_dagster.defs.ingestion import (
     docs_embedding,
     github_discussions_embeddings,
     github_issues_embeddings,
 )
-from project_ask_ai_dagster.resources.pinecone import PineconeResource
+from project_ask_ai_dagster.defs.pinecone import PineconeResource
 
 
 # start_config
