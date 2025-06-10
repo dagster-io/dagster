@@ -1,5 +1,6 @@
 # ruff: noqa: F841 TID252
 
+import copy
 import inspect
 import subprocess
 import textwrap
@@ -18,7 +19,6 @@ from dagster._utils.env import environ
 from dagster.components.testing import TestTranslation, scaffold_defs_sandbox
 from dagster_dlt import DagsterDltResource, DltLoadCollectionComponent
 from dagster_dlt.components.dlt_load_collection.component import DltLoadSpecModel
-from dagster_tests.components_tests.utils import build_component_defs_for_test
 
 if TYPE_CHECKING:
     from dagster._core.definitions.assets import AssetsDefinition
@@ -212,24 +212,25 @@ class TestDltTranslation(TestTranslation):
         assertion: Callable[[AssetSpec], bool],
         key_modifier: Optional[Callable[[AssetKey], AssetKey]],
     ) -> None:
-        defs = build_component_defs_for_test(
-            DltLoadCollectionComponent,
-            {
-                "loads": [
-                    {
-                        "source": dlt_source(),
-                        "pipeline": dlt_pipeline,
-                        "translation": attributes,
-                    }
-                ],
-            },
-        )
-        key = AssetKey("input_duckdb")
-        if key_modifier:
-            key = key_modifier(key)
+        body = copy.deepcopy(BASIC_GITHUB_COMPONENT_BODY)
+        body["attributes"]["loads"][0]["translation"] = attributes
+        with (
+            environ({"SOURCES__ACCESS_TOKEN": "fake"}),
+            setup_dlt_component(
+                load_py_contents=github_load,
+                component_body=body,
+                setup_dlt_sources=lambda: dlt_init("github", "snowflake"),
+            ) as (
+                component,
+                defs,
+            ),
+        ):
+            key = AssetKey(["duckdb_issues", "issues"])
+            if key_modifier:
+                key = key_modifier(key)
 
-        assets_def = defs.resolve_assets_def(key)
-        assert assertion(assets_def.get_asset_spec(key))
+            assets_def = defs.resolve_assets_def(key)
+            assert assertion(assets_def.get_asset_spec(key))
 
 
 def test_python_interface(dlt_pipeline: Pipeline):
