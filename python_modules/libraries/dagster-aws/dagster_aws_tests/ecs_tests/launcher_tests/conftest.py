@@ -217,6 +217,29 @@ def instance_dont_use_current_task(
 
 
 @pytest.fixture
+def instance_regional(
+    instance_cm: Callable[..., ContextManager[DagsterInstance]],
+    subnet,
+    security_group,
+    xregion,
+    xregion_cluster_arn,
+) -> Iterator[DagsterInstance]:
+    with instance_cm(
+        config={
+            "regional": {
+                xregion: {
+                    "cluster": xregion_cluster_arn,
+                    "subnets": [subnet.id],
+                    "security_groups": [security_group.id],
+                    "assign_public_ip": "DISABLED",
+                }
+            }
+        }
+    ) as dagster_instance:
+        yield dagster_instance
+
+
+@pytest.fixture
 def instance_fargate_spot(
     instance_cm: Callable[..., ContextManager[DagsterInstance]],
 ) -> Iterator[DagsterInstance]:

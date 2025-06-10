@@ -6,6 +6,7 @@ import time
 import uuid
 from collections import defaultdict
 from operator import itemgetter
+from typing import Optional
 
 import boto3
 from botocore.exceptions import ClientError
@@ -396,17 +397,18 @@ class StubbedEcs:
                 raise StubbedEcsError
 
             cluster = self._cluster(kwargs.get("cluster"))
+            region = kwargs.get("region")
             count = kwargs.get("count", 1)
             tasks = []
             tags = kwargs.get("tags")
             for _ in range(count):
-                arn = self._task_arn(cluster)
+                arn = self._task_arn(cluster, region)
                 if tags and self._long_arn_enabled():
                     self.storage.tags[arn] = tags
 
                 task = {
                     "attachments": [],
-                    "clusterArn": self._cluster_arn(cluster),
+                    "clusterArn": self._cluster_arn(cluster, region),
                     "containers": containers,
                     "lastStatus": "RUNNING",
                     "overrides": overrides,
@@ -518,17 +520,17 @@ class StubbedEcs:
 
         return False
 
-    def _arn(self, resource_type, resource_id):
-        return f"arn:aws:ecs:us-east-1:1234567890:{resource_type}/{resource_id}"
+    def _arn(self, resource_type, resource_id, region: Optional[str] = None):
+        return f"arn:aws:ecs:{region if region else 'us-east-1'}:1234567890:{resource_type}/{resource_id}"
 
     def _cluster(self, cluster):
         return (cluster or "default").split("/")[-1]
 
-    def _cluster_arn(self, cluster):
-        return self._arn("cluster", self._cluster(cluster))
+    def _cluster_arn(self, cluster, region: Optional[str] = None):
+        return self._arn("cluster", self._cluster(cluster), region)
 
-    def _task_arn(self, cluster):
-        return self._arn("task", f"{self._cluster(cluster)}/{uuid.uuid4()}")
+    def _task_arn(self, cluster, region: Optional[str] = None):
+        return self._arn("task", f"{self._cluster(cluster)}/{uuid.uuid4()}", region)
 
     def _service_arn(self, cluster, service):
         return self._arn("service", f"{self._cluster(cluster)}/{service}")

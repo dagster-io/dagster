@@ -11,8 +11,23 @@ def region():
 
 
 @pytest.fixture
+def xregion():
+    return "eu-central-1"
+
+
+@pytest.fixture
+def xregion_cluster_arn():
+    return "xregion-cluster-arn"
+
+
+@pytest.fixture
 def ecs(region):
     return ThreadsafeStubbedEcs(region_name=region)
+
+
+@pytest.fixture
+def ecs_xregion(xregion):
+    return ThreadsafeStubbedEcs(region_name=xregion)
 
 
 @pytest.fixture

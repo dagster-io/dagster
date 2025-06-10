@@ -85,6 +85,9 @@ filterwarnings = [
 timeout = 240
 addopts = "-ra --force-flaky --max-runs=2 --no-success-flaky-report"
 
+# quick fix to suppress warning in tests https://github.com/pytest-dev/pytest-asyncio/issues/924#issuecomment-2321921915
+asyncio_default_fixture_loop_scope = "function"
+
 # ########################
 # ##### RUFF
 # ########################

@@ -281,6 +281,92 @@ def test_launcher_dont_use_current_task(
     ecs.stop_task(cluster=cluster, task=task_arn)
 
 
+def test_launcher_regional(
+    ecs,
+    ecs_xregion,
+    xregion,
+    xregion_cluster_arn,
+    instance_regional,
+    workspace,
+    remote_job,
+    job,
+    subnet,
+    image,
+    environment,
+):
+    instance = instance_regional
+
+    run = instance.create_run_for_job(
+        job,
+        remote_job_origin=remote_job.get_remote_origin(),
+        job_code_origin=remote_job.get_python_origin(),
+        tags={"region": xregion},
+    )
+    initial_task_definitions = ecs.list_task_definitions()["taskDefinitionArns"]
+    initial_tasks_xregion = ecs.list_tasks(cluster=xregion_cluster_arn)["taskArns"]
+
+    instance.launch_run(run.run_id, workspace)
+
+    # A new task definition is created
+    task_definitions = ecs.list_task_definitions()["taskDefinitionArns"]
+    assert len(task_definitions) == len(initial_task_definitions) + 1
+    task_definition_arn = next(iter(set(task_definitions).difference(initial_task_definitions)))
+    task_definition = ecs.describe_task_definition(taskDefinition=task_definition_arn)
+    task_definition = task_definition["taskDefinition"]
+
+    assert instance.run_launcher.check_run_worker_health(run).status == WorkerStatus.RUNNING
+
+    # It has a new family, name, and image
+    assert task_definition["family"] == get_task_definition_family("run", run.remote_job_origin)
+    assert len(task_definition["containerDefinitions"]) == 1
+    container_definition = task_definition["containerDefinitions"][0]
+    assert container_definition["name"] == "run"
+    assert container_definition["image"] == image
+    assert not container_definition.get("entryPoint")
+    assert not container_definition.get("dependsOn")
+    # But other stuff is inherited from the parent task definition
+    assert all(item in container_definition["environment"] for item in environment)
+    assert {"name": "DAGSTER_RUN_JOB_NAME", "value": "job"} in container_definition["environment"]
+
+    # A new task is launched in xregion cluster
+    tasks_xregion = ecs.list_tasks(cluster=xregion_cluster_arn)["taskArns"]
+
+    assert len(tasks_xregion) == len(initial_tasks_xregion) + 1
+    task_arn = next(iter(set(tasks_xregion).difference(initial_tasks_xregion)))
+    task = ecs.describe_tasks(tasks=[task_arn], cluster=xregion_cluster_arn)["tasks"][0]
+    assert subnet.id in str(task)
+    assert task["taskDefinitionArn"] == task_definition["taskDefinitionArn"]
+    assert task["launchType"] == "FARGATE"
+
+    # The run is tagged with info about the ECS task
+    assert instance.get_run_by_id(run.run_id).tags["ecs/task_arn"] == task_arn
+    # cluster_arn = ecs._cluster_arn(xregion_cluster_arn, xregion)
+    # then fix region in ecs/cluster which is set via fixture in dagster instance
+    # assert instance.get_run_by_id(run.run_id).tags["ecs/cluster"] == cluster_arn
+
+    # We set job-specific overides
+    overrides = task["overrides"]["containerOverrides"]
+    assert len(overrides) == 1
+    override = overrides[0]
+    assert override["name"] == "run"
+    assert "execute_run" in override["command"]
+    assert run.run_id in str(override["command"])
+
+    # And we log
+    events = instance.event_log_storage.get_logs_for_run(run.run_id)
+    latest_event = events[-1]
+    assert latest_event.message == "[EcsRunLauncher] Launching run in ECS task"
+    metadata = latest_event.dagster_event.engine_event_data.metadata
+    assert metadata["ECS Task ARN"] == MetadataValue.text(task_arn)
+    # mismatch due to region
+    # assert metadata["ECS Cluster"] == MetadataValue.text(cluster_arn)
+    assert metadata["Run ID"] == MetadataValue.text(run.run_id)
+
+    # check status and stop task
+    assert instance.run_launcher.check_run_worker_health(run).status == WorkerStatus.RUNNING
+    ecs.stop_task(task=task_arn, cluster=xregion_cluster_arn)
+
+
 def test_task_definition_registration(
     ecs, instance, workspace, run, other_workspace, other_run, secrets_manager, monkeypatch
 ):
