@@ -541,9 +541,9 @@ class TestTranslation:
 
 
 class TestOpCustomization:
-    """Pytest test class for testing translation of asset attributes. You can subclass
-    this class and implement a test_translation function using the various fixtures in
-    order to comprehensively test asset translation options for your component.
+    """Pytest test class for testing customization of op spec. You can subclass
+    this class and implement a test_op_customization function using the various fixtures in
+    order to comprehensively test op spec customization options for your component.
     """
 
     @pytest.fixture(
@@ -556,8 +556,12 @@ class TestOpCustomization:
                 {"tags": {"foo": "bar"}},
                 lambda op: op.tags.get("foo") == "bar",
             ),
+            (
+                {"backfill_policy": {"type": "single_run"}},
+                lambda op: op.backfill_policy.max_partitions_per_run is None,
+            ),
         ],
-        ids=["name", "tags"],
+        ids=["name", "tags", "backfill_policy"],
     )
     def translation_params(self, request):
         return request.param
