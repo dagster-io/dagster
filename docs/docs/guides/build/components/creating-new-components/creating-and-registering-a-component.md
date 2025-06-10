@@ -75,7 +75,7 @@ Additionally, you can include metadata for your component by overriding the `get
 
 :::tip
 
-When defining a field on a component that isn't on the schema, or is of a different type, the components system allows you to provide custom resolution logic for that field. For more information, see "[Providing resolution logic for non-standard types](/guides/labs/components/creating-new-components/component-customization#providing-resolution-logic-for-non-standard-types)".
+When defining a field on a component that isn't on the schema, or is of a different type, the components system allows you to provide custom resolution logic for that field. For more information, see "[Providing resolution logic for non-standard types](/guides/build/components/creating-new-components/component-customization#providing-resolution-logic-for-non-standard-types)".
 
 :::
 

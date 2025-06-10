@@ -10,7 +10,7 @@ import DgComponentsRc from '@site/docs/partials/\_DgComponentsRc.md';
 
 ## Prerequisites
 
-Before following the steps below, you will need to [create and register a component](/guides/labs/components/creating-new-components/creating-and-registering-a-component).
+Before following the steps below, you will need to [create and register a component](/guides/build/components/creating-new-components/creating-and-registering-a-component).
 
 ## Customizing scaffolding behavior
 
