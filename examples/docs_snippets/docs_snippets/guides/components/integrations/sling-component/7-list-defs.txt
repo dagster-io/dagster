@@ -1,0 +1,3 @@
+dg list defs
+
+No definitions are defined for this project.
