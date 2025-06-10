@@ -2,7 +2,6 @@ import shutil
 import sys
 import tempfile
 from collections.abc import Iterator, Mapping
-from contextlib import nullcontext
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable, Optional
@@ -21,6 +20,7 @@ from dagster.components.core.context import ComponentLoadContext
 from dagster.components.core.load_defs import build_component_defs
 from dagster.components.resolved.core_models import AssetAttributesModel
 from dagster.components.resolved.errors import ResolutionException
+from dagster.components.testing import TestTranslation
 from dagster_dbt import DbtProject, DbtProjectComponent
 from dagster_dbt.cli.app import project_app_typer_click_object
 from dagster_dbt.components.dbt_project.component import get_projects_from_dbt_component
@@ -151,7 +151,11 @@ def test_dbt_subclass_additional_scope_fn(dbt_path: Path) -> None:
     class DebugDbtProjectComponent(DbtProjectComponent):
         @classmethod
         def get_additional_scope(cls) -> Mapping[str, Any]:
-            return {"get_tags_for_node": lambda node: {"model_id": node["name"].replace("_", "-")}}
+            return {
+                "get_tags_for_node": lambda node: {
+                    "model_id": str(node.get("name", "")).replace("_", "-")
+                }
+            }
 
     defs = build_component_defs_for_test(
         DebugDbtProjectComponent,
@@ -164,81 +168,14 @@ def test_dbt_subclass_additional_scope_fn(dbt_path: Path) -> None:
     assert assets_def.get_asset_spec(AssetKey("stg_customers")).tags["model_id"] == "stg-customers"
 
 
-@pytest.mark.parametrize(
-    "attributes, assertion, should_error",
-    [
-        ({"group_name": "group"}, lambda asset_spec: asset_spec.group_name == "group", False),
-        (
-            {"owners": ["team:analytics"]},
-            lambda asset_spec: asset_spec.owners == ["team:analytics"],
-            False,
-        ),
-        ({"tags": {"foo": "bar"}}, lambda asset_spec: asset_spec.tags.get("foo") == "bar", False),
-        (
-            {"kinds": ["snowflake", "dbt"]},
-            lambda asset_spec: "snowflake" in asset_spec.kinds and "dbt" in asset_spec.kinds,
-            False,
-        ),
-        (
-            {"tags": {"foo": "bar"}, "kinds": ["snowflake", "dbt"]},
-            lambda asset_spec: "snowflake" in asset_spec.kinds
-            and "dbt" in asset_spec.kinds
-            and asset_spec.tags.get("foo") == "bar",
-            False,
-        ),
-        ({"code_version": "1"}, lambda asset_spec: asset_spec.code_version == "1", False),
-        (
-            {"description": "some description"},
-            lambda asset_spec: asset_spec.description == "some description",
-            False,
-        ),
-        (
-            {"metadata": {"foo": "bar"}},
-            lambda asset_spec: asset_spec.metadata.get("foo") == "bar"
-            and "dagster-dbt/materialization_type"
-            in asset_spec.metadata,  # Ensure dagster-dbt populated metadata is not overwritten
-            False,
-        ),
-        ({"deps": ["customers"]}, None, True),
-        (
-            {"automation_condition": "{{ automation_condition.eager() }}"},
-            lambda asset_spec: asset_spec.automation_condition is not None,
-            False,
-        ),
-        (
-            {"key": "{{ node.name }}_suffix"},
-            lambda asset_spec: asset_spec.key == AssetKey("stg_customers_suffix"),
-            False,
-        ),
-        (
-            {"key_prefix": "cool_prefix"},
-            lambda asset_spec: asset_spec.key.has_prefix(["cool_prefix"]),
-            False,
-        ),
-    ],
-    ids=[
-        "group_name",
-        "owners",
-        "tags",
-        "kinds",
-        "tags-and-kinds",
-        "code-version",
-        "description",
-        "metadata",
-        "deps",
-        "automation_condition",
-        "key",
-        "key_prefix",
-    ],
-)
-def test_asset_attributes(
-    dbt_path: Path,
-    attributes: Mapping[str, Any],
-    assertion: Optional[Callable[[AssetSpec], bool]],
-    should_error: bool,
-) -> None:
-    wrapper = pytest.raises(Exception) if should_error else nullcontext()
-    with wrapper:
+class TestDbtTranslation(TestTranslation):
+    def test_translation(
+        self,
+        dbt_path: Path,
+        attributes: Mapping[str, Any],
+        assertion: Callable[[AssetSpec], bool],
+        key_modifier: Optional[Callable[[AssetKey], AssetKey]],
+    ) -> None:
         defs = build_component_defs_for_test(
             DbtProjectComponent,
             {
@@ -246,33 +183,13 @@ def test_asset_attributes(
                 "translation": attributes,
             },
         )
-        if "key" in attributes:
-            key = AssetKey("stg_customers_suffix")
-        elif "key_prefix" in attributes:
-            key = AssetKey(["cool_prefix", "stg_customers"])
-        else:
-            key = AssetKey("stg_customers")
-            assert defs.resolve_asset_graph().get_all_asset_keys() == JAFFLE_SHOP_KEYS
+        key = AssetKey("stg_customers")
+
+        if key_modifier:
+            key = key_modifier(key)
 
         assets_def = defs.resolve_assets_def(key)
-        if assertion:
-            assert assertion(assets_def.get_asset_spec(key))
-
-
-IGNORED_KEYS = {"skippable"}
-
-
-def test_asset_attributes_is_comprehensive():
-    all_asset_attribute_keys = []
-    for test_arg in test_asset_attributes.pytestmark[0].args[1]:  # pyright: ignore[reportFunctionMemberAccess]
-        all_asset_attribute_keys.extend(test_arg[0].keys())
-    from dagster.components.resolved.core_models import AssetAttributesModel
-
-    assert set(AssetAttributesModel.model_fields.keys()) - IGNORED_KEYS == set(
-        all_asset_attribute_keys
-    ), (
-        f"The test_asset_attributes test does not cover all fields, missing: {set(AssetAttributesModel.model_fields.keys()) - IGNORED_KEYS - set(all_asset_attribute_keys)}"
-    )
+        assert assertion(assets_def.get_asset_spec(key))
 
 
 def test_subselection(dbt_path: Path) -> None:

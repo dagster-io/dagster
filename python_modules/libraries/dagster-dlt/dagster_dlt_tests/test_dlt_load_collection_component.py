@@ -5,7 +5,7 @@ import inspect
 import subprocess
 import textwrap
 from collections.abc import Iterator, Mapping
-from contextlib import contextmanager, nullcontext
+from contextlib import contextmanager
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Callable, Optional, cast
 
@@ -16,7 +16,7 @@ from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._utils import pushd
 from dagster._utils.env import environ
-from dagster.components.testing import scaffold_defs_sandbox
+from dagster.components.testing import TestTranslation, scaffold_defs_sandbox
 from dagster_dlt import DagsterDltResource, DltLoadCollectionComponent
 from dagster_dlt.components.dlt_load_collection.component import DltLoadSpecModel
 
@@ -204,83 +204,14 @@ def test_component_load_multiple_pipelines() -> None:
         }
 
 
-@pytest.mark.parametrize(
-    "attributes, assertion, should_error",
-    [
-        ({"group_name": "group"}, lambda asset_spec: asset_spec.group_name == "group", False),
-        (
-            {"owners": ["team:analytics"]},
-            lambda asset_spec: asset_spec.owners == ["team:analytics"],
-            False,
-        ),
-        ({"tags": {"foo": "bar"}}, lambda asset_spec: asset_spec.tags.get("foo") == "bar", False),
-        (
-            {"kinds": ["snowflake", "dbt"]},
-            lambda asset_spec: "snowflake" in asset_spec.kinds and "dbt" in asset_spec.kinds,
-            False,
-        ),
-        (
-            {"tags": {"foo": "bar"}, "kinds": ["snowflake", "dbt"]},
-            lambda asset_spec: "snowflake" in asset_spec.kinds
-            and "dbt" in asset_spec.kinds
-            and asset_spec.tags.get("foo") == "bar",
-            False,
-        ),
-        ({"code_version": "1"}, lambda asset_spec: asset_spec.code_version == "1", False),
-        (
-            {"description": "some description"},
-            lambda asset_spec: asset_spec.description == "some description",
-            False,
-        ),
-        (
-            {"metadata": {"foo": "bar"}},
-            lambda asset_spec: asset_spec.metadata.get("foo") == "bar",
-            False,
-        ),
-        (
-            {"deps": ["customers"]},
-            lambda asset_spec: len(asset_spec.deps) == 1
-            and asset_spec.deps[0].asset_key == AssetKey("customers"),
-            False,
-        ),
-        (
-            {"automation_condition": "{{ automation_condition.eager() }}"},
-            lambda asset_spec: asset_spec.automation_condition is not None,
-            False,
-        ),
-        (
-            {"key": "{{ spec.key.to_user_string() + '_suffix' }}"},
-            lambda asset_spec: asset_spec.key == AssetKey(["duckdb_issues", "issues_suffix"]),
-            False,
-        ),
-        (
-            {"key_prefix": "cool_prefix"},
-            lambda asset_spec: asset_spec.key.has_prefix(["cool_prefix"]),
-            False,
-        ),
-    ],
-    ids=[
-        "group_name",
-        "owners",
-        "tags",
-        "kinds",
-        "tags-and-kinds",
-        "code-version",
-        "description",
-        "metadata",
-        "deps",
-        "automation_condition",
-        "key",
-        "key_prefix",
-    ],
-)
-def test_translation(
-    attributes: Mapping[str, Any],
-    assertion: Optional[Callable[[AssetSpec], bool]],
-    should_error: bool,
-) -> None:
-    wrapper = pytest.raises(Exception) if should_error else nullcontext()
-    with wrapper:
+class TestDltTranslation(TestTranslation):
+    def test_translation(
+        self,
+        dlt_pipeline: Pipeline,
+        attributes: Mapping[str, Any],
+        assertion: Callable[[AssetSpec], bool],
+        key_modifier: Optional[Callable[[AssetKey], AssetKey]],
+    ) -> None:
         body = copy.deepcopy(BASIC_GITHUB_COMPONENT_BODY)
         body["attributes"]["loads"][0]["translation"] = attributes
         with (
@@ -294,16 +225,12 @@ def test_translation(
                 defs,
             ),
         ):
-            if "key" in attributes:
-                key = AssetKey(["duckdb_issues", "issues_suffix"])
-            elif "key_prefix" in attributes:
-                key = AssetKey(["cool_prefix", "duckdb_issues", "issues"])
-            else:
-                key = AssetKey(["duckdb_issues", "issues"])
+            key = AssetKey(["duckdb_issues", "issues"])
+            if key_modifier:
+                key = key_modifier(key)
 
             assets_def = defs.resolve_assets_def(key)
-            if assertion:
-                assert assertion(assets_def.get_asset_spec(key))
+            assert assertion(assets_def.get_asset_spec(key))
 
 
 def test_python_interface(dlt_pipeline: Pipeline):

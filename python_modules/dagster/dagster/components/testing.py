@@ -11,6 +11,8 @@ from typing import Callable
 import yaml
 from dagster_shared import check
 
+from dagster._core.definitions.asset_key import AssetKey
+
 """Testing utilities for components."""
 
 import json
@@ -31,6 +33,20 @@ from dagster.components.core.defs_module import (
     load_yaml_component_from_path,
 )
 from dagster.components.scaffold.scaffold import ScaffoldFormatOptions
+
+# Unfortunate hack - we only use this util in pytest tests, we just drop in a no-op
+# implementation if pytest is not installed.
+try:
+    import pytest  # type: ignore
+except ImportError:
+
+    class pytest:
+        @staticmethod
+        def fixture(*args, **kwargs) -> Callable:
+            def wrapper(fn):
+                return fn
+
+            return wrapper
 
 
 def component_defs(
@@ -423,3 +439,102 @@ def copy_code_to_file(fn: Callable, file_path: Path) -> None:
     source_code_text = "\n".join(source_code_text.split("\n")[1:])
     dedented_source_code_text = textwrap.dedent(source_code_text)
     file_path.write_text(dedented_source_code_text)
+
+
+class TestTranslation:
+    """Pytest test class for testing translation of asset attributes. You can subclass
+    this class and implement a test_translation function using the various fixtures in
+    order to comprehensively test asset translation options for your component.
+    """
+
+    @pytest.fixture(
+        params=[
+            (
+                {"group_name": "group"},
+                lambda asset_spec: asset_spec.group_name == "group",
+                None,
+            ),
+            (
+                {"owners": ["team:analytics"]},
+                lambda asset_spec: asset_spec.owners == ["team:analytics"],
+                None,
+            ),
+            (
+                {"tags": {"foo": "bar"}},
+                lambda asset_spec: asset_spec.tags.get("foo") == "bar",
+                None,
+            ),
+            (
+                {"kinds": ["snowflake", "dbt"]},
+                lambda asset_spec: "snowflake" in asset_spec.kinds and "dbt" in asset_spec.kinds,
+                None,
+            ),
+            (
+                {"tags": {"foo": "bar"}, "kinds": ["snowflake", "dbt"]},
+                lambda asset_spec: "snowflake" in asset_spec.kinds
+                and "dbt" in asset_spec.kinds
+                and asset_spec.tags.get("foo") == "bar",
+                None,
+            ),
+            ({"code_version": "1"}, lambda asset_spec: asset_spec.code_version == "1", None),
+            (
+                {"description": "some description"},
+                lambda asset_spec: asset_spec.description == "some description",
+                None,
+            ),
+            (
+                {"metadata": {"foo": "bar"}},
+                lambda asset_spec: asset_spec.metadata.get("foo") == "bar",
+                None,
+            ),
+            (
+                {"deps": ["nonexistent"]},
+                lambda asset_spec: len(asset_spec.deps) == 1
+                and asset_spec.deps[0].asset_key == AssetKey("nonexistent"),
+                None,
+            ),
+            (
+                {"automation_condition": "{{ automation_condition.eager() }}"},
+                lambda asset_spec: asset_spec.automation_condition is not None,
+                None,
+            ),
+            (
+                {"key": "{{ spec.key.to_user_string() + '_suffix' }}"},
+                lambda asset_spec: asset_spec.key.path[-1].endswith("_suffix"),
+                lambda key: AssetKey(path=key.path[:-1] + [f"{key.path[-1]}_suffix"]),
+            ),
+            (
+                {"key_prefix": "cool_prefix"},
+                lambda asset_spec: asset_spec.key.has_prefix(["cool_prefix"]),
+                lambda key: AssetKey(path=["cool_prefix"] + key.path),
+            ),
+        ],
+        ids=[
+            "group_name",
+            "owners",
+            "tags",
+            "kinds",
+            "tags-and-kinds",
+            "code-version",
+            "description",
+            "metadata",
+            "deps",
+            "automation_condition",
+            "key",
+            "key_prefix",
+        ],
+    )
+    def translation_params(self, request):
+        return request.param
+
+    @pytest.fixture
+    def attributes(self, translation_params):
+        return translation_params[0]
+
+    @pytest.fixture
+    def assertion(self, translation_params):
+        return translation_params[1]
+
+    @pytest.fixture
+    def key_modifier(self, translation_params):
+        return translation_params[2]

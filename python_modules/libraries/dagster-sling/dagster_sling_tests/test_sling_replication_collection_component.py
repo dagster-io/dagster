@@ -1,7 +1,7 @@
 import shutil
 import tempfile
 from collections.abc import Iterator, Mapping
-from contextlib import contextmanager, nullcontext
+from contextlib import contextmanager
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Callable, Optional, Union
 
@@ -23,9 +23,12 @@ from dagster._core.instance_for_test import instance_for_test
 from dagster._core.test_utils import ensure_dagster_tests_import
 from dagster._utils import alter_sys_path
 from dagster._utils.env import environ
-from dagster.components.resolved.context import ResolutionException
 from dagster.components.resolved.core_models import AssetAttributesModel
-from dagster.components.testing import get_underlying_component, scaffold_defs_sandbox
+from dagster.components.testing import (
+    TestTranslation,
+    get_underlying_component,
+    scaffold_defs_sandbox,
+)
 from dagster_shared import check
 from dagster_sling import SlingReplicationCollectionComponent, SlingResource
 
@@ -188,106 +191,26 @@ def test_sling_subclass() -> None:
     }
 
 
-@pytest.mark.parametrize(
-    "attributes, assertion, should_error",
-    [
-        ({"group_name": "group"}, lambda asset_spec: asset_spec.group_name == "group", False),
-        (
-            {"owners": ["team:analytics"]},
-            lambda asset_spec: asset_spec.owners == ["team:analytics"],
-            False,
-        ),
-        ({"tags": {"foo": "bar"}}, lambda asset_spec: asset_spec.tags.get("foo") == "bar", False),
-        ({"kinds": ["snowflake"]}, lambda asset_spec: "snowflake" in asset_spec.kinds, False),
-        (
-            {"tags": {"foo": "bar"}, "kinds": ["snowflake"]},
-            lambda asset_spec: "snowflake" in asset_spec.kinds
-            and asset_spec.tags.get("foo") == "bar",
-            False,
-        ),
-        ({"code_version": "1"}, lambda asset_spec: asset_spec.code_version == "1", False),
-        (
-            {"description": "some description"},
-            lambda asset_spec: asset_spec.description == "some description",
-            False,
-        ),
-        (
-            {"metadata": {"foo": "bar"}},
-            lambda asset_spec: asset_spec.metadata.get("foo") == "bar",
-            False,
-        ),
-        (
-            {"deps": ["customers"]},
-            lambda asset_spec: {dep.asset_key for dep in asset_spec.deps}
-            == {AssetKey("customers")},
-            False,
-        ),
-        (
-            {"automation_condition": "{{ automation_condition.eager() }}"},
-            lambda asset_spec: asset_spec.automation_condition is not None,
-            False,
-        ),
-        (
-            {"key": "overridden_key"},
-            lambda asset_spec: asset_spec.key == AssetKey("overridden_key"),
-            False,
-        ),
-        (
-            {"key_prefix": "overridden_prefix"},
-            lambda asset_spec: asset_spec.key.has_prefix(["overridden_prefix"]),
-            False,
-        ),
-    ],
-    ids=[
-        "group_name",
-        "owners",
-        "tags",
-        "kinds",
-        "tags-and-kinds",
-        "code-version",
-        "description",
-        "metadata",
-        "deps",
-        "automation_condition",
-        "key",
-        "key_prefix",
-    ],
-)
-def test_translation(
-    attributes: Mapping[str, Any],
-    assertion: Optional[Callable[[AssetSpec], bool]],
-    should_error: bool,
-) -> None:
-    wrapper = pytest.raises(ResolutionException) if should_error else nullcontext()
-    with (
-        wrapper,
-        temp_sling_component_instance(
-            [{"path": "./replication.yaml", "translation": attributes}]
-        ) as (component, defs),
-    ):
-        key = AssetKey(attributes.get("key", "input_duckdb"))
-        if attributes.get("key_prefix"):
-            key = key.with_prefix(attributes["key_prefix"])
+class TestSlingTranslation(TestTranslation):
+    def test_translation(
+        self,
+        attributes: Mapping[str, Any],
+        assertion: Callable[[AssetSpec], bool],
+        key_modifier: Optional[Callable[[AssetKey], AssetKey]],
+    ) -> None:
+        defs = build_component_defs_for_test(
+            SlingReplicationCollectionComponent,
+            {
+                "sling": {},
+                "replications": [{"path": str(REPLICATION_PATH), "translation": attributes}],
+            },
+        )
+        key = AssetKey("input_duckdb")
+        if key_modifier:
+            key = key_modifier(key)
 
-        assets_def: AssetsDefinition = defs.resolve_assets_def(key)
-    if assertion:
+        assets_def = defs.resolve_assets_def(key)
         assert assertion(assets_def.get_asset_spec(key))
-
-
-IGNORED_KEYS = {"skippable"}
-
-
-def test_translation_is_comprehensive():
-    all_asset_attribute_keys = []
-    for test_arg in test_translation.pytestmark[0].args[1]:  # pyright: ignore[reportFunctionMemberAccess]
-        all_asset_attribute_keys.extend(test_arg[0].keys())
-    from dagster.components.resolved.core_models import AssetAttributesModel
-
-    assert set(AssetAttributesModel.model_fields.keys()) - IGNORED_KEYS == set(
-        all_asset_attribute_keys
-    ), (
-        f"The test_translation test does not cover all fields, missing: {set(AssetAttributesModel.model_fields.keys()) - IGNORED_KEYS - set(all_asset_attribute_keys)}"
-    )
 
 
 def test_scaffold_sling():
