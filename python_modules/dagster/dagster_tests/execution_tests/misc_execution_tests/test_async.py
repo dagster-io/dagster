@@ -4,9 +4,9 @@ from contextlib import asynccontextmanager
 import pytest
 from dagster import ConfigurableResource, Output, asset, materialize
 from dagster._core.definitions.decorators import op
-from dagster._core.errors import DagsterError
 from dagster._core.execution.context.invocation import build_asset_context, build_op_context
 from dagster._utils.test import wrap_op_in_graph_and_execute
+from dagster_shared.error import DagsterError
 from pydantic import PrivateAttr
 
 
