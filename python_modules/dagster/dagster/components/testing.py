@@ -10,8 +10,10 @@ from typing import Callable
 
 import yaml
 from dagster_shared import check
+from dagster_shared.merger import deep_merge_dicts
 
 from dagster._core.definitions.asset_key import AssetKey
+from dagster._core.definitions.asset_spec import AssetSpec
 
 """Testing utilities for components."""
 
@@ -20,7 +22,12 @@ import tempfile
 from collections.abc import Iterator, Mapping
 from contextlib import contextmanager
 from dataclasses import dataclass
+<<<<<<< HEAD
 from typing import Any, Optional, Union
+=======
+from pathlib import Path
+from typing import Any, Callable, NamedTuple, Optional, Union
+>>>>>>> bbe64b75a4 ([tests][refactor] add batch version of asset customization test)
 
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._utils import alter_sys_path
@@ -439,6 +446,11 @@ def copy_code_to_file(fn: Callable, file_path: Path) -> None:
     source_code_text = "\n".join(source_code_text.split("\n")[1:])
     dedented_source_code_text = textwrap.dedent(source_code_text)
     file_path.write_text(dedented_source_code_text)
+class TranslationTestCase(NamedTuple):
+    name: str
+    attributes: dict[str, Any]
+    assertion: Callable[[AssetSpec], bool]
+    key_modifier: Optional[Callable[[AssetKey], AssetKey]]
 
 
 class TestTranslation:
@@ -447,97 +459,133 @@ class TestTranslation:
     order to comprehensively test asset translation options for your component.
     """
 
-    @pytest.fixture(
-        params=[
-            (
-                {"group_name": "group"},
-                lambda asset_spec: asset_spec.group_name == "group",
-                None,
+    @staticmethod
+    def test_cases():
+        return [
+            TranslationTestCase(
+                name="group_name",
+                attributes={"group_name": "group"},
+                assertion=lambda asset_spec: asset_spec.group_name == "group",
+                key_modifier=None,
             ),
-            (
-                {"owners": ["team:analytics"]},
-                lambda asset_spec: asset_spec.owners == ["team:analytics"],
-                None,
+            TranslationTestCase(
+                name="owners",
+                attributes={"owners": ["team:analytics"]},
+                assertion=lambda asset_spec: asset_spec.owners == ["team:analytics"],
+                key_modifier=None,
             ),
-            (
-                {"tags": {"foo": "bar"}},
-                lambda asset_spec: asset_spec.tags.get("foo") == "bar",
-                None,
+            TranslationTestCase(
+                name="tags",
+                attributes={"tags": {"foo": "bar"}},
+                assertion=lambda asset_spec: asset_spec.tags.get("foo") == "bar",
+                key_modifier=None,
             ),
-            (
-                {"kinds": ["snowflake", "dbt"]},
-                lambda asset_spec: "snowflake" in asset_spec.kinds and "dbt" in asset_spec.kinds,
-                None,
+            TranslationTestCase(
+                name="kinds",
+                attributes={"kinds": ["snowflake", "dbt"]},
+                assertion=lambda asset_spec: "snowflake" in asset_spec.kinds
+                and "dbt" in asset_spec.kinds,
+                key_modifier=None,
             ),
-            (
-                {"tags": {"foo": "bar"}, "kinds": ["snowflake", "dbt"]},
-                lambda asset_spec: "snowflake" in asset_spec.kinds
+            TranslationTestCase(
+                name="tags-and-kinds",
+                attributes={"tags": {"foo": "bar"}, "kinds": ["snowflake", "dbt"]},
+                assertion=lambda asset_spec: "snowflake" in asset_spec.kinds
                 and "dbt" in asset_spec.kinds
                 and asset_spec.tags.get("foo") == "bar",
-                None,
+                key_modifier=None,
             ),
-            ({"code_version": "1"}, lambda asset_spec: asset_spec.code_version == "1", None),
-            (
-                {"description": "some description"},
-                lambda asset_spec: asset_spec.description == "some description",
-                None,
+            TranslationTestCase(
+                name="code-version",
+                attributes={"code_version": "1"},
+                assertion=lambda asset_spec: asset_spec.code_version == "1",
+                key_modifier=None,
             ),
-            (
-                {"metadata": {"foo": "bar"}},
-                lambda asset_spec: asset_spec.metadata.get("foo") == "bar",
-                None,
+            TranslationTestCase(
+                name="description",
+                attributes={"description": "some description"},
+                assertion=lambda asset_spec: asset_spec.description == "some description",
+                key_modifier=None,
             ),
-            (
-                {"deps": ["nonexistent"]},
-                lambda asset_spec: len(asset_spec.deps) == 1
+            TranslationTestCase(
+                name="metadata",
+                attributes={"metadata": {"foo": "bar"}},
+                assertion=lambda asset_spec: asset_spec.metadata.get("foo") == "bar",
+                key_modifier=None,
+            ),
+            TranslationTestCase(
+                name="deps",
+                attributes={"deps": ["nonexistent"]},
+                assertion=lambda asset_spec: len(asset_spec.deps) == 1
                 and asset_spec.deps[0].asset_key == AssetKey("nonexistent"),
-                None,
+                key_modifier=None,
             ),
-            (
-                {"automation_condition": "{{ automation_condition.eager() }}"},
-                lambda asset_spec: asset_spec.automation_condition is not None,
-                None,
+            TranslationTestCase(
+                name="automation_condition",
+                attributes={"automation_condition": "{{ automation_condition.eager() }}"},
+                assertion=lambda asset_spec: asset_spec.automation_condition is not None,
+                key_modifier=None,
             ),
-            (
-                {"key": "{{ spec.key.to_user_string() + '_suffix' }}"},
-                lambda asset_spec: asset_spec.key.path[-1].endswith("_suffix"),
-                lambda key: AssetKey(path=key.path[:-1] + [f"{key.path[-1]}_suffix"]),
+            TranslationTestCase(
+                name="key",
+                attributes={"key": "{{ spec.key.to_user_string() + '_suffix' }}"},
+                assertion=lambda asset_spec: asset_spec.key.path[-1].endswith("_suffix"),
+                key_modifier=lambda key: AssetKey(
+                    path=list(key.path[:-1]) + [f"{key.path[-1]}_suffix"]
+                ),
             ),
-            (
-                {"key_prefix": "cool_prefix"},
-                lambda asset_spec: asset_spec.key.has_prefix(["cool_prefix"]),
-                lambda key: AssetKey(path=["cool_prefix"] + key.path),
+            TranslationTestCase(
+                name="key_prefix",
+                attributes={"key_prefix": "cool_prefix"},
+                assertion=lambda asset_spec: asset_spec.key.has_prefix(["cool_prefix"]),
+                key_modifier=lambda key: AssetKey(path=["cool_prefix"] + list(key.path)),
             ),
-        ],
-        ids=[
-            "group_name",
-            "owners",
-            "tags",
-            "kinds",
-            "tags-and-kinds",
-            "code-version",
-            "description",
-            "metadata",
-            "deps",
-            "automation_condition",
-            "key",
-            "key_prefix",
-        ],
-    )
-    def translation_params(self, request):
+        ]
+
+    @pytest.fixture(params=test_cases(), ids=[case.name for case in test_cases()])
+    def translation_test_case(self, request):
         return request.param
 
     @pytest.fixture
-    def attributes(self, translation_params):
-        return translation_params[0]
+    def attributes(self, translation_test_case: TranslationTestCase):
+        return translation_test_case.attributes
 
     @pytest.fixture
-    def assertion(self, translation_params):
-        return translation_params[1]
+    def assertion(self, translation_test_case: TranslationTestCase):
+        return translation_test_case.assertion
 
     @pytest.fixture
-    def key_modifier(self, translation_params):
-        return translation_params[2]
+    def key_modifier(self, translation_test_case: TranslationTestCase):
+        return translation_test_case.key_modifier
+
+
+class TestTranslationBatched(TestTranslation):
+    """This version of the TestTranslation class is used to test the translation of
+    asset attributes, applying all customizations in parallel to speed up tests for
+    components which might be expensive to construct.
+    """
+
+    @pytest.fixture()
+    def translation_test_case(self, request):
+        test_cases = TestTranslation.test_cases()
+        deep_merge_all_attributes = {}
+        for case in test_cases:
+            deep_merge_all_attributes = deep_merge_dicts(deep_merge_all_attributes, case.attributes)
+        merged_assertion = lambda asset_spec: all(case.assertion(asset_spec) for case in test_cases)
+
+        # successively apply key modifiers
+        def _merged_key_modifier(key):
+            for case in test_cases:
+                if case.key_modifier:
+                    key = case.key_modifier(key)
+            return key
+
+        return TranslationTestCase(
+            name="merged",
+            attributes=deep_merge_all_attributes,
+            assertion=merged_assertion,
+            key_modifier=_merged_key_modifier,
+        )
 
 
 class TestOpCustomization:
@@ -563,13 +611,13 @@ class TestOpCustomization:
         ],
         ids=["name", "tags", "backfill_policy"],
     )
-    def translation_params(self, request):
+    def translation_test_case(self, request):
         return request.param
 
     @pytest.fixture
-    def attributes(self, translation_params):
-        return translation_params[0]
+    def attributes(self, translation_test_case):
+        return translation_test_case[0]
 
     @pytest.fixture
-    def assertion(self, translation_params):
-        return translation_params[1]
+    def assertion(self, translation_test_case):
+        return translation_test_case[1]
