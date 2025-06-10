@@ -174,7 +174,7 @@ class AssetHealthCheckUnknownMetadata:
     total_num_checks: int
 
 
-AssetHealthCheckMeta = Union[
+AssetHealthCheckMetadata = Union[
     AssetHealthCheckDegradedMetadata,
     AssetHealthCheckWarningMetadata,
     AssetHealthCheckUnknownMetadata,
@@ -184,7 +184,7 @@ AssetHealthCheckMeta = Union[
 async def get_asset_check_status_and_metadata(
     context: "BaseWorkspaceRequestContext",
     asset_key: AssetKey,
-) -> tuple[AssetHealthStatus, Optional["AssetHealthCheckMeta"]]:
+) -> tuple[AssetHealthStatus, Optional["AssetHealthCheckMetadata"]]:
     """Converts an AssetCheckHealthState object to a AssetHealthStatus and the metadata
     needed to power the UIs and alerting.
     """

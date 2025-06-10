@@ -3,7 +3,7 @@ import asyncio
 import graphene
 from dagster._core.definitions.asset_health.asset_check_health import (
     AssetHealthCheckDegradedMetadata,
-    AssetHealthCheckMeta,
+    AssetHealthCheckMetadata,
     AssetHealthCheckUnknownMetadata,
     AssetHealthCheckWarningMetadata,
     get_asset_check_status_and_metadata,
@@ -19,7 +19,7 @@ from dagster._core.definitions.asset_health.asset_materialization_health import 
     AssetHealthMaterializationDegradedNotPartitionedMeta,
     AssetHealthMaterializationDegradedPartitionedMeta,
     AssetHealthMaterializationHealthyPartitionedMeta,
-    AssetHealthMaterializationMeta,
+    AssetHealthMaterializationMetadata,
     get_materialization_status_and_metadata,
 )
 
@@ -65,7 +65,7 @@ class GrapheneAssetHealthCheckMeta(graphene.Union):
 
     @staticmethod
     def from_metadata_class(
-        metadata: AssetHealthCheckMeta,
+        metadata: AssetHealthCheckMetadata,
     ) -> "GrapheneAssetHealthCheckMeta":
         if isinstance(metadata, AssetHealthCheckDegradedMetadata):
             return GrapheneAssetHealthCheckDegradedMeta(
@@ -122,7 +122,7 @@ class GrapheneAssetHealthMaterializationMeta(graphene.Union):
 
     @staticmethod
     def from_metadata_class(
-        metadata: AssetHealthMaterializationMeta,
+        metadata: AssetHealthMaterializationMetadata,
     ) -> "GrapheneAssetHealthMaterializationMeta":
         if isinstance(metadata, AssetHealthMaterializationDegradedNotPartitionedMeta):
             return GrapheneAssetHealthMaterializationDegradedNotPartitionedMeta(

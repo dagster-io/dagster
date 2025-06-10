@@ -66,13 +66,13 @@ class AssetFreshnessHealthState(LoadableBy[AssetKey]):
 
 
 @record.record
-class AssetHealthFreshnessMeta:
+class AssetHealthFreshnessMetadata:
     last_materialized_timestamp: Optional[float]
 
 
 async def get_freshness_status_and_metadata(
     context: "BaseWorkspaceRequestContext", asset_key: AssetKey
-) -> tuple[AssetHealthStatus, Optional["AssetHealthFreshnessMeta"]]:
+) -> tuple[AssetHealthStatus, Optional["AssetHealthFreshnessMetadata"]]:
     """Gets an AssetFreshnessHealthState object for an asset, either via streamline or by computing
     it based on the state of the DB. Then converts it to a AssetHealthStatus and the metadata
     needed to power the UIs. Metadata is computed based on the state of the DB.
@@ -101,15 +101,15 @@ async def get_freshness_status_and_metadata(
     )
 
     if asset_freshness_health_state.freshness_state == FreshnessState.PASS:
-        return AssetHealthStatus.HEALTHY, AssetHealthFreshnessMeta(
+        return AssetHealthStatus.HEALTHY, AssetHealthFreshnessMetadata(
             last_materialized_timestamp=materialization_timestamp,
         )
     if asset_freshness_health_state.freshness_state == FreshnessState.WARN:
-        return AssetHealthStatus.WARNING, AssetHealthFreshnessMeta(
+        return AssetHealthStatus.WARNING, AssetHealthFreshnessMetadata(
             last_materialized_timestamp=materialization_timestamp,
         )
     if asset_freshness_health_state.freshness_state == FreshnessState.FAIL:
-        return AssetHealthStatus.DEGRADED, AssetHealthFreshnessMeta(
+        return AssetHealthStatus.DEGRADED, AssetHealthFreshnessMetadata(
             last_materialized_timestamp=materialization_timestamp,
         )
     elif asset_freshness_health_state.freshness_state == FreshnessState.UNKNOWN:

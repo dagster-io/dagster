@@ -240,7 +240,7 @@ class AssetHealthMaterializationDegradedNotPartitionedMeta:
     failed_run_id: Optional[str]
 
 
-AssetHealthMaterializationMeta = Union[
+AssetHealthMaterializationMetadata = Union[
     AssetHealthMaterializationDegradedPartitionedMeta,
     AssetHealthMaterializationHealthyPartitionedMeta,
     AssetHealthMaterializationDegradedNotPartitionedMeta,
@@ -249,7 +249,7 @@ AssetHealthMaterializationMeta = Union[
 
 async def get_materialization_status_and_metadata(
     context: "BaseWorkspaceRequestContext", asset_key: AssetKey
-) -> tuple[AssetHealthStatus, Optional["AssetHealthMaterializationMeta"]]:
+) -> tuple[AssetHealthStatus, Optional["AssetHealthMaterializationMetadata"]]:
     """Gets an AssetMaterializationHealthState object for an asset, either via streamline or by computing
     it based on the state of the DB. Then converts it to a AssetHealthStatus and the metadata
     needed to power the UIs. Metadata is fetched from the AssetLatestMaterializationState object, again
