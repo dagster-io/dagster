@@ -103,27 +103,6 @@ def test_scaffold_defs_component_no_params_success(in_workspace: bool) -> None:
         )
 
 
-def test_scaffold_defs_component_json_params_only_for_scaffold_params() -> None:
-    with (
-        ProxyRunner.test(use_fixed_test_components=True) as runner,
-        isolated_example_project_foo_bar(runner),
-    ):
-        # SimplePipesScriptComponent has scaffold params, so --json-params should be defined
-        result = runner.invoke(
-            "scaffold", "defs", "dagster_test.components.SimplePipesScriptComponent", "--help"
-        )
-        assert_runner_result(result)
-        assert "--json-params" in result.output
-
-        # AllMetadataEmptyComponent does not have scaffold params, so --json-params should not be
-        # defined
-        result = runner.invoke(
-            "scaffold", "defs", "dagster_test.components.AllMetadataEmptyComponent", "--help"
-        )
-        assert_runner_result(result)
-        assert "--json-params" not in result.output
-
-
 @pytest.mark.parametrize(
     "selection",
     ["", "y", "n", "a"],
@@ -755,6 +734,47 @@ def test_scaffold_defs_sensor() -> None:
         assert_runner_result(result)
         assert Path("src/foo_bar/defs/my_sensor.py").exists()
         assert not Path("src/foo_bar/defs/defs.yaml").exists()
+
+
+# ########################
+# ##### DEFS OPTIONS
+# ########################
+
+
+def test_scaffold_defs_json_params_option_only_for_scaffold_params() -> None:
+    with (
+        ProxyRunner.test(use_fixed_test_components=True) as runner,
+        isolated_example_project_foo_bar(runner),
+    ):
+        # SimplePipesScriptComponent has scaffold params, so --json-params should be defined
+        result = runner.invoke(
+            "scaffold", "defs", "dagster_test.components.SimplePipesScriptComponent", "--help"
+        )
+        assert_runner_result(result)
+        assert "--json-params" in result.output
+
+        # AllMetadataEmptyComponent does not have scaffold params, so --json-params should not be
+        # defined
+        result = runner.invoke(
+            "scaffold", "defs", "dagster_test.components.AllMetadataEmptyComponent", "--help"
+        )
+        assert_runner_result(result)
+        assert "--json-params" not in result.output
+
+
+def test_scaffold_defs_format_option_only_for_components() -> None:
+    with (
+        ProxyRunner.test() as runner,
+        isolated_example_project_foo_bar(runner),
+    ):
+        result = runner.invoke("scaffold", "defs", "dagster.DefsFolderComponent", "--help")
+        assert_runner_result(result)
+        assert "--format" in result.output
+
+        # `asset` is not a component, so --format should not be defined
+        result = runner.invoke("scaffold", "defs", "dagster.asset", "--help")
+        assert_runner_result(result)
+        assert "--format" not in result.output
 
 
 # ##### REAL COMPONENTS
