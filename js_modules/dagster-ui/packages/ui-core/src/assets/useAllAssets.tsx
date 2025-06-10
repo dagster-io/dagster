@@ -15,6 +15,7 @@ import {
   AssetRecordsQueryVersion,
 } from './types/useAllAssets.types';
 import {WorkspaceContext} from '../workspace/WorkspaceContext/WorkspaceContext';
+import {WorkspaceAssetFragment} from '../workspace/WorkspaceContext/types/WorkspaceQueries.types';
 import {DagsterRepoOption} from '../workspace/WorkspaceContext/util';
 
 export type AssetRecord = Extract<
@@ -26,6 +27,12 @@ const POLL_INTERVAL = 60000 * 5; // 5 minutes
 const RETRY_INTERVAL = 1000; // 1 second
 
 const DEFAULT_BATCH_LIMIT = 1000;
+
+export function useAllAssetsNodes() {
+  const {allRepos, loading: workspaceLoading} = useContext(WorkspaceContext);
+  const allAssetNodes = useMemo(() => getAllAssetNodes(allRepos), [allRepos]);
+  return {assets: allAssetNodes, loading: workspaceLoading};
+}
 
 export function useAllAssets({
   groupSelector,
@@ -60,8 +67,7 @@ export function useAllAssets({
     };
   }, [manager, batchLimit]);
 
-  const {allRepos, loading: workspaceLoading} = useContext(WorkspaceContext);
-  const allAssetNodes = useMemo(() => getAllAssetNodes(allRepos), [allRepos]);
+  const {assets: allAssetNodes, loading: allAssetNodesLoading} = useAllAssetsNodes();
 
   const allAssetNodesByKey = useMemo(() => getAllAssetNodesByKey(allAssetNodes), [allAssetNodes]);
 
@@ -74,7 +80,7 @@ export function useAllAssets({
 
   return {
     assets,
-    loading: loading || workspaceLoading,
+    loading: loading || allAssetNodesLoading,
     query: manager.fetchAssets,
     assetsByAssetKey,
     error,
@@ -230,7 +236,7 @@ const getAssets = weakMapMemoize(
   (
     materializedAssets: AssetRecord[],
     allAssetNodesByKey: Record<string, boolean>,
-    allAssetNodes: AssetTableDefinitionFragment[],
+    allAssetNodes: WorkspaceAssetFragment[],
     groupSelector?: AssetGroupSelector,
   ) => {
     const softwareDefinedAssetsWithDuplicates = allAssetNodes.map((assetNode) => ({
