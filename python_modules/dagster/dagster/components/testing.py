@@ -14,6 +14,7 @@ from dagster_shared.merger import deep_merge_dicts
 
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_spec import AssetSpec
+from dagster._core.definitions.partition import StaticPartitionsDefinition
 
 """Testing utilities for components."""
 
@@ -515,6 +516,13 @@ test_cases = [
         attributes={"key_prefix": "cool_prefix"},
         assertion=lambda asset_spec: asset_spec.key.has_prefix(["cool_prefix"]),
         key_modifier=lambda key: AssetKey(path=["cool_prefix"] + list(key.path)),
+    ),
+    TranslationTestCase(
+        name="partitions_defs",
+        attributes={"partitions_def": {"type": "static", "partition_keys": ["foo", "bar"]}},
+        assertion=lambda asset_spec: isinstance(
+            asset_spec.partitions_def, StaticPartitionsDefinition
+        ),
     ),
 ]
 
