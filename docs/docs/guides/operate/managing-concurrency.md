@@ -30,6 +30,7 @@ You can assign assets and ops to concurrency pools which allow you to limit the 
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/operate/concurrency-pool-api.py"
+  title="src/my_project/defs/my_asset_and_graph_asset.py"
   language="python"
   title="Specifying pools on assets and ops"
 />

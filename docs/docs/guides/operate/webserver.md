@@ -22,12 +22,6 @@ The command will print out the URL you can access the UI from in the browser, us
 
 When invoked, the webserver will fetch definitions - such as assets, jobs, schedules, sensors, and resources - from a <PyObject section="definitions" module="dagster" object="Definitions" /> object in a Python module or package or the code locations configured in an open source deployment's [workspace files](/deployment/code-locations/workspace-yaml). For more information, see the [code locations documentation](/deployment/code-locations).
 
-You can also launch the webserver by itself from the command line by running:
-
-```shell
-dagster-webserver
-```
-
 Note that several Dagster features, like schedules and sensors, require the Dagster daemon to be running in order to function.
 
 ## Dagster UI reference
