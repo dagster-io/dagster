@@ -3202,7 +3202,7 @@
     },
     {
       "source": "/guides/labs/dg/configuring-dg",
-      "destination": "/api/dg/dg-configuration"
+      "destination": "/api/dg/dg-cli-configuration"
     },
     {
       "source": "/api/dagster/dg-cli",
@@ -3242,7 +3242,7 @@
     },
     {
       "source": "/guides/labs/dg",
-      "desination": "/getting-started/installation"
+      "destination": "/getting-started/installation"
     }
   ],
   "trailingSlash": false
