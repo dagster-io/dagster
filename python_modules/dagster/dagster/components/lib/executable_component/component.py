@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from collections.abc import Generator, Iterable
+from functools import cached_property
 from typing import Any, Optional, TypeVar, Union
 
 from dagster_shared import check
@@ -70,7 +71,7 @@ class ExecutableComponent(Component, Resolvable, Model, ABC):
     def resource_keys(self) -> set[str]:
         return set()
 
-    @property
+    @cached_property
     def config_fields(self) -> Optional[dict[str, Field]]:
         return None
 
