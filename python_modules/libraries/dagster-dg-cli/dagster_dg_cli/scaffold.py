@@ -9,7 +9,7 @@ import dagster_shared.check as check
 from dagster_dg_core.context import DgContext
 from dagster_dg_core.utils import snakecase, validate_dagster_availability
 from dagster_shared.scaffold import scaffold_subtree
-from dagster_shared.serdes.objects.package_entry import PluginObjectKey
+from dagster_shared.serdes.objects.package_entry import EnvRegistryKey
 from dagster_shared.seven import match_module_pattern
 from typing_extensions import TypeAlias
 
@@ -76,7 +76,7 @@ def scaffold_inline_component(
 
     component_path = full_path / f"{snakecase(typename)}.py"
     if superclass:
-        key = PluginObjectKey.from_typename(superclass)
+        key = EnvRegistryKey.from_typename(superclass)
         superclass_import_lines = [
             f"from {key.namespace} import {key.name}",
         ]
@@ -112,11 +112,11 @@ def scaffold_inline_component(
 
 
 # ####################
-# ##### LIBRARY OBJECT
+# ##### REGISTRY OBJECT
 # ####################
 
 
-def scaffold_library_object(
+def scaffold_registry_object(
     path: Path,
     typename: str,
     scaffold_params: Optional[Mapping[str, Any]],

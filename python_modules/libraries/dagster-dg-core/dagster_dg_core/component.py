@@ -9,8 +9,11 @@ from dagster_shared.error import (
     make_simple_frames_removed_hint,
     remove_system_frames_from_error,
 )
-from dagster_shared.serdes.objects import PluginObjectKey, PluginObjectSnap
-from dagster_shared.serdes.objects.package_entry import PluginManifest, PluginObjectFeature
+from dagster_shared.serdes.objects import EnvRegistryKey, EnvRegistryObjectSnap
+from dagster_shared.serdes.objects.package_entry import (
+    EnvRegistryManifest,
+    EnvRegistryObjectFeature,
+)
 from packaging.version import Version
 
 from dagster_dg_core.utils import validate_dagster_availability
@@ -20,11 +23,11 @@ if TYPE_CHECKING:
     from dagster_dg_core.context import DgContext
 
 
-class RemotePluginRegistry:
+class EnvRegistry:
     @staticmethod
     def from_dg_context(
         dg_context: "DgContext", extra_modules: Optional[Sequence[str]] = None
-    ) -> "RemotePluginRegistry":
+    ) -> "EnvRegistry":
         """Fetches the set of available registry objects. The default set includes everything
         discovered under the "dagster_dg_cli.registry_modules" entry point group in the target environment. If
         `extra_modules` is provided, these will also be searched for component types.
@@ -72,21 +75,21 @@ class RemotePluginRegistry:
                 suppress_warnings=dg_context.config.cli.suppress_warnings,
             )
 
-        return RemotePluginRegistry(plugin_manifest)
+        return EnvRegistry(plugin_manifest)
 
-    def __init__(self, plugin_manifest: PluginManifest):
+    def __init__(self, plugin_manifest: EnvRegistryManifest):
         self._plugin_manifest = plugin_manifest
         self._object_lookup = {key: obj for obj in plugin_manifest.objects for key in obj.all_keys}
 
     @staticmethod
-    def empty() -> "RemotePluginRegistry":
-        return RemotePluginRegistry(PluginManifest(modules=[], objects=[]))
+    def empty() -> "EnvRegistry":
+        return EnvRegistry(EnvRegistryManifest(modules=[], objects=[]))
 
     @property
     def modules(self) -> Sequence[str]:
         return self._plugin_manifest.modules
 
-    def module_entries(self, module: str) -> Set[PluginObjectKey]:
+    def module_entries(self, module: str) -> Set[EnvRegistryKey]:
         return {obj.key for obj in self._plugin_manifest.objects if obj.key.package == module}
 
     # This differs from "modules" in that it is a list of root modules-- so if there are two entry
@@ -96,8 +99,10 @@ class RemotePluginRegistry:
         return sorted({m.split(".")[0] for m in self._plugin_manifest.modules})
 
     def get_objects(
-        self, package: Optional[str] = None, feature: Optional[PluginObjectFeature] = None
-    ) -> Sequence[PluginObjectSnap]:
+        self,
+        package: Optional[str] = None,
+        feature: Optional[EnvRegistryObjectFeature] = None,
+    ) -> Sequence[EnvRegistryObjectSnap]:
         return [
             entry
             for entry in self._plugin_manifest.objects
@@ -105,23 +110,23 @@ class RemotePluginRegistry:
             and (feature is None or feature in entry.features)
         ]
 
-    def get(self, key: PluginObjectKey) -> PluginObjectSnap:
+    def get(self, key: EnvRegistryKey) -> EnvRegistryObjectSnap:
         """Resolves a library object within the scope of a given component directory."""
         return self._object_lookup[key]
 
-    def has(self, key: PluginObjectKey) -> bool:
+    def has(self, key: EnvRegistryKey) -> bool:
         return key in self._object_lookup
 
-    def keys(self) -> Iterable[PluginObjectKey]:
+    def keys(self) -> Iterable[EnvRegistryKey]:
         yield from sorted(
             (obj.key for obj in self._plugin_manifest.objects), key=lambda k: k.to_typename()
         )
 
-    def items(self) -> Iterable[tuple[PluginObjectKey, PluginObjectSnap]]:
+    def items(self) -> Iterable[tuple[EnvRegistryKey, EnvRegistryObjectSnap]]:
         yield from ((obj.key, obj) for obj in self._plugin_manifest.objects)
 
     def __repr__(self) -> str:
-        return f"<RemotePluginRegistry {list(self.keys())}>"
+        return f"<EnvRegistry {list(self.keys())}>"
 
 
 def all_components_schema_from_dg_context(dg_context: "DgContext") -> Mapping[str, Any]:
@@ -141,15 +146,15 @@ MIN_DAGSTER_COMPONENTS_LIST_PLUGINS_VERSION = Version("1.10.12")
 
 def _load_entry_point_registry_objects(
     dg_context: "DgContext",
-) -> PluginManifest:
+) -> EnvRegistryManifest:
     return _fetch_plugin_manifest(entry_points=True, extra_modules=[])
 
 
 def _load_module_registry_objects(
     dg_context: "DgContext", modules: Iterable[str]
-) -> PluginManifest:
+) -> EnvRegistryManifest:
     modules_to_fetch = set(modules)
-    objects: list[PluginObjectSnap] = []
+    objects: list[EnvRegistryObjectSnap] = []
 
     if modules_to_fetch:
         plugin_manifest = _fetch_plugin_manifest(
@@ -161,15 +166,15 @@ def _load_module_registry_objects(
             ]
             objects.extend(objects_for_module)
 
-    return PluginManifest(modules=list(modules), objects=objects)
+    return EnvRegistryManifest(modules=list(modules), objects=objects)
 
 
-# Prior to MIN_DAGSTER_COMPONENTS_LIST_PLUGINS_VERSION, the relevant command was named
-# "list library" instead of "list plugins". It also output a list[PluginObjectSnap] instead of a
-# PluginManifest. This function handles normalizing the output across versions. We can compute a
-# PluginManifest from the list[PluginObjectSnap], but it won't include any modules that register an
-# entry point but don't expose any plugin objects.
-def _fetch_plugin_manifest(entry_points: bool, extra_modules: Sequence[str]) -> PluginManifest:
+# Prior to MIN_DAGSTER_COMPONENTS_LIST_PLUGINS_VERSION, the relevant command was named "list
+# library" instead of "list plugins". It also output a list[EnvRegistryObjectSnap] instead
+# of a EnvRegistryManifest. This function handles normalizing the output across versions. We
+# can compute a EnvRegistryManifest from the list[EnvRegistryObjectSnap], but it
+# won't include any modules that register an entry point but don't expose any plugin objects.
+def _fetch_plugin_manifest(entry_points: bool, extra_modules: Sequence[str]) -> EnvRegistryManifest:
     from rich.console import Console
     from rich.panel import Panel
 

@@ -382,9 +382,8 @@ def set_env_var(name: str, value: str) -> Iterator[None]:
 def convert_pyproject_toml_to_dg_toml(pyproject_toml_path: Path, dg_toml_path: Path) -> None:
     """Convert a pyproject.toml file to a dg.toml file."""
     pyproject_toml = tomlkit.parse(pyproject_toml_path.read_text())
-    dg_toml_path.write_text(
-        tomlkit.dumps(get_toml_node(pyproject_toml, ("tool", "dg"), tomlkit.items.Table))
-    )
+    dg_config = get_toml_node(pyproject_toml, ("tool", "dg"), tomlkit.items.Table)
+    dg_toml_path.write_text(tomlkit.dumps(dg_config))
     delete_toml_node(pyproject_toml, ("tool", "dg"))
 
     # Delete the pyproject.toml file if it is empty after removing the dg section

@@ -39,7 +39,7 @@ def scaffold_with(
     def decorator(obj: T) -> T:
         # Store the scaffolder class as an attribute using the constant
         setattr(obj, SCAFFOLDER_CLS_ATTRIBUTE, scaffolder_cls)
-        # All scaffoldable objects are library objects
+        # All scaffoldable objects are registry objects
         setattr(obj, PACKAGE_ENTRY_ATTR, True)
         return obj
 
