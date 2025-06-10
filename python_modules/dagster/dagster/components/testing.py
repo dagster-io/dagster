@@ -524,4 +524,4 @@ class TestTranslation:
 
     @pytest.fixture
     def key_modifier(self, translation_params):
-        return translation_params[3]
+        return translation_params[2]
