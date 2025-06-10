@@ -41,7 +41,7 @@ class TestAttachInternalFreshnessPolicy:
             defs.map_asset_specs(
                 func=lambda spec: attach_internal_freshness_policy(
                     spec,
-                    None,
+                    None,  # pyright: ignore[reportArgumentType]
                     overwrite_existing=False,
                 )
             )
