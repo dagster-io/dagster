@@ -50,7 +50,7 @@ class ComponentRequirementsModel(BaseModel):
 
 
 class ComponentPostProcessingModel(Resolvable, Model):
-    processors: Optional[Sequence[AssetPostProcessor]] = None
+    assets: Optional[Sequence[AssetPostProcessor]] = None
 
 
 class ComponentFileModel(BaseModel):
@@ -100,23 +100,23 @@ class CompositeYamlComponent(Component):
         self,
         components: Sequence[Component],
         source_positions: Sequence[SourcePosition],
-        post_processors_list: Sequence[Sequence[AssetPostProcessor]],
+        asset_post_processor_lists: Sequence[Sequence[AssetPostProcessor]],
     ):
         self.components = components
         self.source_positions = source_positions
         check.invariant(
-            len(components) == len(post_processors_list),
+            len(components) == len(asset_post_processor_lists),
             "Number of components and post processors must match",
         )
 
-        self.post_processors_list = post_processors_list
+        self.asset_post_processors_list = asset_post_processor_lists
 
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
         component_yaml = check.not_none(_find_defs_or_component_yaml(context.path))
 
         defs_list = []
-        for component, source_position, post_processors in zip(
-            self.components, self.source_positions, self.post_processors_list
+        for component, source_position, asset_post_processors in zip(
+            self.components, self.source_positions, self.asset_post_processors_list
         ):
             defs_list.append(
                 post_process_defs(
@@ -130,7 +130,7 @@ class CompositeYamlComponent(Component):
                         ),
                         selection=None,
                     ),
-                    list(post_processors),
+                    list(asset_post_processors),
                 )
             )
 
@@ -395,7 +395,7 @@ def load_yaml_component_from_path(context: ComponentLoadContext, component_def_p
         component_def_path.read_text(), str(component_def_path)
     )
     components = []
-    post_processors_list: list[list[AssetPostProcessor]] = []
+    asset_post_processor_lists: list[list[AssetPostProcessor]] = []
     for source_tree in source_trees:
         component_file_model = _parse_and_populate_model_with_annotated_errors(
             cls=ComponentFileModel, obj_parse_root=source_tree, obj_key_path_prefix=[]
@@ -412,18 +412,28 @@ def load_yaml_component_from_path(context: ComponentLoadContext, component_def_p
         model_cls = obj.get_model_cls()
         attributes_model = get_attributes_model(component_file_model, model_cls, source_tree)
 
-        post_processors_list.append(
-            from_post_processing_dict(
-                context.resolution_context, component_file_model.post_processing
-            )
+        post_processing_position_tree = source_tree.source_position_tree.children.get(
+            "post_processing", None
         )
+        with (
+            enrich_validation_errors_with_source_position(
+                post_processing_position_tree, ["post_processing"]
+            )
+            if post_processing_position_tree
+            else nullcontext()
+        ):
+            asset_post_processor_lists.append(
+                asset_post_processer_list_from_post_processing_dict(
+                    context.resolution_context, component_file_model.post_processing
+                )
+            )
         components.append(obj.load(attributes_model, context))
 
     check.invariant(len(components) > 0, "No components found in YAML file")
     return CompositeYamlComponent(
         components,
         [source_tree.source_position_tree.position for source_tree in source_trees],
-        post_processors_list,
+        asset_post_processor_lists,
     )
 
 
@@ -454,16 +464,17 @@ def get_attributes_model(
         return TypeAdapter(model_cls).validate_python(component_file_model.attributes)
 
 
-def from_post_processing_dict(
+def asset_post_processer_list_from_post_processing_dict(
     resolution_context: ResolutionContext, post_processing: Optional[Mapping[str, Any]]
 ) -> list[AssetPostProcessor]:
     if not post_processing:
         return []
+
     post_processing_model = ComponentPostProcessingModel.resolve_from_model(
         context=resolution_context,
         model=TypeAdapter(ComponentPostProcessingModel.model()).validate_python(post_processing),
     )
-    return list(post_processing_model.processors or [])
+    return list(post_processing_model.assets or [])
 
 
 # When we remove component.yaml, we can remove this function for just a defs.yaml check

@@ -17,8 +17,8 @@ from dagster import Component, ComponentLoadContext, Definitions
 from dagster._utils import alter_sys_path, pushd
 from dagster._utils.pydantic_yaml import enrich_validation_errors_with_source_position
 from dagster.components.core.defs_module import (
+    asset_post_processer_list_from_post_processing_dict,
     context_with_injected_scope,
-    from_post_processing_dict,
 )
 from dagster.components.resolved.core_models import post_process_defs
 from dagster.components.utils import ensure_loadable_path
@@ -69,7 +69,9 @@ def build_component_defs_for_test(
     context, component = load_context_and_component_for_test(component_type, attrs)
     return post_process_defs(
         component.build_defs(context),
-        from_post_processing_dict(context.resolution_context, post_processing),
+        asset_post_processer_list_from_post_processing_dict(
+            context.resolution_context, post_processing
+        ),
     )
 
 
