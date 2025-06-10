@@ -35,6 +35,7 @@ For example, imagine you have the following code:
 
 <CodeExample
   path="docs_snippets/docs_snippets/concepts/logging/python_logger.py"
+  title="src/my_project/defs/my_op.py"
   startAfter="start_python_logger"
   endBefore="end_python_logger"
   dedent="4"
@@ -96,6 +97,7 @@ For example:
 
 <CodeExample
   path="docs_snippets/docs_snippets/concepts/logging/python_logger.py"
+  title="src/my_project/defs/my_op.py"
   startAfter="start_get_logger"
   endBefore="end_get_logger"
   dedent="4"
@@ -124,6 +126,7 @@ If we execute the following job:
 
 <CodeExample
   path="docs_snippets/docs_snippets/concepts/logging/file_output_pipeline.py"
+  title="src/my_project/defs/my_job.py"
   startAfter="start_custom_file_output_log"
   endBefore="end_custom_file_output_log"
 />
