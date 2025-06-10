@@ -447,7 +447,76 @@ class TranslationTestCase(NamedTuple):
     name: str
     attributes: dict[str, Any]
     assertion: Callable[[AssetSpec], bool]
-    key_modifier: Optional[Callable[[AssetKey], AssetKey]]
+    key_modifier: Optional[Callable[[AssetKey], AssetKey]] = None
+
+
+test_cases = [
+    TranslationTestCase(
+        name="group_name",
+        attributes={"group_name": "group"},
+        assertion=lambda asset_spec: asset_spec.group_name == "group",
+    ),
+    TranslationTestCase(
+        name="owners",
+        attributes={"owners": ["team:analytics"]},
+        assertion=lambda asset_spec: asset_spec.owners == ["team:analytics"],
+    ),
+    TranslationTestCase(
+        name="tags",
+        attributes={"tags": {"foo": "bar"}},
+        assertion=lambda asset_spec: asset_spec.tags.get("foo") == "bar",
+    ),
+    TranslationTestCase(
+        name="kinds",
+        attributes={"kinds": ["snowflake", "dbt"]},
+        assertion=lambda asset_spec: "snowflake" in asset_spec.kinds and "dbt" in asset_spec.kinds,
+    ),
+    TranslationTestCase(
+        name="tags-and-kinds",
+        attributes={"tags": {"foo": "bar"}, "kinds": ["snowflake", "dbt"]},
+        assertion=lambda asset_spec: "snowflake" in asset_spec.kinds
+        and "dbt" in asset_spec.kinds
+        and asset_spec.tags.get("foo") == "bar",
+    ),
+    TranslationTestCase(
+        name="code-version",
+        attributes={"code_version": "1"},
+        assertion=lambda asset_spec: asset_spec.code_version == "1",
+    ),
+    TranslationTestCase(
+        name="description",
+        attributes={"description": "some description"},
+        assertion=lambda asset_spec: asset_spec.description == "some description",
+    ),
+    TranslationTestCase(
+        name="metadata",
+        attributes={"metadata": {"foo": "bar"}},
+        assertion=lambda asset_spec: asset_spec.metadata.get("foo") == "bar",
+    ),
+    TranslationTestCase(
+        name="deps",
+        attributes={"deps": ["nonexistent"]},
+        assertion=lambda asset_spec: len(asset_spec.deps) == 1
+        and asset_spec.deps[0].asset_key == AssetKey("nonexistent"),
+    ),
+    TranslationTestCase(
+        name="automation_condition",
+        attributes={"automation_condition": "{{ automation_condition.eager() }}"},
+        assertion=lambda asset_spec: asset_spec.automation_condition is not None,
+    ),
+    TranslationTestCase(
+        name="key",
+        attributes={"key": "{{ spec.key.to_user_string() + '_suffix' }}"},
+        assertion=lambda asset_spec: asset_spec.key.path[-1].endswith("_suffix"),
+        key_modifier=lambda key: AssetKey(path=list(key.path[:-1]) + [f"{key.path[-1]}_suffix"]),
+    ),
+    TranslationTestCase(
+        name="key_prefix",
+        attributes={"key_prefix": "cool_prefix"},
+        assertion=lambda asset_spec: asset_spec.key.has_prefix(["cool_prefix"]),
+        key_modifier=lambda key: AssetKey(path=["cool_prefix"] + list(key.path)),
+    ),
+]
 
 
 class TestTranslation:
@@ -456,90 +525,7 @@ class TestTranslation:
     order to comprehensively test asset translation options for your component.
     """
 
-    @staticmethod
-    def get_test_cases():
-        return [
-            TranslationTestCase(
-                name="group_name",
-                attributes={"group_name": "group"},
-                assertion=lambda asset_spec: asset_spec.group_name == "group",
-                key_modifier=None,
-            ),
-            TranslationTestCase(
-                name="owners",
-                attributes={"owners": ["team:analytics"]},
-                assertion=lambda asset_spec: asset_spec.owners == ["team:analytics"],
-                key_modifier=None,
-            ),
-            TranslationTestCase(
-                name="tags",
-                attributes={"tags": {"foo": "bar"}},
-                assertion=lambda asset_spec: asset_spec.tags.get("foo") == "bar",
-                key_modifier=None,
-            ),
-            TranslationTestCase(
-                name="kinds",
-                attributes={"kinds": ["snowflake", "dbt"]},
-                assertion=lambda asset_spec: "snowflake" in asset_spec.kinds
-                and "dbt" in asset_spec.kinds,
-                key_modifier=None,
-            ),
-            TranslationTestCase(
-                name="tags-and-kinds",
-                attributes={"tags": {"foo": "bar"}, "kinds": ["snowflake", "dbt"]},
-                assertion=lambda asset_spec: "snowflake" in asset_spec.kinds
-                and "dbt" in asset_spec.kinds
-                and asset_spec.tags.get("foo") == "bar",
-                key_modifier=None,
-            ),
-            TranslationTestCase(
-                name="code-version",
-                attributes={"code_version": "1"},
-                assertion=lambda asset_spec: asset_spec.code_version == "1",
-                key_modifier=None,
-            ),
-            TranslationTestCase(
-                name="description",
-                attributes={"description": "some description"},
-                assertion=lambda asset_spec: asset_spec.description == "some description",
-                key_modifier=None,
-            ),
-            TranslationTestCase(
-                name="metadata",
-                attributes={"metadata": {"foo": "bar"}},
-                assertion=lambda asset_spec: asset_spec.metadata.get("foo") == "bar",
-                key_modifier=None,
-            ),
-            TranslationTestCase(
-                name="deps",
-                attributes={"deps": ["nonexistent"]},
-                assertion=lambda asset_spec: len(asset_spec.deps) == 1
-                and asset_spec.deps[0].asset_key == AssetKey("nonexistent"),
-                key_modifier=None,
-            ),
-            TranslationTestCase(
-                name="automation_condition",
-                attributes={"automation_condition": "{{ automation_condition.eager() }}"},
-                assertion=lambda asset_spec: asset_spec.automation_condition is not None,
-                key_modifier=None,
-            ),
-            TranslationTestCase(
-                name="key",
-                attributes={"key": "{{ spec.key.to_user_string() + '_suffix' }}"},
-                assertion=lambda asset_spec: asset_spec.key.path[-1].endswith("_suffix"),
-                key_modifier=lambda key: AssetKey(
-                    path=list(key.path[:-1]) + [f"{key.path[-1]}_suffix"]
-                ),
-            ),
-            TranslationTestCase(
-                name="key_prefix",
-                attributes={"key_prefix": "cool_prefix"},
-                assertion=lambda asset_spec: asset_spec.key.has_prefix(["cool_prefix"]),
-                key_modifier=lambda key: AssetKey(path=["cool_prefix"] + list(key.path)),
-            ),
-        ]
-
-    @pytest.fixture(params=get_test_cases(), ids=[case.name for case in get_test_cases()])
+    @pytest.fixture(params=test_cases, ids=[case.name for case in test_cases])
     def translation_test_case(self, request):
         return request.param
 
@@ -564,7 +550,6 @@ class TestTranslationBatched(TestTranslation):
 
     @pytest.fixture()
     def translation_test_case(self, request):
-        test_cases = TestTranslation.get_test_cases()
         deep_merge_all_attributes = {}
         for case in test_cases:
             deep_merge_all_attributes = deep_merge_dicts(deep_merge_all_attributes, case.attributes)
