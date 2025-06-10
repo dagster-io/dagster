@@ -14,6 +14,11 @@ from dagster._core.definitions.declarative_automation.automation_condition impor
     AutomationCondition,
 )
 from dagster._core.definitions.definitions_class import Definitions
+from dagster._core.definitions.partition import PartitionsDefinition, StaticPartitionsDefinition
+from dagster._core.definitions.time_window_partitions import (
+    DailyPartitionsDefinition,
+    HourlyPartitionsDefinition,
+)
 from dagster.components.resolved.base import Resolvable, resolve_fields
 from dagster.components.resolved.context import ResolutionContext
 from dagster.components.resolved.model import Injected, Model, Resolver
@@ -27,6 +32,52 @@ def _resolve_asset_key(context: ResolutionContext, key: str) -> AssetKey:
 
 
 PostProcessorFn: TypeAlias = Callable[[Definitions], Definitions]
+
+
+class HourlyPartitionsDefinitionModel(Resolvable, Model):
+    type: Literal["hourly"] = "hourly"
+    start_date: str
+    end_date: Optional[str] = None
+    timezone: Optional[str] = None
+    minute_offset: int = 0
+
+
+class DailyPartitionsDefinitionModel(Resolvable, Model):
+    type: Literal["daily"] = "daily"
+    start_date: str
+    end_date: Optional[str] = None
+    timezone: Optional[str] = None
+    minute_offset: int = 0
+    hour_offset: int = 0
+
+
+class StaticPartitionsDefinitionModel(Resolvable, Model):
+    type: Literal["static"] = "static"
+    partition_keys: Sequence[str]
+
+
+def resolve_partitions_def(context: ResolutionContext, model) -> Optional[PartitionsDefinition]:
+    if model is None:
+        return None
+
+    elif model.type == "hourly":
+        return HourlyPartitionsDefinition(
+            start_date=model.start_date,
+            end_date=model.end_date,
+            timezone=model.timezone,
+            minute_offset=model.minute_offset,
+        )
+    elif model.type == "daily":
+        return DailyPartitionsDefinition(
+            start_date=model.start_date,
+            end_date=model.end_date,
+            timezone=model.timezone,
+            minute_offset=model.minute_offset,
+        )
+    elif model.type == "static":
+        return StaticPartitionsDefinition(partition_keys=model.partition_keys)
+    else:
+        raise ValueError(f"Invalid partitions definition type: {model.type}")
 
 
 class SingleRunBackfillPolicyModel(Resolvable, Model):
@@ -151,6 +202,18 @@ class SharedAssetKwargs(Resolvable):
         Resolver.default(
             model_field_type=Optional[str],
             description="The condition under which the asset will be automatically materialized.",
+        ),
+    ] = None
+    partitions_def: Annotated[
+        Optional[PartitionsDefinition],
+        Resolver(
+            resolve_partitions_def,
+            description="The partitions definition for the asset.",
+            model_field_type=Union[
+                HourlyPartitionsDefinitionModel,
+                DailyPartitionsDefinitionModel,
+                StaticPartitionsDefinitionModel,
+            ],
         ),
     ] = None
 
