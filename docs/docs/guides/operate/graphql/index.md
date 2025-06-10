@@ -22,7 +22,7 @@ Dagster exposes a GraphQL API that allows clients to interact with Dagster progr
 The GraphQL API is served from the[webserver](/guides/operate/webserver). To start the server, run the following:
 
 ```shell
-dagster dev
+dg dev
 ```
 
 The webserver serves the GraphQL endpoint at the `/graphql` endpoint. If you are running the webserver locally on port 3000, you can access the API at [http://localhost:3000/graphql](http://localhost:3000/graphql).
