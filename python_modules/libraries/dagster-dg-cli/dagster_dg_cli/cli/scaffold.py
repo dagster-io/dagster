@@ -136,19 +136,12 @@ class ScaffoldDefsGroup(DgClickGroup):
             aliases=aliases,
         )
         @click.argument("instance_name", type=str)
-        @click.option(
-            "--format",
-            type=click.Choice(["yaml", "python"], case_sensitive=False),
-            default="yaml",
-            help="Format of the component configuration (yaml or python)",
-        )
         @click.pass_context
         @cli_telemetry_wrapper
         def scaffold_command(
             cli_context: click.Context,
             instance_name: str,
-            format: str,  # noqa: A002 "format" name required for click magic
-            **key_value_params: Any,
+            **other_opts: Any,
         ) -> None:
             f"""Scaffold a {key.name} object.
 
@@ -169,9 +162,18 @@ class ScaffoldDefsGroup(DgClickGroup):
             """
             # json_params will not be present in the key_value_params if no scaffold properties
             # are defined.
-            json_params = key_value_params.pop("json_params", None)
+            json_scaffolder_params = other_opts.pop("json_params", None)
+
+            # format option is only present if we are dealing with a component. Otherewise we
+            # default to python for decorator scaffolding. Default is YAML (set by option) for
+            # components.
+            scaffolder_format = cast("ScaffoldFormatOptions", other_opts.pop("format", "python"))
+
+            # Remanining options are scaffolder params
+            key_value_scaffolder_params = other_opts
+
             check.invariant(
-                format in ["yaml", "python"],
+                scaffolder_format in ["yaml", "python"],
                 "format must be either 'yaml' or 'python'",
             )
             cli_config = get_config_from_cli_context(cli_context)
@@ -180,9 +182,19 @@ class ScaffoldDefsGroup(DgClickGroup):
                 cli_config,
                 key,
                 instance_name,
-                key_value_params,
-                cast("ScaffoldFormatOptions", format),
-                json_params,
+                key_value_scaffolder_params,
+                scaffolder_format,
+                json_scaffolder_params,
+            )
+
+        if obj.is_component:
+            scaffold_command.params.append(
+                click.Option(
+                    ["--format"],
+                    type=click.Choice(["yaml", "python"], case_sensitive=False),
+                    default="yaml",
+                    help="Format of the component configuration (yaml or python)",
+                )
             )
 
         # If there are defined scaffold properties, add them to the command. Also only add
@@ -191,7 +203,6 @@ class ScaffoldDefsGroup(DgClickGroup):
             scaffold_command.params.append(
                 click.Option(
                     ["--json-params"],
-                    "json_params",
                     type=str,
                     default=None,
                     help="JSON string of scaffolder parameters. Mutually exclusive with passing individual parameters as options.",
