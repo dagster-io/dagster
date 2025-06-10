@@ -861,6 +861,8 @@ def _core_scaffold(
     scaffold_format: ScaffoldFormatOptions,
     json_params: Optional[Mapping[str, Any]] = None,
 ) -> None:
+    from pydantic import ValidationError
+
     dg_context = DgContext.for_project_environment(Path.cwd(), cli_config)
     registry = EnvRegistry.from_dg_context(dg_context)
     if not registry.has(object_key):
@@ -888,13 +890,22 @@ def _core_scaffold(
     else:
         scaffold_params = None
 
-    scaffold_registry_object(
-        Path(dg_context.defs_path) / instance_name,
-        object_key.to_typename(),
-        scaffold_params,
-        dg_context,
-        scaffold_format,
-    )
+    try:
+        scaffold_registry_object(
+            Path(dg_context.defs_path) / instance_name,
+            object_key.to_typename(),
+            scaffold_params,
+            dg_context,
+            scaffold_format,
+        )
+    except ValidationError as e:
+        exit_with_error(
+            (
+                f"Error validating scaffold parameters for `{object_key.to_typename()}`:\n\n"
+                f"{e.json(indent=4)}"
+            ),
+            do_format=False,
+        )
 
 
 # ########################
