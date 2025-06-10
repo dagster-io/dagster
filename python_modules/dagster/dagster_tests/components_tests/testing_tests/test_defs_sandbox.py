@@ -1,4 +1,7 @@
-from dagster.components.lib.executable_component.function_component import FunctionComponent
+from dagster.components.lib.executable_component.function_component import (
+    FunctionComponent,
+    FunctionSpec,
+)
 from dagster.components.testing import copy_code_to_file, scaffold_defs_sandbox
 
 
@@ -34,4 +37,5 @@ def test_nested_component() -> None:
             },
         ) as (component, defs):
             assert isinstance(component, FunctionComponent)
+            assert isinstance(component.execution, FunctionSpec)
             assert component.execution.name == "nested_component"
