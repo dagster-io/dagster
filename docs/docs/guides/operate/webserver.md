@@ -6,14 +6,14 @@ sidebar_position: 20
 
 The Dagster webserver serves the Dagster UI, a web-based interface for viewing and interacting with Dagster objects. It also responds to GraphQL queries.
 
-In the UI, you can inspect Dagster objects (ex: assets, jobs, schedules), launch runs, view launched runs, and view assets produced by those runs.
+In the UI, you can inspect Dagster objects (such as assets, jobs, schedules), launch runs, view launched runs, and view assets produced by those runs.
 
 ## Launching the webserver
 
 The easiest way to launch the webserver from the command line during local development is to run:
 
 ```shell
-dagster dev
+dg dev
 ```
 
 This command launches both the Dagster webserver and the [Dagster daemon](/deployment/execution/dagster-daemon), allowing you to start a full local deployment of Dagster from the command line.
