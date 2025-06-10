@@ -22,12 +22,7 @@ import tempfile
 from collections.abc import Iterator, Mapping
 from contextlib import contextmanager
 from dataclasses import dataclass
-<<<<<<< HEAD
-from typing import Any, Optional, Union
-=======
-from pathlib import Path
-from typing import Any, Callable, NamedTuple, Optional, Union
->>>>>>> bbe64b75a4 ([tests][refactor] add batch version of asset customization test)
+from typing import Any, NamedTuple, Optional, Union
 
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._utils import alter_sys_path
@@ -446,6 +441,8 @@ def copy_code_to_file(fn: Callable, file_path: Path) -> None:
     source_code_text = "\n".join(source_code_text.split("\n")[1:])
     dedented_source_code_text = textwrap.dedent(source_code_text)
     file_path.write_text(dedented_source_code_text)
+
+
 class TranslationTestCase(NamedTuple):
     name: str
     attributes: dict[str, Any]
