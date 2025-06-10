@@ -2,6 +2,7 @@ import argparse
 
 from rabbitmq.publisher import CSVRecordPublisher
 
+
 def main():
     parser = argparse.ArgumentParser(prog="publish_machine_statuses")
     parser.add_argument("-T", "--period", type=float, default=None)
@@ -12,10 +13,10 @@ def main():
     publisher = CSVRecordPublisher(
         queue_name="daily_statuses",
         filename="data/predictive_maintenance.csv",
-        cols=["UDI", "Target"]
+        cols=["UDI", "Target"],
     )
 
     publisher.run(period=args.period, num_records=args.num_records, offset=args.offset)
 
-main()
 
+main()
