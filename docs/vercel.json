@@ -1866,29 +1866,19 @@
     },
     {
       "source": "/next/guides/build/components",
-      "destination": "/guides/labs/components/"
+      "destination": "/guides/build/components/"
     },
     {
       "source": "/next/guides/build/components/",
-      "destination": "/guides/labs/components/"
+      "destination": "/guides/build/components/"
     },
     {
       "source": "/next/guides/build/components/:path",
-      "destination": "/guides/labs/components/:path"
+      "destination": "/guides/build/components/:path"
     },
     {
       "source": "/guides/build/components",
-      "destination": "/guides/labs/components/",
-      "permanent": false
-    },
-    {
-      "source": "/guides/build/components/",
-      "destination": "/guides/labs/components/",
-      "permanent": false
-    },
-    {
-      "source": "/guides/build/components/:path",
-      "destination": "/guides/labs/components/:path",
+      "destination": "/guides/build/components/",
       "permanent": false
     },
     {
@@ -1907,68 +1897,68 @@
     },
     {
       "source": "/guides/labs/dg/scaffolding-a-project",
-      "destination": "/guides/labs/dg/creating-a-project"
+      "destination": "/guides/build/projects/creating-a-new-project"
     },
     {
       "source": "/guides/labs/components/building-pipelines-with-components/creating-a-code-location-with-components",
-      "destination": "/guides/labs/components/building-pipelines-with-components"
+      "destination": "/guides/build/components/building-pipelines-with-components"
     },
     {
       "source": "/guides/labs/components/building-pipelines-with-components/creating-a-project-with-components",
-      "destination": "/guides/labs/components/building-pipelines-with-components"
+      "destination": "/guides/build/components/building-pipelines-with-components"
     },
     {
       "source": "/guides/labs/components/creating-a-component",
-      "destination": "/guides/labs/components/creating-new-components/creating-and-registering-a-component"
+      "destination": "/guides/build/components/creating-new-components/creating-and-registering-a-component"
     },
     {
       "source": "/guides/labs/components/creating-new-component-types/customizing-components",
-      "destination": "/guides/labs/components/creating-new-components/subclassing-components"
+      "destination": "/guides/build/components/creating-new-components/subclassing-components"
     },
     {
       "source": "/guides/labs/components/existing-code-location",
-      "destination": "/guides/labs/components/incrementally-adopting-components/existing-project"
+      "destination": "/guides/build/projects/migrating-project"
     },
     {
       "source": "/guides/labs/components/migrating-definitions",
-      "destination": "/guides/labs/components/incrementally-adopting-components/existing-definitions"
+      "destination": "/guides/build/projects/migrating-definitions"
     },
     {
       "source": "/guides/labs/components/setting-up-a-deployment",
-      "destination": "/guides/labs/components/managing-multiple-projects"
+      "destination": "/guides/build/projects/multiple-projects"
     },
     {
       "source": "/guides/labs/components/using-a-component",
-      "destination": "/guides/labs/components/building-pipelines-with-components/adding-component-definitions"
+      "destination": "/guides/build/components/building-pipelines-with-components/adding-component-definitions"
     },
     {
       "source": "/guides/labs/components/using-a-component-python",
-      "destination": "/guides/labs/components/building-pipelines-with-components/adding-component-definitions"
+      "destination": "/guides/build/components/building-pipelines-with-components/adding-component-definitions"
     },
     {
       "source": "/guides/labs/components/building-pipelines-with-components/adding-components-python",
-      "destination": "/guides/labs/components/building-pipelines-with-components/adding-component-definitions"
+      "destination": "/guides/build/components/building-pipelines-with-components/adding-component-definitions"
     },
     {
       "source": "/guides/labs/components/building-pipelines-with-components/adding-component-definitions",
-      "destination": "/guides/labs/components/building-pipelines-with-components/adding-component-definitions"
+      "destination": "/guides/build/components/building-pipelines-with-components/adding-component-definitions"
     },
     {
       "source": "/guides/labs/components/incrementally-adopting-components/existing-code-location",
-      "destination": "/guides/labs/components/incrementally-adopting-components/existing-project"
+      "destination": "/guides/build/components/incrementally-adopting-components/existing-project"
     },
     {
       "source": "/guides/labs/components/managing-multiple-code-locations",
-      "destination": "/guides/labs/components/managing-multiple-projects"
+      "destination": "/guides/build/projects/multiple-projects"
     },
     {
       "source": "/guides/preview/",
-      "destination": "/guides/labs/",
+      "destination": "/guides/labs",
       "permanent": false
     },
     {
       "source": "/guides/preview",
-      "destination": "/guides/labs/",
+      "destination": "/guides/labs",
       "permanent": false
     },
     {
@@ -1978,7 +1968,7 @@
     },
     {
       "source": "/guides/preview/components/",
-      "destination": "/guides/labs/components/"
+      "destination": "/guides/build/components"
     },
     {
       "source": "/changelog",
@@ -3172,7 +3162,7 @@
     },
     {
       "source": "/guides/labs/dg/dagster-dg-cli",
-      "destination": "/api/dagster/dg-cli"
+      "destination": "/api/dg/dg-cli"
     },
     {
       "source": "/guides/labs/create-dagster",
@@ -3180,23 +3170,79 @@
     },
     {
       "source": "/guides/labs/components/creating-new-component-types",
-      "destination": "/guides/labs/components/creating-new-components"
+      "destination": "/guides/build/components/creating-new-components"
     },
     {
       "source": "/guides/labs/components/creating-new-component-types/testing-your-component-type",
-      "destination": "/guides/labs/components/creating-new-components/testing-your-component"
+      "destination": "/guides/build/components/creating-new-components/testing-your-component"
     },
     {
       "source": "/guides/labs/components/creating-new-component-types/creating-and-registering-a-component-type",
-      "destination": "/guides/labs/components/creating-new-components/creating-and-registering-a-component"
+      "destination": "/guides/build/components/creating-new-components/creating-and-registering-a-component"
     },
     {
       "source": "/guides/labs/components/creating-new-component-types/subclassing-component-types",
-      "destination": "/guides/labs/components/creating-new-components/subclassing-components"
+      "destination": "/guides/build/components/creating-new-components/subclassing-components"
     },
     {
       "source": "/guides/labs/components/creating-new-component-types/component-type-customization",
-      "destination": "/guides/labs/components/creating-new-components/component-customization"
+      "destination": "/guides/build/components/creating-new-components/component-customization"
+    },
+    {
+      "source": "/guides/labs/components/components-etl-pipeline-tutorial",
+      "destination": "/etl-pipeline-tutorial"
+    },
+    {
+      "source": "/guides/labs/components/:path*",
+      "destination": "/guides/build/components/:path*"
+    },
+    {
+      "source": "/guides/labs/dg/creating-a-project",
+      "destination": "/guides/build/projects/creating-a-new-project"
+    },
+    {
+      "source": "/guides/labs/dg/configuring-dg",
+      "destination": "/api/dg/dg-cli-configuration"
+    },
+    {
+      "source": "/api/dagster/dg-cli",
+      "destination": "/api/dg/dg-cli"
+    },
+    {
+      "source": "/guides/labs/dg/dagster-definitions",
+      "destination": "/api/dg/dg-cli"
+    },
+    {
+      "source": "/guides/labs/dg/using-resources",
+      "destination": "/guides/build/external-resources/using-resources"
+    },
+    {
+      "source": "/guides/labs/dg/multiple-projects",
+      "destination": "/guides/build/projects/multiple-projects"
+    },
+    {
+      "source": "/guides/labs/dg/incrementally-adopting-dg",
+      "destination": "/guides/build/projects/migrating-project"
+    },
+    {
+      "source": "guides/labs/dg/incrementally-adopting-dg/migrating-definitions",
+      "destination": "/guides/build/projects/migrating-definitions"
+    },
+    {
+      "source": "/guides/labs/dg/incrementally-adopting-dg/migrating-project",
+      "destination": "/guides/build/projects/migrating-project"
+    },
+    {
+      "source": "/guides/labs/dg/configuring-dg",
+      "destination": "/api/dg/dg-configuration"
+    },
+    {
+      "source": "/api/dagster/create-dagster",
+      "destination": "/api/dg/create-dagster"
+    },
+    {
+      "source": "/guides/labs/dg",
+      "destination": "/getting-started/installation"
     }
   ],
   "trailingSlash": false

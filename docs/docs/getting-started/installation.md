@@ -109,5 +109,5 @@ If you encounter any issues during the installation process:
 ## Next steps
 
 - Get up and running with your first Dagster project in the [Quickstart](/getting-started/quickstart)
-- Learn more about the [`dg` CLI and modern Dagster development](/guides/labs/dg)
+- Learn more about the [`dg` CLI and modern Dagster development](/api/dg)
 - Learn to [create data assets in Dagster](/guides/build/assets/defining-assets)
