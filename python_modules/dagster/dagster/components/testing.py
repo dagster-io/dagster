@@ -475,9 +475,9 @@ class TestTranslation:
                 None,
             ),
             (
-                {"deps": ["customers"]},
+                {"deps": ["nonexistent"]},
                 lambda asset_spec: len(asset_spec.deps) == 1
-                and asset_spec.deps[0].asset_key == AssetKey("customers"),
+                and asset_spec.deps[0].asset_key == AssetKey("nonexistent"),
                 None,
             ),
             (
