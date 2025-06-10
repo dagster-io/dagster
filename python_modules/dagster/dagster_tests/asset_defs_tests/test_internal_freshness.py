@@ -2,7 +2,7 @@ from datetime import timedelta
 
 import pytest
 from dagster import AssetKey, AssetsDefinition, AssetSpec, Definitions
-from dagster._check import CheckError
+from dagster._check import CheckError, ParameterCheckError
 from dagster._core.definitions.asset_spec import attach_internal_freshness_policy
 from dagster._core.definitions.decorators.asset_decorator import asset
 from dagster._core.definitions.freshness import (
@@ -17,6 +17,26 @@ from dagster_shared.serdes.utils import SerializableTimeDelta
 from dagster_tests.core_tests.host_representation_tests.test_external_data import (
     _get_asset_node_snaps_from_definitions,
 )
+
+
+class TestAttachInternalFreshnessPolicy:
+    def test_attach_internal_freshness_policy_explicit_none_fails(self) -> None:
+        """Check that we cannot apply a null policy to assets."""
+
+        @asset
+        def asset_no_freshness():
+            pass
+
+        defs = Definitions(assets=[asset_no_freshness])
+
+        with pytest.raises(ParameterCheckError):
+            defs.map_asset_specs(
+                func=lambda spec: attach_internal_freshness_policy(
+                    spec,
+                    None,
+                    overwrite_existing=False,
+                )
+            )
 
 
 class TestTimeWindowFreshnessPolicy:
