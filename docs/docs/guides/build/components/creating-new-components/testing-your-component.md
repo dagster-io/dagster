@@ -52,7 +52,7 @@ def test_scaffold_sling():
 
 `scaffold_defs_sandbox` yields an object of type `DefsPathSandbox` as a context manager. You can use the object to load the component instance and the definitions it produces.
 
-For example, the following is code from our tests of our [dlt component](/guides/labs/components/integrations/dlt-component-tutorial) on already-created `DefsPathSandbox`. In this case, we ensure that the definitions have loaded, and that the correct asset keys have been created:
+For example, the following is code from our tests of our [dlt component](/guides/build/components/integrations/dlt-component-tutorial) on already-created `DefsPathSandbox`. In this case, we ensure that the definitions have loaded, and that the correct asset keys have been created:
 
 ```python
 with defs_sandbox.load() as (component, defs):

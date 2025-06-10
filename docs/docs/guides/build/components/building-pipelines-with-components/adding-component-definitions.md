@@ -36,7 +36,7 @@ If the component you want to use is not available in your environment, you will 
   </TabItem>
 </Tabs>
 
-For more information on integrations available as Dagster components, see the [integrations documentation](/integrations).
+For more information on integrations available as Dagster components, see the [integrations documentation](/integrations/libraries).
 
 ### Viewing component documentation
 
