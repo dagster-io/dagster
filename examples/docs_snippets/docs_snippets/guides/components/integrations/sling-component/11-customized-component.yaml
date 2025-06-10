@@ -10,4 +10,4 @@ attributes:
     - path: ./replication.yaml
       translation:
         group_name: sling_data
-        description: "Loads data from Sling replication {{ stream_definition.object }}"
+        description: "Loads data from Sling replication {{ stream_definition.name }}"

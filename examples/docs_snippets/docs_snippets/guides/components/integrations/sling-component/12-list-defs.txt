@@ -14,11 +14,14 @@ dg list defs
 │         │ ├───────────────────────────┼────────────┼────────────────────────┼───────┼──────────────────────────────┤ │
 │         │ │ target/main/raw_customers │ sling_data │ file_raw_customers/csv │ sling │ Loads data from Sling        │ │
 │         │ │                           │            │                        │       │ replication                  │ │
+│         │ │                           │            │                        │       │ file://raw_customers.csv     │ │
 │         │ ├───────────────────────────┼────────────┼────────────────────────┼───────┼──────────────────────────────┤ │
 │         │ │ target/main/raw_orders    │ sling_data │ file_raw_orders/csv    │ sling │ Loads data from Sling        │ │
 │         │ │                           │            │                        │       │ replication                  │ │
+│         │ │                           │            │                        │       │ file://raw_orders.csv        │ │
 │         │ ├───────────────────────────┼────────────┼────────────────────────┼───────┼──────────────────────────────┤ │
 │         │ │ target/main/raw_payments  │ sling_data │ file_raw_payments/csv  │ sling │ Loads data from Sling        │ │
 │         │ │                           │            │                        │       │ replication                  │ │
+│         │ │                           │            │                        │       │ file://raw_payments.csv      │ │
 │         │ └───────────────────────────┴────────────┴────────────────────────┴───────┴──────────────────────────────┘ │
 └─────────┴────────────────────────────────────────────────────────────────────────────────────────────────────────────┘

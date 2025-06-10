@@ -168,7 +168,7 @@ def test_components_docs_sling_workspace(
                     - path: ./replication.yaml
                       translation:
                         group_name: sling_data
-                        description: "Loads data from Sling replication {{ stream_definition.object }}"
+                        description: "Loads data from Sling replication {{ stream_definition.name }}"
                 """
             ),
             snippet_path=f"{context.get_next_snip_number()}-customized-component.yaml",
