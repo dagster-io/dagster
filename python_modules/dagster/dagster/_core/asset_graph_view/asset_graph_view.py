@@ -31,6 +31,7 @@ from dagster._core.definitions.time_window_partitions import (
     TimeWindowPartitionsSubset,
     get_time_partitions_def,
 )
+from dagster._core.event_api import AssetRecordsFilter
 from dagster._core.loader import LoadingContext
 from dagster._time import get_current_datetime
 from dagster._utils.aiodataloader import DataLoader
@@ -285,16 +286,27 @@ class AssetGraphView(LoadingContext):
         return EntitySubset(self, key=subset.key, value=_ValidatedEntitySubsetValue(subset.value))
 
     def get_asset_subset_from_asset_partitions(
-        self, key: AssetKey, asset_partitions: AbstractSet[AssetKeyPartitionKey]
+        self,
+        key: AssetKey,
+        asset_partitions: AbstractSet[AssetKeyPartitionKey],
+        validate: bool,
     ) -> EntitySubset[AssetKey]:
         check.invariant(
             all(akpk.asset_key == key for akpk in asset_partitions),
             "All asset partitions must match input asset key.",
         )
-        partition_keys = {
-            akpk.partition_key for akpk in asset_partitions if akpk.partition_key is not None
-        }
         partitions_def = self._get_partitions_def(key)
+        partition_keys = {
+            akpk.partition_key
+            for akpk in asset_partitions
+            if akpk.partition_key is not None
+            and (
+                validate is False
+                or partitions_def.has_partition_key(
+                    akpk.partition_key, self.effective_dt, self._queryer
+                )
+            )
+        }
         value = (
             partitions_def.subset_with_partition_keys(partition_keys)
             if partitions_def
@@ -432,7 +444,9 @@ class AssetGraphView(LoadingContext):
                 )
 
         keys_subset = self.get_asset_subset_from_asset_partitions(
-            asset_subset.key, {AssetKeyPartitionKey(asset_subset.key, pk) for pk in partition_keys}
+            asset_subset.key,
+            {AssetKeyPartitionKey(asset_subset.key, pk) for pk in partition_keys},
+            validate=False,
         )
         return asset_subset.compute_intersection(keys_subset)
 
@@ -596,7 +610,7 @@ class AssetGraphView(LoadingContext):
                 if not self._queryer.asset_partition_has_materialization_or_observation(ap)
             }
             return self.get_asset_subset_from_asset_partitions(
-                key=key, asset_partitions=missing_asset_partitions
+                key=key, asset_partitions=missing_asset_partitions, validate=False
             )
 
     @cached_method
@@ -714,6 +728,69 @@ class AssetGraphView(LoadingContext):
             ),
         )
 
+    @cached_method
+    async def _compute_latest_event_storage_id(self, key: AssetKey) -> Optional[int]:
+        from dagster._core.storage.event_log.base import AssetRecord
+
+        asset_record = await AssetRecord.gen(self, key)
+        if asset_record and asset_record.asset_entry.last_materialization:
+            return asset_record.asset_entry.last_materialization.storage_id
+        else:
+            return None
+
+    @cached_method
+    async def _compute_materialized_since_storage_id_subset(
+        self, key: AssetKey, since_storage_id: int
+    ) -> EntitySubset[AssetKey]:
+        from dagster._core.storage.event_log.base import AssetRecord, DagsterEventType
+
+        asset_record = await AssetRecord.gen(self, key)
+        if (
+            asset_record
+            and (asset_record.asset_entry.last_materialization_storage_id or 0) <= since_storage_id
+        ):
+            return self.get_empty_subset(key=key)
+
+        partitions_def = self._get_partitions_def(key)
+        if partitions_def is None:
+            return self.get_empty_subset(key=key)
+
+        # in most cases, the number of new events will be small, so we can fetch all of them at once
+        result = self.instance.fetch_materializations(
+            records_filter=AssetRecordsFilter(
+                asset_key=key, after_cursor=since_storage_id, limit=1000
+            )
+        )
+        if not result.has_more:
+            partition_keys = {record.partition_key for record in result.records}
+        else:
+            latest_storage_ids = self.instance.event_log_storage.get_latest_storage_id_by_partition(
+                asset_key=key, event_type=DagsterEventType.ASSET_MATERIALIZATION
+            )
+            partition_keys = {
+                partition_key
+                for partition_key, storage_id in latest_storage_ids.items()
+                if storage_id > since_storage_id
+            }
+        return self.get_asset_subset_from_asset_partitions(
+            key=key,
+            asset_partitions={AssetKeyPartitionKey(key, pk) for pk in partition_keys},
+            validate=True,
+        )
+
+    @cached_method
+    async def _compute_data_version_updated_since_storage_id_subset(
+        self, key: AssetKey, since_storage_id: int
+    ) -> EntitySubset[AssetKey]:
+        # fast path for cases where there are no new events at all
+        latest_storage_id = await self._compute_latest_event_storage_id(key)
+        if latest_storage_id <= since_storage_id:
+            return self.get_empty_subset(key=key)
+
+        partitions_def = self._get_partitions_def(key)
+        if partitions_def is None:
+            return self.get_full_subset(key=key)
+
     async def _compute_updated_since_cursor_subset(
         self, key: AssetKey, cursor: Optional[int], require_data_version_update: bool = False
     ) -> EntitySubset[AssetKey]:
@@ -803,6 +880,7 @@ class AssetGraphView(LoadingContext):
                     AssetKeyPartitionKey(asset_key, pk)
                     for pk in partitions_def.get_partition_keys_in_time_window(time_window)
                 },
+                validate=False,
             )
         )
 
@@ -833,6 +911,7 @@ class AssetGraphView(LoadingContext):
                     dynamic_partitions_store=self._queryer,
                 )
             },
+            validate=False,
         )
 
 
