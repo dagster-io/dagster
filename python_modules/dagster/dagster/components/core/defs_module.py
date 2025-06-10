@@ -423,7 +423,7 @@ def load_yaml_component_from_path(context: ComponentLoadContext, component_def_p
             else nullcontext()
         ):
             asset_post_processor_lists.append(
-                asset_post_processer_list_from_post_processing_dict(
+                asset_post_processor_list_from_post_processing_dict(
                     context.resolution_context, component_file_model.post_processing
                 )
             )
@@ -464,7 +464,7 @@ def get_attributes_model(
         return TypeAdapter(model_cls).validate_python(component_file_model.attributes)
 
 
-def asset_post_processer_list_from_post_processing_dict(
+def asset_post_processor_list_from_post_processing_dict(
     resolution_context: ResolutionContext, post_processing: Optional[Mapping[str, Any]]
 ) -> list[AssetPostProcessor]:
     if not post_processing:
