@@ -13,7 +13,7 @@ You can scaffold Dagster Component definitions in your project from the command 
 
 :::note Prerequisites
 
-Before scaffolding a component definition, you must either [create a components-ready Dagster project](/guides/labs/dg/creating-a-project) or [migrate an existing project to `dg`](/guides/labs/dg/incrementally-adopting-dg/migrating-project).
+Before scaffolding a component definition, you must either [create a components-ready Dagster project](/guides/build/projects/creating-a-new-project) or [migrate an existing project to `dg`](/guides/build/projects/migrating-project).
 
 :::
 
@@ -36,7 +36,7 @@ If the component you want to use is not available in your environment, you will 
   </TabItem>
 </Tabs>
 
-For more information on integrations available as Dagster components, see the [components integrations documentation](/guides/labs/components/integrations).
+For more information on integrations available as Dagster components, see the [integrations documentation](/integrations).
 
 ### Viewing component documentation
 

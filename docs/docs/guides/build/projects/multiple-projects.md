@@ -11,7 +11,7 @@ import DgComponentsRc from '@site/docs/partials/\_DgComponentsRc.md';
 
 :::note
 
-If you're just getting started, we recommend [creating a single project](/guides/build/projects/creating-a-project) instead of a workspace with multiple projects.
+If you're just getting started, we recommend [creating a single project](/guides/build/projects/creating-a-new-project) instead of a workspace with multiple projects.
 
 :::
 

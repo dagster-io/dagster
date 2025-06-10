@@ -10,7 +10,7 @@ import DgComponentsRc from '@site/docs/partials/\_DgComponentsRc.md';
 
 :::note
 
-To create a components-ready project, follow the steps in "[Creating a Dagster project](/guides/labs/dg/creating-a-project)".
+To create a components-ready project, follow the steps in "[Creating a Dagster project](/guides/build/projects/creating-a-new-project)".
 
 :::
 

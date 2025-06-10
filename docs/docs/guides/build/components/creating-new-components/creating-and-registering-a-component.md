@@ -14,7 +14,7 @@ In most cases, components map to a specific technology. For example, you might c
 
 ## Prerequisites
 
-Before creating and registering custom components, you will need to [create a components-ready project](/guides/labs/dg/creating-a-project).
+Before creating and registering custom components, you will need to [create a components-ready project](/guides/build/projects/creating-a-new-project).
 
 ## Creating a new component
 
