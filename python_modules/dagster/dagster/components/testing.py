@@ -538,3 +538,38 @@ class TestTranslation:
     @pytest.fixture
     def key_modifier(self, translation_params):
         return translation_params[2]
+
+
+class TestOpCustomization:
+    """Pytest test class for testing customization of op spec. You can subclass
+    this class and implement a test_op_customization function using the various fixtures in
+    order to comprehensively test op spec customization options for your component.
+    """
+
+    @pytest.fixture(
+        params=[
+            (
+                {"name": "my_op"},
+                lambda op: op.name == "my_op",
+            ),
+            (
+                {"tags": {"foo": "bar"}},
+                lambda op: op.tags.get("foo") == "bar",
+            ),
+            (
+                {"backfill_policy": {"type": "single_run"}},
+                lambda op: op.backfill_policy.max_partitions_per_run is None,
+            ),
+        ],
+        ids=["name", "tags", "backfill_policy"],
+    )
+    def translation_params(self, request):
+        return request.param
+
+    @pytest.fixture
+    def attributes(self, translation_params):
+        return translation_params[0]
+
+    @pytest.fixture
+    def assertion(self, translation_params):
+        return translation_params[1]
