@@ -34,6 +34,8 @@ from dagster.components.core.defs_module import (
 )
 from dagster.components.scaffold.scaffold import ScaffoldFormatOptions
 
+# Unfortunate hack - we only use this util in pytest tests, we just drop in a no-op
+# implementation if pytest is not installed.
 try:
     import pytest  # type: ignore
 except ImportError:
