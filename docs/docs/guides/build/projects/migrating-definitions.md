@@ -10,11 +10,11 @@ import DgComponentsRc from '@site/docs/partials/\_DgComponentsRc.md';
 
 :::note
 
-This guide covers using existing Dagster definitions with a `dg`-compatible project. To convert an existing project to use `dg`, see "[Converting an existing project to use `dg`](/guides/labs/dg/incrementally-adopting-dg/migrating-project)".
+This guide covers using existing Dagster definitions with a `dg`-compatible project. To convert an existing project to use `dg`, see "[Converting an existing project to use `dg`](/guides/build/projects/migrating-project)".
 
 :::
 
-In projects [created with `create-dagster`](/guides/build/projects/creating-a-project), all definitions are typically kept in the `defs/` directory. However, if you've converted an existing project to use `dg`, you may have definitions located in various other modules. This guide will show you how to move these existing definitions into the `defs` directory in a way that will allow them to be automatically loaded.
+In projects [created with `create-dagster`](/guides/build/projects/creating-a-new-project), all definitions are typically kept in the `defs/` directory. However, if you've converted an existing project to use `dg`, you may have definitions located in various other modules. This guide will show you how to move these existing definitions into the `defs` directory in a way that will allow them to be automatically loaded.
 
 ## Example project structure
 
