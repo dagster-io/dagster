@@ -170,8 +170,7 @@ A resource is typically used to connect to an external service or system, such a
 
 Let's take a look at an example from the [Dagster Crash Course](https://dagster.io/blog/dagster-crash-course-oct-2022), which creates a GitHub resource and supplies it to assets. Let's start by looking at the resource:
 
-```python
-## resources.py
+```python title="src/my_project/defs/my_resource.py"
 
 from dagster import StringSource, resource
 from github import Github
