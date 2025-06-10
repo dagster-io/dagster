@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Any, Optional
 
 import click
-from dagster_dg_core.component import RemotePluginRegistry, all_components_schema_from_dg_context
+from dagster_dg_core.component import EnvRegistry, all_components_schema_from_dg_context
 from dagster_dg_core.config import (
     DgRawBuildConfig,
     merge_build_configs,
@@ -29,7 +29,7 @@ from dagster_dg_core.utils.editor import (
 from dagster_dg_core.utils.mcp_client.claude_desktop import get_claude_desktop_config_path
 from dagster_dg_core.utils.telemetry import cli_telemetry_wrapper
 from dagster_shared import check
-from dagster_shared.serdes.objects import PluginObjectKey
+from dagster_shared.serdes.objects import EnvRegistryKey
 from packaging.version import Version
 
 DEFAULT_SCHEMA_FOLDER_NAME = ".dg"
@@ -156,8 +156,8 @@ def inspect_component_type_command(
     """Get detailed information on a registered Dagster component type."""
     cli_config = normalize_cli_config(global_options, click.get_current_context())
     dg_context = DgContext.for_defined_registry_environment(target_path, cli_config)
-    registry = RemotePluginRegistry.from_dg_context(dg_context)
-    component_key = PluginObjectKey.from_typename(component_type)
+    registry = EnvRegistry.from_dg_context(dg_context)
+    component_key = EnvRegistryKey.from_typename(component_type)
     if not registry.has(component_key):
         exit_with_error(generate_missing_plugin_object_error_message(component_type))
     elif sum([description, scaffold_params_schema, component_schema]) > 1:

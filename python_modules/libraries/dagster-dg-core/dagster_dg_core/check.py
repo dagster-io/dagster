@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, NamedTuple, Optional
 
 import click
-from dagster_shared.serdes.objects import PluginObjectKey
+from dagster_shared.serdes.objects import EnvRegistryKey
 from dagster_shared.yaml_utils import parse_yaml_with_source_position
 from dagster_shared.yaml_utils.source_position import (
     LineCol,
@@ -13,11 +13,7 @@ from dagster_shared.yaml_utils.source_position import (
 )
 from yaml.scanner import ScannerError
 
-from dagster_dg_core.component import (
-    RemotePluginRegistry,
-    get_specified_env_var_deps,
-    get_used_env_vars,
-)
+from dagster_dg_core.component import EnvRegistry, get_specified_env_var_deps, get_used_env_vars
 from dagster_dg_core.context import DgContext
 from dagster_dg_core.utils.check_utils import error_dict_to_formatted_error
 
@@ -55,7 +51,7 @@ def _scaffold_value_and_source_position_tree(
 
 
 class ErrorInput(NamedTuple):
-    object_key: Optional[PluginObjectKey]
+    object_key: Optional[EnvRegistryKey]
     error: "ValidationError"
     source_position_tree: ValueAndSourcePositionTree
 
@@ -73,7 +69,7 @@ def check_yaml(
     validation_errors: list[ErrorInput] = []
     all_specified_env_var_deps = set()
 
-    component_contents_by_key: dict[PluginObjectKey, Any] = {}
+    component_contents_by_key: dict[EnvRegistryKey, Any] = {}
     modules_to_fetch = set()
     for component_dir in dg_context.defs_path.rglob("*"):
         if resolved_paths and not any(
@@ -149,16 +145,16 @@ def check_yaml(
             qualified_key = (
                 f"{component_instance_module}{raw_key}" if raw_key.startswith(".") else raw_key
             )
-            key = PluginObjectKey.from_typename(qualified_key)
+            key = EnvRegistryKey.from_typename(qualified_key)
             component_contents_by_key[key] = component_doc_tree
 
-            # We need to fetch components from any modules local to the project because these are
-            # not cached with the components from the general environment.
-            if key.namespace.startswith(dg_context.defs_module_name):
-                modules_to_fetch.add(key.namespace)
+            # Add every module referenced to be explicitly fetched. If we don't do this, only
+            # modules that are explicitly declared as registry modules will work.
+            # `from_dg_context()` on the registry ensures that modules aren't double-fetched.
+            modules_to_fetch.add(key.namespace)
 
     # Fetch the local component types, if we need any local components
-    component_registry = RemotePluginRegistry.from_dg_context(
+    component_registry = EnvRegistry.from_dg_context(
         dg_context, extra_modules=list(modules_to_fetch)
     )
     for key, component_doc_tree in component_contents_by_key.items():

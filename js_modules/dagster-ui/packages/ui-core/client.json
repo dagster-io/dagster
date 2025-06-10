@@ -43,6 +43,7 @@
   "AssetCheckDetailsQuery": "dafb023319ef2c8aa8075c43686b318d3206f5781b8b87cf21130db3172a9f71",
   "AssetChecksQuery": "655a37486ebc6427fe969b59420b9590440a901b3b0c7adc4c8a9873c593a7fe",
   "AssetDaemonTicksQuery": "399ac77e660d40eba32c2ab06db2a2936a71e660d93ec108364eec1fdfc16788",
+  "JobTileQuery": "6fd1bb8a16c8bd5fff0fb75f6608d5402a426d5c2763fefcb61d60e94ff0a3e8",
   "AssetColumnLineage": "bcb70460f77b88bbbfaec90982f3e99f522d9a4e270e63832684cfde169fabc7",
   "AssetRecordsQuery": "1778f6a11acc440983fcf6b6156518b3113c7fa29127130bb30a3e0140807575",
   "GetAutoMaterializePausedQuery": "50f74183f54031274136ab855701d01f26642a6d958d7452ae13aa6c40ca349d",

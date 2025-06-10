@@ -8,7 +8,7 @@ from typing import Any, Callable, NamedTuple, Optional, cast
 
 import click
 from click.core import ParameterSource
-from dagster_dg_core.component import RemotePluginRegistry
+from dagster_dg_core.component import EnvRegistry
 from dagster_dg_core.config import (
     DgRawCliConfig,
     get_config_from_cli_context,
@@ -37,14 +37,14 @@ from dagster_dg_core.utils import (
 from dagster_dg_core.utils.telemetry import cli_telemetry_wrapper
 from dagster_shared import check
 from dagster_shared.plus.config import DagsterPlusCliConfig
-from dagster_shared.serdes.objects import PluginObjectKey, PluginObjectSnap
+from dagster_shared.serdes.objects import EnvRegistryKey, EnvRegistryObjectSnap
 
 from dagster_dg_cli.cli.plus.constants import DgPlusAgentPlatform, DgPlusAgentType
 from dagster_dg_cli.scaffold import (
     ScaffoldFormatOptions,
     scaffold_component,
     scaffold_inline_component,
-    scaffold_library_object,
+    scaffold_registry_object,
 )
 from dagster_dg_cli.utils.plus.build import (
     create_deploy_dockerfile,
@@ -101,11 +101,11 @@ class ScaffoldDefsGroup(DgClickGroup):
         config = get_config_from_cli_context(cli_context)
         dg_context = DgContext.for_defined_registry_environment(Path.cwd(), config)
 
-        registry = RemotePluginRegistry.from_dg_context(dg_context)
+        registry = EnvRegistry.from_dg_context(dg_context)
 
         # Keys where the actual class name is not shared with any other key will use the class name
         # as a command alias.
-        keys_by_name: dict[str, set[PluginObjectKey]] = {}
+        keys_by_name: dict[str, set[EnvRegistryKey]] = {}
         for key in registry.keys():
             keys_by_name.setdefault(key.name, set()).add(key)
 
@@ -117,7 +117,10 @@ class ScaffoldDefsGroup(DgClickGroup):
         self._commands_defined = True
 
     def _create_subcommand(
-        self, key: PluginObjectKey, obj: PluginObjectSnap, use_typename_alias: bool
+        self,
+        key: EnvRegistryKey,
+        obj: EnvRegistryObjectSnap,
+        use_typename_alias: bool,
     ) -> None:
         # We need to "reset" the help option names to the default ones because we inherit the parent
         # value of context settings from the parent group, which has been customized.
@@ -846,14 +849,14 @@ def scaffold_github_actions_command(git_root: Optional[Path], **global_options: 
 def _core_scaffold(
     cli_context: click.Context,
     cli_config: DgRawCliConfig,
-    object_key: PluginObjectKey,
+    object_key: EnvRegistryKey,
     instance_name: str,
     key_value_params,
     json_params,
     scaffold_format: ScaffoldFormatOptions,
 ) -> None:
     dg_context = DgContext.for_project_environment(Path.cwd(), cli_config)
-    registry = RemotePluginRegistry.from_dg_context(dg_context)
+    registry = EnvRegistry.from_dg_context(dg_context)
     if not registry.has(object_key):
         exit_with_error(f"Scaffoldable object type `{object_key.to_typename()}` not found.")
     elif dg_context.has_component_instance(instance_name):
@@ -879,7 +882,7 @@ def _core_scaffold(
     else:
         scaffold_params = None
 
-    scaffold_library_object(
+    scaffold_registry_object(
         Path(dg_context.defs_path) / instance_name,
         object_key.to_typename(),
         scaffold_params,
@@ -919,11 +922,11 @@ def scaffold_component_command(
     """
     cli_config = normalize_cli_config(global_options, context)
     dg_context = DgContext.for_component_library_environment(target_path, cli_config)
-    registry = RemotePluginRegistry.from_dg_context(dg_context)
+    registry = EnvRegistry.from_dg_context(dg_context)
 
     module_name, class_name = _parse_component_name(dg_context, name)
 
-    component_key = PluginObjectKey(name=class_name, namespace=module_name)
+    component_key = EnvRegistryKey(name=class_name, namespace=module_name)
     if registry.has(component_key):
         exit_with_error(f"Component type `{component_key.to_typename()}` already exists.")
 

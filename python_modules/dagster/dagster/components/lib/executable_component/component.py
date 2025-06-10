@@ -4,6 +4,7 @@ from typing import Any, Optional, TypeVar, Union
 
 from dagster_shared import check
 
+from dagster._config.field import Field
 from dagster._core.definitions.asset_check_result import AssetCheckResult
 from dagster._core.definitions.asset_checks import AssetChecksDefinition
 from dagster._core.definitions.assets import AssetsDefinition
@@ -69,6 +70,10 @@ class ExecutableComponent(Component, Resolvable, Model, ABC):
     def resource_keys(self) -> set[str]:
         return set()
 
+    @property
+    def config_fields(self) -> Optional[dict[str, Field]]:
+        return None
+
     @abstractmethod
     def invoke_execute_fn(
         self,
@@ -89,6 +94,7 @@ class ExecutableComponent(Component, Resolvable, Model, ABC):
                 check_specs=self.checks,
                 required_resource_keys=self.resource_keys,
                 pool=self.op_metadata_spec.pool,
+                config_schema=self.config_fields,
             )
             def _assets_def(context: AssetExecutionContext, **kwargs):
                 return to_iterable(
@@ -106,6 +112,7 @@ class ExecutableComponent(Component, Resolvable, Model, ABC):
                 description=self.op_metadata_spec.description,
                 required_resource_keys=self.resource_keys,
                 pool=self.op_metadata_spec.pool,
+                config_schema=self.config_fields,
             )
             def _asset_check_def(context: AssetCheckExecutionContext, **kwargs):
                 return to_iterable(
