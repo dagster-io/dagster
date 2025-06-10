@@ -1,8 +1,12 @@
 import importlib
+import inspect
 import secrets
 import shutil
 import string
 import sys
+import textwrap
+from pathlib import Path
+from typing import Callable
 
 import yaml
 from dagster_shared import check
@@ -14,7 +18,6 @@ import tempfile
 from collections.abc import Iterator, Mapping
 from contextlib import contextmanager
 from dataclasses import dataclass
-from pathlib import Path
 from typing import Any, Optional, Union
 
 from dagster._core.definitions.definitions_class import Definitions
@@ -186,18 +189,24 @@ class DefsPathSandbox:
     @contextmanager
     def load_all(self) -> Iterator[list[tuple[Component, Definitions]]]:
         with alter_sys_path(to_add=[str(self.project_root / "src")], to_remove=[]):
-            module_path = f"{self.project_name}.defs.{self.component_path}"
+            module_path = get_module_path(
+                defs_module_name=f"{self.project_name}.defs", component_path=self.component_path
+            )
             try:
                 yield get_all_components_defs_from_defs_path(
                     project_root=self.project_root,
-                    component_path=self.component_path,
-                    project_name=self.project_name,
+                    module_path=module_path,
                 )
 
             finally:
                 modules_to_remove = [name for name in sys.modules if name.startswith(module_path)]
                 for name in modules_to_remove:
                     del sys.modules[name]
+
+
+def get_module_path(defs_module_name: str, component_path: Path):
+    component_module_path = str(component_path).replace("/", ".")
+    return f"{defs_module_name}.{component_module_path}"
 
 
 def flatten_components(parent_component: Optional[Component]) -> list[Component]:
@@ -209,18 +218,72 @@ def flatten_components(parent_component: Optional[Component]) -> list[Component]
         return []
 
 
+def get_component_defs_within_project(
+    *,
+    project_root: Union[str, Path],
+    component_path: Union[str, Path],
+    instance_key: int = 0,
+) -> tuple[Component, Definitions]:
+    """Get the component defs for a component within a project. This only works if dagster_dg_core is installed.
+
+    Args:
+        project_root: The root of the project.
+        component_path: The path to the component.
+
+    Returns:
+        A tuple of the component and its definitions.
+    """
+    all_component_defs = get_all_components_defs_within_project(
+        project_root=project_root, component_path=component_path
+    )
+    return all_component_defs[instance_key][0], all_component_defs[instance_key][1]
+
+
+def get_all_components_defs_within_project(
+    *,
+    project_root: Union[str, Path],
+    component_path: Union[str, Path],
+) -> list[tuple[Component, Definitions]]:
+    """Get all the component defs for a component within a project. This only works if dagster_dg_core is installed.
+
+    Args:
+        project_root: The root of the project.
+        component_path: The path to the component.
+
+    Returns:
+        A list of tuples of the component and its definitions.
+    """
+    try:
+        from dagster_dg_core.config import discover_config_file
+        from dagster_dg_core.context import DgContext
+    except ImportError:
+        raise Exception(
+            "dagster_dg_core is not installed. Please install it to use default project_name and defs module from pyproject.toml or dg.toml."
+        )
+
+    project_root = Path(project_root)
+    component_path = Path(component_path)
+
+    dg_context = DgContext.from_file_discovery_and_command_line_config(
+        path=check.not_none(discover_config_file(project_root), "No project config file found."),
+        command_line_config={},
+    )
+
+    return get_all_components_defs_from_defs_path(
+        module_path=get_module_path(dg_context.defs_module_name, component_path),
+        project_root=project_root,
+    )
+
+
 def get_all_components_defs_from_defs_path(
     *,
-    project_name: str,
-    project_root: Path,
-    component_path: Path,
-    defs_module_name: str = "defs",
+    module_path: str,
+    project_root: Union[str, Path],
 ) -> list[tuple[Component, Definitions]]:
-    module_path = f"{project_name}.{defs_module_name}.{component_path}"
     module = importlib.import_module(module_path)
     context = ComponentLoadContext.for_module(
         defs_module=module,
-        project_root=project_root,
+        project_root=Path(project_root),
         terminate_autoloading_on_keyword_files=False,
     )
     components = flatten_components(get_component(context))
@@ -228,13 +291,11 @@ def get_all_components_defs_from_defs_path(
 
 
 def get_component_defs_from_defs_path(
-    *,
-    project_name: str,
-    project_root: Path,
-    component_path: Path,
+    *, module_path: str, project_root: Union[str, Path]
 ) -> tuple[Component, Definitions]:
     components = get_all_components_defs_from_defs_path(
-        project_name=project_name, project_root=project_root, component_path=component_path
+        project_root=project_root,
+        module_path=module_path,
     )
     check.invariant(
         len(components) == 1,
@@ -337,3 +398,28 @@ def scaffold_defs_sandbox(
             component_path=Path(component_path),
             component_format=scaffold_format,
         )
+
+
+def copy_code_to_file(fn: Callable, file_path: Path) -> None:
+    """Takes a function and writes the body of the function to a file.
+
+    Args:
+        fn: The function to write to the file.
+        file_path: The path to the file to write the function to.
+
+    Example:
+
+    .. code-block:: python
+
+        def code_to_copy() -> None:
+            import dagster as dg
+
+            def execute_fn(context) -> dg.MaterializeResult:
+                return dg.MaterializeResult()
+
+        copy_code_to_file(code_to_copy, sandbox.defs_folder_path / "execute.py")
+    """
+    source_code_text = inspect.getsource(fn)
+    source_code_text = "\n".join(source_code_text.split("\n")[1:])
+    dedented_source_code_text = textwrap.dedent(source_code_text)
+    file_path.write_text(dedented_source_code_text)
