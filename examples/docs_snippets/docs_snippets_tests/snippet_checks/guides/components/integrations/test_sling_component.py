@@ -63,7 +63,7 @@ def test_components_docs_sling_workspace(
         context.run_command_and_snippet_output(
             cmd=f"uv add --editable {EDITABLE_DIR / 'dagster-sling'}",
             snippet_path=f"{context.get_next_snip_number()}-add-sling.txt",
-            print_cmd="uv add dagster-sling",
+            print_cmd="uv add dagster-sling duckdb",
             ignore_output=True,
         )
 
@@ -84,6 +84,11 @@ def test_components_docs_sling_workspace(
         context.check_file(
             Path("my_project") / "defs" / "sling_ingest" / "defs.yaml",
             snippet_path=f"{context.get_next_snip_number()}-component.yaml",
+        )
+
+        context.check_file(
+            Path("my_project") / "defs" / "sling_ingest" / "replication.yaml",
+            snippet_path=f"{context.get_next_snip_number()}-replication.yaml",
         )
 
         # Download sample data files

@@ -1,1 +1,1 @@
-uv add dagster-sling
+uv add dagster-sling duckdb
