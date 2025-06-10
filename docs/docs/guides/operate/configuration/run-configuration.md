@@ -4,27 +4,26 @@ description: Dagster Job run configuration allows providing parameters to jobs a
 sidebar_position: 100
 ---
 
-Run configuration allows providing parameters to jobs at the time they're executed.
-
 It's often useful to provide user-chosen values to Dagster jobs or asset definitions at runtime. For example, you might want to provide a connection URL for a database resource. Dagster exposes this functionality through a configuration API.
 
-Various Dagster entities (assets, ops, resources) can be individually configured. When launching a job that materializes (assets), executes (ops), or instantiates (resources) a configurable entity, you can provide _run configuration_ for each entity. Within the function that defines the entity, you can access the passed-in configuration through the `config` parameter. Typically, the provided run configuration values correspond to a _configuration schema_ attached to the asset/op/resource definition. Dagster validates the run configuration against the schema and proceeds only if validation is successful.
+When you launch a job that materializes, executes, or instantiates a configurable entity, such as an asset, op, or resource, you can provide _run configuration_ for that entity. Within the function that defines the entity, you can access the passed-in configuration through the `config` parameter. Typically, the provided run configuration values correspond to a _configuration schema_ attached to the asset/op/resource definition. Dagster validates the run configuration against the schema and proceeds only if validation is successful.
 
 A common use of configuration is for a [schedule](/guides/automate/schedules/) or [sensor](/guides/automate/sensors/) to provide configuration to the job run it is launching. For example, a daily schedule might provide the day it's running on to one of the assets as a config value, and that asset might use that config value to decide what day's data to read.
 
 ## Defining and accessing configuration
 
-Configurable parameters accepted by an asset or op are specified by defining a config model subclass of <PyObject section="config" module="dagster" object="Config"/> and a `config` parameter to the corresponding asset or op function. Under the hood, these config models utilize [Pydantic](https://docs.pydantic.dev/), a popular Python library for data validation and serialization.
+You can specify configurable parameters accepted by an asset or op by defining a config model subclass of <PyObject section="config" module="dagster" object="Config"/> and a `config` parameter to the corresponding asset or op function. These config models utilize [Pydantic](https://docs.pydantic.dev/), a popular Python library for data validation and serialization.
 
-During execution, the specified config is accessed within the body of the op or asset using the `config` parameter.
+During execution, the specified config is accessed within the body of the asset or op using the `config` parameter.
 
 <Tabs persistentKey="assetsorops">
-<TabItem value="Using software-defined-assets">
+<TabItem value="Using assets">
 
-Here, we define a subclass of <PyObject section="config" module="dagster" object="Config"/> holding a single string value representing the name of a user. We can access the config through the `config` parameter in the asset body.
+Here, we define a subclass of <PyObject section="config" module="dagster" object="Config"/> holding a single string value representing the name of a user. We can access the config through the `config` parameter in the asset body:
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/dagster/pythonic_config/pythonic_config.py"
+  title="src/my_project/defs/my_asset.py"
   startAfter="start_basic_asset_config"
   endBefore="end_basic_asset_config"
   dedent="4"
@@ -33,10 +32,11 @@ Here, we define a subclass of <PyObject section="config" module="dagster" object
 </TabItem>
 <TabItem value="Using ops and jobs">
 
-Here, we define a subclass of <PyObject section="config" module="dagster" object="Config"/> holding a single string value representing the name of a user. We can access the config through the `config` parameter in the op body.
+Here, we define a subclass of <PyObject section="config" module="dagster" object="Config"/> holding a single string value representing the name of a user. We can access the config through the `config` parameter in the op body:
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/dagster/pythonic_config/pythonic_config.py"
+  title="src/my_project/defs/my_op.py"
   startAfter="start_basic_op_config"
   endBefore="end_basic_op_config"
 />
@@ -54,12 +54,13 @@ Configurable parameters for a resource are defined by specifying attributes for 
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/dagster/pythonic_config/pythonic_config.py"
+  title="src/my_project/defs/my_resource.py"
   startAfter="start_basic_resource_config"
   endBefore="end_basic_resource_config"
   dedent="4"
 />
 
-For more information on using resources, refer to the [Resources guide](/guides/build/external-resources/).
+For more information on using resources, refer to the [Resources guide](/guides/build/external-resources).
 
 ## Specifying runtime configuration
 
@@ -72,6 +73,7 @@ When specifying config from the Python API, we can use the `run_config` argument
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/dagster/pythonic_config/pythonic_config.py"
+  title="src/my_project/defs/my_job.py"
   startAfter="start_execute_with_config"
   endBefore="end_execute_with_config"
   dedent="4"
@@ -91,7 +93,7 @@ You can also click the **Scaffold Missing Config** button to generate dummy valu
 
 ### Command line
 
-When executing a job from Dagster's CLI with [`dagster job execute`](/api/dagster/cli#dagster-job), you can put config in a YAML file:
+When executing a job from Dagster's CLI with [`dg launch --job`](/api/dg/dg-cli#cmdoption-dg-launch-job), you can put config in a YAML file:
 
 ```YAML file=/concepts/configuration/good.yaml
 ops:
@@ -103,7 +105,7 @@ ops:
 And then pass the file path with the `--config` option:
 
 ```bash
-dagster job execute --config my_config.yaml
+dg launch --job my_job --config my_config.yaml
 ```
 
 </TabItem>
@@ -115,6 +117,7 @@ Dagster validates any provided run config against the corresponding Pydantic mod
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/dagster/pythonic_config/pythonic_config.py"
+  title="src/my_project/defs/my_job.py"
   startAfter="start_execute_with_bad_config"
   endBefore="end_execute_with_bad_config"
   dedent="4"
@@ -126,6 +129,7 @@ Assets and ops can be configured using environment variables by passing an <PyOb
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/dagster/pythonic_config/pythonic_config.py"
+  title="src/my_project/defs/my_job.py"
   startAfter="start_execute_with_config_envvar"
   endBefore="end_execute_with_config_envvar"
   dedent="4"
