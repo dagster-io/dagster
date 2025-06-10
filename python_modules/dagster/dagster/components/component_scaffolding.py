@@ -7,9 +7,9 @@ import click
 import yaml
 from dagster_shared import check
 from dagster_shared.serdes.objects import EnvRegistryKey
+from dagster_shared.seven import load_module_object
 from pydantic import BaseModel, TypeAdapter
 
-from dagster.components.core.package_entry import load_package_object
 from dagster.components.scaffold.scaffold import (
     NoParams,
     ScaffolderUnavailableReason,
@@ -75,7 +75,7 @@ def scaffold_object(
     from dagster.components.component.component import Component
 
     key = EnvRegistryKey.from_typename(typename)
-    obj = load_package_object(key)
+    obj = load_module_object(key.namespace, key.name)
 
     scaffolder = get_scaffolder(obj)
 
