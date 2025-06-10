@@ -193,10 +193,12 @@ def test_per_content_type_translation(
     body = {
         "type": "dagster_powerbi.PowerBIWorkspaceComponent",
         "attributes": {
-            "credentials": {
-                "token": uuid.uuid4().hex,
+            "workspace": {
+                "credentials": {
+                    "token": uuid.uuid4().hex,
+                },
+                "workspace_id": workspace_id,
             },
-            "workspace_id": workspace_id,
             "use_workspace_scan": False,
             "translation": {
                 "tags": {"custom_tag": "custom_value"},
