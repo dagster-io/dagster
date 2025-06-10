@@ -72,6 +72,7 @@ sys.meta_path.insert(
 # ##### DYNAMIC IMPORTS
 # ########################
 
+from dagster_shared.error import DagsterError as DagsterError
 from dagster_shared.libraries import DagsterLibraryRegistry
 from dagster_shared.serdes import (
     deserialize_value as deserialize_value,
@@ -453,7 +454,6 @@ from dagster._core.definitions.utils import (
 )
 from dagster._core.errors import (
     DagsterConfigMappingFunctionError as DagsterConfigMappingFunctionError,
-    DagsterError as DagsterError,
     DagsterEventLogInvalidForRun as DagsterEventLogInvalidForRun,
     DagsterExecutionInterruptedError as DagsterExecutionInterruptedError,
     DagsterExecutionStepExecutionError as DagsterExecutionStepExecutionError,

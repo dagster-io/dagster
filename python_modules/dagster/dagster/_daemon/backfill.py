@@ -7,13 +7,11 @@ from concurrent.futures import Future, ThreadPoolExecutor
 from contextlib import contextmanager
 from typing import TYPE_CHECKING, Optional, cast
 
+from dagster_shared.error import DagsterError
+
 import dagster._check as check
 from dagster._core.definitions.instigation_logger import InstigationLogger
-from dagster._core.errors import (
-    DagsterCodeLocationLoadError,
-    DagsterError,
-    DagsterUserCodeUnreachableError,
-)
+from dagster._core.errors import DagsterCodeLocationLoadError, DagsterUserCodeUnreachableError
 from dagster._core.execution.asset_backfill import execute_asset_backfill_iteration
 from dagster._core.execution.backfill import BulkActionsFilter, BulkActionStatus, PartitionBackfill
 from dagster._core.execution.job_backfill import execute_job_backfill_iteration
