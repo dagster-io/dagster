@@ -538,3 +538,34 @@ class TestTranslation:
     @pytest.fixture
     def key_modifier(self, translation_params):
         return translation_params[2]
+
+
+class TestOpCustomization:
+    """Pytest test class for testing translation of asset attributes. You can subclass
+    this class and implement a test_translation function using the various fixtures in
+    order to comprehensively test asset translation options for your component.
+    """
+
+    @pytest.fixture(
+        params=[
+            (
+                {"name": "my_op"},
+                lambda op: op.name == "my_op",
+            ),
+            (
+                {"tags": {"foo": "bar"}},
+                lambda op: op.tags.get("foo") == "bar",
+            ),
+        ],
+        ids=["name", "tags"],
+    )
+    def translation_params(self, request):
+        return request.param
+
+    @pytest.fixture
+    def attributes(self, translation_params):
+        return translation_params[0]
+
+    @pytest.fixture
+    def assertion(self, translation_params):
+        return translation_params[1]

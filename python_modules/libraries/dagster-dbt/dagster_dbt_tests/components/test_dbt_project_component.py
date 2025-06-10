@@ -18,9 +18,9 @@ from dagster._core.test_utils import ensure_dagster_tests_import
 from dagster._utils.env import environ
 from dagster.components.core.context import ComponentLoadContext
 from dagster.components.core.load_defs import build_component_defs
-from dagster.components.resolved.core_models import AssetAttributesModel
+from dagster.components.resolved.core_models import AssetAttributesModel, OpSpec
 from dagster.components.resolved.errors import ResolutionException
-from dagster.components.testing import TestTranslation
+from dagster.components.testing import TestOpCustomization, TestTranslation
 from dagster_dbt import DbtProject, DbtProjectComponent
 from dagster_dbt.cli.app import project_app_typer_click_object
 from dagster_dbt.components.dbt_project.component import get_projects_from_dbt_component
@@ -60,6 +60,22 @@ def dbt_path() -> Iterator[Path]:
         project = DbtProject(dbt_path)
         project.preparer.prepare(project)
         yield dbt_path
+
+
+class TestDbtOpCustomization(TestOpCustomization):
+    def test_translation(
+        self, attributes: Mapping[str, Any], assertion: Callable[[OpSpec], bool], dbt_path
+    ) -> None:
+        component = load_component_for_test(
+            DbtProjectComponent,
+            {
+                "project": str(dbt_path),
+                "op": attributes,
+            },
+        )
+        op = component.op
+        assert op
+        assert assertion(op)
 
 
 @pytest.mark.parametrize(

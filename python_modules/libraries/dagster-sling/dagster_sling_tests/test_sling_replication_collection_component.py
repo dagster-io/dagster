@@ -23,8 +23,9 @@ from dagster._core.instance_for_test import instance_for_test
 from dagster._core.test_utils import ensure_dagster_tests_import
 from dagster._utils import alter_sys_path
 from dagster._utils.env import environ
-from dagster.components.resolved.core_models import AssetAttributesModel
+from dagster.components.resolved.core_models import AssetAttributesModel, OpSpec
 from dagster.components.testing import (
+    TestOpCustomization,
     TestTranslation,
     get_underlying_component,
     scaffold_defs_sandbox,
@@ -111,32 +112,21 @@ def test_python_attributes() -> None:
         assert refs.code_references[0].file_path.endswith("replication.yaml")
 
 
-def test_python_attributes_op_name() -> None:
-    with temp_sling_component_instance(
-        [{"path": "./replication.yaml", "op": {"name": "my_op"}}]
-    ) as (component, defs):
-        replications = component.replications
-        assert len(replications) == 1
-        op = replications[0].op
-        assert op
-        assert op.name == "my_op"
-        assert defs.resolve_asset_graph().get_all_asset_keys() == {
-            AssetKey("input_csv"),
-            AssetKey("input_duckdb"),
-        }
-        assert defs.resolve_assets_def("input_duckdb").op.name == "my_op"
-
-
-def test_python_attributes_op_tags() -> None:
-    with temp_sling_component_instance(
-        [{"path": "./replication.yaml", "op": {"tags": {"tag1": "value1"}}}]
-    ) as (component, defs):
-        replications = component.replications
-        assert len(replications) == 1
-        op = replications[0].op
-        assert op
-        assert op.tags == {"tag1": "value1"}
-        assert defs.resolve_assets_def("input_duckdb").op.tags == {"tag1": "value1"}
+class TestSlingOpCustomization(TestOpCustomization):
+    def test_translation(
+        self,
+        attributes: Mapping[str, Any],
+        assertion: Callable[[OpSpec], bool],
+    ) -> None:
+        with temp_sling_component_instance([{"path": "./replication.yaml", "op": attributes}]) as (
+            component,
+            defs,
+        ):
+            replications = component.replications
+            assert len(replications) == 1
+            op = replications[0].op
+            assert op
+            assert assertion(op)
 
 
 def test_python_params_include_metadata() -> None:
