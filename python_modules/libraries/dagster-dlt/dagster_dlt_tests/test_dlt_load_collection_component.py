@@ -16,7 +16,7 @@ from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._utils import pushd
 from dagster._utils.env import environ
-from dagster.components.testing import TestTranslation, scaffold_defs_sandbox
+from dagster.components.testing import TestTranslationBatched, scaffold_defs_sandbox
 from dagster_dlt import DagsterDltResource, DltLoadCollectionComponent
 from dagster_dlt.components.dlt_load_collection.component import DltLoadSpecModel
 
@@ -204,7 +204,7 @@ def test_component_load_multiple_pipelines() -> None:
         }
 
 
-class TestDltTranslation(TestTranslation):
+class TestDltTranslation(TestTranslationBatched):
     def test_translation(
         self,
         dlt_pipeline: Pipeline,
