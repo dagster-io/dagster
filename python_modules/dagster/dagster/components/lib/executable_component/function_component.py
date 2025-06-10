@@ -112,7 +112,7 @@ class FunctionComponent(ExecutableComponent):
         return self.execute_fn_metadata.resource_keys
 
     @cached_property
-    def config_fields(self) -> Optional[dict[str, Field]]:  # type: ignore  # (pyright complains it is @cached_property but not @property)
+    def config_fields(self) -> Optional[dict[str, Field]]:
         return self.execute_fn_metadata.config_fields
 
     @property
