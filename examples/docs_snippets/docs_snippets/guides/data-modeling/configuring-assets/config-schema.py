@@ -19,9 +19,6 @@ def forecast_model(config: ForecastModelConfig):
     print("Forecasting over time window:", config.lookback_window_days)  # noqa: T201
     # ...more code here
 
-
-defs = dg.Definitions(assets=[forecast_model])
-
 if __name__ == "__main__":
     from pathlib import Path
 
