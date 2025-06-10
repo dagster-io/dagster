@@ -198,10 +198,11 @@ def test_dynamic_subcommand_help_message():
                 │ *    instance_name      TEXT  [required]                                                                             │
                 ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
                 ╭─ Options ────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
-                │ --json-params          TEXT           JSON string of component parameters.                                           │
                 │ --format               [yaml|python]  Format of the component configuration (yaml or python)                         │
-                │ --asset-key            TEXT           asset_key                                                                      │
-                │ --filename             TEXT           filename                                                                       │
+                │ --json-params          TEXT           JSON string of scaffolder parameters. Mutually exclusive with passing          │
+                │                                       individual parameters as options.                                              │
+                │ --asset-key            TEXT           (scaffolder param) asset_key                                                   │
+                │ --filename             TEXT           (scaffolder param) filename                                                    │
                 │ --help         -h                     Show this message and exit.                                                    │
                 ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
                 ╭─ Global options ─────────────────────────────────────────────────────────────────────────────────────────────────────╮
