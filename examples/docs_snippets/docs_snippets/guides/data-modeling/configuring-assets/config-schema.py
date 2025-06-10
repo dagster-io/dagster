@@ -19,6 +19,7 @@ def forecast_model(config: ForecastModelConfig):
     print("Forecasting over time window:", config.lookback_window_days)  # noqa: T201
     # ...more code here
 
+
 if __name__ == "__main__":
     from pathlib import Path
 

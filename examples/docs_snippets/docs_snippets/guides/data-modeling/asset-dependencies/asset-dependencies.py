@@ -1,6 +1,7 @@
 def execute_query(query):
     del query
 
+
 # start_basic_dependencies
 import dagster as dg
 

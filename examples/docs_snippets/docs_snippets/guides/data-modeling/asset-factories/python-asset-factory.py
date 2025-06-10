@@ -44,7 +44,9 @@ def build_etl_job(
 @dg.definitions
 def resources():
     return dg.Definitions(
-        resources={"s3": s3.S3Resource(aws_access_key_id="...", aws_secret_access_key="...")},
+        resources={
+            "s3": s3.S3Resource(aws_access_key_id="...", aws_secret_access_key="...")
+        },
     )
 
 
@@ -66,4 +68,3 @@ def defs():
     ]
 
     return dg.Definitions.merge(*[build_etl_job(**job) for job in etl_jobs])
-

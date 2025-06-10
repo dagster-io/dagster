@@ -38,4 +38,6 @@ def load_etl_jobs_from_yaml(yaml_path: str) -> dg.Definitions:
 @dg.definitions
 def defs():
     return load_etl_jobs_from_yaml("etl_jobs.yaml")
+
+
 # highlight-end
