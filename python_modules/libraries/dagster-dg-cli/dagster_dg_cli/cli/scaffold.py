@@ -137,13 +137,6 @@ class ScaffoldDefsGroup(DgClickGroup):
         )
         @click.argument("instance_name", type=str)
         @click.option(
-            "--json-params",
-            type=str,
-            default=None,
-            help="JSON string of component parameters.",
-            callback=parse_json_option,
-        )
-        @click.option(
             "--format",
             type=click.Choice(["yaml", "python"], case_sensitive=False),
             default="yaml",
@@ -154,7 +147,6 @@ class ScaffoldDefsGroup(DgClickGroup):
         def scaffold_command(
             cli_context: click.Context,
             instance_name: str,
-            json_params: Mapping[str, Any],
             format: str,  # noqa: A002 "format" name required for click magic
             **key_value_params: Any,
         ) -> None:
@@ -175,6 +167,9 @@ class ScaffoldDefsGroup(DgClickGroup):
 
             It is an error to pass both --json-params and key-value pairs as options.
             """
+            # json_params will not be present in the key_value_params if no scaffold properties
+            # are defined.
+            json_params = key_value_params.pop("json_params", None)
             check.invariant(
                 format in ["yaml", "python"],
                 "format must be either 'yaml' or 'python'",
@@ -186,12 +181,23 @@ class ScaffoldDefsGroup(DgClickGroup):
                 key,
                 instance_name,
                 key_value_params,
-                json_params,
                 cast("ScaffoldFormatOptions", format),
+                json_params,
             )
 
-        # If there are defined scaffold params, add them to the command
-        if obj.scaffolder_schema:
+        # If there are defined scaffold properties, add them to the command. Also only add
+        # `--json-params` if there are defined scaffold properties.
+        if obj.scaffolder_schema and obj.scaffolder_schema.get("properties"):
+            scaffold_command.params.append(
+                click.Option(
+                    ["--json-params"],
+                    "json_params",
+                    type=str,
+                    default=None,
+                    help="JSON string of scaffolder parameters. Mutually exclusive with passing individual parameters as options.",
+                    callback=parse_json_option,
+                )
+            )
             for name, field_info in obj.scaffolder_schema["properties"].items():
                 # All fields are currently optional because they can also be passed under
                 # `--json-params`
@@ -851,9 +857,9 @@ def _core_scaffold(
     cli_config: DgRawCliConfig,
     object_key: EnvRegistryKey,
     instance_name: str,
-    key_value_params,
-    json_params,
+    key_value_params: Mapping[str, Any],
     scaffold_format: ScaffoldFormatOptions,
+    json_params: Optional[Mapping[str, Any]] = None,
 ) -> None:
     dg_context = DgContext.for_project_environment(Path.cwd(), cli_config)
     registry = EnvRegistry.from_dg_context(dg_context)
