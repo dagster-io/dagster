@@ -1,6 +1,6 @@
 ---
-title: 'Testing components'
-description: How to test components.
+title: 'Testing component definitions'
+description: How to test component definitions.
 sidebar_position: 600
 ---
 
