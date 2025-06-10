@@ -1,11 +1,12 @@
 from collections.abc import Iterable
-from typing import Optional
+from typing import TYPE_CHECKING, Optional, Union
 
 from dagster_shared import record
 from dagster_shared.serdes import whitelist_for_serdes
 
 import dagster._check as check
 from dagster._core.asset_graph_view.serializable_entity_subset import SerializableEntitySubset
+from dagster._core.definitions.asset_health.asset_health import AssetHealthStatus
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.loader import LoadableBy, LoadingContext
@@ -13,7 +14,9 @@ from dagster._core.remote_representation.external_data import PartitionsSnap
 from dagster._core.storage.dagster_run import RunRecord
 from dagster._core.storage.event_log.base import AssetRecord
 from dagster._core.storage.partition_status_cache import get_partition_subsets
-from dagster._streamline.asset_health import AssetHealthStatus
+
+if TYPE_CHECKING:
+    from dagster._core.workspace.context import BaseWorkspaceRequestContext
 
 
 @whitelist_for_serdes
@@ -217,3 +220,132 @@ async def _get_is_currently_failed_and_latest_terminal_run_id(
 
     # if the run failed, then report the asset as failed
     return run_record.dagster_run.is_failure, run_record.dagster_run.run_id
+
+
+@record.record
+class AssetHealthMaterializationDegradedPartitionedMeta:
+    num_failed_partitions: int
+    num_missing_partitions: int
+    total_num_partitions: int
+
+
+@record.record
+class AssetHealthMaterializationHealthyPartitionedMeta:
+    num_missing_partitions: int
+    total_num_partitions: int
+
+
+@record.record
+class AssetHealthMaterializationDegradedNotPartitionedMeta:
+    failed_run_id: Optional[str]
+
+
+AssetHealthMaterializationMeta = Union[
+    AssetHealthMaterializationDegradedPartitionedMeta,
+    AssetHealthMaterializationHealthyPartitionedMeta,
+    AssetHealthMaterializationDegradedNotPartitionedMeta,
+]
+
+
+async def get_materialization_status_and_metadata(
+    context: "BaseWorkspaceRequestContext", asset_key: AssetKey
+) -> tuple[AssetHealthStatus, Optional["AssetHealthMaterializationMeta"]]:
+    """Gets an AssetMaterializationHealthState object for an asset, either via streamline or by computing
+    it based on the state of the DB. Then converts it to a AssetHealthStatus and the metadata
+    needed to power the UIs. Metadata is fetched from the AssetLatestMaterializationState object, again
+    either via streamline or by computing it based on the state of the DB.
+    """
+    asset_materialization_health_state = await AssetMaterializationHealthState.gen(
+        context, asset_key
+    )
+    # captures streamline disabled or consumer state doesn't exist
+    if asset_materialization_health_state is None:
+        if not context.asset_graph.has(asset_key):
+            # if the asset is not in the asset graph, it could be because materializations are reported by
+            # an external system, determine the status as best we can based on the asset record
+            asset_record = await AssetRecord.gen(context, asset_key)
+            if asset_record is None:
+                return AssetHealthStatus.UNKNOWN, None
+            has_ever_materialized = asset_record.asset_entry.last_materialization is not None
+            is_currently_failed, run_id = await _get_is_currently_failed_and_latest_terminal_run_id(
+                context, asset_record
+            )
+            if is_currently_failed:
+                meta = AssetHealthMaterializationDegradedNotPartitionedMeta(
+                    failed_run_id=run_id,
+                )
+                return AssetHealthStatus.DEGRADED, meta
+            if has_ever_materialized:
+                return AssetHealthStatus.HEALTHY, None
+            else:
+                if asset_record.asset_entry.last_observation is not None:
+                    return AssetHealthStatus.HEALTHY, None
+                return AssetHealthStatus.UNKNOWN, None
+
+        node_snap = context.asset_graph.get(asset_key)
+        if node_snap.is_observable and not node_snap.is_materializable:  # observable source asset
+            # get the asset record to see if there is an observation event
+            asset_record = await AssetRecord.gen(context, asset_key)
+            if asset_record and asset_record.asset_entry.last_observation is not None:
+                return AssetHealthStatus.HEALTHY, None
+            return AssetHealthStatus.UNKNOWN, None
+
+        asset_materialization_health_state = (
+            await AssetMaterializationHealthState.compute_for_asset(
+                asset_key,
+                node_snap.partitions_def,
+                context,
+            )
+        )
+
+    if asset_materialization_health_state.health_status == AssetHealthStatus.HEALTHY:
+        num_missing = 0
+        total_num_partitions = 0
+        if asset_materialization_health_state.partitions_def is not None:
+            total_num_partitions = (
+                asset_materialization_health_state.partitions_def.get_num_partitions(
+                    dynamic_partitions_store=context.instance
+                )
+            )
+            # asset is health, so no partitions are failed
+            num_materialized = len(
+                asset_materialization_health_state.materialized_subset.subset_value
+            )
+            num_missing = total_num_partitions - num_materialized
+        if num_missing > 0 and total_num_partitions > 0:
+            meta = AssetHealthMaterializationHealthyPartitionedMeta(
+                num_missing_partitions=num_missing,
+                total_num_partitions=total_num_partitions,
+            )
+        else:
+            # captures the case when asset is not partitioned, or the asset is partitioned and all partitions are materialized
+            meta = None
+        return AssetHealthStatus.HEALTHY, meta
+    elif asset_materialization_health_state.health_status == AssetHealthStatus.DEGRADED:
+        if asset_materialization_health_state.partitions_def is not None:
+            total_num_partitions = (
+                asset_materialization_health_state.partitions_def.get_num_partitions(
+                    dynamic_partitions_store=context.instance
+                )
+            )
+            num_failed = len(asset_materialization_health_state.failed_subset.subset_value)
+            num_materialized = len(
+                asset_materialization_health_state.currently_materialized_subset.subset_value
+            )
+            num_missing = total_num_partitions - num_materialized - num_failed
+            meta = AssetHealthMaterializationDegradedPartitionedMeta(
+                num_failed_partitions=num_failed,
+                num_missing_partitions=num_missing,
+                total_num_partitions=total_num_partitions,
+            )
+        else:
+            meta = AssetHealthMaterializationDegradedNotPartitionedMeta(
+                failed_run_id=asset_materialization_health_state.latest_terminal_run_id,
+            )
+        return AssetHealthStatus.DEGRADED, meta
+    elif asset_materialization_health_state.health_status == AssetHealthStatus.UNKNOWN:
+        return AssetHealthStatus.UNKNOWN, None
+    else:
+        check.failed(
+            f"Unexpected materialization health status: {asset_materialization_health_state.health_status}"
+        )
