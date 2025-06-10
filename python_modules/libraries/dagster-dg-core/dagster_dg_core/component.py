@@ -220,9 +220,10 @@ def get_used_env_vars(data_structure: Union[Mapping[str, Any], Sequence[Any], An
     if isinstance(data_structure, Mapping):
         return set.union(set(), *(get_used_env_vars(value) for value in data_structure.values()))
     elif isinstance(data_structure, str):
-        return set(env_var_regex.findall(data_structure)).union(
+        raw_result = set(env_var_regex.findall(data_structure)).union(
             set(env_var_regex_dot_notation.findall(data_structure))
         )
+        return {var.strip() for var in raw_result}
     elif isinstance(data_structure, Sequence):
         return set.union(set(), *(get_used_env_vars(item) for item in data_structure))
     else:
