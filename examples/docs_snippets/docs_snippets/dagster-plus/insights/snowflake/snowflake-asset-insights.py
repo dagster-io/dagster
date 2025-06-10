@@ -1,10 +1,9 @@
 # highlight-start
 from dagster_cloud.dagster_insights import (
+    InsightsSnowflakeResource,
     create_snowflake_insights_asset_and_schedule,
 )
 # highlight-end
-from dagster_dbt import DbtCliResource, dbt_assets
-from path import Path
 
 import dagster as dg
 
@@ -15,8 +14,10 @@ insights_definitions = create_snowflake_insights_asset_and_schedule(
 # highlight-end
 
 
-@dbt_assets(manifest=Path(__file__).parent / "manifest.json")
-def my_asset(context: dg.AssetExecutionContext, dbt: DbtCliResource):
-    # highlight-start
-    yield from dbt.cli(["build"], context=context).stream().with_insights()
+@dg.asset
+# highlight-start
+def snowflake_asset(snowflake: InsightsSnowflakeResource):
     # highlight-end
+    with snowflake.get_connection() as conn:
+        conn.cursor().execute("select 1")
+# highlight-end
