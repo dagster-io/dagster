@@ -32,10 +32,12 @@ def get_component_defs_within_project(
 In your test file, it is very convenient to set up a lightweight wrapper function so you only have to set the project root once:
 
 ```python title="my-project/tests/my_test.py"
+import dagster as dg
+
 def my_project_component_defs(component_path) -> tuple[dg.Component, dg.Definitions]:
     # Project root is two parents up from the test file 
     project_root = Path(__file__).parent.parent
-    return get_component_defs_within_project(project_root=project_root, component_path=component_path)
+    return dg.get_component_defs_within_project(project_root=project_root, component_path=component_path)
 ```
 
 Once you do this, you can load the component and its definitions. This component lives at `my-project/src/my_project/defs/path/to/component`. You only need to specify the path relative to the `defs` folder:
