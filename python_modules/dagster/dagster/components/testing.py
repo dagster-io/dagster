@@ -429,6 +429,11 @@ def copy_code_to_file(fn: Callable, file_path: Path) -> None:
 
 
 class TestTranslation:
+    """Pytest test class for testing translation of asset attributes. You can subclass
+    this class and implement a test_translation function using the various fixtures in
+    order to comprehensively test asset translation options for your component.
+    """
+
     @pytest.fixture(
         params=[
             (
