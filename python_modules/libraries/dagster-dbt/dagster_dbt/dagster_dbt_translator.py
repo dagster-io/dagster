@@ -204,6 +204,7 @@ class DagsterDbtTranslator:
             asset_key=asset_spec.key,
             test_unique_id=unique_id,
             project=project,
+            block_on_error_severity=True,
         )
 
     @public
