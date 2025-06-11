@@ -1,7 +1,6 @@
 # highlight-start
-from dagster_cloud.dagster_insights import (
-    create_snowflake_insights_asset_and_schedule,
-)
+from dagster_cloud.dagster_insights import create_snowflake_insights_asset_and_schedule
+
 # highlight-end
 from dagster_dbt import DbtCliResource, dbt_assets
 from path import Path

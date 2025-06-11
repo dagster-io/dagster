@@ -3,8 +3,8 @@ from dagster_cloud.dagster_insights import (
     InsightsSnowflakeResource,
     create_snowflake_insights_asset_and_schedule,
 )
-# highlight-end
 
+# highlight-end
 import dagster as dg
 
 # highlight-start

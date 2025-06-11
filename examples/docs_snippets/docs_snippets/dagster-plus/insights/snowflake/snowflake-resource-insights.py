@@ -1,8 +1,9 @@
 # highlight-start
 from dagster_cloud.dagster_insights import InsightsSnowflakeResource
-# highlight-end
 
+# highlight-end
 import dagster as dg
+
 
 # highlight-start
 @dg.definitions
