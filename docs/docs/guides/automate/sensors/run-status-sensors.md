@@ -27,11 +27,3 @@ Here is an example of a sensor that reports job success in a Slack message:
 />
 
 When a run status sensor is triggered by a run but doesn't return anything, Dagster will report an event back to the run to indicate that the sensor ran.
-
-Once you have written your sensor, you can add the sensor to a <PyObject section="definitions" module="dagster" object="Definitions" /> object so it can be enabled and used the same as other sensors:
-
-<CodeExample
-  path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/sensors/sensor_alert.py"
-  startAfter="start_definitions_marker"
-  endBefore="end_definitions_marker"
-/>
