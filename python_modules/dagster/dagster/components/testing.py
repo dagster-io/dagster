@@ -1,11 +1,20 @@
 import importlib
+import inspect
 import secrets
 import shutil
 import string
 import sys
+import textwrap
+from pathlib import Path
+from typing import Callable
 
 import yaml
 from dagster_shared import check
+from dagster_shared.merger import deep_merge_dicts
+
+from dagster._core.definitions.asset_key import AssetKey
+from dagster._core.definitions.asset_spec import AssetSpec
+from dagster._core.definitions.partition import StaticPartitionsDefinition
 
 """Testing utilities for components."""
 
@@ -14,8 +23,7 @@ import tempfile
 from collections.abc import Iterator, Mapping
 from contextlib import contextmanager
 from dataclasses import dataclass
-from pathlib import Path
-from typing import Any, Optional, Union
+from typing import Any, NamedTuple, Optional, Union
 
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._utils import alter_sys_path
@@ -28,6 +36,20 @@ from dagster.components.core.defs_module import (
     load_yaml_component_from_path,
 )
 from dagster.components.scaffold.scaffold import ScaffoldFormatOptions
+
+# Unfortunate hack - we only use this util in pytest tests, we just drop in a no-op
+# implementation if pytest is not installed.
+try:
+    import pytest  # type: ignore
+except ImportError:
+
+    class pytest:
+        @staticmethod
+        def fixture(*args, **kwargs) -> Callable:
+            def wrapper(fn):
+                return fn
+
+            return wrapper
 
 
 def component_defs(
@@ -186,18 +208,24 @@ class DefsPathSandbox:
     @contextmanager
     def load_all(self) -> Iterator[list[tuple[Component, Definitions]]]:
         with alter_sys_path(to_add=[str(self.project_root / "src")], to_remove=[]):
-            module_path = f"{self.project_name}.defs.{self.component_path}"
+            module_path = get_module_path(
+                defs_module_name=f"{self.project_name}.defs", component_path=self.component_path
+            )
             try:
                 yield get_all_components_defs_from_defs_path(
                     project_root=self.project_root,
-                    component_path=self.component_path,
-                    project_name=self.project_name,
+                    module_path=module_path,
                 )
 
             finally:
                 modules_to_remove = [name for name in sys.modules if name.startswith(module_path)]
                 for name in modules_to_remove:
                     del sys.modules[name]
+
+
+def get_module_path(defs_module_name: str, component_path: Path):
+    component_module_path = str(component_path).replace("/", ".")
+    return f"{defs_module_name}.{component_module_path}"
 
 
 def flatten_components(parent_component: Optional[Component]) -> list[Component]:
@@ -209,18 +237,72 @@ def flatten_components(parent_component: Optional[Component]) -> list[Component]
         return []
 
 
+def get_component_defs_within_project(
+    *,
+    project_root: Union[str, Path],
+    component_path: Union[str, Path],
+    instance_key: int = 0,
+) -> tuple[Component, Definitions]:
+    """Get the component defs for a component within a project. This only works if dagster_dg_core is installed.
+
+    Args:
+        project_root: The root of the project.
+        component_path: The path to the component.
+
+    Returns:
+        A tuple of the component and its definitions.
+    """
+    all_component_defs = get_all_components_defs_within_project(
+        project_root=project_root, component_path=component_path
+    )
+    return all_component_defs[instance_key][0], all_component_defs[instance_key][1]
+
+
+def get_all_components_defs_within_project(
+    *,
+    project_root: Union[str, Path],
+    component_path: Union[str, Path],
+) -> list[tuple[Component, Definitions]]:
+    """Get all the component defs for a component within a project. This only works if dagster_dg_core is installed.
+
+    Args:
+        project_root: The root of the project.
+        component_path: The path to the component.
+
+    Returns:
+        A list of tuples of the component and its definitions.
+    """
+    try:
+        from dagster_dg_core.config import discover_config_file
+        from dagster_dg_core.context import DgContext
+    except ImportError:
+        raise Exception(
+            "dagster_dg_core is not installed. Please install it to use default project_name and defs module from pyproject.toml or dg.toml."
+        )
+
+    project_root = Path(project_root)
+    component_path = Path(component_path)
+
+    dg_context = DgContext.from_file_discovery_and_command_line_config(
+        path=check.not_none(discover_config_file(project_root), "No project config file found."),
+        command_line_config={},
+    )
+
+    return get_all_components_defs_from_defs_path(
+        module_path=get_module_path(dg_context.defs_module_name, component_path),
+        project_root=project_root,
+    )
+
+
 def get_all_components_defs_from_defs_path(
     *,
-    project_name: str,
-    project_root: Path,
-    component_path: Path,
-    defs_module_name: str = "defs",
+    module_path: str,
+    project_root: Union[str, Path],
 ) -> list[tuple[Component, Definitions]]:
-    module_path = f"{project_name}.{defs_module_name}.{component_path}"
     module = importlib.import_module(module_path)
     context = ComponentLoadContext.for_module(
         defs_module=module,
-        project_root=project_root,
+        project_root=Path(project_root),
         terminate_autoloading_on_keyword_files=False,
     )
     components = flatten_components(get_component(context))
@@ -228,13 +310,11 @@ def get_all_components_defs_from_defs_path(
 
 
 def get_component_defs_from_defs_path(
-    *,
-    project_name: str,
-    project_root: Path,
-    component_path: Path,
+    *, module_path: str, project_root: Union[str, Path]
 ) -> tuple[Component, Definitions]:
     components = get_all_components_defs_from_defs_path(
-        project_name=project_name, project_root=project_root, component_path=component_path
+        project_root=project_root,
+        module_path=module_path,
     )
     check.invariant(
         len(components) == 1,
@@ -337,3 +417,197 @@ def scaffold_defs_sandbox(
             component_path=Path(component_path),
             component_format=scaffold_format,
         )
+
+
+def copy_code_to_file(fn: Callable, file_path: Path) -> None:
+    """Takes a function and writes the body of the function to a file.
+
+    Args:
+        fn: The function to write to the file.
+        file_path: The path to the file to write the function to.
+
+    Example:
+
+    .. code-block:: python
+
+        def code_to_copy() -> None:
+            import dagster as dg
+
+            def execute_fn(context) -> dg.MaterializeResult:
+                return dg.MaterializeResult()
+
+        copy_code_to_file(code_to_copy, sandbox.defs_folder_path / "execute.py")
+    """
+    source_code_text = inspect.getsource(fn)
+    source_code_text = "\n".join(source_code_text.split("\n")[1:])
+    dedented_source_code_text = textwrap.dedent(source_code_text)
+    file_path.write_text(dedented_source_code_text)
+
+
+class TranslationTestCase(NamedTuple):
+    name: str
+    attributes: dict[str, Any]
+    assertion: Callable[[AssetSpec], bool]
+    key_modifier: Optional[Callable[[AssetKey], AssetKey]] = None
+
+
+test_cases = [
+    TranslationTestCase(
+        name="group_name",
+        attributes={"group_name": "group"},
+        assertion=lambda asset_spec: asset_spec.group_name == "group",
+    ),
+    TranslationTestCase(
+        name="owners",
+        attributes={"owners": ["team:analytics"]},
+        assertion=lambda asset_spec: asset_spec.owners == ["team:analytics"],
+    ),
+    TranslationTestCase(
+        name="tags",
+        attributes={"tags": {"foo": "bar"}},
+        assertion=lambda asset_spec: asset_spec.tags.get("foo") == "bar",
+    ),
+    TranslationTestCase(
+        name="kinds",
+        attributes={"kinds": ["snowflake", "dbt"]},
+        assertion=lambda asset_spec: "snowflake" in asset_spec.kinds and "dbt" in asset_spec.kinds,
+    ),
+    TranslationTestCase(
+        name="tags-and-kinds",
+        attributes={"tags": {"foo": "bar"}, "kinds": ["snowflake", "dbt"]},
+        assertion=lambda asset_spec: "snowflake" in asset_spec.kinds
+        and "dbt" in asset_spec.kinds
+        and asset_spec.tags.get("foo") == "bar",
+    ),
+    TranslationTestCase(
+        name="code-version",
+        attributes={"code_version": "1"},
+        assertion=lambda asset_spec: asset_spec.code_version == "1",
+    ),
+    TranslationTestCase(
+        name="description",
+        attributes={"description": "some description"},
+        assertion=lambda asset_spec: asset_spec.description == "some description",
+    ),
+    TranslationTestCase(
+        name="metadata",
+        attributes={"metadata": {"foo": "bar"}},
+        assertion=lambda asset_spec: asset_spec.metadata.get("foo") == "bar",
+    ),
+    TranslationTestCase(
+        name="deps",
+        attributes={"deps": ["nonexistent"]},
+        assertion=lambda asset_spec: len(asset_spec.deps) == 1
+        and asset_spec.deps[0].asset_key == AssetKey("nonexistent"),
+    ),
+    TranslationTestCase(
+        name="automation_condition",
+        attributes={"automation_condition": "{{ automation_condition.eager() }}"},
+        assertion=lambda asset_spec: asset_spec.automation_condition is not None,
+    ),
+    TranslationTestCase(
+        name="key",
+        attributes={"key": "{{ spec.key.to_user_string() + '_suffix' }}"},
+        assertion=lambda asset_spec: asset_spec.key.path[-1].endswith("_suffix"),
+        key_modifier=lambda key: AssetKey(path=list(key.path[:-1]) + [f"{key.path[-1]}_suffix"]),
+    ),
+    TranslationTestCase(
+        name="key_prefix",
+        attributes={"key_prefix": "cool_prefix"},
+        assertion=lambda asset_spec: asset_spec.key.has_prefix(["cool_prefix"]),
+        key_modifier=lambda key: AssetKey(path=["cool_prefix"] + list(key.path)),
+    ),
+    TranslationTestCase(
+        name="partitions_defs",
+        attributes={"partitions_def": {"type": "static", "partition_keys": ["foo", "bar"]}},
+        assertion=lambda asset_spec: isinstance(
+            asset_spec.partitions_def, StaticPartitionsDefinition
+        ),
+    ),
+]
+
+
+class TestTranslation:
+    """Pytest test class for testing translation of asset attributes. You can subclass
+    this class and implement a test_translation function using the various fixtures in
+    order to comprehensively test asset translation options for your component.
+    """
+
+    @pytest.fixture(params=test_cases, ids=[case.name for case in test_cases])
+    def translation_test_case(self, request):
+        return request.param
+
+    @pytest.fixture
+    def attributes(self, translation_test_case: TranslationTestCase):
+        return translation_test_case.attributes
+
+    @pytest.fixture
+    def assertion(self, translation_test_case: TranslationTestCase):
+        return translation_test_case.assertion
+
+    @pytest.fixture
+    def key_modifier(self, translation_test_case: TranslationTestCase):
+        return translation_test_case.key_modifier
+
+
+class TestTranslationBatched(TestTranslation):
+    """This version of the TestTranslation class is used to test the translation of
+    asset attributes, applying all customizations in parallel to speed up tests for
+    components which might be expensive to construct.
+    """
+
+    @pytest.fixture()
+    def translation_test_case(self, request):
+        deep_merge_all_attributes = {}
+        for case in test_cases:
+            deep_merge_all_attributes = deep_merge_dicts(deep_merge_all_attributes, case.attributes)
+        merged_assertion = lambda asset_spec: all(case.assertion(asset_spec) for case in test_cases)
+
+        # successively apply key modifiers
+        def _merged_key_modifier(key):
+            for case in test_cases:
+                if case.key_modifier:
+                    key = case.key_modifier(key)
+            return key
+
+        return TranslationTestCase(
+            name="merged",
+            attributes=deep_merge_all_attributes,
+            assertion=merged_assertion,
+            key_modifier=_merged_key_modifier,
+        )
+
+
+class TestOpCustomization:
+    """Pytest test class for testing customization of op spec. You can subclass
+    this class and implement a test_op_customization function using the various fixtures in
+    order to comprehensively test op spec customization options for your component.
+    """
+
+    @pytest.fixture(
+        params=[
+            (
+                {"name": "my_op"},
+                lambda op: op.name == "my_op",
+            ),
+            (
+                {"tags": {"foo": "bar"}},
+                lambda op: op.tags.get("foo") == "bar",
+            ),
+            (
+                {"backfill_policy": {"type": "single_run"}},
+                lambda op: op.backfill_policy.max_partitions_per_run is None,
+            ),
+        ],
+        ids=["name", "tags", "backfill_policy"],
+    )
+    def translation_test_case(self, request):
+        return request.param
+
+    @pytest.fixture
+    def attributes(self, translation_test_case):
+        return translation_test_case[0]
+
+    @pytest.fixture
+    def assertion(self, translation_test_case):
+        return translation_test_case[1]
