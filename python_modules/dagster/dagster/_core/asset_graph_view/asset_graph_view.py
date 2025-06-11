@@ -15,8 +15,10 @@ from dagster import _check as check
 from dagster._check import CheckError
 from dagster._core.asset_graph_view.entity_subset import EntitySubset, _ValidatedEntitySubsetValue
 from dagster._core.asset_graph_view.serializable_entity_subset import SerializableEntitySubset
+from dagster._core.asset_graph_view.utils import extract_latest
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.asset_key import AssetCheckKey, AssetKey, EntityKey, T_EntityKey
+from dagster._core.definitions.data_version import DataVersion, extract_data_version_from_entry
 from dagster._core.definitions.events import AssetKeyPartitionKey
 from dagster._core.definitions.multi_dimensional_partitions import (
     MultiPartitionKey,
@@ -44,6 +46,7 @@ if TYPE_CHECKING:
     from dagster._core.definitions.definitions_class import Definitions
     from dagster._core.definitions.partition import PartitionsDefinition
     from dagster._core.definitions.partition_key_range import PartitionKeyRange
+    from dagster._core.event_api import EventLogRecord
     from dagster._core.instance import DagsterInstance
     from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionResolvedStatus
     from dagster._core.storage.dagster_run import RunRecord
@@ -301,6 +304,21 @@ class AssetGraphView(LoadingContext):
             else bool(asset_partitions)
         )
         return EntitySubset(self, key=key, value=_ValidatedEntitySubsetValue(value))
+
+    def _get_asset_subset_from_partition_keys(
+        self,
+        key: AssetKey,
+        partitions_def: "PartitionsDefinition",
+        partition_keys: AbstractSet[str],
+    ) -> EntitySubset[AssetKey]:
+        filtered_asset_partitions = {
+            AssetKeyPartitionKey(key, pk)
+            for pk in partition_keys
+            if partitions_def.has_partition_key(
+                pk, current_time=self.effective_dt, dynamic_partitions_store=self._queryer
+            )
+        }
+        return self.get_asset_subset_from_asset_partitions(key, filtered_asset_partitions)
 
     def compute_parent_subset_and_required_but_nonexistent_subset(
         self, parent_key, subset: EntitySubset[T_EntityKey]
@@ -744,6 +762,101 @@ class AssetGraphView(LoadingContext):
             return self.get_full_subset(key=key)
 
     @cached_method
+    async def _compute_latest_record(
+        self,
+        key: AssetKey,
+        of_type: Literal["observation", "materialization"],
+        before_storage_id: Optional[int] = None,
+    ) -> Optional["EventLogRecord"]:
+        from dagster._core.event_api import AssetRecordsFilter
+        from dagster._core.storage.event_log.base import AssetRecord
+
+        # attempt to fetch directly from the asset record when possible
+        if before_storage_id is None:
+            if of_type == "materialization":
+                record = await AssetRecord.gen(self, key)
+                return record.asset_entry.last_materialization_record if record else None
+            if (
+                of_type == "observation"
+                and self.instance.event_log_storage.asset_records_have_last_observation
+            ):
+                record = await AssetRecord.gen(self, key)
+                return record.asset_entry.last_observation_record if record else None
+
+        # more expensive path, fetch from the event log
+        method = (
+            self.instance.fetch_observations
+            if of_type == "observation"
+            else self.instance.fetch_materializations
+        )
+        records = method(
+            records_filter=AssetRecordsFilter(asset_key=key, before_storage_id=before_storage_id),
+            limit=1,
+            ascending=False,
+        ).records
+        return next(iter(records), None)
+
+    @cached_method
+    async def _compute_data_version(
+        self, key: AssetKey, as_of: Optional[int] = None
+    ) -> Optional[DataVersion]:
+        latest_observation = await self._compute_latest_record(key, "observation", as_of)
+        latest_materialization = await self._compute_latest_record(key, "materialization", as_of)
+        return extract_latest(
+            latest_observation,
+            latest_materialization,
+            value=lambda x: extract_data_version_from_entry(x.event_log_entry),
+        )
+
+    @cached_method
+    async def compute_data_version_changed_since_temporal_context_subset(
+        self, *, key: AssetKey, temporal_context: TemporalContext
+    ) -> EntitySubset[AssetKey]:
+        previous_storage_id = temporal_context.last_event_id or 0
+
+        # for performance, ignore observations in the update check if we can't get it cheaply
+        # and the asset is materializable, as it is unlikely for an observation to contain a
+        # data version update for a materializable asset. note that this explicitly encodes
+        # incorrect behavior for the sake of performance.
+        use_observations_for_update_check = (
+            self.instance.event_log_storage.asset_records_have_last_observation
+            or not self.asset_graph.get(key).is_materializable
+        )
+        latest_observation = (
+            await self._compute_latest_record(key, "observation")
+            if use_observations_for_update_check
+            else None
+        )
+        latest_materialization = await self._compute_latest_record(key, "materialization")
+        latest_record = extract_latest(latest_observation, latest_materialization)
+
+        # no new records at all since temporal context, so no new data versions
+        if latest_record is None or latest_record.storage_id <= previous_storage_id:
+            return self.get_empty_subset(key=key)
+
+        partitions_def = self._get_partitions_def(key)
+        if partitions_def is None:
+            # unpartitioned case, compare the before / after data versions
+            latest_data_version = await self._compute_data_version(key)
+            previous_data_version = await self._compute_data_version(
+                key, as_of=previous_storage_id + 1
+            )
+            if latest_data_version != previous_data_version:
+                return self.get_full_subset(key=key)
+            else:
+                return self.get_empty_subset(key=key)
+        else:
+            # specialized instance query for partitioned assets
+            updated_partition_keys = (
+                self.instance.event_log_storage.get_updated_data_version_partitions(
+                    asset_key=key, partitions=None, since_storage_id=previous_storage_id + 1
+                )
+            )
+            return self._get_asset_subset_from_partition_keys(
+                key=key, partitions_def=partitions_def, partition_keys=updated_partition_keys
+            )
+
+    @cached_method
     async def compute_updated_since_temporal_context_subset(
         self, *, key: EntityKey, temporal_context: TemporalContext
     ) -> EntitySubset:
@@ -755,14 +868,6 @@ class AssetGraphView(LoadingContext):
             asset_method=functools.partial(
                 self._compute_updated_since_cursor_subset, cursor=temporal_context.last_event_id
             ),
-        )
-
-    @cached_method
-    async def compute_data_version_changed_since_temporal_context_subset(
-        self, *, key: AssetKey, temporal_context: TemporalContext
-    ) -> EntitySubset[AssetKey]:
-        return await self._compute_updated_since_cursor_subset(
-            key, cursor=temporal_context.last_event_id, require_data_version_update=True
         )
 
     class MultiDimInfo(NamedTuple):

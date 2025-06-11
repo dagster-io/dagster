@@ -3276,15 +3276,16 @@ class SqlEventLogStorage(EventLogStorage):
     def get_updated_data_version_partitions(
         self, asset_key: AssetKey, partitions: Optional[Iterable[str]], since_storage_id: int
     ) -> set[str]:
-        previous_data_versions = self._get_partition_data_versions(
-            asset_key=asset_key,
-            partitions=list(partitions) if partitions else None,
-            before_storage_id=since_storage_id + 1,
-        )
         current_data_versions = self._get_partition_data_versions(
             asset_key=asset_key,
             partitions=list(partitions) if partitions else None,
             after_storage_id=since_storage_id,
+        )
+        previous_data_versions = self._get_partition_data_versions(
+            asset_key=asset_key,
+            # only query for partitions that have recorded a data version after the since_storage_id
+            partitions=list(current_data_versions.keys()),
+            before_storage_id=since_storage_id + 1,
         )
 
         updated_partitions = set()
