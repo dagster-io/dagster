@@ -341,8 +341,6 @@ def test_invalid_config_workspace(config_file: ConfigFileType):
                 _set_and_detect_invalid_key(config_file, path)
 
         cases = [
-            ["cli.disable_cache", bool, 1],
-            ["cli.cache_dir", str, 1],
             ["cli.verbose", bool, 1],
             ["cli.use_component_modules", Sequence[str], 1],
             ["cli.suppress_warnings", list[DgWarningIdentifier], 1],

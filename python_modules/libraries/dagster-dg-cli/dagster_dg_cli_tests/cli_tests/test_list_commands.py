@@ -752,9 +752,8 @@ def _assert_entry_point_error(cmd: list[str]):
         # Delete the components package referenced by the entry point
         shutil.rmtree("src/foo_bar/components")
 
-        # Disable cache to force re-discovery of deleted entry point
         result = subprocess.run(
-            ["dg", *cmd, "--disable-cache"],
+            ["dg", *cmd],
             check=False,
             capture_output=True,
         )

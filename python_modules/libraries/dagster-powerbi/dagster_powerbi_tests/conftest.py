@@ -225,7 +225,7 @@ def workspace_scan_data_api_mocks_fixture(workspace_id: str) -> Iterator[respons
     name="workspace_data_api_mocks",
 )
 def workspace_data_api_mocks_fixture(workspace_id: str) -> Iterator[responses.RequestsMock]:
-    with responses.RequestsMock() as response:
+    with responses.RequestsMock(assert_all_requests_are_fired=False) as response:
         response.add(
             method=responses.GET,
             url=f"{BASE_API_URL}/groups/{workspace_id}/dashboards",

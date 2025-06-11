@@ -74,10 +74,6 @@ def scaffold_object(
 ) -> None:
     from dagster.components.component.component import Component
 
-    click.echo(f"Creating a component at {path}.")
-    if not path.exists():
-        path.mkdir(parents=True)
-
     key = EnvRegistryKey.from_typename(typename)
     obj = load_package_object(key)
 
@@ -94,6 +90,10 @@ def scaffold_object(
     )
 
     params_model = parse_params_model(obj=obj, json_params=json_params)
+
+    click.echo(f"Creating a component at {path}.")
+    if not path.exists():
+        path.mkdir(parents=True)
 
     scaffolder.scaffold(
         ScaffoldRequest(
