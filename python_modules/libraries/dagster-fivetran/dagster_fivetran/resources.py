@@ -23,7 +23,7 @@ from dagster import (
     get_dagster_logger,
     resource,
 )
-from dagster._annotations import deprecated, public
+from dagster._annotations import deprecated, public, beta_param
 from dagster._config.pythonic_config import ConfigurableResource
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.definitions_load_context import StateBackedDefinitionsLoader
@@ -1217,6 +1217,7 @@ class FivetranWorkspace(ConfigurableResource):
             context.log.warning(f"Assets were not materialized: {unmaterialized_asset_keys}")
 
 
+@beta_param(param="snapshot_path")
 def load_fivetran_asset_specs(
     workspace: FivetranWorkspace,
     dagster_fivetran_translator: Optional[DagsterFivetranTranslator] = None,
