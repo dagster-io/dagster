@@ -698,11 +698,9 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
     PackageSpec(
         "python_modules/libraries/dagster-airlift/kitchen-sink",
         always_run_if=has_dagster_airlift_changes,
-        unsupported_python_versions=[
-            # airflow
-            AvailablePythonVersion.V3_12,
-        ],
         queue=BuildkiteQueue.DOCKER,
+        # Increased timeout for now because of unoptimized fixture usage.
+        timeout_in_minutes=60,
     ),
     # Runs against live dbt cloud instance, we only want to run on commits and on the
     # nightly build

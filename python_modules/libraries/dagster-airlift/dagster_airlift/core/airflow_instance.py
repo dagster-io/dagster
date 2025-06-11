@@ -10,6 +10,7 @@ from dagster._core.definitions.utils import check_valid_name
 from dagster._time import get_current_datetime
 from dagster_shared.error import DagsterError
 
+from dagster_airlift.constants import AirflowVersion
 from dagster_airlift.core.filter import AirflowFilter
 from dagster_airlift.core.runtime_representations import DagRun, TaskInstance
 from dagster_airlift.core.serialization.serialized_data import (
@@ -71,19 +72,21 @@ class AirflowInstance:
         batch_task_instance_limit: int = DEFAULT_BATCH_TASK_RETRIEVAL_LIMIT,
         batch_dag_runs_limit: int = DEFAULT_BATCH_DAG_RUNS_LIMIT,
         dag_list_limit: int = DEFAULT_DAG_LIST_LIMIT,
+        airflow_version: AirflowVersion = AirflowVersion.AIRFLOW_2,
     ) -> None:
         self.auth_backend = auth_backend
         self.name = check_valid_name(name)
         self.batch_task_instance_limit = batch_task_instance_limit
         self.batch_dag_runs_limit = batch_dag_runs_limit
         self.dag_list_limit = dag_list_limit
+        self.airflow_version = airflow_version
 
     @property
     def normalized_name(self) -> str:
         return self.name.replace(" ", "_").replace("-", "_")
 
     def get_api_url(self) -> str:
-        return f"{self.auth_backend.get_webserver_url()}/api/v1"
+        return f"{self.auth_backend.get_webserver_url()}/api/{self.airflow_version.api_version}"
 
     def list_dags(self, retrieval_filter: Optional[AirflowFilter] = None) -> list["DagInfo"]:
         retrieval_filter = retrieval_filter or AirflowFilter()
@@ -254,9 +257,13 @@ class AirflowInstance:
                 f"Failed to fetch task info for {dag_id}/{task_id}. Status code: {response.status_code}, Message: {response.text}"
             )
 
-    def get_dag_source_code(self, file_token: str) -> str:
+    def get_dag_source_code(self, dag_info: DagInfo) -> str:
+        if self.airflow_version == AirflowVersion.AIRFLOW_2:
+            endpoint = dag_info.metadata["file_token"]
+        else:
+            endpoint = dag_info.dag_id
         response = self.auth_backend.get_session().get(
-            f"{self.get_api_url()}/dagSources/{file_token}"
+            f"{self.get_api_url()}/dagSources/{endpoint}"
         )
         if response.status_code == 200:
             return response.text
@@ -359,7 +366,12 @@ class AirflowInstance:
         Returns:
             str: The dag run id.
         """
-        params = {} if not logical_date else {"logical_date": logical_date.isoformat()}
+        params = {}
+        if logical_date:
+            params["logical_date"] = logical_date.isoformat()
+        elif self.airflow_version == AirflowVersion.AIRFLOW_3:
+            # Required parameter in Airflow 3.
+            params["logical_date"] = None
         response = self.auth_backend.get_session().post(
             f"{self.get_api_url()}/dags/{dag_id}/dagRuns",
             json=params,
@@ -386,6 +398,24 @@ class AirflowInstance:
         )
 
     def unpause_dag(self, dag_id: str) -> None:
+        if self.airflow_version == AirflowVersion.AIRFLOW_3:
+            self._unpause_dag_airflow_3(dag_id)
+        elif self.airflow_version == AirflowVersion.AIRFLOW_2:
+            self._unpause_dag_airflow_2(dag_id)
+        else:
+            raise DagsterError(f"Unsupported Airflow version: {self.airflow_version}")
+
+    def _unpause_dag_airflow_3(self, dag_id: str) -> None:
+        response = self.auth_backend.get_session().patch(
+            f"{self.get_api_url()}/dags/{dag_id}",
+            json={"is_paused": False},
+        )
+        if response.status_code != 200:
+            raise DagsterError(
+                f"Failed to unpause dag {dag_id}. Status code: {response.status_code}, Message: {response.text}"
+            )
+
+    def _unpause_dag_airflow_2(self, dag_id: str) -> None:
         response = self.auth_backend.get_session().patch(
             f"{self.get_api_url()}/dags",
             json={"is_paused": False},
@@ -449,12 +479,16 @@ class AirflowInstance:
         retrieval_filter: AirflowFilter,
         dag_ids: Optional[Sequence[str]],
     ) -> Sequence["Dataset"]:
+        if self.airflow_version == AirflowVersion.AIRFLOW_2:
+            dataset_endpoint = "datasets"
+        elif self.airflow_version == AirflowVersion.AIRFLOW_3:
+            dataset_endpoint = "assets"
         params: dict[str, Any] = {"limit": limit, "offset": offset}
         if retrieval_filter.dataset_uri_ilike:
             params["uri_pattern"] = retrieval_filter.dataset_uri_ilike
 
         response = self.auth_backend.get_session().get(
-            f"{self.get_api_url()}/datasets",
+            f"{self.get_api_url()}/{dataset_endpoint}",
             params=params,
         )
 
@@ -466,7 +500,7 @@ class AirflowInstance:
         data = response.json()
         datasets = []
 
-        for dataset_data in data["datasets"]:
+        for dataset_data in data[dataset_endpoint]:
             producing_tasks = [
                 DatasetProducingTask(
                     dag_id=task_data["dag_id"],
@@ -561,20 +595,35 @@ class AirflowInstance:
                     f"Failed to fetch task instance logs for {dag_id}/{task_id}/{run_id}/{try_number}. Status code: {response.status_code}, Message: {response.text}"
                 )
             data = response.json()
-            # Love how it's different in the two cases lol.
             continuation_token = data.get("continuation_token")
-            log = parse_af_log_response(data["content"])
+            if self.airflow_version == AirflowVersion.AIRFLOW_2:
+                log = parse_af_log_response_v2(data["content"])
+            else:
+                log = parse_af_log_response_v3(data["content"])
             logs.append(log)
             if not continuation_token or log == "":
                 break
         return "".join(logs)
 
 
-def parse_af_log_response(logs: str) -> str:
+def parse_af_log_response_v2(logs: str) -> str:
+    # In Airflow 2, the data comes back as a string mimicking a real python object.
+    # We need to "literal eval" this into a real python object to be able to read it.
     import ast
 
     parsed_data: list = ast.literal_eval(logs)
     strs = []
     for log_item in parsed_data:
         strs.append(log_item[1])
+    return "".join(strs)
+
+
+def parse_af_log_response_v3(logs: Sequence[dict[str, Any]]) -> str:
+    # In Airflow 3, the data comes back as a list of dicts, where each dictionary has an "event" key
+    # containing the message for the log.
+    # We concatenate all of these messages.
+    strs = []
+    for log_dict in logs:
+        if "event" in log_dict:
+            strs.append(log_dict["event"])
     return "".join(strs)

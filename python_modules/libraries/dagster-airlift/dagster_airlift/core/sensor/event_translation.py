@@ -149,7 +149,8 @@ def get_common_metadata(dag_run: DagRun) -> Mapping[str, Any]:
 
 
 def get_task_instance_metadata(dag_run: DagRun, task_instance: TaskInstance) -> Mapping[str, Any]:
-    return {
+    logical_date = task_instance.logical_date
+    metadata = {
         **get_common_metadata(dag_run),
         "Run Details": MarkdownMetadataValue(f"[View Run]({task_instance.details_url})"),
         "Task Logs": MarkdownMetadataValue(f"[View Logs]({task_instance.log_url})"),
@@ -158,10 +159,12 @@ def get_task_instance_metadata(dag_run: DagRun, task_instance: TaskInstance) -> 
         EFFECTIVE_TIMESTAMP_METADATA_KEY: TimestampMetadataValue(
             task_instance.end_date.timestamp()
         ),
-        AIRFLOW_TASK_INSTANCE_LOGICAL_DATE_METADATA_KEY: TimestampMetadataValue(
-            task_instance.logical_date.timestamp()
-        ),
     }
+    if logical_date:
+        metadata[AIRFLOW_TASK_INSTANCE_LOGICAL_DATE_METADATA_KEY] = TimestampMetadataValue(
+            logical_date.timestamp()
+        )
+    return metadata
 
 
 def synthetic_mats_for_task_instance(

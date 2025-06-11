@@ -20,7 +20,6 @@ default_args = {
 dag = DAG(
     "the_dag",
     default_args=default_args,
-    schedule_interval=None,
     is_paused_upon_creation=False,
     start_date=datetime(2023, 1, 1),
 )

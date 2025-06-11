@@ -9,6 +9,7 @@ from dagster._core.definitions.metadata.metadata_value import JsonMetadataValue
 from dagster._core.events.log import EventLogEntry
 from dagster._core.storage.dagster_run import RunsFilter
 from dagster._time import get_current_datetime, get_current_datetime_midnight
+from dagster_airlift.constants import infer_af_version_from_env
 from dagster_airlift.in_airflow.base_asset_operator import DAG_RUN_ID_TAG_KEY
 from kitchen_sink.airflow_instance import local_airflow_instance
 
@@ -33,7 +34,7 @@ def test_migrated_dagster_print_materializes(
     """Test that assets can load properly, and that materializations register."""
     from kitchen_sink.airflow_instance import local_airflow_instance
 
-    af_instance = local_airflow_instance()
+    af_instance = local_airflow_instance(airflow_version=infer_af_version_from_env())
 
     expected_mats_per_dag = {
         "print_dag": [AssetKey("print_asset")],
@@ -65,7 +66,7 @@ def test_dagster_weekly_daily_materializes(
     """
     from kitchen_sink.airflow_instance import local_airflow_instance
 
-    af_instance = local_airflow_instance()
+    af_instance = local_airflow_instance(airflow_version=infer_af_version_from_env())
 
     dag_id = "weekly_dag"
     asset_one = AssetKey("asset_one")
@@ -110,7 +111,7 @@ def test_migrated_overridden_dag_materializes(
     """Test that assets are properly materialized from an overridden dag."""
     from kitchen_sink.airflow_instance import local_airflow_instance
 
-    af_instance = local_airflow_instance()
+    af_instance = local_airflow_instance(airflow_version=infer_af_version_from_env())
 
     expected_mats_per_dag = {
         "overridden_dag": [AssetKey("asset_two")],
@@ -126,7 +127,7 @@ def test_custom_callback_behavior(
     """Test that custom callbacks to proxying_to_dagster are properly applied."""
     from kitchen_sink.airflow_instance import local_airflow_instance
 
-    af_instance = local_airflow_instance()
+    af_instance = local_airflow_instance(airflow_version=infer_af_version_from_env())
 
     expected_mats_per_dag = {
         "affected_dag": [
@@ -156,7 +157,7 @@ def test_migrated_overridden_dag_custom_operator_materializes(
     """Test that assets are properly materialized from an overridden dag, and that the proxied task retains attributes from the custom operator."""
     from kitchen_sink.airflow_instance import local_airflow_instance
 
-    af_instance = local_airflow_instance()
+    af_instance = local_airflow_instance(airflow_version=infer_af_version_from_env())
     assert af_instance.get_task_info(dag_id="overridden_dag_custom_callback", task_id="OVERRIDDEN")
 
     expected_mats_per_dag = {
@@ -173,7 +174,7 @@ def test_partitioned_observation(
     """Test that assets with time-window partitions get partitions mapped correctly onto their materializations."""
     from kitchen_sink.airflow_instance import local_airflow_instance
 
-    af_instance = local_airflow_instance()
+    af_instance = local_airflow_instance(airflow_version=infer_af_version_from_env())
     af_run_id = af_instance.trigger_dag(
         dag_id="daily_interval_dag", logical_date=get_current_datetime_midnight()
     )
@@ -196,7 +197,7 @@ def test_assets_multiple_jobs_same_task(
     """Test the case where multiple assets within the same task have different jobs. Ensure we still materialize them correctly."""
     from kitchen_sink.airflow_instance import local_airflow_instance
 
-    af_instance = local_airflow_instance()
+    af_instance = local_airflow_instance(airflow_version=infer_af_version_from_env())
     assert af_instance.get_task_info(dag_id="overridden_dag_custom_callback", task_id="OVERRIDDEN")
 
     expected_mats_per_dag = {
@@ -217,10 +218,10 @@ def test_partitioned_migrated(
     """Test that partitioned assets are properly materialized from a proxied task."""
     from kitchen_sink.airflow_instance import local_airflow_instance
 
-    af_instance = local_airflow_instance()
+    af_instance = local_airflow_instance(airflow_version=infer_af_version_from_env())
     af_instance.unpause_dag(dag_id="migrated_daily_interval_dag")
     # Wait for dag run to exist
-    expected_logical_date = get_current_datetime_midnight() - timedelta(days=1)
+    expected_logical_date = get_current_datetime_midnight()
     expected_run_id = f"scheduled__{expected_logical_date.isoformat()}"
     poll_for_airflow_run_existence_and_completion(
         af_instance=af_instance,
@@ -247,7 +248,7 @@ def test_success_on_retry(
     from kitchen_sink.airflow_instance import local_airflow_instance
     from kitchen_sink.dagster_defs.retries_configured import succeeds_on_final_retry
 
-    af_instance = local_airflow_instance()
+    af_instance = local_airflow_instance(airflow_version=infer_af_version_from_env())
     assert af_instance.get_task_info(dag_id="migrated_asset_has_retries", task_id="my_task")
 
     expected_mats_per_dag = {
@@ -265,7 +266,7 @@ def test_failure_when_asset_failures_tag_set(
     that the dag run fails.
     """
     dag_id = "migrated_asset_has_retries_not_step_failure"
-    af_instance = local_airflow_instance()
+    af_instance = local_airflow_instance(airflow_version=infer_af_version_from_env())
     assert af_instance.get_task_info(dag_id=dag_id, task_id="my_task")
 
     run_id = af_instance.trigger_dag(dag_id=dag_id)
@@ -287,7 +288,9 @@ def test_respect_airflow_retries(
     """Airflow doesn't actually have dag-level retries; only task-level retries. This test just ensures that we handle task-level retries gracefully."""
     from kitchen_sink.dagster_defs.mapped_defs import UNMAPPED_SPECS_INSTANCE_NAME, materialize_dags
 
-    af_instance = local_airflow_instance(UNMAPPED_SPECS_INSTANCE_NAME)
+    af_instance = local_airflow_instance(
+        UNMAPPED_SPECS_INSTANCE_NAME, airflow_version=infer_af_version_from_env()
+    )
 
     dagster_instance = DagsterInstance.get()
     result = materialize(
