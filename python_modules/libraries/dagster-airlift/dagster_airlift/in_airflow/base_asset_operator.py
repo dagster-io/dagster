@@ -102,7 +102,7 @@ class BaseDagsterAssetsOperator(BaseOperator, ABC):
         if not partitioning_info:
             return None
         return translate_logical_date_to_partition_key(
-            self.get_airflow_logical_date(context), partitioning_info
+            self.get_airflow_logical_date(context), partitioning_info, logger
         )
 
     def get_valid_graphql_response(self, response: Response, key: str) -> Any:

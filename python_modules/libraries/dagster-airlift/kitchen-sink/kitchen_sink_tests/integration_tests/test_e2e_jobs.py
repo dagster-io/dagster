@@ -16,6 +16,7 @@ from dagster_airlift.constants import (
     DAG_RUN_ID_TAG_KEY,
     OBSERVATION_RUN_TAG_KEY,
     TASK_ID_TAG_KEY,
+    infer_af_version_from_env,
 )
 from dagster_airlift.core.monitoring_job.builder import MonitoringConfig, monitoring_job_op_name
 from dagster_airlift.core.utils import monitoring_job_name
@@ -41,7 +42,7 @@ def test_job_based_defs(
         assert asset_spec(key, defs)
 
     # First, execute dataset producer dag
-    af_instance = local_airflow_instance()
+    af_instance = local_airflow_instance(airflow_version=infer_af_version_from_env())
     af_run_id = af_instance.trigger_dag("dataset_producer")
     poll_for_airflow_run_existence_and_completion(
         af_instance=af_instance, af_run_id=af_run_id, dag_id="dataset_producer", duration=30
@@ -132,7 +133,7 @@ def test_job_based_defs_with_proxied_assets(
 ) -> None:
     from kitchen_sink.dagster_defs.job_based_defs import defs
 
-    af_instance = local_airflow_instance()
+    af_instance = local_airflow_instance(airflow_version=infer_af_version_from_env())
     instance = DagsterInstance.get()
     # Execute print_dag. We'd expect corresponding runs to be kicked off of print_asset and another_print_asset.
     print_dag_run_id = af_instance.trigger_dag("deferred_events_dag")

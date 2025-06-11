@@ -7,6 +7,7 @@ from dagster import AssetKey, DagsterInstance
 from dagster._core.definitions.metadata.metadata_value import JsonMetadataValue
 from dagster._core.events.log import EventLogEntry
 from dagster._time import get_current_datetime
+from dagster_airlift.constants import infer_af_version_from_env
 
 from kitchen_sink_tests.integration_tests.conftest import makefile_dir
 
@@ -54,7 +55,7 @@ def test_observation_defs_are_observed(
     """Test that assets can load properly, and that observations register."""
     from kitchen_sink.airflow_instance import local_airflow_instance
 
-    af_instance = local_airflow_instance()
+    af_instance = local_airflow_instance(airflow_version=infer_af_version_from_env())
     dag_ids = [dag_info.dag_id for dag_info in af_instance.list_dags()]
     assert "simple_unproxied_dag" in dag_ids
 

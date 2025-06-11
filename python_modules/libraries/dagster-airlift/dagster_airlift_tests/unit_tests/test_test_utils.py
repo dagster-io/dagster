@@ -2,6 +2,7 @@ from datetime import datetime
 
 import pytest
 from dagster_airlift.core.filter import AirflowFilter
+from dagster_airlift.core.serialization.serialized_data import DagInfo
 from dagster_airlift.test import (
     AirflowInstanceFake,
     make_dag_info,
@@ -112,8 +113,20 @@ def test_test_instance() -> None:
     )
 
     assert (
-        test_instance.get_dag_source_code(file_token="test_file_token")
+        test_instance.get_dag_source_code(
+            DagInfo(
+                dag_id="test_dag",
+                webserver_url="test_webserver_url",
+                metadata={"file_token": "test_file_token"},
+            )
+        )
         == "indicates found source code"
     )
     with pytest.raises(ValueError):
-        test_instance.get_dag_source_code(file_token="nonexistent_file_token")
+        test_instance.get_dag_source_code(
+            DagInfo(
+                dag_id="test_dag",
+                webserver_url="test_webserver_url",
+                metadata={"file_token": "nonexistent_file_token"},
+            )
+        )

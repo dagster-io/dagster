@@ -6,6 +6,7 @@ from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.time_window_partitions import DailyPartitionsDefinition
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster._time import get_current_datetime_midnight
+from dagster_airlift.constants import infer_af_version_from_env
 from dagster_airlift.core import (
     assets_with_dag_mappings,
     assets_with_task_mappings,
@@ -66,7 +67,9 @@ job2 = define_asset_job("job2", [multi_job__b, multi_job__c])
 # Partitioned assets for migrated_daily_interval_dag
 @asset(
     partitions_def=DailyPartitionsDefinition(
-        start_date=get_current_datetime_midnight() - timedelta(days=2)
+        start_date=get_current_datetime_midnight() - timedelta(days=2),
+        end_offset=1,
+        timezone="UTC",
     )
 )
 def migrated_daily_interval_dag__partitioned() -> None:
@@ -74,8 +77,9 @@ def migrated_daily_interval_dag__partitioned() -> None:
 
 
 def build_mapped_defs() -> Definitions:
+    print(f"Airflow version during build_mapped_defs: {infer_af_version_from_env()}")
     return build_defs_from_airflow_instance(
-        airflow_instance=local_airflow_instance(),
+        airflow_instance=local_airflow_instance(airflow_version=infer_af_version_from_env()),
         dag_selector_fn=lambda dag: not dag.dag_id.startswith("unmapped"),
         sensor_minimum_interval_seconds=1,
         defs=Definitions.merge(
@@ -173,7 +177,9 @@ def build_mapped_defs() -> Definitions:
 UNMAPPED_SPECS_INSTANCE_NAME = "unmapped_specs_instance"
 
 unmapped_specs = load_airflow_dag_asset_specs(
-    airflow_instance=local_airflow_instance(UNMAPPED_SPECS_INSTANCE_NAME),
+    airflow_instance=local_airflow_instance(
+        UNMAPPED_SPECS_INSTANCE_NAME, infer_af_version_from_env()
+    ),
     dag_selector_fn=lambda dag: dag.dag_id.startswith("unmapped"),
 )
 
@@ -181,7 +187,7 @@ unmapped_specs = load_airflow_dag_asset_specs(
 @multi_asset(specs=unmapped_specs)
 def materialize_dags(context: AssetExecutionContext):
     for spec in unmapped_specs:
-        af_instance = local_airflow_instance()
+        af_instance = local_airflow_instance(airflow_version=infer_af_version_from_env())
         dag_id = spec.metadata["Dag ID"]
         dag_run_id = af_instance.trigger_dag(dag_id=dag_id)
         af_instance.wait_for_run_completion(dag_id=dag_id, run_id=dag_run_id)

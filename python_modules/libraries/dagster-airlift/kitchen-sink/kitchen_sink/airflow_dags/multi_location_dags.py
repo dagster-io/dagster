@@ -21,7 +21,7 @@ default_args = {
 with DAG(
     "dag_first_code_location",
     default_args=default_args,
-    schedule_interval=None,
+    schedule=None,
     is_paused_upon_creation=False,
 ) as first_dag:
     PythonOperator(task_id="task", python_callable=print_hello)
@@ -29,7 +29,7 @@ with DAG(
 with DAG(
     "dag_second_code_location",
     default_args=default_args,
-    schedule_interval=None,
+    schedule=None,
     is_paused_upon_creation=False,
 ) as second_dag:
     PythonOperator(task_id="task", python_callable=print_hello)

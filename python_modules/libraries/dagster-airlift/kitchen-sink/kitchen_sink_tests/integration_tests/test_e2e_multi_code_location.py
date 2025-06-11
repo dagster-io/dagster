@@ -1,5 +1,6 @@
 import pytest
 from dagster import AssetKey
+from dagster_airlift.constants import infer_af_version_from_env
 
 from kitchen_sink_tests.integration_tests.conftest import (
     ExpectedMat,
@@ -21,7 +22,7 @@ def test_multiple_code_locations_materialize(
     """Test that assets can load properly, and that materializations register across multiple code locations."""
     from kitchen_sink.airflow_instance import local_airflow_instance
 
-    af_instance = local_airflow_instance()
+    af_instance = local_airflow_instance(airflow_version=infer_af_version_from_env())
 
     expected_mats_per_dag = {
         "dag_first_code_location": [

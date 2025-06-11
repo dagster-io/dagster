@@ -20,9 +20,8 @@ pin = "" if ver == "1!0+dev" or "rc" in ver else f"=={ver}"
 # However, to ensure a reliable test and tutorial setup, we pin a version of Airflow
 # that is compatible with the current version of dagster-airlift for all supported
 # versions of python.
-# Eventually, we could consider adding a test suite that runs across different versions of airflow
-# to ensure compatibility.
-AIRFLOW_REQUIREMENTS = [
+# We now support both Airflow 2.x and 3.x versions with separate requirement sets.
+AIRFLOW2_REQUIREMENTS = [
     # Requirements for python versions under 3.12.
     "apache-airflow==2.9.3; python_version < '3.12'",
     "marshmallow==3.20.1; python_version < '3.12'",
@@ -37,6 +36,18 @@ AIRFLOW_REQUIREMENTS = [
     # https://github.com/apache/airflow/issues/35234
     "connexion<3.0.0",
 ]
+
+AIRFLOW3_REQUIREMENTS = [
+    # Airflow 3.0.1 supports Python 3.9+
+    "apache-airflow>=3.0.0,<4.0.0",
+    "marshmallow>=3.23.0",
+    "pendulum>=3.0.0",
+    # Flask-session compatibility for Airflow 3
+    "flask-session>=0.8.0",
+]
+
+# Backward compatibility - keep AIRFLOW_REQUIREMENTS pointing to Airflow 2
+AIRFLOW_REQUIREMENTS = AIRFLOW2_REQUIREMENTS
 
 CLI_REQUIREMENTS = ["click", "structlog"]
 
@@ -78,13 +89,22 @@ setup(
         "mwaa": [
             "boto3>=1.18.0"
         ],  # confirms that mwaa is available in the environment (can't find exactly which version adds mwaa support, but I can confirm that 1.18.0 and greater have it.)
-        "test": [
+        "test-airflow2": [
             "pytest",
             f"dagster-dbt{pin}",
             "dbt-duckdb",
             "boto3",
             f"dagster-webserver{pin}",
-            *AIRFLOW_REQUIREMENTS,
+            *AIRFLOW2_REQUIREMENTS,
+            *CLI_REQUIREMENTS,
+        ],
+        "test-airflow3": [
+            "pytest",
+            f"dagster-dbt{pin}",
+            "dbt-duckdb",
+            "boto3",
+            f"dagster-webserver{pin}",
+            *AIRFLOW3_REQUIREMENTS,
             *CLI_REQUIREMENTS,
         ],
     },

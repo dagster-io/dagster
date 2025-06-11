@@ -224,7 +224,7 @@ def compute_serialized_data(
             dag_id: SerializedDagData(
                 dag_id=dag_id,
                 dag_info=dag_info,
-                source_code=airflow_instance.get_dag_source_code(dag_info.metadata["file_token"])
+                source_code=airflow_instance.get_dag_source_code(dag_info)
                 if source_code_retrieval_enabled
                 else None,
                 leaf_asset_keys=get_leaf_assets_for_dag(

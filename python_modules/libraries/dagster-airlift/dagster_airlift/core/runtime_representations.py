@@ -1,7 +1,6 @@
 import datetime
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Optional
 
-from dagster import _check as check
 from dagster._record import record
 
 if TYPE_CHECKING:
@@ -52,17 +51,16 @@ class DagRun:
         return self.metadata["conf"]
 
     @property
-    def logical_date(self) -> datetime.datetime:
+    def logical_date(self) -> Optional[datetime.datetime]:
         """Returns the airflow-coined "logical date" from the dag run metadata.
         The logical date refers to the starting time of the "data interval" that the dag run is processing.
         In airflow < 2.2, this was set as the execution_date parameter in the dag run metadata.
         """
         # In airflow < 2.2, execution_date is set instead of logical_date.
-        logical_date_str = check.not_none(
-            self.metadata.get("logical_date") or self.metadata.get("execution_date"),
-            "Expected one of execution_date or logical_date to be returned from the airflow rest API when querying for dag information.",
-        )
-
+        # In Airflow 3, logical_date can be None explicitly.
+        logical_date_str = self.metadata.get("logical_date") or self.metadata.get("execution_date")
+        if logical_date_str is None:
+            return None
         return datetime.datetime.fromisoformat(logical_date_str)
 
     @property
@@ -99,17 +97,16 @@ class TaskInstance:
         return f"{self.details_url}&tab=logs"
 
     @property
-    def logical_date(self) -> datetime.datetime:
+    def logical_date(self) -> Optional[datetime.datetime]:
         """Returns the airflow-coined "logical date" from the task instance metadata.
         The logical date refers to the starting time of the "data interval" that the overall dag run is processing.
         In airflow < 2.2, this was set as the execution_date parameter in the task instance metadata.
         """
         # In airflow < 2.2, execution_date is set instead of logical_date.
-        logical_date_str = check.not_none(
-            self.metadata.get("logical_date") or self.metadata.get("execution_date"),
-            "Expected one of execution_date or logical_date to be returned from the airflow rest API when querying for task information.",
-        )
-
+        # In Airflow 3, logical_date can be None explicitly.
+        logical_date_str = self.metadata.get("logical_date") or self.metadata.get("execution_date")
+        if logical_date_str is None:
+            return None
         return datetime.datetime.fromisoformat(logical_date_str)
 
     @property

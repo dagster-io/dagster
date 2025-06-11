@@ -22,7 +22,7 @@ default_args = {
 with DAG(
     "overridden_dag",
     default_args=default_args,
-    schedule_interval=None,
+    schedule=None,
     is_paused_upon_creation=False,
 ) as dag:
     PythonOperator(task_id="print_task", python_callable=print_hello) << PythonOperator(

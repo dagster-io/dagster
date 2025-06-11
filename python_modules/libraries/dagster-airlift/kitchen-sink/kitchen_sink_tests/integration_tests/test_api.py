@@ -4,25 +4,28 @@ from typing import TYPE_CHECKING, cast
 import pytest
 import requests
 from dagster import Definitions
+from dagster._core.definitions.asset_key import AssetKey, CoercibleToAssetKey
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.events import AssetMaterialization
 from dagster._core.definitions.run_request import SensorResult
 from dagster._core.definitions.sensor_definition import build_sensor_context
 from dagster._core.test_utils import instance_for_test
-from dagster_airlift.constants import PEERED_DAG_MAPPING_METADATA_KEY, SOURCE_CODE_METADATA_KEY
+from dagster_airlift.constants import (
+    PEERED_DAG_MAPPING_METADATA_KEY,
+    SOURCE_CODE_METADATA_KEY,
+    infer_af_version_from_env,
+)
 from dagster_airlift.core import build_defs_from_airflow_instance
 from dagster_airlift.core.airflow_instance import AirflowInstance
-from dagster_airlift.core.basic_auth import AirflowBasicAuthBackend
 from dagster_airlift.core.filter import AirflowFilter
 from dagster_airlift.core.serialization.serialized_data import Dataset
 from dagster_airlift.core.top_level_dag_def_api import assets_with_dag_mappings
 from dagster_airlift.test.test_utils import asset_spec
 from kitchen_sink.airflow_instance import (
-    AIRFLOW_BASE_URL,
     AIRFLOW_INSTANCE_NAME,
     EXPECTED_NUM_DAGS,
-    PASSWORD,
-    USERNAME,
+    get_backend,
     local_airflow_instance,
 )
 from pytest_mock import MockFixture
@@ -40,10 +43,9 @@ def test_configure_dag_list_limit(airflow_instance: None, mocker: MockFixture) -
     """Test that batch instance logic correctly retrieves all dags when over batch limit."""
     spy = mocker.spy(requests.Session, "get")
     af_instance = AirflowInstance(
-        auth_backend=AirflowBasicAuthBackend(
-            webserver_url=AIRFLOW_BASE_URL, username=USERNAME, password=PASSWORD
-        ),
+        auth_backend=get_backend(infer_af_version_from_env()),
         name=AIRFLOW_INSTANCE_NAME,
+        airflow_version=infer_af_version_from_env(),
         # Set low list limit, force batched retrieval.
         dag_list_limit=1,
     )
@@ -55,10 +57,9 @@ def test_configure_dag_list_limit(airflow_instance: None, mocker: MockFixture) -
 def test_airflow_filter(airflow_instance: None) -> None:
     """Test that airflow filter correctly filters dags."""
     af_instance = AirflowInstance(
-        auth_backend=AirflowBasicAuthBackend(
-            webserver_url=AIRFLOW_BASE_URL, username=USERNAME, password=PASSWORD
-        ),
+        auth_backend=get_backend(infer_af_version_from_env()),
         name=AIRFLOW_INSTANCE_NAME,
+        airflow_version=infer_af_version_from_env(),
     )
     dags = af_instance.list_dags(AirflowFilter(dag_id_ilike="simple"))
     assert len(dags) == 1
@@ -78,7 +79,7 @@ def change_dag_limit_source_code(limit: int) -> None:
 def test_disable_source_code_retrieval_at_scale(airflow_instance: None) -> None:
     """Test that source code retrieval is disabled at scale."""
     change_dag_limit_source_code(1)
-    af_instance = local_airflow_instance()
+    af_instance = local_airflow_instance(airflow_version=infer_af_version_from_env())
     defs = build_defs_from_airflow_instance(airflow_instance=af_instance)
     assert defs.assets
     for assets_def in defs.assets:
@@ -87,7 +88,9 @@ def test_disable_source_code_retrieval_at_scale(airflow_instance: None) -> None:
 
     change_dag_limit_source_code(200)
     # Also force re-retrieval of state by giving the airflow instance a different name.
-    af_instance = local_airflow_instance(name="different_name")
+    af_instance = local_airflow_instance(
+        name="different_name", airflow_version=infer_af_version_from_env()
+    )
     defs = build_defs_from_airflow_instance(airflow_instance=af_instance)
     assert defs.assets
     for assets_def in defs.assets:
@@ -98,7 +101,9 @@ def test_disable_source_code_retrieval_at_scale(airflow_instance: None) -> None:
 
     # If source code retrieval is explicitly enabled, we don't use the limit.
     change_dag_limit_source_code(1)
-    af_instance = local_airflow_instance(name="different_name")
+    af_instance = local_airflow_instance(
+        name="different_name", airflow_version=infer_af_version_from_env()
+    )
     defs = build_defs_from_airflow_instance(
         airflow_instance=af_instance, source_code_retrieval_enabled=True
     )
@@ -114,10 +119,9 @@ def test_sensor_iteration_multiple_batches(airflow_instance: None, mocker: MockF
     """Test that sensor iteration correctly retrieves all runs when over batch limit."""
     spy = mocker.spy(AirflowInstance, "get_dag_runs_batch")
     af_instance = AirflowInstance(
-        auth_backend=AirflowBasicAuthBackend(
-            webserver_url=AIRFLOW_BASE_URL, username=USERNAME, password=PASSWORD
-        ),
+        auth_backend=get_backend(infer_af_version_from_env()),
         name=AIRFLOW_INSTANCE_NAME,
+        airflow_version=infer_af_version_from_env(),
         # Set low list limit, force batched retrieval.
         batch_dag_runs_limit=1,
     )
@@ -133,17 +137,33 @@ def test_sensor_iteration_multiple_batches(airflow_instance: None, mocker: MockF
         ctx = build_sensor_context(instance=instance, definitions=defs)
         result = sensor_def(ctx)
         assert isinstance(result, SensorResult)
-        assert len(result.asset_events) == 2
-        assert spy.call_count == 2
+        assert (
+            len(
+                mats_for_key(
+                    result.asset_events, AssetKey([af_instance.name, "dag", "simple_unproxied_dag"])
+                )
+            )
+            == 2
+        )
+        # This assertion is not ideal. Essentially, we're trying to ensure that it takes multiple batch requests to
+        # Retrieve all of the asset events, indicating our batch limit is being respected.
+        # However, because automatic runs can get kicked off by Airflow upon spinup, we can't guarantee the exact number of
+        # calls that will ensue.
+        assert spy.call_count >= 2
+
+
+def mats_for_key(
+    lst: Sequence[AssetMaterialization], key: CoercibleToAssetKey
+) -> Sequence[AssetMaterialization]:
+    return [mat for mat in lst if mat.asset_key == AssetKey.from_coercible(key)]
 
 
 def test_sensor_explicitly_mapped_assets(airflow_instance: None, mocker: MockFixture) -> None:
     """Test that sensor iteration correctly retrieves all runs even when assets are explicitly mapped."""
     af_instance = AirflowInstance(
-        auth_backend=AirflowBasicAuthBackend(
-            webserver_url=AIRFLOW_BASE_URL, username=USERNAME, password=PASSWORD
-        ),
+        auth_backend=get_backend(infer_af_version_from_env()),
         name=AIRFLOW_INSTANCE_NAME,
+        airflow_version=infer_af_version_from_env(),
     )
     # explicitly map an asset to a dag. This forces the set of dag_ids passed to the rest API to be nonzero.
     defs = build_defs_from_airflow_instance(
@@ -161,7 +181,15 @@ def test_sensor_explicitly_mapped_assets(airflow_instance: None, mocker: MockFix
         ctx = build_sensor_context(instance=instance, definitions=defs)
         result = sensor_def(ctx)
         assert isinstance(result, SensorResult)
-        assert len(result.asset_events) == 2
+        assert (
+            len(
+                mats_for_key(
+                    result.asset_events, AssetKey([af_instance.name, "dag", "simple_unproxied_dag"])
+                )
+            )
+            == 2
+        )
+        assert len(mats_for_key(result.asset_events, "my_asset")) == 0
 
 
 def dataset_with_uri(datasets: Sequence[Dataset], uri: str) -> Dataset:
@@ -170,7 +198,7 @@ def dataset_with_uri(datasets: Sequence[Dataset], uri: str) -> Dataset:
 
 def test_datasets(airflow_instance: None) -> None:
     """Test that we can correctly retrieve datasets from Airflow."""
-    af_instance = local_airflow_instance()
+    af_instance = local_airflow_instance(airflow_version=infer_af_version_from_env())
     datasets = af_instance.get_all_datasets()
     assert len(datasets) == 2
     assert {d.uri for d in datasets} == {
@@ -208,7 +236,7 @@ def test_datasets(airflow_instance: None) -> None:
 
 
 def test_log_retrieval(airflow_instance: None) -> None:
-    af_instance = local_airflow_instance()
+    af_instance = local_airflow_instance(airflow_version=infer_af_version_from_env())
     run_id = af_instance.trigger_dag("dataset_producer")
     af_instance.wait_for_run_completion(dag_id="dataset_producer", run_id=run_id)
     logs = af_instance.get_task_instance_logs(

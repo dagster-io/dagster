@@ -1,6 +1,7 @@
 from dagster import Definitions
 from dagster._core.definitions.decorators.asset_decorator import asset
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
+from dagster_airlift.constants import infer_af_version_from_env
 from dagster_airlift.core import assets_with_task_mappings
 from dagster_airlift.core.load_defs import build_job_based_airflow_defs
 
@@ -17,7 +18,7 @@ def build_job_based_defs() -> Definitions:
         context.add_output_metadata({"foo": "baz"})
 
     return build_job_based_airflow_defs(
-        airflow_instance=local_airflow_instance(),
+        airflow_instance=local_airflow_instance(airflow_version=infer_af_version_from_env()),
         mapped_defs=Definitions(
             assets=[
                 *assets_with_task_mappings(

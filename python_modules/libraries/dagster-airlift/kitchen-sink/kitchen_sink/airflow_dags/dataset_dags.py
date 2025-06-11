@@ -44,7 +44,7 @@ example2 = Dataset("s3://dataset-bucket/example2.csv")
 with DAG(
     "dataset_producer",
     default_args=default_args,
-    schedule_interval=None,
+    schedule=None,
     is_paused_upon_creation=False,
 ) as dataset_producer_dag:
     print_task = PythonOperator(

@@ -22,7 +22,6 @@ def build_dags_dict_given_structure(structure: dict[str, dict[str, list[str]]]) 
                 "start_date": datetime(2023, 1, 1),
                 "retries": 1,
             },
-            schedule_interval=None,
             is_paused_upon_creation=False,
         )
         for task_id in task_structure.keys():

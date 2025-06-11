@@ -1,12 +1,11 @@
-import time
 from pathlib import Path
 
 import pytest
-import requests
 from dagster import AssetKey, DagsterInstance, DagsterRunStatus
 from dagster._core.test_utils import environ
-from dagster._time import get_current_timestamp
-from dagster_airlift.constants import DAG_RUN_ID_TAG_KEY
+from dagster_airlift.constants import DAG_RUN_ID_TAG_KEY, infer_af_version_from_env
+from dagster_airlift.core.airflow_instance import AirflowInstance
+from dagster_airlift.test.shared_fixtures import AIRFLOW_INSTANCE_NAME, get_backend
 
 
 def _test_project_dir() -> Path:
@@ -25,30 +24,16 @@ def dagster_defs_path_fixture() -> str:
 
 def test_dagster_operator(airflow_instance: None, dagster_dev: None, dagster_home: str) -> None:
     """Tests that dagster operator can correctly map airflow tasks to dagster tasks, and kick off executions."""
-    response = requests.post(
-        "http://localhost:8080/api/v1/dags/the_dag/dagRuns", auth=("admin", "admin"), json={}
+    af_instance = AirflowInstance(
+        auth_backend=get_backend(),
+        name=AIRFLOW_INSTANCE_NAME,
+        airflow_version=infer_af_version_from_env(),
     )
-    assert response.status_code == 200, response.json()
-    # Wait until the run enters a terminal state
-    terminal_status = None
-    start_time = get_current_timestamp()
-    dag_run = None
-    while get_current_timestamp() - start_time < 30:
-        response = requests.get(
-            "http://localhost:8080/api/v1/dags/the_dag/dagRuns", auth=("admin", "admin")
-        )
-        assert response.status_code == 200, response.json()
-        dag_runs = response.json()["dag_runs"]
-        if dag_runs[0]["state"] in ["success", "failed"]:
-            terminal_status = dag_runs[0]["state"]
-            dag_run = dag_runs[0]
-            break
-        time.sleep(1)
-    assert terminal_status == "success", (
-        "Never reached terminal status"
-        if terminal_status is None
-        else f"terminal status was {terminal_status}"
-    )
+    dag_run_id = af_instance.trigger_dag(dag_id="the_dag")
+    af_instance.wait_for_run_completion(dag_id="the_dag", run_id=dag_run_id)
+    dag_run = af_instance.get_dag_run(dag_id="the_dag", run_id=dag_run_id)
+    assert dag_run.success
+
     with environ({"DAGSTER_HOME": dagster_home}):
         instance = DagsterInstance.get()
         runs = instance.get_runs()
@@ -69,6 +54,4 @@ def test_dagster_operator(airflow_instance: None, dagster_dev: None, dagster_hom
         ][0]
         assert the_run.status == DagsterRunStatus.SUCCESS
 
-        assert isinstance(dag_run, dict)
-        assert "dag_run_id" in dag_run
-        assert the_run.tags[DAG_RUN_ID_TAG_KEY] == dag_run["dag_run_id"]
+        assert the_run.tags[DAG_RUN_ID_TAG_KEY] == dag_run.run_id
