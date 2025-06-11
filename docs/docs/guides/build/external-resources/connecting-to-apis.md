@@ -17,7 +17,7 @@ This guide assumes familiarity with [assets](/guides/build/assets/) and [resourc
 
 To run the example code in this article, you will need to install the `requests` library:
     ```bash
-    pip install requests
+    uv pip install requests
     ```
 
 </details>
@@ -32,7 +32,7 @@ Using `ConfigurableResource`, define a Dagster resource with a method that retur
 
 ## Step 2: Use the resource in an asset
 
-To use the resource, provide it as a parameter to an asset and include it in the `Definitions` object:
+To use the resource, provide it as a parameter to an asset and define a function using <PyObject section="definitions" module="dagster" object="definitions" decorator />:
 
 <CodeExample path="docs_snippets/docs_snippets/guides/external-systems/apis/use_minimal_resource_in_asset.py" language="python" />
 

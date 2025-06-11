@@ -70,10 +70,12 @@ def iris_setosa(iris_db: SnowflakeResource) -> None:
 deployment_name = os.getenv("DAGSTER_DEPLOYMENT", "local")
 # highlight-end
 
-defs = dg.Definitions(
-    assets=[iris_dataset, iris_setosa],
-    # highlight-start
-    # Provide the dictionary of resources to `Definitions`
-    resources=resources[deployment_name],
-    # highlight-end
-)
+
+@dg.definitions
+def resources():
+    return dg.Definitions(
+        # highlight-start
+        # Provide the dictionary of resources to `Definitions`
+        resources=resources[deployment_name],
+        # highlight-end
+    )

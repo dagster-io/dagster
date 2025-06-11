@@ -14,7 +14,7 @@ The configuration system has a few advantages over plain Python parameter passin
 
 ## With asset definitions
 
-The following example demonstrates defining a subclass of <PyObject section="resources" module="dagster" object="ConfigurableResource"/> that represents a connection to an external service. The resource can be configured by constructing it in the <PyObject section="definitions" module="dagster" object="Definitions" /> call.
+The following example demonstrates defining a subclass of <PyObject section="resources" module="dagster" object="ConfigurableResource"/> that represents a connection to an external service. The resource can be configured by constructing a function using the <PyObject section="definitions" module="dagster" object="definitions" decorator />.
 
 You can define methods on the resource class which depend on config values.
 
@@ -22,7 +22,7 @@ You can define methods on the resource class which depend on config values.
 
 Assets specify resource dependencies by annotating the resource as a parameter to the asset function.
 
-To provide resource values to assets, attach them to the <PyObject section="definitions" module="dagster" object="Definitions" /> objects. These resources are automatically passed to the function at runtime.
+To provide resource values to assets, attach them to the <PyObject section="definitions" module="dagster" object="Definitions" decorator /> function. These resources are automatically passed to the function at runtime.
 
 ## With sensors
 
@@ -38,7 +38,7 @@ To specify resource dependencies on a schedule, annotate the resource type as a 
 
 ## With jobs
 
-The following example defines a subclass of <PyObject section="resources" module="dagster" object="ConfigurableResource"/> that represents a connection to an external service. The resource can be configured by constructing it in the <PyObject section="definitions" module="dagster" object="Definitions" /> call.
+The following example defines a subclass of <PyObject section="resources" module="dagster" object="ConfigurableResource"/> that represents a connection to an external service. The resource can be configured by constructing a function using the <PyObject section="definitions" module="dagster" object="definitions" decorator />.
 
 You can define methods on the resource class which depend on config values.
 

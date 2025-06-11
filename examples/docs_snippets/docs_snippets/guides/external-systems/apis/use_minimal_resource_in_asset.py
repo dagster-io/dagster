@@ -27,5 +27,9 @@ def sfo_sunrise(context: dg.AssetExecutionContext, sun_resource: SunResource) ->
 
 # highlight-start
 # Include the resource in the Definitions object
-defs = dg.Definitions(assets=[sfo_sunrise], resources={"sun_resource": SunResource()})
+@dg.definitions
+def resources():
+    return dg.Definitions(resources={"sun_resource": SunResource()})
+
+
 # highlight-end

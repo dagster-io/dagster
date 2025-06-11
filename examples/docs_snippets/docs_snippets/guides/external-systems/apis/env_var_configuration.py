@@ -27,16 +27,18 @@ def home_sunrise(context: dg.AssetExecutionContext, sun_resource: SunResource) -
 
 # highlight-end
 
-defs = dg.Definitions(
-    assets=[home_sunrise],
-    # highlight-start
-    # Update the configuration to use environment variables
-    resources={
-        "sun_resource": SunResource(
-            latitude=dg.EnvVar("HOME_LATITUDE"),
-            longitude=dg.EnvVar("HOME_LONGITUDE"),
-            time_zone=dg.EnvVar("HOME_TIMEZONE"),
-        )
-    },
-    # highlight-end
-)
+
+@dg.definitions
+def resources():
+    return dg.Definitions(
+        # highlight-start
+        # Update the configuration to use environment variables
+        resources={
+            "sun_resource": SunResource(
+                latitude=dg.EnvVar("HOME_LATITUDE"),
+                longitude=dg.EnvVar("HOME_LONGITUDE"),
+                time_zone=dg.EnvVar("HOME_TIMEZONE"),
+            )
+        },
+        # highlight-end
+    )
