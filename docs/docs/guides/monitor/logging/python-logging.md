@@ -127,8 +127,6 @@ If we execute the following job:
 <CodeExample
   path="docs_snippets/docs_snippets/concepts/logging/file_output_pipeline.py"
   title="src/my_project/defs/my_job.py"
-  startAfter="start_custom_file_output_log"
-  endBefore="end_custom_file_output_log"
 />
 
 And then read the `my_dagster_logs.log` output log file, we'll see the log file contains the formatted log:
