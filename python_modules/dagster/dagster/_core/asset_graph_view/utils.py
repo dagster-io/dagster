@@ -10,7 +10,6 @@ def extract_latest(
     *records: Optional["EventLogRecord"], value: Callable[["EventLogRecord"], T] = lambda x: x
 ) -> Optional[T]:
     """Extracts the latest non-None value from a list of records."""
-    print("RECORDS", records)
     sorted_records = sorted(filter(None, records), key=lambda x: x.storage_id)
     for r in sorted_records:
         v = value(r)
