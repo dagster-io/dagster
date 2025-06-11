@@ -51,8 +51,6 @@ The next step is to verify that the UI is using the latest version of your Dagst
 
 **If the code location can't be loaded** - for example, due to a syntax error - it will have a **Status** of **Failed**. Click the **View error** link in this column to view the error message.
 
-**If the code location loaded successfully** but the schedule isn't present in the **Schedules** tab, the schedule may not be included in the code location's `Definitions` object. Refer to [Step 1](#step-1-verify-the-schedule-is-included-in-the-definitions-object) for more information.
-
 ## Step 5: Verify your dagster-daemon setup
 
 :::note
