@@ -676,6 +676,12 @@ from dagster.components.scaffold.scaffold import (
     ScaffoldRequest as ScaffoldRequest,
     scaffold_with as scaffold_with,
 )
+from dagster.components.testing import (
+    component_defs as component_defs,
+    defs_from_component_yaml_path as defs_from_component_yaml_path,
+    get_all_components_defs_within_project as get_all_components_defs_within_project,
+    get_component_defs_within_project as get_component_defs_within_project,
+)
 from dagster.version import __version__ as __version__
 
 DagsterLibraryRegistry.register("dagster", __version__)
