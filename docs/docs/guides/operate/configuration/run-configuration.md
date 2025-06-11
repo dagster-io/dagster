@@ -50,7 +50,7 @@ These examples showcase the most basic config types that can be used. For more i
 
 ## Defining and accessing Pythonic configuration for a resource
 
-Configurable parameters for a resource are defined by specifying attributes for a resource class, which subclasses <PyObject section="resources" module="dagster" object="ConfigurableResource"/>. The below resource defines a configurable connection URL, which can be accessed in any methods defined on the resource.
+Configurable parameters for a resource are defined by specifying attributes for a resource class, which subclasses <PyObject section="resources" module="dagster" object="ConfigurableResource"/>. The below resource defines a configurable connection URL, which can be accessed in any methods defined on the resource:
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/dagster/pythonic_config/pythonic_config.py"
@@ -60,7 +60,13 @@ Configurable parameters for a resource are defined by specifying attributes for 
   dedent="4"
 />
 
-For more information on using resources, refer to the [Resources guide](/guides/build/external-resources).
+:::info
+
+If you [create your project](/guides/build/projects/creating-a-new-project) with the [`create-dagster` CLI](/api/dg/create-dagster), you can define resources anywhere in the `/defs` folder of the project, and they will be accessible to any other entity in the `/defs` folder (for example, an asset defined at `/defs/assets/my_asset.py`).
+
+:::
+
+For more information on using resources, see the [resources documentation](/guides/build/external-resources).
 
 ## Specifying runtime configuration
 
