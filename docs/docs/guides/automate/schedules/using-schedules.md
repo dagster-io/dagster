@@ -14,7 +14,7 @@ Before following this guide, you will need to [create a project](/guides/build/p
 
 :::
 
-[Assets](/guides/build/assets) and [jobs] frequently use schedules that are instantiated elsewhere in the project.
+[Assets](/guides/build/assets) and [jobs](/guides/build/jobs) frequently use schedules that are instantiated elsewhere in the project.
 
 For example, if you have created a new Dagster project with `dg` called `my_project`, you can define the schedules at `src/my_project/defs/schedules.py`:
 
