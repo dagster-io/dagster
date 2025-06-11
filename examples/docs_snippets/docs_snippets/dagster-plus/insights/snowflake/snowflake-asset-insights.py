@@ -20,4 +20,6 @@ def snowflake_asset(snowflake: InsightsSnowflakeResource):
     # highlight-end
     with snowflake.get_connection() as conn:
         conn.cursor().execute("select 1")
+
+
 # highlight-end
