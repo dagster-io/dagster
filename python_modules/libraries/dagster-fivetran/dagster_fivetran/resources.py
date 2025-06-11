@@ -2,7 +2,7 @@ import json
 import logging
 import os
 import time
-from collections.abc import Mapping, Sequence
+from collections.abc import Iterator, Mapping, Sequence
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta
 from functools import partial
@@ -66,8 +66,6 @@ FIVETRAN_CONNECTOR_PATH = f"{FIVETRAN_CONNECTOR_ENDPOINT}/"
 
 # default polling interval (in seconds)
 DEFAULT_POLL_INTERVAL = 10
-
-DEFAULT_MAX_THREADPOOL_WORKERS = 10
 
 FIVETRAN_RECONSTRUCTION_METADATA_KEY_PREFIX = "dagster-fivetran/reconstruction_metadata"
 
@@ -970,9 +968,7 @@ class FivetranWorkspace(ConfigurableResource):
         )
 
     @cached_method
-    def fetch_fivetran_workspace_data(
-        self,
-    ) -> FivetranWorkspaceData:
+    def fetch_fivetran_workspace_data(self) -> FivetranWorkspaceData:
         """Retrieves all Fivetran content from the workspace and returns it as a FivetranWorkspaceData object.
 
         Returns:
@@ -1034,18 +1030,42 @@ class FivetranWorkspace(ConfigurableResource):
 
                 return connector, schema_config
 
-            with ThreadPoolExecutor(
-                max_workers=DEFAULT_MAX_THREADPOOL_WORKERS,
-                thread_name_prefix=f"fivetran_{group_id}",
-            ) as executor:
-                for connector, schema_config in imap(
-                    executor=executor,
-                    iterable=connectors_details,
-                    func=_get_connector_and_schema_config_from_connector_details,
-                ):
-                    if connector and schema_config:
-                        connectors_by_id[connector.id] = connector
-                        schema_configs_by_connector_id[connector.id] = schema_config
+            max_threadpool_workers = int(
+                os.getenv("DAGSTER_FIVETRAN_FETCH_WORKSPACE_DATA_MAX_THREADPOOL_WORKERS", "0")
+            )
+
+            def _threadpool_iterator() -> Iterator[
+                tuple[Optional[FivetranConnector], Optional[FivetranSchemaConfig]]
+            ]:
+                with ThreadPoolExecutor(
+                    max_workers=max_threadpool_workers,
+                    thread_name_prefix=f"fivetran_{group_id}",
+                ) as executor:
+                    yield from imap(
+                        executor=executor,
+                        iterable=connectors_details,
+                        func=_get_connector_and_schema_config_from_connector_details,
+                    )
+
+            def _standard_iterator() -> Iterator[
+                tuple[Optional[FivetranConnector], Optional[FivetranSchemaConfig]]
+            ]:
+                for connector_details in connectors_details:
+                    connector, schema_config = (
+                        _get_connector_and_schema_config_from_connector_details(
+                            connector_details=connector_details
+                        )
+                    )
+                    yield connector, schema_config
+
+            _get_connector_and_schema_config_iterator = (
+                _threadpool_iterator if max_threadpool_workers else _standard_iterator
+            )
+
+            for connector, schema_config in _get_connector_and_schema_config_iterator():
+                if connector and schema_config:
+                    connectors_by_id[connector.id] = connector
+                    schema_configs_by_connector_id[connector.id] = schema_config
 
         return FivetranWorkspaceData(
             connectors_by_id=connectors_by_id,
