@@ -58,6 +58,7 @@ def a_job():
 
 # end_different_input_managers
 
+
 # start_plain_input_manager
 # in this case PandasIOManager is an existing IO Manager
 class MyNumpyLoader(PandasIOManager):
