@@ -19,6 +19,7 @@ if TYPE_CHECKING:
     from dagster_graphql.schema.asset_health import (
         GrapheneAssetHealthCheckMeta,
         GrapheneAssetHealthFreshnessMeta,
+        GrapheneAssetHealthMaterializationMeta,
     )
 
 
@@ -141,7 +142,7 @@ async def get_freshness_status_and_metadata(
 
 async def get_materialization_status_and_metadata(
     context: "BaseWorkspaceRequestContext", asset_key: AssetKey
-) -> tuple[AssetHealthStatus, Optional["GrapheneAssetHealthFreshnessMeta"]]:
+) -> tuple[AssetHealthStatus, Optional["GrapheneAssetHealthMaterializationMeta"]]:
     """Gets an AssetMaterializationHealthState object for an asset, either via streamline or by computing
     it based on the state of the DB. Then converts it to a AssetHealthStatus and the metadata
     needed to power the UIs. Metadata is fetched from the AssetLatestMaterializationState object, again
