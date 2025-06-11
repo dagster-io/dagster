@@ -662,7 +662,7 @@
     },
     {
       "source": "/deployment/open-source",
-      "destination": "/guides/deploy/",
+      "destination": "/deployment/oss",
       "permanent": false
     },
     {
@@ -1386,22 +1386,17 @@
       "destination": "/deployment/dagster-plus/management/rate-limits"
     },
     {
-      "source": "/deployment",
-      "destination": "/guides/deploy/",
-      "permanent": false
-    },
-    {
       "source": "/deployment/overview",
       "destination": "/deployment/oss/oss-deployment-architecture",
       "permanent": false
     },
     {
       "source": "/deployment/concepts",
-      "destination": "/guides/deploy/"
+      "destination": "/deployment"
     },
     {
       "source": "/deployment/dagster-instance",
-      "destination": "/guides/deploy/dagster-instance-configuration"
+      "destination": "/deployment/oss/instance-configuration"
     },
     {
       "source": "/deployment/dagster-daemon",
