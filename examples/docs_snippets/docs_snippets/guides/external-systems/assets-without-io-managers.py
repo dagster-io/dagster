@@ -58,7 +58,8 @@ def sales_summary(duckdb: DuckDBResource) -> None:
             conn.execute("INSERT INTO sales_summary SELECT * from summary")
 
 
-defs = dg.Definitions(
-    assets=[raw_sales_data, clean_sales_data, sales_summary],
-    resources={"duckdb": DuckDBResource(database="sales.duckdb", schema="public")},
-)
+@dg.definitions
+def resources():
+    return dg.Definitions(
+        resources={"duckdb": DuckDBResource(database="sales.duckdb", schema="public")}
+    )
