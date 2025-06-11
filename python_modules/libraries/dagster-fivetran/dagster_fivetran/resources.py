@@ -1043,7 +1043,7 @@ class FivetranWorkspace(ConfigurableResource):
                 ) as executor:
                     yield from imap(
                         executor=executor,
-                        iterable=connectors_details,
+                        iterable=iter(connectors_details),
                         func=_get_connector_and_schema_config_from_connector_details,
                     )
 
