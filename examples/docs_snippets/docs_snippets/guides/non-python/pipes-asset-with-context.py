@@ -25,7 +25,8 @@ def my_asset(
     ).get_materialize_result()
 
 
-defs = dg.Definitions(
-    assets=[my_asset],
-    resources={"pipes_subprocess_client": dg.PipesSubprocessClient()},
-)
+@dg.definitions
+def resources():
+    return dg.Definitions(
+        resources={"pipes_subprocess_client": dg.PipesSubprocessClient()}
+    )

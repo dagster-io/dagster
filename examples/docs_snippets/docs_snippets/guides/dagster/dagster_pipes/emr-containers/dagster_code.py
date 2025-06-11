@@ -37,19 +37,22 @@ def emr_containers_asset(
 import boto3
 from dagster_aws.pipes import PipesS3MessageReader
 
-from dagster import Definitions
+import dagster as dg
 
-defs = Definitions(
-    assets=[emr_containers_asset],
-    resources={
-        "pipes_emr_containers_client": PipesEMRContainersClient(
-            message_reader=PipesS3MessageReader(
-                client=boto3.client("s3"),
-                bucket=...,
-                include_stdio_in_messages=True,
-            ),
-        )
-    },
-)
+
+@dg.definitions
+def resources():
+    return dg.Definitions(
+        resources={
+            "pipes_emr_containers_client": PipesEMRContainersClient(
+                message_reader=PipesS3MessageReader(
+                    client=boto3.client("s3"),
+                    bucket=...,
+                    include_stdio_in_messages=True,
+                ),
+            )
+        },
+    )
+
 
 # end_definitions_marker

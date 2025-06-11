@@ -6,14 +6,14 @@ import sys
 
 from dagster_databricks import PipesDatabricksClient
 
-from dagster import AssetExecutionContext, Definitions, asset
+import dagster as dg
 from databricks.sdk import WorkspaceClient
 from databricks.sdk.service import jobs
 
 
-@asset
+@dg.asset
 def databricks_asset(
-    context: AssetExecutionContext, pipes_databricks: PipesDatabricksClient
+    context: dg.AssetExecutionContext, pipes_databricks: PipesDatabricksClient
 ):
     task = jobs.SubmitTask.from_dict(
         {
@@ -64,7 +64,10 @@ pipes_databricks_resource = PipesDatabricksClient(
     )
 )
 
-defs = Definitions(
-    assets=[databricks_asset], resources={"pipes_databricks": pipes_databricks_resource}
-)
+
+@dg.definitions
+def resources():
+    return dg.Definitions(resources={"pipes_databricks": pipes_databricks_resource})
+
+
 # end_definitions
