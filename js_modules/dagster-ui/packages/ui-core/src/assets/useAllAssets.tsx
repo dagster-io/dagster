@@ -347,6 +347,29 @@ const getAssetsByAssetKey = weakMapMemoize(
   },
 );
 
+// The set of fields that should be merged by unioning the values from all SDA definitions across all code locations.
+// Keep this in sync with the python code that merges the SDA definitions: https://github.com/dagster-io/dagster/blob/22e79ea7024bd13b197e3a2f66401197badceb75/python_modules/dagster/dagster/_core/definitions/remote_asset_graph.py#L239
+const MERGE_ARRAY_KEYS = [
+  'jobNames',
+  'kinds',
+  'opNames',
+  'pools',
+  'owners',
+  'tags',
+  'dependencyKeys',
+  'dependedByKeys',
+] as const;
+
+// The set of fields that should be merged by taking the union of the values from all SDA definitions across all code locations.
+// Keep this in sync with the python code that merges the SDA definitions: https://github.com/dagster-io/dagster/blob/22e79ea7024bd13b197e3a2f66401197badceb75/python_modules/dagster/dagster/_core/definitions/remote_asset_graph.py#L239
+const MERGE_BOOLEAN_KEYS = [
+  'isPartitioned',
+  'isExecutable',
+  'isObservable',
+  'isMaterializable',
+  'isAutoCreatedStub',
+] as const;
+
 const combineAssetDefinitions = weakMapMemoize(
   (
     asset: ReturnType<typeof getAssets>[number],
@@ -356,17 +379,20 @@ const combineAssetDefinitions = weakMapMemoize(
       ...asset,
       definition: {
         ...asset.definition,
-        // jobNames: Array.from(new Set(sdas.map((sda) => sda.definition?.jobNames).flat())),
-        // kinds: Array.from(new Set(sdas.map((sda) => sda.definition?.kinds).flat())),
-        // opNames: Array.from(new Set(sdas.map((sda) => sda.definition?.opNames).flat())),
-        pools: Array.from(new Set(sdas.map((sda) => sda.definition?.pools).flat())),
-        dependencyKeys: sdas.map((sda) => sda.definition?.dependencyKeys).flat(),
-        dependedByKeys: sdas.map((sda) => sda.definition?.dependedByKeys).flat(),
-        isPartitioned: sdas.some((sda) => sda.definition?.isPartitioned),
-        isExecutable: sdas.some((sda) => sda.definition?.isExecutable),
-        isObservable: sdas.some((sda) => sda.definition?.isObservable),
-        isMaterializable: sdas.some((sda) => sda.definition?.isMaterializable),
-        isAutoCreatedStub: sdas.some((sda) => sda.definition?.isAutoCreatedStub),
+        ...MERGE_ARRAY_KEYS.reduce(
+          (acc, key) => {
+            acc[key] = Array.from(new Set(sdas.map((sda) => sda.definition[key]).flat())) as any[];
+            return acc;
+          },
+          {} as Record<string, string[]>,
+        ),
+        ...MERGE_BOOLEAN_KEYS.reduce(
+          (acc, key) => {
+            acc[key] = sdas.some((sda) => sda.definition[key]);
+            return acc;
+          },
+          {} as Record<string, boolean>,
+        ),
       },
     };
   },
