@@ -1200,6 +1200,10 @@
                     "title": "Postgresqlsecretname",
                     "type": "string"
                 },
+                "postgresqlSecretKey": {
+                    "title": "Postgresqlsecretkey",
+                    "type": "string"
+                },
                 "dagsterHome": {
                     "title": "Dagsterhome",
                     "type": "string"
@@ -1215,6 +1219,7 @@
             },
             "required": [
                 "postgresqlSecretName",
+                "postgresqlSecretKey",
                 "dagsterHome",
                 "serviceAccountName",
                 "celeryConfigSecretName"
