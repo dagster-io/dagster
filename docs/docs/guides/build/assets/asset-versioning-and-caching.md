@@ -41,7 +41,7 @@ Let's start with a trivial asset that returns a hardcoded number:
 Next, start the Dagster UI:
 
 ```shell
-dagster dev
+dg dev
 ```
 
 Navigate to the **Asset catalog** and click **Materialize** to materialize the asset.
