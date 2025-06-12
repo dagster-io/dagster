@@ -1,7 +1,6 @@
 from collections.abc import Generator
 
 import dagster as dg
-from dagster._core.definitions.asset_spec import AssetExecutionType
 from dagster._core.definitions.computation import Computation, Effect
 from dagster._core.definitions.decorators.computation_decorator import (
     ComputationResult,
@@ -46,8 +45,10 @@ def test_simple_class_construction():
 
 def test_single_decorator():
     @computation(
-        specs=[
-            dg.AssetSpec(key=dg.AssetKey("the_asset"), deps=["upstream"]),
+        effects=[
+            Effect.materialize(
+                dg.AssetSpec(key=dg.AssetKey("the_asset"), deps=["upstream"]),
+            ),
         ]
     )
     def the_thing(upstream: int) -> Generator[dg.MaterializeResult, None, None]:
@@ -64,14 +65,19 @@ def test_multi_decorator_observe_with_checks():
         return 1
 
     @computation(
-        specs=[
-            dg.AssetSpec(key=dg.AssetKey("a"), deps=["upstream_explicit"]),
-            dg.AssetSpec(key=dg.AssetKey("b"), deps=["upstream_implicit"]),
-            dg.AssetSpec(key=dg.AssetKey("c"), deps=["a", "b"]),
-            dg.AssetCheckSpec(name="check_a", asset="a"),
-            dg.AssetCheckSpec(name="check_upstream", asset="upstream_implicit"),
+        effects=[
+            Effect.observe(
+                dg.AssetSpec(key=dg.AssetKey("a"), deps=["upstream_explicit"]),
+            ),
+            Effect.observe(
+                dg.AssetSpec(key=dg.AssetKey("b"), deps=["upstream_implicit"]),
+            ),
+            Effect.observe(
+                dg.AssetSpec(key=dg.AssetKey("c"), deps=["a", "b"]),
+            ),
+            Effect.check(dg.AssetCheckSpec(name="check_a", asset="a")),
+            Effect.check(dg.AssetCheckSpec(name="check_upstream", asset="upstream_implicit")),
         ],
-        asset_execution_type=AssetExecutionType.OBSERVATION,
     )
     def the_thing(upstream_explicit: int) -> ComputationResult:
         yield dg.ObserveResult(

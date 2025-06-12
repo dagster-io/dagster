@@ -66,10 +66,10 @@ class Computation:
         check.inst(self.node_def, OpDefinition)
         return copy(
             self,
-            selected_outputs={
+            inactive_outputs={
                 output_name
                 for output_name, effect in self.output_mappings.items()
-                if effect.spec.key in keys
+                if effect.spec.key not in keys
             },
         )
 

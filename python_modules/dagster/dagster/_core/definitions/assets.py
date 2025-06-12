@@ -1649,7 +1649,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
             node_def=self.node_def,
             input_mappings=self.node_keys_by_input_name,
             output_mappings={**asset_effects, **check_effects},
-            inactive_outputs=active_outputs - self.node_def.output_dict.keys(),
+            inactive_outputs=self.node_def.output_dict.keys() - active_outputs,
         )
 
 
