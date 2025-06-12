@@ -4,7 +4,7 @@ import re
 from collections.abc import Iterable, Mapping
 from functools import cached_property
 from pathlib import Path
-from typing import Any, Final, Optional, Union
+from typing import Any, Final, Optional
 
 from dagster_shared.record import record
 from dagster_shared.serdes.serdes import whitelist_for_serdes
@@ -12,7 +12,6 @@ from dagster_shared.seven import resolve_module_pattern
 from packaging.version import Version
 from typing_extensions import Self
 
-from dagster_dg_core.cache import CachableDataType, DgCache
 from dagster_dg_core.component import EnvRegistry
 from dagster_dg_core.config import (
     DgConfig,
@@ -44,7 +43,6 @@ from dagster_dg_core.utils import (
     set_toml_node,
     validate_dagster_availability,
 )
-from dagster_dg_core.utils.paths import hash_paths
 from dagster_dg_core.utils.warnings import emit_warning
 
 # Project
@@ -71,7 +69,6 @@ class DgContext:
     root_path: Path
     config: DgConfig
     cli_opts: Optional[DgRawCliConfig] = None
-    _cache: Optional[DgCache] = None
     _workspace_root_path: Optional[Path]
 
     # We need to preserve CLI options for the context to be able to derive new contexts, because
@@ -88,7 +85,6 @@ class DgContext:
         self.root_path = root_path
         self._workspace_root_path = workspace_root_path
         self.cli_opts = cli_opts
-        self._cache = None if config.cli.disable_cache else DgCache.from_config(config)
         self.component_registry = EnvRegistry.empty()
 
         # Always run this check, its a no-op if there is no pyproject.toml.
@@ -275,48 +271,12 @@ class DgContext:
             root_path, self.cli_opts or {}
         )
 
-    # ########################
-    # ##### CACHE METHODS
-    # ########################
-
-    @property
-    def cache(self) -> DgCache:
-        if not self._cache:
-            raise DgError("Cache is disabled")
-        return self._cache
-
-    @property
-    def has_cache(self) -> bool:
-        return self._cache is not None
-
     def component_registry_paths(self) -> list[Path]:
         """Paths that should be watched for changes to the component registry."""
         return [
             self.root_path / "uv.lock",
             *([self.default_registry_module_path] if self.has_registry_module_entry_point else []),
         ]
-
-    # Allowing open-ended str data_type for now so we can do module names
-    def get_cache_key(self, data_type: Union[CachableDataType, str]) -> tuple[str, str, str]:
-        path_parts = [str(part) for part in self.root_path.parts if part != self.root_path.anchor]
-        paths_to_hash = [
-            self.root_path / "uv.lock",
-            *([self.default_registry_module_path] if self.has_registry_module_entry_point else []),
-        ]
-        env_hash = hash_paths(paths_to_hash)
-        return ("_".join(path_parts), env_hash, data_type)
-
-    def get_cache_key_for_module(self, module_name: str) -> tuple[str, str, str]:
-        if module_name.startswith(self.root_module_name):
-            path = self.get_path_for_local_module(module_name)
-            env_hash = hash_paths([path], includes=["*.py"])
-            path_parts = [str(part) for part in path.parts if part != "/"]
-            return ("_".join(path_parts), env_hash, "local_component_registry")
-        else:
-            return self.get_cache_key(module_name)
-
-    def get_cache_key_for_update_check_timestamp(self) -> tuple[str]:
-        return ("dg_update_check_timestamp",)
 
     # ########################
     # ##### WORKSPACE METHODS

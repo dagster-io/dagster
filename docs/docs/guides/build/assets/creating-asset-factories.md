@@ -29,7 +29,7 @@ This article assumes familiarity with:
 To run the code in this article, you'll need to create and activate a Python virtual environment and install the following dependencies:
 
    ```bash
-   pip install dagster dagster-aws duckdb pyyaml pydantic
+   uv pip install dagster dagster-aws duckdb pyyaml pydantic
    ```
 </details>
 
