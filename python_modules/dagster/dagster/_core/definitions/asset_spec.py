@@ -20,6 +20,7 @@ from dagster._annotations import (
     only_allow_hidden_params_in_kwargs,
     public,
 )
+from dagster._check import checked
 from dagster._core.definitions.asset_dep import AssetDep, CoercibleToAssetDep
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.declarative_automation.automation_condition import (
@@ -457,6 +458,7 @@ def map_asset_specs(
     ]
 
 
+@checked
 def attach_internal_freshness_policy(
     spec: AssetSpec, policy: InternalFreshnessPolicy, overwrite_existing=True
 ) -> AssetSpec:
