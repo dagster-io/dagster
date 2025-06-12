@@ -1,6 +1,6 @@
 import time
 from datetime import datetime
-from typing import Callable, Optional
+from typing import TYPE_CHECKING, Callable, Optional, cast
 from unittest.mock import MagicMock
 
 import pytest
@@ -46,6 +46,9 @@ from dagster._core.remote_representation.handle import RepositoryHandle
 from dagster._core.test_utils import freeze_time, instance_for_test, mock_workspace_from_repos
 from dagster._time import create_datetime, get_current_datetime
 from dagster_shared.serdes import deserialize_value, serialize_value
+
+if TYPE_CHECKING:
+    from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsSubset
 
 
 def to_remote_asset_graph(assets, asset_checks=None) -> RemoteAssetGraph:
@@ -497,6 +500,43 @@ def test_bfs_filter_asset_subsets(asset_graph_from_assets: Callable[..., BaseAss
             current_time=get_current_datetime(),
         )
         == initial_asset0_subset | initial_asset1_subset | corresponding_asset3_subset
+    )
+
+
+def test_subset_from_asset_partitions(
+    asset_graph_from_assets: Callable[..., BaseAssetGraph],
+):
+    daily_partitions_def = DailyPartitionsDefinition(start_date="2022-01-01")
+
+    @asset(partitions_def=daily_partitions_def)
+    def asset0(): ...
+
+    keys = {
+        AssetKeyPartitionKey(asset0.key, "2021-12-31"),
+        AssetKeyPartitionKey(asset0.key, "2022-01-01"),
+        AssetKeyPartitionKey(asset0.key, "2022-02-02"),
+    }
+
+    subset = AssetGraphSubset.from_asset_partition_set(keys, asset_graph_from_assets([asset0]))
+
+    assert subset == AssetGraphSubset(
+        partitions_subsets_by_asset_key={
+            asset0.key: daily_partitions_def.subset_with_partition_keys(
+                ["2022-01-01", "2022-02-02"]
+            )
+        },
+    )
+
+    subset_without_validation = AssetGraphSubset.from_asset_partition_set(
+        keys, asset_graph_from_assets([asset0]), validate_time_range=False
+    )
+
+    assert subset_without_validation == AssetGraphSubset(
+        partitions_subsets_by_asset_key={
+            asset0.key: cast(
+                "TimeWindowPartitionsSubset", daily_partitions_def.empty_subset()
+            ).with_partition_keys(["2021-12-31", "2022-01-01", "2022-02-02"], validate=False)
+        },
     )
 
 
