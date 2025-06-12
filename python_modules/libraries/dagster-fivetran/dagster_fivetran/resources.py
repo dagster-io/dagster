@@ -1053,11 +1053,13 @@ class FivetranWorkspace(ConfigurableResource):
             workspace=self, translator=DagsterFivetranTranslator()
         ).get_or_fetch_state()
 
+    @beta_param(param="snapshot_path")
     @cached_method
     def load_asset_specs(
         self,
         dagster_fivetran_translator: Optional[DagsterFivetranTranslator] = None,
         connector_selector_fn: Optional[ConnectorSelectorFn] = None,
+        snapshot_path: Optional[Union[str, Path]] = None,
     ) -> Sequence[AssetSpec]:
         """Returns a list of AssetSpecs representing the Fivetran content in the workspace.
 
@@ -1067,6 +1069,8 @@ class FivetranWorkspace(ConfigurableResource):
                 Defaults to :py:class:`DagsterFivetranTranslator`.
             connector_selector_fn (Optional[ConnectorSelectorFn]):
                 A function that allows for filtering which Fivetran connector assets are created for.
+            snapshot_path (Optional[Union[str, Path]]): Path to a snapshot file to load Fivetran data from,
+                rather than fetching it from the Fivetran API.
 
         Returns:
             List[AssetSpec]: The set of assets representing the Fivetran content in the workspace.
@@ -1088,11 +1092,29 @@ class FivetranWorkspace(ConfigurableResource):
                 fivetran_specs = fivetran_workspace.load_asset_specs()
                 defs = dg.Definitions(assets=[*fivetran_specs], resources={"fivetran": fivetran_workspace}
         """
-        return load_fivetran_asset_specs(
-            workspace=self,
-            dagster_fivetran_translator=dagster_fivetran_translator or DagsterFivetranTranslator(),
-            connector_selector_fn=connector_selector_fn,
-        )
+        dagster_fivetran_translator = dagster_fivetran_translator or DagsterFivetranTranslator()
+
+        snapshot = None
+        if snapshot_path and not os.getenv(FIVETRAN_SNAPSHOT_ENV_VAR_NAME):
+            snapshot = deserialize_value(Path(snapshot_path).read_text(), RepositoryLoadData)
+
+        with self.process_config_and_initialize_cm() as initialized_workspace:
+            return [
+                spec.merge_attributes(
+                    metadata={DAGSTER_FIVETRAN_TRANSLATOR_METADATA_KEY: dagster_fivetran_translator}
+                )
+                for spec in check.is_list(
+                    FivetranWorkspaceDefsLoader(
+                        workspace=initialized_workspace,
+                        translator=dagster_fivetran_translator,
+                        connector_selector_fn=connector_selector_fn,
+                        snapshot=snapshot,
+                    )
+                    .build_defs()
+                    .assets,
+                    AssetSpec,
+                )
+            ]
 
     def _generate_materialization(
         self,
@@ -1257,29 +1279,11 @@ def load_fivetran_asset_specs(
             fivetran_specs = load_fivetran_asset_specs(fivetran_workspace)
             defs = dg.Definitions(assets=[*fivetran_specs], resources={"fivetran": fivetran_workspace}
     """
-    dagster_fivetran_translator = dagster_fivetran_translator or DagsterFivetranTranslator()
-
-    snapshot = None
-    if snapshot_path and not os.getenv(FIVETRAN_SNAPSHOT_ENV_VAR_NAME):
-        snapshot = deserialize_value(Path(snapshot_path).read_text(), RepositoryLoadData)
-
-    with workspace.process_config_and_initialize_cm() as initialized_workspace:
-        return [
-            spec.merge_attributes(
-                metadata={DAGSTER_FIVETRAN_TRANSLATOR_METADATA_KEY: dagster_fivetran_translator}
-            )
-            for spec in check.is_list(
-                FivetranWorkspaceDefsLoader(
-                    workspace=initialized_workspace,
-                    translator=dagster_fivetran_translator,
-                    connector_selector_fn=connector_selector_fn,
-                    snapshot=snapshot,
-                )
-                .build_defs()
-                .assets,
-                AssetSpec,
-            )
-        ]
+    return workspace.load_asset_specs(
+        dagster_fivetran_translator=dagster_fivetran_translator,
+        connector_selector_fn=connector_selector_fn,
+        snapshot_path=snapshot_path,
+    )
 
 
 @record
