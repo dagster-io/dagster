@@ -283,6 +283,7 @@ const getAssets = weakMapMemoize((allAssetNodes: WorkspaceAssetFragment[]) => {
     const key = tokenForAssetKey(asset.key);
     if (!keysWithMultipleDefinitions.has(key)) {
       softwareDefinedAssets.push(asset);
+      return;
     }
     const materializableAsset = softwareDefinedAssetsByAssetKey[key]?.find(
       (a) => a.definition?.isMaterializable,
