@@ -39,6 +39,6 @@ dg scaffold defs dagster.sensor path/to/sensors.py
 
 which will create
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/automate/scaffolded-sensor-defs.py" />
+<CodeExample path="docs_snippets/docs_snippets/concepts/automate/scaffolded-sensor-defs.py" title="src/<project-name>/defs/sensors.py" />
 
 and you can fill out the sensor dictionary as needed.
