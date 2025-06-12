@@ -31,8 +31,8 @@ Selects all assets on the path from the `raw_data_b` asset to the `summary_stats
     </TabItem>
     <TabItem value="cli" label="CLI">
     ```shell
-    dagster asset list --select 'key:"raw_data_b"+ and +key:"summary_stats_2"'
-    dagster asset materialize --select 'key:"raw_data_b"+ and +key:"summary_stats_2"'
+    dg list defs --assets 'key:"raw_data_b"+ and +key:"summary_stats_2"'
+    dg launch --assets 'key:"raw_data_b"+ and +key:"summary_stats_2"'
     ```
     </TabItem>
 </Tabs>
@@ -58,8 +58,8 @@ Selects all assets on the paths between the `raw_data_a` or `raw_data_b` assets 
     </TabItem>
     <TabItem value="cli" label="CLI">
     ```shell
-    dagster asset list --select '(key:"raw_data_a" or key:"raw_data_b")+ and +(key:"a_b_c_for_sales" or key:"b_c_for_sales")'
-    dagster asset materialize --select '(key:"raw_data_a" or key:"raw_data_b")+ and +(key:"a_b_c_for_sales" or key:"b_c_for_sales")'
+    dg list defs --assets '(key:"raw_data_a" or key:"raw_data_b")+ and +(key:"a_b_c_for_sales" or key:"b_c_for_sales")'
+    dg launch --assets '(key:"raw_data_a" or key:"raw_data_b")+ and +(key:"a_b_c_for_sales" or key:"b_c_for_sales")'
     ```
     </TabItem>
 </Tabs>
@@ -85,8 +85,8 @@ Selects all assets on the paths between assets tagged with `private` and assets 
     </TabItem>
     <TabItem value="cli" label="CLI">
     ```shell
-    dagster asset list --select 'tag:"private"+ and +tag:"public"'
-    dagster asset materialize --select 'tag:"private"+ and +tag:"public"'
+    dg list defs --assets 'tag:"private"+ and +tag:"public"'
+    dg launch --assets 'tag:"private"+ and +tag:"public"'
     ```
     </TabItem>
 </Tabs>
@@ -112,8 +112,8 @@ Selects all assets on the paths from the `sensitive_data` group to the `public_d
     </TabItem>
     <TabItem value="cli" label="CLI">
     ```shell
-    dagster asset list --select 'group:"sensitive_data"+ and +group:"public_data"'
-    dagster asset materialize --select 'group:"sensitive_data"+ and +group:"public_data"'
+    dg list defs --assets 'group:"sensitive_data"+ and +group:"public_data"'
+    dg launch --assets 'group:"sensitive_data"+ and +group:"public_data"'
     ```
     </TabItem>
 </Tabs>
@@ -139,8 +139,8 @@ Selects all assets on the path between the `raw_data_c` asset and `summary_stats
     </TabItem>
     <TabItem value="cli" label="CLI">
     ```shell
-    dagster asset list --select 'key:"raw_data_c"+ and +key:"combo_a_b_c_data"+ and +key:"summary_stats_1"'
-    dagster asset materialize --select 'key:"raw_data_c"+ and +key:"combo_a_b_c_data"+ and +key:"summary_stats_1"'
+    dg list defs --assets 'key:"raw_data_c"+ and +key:"combo_a_b_c_data"+ and +key:"summary_stats_1"'
+    dg launch --assets 'key:"raw_data_c"+ and +key:"combo_a_b_c_data"+ and +key:"summary_stats_1"'
     ```
     </TabItem>
 </Tabs>
@@ -175,8 +175,8 @@ def raw_data_a() -> None:
     </TabItem>
     <TabItem value="cli" label="CLI">
     ```shell
-    dagster asset list --select 'key:"my_prefix/raw_data_a"'
-    dagster asset materialize --select 'key:"my_prefix/raw_data_a"'
+    dg list defs --assets 'key:"my_prefix/raw_data_a"'
+    dg launch --assets 'key:"my_prefix/raw_data_a"'
     ```
     </TabItem>
 </Tabs>
@@ -202,8 +202,8 @@ key:"summary_stats_1" or key:"summary_stats_2"
     </TabItem>
     <TabItem value="cli" label="CLI">
     ```shell
-    dagster asset list --select 'key:"summary_stats_1" or key:"summary_stats_2"'
-    dagster asset materialize --select 'key:"summary_stats_1" or key:"summary_stats_2"'
+    dg list defs --assets 'key:"summary_stats_1" or key:"summary_stats_2"'
+    dg launch --assets 'key:"summary_stats_1" or key:"summary_stats_2"'
     ```
     </TabItem>
 </Tabs>
@@ -229,8 +229,8 @@ Selects one layer downstream of `combo_a_b_c_data`, limited to assets of kind `c
     </TabItem>
     <TabItem value="cli" label="CLI">
     ```shell
-    dagster asset list --select 'key:"combo_a_b_c_data"+ and kind:"csv"'
-    dagster asset materialize --select 'key:"combo_a_b_c_data"+ and kind:"csv"'
+    dg list defs --assets 'key:"combo_a_b_c_data"+ and kind:"csv"'
+    dg launch --assets 'key:"combo_a_b_c_data"+ and kind:"csv"'
     ```
     </TabItem>
 </Tabs>
@@ -256,8 +256,8 @@ Selects all assets owned by `nora.dagster@example.com` **excluding** any assets 
     </TabItem>
     <TabItem value="cli" label="CLI">
     ```shell
-    dagster asset list --select 'owner:"nora.dagster@example.com" and not tag:"customer_data"'
-    dagster asset materialize --select 'owner:"nora.dagster@example.com" and not tag:"customer_data"'
+    dg list defs --assets 'owner:"nora.dagster@example.com" and not tag:"customer_data"'
+    dg launch --assets 'owner:"nora.dagster@example.com" and not tag:"customer_data"'
     ```
     </TabItem>
 </Tabs>
@@ -285,8 +285,8 @@ Selects assets that are either owned by the sales team and of kind `csv`, **or**
     </TabItem>
     <TabItem value="cli" label="CLI">
     ```shell
-    dagster asset list --select '(owner:"team:sales" and kind:"csv") or group:"public_data"'
-    dagster asset materialize --select '(owner:"team:sales" and kind:"csv") or group:"public_data"'
+    dg list defs --assets '(owner:"team:sales" and kind:"csv") or group:"public_data"'
+    dg launch --assets '(owner:"team:sales" and kind:"csv") or group:"public_data"'
     ```
     </TabItem>
 </Tabs>
@@ -312,8 +312,8 @@ Selects assets whose keys contain `raw` and are **not** of the kind `s3` or `csv
     </TabItem>
     <TabItem value="cli" label="CLI">
     ```shell
-    dagster asset list --select 'not (kind:"s3" or kind:"csv") and key:"raw*"'
-    dagster asset materialize --select 'not (kind:"s3" or kind:"csv") and key:"raw*"'
+    dg list defs --assets 'not (kind:"s3" or kind:"csv") and key:"raw*"'
+    dg launch --assets 'not (kind:"s3" or kind:"csv") and key:"raw*"'
     ```
     </TabItem>
 </Tabs>
@@ -345,8 +345,8 @@ Selects root assets within the `public_data` group.
     </TabItem>
     <TabItem value="cli" label="CLI">
     ```shell
-    dagster asset list --select 'roots(group:"public_data")'
-    dagster asset materialize --select 'roots(group:"public_data")'
+    dg list defs --assets 'roots(group:"public_data")'
+    dg launch --assets 'roots(group:"public_data")'
     ```
     </TabItem>
 </Tabs>
@@ -372,8 +372,8 @@ Selects sink assets within the `public_data` group.
     </TabItem>
     <TabItem value="cli" label="CLI">
     ```shell
-    dagster asset list --select 'sinks(group:"public_data")'
-    dagster asset materialize --select 'sinks(group:"public_data")'
+    dg list defs --assets 'sinks(group:"public_data")'
+    dg launch --assets 'sinks(group:"public_data")'
     ```
     </TabItem>
 </Tabs>
@@ -399,8 +399,8 @@ Selects root assets that feed into the `public_data` group, but do not belong to
     </TabItem>
     <TabItem value="cli" label="CLI">
     ```shell
-    dagster asset list --select 'roots(+group:"public_data")'
-    dagster asset materialize --select 'roots(+group:"public_data")'
+    dg list defs --assets 'roots(+group:"public_data")'
+    dg launch --assets 'roots(+group:"public_data")'
     ```
     </TabItem>
 </Tabs>
@@ -426,8 +426,8 @@ Selects sink assets that depend on assets in the `public_data` group, but do not
     </TabItem>
     <TabItem value="cli" label="CLI">
     ```shell
-    dagster asset list --select 'sinks(group:"public_data"+)'
-    dagster asset materialize --select 'sinks(group:"public_data"+)'
+    dg list defs --assets 'sinks(group:"public_data"+)'
+    dg launch --assets 'sinks(group:"public_data"+)'
     ```
     </TabItem>
 </Tabs>
