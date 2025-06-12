@@ -8,6 +8,12 @@ Environment variables, which are key-value pairs configured outside your source 
 
 Using environment variables, you can define various configuration options for your Dagster application and securely set up secrets. For example, instead of hard-coding database credentials - which is bad practice and cumbersome for development - you can use environment variables to supply user details. This allows you to parameterize your pipeline without modifying code or insecurely storing sensitive data.
 
+:::tip
+
+For more information on using environment variables with components, see [Using environment variables with components](/guides/build/components/using-environment-variables-in-components).
+
+:::
+
 ## Declaring environment variables
 
 How environment variables are declared depends on whether you're developing locally or have already deployed your Dagster project.
@@ -28,12 +34,12 @@ DATABASE_USERNAME=salesteam
 DATABASE_PASSWORD=supersecretstagingpassword
 ```
 
-If Dagster detects a `.env` file in the same folder where `dagster-webserver` or `dagster-daemon` is launched, it will automatically load the environment variables in the file. This also applies to variables [exported from Dagster+](/deployment/dagster-plus/management/environment-variables/dagster-ui#export)
+If Dagster detects a `.env` file in the same folder where the [webserver](/guides/operate/webserver) is launched, it will automatically load the environment variables in the file. This also applies to variables [exported from Dagster+](/deployment/dagster-plus/management/environment-variables/dagster-ui#export)
 
 When using a `.env` file, keep the following in mind:
 
-- The `.env` file must be in the same folder where `dagster-webserver` or `dagster-daemon` is launched
-- Any time the `.env` file is modified, the workspace must be re-loaded to make the Dagster webserver/UI aware of the changes
+- The `.env` file must be in the same folder where the webserver is launched
+- Any time the `.env` file is modified, the workspace must be re-loaded to make the Dagster webserver aware of the changes
 
 <TabItem value="Dagster+">
 
@@ -170,7 +176,7 @@ A resource is typically used to connect to an external service or system, such a
 
 Let's take a look at an example from the [Dagster Crash Course](https://dagster.io/blog/dagster-crash-course-oct-2022), which creates a GitHub resource and supplies it to assets. Let's start by looking at the resource:
 
-```python title="src/my_project/defs/my_resource.py"
+```python
 
 from dagster import StringSource, resource
 from github import Github

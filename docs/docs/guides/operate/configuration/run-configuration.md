@@ -54,17 +54,10 @@ Configurable parameters for a resource are defined by specifying attributes for 
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/dagster/pythonic_config/pythonic_config.py"
-  title="src/my_project/defs/my_resource.py"
   startAfter="start_basic_resource_config"
   endBefore="end_basic_resource_config"
   dedent="4"
 />
-
-:::info
-
-If you [create your project](/guides/build/projects/creating-a-new-project) with the [`create-dagster` CLI](/api/dg/create-dagster), you can define resources anywhere in the `/defs` folder of the project, and they will be accessible to any other entity in the `/defs` folder (for example, an asset defined at `/defs/assets/my_asset.py`).
-
-:::
 
 For more information on using resources, see the [resources documentation](/guides/build/external-resources).
 
