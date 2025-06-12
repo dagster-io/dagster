@@ -470,7 +470,13 @@ const buildExternalAssetQueryItem = (asset: {
 };
 
 const getAllAssets = weakMapMemoize(
-  (sdas: WorkspaceAssetFragment[], externalAssets: {id: string; key: {path: Array<string>}}[]) => {
-    return [...sdas, ...externalAssets.map((a) => buildExternalAssetQueryItem(a))];
+  (
+    sdas: ReturnType<typeof useAllAssetsNodes>['assets'],
+    externalAssets: {id: string; key: {path: Array<string>}}[],
+  ) => {
+    return [
+      ...sdas.map((sda) => sda.definition),
+      ...externalAssets.map((a) => buildExternalAssetQueryItem(a)),
+    ];
   },
 );
