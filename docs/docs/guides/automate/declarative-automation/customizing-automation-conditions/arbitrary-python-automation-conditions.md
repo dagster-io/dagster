@@ -24,7 +24,7 @@ Automation condition evaluation can be more resource-intensive than a typical se
 
 To do this, add an automation condition sensor to your definitions with the `use_user_code_server` flag set to `True`:
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/declarative_automation/sensors/arbitray_python.py" title="src/<project-name>/defs/assets.py" />
+<CodeExample path="docs_snippets/docs_snippets/concepts/declarative_automation/sensors/arbitrary_python.py" title="src/<project-name>/defs/assets.py" />
 
 This will allow your sensor to target automation conditions containing custom python code.
 
