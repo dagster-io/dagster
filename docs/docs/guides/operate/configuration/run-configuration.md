@@ -23,7 +23,7 @@ Here, we define a subclass of <PyObject section="config" module="dagster" object
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/dagster/pythonic_config/pythonic_config.py"
-  title="src/my_project/defs/my_asset.py"
+  title="src/<project_name>/defs/my_asset.py"
   startAfter="start_basic_asset_config"
   endBefore="end_basic_asset_config"
   dedent="4"
@@ -36,7 +36,7 @@ Here, we define a subclass of <PyObject section="config" module="dagster" object
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/dagster/pythonic_config/pythonic_config.py"
-  title="src/my_project/defs/my_op.py"
+  title="src/<project_name>/defs/my_op.py"
   startAfter="start_basic_op_config"
   endBefore="end_basic_op_config"
 />
@@ -72,7 +72,7 @@ When specifying config from the Python API, we can use the `run_config` argument
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/dagster/pythonic_config/pythonic_config.py"
-  title="src/my_project/defs/my_job.py"
+  title="src/<project_name>/defs/my_job.py"
   startAfter="start_execute_with_config"
   endBefore="end_execute_with_config"
   dedent="4"
@@ -116,7 +116,7 @@ Dagster validates any provided run config against the corresponding Pydantic mod
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/dagster/pythonic_config/pythonic_config.py"
-  title="src/my_project/defs/my_job.py"
+  title="src/<project_name>/defs/my_job.py"
   startAfter="start_execute_with_bad_config"
   endBefore="end_execute_with_bad_config"
   dedent="4"
@@ -128,7 +128,7 @@ Assets and ops can be configured using environment variables by passing an <PyOb
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/dagster/pythonic_config/pythonic_config.py"
-  title="src/my_project/defs/my_job.py"
+  title="src/<project_name>/defs/my_job.py"
   startAfter="start_execute_with_config_envvar"
   endBefore="end_execute_with_config_envvar"
   dedent="4"
