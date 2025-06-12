@@ -1,9 +1,4 @@
-import dagster as dg
-
-
-@dg.op
-def process_file(loaded_file: str) -> str:
-    return loaded_file.strip()
+from my_project.defs.assets import process_file
 
 
 # highlight-start

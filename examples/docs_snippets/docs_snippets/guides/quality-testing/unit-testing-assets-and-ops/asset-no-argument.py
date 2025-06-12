@@ -1,10 +1,4 @@
-import dagster as dg
-
-
-@dg.asset
-def loaded_file() -> str:
-    with open("path.txt") as file:
-        return file.read()
+from my_project.defs.assets import loaded_file
 
 
 # highlight-start

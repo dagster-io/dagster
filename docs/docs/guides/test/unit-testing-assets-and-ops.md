@@ -27,8 +27,17 @@ Before you begin implementing unit tests, note that:
 The simplest assets to test are those with no arguments. In these cases, you can directly invoke definitions.
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/quality-testing/unit-testing-assets-and-ops/asset-no-argument.py"
+  path="docs_snippets/docs_snippets/guides/quality-testing/unit-testing-assets-and-ops/my_project/defs/assets.py"
   language="python"
+  startAfter="start_no_argument"
+  endBefore="end_no_argument"
+  title="src/my_project/defs/assets.py"
+/>
+
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/quality-testing/unit-testing-assets-and-ops/asset-combo.py"
+  language="python"
+  title="tests/test_assets.py"
 />
 
 ### Assets with upstream dependencies \{#upstream-dependencies}
@@ -36,8 +45,17 @@ The simplest assets to test are those with no arguments. In these cases, you can
 If an asset has an upstream dependency, you can directly pass a value for that dependency when invoking the definition.
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/quality-testing/unit-testing-assets-and-ops/asset-dependency.py"
+  path="docs_snippets/docs_snippets/guides/quality-testing/unit-testing-assets-and-ops/my_project/defs/assets.py"
   language="python"
+  startAfter="start_dependency"
+  endBefore="end_dependency"
+  title="src/my_project/defs/assets.py"
+/>
+
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/quality-testing/unit-testing-assets-and-ops/asset-combo.py"
+  language="python"
+  title="tests/test_assets.py"
 />
 
 ### Assets with config \{#config}
@@ -45,8 +63,17 @@ If an asset has an upstream dependency, you can directly pass a value for that d
 If an asset uses config, you can construct an instance of the required config object and pass it in directly.
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/quality-testing/unit-testing-assets-and-ops/asset-config.py"
+  path="docs_snippets/docs_snippets/guides/quality-testing/unit-testing-assets-and-ops/my_project/defs/assets.py"
   language="python"
+  startAfter="start_config"
+  endBefore="end_config"
+  title="src/my_project/defs/assets.py"
+/>
+
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/quality-testing/unit-testing-assets-and-ops/asset-combo.py"
+  language="python"
+  title="tests/test_assets.py"
 />
 
 ### Assets with resources \{#resources}
@@ -54,8 +81,17 @@ If an asset uses config, you can construct an instance of the required config ob
 If an asset uses a resource, it can be useful to create a mock instance of the resource to avoid interacting with external services.
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/quality-testing/unit-testing-assets-and-ops/asset-resource.py"
+  path="docs_snippets/docs_snippets/guides/quality-testing/unit-testing-assets-and-ops/my_project/defs/assets.py"
   language="python"
+  startAfter="start_resource"
+  endBefore="end_resource"
+  title="src/my_project/defs/assets.py"
+/>
+
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/quality-testing/unit-testing-assets-and-ops/asset-combo.py"
+  language="python"
+  title="tests/test_assets.py"
 />
 
 ### Assets with context \{#context}
@@ -63,8 +99,17 @@ If an asset uses a resource, it can be useful to create a mock instance of the r
 If an asset uses a `context` argument, you can use `build_asset_context()` to construct a context object.
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/quality-testing/unit-testing-assets-and-ops/asset-context.py"
+  path="docs_snippets/docs_snippets/guides/quality-testing/unit-testing-assets-and-ops/my_project/defs/assets.py"
   language="python"
+  startAfter="start_context"
+  endBefore="end_context"
+  title="src/my_project/defs/assets.py"
+/>
+
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/quality-testing/unit-testing-assets-and-ops/asset-combo.py"
+  language="python"
+  title="tests/test_assets.py"
 />
 
 ### Assets with multiple parameters \{#multiple-parameters}
@@ -72,14 +117,23 @@ If an asset uses a `context` argument, you can use `build_asset_context()` to co
 If an asset has multiple parameters, we recommended using keyword arguments for clarity.
 
 <CodeExample
+  path="docs_snippets/docs_snippets/guides/quality-testing/unit-testing-assets-and-ops/my_project/defs/assets.py"
+  language="python"
+  startAfter="start_combo"
+  endBefore="end_combo"
+  title="src/my_project/defs/assets.py"
+/>
+
+<CodeExample
   path="docs_snippets/docs_snippets/guides/quality-testing/unit-testing-assets-and-ops/asset-combo.py"
   language="python"
+  title="tests/test_assets.py"
 />
 
 ## Running the tests
 
 Use `pytest` or your test runner of choice to run your unit tests. Navigate to the top-level project directory (the one that contains the tests directory) and run:
 
-```
-pytest my_project_tests
+```bash
+pytest tests
 ```

@@ -42,6 +42,13 @@ The following example defines an asset check on an asset that fails if the `orde
 <CodeExample
   path="docs_snippets/docs_snippets/guides/data-assets/quality-testing/asset-checks/single-asset-check.py"
   language="python"
+  title="src/my_project/defs/assets.py"
+/>
+
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/data-assets/quality-testing/asset-checks/single-asset-check-checks.py"
+  language="python"
+  title="src/my_project/defs/asset_checks.py"
 />
 
 ## Defining multiple asset checks \{#multiple-checks}
@@ -58,6 +65,13 @@ In this example, both asset checks will run in a single operation after the asse
 <CodeExample
   path="docs_snippets/docs_snippets/guides/data-assets/quality-testing/asset-checks/multiple-asset-checks.py"
   language="python"
+  title="src/my_project/defs/assets.py"
+/>
+
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/data-assets/quality-testing/asset-checks/multiple-asset-checks-checks.py"
+  language="python"
+  title="src/my_project/defs/asset_checks.py"
 />
 
 ## Programmatically generating asset checks \{#factory-pattern}
@@ -67,6 +81,13 @@ Defining multiple checks can also be done using a factory pattern. The example b
 <CodeExample
   path="docs_snippets/docs_snippets/guides/data-assets/quality-testing/asset-checks/asset-checks-factory.py"
   language="python"
+  title="src/my_project/defs/assets.py"
+/>
+
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/data-assets/quality-testing/asset-checks/asset-checks-factory-checks.py"
+  language="python"
+  title="src/my_project/defs/asset_checks.py"
 />
 
 ## Blocking downstream materialization
@@ -78,6 +99,13 @@ In the example bellow, if the `orders_id_has_no_nulls` check fails, the downstre
 <CodeExample
   path="docs_snippets/docs_snippets/guides/data-assets/quality-testing/asset-checks/block-downstream-with-asset-checks.py"
   language="python"
+  title="src/my_project/defs/assets.py"
+/>
+
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/data-assets/quality-testing/asset-checks/block-downstream-with-asset-checks-checks.py"
+  language="python"
+  title="src/my_project/defs/asset_checks.py"
 />
 
 ## Scheduling and monitoring asset checks
@@ -89,6 +117,13 @@ In the example below, two jobs are defined: one for the asset and another for th
 <CodeExample
   path="docs_snippets/docs_snippets/guides/data-assets/quality-testing/asset-checks/asset-checks-with-schedule-and-sensor.py"
   language="python"
+  title="src/my_project/defs/assets.py"
+/>
+
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/data-assets/quality-testing/asset-checks/asset-checks-with-schedule-and-sensor-checks.py"
+  language="python"
+  title="src/my_project/defs/asset_checks.py"
 />
 
 ## Next steps

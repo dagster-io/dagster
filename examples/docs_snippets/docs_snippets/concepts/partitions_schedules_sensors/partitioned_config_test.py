@@ -12,6 +12,7 @@ from dagster import validate_run_config, daily_partitioned_config
 from datetime import datetime
 
 
+# src/my_project/defs/assets.py
 @daily_partitioned_config(start_date=datetime(2020, 1, 1))
 def my_partitioned_config(start: datetime, _end: datetime):
     return {
@@ -21,6 +22,7 @@ def my_partitioned_config(start: datetime, _end: datetime):
     }
 
 
+# tests/test_partitioned_config.py
 def test_my_partitioned_config():
     # assert that the decorated function returns the expected output
     run_config = my_partitioned_config(datetime(2020, 1, 3), datetime(2020, 1, 4))
@@ -39,6 +41,7 @@ def test_my_partitioned_config():
 from dagster import Config, OpExecutionContext
 
 
+# src/my_project/defs/assets.py
 @daily_partitioned_config(start_date=datetime(2020, 1, 1), minute_offset=15)
 def my_offset_partitioned_config(start: datetime, _end: datetime):
     return {
@@ -70,6 +73,7 @@ def do_more_stuff_partitioned():
     process_data()
 
 
+# tests/test_partitioned_config.py
 def test_my_offset_partitioned_config():
     # test that the partition keys are what you expect
     keys = my_offset_partitioned_config.get_partition_keys()

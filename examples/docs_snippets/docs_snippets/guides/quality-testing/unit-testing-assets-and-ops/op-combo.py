@@ -1,15 +1,4 @@
-import dagster as dg
-
-
-class SeparatorConfig(dg.Config):
-    separator: str
-
-
-@dg.op
-def process_file(
-    primary_file: str, secondary_file: str, config: SeparatorConfig
-) -> str:
-    return f"{primary_file}{config.separator}{secondary_file}"
+from my_project.defs.assets import SeparatorConfig, process_file
 
 
 # highlight-start
