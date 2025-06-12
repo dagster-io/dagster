@@ -229,7 +229,11 @@ class SensorLaunchContext(AbstractContextManager):
         return True
 
     def _write(self) -> None:
-        self._instance.update_tick(self._tick)
+        # do not write the cursor into the ticks table for custom user-code AutomationConditionSensorDefinitions
+        if self._remote_sensor.sensor_type == SensorType.AUTOMATION:
+            self._instance.update_tick(self._tick.with_cursor(None))
+        else:
+            self._instance.update_tick(self._tick)
 
         if self._tick.status not in FINISHED_TICK_STATES:
             return
