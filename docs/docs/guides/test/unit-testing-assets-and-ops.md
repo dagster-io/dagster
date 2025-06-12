@@ -4,6 +4,10 @@ sidebar_position: 400
 title: Unit testing assets and ops
 ---
 
+import ScaffoldAsset from '@site/docs/partials/\_ScaffoldAsset.md';
+
+<ScaffoldAsset />
+
 Unit testing is essential for ensuring that computations function as intended. In the context of data pipelines, this can be particularly challenging. However, Dagster streamlines the process by enabling direct invocation of computations with specified input values and mocked resources, making it easier to verify that data transformations behave as expected.
 
 While unit tests can't fully replace integration tests or manual review, they can catch a variety of errors with a significantly faster feedback loop.
@@ -31,7 +35,7 @@ The simplest assets to test are those with no arguments. In these cases, you can
   language="python"
   startAfter="start_no_argument"
   endBefore="end_no_argument"
-  title="src/my_project/defs/assets.py"
+  title="src/<project_name>/defs/assets.py"
 />
 
 <CodeExample
@@ -49,7 +53,7 @@ If an asset has an upstream dependency, you can directly pass a value for that d
   language="python"
   startAfter="start_dependency"
   endBefore="end_dependency"
-  title="src/my_project/defs/assets.py"
+  title="src/<project_name>/defs/assets.py"
 />
 
 <CodeExample
@@ -67,7 +71,7 @@ If an asset uses config, you can construct an instance of the required config ob
   language="python"
   startAfter="start_config"
   endBefore="end_config"
-  title="src/my_project/defs/assets.py"
+  title="src/<project_name>/defs/assets.py"
 />
 
 <CodeExample
@@ -85,7 +89,7 @@ If an asset uses a resource, it can be useful to create a mock instance of the r
   language="python"
   startAfter="start_resource"
   endBefore="end_resource"
-  title="src/my_project/defs/assets.py"
+  title="src/<project_name>/defs/assets.py"
 />
 
 <CodeExample
@@ -103,7 +107,7 @@ If an asset uses a `context` argument, you can use `build_asset_context()` to co
   language="python"
   startAfter="start_context"
   endBefore="end_context"
-  title="src/my_project/defs/assets.py"
+  title="src/<project_name>/defs/assets.py"
 />
 
 <CodeExample
@@ -121,7 +125,7 @@ If an asset has multiple parameters, we recommended using keyword arguments for 
   language="python"
   startAfter="start_combo"
   endBefore="end_combo"
-  title="src/my_project/defs/assets.py"
+  title="src/<project_name>/defs/assets.py"
 />
 
 <CodeExample
