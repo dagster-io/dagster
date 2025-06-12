@@ -15,5 +15,6 @@ workspace = FivetranWorkspace(
 )
 
 workspace.get_or_fetch_workspace_data()
+fivetran_specs = load_fivetran_asset_specs(workspace=workspace)
 
-defs = Definitions(resources={"fivetran": workspace})
+defs = Definitions(assets=fivetran_specs)

@@ -396,9 +396,19 @@ def test_translator_invariant_group_name_with_asset_decorator(
             )
             def my_fivetran_assets(): ...
 
-
+@pytest.mark.parametrize(
+    "pending_repo, expected_assets",
+    [
+        ("pending_repo_snapshot.py", 0),
+        ("pending_repo_snapshot_with_assets.py", 4),
+    ],
+    ids=[
+        "pending_repo_snapshot_without_assets",
+        "pending_repo_snapshot_with_assets",
+    ],
+)
 def test_load_fivetran_specs_with_snapshot(
-    fetch_workspace_data_api_mocks: responses.RequestsMock,
+    pending_repo: str, expected_assets: int, fetch_workspace_data_api_mocks: responses.RequestsMock,
 ) -> None:
     with instance_for_test() as _instance, TemporaryDirectory() as temp_dir:
         from dagster_fivetran.cli import fivetran_snapshot_command
@@ -408,7 +418,7 @@ def test_load_fivetran_specs_with_snapshot(
             fivetran_snapshot_command,
             args=[
                 "-f",
-                str(Path(__file__).parent / "pending_repo_snapshot.py"),
+                str(Path(__file__).parent / pending_repo),
                 "--output-path",
                 str(temp_file),
             ],
@@ -420,9 +430,9 @@ def test_load_fivetran_specs_with_snapshot(
         with environ({"FIVETRAN_SNAPSHOT_PATH": str(temp_file)}):
             repository_def = initialize_repository_def_from_pointer(
                 CodePointer.from_python_file(
-                    str(Path(__file__).parent / "pending_repo_snapshot.py"), "defs", None
+                    str(Path(__file__).parent / pending_repo), "defs", None
                 ),
             )
-            assert len(repository_def.assets_defs_by_key) == 4
+            assert len(repository_def.assets_defs_by_key) == expected_assets
 
             assert len(responses.calls) == calls

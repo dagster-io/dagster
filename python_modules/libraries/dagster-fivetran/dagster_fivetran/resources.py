@@ -4,7 +4,7 @@ import os
 import time
 from collections.abc import Mapping, Sequence
 from datetime import datetime, timedelta
-from functools import partial
+from functools import partial, cached_property
 from pathlib import Path
 from typing import Any, Callable, Optional, Union
 from urllib.parse import urljoin
@@ -962,10 +962,16 @@ class FivetranWorkspace(ConfigurableResource):
         ),
     )
 
-    @property
-    @cached_method
+    @cached_property
     def _log(self) -> logging.Logger:
         return get_dagster_logger()
+
+    @cached_property
+    def snapshot(self) -> Optional[RepositoryLoadData]:
+        snapshot = None
+        if self.snapshot_path and not os.getenv(FIVETRAN_SNAPSHOT_ENV_VAR_NAME):
+            snapshot = deserialize_value(Path(self.snapshot_path).read_text(), RepositoryLoadData)
+        return snapshot
 
     @cached_method
     def get_client(self) -> FivetranClient:
@@ -1057,7 +1063,7 @@ class FivetranWorkspace(ConfigurableResource):
             FivetranWorkspaceData: A snapshot of the Fivetran workspace's content.
         """
         return FivetranWorkspaceDefsLoader(
-            workspace=self, translator=DagsterFivetranTranslator()
+            workspace=self, translator=DagsterFivetranTranslator(), snapshot=self.snapshot,
         ).get_or_fetch_state()
 
     @cached_method
@@ -1097,10 +1103,6 @@ class FivetranWorkspace(ConfigurableResource):
         """
         dagster_fivetran_translator = dagster_fivetran_translator or DagsterFivetranTranslator()
 
-        snapshot = None
-        if self.snapshot_path and not os.getenv(FIVETRAN_SNAPSHOT_ENV_VAR_NAME):
-            snapshot = deserialize_value(Path(self.snapshot_path).read_text(), RepositoryLoadData)
-
         with self.process_config_and_initialize_cm() as initialized_workspace:
             return [
                 spec.merge_attributes(
@@ -1111,7 +1113,7 @@ class FivetranWorkspace(ConfigurableResource):
                         workspace=initialized_workspace,
                         translator=dagster_fivetran_translator,
                         connector_selector_fn=connector_selector_fn,
-                        snapshot=snapshot,
+                        snapshot=self.snapshot,
                     )
                     .build_defs()
                     .assets,
