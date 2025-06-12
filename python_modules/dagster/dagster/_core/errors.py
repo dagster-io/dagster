@@ -20,6 +20,8 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 from typing import TYPE_CHECKING, Any, Callable, Optional
 
+from dagster_shared.error import DagsterError
+
 import dagster._check as check
 from dagster._utils.interrupts import raise_interrupts_as
 
@@ -34,18 +36,6 @@ class DagsterExecutionInterruptedError(BaseException):
     as to not be accidentally caught by code that catches Exception
     and thus prevent the interpreter from exiting.
     """
-
-
-class DagsterError(Exception):
-    """Base class for all errors thrown by the Dagster framework.
-
-    Users should not subclass this base class for their own exceptions.
-    """
-
-    @property
-    def is_user_code_error(self):
-        """Returns true if this error is attributable to user code."""
-        return False
 
 
 class DagsterInvalidDefinitionError(DagsterError):

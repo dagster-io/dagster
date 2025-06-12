@@ -17,6 +17,8 @@ from typing import (  # noqa: UP035
     cast,
 )
 
+from dagster_shared.error import DagsterError
+
 import dagster._check as check
 from dagster._core.definitions import ExecutorDefinition, JobDefinition
 from dagster._core.definitions.executor_definition import check_cross_process_constraints
@@ -25,7 +27,6 @@ from dagster._core.definitions.repository_definition.repository_definition impor
     RepositoryDefinition,
 )
 from dagster._core.definitions.resource_definition import ScopedResourcesBuilder
-from dagster._core.errors import DagsterError, DagsterUserCodeExecutionError
 from dagster._core.events import DagsterEvent, RunFailureReason
 from dagster._core.execution.context.logger import InitLoggerContext
 from dagster._core.execution.context.system import (
@@ -51,6 +52,7 @@ from dagster._utils import EventGenerationManager
 from dagster._utils.error import serializable_error_info_from_exc_info
 
 if TYPE_CHECKING:
+    from dagster._core.errors import DagsterUserCodeExecutionError
     from dagster._core.execution.plan.outputs import StepOutputHandle
     from dagster._core.executor.base import Executor
 

@@ -22,6 +22,14 @@ This can be combined with `AutomationCondition.on_cron()` to ensure that your as
 
 <CodeExample path="docs_snippets/docs_snippets/concepts/declarative_automation/on_cron/blocking_checks_condition.py" />
 
+## Executing later than upstream assets
+
+By default, a single cron schedule determines the point in time that an asset starts looking for upstream data, as well as the earliest point that it would be valid to execute that asset. Sometimes, it can be useful to start looking for upstream updates at an earlier time than the cron schedule on which you want the asset to execute.
+
+This can be achieved by modifying the `AutomationCondition.all_deps_updated_since_cron()` sub-condition. In this example, we want our asset to materialize at 9:00 AM each day, but start looking for upstream data as soon as the midnight boundary is passed:
+
+<CodeExample path="docs_snippets/docs_snippets/concepts/declarative_automation/on_cron/multiple_cron_schedules.py" />
+
 ## Updating older time partitions
 
 By default, `AutomationCondition.on_cron()` will target the latest time partition of an asset.

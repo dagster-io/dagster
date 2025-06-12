@@ -4,11 +4,7 @@ from typing import TYPE_CHECKING, Union, cast
 import dagster._check as check
 from dagster._core.definitions.selector import PartitionsByAssetSelector, RepositorySelector
 from dagster._core.definitions.utils import check_valid_title
-from dagster._core.errors import (
-    DagsterError,
-    DagsterInvariantViolationError,
-    DagsterUserCodeProcessError,
-)
+from dagster._core.errors import DagsterInvariantViolationError, DagsterUserCodeProcessError
 from dagster._core.events import AssetKey
 from dagster._core.execution.asset_backfill import create_asset_backfill_data_from_asset_partitions
 from dagster._core.execution.backfill import (
@@ -24,6 +20,7 @@ from dagster._core.utils import make_new_backfill_id
 from dagster._core.workspace.permissions import Permissions
 from dagster._time import datetime_from_timestamp, get_current_timestamp
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
+from dagster_shared.error import DagsterError
 
 from dagster_graphql.implementation.utils import (
     AssetBackfillPreviewParams,
