@@ -13,7 +13,12 @@ import dagster._check as check
 from dagster._core.definitions.instigation_logger import InstigationLogger
 from dagster._core.errors import DagsterCodeLocationLoadError, DagsterUserCodeUnreachableError
 from dagster._core.execution.asset_backfill import execute_asset_backfill_iteration
-from dagster._core.execution.backfill import BulkActionsFilter, BulkActionStatus, PartitionBackfill
+from dagster._core.execution.backfill import (
+    BULK_ACTION_TERMINAL_STATUSES,
+    BulkActionsFilter,
+    BulkActionStatus,
+    PartitionBackfill,
+)
 from dagster._core.execution.job_backfill import execute_job_backfill_iteration
 from dagster._core.workspace.context import IWorkspaceProcessContext
 from dagster._daemon.utils import DaemonErrorCapture
@@ -236,6 +241,9 @@ def execute_backfill_jobs(
 
         # refetch, in case the backfill was updated in the meantime
         backfill = cast("PartitionBackfill", instance.get_backfill(backfill_id))
+        if backfill.status in BULK_ACTION_TERMINAL_STATUSES:
+            # The backfill is now in a terminal state, skip iteration
+            continue
 
         try:
             if threadpool_executor:
