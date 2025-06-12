@@ -302,7 +302,8 @@ class DecoratorAssetsDefinitionBuilder:
 
         if args.specs:
             check.invariant(
-                args.decorator_name == "@multi_asset", "Only hit this code path in multi_asset."
+                args.decorator_name in ("@multi_asset", "@computation"),
+                "Only hit this code path in multi_asset.",
             )
             if args.upstream_asset_deps:
                 raise DagsterInvalidDefinitionError(

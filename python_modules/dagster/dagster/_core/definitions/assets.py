@@ -32,6 +32,7 @@ from dagster._core.definitions.asset_spec import (
 )
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.backfill_policy import BackfillPolicy
+from dagster._core.definitions.computation import Computation, Effect
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationCondition,
 )
@@ -1627,6 +1628,28 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
             specs=self.specs,
             is_subset=self.is_subset,
             execution_type=self._computation.execution_type if self._computation else None,
+        )
+
+    def to_computation(self) -> Computation:
+        asset_effects = {
+            self.get_output_name_for_asset_key(spec.key): (
+                Effect.materialize(spec) if self.is_materializable else Effect.observe(spec)
+            )
+            for spec in self.specs
+        }
+        check_effects = {
+            self.get_output_name_for_asset_check_key(spec.key): Effect.check(spec)
+            for spec in self.check_specs
+        }
+        active_outputs = {
+            *{self.get_output_name_for_asset_key(key) for key in self.keys},
+            *{self.get_output_name_for_asset_check_key(key) for key in self.check_keys},
+        }
+        return Computation(
+            node_def=self.node_def,
+            input_mappings=self.node_keys_by_input_name,
+            output_mappings={**asset_effects, **check_effects},
+            inactive_outputs=active_outputs - self.node_def.output_dict.keys(),
         )
 
 
