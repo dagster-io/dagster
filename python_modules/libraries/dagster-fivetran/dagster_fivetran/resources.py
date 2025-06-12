@@ -4,7 +4,7 @@ import os
 import time
 from collections.abc import Mapping, Sequence
 from datetime import datetime, timedelta
-from functools import partial, cached_property
+from functools import cached_property, partial
 from pathlib import Path
 from typing import Any, Callable, Optional, Union
 from urllib.parse import urljoin
@@ -1063,7 +1063,9 @@ class FivetranWorkspace(ConfigurableResource):
             FivetranWorkspaceData: A snapshot of the Fivetran workspace's content.
         """
         return FivetranWorkspaceDefsLoader(
-            workspace=self, translator=DagsterFivetranTranslator(), snapshot=self.snapshot,
+            workspace=self,
+            translator=DagsterFivetranTranslator(),
+            snapshot=self.snapshot,
         ).get_or_fetch_state()
 
     @cached_method

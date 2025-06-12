@@ -396,6 +396,7 @@ def test_translator_invariant_group_name_with_asset_decorator(
             )
             def my_fivetran_assets(): ...
 
+
 @pytest.mark.parametrize(
     "pending_repo, expected_assets",
     [
@@ -408,7 +409,9 @@ def test_translator_invariant_group_name_with_asset_decorator(
     ],
 )
 def test_load_fivetran_specs_with_snapshot(
-    pending_repo: str, expected_assets: int, fetch_workspace_data_api_mocks: responses.RequestsMock,
+    pending_repo: str,
+    expected_assets: int,
+    fetch_workspace_data_api_mocks: responses.RequestsMock,
 ) -> None:
     with instance_for_test() as _instance, TemporaryDirectory() as temp_dir:
         from dagster_fivetran.cli import fivetran_snapshot_command
