@@ -4,11 +4,10 @@ import {ApolloClient, ApolloQueryResult, gql, useApolloClient} from '../apollo-c
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorFragment} from '../app/types/PythonErrorFragment.types';
 import {tokenForAssetKey} from '../asset-graph/Utils';
-import {AssetGroupSelector} from '../graphql/types';
+import {AssetGroupSelector, AssetKey} from '../graphql/types';
 import {CacheData} from '../search/useIndexedDBCachedQuery';
 import {cache} from '../util/idb-lru-cache';
 import {weakMapMemoize} from '../util/weakMapMemoize';
-import {AssetTableDefinitionFragment} from './types/AssetTableFragment.types';
 import {
   AssetRecordsQuery,
   AssetRecordsQueryVariables,
@@ -72,8 +71,14 @@ export function useAllAssets({
   const allAssetNodesByKey = useMemo(() => getAllAssetNodesByKey(allAssetNodes), [allAssetNodes]);
 
   const assets = useMemo(
-    () => getAssets(materializedAssets, allAssetNodesByKey, allAssetNodes, groupSelector),
-    [materializedAssets, allAssetNodesByKey, allAssetNodes, groupSelector],
+    () =>
+      combineSDAsAndExternalAssetsAndFilterByGroup(
+        allAssetNodesByKey,
+        materializedAssets,
+        allAssetNodes,
+        groupSelector,
+      ),
+    [allAssetNodesByKey, materializedAssets, allAssetNodes, groupSelector],
   );
 
   const assetsByAssetKey = useMemo(() => getAssetsByAssetKey(assets), [assets]);
@@ -219,91 +224,106 @@ async function fetchAssets(client: ApolloClient<any>, batchLimit: number) {
 }
 
 const getAllAssetNodes = weakMapMemoize((allRepos: DagsterRepoOption[]) => {
-  return allRepos.flatMap((repo) => repo.repository.assetNodes);
+  const allAssets = allRepos.flatMap((repo) => repo.repository.assetNodes);
+  return getAssets(allAssets);
 });
 
-const getAllAssetNodesByKey = weakMapMemoize((allAssetNodes: AssetTableDefinitionFragment[]) => {
-  return allAssetNodes.reduce(
-    (acc, assetNode) => {
-      acc[tokenForAssetKey(assetNode.assetKey)] = true;
-      return acc;
-    },
-    {} as Record<string, boolean>,
-  );
+const getAllAssetNodesByKey = weakMapMemoize(
+  (allAssetNodes: ReturnType<typeof getAllAssetNodes>) => {
+    return allAssetNodes.reduce(
+      (acc, assetNode) => {
+        acc[tokenForAssetKey(assetNode.key)] = true;
+        return acc;
+      },
+      {} as Record<string, boolean>,
+    );
+  },
+);
+
+const getAssets = weakMapMemoize((allAssetNodes: WorkspaceAssetFragment[]) => {
+  const softwareDefinedAssetsWithDuplicates = allAssetNodes.map((assetNode) => ({
+    __typename: 'Asset' as const,
+    id: assetNode.id,
+    key: assetNode.assetKey,
+    definition: assetNode,
+  }));
+
+  const softwareDefinedAssetsByAssetKey: Record<
+    string,
+    (typeof softwareDefinedAssetsWithDuplicates)[number][]
+  > = {};
+  const keysWithMultipleDefinitions: Set<string> = new Set();
+  for (const asset of softwareDefinedAssetsWithDuplicates) {
+    const key = tokenForAssetKey(asset.key);
+    softwareDefinedAssetsByAssetKey[key] = softwareDefinedAssetsByAssetKey[key] || [];
+    softwareDefinedAssetsByAssetKey[key].push(asset);
+    if (softwareDefinedAssetsByAssetKey[key].length > 1) {
+      keysWithMultipleDefinitions.add(key);
+    }
+  }
+
+  const softwareDefinedAssets: {key: AssetKey; definition: WorkspaceAssetFragment; id: string}[] =
+    [];
+
+  softwareDefinedAssetsWithDuplicates.forEach((asset) => {
+    /**
+     * Return a materialization node if it exists, otherwise return an observable node if it
+     * exists, otherwise return any non-stub node, otherwise return any node.
+     * This exists to preserve implicit behavior, where the
+     * materialization node was previously preferred over the observable node. This is a
+     * temporary measure until we can appropriately scope the accessors that could apply to
+     * either a materialization or observation node.
+     * This property supports existing behavior but it should be phased out, because it relies on
+     * materialization nodes shadowing observation nodes that would otherwise be exposed.
+     */
+    const key = tokenForAssetKey(asset.key);
+    if (!keysWithMultipleDefinitions.has(key)) {
+      softwareDefinedAssets.push(asset);
+    }
+    const materializableAsset = softwareDefinedAssetsByAssetKey[key]?.find(
+      (a) => a.definition?.isMaterializable,
+    );
+    const observableAsset = softwareDefinedAssetsByAssetKey[key]?.find(
+      (a) => a.definition?.isObservable,
+    );
+    const nonGeneratedAsset = softwareDefinedAssetsByAssetKey[key]?.find(
+      (a) => !a.definition?.isAutoCreatedStub && a.definition,
+    );
+    const assetWithRepo = softwareDefinedAssetsByAssetKey[key]?.find((a) => !!a.definition);
+    const anyAsset = softwareDefinedAssetsByAssetKey[key]?.[0];
+
+    const assetToReturn =
+      materializableAsset || observableAsset || nonGeneratedAsset || assetWithRepo || anyAsset;
+
+    softwareDefinedAssets.push(
+      combineAssetDefinitions(assetToReturn!, softwareDefinedAssetsByAssetKey[key]!),
+    );
+  });
+
+  return softwareDefinedAssets;
 });
 
-const getAssets = weakMapMemoize(
+const filteredSDAs = weakMapMemoize(
+  (sdaAssets: ReturnType<typeof getAssets>, groupSelector?: AssetGroupSelector) => {
+    if (!groupSelector) {
+      return sdaAssets;
+    }
+    return sdaAssets.filter(
+      (asset) =>
+        asset.definition?.groupName === groupSelector.groupName &&
+        asset.definition?.repository.name === groupSelector.repositoryName &&
+        asset.definition?.repository.location.name === groupSelector.repositoryLocationName,
+    );
+  },
+);
+
+const combineSDAsAndExternalAssetsAndFilterByGroup = weakMapMemoize(
   (
-    materializedAssets: AssetRecord[],
     allAssetNodesByKey: Record<string, boolean>,
-    allAssetNodes: WorkspaceAssetFragment[],
+    materializedAssets: AssetRecord[],
+    sdaAssets: ReturnType<typeof getAssets>,
     groupSelector?: AssetGroupSelector,
   ) => {
-    const softwareDefinedAssetsWithDuplicates = allAssetNodes.map((assetNode) => ({
-      __typename: 'Asset' as const,
-      id: assetNode.id,
-      key: assetNode.assetKey,
-      definition: assetNode,
-    }));
-
-    const softwareDefinedAssetsByAssetKey: Record<
-      string,
-      (typeof softwareDefinedAssetsWithDuplicates)[number][]
-    > = {};
-    const keysWithMultipleDefinitions: Set<string> = new Set();
-    for (const asset of softwareDefinedAssetsWithDuplicates) {
-      const key = tokenForAssetKey(asset.key);
-      softwareDefinedAssetsByAssetKey[key] = softwareDefinedAssetsByAssetKey[key] || [];
-      softwareDefinedAssetsByAssetKey[key].push(asset);
-      if (softwareDefinedAssetsByAssetKey[key].length > 1) {
-        keysWithMultipleDefinitions.add(key);
-      }
-    }
-
-    const softwareDefinedAssets = softwareDefinedAssetsWithDuplicates.filter((asset) => {
-      /**
-       * Return a materialization node if it exists, otherwise return an observable node if it
-       * exists, otherwise return any non-stub node, otherwise return any node.
-       * This exists to preserve implicit behavior, where the
-       * materialization node was previously preferred over the observable node. This is a
-       * temporary measure until we can appropriately scope the accessors that could apply to
-       * either a materialization or observation node.
-       * This property supports existing behavior but it should be phased out, because it relies on
-       * materialization nodes shadowing observation nodes that would otherwise be exposed.
-       */
-      const key = tokenForAssetKey(asset.key);
-      if (!keysWithMultipleDefinitions.has(key)) {
-        return true;
-      }
-      const materializableAsset = softwareDefinedAssetsByAssetKey[key]?.find(
-        (a) => a.definition?.isMaterializable,
-      );
-      const observableAsset = softwareDefinedAssetsByAssetKey[key]?.find(
-        (a) => a.definition?.isObservable,
-      );
-      const nonGeneratedAsset = softwareDefinedAssetsByAssetKey[key]?.find(
-        (a) => !a.definition?.isAutoCreatedStub && a.definition,
-      );
-      const assetWithRepo = softwareDefinedAssetsByAssetKey[key]?.find((a) => !!a.definition);
-      const anyAsset = softwareDefinedAssetsByAssetKey[key]?.[0];
-
-      const assetToReturn =
-        materializableAsset || observableAsset || nonGeneratedAsset || assetWithRepo || anyAsset;
-
-      return assetToReturn === asset;
-    });
-
-    if (groupSelector) {
-      return softwareDefinedAssets.filter(
-        (asset) =>
-          asset.definition.groupName === groupSelector.groupName &&
-          asset.definition.repository.name === groupSelector.repositoryName &&
-          asset.definition.repository.location.name === groupSelector.repositoryLocationName,
-      );
-    }
-
-    // Assets returned by the assetRecordsOrError resolver but not returned by the WorkspaceContext
-    // don't have a definition and are "external assets"
     const externalAssets = materializedAssets
       .filter((asset) => !allAssetNodesByKey[tokenForAssetKey(asset.key)])
       .map((externalAsset) => ({
@@ -313,13 +333,40 @@ const getAssets = weakMapMemoize(
         definition: null,
       }));
 
-    return [...externalAssets, ...softwareDefinedAssets];
+    return [...filteredSDAs(sdaAssets, groupSelector), ...externalAssets];
   },
 );
 
-const getAssetsByAssetKey = weakMapMemoize((assets: ReturnType<typeof getAssets>) => {
-  return new Map(assets.map((asset) => [tokenForAssetKey(asset.key), asset]));
-});
+const getAssetsByAssetKey = weakMapMemoize(
+  (assets: ReturnType<typeof combineSDAsAndExternalAssetsAndFilterByGroup>) => {
+    return new Map(assets.map((asset) => [tokenForAssetKey(asset.key), asset]));
+  },
+);
+
+const combineAssetDefinitions = weakMapMemoize(
+  (
+    asset: ReturnType<typeof getAssets>[number],
+    sdas: ReturnType<typeof getAssets>,
+  ): ReturnType<typeof getAssets>[number] => {
+    return {
+      ...asset,
+      definition: {
+        ...asset.definition,
+        // jobNames: Array.from(new Set(sdas.map((sda) => sda.definition?.jobNames).flat())),
+        // kinds: Array.from(new Set(sdas.map((sda) => sda.definition?.kinds).flat())),
+        // opNames: Array.from(new Set(sdas.map((sda) => sda.definition?.opNames).flat())),
+        pools: Array.from(new Set(sdas.map((sda) => sda.definition?.pools).flat())),
+        dependencyKeys: sdas.map((sda) => sda.definition?.dependencyKeys).flat(),
+        dependedByKeys: sdas.map((sda) => sda.definition?.dependedByKeys).flat(),
+        isPartitioned: sdas.some((sda) => sda.definition?.isPartitioned),
+        isExecutable: sdas.some((sda) => sda.definition?.isExecutable),
+        isObservable: sdas.some((sda) => sda.definition?.isObservable),
+        isMaterializable: sdas.some((sda) => sda.definition?.isMaterializable),
+        isAutoCreatedStub: sdas.some((sda) => sda.definition?.isAutoCreatedStub),
+      },
+    };
+  },
+);
 
 export const ASSET_RECORDS_QUERY = gql`
   query AssetRecordsQuery($cursor: String, $limit: Int) {
