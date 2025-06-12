@@ -262,8 +262,12 @@ const getAssets = weakMapMemoize((allAssetNodes: WorkspaceAssetFragment[]) => {
     }
   }
 
-  const softwareDefinedAssets: {key: AssetKey; definition: WorkspaceAssetFragment; id: string}[] =
-    [];
+  const softwareDefinedAssets: {
+    __typename: 'Asset';
+    key: AssetKey;
+    definition: WorkspaceAssetFragment;
+    id: string;
+  }[] = [];
 
   softwareDefinedAssetsWithDuplicates.forEach((asset) => {
     /**
