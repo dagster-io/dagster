@@ -528,6 +528,9 @@ class TestEventLogStorage:
     def watch_timeout(self):
         return 5
 
+    def can_wipe_asset_partitions(self):
+        return True
+
     @contextmanager
     def mock_tags_to_index(self, storage):
         passthrough_all_tags = lambda tags: tags
@@ -2861,7 +2864,13 @@ class TestEventLogStorage:
         materializations = instance.fetch_materializations(asset_to_wipe.key, limit=100).records
         assert len(materializations) == 1
 
-        instance.wipe_asset_partitions(asset_to_wipe.key, ["a"])
+        try:
+            instance.wipe_asset_partitions(asset_to_wipe.key, ["a"])
+        except NotImplementedError:
+            if not self.can_wipe_asset_partitions():
+                pytest.skip("wiping asset partitions is not supported for this storage")
+            raise
+
         wipe_events = instance.get_event_records(
             EventRecordsFilter(event_type=DagsterEventType.ASSET_WIPED)
         )
