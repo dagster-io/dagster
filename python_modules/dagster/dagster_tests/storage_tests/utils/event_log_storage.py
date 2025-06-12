@@ -2832,6 +2832,44 @@ class TestEventLogStorage:
         assert len(asset_keys) == 1
         assert storage.has_asset_key(AssetKey("asset_1"))
 
+    def test_asset_wiped_event(self, instance):
+        @asset
+        def asset_to_wipe():
+            return 1
+
+        materialize([asset_to_wipe], instance=instance)
+        materializations = instance.fetch_materializations(asset_to_wipe.key, limit=100).records
+        assert len(materializations) == 1
+
+        instance.wipe_assets([asset_to_wipe.key])
+        materializations = instance.fetch_materializations(asset_to_wipe.key, limit=100).records
+        assert len(materializations) == 0
+        wipe_events = instance.get_event_records(
+            EventRecordsFilter(event_type=DagsterEventType.ASSET_WIPED)
+        )
+        assert len(wipe_events) == 1
+        assert wipe_events[0].event_log_entry.dagster_event.asset_key == AssetKey("asset_to_wipe")
+        assert wipe_events[0].event_log_entry.dagster_event_type == DagsterEventType.ASSET_WIPED
+        assert wipe_events[0].event_log_entry.dagster_event.asset_wiped_data.partition_keys is None
+
+    def test_asset_partitioned_wiped_event(self, instance):
+        @asset(partitions_def=StaticPartitionsDefinition(["a", "b", "c"]))
+        def asset_to_wipe():
+            return 1
+
+        materialize([asset_to_wipe], instance=instance, partition_key="a")
+        materializations = instance.fetch_materializations(asset_to_wipe.key, limit=100).records
+        assert len(materializations) == 1
+
+        instance.wipe_asset_partitions(asset_to_wipe.key, ["a"])
+        wipe_events = instance.get_event_records(
+            EventRecordsFilter(event_type=DagsterEventType.ASSET_WIPED)
+        )
+        assert len(wipe_events) == 1
+        assert wipe_events[0].event_log_entry.dagster_event.asset_key == AssetKey("asset_to_wipe")
+        assert wipe_events[0].event_log_entry.dagster_event_type == DagsterEventType.ASSET_WIPED
+        assert wipe_events[0].event_log_entry.dagster_event.asset_wiped_data.partition_keys == ["a"]
+
     def test_asset_secondary_index(self, storage, instance):
         _synthesize_events(lambda: one_asset_op(), instance=instance)
 
