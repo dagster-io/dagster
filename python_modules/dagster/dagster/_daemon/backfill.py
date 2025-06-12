@@ -239,12 +239,6 @@ def execute_backfill_jobs(
     for backfill_job in backfill_jobs:
         backfill_id = backfill_job.backfill_id
 
-        # refetch, in case the backfill was updated in the meantime
-        backfill = cast("PartitionBackfill", instance.get_backfill(backfill_id))
-        if backfill.status in BULK_ACTION_TERMINAL_STATUSES:
-            # The backfill is now in a terminal state, skip iteration
-            continue
-
         try:
             if threadpool_executor:
                 if backfill_futures is None:
@@ -252,6 +246,12 @@ def execute_backfill_jobs(
 
                 # only allow one backfill per backfill job to be in flight
                 if backfill_id in backfill_futures and not backfill_futures[backfill_id].done():
+                    continue
+
+                # refetch, in case the backfill was updated in the meantime
+                backfill = cast("PartitionBackfill", instance.get_backfill(backfill_id))
+                if backfill.status in BULK_ACTION_TERMINAL_STATUSES:
+                    # The backfill is now in a terminal state, skip iteration
                     continue
 
                 future = threadpool_executor.submit(
@@ -268,6 +268,12 @@ def execute_backfill_jobs(
                 yield
 
             else:
+                # refetch, in case the backfill was updated in the meantime
+                backfill = cast("PartitionBackfill", instance.get_backfill(backfill_id))
+                if backfill.status in BULK_ACTION_TERMINAL_STATUSES:
+                    # The backfill is now in a terminal state, skip iteration
+                    continue
+
                 yield from execute_backfill_iteration_with_instigation_logger(
                     backfill,
                     logger,
