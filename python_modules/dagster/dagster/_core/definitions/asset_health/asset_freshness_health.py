@@ -65,6 +65,7 @@ class AssetFreshnessHealthState(LoadableBy[AssetKey]):
             return [asset_freshness_health_states.get(key) for key in keys]
 
 
+@whitelist_for_serdes
 @record.record
 class AssetHealthFreshnessMetadata:
     last_materialized_timestamp: Optional[float]

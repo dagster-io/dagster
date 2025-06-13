@@ -222,6 +222,7 @@ async def _get_is_currently_failed_and_latest_terminal_run_id(
     return run_record.dagster_run.is_failure, run_record.dagster_run.run_id
 
 
+@whitelist_for_serdes
 @record.record
 class AssetHealthMaterializationDegradedPartitionedMeta:
     num_failed_partitions: int
@@ -229,12 +230,14 @@ class AssetHealthMaterializationDegradedPartitionedMeta:
     total_num_partitions: int
 
 
+@whitelist_for_serdes
 @record.record
 class AssetHealthMaterializationHealthyPartitionedMeta:
     num_missing_partitions: int
     total_num_partitions: int
 
 
+@whitelist_for_serdes
 @record.record
 class AssetHealthMaterializationDegradedNotPartitionedMeta:
     failed_run_id: Optional[str]

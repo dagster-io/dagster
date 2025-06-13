@@ -155,6 +155,7 @@ class AssetCheckHealthState(LoadableBy[AssetKey]):
             return [asset_check_health_states.get(key) for key in keys]
 
 
+@whitelist_for_serdes
 @record.record
 class AssetHealthCheckDegradedMetadata:
     num_failed_checks: int
@@ -162,12 +163,14 @@ class AssetHealthCheckDegradedMetadata:
     total_num_checks: int
 
 
+@whitelist_for_serdes
 @record.record
 class AssetHealthCheckWarningMetadata:
     num_warning_checks: int
     total_num_checks: int
 
 
+@whitelist_for_serdes
 @record.record
 class AssetHealthCheckUnknownMetadata:
     num_not_executed_checks: int
