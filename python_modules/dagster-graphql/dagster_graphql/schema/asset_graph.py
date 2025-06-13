@@ -89,7 +89,7 @@ from dagster_graphql.schema.errors import GrapheneAssetNotFoundError
 from dagster_graphql.schema.freshness import GrapheneInternalFreshnessPolicy
 from dagster_graphql.schema.freshness_policy import (
     GrapheneAssetFreshnessInfo,
-    GrapheneFreshnessPolicy,
+    GrapheneLegacyFreshnessPolicy,
 )
 from dagster_graphql.schema.inputs import GraphenePipelineSelector
 from dagster_graphql.schema.instigators import GrapheneInstigator
@@ -271,7 +271,7 @@ class GrapheneAssetNode(graphene.ObjectType):
     dependencyKeys = non_null_list(GrapheneAssetKey)
     description = graphene.String()
     freshnessInfo = graphene.Field(GrapheneAssetFreshnessInfo)
-    freshnessPolicy = graphene.Field(GrapheneFreshnessPolicy)
+    freshnessPolicy = graphene.Field(GrapheneLegacyFreshnessPolicy)
     internalFreshnessPolicy = graphene.Field(GrapheneInternalFreshnessPolicy)
     autoMaterializePolicy = graphene.Field(GrapheneAutoMaterializePolicy)
     automationCondition = graphene.Field(GrapheneAutomationCondition)
@@ -855,9 +855,9 @@ class GrapheneAssetNode(graphene.ObjectType):
 
     def resolve_freshnessPolicy(
         self, _graphene_info: ResolveInfo
-    ) -> Optional[GrapheneFreshnessPolicy]:
+    ) -> Optional[GrapheneLegacyFreshnessPolicy]:
         if self._asset_node_snap.freshness_policy:
-            return GrapheneFreshnessPolicy(self._asset_node_snap.freshness_policy)
+            return GrapheneLegacyFreshnessPolicy(self._asset_node_snap.freshness_policy)
         return None
 
     def resolve_internalFreshnessPolicy(

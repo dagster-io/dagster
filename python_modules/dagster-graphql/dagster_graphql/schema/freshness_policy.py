@@ -15,7 +15,7 @@ class GrapheneAssetFreshnessInfo(graphene.ObjectType):
         name = "AssetFreshnessInfo"
 
 
-class GrapheneFreshnessPolicy(graphene.ObjectType):
+class GrapheneLegacyFreshnessPolicy(graphene.ObjectType):
     maximumLagMinutes = graphene.NonNull(graphene.Float)
     cronSchedule = graphene.Field(graphene.String)
     cronScheduleTimezone = graphene.Field(graphene.String)
