@@ -77,7 +77,7 @@ To execute a job or materialize an asset that specifies config, you'll need to p
 When specifying config from the Python API, you can use the `run_config` argument for <PyObject section="jobs" module="dagster" object="JobDefinition.execute_in_process" /> or <PyObject section="execution" module="dagster" object="materialize"/>. This takes a <PyObject section="config" module="dagster" object="RunConfig"/> object, within which we can supply config on a per-op or per-asset basis. The config is specified as a dictionary, with the keys corresponding to the op/asset names and the values corresponding to the config values.
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/operate/run_config/providing_config_values.py"
+  path="docs_snippets/docs_snippets/guides/operate/run_config/providing_config_values/assets.py"
   title="src/<project_name>/defs/assets.py"
   dedent="4"
 />
@@ -93,8 +93,6 @@ You can also click the **Scaffold Missing Config** button to generate dummy valu
 
 </TabItem>
 <TabItem value="Command line">
-
-### Command line
 
 When executing a job from Dagster's CLI with [`dg launch --job`](/api/dg/dg-cli#cmdoption-dg-launch-job), you can put config in a YAML file:
 
@@ -114,32 +112,26 @@ dg launch --job my_job --config my_config.yaml
 </TabItem>
 </Tabs>
 
+## Using environment variables with config
+
+Assets and ops can be configured using environment variables by passing an <PyObject section="resources" module="dagster" object="EnvVar" /> when constructing a config object. This is useful when the value is sensitive or may vary based on environment. If using Dagster+, environment variables can be [set up directly in the UI](/guides/operate/configuration/using-environment-variables-and-secrets).
+
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/operate/run_config/using_env_vars/assets.py"
+  title="src/<project_name>/defs/assets.py"
+/>
+
+For more information on using environment variables in Dagster, see [Using environment variables and secrets in Dagster code](/guides/operate/configuration/using-environment-variables-and-secrets).
+
 ## Validation
 
 Dagster validates any provided run config against the corresponding Pydantic model. It will abort execution with a <PyObject section="errors" module="dagster" object="DagsterInvalidConfigError"/> or Pydantic `ValidationError` if validation fails. For example, both of the following will fail, because there is no `nonexistent_config_value` in the config schema:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/dagster/pythonic_config/pythonic_config.py"
-  title="src/<project_name>/defs/my_job.py"
-  startAfter="start_execute_with_bad_config"
-  endBefore="end_execute_with_bad_config"
-  dedent="4"
+  path="docs_snippets/docs_snippets/guides/operate/run_config/validation/assets.py"
+  title="src/<project_name>/defs/assets.py"
 />
-
-### Using environment variables with config
-
-Assets and ops can be configured using environment variables by passing an <PyObject section="resources" module="dagster" object="EnvVar" /> when constructing a config object. This is useful when the value is sensitive or may vary based on environment. If using Dagster+, environment variables can be [set up directly in the UI](/guides/operate/configuration/using-environment-variables-and-secrets).
-
-<CodeExample
-  path="docs_snippets/docs_snippets/guides/dagster/pythonic_config/pythonic_config.py"
-  title="src/<project_name>/defs/my_job.py"
-  startAfter="start_execute_with_config_envvar"
-  endBefore="end_execute_with_config_envvar"
-  dedent="4"
-/>
-
-Refer to the [Environment variables and secrets guide](/guides/operate/configuration/using-environment-variables-and-secrets) for more general info about environment variables in Dagster.
 
 ## Next steps
 
-Config is a powerful tool for making Dagster pipelines more flexible and observable. For a deeper dive into the supported config types, see [the advanced config types documentation](/guides/operate/configuration/advanced-config-types). For more information on using resources, which are a powerful way to encapsulate reusable logic, see [the Resources guide](/guides/build/external-resources).
+Config is a powerful tool for making Dagster pipelines more flexible and observable. For a deeper dive into the supported config types, see the [advanced config types documentation](/guides/operate/configuration/advanced-config-types). For more information on using resources, which are a powerful way to encapsulate reusable logic, see the [resources documentation](/guides/build/external-resources).
