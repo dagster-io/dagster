@@ -126,6 +126,7 @@ def execute_backfill_iteration(
         return
 
     backfill_jobs = [*in_progress_backfills, *canceling_backfills]
+    backfill_jobs = sorted(backfill_jobs, key=lambda x: x.backfill_timestamp)
 
     yield from execute_backfill_jobs(
         workspace_process_context,
