@@ -12,7 +12,11 @@ from dagster._core.remote_representation.origin import ManagedGrpcPythonEnvCodeL
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._grpc.__generated__ import dagster_api_pb2
 from dagster._grpc.__generated__.dagster_api_pb2_grpc import DagsterApiServicer
-from dagster._grpc.client import DEFAULT_GRPC_TIMEOUT, DEFAULT_REPOSITORY_GRPC_TIMEOUT
+from dagster._grpc.client import (
+    DEFAULT_GRPC_TIMEOUT,
+    DEFAULT_REPOSITORY_GRPC_TIMEOUT,
+    DEFAULT_SENSOR_GRPC_TIMEOUT,
+)
 from dagster._grpc.constants import GrpcServerCommand
 from dagster._grpc.types import (
     CancelExecutionRequest,
@@ -323,7 +327,7 @@ class DagsterProxyApiServicer(DagsterApiServicer):
             "SyncExternalSensorExecution",
             request,
             context,
-            sensor_execution_args.timeout or DEFAULT_GRPC_TIMEOUT,
+            sensor_execution_args.timeout or DEFAULT_SENSOR_GRPC_TIMEOUT,
         )
 
     def ShutdownServer(self, request, context):
