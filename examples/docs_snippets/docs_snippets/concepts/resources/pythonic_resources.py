@@ -13,10 +13,13 @@ def new_resource_testing() -> None:
         def get_value(self) -> str:
             return self.value
 
+    # end_new_resource_testing
+
+    # start_test_my_resource
     def test_my_resource():
         assert MyResource(value="foo").get_value() == "foo"
 
-    # end_new_resource_testing
+    # end_test_my_resource
 
     test_my_resource()
 
@@ -32,13 +35,16 @@ def new_resource_testing_with_nesting() -> None:
         foo: StringHolderResource
         bar: str
 
+    # end_new_resource_testing_with_nesting
+
+    # start_test_my_resource_with_nesting
     def test_my_resource_with_nesting():
         string_holder = StringHolderResource(value="foo")
         resource = MyResourceRequiresAnother(foo=string_holder, bar="bar")
         assert resource.foo.value == "foo"
         assert resource.bar == "bar"
 
-    # end_new_resource_testing_with_nesting
+    # end_test_my_resource_with_nesting
 
     test_my_resource_with_nesting()
 
@@ -569,6 +575,9 @@ def new_resource_testing_with_context():
             assert instance
             return instance.storage_directory()
 
+    # end_new_resource_testing_with_context
+
+    # start_test_my_context_resource
     def test_my_context_resource():
         with dg.DagsterInstance.ephemeral() as instance:
             context = dg.build_init_resource_context(instance=instance)
@@ -579,7 +588,7 @@ def new_resource_testing_with_context():
                 == instance.storage_directory()
             )
 
-    # end_new_resource_testing_with_context
+    # end_test_my_context_resource
 
 
 def with_state_example() -> None:
