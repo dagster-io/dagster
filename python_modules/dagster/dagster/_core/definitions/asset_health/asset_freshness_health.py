@@ -40,7 +40,9 @@ class AssetFreshnessHealthState(LoadableBy[AssetKey]):
         cls, asset_key: AssetKey, loading_context: LoadingContext
     ) -> "AssetFreshnessHealthState":
         """Gets the freshness state for the asset from the DB."""
-        freshness_state_record = loading_context.instance.get_entity_freshness_state(asset_key)
+        freshness_state_record = loading_context.instance.get_freshness_state_records(
+            [asset_key]
+        ).get(asset_key)
 
         if freshness_state_record is None:
             # freshness policy has no evaluations yet

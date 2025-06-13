@@ -3614,9 +3614,11 @@ class DagsterInstance(DynamicPartitionsStore):
             ),
         )
 
-    def get_entity_freshness_state(self, entity_key: AssetKey) -> Optional[FreshnessStateRecord]:
-        warnings.warn("`get_entity_freshness_state` is not yet implemented for OSS.")
-        return None
+    def get_freshness_state_records(
+        self, entity_keys: Sequence[AssetKey]
+    ) -> Mapping[AssetKey, FreshnessStateRecord]:
+        warnings.warn("`get_freshness_state_records` is not currently implemented.")
+        return {}
 
     def get_asset_check_support(self) -> "AssetCheckInstanceSupport":
         from dagster._core.storage.asset_check_execution_record import AssetCheckInstanceSupport
