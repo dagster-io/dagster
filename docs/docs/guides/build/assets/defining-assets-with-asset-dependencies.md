@@ -4,11 +4,11 @@ sidebar_position: 200
 title: Defining assets that depend on other assets
 ---
 
+Asset definitions can depend on other asset definitions. The dependent asset is called the **downstream asset**, and the asset it depends on is the **upstream asset**.
+
 import ScaffoldAsset from '@site/docs/partials/\_ScaffoldAsset.md';
 
 <ScaffoldAsset />
-
-Asset definitions can depend on other asset definitions. The dependent asset is called the **downstream asset**, and the asset it depends on is the **upstream asset**.
 
 ## Defining basic dependencies
 
