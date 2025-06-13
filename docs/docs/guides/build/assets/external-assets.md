@@ -20,12 +20,6 @@ For example, external assets could be:
 - A CSV file delivered daily by SFTP from a partner
 - A table in a data warehouse populated by another orchestrator
 
-:::note
-
-This article assumes familiarity with [assets](/guides/build/assets/defining-assets) and [sensors](/guides/automate/sensors).
-
-:::
-
 ## Defining external assets
 
 Let's say you have a partner who sends you raw transaction data by SFTP on an almost daily basis. This data is later cleaned and stored in an internal data lake.
