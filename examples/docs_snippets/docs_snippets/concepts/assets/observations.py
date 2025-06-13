@@ -24,7 +24,7 @@ import dagster as dg
 
 
 @dg.op
-def observation_op(context: OpExecutionContext):
+def observation_op(context: dg.OpExecutionContext):
     df = read_df()
     context.log_event(
         dg.AssetObservation(
