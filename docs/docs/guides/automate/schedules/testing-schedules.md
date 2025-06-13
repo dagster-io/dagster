@@ -53,6 +53,7 @@ Let's say we want to test the `configurable_job_schedule` in this example:
   path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/schedules/schedules.py"
   startAfter="start_run_config_schedule"
   endBefore="end_run_config_schedule"
+  title="src/<project-name>/defs/assets.py"
 />
 
 To test this schedule, we used <PyObject section="schedules-sensors" module="dagster" object="build_schedule_context" /> to construct a <PyObject section="schedules-sensors" module="dagster" object="ScheduleEvaluationContext" /> to provide to the `context` parameter:
@@ -61,6 +62,7 @@ To test this schedule, we used <PyObject section="schedules-sensors" module="dag
   path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/schedules/schedule_examples.py"
   startAfter="start_test_cron_schedule_context"
   endBefore="end_test_cron_schedule_context"
+  title="tests/test_assets.py"
 />
 
 If your <PyObject section="schedules-sensors" module="dagster" object="schedule" decorator />-decorated function doesn't have a context parameter, you don't need to provide one when invoking it.
@@ -75,6 +77,7 @@ Let's say we want to test the `process_data_schedule` in this example:
   path="docs_snippets/docs_snippets/concepts/resources/pythonic_resources.py"
   startAfter="start_new_resource_on_schedule"
   endBefore="end_new_resource_on_schedule"
+  title="src/<project-name>/defs/assets.py"
   dedent="4"
 />
 
@@ -84,6 +87,7 @@ In the test for this schedule, we provided the `date_formatter` resource to the 
   path="docs_snippets/docs_snippets/concepts/resources/pythonic_resources.py"
   startAfter="start_test_resource_on_schedule"
   endBefore="end_test_resource_on_schedule"
+  title="tests/test_assets.py"
   dedent="4"
 />
 

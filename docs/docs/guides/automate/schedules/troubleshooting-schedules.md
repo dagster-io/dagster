@@ -81,7 +81,7 @@ If the logs don't indicate the cause of the issue, move on to the next step.
 
 ### Check for execution failures
 
-The last step is to check that the schedule executed successfully. If you didn't do this already, refer to [Step 3](#step-3-check-for-execution-failures) for more information.
+The last step is to check that the schedule executed successfully. If you didn't do this already, refer to [Step 3](#step-3-verify-the-schedules-interval-configuration) for more information.
 
 ## More help
 
