@@ -1213,4 +1213,53 @@ describe('createAssetSelectionHint', () => {
       to: 4,
     });
   });
+
+  it('Treats * as a wildcard within key attribute', () => {
+    expect(testAutocomplete('key:"asset*|"')).toEqual({
+      from: 4,
+      list: [
+        expect.objectContaining({
+          text: '"asset1"',
+        }),
+        expect.objectContaining({
+          text: '"asset2"',
+        }),
+        expect.objectContaining({
+          text: '"asset3"',
+        }),
+      ],
+      to: 12,
+    });
+    expect(testAutocomplete('key:asset*|')).toEqual({
+      from: 4,
+      list: [
+        expect.objectContaining({
+          text: '"asset1"',
+        }),
+        expect.objectContaining({
+          text: '"asset2"',
+        }),
+        expect.objectContaining({
+          text: '"asset3"',
+        }),
+      ],
+      to: 10,
+    });
+
+    expect(testAutocomplete('key:*set|')).toEqual({
+      from: 4,
+      list: [
+        expect.objectContaining({
+          text: '"asset1"',
+        }),
+        expect.objectContaining({
+          text: '"asset2"',
+        }),
+        expect.objectContaining({
+          text: '"asset3"',
+        }),
+      ],
+      to: 8,
+    });
+  });
 });
