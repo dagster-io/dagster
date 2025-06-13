@@ -25,7 +25,6 @@ from dagster._annotations import beta, deprecated, superseded
 from dagster._core.definitions.definitions_load_context import StateBackedDefinitionsLoader
 from dagster._record import record
 from dagster._utils.cached_method import cached_method
-from dagster._utils.warnings import deprecation_warning
 from pydantic import Field, PrivateAttr
 from tableauserverclient.server.endpoint.auth_endpoint import Auth
 
@@ -700,9 +699,7 @@ class BaseTableauWorkspace(ConfigurableResource):
 @beta
 def load_tableau_asset_specs(
     workspace: BaseTableauWorkspace,
-    dagster_tableau_translator: Optional[
-        DagsterTableauTranslator
-    ] = None,
+    dagster_tableau_translator: Optional[DagsterTableauTranslator] = None,
 ) -> Sequence[AssetSpec]:
     """Returns a list of AssetSpecs representing the Tableau content in the workspace.
 
@@ -715,7 +712,6 @@ def load_tableau_asset_specs(
     Returns:
         List[AssetSpec]: The set of assets representing the Tableau content in the workspace.
     """
-
     with workspace.process_config_and_initialize_cm() as initialized_workspace:
         return check.is_list(
             TableauWorkspaceDefsLoader(

@@ -1,6 +1,5 @@
 from unittest.mock import MagicMock
 
-import pytest
 from dagster import AssetExecutionContext
 from dagster._core.code_pointer import CodePointer
 from dagster._core.definitions.asset_spec import AssetSpec
@@ -475,6 +474,7 @@ def test_load_assets_workspace_data_translator(
         assert all(
             key.path[0] == "my_prefix" for key in repository_def.assets_defs_by_key.keys()
         ), repository_def.assets_defs_by_key
+
 
 def test_load_assets_workspace_asset_decorator_with_context(
     sign_in: MagicMock,
