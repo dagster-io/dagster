@@ -63,7 +63,7 @@ dg scaffold defs dagster.asset assets.py
 Replace the boilerplate code in `assets.py` with the code below. We'll use Pandas DataFrames to interact with the data:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/operate/dev-to-prod/assets/assets.py"
+  path="docs_snippets/docs_snippets/guides/operate/dev_to_prod/assets/assets.py"
   startAfter="start_assets"
   endBefore="end_assets"
   title="src/my_dagster_project/defs/assets.py"
@@ -82,7 +82,7 @@ dg scaffold defs dagster.resources resources.py
 Next, copy the following code into `resources.py`:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/operate/dev-to-prod/resources/resources.py"
+  path="docs_snippets/docs_snippets/guides/operate/dev_to_prod/resources/resources.py"
   title="src/my_dagster_project/defs/resources.py"
 />
 
@@ -128,7 +128,7 @@ We want to store the assets in a production Snowflake database, so we need to up
 Instead, we can determine the configuration for resources based on the environment:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/operate/dev-to-prod/resources/resources_v2.py"
+  path="docs_snippets/docs_snippets/guides/operate/dev_to_prod/resources/resources_v2.py"
   title="src/my-dagster-project/defs/resources.py"
 />
 
@@ -150,7 +150,7 @@ We still have some problems with this setup:
 We can easily solve these problems using <PyObject section="resources" module="dagster" object="EnvVar"/>, which lets us source configuration for resources from environment variables. This allows us to store Snowflake configuration values as environment variables and point the I/O manager to those environment variables:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/operate/dev-to-prod/resources/resources_v3.py"
+  path="docs_snippets/docs_snippets/guides/operate/dev_to_prod/resources/resources_v3.py"
 />
 
 ### Staging
@@ -162,7 +162,7 @@ Depending on your organization’s Dagster setup, there are a couple of options 
 - **For a self-hosted staging deployment**, we’ve already done most of the necessary work to run our assets in staging! All we need to do is add another entry to the `resources` dictionary and set `DAGSTER_DEPLOYMENT=staging` in our staging deployment.
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/operate/dev-to-prod/resources/resources_v4.py"
+  path="docs_snippets/docs_snippets/guides/operate/dev_to_prod/resources/resources_v4.py"
   startAfter="start_staging"
   endBefore="end_staging"
 />
@@ -191,7 +191,7 @@ Determining when it makes sense to stub a resource for a unit test can be a topi
 We'll start by writing the "real" Hacker News API Client. We'll also need to add an instance of `HNAPIClient` to `resources`:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/operate/dev-to-prod/resources/resources_v5.py"
+  path="docs_snippets/docs_snippets/guides/operate/dev_to_prod/resources/resources_v5.py"
   title="src/my_dagster_project/defs/resources.py"
 />
 
@@ -200,7 +200,7 @@ We'll start by writing the "real" Hacker News API Client. We'll also need to add
 Next, we'll need to update the `items` asset in `assets.py` to use the Hacker News API client as a resource:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/operate/dev-to-prod/assets/assets_v2.py"
+  path="docs_snippets/docs_snippets/guides/operate/dev_to_prod/assets/assets_v2.py"
   title="src/my_dagster_project/defs/assets.py"
 />
 
@@ -215,7 +215,7 @@ For the sake of brevity, we've omitted the implementation of the property `item_
 Now we can write a stubbed version of the Hacker News resource. We want to make sure the stub has implementations for each method `HNAPIClient` implements.
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/operate/dev-to-prod/resources/resources_v6.py"
+  path="docs_snippets/docs_snippets/guides/operate/dev_to_prod/resources/resources_v6.py"
   title="src/my_dagster_project/defs/resources.py"
 />
 
@@ -230,7 +230,7 @@ Since the stub Hacker News resource and the real Hacker News resource need to im
 Now we can use the stub Hacker News resource to test that the `items` asset transforms the data in the way we expect:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/operate/dev-to-prod/test_assets.py"
+  path="docs_snippets/docs_snippets/guides/operate/dev_to_prod/test_assets.py"
   title="src/my_dagster_project/defs/test_assets.py"
 />
 
