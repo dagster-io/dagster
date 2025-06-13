@@ -57,7 +57,7 @@ except ImportError:
     VALID_SCHEMA_MODEL_CLASSES = (pa.DataFrameModel,)
     VALID_COLUMN_CLASSES = (pa.Column,)
 
-# if TYPE_CHECKING:
+if TYPE_CHECKING:
     # Unconditionally import pandera.polars for type-checking. Note that this is an unresolved
     # import in a type checking process if polars isn't installed, but this won't interfere with the
     # user type-checking experience-- the error will be suppressed because it is in a third-party
@@ -66,7 +66,7 @@ except ImportError:
     # NOTE: It is important NOT to import `pandera.polars` under the same pa_polars alias we use for
     # the runtime import above-- that will confuse type checkers because that alias is a variable
     # due to the runtime ImportError handling.
-    # import pandera.polars  # noqa: TC004
+    import pandera.polars  # noqa: TC004
 
 DagsterPanderaSchema: TypeAlias = Union[pa.DataFrameSchema, "pandera.polars.DataFrameSchema"]
 DagsterPanderaSchemaModel: TypeAlias = type[
