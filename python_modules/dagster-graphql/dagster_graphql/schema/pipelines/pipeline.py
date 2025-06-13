@@ -441,7 +441,7 @@ class GrapheneAsset(graphene.ObjectType):
         return None
 
     def resolve_assetHealth(self, graphene_info: ResolveInfo) -> Optional[GrapheneAssetHealth]:
-        if not graphene_info.context.instance.dagster_observe_supported():
+        if not graphene_info.context.instance.dagster_asset_health_queries_supported():
             return None
         return GrapheneAssetHealth(
             asset_key=self.key,
