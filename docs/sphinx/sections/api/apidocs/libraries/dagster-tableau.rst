@@ -23,6 +23,8 @@ Assets (Tableau API)
 
 .. autoclass:: DagsterTableauTranslator
 
+.. autodecorator:: tableau_assets
+
 .. autofunction:: load_tableau_asset_specs
 
 .. autofunction:: build_tableau_materializable_assets_definition
