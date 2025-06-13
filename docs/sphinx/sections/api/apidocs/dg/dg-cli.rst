@@ -28,8 +28,8 @@ dg CLI
     :nested:
 
 
-Example: Scaffolding an asset
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+dg scaffold example
+^^^^^^^^^^^^^^^^^^^
 
 **Note:** Before scaffolding definitions with ``dg``, you must `create a project <https://docs.dagster.io/guides/labs/dg/creating-a-project>`_ with the `create-dagster CLI <https://docs.dagster.io/api/dg/create-dagster>`_ and activate its virtual environment.
 
