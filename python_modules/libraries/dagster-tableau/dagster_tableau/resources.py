@@ -701,29 +701,20 @@ class BaseTableauWorkspace(ConfigurableResource):
 def load_tableau_asset_specs(
     workspace: BaseTableauWorkspace,
     dagster_tableau_translator: Optional[
-        Union[DagsterTableauTranslator, type[DagsterTableauTranslator]]
+        DagsterTableauTranslator
     ] = None,
 ) -> Sequence[AssetSpec]:
     """Returns a list of AssetSpecs representing the Tableau content in the workspace.
 
     Args:
         workspace (Union[TableauCloudWorkspace, TableauServerWorkspace]): The Tableau workspace to fetch assets from.
-        dagster_tableau_translator (Optional[Union[DagsterTableauTranslator, Type[DagsterTableauTranslator]]]):
+        dagster_tableau_translator (Optional[DagsterTableauTranslator]):
             The translator to use to convert Tableau content into :py:class:`dagster.AssetSpec`.
             Defaults to :py:class:`DagsterTableauTranslator`.
 
     Returns:
         List[AssetSpec]: The set of assets representing the Tableau content in the workspace.
     """
-    if isinstance(dagster_tableau_translator, type):
-        deprecation_warning(
-            subject="Support of `dagster_tableau_translator` as a Type[DagsterTableauTranslator]",
-            breaking_version="1.10",
-            additional_warn_text=(
-                "Pass an instance of DagsterTableauTranslator or subclass to `dagster_tableau_translator` instead."
-            ),
-        )
-        dagster_tableau_translator = dagster_tableau_translator()
 
     with workspace.process_config_and_initialize_cm() as initialized_workspace:
         return check.is_list(
