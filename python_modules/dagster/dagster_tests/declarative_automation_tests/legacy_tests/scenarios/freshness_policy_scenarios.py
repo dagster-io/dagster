@@ -3,7 +3,7 @@ import datetime
 from dagster import AssetSelection, DailyPartitionsDefinition
 from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
 from dagster._core.definitions.auto_materialize_rule_evaluation import TextRuleEvaluationData
-from dagster._core.definitions.freshness_policy import FreshnessPolicy
+from dagster._core.definitions.freshness_policy import LegacyFreshnessPolicy
 
 from dagster_tests.declarative_automation_tests.scenario_utils.base_scenario import (
     AssetEvaluationSpec,
@@ -14,8 +14,8 @@ from dagster_tests.declarative_automation_tests.scenario_utils.base_scenario imp
     run_request,
 )
 
-freshness_30m = FreshnessPolicy(maximum_lag_minutes=30)
-freshness_60m = FreshnessPolicy(maximum_lag_minutes=60)
+freshness_30m = LegacyFreshnessPolicy(maximum_lag_minutes=30)
+freshness_60m = LegacyFreshnessPolicy(maximum_lag_minutes=60)
 
 non_subsettable_multi_asset_on_top = [
     multi_asset_def(["asset1", "asset2", "asset3"], can_subset=False),

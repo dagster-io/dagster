@@ -26,8 +26,8 @@ class FreshnessMinutes(NamedTuple):
     additional_warn_text="For monitoring freshness, use freshness checks instead. If using lazy "
     "auto-materialize, use AutomationCondition.cron() and AutomationCondition.any_downstream_conditions().",
 )
-@whitelist_for_serdes
-class FreshnessPolicy(
+@whitelist_for_serdes(storage_name="FreshnessPolicy")
+class LegacyFreshnessPolicy(
     NamedTuple(
         "_FreshnessPolicy",
         [

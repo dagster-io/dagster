@@ -16,7 +16,7 @@ from dagster._core.definitions.declarative_automation.automation_condition impor
     AutomationCondition,
 )
 from dagster._core.definitions.events import AssetKey, AssetObservation, CoercibleToAssetKey, Output
-from dagster._core.definitions.freshness_policy import FreshnessPolicy
+from dagster._core.definitions.freshness_policy import LegacyFreshnessPolicy
 from dagster._core.definitions.metadata import (
     ArbitraryMetadataMapping,
     MetadataMapping,
@@ -207,7 +207,7 @@ class SourceAsset(ResourceAddable, IHasInternalInit):
     op_tags: Optional[Mapping[str, Any]]
     _node_def: Optional[OpDefinition]  # computed lazily
     auto_observe_interval_minutes: Optional[float]
-    freshness_policy: Optional[FreshnessPolicy]
+    freshness_policy: Optional[LegacyFreshnessPolicy]
     automation_condition: Optional[AutomationCondition]
     tags: Mapping[str, str]
 
@@ -225,7 +225,7 @@ class SourceAsset(ResourceAddable, IHasInternalInit):
         op_tags: Optional[Mapping[str, Any]] = None,
         *,
         auto_observe_interval_minutes: Optional[float] = None,
-        freshness_policy: Optional[FreshnessPolicy] = None,
+        freshness_policy: Optional[LegacyFreshnessPolicy] = None,
         automation_condition: Optional[AutomationCondition] = None,
         tags: Optional[Mapping[str, str]] = None,
         # This is currently private because it is necessary for source asset observation functions,
@@ -278,7 +278,7 @@ class SourceAsset(ResourceAddable, IHasInternalInit):
             auto_observe_interval_minutes, "auto_observe_interval_minutes"
         )
         self.freshness_policy = check.opt_inst_param(
-            freshness_policy, "freshness_policy", FreshnessPolicy
+            freshness_policy, "freshness_policy", LegacyFreshnessPolicy
         )
         self.automation_condition = check.opt_inst_param(
             automation_condition, "automation_condition", AutomationCondition
@@ -298,7 +298,7 @@ class SourceAsset(ResourceAddable, IHasInternalInit):
         observe_fn: Optional[SourceAssetObserveFunction],
         op_tags: Optional[Mapping[str, Any]],
         auto_observe_interval_minutes: Optional[float],
-        freshness_policy: Optional[FreshnessPolicy],
+        freshness_policy: Optional[LegacyFreshnessPolicy],
         automation_condition: Optional[AutomationCondition],
         tags: Optional[Mapping[str, str]],
         _required_resource_keys: Optional[AbstractSet[str]],

@@ -11,7 +11,7 @@ from dagster import (
     AssetKey,
     AssetsDefinition,
     AutoMaterializePolicy,
-    FreshnessPolicy,
+    LegacyFreshnessPolicy,
     MetadataValue,
     PartitionsDefinition,
     ResourceDefinition,
@@ -52,7 +52,9 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
         job_id: int,
         node_info_to_asset_key: Callable[[Mapping[str, Any]], AssetKey],
         node_info_to_group_fn: Callable[[Mapping[str, Any]], Optional[str]],
-        node_info_to_freshness_policy_fn: Callable[[Mapping[str, Any]], Optional[FreshnessPolicy]],
+        node_info_to_freshness_policy_fn: Callable[
+            [Mapping[str, Any]], Optional[LegacyFreshnessPolicy]
+        ],
         node_info_to_auto_materialize_policy_fn: Callable[
             [Mapping[str, Any]], Optional[AutoMaterializePolicy]
         ],
@@ -545,7 +547,7 @@ def load_assets_from_dbt_cloud_job(
         [Mapping[str, Any]], Optional[str]
     ] = default_group_from_dbt_resource_props,
     node_info_to_freshness_policy_fn: Callable[
-        [Mapping[str, Any]], Optional[FreshnessPolicy]
+        [Mapping[str, Any]], Optional[LegacyFreshnessPolicy]
     ] = default_freshness_policy_fn,
     node_info_to_auto_materialize_policy_fn: Callable[
         [Mapping[str, Any]], Optional[AutoMaterializePolicy]

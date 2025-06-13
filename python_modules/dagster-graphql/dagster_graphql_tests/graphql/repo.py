@@ -100,7 +100,7 @@ from dagster._core.definitions.events import Failure
 from dagster._core.definitions.executor_definition import in_process_executor
 from dagster._core.definitions.external_asset import external_asset_from_spec
 from dagster._core.definitions.freshness import InternalFreshnessPolicy
-from dagster._core.definitions.freshness_policy import FreshnessPolicy
+from dagster._core.definitions.freshness_policy import LegacyFreshnessPolicy
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
@@ -1832,7 +1832,7 @@ def fresh_diamond_right(fresh_diamond_top):
 
 
 @asset(
-    freshness_policy=FreshnessPolicy(maximum_lag_minutes=30),
+    freshness_policy=LegacyFreshnessPolicy(maximum_lag_minutes=30),
     auto_materialize_policy=AutoMaterializePolicy.lazy(),
 )
 def fresh_diamond_bottom(fresh_diamond_left, fresh_diamond_right):

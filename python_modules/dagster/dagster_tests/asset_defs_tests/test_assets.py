@@ -14,7 +14,6 @@ from dagster import (
     DagsterEventType,
     DailyPartitionsDefinition,
     Definitions,
-    FreshnessPolicy,
     GraphOut,
     HookContext,
     IdentityPartitionMapping,
@@ -22,6 +21,7 @@ from dagster import (
     IOManager,
     IOManagerDefinition,
     LastPartitionMapping,
+    LegacyFreshnessPolicy,
     Out,
     Output,
     ResourceDefinition,
@@ -180,7 +180,7 @@ def test_retain_group():
 
 
 def test_retain_freshness_policy():
-    fp = FreshnessPolicy(maximum_lag_minutes=24.5)
+    fp = LegacyFreshnessPolicy(maximum_lag_minutes=24.5)
 
     @asset(freshness_policy=fp)
     def bar():
@@ -194,8 +194,8 @@ def test_retain_freshness_policy():
 
 
 def test_graph_backed_retain_freshness_policy_and_auto_materialize_policy():
-    fpa = FreshnessPolicy(maximum_lag_minutes=24.5)
-    fpb = FreshnessPolicy(
+    fpa = LegacyFreshnessPolicy(maximum_lag_minutes=24.5)
+    fpb = LegacyFreshnessPolicy(
         maximum_lag_minutes=30.5, cron_schedule="0 0 * * *", cron_schedule_timezone="US/Eastern"
     )
     ampa = AutoMaterializePolicy.eager()
@@ -944,7 +944,7 @@ def test_from_graph_w_key_prefix():
     def silly_graph():
         return bar(foo())
 
-    freshness_policy = FreshnessPolicy(maximum_lag_minutes=60)
+    freshness_policy = LegacyFreshnessPolicy(maximum_lag_minutes=60)
     description = "This is a description!"
     metadata = {"test_metadata": "This is some metadata"}
 
@@ -995,7 +995,7 @@ def test_from_op_w_key_prefix():
     def foo():
         return 1
 
-    freshness_policy = FreshnessPolicy(maximum_lag_minutes=60)
+    freshness_policy = LegacyFreshnessPolicy(maximum_lag_minutes=60)
     description = "This is a description!"
     metadata = {"test_metadata": "This is some metadata"}
 

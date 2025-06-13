@@ -16,9 +16,9 @@ from dagster import (
     Definitions,
     DependencyDefinition,
     DimensionPartitionMapping,
-    FreshnessPolicy,
     Jitter,
     LastPartitionMapping,
+    LegacyFreshnessPolicy,
     MultiPartitionMapping,
     NodeInvocation,
     OpDefinition,
@@ -338,7 +338,7 @@ def test_backfill_policy(
     expected_backfill_policy: BackfillPolicy,
 ) -> None:
     class CustomDagsterDbtTranslator(DagsterDbtTranslator):
-        def get_freshness_policy(self, _: Mapping[str, Any]) -> Optional[FreshnessPolicy]:  # pyright: ignore[reportIncompatibleMethodOverride]
+        def get_freshness_policy(self, _: Mapping[str, Any]) -> Optional[LegacyFreshnessPolicy]:  # pyright: ignore[reportIncompatibleMethodOverride]
             # Disable freshness policies when using static partitions
             return None
 
@@ -748,10 +748,10 @@ def test_all_assets_have_a_distinct_code_version(test_jaffle_shop_manifest: dict
 
 
 def test_with_freshness_policy_replacements(test_jaffle_shop_manifest: dict[str, Any]) -> None:
-    expected_freshness_policy = FreshnessPolicy(maximum_lag_minutes=60)
+    expected_freshness_policy = LegacyFreshnessPolicy(maximum_lag_minutes=60)
 
     class CustomDagsterDbtTranslator(DagsterDbtTranslator):
-        def get_freshness_policy(self, _: Mapping[str, Any]) -> Optional[FreshnessPolicy]:  # pyright: ignore[reportIncompatibleMethodOverride]
+        def get_freshness_policy(self, _: Mapping[str, Any]) -> Optional[LegacyFreshnessPolicy]:  # pyright: ignore[reportIncompatibleMethodOverride]
             return expected_freshness_policy
 
     expected_specs_by_key = {
@@ -884,7 +884,9 @@ def test_dbt_meta_auto_materialize_policy(test_meta_config_manifest: dict[str, A
 
 
 def test_dbt_meta_freshness_policy(test_meta_config_manifest: dict[str, Any]) -> None:
-    expected_freshness_policy = FreshnessPolicy(maximum_lag_minutes=60.0, cron_schedule="* * * * *")
+    expected_freshness_policy = LegacyFreshnessPolicy(
+        maximum_lag_minutes=60.0, cron_schedule="* * * * *"
+    )
     expected_specs_by_key = {
         spec.key: spec for spec in build_dbt_asset_specs(manifest=test_meta_config_manifest)
     }
