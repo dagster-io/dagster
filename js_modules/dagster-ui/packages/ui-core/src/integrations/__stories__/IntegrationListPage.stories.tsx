@@ -1,16 +1,19 @@
 import {Box, Colors} from '@dagster-io/ui-components';
 import {Meta} from '@storybook/react';
+import {useIntegrationsProvider} from 'shared/integrations/useIntegrationsProvider.oss';
 
-import {MarketplaceHome} from '../MarketplaceHome';
+import {IntegrationListPage} from '../IntegrationListPage';
 import {IntegrationFrontmatter} from '../types';
 
 // eslint-disable-next-line import/no-default-export
 export default {
-  title: 'Integrations/MarketplaceHome',
-  component: MarketplaceHome,
+  title: 'Integrations/IntegrationListPage',
+  component: IntegrationListPage,
 } as Meta;
 
 export const Default = () => {
+  const provider = useIntegrationsProvider();
+
   const integrations: IntegrationFrontmatter[] = [
     {
       id: 'airlift',
@@ -25,6 +28,7 @@ export const Default = () => {
       logoFilename: 'airflow.svg',
       logo: null,
       installationCommand: null,
+      isPrivate: false,
     },
     {
       id: 'anthropic',
@@ -40,6 +44,7 @@ export const Default = () => {
       logoFilename: 'anthropic.svg',
       logo: null,
       installationCommand: null,
+      isPrivate: false,
     },
     {
       id: 'azure-adls2',
@@ -54,12 +59,29 @@ export const Default = () => {
       logoFilename: 'azure.svg',
       logo: null,
       installationCommand: null,
+      isPrivate: false,
+    },
+    {
+      id: 'trino',
+      name: 'Trino',
+      title: '',
+      description:
+        'This repository contains an integration between Dagster and Trino that enables users to run Trino queries as part of their Dagster pipelines.',
+      logo: '🚜',
+      logoFilename: null,
+      installationCommand:
+        'https://github.com/andreapiso/dagster-trino/archive/refs/heads/main.zip && pip install -e .',
+      pypi: null,
+      partnerlink: '',
+      isPrivate: true,
+      source: 'https://github.com/andreapiso/dagster-trino/',
+      tags: ['etl', 'compute', 'bi'],
     },
   ];
 
   return (
     <Box padding={64} style={{width: '1300px', backgroundColor: Colors.backgroundLight()}}>
-      <MarketplaceHome integrations={integrations} />
+      <IntegrationListPage provider={{...provider, integrations}} />
     </Box>
   );
 };

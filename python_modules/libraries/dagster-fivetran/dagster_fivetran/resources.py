@@ -5,6 +5,7 @@ import time
 from collections.abc import Mapping, Sequence
 from datetime import datetime, timedelta
 from functools import partial
+from pathlib import Path
 from typing import Any, Callable, Optional, Union
 from urllib.parse import urljoin
 
@@ -22,18 +23,24 @@ from dagster import (
     get_dagster_logger,
     resource,
 )
-from dagster._annotations import deprecated, public
+from dagster._annotations import beta_param, deprecated, public
 from dagster._config.pythonic_config import ConfigurableResource
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.definitions_load_context import StateBackedDefinitionsLoader
+from dagster._core.definitions.repository_definition.repository_definition import RepositoryLoadData
 from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from dagster._record import as_dict, record
 from dagster._utils.cached_method import cached_method
 from dagster._vendored.dateutil import parser
+from dagster_shared.serdes import deserialize_value
 from pydantic import Field
 from requests.auth import HTTPBasicAuth
 from requests.exceptions import RequestException
 
+from dagster_fivetran.constants import (
+    FIVETRAN_RECONSTRUCTION_METADATA_KEY_PREFIX,
+    FIVETRAN_SNAPSHOT_ENV_VAR_NAME,
+)
 from dagster_fivetran.fivetran_event_iterator import FivetranEventIterator
 from dagster_fivetran.translator import (
     ConnectorSelectorFn,
@@ -64,8 +71,6 @@ FIVETRAN_CONNECTOR_PATH = f"{FIVETRAN_CONNECTOR_ENDPOINT}/"
 
 # default polling interval (in seconds)
 DEFAULT_POLL_INTERVAL = 10
-
-FIVETRAN_RECONSTRUCTION_METADATA_KEY_PREFIX = "dagster-fivetran/reconstruction_metadata"
 
 
 @deprecated(breaking_version="0.30", additional_warn_text="Use `FivetranWorkspace` instead.")
@@ -1212,10 +1217,12 @@ class FivetranWorkspace(ConfigurableResource):
             context.log.warning(f"Assets were not materialized: {unmaterialized_asset_keys}")
 
 
+@beta_param(param="snapshot_path")
 def load_fivetran_asset_specs(
     workspace: FivetranWorkspace,
     dagster_fivetran_translator: Optional[DagsterFivetranTranslator] = None,
     connector_selector_fn: Optional[ConnectorSelectorFn] = None,
+    snapshot_path: Optional[Union[str, Path]] = None,
 ) -> Sequence[AssetSpec]:
     """Returns a list of AssetSpecs representing the Fivetran content in the workspace.
 
@@ -1226,6 +1233,8 @@ def load_fivetran_asset_specs(
             Defaults to :py:class:`DagsterFivetranTranslator`.
         connector_selector_fn (Optional[ConnectorSelectorFn]):
                 A function that allows for filtering which Fivetran connector assets are created for.
+        snapshot_path (Optional[Union[str, Path]]): Path to a snapshot file to load Fivetran data from,
+            rather than fetching it from the Fivetran API.
 
     Returns:
         List[AssetSpec]: The set of assets representing the Fivetran content in the workspace.
@@ -1250,6 +1259,10 @@ def load_fivetran_asset_specs(
     """
     dagster_fivetran_translator = dagster_fivetran_translator or DagsterFivetranTranslator()
 
+    snapshot = None
+    if snapshot_path and not os.getenv(FIVETRAN_SNAPSHOT_ENV_VAR_NAME):
+        snapshot = deserialize_value(Path(snapshot_path).read_text(), RepositoryLoadData)
+
     with workspace.process_config_and_initialize_cm() as initialized_workspace:
         return [
             spec.merge_attributes(
@@ -1260,6 +1273,7 @@ def load_fivetran_asset_specs(
                     workspace=initialized_workspace,
                     translator=dagster_fivetran_translator,
                     connector_selector_fn=connector_selector_fn,
+                    snapshot=snapshot,
                 )
                 .build_defs()
                 .assets,
@@ -1273,12 +1287,15 @@ class FivetranWorkspaceDefsLoader(StateBackedDefinitionsLoader[FivetranWorkspace
     workspace: FivetranWorkspace
     translator: DagsterFivetranTranslator
     connector_selector_fn: Optional[ConnectorSelectorFn] = None
+    snapshot: Optional[RepositoryLoadData] = None
 
     @property
     def defs_key(self) -> str:
         return f"{FIVETRAN_RECONSTRUCTION_METADATA_KEY_PREFIX}/{self.workspace.account_id}"
 
     def fetch_state(self) -> FivetranWorkspaceData:
+        if self.snapshot and self.defs_key in self.snapshot.reconstruction_metadata:
+            return deserialize_value(self.snapshot.reconstruction_metadata[self.defs_key])  # type: ignore
         return self.workspace.fetch_fivetran_workspace_data()
 
     def defs_from_state(self, state: FivetranWorkspaceData) -> Definitions:

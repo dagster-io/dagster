@@ -1,7 +1,3 @@
-import inspect
-from textwrap import dedent
-from typing import Callable
-
 from dagster._core.definitions.asset_key import AssetCheckKey, AssetKey
 from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.materialize import materialize
@@ -10,14 +6,7 @@ from dagster.components.lib.executable_component.python_script_component import 
     PythonScriptComponent,
     ScriptSpec,
 )
-from dagster.components.testing import scaffold_defs_sandbox
-
-
-def get_function_content(fn: Callable) -> str:
-    raw_source = inspect.getsource(fn)
-    raw_source = "\n".join(raw_source.split("\n")[1:])
-    raw_source = dedent(raw_source)
-    return raw_source
+from dagster.components.testing import copy_code_to_file, scaffold_defs_sandbox
 
 
 def test_pipes_subprocess_script_hello_world() -> None:
@@ -59,12 +48,8 @@ def test_pipes_subprocess_script_with_custom_materialize_result() -> None:
                 context.report_asset_materialization(metadata={"foo": "bar"})
 
     with scaffold_defs_sandbox(component_cls=PythonScriptComponent) as sandbox:
-        raw_source = inspect.getsource(code_to_copy)
-        raw_source = "\n".join(raw_source.split("\n")[1:])
-        raw_source = dedent(raw_source)
-
         execute_path = sandbox.defs_folder_path / "op_name.py"
-        execute_path.write_text(raw_source)
+        copy_code_to_file(code_to_copy, execute_path)
 
         with sandbox.load(
             component_body={
@@ -127,7 +112,7 @@ def test_pipes_subprocess_script_with_checks_only() -> None:
 
     with scaffold_defs_sandbox(component_cls=PythonScriptComponent) as sandbox:
         execute_path = sandbox.defs_folder_path / "only_checks.py"
-        execute_path.write_text(get_function_content(code_to_copy))
+        copy_code_to_file(code_to_copy, execute_path)
 
         with sandbox.load(
             component_body={
@@ -179,9 +164,9 @@ def test_pipes_subprocess_with_args() -> None:
 
     with scaffold_defs_sandbox(component_cls=PythonScriptComponent) as sandbox:
         execute_path = sandbox.defs_folder_path / "op_name.py"
-        execute_path.write_text(get_function_content(op_name_contents))
+        copy_code_to_file(op_name_contents, execute_path)
         template_vars_path = sandbox.defs_folder_path / "template_vars.py"
-        template_vars_path.write_text(get_function_content(template_vars_content))
+        copy_code_to_file(template_vars_content, template_vars_path)
         with sandbox.load(
             component_body={
                 "type": "dagster.components.lib.executable_component.python_script_component.PythonScriptComponent",
@@ -222,7 +207,7 @@ def test_pipes_subprocess_with_inline_str() -> None:
 
     with scaffold_defs_sandbox(component_cls=PythonScriptComponent) as sandbox:
         execute_path = sandbox.defs_folder_path / "op_name.py"
-        execute_path.write_text(get_function_content(op_name_contents))
+        copy_code_to_file(op_name_contents, execute_path)
         with sandbox.load(
             component_body={
                 "type": "dagster.components.lib.executable_component.python_script_component.PythonScriptComponent",

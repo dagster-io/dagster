@@ -52,9 +52,7 @@ class AssetCheckSpec(IHaveNew, LegacyNamedTupleMixin):
     asset_key: PublicAttr[AssetKey]
     description: PublicAttr[Optional[str]]
     additional_deps: PublicAttr[Iterable[LazyAssetDep]]
-    blocking: (
-        bool  # intentionally not public, see https://github.com/dagster-io/dagster/issues/20659
-    )
+    blocking: PublicAttr[bool]
     metadata: PublicAttr[Mapping[str, Any]]
     automation_condition: PublicAttr[Optional[LazyAutomationCondition]]
 
@@ -74,6 +72,10 @@ class AssetCheckSpec(IHaveNew, LegacyNamedTupleMixin):
             the asset specified by `asset`. For example, the check may test that `asset` has
             matching data with an asset in `additional_deps`. This field holds both `additional_deps`
             and `additional_ins` passed to @asset_check.
+        blocking (bool): When enabled, if the check fails with severity `AssetCheckSeverity.ERROR`,
+            then downstream assets won't execute. If this AssetCheckSpec is used in a multi-asset,
+            that multi-asset is responsible for enforcing that downstream assets within the
+            same step do not execute after a blocking asset check fails.
         metadata (Optional[Mapping[str, Any]]):  A dict of static metadata for this asset check.
     """
 

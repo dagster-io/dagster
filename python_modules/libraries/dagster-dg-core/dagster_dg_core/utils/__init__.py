@@ -425,13 +425,13 @@ def json_schema_property_to_click_option(
     # Handle object type fields as JSON strings
     if field_type == "object":
         option_type = str  # JSON string input
-        help_text = f"{key} (JSON string)"
+        help_text = f"[scaffolder parameter] {key} (JSON string)"
         callback = parse_json_option
 
     # Handle other basic types
     else:
         option_type = _JSON_SCHEMA_TYPE_TO_CLICK_TYPE[field_type]
-        help_text = key
+        help_text = f"(scaffolder param) {key}"
         callback = None
 
     return click.Option(

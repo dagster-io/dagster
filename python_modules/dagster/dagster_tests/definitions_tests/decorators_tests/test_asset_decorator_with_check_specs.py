@@ -260,8 +260,7 @@ def test_blocking_check_skips_downstream() -> None:
 
     error = check.not_none(result.failure_data_for_node("asset1")).error
     assert check.not_none(error).message.startswith(
-        "dagster._core.errors.DagsterAssetCheckFailedError: Blocking check 'check1' for asset 'asset1'"
-        " failed with ERROR severity."
+        "dagster._core.errors.DagsterAssetCheckFailedError: 1 blocking asset check failed with ERROR severity:\nasset1: check1"
     )
 
 
@@ -343,12 +342,18 @@ def test_multi_asset_no_result_for_check() -> None:
 def test_multi_asset_blocking_check_skips_downstream() -> None:
     @multi_asset(
         outs={"one": AssetOut("asset1"), "two": AssetOut("asset2")},
-        check_specs=[AssetCheckSpec("check1", asset=AssetKey(["asset1", "one"]), blocking=True)],
+        check_specs=[
+            AssetCheckSpec("check1", asset=AssetKey(["asset1", "one"]), blocking=True),
+            AssetCheckSpec("check2", asset=AssetKey(["asset1", "one"]), blocking=True),
+            AssetCheckSpec("check3", asset=AssetKey(["asset1", "one"]), blocking=False),
+        ],
     )
     def asset_1_and_2() -> Iterable:
         yield Output(None, output_name="one")
-        yield Output(None, output_name="two")
         yield AssetCheckResult(check_name="check1", passed=False)
+        yield AssetCheckResult(check_name="check2", passed=False)
+        yield AssetCheckResult(check_name="check3", passed=False)
+        yield Output(None, output_name="two")
 
     @asset(deps=[AssetKey(["asset1", "one"])])
     def asset3() -> None:
@@ -369,16 +374,27 @@ def test_multi_asset_blocking_check_skips_downstream() -> None:
     assert materialization_events[1].asset_key == AssetKey(["asset2", "two"])
 
     check_evals = result.get_asset_check_evaluations()
-    assert len(check_evals) == 1
+
+    assert len(check_evals) == 3
     check_eval = check_evals[0]
     assert check_eval.asset_key == AssetKey(["asset1", "one"])
     assert check_eval.check_name == "check1"
     assert not check_eval.passed
 
+    check_eval = check_evals[1]
+    assert check_eval.asset_key == AssetKey(["asset1", "one"])
+    assert check_eval.check_name == "check2"
+    assert not check_eval.passed
+
+    check_eval = check_evals[2]
+    assert check_eval.asset_key == AssetKey(["asset1", "one"])
+    assert check_eval.check_name == "check3"
+    assert not check_eval.passed
+
     error = check.not_none(check.not_none(result.failure_data_for_node("asset_1_and_2")).error)
+
     assert check.not_none(error.message).startswith(
-        "dagster._core.errors.DagsterAssetCheckFailedError: Blocking check 'check1' for asset 'asset1/one'"
-        " failed with ERROR severity."
+        "dagster._core.errors.DagsterAssetCheckFailedError: 2 blocking asset checks failed with ERROR severity:\nasset1/one: check1,check2"
     )
 
 
