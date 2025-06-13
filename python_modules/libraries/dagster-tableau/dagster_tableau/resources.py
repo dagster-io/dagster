@@ -21,7 +21,7 @@ from dagster import (
     _check as check,
     get_dagster_logger,
 )
-from dagster._annotations import beta, deprecated
+from dagster._annotations import beta, deprecated, superseded
 from dagster._core.definitions.definitions_load_context import StateBackedDefinitionsLoader
 from dagster._record import record
 from dagster._utils.cached_method import cached_method
@@ -127,6 +127,7 @@ class BaseTableauClient:
         """Cancels a given job."""
         return self._server.jobs.cancel(job_id)
 
+    @superseded(additional_warn_text="Use `refresh_and_poll` on the tableau resource instead.")
     def refresh_and_materialize_workbooks(
         self, specs: Sequence[AssetSpec], refreshable_workbook_ids: Optional[Sequence[str]]
     ) -> Iterator[Union[Output, ObserveResult]]:
@@ -155,6 +156,7 @@ class BaseTableauClient:
         job = self.poll_job(job_id=job.id, poll_interval=poll_interval, poll_timeout=poll_timeout)
         return job.workbook_id
 
+    @superseded(additional_warn_text="Use `refresh_and_poll` on the tableau resource instead.")
     def refresh_and_materialize(
         self, specs: Sequence[AssetSpec], refreshable_data_source_ids: Optional[Sequence[str]]
     ) -> Iterator[Union[Output, ObserveResult]]:
