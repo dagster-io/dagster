@@ -82,13 +82,26 @@ export const LOCATION_WORKSPACE_QUERY = gql`
     }
     assetNodes {
       id
-      ...AssetTableDefinitionFragment
+      ...WorkspaceAsset
     }
     allTopLevelResourceDetails {
       id
       ...ResourceEntryFragment
     }
     ...RepositoryInfoFragment
+  }
+
+  fragment WorkspaceAsset on AssetNode {
+    id
+    ...AssetTableDefinitionFragment
+    graphName
+    opVersion
+    dependencyKeys {
+      path
+    }
+    dependedByKeys {
+      path
+    }
   }
 
   fragment WorkspacePipeline on Pipeline {
