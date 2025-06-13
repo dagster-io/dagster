@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional
 
 from dagster import (
+    AssetCheckSpec,
     AssetDep,
     AssetKey,
     AssetSpec,
@@ -13,7 +14,6 @@ from dagster import (
     DagsterInvalidDefinitionError,
     FreshnessPolicy,
     PartitionMapping,
-    _check as check,
 )
 from dagster._annotations import beta, public
 from dagster._core.definitions.metadata.source_code import (
@@ -24,11 +24,13 @@ from dagster._core.definitions.metadata.source_code import (
 from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._utils.tags import is_valid_tag_key
 from dagster.components.resolved.base import Resolvable
+from dagster_shared import check
 
 from dagster_dbt.asset_utils import (
     DAGSTER_DBT_MANIFEST_METADATA_KEY,
     DAGSTER_DBT_TRANSLATOR_METADATA_KEY,
     DAGSTER_DBT_UNIQUE_ID_METADATA_KEY,
+    default_asset_check_fn,
     default_asset_key_fn,
     default_auto_materialize_policy_fn,
     default_code_version_fn,
@@ -184,6 +186,21 @@ class DagsterDbtTranslator:
         self._resolved_specs[memo_id] = spec
 
         return self._resolved_specs[memo_id]
+
+    def get_asset_check_spec(
+        self,
+        asset_spec: AssetSpec,
+        manifest: Mapping[str, Any],
+        unique_id: str,
+        project: Optional["DbtProject"],
+    ) -> Optional[AssetCheckSpec]:
+        return default_asset_check_fn(
+            manifest=manifest,
+            dagster_dbt_translator=self,
+            asset_key=asset_spec.key,
+            test_unique_id=unique_id,
+            project=project,
+        )
 
     @public
     def get_asset_key(self, dbt_resource_props: Mapping[str, Any]) -> AssetKey:

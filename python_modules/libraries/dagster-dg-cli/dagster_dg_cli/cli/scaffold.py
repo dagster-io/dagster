@@ -136,27 +136,12 @@ class ScaffoldDefsGroup(DgClickGroup):
             aliases=aliases,
         )
         @click.argument("instance_name", type=str)
-        @click.option(
-            "--json-params",
-            type=str,
-            default=None,
-            help="JSON string of component parameters.",
-            callback=parse_json_option,
-        )
-        @click.option(
-            "--format",
-            type=click.Choice(["yaml", "python"], case_sensitive=False),
-            default="yaml",
-            help="Format of the component configuration (yaml or python)",
-        )
         @click.pass_context
         @cli_telemetry_wrapper
         def scaffold_command(
             cli_context: click.Context,
             instance_name: str,
-            json_params: Mapping[str, Any],
-            format: str,  # noqa: A002 "format" name required for click magic
-            **key_value_params: Any,
+            **other_opts: Any,
         ) -> None:
             f"""Scaffold a {key.name} object.
 
@@ -175,8 +160,20 @@ class ScaffoldDefsGroup(DgClickGroup):
 
             It is an error to pass both --json-params and key-value pairs as options.
             """
+            # json_params will not be present in the key_value_params if no scaffold properties
+            # are defined.
+            json_scaffolder_params = other_opts.pop("json_params", None)
+
+            # format option is only present if we are dealing with a component. Otherewise we
+            # default to python for decorator scaffolding. Default is YAML (set by option) for
+            # components.
+            scaffolder_format = cast("ScaffoldFormatOptions", other_opts.pop("format", "python"))
+
+            # Remanining options are scaffolder params
+            key_value_scaffolder_params = other_opts
+
             check.invariant(
-                format in ["yaml", "python"],
+                scaffolder_format in ["yaml", "python"],
                 "format must be either 'yaml' or 'python'",
             )
             cli_config = get_config_from_cli_context(cli_context)
@@ -185,13 +182,33 @@ class ScaffoldDefsGroup(DgClickGroup):
                 cli_config,
                 key,
                 instance_name,
-                key_value_params,
-                json_params,
-                cast("ScaffoldFormatOptions", format),
+                key_value_scaffolder_params,
+                scaffolder_format,
+                json_scaffolder_params,
             )
 
-        # If there are defined scaffold params, add them to the command
-        if obj.scaffolder_schema:
+        if obj.is_component:
+            scaffold_command.params.append(
+                click.Option(
+                    ["--format"],
+                    type=click.Choice(["yaml", "python"], case_sensitive=False),
+                    default="yaml",
+                    help="Format of the component configuration (yaml or python)",
+                )
+            )
+
+        # If there are defined scaffold properties, add them to the command. Also only add
+        # `--json-params` if there are defined scaffold properties.
+        if obj.scaffolder_schema and obj.scaffolder_schema.get("properties"):
+            scaffold_command.params.append(
+                click.Option(
+                    ["--json-params"],
+                    type=str,
+                    default=None,
+                    help="JSON string of scaffolder parameters. Mutually exclusive with passing individual parameters as options.",
+                    callback=parse_json_option,
+                )
+            )
             for name, field_info in obj.scaffolder_schema["properties"].items():
                 # All fields are currently optional because they can also be passed under
                 # `--json-params`
@@ -851,10 +868,12 @@ def _core_scaffold(
     cli_config: DgRawCliConfig,
     object_key: EnvRegistryKey,
     instance_name: str,
-    key_value_params,
-    json_params,
+    key_value_params: Mapping[str, Any],
     scaffold_format: ScaffoldFormatOptions,
+    json_params: Optional[Mapping[str, Any]] = None,
 ) -> None:
+    from pydantic import ValidationError
+
     dg_context = DgContext.for_project_environment(Path.cwd(), cli_config)
     registry = EnvRegistry.from_dg_context(dg_context)
     if not registry.has(object_key):
@@ -882,13 +901,22 @@ def _core_scaffold(
     else:
         scaffold_params = None
 
-    scaffold_registry_object(
-        Path(dg_context.defs_path) / instance_name,
-        object_key.to_typename(),
-        scaffold_params,
-        dg_context,
-        scaffold_format,
-    )
+    try:
+        scaffold_registry_object(
+            Path(dg_context.defs_path) / instance_name,
+            object_key.to_typename(),
+            scaffold_params,
+            dg_context,
+            scaffold_format,
+        )
+    except ValidationError as e:
+        exit_with_error(
+            (
+                f"Error validating scaffold parameters for `{object_key.to_typename()}`:\n\n"
+                f"{e.json(indent=4)}"
+            ),
+            do_format=False,
+        )
 
 
 # ########################

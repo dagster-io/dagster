@@ -33,8 +33,6 @@ from dagster_dg_core.utils import (
     exit_with_error,
     get_toml_node,
     has_toml_node,
-    is_macos,
-    is_windows,
     load_toml_as_dict,
     modify_toml,
 )
@@ -49,18 +47,6 @@ T = TypeVar("T")
 # The format determines whether settings are nested under the `tool.dg` section
 # (`pyproject.toml`) or not (`dg.toml`).
 DgConfigFileFormat: TypeAlias = Literal["root", "nested"]
-
-
-def _get_default_cache_dir() -> Path:
-    if is_windows():
-        return Path.home() / "AppData" / "dg" / "cache"
-    elif is_macos():
-        return Path.home() / "Library" / "Caches" / "dg"
-    else:
-        return Path.home() / ".cache" / "dg"
-
-
-DEFAULT_CACHE_DIR = _get_default_cache_dir()
 
 
 def discover_workspace_root(path: Path) -> Optional[Path]:
@@ -111,8 +97,6 @@ def get_config_from_cli_context(cli_context: click.Context) -> "DgRawCliConfig":
 # ########################
 # ##### MAIN
 # ########################
-
-_ConfigCacheKey: TypeAlias = tuple[Any, ...]
 
 
 @dataclass
@@ -184,9 +168,6 @@ class DgCliConfig:
     """CLI configuration for Dg.
 
     Args:
-        disable_cache (bool): If True, disable caching. Defaults to False.
-        cache_dir (Optional[str]): The directory to use for caching. If None, the default cache will
-            be used.
         verbose (bool): If True, log debug information.
         use_component_modules (list[str]): Specify a list of modules containing components.
             Any components retrieved from the remote environment will be filtered to only include those
@@ -194,8 +175,6 @@ class DgCliConfig:
             set of test components.
     """
 
-    disable_cache: bool = False
-    cache_dir: Path = DEFAULT_CACHE_DIR
     verbose: bool = False
     use_component_modules: list[str] = field(default_factory=list)
     suppress_warnings: list["DgWarningIdentifier"] = field(default_factory=list)
@@ -209,8 +188,6 @@ class DgCliConfig:
     def from_raw(cls, *partials: "DgRawCliConfig") -> Self:
         merged = cast("DgRawCliConfig", functools.reduce(lambda acc, x: {**acc, **x}, partials))  # type: ignore
         return cls(
-            disable_cache=merged.get("disable_cache", DgCliConfig.disable_cache),
-            cache_dir=Path(merged["cache_dir"]) if "cache_dir" in merged else DgCliConfig.cache_dir,
             verbose=merged.get("verbose", DgCliConfig.verbose),
             use_component_modules=merged.get(
                 "use_component_modules",
@@ -232,8 +209,6 @@ class RawDgTelemetryConfig(TypedDict, total=False):
 
 # All fields are optional
 class DgRawCliConfig(TypedDict, total=False):
-    disable_cache: bool
-    cache_dir: str
     verbose: bool
     use_component_modules: Sequence[str]
     suppress_warnings: Sequence[DgWarningIdentifier]
