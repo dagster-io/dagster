@@ -3,6 +3,7 @@ from collections.abc import Iterable, Iterator, Sequence
 from importlib import import_module
 from types import ModuleType
 from typing import Optional, Union, cast, get_args
+from typing import Literal, Optional, Union, cast, get_args, overload
 
 import dagster._check as check
 from dagster._core.definitions.asset_checks import has_only_asset_checks
@@ -50,6 +51,39 @@ def find_subclasses_in_module(
 
 
 AssetLoaderTypes = Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition, AssetSpec]
+AssetLoaderTypesNoSpecs = Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition]
+
+
+@overload
+def load_assets_from_modules(
+    modules: Iterable[ModuleType],
+    group_name: Optional[str] = None,
+    key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
+    *,
+    freshness_policy: Optional[FreshnessPolicy] = None,
+    auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
+    automation_condition: Optional[AutomationCondition] = None,
+    backfill_policy: Optional[BackfillPolicy] = None,
+    source_key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
+    include_specs: Literal[False] = False,
+) -> Sequence[AssetLoaderTypesNoSpecs]:
+    ...
+
+
+@overload
+def load_assets_from_modules(
+    modules: Iterable[ModuleType],
+    group_name: Optional[str] = None,
+    key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
+    *,
+    freshness_policy: Optional[FreshnessPolicy] = None,
+    auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
+    automation_condition: Optional[AutomationCondition] = None,
+    backfill_policy: Optional[BackfillPolicy] = None,
+    source_key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
+    include_specs: Literal[True],
+) -> Sequence[AssetLoaderTypes]:
+    ...
 
 
 def load_assets_from_modules(
@@ -63,7 +97,7 @@ def load_assets_from_modules(
     backfill_policy: Optional[BackfillPolicy] = None,
     source_key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     include_specs: bool = False,
-) -> Sequence[AssetLoaderTypes]:
+) -> Union[Sequence[AssetLoaderTypes], Sequence[AssetLoaderTypesNoSpecs]]:
     """Constructs a list of assets and source assets from the given modules.
 
     Args:
@@ -81,10 +115,14 @@ def load_assets_from_modules(
         backfill_policy (Optional[AutoMaterializePolicy]): BackfillPolicy to apply to all the loaded assets.
         source_key_prefix (bool): Prefix to prepend to the keys of loaded SourceAssets. The returned
             assets will be copies of the loaded objects, with the prefix prepended.
+        include_specs (bool): Specify whether to include AssetSpecs in the return value.
+            The default is False.
 
     Returns:
-        Sequence[Union[AssetsDefinition, SourceAsset]]:
-            A list containing assets and source assets defined in the given modules.
+        Sequence[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition, AssetSpec]]
+            If include_specs is True.
+        Sequence[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition]]
+            If include_specs is False.
     """
 
     def _asset_filter(dagster_object) -> bool:
@@ -122,6 +160,36 @@ def load_assets_from_modules(
     )
 
 
+@overload
+def load_assets_from_current_module(
+    group_name: Optional[str] = None,
+    key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
+    *,
+    freshness_policy: Optional[FreshnessPolicy] = None,
+    auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
+    automation_condition: Optional[AutomationCondition] = None,
+    backfill_policy: Optional[BackfillPolicy] = None,
+    source_key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
+    include_specs: Literal[False] = False,
+) -> Sequence[AssetLoaderTypesNoSpecs]:
+    ...
+
+
+@overload
+def load_assets_from_current_module(
+    group_name: Optional[str] = None,
+    key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
+    *,
+    freshness_policy: Optional[FreshnessPolicy] = None,
+    auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
+    automation_condition: Optional[AutomationCondition] = None,
+    backfill_policy: Optional[BackfillPolicy] = None,
+    source_key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
+    include_specs: Literal[True],
+) -> Sequence[AssetLoaderTypes]:
+    ...
+
+
 def load_assets_from_current_module(
     group_name: Optional[str] = None,
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
@@ -132,7 +200,7 @@ def load_assets_from_current_module(
     backfill_policy: Optional[BackfillPolicy] = None,
     source_key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     include_specs: bool = False,
-) -> Sequence[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition, AssetSpec]]:
+) -> Union[Sequence[AssetLoaderTypes], Sequence[AssetLoaderTypesNoSpecs]]:
     """Constructs a list of assets, source assets, and cacheable assets from the module where
     this function is called.
 
@@ -150,10 +218,14 @@ def load_assets_from_current_module(
         backfill_policy (Optional[AutoMaterializePolicy]): BackfillPolicy to apply to all the loaded assets.
         source_key_prefix (bool): Prefix to prepend to the keys of loaded SourceAssets. The returned
             assets will be copies of the loaded objects, with the prefix prepended.
+        include_specs (bool): Specify whether to include AssetSpecs in the return value.
+            The default is False.
 
     Returns:
-        Sequence[Union[AssetsDefinition, SourceAsset, CachableAssetsDefinition]]:
-            A list containing assets, source assets, and cacheable assets defined in the module.
+        Sequence[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition, AssetSpec]]
+            If include_specs is True.
+        Sequence[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition]]
+            If include_specs is False.
     """
     caller = inspect.stack()[1]
     module = inspect.getmodule(caller[0])
@@ -174,6 +246,38 @@ def load_assets_from_current_module(
     )
 
 
+@overload
+def load_assets_from_package_module(
+    package_module: ModuleType,
+    group_name: Optional[str] = None,
+    key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
+    *,
+    freshness_policy: Optional[FreshnessPolicy] = None,
+    auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
+    automation_condition: Optional[AutomationCondition] = None,
+    backfill_policy: Optional[BackfillPolicy] = None,
+    source_key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
+    include_specs: Literal[False] = False,
+) -> Sequence[AssetLoaderTypesNoSpecs]:
+    ...
+
+
+@overload
+def load_assets_from_package_module(
+    package_module: ModuleType,
+    group_name: Optional[str] = None,
+    key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
+    *,
+    freshness_policy: Optional[FreshnessPolicy] = None,
+    auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
+    automation_condition: Optional[AutomationCondition] = None,
+    backfill_policy: Optional[BackfillPolicy] = None,
+    source_key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
+    include_specs: Literal[True],
+) -> Sequence[AssetLoaderTypes]:
+    ...
+
+
 def load_assets_from_package_module(
     package_module: ModuleType,
     group_name: Optional[str] = None,
@@ -185,7 +289,7 @@ def load_assets_from_package_module(
     backfill_policy: Optional[BackfillPolicy] = None,
     source_key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     include_specs: bool = False,
-) -> Sequence[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition, AssetSpec]]:
+) -> Union[Sequence[AssetLoaderTypes], Sequence[AssetLoaderTypesNoSpecs]]:
     """Constructs a list of assets and source assets that includes all asset
     definitions, source assets, and cacheable assets in all sub-modules of the given package module.
 
@@ -206,10 +310,14 @@ def load_assets_from_package_module(
         backfill_policy (Optional[AutoMaterializePolicy]): BackfillPolicy to apply to all the loaded assets.
         source_key_prefix (bool): Prefix to prepend to the keys of loaded SourceAssets. The returned
             assets will be copies of the loaded objects, with the prefix prepended.
+        include_specs (bool): Specify whether to include AssetSpecs in the return value.
+            The default is False.
 
     Returns:
-        Sequence[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition]]:
-            A list containing assets, source assets, and cacheable assets defined in the module.
+        Sequence[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition, AssetSpec]]
+            If include_specs is True.
+        Sequence[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition]]
+            If include_specs is False.
     """
     return load_assets_from_modules(
         [*find_modules_in_package(package_module)],
@@ -224,6 +332,36 @@ def load_assets_from_package_module(
     )
 
 
+@overload
+def load_assets_from_package_name(
+    package_name: str,
+    group_name: Optional[str] = None,
+    key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
+    *,
+    freshness_policy: Optional[FreshnessPolicy] = None,
+    auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
+    backfill_policy: Optional[BackfillPolicy] = None,
+    source_key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
+    include_specs: Literal[False] = False,
+) -> Sequence[AssetLoaderTypesNoSpecs]:
+    ...
+
+
+@overload
+def load_assets_from_package_name(
+    package_name: str,
+    group_name: Optional[str] = None,
+    key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
+    *,
+    freshness_policy: Optional[FreshnessPolicy] = None,
+    auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
+    backfill_policy: Optional[BackfillPolicy] = None,
+    source_key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
+    include_specs: Literal[True],
+) -> Sequence[AssetLoaderTypes]:
+    ...
+
+
 def load_assets_from_package_name(
     package_name: str,
     group_name: Optional[str] = None,
@@ -234,7 +372,7 @@ def load_assets_from_package_name(
     backfill_policy: Optional[BackfillPolicy] = None,
     source_key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     include_specs: bool = False,
-) -> Sequence[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition, AssetSpec]]:
+) -> Union[Sequence[AssetLoaderTypes], Sequence[AssetLoaderTypesNoSpecs]]:
     """Constructs a list of assets, source assets, and cacheable assets that includes all asset
     definitions and source assets in all sub-modules of the given package.
 
@@ -253,10 +391,14 @@ def load_assets_from_package_name(
         backfill_policy (Optional[AutoMaterializePolicy]): BackfillPolicy to apply to all the loaded assets.
         source_key_prefix (bool): Prefix to prepend to the keys of loaded SourceAssets. The returned
             assets will be copies of the loaded objects, with the prefix prepended.
+        include_specs (bool): Specify whether to include AssetSpecs in the return value.
+            The default is False.
 
     Returns:
-        Sequence[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition]]:
-            A list containing assets, source assets, and cacheable assets defined in the module.
+        Sequence[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition, AssetSpec]]
+            If include_specs is True.
+        Sequence[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition]]
+            If include_specs is False.
     """
     package_module = import_module(package_name)
     return load_assets_from_package_module(
