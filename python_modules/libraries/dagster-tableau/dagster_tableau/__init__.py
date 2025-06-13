@@ -14,7 +14,8 @@ from dagster_tableau.resources import (
 )
 from dagster_tableau.translator import (
     DagsterTableauTranslator as DagsterTableauTranslator,
-    TableauTranslatorData as TableauTranslatorData
+    TableauContentType as TableauContentType,
+    TableauTranslatorData as TableauTranslatorData,
 )
 from dagster_tableau.version import __version__ as __version__
 
