@@ -2,8 +2,8 @@ from dagster_tableau import (
     DagsterTableauTranslator,
     TableauCloudWorkspace,
     load_tableau_asset_specs,
+    TableauContentType, TableauTranslatorData
 )
-from dagster_tableau.translator import TableauContentType, TableauTranslatorData
 
 import dagster as dg
 
