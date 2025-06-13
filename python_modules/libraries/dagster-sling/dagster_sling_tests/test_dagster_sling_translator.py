@@ -1,5 +1,5 @@
 import pytest
-from dagster import AssetKey, AutoMaterializePolicy, FreshnessPolicy, JsonMetadataValue
+from dagster import AssetKey, AutoMaterializePolicy, JsonMetadataValue, LegacyFreshnessPolicy
 from dagster_sling.dagster_sling_translator import DagsterSlingTranslator
 
 
@@ -127,7 +127,7 @@ def test_group_name_from_get_asset_spec(stream, expected):
                 "name": "foo",
                 "config": {"meta": {"dagster": {"freshness_policy": {"maximum_lag_minutes": 5}}}},
             },
-            FreshnessPolicy(maximum_lag_minutes=5),
+            LegacyFreshnessPolicy(maximum_lag_minutes=5),
         ),
     ],
 )

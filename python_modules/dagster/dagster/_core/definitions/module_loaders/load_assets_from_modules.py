@@ -18,7 +18,7 @@ from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationCondition,
 )
-from dagster._core.definitions.freshness_policy import FreshnessPolicy
+from dagster._core.definitions.freshness_policy import LegacyFreshnessPolicy
 from dagster._core.definitions.module_loaders.object_list import ModuleScopedDagsterDefs
 from dagster._core.definitions.module_loaders.utils import find_modules_in_package
 from dagster._core.definitions.source_asset import SourceAsset
@@ -57,7 +57,7 @@ def load_assets_from_modules(
     group_name: Optional[str] = None,
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     *,
-    freshness_policy: Optional[FreshnessPolicy] = None,
+    freshness_policy: Optional[LegacyFreshnessPolicy] = None,
     auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
     automation_condition: Optional[AutomationCondition] = None,
     backfill_policy: Optional[BackfillPolicy] = None,
@@ -109,7 +109,7 @@ def load_assets_from_modules(
             ),
             group_name=check.opt_str_param(group_name, "group_name"),
             freshness_policy=check.opt_inst_param(
-                freshness_policy, "freshness_policy", FreshnessPolicy
+                freshness_policy, "freshness_policy", LegacyFreshnessPolicy
             ),
             automation_condition=resolve_automation_condition(
                 automation_condition, auto_materialize_policy
@@ -126,7 +126,7 @@ def load_assets_from_current_module(
     group_name: Optional[str] = None,
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     *,
-    freshness_policy: Optional[FreshnessPolicy] = None,
+    freshness_policy: Optional[LegacyFreshnessPolicy] = None,
     auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
     automation_condition: Optional[AutomationCondition] = None,
     backfill_policy: Optional[BackfillPolicy] = None,
@@ -179,7 +179,7 @@ def load_assets_from_package_module(
     group_name: Optional[str] = None,
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     *,
-    freshness_policy: Optional[FreshnessPolicy] = None,
+    freshness_policy: Optional[LegacyFreshnessPolicy] = None,
     auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
     automation_condition: Optional[AutomationCondition] = None,
     backfill_policy: Optional[BackfillPolicy] = None,
@@ -229,7 +229,7 @@ def load_assets_from_package_name(
     group_name: Optional[str] = None,
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     *,
-    freshness_policy: Optional[FreshnessPolicy] = None,
+    freshness_policy: Optional[LegacyFreshnessPolicy] = None,
     auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
     backfill_policy: Optional[BackfillPolicy] = None,
     source_key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,

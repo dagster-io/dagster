@@ -1,6 +1,6 @@
 import dagster._check as check
 import graphene
-from dagster._core.definitions.freshness_policy import FreshnessPolicy
+from dagster._core.definitions.freshness_policy import LegacyFreshnessPolicy
 from dagster._time import get_current_datetime
 
 
@@ -24,9 +24,9 @@ class GrapheneFreshnessPolicy(graphene.ObjectType):
     class Meta:
         name = "FreshnessPolicy"
 
-    def __init__(self, freshness_policy: FreshnessPolicy):
+    def __init__(self, freshness_policy: LegacyFreshnessPolicy):
         self._freshness_policy = check.inst_param(
-            freshness_policy, "freshness_policy", FreshnessPolicy
+            freshness_policy, "freshness_policy", LegacyFreshnessPolicy
         )
 
         super().__init__(

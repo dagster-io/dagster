@@ -31,7 +31,7 @@ from dagster._core.definitions.freshness import (
     INTERNAL_FRESHNESS_POLICY_METADATA_KEY,
     InternalFreshnessPolicy,
 )
-from dagster._core.definitions.freshness_policy import FreshnessPolicy
+from dagster._core.definitions.freshness_policy import LegacyFreshnessPolicy
 from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.definitions.partition_mapping import PartitionMapping
 from dagster._core.definitions.utils import (
@@ -161,7 +161,7 @@ class AssetSpec(IHasInternalInit, IHaveNew, LegacyNamedTupleMixin):
     group_name: PublicAttr[Optional[str]]
     skippable: PublicAttr[bool]
     code_version: PublicAttr[Optional[str]]
-    freshness_policy: PublicAttr[Optional[FreshnessPolicy]]
+    freshness_policy: PublicAttr[Optional[LegacyFreshnessPolicy]]
     automation_condition: PublicAttr[Optional[AutomationCondition]]
     owners: PublicAttr[Sequence[str]]
     tags: PublicAttr[Mapping[str, str]]
@@ -228,7 +228,7 @@ class AssetSpec(IHasInternalInit, IHaveNew, LegacyNamedTupleMixin):
             freshness_policy=check.opt_inst_param(
                 kwargs.get("freshness_policy"),
                 "freshness_policy",
-                FreshnessPolicy,
+                LegacyFreshnessPolicy,
             ),
             automation_condition=check.opt_inst_param(
                 resolve_automation_condition(
@@ -330,7 +330,7 @@ class AssetSpec(IHasInternalInit, IHaveNew, LegacyNamedTupleMixin):
         tags: Optional[Mapping[str, str]] = ...,
         kinds: Optional[set[str]] = ...,
         partitions_def: Optional[PartitionsDefinition] = ...,
-        freshness_policy: Optional[FreshnessPolicy] = ...,
+        freshness_policy: Optional[LegacyFreshnessPolicy] = ...,
     ) -> "AssetSpec":
         """Returns a new AssetSpec with the specified attributes replaced."""
         current_tags_without_kinds = {

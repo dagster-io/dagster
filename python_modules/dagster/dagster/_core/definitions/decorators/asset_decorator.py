@@ -35,7 +35,7 @@ from dagster._core.definitions.events import (
     CoercibleToAssetKeyPrefix,
 )
 from dagster._core.definitions.freshness import INTERNAL_FRESHNESS_POLICY_METADATA_KEY
-from dagster._core.definitions.freshness_policy import FreshnessPolicy
+from dagster._core.definitions.freshness_policy import LegacyFreshnessPolicy
 from dagster._core.definitions.hook_definition import HookDefinition
 from dagster._core.definitions.input import GraphIn
 from dagster._core.definitions.metadata import ArbitraryMetadataMapping, RawMetadataMapping
@@ -412,7 +412,7 @@ class AssetDecoratorArgs(NamedTuple):
     op_tags: Optional[Mapping[str, Any]]
     group_name: Optional[str]
     output_required: bool
-    freshness_policy: Optional[FreshnessPolicy]
+    freshness_policy: Optional[LegacyFreshnessPolicy]
     automation_condition: Optional[AutomationCondition]
     backfill_policy: Optional[BackfillPolicy]
     retry_policy: Optional[RetryPolicy]
@@ -774,7 +774,7 @@ def graph_asset(
     tags: Optional[Mapping[str, str]] = ...,
     owners: Optional[Sequence[str]] = None,
     kinds: Optional[AbstractSet[str]] = None,
-    freshness_policy: Optional[FreshnessPolicy] = ...,
+    freshness_policy: Optional[LegacyFreshnessPolicy] = ...,
     auto_materialize_policy: Optional[AutoMaterializePolicy] = ...,
     automation_condition: Optional[AutomationCondition] = ...,
     backfill_policy: Optional[BackfillPolicy] = ...,
@@ -955,7 +955,7 @@ def graph_asset_no_defaults(
     metadata: Optional[RawMetadataMapping],
     tags: Optional[Mapping[str, str]],
     owners: Optional[Sequence[str]],
-    freshness_policy: Optional[FreshnessPolicy],
+    freshness_policy: Optional[LegacyFreshnessPolicy],
     automation_condition: Optional[AutomationCondition],
     backfill_policy: Optional[BackfillPolicy],
     resource_defs: Optional[Mapping[str, ResourceDefinition]],

@@ -18,7 +18,7 @@ from dagster._core.definitions.decorators.decorator_assets_definition_builder im
     create_check_specs_by_output_name,
 )
 from dagster._core.definitions.events import CoercibleToAssetKey, CoercibleToAssetKeyPrefix
-from dagster._core.definitions.freshness_policy import FreshnessPolicy
+from dagster._core.definitions.freshness_policy import LegacyFreshnessPolicy
 from dagster._core.definitions.metadata import RawMetadataMapping
 from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.definitions.resource_annotation import get_resource_args
@@ -47,7 +47,7 @@ def observable_source_asset(
     resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
     partitions_def: Optional[PartitionsDefinition] = None,
     auto_observe_interval_minutes: Optional[float] = None,
-    freshness_policy: Optional[FreshnessPolicy] = None,
+    freshness_policy: Optional[LegacyFreshnessPolicy] = None,
     automation_condition: Optional[AutomationCondition] = None,
     op_tags: Optional[Mapping[str, Any]] = None,
     tags: Optional[Mapping[str, str]] = None,
@@ -163,7 +163,7 @@ class _ObservableSourceAsset:
         resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
         partitions_def: Optional[PartitionsDefinition] = None,
         auto_observe_interval_minutes: Optional[float] = None,
-        freshness_policy: Optional[FreshnessPolicy] = None,
+        freshness_policy: Optional[LegacyFreshnessPolicy] = None,
         automation_condition: Optional[AutomationCondition] = None,
         op_tags: Optional[Mapping[str, Any]] = None,
         tags: Optional[Mapping[str, str]] = None,

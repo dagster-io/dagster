@@ -11,8 +11,8 @@ from dagster import (
     AssetKey,
     AssetSpec,
     Config,
-    FreshnessPolicy,
     JsonMetadataValue,
+    LegacyFreshnessPolicy,
     file_relative_path,
 )
 from dagster._core.definitions.materialize import materialize
@@ -210,7 +210,7 @@ def test_base_with_meta_config_translator():
     }
 
     assert my_sling_assets.freshness_policies_by_key == {
-        AssetKey(["target", "departments"]): FreshnessPolicy(
+        AssetKey(["target", "departments"]): LegacyFreshnessPolicy(
             maximum_lag_minutes=0.0, cron_schedule="5 4 * * *", cron_schedule_timezone="UTC"
         )
     }
