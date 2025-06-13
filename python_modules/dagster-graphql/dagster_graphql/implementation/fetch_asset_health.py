@@ -109,9 +109,8 @@ async def get_freshness_status_and_metadata(
             or context.asset_graph.get(asset_key).internal_freshness_policy is None
         ):
             return GrapheneAssetHealthStatus.NOT_APPLICABLE, None
-        asset_freshness_health_state = AssetFreshnessHealthState.compute_for_asset(
-            asset_key,
-            context,
+        asset_freshness_health_state = await AssetFreshnessHealthState.compute_for_asset(
+            asset_key, context
         )
 
     asset_record = await AssetRecord.gen(context, asset_key)
