@@ -1,7 +1,7 @@
 from unittest.mock import MagicMock
 
 import pytest
-from dagster import AssetExecutionContext, multi_asset
+from dagster import AssetExecutionContext
 from dagster._core.code_pointer import CodePointer
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.definitions_class import Definitions
@@ -16,6 +16,7 @@ from dagster._core.events import DagsterEventType
 from dagster._core.execution.api import create_execution_plan, execute_plan
 from dagster._core.instance_for_test import instance_for_test
 from dagster._utils.test.definitions import definitions
+from dagster_tableau.asset_decorator import tableau_assets
 from dagster_tableau.asset_utils import parse_tableau_external_and_materializable_asset_specs
 from dagster_tableau.assets import build_tableau_materializable_assets_definition
 from dagster_tableau.resources import TableauCloudWorkspace, load_tableau_asset_specs
@@ -121,32 +122,15 @@ def cacheable_asset_defs_refreshable_data_sources():
 
 
 @definitions
-def cacheable_asset_defs_multi_asset_with_context():
-    tableau_specs = load_tableau_asset_specs(
-        workspace=resource,
-    )
-
-    external_asset_specs, materializable_asset_specs = (
-        parse_tableau_external_and_materializable_asset_specs(
-            tableau_specs, include_data_sources_with_extracts=True
-        )
-    )
-
-    resource_key = "tableau"
-
-    @multi_asset(
-        name=f"tableau_sync_site_{resource_key}",
-        compute_kind="tableau",
-        can_subset=False,
-        specs=materializable_asset_specs,
-    )
+def cacheable_asset_defs_asset_decorator_with_context():
+    @tableau_assets(workspace=resource)
     def my_tableau_assets(context: AssetExecutionContext, tableau: TableauCloudWorkspace):
         yield from tableau.refresh_and_poll(context=context)
 
     return Definitions(
-        assets=[my_tableau_assets, *external_asset_specs],
+        assets=[my_tableau_assets],
         jobs=[define_asset_job("all_asset_job")],
-        resources={resource_key: resource},
+        resources={"tableau": resource},
     )
 
 
@@ -536,7 +520,7 @@ def test_load_assets_workspace_data_translator_legacy(
         ), repository_def.assets_defs_by_key
 
 
-def test_load_assets_workspace_multi_asset_with_context(
+def test_load_assets_workspace_asset_decorator_with_context(
     sign_in: MagicMock,
     get_workbooks: MagicMock,
     get_workbook: MagicMock,
@@ -549,15 +533,15 @@ def test_load_assets_workspace_multi_asset_with_context(
     with instance_for_test() as instance:
         pointer = CodePointer.from_python_file(
             __file__,
-            "cacheable_asset_defs_multi_asset_with_context",
+            "cacheable_asset_defs_asset_decorator_with_context",
             None,
         )
         repository_def = initialize_repository_def_from_pointer(
             pointer,
         )
 
-        # 2 Tableau external assets and 3 Tableau materializable assets
-        assert len(repository_def.assets_defs_by_key) == 2 + 3
+        # 4 Tableau materializable assets
+        assert len(repository_def.assets_defs_by_key) == 4
 
         repository_load_data = repository_def.repository_load_data
 
