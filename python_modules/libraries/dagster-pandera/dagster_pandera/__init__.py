@@ -5,7 +5,12 @@ from typing import TYPE_CHECKING, Callable, Type, Union  # noqa: F401, UP035
 
 import dagster._check as check
 import pandas as pd
-import pandera as pa
+import pandera as _pa
+if _pa.__version__ >= "0.24.0":
+    import pandera.pandas as pa
+else:
+    import pandera as pa
+
 import pandera.errors as pa_errors
 from dagster import (
     DagsterType,
