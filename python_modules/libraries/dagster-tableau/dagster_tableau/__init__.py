@@ -12,7 +12,10 @@ from dagster_tableau.resources import (
     TableauServerWorkspace as TableauServerWorkspace,
     load_tableau_asset_specs as load_tableau_asset_specs,
 )
-from dagster_tableau.translator import DagsterTableauTranslator as DagsterTableauTranslator
+from dagster_tableau.translator import (
+    DagsterTableauTranslator as DagsterTableauTranslator,
+    TableauTranslatorData as TableauTranslatorData
+)
 from dagster_tableau.version import __version__ as __version__
 
 DagsterLibraryRegistry.register("dagster-tableau", __version__)
