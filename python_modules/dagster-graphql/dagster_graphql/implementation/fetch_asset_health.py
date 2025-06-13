@@ -26,15 +26,14 @@ if TYPE_CHECKING:
 async def get_asset_check_status_and_metadata(
     context: "BaseWorkspaceRequestContext",
     asset_key: AssetKey,
-) -> tuple[str, Optional["GrapheneAssetHealthCheckMeta"]]:
-    """Converts an AssetCheckHealthState object to a GrapheneAssetHealthStatus and the metadata
+) -> tuple[AssetHealthStatus, Optional["GrapheneAssetHealthCheckMeta"]]:
+    """Converts an AssetCheckHealthState object to a AssetHealthStatus and the metadata
     needed to power the UIs.
     """
     from dagster_graphql.schema.asset_health import (
         GrapheneAssetHealthCheckDegradedMeta,
         GrapheneAssetHealthCheckUnknownMeta,
         GrapheneAssetHealthCheckWarningMeta,
-        GrapheneAssetHealthStatus,
     )
 
     asset_check_health_state = await AssetCheckHealthState.gen(context, asset_key)
@@ -51,10 +50,10 @@ async def get_asset_check_status_and_metadata(
         )
 
     if asset_check_health_state.health_status == AssetHealthStatus.HEALTHY:
-        return GrapheneAssetHealthStatus.HEALTHY, None
+        return AssetHealthStatus.HEALTHY, None
     if asset_check_health_state.health_status == AssetHealthStatus.WARNING:
         return (
-            GrapheneAssetHealthStatus.WARNING,
+            AssetHealthStatus.WARNING,
             GrapheneAssetHealthCheckWarningMeta(
                 numWarningChecks=len(asset_check_health_state.warning_checks),
                 totalNumChecks=len(asset_check_health_state.all_checks),
@@ -62,7 +61,7 @@ async def get_asset_check_status_and_metadata(
         )
     if asset_check_health_state.health_status == AssetHealthStatus.DEGRADED:
         return (
-            GrapheneAssetHealthStatus.DEGRADED,
+            AssetHealthStatus.DEGRADED,
             GrapheneAssetHealthCheckDegradedMeta(
                 numFailedChecks=len(asset_check_health_state.failing_checks),
                 numWarningChecks=len(asset_check_health_state.warning_checks),
@@ -71,7 +70,7 @@ async def get_asset_check_status_and_metadata(
         )
     if asset_check_health_state.health_status == AssetHealthStatus.UNKNOWN:
         return (
-            GrapheneAssetHealthStatus.UNKNOWN,
+            AssetHealthStatus.UNKNOWN,
             GrapheneAssetHealthCheckUnknownMeta(
                 numNotExecutedChecks=len(asset_check_health_state.all_checks)
                 - len(asset_check_health_state.passing_checks)
@@ -81,7 +80,7 @@ async def get_asset_check_status_and_metadata(
             ),
         )
     elif asset_check_health_state.health_status == AssetHealthStatus.NOT_APPLICABLE:
-        return GrapheneAssetHealthStatus.NOT_APPLICABLE, None
+        return AssetHealthStatus.NOT_APPLICABLE, None
     else:
         check.failed(
             f"Unexpected asset check health status: {asset_check_health_state.health_status}"
@@ -90,15 +89,12 @@ async def get_asset_check_status_and_metadata(
 
 async def get_freshness_status_and_metadata(
     context: "BaseWorkspaceRequestContext", asset_key: AssetKey
-) -> tuple[str, Optional["GrapheneAssetHealthFreshnessMeta"]]:
+) -> tuple[AssetHealthStatus, Optional["GrapheneAssetHealthFreshnessMeta"]]:
     """Gets an AssetFreshnessHealthState object for an asset, either via streamline or by computing
-    it based on the state of the DB. Then converts it to a GrapheneAssetHealthStatus and the metadata
+    it based on the state of the DB. Then converts it to a AssetHealthStatus and the metadata
     needed to power the UIs. Metadata is computed based on the state of the DB.
     """
-    from dagster_graphql.schema.asset_health import (
-        GrapheneAssetHealthFreshnessMeta,
-        GrapheneAssetHealthStatus,
-    )
+    from dagster_graphql.schema.asset_health import GrapheneAssetHealthFreshnessMeta
 
     asset_freshness_health_state = await AssetFreshnessHealthState.gen(context, asset_key)
     if (
@@ -108,7 +104,7 @@ async def get_freshness_status_and_metadata(
             not context.asset_graph.has(asset_key)
             or context.asset_graph.get(asset_key).internal_freshness_policy is None
         ):
-            return GrapheneAssetHealthStatus.NOT_APPLICABLE, None
+            return AssetHealthStatus.NOT_APPLICABLE, None
         asset_freshness_health_state = AssetFreshnessHealthState.compute_for_asset(
             asset_key,
             context,
@@ -124,21 +120,21 @@ async def get_freshness_status_and_metadata(
     )
 
     if asset_freshness_health_state.freshness_state == FreshnessState.PASS:
-        return GrapheneAssetHealthStatus.HEALTHY, GrapheneAssetHealthFreshnessMeta(
+        return AssetHealthStatus.HEALTHY, GrapheneAssetHealthFreshnessMeta(
             lastMaterializedTimestamp=materialization_timestamp,
         )
     if asset_freshness_health_state.freshness_state == FreshnessState.WARN:
-        return GrapheneAssetHealthStatus.WARNING, GrapheneAssetHealthFreshnessMeta(
+        return AssetHealthStatus.WARNING, GrapheneAssetHealthFreshnessMeta(
             lastMaterializedTimestamp=materialization_timestamp,
         )
     if asset_freshness_health_state.freshness_state == FreshnessState.FAIL:
-        return GrapheneAssetHealthStatus.DEGRADED, GrapheneAssetHealthFreshnessMeta(
+        return AssetHealthStatus.DEGRADED, GrapheneAssetHealthFreshnessMeta(
             lastMaterializedTimestamp=materialization_timestamp,
         )
     elif asset_freshness_health_state.freshness_state == FreshnessState.UNKNOWN:
-        return GrapheneAssetHealthStatus.UNKNOWN, None
+        return AssetHealthStatus.UNKNOWN, None
     elif asset_freshness_health_state.freshness_state == FreshnessState.NOT_APPLICABLE:
-        return GrapheneAssetHealthStatus.NOT_APPLICABLE, None
+        return AssetHealthStatus.NOT_APPLICABLE, None
 
     else:
         check.failed(f"Unexpected freshness state: {asset_freshness_health_state.freshness_state}")
@@ -146,9 +142,9 @@ async def get_freshness_status_and_metadata(
 
 async def get_materialization_status_and_metadata(
     context: "BaseWorkspaceRequestContext", asset_key: AssetKey
-) -> tuple[str, Optional["GrapheneAssetHealthMaterializationMeta"]]:
+) -> tuple[AssetHealthStatus, Optional["GrapheneAssetHealthMaterializationMeta"]]:
     """Gets an AssetMaterializationHealthState object for an asset, either via streamline or by computing
-    it based on the state of the DB. Then converts it to a GrapheneAssetHealthStatus and the metadata
+    it based on the state of the DB. Then converts it to a AssetHealthStatus and the metadata
     needed to power the UIs. Metadata is fetched from the AssetLatestMaterializationState object, again
     either via streamline or by computing it based on the state of the DB.
     """
@@ -156,7 +152,6 @@ async def get_materialization_status_and_metadata(
         GrapheneAssetHealthMaterializationDegradedNotPartitionedMeta,
         GrapheneAssetHealthMaterializationDegradedPartitionedMeta,
         GrapheneAssetHealthMaterializationHealthyPartitionedMeta,
-        GrapheneAssetHealthStatus,
     )
 
     asset_materialization_health_state = await AssetMaterializationHealthState.gen(
@@ -169,7 +164,7 @@ async def get_materialization_status_and_metadata(
             # an external system, determine the status as best we can based on the asset record
             asset_record = await AssetRecord.gen(context, asset_key)
             if asset_record is None:
-                return GrapheneAssetHealthStatus.UNKNOWN, None
+                return AssetHealthStatus.UNKNOWN, None
             has_ever_materialized = asset_record.asset_entry.last_materialization is not None
             is_currently_failed, run_id = await _get_is_currently_failed_and_latest_terminal_run_id(
                 context, asset_record
@@ -178,21 +173,21 @@ async def get_materialization_status_and_metadata(
                 meta = GrapheneAssetHealthMaterializationDegradedNotPartitionedMeta(
                     failedRunId=run_id,
                 )
-                return GrapheneAssetHealthStatus.DEGRADED, meta
+                return AssetHealthStatus.DEGRADED, meta
             if has_ever_materialized:
-                return GrapheneAssetHealthStatus.HEALTHY, None
+                return AssetHealthStatus.HEALTHY, None
             else:
                 if asset_record.asset_entry.last_observation is not None:
-                    return GrapheneAssetHealthStatus.HEALTHY, None
-                return GrapheneAssetHealthStatus.UNKNOWN, None
+                    return AssetHealthStatus.HEALTHY, None
+                return AssetHealthStatus.UNKNOWN, None
 
         node_snap = context.asset_graph.get(asset_key)
         if node_snap.is_observable and not node_snap.is_materializable:  # observable source asset
             # get the asset record to see if there is an observation event
             asset_record = await AssetRecord.gen(context, asset_key)
             if asset_record and asset_record.asset_entry.last_observation is not None:
-                return GrapheneAssetHealthStatus.HEALTHY, None
-            return GrapheneAssetHealthStatus.UNKNOWN, None
+                return AssetHealthStatus.HEALTHY, None
+            return AssetHealthStatus.UNKNOWN, None
 
         asset_materialization_health_state = (
             await AssetMaterializationHealthState.compute_for_asset(
@@ -224,7 +219,7 @@ async def get_materialization_status_and_metadata(
         else:
             # captures the case when asset is not partitioned, or the asset is partitioned and all partitions are materialized
             meta = None
-        return GrapheneAssetHealthStatus.HEALTHY, meta
+        return AssetHealthStatus.HEALTHY, meta
     elif asset_materialization_health_state.health_status == AssetHealthStatus.DEGRADED:
         if asset_materialization_health_state.partitions_def is not None:
             total_num_partitions = (
@@ -246,9 +241,9 @@ async def get_materialization_status_and_metadata(
             meta = GrapheneAssetHealthMaterializationDegradedNotPartitionedMeta(
                 failedRunId=asset_materialization_health_state.latest_terminal_run_id,
             )
-        return GrapheneAssetHealthStatus.DEGRADED, meta
+        return AssetHealthStatus.DEGRADED, meta
     elif asset_materialization_health_state.health_status == AssetHealthStatus.UNKNOWN:
-        return GrapheneAssetHealthStatus.UNKNOWN, None
+        return AssetHealthStatus.UNKNOWN, None
     else:
         check.failed(
             f"Unexpected materialization health status: {asset_materialization_health_state.health_status}"
