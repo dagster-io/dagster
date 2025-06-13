@@ -1,5 +1,5 @@
 from abc import ABC
-from collections.abc import Mapping
+from collections.abc import Iterable, Mapping
 from datetime import datetime, timedelta
 from enum import Enum
 from typing import Any, Optional, Union
@@ -7,6 +7,7 @@ from typing import Any, Optional, Union
 from dagster_shared.serdes.utils import SerializableTimeDelta
 
 from dagster._core.definitions.asset_key import AssetKey
+from dagster._core.loader import LoadableBy, LoadingContext
 from dagster._record import IHaveNew, record, record_custom
 from dagster._serdes import deserialize_value, whitelist_for_serdes
 from dagster._time import get_timezone
@@ -199,7 +200,7 @@ class FreshnessStateRecordBody:
 
 
 @record
-class FreshnessStateRecord:
+class FreshnessStateRecord(LoadableBy[AssetKey]):
     entity_key: AssetKey
     freshness_state: FreshnessState
     updated_at: datetime
@@ -213,3 +214,11 @@ class FreshnessStateRecord:
             record_body=deserialize_value(db_row[4], FreshnessStateRecordBody),
             updated_at=db_row[5],
         )
+
+    @classmethod
+    def _blocking_batch_load(
+        cls, keys: Iterable[AssetKey], context: LoadingContext
+    ) -> Iterable[Optional["FreshnessStateRecord"]]:
+        keys = list(keys)
+        state_records = context.instance.get_freshness_state_records(keys)
+        return [state_records.get(key) for key in keys]
