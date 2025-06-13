@@ -7,7 +7,7 @@ from dagster import (
     AssetKey,
     AssetsDefinition,
     DagsterInvalidDefinitionError,
-    FreshnessPolicy,
+    LegacyFreshnessPolicy,
     SourceAsset,
     asset,
     load_assets_from_current_module,
@@ -245,14 +245,14 @@ def test_load_assets_with_freshness_policy():
 
     assets = load_assets_from_modules(
         [asset_package, module_with_assets],
-        freshness_policy=FreshnessPolicy(maximum_lag_minutes=50),
+        freshness_policy=LegacyFreshnessPolicy(maximum_lag_minutes=50),
     )
-    check_freshness_policy(assets, FreshnessPolicy(maximum_lag_minutes=50))
+    check_freshness_policy(assets, LegacyFreshnessPolicy(maximum_lag_minutes=50))
 
     assets = load_assets_from_package_module(
-        asset_package, freshness_policy=FreshnessPolicy(maximum_lag_minutes=50)
+        asset_package, freshness_policy=LegacyFreshnessPolicy(maximum_lag_minutes=50)
     )
-    check_freshness_policy(assets, FreshnessPolicy(maximum_lag_minutes=50))
+    check_freshness_policy(assets, LegacyFreshnessPolicy(maximum_lag_minutes=50))
 
 
 def test_load_assets_with_auto_materialize_policy():

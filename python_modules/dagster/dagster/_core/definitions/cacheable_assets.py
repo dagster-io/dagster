@@ -13,7 +13,7 @@ from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.backfill_policy import BackfillPolicy
 from dagster._core.definitions.events import AssetKey, CoercibleToAssetKeyPrefix
-from dagster._core.definitions.freshness_policy import FreshnessPolicy
+from dagster._core.definitions.freshness_policy import LegacyFreshnessPolicy
 from dagster._core.definitions.metadata import RawMetadataMapping
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.resource_requirement import ResourceAddable
@@ -33,7 +33,7 @@ class AssetsDefinitionCacheableData(
             ("key_prefix", Optional[CoercibleToAssetKeyPrefix]),
             ("can_subset", bool),
             ("extra_metadata", Optional[Mapping[Any, Any]]),
-            ("freshness_policies_by_output_name", Optional[Mapping[str, FreshnessPolicy]]),
+            ("freshness_policies_by_output_name", Optional[Mapping[str, LegacyFreshnessPolicy]]),
             (
                 "auto_materialize_policies_by_output_name",
                 Optional[Mapping[str, AutoMaterializePolicy]],
@@ -56,7 +56,7 @@ class AssetsDefinitionCacheableData(
         key_prefix: Optional[Sequence[str]] = None,
         can_subset: bool = False,
         extra_metadata: Optional[Mapping[Any, Any]] = None,
-        freshness_policies_by_output_name: Optional[Mapping[str, FreshnessPolicy]] = None,
+        freshness_policies_by_output_name: Optional[Mapping[str, LegacyFreshnessPolicy]] = None,
         auto_materialize_policies_by_output_name: Optional[
             Mapping[str, AutoMaterializePolicy]
         ] = None,
@@ -98,7 +98,7 @@ class AssetsDefinitionCacheableData(
                 freshness_policies_by_output_name,
                 "freshness_policies_by_output_name",
                 key_type=str,
-                value_type=FreshnessPolicy,
+                value_type=LegacyFreshnessPolicy,
             ),
             auto_materialize_policies_by_output_name=check.opt_nullable_mapping_param(
                 auto_materialize_policies_by_output_name,
@@ -156,7 +156,7 @@ class CacheableAssetsDefinition(ResourceAddable, ABC):
         asset_key_replacements: Optional[Mapping[AssetKey, AssetKey]] = None,
         group_names_by_key: Optional[Mapping[AssetKey, str]] = None,
         freshness_policy: Optional[
-            Union[FreshnessPolicy, Mapping[AssetKey, FreshnessPolicy]]
+            Union[LegacyFreshnessPolicy, Mapping[AssetKey, LegacyFreshnessPolicy]]
         ] = None,
     ) -> "CacheableAssetsDefinition":
         return PrefixOrGroupWrappedCacheableAssetsDefinition(
@@ -179,7 +179,7 @@ class CacheableAssetsDefinition(ResourceAddable, ABC):
     def with_attributes_for_all(
         self,
         group_name: Optional[str],
-        freshness_policy: Optional[FreshnessPolicy],
+        freshness_policy: Optional[LegacyFreshnessPolicy],
         auto_materialize_policy: Optional[AutoMaterializePolicy],
         backfill_policy: Optional[BackfillPolicy],
     ) -> "CacheableAssetsDefinition":
@@ -250,7 +250,7 @@ class PrefixOrGroupWrappedCacheableAssetsDefinition(WrappedCacheableAssetsDefini
         group_name_for_all_assets: Optional[str] = None,
         prefix_for_all_assets: Optional[list[str]] = None,
         freshness_policy: Optional[
-            Union[FreshnessPolicy, Mapping[AssetKey, FreshnessPolicy]]
+            Union[LegacyFreshnessPolicy, Mapping[AssetKey, LegacyFreshnessPolicy]]
         ] = None,
         auto_materialize_policy: Optional[
             Union[AutoMaterializePolicy, Mapping[AssetKey, AutoMaterializePolicy]]
