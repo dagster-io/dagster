@@ -560,10 +560,12 @@ class AssetBackfillData(NamedTuple):
             target_subset = AssetGraphSubset(
                 non_partitioned_asset_keys=set(asset_selection) - partitioned_asset_keys,
             )
+            selected_asset_keys = set(asset_selection)
+            
             for root_asset_key in root_partitioned_asset_keys:
                 target_subset |= asset_graph.bfs_filter_subsets(
                     dynamic_partitions_store,
-                    lambda asset_key, _: asset_key in partitioned_asset_keys,
+                    lambda asset_key, _: asset_key in selected_asset_keys,
                     AssetGraphSubset(
                         partitions_subsets_by_asset_key={root_asset_key: root_partitions_subset},
                     ),
