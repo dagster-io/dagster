@@ -4,6 +4,10 @@ description: "Learn to integrate Dagster Pipes with PySpark to orchestrate PySpa
 sidebar_position: 70
 ---
 
+import ScaffoldAsset from '@site/docs/partials/\_ScaffoldAsset.md';
+
+<ScaffoldAsset />
+
 This tutorial is focused on using Dagster Pipes to launch & monitor general PySpark jobs. The [Spark integration page](/integrations/libraries/spark) provides more information on using Pipes with specific Spark providers, such as AWS EMR or Databricks.
 
 Spark is often used with object stores such as Amazon S3. We are going to simulate this setup locally with [MinIO](https://min.io/), which has an API compatible with AWS S3. All communication between Dagster and the Spark job (metadata and logs collection) will happen through a MinIO bucket.
@@ -46,7 +50,7 @@ We will set up a few non-default Pipes components to streamline the otherwise ch
 
 1. Let's start by creating the asset and opening a Pipes session. We will be using S3 to pass Pipes messages from the Spark job to Dagster, so we will create `PipesS3MessageReader` and `PipesS3ContextInjector` objects. (Technically, it's not strictly required to use S3 for passing the Dagster context, but storing it there will decrease the CLI arguments size).
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/pyspark/dagster_code.py" startAfter="start_pipes_session_marker" endBefore="end_pipes_session_marker" />
+<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/pyspark/dagster_code.py" startAfter="start_pipes_session_marker" endBefore="end_pipes_session_marker" title="src/<project_name>/defs/assets.py" />
 
 Notice how `PipesS3MessageReader` has `include_stdio_in_messages=True`. This setting will configure the Pipes **message writer** in the Spark job to collect logs from the Spark driver and send them to Dagster via Pipes messages.
 

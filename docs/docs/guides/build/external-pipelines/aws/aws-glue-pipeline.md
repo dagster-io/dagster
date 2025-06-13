@@ -4,6 +4,10 @@ description: "Learn to integrate Dagster Pipes with AWS Glue to launch external 
 sidebar_position: 500
 ---
 
+import ScaffoldAsset from '@site/docs/partials/\_ScaffoldAsset.md';
+
+<ScaffoldAsset />
+
 # AWS Glue & Dagster Pipes
 
 This article covers how to use [Dagster Pipes](/guides/build/external-pipelines/) with [AWS Glue](https://aws.amazon.com/glue/).
@@ -18,7 +22,7 @@ The [dagster-aws](/api/libraries/dagster-aws) integration library provides the <
     - Install the following packages:
 
         ```shell
-        pip install dagster dagster-webserver dagster-aws
+        uv pip install dagster dagster-webserver dagster-aws
         ```
 
         Refer to the [Dagster installation guide](/getting-started/installation) for more info.
@@ -52,7 +56,7 @@ The metadata format shown above (`{"raw_value": value, "type": type}`) is part o
 
 In the Dagster asset/op code, use the `PipesGlueClient` resource to launch the job:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/glue/dagster_code.py" startAfter="start_asset_marker" endBefore="end_asset_marker" />
+<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/glue/dagster_code.py" startAfter="start_asset_marker" endBefore="end_asset_marker" title="src/<project_name>/defs/assets.py" />
 
 This will launch the AWS Glue job and monitor its status until it either fails or succeeds. A job failure will also cause the Dagster run to fail with an exception.
 
@@ -60,7 +64,7 @@ This will launch the AWS Glue job and monitor its status until it either fails o
 
 Next, add the `PipesGlueClient` resource to your project's <PyObject section="definitions" module="dagster" object="Definitions" /> object:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/glue/dagster_code.py" startAfter="start_definitions_marker" endBefore="end_definitions_marker" />
+<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/glue/dagster_code.py" startAfter="start_definitions_marker" endBefore="end_definitions_marker" title="src/<project_name>/defs/resources.py" />
 
 Dagster will now be able to launch the AWS Glue job from the `glue_pipes_asset` asset.
 

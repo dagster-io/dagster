@@ -4,6 +4,10 @@ description: "Learn to integrate Dagster Pipes with AWS EMR Serverless to launch
 sidebar_position: 400
 ---
 
+import ScaffoldAsset from '@site/docs/partials/\_ScaffoldAsset.md';
+
+<ScaffoldAsset />
+
 This article covers how to use [Dagster Pipes](/guides/build/external-pipelines/) with [AWS EMR Serverless](https://docs.aws.amazon.com/emr/latest/EMR-Serverless-UserGuide/getting-started.html).
 
 The [dagster-aws](/api/libraries/dagster-aws) integration library provides the <PyObject section="libraries" object="pipes.PipesEMRServerlessClient" module="dagster_aws" /> resource, which can be used to launch AWS EMR Serverless jobs from Dagster assets and ops. Dagster can receive regular events such as logs, asset checks, or asset materializations from jobs launched with this client. Using it requires minimal code changes to your EMR jobs.
@@ -75,7 +79,7 @@ The metadata format shown above (`{"raw_value": value, "type": type}`) is part o
 
 In the Dagster asset/op code, use the `PipesEMRServerlessClient` resource to launch the job:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/emr-serverless/dagster_code.py" startAfter="start_asset_marker" endBefore="=end_asset_marker" />
+<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/emr-serverless/dagster_code.py" startAfter="start_asset_marker" endBefore="=end_asset_marker" title="src/<project_name>/defs/assets.py" />
 
 This will launch the AWS EMR Serverless job and wait for it completion. If the job fails, the Dagster process will raise an exception. If the Dagster process is interrupted while the job is still running, the job will be terminated.
 
@@ -83,6 +87,6 @@ This will launch the AWS EMR Serverless job and wait for it completion. If the j
 
 Next, add the `PipesEMRServerlessClient` resource to your project's <PyObject section="definitions" module="dagster" object="Definitions" /> object:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/emr-serverless/dagster_code.py" startAfter="start_definitions_marker" endBefore="=end_definitions_marker"/>
+<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/emr-serverless/dagster_code.py" startAfter="start_definitions_marker" endBefore="=end_definitions_marker" title="src/<project_name>/defs/resources.py" />
 
 Dagster will now be able to launch the AWS EMR Serverless task from the `emr_serverless_asset` asset, and receive logs and events from the job. If using the default `message_reader` `PipesCloudwatchLogReader`, driver logs will be forwarded to the Dagster process.

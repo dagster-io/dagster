@@ -4,6 +4,10 @@ description: "Learn to integrate Dagster Pipes with AWS ECS to launch external c
 sidebar_position: 100
 ---
 
+import ScaffoldAsset from '@site/docs/partials/\_ScaffoldAsset.md';
+
+<ScaffoldAsset />
+
 This article covers how to use [Dagster Pipes](/guides/build/external-pipelines/) with [AWS ECS](https://aws.amazon.com/ecs/).
 
 The [dagster-aws](/api/libraries/dagster-aws) integration library provides the <PyObject section="libraries" object="pipes.PipesECSClient" module="dagster_aws" /> resource which can be used to launch AWS ECS tasks from Dagster assets and ops. Dagster can receive regular events like logs, asset checks, or asset materializations from jobs launched with this client. Using it requires minimal code changes on the task side.
@@ -16,7 +20,7 @@ The [dagster-aws](/api/libraries/dagster-aws) integration library provides the <
     - Install the following packages:
 
         ```shell
-        pip install dagster dagster-webserver dagster-aws
+        uv pip install dagster dagster-webserver dagster-aws
         ```
 
         Refer to the [Dagster installation guide](/getting-started/installation) for more info.
@@ -60,7 +64,7 @@ The metadata format shown above (`{"raw_value": value, "type": type}`) is part o
 
 In the Dagster asset/op code, use the `PipesECSClient` resource to launch the job:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/ecs/dagster_code.py" startAfter="start_asset_marker" endBefore="=end_asset_marker" />
+<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/ecs/dagster_code.py" startAfter="start_asset_marker" endBefore="=end_asset_marker" title="src/<project_name>/defs/assets.py" />
 
 This will launch the AWS ECS task and wait until it reaches `"STOPPED"` status. If any of the tasks's containers fail, the Dagster process will raise an exception. If the Dagster process is interrupted while the task is still running, the task will be terminated.
 

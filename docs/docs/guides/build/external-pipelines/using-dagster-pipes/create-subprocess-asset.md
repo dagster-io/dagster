@@ -59,7 +59,7 @@ Here’s what we did in this example:
 
 Then, invoke a subprocess that executes the external code from the asset using the `pipes_subprocess_client` resource:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/subprocess/part_1/dagster_code.py" startAfter="start_asset_marker" endBefore="end_asset_marker" />
+<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/subprocess/part_1/dagster_code.py" startAfter="start_asset_marker" endBefore="end_asset_marker" title="src/external_pipeline/defs/dagster_code.py" />
 
 Let’s take a look at what this code does:
 
@@ -78,7 +78,7 @@ Copy and paste the following to the bottom of `dagster_code.py`:
 
 At this point, `dagster_code.py` should look like the following:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/subprocess/part_1/dagster_code_finished.py" />
+<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/subprocess/part_1/dagster_code_finished.py" title="src/external_pipeline/defs/dagster_code.py" />
 
 ## Step 3: Run the subprocess from the Dagster UI
 

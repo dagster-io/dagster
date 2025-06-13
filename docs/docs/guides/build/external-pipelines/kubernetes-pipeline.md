@@ -10,6 +10,10 @@ This article focuses on using an out-of-the-box Kubernetes resource. For further
 
 :::
 
+import ScaffoldAsset from '@site/docs/partials/\_ScaffoldAsset.md';
+
+<ScaffoldAsset />
+
 This article covers how to use [Dagster Pipes](/guides/build/external-pipelines/) with Dagster's [Kubernetes integration](/integrations/libraries/kubernetes) to launch Kubernetes pods and execute external code.
 
 Pipes allows your code to interact with Dagster outside of a full Dagster environment. Instead, the environment only needs to contain [`dagster-pipes`](https://pypi.org/project/dagster-pipes), a single-file Python package with no dependencies that can be installed from PyPI or easily vendored. `dagster-pipes` handles streaming `stdout`/`stderr` and Dagster events back to the orchestration process.
@@ -26,7 +30,7 @@ You can omit the `dagster-pipes` dependency entirely if you do not wish to use t
     - **In the Dagster environment**, you'll need to install the following packages:
 
     ```shell
-    pip install dagster dagster-webserver dagster-k8s
+    uv pip install dagster dagster-webserver dagster-k8s
     ```
 
     Refer to the [Dagster installation guide](/getting-started/installation) for more info.

@@ -14,7 +14,7 @@ When launching the subprocess, you may want to make environment variables or add
 
 In the external code, you can access extras via the `PipesContext` object:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/subprocess/with_extras_env/external_code.py" lineStart="2" />
+<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/subprocess/with_extras_env/external_code.py" lineStart="2" title="src/external_pipeline/defs/external_code.py" />
 
 </TabItem>
 <TabItem value="Dagster code in dagster_code.py">
@@ -23,7 +23,7 @@ The `run` method to the `PipesSubprocessClient` resource also accepts `env` and 
 
 Note: We're using `os.environ` in this example, but Dagster's recommendation is to use <PyObject section="resources" module="dagster" object="EnvVar" /> in production.
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/subprocess/with_extras_env/dagster_code.py" />
+<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/subprocess/with_extras_env/dagster_code.py" title="src/external_pipeline/defs/dagster_code.py" />
 
 </TabItem>
 </Tabs>
@@ -38,14 +38,14 @@ Sometimes, you may not want to materialize an asset, but instead want to report 
 
 From the external code, you can report to Dagster that an asset check has been performed via <PyObject section="libraries" module="dagster_pipes" object="PipesContext" method="report_asset_check" />. Note that `asset_key` in this case is required, and must match the asset key defined in <PyObject section="asset-checks" module="dagster" object="asset_check" decorator />:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/subprocess/with_asset_check/external_code.py" />
+<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/subprocess/with_asset_check/external_code.py" title="src/external_pipeline/defs/external_code.py" />
 
 </TabItem>
 <TabItem value="Dagster code in dagster_code.py">
 
 On Dagster's side, the `PipesClientCompletedInvocation` object returned from `PipesSubprocessClient` includes a `get_asset_check_result` method, which you can use to access the <PyObject section="asset-checks" module="dagster" object="AssetCheckResult" /> event reported by the subprocess.
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/subprocess/with_asset_check/dagster_code.py" />
+<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/subprocess/with_asset_check/dagster_code.py"title="src/external_pipeline/defs/dagster_code.py" />
 
 </TabItem>
 </Tabs>
@@ -66,7 +66,7 @@ Calling {method} with asset key {asset_key} is undefined. Asset has already been
 
 Instead, you’ll need to set the `asset_key` parameter for each instance of <PyObject module="dagster_pipes" section="libraries" object="PipesContext" method="report_asset_materialization" />:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/subprocess/with_multi_asset/external_code.py" />
+<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/subprocess/with_multi_asset/external_code.py" title="src/external_pipeline/defs/external_code.py" />
 
 </TabItem>
 
@@ -74,7 +74,7 @@ Instead, you’ll need to set the `asset_key` parameter for each instance of <Py
 
 In the Dagster code, you can use <PyObject section="assets" module="dagster" object="multi_asset" decorator /> to define a single asset that represents multiple assets. The `PipesClientCompletedInvocation` object returned from `PipesSubprocessClient` includes a `get_results` method, which you can use to access all the events, such as multiple <PyObject section="ops" module="dagster" object="AssetMaterialization" pluralize /> and <PyObject section="asset-checks" module="dagster" object="AssetCheckResult" pluralize />, reported by the subprocess:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/subprocess/with_multi_asset/dagster_code.py" />
+<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/subprocess/with_multi_asset/dagster_code.py" title="src/external_pipeline/defs/dagster_code.py" />
 
 </TabItem>
 </Tabs>
@@ -88,14 +88,14 @@ Sometimes, you may want to pass data back from the external process for use in t
 
 In the external code, we send messages using `report_custom_message`. The message can be any data that is JSON serializable.
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/subprocess/custom_messages/external_code.py" />
+<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/subprocess/custom_messages/external_code.py" title="src/external_pipeline/defs/external_code.py" />
 
 </TabItem>
 <TabItem value="Dagster code in dagster_code.py">
 
 In the Dagster code we receive custom messages using `get_custom_messages`.
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/subprocess/custom_messages/dagster_code.py" />
+<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/subprocess/custom_messages/dagster_code.py" title="src/external_pipeline/defs/dagster_code.py" />
 
 </TabItem>
 </Tabs>

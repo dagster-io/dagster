@@ -16,10 +16,8 @@ def subprocess_asset(
 
 # end_asset_marker
 
+
 # start_definitions_marker
-import dagster as dg
-
-
 @dg.definitions
 def resources():
     return dg.Definitions(

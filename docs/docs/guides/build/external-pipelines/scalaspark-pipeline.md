@@ -4,6 +4,10 @@ description: "Learn to integrate Dagster Pipes with Scala and Spark to orchestra
 sidebar_position: 71
 ---
 
+import ScaffoldAsset from '@site/docs/partials/\_ScaffoldAsset.md';
+
+<ScaffoldAsset />
+
 This tutorial is focused on using Dagster Pipes to launch & monitor Apache Spark jobs implemented in Scala. The [Spark integration page](/integrations/libraries/spark) provides more information on using Pipes with specific Spark providers, such as AWS EMR or Databricks.
 
 Spark is often used with object stores such as Amazon S3. In our example, Dagster will use an S3
@@ -74,7 +78,7 @@ For demonstration purposes, this tutorial makes a few simplifications that you s
 
 We will set up a few non-default Pipes components to streamline the otherwise challenging problem of orchestrating Spark jobs.
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/scalaspark/dagster_code.py" />
+<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/scalaspark/dagster_code.py" title="src/<project_name>/defs/assets.py" />
 
 * Notice that we are using S3 to pass Pipes messages from the Spark job to Dagster, so we create `PipesS3MessageReader` and `PipesS3ContextInjector` objects. (Technically, it's not strictly required to use S3 for passing the Dagster context, but storing it there will decrease the CLI arguments size.)
 

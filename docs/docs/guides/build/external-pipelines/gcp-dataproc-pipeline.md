@@ -4,6 +4,10 @@ description: "Learn to integrate Dagster Pipes with GCP Dataproc to launch exter
 sidebar_position: 40
 ---
 
+import ScaffoldAsset from '@site/docs/partials/\_ScaffoldAsset.md';
+
+<ScaffoldAsset />
+
 This article covers how to use [Dagster Pipes](/guides/build/external-pipelines/) to [submit jobs](https://cloud.google.com/dataproc/docs/guides/submit-job) to [GCP Dataproc](https://cloud.google.com/dataproc).
 
 The [dagster-gcp](/api/libraries/dagster-gcp) integration library provides the <PyObject section="libraries" module="dagster_gcp" object="pipes.PipesDataprocJobClient" /> resource, which can be used to launch GCP Dataproc jobs from Dagster assets and ops. Dagster can receive events such as logs, asset checks, or asset materializations from jobs launched with this client. The client requires minimal code changes to your Dataproc jobs.
@@ -17,7 +21,7 @@ The [dagster-gcp](/api/libraries/dagster-gcp) integration library provides the <
       - Install the following packages:
 
           ```shell
-          pip install dagster dagster-webserver 'dagster-gcp[dataproc]'
+          uv pip install dagster dagster-webserver 'dagster-gcp[dataproc]'
           ```
 
           Refer to the [Dagster installation guide](/getting-started/installation) for more info.
@@ -60,7 +64,7 @@ The metadata format shown above (`{"raw_value": value, "type": type}`) is part o
 
 In the Dagster asset/op code, use the `PipesDataprocJobClient` resource to launch the job:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/gcp/dataproc_job/dagster_code.py" startAfter="start_asset_marker" endBefore="end_asset_marker" />
+<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/gcp/dataproc_job/dagster_code.py" startAfter="start_asset_marker" endBefore="end_asset_marker" title="src/<project_name>/defs/assets.py" />
 
 This will launch the Dataproc job and wait for it to complete. If the job fails, the Dagster process will raise an exception. If the Dagster process is interrupted while the job is still running, the job will be terminated.
 
@@ -70,6 +74,6 @@ Setting `include_stdtio_in_messages=True` in the `PipesDataprocJobClient` constr
 
 Next, add the `PipesDataprocJobClient` resource to your project's <PyObject section="definitions" module="dagster" object="Definitions" /> object:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/gcp/dataproc_job/dagster_code.py" startAfter="start_definitions_marker" endBefore="end_definitions_marker" />
+<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/gcp/dataproc_job/dagster_code.py" startAfter="start_definitions_marker" endBefore="end_definitions_marker" title="src/<project_name>/defs/resources.py" />
 
 Dagster will now be able to launch the GCP Dataproc job from the `dataproc_asset` asset, and receive logs and events from the job.

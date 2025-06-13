@@ -5,8 +5,10 @@ sidebar_position: 200
 ---
 
 import Preview from '@site/docs/partials/\_Preview.md';
+import ScaffoldAsset from '@site/docs/partials/\_ScaffoldAsset.md';
 
 <Preview />
+<ScaffoldAsset />
 
 This tutorial gives a short overview on how to use [Dagster Pipes](/guides/build/external-pipelines/) with [AWS EMR on EKS](https://aws.amazon.com/emr/features/eks/) (the corresponding AWS API is called `emr-containers`).
 
@@ -63,7 +65,7 @@ It's best to use the `PipesS3MessageWriter` with EMR on EKS, because this messag
 
 In the Dagster asset/op code, use the `PipesEMRcontainersClient` resource to launch the job:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/emr-containers/dagster_code.py" startAfter="start_asset_marker" endBefore="end_asset_marker" />
+<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/emr-containers/dagster_code.py" startAfter="start_asset_marker" endBefore="end_asset_marker" title="src/<project_name>/defs/assets.py" />
 
 :::note
 
@@ -77,6 +79,6 @@ Materializing this asset will launch the AWS on EKS job and wait for it to compl
 
 Next, add the `PipesEMRContainersClient` resource to your project's <PyObject section="definitions" module="dagster" object="Definitions" /> object:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/emr-containers/dagster_code.py" startAfter="start_definitions_marker" endBefore="end_definitions_marker" />
+<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/emr-containers/dagster_code.py" startAfter="start_definitions_marker" endBefore="end_definitions_marker" title="src/<project_name>/defs/resouces.py" />
 
 Dagster will now be able to launch the AWS EMR Containers job from the `emr_containers_asset` asset, and receive logs and events from the job. If `include_stdio_in_messages` is set to `True`, the logs will be forwarded to the Dagster process.
