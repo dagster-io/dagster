@@ -10,7 +10,7 @@ from dagster import (
     AssetKey,
     DagsterEventType,
     EventRecordsFilter,
-    FreshnessPolicy,
+    LegacyFreshnessPolicy,
     MetadataValue,
     asset_check,
     build_column_schema_change_checks,
@@ -70,7 +70,7 @@ def handle_freshness_check(check: dict):
         asset_key = AssetKey(asset.split("."))
 
         if "maximum_lag_minutes" in check:
-            policy = FreshnessPolicy(maximum_lag_minutes=check["maximum_lag_minutes"])
+            policy = LegacyFreshnessPolicy(maximum_lag_minutes=check["maximum_lag_minutes"])
             safe_name = f"{'_'.join(asset_key.path)}_freshness_check"
 
             @asset_check(asset=asset_key, name=safe_name)
@@ -81,7 +81,7 @@ def handle_freshness_check(check: dict):
             checks.append(freshness_check)
 
         if "maximum_lag_minutes_by_partition" in check:
-            policy = FreshnessPolicy(  # noqa
+            policy = LegacyFreshnessPolicy(  # noqa
                 maximum_lag_minutes=check["maximum_lag_minutes_by_partition"],
                 cron_schedule="* * * * *",
             )  # cron required for partition

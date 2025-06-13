@@ -13,7 +13,7 @@ from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationCondition,
 )
-from dagster._core.definitions.freshness_policy import FreshnessPolicy
+from dagster._core.definitions.freshness_policy import LegacyFreshnessPolicy
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.module_loaders.utils import (
     find_objects_in_module_of_types,
@@ -349,7 +349,7 @@ class DagsterObjectsList:
         key_prefix: Optional[CoercibleToAssetKeyPrefix],
         source_key_prefix: Optional[CoercibleToAssetKeyPrefix],
         group_name: Optional[str],
-        freshness_policy: Optional[FreshnessPolicy],
+        freshness_policy: Optional[LegacyFreshnessPolicy],
         automation_condition: Optional[AutomationCondition],
         backfill_policy: Optional[BackfillPolicy],
     ) -> "DagsterObjectsList":

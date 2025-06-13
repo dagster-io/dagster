@@ -15,7 +15,7 @@ from dagster._core.definitions.events import (
     CoercibleToAssetKey,
     CoercibleToAssetKeyPrefix,
 )
-from dagster._core.definitions.freshness_policy import FreshnessPolicy
+from dagster._core.definitions.freshness_policy import LegacyFreshnessPolicy
 from dagster._core.definitions.input import NoValueSentinel
 from dagster._core.definitions.output import Out
 from dagster._core.definitions.partition import PartitionsDefinition
@@ -157,7 +157,7 @@ class AssetOut:
                     AutomationCondition,
                 ),
                 freshness_policy=check.opt_inst_param(
-                    freshness_policy, "freshness_policy", FreshnessPolicy
+                    freshness_policy, "freshness_policy", LegacyFreshnessPolicy
                 ),
                 owners=check.opt_sequence_param(owners, "owners", of_type=str),
                 tags=normalize_tags(tags or {}, strict=True),
@@ -190,7 +190,7 @@ class AssetOut:
         return self._spec.code_version
 
     @property
-    def freshness_policy(self) -> Optional[FreshnessPolicy]:
+    def freshness_policy(self) -> Optional[LegacyFreshnessPolicy]:
         return self._spec.freshness_policy
 
     @property
