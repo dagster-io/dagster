@@ -11,6 +11,7 @@ import jwt
 import requests
 import tableauserverclient as TSC
 from dagster import (
+    AssetExecutionContext,
     AssetSpec,
     ConfigurableResource,
     Definitions,
@@ -20,7 +21,7 @@ from dagster import (
     _check as check,
     get_dagster_logger,
 )
-from dagster._annotations import beta, deprecated
+from dagster._annotations import beta, deprecated, superseded
 from dagster._core.definitions.definitions_load_context import StateBackedDefinitionsLoader
 from dagster._record import record
 from dagster._utils.cached_method import cached_method
@@ -33,6 +34,7 @@ from dagster_tableau.translator import (
     DagsterTableauTranslator,
     TableauContentData,
     TableauContentType,
+    TableauDataSourceMetadataSet,
     TableauMetadataSet,
     TableauTagSet,
     TableauTranslatorData,
@@ -125,6 +127,7 @@ class BaseTableauClient:
         """Cancels a given job."""
         return self._server.jobs.cancel(job_id)
 
+    @superseded(additional_warn_text="Use `refresh_and_poll` on the tableau resource instead.")
     def refresh_and_materialize_workbooks(
         self, specs: Sequence[AssetSpec], refreshable_workbook_ids: Optional[Sequence[str]]
     ) -> Iterator[Union[Output, ObserveResult]]:
@@ -153,6 +156,7 @@ class BaseTableauClient:
         job = self.poll_job(job_id=job.id, poll_interval=poll_interval, poll_timeout=poll_timeout)
         return job.workbook_id
 
+    @superseded(additional_warn_text="Use `refresh_and_poll` on the tableau resource instead.")
     def refresh_and_materialize(
         self, specs: Sequence[AssetSpec], refreshable_data_source_ids: Optional[Sequence[str]]
     ) -> Iterator[Union[Output, ObserveResult]]:
@@ -633,6 +637,64 @@ class BaseTableauWorkspace(ConfigurableResource):
             ],
             resources={resource_key: self},
         )
+
+    def refresh_and_poll(
+        self, context: AssetExecutionContext
+    ) -> Iterator[Union[Output, ObserveResult]]:
+        """Executes a refresh and poll process to materialize Tableau assets,
+        including data sources with extracts, views and workbooks.
+        This method can only be used in the context of an asset execution.
+        """
+        assets_def = context.assets_def
+        specs = assets_def.specs
+        refreshable_data_source_ids = [
+            check.not_none(TableauDataSourceMetadataSet.extract(spec.metadata).id)
+            for spec in specs
+            if TableauDataSourceMetadataSet.extract(spec.metadata).has_extracts
+        ]
+
+        with self.get_client() as client:
+            refreshed_data_source_ids = set()
+            for refreshable_data_source_id in refreshable_data_source_ids:
+                refreshed_data_source_ids.add(
+                    client.refresh_and_poll_data_source(refreshable_data_source_id)
+                )
+
+            # If a sheet depends on a refreshed data source, then its workbook is considered refreshed
+            refreshed_workbook_ids = set()
+            specs_by_asset_key = {spec.key: spec for spec in specs}
+            for spec in specs:
+                if TableauTagSet.extract(spec.tags).asset_type == "sheet":
+                    for dep in spec.deps:
+                        # Only materializable data sources are included in materializable asset specs,
+                        # so we must verify for None values - data sources that are external specs are not available here.
+                        dep_spec = specs_by_asset_key.get(dep.asset_key, None)
+                        if (
+                            dep_spec
+                            and TableauMetadataSet.extract(dep_spec.metadata).id
+                            in refreshed_data_source_ids
+                        ):
+                            refreshed_workbook_ids.add(
+                                TableauViewMetadataSet.extract(spec.metadata).workbook_id
+                            )
+                            break
+
+            for spec in specs:
+                asset_type = check.inst(TableauTagSet.extract(spec.tags).asset_type, str)
+                asset_id = check.inst(TableauMetadataSet.extract(spec.metadata).id, str)
+
+                if asset_type == "data_source":
+                    yield from create_data_source_asset_event(
+                        data_source=client.get_data_source(asset_id),
+                        spec=spec,
+                        refreshed_data_source_ids=refreshed_data_source_ids,
+                    )
+                else:
+                    yield from create_view_asset_event(
+                        view=client.get_view(asset_id),
+                        spec=spec,
+                        refreshed_workbook_ids=refreshed_workbook_ids,
+                    )
 
 
 @beta
