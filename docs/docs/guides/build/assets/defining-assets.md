@@ -114,11 +114,11 @@ When defining an asset, you can optionally provide a first parameter, `context`.
 For example, to access the logger and log an info message:
 
 ```python
-from dagster import AssetExecutionContext, asset
+import dagster as dg
 
 
-@asset
-def context_asset(context: AssetExecutionContext):
+@dg.asset
+def context_asset(context: dg.AssetExecutionContext):
     context.log.info(f"My run ID is {context.run.run_id}")
     ...
 
@@ -129,8 +129,7 @@ def context_asset(context: AssetExecutionContext):
 Assets may be assigned a `code_version`. Versions let you help Dagster track what assets haven't been re-materialized since their code has changed, and avoid performing redundant computation.
 
 ```python
-
-@asset(code_version="1")
+@dg.asset(code_version="1")
 def asset_with_version():
     with open("data/asset_with_version.json", "w") as f:
         json.dump(100, f)

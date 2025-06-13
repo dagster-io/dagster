@@ -14,7 +14,7 @@ Here's an example of some tags you might apply to an asset:
 
 Like `owners`, just pass a dictionary of tags to the `tags` argument when defining an asset:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/data-modeling/metadata/tags.py" language="python" />
+<CodeExample path="docs_snippets/docs_snippets/guides/data-modeling/metadata/tags.py" language="python" title="src/<project-name>/defs/assets.py" />
 
 Keep in mind that tags must contain only strings as keys and values. Additionally, the Dagster UI will render tags with the empty string as a "label" rather than a key-value pair.
 

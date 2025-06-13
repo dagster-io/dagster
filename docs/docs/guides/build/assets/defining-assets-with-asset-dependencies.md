@@ -4,6 +4,10 @@ sidebar_position: 200
 title: Defining assets that depend on other assets
 ---
 
+import ScaffoldAsset from '@site/docs/partials/\_ScaffoldAsset.md';
+
+<ScaffoldAsset />
+
 Asset definitions can depend on other asset definitions. The dependent asset is called the **downstream asset**, and the asset it depends on is the **upstream asset**.
 
 ## Defining basic dependencies
@@ -17,6 +21,7 @@ In this example, the asset `sugary_cereals` creates a new table (`sugary_cereals
     language="python"
     startAfter="start_basic_dependencies"
     endBefore="end_basic_dependencies"
+    title="src/<project-name>/defs/assets.py"
 />
 
 ## Defining asset dependencies across code locations
@@ -28,6 +33,7 @@ Assets can depend on assets in different [code locations](/deployment/code-locat
     language="python"
     startAfter="start_code_location_one_asset_decorator"
     endBefore="end_code_location_one_asset_decorator"
+    title="src/<project-name>/defs/assets.py"
 />
 
 In `code_location_2`, we can reference `code_location_1_asset` it via its asset key:
@@ -37,5 +43,6 @@ In `code_location_2`, we can reference `code_location_1_asset` it via its asset 
     language="python"
     startAfter="start_code_location_two_asset_decorator"
     endBefore="end_code_location_two_asset_decorator"
+    title="src/<project-name>/defs/assets.py"
 />
 
