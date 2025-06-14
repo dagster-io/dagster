@@ -2,7 +2,10 @@ import shutil
 import subprocess
 
 from dagster_dg_cli.cli import cli
-from dagster_dg_core.utils import DgClickCommand, DgClickGroup
+from dagster_dg_core.utils import DgClickCommand, DgClickGroup, ensure_dagster_dg_tests_import
+
+ensure_dagster_dg_tests_import()
+
 from dagster_dg_core_tests.utils import ProxyRunner, isolated_dg_venv
 
 

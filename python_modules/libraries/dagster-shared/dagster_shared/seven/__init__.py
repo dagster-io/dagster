@@ -223,3 +223,19 @@ def is_valid_module_pattern(pattern: str) -> bool:
             return False
 
     return True
+
+
+def load_module_object(module_name: str, attr: str) -> object:
+    from dagster_shared.error import DagsterUnresolvableSymbolError
+
+    try:
+        module = importlib.import_module(module_name)
+        if not hasattr(module, attr):
+            raise DagsterUnresolvableSymbolError(
+                f"Module `{module_name}` has no attribute `{attr}`."
+            )
+        return getattr(module, attr)
+    except ModuleNotFoundError as e:
+        raise DagsterUnresolvableSymbolError(f"Module `{module_name}` not found.") from e
+    except ImportError as e:
+        raise DagsterUnresolvableSymbolError(f"Error loading module `{module_name}`.") from e
