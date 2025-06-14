@@ -4,11 +4,13 @@ import os
 import boto3
 from dagster_aws.pipes import PipesEMRClient, PipesS3MessageReader
 
-from dagster import AssetExecutionContext, asset
+import dagster as dg
 
 
-@asset
-def emr_pipes_asset(context: AssetExecutionContext, pipes_emr_client: PipesEMRClient):
+@dg.asset
+def emr_pipes_asset(
+    context: dg.AssetExecutionContext, pipes_emr_client: PipesEMRClient
+):
     return pipes_emr_client.run(
         context=context,
         # see full reference here: https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/emr/client/run_job_flow.html#EMR.Client.run_job_flow
@@ -19,19 +21,21 @@ def emr_pipes_asset(context: AssetExecutionContext, pipes_emr_client: PipesEMRCl
 # end_asset_marker
 
 # start_definitions_marker
+import dagster as dg
 
-from dagster import Definitions  # noqa
 
-
-defs = Definitions(
-    assets=[emr_pipes_asset],
-    resources={
-        "pipes_emr_client": PipesEMRClient(
-            message_reader=PipesS3MessageReader(
-                client=boto3.client("s3"), bucket=os.environ["DAGSTER_PIPES_BUCKET"]
+@dg.definitions
+def resources():
+    return dg.Definitions(
+        resources={
+            "pipes_emr_client": PipesEMRClient(
+                message_reader=PipesS3MessageReader(
+                    client=boto3.client("s3"),
+                    bucket=dg.EnvVar("DAGSTER_PIPES_BUCKET"),
+                )
             )
-        )
-    },
-)
+        },
+    )
+
 
 # end_definitions_marker

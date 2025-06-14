@@ -113,31 +113,31 @@ Below are examples of specifying data for all supported metadata types. Float, i
 
 #### URL Metadata
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/subprocess/rich_metadata/url_metadata.py" />
+<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/subprocess/rich_metadata/url_metadata.py" startAfter="start_url" endBefore="end_url" />
 
 #### Path Metadata
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/subprocess/rich_metadata/path_metadata.py" />
+<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/subprocess/rich_metadata/path_metadata.py" startAfter="start_path" endBefore="end_path" />
 
 #### Notebook Metadata
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/subprocess/rich_metadata/notebook_metadata.py" />
+<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/subprocess/rich_metadata/notebook_metadata.py" startAfter="start_notebook" endBefore="end_notebook" />
 
 #### JSON Metadata
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/subprocess/rich_metadata/json_metadata.py" />
+<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/subprocess/rich_metadata/json_metadata.py" startAfter="start_json" endBefore="end_json" />
 
 #### Markdown Metadata
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/subprocess/rich_metadata/markdown_metadata.py" />
+<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/subprocess/rich_metadata/markdown_metadata.py" startAfter="start_markdown" endBefore="end_markdown" />
 
 #### Table Metadata
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/subprocess/rich_metadata/table_metadata.py" />
+<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/subprocess/rich_metadata/table_metadata.py" startAfter="start_table" endBefore="end_table" />
 
 #### Table Schema Metadata
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/subprocess/rich_metadata/table_schema_metadata.py" />
+<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/subprocess/rich_metadata/table_schema_metadata.py" startAfter="start_table_schema" endBefore="end_table_schema" />
 
 #### Table Column Lineage Metadata
 

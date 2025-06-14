@@ -1,16 +1,13 @@
 # start_asset_marker
-
-# dagster_lambda_pipes.py
-
 import boto3
 from dagster_aws.pipes import PipesLambdaClient
 
-from dagster import AssetExecutionContext, Definitions, asset
+import dagster as dg
 
 
-@asset
+@dg.asset
 def lambda_pipes_asset(
-    context: AssetExecutionContext, lambda_pipes_client: PipesLambdaClient
+    context: dg.AssetExecutionContext, lambda_pipes_client: PipesLambdaClient
 ):
     return lambda_pipes_client.run(
         context=context,
@@ -21,12 +18,15 @@ def lambda_pipes_asset(
 
 # end_asset_marker
 
+
 # start_definitions_marker
+@dg.definitions
+def resources():
+    return dg.Definitions(
+        resources={
+            "lambda_pipes_client": PipesLambdaClient(client=boto3.client("lambda"))
+        }
+    )
 
-# dagster_lambda_pipes.py
 
-defs = Definitions(
-    assets=[lambda_pipes_asset],
-    resources={"lambda_pipes_client": PipesLambdaClient(client=boto3.client("lambda"))},
-)
 # end_definitions_marker

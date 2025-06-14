@@ -17,7 +17,7 @@ The [dagster-aws](/api/libraries/dagster-aws) integration library provides the <
     - Install the following packages:
 
         ```shell
-        pip install dagster dagster-webserver dagster-aws
+        uv pip install dagster dagster-webserver dagster-aws
         ```
 
         Refer to the [Dagster installation guide](/getting-started/installation) for more info.

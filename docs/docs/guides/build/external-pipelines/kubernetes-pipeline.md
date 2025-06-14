@@ -115,12 +115,12 @@ In your Dagster project, create a file named `dagster_k8s_pipes.py` and paste in
 ```python
 # dagster_k8s_pipes.py
 
-from dagster import AssetExecutionContext, Definitions, asset
+import dagster as dg
 from dagster_k8s import PipesK8sClient
 
 
-@asset
-def k8s_pipes_asset(context: AssetExecutionContext, k8s_pipes_client: PipesK8sClient):
+@dg.asset
+def k8s_pipes_asset(context: dg.AssetExecutionContext, k8s_pipes_client: PipesK8sClient):
   return k8s_pipes_client.run(
       context=context,
       image="pipes-example:v1",
@@ -164,27 +164,24 @@ Next, you'll add the asset and Kubernetes resource to your project's code locati
 Copy and paste the following to the bottom of `dagster_k8s_pipes.py`:
 
 ```python
-# dagster_k8s_pipes.py
-
-defs = Definitions(
-  assets=[k8s_pipes_asset],
-  resources={
-    "k8s_pipes_client": PipesK8sClient(),
-  },
-)
+@dg.definitions
+def resources():
+    return dg.Definitions(
+        resources={
+            "k8s_pipes_client": PipesK8sClient(),
+        }
+    )
 ```
 
 At this point, `dagster_k8s_pipes.py` should look like the following:
 
 ```python
-# dagster_k8s_pipes.py
-
-from dagster import AssetExecutionContext, Definitions, asset
+import dagster as dg
 from dagster_k8s import PipesK8sClient
 
 
-@asset
-def k8s_pipes_asset(context: AssetExecutionContext, k8s_pipes_client: PipesK8sClient):
+@dg.asset
+def k8s_pipes_asset(context: dg.AssetExecutionContext, k8s_pipes_client: PipesK8sClient):
   return k8s_pipes_client.run(
       context=context,
       image="pipes-example:v1",
@@ -194,12 +191,13 @@ def k8s_pipes_asset(context: AssetExecutionContext, k8s_pipes_client: PipesK8sCl
   ).get_materialize_result()
 
 
-defs = Definitions(
-  assets=[k8s_pipes_asset],
-  resources={
-    "k8s_pipes_client": PipesK8sClient(),
-  },
-)
+@dg.definitions
+def resources():
+    return dg.Definitions(
+        resources={
+            "k8s_pipes_client": PipesK8sClient(),
+        }
+    )
 ```
 
 ## Step 3: Launch the Kubernetes container from the Dagster UI
@@ -209,7 +207,7 @@ In this step, you'll run the Kubernetes container you defined in [Step 1](#step-
 1. In a new command line session, run the following to start the UI:
 
    ```python
-   dagster dev -f dagster_k8s_pipes.py
+   dg dev
    ```
 
 2. Navigate to [localhost:3000](http://localhost:3000/), where you should see the UI.

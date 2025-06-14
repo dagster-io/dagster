@@ -1,13 +1,13 @@
 # start_asset_marker
-
-# dagster_glue_pipes.py
 from dagster_aws.pipes import PipesECSClient
 
-from dagster import AssetExecutionContext, asset
+import dagster as dg
 
 
-@asset
-def ecs_pipes_asset(context: AssetExecutionContext, pipes_ecs_client: PipesECSClient):
+@dg.asset
+def ecs_pipes_asset(
+    context: dg.AssetExecutionContext, pipes_ecs_client: PipesECSClient
+):
     return pipes_ecs_client.run(
         context=context,
         run_task_params={
@@ -19,14 +19,14 @@ def ecs_pipes_asset(context: AssetExecutionContext, pipes_ecs_client: PipesECSCl
 
 # end_asset_marker
 
+
 # start_definitions_marker
+import dagster as dg
 
-from dagster import Definitions  # noqa
 
+@dg.definitions
+def resources():
+    return dg.Definitions(resources={"pipes_ecs_client": PipesECSClient()})
 
-defs = Definitions(
-    assets=[ecs_pipes_asset],
-    resources={"pipes_ecs_client": PipesECSClient()},
-)
 
 # end_definitions_marker

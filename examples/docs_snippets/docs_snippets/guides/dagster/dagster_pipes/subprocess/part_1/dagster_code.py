@@ -17,11 +17,14 @@ def subprocess_asset(
 # end_asset_marker
 
 # start_definitions_marker
+import dagster as dg
 
-from dagster import Definitions
 
-defs = Definitions(
-    assets=[subprocess_asset],
-    resources={"pipes_subprocess_client": dg.PipesSubprocessClient()},
-)
+@dg.definitions
+def resources():
+    return dg.Definitions(
+        resources={"pipes_subprocess_client": dg.PipesSubprocessClient()}
+    )
+
+
 # end_definitions_marker
