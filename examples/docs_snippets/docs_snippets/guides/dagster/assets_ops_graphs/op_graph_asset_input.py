@@ -1,14 +1,14 @@
-from dagster import asset, job, op
+import dagster as dg
 
 
-@asset
+@dg.asset
 def emails_to_send(): ...
 
 
-@op
+@dg.op
 def send_emails(emails) -> None: ...
 
 
-@job
+@dg.job
 def send_emails_job():
     send_emails(emails_to_send.get_asset_spec())

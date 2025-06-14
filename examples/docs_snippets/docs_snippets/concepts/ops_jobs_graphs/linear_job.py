@@ -1,18 +1,18 @@
 # start_marker
-from dagster import OpExecutionContext, job, op
+import dagster as dg
 
 
-@op
-def return_one(context: OpExecutionContext) -> int:
+@dg.op
+def return_one(context: dg.OpExecutionContext) -> int:
     return 1
 
 
-@op
-def add_one(context: OpExecutionContext, number: int) -> int:
+@dg.op
+def add_one(context: dg.OpExecutionContext, number: int) -> int:
     return number + 1
 
 
-@job
+@dg.job
 def linear():
     add_one(add_one(add_one(return_one())))
 

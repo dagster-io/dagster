@@ -1,16 +1,16 @@
 import random
 
-from dagster import RetryPolicy, asset, define_asset_job
+import dagster as dg
 
 
-@asset
+@dg.asset
 def sample_asset():
     if random.choice([True, False]):
         raise Exception("failed")
 
 
-sample_job = define_asset_job(
+sample_job = dg.define_asset_job(
     name="sample_job",
     selection="sample_asset",
-    op_retry_policy=RetryPolicy(max_retries=3),
+    op_retry_policy=dg.RetryPolicy(max_retries=3),
 )
