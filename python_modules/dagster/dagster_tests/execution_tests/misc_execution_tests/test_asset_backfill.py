@@ -2182,3 +2182,38 @@ def test_asset_backfill_with_asset_check():
     run_request = result.run_requests[0]
     assert run_request.asset_selection == [foo.key]
     assert run_request.asset_check_keys == [foo_check.check_key]
+
+def test_asset_backfill_issue():
+    @asset
+    def some_asset1() -> str:
+        return "some_asset1"
+
+
+    @asset(partitions_def=StaticPartitionsDefinition(["partition1", "partition2"]))
+    def some_asset2(context: OpExecutionContext, some_asset1: str) -> str:
+        # Log the partition name
+        context.log.info(f"some_asset2 partition: {context.partition_key}")
+        return "some_asset2"
+
+
+    @asset
+    def some_asset3(some_asset2: dict) -> str:
+        return "some_asset3"
+
+
+    @asset(partitions_def=StaticPartitionsDefinition(["partition1", "partition2"]))
+    def some_asset4(context: OpExecutionContext, some_asset3: str) -> str:
+        # Log the partition name
+        context.log.info(f"some_asset4 partition: {context.partition_key}")
+        return "some_asset4"
+    
+    target_partitions_subset = StaticPartitionsDefinition(["partition1", "partition2"]).empty_subset().with_partition_key_range(
+        StaticPartitionsDefinition(["partition1", "partition2"]), PartitionKeyRange("partition1", "partition2")
+    )
+    asset_backfill_data = AssetBackfillData.from_asset_graph_subset(
+        asset_graph_subset=AssetGraphSubset(
+            partitions_subsets_by_asset_key={foo.key: target_partitions_subset}
+        ),
+        dynamic_partitions_store=MagicMock(),
+        backfill_start_timestamp=create_datetime(2023, 12, 5, 0, 0, 0).timestamp(),
+    )
