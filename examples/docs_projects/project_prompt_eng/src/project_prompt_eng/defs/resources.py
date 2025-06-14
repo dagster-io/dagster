@@ -32,9 +32,11 @@ class NRELResource(dg.ConfigurableResource):
 # end_resource
 
 
-defs = dg.Definitions(
-    resources={
-        "nrel": NRELResource(api_key=dg.EnvVar("NREL_API_KEY")),
-        "anthropic": AnthropicResource(api_key=dg.EnvVar("ANTHROPIC_API_KEY")),
-    },
-)
+@dg.definitions
+def resources() -> dg.Definitions:
+    return dg.Definitions(
+        resources={
+            "nrel": NRELResource(api_key=dg.EnvVar("NREL_API_KEY")),
+            "anthropic": AnthropicResource(api_key=dg.EnvVar("ANTHROPIC_API_KEY")),
+        },
+    )
