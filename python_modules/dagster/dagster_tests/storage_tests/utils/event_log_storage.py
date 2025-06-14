@@ -6364,9 +6364,9 @@ class TestEventLogStorage:
             }
         ]
 
-    def test_previous_observation_data_versions(self, storage, instance):
+    @pytest.mark.parametrize("partitions", [["1", "2", "3"], None])
+    def test_previous_observation_data_versions(self, storage, instance, partitions):
         asset_key = AssetKey(["one"])
-        partitions = ["1", "2", "3"]
 
         def _observe_partition(partition, data_version):
             yield AssetObservation(
@@ -6376,7 +6376,7 @@ class TestEventLogStorage:
             )
 
         def _observe(data_version):
-            for partition in partitions:
+            for partition in ["1", "2", "3"]:
                 yield from _observe_partition(partition, data_version)
 
         @op
@@ -6459,9 +6459,9 @@ class TestEventLogStorage:
                 == set()
             )
 
-    def test_previous_materialization_data_versions(self, storage, instance):
+    @pytest.mark.parametrize("partitions", [["1", "2", "3"], None])
+    def test_previous_materialization_data_versions(self, storage, instance, partitions):
         asset_key = AssetKey(["one"])
-        partitions = ["1", "2", "3"]
 
         def _materialize_partition(partition, data_version):
             yield AssetMaterialization(
@@ -6471,7 +6471,7 @@ class TestEventLogStorage:
             )
 
         def _materialize(data_version):
-            for partition in partitions:
+            for partition in ["1", "2", "3"]:
                 yield from _materialize_partition(partition, data_version)
 
         @op
@@ -6554,16 +6554,16 @@ class TestEventLogStorage:
                 == set()
             )
 
-    def test_updated_none_data_version(self, storage, instance):
+    @pytest.mark.parametrize("partitions", [["1", "2", "3"], None])
+    def test_updated_none_data_version(self, storage, instance, partitions):
         asset_key = AssetKey(["one"])
-        partitions = ["1", "2", "3"]
 
         def _materialize_partition(partition, data_version):
             tags = {"dagster/data_version": data_version} if data_version else None
             yield AssetMaterialization(asset_key=asset_key, partition=partition, tags=tags)
 
         def _materialize(data_version):
-            for partition in partitions:
+            for partition in ["1", "2", "3"]:
                 yield from _materialize_partition(partition, data_version)
 
         @op

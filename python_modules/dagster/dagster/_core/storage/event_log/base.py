@@ -733,7 +733,7 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
 
     @abstractmethod
     def get_updated_data_version_partitions(
-        self, asset_key: AssetKey, partitions: Iterable[str], since_storage_id: int
+        self, asset_key: AssetKey, partitions: Optional[Iterable[str]], since_storage_id: int
     ) -> set[str]:
         raise NotImplementedError()
 
