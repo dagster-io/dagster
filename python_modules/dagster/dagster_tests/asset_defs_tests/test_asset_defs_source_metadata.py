@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import cast
 
 import dagster as dg
+import pytest
 
 # path of the `dagster` package on the filesystem
 DAGSTER_PACKAGE_PATH = os.path.normpath(dg.file_relative_path(__file__, "../../"))
@@ -213,3 +214,28 @@ def test_asset_code_origins_source_control_custom_mapping() -> None:
                 )
 
                 assert meta.url == expected_url
+
+
+@pytest.mark.parametrize(
+    ("url", "branch", "platform", "expected"),
+    [
+        ("http://github.com", "my_b", None, "http://github.com/tree/my_b"),
+        ("http://gitlab.com", "my_b", None, "http://gitlab.com/-/tree/my_b"),
+        ("http://x.com", "my_b", "github", "http://x.com/tree/my_b"),
+        ("http://x.com", "my_b", "gitlab", "http://x.com/-/tree/my_b"),
+    ],
+)
+def test_base_git_url(url: str, branch: str, platform: str, expected: str) -> None:
+    base_url = dg.base_git_url(url, branch, platform)
+
+    assert base_url == expected
+
+
+def test_base_git_url_invalid_git_url() -> None:
+    with pytest.raises(ValueError, match="Unable to infer the source control platform"):
+        dg.base_git_url("http://x.com", "my_b", None)
+
+
+def test_base_git_url_invalid_platform() -> None:
+    with pytest.raises(ValueError, match="Invalid `platform`"):
+        dg.base_git_url("http://x.com", "my_b", "bogus_platform")

@@ -303,6 +303,7 @@ from dagster._core.definitions.metadata import (
     TimestampMetadataValue as TimestampMetadataValue,
     UrlCodeReference as UrlCodeReference,
     UrlMetadataValue as UrlMetadataValue,
+    base_git_url as base_git_url,
     link_code_references_to_git as link_code_references_to_git,
     with_source_code_references as with_source_code_references,
 )
