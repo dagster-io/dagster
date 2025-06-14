@@ -10,8 +10,6 @@ This example demonstrates how to use resources in schedules. To specify a resour
 
 This article assumes familiarity with [resources](/guides/build/external-resources/), [code locations and definitions](/deployment/code-locations), and [schedule testing](/guides/automate/schedules/testing-schedules).
 
-All Dagster definitions, including schedules and resources, must be attached to a <PyObject section="definitions" module="dagster" object="Definitions" /> call.
-
 :::
 
 <CodeExample
@@ -19,6 +17,7 @@ All Dagster definitions, including schedules and resources, must be attached to 
   startAfter="start_new_resource_on_schedule"
   endBefore="end_new_resource_on_schedule"
   dedent="4"
+  title="src/<project-name>/defs/assets.py"
 />
 
 ## APIs in this guide

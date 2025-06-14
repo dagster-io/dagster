@@ -10,6 +10,7 @@ This example demonstrates how to use run config to vary the behavior of a job ba
   path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/schedules/schedules.py"
   startAfter="start_run_config_schedule"
   endBefore="end_run_config_schedule"
+  title="src/<project-name>/defs/assets.py"
 />
 
 ## APIs in this example
