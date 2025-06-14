@@ -191,6 +191,128 @@ ResolvedAirflowAuthBackend: TypeAlias = Annotated[
 @scaffold_with(AirflowInstanceScaffolder)
 @dataclass
 class AirflowInstanceComponent(Component, Resolvable):
+    """A Dagster Component for integrating with Apache Airflow instances.
+    
+    This component enables comprehensive integration with Airflow by observing existing 
+    Airflow DAGs and tasks as Dagster assets, mapping Airflow workflows to Dagster assets 
+    for migration, maintaining lineage and operational visibility, and supporting multiple 
+    authentication backends.
+    
+    Args:
+        auth: Authentication backend for connecting to Airflow. Supports basic_auth for 
+            HTTP basic authentication and mwaa for AWS Managed Workflows for Apache Airflow.
+        name: Unique identifier for the Airflow instance, used as prefix for auto-created assets.
+        filter: Optional filtering criteria to control which Airflow objects to retrieve.
+            Supports dag_id_ilike (SQL ILIKE pattern), airflow_tags (filter by DAG tags),
+            retrieve_datasets (include Airflow datasets, default True), and dataset_uri_ilike 
+            (pattern for dataset URIs).
+        mappings: Explicit mappings between Airflow DAGs/tasks and Dagster assets. Can map 
+            entire DAGs to assets or individual tasks to specific assets. Supports both 
+            existing Dagster assets (by_key) and new asset specs.
+        source_code_retrieval_enabled: Whether to retrieve and display Airflow DAG source code.
+        asset_post_processors: Transformations to apply to generated assets (metadata, tags, etc.).
+    
+    Examples:
+        Basic YAML configuration:
+        
+        .. code-block:: yaml
+        
+            type: dagster_airlift.core.components.AirflowInstanceComponent
+            attributes:
+              name: my_airflow
+              auth:
+                type: basic_auth
+                webserver_url: "{{ env('AIRFLOW_WEBSERVER_URL') }}"
+                username: "{{ env('AIRFLOW_USERNAME') }}"
+                password: "{{ env('AIRFLOW_PASSWORD') }}"
+        
+        Advanced configuration with filtering and mappings:
+        
+        .. code-block:: yaml
+        
+            type: dagster_airlift.core.components.AirflowInstanceComponent
+            attributes:
+              name: production_airflow
+              auth:
+                type: basic_auth
+                webserver_url: "https://airflow.company.com"
+                username: "{{ env('AIRFLOW_USERNAME') }}"
+                password: "{{ env('AIRFLOW_PASSWORD') }}"
+              filter:
+                dag_id_ilike: "prod_*"
+                airflow_tags: ["critical", "daily"]
+              mappings:
+                - dag_id: "daily_etl"
+                  assets:
+                    - spec:
+                        key: "daily_report"
+                  task_mappings:
+                    - task_id: "extract_users"
+                      assets:
+                        - by_key: "users_table"
+                    - task_id: "transform_data"
+                      assets:
+                        - spec:
+                            key: "transformed_users"
+                            deps: ["users_table"]
+              asset_post_processors:
+                - target: "*"
+                  attributes:
+                    metadata:
+                      environment: "production"
+                    tags: ["airflow-managed"]
+        
+        MWAA configuration:
+        
+        .. code-block:: yaml
+        
+            type: dagster_airlift.core.components.AirflowInstanceComponent
+            attributes:
+              name: mwaa_instance
+              auth:
+                type: mwaa
+                env_name: "{{ env('MWAA_ENV_NAME') }}"
+                region_name: "us-west-2"
+                profile_name: "{{ env('AWS_PROFILE') }}"
+        
+        Python configuration:
+        
+        .. code-block:: python
+        
+            from dagster_airlift.core.components import AirflowInstanceComponent
+            
+            component = AirflowInstanceComponent(
+                name="my_airflow",
+                auth={
+                    "type": "basic_auth",
+                    "webserver_url": "http://localhost:8080",
+                    "username": "admin",
+                    "password": "admin"
+                },
+                filter={
+                    "dag_id_ilike": "etl_*",
+                    "airflow_tags": ["production"]
+                },
+                mappings=[
+                    {
+                        "dag_id": "customer_pipeline",
+                        "task_mappings": [
+                            {
+                                "task_id": "extract_customers",
+                                "assets": [{"spec": {"key": "raw_customers"}}]
+                            }
+                        ]
+                    }
+                ]
+            )
+        
+        Scaffolding a new component:
+        
+        .. code-block:: bash
+        
+            dg scaffold defs dagster_airlift.core.components.AirflowInstanceComponent my_airflow \\
+              --name production_airflow --auth-type basic_auth
+    """
     auth: ResolvedAirflowAuthBackend
     name: str
     filter: Optional[ResolvedAirflowFilter] = None
