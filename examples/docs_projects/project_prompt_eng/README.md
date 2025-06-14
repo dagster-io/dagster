@@ -14,14 +14,14 @@ across assets
 
 Install the project dependencies:
 
-```sh
-pip install -e ".[dev]"
+```bash
+uv sync
 ```
 
 Run Dagster:
 
-```sh
-dagster dev
+```bash
+dg dev
 ```
 
 Open http://localhost:3000 in your browser.

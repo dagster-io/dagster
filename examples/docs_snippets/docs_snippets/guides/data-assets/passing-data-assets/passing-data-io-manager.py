@@ -25,10 +25,12 @@ def combined_data(people, birds):
     # highlight-end
 
 
-defs = dg.Definitions(
-    assets=[people, birds, combined_data],
-    resources={"io_manager": duckdb_io_manager},
-)
+@dg.definitions
+def resources():
+    return dg.Definitions(
+        resources={"io_manager": duckdb_io_manager},
+    )
+
 
 if __name__ == "__main__":
     dg.materialize(assets=[people, birds, combined_data])

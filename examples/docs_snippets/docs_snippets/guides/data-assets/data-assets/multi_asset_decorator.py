@@ -5,6 +5,3 @@ import dagster as dg
 def my_multi_asset():
     yield dg.MaterializeResult(asset_key="asset_one", metadata={"num_rows": 10})
     yield dg.MaterializeResult(asset_key="asset_two", metadata={"num_rows": 24})
-
-
-defs = dg.Definitions(assets=[my_multi_asset])

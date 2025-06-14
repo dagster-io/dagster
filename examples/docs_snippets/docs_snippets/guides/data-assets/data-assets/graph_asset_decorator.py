@@ -25,6 +25,3 @@ def step_two(num: int):
 @dg.graph_asset
 def complex_asset():
     return step_two(step_one())
-
-
-defs = dg.Definitions(assets=[complex_asset])
