@@ -88,6 +88,7 @@
 -e python_modules/libraries/dagster-sling/
 -e python_modules/libraries/dagster-snowflake/
 -e python_modules/libraries/dagster-snowflake-pandas/
+-e python_modules/libraries/dagster-snowflake-polars/
 -e python_modules/libraries/dagster-snowflake-pyspark/
 -e python_modules/libraries/dagster-spark/
 -e python_modules/libraries/dagster-ssh/
