@@ -44,7 +44,7 @@ const _assetLayoutCacheKey = weakMapMemoize(
     return hashObject({
       opts,
       graphData,
-      version: 4,
+      version: 5,
     });
   },
 );
