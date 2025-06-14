@@ -16,7 +16,7 @@ from dagster._core.definitions.declarative_automation.legacy.valid_asset_subset 
     ValidAssetSubset,
 )
 from dagster._core.definitions.events import AssetKeyPartitionKey
-from dagster._core.definitions.freshness_policy import FreshnessPolicy
+from dagster._core.definitions.freshness_policy import LegacyFreshnessPolicy
 from dagster._core.definitions.time_window_partitions import TimeWindow
 from dagster._utils.schedules import cron_string_iterator
 
@@ -31,7 +31,7 @@ if TYPE_CHECKING:
 
 
 def get_execution_period_for_policy(
-    freshness_policy: FreshnessPolicy,
+    freshness_policy: LegacyFreshnessPolicy,
     effective_data_time: Optional[datetime.datetime],
     current_time: datetime.datetime,
 ) -> TimeWindow:
@@ -67,8 +67,8 @@ def get_execution_period_for_policy(
 
 
 def get_execution_period_and_evaluation_data_for_policies(
-    local_policy: Optional[FreshnessPolicy],
-    policies: AbstractSet[FreshnessPolicy],
+    local_policy: Optional[LegacyFreshnessPolicy],
+    policies: AbstractSet[LegacyFreshnessPolicy],
     effective_data_time: Optional[datetime.datetime],
     current_time: datetime.datetime,
 ) -> tuple[Optional[TimeWindow], Optional["TextRuleEvaluationData"]]:

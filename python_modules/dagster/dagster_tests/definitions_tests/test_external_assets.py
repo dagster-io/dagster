@@ -23,7 +23,7 @@ from dagster._core.definitions.external_asset import (
     create_external_asset_from_source_asset,
     external_assets_from_specs,
 )
-from dagster._core.definitions.freshness_policy import FreshnessPolicy
+from dagster._core.definitions.freshness_policy import LegacyFreshnessPolicy
 from dagster._core.definitions.time_window_partitions import DailyPartitionsDefinition
 
 
@@ -265,7 +265,7 @@ def test_how_partitioned_source_assets_are_backwards_compatible() -> None:
 
 
 def test_observable_source_asset_decorator() -> None:
-    freshness_policy = FreshnessPolicy(maximum_lag_minutes=30)
+    freshness_policy = LegacyFreshnessPolicy(maximum_lag_minutes=30)
 
     @observable_source_asset(freshness_policy=freshness_policy)
     def an_observable_source_asset() -> DataVersion:

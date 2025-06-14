@@ -1,6 +1,6 @@
 from collections.abc import Sequence
 
-from dagster import AssetsDefinition, FreshnessPolicy
+from dagster import AssetsDefinition, LegacyFreshnessPolicy
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 
 from dagster_tests.declarative_automation_tests.legacy_tests.scenarios.basic_scenarios import (
@@ -13,8 +13,8 @@ from dagster_tests.declarative_automation_tests.scenario_utils.base_scenario imp
     run_request,
 )
 
-freshness_30m = FreshnessPolicy(maximum_lag_minutes=30)
-freshness_inf = FreshnessPolicy(maximum_lag_minutes=99999)
+freshness_30m = LegacyFreshnessPolicy(maximum_lag_minutes=30)
+freshness_inf = LegacyFreshnessPolicy(maximum_lag_minutes=99999)
 
 diamond_freshness = diamond[:-1] + [
     asset_def("asset4", ["asset2", "asset3"], freshness_policy=freshness_30m)
