@@ -105,10 +105,10 @@ export const StyledButton = styled.button<StyledButtonProps>`
   }
 `;
 
-export const StyledButtonText = styled.span`
+export const StyledButtonText = styled.span<{$fill?: boolean}>`
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  text-align: left;
+  text-align: ${(p) => (p.$fill ? 'center' : 'left')};
   flex: 1;
 `;

@@ -7,6 +7,7 @@ interface CommonButtonProps {
   icon?: React.ReactNode;
   label?: React.ReactNode;
   loading?: boolean;
+  fill?: boolean;
   rightIcon?: React.ReactNode;
   iconColor?: string;
   fillColor?: string;
@@ -32,6 +33,7 @@ export const BaseButton = React.forwardRef(
       textColor = Colors.textDefault(),
       strokeColor = Colors.accentGray(),
       strokeColorHover = Colors.accentGray(),
+      fill,
       ...rest
     } = props;
 
@@ -49,7 +51,7 @@ export const BaseButton = React.forwardRef(
         ref={ref}
       >
         {icon || null}
-        {label ? <StyledButtonText>{label}</StyledButtonText> : null}
+        {label ? <StyledButtonText $fill={fill}>{label}</StyledButtonText> : null}
         {rightIcon || null}
       </StyledButton>
     );

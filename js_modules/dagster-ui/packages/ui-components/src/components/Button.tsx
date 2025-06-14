@@ -253,7 +253,7 @@ export const ExternalAnchorButton = React.forwardRef(
     props: Omit<React.ComponentProps<typeof BlueprintAnchorButton>, 'loading'>,
     ref: React.ForwardedRef<HTMLAnchorElement>,
   ) => {
-    const {children, icon, intent, outlined, rightIcon, ...rest} = props;
+    const {children, icon, intent, outlined, rightIcon, fill, ...rest} = props;
 
     const {fillColor, fillColorHover, textColor, iconColor, strokeColor, strokeColorHover} =
       React.useMemo(() => buildColorSet({intent, outlined}), [intent, outlined]);
@@ -273,7 +273,7 @@ export const ExternalAnchorButton = React.forwardRef(
         ref={ref}
       >
         {icon || null}
-        {children ? <StyledButtonText>{children}</StyledButtonText> : null}
+        {children ? <StyledButtonText $fill={fill}>{children}</StyledButtonText> : null}
         {rightIcon || null}
       </StyledButton>
     );
