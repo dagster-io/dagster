@@ -31,7 +31,7 @@ export const SidebarResourcesSection = ({
             <div>
               <ContextResourceHeader>{resource.name}</ContextResourceHeader>
               <Description description={resource.description || NO_DESCRIPTION} />
-              {resource.configField && (
+              {resource.configField && resource.configField.configType.key !== 'Any' && (
                 <ConfigTypeSchema
                   type={resource.configField.configType}
                   typesInScope={resource.configField.configType.recursiveConfigTypes}
