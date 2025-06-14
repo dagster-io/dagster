@@ -1,14 +1,4 @@
-import dagster as dg
-
-
-class FilepathConfig(dg.Config):
-    path: str
-
-
-@dg.asset
-def loaded_file(config: FilepathConfig) -> str:
-    with open(config.path) as file:
-        return file.read()
+from my_project.defs.assets import FilepathConfig, loaded_file
 
 
 # highlight-start

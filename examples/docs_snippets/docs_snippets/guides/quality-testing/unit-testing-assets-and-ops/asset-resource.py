@@ -1,13 +1,7 @@
 from unittest import mock
 
 from dagster_aws.s3 import S3FileHandle, S3FileManager
-
-import dagster as dg
-
-
-@dg.asset
-def loaded_file(file_manager: S3FileManager) -> str:
-    return file_manager.read_data(S3FileHandle("bucket", "path.txt"))
+from my_project.defs.assets import loaded_file
 
 
 # highlight-start

@@ -1,15 +1,15 @@
 from datetime import timedelta
 
-import dagster_snowflake as dg_snowflake
+from dagster_snowflake import SnowflakeResource, fetch_last_updated_timestamps
 
 import dagster as dg
 
 
 @dg.observable_source_asset
-def hourly_sales(snowflake: dg_snowflake.SnowflakeResource):
+def hourly_sales(snowflake: SnowflakeResource):
     table_name = "hourly_sales"
     with snowflake.get_connection() as conn:
-        freshness_results = dg_snowflake.fetch_last_updated_timestamps(
+        freshness_results = fetch_last_updated_timestamps(
             snowflake_connection=conn.cursor(),
             tables=[table_name],
             schema="PUBLIC",
@@ -53,16 +53,14 @@ freshness_checks_sensor = dg.build_sensor_for_freshness_checks(
 # highlight-end
 
 
-defs = dg.Definitions(
-    assets=[hourly_sales],
-    asset_checks=hourly_sales_freshness_check,
-    schedules=[freshness_check_schedule],
-    sensors=[freshness_checks_sensor],
-    resources={
-        "snowflake": dg_snowflake.SnowflakeResource(
-            user=dg.EnvVar("SNOWFLAKE_USER"),
-            account=dg.EnvVar("SNOWFLAKE_ACCOUNT"),
-            password=dg.EnvVar("SNOWFLAKE_PASSWORD"),
-        )
-    },
-)
+@dg.definitions
+def resources():
+    return dg.Definitions(
+        {
+            "snowflake": SnowflakeResource(
+                user=dg.EnvVar("SNOWFLAKE_USER"),
+                account=dg.EnvVar("SNOWFLAKE_ACCOUNT"),
+                password=dg.EnvVar("SNOWFLAKE_PASSWORD"),
+            )
+        }
+    )
