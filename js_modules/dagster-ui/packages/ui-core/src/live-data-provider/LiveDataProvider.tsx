@@ -4,6 +4,7 @@ import {LiveDataRefreshButton} from './LiveDataRefreshButton';
 import {LiveDataThreadID} from './LiveDataThread';
 import {LiveDataThreadManager} from './LiveDataThreadManager';
 import {useDocumentVisibility} from '../hooks/useDocumentVisibility';
+import {hashObject} from '../util/hashObject';
 
 export const SUBSCRIPTION_IDLE_POLL_RATE = 30 * 1000;
 
@@ -29,7 +30,7 @@ export function useLiveDataSingle<T>(
 const emptyObject = {};
 
 export function useLiveData<T>(
-  keys: string[],
+  _keys: string[],
   manager: LiveDataThreadManager<T>,
   thread: LiveDataThreadID = 'default',
   batchUpdatesInterval: number = 1000,
@@ -38,11 +39,12 @@ export function useLiveData<T>(
 
   const [isRefreshing, setIsRefreshing] = React.useState(false);
 
-  // use JSON.stringify to avoid unsubscribing/re-subscribing to the same keys
-  const keysJSON = useMemo(() => JSON.stringify(keys), [keys]);
+  // Hash the keys and use that as a dependency to avoid unsubscribing/re-subscribing to the same keys in case the reference changes but the keys are the same
+  const keysHash = useMemo(() => hashObject(_keys), [_keys]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const keys = useMemo(() => _keys, [keysHash]);
 
   React.useLayoutEffect(() => {
-    const keys = JSON.parse(keysJSON) as string[];
     let timeout: ReturnType<typeof setTimeout> | null = null;
     let didUpdateOnce = false;
     let didScheduleUpdateOnce = false;
@@ -104,7 +106,7 @@ export function useLiveData<T>(
         cb();
       });
     };
-  }, [batchUpdatesInterval, manager, thread, keysJSON]);
+  }, [batchUpdatesInterval, manager, thread, keys]);
 
   return {
     liveDataByNode: data,
