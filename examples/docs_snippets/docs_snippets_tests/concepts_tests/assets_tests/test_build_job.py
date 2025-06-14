@@ -1,6 +1,6 @@
-from docs_snippets.concepts.assets.build_job import defs
+from docs_snippets.concepts.assets.build_job import all_assets_job, sugary_cereals_job
 
 
 def test_build_job_doc_snippet():
-    assert defs.get_job_def("all_assets_job").execute_in_process().success
-    assert defs.get_job_def("sugary_cereals_job").execute_in_process().success
+    assert all_assets_job.execute_in_process().success
+    assert sugary_cereals_job.execute_in_process().success

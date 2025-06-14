@@ -32,10 +32,10 @@ Dagster supports the following methods to execute one-off jobs. Click the tabs f
 
 Using the Dagster UI, you can view, interact, and execute jobs.
 
-To view your job in the UI, use the [`dagster dev`](/api/dagster/cli#dagster-dev) command:
+To view your job in the UI, use the [`dg dev`]/api/dg/dg-cli#dg-dev) command:
 
 ```bash
-dagster dev -f my_job.py
+dg dev
 ```
 
 Then navigate to `http://localhost:3000`:
@@ -55,13 +55,12 @@ The Launchpad also offers a configuration editor to let you interactively build 
 
 The dagster CLI includes the following commands for job execution:
 
-- [`dagster job execute`](/api/dagster/cli#dagster-job) for direct execution
-- [`dagster job launch`](/api/dagster/cli#dagster-job) for launching runs asynchronously using the [run launcher](/deployment/execution/run-launchers) on your instance
+- [`dg launch`](/api/dg/dg-cli#dg-launch) for launching runs asynchronously using the [run launcher](/deployment/execution/run-launchers) on your instance
 
 To execute your job directly, run:
 
 ```bash
-dagster job execute -f my_job.py
+dg launch --jobs my_job
 ```
 
 </TabItem>
@@ -74,7 +73,7 @@ Dagster includes Python APIs for execution that are useful when writing tests or
 <PyObject section="jobs" module="dagster" object="JobDefinition.execute_in_process" /> executes a job and
 returns an <PyObject section="execution" module="dagster" object="ExecuteInProcessResult" />.
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/job_execution.py" startAfter="start_execute_marker" endBefore="end_execute_marker" />
+<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/job_execution.py" startAfter="start_execute" endBefore="end_execute" />
 
 You can find the full API documentation in [Execution API](/api/dagster/execution) and learn more about the testing use cases in the [testing documentation](/guides/test/).
 
