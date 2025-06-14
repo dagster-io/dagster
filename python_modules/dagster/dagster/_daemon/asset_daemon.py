@@ -43,7 +43,11 @@ from dagster._core.definitions.selector import JobSubsetSelector
 from dagster._core.definitions.sensor_definition import DefaultSensorStatus
 from dagster._core.errors import DagsterCodeLocationLoadError, DagsterUserCodeUnreachableError
 from dagster._core.execution.backfill import PartitionBackfill
-from dagster._core.execution.submit_asset_runs import RunRequestExecutionData, submit_asset_run
+from dagster._core.execution.submit_asset_runs import (
+    RunRequestExecutionData,
+    get_job_execution_data_from_run_request,
+    submit_asset_run,
+)
 from dagster._core.instance import DagsterInstance
 from dagster._core.remote_representation import RemoteSensor
 from dagster._core.remote_representation.external import RemoteRepository
@@ -69,7 +73,7 @@ from dagster._core.utils import (
     make_new_backfill_id,
     make_new_run_id,
 )
-from dagster._core.workspace.context import IWorkspaceProcessContext
+from dagster._core.workspace.context import BaseWorkspaceRequestContext, IWorkspaceProcessContext
 from dagster._daemon.daemon import DaemonIterator, DagsterDaemon, SpanMarker
 from dagster._daemon.sensor import get_elapsed, is_under_min_interval, mark_sensor_state_for_tick
 from dagster._daemon.utils import DaemonErrorCapture
@@ -729,9 +733,9 @@ class AssetDaemon(DagsterDaemon):
         else:
             auto_materialize_instigator_state = None
 
-        try:
-            print_group_name = self._get_print_sensor_name(sensor)
+        print_group_name = self._get_print_sensor_name(sensor)
 
+        try:
             if sensor:
                 selection = check.not_none(sensor.asset_selection)
                 repository_origin = check.not_none(repository).get_remote_origin()
@@ -947,11 +951,17 @@ class AssetDaemon(DagsterDaemon):
 
         schedule_storage = check.not_none(instance.schedule_storage)
 
+        run_request_execution_data_cache = {}
+
+        print_group_name = self._get_print_sensor_name(sensor)
+
         if is_retry:
             # Unfinished or retried tick already generated evaluations and run requests and cursor, now
             # need to finish it
             run_requests = tick.tick_data.run_requests or []
             reserved_run_ids = tick.tick_data.reserved_run_ids or []
+
+            workspace = workspace_process_context.create_request_context()
 
             if schedule_storage.supports_auto_materialize_asset_evaluations:
                 evaluation_records = (
@@ -1029,11 +1039,38 @@ class AssetDaemon(DagsterDaemon):
                 for rr in run_requests
             ]
 
+            self._logger.info(
+                "Tick produced"
+                f" {len(run_requests)} run{'s' if len(run_requests) != 1 else ''} and"
+                f" {len(evaluations_by_key)} asset"
+                f" evaluation{'s' if len(evaluations_by_key) != 1 else ''} for evaluation ID"
+                f" {evaluation_id}{print_group_name}"
+            )
+
+            # Fetch all data that requires the code server before writing the cursor, to minimize
+            # the chances that changes to code servers after the cursor is written (e.g. a
+            # code server moving into an error state or an asset being renamed) causes problems
+            workspace = workspace_process_context.create_request_context()
+            for run_request_index, run_request in enumerate(run_requests):
+                if not run_request.requires_backfill_daemon():
+                    get_job_execution_data_from_run_request(
+                        workspace.asset_graph,
+                        run_request,
+                        instance,
+                        workspace=workspace,
+                        run_request_execution_data_cache=run_request_execution_data_cache,
+                    )
+                    check_for_debug_crash(debug_crash_flags, "EXECUTION_PLAN_CACHED")
+                    check_for_debug_crash(
+                        debug_crash_flags, f"EXECUTION_PLAN_CACHED_{run_request_index}"
+                    )
+
             # Write out the in-progress tick data, which ensures that if the tick crashes or raises an exception, it will retry
             tick = tick_context.set_run_requests(
                 run_requests=run_requests,
                 reserved_run_ids=reserved_run_ids,
             )
+
             tick_context.write()
             check_for_debug_crash(debug_crash_flags, "RUN_REQUESTS_CREATED")
 
@@ -1060,21 +1097,12 @@ class AssetDaemon(DagsterDaemon):
 
             check_for_debug_crash(debug_crash_flags, "CURSOR_UPDATED")
 
-        print_group_name = self._get_print_sensor_name(sensor)
-
-        self._logger.info(
-            "Tick produced"
-            f" {len(run_requests)} run{'s' if len(run_requests) != 1 else ''} and"
-            f" {len(evaluations_by_key)} asset"
-            f" evaluation{'s' if len(evaluations_by_key) != 1 else ''} for evaluation ID"
-            f" {evaluation_id}{print_group_name}"
-        )
-
         check.invariant(len(run_requests) == len(reserved_run_ids))
         yield from self._submit_run_requests_and_update_evaluations(
             instance=instance,
             tick_context=tick_context,
             workspace_process_context=workspace_process_context,
+            workspace=workspace,
             evaluations_by_key=evaluations_by_key,
             evaluation_id=evaluation_id,
             run_requests=run_requests,
@@ -1082,6 +1110,7 @@ class AssetDaemon(DagsterDaemon):
             debug_crash_flags=debug_crash_flags,
             submit_threadpool_executor=submit_threadpool_executor,
             remote_sensor=sensor,
+            run_request_execution_data_cache=run_request_execution_data_cache,
         )
 
         if schedule_storage.supports_auto_materialize_asset_evaluations:
@@ -1098,6 +1127,7 @@ class AssetDaemon(DagsterDaemon):
         i: int,
         instance: DagsterInstance,
         workspace_process_context: IWorkspaceProcessContext,
+        workspace: BaseWorkspaceRequestContext,
         evaluation_id: int,
         run_request: RunRequest,
         reserved_run_id: str,
@@ -1144,6 +1174,7 @@ class AssetDaemon(DagsterDaemon):
                 run_request_index=i,
                 instance=instance,
                 workspace_process_context=workspace_process_context,
+                workspace=workspace,
                 run_request_execution_data_cache=run_request_execution_data_cache,
                 debug_crash_flags=debug_crash_flags,
                 logger=self._logger,
@@ -1159,6 +1190,7 @@ class AssetDaemon(DagsterDaemon):
         instance: DagsterInstance,
         tick_context: AutoMaterializeLaunchContext,
         workspace_process_context: IWorkspaceProcessContext,
+        workspace: BaseWorkspaceRequestContext,
         evaluations_by_key: dict[EntityKey, AutomationConditionEvaluationWithRunIds],
         evaluation_id: int,
         run_requests: Sequence[RunRequest],
@@ -1166,9 +1198,9 @@ class AssetDaemon(DagsterDaemon):
         debug_crash_flags: SingleInstigatorDebugCrashFlags,
         submit_threadpool_executor: Optional[ThreadPoolExecutor],
         remote_sensor: Optional[RemoteSensor],
+        run_request_execution_data_cache: dict[JobSubsetSelector, RunRequestExecutionData],
     ):
         updated_evaluation_keys = set()
-        run_request_execution_data_cache = {}
         check_after_runs_num = instance.get_tick_termination_check_interval()
 
         check.invariant(len(run_requests) == len(reserved_run_ids))
@@ -1186,6 +1218,7 @@ class AssetDaemon(DagsterDaemon):
                 evaluation_id=evaluation_id,
                 run_request_execution_data_cache=run_request_execution_data_cache,
                 workspace_process_context=workspace_process_context,
+                workspace=workspace,
                 debug_crash_flags=debug_crash_flags,
             )
 

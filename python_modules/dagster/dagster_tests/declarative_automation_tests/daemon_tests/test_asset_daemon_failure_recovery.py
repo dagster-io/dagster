@@ -149,6 +149,8 @@ def test_old_tick_not_resumed(daemon_not_paused_instance):
     [
         "EVALUATIONS_FINISHED",
         "RUN_REQUESTS_CREATED",
+        "EXECUTION_PLAN_CACHED",
+        "EXECUTION_PLAN_CACHED_1",
     ],
 )
 def test_error_loop_before_cursor_written(daemon_not_paused_instance, crash_location):
