@@ -658,12 +658,17 @@ def default_asset_check_fn(
         for parent_id in parent_unique_ids
     }
     additional_deps.discard(asset_key)
+
+    severity = test_resource_props.get("config", {}).get("severity", "error")
+    blocking = severity.lower() == "error"
+
     return AssetCheckSpec(
         name=test_resource_props["name"],
         asset=asset_key,
         description=test_resource_props.get("meta", {}).get("description"),
         additional_deps=additional_deps,
         metadata={DAGSTER_DBT_UNIQUE_ID_METADATA_KEY: test_unique_id},
+        blocking=blocking,
     )
 
 
