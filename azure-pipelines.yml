@@ -43,6 +43,16 @@ jobs:
             PYTHON_VERSION: "${{ py_version }}"
     variables:
       PYTHONUTF8: "1"
+      # Different APIs when running Python in windows will sometimes generate different paths for
+      # the same file. In particular, "C:\Users\VssAdministrator" and "C:\Users\VSSADM~1" actually
+      # refer to the same directory, but different APIs will return one of these two variants.
+      # Tempdir commands can return the shorter "VSSADM~1" form. This can break our code when it
+      # does lexical comparison of paths to ensure one path is a subdirectory of another. Lexical
+      # comparisons are unaware of the underlying equality of the short and long paths.
+      # 
+      # To avoid this, we set the TEMP and TMP enivironment variables to ensure tempdir APIs always
+      # return the long path.
+      LONG_TEMP: '$(USERPROFILE)\AppData\Local\Temp'
     # Use PowerShell (`powershell`) instead of cmd shell (`script`) for better UTF-8 support.
     steps:
       - task: UsePythonVersion@0
@@ -57,6 +67,10 @@ jobs:
           tox -e $env:TOX_ENV
           cd $env:PATH_BACK_TO_REPO_ROOT
         displayName: "Run tests"
+        env:
+          # See note in the `variables` section above.
+          TEMP: "$(LONG_TEMP)"
+          TMP: "$(LONG_TEMP)"
       - task: PublishTestResults@2
         inputs:
           testResultsFiles: "**/test_results.xml"
