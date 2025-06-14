@@ -1,9 +1,9 @@
-# Docs Snippets
+# Docs snippets
 
 This module exists only to enable testing docs snippets/examples in CI, and should not be installed
 otherwise.
 
-## Code Style
+## Code style
 
 Please use the following code style to keep imports short:
 
@@ -28,4 +28,6 @@ pip install tox-uv
 tox
 ```
 
-You may include additional test files in `docs_snippets_tests`
+Note that before running tests, you will need to create a virtual environment and run `make dev_install` in the root folder of the Dagster repo, then set the `DAGSTER_GIT_REPO_DIR` environment variable.
+
+You may include additional test files in `docs_snippets_tests`.
