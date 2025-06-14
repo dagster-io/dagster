@@ -9,6 +9,7 @@ import os
 from abc import ABC, abstractmethod
 from collections import defaultdict
 from collections.abc import Iterable, Mapping, Sequence
+from datetime import datetime
 from enum import Enum
 from typing import Any, Final, NamedTuple, Optional, Union, cast
 
@@ -836,6 +837,8 @@ class TimeWindowPartitionsSnap(PartitionsSnap):
     end_offset: int
     end: Optional[float] = None
     cron_schedule: Optional[str] = None
+    # exclusions
+    exclusions: Optional[set[Union[str, datetime]]] = None
     # superseded by cron_schedule, but kept around for backcompat
     schedule_type: Optional[ScheduleType] = None
     # superseded by cron_schedule, but kept around for backcompat
@@ -855,6 +858,7 @@ class TimeWindowPartitionsSnap(PartitionsSnap):
             timezone=partitions_def.timezone,
             fmt=partitions_def.fmt,
             end_offset=partitions_def.end_offset,
+            exclusions=partitions_def.exclusions,
         )
 
     def get_partitions_definition(self):
@@ -866,6 +870,7 @@ class TimeWindowPartitionsSnap(PartitionsSnap):
                 fmt=self.fmt,
                 end_offset=self.end_offset,
                 end=(datetime_from_timestamp(self.end, tz=self.timezone) if self.end else None),  # pyright: ignore[reportArgumentType]
+                exclusions=self.exclusions,
             )
         else:
             # backcompat case
@@ -879,6 +884,7 @@ class TimeWindowPartitionsSnap(PartitionsSnap):
                 minute_offset=self.minute_offset,
                 hour_offset=self.hour_offset,
                 day_offset=self.day_offset,
+                exclusions=self.exclusions,
             )
 
 
