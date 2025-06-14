@@ -59,9 +59,3 @@ def weekly_sales_summary(context: dg.AssetExecutionContext):
     }
 
     context.log.info(f"weekly sales summary for {week}: {weekly_summary}")
-
-
-# Define the Definitions object
-defs = dg.Definitions(
-    assets=[daily_sales_data, weekly_sales_summary],
-)

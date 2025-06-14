@@ -52,10 +52,3 @@ regional_sales_job = dg.define_asset_job(
     name="regional_sales_job",
     selection=[regional_sales_data, daily_sales_summary],
 )
-
-
-# Define the Definitions object
-defs = dg.Definitions(
-    assets=[regional_sales_data, daily_sales_summary],
-    jobs=[regional_sales_job],
-)
