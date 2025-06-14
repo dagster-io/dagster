@@ -19,17 +19,18 @@ def sales_summary(clean_sales_data: pd.DataFrame) -> pd.DataFrame:
     return clean_sales_data.groupby(["owner"])["amount"].sum().reset_index()
 
 
-defs = dg.Definitions(
-    assets=[raw_sales_data, clean_sales_data, sales_summary],
-    resources={
-        # highlight-start
-        # Swap in a Snowflake I/O manager
-        "io_manager": SnowflakePandasIOManager(
-            database=dg.EnvVar("SNOWFLAKE_DATABASE"),
-            account=dg.EnvVar("SNOWFLAKE_ACCOUNT"),
-            user=dg.EnvVar("SNOWFLAKE_USER"),
-            password=dg.EnvVar("SNOWFLAKE_PASSWORD"),
-        )
-    },
-    # highlight-end
-)
+@dg.definitions
+def resources():
+    return dg.Definitions(
+        resources={
+            # highlight-start
+            # Swap in a Snowflake I/O manager
+            "io_manager": SnowflakePandasIOManager(
+                database=dg.EnvVar("SNOWFLAKE_DATABASE"),
+                account=dg.EnvVar("SNOWFLAKE_ACCOUNT"),
+                user=dg.EnvVar("SNOWFLAKE_USER"),
+                password=dg.EnvVar("SNOWFLAKE_PASSWORD"),
+            )
+            # highlight-end
+        }
+    )

@@ -53,7 +53,7 @@ The `upstream_asset` becomes a mapping from partition keys to partition values. 
 
 A <PyObject section="partitions" module="dagster" object="PartitionMapping" /> can be provided to <PyObject section="assets" module="dagster" object="AssetIn" /> to configure the mapped upstream partitions.
 
-When writing a custom I/O manager for loading multiple upstream partitions, the mapped keys can be accessed using <PyObject section="io-managers" module="dagster" object="InputContext" method="asset_partition_keys" />, <PyObject section="io-managers" module="dagster" object="InputContext" method="asset_partition_key_range" />, or <PyObject section="io-managers" module="dagster" object="InputContext" method="asset_partitions_time_window" />.
+When writing a custom I/O manager for loading multiple upstream partitions, the mapped keys can be accessed using <PyObject section="io-managers" module="dagster" object="InputContext" />.
 
 ### Writing a per-input I/O manager
 

@@ -517,10 +517,11 @@ def new_io_manager() -> None:
         def load_input(self, context: dg.InputContext):
             return read_csv(self._get_path(context.asset_key))
 
-    defs = dg.Definitions(
-        assets=...,
-        resources={"dg.io_manager": MyIOManager(root_path="/tmp/")},
-    )
+    @dg.definitions
+    def resources():
+        return dg.Definitions(
+            resources={"dg.io_manager": MyIOManager(root_path="/tmp/")},
+        )
 
     # end_new_io_manager
 
