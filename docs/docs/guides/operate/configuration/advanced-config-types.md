@@ -14,7 +14,6 @@ For example, we can annotate a config field with a description, which will be di
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/dagster/pythonic_config/pythonic_config.py"
-  title="src/<project_name>/defs/my_asset.py"
   startAfter="start_metadata_config"
   endBefore="end_metadata_config"
   dedent="4"
