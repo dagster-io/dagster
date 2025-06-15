@@ -126,6 +126,13 @@ def pandera_schema_to_dagster_type(
     )
     tschema = _pandera_schema_to_table_schema(norm_schema)
     type_check_fn = _pandera_schema_to_type_check_fn(norm_schema, tschema)
+    typing_type = (
+        pd.DataFrame
+        if not pl 
+        or (isinstance(schema, type) and issubclass(schema, pa.DataFrameModel)) 
+        or isinstance(schema, pa.DataFrameSchema)
+        else pl.DataFrame
+    )
 
     return DagsterType(
         type_check_fn=type_check_fn,
@@ -134,7 +141,7 @@ def pandera_schema_to_dagster_type(
         metadata={
             "schema": MetadataValue.table_schema(tschema),
         },
-        typing_type=pd.DataFrame,
+        typing_type=typing_type,
     )
 
 
