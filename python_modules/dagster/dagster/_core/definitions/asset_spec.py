@@ -152,6 +152,7 @@ class AssetSpec(IHasInternalInit, IHaveNew, LegacyNamedTupleMixin):
             will be made visible in the Dagster UI.
         partitions_def (Optional[PartitionsDefinition]): Defines the set of partition keys that
             compose the asset.
+        kinds_order (Optional[Sequence[str]]): An optional sequence specifying the order of kinds.
     """
 
     key: PublicAttr[AssetKey]
@@ -166,6 +167,7 @@ class AssetSpec(IHasInternalInit, IHaveNew, LegacyNamedTupleMixin):
     owners: PublicAttr[Sequence[str]]
     tags: PublicAttr[Mapping[str, str]]
     partitions_def: PublicAttr[Optional[PartitionsDefinition]]
+    kinds_order: PublicAttr[Optional[Sequence[str]]]
 
     def __new__(
         cls,
@@ -182,6 +184,7 @@ class AssetSpec(IHasInternalInit, IHaveNew, LegacyNamedTupleMixin):
         tags: Optional[Mapping[str, str]] = None,
         kinds: Optional[set[str]] = None,
         partitions_def: Optional[PartitionsDefinition] = None,
+        kinds_order: Optional[Sequence[str]] = None,
         **kwargs,
     ):
         from dagster._core.definitions.asset_dep import coerce_to_deps_and_check_duplicates
@@ -242,6 +245,7 @@ class AssetSpec(IHasInternalInit, IHaveNew, LegacyNamedTupleMixin):
             partitions_def=check.opt_inst_param(
                 partitions_def, "partitions_def", PartitionsDefinition
             ),
+            kinds_order=check.opt_sequence_param(kinds_order, "kinds_order", of_type=str),
         )
 
     @staticmethod
@@ -259,6 +263,7 @@ class AssetSpec(IHasInternalInit, IHaveNew, LegacyNamedTupleMixin):
         tags: Optional[Mapping[str, str]],
         kinds: Optional[set[str]],
         partitions_def: Optional[PartitionsDefinition],
+        kinds_order: Optional[Sequence[str]],
         **kwargs,
     ) -> "AssetSpec":
         check.invariant(kwargs.get("auto_materialize_policy") is None)
@@ -276,6 +281,7 @@ class AssetSpec(IHasInternalInit, IHaveNew, LegacyNamedTupleMixin):
             tags=tags,
             kinds=kinds,
             partitions_def=partitions_def,
+            kinds_order=kinds_order,
         )
 
     @cached_property
@@ -296,7 +302,10 @@ class AssetSpec(IHasInternalInit, IHaveNew, LegacyNamedTupleMixin):
 
     @cached_property
     def kinds(self) -> set[str]:
-        return {tag[len(KIND_PREFIX) :] for tag in self.tags if tag.startswith(KIND_PREFIX)}
+        kinds = {tag[len(KIND_PREFIX) :] for tag in self.tags if tag.startswith(KIND_PREFIX)}
+        if self.kinds_order:
+            kinds = sorted(kinds, key=lambda kind: self.kinds_order.index(kind) if kind in self.kinds_order else len(self.kinds_order))
+        return kinds
 
     @public
     def with_io_manager_key(self, io_manager_key: str) -> "AssetSpec":
@@ -331,6 +340,7 @@ class AssetSpec(IHasInternalInit, IHaveNew, LegacyNamedTupleMixin):
         kinds: Optional[set[str]] = ...,
         partitions_def: Optional[PartitionsDefinition] = ...,
         freshness_policy: Optional[FreshnessPolicy] = ...,
+        kinds_order: Optional[Sequence[str]] = ...,
     ) -> "AssetSpec":
         """Returns a new AssetSpec with the specified attributes replaced."""
         current_tags_without_kinds = {
@@ -355,6 +365,7 @@ class AssetSpec(IHasInternalInit, IHaveNew, LegacyNamedTupleMixin):
                 tags=tags if tags is not ... else current_tags_without_kinds,
                 kinds=kinds if kinds is not ... else self.kinds,
                 partitions_def=partitions_def if partitions_def is not ... else self.partitions_def,
+                kinds_order=kinds_order if kinds_order is not ... else self.kinds_order,
             )
 
     @public
@@ -366,6 +377,7 @@ class AssetSpec(IHasInternalInit, IHaveNew, LegacyNamedTupleMixin):
         owners: Sequence[str] = ...,
         tags: Mapping[str, str] = ...,
         kinds: set[str] = ...,
+        kinds_order: Sequence[str] = ...,
     ) -> "AssetSpec":
         """Returns a new AssetSpec with the specified attributes merged with the current attributes.
 
@@ -378,6 +390,7 @@ class AssetSpec(IHasInternalInit, IHaveNew, LegacyNamedTupleMixin):
             tags (Optional[Mapping[str, str]]): A set of tags to add to the asset self.
                 Will overwrite any existing tags with the same key.
             kinds (Optional[Set[str]]): A set of kinds to add to the asset self.
+            kinds_order (Optional[Sequence[str]]): An optional sequence specifying the order of kinds.
 
         Returns:
             AssetSpec
@@ -402,6 +415,7 @@ class AssetSpec(IHasInternalInit, IHaveNew, LegacyNamedTupleMixin):
                 tags={**current_tags_without_kinds, **(tags if tags is not ... else {})},
                 kinds={*self.kinds, *(kinds if kinds is not ... else {})},
                 partitions_def=self.partitions_def,
+                kinds_order=kinds_order if kinds_order is not ... else self.kinds_order,
             )
 
 
