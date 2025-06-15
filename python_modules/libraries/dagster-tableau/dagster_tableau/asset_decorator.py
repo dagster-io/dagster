@@ -1,6 +1,7 @@
 from typing import Any, Callable, Optional
 
 from dagster import AssetsDefinition, multi_asset
+from dagster._annotations import beta
 from dagster._core.errors import DagsterInvariantViolationError
 
 from dagster_tableau.asset_utils import parse_tableau_external_and_materializable_asset_specs
@@ -8,6 +9,7 @@ from dagster_tableau.resources import BaseTableauWorkspace, load_tableau_asset_s
 from dagster_tableau.translator import DagsterTableauTranslator
 
 
+@beta
 def tableau_assets(
     *,
     workspace: BaseTableauWorkspace,
