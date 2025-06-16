@@ -111,9 +111,11 @@ describe('LaunchAssetExecutionButton', () => {
       renderButton({
         scope: {selected: [UNPARTITIONED_SOURCE_ASSET, ASSET_DAILY]},
       });
-      expect((await screen.findByTestId('materialize-button')).textContent).toEqual(
-        'Materialize selected (1)…', // 2 instead of 3
-      );
+      await waitFor(async () => {
+        expect((await screen.findByTestId('materialize-button')).textContent).toEqual(
+          'Materialize selected (1)…', // 2 instead of 3
+        );
+      });
     });
 
     it('should be disabled if the selection is empty', async () => {
