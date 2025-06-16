@@ -47,7 +47,7 @@ class FreshnessDaemon(IntervalDaemon):
             f"End freshness daemon iteration.\n Evaluated: {len(results)}\nState Updated: {sum(results)}",
             start_timestamp=start_time,
             end_timestamp=end_time,
-            daemon_iteration_seconds=start_time - end_time,
+            daemon_iteration_seconds=end_time - start_time,
         )
 
     async def _evaluate_assets(
