@@ -172,7 +172,7 @@ class GrapheneAssetHealth(graphene.ObjectType):
         return freshness_status_metadata
 
     async def resolve_assetHealth(self, graphene_info: ResolveInfo) -> AssetHealthStatus:
-        if not graphene_info.context.instance.dagster_observe_supported():
+        if not graphene_info.context.instance.dagster_asset_health_queries_supported():
             return AssetHealthStatus.UNKNOWN
         if self.materialization_status_task is None:
             self.materialization_status_task = asyncio.create_task(
