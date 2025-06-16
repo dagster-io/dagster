@@ -2,7 +2,7 @@ import importlib
 from pathlib import Path
 
 import pytest
-from dagster import AssetKey, Definitions, load_defs
+from dagster import AssetKey, Definitions, load_defs, load_defs_folder
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._utils.env import environ
 from dagster.components.core.context import ComponentLoadContext
@@ -196,13 +196,21 @@ def test_autoload_backcompat_components(defs: Definitions) -> None:
 def test_autoload_definitions_new_flag(
     terminate_autoloading_on_keyword_files: bool, expected_keys: set[AssetKey]
 ) -> None:
-    module = importlib.import_module(
-        "dagster_tests.components_tests.integration_tests.integration_test_defs.definitions.special_names_at_levels"
-    )
-    defs = load_defs(
-        module,
-        project_root=Path(__file__).parent,
-        terminate_autoloading_on_keyword_files=terminate_autoloading_on_keyword_files,
-    )
+    if not terminate_autoloading_on_keyword_files:
+        defs = load_defs_folder(
+            Path(__file__).parent
+            / "integration_test_defs"
+            / "definitions"
+            / "special_names_at_levels",
+        )
+    else:
+        # Flag is not present on load_defs_folder
+        module = importlib.import_module(
+            "dagster_tests.components_tests.integration_tests.integration_test_defs.definitions.special_names_at_levels"
+        )
+        defs = load_defs(
+            module,
+            project_root=Path(__file__).parent,
+        )
 
     assert {spec.key for spec in defs.resolve_all_asset_specs()} == expected_keys

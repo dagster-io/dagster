@@ -1,4 +1,4 @@
+from pathlib import Path
 import dagster as dg
-import my_existing_project.defs
 
-defs = dg.components.load_defs(my_existing_project.defs)
+defs = dg.load_defs_folder(Path(__file__).parent / "defs")

@@ -44,8 +44,12 @@ def get_project_root(defs_root: ModuleType) -> Path:
         FileNotFoundError: If no project root with pyproject.toml or setup.py is found.
     """
     # Get the module's file path
-
     module_path = getattr(defs_root, "__file__", None)
+    if module_path is None:
+        # For modules without __file__ attribute (e.g. namespace packages), try to get path from __path__
+        module_paths = getattr(defs_root, "__path__", None)
+        if module_paths and len(module_paths) > 0:
+            module_path = module_paths[0]
     if not module_path:
         raise FileNotFoundError(f"Module {defs_root} has no __file__ attribute")
 
@@ -61,9 +65,31 @@ def get_project_root(defs_root: ModuleType) -> Path:
     raise FileNotFoundError("No project root with pyproject.toml or setup.py found")
 
 
+@public
+@preview(emit_runtime_warning=False)
+@suppress_dagster_warnings
+def load_defs_folder(defs_folder_path: Path) -> Definitions:
+    """Constructs a Definitions object, loading all Dagster defs in the given folder.
+
+    Args:
+        defs_folder_path (Path): The path to the defs folder.
+    """
+    import sys
+
+    # append parent path to sys.path
+    sys.path.append(str(defs_folder_path.parent))
+    defs_module = importlib.import_module(defs_folder_path.name)
+
+    return load_defs(defs_module, terminate_autoloading_on_keyword_files=False)
+
+
 # Public method so optional Nones are fine
 @public
 @preview(emit_runtime_warning=False)
+@deprecated(
+    breaking_version="1.10.21",
+    additional_warn_text="Use load_defs_folder instead.",
+)
 @suppress_dagster_warnings
 def load_defs(
     defs_root: ModuleType,
