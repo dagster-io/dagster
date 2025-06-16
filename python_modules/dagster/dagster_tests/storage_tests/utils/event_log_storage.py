@@ -2856,6 +2856,9 @@ class TestEventLogStorage:
         assert wipe_events[0].event_log_entry.dagster_event.asset_wiped_data.partition_keys is None
 
     def test_asset_partitioned_wiped_event(self, instance):
+        if not self.can_wipe_asset_partitions():
+            pytest.skip("wiping asset partitions is not supported for this storage")
+
         @asset(partitions_def=StaticPartitionsDefinition(["a", "b", "c"]))
         def asset_to_wipe():
             return 1
@@ -2864,12 +2867,7 @@ class TestEventLogStorage:
         materializations = instance.fetch_materializations(asset_to_wipe.key, limit=100).records
         assert len(materializations) == 1
 
-        try:
-            instance.wipe_asset_partitions(asset_to_wipe.key, ["a"])
-        except NotImplementedError:
-            if not self.can_wipe_asset_partitions():
-                pytest.skip("wiping asset partitions is not supported for this storage")
-            raise
+        instance.wipe_asset_partitions(asset_to_wipe.key, ["a"])
 
         wipe_events = instance.get_event_records(
             EventRecordsFilter(event_type=DagsterEventType.ASSET_WIPED)
