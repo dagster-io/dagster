@@ -212,6 +212,6 @@ export type AssetCatalogGroupTableNodeFragment = {
   };
 };
 
-export const AssetCatalogTableQueryVersion = 'f5abe0feb0b3b66b28c825dfad0cfe8f41dab1b3469eed5d51041efb350af6a1';
+export const AssetCatalogTableQueryVersion = '3bb8c7c4fe72f073b4f40aac177ca73327e5ae94cc2912a9aa9bc910cc4bd937';
 
-export const AssetCatalogGroupTableQueryVersion = '9288d38ac6970055480818a9026d52e650b0001964109c09d3a7a71a506eae34';
+export const AssetCatalogGroupTableQueryVersion = '0167045d0b604069d2df634e7e3e2e85f9e544f824c9ff858402c2814497ffa5';
