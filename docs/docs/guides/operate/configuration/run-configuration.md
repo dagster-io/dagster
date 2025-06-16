@@ -79,7 +79,8 @@ When specifying config from the Python API, you can use the `run_config` argumen
 <CodeExample
   path="docs_snippets/docs_snippets/guides/operate/configuration/run_config/providing_config_values/assets.py"
   title="src/<project_name>/defs/assets.py"
-  dedent="4"
+  startAfter="start"
+  endBefore="end"
 />
 
 </TabItem>
@@ -119,6 +120,8 @@ Assets and ops can be configured using environment variables by passing an <PyOb
 <CodeExample
   path="docs_snippets/docs_snippets/guides/operate/configuration/run_config/using_env_vars/assets.py"
   title="src/<project_name>/defs/assets.py"
+  startAfter="start"
+  endBefore="end"
 />
 
 For more information on using environment variables in Dagster, see [Using environment variables and secrets in Dagster code](/guides/operate/configuration/using-environment-variables-and-secrets).
@@ -130,6 +133,8 @@ Dagster validates any provided run config against the corresponding Pydantic mod
 <CodeExample
   path="docs_snippets/docs_snippets/guides/operate/configuration/run_config/validation/assets.py"
   title="src/<project_name>/defs/assets.py"
+  startAfter="start"
+  endBefore="end"
 />
 
 ## Next steps
