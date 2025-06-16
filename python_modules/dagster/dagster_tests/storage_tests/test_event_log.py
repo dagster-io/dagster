@@ -68,6 +68,8 @@ class TestInMemoryEventLogStorage(TestEventLogStorage):
 class TestSqliteEventLogStorage(TestEventLogStorage):
     __test__ = True
 
+    # TestSqliteEventLogStorage::test_asset_wiped_event
+
     @pytest.fixture(name="instance", scope="function")
     def instance(self):  # pyright: ignore[reportIncompatibleMethodOverride]
         with tempfile.TemporaryDirectory(dir=os.getcwd()) as tmpdir_path:
