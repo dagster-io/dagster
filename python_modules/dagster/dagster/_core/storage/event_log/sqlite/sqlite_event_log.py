@@ -369,7 +369,7 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
                 try:
                     event_record = deserialize_value(json_str, EventLogEntry)
                     records.append(EventLogRecord(storage_id=row_id, event_log_entry=event_record))
-                    if limit and len(event_records) >= limit:
+                    if limit and len(records) >= limit:
                         return records
                 except DeserializationError:
                     logging.warning(

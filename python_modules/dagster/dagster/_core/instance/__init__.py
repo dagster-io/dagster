@@ -2478,7 +2478,7 @@ class DagsterInstance(DynamicPartitionsStore):
         """Wipes asset event history from the event log for the given asset key and partition keys.
 
         Args:
-            asset_key (Sequence[AssetKey]): Asset key to wipe.
+            asset_key (AssetKey): Asset key to wipe.
             partition_keys (Sequence[str]): Partition keys to wipe.
         """
         from dagster._core.events import AssetWipedData, DagsterEvent, DagsterEventType
