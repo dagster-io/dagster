@@ -100,6 +100,7 @@ EventSpecificData = Union[
     "FreshnessStateEvaluation",
     "FreshnessStateChange",
     "AssetHealthChangedData",
+    "AssetWipedData",
 ]
 
 
@@ -135,6 +136,7 @@ class DagsterEventType(str, Enum):
     ASSET_CHECK_EVALUATION_PLANNED = "ASSET_CHECK_EVALUATION_PLANNED"
     ASSET_CHECK_EVALUATION = "ASSET_CHECK_EVALUATION"
     ASSET_HEALTH_CHANGED = "ASSET_HEALTH_CHANGED"
+    ASSET_WIPED = "ASSET_WIPED"
 
     # We want to display RUN_* events in the Dagster UI and in our LogManager output, but in order to
     # support backcompat for our storage layer, we need to keep the persisted value to be strings
@@ -757,6 +759,8 @@ class DagsterEvent(
             return self.asset_freshness_state_change_data.key
         elif self.event_type == DagsterEventType.ASSET_HEALTH_CHANGED:
             return self.asset_health_changed_data.asset_key
+        elif self.event_type == DagsterEventType.ASSET_WIPED:
+            return self.asset_wiped_data.asset_key
         else:
             return None
 
@@ -876,6 +880,17 @@ class DagsterEvent(
             self.event_type,
         )
         return cast("AssetHealthChangedData", self.event_specific_data)
+
+    @property
+    def asset_wiped_data(
+        self,
+    ) -> "AssetWipedData":
+        _assert_type(
+            "asset_wiped_data",
+            DagsterEventType.ASSET_WIPED,
+            self.event_type,
+        )
+        return cast("AssetWipedData", self.event_specific_data)
 
     @property
     def step_expectation_result_data(self) -> "StepExpectationResultData":
@@ -1784,6 +1799,13 @@ class AssetHealthChangedData:
     asset_key: AssetKey
     previous_health_state: AssetHealthStatus
     new_health_state: AssetHealthStatus
+
+
+@whitelist_for_serdes
+@record
+class AssetWipedData:
+    asset_key: AssetKey
+    partition_keys: Optional[Sequence[str]]
 
 
 @whitelist_for_serdes
