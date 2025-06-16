@@ -33,7 +33,7 @@ BASIC_SNOWFLAKE_COMPONENT_BODY = {
     "attributes": {
         "sql_template": "SELECT * FROM MY_TABLE;",
         "database": "TESTDB",
-        "schema": "TESTSCHEMA",
+        "table_schema": "TESTSCHEMA",
         "table_name": "TEST_TABLE",
     },
 }
@@ -106,7 +106,7 @@ def test_snowflake_sql_component_with_templates(snowflake_connect, sql_template)
             "attributes": {
                 "sql_template": sql_template,
                 "database": "TESTDB",
-                "schema": "TESTSCHEMA",
+                "table_schema": "TESTSCHEMA",
                 "table_name": "TEST_TABLE",
                 "template_vars": {
                     "date": "2024-03-20",

@@ -17,7 +17,7 @@ from dagster.components.resolved.model import Resolver
 T = TypeVar("T")
 
 
-class SqlComponent(Component, Generic[T], ABC, BaseModel):
+class SqlComponent(Resolvable, BaseModel, Component, Generic[T], ABC):
     """Base component which executes templated SQL."""
 
     asset_attributes: Annotated[
@@ -76,7 +76,7 @@ ResolvedSqlTemplate = Annotated[
 ]
 
 
-class TemplatedSqlComponent(SqlComponent[T], Resolvable):
+class TemplatedSqlComponent(SqlComponent[T]):
     """A component that executes templated SQL from a string or file."""
 
     sql_template: Annotated[
