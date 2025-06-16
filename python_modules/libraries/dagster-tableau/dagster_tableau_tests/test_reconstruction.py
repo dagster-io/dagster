@@ -1,6 +1,7 @@
 from unittest.mock import MagicMock
 
 import pytest
+from dagster import AssetExecutionContext
 from dagster._core.code_pointer import CodePointer
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.definitions_class import Definitions
@@ -15,6 +16,7 @@ from dagster._core.events import DagsterEventType
 from dagster._core.execution.api import create_execution_plan, execute_plan
 from dagster._core.instance_for_test import instance_for_test
 from dagster._utils.test.definitions import definitions
+from dagster_tableau.asset_decorator import tableau_assets
 from dagster_tableau.asset_utils import parse_tableau_external_and_materializable_asset_specs
 from dagster_tableau.assets import build_tableau_materializable_assets_definition
 from dagster_tableau.resources import TableauCloudWorkspace, load_tableau_asset_specs
@@ -116,6 +118,19 @@ def cacheable_asset_defs_refreshable_data_sources():
         ],
         jobs=[define_asset_job("all_asset_job")],
         resources={resource_key: resource},
+    )
+
+
+@definitions
+def cacheable_asset_defs_asset_decorator_with_context():
+    @tableau_assets(workspace=resource)
+    def my_tableau_assets(context: AssetExecutionContext, tableau: TableauCloudWorkspace):
+        yield from tableau.refresh_and_poll(context=context)
+
+    return Definitions(
+        assets=[my_tableau_assets],
+        jobs=[define_asset_job("all_asset_job")],
+        resources={"tableau": resource},
     )
 
 
@@ -503,3 +518,57 @@ def test_load_assets_workspace_data_translator_legacy(
         assert all(
             key.path[0] == "my_prefix" for key in repository_def.assets_defs_by_key.keys()
         ), repository_def.assets_defs_by_key
+
+
+def test_load_assets_workspace_asset_decorator_with_context(
+    sign_in: MagicMock,
+    get_workbooks: MagicMock,
+    get_workbook: MagicMock,
+    get_view: MagicMock,
+    get_data_source: MagicMock,
+    get_job: MagicMock,
+    refresh_data_source: MagicMock,
+    cancel_job: MagicMock,
+) -> None:
+    with instance_for_test() as instance:
+        pointer = CodePointer.from_python_file(
+            __file__,
+            "cacheable_asset_defs_asset_decorator_with_context",
+            None,
+        )
+        repository_def = initialize_repository_def_from_pointer(
+            pointer,
+        )
+
+        # 4 Tableau materializable assets
+        assert len(repository_def.assets_defs_by_key) == 4
+
+        repository_load_data = repository_def.repository_load_data
+
+        # testing the job that materializes the tableau assets
+        job_def = repository_def.get_job("all_asset_job")
+        recon_job = ReconstructableJob(
+            repository=ReconstructableRepository(pointer),
+            job_name="all_asset_job",
+        )
+
+        execution_plan = create_execution_plan(recon_job, repository_load_data=repository_load_data)
+        run = instance.create_run_for_job(job_def=job_def, execution_plan=execution_plan)
+
+        events = execute_plan(
+            execution_plan=execution_plan,
+            job=recon_job,
+            dagster_run=run,
+            instance=instance,
+        )
+
+        # the materialization of the multi-asset for the 4 materializable assets should be successful
+        assert (
+            len([event for event in events if event.event_type == DagsterEventType.STEP_SUCCESS])
+            == 1
+        ), "Expected one successful step"
+
+        asset_materializations = [
+            event for event in events if event.event_type == DagsterEventType.ASSET_MATERIALIZATION
+        ]
+        assert len(asset_materializations) == 4

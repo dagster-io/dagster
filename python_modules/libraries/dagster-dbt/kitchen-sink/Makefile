@@ -24,4 +24,4 @@ run_dagster:
 	dagster dev -m dagster_dbt_cloud_kitchen_sink.defs -p 3333
 
 wipe: ## Wipe out all the files created by the Makefile
-	rm -rf $(DAGSTER_HOME)
+	- rm -rf $(DAGSTER_HOME)
