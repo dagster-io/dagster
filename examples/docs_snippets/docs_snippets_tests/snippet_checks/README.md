@@ -4,6 +4,10 @@ This directory contains tests that check that the contents of files in the `./do
 
 Currently, these tests are used to validate user-facing guides in `/docs/docs` that contain a lot of CLI invocations. This lets us ensure that guides do not break when we make changes to the CLI, and allows us to easily regenerate the snippets if we change the output format.
 
+### Prerequisites
+
+Before running tests or regenerating snippets, you will need to create a virtual environment and run `make dev_install` in the root folder of the Dagster repo, then set the `DAGSTER_GIT_REPO_DIR` environment variable.
+
 ### Running the tests
 
 To run the tests, invoke the `docs_snapshot_test` tox environment in `examples/docs_snippets`.
