@@ -1,6 +1,10 @@
 import asyncio
 
 import graphene
+from dagster._streamline.asset_health import (
+    AssetHealthStatus,
+    overall_status_from_component_statuses,
+)
 
 from dagster_graphql.implementation.fetch_asset_health import (
     get_asset_check_status_and_metadata,
@@ -10,16 +14,7 @@ from dagster_graphql.implementation.fetch_asset_health import (
 from dagster_graphql.schema.entity_key import GrapheneAssetKey
 from dagster_graphql.schema.util import ResolveInfo
 
-
-class GrapheneAssetHealthStatus(graphene.Enum):
-    HEALTHY = "HEALTHY"
-    WARNING = "WARNING"
-    DEGRADED = "DEGRADED"
-    UNKNOWN = "UNKNOWN"
-    NOT_APPLICABLE = "NOT_APPLICABLE"
-
-    class Meta:
-        name = "AssetHealthStatus"
+GrapheneAssetHealthStatus = graphene.Enum.from_enum(AssetHealthStatus)
 
 
 class GrapheneAssetHealthCheckDegradedMeta(graphene.ObjectType):
@@ -118,7 +113,7 @@ class GrapheneAssetHealth(graphene.ObjectType):
         self.asset_check_status_task = None
         self.freshness_status_task = None
 
-    async def resolve_materializationStatus(self, graphene_info: ResolveInfo) -> str:
+    async def resolve_materializationStatus(self, graphene_info: ResolveInfo) -> AssetHealthStatus:
         if self.materialization_status_task is None:
             self.materialization_status_task = asyncio.create_task(
                 get_materialization_status_and_metadata(graphene_info.context, self._asset_key)
@@ -136,7 +131,7 @@ class GrapheneAssetHealth(graphene.ObjectType):
         _, materialization_status_metadata = await self.materialization_status_task
         return materialization_status_metadata
 
-    async def resolve_assetChecksStatus(self, graphene_info: ResolveInfo) -> str:
+    async def resolve_assetChecksStatus(self, graphene_info: ResolveInfo) -> AssetHealthStatus:
         if self.asset_check_status_task is None:
             self.asset_check_status_task = asyncio.create_task(
                 get_asset_check_status_and_metadata(graphene_info.context, self._asset_key)
@@ -156,7 +151,7 @@ class GrapheneAssetHealth(graphene.ObjectType):
         _, asset_checks_status_metadata = await self.asset_check_status_task
         return asset_checks_status_metadata
 
-    async def resolve_freshnessStatus(self, graphene_info: ResolveInfo) -> str:
+    async def resolve_freshnessStatus(self, graphene_info: ResolveInfo) -> AssetHealthStatus:
         if self.freshness_status_task is None:
             self.freshness_status_task = asyncio.create_task(
                 get_freshness_status_and_metadata(graphene_info.context, self._asset_key)
@@ -176,9 +171,9 @@ class GrapheneAssetHealth(graphene.ObjectType):
         _, freshness_status_metadata = await self.freshness_status_task
         return freshness_status_metadata
 
-    async def resolve_assetHealth(self, graphene_info: ResolveInfo):
+    async def resolve_assetHealth(self, graphene_info: ResolveInfo) -> AssetHealthStatus:
         if not graphene_info.context.instance.dagster_observe_supported():
-            return GrapheneAssetHealthStatus.UNKNOWN
+            return AssetHealthStatus.UNKNOWN
         if self.materialization_status_task is None:
             self.materialization_status_task = asyncio.create_task(
                 get_materialization_status_and_metadata(graphene_info.context, self._asset_key)
@@ -194,23 +189,9 @@ class GrapheneAssetHealth(graphene.ObjectType):
                 get_freshness_status_and_metadata(graphene_info.context, self._asset_key)
             )
         freshness_status, _ = await self.freshness_status_task
-        statuses = [
-            materialization_status,
-            asset_checks_status,
-            freshness_status,
-        ]
-        if GrapheneAssetHealthStatus.DEGRADED in statuses:
-            return GrapheneAssetHealthStatus.DEGRADED
-        if GrapheneAssetHealthStatus.WARNING in statuses:
-            return GrapheneAssetHealthStatus.WARNING
-        # at this point, all statuses are HEALTHY, UNKNOWN, or NOT_APPLICABLE
-        if materialization_status == GrapheneAssetHealthStatus.UNKNOWN:
-            return GrapheneAssetHealthStatus.UNKNOWN
-        if all(
-            status == GrapheneAssetHealthStatus.UNKNOWN
-            or status == GrapheneAssetHealthStatus.NOT_APPLICABLE
-            for status in statuses
-        ):
-            return GrapheneAssetHealthStatus.UNKNOWN
-        # at least one status must be HEALTHY
-        return GrapheneAssetHealthStatus.HEALTHY
+
+        return overall_status_from_component_statuses(
+            asset_checks_status=asset_checks_status,
+            materialization_status=materialization_status,
+            freshness_status=freshness_status,
+        )
