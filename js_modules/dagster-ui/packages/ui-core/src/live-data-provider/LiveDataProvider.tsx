@@ -4,7 +4,7 @@ import {LiveDataRefreshButton} from './LiveDataRefreshButton';
 import {LiveDataThreadID} from './LiveDataThread';
 import {LiveDataThreadManager} from './LiveDataThreadManager';
 import {useDocumentVisibility} from '../hooks/useDocumentVisibility';
-import {hashObject} from '../util/hashObject';
+import {useStableReferenceByHash} from '../hooks/useStableReferenceByHash';
 
 export const SUBSCRIPTION_IDLE_POLL_RATE = 30 * 1000;
 
@@ -40,9 +40,7 @@ export function useLiveData<T>(
   const [isRefreshing, setIsRefreshing] = React.useState(false);
 
   // Hash the keys and use that as a dependency to avoid unsubscribing/re-subscribing to the same keys in case the reference changes but the keys are the same
-  const keysHash = useMemo(() => hashObject(_keys), [_keys]);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const keys = useMemo(() => _keys, [keysHash]);
+  const keys = useStableReferenceByHash(_keys);
 
   React.useLayoutEffect(() => {
     let timeout: ReturnType<typeof setTimeout> | null = null;
