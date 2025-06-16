@@ -26,7 +26,7 @@ Copy the following code in the `defs/schedules.py` file created by the `dg` comm
 <CodeExample
   path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial_components/src/etl_tutorial_components/defs/schedules.py"
   language="python"
-  title="src/etl_tutorial_components/defs/assets.py"
+  title="src/etl_tutorial_components/defs/schedules.py"
 />
 
 ## 2. Automate asset materialization

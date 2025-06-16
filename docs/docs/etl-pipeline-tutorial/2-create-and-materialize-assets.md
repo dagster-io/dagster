@@ -4,22 +4,41 @@ description: Create and materialize assets
 sidebar_position: 30
 ---
 
-In the first step of the tutorial, you created your Dagster project with the raw data files. In this step, you will:
+Now we have integrated with Sling and dbt to bring in and model the data we will start to define some custom assets and show how to define Dagster objects yourself. In this step, you will:
 
 - Add a DuckDB resource
 - Build software-defined assets
 - Materialize your assets
 
+<details>
+  <summary>Scaffold assets</summary>
+
+  If you have setup the first part of this tutorial only using components, be sure to scaffold the assets:
+
+  ```bash
+  dg scaffold def dagster.asset asset.py 
+  ```
+
+</details>
+
 ## 1. Define the DuckDB resource
 
 In Dagster, [Resources](/api/dagster/resources) are the external services, tools, and storage backends you need to do your job. For the storage backend in this project, we'll use [DuckDB](https://duckdb.org/), a fast, in-process SQL database that runs inside your application. We'll define it once, making it available to all assets and objects that need it.
 
-We will create a file in the `defs` directory
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial_components/src/etl_tutorial_components/defs/resources.py"
+  language="python"
+  startAfter="start_database_resource"
+  endBefore="end_database_resource"
+  title="src/etl_tutorial_components/defs/assets/py"
+/>
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial_components/src/etl_tutorial_components/defs/assets.py"
+  path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial_components/src/etl_tutorial_components/defs/resources.py"
   language="python"
-  title="src/etl_tutorial_components/defs/assets.py"
+  startAfter="start_resources_definitions"
+  endBefore="end_resources_definitions"
+  title="src/etl_tutorial_components/defs/assets/py"
 />
 
 ## 2. Create assets

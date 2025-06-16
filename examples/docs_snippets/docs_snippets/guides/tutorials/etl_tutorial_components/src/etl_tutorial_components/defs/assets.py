@@ -2,6 +2,55 @@ from dagster_duckdb import DuckDBResource
 
 import dagster as dg
 
+
+# start_joined_data_asset
+@dg.asset(
+    compute_kind="duckdb",
+    group_name="joins",
+    deps=[dg.AssetKey("stg_orders")],
+)
+def joined_data(duckdb: DuckDBResource) -> dg.MaterializeResult:
+    with duckdb.get_connection() as conn:
+        conn.execute(
+            """
+            create or replace table joined_data as (
+                select 
+                    date,
+                    dollar_amount,
+                    customer_name,
+                    quantity,
+                    rep_name,
+                    department,
+                    hire_date,
+                    product_name,
+                    category,
+                    price
+                from sales_data
+                left join sales_reps
+                    on sales_reps.rep_id = sales_data.rep_id
+                left join products
+                    on products.product_id = sales_data.product_id
+            )
+            """
+        )
+
+        preview_query = "select * from joined_data limit 10"
+        preview_df = conn.execute(preview_query).fetchdf()
+
+        row_count = conn.execute("select count(*) from joined_data").fetchone()
+        count = row_count[0] if row_count else 0
+
+        return dg.MaterializeResult(
+            metadata={
+                "row_count": dg.MetadataValue.int(count),
+                "preview": dg.MetadataValue.md(preview_df.to_markdown(index=False)),
+            }
+        )
+
+
+# end_joined_data_asset
+
+
 # start_monthly_partition
 monthly_partition = dg.MonthlyPartitionsDefinition(start_date="2018-01-01")
 
@@ -130,6 +179,7 @@ def payment_performance(context: dg.AssetExecutionContext, duckdb: DuckDBResourc
 # end_product_performance_asset
 
 
+# start_adhoc_request_asset
 class AdhocRequestConfig(dg.Config):
     start_date: str
     end_date: str
@@ -159,6 +209,10 @@ def adhoc_request(
     )
 
 
+# end_adhoc_request_asset
+
+
+# start_asset_check
 @dg.asset_check(asset=monthly_orders)
 def adhoc_request_check(duckdb: DuckDBResource) -> dg.AssetCheckResult:
     with duckdb.get_connection() as conn:
@@ -174,3 +228,6 @@ def adhoc_request_check(duckdb: DuckDBResource) -> dg.AssetCheckResult:
         return dg.AssetCheckResult(
             passed=count == 0, metadata={"order_id is null": count}
         )
+
+
+# end_asset_check

@@ -20,8 +20,8 @@ As you can see, the new `joined_data` asset looks a lot like our previous ones, 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial_components/src/etl_tutorial_components/defs/assets.py"
   language="python"
-  startAfter="start_asset_joined_data"
-  endBefore="end_asset_joined_data"
+  startAfter="start_joined_data_asset"
+  endBefore="end_joined_data_asset"
   title="src/etl_tutorial_components/defs/assets/py"
 />
 

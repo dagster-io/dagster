@@ -28,8 +28,8 @@ Other than that, defining this asset is the same as our previous assets. Copy th
 <CodeExample
   path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial_components/src/etl_tutorial_components/defs/assets.py"
   language="python"
-  startAfter="start_adhoc_asset"
-  endBefore="end_adhoc_asset"
+  startAfter="start_adhoc_request_asset"
+  endBefore="end_adhoc_request_asset"
   title="src/etl_tutorial_components/defs/assets.py"
 />
 

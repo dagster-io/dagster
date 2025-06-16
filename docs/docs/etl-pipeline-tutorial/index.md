@@ -11,23 +11,21 @@ sidebar_position: 10
 
 In this tutorial, you'll build an ETL pipeline with Dagster that:
 
-- Imports sales data to DuckDB using Sling
+- Imports sales data into DuckDB using Sling
 - Transforms data into reports with dbt
 - Runs scheduled reports automatically
 - Generates one-time reports on demand
-- Visualize the data with Evidence
+- Visualizes the data with Evidence
 
 ## You will learn to:
 
-- Set up a Dagster project with the recommended project structure
+- How to set up a Dagster project with the recommended project structure
 - Integrate with other tools
-- Create and materialize assets
-- Create and materialize dependant assets
+- Create and materialize assets and dependencies
 - Ensure data quality with asset checks
 - Create and materialize partitioned assets
 - Automate the pipeline
-- Create and materialize a sensor asset
-- Refactor your project when it becomes more complex
+- Create and materialize assets with sensors
 
 <details>
   <summary>Prerequisites</summary>
@@ -41,21 +39,19 @@ To follow the steps in this guide, you'll need:
 
 </details>
 
-## Step 1: Set up your Dagster environment
+## Set up your Dagster project
 
-First, set up a new Dagster project.
-
-1. Open your terminal and scaffold a new project with `dg`:
+1. Open your terminal and scaffold a new project with `uv`:
 
    ```bash
-   uvx create-dagster project etl-tutorial-components
+   uvx create-dagster project etl_tutorial_components
    ```
 
 2. Change into that project
 
-  ```bash
-  cd etl-tutorial-components
-  ```
+   ```bash
+   cd etl_tutorial_components
+   ```
 
 3. Activate the project virtual environment:
 
@@ -68,7 +64,7 @@ First, set up a new Dagster project.
      </TabItem>
    </Tabs>
 
-4. Install Dagster and the required dependencies:
+4. Install the required dependencies:
 
    ```bash
    uv pip install dagster-duckdb dagster-dbt dagster-sling dagster-evidence dagster-webserver
@@ -76,15 +72,15 @@ First, set up a new Dagster project.
 
 5. Check the project structure:
 
-  ```bash
-  dg check defs
-  ```
+   ```bash
+   dg check defs
+   ```
 
-To make sure Dagster and its dependencies were installed correctly, navigate to the project root directory and start the Dagster webserver:"
+6. To make sure Dagster and its dependencies were installed correctly, navigate to the project root directory and start the Dagster webserver:
 
-```bash
-dg dev
-```
+   ```bash
+   dg dev
+   ```
 
 At this point the project will be empty but we will continue to add to it throughout the tutorial.
 
