@@ -123,6 +123,10 @@ class EnvRegistryObjectSnap:
         return component_data.schema if component_data else None
 
     @property
+    def is_component(self) -> bool:
+        return self.get_feature_data("component") is not None
+
+    @property
     def all_keys(self) -> Sequence[EnvRegistryKey]:
         """Return all keys associated with this plugin object, including aliases."""
         return [self.key, *self.aliases]
