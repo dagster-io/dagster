@@ -2,14 +2,14 @@
 
 ## eager_materilization_start
 
-from dagster import AutomationCondition, asset
+import dagster as dg
 
 
-@asset
+@dg.asset
 def my_data(): ...
 
 
-@asset(automation_condition=AutomationCondition.eager())
+@dg.asset(automation_condition=dg.AutomationCondition.eager())
 def my_ml_model(my_data): ...
 
 
@@ -17,14 +17,14 @@ def my_ml_model(my_data): ...
 
 ## lazy_materlization_start
 
-from dagster import asset
+import dagster as dg
 
 
-@asset
+@dg.asset
 def my_other_data(): ...
 
 
-@asset(automation_condition=AutomationCondition.on_cron("0 9 * * *"))
+@dg.asset(automation_condition=dg.AutomationCondition.on_cron("0 9 * * *"))
 def my_other_ml_model(my_other_data): ...
 
 
@@ -33,14 +33,14 @@ def my_other_ml_model(my_other_data): ...
 
 ## conditional_monitoring_start
 
+import dagster as dg
 from sklearn import linear_model
-from dagster import asset, Output, AssetKey, AssetExecutionContext
 import numpy as np
 from sklearn.model_selection import train_test_split
 
 
-@asset(output_required=False)
-def conditional_machine_learning_model(context: AssetExecutionContext):
+@dg.asset(output_required=False)
+def conditional_machine_learning_model(context: dg.AssetExecutionContext):
     X, y = np.random.randint(5000, size=(5000, 2)), range(5000)
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=0.33, random_state=42
@@ -51,10 +51,12 @@ def conditional_machine_learning_model(context: AssetExecutionContext):
     # Get the model accuracy from metadata of the previous materilization of this machine learning model
     instance = context.instance
     materialization = instance.get_latest_materialization_event(
-        AssetKey(["conditional_machine_learning_model"])
+        dg.AssetKey(["conditional_machine_learning_model"])
     )
     if materialization is None:
-        yield Output(reg, metadata={"model_accuracy": float(reg.score(X_test, y_test))})
+        yield dg.Output(
+            reg, metadata={"model_accuracy": float(reg.score(X_test, y_test))}
+        )
 
     else:
         previous_model_accuracy = None
@@ -70,13 +72,13 @@ def conditional_machine_learning_model(context: AssetExecutionContext):
             previous_model_accuracy is None
             or new_model_accuracy > previous_model_accuracy
         ):
-            yield Output(reg, metadata={"model_accuracy": float(new_model_accuracy)})
+            yield dg.Output(reg, metadata={"model_accuracy": float(new_model_accuracy)})
 
 
 ## conditional_monitoring_end
 
 
-@asset
+@dg.asset
 def ml_model():
     pass
 
@@ -84,11 +86,10 @@ def ml_model():
 slack_token = "782823"
 
 ## fail_slack_start
-
-from dagster import define_asset_job
+import dagster as dg
 from dagster_slack import make_slack_on_run_failure_sensor
 
-ml_job = define_asset_job("ml_training_job", selection=[ml_model])
+ml_job = dg.define_asset_job("ml_training_job", selection=[ml_model])
 
 slack_on_run_failure = make_slack_on_run_failure_sensor(
     channel="#ml_monitor_channel",
@@ -98,7 +99,7 @@ slack_on_run_failure = make_slack_on_run_failure_sensor(
 ## fail_slack_end
 
 ## ui_plot_start
-from dagster import MetadataValue
+import dagster as dg
 import seaborn
 import matplotlib.pyplot as plt
 import base64
@@ -112,20 +113,19 @@ def make_plot(eval_metric):
     buffer = BytesIO()
     fig.savefig(buffer)
     image_data = base64.b64encode(buffer.getvalue())
-    return MetadataValue.md(f"![img](data:image/png;base64,{image_data.decode()})")
+    return dg.MetadataValue.md(f"![img](data:image/png;base64,{image_data.decode()})")
 
 
 ## ui_plot_end
 
 
 ## metadata_use_start
-
-from dagster import asset
+import dagster as dg
 import xgboost as xgb
 from sklearn.metrics import mean_absolute_error
 
 
-@asset
+@dg.asset
 def xgboost_comments_model(transformed_training_data, transformed_test_data):
     transformed_X_train, transformed_y_train = transformed_training_data
     transformed_X_test, transformed_y_test = transformed_test_data
@@ -150,7 +150,7 @@ def xgboost_comments_model(transformed_training_data, transformed_test_data):
         "mean_absolute_error"
     ][-1]
 
-    return Output(xgb_r, metadata=metadata)
+    return dg.Output(xgb_r, metadata=metadata)
 
 
 ## metadata_use_end

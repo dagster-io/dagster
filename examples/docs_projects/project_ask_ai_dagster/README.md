@@ -4,48 +4,40 @@
 
 This project implements a support bot using Retrieval-Augmented Generation (RAG) with OpenAI and Pinecone vector database, orchestrated using Dagster for reliable data ingestion and retrieval pipelines.
 
-## Features
+### Example Asset Lineage
 
-- RAG-Powered Support Bot: Leverages advanced retrieval and generation techniques
-- Pinecone Vector Database: Efficient semantic search and document retrieval
-- Dagster Orchestration: Robust pipeline management for ingestion and retrieval processes
-- OpenAI Integration: Powerful language model for generating responses
+![Screenshot Dagster Lineage](_static/screenshot_dagster_lineage.svg)
 
-## Data Sources
+## Getting started
 
-1. Dagster Github Repository Issues
-2. Dagster Github Repository Discussions
-3. Dagster Docs Website
+Install the project dependencies:
 
-## Prerequisites
+```bash
+uv sync
+```
 
-- Python 3.8+
-- OpenAI API Key
-- Pinecone Account and API Key
-- Dagster
-- Webscraping
+Run Dagster:
 
-## Environment variables
+```bash
+dg dev
+```
 
-For the pipeline to be able to pull issues and discussions from GitHub, you'll need set your GitHub credentials, and to store data in Pinecone, you will need to set your API key. This is done through environment variables:
-OPENAI_API_KEY=[Instructions](https://platform.openai.com/docs/quickstart)
-DOCS_SITEMAP=[Docs Sitemap](https://docs.dagster.io/sitemap.xml)
-PINECONE_API_KEY=[Instructions](https://docs.pinecone.io/guides/get-started/quickstart)
-GITHUB_TOKEN=[Instructions](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens)
+Open http://localhost:3000 in your browser.
 
-## Ingestion Pipeline
+## References
 
-The ingestion pipeline handles:
+Dagster
 
-- Document loading
-- Text splitting
-- Embedding generation
-- Vector storage in Pinecone
+- [Dagster Docs](https://docs.dagster.io/)
+- [Dagster Docs: DuckDB](https://docs.dagster.io/_apidocs/libraries/dagster-duckdb)
+- [Dagster Docs: OpenAI Integration](https://docs.dagster.io/integrations/openai)
 
-## Retrieval Pipeline
+Pinecone
 
-The retrieval pipeline manages:
+- [Pinecone](https://www.pinecone.io/)
 
-- Query embedding
-- Semantic search in Pinecone
-- Response generation with OpenAI
+OpenAI
+
+- [OpenAI Fine-Tuning](https://platform.openai.com/docs/guides/fine-tuning)
+- [OpenAI Cookbook: How to fine-tune chat models](https://cookbook.openai.com/examples/how_to_finetune_chat_models)
+- [OpenAI Cookbook: Data preparation and analysis for chat model fine-tuning](https://cookbook.openai.com/examples/chat_finetuning_data_prep)
