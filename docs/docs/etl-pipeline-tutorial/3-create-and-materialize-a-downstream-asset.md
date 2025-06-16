@@ -29,4 +29,4 @@ In the Dagster UI, reload definitions and materialize the `joined_data` asset.
 
 ## Next steps
 
-- Continue this tutorial with [ensuring data quality with asset checks](/etl-pipeline-tutorial/ensure-data-quality-with-asset-checks).
+- Continue this tutorial with [ensuring data quality with asset checks](/etl-pipeline-tutorial/partition-asset).

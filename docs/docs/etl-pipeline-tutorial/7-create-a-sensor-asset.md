@@ -83,12 +83,6 @@ Now copy the following sensor code in the `defs/sensors.py` file:
 
    ![2048 resolution](/images/tutorial/etl-tutorial/sensor-asset-run.png)
 
-## That's it!
+# Next steps
+- Continue this tutorial with adding [Evidence](/etl-pipeline-tutorial/create-evidence-connection)
 
-Congratulations! You have completed your first project with Dagster and have an example of how to use the building blocks to build your own data pipelines.
-
-## Recommended next steps
-
-- Join our [Slack community](https://dagster.io/slack).
-- Continue learning with [Dagster University](https://courses.dagster.io/) courses.
-- Start a [free trial of Dagster+](https://dagster.cloud/signup) for your own project.

@@ -130,3 +130,7 @@ You can set up this part of the Dagster project using either components or asset
 
     </TabItem>
 </Tabs>
+
+## Next steps
+
+- Continue this tutorial with your [create and materialize assets](/etl-pipeline-tutorial/create-and-materialize-assets)

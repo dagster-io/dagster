@@ -5,7 +5,6 @@ from dagster_sling import SlingConnectionResource, SlingResource
 import dagster as dg
 from etl_tutorial_components.defs.dbt_assets import dbt_resource
 
-
 # start_database_resource
 database_resource = DuckDBResource(database="duckdb:///var/tmp/duckdb.db")
 
@@ -44,4 +43,6 @@ def resources():
             "dbt": dbt_resource,
         }
     )
+
+
 # end_resources_definitions

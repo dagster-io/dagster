@@ -75,3 +75,9 @@ You can use components and assets together so choose whichever option you prefer
 
     </TabItem>
 </Tabs>
+
+## Recommended next steps
+
+- Join our [Slack community](https://dagster.io/slack).
+- Continue learning with [Dagster University](https://courses.dagster.io/) courses.
+- Start a [free trial of Dagster+](https://dagster.cloud/signup) for your own project.

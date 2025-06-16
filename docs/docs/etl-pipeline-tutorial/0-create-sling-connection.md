@@ -98,5 +98,6 @@ You can set up this part of the Dagster project using either components or asset
     </TabItem>
 </Tabs>
 
+## Next steps
 
-
+- Continue this tutorial with your [dbt](/etl-pipeline-tutorial/create-dbt-connection)
