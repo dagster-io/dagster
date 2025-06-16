@@ -1,6 +1,6 @@
 /* eslint-disable jest/expect-expect */
 import {MockedProvider, MockedResponse} from '@apollo/client/testing';
-import {render, screen, waitFor} from '@testing-library/react';
+import {act, render, screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import {CustomAlertProvider} from '../../app/CustomAlertProvider';
@@ -107,15 +107,15 @@ describe('LaunchAssetExecutionButton', () => {
       );
     });
 
-    it('should say "Materialize selected (1)…" for a `selected` scope if the entire selection is not materializable', async () => {
-      renderButton({
-        scope: {selected: [UNPARTITIONED_SOURCE_ASSET, ASSET_DAILY]},
+    it('should say "Materialize selected (2)…" for a `selected` scope if the entire selection is not materializable', async () => {
+      await act(async () => {
+        renderButton({
+          scope: {selected: [UNPARTITIONED_SOURCE_ASSET, ASSET_DAILY]},
+        });
       });
-      await waitFor(async () => {
-        expect((await screen.findByTestId('materialize-button')).textContent).toEqual(
-          'Materialize selected (1)…', // 2 instead of 3
-        );
-      });
+      expect((await screen.findByTestId('materialize-button')).textContent).toEqual(
+        'Materialize selected (1)…', // 2 instead of 3
+      );
     });
 
     it('should be disabled if the selection is empty', async () => {
