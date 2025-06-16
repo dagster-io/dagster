@@ -21,7 +21,7 @@ This example demonstrates how to define a schedule using <PyObject section="sche
   path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/schedules/schedules.py"
   startAfter="start_basic_schedule"
   endBefore="end_basic_schedule"
-  title="src/<project-name>/defs/assets.py"
+  title="src/<project_name>/defs/assets.py"
 />
 
 :::note
@@ -70,7 +70,7 @@ This example demonstrates how to emit log messages from a schedule during its ev
   path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/schedules/schedules.py"
   startAfter="start_schedule_logging"
   endBefore="end_schedule_logging"
-  title="src/<project-name>/defs/schedules.py"
+  title="src/<project_name>/defs/schedules.py"
 />
 
 :::note

@@ -17,7 +17,7 @@ This article assumes familiarity with [resources](/guides/build/external-resourc
   startAfter="start_new_resource_on_schedule"
   endBefore="end_new_resource_on_schedule"
   dedent="4"
-  title="src/<project-name>/defs/assets.py"
+  title="src/<project_name>/defs/assets.py"
 />
 
 ## APIs in this guide
