@@ -21,7 +21,7 @@ from dagster import (
     _check as check,
     get_dagster_logger,
 )
-from dagster._annotations import beta, deprecated, superseded
+from dagster._annotations import beta, superseded
 from dagster._core.definitions.definitions_load_context import StateBackedDefinitionsLoader
 from dagster._record import record
 from dagster._utils.cached_method import cached_method
