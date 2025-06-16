@@ -38,7 +38,7 @@ class SqlComponent(Resolvable, BaseModel, Component, Generic[T], ABC):
 
     @abstractmethod
     def get_asset_key(self) -> dg.AssetKey:
-        """The asset key or keys to associate with this model."""
+        """The asset key to associate with this model."""
         ...
 
     @property
