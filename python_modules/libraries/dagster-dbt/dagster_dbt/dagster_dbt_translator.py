@@ -87,7 +87,6 @@ class DagsterDbtTranslator:
             settings (Optional[DagsterDbtTranslatorSettings]): Settings for the translator.
         """
         self._settings = settings or DagsterDbtTranslatorSettings()
-        self._resolved_specs: dict[tuple, AssetSpec] = {}
 
     @property
     def settings(self) -> DagsterDbtTranslatorSettings:
@@ -106,6 +105,11 @@ class DagsterDbtTranslator:
         # memoize resolution for a given manifest & unique_id
         # since we recursively call get_asset_spec for dependencies
         memo_id = (id(manifest), unique_id)
+
+        # Don't initialize this in the constructor in case a subclass does not call __init__
+        if not hasattr(self, "_resolved_specs"):
+            self._resolved_specs = {}
+
         if memo_id in self._resolved_specs:
             return self._resolved_specs[memo_id]
 
