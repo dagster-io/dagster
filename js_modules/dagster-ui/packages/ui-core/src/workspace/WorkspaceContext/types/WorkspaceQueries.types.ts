@@ -793,6 +793,6 @@ export type LocationStatusEntryFragment = {
   versionKey: string;
 };
 
-export const LocationWorkspaceQueryVersion = 'f952f04599e33ea70c9f5bde749aaf99e809c4843a8e5a41dcf95c7881bfc935';
+export const LocationWorkspaceQueryVersion = '483f457df505fa7eae5e73ea0912a57a513acbec31a37a4c17aec1f59eef42f0';
 
 export const CodeLocationStatusQueryVersion = 'f92885e073b8b4b9bd588bf248df7b06025e2a1f6e74c082233ac7863f5eef8e';

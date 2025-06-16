@@ -11,6 +11,7 @@ import React, {useMemo} from 'react';
 import {Link} from 'react-router-dom';
 import {AssetAlertsSection} from 'shared/assets/AssetAlertsSection.oss';
 
+import {FreshnessPolicySection} from './FreshnessPolicySection';
 import {WorkspaceAssetFragment} from '../../workspace/WorkspaceContext/types/WorkspaceQueries.types';
 import {AssetEventMetadataEntriesTable} from '../AssetEventMetadataEntriesTable';
 import {metadataForAssetNode} from '../AssetMetadata';
@@ -18,7 +19,7 @@ import {AutomationDetailsSection} from './AutomationDetailsSection';
 import {AttributeAndValue, NoValue, SectionEmptyState} from './Common';
 import {ComputeDetailsSection} from './ComputeDetailsSection';
 import {DefinitionSection} from './DefinitionSection';
-import {FreshnessPolicySection, FreshnessTag} from './FreshnessPolicySection';
+import {FreshnessPolicyStatus} from './FreshnessPolicyStatus';
 import {LineageSection} from './LineageSection';
 import {useAssetsLiveData} from '../../asset-data/AssetLiveDataProvider';
 import {LiveDataForNode} from '../../asset-graph/Utils';
@@ -153,13 +154,10 @@ export const AssetNodeOverview = ({
           </Box>
         ) : undefined}
         {internalFreshnessPolicy ? (
-          <Box flex={{direction: 'column', gap: 6}}>
-            <Subtitle2>Freshness Policy</Subtitle2>
-            <FreshnessTag
-              policy={internalFreshnessPolicy}
-              assetKey={(assetNode?.assetKey ?? cachedOrLiveAssetNode?.assetKey)!}
-            />
-          </Box>
+          <FreshnessPolicyStatus
+            assetKey={cachedOrLiveAssetNode.assetKey}
+            freshnessPolicy={internalFreshnessPolicy}
+          />
         ) : undefined}
         {rowCountMeta?.intValue ? (
           <Box flex={{direction: 'column', gap: 6}}>
@@ -272,8 +270,7 @@ export const AssetNodeOverview = ({
           {internalFreshnessPolicy ? (
             <LargeCollapsibleSection header="Freshness policy" icon="freshness">
               <FreshnessPolicySection
-                assetNode={assetNode}
-                cachedOrLiveAssetNode={cachedOrLiveAssetNode}
+                assetKey={cachedOrLiveAssetNode.assetKey}
                 policy={internalFreshnessPolicy}
               />
             </LargeCollapsibleSection>
