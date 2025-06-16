@@ -35,7 +35,7 @@ For example, imagine you have the following code:
 
 <CodeExample
   path="docs_snippets/docs_snippets/concepts/logging/python_logger.py"
-  title="src/my_project/defs/my_op.py"
+  title="src/<project_name>/defs/ops.py"
   startAfter="start_python_logger"
   endBefore="end_python_logger"
   dedent="4"
@@ -97,7 +97,7 @@ For example:
 
 <CodeExample
   path="docs_snippets/docs_snippets/concepts/logging/python_logger.py"
-  title="src/my_project/defs/my_op.py"
+  title="src/<project_name>/defs/ops.py"
   startAfter="start_get_logger"
   endBefore="end_get_logger"
   dedent="4"
@@ -126,7 +126,7 @@ If we execute the following job:
 
 <CodeExample
   path="docs_snippets/docs_snippets/concepts/logging/file_output_pipeline.py"
-  title="src/my_project/defs/my_job.py"
+  title="src/<project_name>/defs/jobs.py"
 />
 
 And then read the `my_dagster_logs.log` output log file, we'll see the log file contains the formatted log:

@@ -21,7 +21,7 @@ First, add the `context` parameter to your asset definition, and add `context.pd
 <CodeExample
     path="docs_snippets/docs_snippets/guides/monitor-alert/debugging/pdb.py"
     language="python"
-    title="src/my_project/defs/my_asset.py"
+    title="src/<project_name>/defs/assets.py"
 />
 
 ## 2. Launch the webserver and materialize your asset
