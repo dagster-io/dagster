@@ -210,7 +210,10 @@ def test_freshness_policy_deprecated_import():
     """We should be able to import FreshnessPolicy from `dagster.deprecated` and use it to define a freshness policy on an asset."""
     from dagster.deprecated import FreshnessPolicy
 
-    @dg.asset(freshness_policy=FreshnessPolicy(maximum_lag_minutes=1))
+    policy = FreshnessPolicy(maximum_lag_minutes=1)
+    assert isinstance(policy, LegacyFreshnessPolicy)
+
+    @dg.asset(freshness_policy=policy)
     def foo():
         pass
 
