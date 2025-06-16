@@ -1,5 +1,49 @@
 # Changelog
 
+## 1.10.20 (core) / 0.26.20 (libraries)
+
+### New
+
+- The `@asset` decorator now supports a `hooks` argument to allow for functions to be executed on asset success / failure (thanks @brunobbaraujo)!
+- The log message produced when an asset check is evaluated now includes its pass / fail state.
+- The `@multi_asset_check` decorator now supports the `pool` argument.
+- [dagster-dbt] The `DagsterDbtTranslator` class now has a `get_asset_check_spec` method which can be overridden to customize the `AssetCheckSpecs` that are produced for each individual dbt test.
+
+### Bugfixes
+
+- Fixed an issue where setting the non-public `blocking` attribute on an `AssetCheckSpec` would halt execution of the step as soon as any asset check failure was emitted, even if the step still had asset materializations or check evaluations to emit that were not downstream of the failed asset check. Now that this issue has been fixed, the `blocking` attribute on `AssetCheckSpec` has been made a public attribute. If you were making use of the `blocking` attribute on AssetCheckSpec before it was public and relying on the previous behavior, you should exit from your asset evaluation function after emitting an AssetCheckFailure from within your multi-asset in order to halt further execution of the step.
+- Fixed a bug where `GraphDefinition.to_job()` would not work if an op had a custom IO manager key.
+- Fixed an issue that would cause `.allow()` and `.ignore()` applications to not propagate through `.since()` automation conditions.
+- Fixed a bug where assets with cross-location dependencies could sometimes be incorrectly reported as "Unsynced".
+- Fixed an issue where `dagster dev` was sometimes failing to load code locations with a "Deadline Exceeded" error unless the `--use-legacy-code-server-behavior` flag was set.
+- The backfill daemon can now be configured to use a threadpool executor via helm (thanks @hynekblaha)!
+- [dagster-gcp] Added a `google-cloud-bigquery>=1.28.3` pin to correctly reflect the lowest compatible version.
+
+### Breaking Changes
+
+- [ui] Moved legacy Auto-materialize (global AMP) tab from Overview to Automations.
+
+### Dagster Plus
+
+- Fixed an issue where certain rare network conditions could cause steps to hang while uploading compute logs after a step finished.
+- [ui] For users with the new Observe UIs enabled, the Asset Health and Resources tabs are no longer shown on the Timeline page.
+
+### dg & Components (Preview)
+
+- Fix a bug with `dg check yaml` where valid component type names were rejected if they were not registered (i.e. visible from `dg check components`).
+- `dg create-dagster` now warns when scaffolding a project or workspace if it is not the latest version.
+- The `project.registry_modules` configuration can now accept wildcards (e.g. `foo_bar.components.*`). This will register any module matching the pattern with `dg`.
+- The `env` YAML function now errors if the specified env var is unset. Default values can be provided as an additional argument: `{{ env('MY_ENV_VAR', 'default') }}`
+- defs.yaml files can now specify a component in the module where it is defined, as opposed to just the module where it is exposed in the `dg` registry.
+- The `PipesSubprocessScriptCollectionComponent` has been removed.
+- Running dg commands such as `dg check defs` and `dg dev` in a project folder that is part of the workspace will now only apply to that project, instead of every project in the workspace.
+- Scaffolded projects no longer contain a "components" directory or a Python `dagster_dg_cli.plugin` entry point.
+- Scaffolded components can now be placed anywhere within a project module hierarchy.
+- The entry point group used by shared libraries exposing custom components to `dg` has been renamed from `dagster_dg_cli.plugin` to `dagster_dg_cli.registry_modules` (projects no longer need to define an entry point group at all).
+- `dg list plugin-modules` has been renamed to `dg list registry-modules`.
+- `dg list defs` now supports configuring output columns with the `--columns/-c` option.
+- [dagster-airbyte] Introduced a `AirbyteCloudWorkspaceComponent` which can be used to pull in Airbyte Cloud connections into Dagster
+
 ## 1.10.19 (core) / 0.26.19 (libraries)
 
 ### New

@@ -62,7 +62,9 @@ from dagster._core.log_manager import DagsterLogManager
 from dagster._core.storage.compute_log_manager import CapturedLogContext, LogRetrievalShellCommand
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
 from dagster._core.storage.tags import PARTITION_NAME_TAG
+from dagster._record import record
 from dagster._serdes import NamedTupleSerializer, whitelist_for_serdes
+from dagster._streamline.asset_health import AssetHealthStatus
 from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 from dagster._utils.timing import format_duration
 
@@ -97,6 +99,7 @@ EventSpecificData = Union[
     "RunEnqueuedData",
     "FreshnessStateEvaluation",
     "FreshnessStateChange",
+    "AssetHealthChangedData",
 ]
 
 
@@ -131,6 +134,7 @@ class DagsterEventType(str, Enum):
     STEP_EXPECTATION_RESULT = "STEP_EXPECTATION_RESULT"
     ASSET_CHECK_EVALUATION_PLANNED = "ASSET_CHECK_EVALUATION_PLANNED"
     ASSET_CHECK_EVALUATION = "ASSET_CHECK_EVALUATION"
+    ASSET_HEALTH_CHANGED = "ASSET_HEALTH_CHANGED"
 
     # We want to display RUN_* events in the Dagster UI and in our LogManager output, but in order to
     # support backcompat for our storage layer, we need to keep the persisted value to be strings
@@ -751,6 +755,8 @@ class DagsterEvent(
             return self.asset_failed_to_materialize_data.asset_key
         elif self.event_type == DagsterEventType.FRESHNESS_STATE_CHANGE:
             return self.asset_freshness_state_change_data.key
+        elif self.event_type == DagsterEventType.ASSET_HEALTH_CHANGED:
+            return self.asset_health_changed_data.asset_key
         else:
             return None
 
@@ -859,6 +865,17 @@ class DagsterEvent(
             self.event_type,
         )
         return cast("FreshnessStateChange", self.event_specific_data)
+
+    @property
+    def asset_health_changed_data(
+        self,
+    ) -> "AssetHealthChangedData":
+        _assert_type(
+            "asset_health_changed_data",
+            DagsterEventType.ASSET_HEALTH_CHANGED,
+            self.event_type,
+        )
+        return cast("AssetHealthChangedData", self.event_specific_data)
 
     @property
     def step_expectation_result_data(self) -> "StepExpectationResultData":
@@ -1759,6 +1776,14 @@ class AssetMaterializationPlannedData(
             partition=check.opt_str_param(partition, "partition"),
             partitions_subset=partitions_subset,
         )
+
+
+@whitelist_for_serdes
+@record
+class AssetHealthChangedData:
+    asset_key: AssetKey
+    previous_health_state: AssetHealthStatus
+    new_health_state: AssetHealthStatus
 
 
 @whitelist_for_serdes

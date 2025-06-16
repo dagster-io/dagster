@@ -45,7 +45,7 @@ export function getSupplementaryDataKey({
   value,
 }: {
   field: string;
-  value: string | {key: string; value: string} | {key: string};
+  value: string | {key: string; value?: string | undefined};
 }): string {
   return JSON.stringify({field, value});
 }
