@@ -21,7 +21,7 @@ from dagster import (
     _check as check,
     get_dagster_logger,
 )
-from dagster._annotations import beta, deprecated, superseded
+from dagster._annotations import beta, superseded
 from dagster._core.definitions.definitions_load_context import StateBackedDefinitionsLoader
 from dagster._record import record
 from dagster._utils.cached_method import cached_method
@@ -576,65 +576,6 @@ class BaseTableauWorkspace(ConfigurableResource):
         return TableauWorkspaceData.from_content_data(
             self.site_name,
             workbooks + sheets + dashboards + data_sources,
-        )
-
-    @deprecated(
-        breaking_version="1.9.0",
-        additional_warn_text="Use dagster_tableau.load_tableau_asset_specs instead",
-    )
-    def build_defs(
-        self,
-        refreshable_workbook_ids: Optional[Sequence[str]] = None,
-        dagster_tableau_translator: type[DagsterTableauTranslator] = DagsterTableauTranslator,
-    ) -> Definitions:
-        """Returns a Definitions object which will load Tableau content from
-        the workspace and translate it into assets, using the provided translator.
-
-        Args:
-            refreshable_workbook_ids (Optional[Sequence[str]]): A list of workbook IDs. The workbooks provided must
-                have extracts as data sources and be refreshable in Tableau.
-
-                When materializing your Tableau assets, the workbooks provided are refreshed,
-                refreshing their sheets and dashboards before pulling their data in Dagster.
-
-                This feature is equivalent to selecting Refreshing Extracts for a workbook in Tableau UI
-                and only works for workbooks for which the data sources are extracts.
-                See https://help.tableau.com/current/api/rest_api/en-us/REST/rest_api_ref_workbooks_and_views.htm#update_workbook_now
-                for documentation.
-            dagster_tableau_translator (Type[DagsterTableauTranslator]): The translator to use
-                to convert Tableau content into AssetSpecs. Defaults to DagsterTableauTranslator.
-
-        Returns:
-            Definitions: A Definitions object which will build and return the Power BI content.
-        """
-        from dagster_tableau.assets import build_tableau_materializable_assets_definition
-
-        resource_key = "tableau"
-
-        asset_specs = load_tableau_asset_specs(self, dagster_tableau_translator())
-
-        non_executable_asset_specs = [
-            spec
-            for spec in asset_specs
-            if TableauTagSet.extract(spec.tags).asset_type == "data_source"
-        ]
-
-        executable_asset_specs = [
-            spec
-            for spec in asset_specs
-            if TableauTagSet.extract(spec.tags).asset_type in ["dashboard", "sheet"]
-        ]
-
-        return Definitions(
-            assets=[
-                build_tableau_materializable_assets_definition(
-                    resource_key=resource_key,
-                    specs=executable_asset_specs,
-                    refreshable_workbook_ids=refreshable_workbook_ids,
-                ),
-                *non_executable_asset_specs,
-            ],
-            resources={resource_key: self},
         )
 
     def refresh_and_poll(
