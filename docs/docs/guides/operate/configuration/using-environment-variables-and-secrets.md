@@ -217,6 +217,7 @@ This example is adapted from the [Transitioning data pipelines from development 
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/operate/configuration/env_vars_and_secrets/per_env_config.py"
+  title="src/<project_name>/defs/resources.py"
 />
 
 Let's review what's happening here:
