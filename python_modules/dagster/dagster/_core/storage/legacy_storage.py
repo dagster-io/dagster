@@ -10,6 +10,7 @@ from dagster._core.definitions.declarative_automation.serialized_objects import 
     AutomationConditionEvaluationWithRunIds,
 )
 from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.freshness import FreshnessStateRecord
 from dagster._core.event_api import EventHandlerFn
 from dagster._core.storage.asset_check_execution_record import (
     AssetCheckExecutionRecord,
@@ -553,6 +554,11 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
         self, asset_keys: Optional[Sequence["AssetKey"]] = None
     ) -> Iterable[AssetRecord]:
         return self._storage.event_log_storage.get_asset_records(asset_keys)
+
+    def get_freshness_state_records(
+        self, keys: Sequence["AssetKey"]
+    ) -> Mapping["AssetKey", FreshnessStateRecord]:
+        return self._storage.event_log_storage.get_freshness_state_records(keys)
 
     def get_asset_check_summary_records(
         self, asset_check_keys: Sequence["AssetCheckKey"]

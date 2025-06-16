@@ -30,6 +30,7 @@ from dagster._core.assets import AssetDetails
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.data_version import DATA_VERSION_TAG
 from dagster._core.definitions.events import AssetKey, AssetMaterialization
+from dagster._core.definitions.freshness import FreshnessStateRecord
 from dagster._core.errors import (
     DagsterEventLogInvalidForRun,
     DagsterInvalidInvocationError,
@@ -1259,6 +1260,44 @@ class SqlEventLogStorage(EventLogStorage):
                 )
 
         return asset_records
+
+    def get_freshness_state_records(
+        self, keys: Sequence[AssetKey]
+    ) -> Mapping[AssetKey, FreshnessStateRecord]:
+        latest_event_id_subquery = db_subquery(
+            db_select(
+                [
+                    SqlEventLogStorageTable.c.asset_key,
+                    db.func.max(SqlEventLogStorageTable.c.id).label("id"),
+                ]
+            )
+            .where(
+                db.and_(
+                    SqlEventLogStorageTable.c.asset_key.in_(
+                        [asset_key.to_string() for asset_key in keys]
+                    ),
+                    SqlEventLogStorageTable.c.dagster_event_type
+                    == DagsterEventType.FRESHNESS_STATE_CHANGE.value,
+                )
+            )
+            .group_by(SqlEventLogStorageTable.c.asset_key)
+        )
+        latest_event_query = db_select([SqlEventLogStorageTable.c.event]).select_from(
+            latest_event_id_subquery.join(
+                SqlEventLogStorageTable,
+                db.and_(
+                    SqlEventLogStorageTable.c.asset_key == latest_event_id_subquery.c.asset_key,
+                    SqlEventLogStorageTable.c.id == latest_event_id_subquery.c.id,
+                ),
+            )
+        )
+
+        with self.index_connection() as conn:
+            rows = db_fetch_mappings(conn, latest_event_query)
+
+        entries = [deserialize_value(row["event"], EventLogEntry) for row in rows]
+        records = [FreshnessStateRecord.from_event_log_entry(entry) for entry in entries]
+        return {record.entity_key: record for record in records}
 
     def get_asset_check_summary_records(
         self, asset_check_keys: Sequence[AssetCheckKey]

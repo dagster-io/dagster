@@ -418,7 +418,6 @@ class FreshnessDaemonTests(ABC):
                 )
 
 
-@pytest.mark.skip(reason="Freshness daemon not yet enabled.")
 class TestFreshnessDaemon(FreshnessDaemonTests):
     @pytest.fixture
     def daemon_instance(self) -> Generator[DagsterInstance, None, None]:
