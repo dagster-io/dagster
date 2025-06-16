@@ -1,6 +1,5 @@
 from unittest.mock import MagicMock
 
-import pytest
 from dagster import AssetExecutionContext
 from dagster._core.code_pointer import CodePointer
 from dagster._core.definitions.asset_spec import AssetSpec
@@ -144,25 +143,6 @@ def cacheable_asset_defs_custom_translator():
     tableau_specs = load_tableau_asset_specs(
         workspace=resource, dagster_tableau_translator=MyCoolTranslator()
     )
-
-    return Definitions(assets=[*tableau_specs], jobs=[define_asset_job("all_asset_job")])
-
-
-@definitions
-def cacheable_asset_defs_custom_translator_legacy():
-    class MyCoolTranslator(DagsterTableauTranslator):
-        def get_asset_spec(self, data: TableauTranslatorData) -> AssetSpec:
-            default_spec = super().get_asset_spec(data)
-            return default_spec.replace_attributes(key=default_spec.key.with_prefix("my_prefix"))
-
-    # Pass the translator type
-    with pytest.warns(
-        DeprecationWarning,
-        match=r"Support of `dagster_tableau_translator` as a Type\[DagsterTableauTranslator\]",
-    ):
-        tableau_specs = load_tableau_asset_specs(
-            workspace=resource, dagster_tableau_translator=MyCoolTranslator
-        )
 
     return Definitions(assets=[*tableau_specs], jobs=[define_asset_job("all_asset_job")])
 
@@ -486,30 +466,6 @@ def test_load_assets_workspace_data_translator(
             pointer=CodePointer.from_python_file(
                 __file__,
                 "cacheable_asset_defs_custom_translator",
-                None,
-            )
-        )
-
-        assert len(repository_def.assets_defs_by_key) == 5
-        assert all(
-            key.path[0] == "my_prefix" for key in repository_def.assets_defs_by_key.keys()
-        ), repository_def.assets_defs_by_key
-
-
-def test_load_assets_workspace_data_translator_legacy(
-    sign_in: MagicMock,
-    get_workbooks: MagicMock,
-    get_workbook: MagicMock,
-    get_view: MagicMock,
-    get_job: MagicMock,
-    refresh_workbook: MagicMock,
-    cancel_job: MagicMock,
-) -> None:
-    with instance_for_test() as _instance:
-        repository_def = initialize_repository_def_from_pointer(
-            pointer=CodePointer.from_python_file(
-                __file__,
-                "cacheable_asset_defs_custom_translator_legacy",
                 None,
             )
         )
