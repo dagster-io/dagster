@@ -4,6 +4,10 @@ sidebar_position: 200
 title: Logging in sensors
 ---
 
+import ScaffoldSensor from '@site/docs/partials/\_ScaffoldSensor.md';
+
+<ScaffoldSensor />
+
 Any sensor can emit log messages during its evaluation function:
 
 <CodeExample

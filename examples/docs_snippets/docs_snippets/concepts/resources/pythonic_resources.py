@@ -719,23 +719,24 @@ def new_resource_on_sensor() -> None:
 
         context.update_cursor(str(num_users))
 
-    defs = dg.Definitions(
-        jobs=[process_user],
-        sensors=[process_new_users_sensor],
-        resources={"users_api": UsersAPI(url="https://my-api.com/users")},
-    )
+    @dg.definitions
+    def resources():
+        return dg.Definitions(
+            resources={"users_api": UsersAPI(url="https://my-api.com/users")},
+        )
+
     # end_new_resource_on_sensor
 
     # start_test_resource_on_sensor
 
-    from dagster import build_sensor_context
+    import dagster as dg
 
     def test_process_new_users_sensor():
         class FakeUsersAPI:
             def fetch_users(self) -> list[str]:
                 return ["1", "2", "3"]
 
-        context = build_sensor_context()
+        context = dg.build_sensor_context()
         run_requests = process_new_users_sensor(context, users_api=FakeUsersAPI())
         assert len(run_requests) == 3
 
