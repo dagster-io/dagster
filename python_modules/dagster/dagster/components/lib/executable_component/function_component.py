@@ -43,6 +43,20 @@ class FunctionSpec(OpSpec):
     type: Literal["function"] = "function"
     fn: ResolvableCallable
 
+    @staticmethod
+    def to_function_spec(
+        op_spec: OpSpec, execute_fn: Callable, default_name: str
+    ) -> "FunctionSpec":
+        from dagster.components.lib.executable_component.function_component import FunctionSpec
+
+        return FunctionSpec(
+            name=op_spec.name or default_name,
+            tags=op_spec.tags,
+            description=op_spec.description,
+            pool=op_spec.pool,
+            fn=execute_fn,
+        )
+
 
 def get_config_param_type(fn: Callable) -> Union[type[Config], None]:
     """Get the type annotation of the 'config' parameter if it exists.
