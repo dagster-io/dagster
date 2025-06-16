@@ -68,13 +68,13 @@ class ComponentTree:
         """
         # impl to be fleshed out to flexibly handle different path types (str, list[str], ...)
         if self.root.path.absolute().as_posix() == defs_path.absolute().as_posix():
-            return self.root.build_defs(self.load_context.for_path(self.root.path))
+            return self.root.build_defs(self.load_context.replace_path(self.root.path))
         for cp, c in self.root.iterate_path_component_pairs():
             defs_path_abs = (
                 defs_path if defs_path.is_absolute() else (self.root.path / defs_path).absolute()
             )
             if cp.file_path.absolute().as_posix() == defs_path_abs.as_posix():
-                return c.build_defs(self.load_context.for_path(cp.file_path))
+                return c.build_defs(self.load_context.replace_path(cp.file_path))
 
         raise Exception(f"No component found for path {defs_path}")
 
