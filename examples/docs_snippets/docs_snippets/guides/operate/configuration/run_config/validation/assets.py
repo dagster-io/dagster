@@ -1,3 +1,5 @@
+# pyright: reportMissingImports=none
+
 import dagster as dg
 
 from .resources import MyAssetConfig

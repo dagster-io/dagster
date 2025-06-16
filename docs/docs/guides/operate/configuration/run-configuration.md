@@ -26,12 +26,12 @@ During execution, the specified config is accessed within the body of the asset,
 Here, we define a basic asset in `assets.py` and its configurable parameters in `resources.py`. `MyAssetConfig` is a subclass of <PyObject section="config" module="dagster" object="Config"/> that holds a single string value representing the name of a user. This config can be accessed through the `config` parameter in the asset body:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/operate/run_config/asset_example/assets.py"
+  path="docs_snippets/docs_snippets/guides/operate/configuration/run_config/asset_example/assets.py"
   title="src/<project_name>/defs/assets.py"
 />
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/operate/run_config/asset_example/resources.py"
+  path="docs_snippets/docs_snippets/guides/operate/configuration/run_config/asset_example/resources.py"
   title="src/<project_name>/defs/resources.py"
 />
 
@@ -41,12 +41,12 @@ Here, we define a basic asset in `assets.py` and its configurable parameters in 
 Here, we define a basic op in `ops.py` and its configurable parameters in `resources.py`. `MyAssetConfig` is a subclass of <PyObject section="config" module="dagster" object="Config"/> that holds a single string value representing the name of a user. This config can be accessed through the `config` parameter in the asset body:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/operate/run_config/op_example/ops.py"
+  path="docs_snippets/docs_snippets/guides/operate/configuration/run_config/op_example/ops.py"
   title="src/<project_name>/defs/ops.py"
 />
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/operate/run_config/op_example/resources.py"
+  path="docs_snippets/docs_snippets/guides/operate/configuration/run_config/op_example/resources.py"
   title="src/<project_name>/defs/resources.py"
 />
 
@@ -62,7 +62,7 @@ These examples showcase the most basic config types that can be used. For more i
 Configurable parameters for a resource are defined by specifying attributes for a resource class, which subclasses <PyObject section="resources" module="dagster" object="ConfigurableResource"/>. The below resource defines a configurable connection URL, which can be accessed in any methods defined on the resource:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/operate/run_config/resource_example/resources.py"
+  path="docs_snippets/docs_snippets/guides/operate/configuration/run_config/resource_example/resources.py"
 />
 
 For more information on using resources, see the [External resources documentation](/guides/build/external-resources).
@@ -77,7 +77,7 @@ To execute a job or materialize an asset that specifies config, you'll need to p
 When specifying config from the Python API, you can use the `run_config` argument for <PyObject section="jobs" module="dagster" object="JobDefinition.execute_in_process" /> or <PyObject section="execution" module="dagster" object="materialize"/>. This takes a <PyObject section="config" module="dagster" object="RunConfig"/> object, within which we can supply config on a per-op or per-asset basis. The config is specified as a dictionary, with the keys corresponding to the op/asset names and the values corresponding to the config values.
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/operate/run_config/providing_config_values/assets.py"
+  path="docs_snippets/docs_snippets/guides/operate/configuration/run_config/providing_config_values/assets.py"
   title="src/<project_name>/defs/assets.py"
   dedent="4"
 />
@@ -117,7 +117,7 @@ dg launch --job my_job --config my_config.yaml
 Assets and ops can be configured using environment variables by passing an <PyObject section="resources" module="dagster" object="EnvVar" /> when constructing a config object. This is useful when the value is sensitive or may vary based on environment. If using Dagster+, environment variables can be [set up directly in the UI](/guides/operate/configuration/using-environment-variables-and-secrets).
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/operate/run_config/using_env_vars/assets.py"
+  path="docs_snippets/docs_snippets/guides/operate/configuration/run_config/using_env_vars/assets.py"
   title="src/<project_name>/defs/assets.py"
 />
 
@@ -128,7 +128,7 @@ For more information on using environment variables in Dagster, see [Using envir
 Dagster validates any provided run config against the corresponding Pydantic model. It will abort execution with a <PyObject section="errors" module="dagster" object="DagsterInvalidConfigError"/> or Pydantic `ValidationError` if validation fails. For example, both of the following will fail, because there is no `nonexistent_config_value` in the config schema:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/operate/run_config/validation/assets.py"
+  path="docs_snippets/docs_snippets/guides/operate/configuration/run_config/validation/assets.py"
   title="src/<project_name>/defs/assets.py"
 />
 

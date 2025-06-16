@@ -18,17 +18,6 @@ def resources() -> dg.Definitions:
                     schema=dg.EnvVar("DEV_SNOWFLAKE_SCHEMA"),
                 ),
             },
-            # highlight-start
-            "staging": {
-                "snowflake_io_manager": SnowflakePandasIOManager(
-                    account="abc1234.us-east-1",
-                    user="system@company.com",
-                    password=dg.EnvVar("SYSTEM_SNOWFLAKE_PASSWORD"),
-                    database="STAGING",
-                    schema="HACKER_NEWS",
-                ),
-            },
-            # highlight-end
             "production": {
                 "snowflake_io_manager": SnowflakePandasIOManager(
                     account="abc1234.us-east-1",
