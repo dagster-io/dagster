@@ -28,7 +28,7 @@ An executor can be specified directly on a job by supplying an <PyObject section
 
 <CodeExample
   path="docs_snippets/docs_snippets/deploying/executors/executors.py"
-  title="src/<project_name>/defs/my_job.py"
+  title="src/<project_name>/defs/jobs.py"
   startAfter="start_executor_on_job"
   endBefore="end_executor_on_job"
 />
