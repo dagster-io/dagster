@@ -4,15 +4,15 @@ description: The dagster-sling library provides a SlingReplicationCollectionComp
 sidebar_position: 200
 ---
 
-import DgComponentsPreview from '@site/docs/partials/_DgComponentsPreview.md';
+import DgComponentsRc from '@site/docs/partials/_DgComponentsRc.md';
 
-<DgComponentsPreview />
+<DgComponentsRc />
 
 The [dagster-sling](/integrations/libraries/sling) library provides a `SlingReplicationCollectionComponent` which can be used to easily represent a collection of [Sling](https://slingdata.io/) replications as assets in Dagster.
 
 ## 1. Prepare a Dagster project
 
-To begin, you'll need a Dagster project. You can use an [existing components-ready project](/guides/labs/dg/incrementally-adopting-dg/migrating-project) or create a new one:
+To begin, you'll need a Dagster project. You can use an [existing components-ready project](/guides/build/projects/migrating-project) or create a new one:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/sling-component/1-scaffold-project.txt" />
 
