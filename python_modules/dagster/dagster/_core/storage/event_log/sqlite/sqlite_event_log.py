@@ -361,17 +361,16 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         )
 
         def _get_event_records_for_run(run_id: str) -> Sequence[EventLogRecord]:
+            records = []
             with self.run_connection(run_id) as conn:
                 results = conn.execute(query).fetchall()
 
             for row_id, json_str in results:
                 try:
                     event_record = deserialize_value(json_str, EventLogEntry)
-                    event_records.append(
-                        EventLogRecord(storage_id=row_id, event_log_entry=event_record)
-                    )
+                    records.append(EventLogRecord(storage_id=row_id, event_log_entry=event_record))
                     if limit and len(event_records) >= limit:
-                        break
+                        return records
                 except DeserializationError:
                     logging.warning(
                         "Could not resolve event record as EventLogEntry for id `%s`.", row_id
@@ -379,15 +378,18 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
                 except seven.JSONDecodeError:
                     logging.warning("Could not parse event record id `%s`.", row_id)
 
+            return records
+
         event_records = []
         for run_record in run_records:
             run_id = run_record.dagster_run.run_id
-            _get_event_records_for_run(run_id)
+            event_records.extend(_get_event_records_for_run(run_id))
 
             if limit and len(event_records) >= limit:
                 break
 
-        _get_event_records_for_run(RUNLESS_RUN_ID)
+        if not limit or len(event_records) < limit:
+            event_records.extend(_get_event_records_for_run(RUNLESS_RUN_ID))
 
         return event_records[:limit]
 
