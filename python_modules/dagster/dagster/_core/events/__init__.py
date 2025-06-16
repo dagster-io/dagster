@@ -881,6 +881,7 @@ class DagsterEvent(
         )
         return cast("AssetHealthChangedData", self.event_specific_data)
 
+    @property
     def asset_wiped_data(
         self,
     ) -> "AssetWipedData":
@@ -1800,6 +1801,8 @@ class AssetHealthChangedData:
     new_health_state: AssetHealthStatus
 
 
+@whitelist_for_serdes
+@record
 class AssetWipedData:
     asset_key: AssetKey
     partition_keys: Optional[Sequence[str]]

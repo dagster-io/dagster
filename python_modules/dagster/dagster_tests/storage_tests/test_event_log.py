@@ -54,7 +54,7 @@ class TestInMemoryEventLogStorage(TestEventLogStorage):
         with DagsterInstance.ephemeral() as the_instance:
             yield the_instance
 
-    def can_wipe_asset_partitions(self):
+    def can_wipe_asset_partitions(self) -> bool:
         return False
 
     @pytest.mark.skipif(
@@ -83,7 +83,7 @@ class TestSqliteEventLogStorage(TestEventLogStorage):
     def supports_multiple_event_type_queries(self):  # pyright: ignore[reportIncompatibleMethodOverride]
         return False
 
-    def can_wipe_asset_partitions(self):
+    def can_wipe_asset_partitions(self) -> bool:
         return False
 
     def test_filesystem_event_log_storage_run_corrupted(self, storage):
@@ -181,7 +181,7 @@ class TestConsolidatedSqliteEventLogStorage(TestEventLogStorage):
     def supports_multiple_event_type_queries(self):  # pyright: ignore[reportIncompatibleMethodOverride]
         return False
 
-    def can_wipe_asset_partitions(self):
+    def can_wipe_asset_partitions(self) -> bool:
         return False
 
 
@@ -205,7 +205,7 @@ class TestLegacyStorage(TestEventLogStorage):
         finally:
             legacy_storage.dispose()
 
-    def can_wipe_asset_partitions(self):
+    def can_wipe_asset_partitions(self) -> bool:
         return False
 
     def is_sqlite(self, storage):

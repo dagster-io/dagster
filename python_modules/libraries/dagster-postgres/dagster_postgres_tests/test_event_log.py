@@ -45,7 +45,7 @@ class TestPostgresEventLogStorage(TestEventLogStorage):
         assert isinstance(event_log_storage, PostgresEventLogStorage)
         yield event_log_storage
 
-    def can_wipe_asset_partitions(self):
+    def can_wipe_asset_partitions(self) -> bool:
         return False
 
     def test_event_log_storage_two_watchers(self, conn_string):

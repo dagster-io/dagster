@@ -528,7 +528,7 @@ class TestEventLogStorage:
     def watch_timeout(self):
         return 5
 
-    def can_wipe_asset_partitions(self):
+    def can_wipe_asset_partitions(self) -> bool:
         return True
 
     @contextmanager

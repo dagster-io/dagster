@@ -40,7 +40,7 @@ class TestMySQLEventLogStorage(TestEventLogStorage):
         ) as instance:
             yield instance
 
-    def can_wipe_asset_partitions(self):
+    def can_wipe_asset_partitions(self) -> bool:
         return False
 
     @pytest.fixture(scope="function", name="storage")
