@@ -15,7 +15,6 @@ from contextlib import contextmanager, nullcontext, redirect_stderr, redirect_st
 from dataclasses import dataclass
 from io import StringIO
 from pathlib import Path
-from tempfile import TemporaryDirectory
 from types import TracebackType
 from typing import Any, Literal, Optional, TextIO, Union
 
@@ -65,7 +64,7 @@ def crawl_cli_commands() -> dict[tuple[str, ...], click.Command]:
     """Note that this does not pick up:
     - all `scaffold` subcommands, because these are dynamically generated and vary across
       environment.
-    - special --ACTION options with callbacks (e.g. `--rebuild-plugin-cache`).
+    - special --ACTION options with callbacks (e.g. `--install-completion`).
     """
     commands: dict[tuple[str, ...], click.Command] = {}
 
@@ -627,7 +626,6 @@ class ProxyRunner:
         cls,
         use_fixed_test_components: bool = False,
         verbose: bool = False,
-        disable_cache: bool = False,
         console_width: int = DG_CLI_MAX_OUTPUT_WIDTH,
     ) -> Iterator[Self]:
         # We set the `COLUMNS` environment variable because this determines the width of output from
@@ -637,13 +635,10 @@ class ProxyRunner:
             if use_fixed_test_components
             else []
         )
-        with TemporaryDirectory() as cache_dir, set_env_var("COLUMNS", str(console_width)):
+        with set_env_var("COLUMNS", str(console_width)):
             append_opts = [
                 *use_component_modules_args,
-                "--cache-dir",
-                str(cache_dir),
                 *(["--verbose"] if verbose else []),
-                *(["--disable-cache"] if disable_cache else []),
             ]
             yield cls(CliRunner(), append_args=append_opts, console_width=console_width)
 

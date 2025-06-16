@@ -10,11 +10,6 @@ import {
   AssetGraphLiveQueryVariables,
 } from '../../asset-data/types/AssetBaseDataProvider.types';
 import {
-  AssetGraphQuery,
-  AssetGraphQueryVariables,
-} from '../../asset-graph/types/useAssetGraphData.types';
-import {ASSET_GRAPH_QUERY} from '../../asset-graph/useAssetGraphData';
-import {
   AssetKeyInput,
   buildAssetKey,
   buildAssetLatestInfo,
@@ -70,13 +65,6 @@ describe('AssetView', () => {
             mockLiveData('sda_asset'),
             mockLiveData('observable_source_asset'),
             mockLiveData('non_sda_asset'),
-            buildQueryMock<AssetGraphQuery, AssetGraphQueryVariables>({
-              query: ASSET_GRAPH_QUERY,
-              variables: {},
-              data: {
-                assetNodes: [buildAssetNode()],
-              },
-            }),
             buildQueryMock<AssetRecordsQuery, AssetRecordsQueryVariables>({
               query: ASSET_RECORDS_QUERY,
               variableMatcher: () => true,

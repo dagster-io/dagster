@@ -85,6 +85,44 @@ def test_scaffold_defs_classname_conflict_no_alias() -> None:
             assert f"type: {full_type}" in defs_yaml_path.read_text()
 
 
+def test_scaffold_defs_validation_failure() -> None:
+    with (
+        ProxyRunner.test(use_fixed_test_components=True) as runner,
+        isolated_example_project_foo_bar(runner),
+    ):
+        result = runner.invoke(
+            "scaffold", "defs", "dagster_test.components.SimplePipesScriptComponent", "qux"
+        )
+        assert_runner_result(result, exit_0=False)
+        assert (
+            result.output.strip()
+            == textwrap.dedent("""
+            Error validating scaffold parameters for `dagster_test.components.SimplePipesScriptComponent`:
+
+            [
+                {
+                    "type": "missing",
+                    "loc": [
+                        "asset_key"
+                    ],
+                    "msg": "Field required",
+                    "input": {},
+                    "url": "https://errors.pydantic.dev/2.11/v/missing"
+                },
+                {
+                    "type": "missing",
+                    "loc": [
+                        "filename"
+                    ],
+                    "msg": "Field required",
+                    "input": {},
+                    "url": "https://errors.pydantic.dev/2.11/v/missing"
+                }
+            ]
+        """).strip()
+        )
+
+
 @pytest.mark.parametrize("in_workspace", [True, False])
 def test_scaffold_defs_component_no_params_success(in_workspace: bool) -> None:
     with (
@@ -734,6 +772,47 @@ def test_scaffold_defs_sensor() -> None:
         assert_runner_result(result)
         assert Path("src/foo_bar/defs/my_sensor.py").exists()
         assert not Path("src/foo_bar/defs/defs.yaml").exists()
+
+
+# ########################
+# ##### DEFS OPTIONS
+# ########################
+
+
+def test_scaffold_defs_json_params_option_only_for_scaffold_params() -> None:
+    with (
+        ProxyRunner.test(use_fixed_test_components=True) as runner,
+        isolated_example_project_foo_bar(runner),
+    ):
+        # SimplePipesScriptComponent has scaffold params, so --json-params should be defined
+        result = runner.invoke(
+            "scaffold", "defs", "dagster_test.components.SimplePipesScriptComponent", "--help"
+        )
+        assert_runner_result(result)
+        assert "--json-params" in result.output
+
+        # AllMetadataEmptyComponent does not have scaffold params, so --json-params should not be
+        # defined
+        result = runner.invoke(
+            "scaffold", "defs", "dagster_test.components.AllMetadataEmptyComponent", "--help"
+        )
+        assert_runner_result(result)
+        assert "--json-params" not in result.output
+
+
+def test_scaffold_defs_format_option_only_for_components() -> None:
+    with (
+        ProxyRunner.test() as runner,
+        isolated_example_project_foo_bar(runner),
+    ):
+        result = runner.invoke("scaffold", "defs", "dagster.DefsFolderComponent", "--help")
+        assert_runner_result(result)
+        assert "--format" in result.output
+
+        # `asset` is not a component, so --format should not be defined
+        result = runner.invoke("scaffold", "defs", "dagster.asset", "--help")
+        assert_runner_result(result)
+        assert "--format" not in result.output
 
 
 # ##### REAL COMPONENTS
