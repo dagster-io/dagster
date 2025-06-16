@@ -27,6 +27,7 @@ For example, we can attach a default value of `"hello"` to the `greeting_phrase`
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/dagster/pythonic_config/pythonic_config.py"
+  title="src/<project_name>/defs/my_asset.py"
   startAfter="start_optional_config"
   endBefore="end_optional_config"
   dedent="4"
@@ -38,6 +39,7 @@ By default, fields which are typed as `Optional` are not required to be specifie
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/dagster/pythonic_config/pythonic_config.py"
+  title="src/<project_name>/defs/my_asset.py"
   startAfter="start_required_config"
   endBefore="end_required_config"
   dedent="4"
@@ -55,6 +57,7 @@ For example, we can define a config schema that takes in a list of user names an
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/dagster/pythonic_config/pythonic_config.py"
+  title="src/<project_name>/defs/my_asset.py"
   startAfter="start_basic_data_structures_config"
   endBefore="end_basic_data_structures_config"
   dedent="4"
@@ -68,6 +71,7 @@ Here, we define a schema which contains a mapping of user names to complex user 
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/dagster/pythonic_config/pythonic_config.py"
+  title="src/<project_name>/defs/my_asset.py"
   startAfter="start_nested_schema_config"
   endBefore="end_nested_schema_config"
   dedent="4"
@@ -79,6 +83,7 @@ By default, `Config` schemas are strict, meaning that they will only accept fiel
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/dagster/pythonic_config/pythonic_config.py"
+  title="src/<project_name>/defs/my_asset.py"
   startAfter="start_permissive_schema_config"
   endBefore="end_permissive_schema_config"
   dedent="4"
@@ -92,6 +97,7 @@ Here, we define a config schema which takes in a `pet` field, which can be eithe
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/dagster/pythonic_config/pythonic_config.py"
+  title="src/<project_name>/defs/my_asset.py"
   startAfter="start_union_schema_config"
   endBefore="end_union_schema_config"
   dedent="4"
@@ -125,6 +131,7 @@ Python enums which subclass `Enum` are supported as config fields. Here, we defi
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/dagster/pythonic_config/pythonic_config.py"
+  title="src/<project_name>/defs/my_job.py"
   startAfter="start_enum_schema_config"
   endBefore="end_enum_schema_config"
   dedent="4"
@@ -159,6 +166,7 @@ Here, we define some validators on a configured user's name and username, which 
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/dagster/pythonic_config/pythonic_config.py"
+  title="src/<project_name>/defs/my_job.py"
   startAfter="start_validated_schema_config"
   endBefore="end_validated_schema_config"
 />

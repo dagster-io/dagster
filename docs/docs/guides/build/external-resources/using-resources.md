@@ -30,7 +30,7 @@ You can now use the resource elsewhere in your project - for example, in an asse
  />
 
 
-Resource binding can happen at any level of the `defs` hierarchy. If you moved `asset_one` in this example to a subdirectory, you could leave the existing `resources.py` file at `src/defs/resources.py`:
+Resource binding can happen at any level of the `defs` hierarchy. If you moved `asset_one` in this example to a subdirectory, you could leave the existing `resources.py` file at `src/resource_docs/defs/resources.py`:
 
 ```
 src

@@ -39,10 +39,3 @@ def my_schedule(context):
         )
     # highlight-end
     return dg.RunRequest()
-
-
-defs = dg.Definitions(
-    assets=[first_asset],
-    jobs=[my_job],
-    schedules=[my_schedule],
-)

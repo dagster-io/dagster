@@ -29,9 +29,9 @@ concurrency:
 You can assign assets and ops to concurrency pools which allow you to limit the number of in progress op executions across all runs. You first assign your asset or op to a concurrency pool using the `pool` keyword argument.
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/operate/concurrency-pool-api.py"
+  path="docs_snippets/docs_snippets/guides/operate/managing_concurrency/concurrency_pool_api.py"
+  title="src/<project_name>/defs/my_asset_and_graph_asset.py"
   language="python"
-  title="Specifying pools on assets and ops"
 />
 
 You should be able to verify that you have set the pool correctly by viewing the details pane for the asset or op in the Dagster UI.
@@ -113,9 +113,9 @@ While pool limits allow you to [limit the number of ops executing across all run
 limit concurrency for ops and assets in runs, by using `max_concurrent` in the run config, either in Python or using the Launchpad in the Dagster UI.
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/operate/concurrency-run-scoped-op-concurrency.py"
+  path="docs_snippets/docs_snippets/guides/operate/managing_concurrency/concurrency_run_scoped_op_concurrency.py"
   language="python"
-  title="Limit concurrent op execution for a single run"
+  title="src/<project_name>/defs/limit_concurrent_ops.py"
 />
 
 The default limit for op execution within a run depends on which executor you are using. For example, the <PyObject section="execution" module="dagster" object="multiprocess_executor" /> by default limits the number of ops executing to the value of `multiprocessing.cpu_count()` in the launched run.
@@ -125,9 +125,9 @@ The default limit for op execution within a run depends on which executor you ar
 You can use Dagster's rich metadata to use a schedule or a sensor to only start a run when there are no currently running jobs.
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/operate/concurrency-no-more-than-1-job.py"
+  path="docs_snippets/docs_snippets/guides/operate/managing_concurrency/concurrency_no_more_than_1_job.py"
   language="python"
-  title="No more than 1 running job from a schedule"
+  title="src/<project_name>/defs/one_job.py"
 />
 
 ## Troubleshooting

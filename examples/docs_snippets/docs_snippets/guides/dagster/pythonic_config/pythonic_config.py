@@ -12,9 +12,9 @@ def get_engine(connection_url: str) -> Engine:
 def basic_resource_config() -> None:
     # start_basic_resource_config
 
-    from dagster import ConfigurableResource
+    import dagster as dg
 
-    class MyDatabaseResource(ConfigurableResource):
+    class MyDatabaseResource(dg.ConfigurableResource):
         connection_url: str
 
         def query(self, query: str):
@@ -26,15 +26,15 @@ def basic_resource_config() -> None:
 def permissive_schema_config() -> None:
     # start_permissive_schema_config
 
-    from dagster import asset, PermissiveConfig
+    import dagster as dg
     from typing import Optional
     import requests
 
-    class FilterConfig(PermissiveConfig):
+    class FilterConfig(dg.PermissiveConfig):
         title: Optional[str] = None
         description: Optional[str] = None
 
-    @asset
+    @dg.asset
     def filtered_listings(config: FilterConfig):
         # extract all config fields, including those not defined in the schema
         url_params = config.dict()
@@ -48,12 +48,12 @@ def permissive_schema_config() -> None:
 def execute_with_config() -> None:
     # start_basic_op_config
 
-    from dagster import op, Config
+    import dagster as dg
 
-    class MyOpConfig(Config):
+    class MyOpConfig(dg.Config):
         person_name: str
 
-    @op
+    @dg.op
     def print_greeting(config: MyOpConfig):
         print(f"hello {config.person_name}")  # noqa: T201
 
@@ -61,48 +61,48 @@ def execute_with_config() -> None:
 
     # start_basic_asset_config
 
-    from dagster import asset, Config
+    import dagster as dg
 
-    class MyAssetConfig(Config):
+    class MyAssetConfig(dg.Config):
         person_name: str
 
-    @asset
+    @dg.asset
     def greeting(config: MyAssetConfig) -> str:
         return f"hello {config.person_name}"
 
     # end_basic_asset_config
 
     # start_execute_with_config
-    from dagster import job, materialize, op, RunConfig
+    import dagster as dg
 
-    @job
+    @dg.job
     def greeting_job():
         print_greeting()
 
     job_result = greeting_job.execute_in_process(
-        run_config=RunConfig({"print_greeting": MyOpConfig(person_name="Alice")})
+        run_config=dg.RunConfig({"print_greeting": MyOpConfig(person_name="Alice")})
     )
 
-    asset_result = materialize(
+    asset_result = dg.materialize(
         [greeting],
-        run_config=RunConfig({"greeting": MyAssetConfig(person_name="Alice")}),
+        run_config=dg.RunConfig({"greeting": MyAssetConfig(person_name="Alice")}),
     )
 
     # end_execute_with_config
 
     # start_execute_with_config_envvar
-    from dagster import job, materialize, op, RunConfig, EnvVar
+    import dagster as dg
 
     job_result = greeting_job.execute_in_process(
-        run_config=RunConfig(
-            {"print_greeting": MyOpConfig(person_name=EnvVar("PERSON_NAME"))}
+        run_config=dg.RunConfig(
+            {"print_greeting": MyOpConfig(person_name=dg.EnvVar("PERSON_NAME"))}
         )
     )
 
-    asset_result = materialize(
+    asset_result = dg.materialize(
         [greeting],
-        run_config=RunConfig(
-            {"greeting": MyAssetConfig(person_name=EnvVar("PERSON_NAME"))}
+        run_config=dg.RunConfig(
+            {"greeting": MyAssetConfig(person_name=dg.EnvVar("PERSON_NAME"))}
         ),
     )
 
@@ -111,18 +111,18 @@ def execute_with_config() -> None:
 
 def basic_data_structures_config() -> None:
     # start_basic_data_structures_config
-    from dagster import Config, materialize, asset, RunConfig
+    import dagster as dg
 
-    class MyDataStructuresConfig(Config):
+    class MyDataStructuresConfig(dg.Config):
         user_names: list[str]
         user_scores: dict[str, int]
 
-    @asset
+    @dg.asset
     def scoreboard(config: MyDataStructuresConfig): ...
 
-    result = materialize(
+    result = dg.materialize(
         [scoreboard],
-        run_config=RunConfig(
+        run_config=dg.RunConfig(
             {
                 "scoreboard": MyDataStructuresConfig(
                     user_names=["Alice", "Bob"],
@@ -137,22 +137,22 @@ def basic_data_structures_config() -> None:
 
 def nested_schema_config() -> None:
     # start_nested_schema_config
-    from dagster import asset, materialize, Config, RunConfig
+    import dagster as dg
 
-    class UserData(Config):
+    class UserData(dg.Config):
         age: int
         email: str
         profile_picture_url: str
 
-    class MyNestedConfig(Config):
+    class MyNestedConfig(dg.Config):
         user_data: dict[str, UserData]
 
-    @asset
+    @dg.asset
     def average_age(config: MyNestedConfig): ...
 
-    result = materialize(
+    result = dg.materialize(
         [average_age],
-        run_config=RunConfig(
+        run_config=dg.RunConfig(
             {
                 "average_age": MyNestedConfig(
                     user_data={
@@ -178,32 +178,32 @@ def nested_schema_config() -> None:
 def union_schema_config() -> None:
     # start_union_schema_config
 
-    from dagster import asset, materialize, Config, RunConfig
+    import dagster as dg
     from pydantic import Field
     from typing import Union
     from typing_extensions import Literal
 
-    class Cat(Config):
+    class Cat(dg.Config):
         pet_type: Literal["cat"] = "cat"
         meows: int
 
-    class Dog(Config):
+    class Dog(dg.Config):
         pet_type: Literal["dog"] = "dog"
         barks: float
 
-    class ConfigWithUnion(Config):
+    class ConfigWithUnion(dg.Config):
         pet: Union[Cat, Dog] = Field(discriminator="pet_type")
 
-    @asset
+    @dg.asset
     def pet_stats(config: ConfigWithUnion):
         if isinstance(config.pet, Cat):
             return f"Cat meows {config.pet.meows} times"
         else:
             return f"Dog barks {config.pet.barks} times"
 
-    result = materialize(
+    result = dg.materialize(
         [pet_stats],
-        run_config=RunConfig(
+        run_config=dg.RunConfig(
             {
                 "pet_stats": ConfigWithUnion(
                     pet=Cat(meows=10),
@@ -219,7 +219,7 @@ def metadata_config() -> None:
     from dagster import Config
     from pydantic import Field
 
-    class MyMetadataConfig(Config):
+    class MyMetadataConfig(dg.Config):
         person_name: str = Field(description="The name of the person to greet")
         age: int = Field(gt=0, lt=100, description="The age of the person to greet")
 
@@ -233,10 +233,10 @@ def optional_config() -> None:
     # start_optional_config
 
     from typing import Optional
-    from dagster import asset, Config, materialize, RunConfig
+    import dagster as dg
     from pydantic import Field
 
-    class MyAssetConfig(Config):
+    class MyAssetConfig(dg.Config):
         person_name: Optional[str] = None
 
         # can pass default to pydantic.Field to attach metadata to the field
@@ -244,16 +244,16 @@ def optional_config() -> None:
             default="hello", description="The greeting phrase to use."
         )
 
-    @asset
+    @dg.asset
     def greeting(config: MyAssetConfig) -> str:
         if config.person_name:
             return f"{config.greeting_phrase} {config.person_name}"
         else:
             return config.greeting_phrase
 
-    asset_result = materialize(
+    asset_result = dg.materialize(
         [greeting],
-        run_config=RunConfig({"greeting": MyAssetConfig()}),
+        run_config=dg.RunConfig({"greeting": MyAssetConfig()}),
     )
 
     # end_optional_config
@@ -262,37 +262,37 @@ def optional_config() -> None:
 def execute_with_bad_config() -> None:
     from dagster import op, job, materialize, Config, RunConfig
 
-    class MyOpConfig(Config):
+    class MyOpConfig(dg.Config):
         person_name: str
 
-    @op
+    @dg.op
     def print_greeting(config: MyOpConfig):
         print(f"hello {config.person_name}")  # noqa: T201
 
     from dagster import asset, Config
 
-    class MyAssetConfig(Config):
+    class MyAssetConfig(dg.Config):
         person_name: str
 
-    @asset
+    @dg.asset
     def greeting(config: MyAssetConfig) -> str:
         return f"hello {config.person_name}"
 
     # start_execute_with_bad_config
 
-    @job
+    @dg.job
     def greeting_job():
         print_greeting()
 
     op_result = greeting_job.execute_in_process(
-        run_config=RunConfig(
+        run_config=dg.RunConfig(
             {"print_greeting": MyOpConfig(nonexistent_config_value=1)}  # type: ignore
         ),
     )
 
-    asset_result = materialize(
+    asset_result = dg.materialize(
         [greeting],
-        run_config=RunConfig({"greeting": MyAssetConfig(nonexistent_config_value=1)}),  # type: ignore
+        run_config=dg.RunConfig({"greeting": MyAssetConfig(nonexistent_config_value=1)}),  # type: ignore
     )
 
     # end_execute_with_bad_config
@@ -301,7 +301,7 @@ def execute_with_bad_config() -> None:
 def enum_schema_config() -> None:
     # start_enum_schema_config
 
-    from dagster import Config, RunConfig, op, job
+    import dagster as dg
     from enum import Enum
 
     class UserPermissions(Enum):
@@ -309,21 +309,21 @@ def enum_schema_config() -> None:
         MEMBER = "member"
         ADMIN = "admin"
 
-    class ProcessUsersConfig(Config):
+    class ProcessUsersConfig(dg.Config):
         users_list: dict[str, UserPermissions]
 
-    @op
+    @dg.op
     def process_users(config: ProcessUsersConfig):
         for user, permission in config.users_list.items():
             if permission == UserPermissions.ADMIN:
                 print(f"{user} is an admin")  # noqa: T201
 
-    @job
+    @dg.job
     def process_users_job():
         process_users()
 
     op_result = process_users_job.execute_in_process(
-        run_config=RunConfig(
+        run_config=dg.RunConfig(
             {
                 "process_users": ProcessUsersConfig(
                     users_list={
@@ -340,10 +340,10 @@ def enum_schema_config() -> None:
 def validated_schema_config() -> None:
     # start_validated_schema_config
 
-    from dagster import Config, RunConfig, op, job
+    import dagster as dg
     from pydantic import validator
 
-    class UserConfig(Config):
+    class UserConfig(dg.Config):
         name: str
         username: str
 
@@ -360,25 +360,25 @@ def validated_schema_config() -> None:
 
     executed = {}
 
-    @op
+    @dg.op
     def greet_user(config: UserConfig) -> None:
         print(f"Hello {config.name}!")  # noqa: T201
         executed["greet_user"] = True
 
-    @job
+    @dg.job
     def greet_user_job() -> None:
         greet_user()
 
     # Input is valid, so this will work
     op_result = greet_user_job.execute_in_process(
-        run_config=RunConfig(
+        run_config=dg.RunConfig(
             {"greet_user": UserConfig(name="Alice Smith", username="alice123")}
         ),
     )
 
     # Name has no space, so this will fail
     op_result = greet_user_job.execute_in_process(
-        run_config=RunConfig(
+        run_config=dg.RunConfig(
             {"greet_user": UserConfig(name="John", username="johndoe44")}
         ),
     )
@@ -389,10 +389,10 @@ def validated_schema_config() -> None:
 def required_config() -> None:
     # start_required_config
     from typing import Optional, Callable
-    from dagster import asset, Config
+    import dagster as dg
     from pydantic import Field
 
-    class MyAssetConfig(Config):
+    class MyAssetConfig(dg.Config):
         # ellipsis indicates that even though the type is Optional,
         # an input is required
         person_first_name: Optional[str] = ...
@@ -402,7 +402,7 @@ def required_config() -> None:
             default=..., description="The last name of the person to greet"
         )
 
-    @asset
+    @dg.asset
     def goodbye(config: MyAssetConfig) -> str:
         full_name = f"{config.person_first_name} {config.person_last_name}".strip()
         if full_name:

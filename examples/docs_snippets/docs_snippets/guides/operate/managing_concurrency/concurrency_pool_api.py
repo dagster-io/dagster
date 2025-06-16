@@ -1,5 +1,3 @@
-import time
-
 import dagster as dg
 
 
@@ -21,8 +19,3 @@ def my_downstream_op(inp):
 @dg.graph_asset
 def my_graph_asset():
     return my_downstream_op(my_op())
-
-
-defs = dg.Definitions(
-    assets=[my_asset, my_graph_asset],
-)

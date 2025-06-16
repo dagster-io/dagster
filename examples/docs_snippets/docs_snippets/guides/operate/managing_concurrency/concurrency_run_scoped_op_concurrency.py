@@ -30,7 +30,5 @@ my_job = dg.define_asset_job(
 
 # limits concurrent asset execution for all runs in this code location to 4
 defs = dg.Definitions(
-    assets=[first_asset, second_asset, third_asset],
-    jobs=[my_job],
     executor=dg.multiprocess_executor.configured({"max_concurrent": 4}),
 )
