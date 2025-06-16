@@ -6,21 +6,21 @@ title: Customizing Dagster's built-in loggers
 
 Custom loggers are used to alter the structure of the logs being produced by your Dagster pipelines. For example, JSON logs can be produced to more easily be processed by log management systems. For a list of all built-in loggers, see the [API documentation](/api/dagster/loggers#built-in-loggers).
 
-:::info Limitations
+:::note Limitations
 
 It's not currently possible to globally configure the logger for all jobs in a repository.
 
 :::
 
-:::note Prerequisites
+<details>
+  <summary>Prerequisites</summary>
 
 To follow the steps in this guide, you'll need:
 
-- A [Dagster project](/guides/build/projects/creating-a-new-project) created with the [`create-dagster` CLI](/api/dg/create-dagster)
-- A basic understanding of Dagster concepts such as [assets](/guides/build/assets), [jobs](/guides/build/jobs) and [definitions](/api/dagster/definitions)
-- A working knowledge of the [Python logging module](https://docs.python.org/3/library/logging.html)
+- A basic understanding of Dagster concepts such as assets, jobs and definitions
+- A working knowledge of the Python logging module
 
-:::
+</details>
 
 ## Step 1: Add a prebuilt custom logger to your jobs
 
@@ -33,7 +33,7 @@ The following example shows how to add the custom logger to your code location d
 <CodeExample
   path="docs_snippets/docs_snippets/guides/monitor-alert/custom-logging/asset-job-example.py"
   language="python"
-  title="src/my_project/defs/my_asset_job.py"
+  title="Add custom logger to asset job"
 />
 
 ### Add the custom logger to your ops-based jobs
@@ -43,7 +43,7 @@ Configuring a ops job to use the custom logger slightly differs from the asset j
 <CodeExample
   path="docs_snippets/docs_snippets/guides/monitor-alert/custom-logging/ops-job-example.py"
   language="python"
-  title="src/my_project/defs/my_op_job.py"
+  title="Add custom logger to ops job"
 />
 
 ### Expected `json_console_logger` output
@@ -114,7 +114,7 @@ log record. Other examples can be found in the codebase, in the built-in loggers
 <CodeExample
   path="docs_snippets/docs_snippets/guides/monitor-alert/custom-logging/customlogger.py"
   language="python"
-  title="src/my_project/defs/my_custom_logger.py"
+  title="Example custom logger"
 />
 
 Sample output:
