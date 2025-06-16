@@ -64,12 +64,8 @@ You can define custom values that will be made available to the templating engin
 
 When a user scaffolds this component definition, they will be able to use this custom scope in their `defs.yaml` file:
 
-```yaml
-component_type: my_component
-
-attributes:
-  script_path: script.sh
-  asset_specs:
-    - key: a
-      partitions_def: '{{ daily_partitions }}'
-```
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/components/shell-script-component/7-custom-scope-defs.yaml"
+  language="yaml"
+  title="my_component_library/components/my_shell_command/defs.yaml"
+/>
