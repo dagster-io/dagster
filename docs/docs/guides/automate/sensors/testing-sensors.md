@@ -57,10 +57,6 @@ dagster sensor preview my_sensor_name
 
 **Via Python**
 
-import ScaffoldSensor from '@site/docs/partials/\_ScaffoldSensor.md';
-
-<ScaffoldSensor />
-
 To unit test sensors, you can directly invoke the sensor's Python function. This will return all the run requests yielded by the sensor. The config obtained from the returned run requests can be validated using the <PyObject section="execution" module="dagster" object="validate_run_config" /> function:
 
 <CodeExample
