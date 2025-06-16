@@ -45,7 +45,7 @@ The most common kind of partitioned job is a time-partitioned job - each partiti
 
 Before we dive in, let's look at a non-partitioned job that computes some data for a given date:
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/date_config_job.py" />
+<CodeExample path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/date_config_job.py" title="src/<project_name>/defs/assets.py"/>
 
 It takes, as config, a string `date`. This piece of config defines which date to compute data for. For example, if you wanted to compute for `May 5th, 2020`, you would execute the graph with the following config:
 
@@ -57,17 +57,17 @@ With the job above, it's possible to supply any value for the `date` param. This
 
 First, define the <PyObject section="partitions" module="dagster" object="PartitionedConfig"/>. In this case, because each partition is a date, you can use the <PyObject section="partitions" module="dagster" object="daily_partitioned_config" decorator /> decorator. This decorator defines the full set of partitions - every date between the start date and the current date, as well as how to determine the run config for a given partition.
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/partitioned_job.py" startAfter="start_partitioned_config" endBefore="end_partitioned_config" />
+<CodeExample path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/partitioned_job.py" startAfter="start_partitioned_config" endBefore="end_partitioned_config" title="src/<project_name>/defs/assets.py"/>
 
 Then you can build a job that uses the `PartitionedConfig` by supplying it to the `config` argument when you construct the job:
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/partitioned_job.py" startAfter="start_partitioned_job" endBefore="end_partitioned_job" />
+<CodeExample path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/partitioned_job.py" startAfter="start_partitioned_job" endBefore="end_partitioned_job" title="src/<project_name>/defs/assets.py"/>
 
 ## Defining jobs with static partitions
 
 Not all jobs are partitioned by time. For example, the following example shows a partitioned job where the partitions are continents:
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/static_partitioned_job.py" />
+<CodeExample path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/static_partitioned_job.py" title="src/<project_name>/defs/assets.py"/>
 
 ## Creating schedules from partitioned jobs
 
