@@ -6,24 +6,15 @@ from pathlib import Path
 from typing import Any
 
 import dagster as dg
-from dagster.components import (
-    Component,
-    ComponentLoadContext,
-    Resolvable,
-    ResolvedAssetSpec,
-    Scaffolder,
-    ScaffoldRequest,
-    scaffold_component,
-)
-from dagster.components.scaffold.scaffold import scaffold_with
+from dagster.components.scaffold.scaffold import ScaffoldRequest, scaffold_with
 
 
 # highlight-start
-class ShellCommandScaffolder(Scaffolder):
-    """Scaffolds a template shell script alongside a filled-out component YAML file."""
+class ShellCommandScaffolder(dg.Scaffolder):
+    """Scaffolds a template shell script alongside a filled-out defs.yaml file."""
 
-    def scaffold(self, request: ScaffoldRequest, params: Any) -> None:
-        scaffold_component(
+    def scaffold(self, request: ScaffoldRequest) -> None:
+        dg.scaffold_component(
             request,
             {
                 "script_path": "script.sh",
@@ -44,13 +35,13 @@ class ShellCommandScaffolder(Scaffolder):
 @scaffold_with(ShellCommandScaffolder)
 # highlight-end
 @dataclass
-class ShellCommand(Component, Resolvable):
+class ShellCommand(dg.Component, dg.Resolvable):
     """Models a shell script as a Dagster asset."""
 
     script_path: str
-    asset_specs: Sequence[ResolvedAssetSpec]
+    asset_specs: Sequence[dg.ResolvedAssetSpec]
 
-    def build_defs(self, context: ComponentLoadContext) -> dg.Definitions:
+    def build_defs(self, context: dg.ComponentLoadContext) -> dg.Definitions:
         resolved_script_path = Path(context.path, self.script_path).absolute()
 
         @dg.multi_asset(name=Path(self.script_path).stem, specs=self.asset_specs)

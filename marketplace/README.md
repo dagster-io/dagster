@@ -4,21 +4,25 @@ Marketplace API hosting a registry integrations and components.
 
 ## Development
 
+```bash
+yarn start
 ```
+
+or:
+
+```bash
 vercel login
 ```
 
-```
+```bash
 vercel dev
 ```
 
 ## Deployment
 
+```bash
+vercel deploy --prod
 ```
-vercel
-```
-
-NOTE: CI/CD will be configured soon.
 
 ## References
 

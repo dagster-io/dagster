@@ -1,17 +1,19 @@
 from collections.abc import Iterator, Mapping, Sequence
 from dataclasses import dataclass, field
+from functools import cached_property
 from pathlib import Path
-from typing import Annotated, Any, Literal, Optional, Union
+from typing import Annotated, Any, Callable, Literal, Optional, Union
 
+from dagster import Resolvable, Resolver
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.assets import AssetsDefinition
-from dagster._core.definitions.declarative_automation.automation_condition import (
-    AutomationCondition,
-)
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.events import AssetMaterialization
+from dagster._core.definitions.metadata.source_code import (
+    LocalFileCodeReference,
+    merge_code_references,
+)
 from dagster._core.definitions.result import MaterializeResult
-from dagster.components import Resolvable, Resolver
 from dagster.components.component.component import Component
 from dagster.components.core.context import ComponentLoadContext
 from dagster.components.resolved.context import ResolutionContext
@@ -30,71 +32,55 @@ from dagster_sling.resources import AssetExecutionContext, SlingResource
 SlingMetadataAddons: TypeAlias = Literal["column_metadata", "row_count"]
 
 
-class DagsterSlingTranslatorAutomationCondition(DagsterSlingTranslator):
-    """Subclassed to pull in any overridden impl for get_automation_condition
-    into produced asset specs.
-    """
+def resolve_translation(context: ResolutionContext, model):
+    info = TranslatorResolvingInfo(
+        "stream_definition",
+        asset_attributes=model,
+        resolution_context=context,
+        model_key="translation",
+    )
+    return lambda base_asset_spec, stream_definition: info.get_asset_spec(
+        base_asset_spec,
+        {
+            "stream_definition": stream_definition,
+            "spec": base_asset_spec,
+        },
+    )
 
-    def get_automation_condition(
-        self, stream_definition: Mapping[str, Any]
-    ) -> Optional[AutomationCondition]: ...
+
+TranslationFn: TypeAlias = Callable[[AssetSpec, Mapping[str, Any]], AssetSpec]
+
+ResolvedTranslationFn: TypeAlias = Annotated[
+    TranslationFn,
+    Resolver(
+        resolve_translation,
+        model_field_type=Union[str, AssetAttributesModel],
+        inject_before_resolve=False,
+    ),
+]
+
+
+class ProxyDagsterSlingTranslator(DagsterSlingTranslator):
+    def __init__(self, fn: TranslationFn):
+        self._fn = fn
 
     def get_asset_spec(self, stream_definition: Mapping[str, Any]) -> AssetSpec:
-        asset_spec = super().get_asset_spec(stream_definition)
-        return asset_spec.replace_attributes(
-            automation_condition=self.get_automation_condition(stream_definition)
-        )
-
-
-class ComponentsDagsterSlingTranslator(DagsterSlingTranslator):
-    def __init__(self, *, resolving_info: TranslatorResolvingInfo):
-        super().__init__()
-        self.resolving_info = resolving_info
-
-    def get_asset_spec(self, obj: Any) -> AssetSpec:  # pyright: ignore[reportIncompatibleMethodOverride]
-        base_spec = super().get_asset_spec(obj)
-        return self.resolving_info.get_asset_spec(
-            base_spec,
-            {self.resolving_info.obj_name: obj, "spec": base_spec},
-        )
-
-
-def resolve_translator(
-    context: ResolutionContext,
-    asset_attributes,
-) -> DagsterSlingTranslator:
-    # TODO: Consider supporting owners and code_version in the future
-    if asset_attributes and isinstance(asset_attributes, AssetAttributesModel):
-        set_vals = asset_attributes.model_dump(exclude_unset=True)
-        if "owners" in set_vals:
-            raise ValueError("owners are not supported for sling_replication_collection component")
-        if "code_version" in set_vals:
-            raise ValueError(
-                "code_version is not supported for sling_replication_collection component"
-            )
-
-    return ComponentsDagsterSlingTranslator(
-        resolving_info=TranslatorResolvingInfo(
-            "stream_definition",
-            asset_attributes or AssetAttributesModel(),
-            context,
-        )
-    )
+        base_asset_spec = super().get_asset_spec(stream_definition)
+        return self._fn(base_asset_spec, stream_definition)
 
 
 @dataclass
 class SlingReplicationSpecModel(Resolvable):
     path: str
     op: Optional[OpSpec] = None
-    translator: Annotated[
-        Optional[DagsterSlingTranslator],
-        Resolver(
-            resolve_translator,
-            model_field_name="asset_attributes",
-            model_field_type=Union[str, AssetAttributesModel],
-        ),
-    ] = None
+    translation: Optional[ResolvedTranslationFn] = None
     include_metadata: list[SlingMetadataAddons] = field(default_factory=list)
+
+    @cached_property
+    def translator(self):
+        if self.translation:
+            return ProxyDagsterSlingTranslator(self.translation)
+        return DagsterSlingTranslator()
 
 
 def resolve_resource(
@@ -114,7 +100,7 @@ class SlingReplicationCollectionComponent(Component, Resolvable):
 
     dg scaffold dagster_sling.SlingReplicationCollectionComponent {component_path} to get started.
 
-    This will create a component.yaml as well as a `replication.yaml` which is a Sling-specific configuration
+    This will create a defs.yaml as well as a `replication.yaml` which is a Sling-specific configuration
     file. See Sling's [documentation](https://docs.slingdata.io/concepts/replication#overview) on `replication.yaml`.
     """
 
@@ -133,11 +119,23 @@ class SlingReplicationCollectionComponent(Component, Resolvable):
     ) -> AssetsDefinition:
         op_spec = replication_spec_model.op or OpSpec()
 
+        class ReplicationTranslatorWithCodeReferences(DagsterSlingTranslator):
+            def get_asset_spec(self, stream_definition: Mapping[str, Any]) -> AssetSpec:
+                asset_spec = replication_spec_model.translator.get_asset_spec(stream_definition)
+                return merge_code_references(
+                    asset_spec,
+                    [
+                        LocalFileCodeReference(
+                            file_path=str(context.path / replication_spec_model.path)
+                        )
+                    ],
+                )
+
         @sling_assets(
             name=op_spec.name or Path(replication_spec_model.path).stem,
             op_tags=op_spec.tags,
             replication_config=context.path / replication_spec_model.path,
-            dagster_sling_translator=replication_spec_model.translator,
+            dagster_sling_translator=ReplicationTranslatorWithCodeReferences(),
             backfill_policy=op_spec.backfill_policy,
         )
         def _asset(context: AssetExecutionContext):

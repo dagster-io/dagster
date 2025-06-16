@@ -896,3 +896,22 @@ def test_large_cross_product_memory_usage():
         assert paginated_results.has_more
         mock_product.assert_not_called()
         mock_get_partition_keys.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    "key, expected",
+    [
+        ("a|2", True),
+        ("c|1", True),
+        ("2|a", False),
+        ("a|b", False),
+        ("abc", False),
+        ("super1@#^k-INVALID", False),
+    ],
+)
+def test_has_partition_key(key: str, expected: bool) -> None:
+    dim1 = StaticPartitionsDefinition(["a", "b", "c"])
+    dim2 = StaticPartitionsDefinition(["1", "2", "3"])
+
+    multi_partitions = MultiPartitionsDefinition({"dim1": dim1, "dim2": dim2})
+    assert multi_partitions.has_partition_key(key) == expected

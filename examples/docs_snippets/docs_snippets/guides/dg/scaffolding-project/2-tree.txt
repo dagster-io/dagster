@@ -6,13 +6,10 @@ tree
     ├── src
     │   └── my_project
     │       ├── __init__.py
-    │       ├── definitions.py
-    │       ├── defs
-    │       │   └── __init__.py
-    │       └── lib
+    │       └── defs
     │           └── __init__.py
     ├── tests
     │   └── __init__.py
     └── uv.lock
 
-7 directories, 7 files
+6 directories, 5 files

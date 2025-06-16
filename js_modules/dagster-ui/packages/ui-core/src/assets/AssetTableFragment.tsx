@@ -10,6 +10,7 @@ export const ASSET_TABLE_DEFINITION_FRAGMENT = gql`
     isObservable
     isExecutable
     isPartitioned
+    isAutoCreatedStub
     computeKind
     hasMaterializePermission
     hasReportRunlessAssetEventPermission
@@ -20,6 +21,11 @@ export const ASSET_TABLE_DEFINITION_FRAGMENT = gql`
       ... on TimeWindowFreshnessPolicy {
         failWindowSeconds
         warnWindowSeconds
+      }
+      ... on CronFreshnessPolicy {
+        deadlineCron
+        lowerBoundDeltaSeconds
+        timezone
       }
     }
     partitionDefinition {

@@ -36,7 +36,7 @@ setup(
     install_requires=[
         f"dagster{pin}",
         "pandas",
-        "pandera>=0.15.0",
+        "pandera>=0.15.0,<0.24.0",
     ],
     extras_require={
         "polars": ["polars>=1"],

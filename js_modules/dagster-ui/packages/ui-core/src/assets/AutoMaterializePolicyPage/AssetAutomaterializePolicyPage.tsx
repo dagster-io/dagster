@@ -33,7 +33,7 @@ export const AssetAutomaterializePolicyPage = ({
   >({
     queryKey: 'evaluation',
     decode: (raw) => {
-      return raw.evaluation;
+      return typeof raw.evaluation === 'string' ? raw.evaluation : undefined;
     },
     encode: (raw) => {
       // Reset the selected partition

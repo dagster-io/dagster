@@ -41,7 +41,7 @@ def execute_asset_job_in_process(asset_job: UnresolvedAssetJobDefinition) -> Exe
     assets = [asset1, asset2]
     asset_checks = [asset1_check1, asset1_check2, asset2_check1]
     defs = Definitions(assets=assets, jobs=[asset_job], asset_checks=asset_checks)
-    job_def = defs.get_job_def(asset_job.name)
+    job_def = defs.resolve_job_def(asset_job.name)
     return job_def.execute_in_process()
 
 
@@ -88,7 +88,7 @@ def test_checks_for_assets_asset_key_coercibles():
         return AssetCheckResult(passed=True)
 
     defs = Definitions(assets=[asset1, asset2], asset_checks=[asset1_check, asset2_check])
-    asset_graph = defs.get_asset_graph()
+    asset_graph = defs.resolve_asset_graph()
 
     assert AssetSelection.checks_for_assets(asset1).resolve_checks(asset_graph) == {
         AssetCheckKey(asset1.key, "asset1_check")
@@ -217,7 +217,7 @@ def execute_asset_job_2_in_process(
 ) -> ExecuteInProcessResult:
     assets = [asset_with_checks]
     defs = Definitions(assets=assets, jobs=[asset_job])
-    job_def = defs.get_job_def(asset_job.name)
+    job_def = defs.resolve_job_def(asset_job.name)
     return job_def.execute_in_process()
 
 
@@ -238,7 +238,7 @@ def test_check_keys_selection():
     assets = [asset1, asset2]
     asset_checks = [asset1_check1, asset1_check2, asset2_check1]
     defs = Definitions(assets=assets, asset_checks=asset_checks)
-    asset_graph = defs.get_asset_graph()
+    asset_graph = defs.resolve_asset_graph()
     keys = {
         AssetCheckKey(asset_key=asset1.key, name="asset1_check1"),
         AssetCheckKey(asset_key=asset1.key, name="asset1_check2"),

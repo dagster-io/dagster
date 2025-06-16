@@ -35,6 +35,7 @@ from dagster._core.execution.api import (
 from dagster._core.execution.retries import RetryMode
 from dagster._core.storage.dagster_run import DagsterRun
 from dagster._core.test_utils import instance_for_test
+from dagster._utils import segfault
 
 executors = pytest.mark.parametrize(
     "environment",
@@ -646,3 +647,71 @@ def test_failure_metadata():
     assert step_failure_data
     assert step_failure_data.user_failure_data
     assert step_failure_data.user_failure_data.metadata["meta"].value == "data"
+
+
+def define_crash_once_job():
+    @op(config_schema=str, retry_policy=RetryPolicy(max_retries=1))
+    def crash_once(context):
+        file = os.path.join(context.op_config, "i_threw_up")
+        if not os.path.exists(file):
+            open(file, "a", encoding="utf8").close()
+            segfault()
+        return "okay perfect"
+
+    @job
+    def crash_retry():
+        crash_once()
+
+    return crash_retry
+
+
+def define_crash_always_job():
+    @op(config_schema=str, retry_policy=RetryPolicy(max_retries=1))
+    def crash_always(context):
+        segfault()
+
+    @job
+    def crash_always_job():
+        crash_always()
+
+    return crash_always_job
+
+
+def test_multiprocess_crash_retry():
+    with instance_for_test() as instance:
+        with tempfile.TemporaryDirectory() as tempdir:
+            with execute_job(
+                reconstructable(define_crash_once_job),
+                run_config={
+                    "execution": {"config": {"multiprocess": {}}},
+                    "ops": {"crash_once": {"config": tempdir}},
+                },
+                instance=instance,
+            ) as result:
+                assert result.success
+                events = defaultdict(list)
+                for ev in result.all_events:
+                    events[ev.event_type].append(ev)
+
+                # we won't get start events because those are emitted from the crashed child process
+                assert len(events[DagsterEventType.STEP_UP_FOR_RETRY]) == 1
+                assert len(events[DagsterEventType.STEP_RESTARTED]) == 1
+                assert len(events[DagsterEventType.STEP_SUCCESS]) == 1
+
+        with tempfile.TemporaryDirectory() as tempdir:
+            with execute_job(
+                reconstructable(define_crash_always_job),
+                run_config={
+                    "execution": {"config": {"multiprocess": {}}},
+                    "ops": {"crash_always": {"config": tempdir}},
+                },
+                instance=instance,
+            ) as result:
+                assert not result.success
+                events = defaultdict(list)
+                for ev in result.all_events:
+                    events[ev.event_type].append(ev)
+
+                # we won't get start events or restarted events, because those are emitted from the child process
+                assert len(events[DagsterEventType.STEP_UP_FOR_RETRY]) == 1
+                assert len(events[DagsterEventType.STEP_FAILURE]) == 1

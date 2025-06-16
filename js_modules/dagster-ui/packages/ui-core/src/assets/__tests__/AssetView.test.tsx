@@ -10,15 +10,11 @@ import {
   AssetGraphLiveQueryVariables,
 } from '../../asset-data/types/AssetBaseDataProvider.types';
 import {
-  AssetGraphQuery,
-  AssetGraphQueryVariables,
-} from '../../asset-graph/types/useAssetGraphData.types';
-import {ASSET_GRAPH_QUERY} from '../../asset-graph/useAssetGraphData';
-import {
   AssetKeyInput,
   buildAssetKey,
   buildAssetLatestInfo,
   buildAssetNode,
+  buildAssetRecordConnection,
 } from '../../graphql/types';
 import {buildQueryMock} from '../../testing/mocking';
 import {WorkspaceProvider} from '../../workspace/WorkspaceContext/WorkspaceContext';
@@ -30,7 +26,8 @@ import {
   LatestMaterializationTimestamp,
   RootWorkspaceWithOneLocation,
 } from '../__fixtures__/AssetViewDefinition.fixtures';
-
+import {AssetRecordsQuery, AssetRecordsQueryVariables} from '../types/useAllAssets.types';
+import {ASSET_RECORDS_QUERY} from '../useAllAssets';
 import '../../../jest/mocks/ComputeGraphData.worker';
 
 // This file must be mocked because Jest can't handle `import.meta.url`.
@@ -68,11 +65,11 @@ describe('AssetView', () => {
             mockLiveData('sda_asset'),
             mockLiveData('observable_source_asset'),
             mockLiveData('non_sda_asset'),
-            buildQueryMock<AssetGraphQuery, AssetGraphQueryVariables>({
-              query: ASSET_GRAPH_QUERY,
-              variables: {},
+            buildQueryMock<AssetRecordsQuery, AssetRecordsQueryVariables>({
+              query: ASSET_RECORDS_QUERY,
+              variableMatcher: () => true,
               data: {
-                assetNodes: [buildAssetNode()],
+                assetRecordsOrError: buildAssetRecordConnection({assets: []}),
               },
             }),
           ]}

@@ -82,6 +82,7 @@ class CodeLocationDeployData(
             ("cloud_context_env", dict[str, Any]),
             ("pex_metadata", Optional[PexMetadata]),
             ("agent_queue", Optional[AgentQueue]),
+            ("autoload_defs_module_name", Optional[str]),
         ],
     )
 ):
@@ -99,10 +100,18 @@ class CodeLocationDeployData(
         cloud_context_env=None,
         pex_metadata=None,
         agent_queue=None,
+        autoload_defs_module_name=None,
     ):
         check.invariant(
-            len([val for val in [python_file, package_name, module_name] if val]) == 1,
-            "Must supply exactly one of a file name, a package name, or a module name",
+            len(
+                [
+                    val
+                    for val in [python_file, package_name, module_name, autoload_defs_module_name]
+                    if val
+                ]
+            )
+            == 1,
+            "Must supply exactly one of python_file, package_name, module_name, or autoload_defs_module_name.",
         )
 
         return super().__new__(
@@ -119,6 +128,7 @@ class CodeLocationDeployData(
             check.opt_dict_param(cloud_context_env, "cloud_context_env", key_type=str),
             check.opt_inst_param(pex_metadata, "pex_metadata", PexMetadata),
             check.opt_str_param(agent_queue, "agent_queue"),
+            check.opt_str_param(autoload_defs_module_name, "autoload_defs_module_name"),
         )
 
     def with_cloud_context_env(self, cloud_context_env: dict[str, Any]) -> "CodeLocationDeployData":

@@ -1,0 +1,155 @@
+from pathlib import Path
+
+import pytest
+from dagster_dg_core.utils import (
+    discover_git_root,
+    ensure_dagster_dg_tests_import,
+    is_windows,
+    pushd,
+)
+
+ensure_dagster_dg_tests_import()
+from dagster_dg_core_tests.utils import (
+    ProxyRunner,
+    assert_runner_result,
+    create_project_from_components,
+    isolated_example_project_foo_bar,
+    isolated_example_workspace,
+)
+from dagster_test.components.test_utils.test_cases import BASIC_INVALID_VALUE, BASIC_MISSING_VALUE
+
+
+@pytest.mark.skipif(is_windows(), reason="Temporarily skipping (signal issues in CLI)..")
+def test_check_defs_workspace_context_success():
+    dagster_git_repo_dir = str(discover_git_root(Path(__file__)))
+    with ProxyRunner.test() as runner, isolated_example_workspace(runner, create_venv=True):
+        result = runner.invoke_create_dagster(
+            "project",
+            "--use-editable-dagster",
+            dagster_git_repo_dir,
+            "projects/project-1",
+            "--uv-sync",
+        )
+        assert_runner_result(result)
+        result = runner.invoke_create_dagster(
+            "project",
+            "--use-editable-dagster",
+            dagster_git_repo_dir,
+            "projects/project-2",
+            "--uv-sync",
+        )
+        assert_runner_result(result)
+
+        result = runner.invoke("check", "defs")
+        assert_runner_result(result)
+
+        (Path("projects") / "project-1" / "src" / "project_1" / "defs" / "__init__.py").write_text(
+            "invalid"
+        )
+        result = runner.invoke("check", "defs")
+        assert result.exit_code == 1
+
+
+@pytest.mark.skipif(is_windows(), reason="Temporarily skipping (signal issues in CLI)..")
+def test_check_defs_project_context_success():
+    with ProxyRunner.test() as runner, isolated_example_project_foo_bar(runner):
+        result = runner.invoke("check", "defs")
+        assert_runner_result(result)
+
+
+@pytest.mark.skipif(is_windows(), reason="Temporarily skipping (signal issues in CLI)..")
+def test_check_defs_project_context_failure():
+    with ProxyRunner.test() as runner, isolated_example_project_foo_bar(runner):
+        (Path("src") / "foo_bar" / "defs" / "__init__.py").write_text("invalid")
+        result = runner.invoke("check", "defs")
+        assert result.exit_code == 1
+
+
+def test_implicit_yaml_check_from_dg_check_defs_in_project_context() -> None:
+    with (
+        ProxyRunner.test() as runner,
+        create_project_from_components(
+            runner,
+            BASIC_MISSING_VALUE.component_path,
+            BASIC_INVALID_VALUE.component_path,
+            local_component_defn_to_inject=BASIC_MISSING_VALUE.component_type_filepath,
+            in_workspace=False,
+        ) as tmpdir,
+    ):
+        with pushd(str(tmpdir)):
+            result = runner.invoke("check", "defs", catch_exceptions=False)
+            assert result.exit_code != 0, str(result.stdout)
+
+            assert BASIC_INVALID_VALUE.check_error_msg and BASIC_MISSING_VALUE.check_error_msg
+            BASIC_INVALID_VALUE.check_error_msg(str(result.stdout))
+            BASIC_MISSING_VALUE.check_error_msg(str(result.stdout))
+
+            # didn't make it to defs check
+            assert "Validation failed for code location foo-bar" not in str(result.stdout)
+
+
+def test_implicit_yaml_check_disabled_in_project_context() -> None:
+    with (
+        ProxyRunner.test() as runner,
+        create_project_from_components(
+            runner,
+            BASIC_MISSING_VALUE.component_path,
+            BASIC_INVALID_VALUE.component_path,
+            local_component_defn_to_inject=BASIC_MISSING_VALUE.component_type_filepath,
+            in_workspace=False,
+        ) as tmpdir,
+    ):
+        with pushd(str(tmpdir)):
+            result = runner.invoke("check", "defs", "--no-check-yaml", catch_exceptions=False)
+            assert result.exit_code != 0, str(result.stdout)
+
+            # yaml check was skipped, defs check failed
+            assert "Validation failed for code location foo-bar" in str(result.stdout)
+
+
+def test_no_implicit_yaml_check_from_dg_check_defs_in_workspace_context() -> None:
+    with (
+        ProxyRunner.test() as runner,
+        create_project_from_components(
+            runner,
+            BASIC_MISSING_VALUE.component_path,
+            BASIC_INVALID_VALUE.component_path,
+            local_component_defn_to_inject=BASIC_MISSING_VALUE.component_type_filepath,
+            in_workspace=True,
+        ) as tmpdir,
+    ):
+        with pushd(Path(tmpdir).parent):
+            result = runner.invoke("check", "defs", catch_exceptions=False)
+            assert result.exit_code != 0, str(result.stdout)
+
+            # yaml check was skipped, defs check failed
+            assert "Validation failed for code location foo-bar" in str(result.stdout)
+
+
+def test_implicit_yaml_check_from_dg_check_defs_disallowed_in_workspace_context() -> None:
+    with (
+        ProxyRunner.test() as runner,
+        create_project_from_components(
+            runner,
+            BASIC_MISSING_VALUE.component_path,
+            BASIC_INVALID_VALUE.component_path,
+            local_component_defn_to_inject=BASIC_MISSING_VALUE.component_type_filepath,
+            in_workspace=True,
+        ) as tmpdir,
+    ):
+        with pushd(Path(tmpdir).parent):
+            result = runner.invoke("check", "defs", "--check-yaml", catch_exceptions=False)
+            assert result.exit_code != 0, str(result.stdout)
+
+            assert "--check-yaml is not currently supported in a workspace context" in str(
+                result.stdout
+            )
+
+        # It is supported and is the default in a project context within a workspace
+        with pushd(tmpdir):
+            result = runner.invoke("check", "defs", "--check-yaml", catch_exceptions=False)
+            assert result.exit_code != 0, str(result.stdout)
+
+            assert BASIC_INVALID_VALUE.check_error_msg and BASIC_MISSING_VALUE.check_error_msg
+            BASIC_INVALID_VALUE.check_error_msg(str(result.stdout))
+            BASIC_MISSING_VALUE.check_error_msg(str(result.stdout))

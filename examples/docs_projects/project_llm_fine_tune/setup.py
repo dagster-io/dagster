@@ -5,10 +5,11 @@ setup(
     packages=find_packages(exclude=["project_llm_fine_tune_tests"]),
     install_requires=[
         "dagster",
+        "dagster-dg-cli",
         "dagster-openai",
         "dagster-duckdb",
         "pandas",
         "openai",
     ],
-    extras_require={"dev": ["dagster-webserver", "pytest", "ruff==0.11.5"]},
+    extras_require={"dev": ["dagster-webserver", "pytest", "ruff"]},
 )

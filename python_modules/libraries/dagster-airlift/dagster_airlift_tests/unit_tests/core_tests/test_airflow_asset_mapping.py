@@ -140,6 +140,7 @@ def test_fetched_airflow_data() -> None:
                 airlift_asset_spec("asset2", "dag1", "task2"),
             ]
         ),
+        datasets=[],
     )
 
     all_mapped_tasks = fetched_airflow_data.all_mapped_tasks

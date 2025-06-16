@@ -11,6 +11,7 @@ from typing import Optional
 
 import click
 import yaml
+from dagster_shared.cli import workspace_options
 from dagster_shared.ipc import (
     get_ipc_shutdown_pipe,
     interrupt_on_ipc_shutdown_message,
@@ -20,11 +21,10 @@ from dagster_shared.ipc import (
 from dagster_shared.serdes import serialize_value
 
 from dagster._annotations import deprecated
+from dagster._cli.proxy_server_manager import ProxyServerManager
 from dagster._cli.utils import assert_no_remaining_opts, get_possibly_temporary_instance_for_cli
-from dagster._cli.workspace.cli_target import WorkspaceOpts, workspace_options
+from dagster._cli.workspace.cli_target import WorkspaceOpts, workspace_opts_to_load_target
 from dagster._core.instance import DagsterInstance
-from dagster._core.workspace.context import WorkspaceProcessContext
-from dagster._grpc.server import GrpcServerCommand
 from dagster._utils.interrupts import setup_interrupt_handlers
 from dagster._utils.log import configure_loggers
 
@@ -125,6 +125,32 @@ def dev_command(
     workspace_opts = WorkspaceOpts.extract_from_cli_options(other_opts)
     assert_no_remaining_opts(other_opts)
 
+    dev_command_impl(
+        code_server_log_level,
+        log_level,
+        log_format,
+        port,
+        host,
+        use_legacy_code_server_behavior,
+        shutdown_pipe,
+        verbose,
+        workspace_opts,
+        live_data_poll_rate,
+    )
+
+
+def dev_command_impl(
+    code_server_log_level: str,
+    log_level: str,
+    log_format: str,
+    port: Optional[str],
+    host: Optional[str],
+    use_legacy_code_server_behavior: bool,
+    shutdown_pipe: Optional[int],
+    verbose: bool,
+    workspace_opts: WorkspaceOpts,
+    live_data_poll_rate: Optional[str] = "2000",
+) -> None:
     # check if dagster-webserver installed, crash if not
     try:
         import dagster_webserver  #  # noqa: F401
@@ -257,7 +283,7 @@ def dev_command(
 
 
 @contextmanager
-def _temp_grpc_socket_workspace_file(context: WorkspaceProcessContext) -> Iterator[Path]:
+def _temp_grpc_socket_workspace_file(context: "ProxyServerManager") -> Iterator[Path]:
     with tempfile.TemporaryDirectory() as temp_dir:
         workspace_file = Path(temp_dir) / "workspace.yaml"
         workspace_file.write_text(yaml.dump({"load_from": context.get_code_server_specs()}))
@@ -276,17 +302,16 @@ def _optionally_create_temp_workspace(
     If in legacy mode, do nothing and return the target args.
     """
     if not use_legacy_code_server_behavior:
-        with WorkspaceProcessContext(
+        with ProxyServerManager(
             instance=instance,
-            workspace_load_target=workspace_opts.to_load_target(),
-            server_command=GrpcServerCommand.CODE_SERVER_START,
+            workspace_load_target=workspace_opts_to_load_target(workspace_opts),
             code_server_log_level=code_server_log_level,
         ) as context:
             with _temp_grpc_socket_workspace_file(context) as workspace_file:
                 yield ["--workspace", str(workspace_file)]
     else:
         # sanity check workspace args
-        workspace_opts.to_load_target()
+        workspace_opts_to_load_target(workspace_opts)
         yield _workspace_opts_to_serialized_cli_args(workspace_opts)
 
 

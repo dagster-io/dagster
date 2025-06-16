@@ -25,6 +25,7 @@ from dagster._core.definitions.asset_dep import AssetDep
 from dagster._core.definitions.asset_in import AssetIn
 from dagster._core.definitions.asset_selection import AssetCheckKeysSelection, AssetSelection
 from dagster._core.definitions.asset_spec import AssetSpec
+from dagster._core.definitions.events import AssetMaterialization
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
     DagsterInvariantViolationError,
@@ -259,8 +260,7 @@ def test_blocking_check_skips_downstream() -> None:
 
     error = check.not_none(result.failure_data_for_node("asset1")).error
     assert check.not_none(error).message.startswith(
-        "dagster._core.errors.DagsterAssetCheckFailedError: Blocking check 'check1' for asset 'asset1'"
-        " failed with ERROR severity."
+        "dagster._core.errors.DagsterAssetCheckFailedError: 1 blocking asset check failed with ERROR severity:\nasset1: check1"
     )
 
 
@@ -342,12 +342,18 @@ def test_multi_asset_no_result_for_check() -> None:
 def test_multi_asset_blocking_check_skips_downstream() -> None:
     @multi_asset(
         outs={"one": AssetOut("asset1"), "two": AssetOut("asset2")},
-        check_specs=[AssetCheckSpec("check1", asset=AssetKey(["asset1", "one"]), blocking=True)],
+        check_specs=[
+            AssetCheckSpec("check1", asset=AssetKey(["asset1", "one"]), blocking=True),
+            AssetCheckSpec("check2", asset=AssetKey(["asset1", "one"]), blocking=True),
+            AssetCheckSpec("check3", asset=AssetKey(["asset1", "one"]), blocking=False),
+        ],
     )
     def asset_1_and_2() -> Iterable:
         yield Output(None, output_name="one")
-        yield Output(None, output_name="two")
         yield AssetCheckResult(check_name="check1", passed=False)
+        yield AssetCheckResult(check_name="check2", passed=False)
+        yield AssetCheckResult(check_name="check3", passed=False)
+        yield Output(None, output_name="two")
 
     @asset(deps=[AssetKey(["asset1", "one"])])
     def asset3() -> None:
@@ -368,16 +374,27 @@ def test_multi_asset_blocking_check_skips_downstream() -> None:
     assert materialization_events[1].asset_key == AssetKey(["asset2", "two"])
 
     check_evals = result.get_asset_check_evaluations()
-    assert len(check_evals) == 1
+
+    assert len(check_evals) == 3
     check_eval = check_evals[0]
     assert check_eval.asset_key == AssetKey(["asset1", "one"])
     assert check_eval.check_name == "check1"
     assert not check_eval.passed
 
+    check_eval = check_evals[1]
+    assert check_eval.asset_key == AssetKey(["asset1", "one"])
+    assert check_eval.check_name == "check2"
+    assert not check_eval.passed
+
+    check_eval = check_evals[2]
+    assert check_eval.asset_key == AssetKey(["asset1", "one"])
+    assert check_eval.check_name == "check3"
+    assert not check_eval.passed
+
     error = check.not_none(check.not_none(result.failure_data_for_node("asset_1_and_2")).error)
+
     assert check.not_none(error.message).startswith(
-        "dagster._core.errors.DagsterAssetCheckFailedError: Blocking check 'check1' for asset 'asset1/one'"
-        " failed with ERROR severity."
+        "dagster._core.errors.DagsterAssetCheckFailedError: 2 blocking asset checks failed with ERROR severity:\nasset1/one: check1,check2"
     )
 
 
@@ -398,7 +415,7 @@ def test_result_missing_asset_key() -> None:
         DagsterInvariantViolationError,
         match=re.escape(
             "AssetCheckResult didn't specify an asset key, but there are multiple assets to choose"
-            " from: ['asset1', 'asset2']"
+            " from"
         ),
     ):
         materialize(assets=[asset_1_and_2])
@@ -662,7 +679,7 @@ def test_can_subset() -> None:
     assert check_eval.check_name == "check1"
 
 
-def test_can_subset_result_for_unselected_check() -> None:
+def test_can_subset_result_for_unselected_check(capsys) -> None:
     @multi_asset(
         can_subset=True,
         specs=[AssetSpec("asset1"), AssetSpec("asset2")],
@@ -679,8 +696,11 @@ def test_can_subset_result_for_unselected_check() -> None:
         yield AssetCheckResult(asset_key="asset1", check_name="check1", passed=True)
         yield AssetCheckResult(asset_key="asset2", check_name="check2", passed=True)
 
-    with pytest.raises(DagsterInvariantViolationError):
-        materialize([foo], selection=["asset1"])
+    result = materialize([foo], selection=["asset1"])
+    assert "not selected" in capsys.readouterr().err
+    assert result.success
+    assert len(result.get_asset_materialization_events()) == 1
+    assert len(result.get_asset_check_evaluations()) == 2
 
 
 def test_can_subset_select_only_asset() -> None:
@@ -926,3 +946,37 @@ def test_additional_deps_with_multi_asset_decorator() -> None:
         def foo(context: AssetExecutionContext, asset3) -> Iterable:
             yield Output(value=None, output_name="asset1")
             yield Output(value=None, output_name="asset2")
+
+
+def test_arbitary_asset_check_specs() -> None:
+    """Test hidden behavior where we allow arbitrary asset check specs to be passed in
+    to the asset decorator. This is necessary to model things like dbt source checks.
+    """
+
+    @multi_asset(
+        check_specs=[
+            AssetCheckSpec("check1", asset="asset1", description="desc"),
+            AssetCheckSpec("check2", asset="asset2", description="desc"),
+        ],
+        specs=[AssetSpec("asset1")],
+        allow_arbitrary_check_specs=True,
+        can_subset=True,
+    )
+    def _compute() -> Iterable:
+        yield AssetMaterialization("asset1")
+        yield AssetCheckResult(
+            check_name="check1", asset_key="asset1", passed=True, metadata={"foo": "bar"}
+        )
+        yield AssetCheckResult(
+            check_name="check2", asset_key="asset2", passed=True, metadata={"baz": "bla"}
+        )
+
+    instance = DagsterInstance.ephemeral()
+    result = materialize(assets=[_compute], instance=instance)
+    assert result.success
+
+    check_evals = result.get_asset_check_evaluations()
+    assert len(check_evals) == 2
+    check_eval = check_evals[0]
+    assert check_eval.asset_key == AssetKey("asset1")
+    assert check_eval.check_name == "check1"

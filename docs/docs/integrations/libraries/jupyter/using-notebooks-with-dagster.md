@@ -32,9 +32,7 @@ To complete this tutorial, you'll need:
 
 - **To install Dagster and Jupyter**. Run the following to install using pip:
 
-  ```shell
-  pip install dagster notebook
-  ```
+  <PackageInstallInstructions packageName="dagster notebook" />
 
   Refer to the [Dagster](/getting-started/installation) installation docs for more info.
 

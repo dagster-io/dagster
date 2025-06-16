@@ -1,7 +1,10 @@
+import json
+import socket
 import warnings
 from collections.abc import Mapping
+from typing import Any
 
-import packaging.version
+from packaging.version import Version
 
 from dagster_shared import check
 from dagster_shared.version import __version__
@@ -22,10 +25,18 @@ class DagsterLibraryRegistry:
         return cls._libraries.copy()
 
 
-def parse_package_version(version_str: str) -> packaging.version.Version:
-    parsed_version = packaging.version.parse(version_str)
-    assert isinstance(parsed_version, packaging.version.Version)
+def parse_package_version(version_str: str) -> Version:
+    parsed_version = Version(version_str)
+    assert isinstance(parsed_version, Version)
     return parsed_version
+
+
+def increment_micro_version(v: Version, interval: int) -> Version:
+    major, minor, micro = v.major, v.minor, v.micro
+    new_micro = micro + interval
+    if new_micro < 0:
+        raise ValueError(f"Micro version cannot be negative: {new_micro}")
+    return Version(f"{major}.{minor}.{new_micro}")
 
 
 def check_dagster_package_version(library_name: str, library_version: str) -> None:
@@ -33,19 +44,19 @@ def check_dagster_package_version(library_name: str, library_version: str) -> No
     from dagster_shared.version import __version__
 
     parsed_lib_version = parse_package_version(library_version)
-    if parsed_lib_version.release[0] < 1:
+    if parsed_lib_version.release[0] >= 1:
         if library_version != __version__:
             message = (
-                f"Found version mismatch between `dagster-shared` ({__version__}) "
+                f"Found version mismatch between `dagster-shared` ({__version__})"
                 f"and `{library_name}` ({library_version})"
             )
             warnings.warn(message)
     else:
-        expected_version = core_version_from_library_version(__version__)
-        if library_version != expected_version:
+        target_version = library_version_from_core_version(__version__)
+        if library_version != target_version:
             message = (
                 f"Found version mismatch between `dagster-shared` ({__version__}) "
-                f"expected library version ({expected_version}) "
+                f"expected library version ({target_version}) "
                 f"and `{library_name}` ({library_version})."
             )
             warnings.warn(message)
@@ -91,3 +102,32 @@ def core_version_from_library_version(library_version: str) -> str:
         return core_version
     else:
         return library_version
+
+
+class DagsterPyPiAccessError(Exception):
+    pass
+
+
+def get_pypi_package_data(pkg_name: str, timeout: float = 5.0) -> dict[str, Any]:
+    # defer for import performance
+    import urllib.request
+    from urllib.error import HTTPError, URLError
+
+    url = f"https://pypi.org/pypi/{pkg_name}/json"
+
+    try:
+        with urllib.request.urlopen(url, timeout=timeout) as response:
+            if response.status != 200:
+                raise DagsterPyPiAccessError(
+                    f"Error: Received status code {response.status} for {pkg_name}"
+                )
+            return json.load(response)
+    except (HTTPError, URLError, socket.timeout) as e:
+        raise DagsterPyPiAccessError(f"Network error while checking {pkg_name}: {e}")
+    except json.JSONDecodeError as e:
+        raise DagsterPyPiAccessError(f"Invalid JSON response for {pkg_name}: {e}")
+
+
+def get_published_pypi_versions(pkg_name: str, timeout: float = 5.0) -> list[Version]:
+    package_data = get_pypi_package_data(pkg_name, timeout)
+    return sorted(Version(k) for k in package_data["releases"].keys())

@@ -5,8 +5,9 @@ from collections import defaultdict
 from collections.abc import Iterable, Iterator, Mapping, Sequence
 from contextlib import ExitStack
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Callable, NamedTuple, Optional, TypeVar, Union, cast
+from typing import TYPE_CHECKING, Any, Callable, Optional, TypeVar, Union, cast
 
+from dagster_shared.record import IHaveNew, record_custom
 from typing_extensions import TypeAlias
 
 import dagster._check as check
@@ -29,7 +30,7 @@ from dagster._core.definitions.dynamic_partitions_request import (
 from dagster._core.definitions.events import AssetMaterialization, AssetObservation
 from dagster._core.definitions.instigation_logger import InstigationLogger
 from dagster._core.definitions.job_definition import JobDefinition
-from dagster._core.definitions.metadata import normalize_metadata
+from dagster._core.definitions.metadata import RawMetadataMapping, normalize_metadata
 from dagster._core.definitions.metadata.metadata_value import MetadataValue
 from dagster._core.definitions.partition import CachingDynamicPartitionsLoader
 from dagster._core.definitions.resource_annotation import get_resource_args
@@ -587,26 +588,33 @@ class SensorDefinition(IHasInternalInit):
             This is a parameter that will replace `job`, `jobs`, and `asset_selection`.
     """
 
-    def with_updated_jobs(self, new_jobs: Sequence[ExecutableDefinition]) -> "SensorDefinition":
-        """Returns a copy of this sensor with the jobs replaced.
+    def with_attributes(
+        self,
+        *,
+        jobs: Optional[Sequence[ExecutableDefinition]] = None,
+        metadata: Optional[RawMetadataMapping] = None,
+    ) -> "SensorDefinition":
+        """Returns a copy of this sensor with the attributes replaced."""
+        if jobs is not None:
+            new_jobs = jobs if len(jobs) > 1 else None
+            new_job = jobs[0] if len(jobs) == 1 else None
+        else:
+            new_job = self.job if len(self.jobs) == 1 else None
+            new_jobs = self.jobs if len(self.jobs) > 1 else None
 
-        Args:
-            job (ExecutableDefinition): The job that should execute when this
-                schedule runs.
-        """
         return SensorDefinition.dagster_internal_init(
             name=self.name,
             evaluation_fn=self._raw_fn,
             minimum_interval_seconds=self.minimum_interval_seconds,
             description=self.description,
             job_name=None,  # if original init was passed job name, was resolved to a job
-            jobs=new_jobs if len(new_jobs) > 1 else None,
-            job=new_jobs[0] if len(new_jobs) == 1 else None,
+            jobs=new_jobs,
+            job=new_job,
             default_status=self.default_status,
             asset_selection=self.asset_selection,
             required_resource_keys=self._raw_required_resource_keys,
             tags=self._tags,
-            metadata=self._metadata,
+            metadata=metadata if metadata is not None else self._metadata,
             target=None,
         )
 
@@ -618,6 +626,15 @@ class SensorDefinition(IHasInternalInit):
                 schedule runs.
         """
         return self.with_updated_jobs([new_job])
+
+    def with_updated_jobs(self, new_jobs: Sequence[ExecutableDefinition]) -> "SensorDefinition":
+        """Returns a copy of this sensor with the jobs replaced.
+
+        Args:
+            jobs (Sequence[ExecutableDefinition]): The jobs that should execute when this
+                schedule runs.
+        """
+        return self.with_attributes(jobs=new_jobs)
 
     def __init__(
         self,
@@ -633,7 +650,7 @@ class SensorDefinition(IHasInternalInit):
         asset_selection: Optional[CoercibleToAssetSelection] = None,
         required_resource_keys: Optional[set[str]] = None,
         tags: Optional[Mapping[str, str]] = None,
-        metadata: Optional[Mapping[str, object]] = None,
+        metadata: Optional[RawMetadataMapping] = None,
         target: Optional[
             Union[
                 "CoercibleToAssetSelection",
@@ -727,7 +744,7 @@ class SensorDefinition(IHasInternalInit):
         self._required_resource_keys = self._raw_required_resource_keys or resource_arg_names
         self._tags = normalize_tags(tags)
         self._metadata = normalize_metadata(
-            check.opt_mapping_param(metadata, "metadata", key_type=str)  # type: ignore  # (pyright bug)
+            check.opt_mapping_param(metadata, "metadata", key_type=str)
         )
 
     @staticmethod
@@ -744,7 +761,7 @@ class SensorDefinition(IHasInternalInit):
         asset_selection: Optional[CoercibleToAssetSelection],
         required_resource_keys: Optional[set[str]],
         tags: Optional[Mapping[str, str]],
-        metadata: Optional[Mapping[str, object]],
+        metadata: Optional[RawMetadataMapping],
         target: Optional[
             Union[
                 "CoercibleToAssetSelection",
@@ -1134,30 +1151,18 @@ class SensorDefinition(IHasInternalInit):
         "log_key": "captured_log_key",
     },
 )
-class SensorExecutionData(
-    NamedTuple(
-        "_SensorExecutionData",
-        [
-            ("run_requests", Optional[Sequence[RunRequest]]),
-            ("skip_message", Optional[str]),
-            ("cursor", Optional[str]),
-            ("dagster_run_reactions", Optional[Sequence[DagsterRunReaction]]),
-            ("log_key", Optional[Sequence[str]]),
-            (
-                "dynamic_partitions_requests",
-                Optional[
-                    Sequence[Union[AddDynamicPartitionsRequest, DeleteDynamicPartitionsRequest]]
-                ],
-            ),
-            (
-                "asset_events",
-                Sequence[Union[AssetMaterialization, AssetObservation, AssetCheckEvaluation]],
-            ),
-            ("automation_condition_evaluations", Sequence[AutomationConditionEvaluation]),
-        ],
-    )
-):
-    dagster_run_reactions: Optional[Sequence[DagsterRunReaction]]  # pyright: ignore[reportIncompatibleVariableOverride]
+@record_custom
+class SensorExecutionData(IHaveNew):
+    run_requests: Optional[Sequence[RunRequest]]
+    skip_message: Optional[str]
+    cursor: Optional[str]
+    dagster_run_reactions: Optional[Sequence[DagsterRunReaction]]
+    log_key: Optional[Sequence[str]]
+    dynamic_partitions_requests: Optional[
+        Sequence[Union[AddDynamicPartitionsRequest, DeleteDynamicPartitionsRequest]]
+    ]
+    asset_events: Sequence[Union[AssetMaterialization, AssetObservation, AssetCheckEvaluation]]
+    automation_condition_evaluations: Sequence[AutomationConditionEvaluation]
 
     def __new__(
         cls,
@@ -1174,26 +1179,6 @@ class SensorExecutionData(
         ] = None,
         automation_condition_evaluations: Optional[Sequence[AutomationConditionEvaluation]] = None,
     ):
-        check.opt_sequence_param(run_requests, "run_requests", RunRequest)
-        check.opt_str_param(skip_message, "skip_message")
-        check.opt_str_param(cursor, "cursor")
-        check.opt_sequence_param(dagster_run_reactions, "dagster_run_reactions", DagsterRunReaction)
-        check.opt_list_param(log_key, "log_key", str)
-        check.opt_sequence_param(
-            dynamic_partitions_requests,
-            "dynamic_partitions_requests",
-            (AddDynamicPartitionsRequest, DeleteDynamicPartitionsRequest),
-        )
-        asset_events = check.opt_sequence_param(
-            asset_events,
-            "asset_events",
-            (AssetMaterialization, AssetObservation, AssetCheckEvaluation),
-        )
-        automation_condition_evaluations = check.opt_sequence_param(
-            automation_condition_evaluations,
-            "automation_condition_evaluations",
-            AutomationConditionEvaluation,
-        )
         check.invariant(
             not (run_requests and skip_message), "Found both skip data and run request data"
         )
@@ -1205,8 +1190,8 @@ class SensorExecutionData(
             dagster_run_reactions=dagster_run_reactions,
             log_key=log_key,
             dynamic_partitions_requests=dynamic_partitions_requests,
-            asset_events=asset_events,
-            automation_condition_evaluations=automation_condition_evaluations,
+            asset_events=asset_events or [],
+            automation_condition_evaluations=automation_condition_evaluations or [],
         )
 
 

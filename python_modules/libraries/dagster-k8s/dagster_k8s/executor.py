@@ -37,6 +37,7 @@ from dagster_k8s.job import (
     get_user_defined_k8s_config,
 )
 from dagster_k8s.launcher import K8sRunLauncher
+from dagster_k8s.utils import get_deployment_id_label
 
 _K8S_EXECUTOR_CONFIG_SCHEMA = merge_dicts(
     DagsterK8sJobConfig.config_type_job(),
@@ -297,6 +298,9 @@ class K8sStepHandler(StepHandler):
             labels["dagster/code-location"] = (
                 run.remote_job_origin.repository_origin.code_location_origin.location_name
             )
+        deployment_name_env_var = get_deployment_id_label(container_context.run_k8s_config)
+        if deployment_name_env_var:
+            labels["dagster/deployment-name"] = deployment_name_env_var
         job = construct_dagster_k8s_job(
             job_config=job_config,
             args=args,

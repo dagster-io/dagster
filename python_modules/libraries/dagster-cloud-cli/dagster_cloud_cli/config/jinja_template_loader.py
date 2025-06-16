@@ -4,7 +4,6 @@ from pathlib import Path
 from typing import Any
 
 import yaml
-from jinja2 import Environment, FileSystemLoader
 
 
 class JinjaTemplateLoader:
@@ -32,6 +31,9 @@ class JinjaTemplateLoader:
         return getenv(name, default)
 
     def render(self, filepath: str, context: Mapping[str, Any]) -> str:
+        # defer for import performance
+        from jinja2 import Environment, FileSystemLoader
+
         path = Path(filepath)
         template_path = path.resolve().parent
         filename = path.name

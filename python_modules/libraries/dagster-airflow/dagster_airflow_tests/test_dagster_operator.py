@@ -58,9 +58,10 @@ class TestDagsterOperator(unittest.TestCase):
                 run_type=DagRunType.MANUAL,  # pyright: ignore[reportPossiblyUnboundVariable]
             )
             ti = dagrun.get_task_instance(task_id="anytask")
-            ti.task = dag.get_task(task_id="anytask")  # pyright: ignore[reportOptionalMemberAccess]
-            ti.run(ignore_ti_state=True)  # pyright: ignore[reportOptionalMemberAccess]
-            assert ti.state == TaskInstanceState.SUCCESS  # pyright: ignore[reportPossiblyUnboundVariable,reportOptionalMemberAccess]
+            assert ti
+            ti.task = dag.get_task(task_id="anytask")
+            ti.run(ignore_ti_state=True)  # pyright: ignore[reportAttributeAccessIssue]
+            assert ti.state == TaskInstanceState.SUCCESS  # pyright: ignore[reportPossiblyUnboundVariable]
         else:
             ti = TaskInstance(task=task, execution_date=datetime.now())
             ctx = ti.get_template_context()
@@ -87,8 +88,9 @@ class TestDagsterOperator(unittest.TestCase):
             run_type=DagRunType.MANUAL,  # pyright: ignore[reportPossiblyUnboundVariable]
         )
         ti = dagrun.get_task_instance(task_id="anytask")
-        ti.task = dag.get_task(task_id="anytask")  # pyright: ignore[reportOptionalMemberAccess]
-        ti.run(ignore_ti_state=True)  # pyright: ignore[reportOptionalMemberAccess]
-        assert ti.state == TaskInstanceState.SUCCESS  # pyright: ignore[reportPossiblyUnboundVariable,reportOptionalMemberAccess]
+        assert ti
+        ti.task = dag.get_task(task_id="anytask")
+        ti.run(ignore_ti_state=True)  # pyright: ignore[reportAttributeAccessIssue]
+        assert ti.state == TaskInstanceState.SUCCESS  # pyright: ignore[reportPossiblyUnboundVariable]
         launch_run.assert_called_once()
         wait_for_run.assert_called_once()

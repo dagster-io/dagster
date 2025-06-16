@@ -28,15 +28,23 @@ def load_etl_tables_from_yaml(yaml_path: str) -> Sequence[dg.AssetsDefinition]:
     return factory_assets
 
 
-defs = dg.Definitions(
-    assets=load_etl_tables_from_yaml(
-        dg.file_relative_path(__file__, "table_definitions.yaml")
-    ),
-    resources={
-        "snowflake": SnowflakeResource(
-            user=dg.EnvVar("SNOWFLAKE_USER"),
-            account=dg.EnvVar("SNOWFLAKE_ACCOUNT"),
-            password=dg.EnvVar("SNOWFLAKE_PASSWORD"),
+@dg.definitions
+def resources() -> dg.Definitions:
+    return dg.Definitions(
+        resources={
+            "snowflake": SnowflakeResource(
+                user=dg.EnvVar("SNOWFLAKE_USER"),
+                account=dg.EnvVar("SNOWFLAKE_ACCOUNT"),
+                password=dg.EnvVar("SNOWFLAKE_PASSWORD"),
+            )
+        }
+    )
+
+
+@dg.definitions
+def defs() -> dg.Definitions:
+    return dg.Definitions.merge(
+        load_etl_tables_from_yaml(
+            dg.file_relative_path(__file__, "table_definitions.yaml")
         )
-    },
-)
+    )

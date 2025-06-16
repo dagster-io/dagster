@@ -1,0 +1,14 @@
+dg list components
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ Key                                               ┃ Summary                                                     ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│ dagster.DefinitionsComponent                      │ An arbitrary set of Dagster definitions.                    │
+├───────────────────────────────────────────────────┼─────────────────────────────────────────────────────────────┤
+│ dagster.DefsFolderComponent                       │ A folder which may contain multiple submodules, each        │
+│                                                   │ which define components.                                    │
+├───────────────────────────────────────────────────┼─────────────────────────────────────────────────────────────┤
+│ dagster_dbt.DbtProjectComponent                   │ Expose a DBT project to Dagster as a set of assets.         │
+├───────────────────────────────────────────────────┼─────────────────────────────────────────────────────────────┤
+│ dagster_sling.SlingReplicationCollectionComponent │ Expose one or more Sling replications to Dagster as assets. │
+└───────────────────────────────────────────────────┴─────────────────────────────────────────────────────────────┘

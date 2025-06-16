@@ -1,25 +1,32 @@
 from abc import abstractmethod
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Callable, Literal, Optional, TypeVar, Union
+from typing import Any, Callable, Generic, Literal, Optional, Union
 
 from pydantic import BaseModel
-from typing_extensions import TypeAlias
+from typing_extensions import TypeAlias, TypeVar
 
 from dagster import _check as check
-from dagster._record import record
+from dagster._annotations import preview, public
+
+# Constant for object attribute name
+SCAFFOLDER_CLS_ATTRIBUTE: str = "__scaffolder_cls__"
+
+
+class NoParams(BaseModel): ...
+
 
 # Type variable for generic class handling
 T = TypeVar("T")
-
-# Constant for object attribute name
-SCAFFOLDER_CLS_ATTRIBUTE = "__scaffolder_cls__"
+TModel = TypeVar("TModel", bound=BaseModel, default=NoParams)
 
 
+@public
+@preview(emit_runtime_warning=False)
 def scaffold_with(
-    scaffolder_cls: Union[type["Scaffolder"], "ScaffolderUnavailableReason"],
+    scaffolder_cls: Union[type["Scaffolder[Any]"], "ScaffolderUnavailableReason"],
 ) -> Callable[[T], T]:
-    """A decorator that declares what scaffolder is used to scaffold the artifact.
+    """A decorator that declares what Scaffolder is used to scaffold the artifact.
 
     Args:
         scaffolder_cls: A class that inherits from Scaffolder
@@ -32,7 +39,7 @@ def scaffold_with(
     def decorator(obj: T) -> T:
         # Store the scaffolder class as an attribute using the constant
         setattr(obj, SCAFFOLDER_CLS_ATTRIBUTE, scaffolder_cls)
-        # All scaffoldable objects are library objects
+        # All scaffoldable objects are registry objects
         setattr(obj, PACKAGE_ENTRY_ATTR, True)
         return obj
 
@@ -51,7 +58,7 @@ def has_scaffolder(obj: object) -> bool:
     return hasattr(obj, SCAFFOLDER_CLS_ATTRIBUTE)
 
 
-def get_scaffolder(obj: object) -> Union["Scaffolder", "ScaffolderUnavailableReason"]:
+def get_scaffolder(obj: object) -> Union["Scaffolder[Any]", "ScaffolderUnavailableReason"]:
     """Retrieves the scaffolder class attached to the decorated object.
 
     Args:
@@ -75,20 +82,38 @@ class ScaffolderUnavailableReason:
 ScaffoldFormatOptions: TypeAlias = Literal["yaml", "python"]
 
 
-@record
-class ScaffoldRequest:
+@public
+@preview(emit_runtime_warning=False)
+@dataclass
+class ScaffoldRequest(Generic[TModel]):
+    """The details about the current scaffolding operation."""
+
     # fully qualified class name of the decorated object
     type_name: str
     # target path for the scaffold request. Typically used to construct absolute paths
     target_path: Path
     # yaml or python
     scaffold_format: ScaffoldFormatOptions
+    # the root of the dg project
+    project_root: Optional[Path]
+    # optional params for scaffolding
+    params: TModel
 
 
-class Scaffolder:
+@public
+@preview(emit_runtime_warning=False)
+class Scaffolder(Generic[TModel]):
+    """Handles scaffolding its associated scaffold target."""
+
     @classmethod
-    def get_scaffold_params(cls) -> Optional[type[BaseModel]]:
-        return None
+    def get_scaffold_params(cls) -> type[TModel]:
+        return NoParams  # type: ignore
 
     @abstractmethod
-    def scaffold(self, request: ScaffoldRequest, params: Any) -> None: ...
+    def scaffold(self, request: ScaffoldRequest[TModel]) -> None:
+        """Scaffold the target with the given request.
+
+        Args:
+            request: The scaffold request containing type name, target path, format, project root and params
+        """
+        ...

@@ -63,7 +63,8 @@ from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._core.workspace.load_target import EmptyWorkspaceTarget, ModuleTarget
 from dagster._daemon import get_default_daemon_logger
 from dagster._grpc.client import DagsterGrpcClient
-from dagster._grpc.server import GrpcServerCommand, open_server_process
+from dagster._grpc.constants import GrpcServerCommand
+from dagster._grpc.server import open_server_process
 from dagster._record import copy
 from dagster._scheduler.scheduler import (
     RETAIN_ORPHANED_STATE_INTERVAL_SECONDS,

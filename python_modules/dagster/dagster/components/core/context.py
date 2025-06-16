@@ -1,43 +1,53 @@
-import contextlib
-import contextvars
 import dataclasses
 import importlib
 from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
 from types import ModuleType
-from typing import Any, Union
+from typing import Any
 
+from dagster_shared import check
 from dagster_shared.yaml_utils.source_position import SourcePositionTree
 
+from dagster._annotations import PublicAttr, preview, public
 from dagster._core.definitions.definitions_class import Definitions
-from dagster._core.errors import DagsterError
 from dagster._utils import pushd
 from dagster.components.resolved.context import ResolutionContext
 from dagster.components.utils import get_path_from_module
 
+RESOLUTION_CONTEXT_STASH_KEY = "component_load_context"
 
+
+@public
+@preview(emit_runtime_warning=False)
 @dataclass
 class ComponentLoadContext:
-    """Context for loading a single component."""
+    """Context available when instantiating Components."""
 
-    path: Path
-    project_root: Path
-    defs_module_path: Path
-    defs_module_name: str
-    resolution_context: ResolutionContext
+    path: PublicAttr[Path]
+    project_root: PublicAttr[Path]
+    defs_module_path: PublicAttr[Path]
+    defs_module_name: PublicAttr[str]
+    resolution_context: PublicAttr[ResolutionContext]
+    terminate_autoloading_on_keyword_files: bool
 
-    @staticmethod
-    def current() -> "ComponentLoadContext":
-        context = active_component_load_context.get()
-        if context is None:
-            raise DagsterError(
-                "No active component load context, `ComponentLoadContext.current()` must be called inside of a component's `build_defs` method"
-            )
-        return context
+    def __post_init__(self):
+        self.resolution_context = self.resolution_context.with_stashed_value(
+            RESOLUTION_CONTEXT_STASH_KEY, self
+        )
 
     @staticmethod
-    def for_module(defs_module: ModuleType, project_root: Path) -> "ComponentLoadContext":
+    def from_resolution_context(resolution_context: ResolutionContext) -> "ComponentLoadContext":
+        return check.inst(
+            resolution_context.stash.get(RESOLUTION_CONTEXT_STASH_KEY), ComponentLoadContext
+        )
+
+    @staticmethod
+    def for_module(
+        defs_module: ModuleType,
+        project_root: Path,
+        terminate_autoloading_on_keyword_files: bool = True,
+    ) -> "ComponentLoadContext":
         path = get_path_from_module(defs_module)
         return ComponentLoadContext(
             path=path,
@@ -45,6 +55,7 @@ class ComponentLoadContext:
             defs_module_path=path,
             defs_module_name=defs_module.__name__,
             resolution_context=ResolutionContext.default(),
+            terminate_autoloading_on_keyword_files=terminate_autoloading_on_keyword_files,
         )
 
     @staticmethod
@@ -55,6 +66,7 @@ class ComponentLoadContext:
             defs_module_path=Path.cwd(),
             defs_module_name="test",
             resolution_context=ResolutionContext.default(),
+            terminate_autoloading_on_keyword_files=True,
         )
 
     def _with_resolution_context(
@@ -141,17 +153,3 @@ class ComponentLoadContext:
         It is as if one typed "import a_project.defs.my_component.my_python_file" in the python interpreter.
         """
         return importlib.import_module(self.defs_relative_module_name(path))
-
-
-active_component_load_context: contextvars.ContextVar[Union[ComponentLoadContext, None]] = (
-    contextvars.ContextVar("active_component_load_context", default=None)
-)
-
-
-@contextlib.contextmanager
-def use_component_load_context(component_load_context: ComponentLoadContext):
-    token = active_component_load_context.set(component_load_context)
-    try:
-        yield
-    finally:
-        active_component_load_context.reset(token)

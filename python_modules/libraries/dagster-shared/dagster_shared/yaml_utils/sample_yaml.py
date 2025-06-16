@@ -4,7 +4,7 @@ from typing import Any, Union
 
 import yaml
 
-from dagster_shared.yaml_utils import parse_yaml_with_source_positions
+from dagster_shared.yaml_utils import parse_yaml_with_source_position
 from dagster_shared.yaml_utils.source_position import SourcePositionTree
 
 REF_BASE = "#/$defs/"
@@ -138,7 +138,7 @@ def generate_sample_yaml(component_type: str, json_schema: Mapping[str, Any]) ->
         Dumper=ComponentDumper,
         sort_keys=False,
     )
-    parsed = parse_yaml_with_source_positions(raw)
+    parsed = parse_yaml_with_source_position(raw)
     comments = dict(_get_source_position_comments([], parsed.source_position_tree, json_schema))
     commented_lines = []
     for line_num, line in enumerate(raw.split("\n")):

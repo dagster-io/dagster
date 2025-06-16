@@ -9,7 +9,6 @@ from typing_extensions import TypeAlias
 
 from dagster_shared.record import record
 from dagster_shared.serdes.serdes import whitelist_for_serdes
-from dagster_shared.yaml_utils.sample_yaml import generate_sample_yaml
 
 
 def _generate_invalid_component_typename_error_message(typename: str) -> str:
@@ -21,7 +20,7 @@ def _generate_invalid_component_typename_error_message(typename: str) -> str:
 
 @whitelist_for_serdes
 @record(kw_only=False)
-class PluginObjectKey:
+class EnvRegistryKey:
     namespace: str
     name: str
 
@@ -33,7 +32,7 @@ class PluginObjectKey:
         return f"{self.namespace}.{self.name}"
 
     @staticmethod
-    def from_typename(typename: str) -> "PluginObjectKey":
+    def from_typename(typename: str) -> "EnvRegistryKey":
         parts = typename.split(".")
         for part in parts:
             if not part.isidentifier():
@@ -41,57 +40,60 @@ class PluginObjectKey:
         if len(parts) < 2:
             raise ValueError(_generate_invalid_component_typename_error_message(typename))
         namespace, _, name = typename.rpartition(".")
-        return PluginObjectKey(name=name, namespace=namespace)
+        return EnvRegistryKey(name=name, namespace=namespace)
 
 
 ###########
 # TYPE DATA
 ###########
-PluginObjectFeature: TypeAlias = Literal["component", "scaffold-target"]
+EnvRegistryObjectFeature: TypeAlias = Literal["component", "scaffold-target"]
 
 
-class PluginObjectFeatureData(ABC):
+class EnvRegistryObjectFeatureData(ABC):
     @property
     @abstractmethod
-    def feature(self) -> PluginObjectFeature:
+    def feature(self) -> EnvRegistryObjectFeature:
         pass
 
 
 @whitelist_for_serdes
 @record
-class ComponentFeatureData(PluginObjectFeatureData):
+class ComponentFeatureData(EnvRegistryObjectFeatureData):
     schema: Optional[dict[str, Any]]
 
     @property
-    def feature(self) -> PluginObjectFeature:
+    def feature(self) -> EnvRegistryObjectFeature:
         return "component"
 
 
 @whitelist_for_serdes
 @record
-class ScaffoldTargetTypeData(PluginObjectFeatureData):
+class ScaffoldTargetTypeData(EnvRegistryObjectFeatureData):
     schema: Optional[dict[str, Any]]
 
     @property
-    def feature(self) -> PluginObjectFeature:
+    def feature(self) -> EnvRegistryObjectFeature:
         return "scaffold-target"
 
 
 ###############
-# PACKAGE ENTRY
+# PLUGIN MANIFEST
 ###############
+
+
 @whitelist_for_serdes
 @record
-class PluginObjectSnap:
-    key: PluginObjectKey
+class EnvRegistryObjectSnap:
+    key: EnvRegistryKey
+    aliases: Sequence[EnvRegistryKey]
     summary: Optional[str]
     description: Optional[str]
     owners: Optional[Sequence[str]]
     tags: Optional[Sequence[str]]
-    feature_data: Sequence[PluginObjectFeatureData]
+    feature_data: Sequence[EnvRegistryObjectFeatureData]
 
     @property
-    def features(self) -> Sequence[PluginObjectFeature]:
+    def features(self) -> Sequence[EnvRegistryObjectFeature]:
         return [type_data.feature for type_data in self.feature_data]
 
     @overload
@@ -102,7 +104,9 @@ class PluginObjectSnap:
         self, feature: Literal["scaffold-target"]
     ) -> Optional[ScaffoldTargetTypeData]: ...
 
-    def get_feature_data(self, feature: PluginObjectFeature) -> Optional[PluginObjectFeatureData]:
+    def get_feature_data(
+        self, feature: EnvRegistryObjectFeature
+    ) -> Optional[EnvRegistryObjectFeatureData]:
         for feature_data in self.feature_data:
             if feature_data.feature == feature:
                 return feature_data
@@ -117,6 +121,38 @@ class PluginObjectSnap:
     def component_schema(self) -> Optional[dict[str, Any]]:
         component_data = self.get_feature_data("component")
         return component_data.schema if component_data else None
+
+    @property
+    def is_component(self) -> bool:
+        return self.get_feature_data("component") is not None
+
+    @property
+    def all_keys(self) -> Sequence[EnvRegistryKey]:
+        """Return all keys associated with this plugin object, including aliases."""
+        return [self.key, *self.aliases]
+
+
+@whitelist_for_serdes
+@record
+class EnvRegistryManifest:
+    """A manifest of all components in a package.
+
+    This is used to generate the component registry and to validate that the package entry point
+    is valid.
+    """
+
+    modules: Sequence[str]  # List of modules scanned
+    objects: Sequence[EnvRegistryObjectSnap]
+
+    def merge(self, other: "EnvRegistryManifest") -> "EnvRegistryManifest":
+        """Merge another manifest with this one and return a new instance."""
+        shared_modules = set(self.modules).intersection(other.modules)
+        if shared_modules:
+            raise ValueError(f"Cannot merge manifests with overlapping modules: {shared_modules}.")
+        return EnvRegistryManifest(
+            modules=[*self.modules, *other.modules],
+            objects=[*self.objects, *other.objects],
+        )
 
 
 ###################################
@@ -143,7 +179,7 @@ class ComponentTypeNamespaceJson(TypedDict):
 
 
 def json_for_all_components(
-    components: Sequence[PluginObjectSnap],
+    components: Sequence[EnvRegistryObjectSnap],
 ) -> list[ComponentTypeNamespaceJson]:
     """Returns a list of JSON representations of all component types in the registry."""
     component_json = []
@@ -167,10 +203,12 @@ def json_for_all_components(
 
 
 def json_for_component_type(
-    key: PluginObjectKey,
-    entry: PluginObjectSnap,
+    key: EnvRegistryKey,
+    entry: EnvRegistryObjectSnap,
     component_type_data: ComponentFeatureData,
 ) -> ComponentTypeJson:
+    from dagster_shared.yaml_utils.sample_yaml import generate_sample_yaml
+
     typename = key.to_typename()
     sample_yaml = generate_sample_yaml(typename, component_type_data.schema or {})
     return ComponentTypeJson(

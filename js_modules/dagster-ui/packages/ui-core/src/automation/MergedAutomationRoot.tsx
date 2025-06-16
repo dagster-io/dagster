@@ -2,19 +2,21 @@ import {
   Body2,
   Box,
   Colors,
-  Heading,
   Icon,
   NonIdealState,
   PageHeader,
   SpinnerWithText,
+  Subtitle1,
   TextInput,
   Tooltip,
 } from '@dagster-io/ui-components';
 import {useCallback, useContext, useMemo} from 'react';
 
 import {AutomationBulkActionMenu} from './AutomationBulkActionMenu';
+import {AutomationTabs} from './AutomationTabs';
 import {AutomationsTable} from './AutomationsTable';
 import {useTrackPageView} from '../app/analytics';
+import {useAutoMaterializeSensorFlag} from '../assets/AutoMaterializeSensorFlag';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {useSelectionReducer} from '../hooks/useSelectionReducer';
@@ -37,7 +39,10 @@ import {WorkspaceLocationNodeFragment} from '../workspace/WorkspaceContext/types
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 
-type AutomationType = 'schedules' | 'sensors';
+enum AutomationType {
+  Schedules = 'schedules',
+  Sensors = 'sensors',
+}
 
 const AUTOMATION_TYPE_FILTERS = {
   schedules: {
@@ -53,6 +58,7 @@ const AUTOMATION_TYPE_FILTERS = {
 };
 
 const ALL_AUTOMATION_VALUES = Object.values(AUTOMATION_TYPE_FILTERS);
+const AUTOMATION_TYPES: Set<string> = new Set(Object.values(AutomationType));
 
 export const MergedAutomationRoot = () => {
   useTrackPageView();
@@ -63,8 +69,9 @@ export const MergedAutomationRoot = () => {
     visibleRepos,
     loading: workspaceLoading,
     data: cachedData,
-    refetch,
   } = useContext(WorkspaceContext);
+
+  const automaterializeSensorsFlagState = useAutoMaterializeSensorFlag();
 
   const [searchValue, setSearchValue] = useQueryPersistedState<string>({
     queryKey: 'search',
@@ -73,7 +80,15 @@ export const MergedAutomationRoot = () => {
 
   const [automationTypes, setAutomationTypes] = useQueryPersistedState<Set<AutomationType>>({
     encode: (vals) => ({automationType: vals.size ? Array.from(vals).join(',') : undefined}),
-    decode: (qs) => new Set((qs.automationType?.split(',') as AutomationType[]) || []),
+    decode: (qs) => {
+      if (typeof qs.automationType === 'string') {
+        const values = qs.automationType.split(',');
+        return new Set(
+          values.filter((value) => AUTOMATION_TYPES.has(value)),
+        ) as Set<AutomationType>;
+      }
+      return new Set();
+    },
   });
 
   const automationFilterState = useMemo(() => {
@@ -144,7 +159,7 @@ export const MergedAutomationRoot = () => {
           if (runningState.size && !runningState.has(sensorState.status)) {
             return false;
           }
-          if (automationTypes.size && !automationTypes.has('sensors')) {
+          if (automationTypes.size && !automationTypes.has(AutomationType.Sensors)) {
             return false;
           }
           return true;
@@ -159,7 +174,7 @@ export const MergedAutomationRoot = () => {
           if (runningState.size && !runningState.has(scheduleState.status)) {
             return false;
           }
-          if (automationTypes.size && !automationTypes.has('schedules')) {
+          if (automationTypes.size && !automationTypes.has(AutomationType.Schedules)) {
             return false;
           }
           return true;
@@ -337,7 +352,12 @@ export const MergedAutomationRoot = () => {
 
   return (
     <Box flex={{direction: 'column'}} style={{height: '100%', overflow: 'hidden'}}>
-      <PageHeader title={<Heading>Automation</Heading>} />
+      <PageHeader title={<Subtitle1>Automation</Subtitle1>} />
+      {automaterializeSensorsFlagState === 'has-global-amp' ? (
+        <Box padding={{horizontal: 24}} border="bottom">
+          <AutomationTabs tab="schedules-and-sensors" />
+        </Box>
+      ) : null}
       <Box
         padding={{horizontal: 24, vertical: 12}}
         flex={{
@@ -364,7 +384,7 @@ export const MergedAutomationRoot = () => {
           placement="top-end"
           useDisabledButtonTooltipFix
         >
-          <AutomationBulkActionMenu automations={checkedAutomations} onDone={() => refetch()} />
+          <AutomationBulkActionMenu automations={checkedAutomations} />
         </Tooltip>
       </Box>
       {activeFiltersJsx.length ? (

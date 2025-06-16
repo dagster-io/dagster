@@ -24,7 +24,7 @@ For demonstration purposes, this tutorial makes a few simplifications that you s
     - `dagster-webserver` --- to run the Dagster UI
     - `dagster-aws` --- when using S3
 
-    You will also need to make the orchestration code available to Dagster (typically via a [code location](/guides/deploy/code-locations/)).
+    You will also need to make the orchestration code available to Dagster (typically via a [code location](/deployment/code-locations)).
 
   - **In the PySpark environment**, you'll need to install the `dagster-pipes` Python package, and typically the Java AWS S3 SDK packages. For example:
 

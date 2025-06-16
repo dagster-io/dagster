@@ -33,15 +33,20 @@ function buildSerializer(assetHealth: Pick<PartitionHealthData, 'dimensions'>) {
       for (const key in qs) {
         if (key.endsWith('_range')) {
           const name = key.replace(/_range$/, '');
-          results[name] = {text: qs[key], isFromPartitionQueryStringParam: false};
+          const value = qs[key];
+          if (typeof value === 'string') {
+            results[name] = {text: value, isFromPartitionQueryStringParam: false};
+          }
         } else if (key === 'partition') {
-          const partitions = qs[key].split('|');
-          for (let i = 0; i < partitions.length; i++) {
-            const partitionText = partitions[i];
-            const name = assetHealth?.dimensions[i]?.name;
-            if (name) {
-              results[name] = {text: partitionText, isFromPartitionQueryStringParam: true};
-            }
+          const value = qs[key];
+          if (typeof value === 'string') {
+            const partitions = value.split('|');
+            partitions.forEach((partitionText, i) => {
+              const name = assetHealth?.dimensions[i]?.name;
+              if (name) {
+                results[name] = {text: partitionText, isFromPartitionQueryStringParam: true};
+              }
+            });
           }
         }
       }

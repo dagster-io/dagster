@@ -15,6 +15,10 @@ from dagster._utils.warnings import suppress_dagster_warnings
 from dagster_dbt.asset_utils import (
     DAGSTER_DBT_EXCLUDE_METADATA_KEY,
     DAGSTER_DBT_SELECT_METADATA_KEY,
+    DAGSTER_DBT_SELECTOR_METADATA_KEY,
+    DBT_DEFAULT_EXCLUDE,
+    DBT_DEFAULT_SELECT,
+    DBT_DEFAULT_SELECTOR,
     build_dbt_specs,
 )
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator, validate_translator
@@ -26,8 +30,9 @@ from dagster_dbt.dbt_project import DbtProject
 def dbt_assets(
     *,
     manifest: DbtManifestParam,
-    select: str = "fqn:*",
-    exclude: Optional[str] = None,
+    select: str = DBT_DEFAULT_SELECT,
+    exclude: Optional[str] = DBT_DEFAULT_EXCLUDE,
+    selector: Optional[str] = DBT_DEFAULT_SELECTOR,
     name: Optional[str] = None,
     io_manager_key: Optional[str] = None,
     partitions_def: Optional[PartitionsDefinition] = None,
@@ -53,6 +58,8 @@ def dbt_assets(
             to include. Defaults to ``fqn:*``.
         exclude (Optional[str]): A dbt selection string for the models in a project that you want
             to exclude. Defaults to "".
+        selector (Optional[str]): A dbt selector for the models in a project that you want to
+            include. Cannot be combined with select or exclude. Defaults to None.
         name (Optional[str]): The name of the op.
         io_manager_key (Optional[str]): The IO manager key that will be set on each of the returned
             assets. When other ops are downstream of the loaded assets, the IOManager specified
@@ -310,7 +317,8 @@ def dbt_assets(
         translator=dagster_dbt_translator,
         manifest=manifest,
         select=select,
-        exclude=exclude or "",
+        exclude=exclude or DBT_DEFAULT_EXCLUDE,
+        selector=selector or DBT_DEFAULT_SELECTOR,
         io_manager_key=io_manager_key,
         project=project,
     )
@@ -327,9 +335,16 @@ def dbt_assets(
             " with op_tags"
         )
 
+    if op_tags and DAGSTER_DBT_SELECTOR_METADATA_KEY in op_tags:
+        raise DagsterInvalidDefinitionError(
+            f"To specify a dbt selector, use the 'selector' argument, not '{DAGSTER_DBT_SELECTOR_METADATA_KEY}'"
+            " with op_tags"
+        )
+
     resolved_op_tags = {
         **({DAGSTER_DBT_SELECT_METADATA_KEY: select} if select else {}),
         **({DAGSTER_DBT_EXCLUDE_METADATA_KEY: exclude} if exclude else {}),
+        **({DAGSTER_DBT_SELECTOR_METADATA_KEY: selector} if selector else {}),
         **(op_tags if op_tags else {}),
     }
 
@@ -351,4 +366,5 @@ def dbt_assets(
         backfill_policy=backfill_policy,
         retry_policy=retry_policy,
         pool=pool,
+        allow_arbitrary_check_specs=True,
     )

@@ -1,8 +1,8 @@
 ---
 title: Dagster & obstore
 sidebar_label: obstore
-description: The community-supported `dagster-obstore` package provides an integration with obstore.
-tags: [community-supported]
+description: The community-supported obstore package provides an integration with obstore, providing three lean integrations with object stores, ADLS, GCS & S3.
+tags: [community-supported, storage]
 source: https://github.com/dagster-io/community-integrations/tree/main/libraries/dagster-obstore
 pypi: https://pypi.org/project/dagster-obstore
 sidebar_custom_props:
@@ -11,9 +11,9 @@ sidebar_custom_props:
 partnerlink: https://developmentseed.org/obstore/latest/
 ---
 
-The community-supported `dagster-obstore` package provides an integration with obstore, providing three lean integrations with object stores, ADLS, GCS & S3.
+<p>{frontMatter.description}</p>
 
-### S3ComputeLogManager
+## S3ComputeLogManager
 
 The `S3ComputeLogManager` writes `stdout` and `stderr` to any S3 compatible endpoint.
 
@@ -54,7 +54,7 @@ compute_logs:
     local_dir: "/tmp/dagster-logs"
 ```
 
-### ADLSComputeLogManager
+## ADLSComputeLogManager
 
 The `ADLSComputeLogManager` writes `stdout` and `stderr` to Azure Datalake/Blob storage.
 
@@ -103,7 +103,7 @@ compute_logs:
     local_dir: "/tmp/dagster-logs"
 ```
 
-### GCSComputeLogManager
+## GCSComputeLogManager
 
 The `GCSComputeLogManager` writes `stdout` and `stderr` to Google Cloud Storage.
 

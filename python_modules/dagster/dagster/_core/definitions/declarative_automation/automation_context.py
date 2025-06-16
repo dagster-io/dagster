@@ -24,6 +24,7 @@ from dagster._core.definitions.declarative_automation.serialized_objects import 
     HistoricalAllPartitionsSubsetSentinel,
     StructuredCursor,
 )
+from dagster._core.definitions.metadata import MetadataMapping
 from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._time import get_current_datetime
 
@@ -187,6 +188,13 @@ class AutomationContext(Generic[T_EntityKey]):
         )
 
     @property
+    def previous_metadata(self) -> Optional[MetadataMapping]:
+        """Returns the metadata for this node from the previous evaluation, if this node was
+        evaluated on the previous tick.
+        """
+        return self._node_cursor.metadata if self._node_cursor else None
+
+    @property
     def evaluation_time(self) -> datetime.datetime:
         """A consistent datetime for all evaluations on this tick."""
         return self.asset_graph_view.effective_dt
@@ -215,6 +223,13 @@ class AutomationContext(Generic[T_EntityKey]):
     def previous_temporal_context(self) -> Optional[TemporalContext]:
         """The `temporal_context` value used on the previous tick's evaluation."""
         return self._cursor.temporal_context if self._cursor else None
+
+    @property
+    def evaluation_id(self) -> int:
+        """Returns the current evaluation ID. This ID is incremented for each tick
+        and is global across all conditions.
+        """
+        return self._full_cursor.evaluation_id
 
     @property
     def legacy_context(self) -> LegacyRuleEvaluationContext:

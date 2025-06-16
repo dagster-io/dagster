@@ -10,8 +10,6 @@ sidebar_custom_props:
 partnerlink: https://pandas.pydata.org/
 ---
 
-# Pandas & Dagster
-
 import Beta from '@site/docs/partials/\_Beta.md';
 
 <Beta />
@@ -94,7 +92,6 @@ To tie this back to our example, let's say that we want to validate that the amo
   startAfter="start_custom_col"
   endBefore="end_custom_col"
 />
-
 
 ## About Pandas
 

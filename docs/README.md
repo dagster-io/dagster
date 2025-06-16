@@ -77,7 +77,7 @@ yarn format
 Kinds tags are generated programmatically and stored in the `docs/partials/_KindsTags.md` partial with the following command:
 
 ```sh
-yarn rebuild-kinds-tags
+yarn build-kinds-tags
 ```
 
 **Note:** Most of the time, you will not need to run this command locally, since it runs on the production build.
@@ -102,7 +102,7 @@ To validate the dropdown menu, you can run `VERCEL_ENV=preview yarn start`.
 
 This site is built and deployed using Vercel.
 
-The _build_ step in Vercel is overridden to build API documentation using the `scripts/vercel-sync-api-docs.sh` script; this should _not_ be used locally.
+The _build_ step in Vercel is overridden to build API documentation using the `scripts/vercel-sync-api-docs.sh` script; this is configured in the `vercel.json` file through the `buildCommand` property.
 
 ---
 

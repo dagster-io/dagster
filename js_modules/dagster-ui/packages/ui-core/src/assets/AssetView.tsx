@@ -5,8 +5,8 @@ import React, {useContext, useEffect, useMemo} from 'react';
 import {Link, Redirect, useLocation, useRouteMatch} from 'react-router-dom';
 import {useSetRecoilState} from 'recoil';
 import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
+import {getAssetSelectionQueryString} from 'shared/asset-selection/useAssetSelectionState.oss';
 import {AssetPageHeader} from 'shared/assets/AssetPageHeader.oss';
-import {getAssetFilterStateQueryString} from 'shared/assets/useAssetDefinitionFilterState.oss';
 
 import {ASSET_NODE_CONFIG_FRAGMENT} from './AssetConfig';
 import {AssetEvents} from './AssetEvents';
@@ -24,7 +24,6 @@ import {UNDERLYING_OPS_ASSET_NODE_FRAGMENT} from './UnderlyingOpsOrGraph';
 import {AssetChecks} from './asset-checks/AssetChecks';
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
 import {gql} from '../apollo-client';
-import {featureEnabled} from '../app/Flags';
 import {AssetNodeOverview, AssetNodeOverviewNonSDA} from './overview/AssetNodeOverview';
 import {AssetKey, AssetViewParams} from './types';
 import {AssetTableDefinitionFragment} from './types/AssetTableFragment.types';
@@ -35,6 +34,7 @@ import {useDeleteDynamicPartitionsDialog} from './useDeleteDynamicPartitionsDial
 import {healthRefreshHintFromLiveData} from './usePartitionHealthData';
 import {useReportEventsDialog} from './useReportEventsDialog';
 import {useWipeDialog} from './useWipeDialog';
+import {featureEnabled} from '../app/Flags';
 import {currentPageAtom} from '../app/analytics';
 import {Timestamp} from '../app/time/Timestamp';
 import {AssetLiveDataRefreshButton, useAssetLiveData} from '../asset-data/AssetLiveDataProvider';
@@ -279,12 +279,14 @@ const AssetViewImpl = ({assetKey, headerBreadcrumbs, writeAssetVisit, currentPat
   );
 
   if (definitionQueryResult.data?.assetOrError.__typename === 'AssetNotFoundError') {
+    const assetSelection = getAssetSelectionQueryString();
+    let nextPath = `/assets/${currentPath.join('/')}?view=folder${assetSelection ? `&asset-selection=${assetSelection}` : ''}`;
+    if (featureEnabled(FeatureFlag.flagUseNewObserveUIs)) {
+      // The new UI doesn't have folders. So instead set the asset selection to filter to assets prefixed with the current path.
+      nextPath = `/assets?asset-selection=key:"${currentPath.join('/')}/*"`;
+    }
     // Redirect to the asset catalog
-    return (
-      <Redirect
-        to={`/assets/${currentPath.join('/')}?view=folder${getAssetFilterStateQueryString()}`}
-      />
-    );
+    return <Redirect to={nextPath} />;
   }
 
   return (
@@ -298,6 +300,7 @@ const AssetViewImpl = ({assetKey, headerBreadcrumbs, writeAssetVisit, currentPat
         headerBreadcrumbs={headerBreadcrumbs}
         tags={
           <AssetViewPageHeaderTags
+            assetKey={assetKey}
             definition={cachedOrLiveDefinition}
             liveData={liveData}
             onShowUpstream={() => setParams({...params, view: 'lineage', lineageScope: 'upstream'})}
@@ -367,9 +370,7 @@ function getQueryForVisibleAssets(
 
   if (view === 'definition' || view === 'overview') {
     return {
-      query: featureEnabled(FeatureFlag.flagSelectionSyntax)
-        ? `1+key:"${token}"+1`
-        : `+"${token}"+`,
+      query: `1+key:"${token}"+1`,
       requestedDepth: 1,
     };
   }
@@ -377,40 +378,23 @@ function getQueryForVisibleAssets(
     const defaultDepth = 1;
     const requestedDepth = Number(lineageDepth) || defaultDepth;
 
-    if (featureEnabled(FeatureFlag.flagSelectionSyntax)) {
-      if (lineageScope === 'upstream') {
-        return {
-          query: `${requestedDepth}+key:"${token}"`,
-          requestedDepth,
-        };
-      } else if (lineageScope === 'downstream') {
-        return {
-          query: `key:"${token}"+${requestedDepth}`,
-          requestedDepth,
-        };
-      }
+    if (lineageScope === 'upstream') {
       return {
-        query: `${requestedDepth}+key:"${token}"+${requestedDepth}`,
+        query: `${requestedDepth}+key:"${token}"`,
+        requestedDepth,
+      };
+    } else if (lineageScope === 'downstream') {
+      return {
+        query: `key:"${token}"+${requestedDepth}`,
         requestedDepth,
       };
     }
-
-    const depthStr = '+'.repeat(requestedDepth);
-
-    // Load the asset lineage (for both lineage tab and definition "Upstream" / "Downstream")
-    const query =
-      view === 'lineage' && lineageScope === 'upstream'
-        ? `${depthStr}"${token}"`
-        : view === 'lineage' && lineageScope === 'downstream'
-          ? `"${token}"${depthStr}`
-          : `${depthStr}"${token}"${depthStr}`;
-
     return {
-      query,
+      query: `${requestedDepth}+key:"${token}"+${requestedDepth}`,
       requestedDepth,
     };
   }
-  return {query: `"${token}"`, requestedDepth: 0};
+  return {query: `key:"${token}"`, requestedDepth: 0};
 }
 
 function useNeighborsFromGraph(graphData: GraphData | null, assetKey: AssetKey) {
@@ -495,6 +479,11 @@ export const ASSET_VIEW_DEFINITION_QUERY = gql`
         failWindowSeconds
         warnWindowSeconds
       }
+      ... on CronFreshnessPolicy {
+        deadlineCron
+        lowerBoundDeltaSeconds
+        timezone
+      }
     }
     backfillPolicy {
       description
@@ -561,10 +550,12 @@ const HistoricalViewAlert = ({asOf, hasDefinition}: {asOf: string; hasDefinition
 };
 
 const AssetViewPageHeaderTags = ({
+  assetKey,
   definition,
   liveData,
   onShowUpstream,
 }: {
+  assetKey: AssetKey;
   definition: AssetViewDefinitionNodeFragment | AssetTableDefinitionFragment | null | undefined;
   liveData?: LiveDataForNodeWithStaleData;
   onShowUpstream: () => void;
@@ -573,20 +564,22 @@ const AssetViewPageHeaderTags = ({
   // When the old code below is removed, some of these components may no longer be used.
   return (
     <>
-      {definition ? (
-        <Box flex={{direction: 'row', gap: 6, alignItems: 'center'}}>
-          <AssetHealthSummary assetKey={definition.assetKey} />
-          <StaleReasonsTag
-            liveData={liveData}
-            assetKey={definition.assetKey}
-            onClick={onShowUpstream}
-          />
-          <ChangedReasonsTag
-            changedReasons={definition.changedReasons}
-            assetKey={definition.assetKey}
-          />
-        </Box>
-      ) : null}
+      <Box flex={{direction: 'row', gap: 6, alignItems: 'center'}}>
+        <AssetHealthSummary assetKey={assetKey} />
+        {definition ? (
+          <Box>
+            <StaleReasonsTag
+              liveData={liveData}
+              assetKey={definition.assetKey}
+              onClick={onShowUpstream}
+            />
+            <ChangedReasonsTag
+              changedReasons={definition.changedReasons}
+              assetKey={definition.assetKey}
+            />
+          </Box>
+        ) : null}
+      </Box>
       {!definition?.isMaterializable ? <Tag>External Asset</Tag> : undefined}
     </>
   );

@@ -1,6 +1,7 @@
 ---
-title: Connecting to APIs
+description: Standardize external API connections in Dagster pipelines using resources, enabling configuration in code or with environment variables.
 sidebar_position: 500
+title: Connecting to APIs
 ---
 
 When building a data pipeline, you'll likely need to connect to several external APIs, each with its own specific configuration and behavior. This guide demonstrates how to standardize your API connections and customize their configuration using Dagster resources.
@@ -60,6 +61,6 @@ When you materialize `home_sunrise`, Dagster will read the values set for the `H
 The initialized `SunResource` will be provided to the `sun_resource` parameter.
 
 :::note
-You can also fetch environment variables using the `os` library. Dagster treats each approach to fetching environment variables differently, such as when they're fetched or how they display in the UI. Refer to the [Environment variables guide](/guides/deploy/using-environment-variables-and-secrets) for more information.
+You can also fetch environment variables using the `os` library. Dagster treats each approach to fetching environment variables differently, such as when they're fetched or how they display in the UI. Refer to the [Environment variables guide](/guides/operate/configuration/using-environment-variables-and-secrets) for more information.
 :::
 

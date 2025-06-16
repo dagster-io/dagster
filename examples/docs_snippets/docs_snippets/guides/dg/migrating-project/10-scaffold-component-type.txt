@@ -1,0 +1,3 @@
+dg scaffold component Foo
+
+Scaffolded Dagster component at /.../my-existing-project/my_existing_project/components/foo.py.

@@ -270,7 +270,7 @@ def test_custom_unsupported_partition_mapping():
         def validate_partition_mapping(
             self,
             upstream_partitions_def: PartitionsDefinition,
-            downstream_partitions_def: PartitionsDefinition,
+            downstream_partitions_def: Optional[PartitionsDefinition],
         ):
             pass
 
@@ -930,7 +930,7 @@ def test_multi_asset_with_many_specs():
     defs = Definitions(assets=[my_multi_asset_with_many_specs])
 
     start_time = time.time()
-    defs.get_all_job_defs()
+    defs.resolve_all_job_defs()
 
     end_time = time.time()
 

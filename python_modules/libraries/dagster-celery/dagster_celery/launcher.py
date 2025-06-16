@@ -19,7 +19,7 @@ from dagster._core.launcher import (
     RunLauncher,
     WorkerStatus,
 )
-from dagster._grpc import ExecuteRunArgs, ResumeRunArgs
+from dagster._grpc.types import ExecuteRunArgs, ResumeRunArgs
 from dagster._serdes import ConfigurableClass, ConfigurableClassData, pack_value
 from typing_extensions import Self, override
 

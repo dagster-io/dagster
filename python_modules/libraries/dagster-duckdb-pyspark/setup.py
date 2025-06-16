@@ -34,7 +34,7 @@ setup(
     install_requires=[
         f"dagster{pin}",
         f"dagster-duckdb{pin}",
-        "pyspark>=3",
+        "pyspark>=3,<4",
         "pandas",
         "pyarrow",
     ],

@@ -27,6 +27,7 @@ export type AssetCatalogTableQuery = {
             isObservable: boolean;
             isExecutable: boolean;
             isPartitioned: boolean;
+            isAutoCreatedStub: boolean;
             computeKind: string | null;
             hasMaterializePermission: boolean;
             hasReportRunlessAssetEventPermission: boolean;
@@ -35,11 +36,19 @@ export type AssetCatalogTableQuery = {
             jobNames: Array<string>;
             kinds: Array<string>;
             assetKey: {__typename: 'AssetKey'; path: Array<string>};
-            internalFreshnessPolicy: {
-              __typename: 'TimeWindowFreshnessPolicy';
-              failWindowSeconds: number;
-              warnWindowSeconds: number | null;
-            } | null;
+            internalFreshnessPolicy:
+              | {
+                  __typename: 'CronFreshnessPolicy';
+                  deadlineCron: string;
+                  lowerBoundDeltaSeconds: number;
+                  timezone: string;
+                }
+              | {
+                  __typename: 'TimeWindowFreshnessPolicy';
+                  failWindowSeconds: number;
+                  warnWindowSeconds: number | null;
+                }
+              | null;
             partitionDefinition: {
               __typename: 'PartitionDefinition';
               description: string;
@@ -96,6 +105,7 @@ export type AssetCatalogGroupTableQuery = {
     isObservable: boolean;
     isExecutable: boolean;
     isPartitioned: boolean;
+    isAutoCreatedStub: boolean;
     computeKind: string | null;
     hasMaterializePermission: boolean;
     hasReportRunlessAssetEventPermission: boolean;
@@ -104,11 +114,19 @@ export type AssetCatalogGroupTableQuery = {
     jobNames: Array<string>;
     kinds: Array<string>;
     assetKey: {__typename: 'AssetKey'; path: Array<string>};
-    internalFreshnessPolicy: {
-      __typename: 'TimeWindowFreshnessPolicy';
-      failWindowSeconds: number;
-      warnWindowSeconds: number | null;
-    } | null;
+    internalFreshnessPolicy:
+      | {
+          __typename: 'CronFreshnessPolicy';
+          deadlineCron: string;
+          lowerBoundDeltaSeconds: number;
+          timezone: string;
+        }
+      | {
+          __typename: 'TimeWindowFreshnessPolicy';
+          failWindowSeconds: number;
+          warnWindowSeconds: number | null;
+        }
+      | null;
     partitionDefinition: {
       __typename: 'PartitionDefinition';
       description: string;
@@ -146,6 +164,7 @@ export type AssetCatalogGroupTableNodeFragment = {
   isObservable: boolean;
   isExecutable: boolean;
   isPartitioned: boolean;
+  isAutoCreatedStub: boolean;
   computeKind: string | null;
   hasMaterializePermission: boolean;
   hasReportRunlessAssetEventPermission: boolean;
@@ -154,11 +173,19 @@ export type AssetCatalogGroupTableNodeFragment = {
   jobNames: Array<string>;
   kinds: Array<string>;
   assetKey: {__typename: 'AssetKey'; path: Array<string>};
-  internalFreshnessPolicy: {
-    __typename: 'TimeWindowFreshnessPolicy';
-    failWindowSeconds: number;
-    warnWindowSeconds: number | null;
-  } | null;
+  internalFreshnessPolicy:
+    | {
+        __typename: 'CronFreshnessPolicy';
+        deadlineCron: string;
+        lowerBoundDeltaSeconds: number;
+        timezone: string;
+      }
+    | {
+        __typename: 'TimeWindowFreshnessPolicy';
+        failWindowSeconds: number;
+        warnWindowSeconds: number | null;
+      }
+    | null;
   partitionDefinition: {
     __typename: 'PartitionDefinition';
     description: string;
@@ -185,6 +212,6 @@ export type AssetCatalogGroupTableNodeFragment = {
   };
 };
 
-export const AssetCatalogTableQueryVersion = '744a413c6d97571f19266b1157e3ef3cccdb56eb22068030162d47ee926f89d0';
+export const AssetCatalogTableQueryVersion = 'f5abe0feb0b3b66b28c825dfad0cfe8f41dab1b3469eed5d51041efb350af6a1';
 
-export const AssetCatalogGroupTableQueryVersion = 'd8bc68e648dee12c9e9eccfeae9fbe9e82eb2ffa84232f12d38e1c6bf1fa1729';
+export const AssetCatalogGroupTableQueryVersion = '9288d38ac6970055480818a9026d52e650b0001964109c09d3a7a71a506eae34';

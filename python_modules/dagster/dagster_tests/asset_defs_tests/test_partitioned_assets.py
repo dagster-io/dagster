@@ -222,7 +222,7 @@ def test_assets_job_with_different_partitions_defs():
         Definitions(
             assets=[upstream, downstream],
             jobs=[define_asset_job("my_job", selection=[upstream, downstream])],
-        ).get_job_def("my_job")
+        ).resolve_job_def("my_job")
 
 
 def test_access_partition_keys_from_context_direct_invocation():
@@ -732,7 +732,7 @@ def test_mismatched_job_partitioned_config_with_asset_partitions():
     ):
         define_asset_job("job", config=myconfig).resolve(
             asset_graph=AssetGraph.from_assets([asset1])
-        )
+        ).execute_in_process()
 
 
 def test_partition_range_single_run() -> None:

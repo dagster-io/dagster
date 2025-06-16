@@ -3,8 +3,8 @@ from typing import Optional
 
 from dagster_shared.serdes.objects.package_entry import (
     ComponentFeatureData,
-    PluginObjectKey,
-    PluginObjectSnap,
+    EnvRegistryKey,
+    EnvRegistryObjectSnap,
     ScaffoldTargetTypeData,
 )
 
@@ -43,21 +43,26 @@ def _get_scaffold_target_type_data(scaffolder: Scaffolder) -> ScaffoldTargetType
     )
 
 
-def get_package_entry_snap(key: PluginObjectKey, obj: object) -> PluginObjectSnap:
+def get_package_entry_snap(key: EnvRegistryKey, obj: object) -> EnvRegistryObjectSnap:
     type_data = []
     owners = []
     tags = []
+    aliases = []
     if isinstance(obj, type) and issubclass(obj, Component):
         type_data.append(_get_component_type_data(obj))
         spec = obj.get_spec()
         owners = spec.owners
         tags = spec.tags
+        if obj.__module__ != key.namespace:
+            # add the module that defines the class as an alias
+            aliases.append(EnvRegistryKey(namespace=obj.__module__, name=obj.__name__))
     scaffolder = get_scaffolder(obj)
     if isinstance(scaffolder, Scaffolder):
         type_data.append(_get_scaffold_target_type_data(scaffolder))
     summary, description = _get_summary_and_description(obj)
-    return PluginObjectSnap(
+    return EnvRegistryObjectSnap(
         key=key,
+        aliases=aliases,
         summary=summary,
         owners=owners,
         tags=tags,

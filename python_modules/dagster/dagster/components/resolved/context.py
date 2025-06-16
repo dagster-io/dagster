@@ -6,11 +6,9 @@ from pathlib import Path
 from typing import Any, Optional, TypeVar, Union, overload
 
 from dagster_shared.yaml_utils.source_position import SourcePositionTree
-from jinja2 import Undefined
-from jinja2.exceptions import UndefinedError
-from jinja2.nativetypes import NativeTemplate
 from pydantic import BaseModel
 
+from dagster._annotations import preview, public
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationCondition,
 )
@@ -20,8 +18,28 @@ from dagster.components.resolved.errors import ResolutionException
 T = TypeVar("T")
 
 
-def env_scope(key: str) -> Optional[str]:
-    return os.environ.get(key)
+class EnvScope:
+    def __call__(self, key: str, default: Optional[Union[str, Any]] = ...) -> Optional[str]:
+        value = os.environ.get(key, default=default)
+        if value is ...:
+            raise ResolutionException(
+                f"Environment variable {key} is not set and no default value was provided."
+                f" To provide a default value, use e.g. `env('{key}', 'default_value')`."
+            )
+        return value
+
+    def __getattr__(self, key: str) -> Optional[str]:
+        # jinja2 applies a hasattr check to any scope fn - we avoid raising our own exception
+        # for this access
+        if key.startswith("jinja"):
+            raise AttributeError(f"{key} not found")
+
+        return os.environ.get(key)
+
+    def __getitem__(self, key: str) -> Optional[str]:
+        raise ResolutionException(
+            f"To access environment variables, use dot access or the `env` function, e.g. `env.{key}` or `env('{key}')`"
+        )
 
 
 def automation_condition_scope() -> Mapping[str, Any]:
@@ -34,11 +52,19 @@ def automation_condition_scope() -> Mapping[str, Any]:
 T = TypeVar("T")
 
 
+@public
+@preview(emit_runtime_warning=False)
 @record
 class ResolutionContext:
+    """The context available to Resolver functions when "resolving" from yaml in to a Resolvable object."""
+
     scope: Mapping[str, Any]
     path: list[Union[str, int]] = []
     source_position_tree: Optional[SourcePositionTree] = None
+    # dict where you can stash arbitrary objects. Used to store references to ComponentLoadContext
+    # We are structuring this way to make it easier to use Resolved outside of the context of
+    # the component system in the future
+    stash: dict[str, Any] = {}
 
     def at_path(self, path_part: Union[str, int]):
         return copy(self, path=[*self.path, path_part])
@@ -46,9 +72,12 @@ class ResolutionContext:
     @staticmethod
     def default(source_position_tree: Optional[SourcePositionTree] = None) -> "ResolutionContext":
         return ResolutionContext(
-            scope={"env": env_scope, "automation_condition": automation_condition_scope()},
+            scope={"env": EnvScope(), "automation_condition": automation_condition_scope()},
             source_position_tree=source_position_tree,
         )
+
+    def with_stashed_value(self, key: str, value: Any) -> "ResolutionContext":
+        return copy(self, stash={**self.stash, key: value})
 
     def with_scope(self, **additional_scope) -> "ResolutionContext":
         return copy(self, scope={**self.scope, **additional_scope})
@@ -114,7 +143,15 @@ class ResolutionContext:
 
     def _resolve_inner_value(self, val: Any) -> Any:
         """Resolves a single value, if it is a templated string."""
-        if isinstance(val, str):
+        # defer for import performance
+        from jinja2 import Undefined
+        from jinja2.exceptions import UndefinedError
+        from jinja2.nativetypes import NativeTemplate
+
+        if (
+            isinstance(val, str)
+            and val  # evaluating empty string returns None so skip to preserve empty string values
+        ):
             try:
                 val = NativeTemplate(val).render(**self.scope)
                 if isinstance(val, Undefined):

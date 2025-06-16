@@ -3,15 +3,13 @@ import os
 import sys
 
 import click
+from dagster_shared.cli import workspace_options
+from dagster_shared.error import remove_system_frames_from_error
 
 from dagster import __version__ as dagster_version
 from dagster._cli.utils import assert_no_remaining_opts, get_possibly_temporary_instance_for_cli
-from dagster._cli.workspace.cli_target import (
-    WorkspaceOpts,
-    get_workspace_from_cli_opts,
-    workspace_options,
-)
-from dagster._utils.error import remove_system_frames_from_error, unwrap_user_code_error
+from dagster._cli.workspace.cli_target import WorkspaceOpts, get_workspace_from_cli_opts
+from dagster._utils.error import unwrap_user_code_error
 from dagster._utils.log import configure_loggers
 
 
@@ -72,6 +70,22 @@ def definitions_validate_command(
     verbose: bool,
     **other_opts: object,
 ):
+    definitions_validate_command_impl(
+        log_level=log_level,
+        log_format=log_format,
+        allow_in_process=not load_with_grpc,
+        verbose=verbose,
+        **other_opts,
+    )
+
+
+def definitions_validate_command_impl(
+    log_level: str,
+    log_format: str,
+    allow_in_process: bool,
+    verbose: bool,
+    **other_opts: object,
+):
     workspace_opts = WorkspaceOpts.extract_from_cli_options(other_opts)
     assert_no_remaining_opts(other_opts)
     os.environ["DAGSTER_IS_DEFS_VALIDATION_CLI"] = "1"
@@ -94,11 +108,9 @@ def definitions_validate_command(
             instance=instance,
             version=dagster_version,
             workspace_opts=workspace_opts,
-            allow_in_process=not load_with_grpc,
+            allow_in_process=allow_in_process,
             log_level=log_level,
         ) as workspace:
-            if logger.parent:
-                logger.parent.handlers.clear()
             invalid_locations = [
                 entry
                 for entry in workspace.get_code_location_entries().values()

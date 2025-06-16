@@ -12,6 +12,7 @@ export type RepoAssetTableFragment = {
   isObservable: boolean;
   isExecutable: boolean;
   isPartitioned: boolean;
+  isAutoCreatedStub: boolean;
   computeKind: string | null;
   hasMaterializePermission: boolean;
   hasReportRunlessAssetEventPermission: boolean;
@@ -20,11 +21,19 @@ export type RepoAssetTableFragment = {
   jobNames: Array<string>;
   kinds: Array<string>;
   assetKey: {__typename: 'AssetKey'; path: Array<string>};
-  internalFreshnessPolicy: {
-    __typename: 'TimeWindowFreshnessPolicy';
-    failWindowSeconds: number;
-    warnWindowSeconds: number | null;
-  } | null;
+  internalFreshnessPolicy:
+    | {
+        __typename: 'CronFreshnessPolicy';
+        deadlineCron: string;
+        lowerBoundDeltaSeconds: number;
+        timezone: string;
+      }
+    | {
+        __typename: 'TimeWindowFreshnessPolicy';
+        failWindowSeconds: number;
+        warnWindowSeconds: number | null;
+      }
+    | null;
   partitionDefinition: {
     __typename: 'PartitionDefinition';
     description: string;
@@ -82,6 +91,7 @@ export type WorkspaceAssetsQuery = {
           isObservable: boolean;
           isExecutable: boolean;
           isPartitioned: boolean;
+          isAutoCreatedStub: boolean;
           computeKind: string | null;
           hasMaterializePermission: boolean;
           hasReportRunlessAssetEventPermission: boolean;
@@ -90,11 +100,19 @@ export type WorkspaceAssetsQuery = {
           jobNames: Array<string>;
           kinds: Array<string>;
           assetKey: {__typename: 'AssetKey'; path: Array<string>};
-          internalFreshnessPolicy: {
-            __typename: 'TimeWindowFreshnessPolicy';
-            failWindowSeconds: number;
-            warnWindowSeconds: number | null;
-          } | null;
+          internalFreshnessPolicy:
+            | {
+                __typename: 'CronFreshnessPolicy';
+                deadlineCron: string;
+                lowerBoundDeltaSeconds: number;
+                timezone: string;
+              }
+            | {
+                __typename: 'TimeWindowFreshnessPolicy';
+                failWindowSeconds: number;
+                warnWindowSeconds: number | null;
+              }
+            | null;
           partitionDefinition: {
             __typename: 'PartitionDefinition';
             description: string;
@@ -125,4 +143,4 @@ export type WorkspaceAssetsQuery = {
     | {__typename: 'RepositoryNotFoundError'};
 };
 
-export const WorkspaceAssetsQueryVersion = 'cecc4dd96b527fb96d9e16e6578a28ac62fe1d317623e3dae45190cb9f7c28f5';
+export const WorkspaceAssetsQueryVersion = '8d26343f4d47bf0bd6e3f6d32d865687ad7530ca8d44b72d06bc459b9883e0e9';

@@ -1,4 +1,5 @@
 import inspect
+from collections import defaultdict
 from collections.abc import Iterable, Iterator, Mapping
 from typing import Any, Optional, Union, cast
 
@@ -58,6 +59,7 @@ from dagster._core.execution.plan.inputs import StepInputData
 from dagster._core.execution.plan.objects import StepSuccessData, TypeCheckData
 from dagster._core.execution.plan.outputs import StepOutputData, StepOutputHandle
 from dagster._core.execution.plan.utils import op_execution_error_boundary
+from dagster._core.storage.dagster_run import assets_are_externally_managed
 from dagster._core.storage.tags import BACKFILL_ID_TAG
 from dagster._core.types.dagster_type import DagsterType
 from dagster._utils import iterate_with_context
@@ -110,31 +112,28 @@ def _process_user_event(
             )
     elif isinstance(user_event, AssetCheckResult):
         asset_check_evaluation = user_event.to_asset_check_evaluation(step_context)
+        assets_def = _get_assets_def_for_step(step_context, user_event)
         spec = check.not_none(
-            step_context.job_def.asset_layer.asset_graph.get_check_spec(
-                asset_check_evaluation.asset_check_key
-            ),
+            assets_def.get_spec_for_check_key(asset_check_evaluation.asset_check_key),
             "If we were able to create an AssetCheckEvaluation from the AssetCheckResult, then"
             " there should be a spec for the check",
         )
-
-        output_name = step_context.job_def.asset_layer.get_output_name_for_asset_check(
-            asset_check_evaluation.asset_check_key
-        )
-        output = Output(value=None, output_name=output_name)
-
+        # If the check is explicitly selected, we need to yield an Output event for it.
+        if spec.key in assets_def.check_keys:
+            output_name = check.not_none(
+                step_context.job_def.asset_layer.get_output_name_for_asset_check(
+                    asset_check_key=spec.key
+                ),
+                f"No output name found for check key {spec.key} in step {step_context.step.key}. This likely indicates that the currently executing AssetsDefinition has no check specified for the key.",
+            )
+            output = Output(value=None, output_name=output_name)
+            yield output
+        else:
+            step_context.log.warning(
+                f"AssetCheckResult for check '{spec.name}' for asset '{spec.asset_key.to_user_string()}' was yielded which is not selected. Letting it through."
+            )
         yield asset_check_evaluation
 
-        if (
-            not asset_check_evaluation.passed
-            and asset_check_evaluation.severity == AssetCheckSeverity.ERROR
-            and spec.blocking
-        ):
-            raise DagsterAssetCheckFailedError(
-                f"Blocking check '{spec.name}' for asset '{spec.asset_key.to_user_string()}' failed with"
-                " ERROR severity."
-            )
-        yield output
     else:
         yield user_event
 
@@ -496,6 +495,8 @@ def core_dagster_event_sequence_for_step(
             compute_context,
         )
 
+        failed_blocking_asset_check_evaluations = []
+
         # It is important for this loop to be indented within the
         # timer block above in order for time to be recorded accurately.
         for user_event in _step_output_error_checked_user_event_sequence(
@@ -514,11 +515,31 @@ def core_dagster_event_sequence_for_step(
             elif isinstance(user_event, AssetObservation):
                 yield DagsterEvent.asset_observation(step_context, user_event)
             elif isinstance(user_event, AssetCheckEvaluation):
+                if (
+                    not user_event.passed
+                    and user_event.severity == AssetCheckSeverity.ERROR
+                    and user_event.blocking
+                ):
+                    failed_blocking_asset_check_evaluations.append(user_event)
                 yield DagsterEvent.asset_check_evaluation(step_context, user_event)
             elif isinstance(user_event, ExpectationResult):
                 yield DagsterEvent.step_expectation_result(step_context, user_event)
             else:
                 check.failed(f"Unexpected event {user_event}, should have been caught earlier")
+
+    if failed_blocking_asset_check_evaluations:
+        grouped_by_asset_key: dict[AssetKey, list[AssetCheckEvaluation]] = defaultdict(list)
+        for failed_check in failed_blocking_asset_check_evaluations:
+            grouped_by_asset_key.setdefault(failed_check.asset_key, []).append(failed_check)
+
+        grouped_by_asset_key_str = "\n".join(
+            f"{asset_key.to_user_string()}: {','.join(failed_check.check_name for failed_check in checks)}"
+            for asset_key, checks in grouped_by_asset_key.items()
+        )
+
+        raise DagsterAssetCheckFailedError(
+            f"{len(failed_blocking_asset_check_evaluations)} blocking asset check{'s' if len(failed_blocking_asset_check_evaluations) > 1 else ''} failed with ERROR severity:\n{grouped_by_asset_key_str}"
+        )
 
     yield DagsterEvent.step_success_event(
         step_context, StepSuccessData(duration_ms=timer_result.millis)
@@ -882,17 +903,20 @@ def _log_materialization_or_observation_events_for_asset(
             f"Unexpected asset execution type {execution_type}",
         )
 
-        asset_events = list(
-            _get_output_asset_events(
-                asset_key,
-                partitions,
-                output,
-                output_def,
-                manager_metadata,
-                step_context,
-                execution_type,
+        if assets_are_externally_managed(step_context.dagster_run):
+            asset_events = []
+        else:
+            asset_events = list(
+                _get_output_asset_events(
+                    asset_key,
+                    partitions,
+                    output,
+                    output_def,
+                    manager_metadata,
+                    step_context,
+                    execution_type,
+                )
             )
-        )
 
         batch_id = generate_event_batch_id()
         last_index = len(asset_events) - 1

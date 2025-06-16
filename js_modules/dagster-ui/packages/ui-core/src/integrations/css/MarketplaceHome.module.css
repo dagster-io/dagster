@@ -6,53 +6,34 @@
   user-select: none;
 }
 
-.itemLink {
-  white-space: normal;
-  color: var(--color-text-default);
-  text-decoration: none;
-  border-radius: 8px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
 .itemCard:hover {
   background-color: var(--color-background-lighter);
   color: var(--color-text-default);
+  cursor: pointer;
 }
 
-.itemCard:hover .itemLink {
-  color: var(--color-text-default);
-  text-decoration: none;
-}
-
-.itemTags {
-  position: absolute;
-  top: 20px;
-  right: 20px;
-}
-
-.externalLink {
-  font-size: 11px;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  text-decoration: none;
-  color: var(--color-link-default);
-}
-
-.externalLink:hover {
-  color: var(--color-link-default);
-  text-decoration: none;
-}
-
-.externalLink:hover div[role='img'] {
-  background-color: var(--color-link-default);
-}
-
-.excerpt {
+.description {
   color: var(--color-text-light);
-  font-size: 12px;
+  font-size: 14px;
   line-height: 20px;
-  margin-top: 8px;
+  margin-top: 12px;
+}
+
+.searchInput {
+  display: flex;
+  flex-direction: column;
+  font-size: 16px;
+  line-height: 20px;
+}
+
+.searchInput input {
+  height: 48px;
+  padding-left: 40px;
+}
+
+.searchInput div[role='img'] {
+  margin-top: 6px;
+  margin-left: 6px;
+  width: 18px;
+  height: 18px;
 }

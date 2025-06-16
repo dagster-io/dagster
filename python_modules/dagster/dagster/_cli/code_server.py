@@ -7,9 +7,10 @@ from typing import Optional
 
 import click
 import dagster_shared.seven as seven
+from dagster_shared.cli import python_pointer_options
 
 from dagster._cli.utils import assert_no_remaining_opts
-from dagster._cli.workspace.cli_target import PythonPointerOpts, python_pointer_options
+from dagster._cli.workspace.cli_target import PythonPointerOpts
 from dagster._core.instance import InstanceRef
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.utils import FuturesAwareThreadPoolExecutor
@@ -17,7 +18,13 @@ from dagster._serdes import deserialize_value
 from dagster._utils.interrupts import setup_interrupt_handlers
 from dagster._utils.log import configure_loggers
 
-DEFAULT_HEARTBEAT_TIMEOUT = 30
+
+def get_default_proxy_server_heartbeat_timeout():
+    """Get the default heartbeat timeout for the proxy server."""
+    return int(os.getenv("DAGSTER_PROXY_SERVER_HEARTBEAT_TIMEOUT", "30"))
+
+
+DEFAULT_HEARTBEAT_TIMEOUT = get_default_proxy_server_heartbeat_timeout()
 
 
 @click.group(name="code-server")
@@ -184,8 +191,9 @@ def start_command(
     instance_ref: Optional[str],
     **other_opts,
 ):
-    from dagster._grpc import DagsterGrpcServer
+    # deferring for import perf
     from dagster._grpc.proxy_server import DagsterProxyApiServicer
+    from dagster._grpc.server import DagsterGrpcServer
 
     python_pointer_opts = PythonPointerOpts.extract_from_cli_options(other_opts)
     assert_no_remaining_opts(other_opts)
@@ -212,6 +220,7 @@ def start_command(
         module_name=python_pointer_opts.module_name,
         python_file=python_pointer_opts.python_file,
         package_name=python_pointer_opts.package_name,
+        autoload_defs_module_name=python_pointer_opts.autoload_defs_module_name,
     )
 
     code_desc = " "

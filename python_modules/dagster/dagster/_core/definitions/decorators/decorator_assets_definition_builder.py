@@ -26,6 +26,7 @@ from dagster._core.definitions.assets import (
 )
 from dagster._core.definitions.backfill_policy import BackfillPolicy
 from dagster._core.definitions.decorators.op_decorator import _Op
+from dagster._core.definitions.hook_definition import HookDefinition
 from dagster._core.definitions.input import In
 from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.output import Out
@@ -237,6 +238,7 @@ class DecoratorAssetsDefinitionBuilderArgs(NamedTuple):
     op_def_resource_defs: Mapping[str, ResourceDefinition]
     op_description: Optional[str]
     op_tags: Optional[Mapping[str, Any]]
+    hooks: Optional[AbstractSet[HookDefinition]]
     partitions_def: Optional[PartitionsDefinition]
     required_resource_keys: AbstractSet[str]
     retry_policy: Optional[RetryPolicy]
@@ -245,6 +247,7 @@ class DecoratorAssetsDefinitionBuilderArgs(NamedTuple):
     upstream_asset_deps: Optional[Iterable[AssetDep]]
     execution_type: Optional[AssetExecutionType]
     pool: Optional[str]
+    allow_arbitrary_check_specs: bool = False
 
     @property
     def check_specs(self) -> Sequence[AssetCheckSpec]:
@@ -387,9 +390,10 @@ class DecoratorAssetsDefinitionBuilder:
             if spec.deps is not None
         }
 
-        _validate_check_specs_target_relevant_asset_keys(
-            passed_args.check_specs, [spec.key for spec in asset_specs]
-        )
+        if not passed_args.allow_arbitrary_check_specs:
+            _validate_check_specs_target_relevant_asset_keys(
+                passed_args.check_specs, [spec.key for spec in asset_specs]
+            )
 
         return DecoratorAssetsDefinitionBuilder(
             named_ins_by_asset_key=named_ins_by_asset_key,
@@ -579,6 +583,7 @@ class DecoratorAssetsDefinitionBuilder:
             backfill_policy=self.args.backfill_policy,
             check_specs_by_output_name=self.check_specs_by_output_name,
             specs=self.specs,
+            hook_defs=self.args.hooks,
             is_subset=False,
             selected_asset_keys=None,  # not a subset so this is None
             selected_asset_check_keys=None,  # not a subset so this is none

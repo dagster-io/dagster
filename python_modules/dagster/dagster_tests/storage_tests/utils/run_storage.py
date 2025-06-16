@@ -3,7 +3,7 @@ import tempfile
 import time
 import unittest
 from contextlib import contextmanager
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 from uuid import uuid4
 
@@ -124,6 +124,10 @@ class TestRunStorage:
 
     # Override for storages that support getting backfill counts
     def supports_backfills_count(self):
+        return False
+
+    # Override for storages that support adding a historical run
+    def supports_add_historical_run(self):
         return False
 
     def get_backfills_and_assert_expected_count(self, storage, filters, expected_count):
@@ -404,6 +408,20 @@ class TestRunStorage:
 
         # empty tag_keys implies nothing instead of everything
         assert storage.get_run_tags(tag_keys=[]) == []
+
+    def test_add_historical_run(self, storage):
+        if not self.supports_add_historical_run():
+            pytest.skip("Storage does not support adding a historical run")
+        run = DagsterRun(run_id=make_new_run_id(), job_name="some_job", tags={"foo": "bar"})
+        storage.add_historical_run(run, datetime(2025, 1, 1, tzinfo=timezone.utc))
+        record = storage.get_run_records()[0]
+        assert record is not None
+        assert record.dagster_run.tags == run.tags
+        assert record.create_timestamp == datetime(2025, 1, 1, tzinfo=timezone.utc)
+        run_tags = storage.get_run_tags(tag_keys=["foo"])
+        assert len(run_tags) == 1
+        assert run_tags[0][0] == "foo"
+        assert run_tags[0][1] == {"bar"}
 
     def test_fetch_by_filter(self, storage):
         assert storage

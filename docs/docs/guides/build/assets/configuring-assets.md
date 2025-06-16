@@ -1,6 +1,7 @@
 ---
-title: Configuring assets in the UI
+description: Make assets configurable in the Dagster UI by defining a run configuration schema that inherits from the Dagster Config class.
 sidebar_position: 400
+title: Configuring assets in the UI
 ---
 
 The Dagster UI is commonly used to manually materialize assets, backfill historical data, debug a production issue, or some other one-off task.
@@ -20,7 +21,7 @@ For an asset to be configurable, first define a [run configuration schema](/guid
 
 For example, you want to allow your team to change the lookback time window for the computation that materializes an asset:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/data-modeling/configuring-assets/config-schema.py" language="python" />
+<CodeExample path="docs_snippets/docs_snippets/guides/data-modeling/configuring-assets/config-schema.py" language="python" title="src/<project_name>/defs/assets.py" />
 
 ## Specifying config using the Dagster UI
 

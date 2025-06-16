@@ -112,6 +112,7 @@ def asset_check(
     retry_policy: Optional[RetryPolicy] = None,
     metadata: Optional[Mapping[str, Any]] = None,
     automation_condition: Optional[AutomationCondition[AssetCheckKey]] = None,
+    pool: Optional[str] = None,
 ) -> Callable[[AssetCheckFunction], AssetChecksDefinition]:
     """Create a definition for how to execute an asset check.
 
@@ -149,6 +150,7 @@ def asset_check(
         metadata (Optional[Mapping[str, Any]]): A dictionary of static metadata for the check.
         automation_condition (Optional[AutomationCondition]): An AutomationCondition which determines
             when this check should be executed.
+        pool (Optional[str]): A string that identifies the concurrency pool that governs this asset check's execution.
 
     Produces an :py:class:`AssetChecksDefinition` object.
 
@@ -246,7 +248,8 @@ def asset_check(
             asset_in_map={},
             asset_out_map={},
             execution_type=None,
-            pool=None,
+            pool=pool,
+            hooks=None,
         )
 
         builder = DecoratorAssetsDefinitionBuilder(
@@ -291,6 +294,7 @@ def multi_asset_check(
     retry_policy: Optional[RetryPolicy] = None,
     config_schema: Optional[UserConfigSchema] = None,
     ins: Optional[Mapping[str, CoercibleToAssetIn]] = None,
+    pool: Optional[str] = None,
 ) -> Callable[[Callable[..., Any]], AssetChecksDefinition]:
     """Defines a set of asset checks that can be executed together with the same op.
 
@@ -316,7 +320,7 @@ def multi_asset_check(
             keys, based on the context.selected_asset_check_keys argument. Defaults to False.
         ins (Optional[Mapping[str, Union[AssetKey, AssetIn]]]): A mapping from input name to AssetIn depended upon by
             a given asset check. If an AssetKey is provided, it will be converted to an AssetIn with the same key.
-
+        pool (Optional[str]): A string that identifies the concurrency pool that governs this multi asset check's execution.
 
     Examples:
         .. code-block:: python
@@ -384,6 +388,7 @@ def multi_asset_check(
                 },
                 config_schema=config_schema,
                 retry_policy=retry_policy,
+                pool=pool,
             )(fn)
 
         return AssetChecksDefinition.create(

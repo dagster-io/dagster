@@ -1,1 +1,1 @@
-dg init jaffle-platform
+uvx -U create-dagster project jaffle-platform

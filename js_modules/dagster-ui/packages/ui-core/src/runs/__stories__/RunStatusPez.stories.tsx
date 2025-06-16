@@ -69,6 +69,12 @@ export const List = () => {
         <RunStatusPezList
           jobName={fakeRepo}
           fade
+          runs={wrapToFragment(generateRunMocks(4, [tenDaysAgo, now]))}
+          forceCount={10}
+        />
+        <RunStatusPezList
+          jobName={fakeRepo}
+          fade
           runs={wrapToFragment(generateRunMocks(9, [tenDaysAgo, now])).map((f) => ({
             ...f,
             status: RunStatus.STARTED,

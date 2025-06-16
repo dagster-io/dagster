@@ -1,7 +1,7 @@
 ---
 title: Dagster & Sigma
 sidebar_label: Sigma
-description: Represent your Sigma assets in Dagster.
+description: Your Sigma assets, including datasets and workbooks, can be represented in the Dagster asset graph, allowing you to track lineage and dependencies between Sigma assets and upstream data assets you are already modeling in Dagster.
 tags: [dagster-supported, bi]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-sigma
 pypi: https://pypi.org/project/dagster-sigma
@@ -14,7 +14,7 @@ import Beta from '@site/docs/partials/\_Beta.md';
 
 <Beta />
 
-This guide provides instructions for using Dagster with Sigma using the [`dagster-sigma`](/api/libraries/dagster-sigma) library. Your Sigma assets, including datasets and workbooks, can be represented in the Dagster asset graph, allowing you to track lineage and dependencies between Sigma assets and upstream data assets you are already modeling in Dagster.
+<p>{frontMatter.description}</p>
 
 ## What you'll learn
 
@@ -37,9 +37,7 @@ This guide provides instructions for using Dagster with Sigma using the [`dagste
 
 To get started, you'll need to install the `dagster` and `dagster-sigma` Python packages:
 
-```bash
-pip install dagster dagster-sigma
-```
+<PackageInstallInstructions packageName="dagster-sigma" />
 
 ## Represent Sigma assets in the asset graph
 
@@ -78,9 +76,9 @@ By default, Dagster sets upstream dependencies when generating asset specs for y
 The below example defines `my_upstream_asset` as an upstream dependency of `my_sigma_workbook`:
 
 <CodeExample
-    startAfter="start_upstream_asset"
-    endBefore="end_upstream_asset"
-    path="docs_snippets/docs_snippets/integrations/sigma/customize_upstream_dependencies.py"
+  startAfter="start_upstream_asset"
+  endBefore="end_upstream_asset"
+  path="docs_snippets/docs_snippets/integrations/sigma/customize_upstream_dependencies.py"
 />
 
 Note that `super()` is called in each of the overridden methods to generate the default asset spec. It is best practice to generate the default asset spec before customizing it.
@@ -90,4 +88,4 @@ Note that `super()` is called in each of the overridden methods to generate the 
 - [`dagster-sigma` API reference](/api/libraries/dagster-sigma)
 - [Asset definitions](/guides/build/assets/defining-assets)
 - [Resources](/guides/build/external-resources/)
-- [Using environment variables and secrets](/guides/deploy/using-environment-variables-and-secrets)
+- [Using environment variables and secrets](/guides/operate/configuration/using-environment-variables-and-secrets)

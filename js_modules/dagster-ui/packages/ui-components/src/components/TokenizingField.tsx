@@ -28,10 +28,10 @@ interface ActiveSuggestionInfo {
   idx: number;
 }
 
-export interface TokenizingFieldValue {
+export type TokenizingFieldValue = {
   token?: string;
   value: string;
-}
+};
 
 interface TokenizingFieldProps {
   values: TokenizingFieldValue[];

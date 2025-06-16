@@ -73,10 +73,10 @@ def test_with_source_code_references_wrapper(test_jaffle_shop_manifest: dict[str
 
     defs = Definitions(assets=with_source_code_references([my_dbt_assets]))
 
-    assets = defs.get_asset_graph().get_all_asset_keys()
+    assets = defs.resolve_asset_graph().get_all_asset_keys()
 
     for asset_key in assets:
-        asset_metadata = defs.get_assets_def(asset_key).specs_by_key[asset_key].metadata
+        asset_metadata = defs.resolve_assets_def(asset_key).specs_by_key[asset_key].metadata
         assert "dagster/code_references" in asset_metadata
 
         references = asset_metadata["dagster/code_references"].code_references
@@ -108,10 +108,10 @@ def test_link_to_git_wrapper(test_jaffle_shop_manifest: dict[str, Any]) -> None:
         )
     )
 
-    assets = defs.get_asset_graph().get_all_asset_keys()
+    assets = defs.resolve_asset_graph().get_all_asset_keys()
 
     for asset_key in assets:
-        asset_metadata = defs.get_assets_def(asset_key).specs_by_key[asset_key].metadata
+        asset_metadata = defs.resolve_assets_def(asset_key).specs_by_key[asset_key].metadata
         assert "dagster/code_references" in asset_metadata
 
         references = asset_metadata["dagster/code_references"].code_references

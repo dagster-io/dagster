@@ -75,7 +75,7 @@ setup(
     python_requires=">=3.9,<3.13",
     install_requires=[
         # cli
-        "click>=5.0",
+        "click>=5.0,<8.2",
         "coloredlogs>=6.1,<=14.0",
         "Jinja2",
         # core (not explicitly expressed atm)
@@ -132,6 +132,7 @@ setup(
             "rapidfuzz",
             "flaky",
             "psutil",
+            "ruff==0.11.5",
         ],
         "test-components": [
             "tomlkit",
@@ -168,12 +169,10 @@ setup(
     entry_points={
         "console_scripts": [
             "dagster = dagster.cli:main",
-            "dagster-components = dagster.components.cli:main",
             "dagster-daemon = dagster.daemon.cli:main",
         ],
-        "dagster_dg.plugin": [
+        "dagster_dg_cli.registry_modules": [
             "dagster = dagster",
-            "dagster.components = dagster.components",
         ],
     },
 )

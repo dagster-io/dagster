@@ -138,6 +138,43 @@
             "title": "AzureBlobComputeLogManager",
             "type": "object"
         },
+        "Backfills": {
+            "properties": {
+                "useThreads": {
+                    "title": "Usethreads",
+                    "type": "boolean"
+                },
+                "numWorkers": {
+                    "anyOf": [
+                        {
+                            "type": "integer"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "title": "Numworkers"
+                },
+                "numSubmitWorkers": {
+                    "anyOf": [
+                        {
+                            "type": "integer"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "title": "Numsubmitworkers"
+                }
+            },
+            "required": [
+                "useThreads"
+            ],
+            "title": "Backfills",
+            "type": "object"
+        },
         "BlockOpConcurrencyLimitedRuns": {
             "properties": {
                 "enabled": {
@@ -752,6 +789,17 @@
                 },
                 "schedules": {
                     "$ref": "#/$defs/Schedules"
+                },
+                "backfills": {
+                    "anyOf": [
+                        {
+                            "$ref": "#/$defs/Backfills"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null
                 },
                 "schedulerName": {
                     "anyOf": [

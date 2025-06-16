@@ -21,9 +21,7 @@ To complete this tutorial, you'll need:
 
 - **To install the following libraries**:
 
-  ```shell
-  pip install dagster dagster-snowflake pandas
-  ```
+  <PackageInstallInstructions packageName="dagster-snowflake pandas" />
 
 - **To gather the following information**, which is required to use the Snowflake resource:
 
@@ -40,7 +38,7 @@ To complete this tutorial, you'll need:
     export SNOWFLAKE_PASSWORD=<your password>
     ```
 
-    Refer to the [Using environment variables and secrets guide](/guides/deploy/using-environment-variables-and-secrets) for more info.
+    Refer to the [Using environment variables and secrets guide](/guides/operate/configuration/using-environment-variables-and-secrets) for more info.
 
     For more information on authenticating with a private key, see [Authenticating with a private key](/integrations/libraries/snowflake/reference#authenticating-using-a-private-key) in the Snowflake reference guide.
 

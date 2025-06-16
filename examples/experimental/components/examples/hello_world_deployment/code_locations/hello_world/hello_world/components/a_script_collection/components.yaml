@@ -1,6 +1,0 @@
-type: pipes_subprocess_script_collection
-
-params:
-  script_one:
-    assets:
-      - key: a

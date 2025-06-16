@@ -5,20 +5,26 @@ import sys
 from collections.abc import Iterable, Sequence
 from types import ModuleType
 
-from dagster_shared.serdes.objects import PluginObjectKey
+from dagster_shared.error import DagsterError
+from dagster_shared.serdes.objects import EnvRegistryKey
 
-from dagster._core.errors import DagsterError
 from dagster.components.utils import format_error_message
 
 PACKAGE_ENTRY_ATTR = "__dg_package_entry__"
-DG_PLUGIN_ENTRY_POINT_GROUP = "dagster_dg.plugin"
+DG_PLUGIN_ENTRY_POINT_GROUP = "dagster_dg_cli.registry_modules"
 
 # Remove in future, in place for backcompat
-OLD_DG_PLUGIN_ENTRY_POINT_GROUP = "dagster_dg.library"
+OLD_DG_PLUGIN_ENTRY_POINT_GROUPS = [
+    "dagster_dg.library",
+    "dagster_dg.plugin",
+    "dagster_dg_cli.plugin",
+]
 
 
 class ComponentsEntryPointLoadError(DagsterError):
-    pass
+    def __init__(self, message: str) -> None:
+        super().__init__(message)
+        self.message = message
 
 
 def get_entry_points_from_python_environment(group: str) -> Sequence[importlib.metadata.EntryPoint]:
@@ -28,23 +34,27 @@ def get_entry_points_from_python_environment(group: str) -> Sequence[importlib.m
         return importlib.metadata.entry_points().get(group, [])
 
 
-def discover_entry_point_package_objects() -> dict[PluginObjectKey, object]:
-    """Discover package entries registered in the Python environment via the
-    `dagster_dg.plugin` entry point group.
-    """
-    objects: dict[PluginObjectKey, object] = {}
-    entry_points = [
-        *get_entry_points_from_python_environment(DG_PLUGIN_ENTRY_POINT_GROUP),
-        *get_entry_points_from_python_environment(OLD_DG_PLUGIN_ENTRY_POINT_GROUP),
-    ]
+def get_plugin_entry_points() -> Sequence[importlib.metadata.EntryPoint]:
+    entry_points = []
+    entry_points.extend(get_entry_points_from_python_environment(DG_PLUGIN_ENTRY_POINT_GROUP))
+    for entry_point_group in OLD_DG_PLUGIN_ENTRY_POINT_GROUPS:
+        entry_points.extend(get_entry_points_from_python_environment(entry_point_group))
+    return entry_points
 
-    for entry_point in entry_points:
+
+def discover_entry_point_package_objects() -> dict[EnvRegistryKey, object]:
+    """Discover package entries registered in the Python environment via the
+    `dagster_dg_cli.registry_modules` entry point group.
+    """
+    objects: dict[EnvRegistryKey, object] = {}
+
+    for entry_point in get_plugin_entry_points():
         try:
             root_module = entry_point.load()
         except Exception as e:
             raise ComponentsEntryPointLoadError(
                 format_error_message(f"""
-                    Error loading entry point `{entry_point.name}` in group `{DG_PLUGIN_ENTRY_POINT_GROUP}`.
+                    Error loading entry point `{entry_point.value}` in group `{entry_point.group}`.
                     Please fix the error or uninstall the package that defines this entry point.
                 """)
             ) from e
@@ -55,16 +65,16 @@ def discover_entry_point_package_objects() -> dict[PluginObjectKey, object]:
                 f"Value expected to be a module, got {root_module}."
             )
         for name, obj in get_package_objects_in_module(root_module):
-            key = PluginObjectKey(name=name, namespace=entry_point.value)
+            key = EnvRegistryKey(name=name, namespace=entry_point.value)
             objects[key] = obj
     return objects
 
 
-def discover_package_objects(modules: Sequence[str]) -> dict[PluginObjectKey, object]:
-    objects: dict[PluginObjectKey, object] = {}
+def discover_package_objects(modules: Sequence[str]) -> dict[EnvRegistryKey, object]:
+    objects: dict[EnvRegistryKey, object] = {}
     for extra_module in modules:
         for name, obj in get_package_objects_in_module(importlib.import_module(extra_module)):
-            key = PluginObjectKey(name=name, namespace=extra_module)
+            key = EnvRegistryKey(name=name, namespace=extra_module)
             objects[key] = obj
     return objects
 
@@ -78,7 +88,7 @@ def get_package_objects_in_module(
             yield attr, value
 
 
-def load_package_object(key: PluginObjectKey) -> object:
+def load_package_object(key: EnvRegistryKey) -> object:
     module_name, attr = key.namespace, key.name
     try:
         module = importlib.import_module(module_name)

@@ -1,6 +1,6 @@
 ---
 title: Build your first Dagster project
-description: Learn how to quickly get up and running with Dagster
+description: Learn how to set up a Dagster environment, create a project, define assets, and run your first pipeline.
 sidebar_position: 30
 sidebar_label: 'Quickstart'
 ---
@@ -34,53 +34,71 @@ To follow the steps in this guide, you'll need:
 1. Open the terminal and create a new directory for your project:
 
    ```bash
-   mkdir dagster-quickstart
+   uvx create-dagster project dagster-quickstart
    cd dagster-quickstart
    ```
 
-2. Create and activate a virtual environment:
+2. Activate the virtual environment:
 
    <Tabs>
      <TabItem value="macos" label="MacOS">
-       ```bash python -m venv venv source venv/bin/activate ```
+       ```source .venv/bin/activate```
      </TabItem>
      <TabItem value="windows" label="Windows">
-       ```bash python -m venv venv source venv\Scripts\activate ```
+      ```.venv\Scripts\activate```
      </TabItem>
    </Tabs>
 
-3. Install Dagster and the required dependencies:
+3. Install the required dependencies in the virtual environment:
 
    ```bash
-   pip install dagster dagster-webserver pandas
+   uv pip install pandas
    ```
 
 ## Step 2: Create the Dagster project structure
 
-:::info
-The project structure in this guide is simplified to allow you to get started quickly. When creating new projects, use `dagster project scaffold` to generate a complete Dagster project.
-:::
-
-Next, you'll create a basic Dagster project that looks like this:
+The generated Dagster project should have the following structure:
 
 ```
-dagster-quickstart/
-├── quickstart/
-│   ├── __init__.py
-│   └── assets.py
-├── data/
-    └── sample_data.csv
+.
+├── pyproject.toml
+├── src
+│   └── dagster-quickstart
+│       ├── __init__.py
+│       ├── components
+│       │   ├── __init__.py
+│       ├── definitions.py
+│       └── defs
+│           └── __init__.py
+├── tests
+│   └── __init__.py
+└── uv.lock
 ```
 
-1. To create the files and directories outlined above, run the following:
+1. Create an assets file using `dg` in the terminal:
 
    ```bash
-   mkdir quickstart data
-   touch quickstart/__init__.py quickstart/assets.py
-   touch data/sample_data.csv
+   dg scaffold defs dagster.asset assets.py
    ```
 
-2. In the `data/sample_data.csv` file, add the following content:
+   This will add a new file `assets.py` in the `defs` directory:
+
+   ```
+   .
+   └── src
+       └── dagster-quickstart
+           └── defs
+               └── assets.py
+   ```
+
+2. Add the `sample_data.csv` file:
+
+   ```bash
+   mkdir src/dagster-quickstart/defs/data
+   touch src/dagster-quickstart/defs/data/sample_data.csv
+   ```
+
+   Within this file add the following content:
 
    ```csv
    id,name,age,city
@@ -94,9 +112,13 @@ dagster-quickstart/
 
 ## Step 3: Define the assets
 
-Now, create the assets for the ETL pipeline. Open `quickstart/assets.py` and add the following code:
+Now, create the assets for the ETL pipeline. Open `src/dagster-quickstart/defs/assets.py` file in your preferred editor and include the following code:
 
-<CodeExample path="docs_snippets/docs_snippets/getting-started/quickstart.py" language="python" />
+<CodeExample
+   path="docs_snippets/docs_snippets/getting-started/quickstart.py"
+   language="python"
+   title="src/dagster-quickstart/defs/assets.py"
+/>
 
 This may seem unusual if you're used to task-based orchestration. In that case, you'd have three separate steps for extracting, transforming, and loading.
 
@@ -107,7 +129,7 @@ However, in Dagster, you'll model your pipelines using assets as the fundamental
 1. In the terminal, navigate to your project's root directory and run:
 
    ```bash
-   dagster dev -f quickstart/assets.py
+   dg dev
    ```
 
 2. Open your web browser and navigate to `http://localhost:3000`, where you should see the Dagster UI:
@@ -129,7 +151,7 @@ However, in Dagster, you'll model your pipelines using assets as the fundamental
 In your terminal, run:
 
 ```bash
-cat data/processed_data.csv
+cat src/dagster-quickstart/defs/data/processed_data.csv
 ```
 
 You should see the transformed data, including the new `age_group` column:

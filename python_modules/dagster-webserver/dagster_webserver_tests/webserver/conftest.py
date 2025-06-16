@@ -1,6 +1,6 @@
 import pytest
 from dagster import DagsterInstance, __version__
-from dagster._cli.workspace.cli_target import WorkspaceOpts
+from dagster._cli.workspace.cli_target import WorkspaceOpts, workspace_opts_to_load_target
 from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster_webserver.webserver import DagsterWebserver
 from starlette.requests import Request
@@ -34,7 +34,9 @@ def test_client(instance):
         instance=instance,
         version=__version__,
         read_only=False,
-        workspace_load_target=WorkspaceOpts(empty_workspace=True).to_load_target(),
+        workspace_load_target=workspace_opts_to_load_target(
+            WorkspaceOpts(empty_workspace=True),
+        ),
     )
 
     app = TestDagsterWebserver(process_context).create_asgi_app(debug=True)

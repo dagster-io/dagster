@@ -1,9 +1,10 @@
-from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any, Optional, cast
+from collections.abc import Mapping, Sequence
+from typing import TYPE_CHECKING, Any, Optional, Union, cast
 
+from dagster import _check as check
 from dagster._core.definitions import GraphDefinition, JobDefinition, Node, NodeHandle, OpDefinition
 from dagster._core.definitions.events import AssetKey
-from dagster._core.definitions.job_base import InMemoryJob
+from dagster._core.definitions.job_base import IJob
 from dagster._core.errors import DagsterInvalidInvocationError
 from dagster._core.execution.api import (
     ExecuteRunWithPlanIterable,
@@ -18,15 +19,94 @@ from dagster._core.execution.context_creation_job import (
 from dagster._core.execution.execute_in_process_result import ExecuteInProcessResult
 from dagster._core.instance import DagsterInstance
 from dagster._core.types.dagster_type import DagsterTypeKind
+from dagster._utils.merger import merge_dicts
 
 if TYPE_CHECKING:
+    from dagster._core.definitions.resource_definition import ResourceDefinition
+    from dagster._core.definitions.run_config import RunConfig
     from dagster._core.execution.plan.outputs import StepOutputHandle
     from dagster._core.storage.dagster_run import DagsterRun
 
 
+def merge_run_tags(
+    job_def: JobDefinition,
+    partition_key: Optional[str],
+    tags: Optional[Mapping[str, str]],
+    asset_selection: Optional[Sequence[AssetKey]],
+    instance: Optional[DagsterInstance],
+    run_config: Optional[Mapping[str, object]],
+) -> Mapping[str, str]:
+    merged_run_tags = merge_dicts(job_def.run_tags, tags or {})
+    if partition_key:
+        job_def.validate_partition_key(
+            partition_key,
+            selected_asset_keys=asset_selection,
+            dynamic_partitions_store=instance,
+        )
+        tags_for_partition_key = job_def.get_tags_for_partition_key(
+            partition_key,
+            selected_asset_keys=asset_selection,
+        )
+
+        if not run_config and job_def.partitioned_config:
+            run_config = job_def.partitioned_config.get_run_config_for_partition_key(partition_key)
+
+        if job_def.partitioned_config:
+            merged_run_tags.update(
+                job_def.partitioned_config.get_tags_for_partition_key(
+                    partition_key, job_name=job_def.name
+                )
+            )
+        else:
+            merged_run_tags.update(tags_for_partition_key)
+    return merged_run_tags
+
+
+def type_check_and_normalize_args(
+    run_config: Optional[Union[Mapping[str, Any], "RunConfig"]] = None,
+    partition_key: Optional[str] = None,
+    op_selection: Optional[Sequence[str]] = None,
+    asset_selection: Optional[Sequence[AssetKey]] = None,
+    input_values: Optional[Mapping[str, object]] = None,
+    resources: Optional[Mapping[str, object]] = None,
+) -> tuple[
+    Mapping[str, object],
+    Sequence[str],
+    Sequence[AssetKey],
+    Mapping[str, "ResourceDefinition"],
+    Optional[str],
+    Mapping[str, object],
+]:
+    from dagster._core.definitions.run_config import convert_config_input
+    from dagster._core.execution.build_resources import wrap_resources_for_execution
+
+    run_config = check.opt_mapping_param(convert_config_input(run_config), "run_config")
+    op_selection = check.opt_sequence_param(op_selection, "op_selection", str)
+    asset_selection = check.opt_sequence_param(asset_selection, "asset_selection", AssetKey)
+    resources = check.opt_mapping_param(resources, "resources", key_type=str)
+
+    resource_defs = wrap_resources_for_execution(resources)
+
+    check.invariant(
+        not (op_selection and asset_selection),
+        "op_selection and asset_selection cannot both be provided as args to execute_in_process",
+    )
+
+    partition_key = check.opt_str_param(partition_key, "partition_key")
+    input_values = check.opt_mapping_param(input_values, "input_values")
+    return (
+        run_config,
+        op_selection,
+        asset_selection,
+        resource_defs,
+        partition_key,
+        input_values,
+    )
+
+
 def core_execute_in_process(
     run_config: Mapping[str, object],
-    ephemeral_job: JobDefinition,
+    job: IJob,
     instance: Optional[DagsterInstance],
     output_capturing_enabled: bool,
     raise_on_error: bool,
@@ -34,8 +114,7 @@ def core_execute_in_process(
     run_id: Optional[str] = None,
     asset_selection: Optional[frozenset[AssetKey]] = None,
 ) -> ExecuteInProcessResult:
-    job_def = ephemeral_job
-    job = InMemoryJob(job_def)
+    job_def = job.get_definition()
 
     _check_top_level_inputs(job_def)
 
@@ -77,7 +156,7 @@ def core_execute_in_process(
         run = execute_instance.get_run_by_id(run_id)
 
     return ExecuteInProcessResult(
-        job_def=ephemeral_job,
+        job_def=job_def,
         event_list=event_list,
         dagster_run=cast("DagsterRun", run),
         output_capture=output_capture,

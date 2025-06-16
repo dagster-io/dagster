@@ -1,6 +1,8 @@
 import json
+import logging
 import os
 import sys
+import tempfile
 import threading
 import time
 from abc import abstractmethod
@@ -21,9 +23,12 @@ from dagster._core.storage.local_compute_log_manager import (
     IO_TYPE_EXTENSION,
     LocalComputeLogManager,
 )
+from dagster._utils import ensure_file
 from dagster._utils.error import serializable_error_info_from_exc_info
 
 SUBSCRIPTION_POLLING_INTERVAL = 5
+DEFAULT_TRUNCATE_COMPUTE_LOGS_UPLOAD_BYTES = str(50 * 1024 * 1024)  # 50MB
+logger = logging.getLogger("dagster.compute_log_manager")
 
 
 class CloudStorageComputeLogManager(ComputeLogManager[T_DagsterInstance]):
@@ -283,6 +288,74 @@ class PollingComputeLogSubscriptionManager:
     def dispose(self) -> None:
         if self._shutdown_event:
             self._shutdown_event.set()
+
+
+class TruncatingCloudStorageComputeLogManager(CloudStorageComputeLogManager[T_DagsterInstance]):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._truncated = set()
+
+    @contextmanager
+    def _truncate_file(self, path, max_bytes: int) -> Iterator[str]:
+        dest = tempfile.NamedTemporaryFile(mode="w+b", delete=False)
+        try:
+            with open(path, "rb") as src:
+                remaining = max_bytes
+                bufsize = 64 * 1024
+
+                while remaining:
+                    chunk = src.read(min(bufsize, remaining))
+                    if not chunk:
+                        break
+                    dest.write(chunk)
+                    remaining -= len(chunk)
+
+                dest.flush()
+                dest.close()
+
+                yield dest.name
+
+        finally:
+            try:
+                os.remove(dest.name)
+            except FileNotFoundError:
+                pass
+
+    @abstractmethod
+    def _upload_file_obj(
+        self, data: IO[bytes], log_key: Sequence[str], io_type: ComputeIOType, partial=False
+    ):
+        pass
+
+    def upload_to_cloud_storage(
+        self, log_key: Sequence[str], io_type: ComputeIOType, partial: bool = False
+    ) -> None:
+        """Uploads the logs for a given log key from local storage to cloud storage."""
+        # We've already truncated
+        if (tuple(log_key), io_type) in self._truncated:
+            logger.debug(f"Compute logs have already been truncated; Skipping upload to {log_key}")
+            return
+
+        path = self.local_manager.get_captured_local_path(log_key, IO_TYPE_EXTENSION[io_type])
+        ensure_file(path)
+
+        max_bytes = int(
+            os.environ.get(
+                "DAGSTER_TRUNCATE_COMPUTE_LOGS_UPLOAD_BYTES",
+                DEFAULT_TRUNCATE_COMPUTE_LOGS_UPLOAD_BYTES,
+            )
+        )
+        if max_bytes and os.stat(path).st_size >= max_bytes:
+            self._truncated.add((tuple(log_key), io_type))
+            with self._truncate_file(path, max_bytes=max_bytes) as truncated_path:
+                with open(truncated_path, "rb") as data:
+                    logger.info(
+                        f"Truncating compute logs to {max_bytes} bytes and uploading to {log_key}"
+                    )
+                    self._upload_file_obj(data, log_key, io_type, partial)
+        else:
+            with open(path, "rb") as data:
+                self._upload_file_obj(data, log_key, io_type, partial)
 
 
 def _upload_partial_logs(

@@ -27,7 +27,7 @@ describe('encodeRunPageFilters', () => {
         sinceTime: 0,
       }),
     ).toEqual({
-      focusedTime: 1611430148147,
+      focusedTime: '1611430148147',
       hideNonMatches: 'true',
       levels: 'critical|error',
       logs: 'step:bar|query:foo*',

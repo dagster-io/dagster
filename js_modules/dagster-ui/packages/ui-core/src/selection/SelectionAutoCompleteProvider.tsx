@@ -157,17 +157,6 @@ export const AttributeValueTagSuggestion = ({
   return <SuggestionJSXBase label={<MiddleTruncate text={valueText} />} />;
 };
 
-export const FunctionSuggestionJSX = ({
-  functionName,
-  includeParenthesis,
-}: {
-  functionName: string;
-  includeParenthesis?: boolean;
-}) => {
-  const fn = includeParenthesis ? `${functionName}()` : functionName;
-  return <SuggestionJSXBase label={fn} />;
-};
-
 export const SuggestionJSXBase = ({
   label,
   icon,
@@ -387,9 +376,20 @@ export const createProvider = <
     },
     getAttributeValueResultsMatchingQuery: ({attribute, query, textCallback}) => {
       const values = attributesMap[attribute as keyof typeof attributesMap];
+      const shouldTreatAsteriskAsWildcard = attribute === primaryAttributeKey;
+      const queryToUseAsRegex = shouldTreatAsteriskAsWildcard ? query.replace(/\*/g, '.*') : query;
+      const regex = new RegExp(queryToUseAsRegex, 'i');
       const results =
         values
-          ?.filter((value) => doesValueIncludeQuery({value, query}))
+          ?.filter((value) => {
+            if (shouldTreatAsteriskAsWildcard) {
+              if (typeof value === 'string') {
+                return regex.test(value);
+              }
+              return regex.test(value.key) || (value.value && regex.test(value.value));
+            }
+            return doesValueIncludeQuery({value, query});
+          })
           .map((value) =>
             createAttributeValueSuggestion({
               value,

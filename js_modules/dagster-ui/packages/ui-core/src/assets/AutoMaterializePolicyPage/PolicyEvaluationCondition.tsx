@@ -12,10 +12,20 @@ interface Props {
   skipped?: boolean;
   isExpanded: boolean;
   hasChildren: boolean;
+  evaluationLink?: React.ReactNode | null;
 }
 
 export const PolicyEvaluationCondition = (props: Props) => {
-  const {depth, icon, label, type, skipped = false, isExpanded, hasChildren} = props;
+  const {
+    depth,
+    icon,
+    label,
+    type,
+    skipped = false,
+    isExpanded,
+    hasChildren,
+    evaluationLink,
+  } = props;
   const depthLines = React.useMemo(() => {
     return new Array(depth).fill(null).map((_, ii) => <DepthLine key={ii} />);
   }, [depth]);
@@ -37,6 +47,7 @@ export const PolicyEvaluationCondition = (props: Props) => {
       <ConditionLabel $type={type} $skipped={skipped}>
         {label}
       </ConditionLabel>
+      {evaluationLink ? <>[{evaluationLink}]</> : null}
     </Box>
   );
 };

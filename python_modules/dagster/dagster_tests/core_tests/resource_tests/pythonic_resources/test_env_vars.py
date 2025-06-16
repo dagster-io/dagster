@@ -34,7 +34,7 @@ def test_env_var() -> None:
             },
         )
 
-        assert defs.get_implicit_global_asset_job_def().execute_in_process().success
+        assert defs.resolve_implicit_global_asset_job_def().execute_in_process().success
         assert executed["yes"]
 
 
@@ -75,7 +75,7 @@ def test_env_var_data_structure() -> None:
             },
         )
 
-        assert defs.get_implicit_global_asset_job_def().execute_in_process().success
+        assert defs.resolve_implicit_global_asset_job_def().execute_in_process().success
         assert executed["yes"]
 
 
@@ -99,12 +99,12 @@ def test_runtime_config_env_var() -> None:
 
     with environ({"MY_PREFIX_FOR_TEST": "greeting: "}):
         with pytest.raises(DagsterInvalidConfigError):
-            defs.get_implicit_global_asset_job_def().execute_in_process(
+            defs.resolve_implicit_global_asset_job_def().execute_in_process(
                 {"resources": {"writer": {"config": {"prefix": EnvVar("MY_PREFIX_FOR_TEST")}}}}
             )
 
         # Ensure fully unstructured run config option works
-        result = defs.get_implicit_global_asset_job_def().execute_in_process(
+        result = defs.resolve_implicit_global_asset_job_def().execute_in_process(
             {"resources": {"writer": {"config": {"prefix": {"env": "MY_PREFIX_FOR_TEST"}}}}}
         )
         assert result.success
@@ -137,7 +137,7 @@ def test_env_var_err() -> None:
             'You have attempted to fetch the environment variable "UNSET_ENV_VAR" which is not set.'
         ),
     ):
-        defs.get_implicit_global_asset_job_def().execute_in_process()
+        defs.resolve_implicit_global_asset_job_def().execute_in_process()
 
     # Test using runtime configuration of the resource
     defs = Definitions(
@@ -148,7 +148,7 @@ def test_env_var_err() -> None:
         DagsterInvalidConfigError,
         match="Invalid use of environment variable wrapper.",
     ):
-        defs.get_implicit_global_asset_job_def().execute_in_process(
+        defs.resolve_implicit_global_asset_job_def().execute_in_process(
             {"resources": {"a_resource": {"config": {"a_str": EnvVar("UNSET_ENV_VAR_RUNTIME")}}}}
         )
 
@@ -183,7 +183,7 @@ def test_env_var_nested_resources() -> None:
             "ENV_VARIABLE_FOR_TEST": "SOME_VALUE",
         }
     ):
-        assert defs.get_implicit_global_asset_job_def().execute_in_process().success
+        assert defs.resolve_implicit_global_asset_job_def().execute_in_process().success
         assert executed["yes"]
 
 
@@ -217,7 +217,7 @@ def test_env_var_nested_config() -> None:
             "ENV_VARIABLE_FOR_TEST": "SOME_VALUE",
         }
     ):
-        assert defs.get_implicit_global_asset_job_def().execute_in_process().success
+        assert defs.resolve_implicit_global_asset_job_def().execute_in_process().success
         assert executed["yes"]
 
 
@@ -253,14 +253,14 @@ def test_env_var_alongside_enum() -> None:
             "ENV_VARIABLE_FOR_TEST": "SOME_VALUE",
         }
     ):
-        result = defs.get_implicit_global_asset_job_def().execute_in_process()
+        result = defs.resolve_implicit_global_asset_job_def().execute_in_process()
         assert result.output_for_node("an_asset") == ("FOO", "SOME_VALUE")
         assert executed["yes"]
 
     executed.clear()
 
     # Case: I'm using the default value provided by resource instantiation to the enum, and then using a value specified at runtime for the string.
-    result = defs.get_implicit_global_asset_job_def().execute_in_process(
+    result = defs.resolve_implicit_global_asset_job_def().execute_in_process(
         run_config={"resources": {"a_resource": {"config": {"a_str": "foo", "my_enum": "BAR"}}}}
     )
 

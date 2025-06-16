@@ -2,32 +2,20 @@ import os
 from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
 
 import dagster as dg
-from dagster.components import (
-    Component,
-    ComponentLoadContext,
-    Resolvable,
-    ResolvedAssetSpec,
-    Scaffolder,
-    ScaffoldRequest,
-    scaffold_component,
-)
-from dagster.components.scaffold.scaffold import scaffold_with
 
 from .pdf_extraction_resource import PDFTextExtractor
 
 
-class PdfExtractionScaffolder(Scaffolder):
+class PdfExtractionScaffolder(dg.Scaffolder):
     """Scaffolds a PDF extraction component with configuration and example PDFs."""
 
-    def scaffold(self, request: ScaffoldRequest, params: Any) -> None:
+    def scaffold(self, request: dg.ScaffoldRequest) -> None:
         """Generate scaffold code for PdfExtraction component.
 
         Args:
-            request: The scaffold request containing target path and format
-            params: The scaffold parameters containing configuration values
+            request: The scaffold request containing type name, target path, format, project root and optional params
         """
         # Default configuration values
         config = {
@@ -40,12 +28,8 @@ class PdfExtractionScaffolder(Scaffolder):
             "asset_specs": [],
         }
 
-        # Update with provided params if they exist
-        if isinstance(params, dict):
-            config.update(params)
-
         # Create the component YAML using scaffold_component
-        scaffold_component(request, config)
+        dg.scaffold_component(request, config)
 
     @property
     def description(self) -> str:
@@ -68,9 +52,9 @@ class PdfExtractionScaffolder(Scaffolder):
         """
 
 
-@scaffold_with(PdfExtractionScaffolder)
+@dg.scaffold_with(PdfExtractionScaffolder)
 @dataclass
-class PdfExtraction(Component, Resolvable):
+class PdfExtraction(dg.Component, dg.Resolvable):
     """A component for extracting and validating text from PDF documents.
 
     This component provides a complete PDF text extraction pipeline that:
@@ -97,7 +81,7 @@ class PdfExtraction(Component, Resolvable):
 
     pdf_dir: str
     output_dir: str
-    asset_specs: Sequence[ResolvedAssetSpec]
+    asset_specs: Sequence[dg.ResolvedAssetSpec]
     validation_score: int = 7
     language: str = "eng"
     dpi: int = 300
@@ -106,7 +90,7 @@ class PdfExtraction(Component, Resolvable):
     def _normalize_key(self, key: str) -> str:
         return key.replace("-", "_")
 
-    def build_defs(self, context: ComponentLoadContext) -> dg.Definitions:
+    def build_defs(self, context: dg.ComponentLoadContext) -> dg.Definitions:
         # Initialize pdf_paths as an empty list
         pdf_paths = []
 

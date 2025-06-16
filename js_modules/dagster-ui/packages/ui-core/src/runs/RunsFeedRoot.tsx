@@ -53,7 +53,10 @@ export const RunsFeedRoot = () => {
 
   const [view, setView] = useQueryPersistedState<RunsFeedView>({
     encode: (v) => ({view: v && v !== RunsFeedView.ROOTS ? v.toLowerCase() : undefined}),
-    decode: (qs) => (qs.view || RunsFeedView.ROOTS).toUpperCase(),
+    decode: (qs) => {
+      const value = typeof qs.view === 'string' ? qs.view : RunsFeedView.ROOTS;
+      return value.toUpperCase() as RunsFeedView;
+    },
   });
 
   const currentTab = useSelectedRunsFeedTab(filterTokens, view);
@@ -197,7 +200,7 @@ export const RunsFeedRoot = () => {
     <Box style={{height: '100%', display: 'grid', gridTemplateRows: 'auto minmax(0, 1fr)'}}>
       <Box
         border="bottom"
-        background={Colors.backgroundLight()}
+        background={Colors.backgroundDefault()}
         padding={{left: 24, right: 20}}
         flex={{direction: 'row', justifyContent: 'space-between'}}
       >

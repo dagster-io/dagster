@@ -50,6 +50,21 @@ include a section like:
          - "dagster-k8s-job-runner-env"
        env_secrets:
          - "dagster-k8s-some-secret"
+       env_vars:
+         - "ENV_VAR=1"
+       labels:
+       resources:
+       run_k8s_config:
+         pod_template_spec_metadata:
+         pod_spec_config:
+         job_metadata:
+         job_spec_config:
+         container_config:
+       volume_mounts:
+       volumes:
+       security_context:
+       scheduler_name:
+       kubeconfig_file: 
 
 Helm chart
 ----------

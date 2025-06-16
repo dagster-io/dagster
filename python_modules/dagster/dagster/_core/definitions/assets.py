@@ -15,6 +15,8 @@ from typing import (  # noqa: UP035
     cast,
 )
 
+from dagster_shared.record import replace
+
 import dagster._check as check
 from dagster._annotations import beta_param, public
 from dagster._core.definitions.asset_check_spec import AssetCheckSpec
@@ -36,6 +38,7 @@ from dagster._core.definitions.declarative_automation.automation_condition impor
 from dagster._core.definitions.dependency import NodeHandle
 from dagster._core.definitions.events import CoercibleToAssetKey, CoercibleToAssetKeyPrefix
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
+from dagster._core.definitions.hook_definition import HookDefinition
 from dagster._core.definitions.metadata import ArbitraryMetadataMapping
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
 from dagster._core.definitions.node_definition import NodeDefinition
@@ -67,6 +70,7 @@ from dagster._core.definitions.utils import (
 )
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster._utils import IHasInternalInit
+from dagster._utils.cached_method import cached_method
 from dagster._utils.merger import merge_dicts, reverse_dict
 from dagster._utils.security import non_secure_md5_hash_str
 from dagster._utils.tags import normalize_tags
@@ -111,6 +115,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
 
     _specs_by_key: Mapping[AssetKey, AssetSpec]
     _computation: Optional[AssetGraphComputation]
+    _hook_defs: AbstractSet[HookDefinition]
 
     @beta_param(param="execution_type")
     def __init__(
@@ -148,10 +153,12 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         execution_type: Optional[AssetExecutionType] = None,
         # TODO: FOU-243
         auto_materialize_policies_by_key: Optional[Mapping[AssetKey, AutoMaterializePolicy]] = None,
+        hook_defs: Optional[AbstractSet[HookDefinition]] = None,
         # if adding new fields, make sure to handle them in the with_attributes, from_graph,
         # from_op, and get_attributes_dict methods
     ):
         from dagster._core.definitions.graph_definition import GraphDefinition
+        from dagster._core.definitions.hook_definition import HookDefinition
         from dagster._core.execution.build_resources import wrap_resources_for_execution
 
         if isinstance(node_def, GraphDefinition):
@@ -163,6 +170,8 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
             key_type=str,
             value_type=AssetCheckSpec,
         )
+
+        self._hook_defs = check.opt_set_param(hook_defs, "hook_defs", HookDefinition)
 
         automation_conditions_by_key = (
             {k: v.to_automation_condition() for k, v in auto_materialize_policies_by_key.items()}
@@ -180,7 +189,8 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
                 "node_def is None, so keys_by_output_name must be empty",
             )
             check.invariant(
-                backfill_policy is None, "node_def is None, so backfill_policy must be None"
+                backfill_policy is None,
+                "node_def is None, so backfill_policy must be None",
             )
             check.invariant(not can_subset, "node_def is None, so can_subset must be False")
             self._computation = None
@@ -242,7 +252,8 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
 
         else:
             computation_not_none = check.not_none(
-                self._computation, "If specs are not provided, a node_def must be provided"
+                self._computation,
+                "If specs are not provided, a node_def must be provided",
             )
             all_asset_keys = set(computation_not_none.keys_by_output_name.values())
 
@@ -322,7 +333,8 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
             )
 
             normalized_specs.append(
-                spec._replace(
+                replace(
+                    spec,
                     group_name=group_name,
                     code_version=code_version,
                     metadata=metadata,
@@ -341,7 +353,16 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
 
         _validate_self_deps(normalized_specs)
 
-        self._specs_by_key = {spec.key: spec for spec in normalized_specs}
+        self._specs_by_key = {}
+        for spec in normalized_specs:
+            if spec.key in self._specs_by_key and self._specs_by_key[spec.key] != spec:
+                warnings.warn(
+                    "Received conflicting AssetSpecs with the same key:\n"
+                    f"{self._specs_by_key[spec.key]}\n"
+                    f"{spec}\n"
+                    "This warning will become an exception in version 1.11"
+                )
+            self._specs_by_key[spec.key] = spec
 
         self._partition_mappings = get_partition_mappings_from_deps(
             {},
@@ -367,6 +388,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         is_subset: bool,
         specs: Optional[Sequence[AssetSpec]],
         execution_type: Optional[AssetExecutionType],
+        hook_defs: Optional[AbstractSet[HookDefinition]],
     ) -> "AssetsDefinition":
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=PreviewWarning)
@@ -378,6 +400,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
                 selected_asset_keys=selected_asset_keys,
                 can_subset=can_subset,
                 resource_defs=resource_defs,
+                hook_defs=hook_defs,
                 backfill_policy=backfill_policy,
                 check_specs_by_output_name=check_specs_by_output_name,
                 selected_asset_check_keys=selected_asset_check_keys,
@@ -430,6 +453,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         auto_materialize_policies_by_output_name: Optional[
             Mapping[str, Optional[AutoMaterializePolicy]]
         ] = None,
+        hook_defs: Optional[AbstractSet[HookDefinition]] = None,
     ) -> "AssetsDefinition":
         """Constructs an AssetsDefinition from a GraphDefinition.
 
@@ -499,6 +523,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
             partitions_def=partitions_def,
             partition_mappings=partition_mappings,
             resource_defs=resource_defs,
+            hook_defs=hook_defs,
             group_name=group_name,
             group_names_by_output_name=group_names_by_output_name,
             descriptions_by_output_name=descriptions_by_output_name,
@@ -542,6 +567,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         auto_materialize_policies_by_output_name: Optional[
             Mapping[str, Optional[AutoMaterializePolicy]]
         ] = None,
+        hook_defs: Optional[AbstractSet[HookDefinition]] = None,
     ) -> "AssetsDefinition":
         """Constructs an AssetsDefinition from an OpDefinition.
 
@@ -615,6 +641,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
             ),
             backfill_policy=backfill_policy,
             can_subset=can_subset,
+            hook_defs=hook_defs,
         )
 
     @staticmethod
@@ -642,17 +669,22 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         can_subset: bool = False,
         check_specs: Optional[Sequence[AssetCheckSpec]] = None,
         owners_by_output_name: Optional[Mapping[str, Sequence[str]]] = None,
+        hook_defs: Optional[AbstractSet[HookDefinition]] = None,
     ) -> "AssetsDefinition":
         from dagster._core.definitions.decorators.decorator_assets_definition_builder import (
             _validate_check_specs_target_relevant_asset_keys,
             create_check_specs_by_output_name,
         )
+        from dagster._core.definitions.hook_definition import HookDefinition
 
         node_def = check.inst_param(node_def, "node_def", NodeDefinition)
         keys_by_input_name = _infer_keys_by_input_names(
             node_def,
             check.opt_mapping_param(
-                keys_by_input_name, "keys_by_input_name", key_type=str, value_type=AssetKey
+                keys_by_input_name,
+                "keys_by_input_name",
+                key_type=str,
+                value_type=AssetKey,
             ),
         )
         keys_by_output_name = check.opt_mapping_param(
@@ -672,6 +704,8 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         resource_defs = check.opt_mapping_param(
             resource_defs, "resource_defs", key_type=str, value_type=ResourceDefinition
         )
+        hook_defs = check.opt_set_param(hook_defs, "hook_defs", HookDefinition)
+
         transformed_internal_asset_deps: dict[AssetKey, AbstractSet[AssetKey]] = {}
         if internal_asset_deps:
             for output_name, asset_keys in internal_asset_deps.items():
@@ -753,6 +787,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
             keys_by_output_name=keys_by_output_name_with_prefix,
             node_def=node_def,
             resource_defs=resource_defs,
+            hook_defs=hook_defs,
             backfill_policy=check.opt_inst_param(
                 backfill_policy, "backfill_policy", BackfillPolicy
             ),
@@ -870,6 +905,14 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         """
         return dict(self._resource_defs)
 
+    @property
+    def hook_defs(self) -> AbstractSet[HookDefinition]:
+        """AbstractSet[HookDefinition]: A set of hook definitions that are bound to this
+        AssetsDefinition. These hooks will be executed when the assets in this AssetsDefinition
+        are materialized.
+        """
+        return self._hook_defs
+
     @public
     @property
     def keys(self) -> AbstractSet[AssetKey]:
@@ -972,7 +1015,9 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         }
 
     @property
-    def auto_materialize_policies_by_key(self) -> Mapping[AssetKey, AutoMaterializePolicy]:
+    def auto_materialize_policies_by_key(
+        self,
+    ) -> Mapping[AssetKey, AutoMaterializePolicy]:
         return {
             key: spec.auto_materialize_policy
             for key, spec in self._specs_by_key.items()
@@ -986,6 +1031,20 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
             for key, spec in self._specs_by_key.items()
             if spec.automation_condition
         }
+
+    @cached_method
+    def get_upstream_input_keys(self, keys: frozenset[AssetKey]) -> AbstractSet[AssetKey]:
+        """Returns keys that are directly upstream of the provided keys and are inputs of this asset."""
+        direct_upstreams = {dep.asset_key for key in keys for dep in self._specs_by_key[key].deps}
+        return direct_upstreams - set(self.node_keys_by_output_name.values())
+
+    @cached_method
+    def get_checks_targeting_keys(self, keys: frozenset[AssetKey]) -> AbstractSet[AssetCheckKey]:
+        """Returns checks defined on this AssetsDefinition for the provided keys."""
+        check_keys = {
+            check_spec.key for check_spec in self.node_check_specs_by_output_name.values()
+        }
+        return {key for key in check_keys if key.asset_key in keys}
 
     # Applies only to external observable assets. Can be removed when we fold
     # `auto_observe_interval_minutes` into auto-materialize policies.
@@ -1208,6 +1267,10 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
             Union[AutomationCondition, Mapping[AssetKey, AutomationCondition]]
         ] = None,
         backfill_policy: Optional[BackfillPolicy] = None,
+        hook_defs: Optional[AbstractSet[HookDefinition]] = None,
+        metadata_by_key: Optional[
+            Mapping[Union[AssetKey, AssetCheckKey], ArbitraryMetadataMapping]
+        ] = None,
     ) -> "AssetsDefinition":
         conflicts_by_attr_name: dict[str, set[AssetKey]] = defaultdict(set)
         replaced_specs = []
@@ -1243,6 +1306,9 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
                 default_value=DEFAULT_GROUP_NAME,
             )
 
+            if metadata_by_key and key in metadata_by_key:
+                replace_dict["metadata"] = metadata_by_key[key]
+
             if key in asset_key_replacements:
                 replace_dict["key"] = asset_key_replacements[key]
 
@@ -1257,7 +1323,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
 
                 replace_dict["deps"] = new_deps
 
-            replaced_specs.append(spec._replace(**replace_dict))
+            replaced_specs.append(replace(spec, **replace_dict))
 
         for attr_name, conflicting_asset_keys in conflicts_by_attr_name.items():
             raise DagsterInvalidDefinitionError(
@@ -1265,14 +1331,21 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
                 f" {', '.join(asset_key.to_user_string() for asset_key in conflicting_asset_keys)}"
             )
 
-        check_specs_by_output_name = {
-            output_name: check_spec.replace_key(
-                key=check_spec.key.replace_asset_key(
-                    asset_key_replacements.get(check_spec.asset_key, check_spec.asset_key)
+        check_specs_by_output_name = {}
+        for output_name, check_spec in self.node_check_specs_by_output_name.items():
+            updated_check_spec = check_spec
+            if check_spec.asset_key in asset_key_replacements:
+                updated_check_spec = updated_check_spec.replace_key(
+                    key=check_spec.key.replace_asset_key(
+                        asset_key_replacements[check_spec.asset_key]
+                    )
                 )
-            )
-            for output_name, check_spec in self.node_check_specs_by_output_name.items()
-        }
+            if metadata_by_key and check_spec.key in metadata_by_key:
+                updated_check_spec = updated_check_spec.with_metadata(
+                    metadata_by_key[check_spec.key]
+                )
+
+            check_specs_by_output_name[output_name] = updated_check_spec
 
         selected_asset_check_keys = {
             check_key.replace_asset_key(
@@ -1296,6 +1369,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
             check_specs_by_output_name=check_specs_by_output_name,
             selected_asset_check_keys=selected_asset_check_keys,
             specs=replaced_specs,
+            hook_defs=hook_defs if hook_defs else self.hook_defs,
         )
 
         merged_attrs = merge_dicts(self.get_attributes_dict(), replaced_attributes)
@@ -1380,7 +1454,8 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         if key is not None:
             resolved_key = AssetKey.from_coercible(key)
             check.invariant(
-                resolved_key in self.keys, f"Key {resolved_key} not found in AssetsDefinition"
+                resolved_key in self.keys,
+                f"Key {resolved_key} not found in AssetsDefinition",
             )
         else:
             resolved_key = self.key
@@ -1453,18 +1528,39 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
             )[0].io_manager_key
 
     def get_resource_requirements(self) -> Iterator[ResourceRequirement]:
+        from itertools import chain
+
         from dagster._core.definitions.graph_definition import GraphDefinition
 
         if self.is_executable:
             if isinstance(self.node_def, GraphDefinition):
-                yield from self.node_def.get_resource_requirements(
-                    asset_layer=None,
+                yield from chain(
+                    self.node_def.get_resource_requirements(
+                        asset_layer=None,
+                    ),
+                    (
+                        req
+                        for hook_def in self._hook_defs
+                        for req in hook_def.get_resource_requirements(
+                            attached_to=f"asset '{self.node_def.name}'",
+                        )
+                    ),
                 )
             elif isinstance(self.node_def, OpDefinition):
-                yield from self.node_def.get_resource_requirements(
-                    handle=None,
-                    asset_layer=None,
+                yield from chain(
+                    self.node_def.get_resource_requirements(
+                        handle=None,
+                        asset_layer=None,
+                    ),
+                    (
+                        req
+                        for hook_def in self._hook_defs
+                        for req in hook_def.get_resource_requirements(
+                            attached_to=f"asset '{self.node_def.name}'",
+                        )
+                    ),
                 )
+
         else:
             for key in self.keys:
                 # This matches how SourceAsset emit requirements except we emit
@@ -1508,6 +1604,14 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         with disable_dagster_warnings():
             return self.__class__(**attributes_dict)
 
+    @public
+    def with_hooks(self, hook_defs: AbstractSet[HookDefinition]) -> "AssetsDefinition":
+        """Apply a set of hooks to all op instances within the asset."""
+        from dagster._core.definitions.hook_definition import HookDefinition
+
+        hook_defs = check.set_param(hook_defs, "hook_defs", of_type=HookDefinition)
+        return self.with_attributes(hook_defs=(hook_defs | self.hook_defs))
+
     def get_attributes_dict(self) -> dict[str, Any]:
         return dict(
             keys_by_input_name=self.node_keys_by_input_name,
@@ -1516,6 +1620,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
             selected_asset_keys=self.keys,
             can_subset=self.can_subset,
             resource_defs=self._resource_defs,
+            hook_defs=self._hook_defs,
             backfill_policy=self.backfill_policy,
             check_specs_by_output_name=self._check_specs_by_output_name,
             selected_asset_check_keys=self.check_keys,
@@ -1816,7 +1921,8 @@ def _validate_self_deps(specs: Iterable[AssetSpec]) -> None:
 
 
 def get_self_dep_time_window_partition_mapping(
-    partition_mapping: Optional[PartitionMapping], partitions_def: Optional[PartitionsDefinition]
+    partition_mapping: Optional[PartitionMapping],
+    partitions_def: Optional[PartitionsDefinition],
 ) -> Optional[TimeWindowPartitionMapping]:
     """Returns a time window partition mapping dimension of the provided partition mapping,
     if exists.
@@ -1841,7 +1947,9 @@ def get_self_dep_time_window_partition_mapping(
 
 
 def get_partition_mappings_from_deps(
-    partition_mappings: dict[AssetKey, PartitionMapping], deps: Iterable[AssetDep], asset_name: str
+    partition_mappings: dict[AssetKey, PartitionMapping],
+    deps: Iterable[AssetDep],
+    asset_name: str,
 ) -> Mapping[AssetKey, PartitionMapping]:
     # Add PartitionMappings specified via AssetDeps to partition_mappings dictionary. Error on duplicates
     for dep in deps:

@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional
 
 from dagster import (
+    AssetCheckSpec,
     AssetDep,
     AssetKey,
     AssetSpec,
@@ -13,7 +14,6 @@ from dagster import (
     DagsterInvalidDefinitionError,
     FreshnessPolicy,
     PartitionMapping,
-    _check as check,
 )
 from dagster._annotations import beta, public
 from dagster._core.definitions.metadata.source_code import (
@@ -23,11 +23,14 @@ from dagster._core.definitions.metadata.source_code import (
 )
 from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._utils.tags import is_valid_tag_key
+from dagster.components.resolved.base import Resolvable
+from dagster_shared import check
 
 from dagster_dbt.asset_utils import (
     DAGSTER_DBT_MANIFEST_METADATA_KEY,
     DAGSTER_DBT_TRANSLATOR_METADATA_KEY,
     DAGSTER_DBT_UNIQUE_ID_METADATA_KEY,
+    default_asset_check_fn,
     default_asset_key_fn,
     default_auto_materialize_policy_fn,
     default_code_version_fn,
@@ -46,7 +49,7 @@ if TYPE_CHECKING:
 
 
 @dataclass(frozen=True)
-class DagsterDbtTranslatorSettings:
+class DagsterDbtTranslatorSettings(Resolvable):
     """Settings to enable Dagster features for your dbt project.
 
     Args:
@@ -58,12 +61,15 @@ class DagsterDbtTranslatorSettings:
             Defaults to False.
         enable_dbt_selection_by_name (bool): Whether to enable selecting dbt resources by name,
             rather than fully qualified name. Defaults to False.
+        enable_source_tests_as_checks (bool): Whether to load dbt source tests as Dagster asset checks.
+            Defaults to False. If False, asset observations will be emitted for source tests.
     """
 
     enable_asset_checks: bool = True
     enable_duplicate_source_asset_keys: bool = False
     enable_code_references: bool = False
     enable_dbt_selection_by_name: bool = False
+    enable_source_tests_as_checks: bool = False
 
 
 class DagsterDbtTranslator:
@@ -81,7 +87,6 @@ class DagsterDbtTranslator:
             settings (Optional[DagsterDbtTranslatorSettings]): Settings for the translator.
         """
         self._settings = settings or DagsterDbtTranslatorSettings()
-        self._resolved_specs: dict[tuple, AssetSpec] = {}
 
     @property
     def settings(self) -> DagsterDbtTranslatorSettings:
@@ -100,6 +105,11 @@ class DagsterDbtTranslator:
         # memoize resolution for a given manifest & unique_id
         # since we recursively call get_asset_spec for dependencies
         memo_id = (id(manifest), unique_id)
+
+        # Don't initialize this in the constructor in case a subclass does not call __init__
+        if not hasattr(self, "_resolved_specs"):
+            self._resolved_specs = {}
+
         if memo_id in self._resolved_specs:
             return self._resolved_specs[memo_id]
 
@@ -180,6 +190,21 @@ class DagsterDbtTranslator:
         self._resolved_specs[memo_id] = spec
 
         return self._resolved_specs[memo_id]
+
+    def get_asset_check_spec(
+        self,
+        asset_spec: AssetSpec,
+        manifest: Mapping[str, Any],
+        unique_id: str,
+        project: Optional["DbtProject"],
+    ) -> Optional[AssetCheckSpec]:
+        return default_asset_check_fn(
+            manifest=manifest,
+            dagster_dbt_translator=self,
+            asset_key=asset_spec.key,
+            test_unique_id=unique_id,
+            project=project,
+        )
 
     @public
     def get_asset_key(self, dbt_resource_props: Mapping[str, Any]) -> AssetKey:

@@ -15,9 +15,9 @@ def test_docs_snippets_concepts_external_asset_external_asset_deps() -> None:
     defs_with_deps: Definitions = (
         docs_snippets.concepts.assets.external_assets.external_asset_deps.defs
     )
-    assert defs_with_deps.get_assets_def("raw_logs")
-    assert defs_with_deps.get_assets_def("processed_logs")
-    assert defs_with_deps.get_assets_def("processed_logs").asset_deps[
+    assert defs_with_deps.resolve_assets_def("raw_logs")
+    assert defs_with_deps.resolve_assets_def("processed_logs")
+    assert defs_with_deps.resolve_assets_def("processed_logs").asset_deps[
         AssetKey("processed_logs")
     ] == {AssetKey("raw_logs")}
 
@@ -31,13 +31,13 @@ def test_docs_snippets_normal_assets_dep_on_external() -> None:
 
     al_key = aggregated_logs.key
 
-    assert defs.get_assets_def(al_key)
-    assert defs.get_assets_def(al_key).asset_deps[al_key] == {
+    assert defs.resolve_assets_def(al_key)
+    assert defs.resolve_assets_def(al_key).asset_deps[al_key] == {
         AssetKey("processed_logs")
     }
 
     assert (
-        defs.get_implicit_global_asset_job_def()
+        defs.resolve_implicit_global_asset_job_def()
         .execute_in_process(asset_selection=[al_key])
         .success
     )

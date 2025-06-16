@@ -3,16 +3,15 @@ import pytest
 from click.testing import CliRunner
 from dagster._cli.workspace.cli_target import (
     RepositoryOpts,
-    WorkspaceOpts,
     get_job_from_cli_opts,
     job_name_option,
     repository_options,
-    workspace_options,
 )
 from dagster._core.instance import DagsterInstance
 from dagster._core.remote_representation import RemoteJob
 from dagster._core.test_utils import instance_for_test
 from dagster._utils import file_relative_path
+from dagster_shared.cli import WorkspaceOpts, workspace_options
 
 
 def load_pipeline_via_cli_runner(cli_args):

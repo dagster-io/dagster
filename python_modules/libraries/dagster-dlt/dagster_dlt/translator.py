@@ -8,12 +8,17 @@ from dagster._record import record
 from dagster._utils.warnings import supersession_warning
 from dlt.common.destination import Destination
 from dlt.extract.resource import DltResource
+from dlt.pipeline.pipeline import Pipeline
 
 
 @record
 class DltResourceTranslatorData:
     resource: DltResource
-    destination: Optional[Destination]
+    pipeline: Optional[Pipeline]
+
+    @property
+    def destination(self) -> Optional[Destination]:
+        return self.pipeline.destination if self.pipeline else None
 
 
 @dataclass

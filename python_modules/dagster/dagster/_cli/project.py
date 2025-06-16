@@ -4,7 +4,6 @@ from collections.abc import Sequence
 from typing import NamedTuple, Optional, Union
 
 import click
-import requests
 
 from dagster._generate import download_example_from_github, generate_project, generate_repository
 from dagster._generate.download import AVAILABLE_EXAMPLES
@@ -62,6 +61,9 @@ def check_if_pypi_package_conflict_exists(project_name: str) -> PackageConflictC
     Raises an error regardless of hyphen or underscore (i.e. dagster_dbt vs dagster-dbt). Both
     are invalid and cause import errors.
     """
+    # defer for import performance
+    import requests
+
     if any(keyword in project_name for keyword in FLAGGED_PACKAGE_KEYWORDS):
         try:
             res = requests.get(f"https://pypi.org/pypi/{project_name}/json")

@@ -1,19 +1,25 @@
+import operator
+from collections.abc import Sequence
 from dataclasses import dataclass, replace
-from typing import Generic, Optional, Union
+from typing import Any, Callable, Generic, Optional, Union
 
 from dagster_shared.serdes.serdes import DataclassSerializer, whitelist_for_serdes
+from typing_extensions import Self
 
 import dagster._check as check
 from dagster._core.definitions.asset_key import T_EntityKey
 from dagster._core.definitions.events import AssetKeyPartitionKey
 from dagster._core.definitions.partition import (
     AllPartitionsSubset,
+    DefaultPartitionsSubset,
     PartitionsDefinition,
     PartitionsSubset,
 )
 from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsSubset
 
 EntitySubsetValue = Union[bool, PartitionsSubset]
+
+CoercibleToAssetEntitySubsetValue = Union[str, Sequence[str], PartitionsSubset, None]
 
 
 class EntitySubsetSerializer(DataclassSerializer):
@@ -40,6 +46,65 @@ class SerializableEntitySubset(Generic[T_EntityKey]):
 
     key: T_EntityKey
     value: EntitySubsetValue
+
+    @classmethod
+    def from_coercible_value(
+        cls,
+        key: T_EntityKey,
+        value: CoercibleToAssetEntitySubsetValue,
+        partitions_def: Optional[PartitionsDefinition],
+    ) -> "SerializableEntitySubset":
+        """Creates a new SerializableEntitySubset, handling coercion of a CoercibleToAssetEntitySubsetValue
+        to an EntitySubsetValue.
+        """
+        if value is None:
+            check.invariant(
+                partitions_def is None,
+                "Cannot create a SerializableEntitySubset with value=None and non-None partitions_def",
+            )
+            return cls(key=key, value=True)
+        if isinstance(value, str):
+            partitions_def = check.not_none(partitions_def)
+            if partitions_def.partitions_subset_class is not DefaultPartitionsSubset:
+                # DefaultPartitionsSubset just adds partition keys to a set, but other subsets
+                # may require partition keys be part of the partition, so validate the key
+                partitions_def.validate_partition_key(value)
+            partitions_subset = partitions_def.subset_with_partition_keys([value])
+        elif isinstance(value, PartitionsSubset):
+            if partitions_def is not None:
+                check.inst_param(
+                    value,
+                    "value",
+                    partitions_def.partitions_subset_class,
+                )
+            partitions_subset = value
+        else:
+            check.list_param(value, "value", of_type=str)
+            partitions_def = check.not_none(partitions_def)
+            if partitions_def.partitions_subset_class is not DefaultPartitionsSubset:
+                # DefaultPartitionsSubset just adds partition keys to a set, but other subsets
+                # may require partition keys be part of the partition, so validate the keys and only
+                # include the valid keys in the subset
+                valid_keys = [key for key in value if partitions_def.has_partition_key(key)]
+            else:
+                valid_keys = value
+            partitions_subset = partitions_def.subset_with_partition_keys(valid_keys)
+        return cls(key=key, value=partitions_subset)
+
+    @classmethod
+    def try_from_coercible_value(
+        cls,
+        key: T_EntityKey,
+        value: CoercibleToAssetEntitySubsetValue,
+        partitions_def: Optional[PartitionsDefinition],
+    ) -> Optional["SerializableEntitySubset"]:
+        """Attempts to create a new SerializableEntitySubset, handling coercion of a CoercibleToAssetEntitySubsetValue
+        and partitions definition to an EntitySubsetValue. Returns None if the coercion fails.
+        """
+        try:
+            return cls.from_coercible_value(key, value, partitions_def)
+        except:
+            return None
 
     @property
     def is_partitioned(self) -> bool:
@@ -79,6 +144,24 @@ class SerializableEntitySubset(Generic[T_EntityKey]):
                 return partitions_def is not None
         else:
             return partitions_def is None
+
+    def _oper(self, other: Self, oper: Callable[..., Any]) -> Self:
+        check.invariant(self.key == other.key, "Keys must match for operation")
+        value = oper(self.value, other.value)
+        return self.__class__(key=self.key, value=value)
+
+    def compute_difference(self, other: Self) -> Self:
+        if isinstance(self.value, bool):
+            value = self.bool_value and not other.bool_value
+            return self.__class__(key=self.key, value=value)
+        else:
+            return self._oper(other, operator.sub)
+
+    def compute_union(self, other: Self) -> Self:
+        return self._oper(other, operator.or_)
+
+    def compute_intersection(self, other: Self) -> Self:
+        return self._oper(other, operator.and_)
 
     def __contains__(self, item: AssetKeyPartitionKey) -> bool:
         if not self.is_partitioned:

@@ -3,7 +3,6 @@ from typing import TYPE_CHECKING, Optional, cast
 
 import graphene
 from dagster import _check as check
-from dagster._core.definitions.partition import CachingDynamicPartitionsLoader
 from dagster._core.definitions.sensor_definition import SensorType
 from dagster._core.remote_representation import (
     CodeLocation,
@@ -386,9 +385,6 @@ class GrapheneRepository(graphene.ObjectType):
     def resolve_assetNodes(self, graphene_info: ResolveInfo):
         remote_nodes = self.get_repository(graphene_info).asset_graph.asset_nodes
 
-        dynamic_partitions_loader = CachingDynamicPartitionsLoader(
-            graphene_info.context.instance,
-        )
         stale_status_loader = StaleStatusLoader(
             instance=graphene_info.context.instance,
             asset_graph=lambda: self.get_repository(graphene_info).asset_graph,
@@ -399,7 +395,6 @@ class GrapheneRepository(graphene.ObjectType):
             GrapheneAssetNode(
                 remote_node=remote_node,
                 stale_status_loader=stale_status_loader,
-                dynamic_partitions_loader=dynamic_partitions_loader,
             )
             for remote_node in remote_nodes
         ]

@@ -14,6 +14,7 @@ from dagster._core.events import (
     DagsterEventType,
     EngineEventData,
 )
+from dagster._core.events.log import EventLogEntry
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.dagster_run import CANCELABLE_RUN_STATUSES
 from dagster._core.workspace.permissions import Permissions
@@ -233,7 +234,10 @@ async def gen_events_for_run(
         "GraphenePipelineRunLogsSubscriptionSuccess",
     ]
 ]:
-    from dagster_graphql.implementation.events import from_event_record
+    from dagster_graphql.implementation.events import (
+        from_event_record,
+        get_graphene_events_from_records_connection,
+    )
     from dagster_graphql.schema.pipelines.pipeline import GrapheneRun
     from dagster_graphql.schema.pipelines.subscription import (
         GraphenePipelineRunLogsSubscriptionFailure,
@@ -271,13 +275,13 @@ async def gen_events_for_run(
             cursor=after_cursor,
             limit=chunk_size,
         )
+
         if not dont_send_past_records:
             yield GraphenePipelineRunLogsSubscriptionSuccess(
                 run=GrapheneRun(record),
-                messages=[
-                    from_event_record(record.event_log_entry, run.job_name)
-                    for record in connection.records
-                ],
+                messages=get_graphene_events_from_records_connection(
+                    instance, connection, run.job_name
+                ),
                 hasMorePastEvents=connection.has_more,
                 cursor=connection.cursor,
             )
@@ -285,22 +289,27 @@ async def gen_events_for_run(
         after_cursor = connection.cursor
 
     loop = asyncio.get_event_loop()
-    queue: asyncio.Queue[tuple[Any, Any]] = asyncio.Queue()
+    queue: asyncio.Queue[tuple[EventLogEntry, str]] = asyncio.Queue()
 
-    def _enqueue(event, cursor):
+    def _enqueue(event: EventLogEntry, cursor: str):
         loop.call_soon_threadsafe(queue.put_nowait, (event, cursor))
 
     # watch for live events
     instance.watch_event_logs(run_id, after_cursor, _enqueue)
+    show_failed_to_materialize = instance.can_read_asset_failure_events()
     try:
         while True:
             event, cursor = await queue.get()
-            yield GraphenePipelineRunLogsSubscriptionSuccess(
-                run=GrapheneRun(record),
-                messages=[from_event_record(event, run.job_name)],
-                hasMorePastEvents=False,
-                cursor=cursor,
-            )
+            if (
+                show_failed_to_materialize
+                or event.dagster_event_type != DagsterEventType.ASSET_FAILED_TO_MATERIALIZE
+            ):
+                yield GraphenePipelineRunLogsSubscriptionSuccess(
+                    run=GrapheneRun(record),
+                    messages=[from_event_record(event, run.job_name)],
+                    hasMorePastEvents=False,
+                    cursor=cursor,
+                )
     finally:
         instance.end_watch_event_logs(run_id, _enqueue)
 

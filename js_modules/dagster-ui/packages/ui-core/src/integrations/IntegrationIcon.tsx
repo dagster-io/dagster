@@ -1,27 +1,31 @@
-import {Box, Icon, IconWrapper} from '@dagster-io/ui-components';
-import styled from 'styled-components';
+import {Box, Icon} from '@dagster-io/ui-components';
 
-const INTEGRATIONS_ORIGIN_AND_PATH = 'https://integration-registry.dagster.io/logos';
+import styles from './IntegrationIcon.module.css';
+import {INTEGRATIONS_HOSTNAME} from './constants';
 
 interface Props {
   name: string;
-  logoFilename: string | null;
+  content: string | null; // URL or image filename or an emoji
 }
 
-export const IntegrationIcon = ({name, logoFilename}: Props) => {
+export const IntegrationIcon = ({name, content}: Props) => {
   const icon = () => {
-    if (logoFilename === null) {
+    if (!content) {
       return <Icon name="workspace" size={24} />;
     }
 
+    if (content.length <= 2) {
+      return <div className={styles.integrationIconEmoji}>{content}</div>;
+    }
+
+    const url = content.startsWith('http') ? content : `${INTEGRATIONS_HOSTNAME}/logos/${content}`;
+
     return (
-      <IntegrationIconWrapper
+      <div
         role="img"
-        $size={32}
-        $img={`${INTEGRATIONS_ORIGIN_AND_PATH}/${logoFilename}`}
-        $color={null}
-        $rotation={null}
         aria-label={name}
+        className={styles.integrationIconWrapper}
+        style={{backgroundImage: `url(${url})`}}
       />
     );
   };
@@ -37,12 +41,3 @@ export const IntegrationIcon = ({name, logoFilename}: Props) => {
     </Box>
   );
 };
-
-const IntegrationIconWrapper = styled(IconWrapper)`
-  mask-size: contain;
-  mask-repeat: no-repeat;
-  mask-position: center;
-  -webkit-mask-size: contain;
-  -webkit-mask-repeat: no-repeat;
-  -webkit-mask-position: center;
-`;

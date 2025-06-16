@@ -41,9 +41,7 @@ To complete this tutorial, you'll need:
 
 - **To install the `dagster-gcp` and `dagster-gcp-pandas` libraries**:
 
-  ```shell
-  pip install dagster-gcp dagster-gcp-pandas
-  ```
+  <PackageInstallInstructions packageName="dagster-gcp dagster-gcp-pandas" />
 
 - **To gather the following information**:
 

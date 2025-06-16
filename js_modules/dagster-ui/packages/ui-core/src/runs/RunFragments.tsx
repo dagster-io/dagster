@@ -43,6 +43,7 @@ export const RUN_FRAGMENT = gql`
     pipelineSnapshotId
     executionPlan {
       artifactsPersisted
+      assetSelection
       ...ExecutionPlanToGraphFragment
     }
     stepKeysToExecute

@@ -31,6 +31,7 @@ def test_tox_passenv(tox_config):
         "BUILDKITE*",
         "PYTEST_ADDOPTS",
         "PYTEST_PLUGINS",
+        "DAGSTER_GIT_REPO_DIR",
     ]
 
     missing_env = []

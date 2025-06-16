@@ -1,10 +1,17 @@
 from collections.abc import Iterable, Mapping
 from enum import Enum
-from typing import TYPE_CHECKING, Any, NamedTuple, Optional, Union
+from typing import TYPE_CHECKING, Annotated, Any, Optional, Union
 
+from dagster_shared.record import (
+    IHaveNew,
+    ImportFrom,
+    LegacyNamedTupleMixin,
+    record_custom,
+    replace,
+)
 from dagster_shared.serdes import whitelist_for_serdes
+from typing_extensions import TypeAlias
 
-import dagster._check as check
 from dagster._annotations import PublicAttr
 from dagster._core.definitions.asset_key import AssetCheckKey, AssetKey, CoercibleToAssetKey
 
@@ -31,23 +38,24 @@ class AssetCheckSeverity(Enum):
     ERROR = "ERROR"
 
 
-class AssetCheckSpec(
-    NamedTuple(
-        "_AssetCheckSpec",
-        [
-            ("name", PublicAttr[str]),
-            ("asset_key", PublicAttr[AssetKey]),
-            ("description", PublicAttr[Optional[str]]),
-            ("additional_deps", PublicAttr[Iterable["AssetDep"]]),
-            (
-                "blocking",  # intentionally not public, see https://github.com/dagster-io/dagster/issues/20659
-                bool,
-            ),
-            ("metadata", PublicAttr[Optional[Mapping[str, Any]]]),
-            ("automation_condition", Optional["AutomationCondition[AssetCheckKey]"]),
-        ],
-    )
-):
+LazyAutomationCondition: TypeAlias = Annotated[
+    "AutomationCondition",  # Ideally this would be AutomationCondition[AssetCheckKey] if record was updated to handle it
+    ImportFrom("dagster._core.definitions.declarative_automation.automation_condition"),
+]
+
+LazyAssetDep: TypeAlias = Annotated["AssetDep", ImportFrom("dagster._core.definitions.asset_dep")]
+
+
+@record_custom
+class AssetCheckSpec(IHaveNew, LegacyNamedTupleMixin):
+    name: PublicAttr[str]
+    asset_key: PublicAttr[AssetKey]
+    description: PublicAttr[Optional[str]]
+    additional_deps: PublicAttr[Iterable[LazyAssetDep]]
+    blocking: PublicAttr[bool]
+    metadata: PublicAttr[Mapping[str, Any]]
+    automation_condition: PublicAttr[Optional[LazyAutomationCondition]]
+
     """Defines information about an asset check, except how to execute it.
 
     AssetCheckSpec is often used as an argument to decorators that decorator a function that can
@@ -64,6 +72,10 @@ class AssetCheckSpec(
             the asset specified by `asset`. For example, the check may test that `asset` has
             matching data with an asset in `additional_deps`. This field holds both `additional_deps`
             and `additional_ins` passed to @asset_check.
+        blocking (bool): When enabled, if the check fails with severity `AssetCheckSeverity.ERROR`,
+            then downstream assets won't execute. If this AssetCheckSpec is used in a multi-asset,
+            that multi-asset is responsible for enforcing that downstream assets within the
+            same step do not execute after a blocking asset check fails.
         metadata (Optional[Mapping[str, Any]]):  A dict of static metadata for this asset check.
     """
 
@@ -79,9 +91,6 @@ class AssetCheckSpec(
         automation_condition: Optional["AutomationCondition[AssetCheckKey]"] = None,
     ):
         from dagster._core.definitions.asset_dep import coerce_to_deps_and_check_duplicates
-        from dagster._core.definitions.declarative_automation.automation_condition import (
-            AutomationCondition,
-        )
 
         asset_key = AssetKey.from_coercible_or_definition(asset)
 
@@ -98,15 +107,13 @@ class AssetCheckSpec(
 
         return super().__new__(
             cls,
-            name=check.str_param(name, "name"),
+            name=name,
             asset_key=asset_key,
-            description=check.opt_str_param(description, "description"),
+            description=description,
             additional_deps=additional_asset_deps,
-            blocking=check.bool_param(blocking, "blocking"),
-            metadata=check.opt_mapping_param(metadata, "metadata", key_type=str),
-            automation_condition=check.opt_inst_param(
-                automation_condition, "automation_condition", AutomationCondition
-            ),
+            blocking=blocking,
+            metadata=metadata or {},
+            automation_condition=automation_condition,
         )
 
     def get_python_identifier(self) -> str:
@@ -120,4 +127,7 @@ class AssetCheckSpec(
         return AssetCheckKey(self.asset_key, self.name)
 
     def replace_key(self, key: AssetCheckKey) -> "AssetCheckSpec":
-        return self._replace(asset_key=key.asset_key, name=key.name)
+        return replace(self, asset_key=key.asset_key, name=key.name)
+
+    def with_metadata(self, metadata: Mapping[str, Any]) -> "AssetCheckSpec":
+        return replace(self, metadata=metadata)

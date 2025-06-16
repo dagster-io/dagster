@@ -102,7 +102,7 @@ BuildkiteStep: TypeAlias = Union[
 BuildkiteLeafStep = Union[CommandStep, TriggerStep, WaitStep]
 BuildkiteTopLevelStep = Union[CommandStep, GroupStep]
 
-UV_PIN = "uv==0.6.9"
+UV_PIN = "uv==0.7.2"
 
 
 def is_command_step(step: BuildkiteStep) -> TypeGuard[CommandStep]:
@@ -324,19 +324,6 @@ def has_dg_changes():
     return any(
         "dagster-dg" in str(path) or "docs_snippets" in str(path)
         for path in ChangedFiles.all
-    )
-
-
-@functools.lru_cache(maxsize=None)
-def skip_if_not_airlift_or_dlift_commit() -> Optional[str]:
-    """If no dlift or airlift files are touched, then do NOT run. Even if on master."""
-    return (
-        None
-        if (
-            any("dagster-dlift" in str(path) for path in ChangedFiles.all)
-            or any("dagster-airlift" in str(path) for path in ChangedFiles.all)
-        )
-        else "Not an airlift or dlift commit"
     )
 
 

@@ -2,7 +2,9 @@ import warnings
 from collections.abc import Mapping, Sequence
 from datetime import datetime
 from itertools import groupby
-from typing import TYPE_CHECKING, AbstractSet, Any, NamedTuple, Optional, Union  # noqa: UP035
+from typing import TYPE_CHECKING, AbstractSet, Any, Optional, Union  # noqa: UP035
+
+from dagster_shared.record import IHaveNew, record_custom, replace
 
 import dagster._check as check
 from dagster._annotations import deprecated, deprecated_param
@@ -29,27 +31,20 @@ if TYPE_CHECKING:
     from dagster._core.definitions.run_config import RunConfig
 
 
-class UnresolvedAssetJobDefinition(
-    NamedTuple(
-        "_UnresolvedAssetJobDefinition",
-        [
-            ("name", str),
-            ("selection", AssetSelection),
-            (
-                "config",
-                Optional[Union[ConfigMapping, Mapping[str, Any], "PartitionedConfig"]],
-            ),
-            ("description", Optional[str]),
-            ("tags", Optional[Mapping[str, str]]),
-            ("run_tags", Optional[Mapping[str, str]]),
-            ("metadata", Optional[Mapping[str, RawMetadataValue]]),
-            ("partitions_def", Optional[PartitionsDefinition]),
-            ("executor_def", Optional[ExecutorDefinition]),
-            ("hooks", Optional[AbstractSet[HookDefinition]]),
-            ("op_retry_policy", Optional["RetryPolicy"]),
-        ],
-    )
-):
+@record_custom
+class UnresolvedAssetJobDefinition(IHaveNew):
+    name: str
+    selection: AssetSelection
+    config: Optional[Union[ConfigMapping, Mapping[str, Any], "PartitionedConfig"]]
+    description: Optional[str]
+    tags: Optional[Mapping[str, str]]
+    run_tags: Optional[Mapping[str, str]]
+    metadata: Optional[Mapping[str, Any]]
+    partitions_def: Optional[PartitionsDefinition]
+    executor_def: Optional[ExecutorDefinition]
+    hooks: Optional[AbstractSet[HookDefinition]]
+    op_retry_policy: Optional[RetryPolicy]
+
     def __new__(
         cls,
         name: str,
@@ -64,31 +59,26 @@ class UnresolvedAssetJobDefinition(
         partitions_def: Optional[PartitionsDefinition] = None,
         executor_def: Optional[ExecutorDefinition] = None,
         hooks: Optional[AbstractSet[HookDefinition]] = None,
-        op_retry_policy: Optional["RetryPolicy"] = None,
+        op_retry_policy: Optional[RetryPolicy] = None,
     ):
-        from dagster._core.definitions import ExecutorDefinition
         from dagster._core.definitions.run_config import convert_config_input
 
-        tags = check.opt_mapping_param(tags, "tags")
-        # If `run_tags` is set, then we use it, otherwise `tags` acts as both definition tags and
-        # run tags. This is for backcompat with old behavior prior to the introduction of
-        # `run_tags`.
-        run_tags = check.mapping_param(run_tags, "run_tags") if run_tags else tags
         return super().__new__(
             cls,
-            name=check.str_param(name, "name"),
-            selection=check.inst_param(selection, "selection", AssetSelection),
+            name=name,
+            selection=selection,
             config=convert_config_input(config),
-            description=check.opt_str_param(description, "description"),
+            description=description,
             tags=tags,
-            run_tags=run_tags,
-            metadata=check.opt_mapping_param(metadata, "metadata"),
-            partitions_def=check.opt_inst_param(
-                partitions_def, "partitions_def", PartitionsDefinition
-            ),
-            executor_def=check.opt_inst_param(executor_def, "executor_def", ExecutorDefinition),
-            hooks=check.opt_nullable_set_param(hooks, "hooks", of_type=HookDefinition),
-            op_retry_policy=check.opt_inst_param(op_retry_policy, "op_retry_policy", RetryPolicy),
+            # If `run_tags` is set, then we use it, otherwise `tags` acts as both definition tags and
+            # run tags. This is for backcompat with old behavior prior to the introduction of
+            # `run_tags`.
+            run_tags=run_tags if run_tags else tags,
+            metadata=metadata,
+            partitions_def=partitions_def,
+            executor_def=executor_def,
+            hooks=hooks,
+            op_retry_policy=op_retry_policy,
         )
 
     @deprecated(
@@ -238,6 +228,11 @@ class UnresolvedAssetJobDefinition(
             allow_different_partitions_defs=False,
         )
 
+    def with_metadata(
+        self, metadata: Mapping[str, "RawMetadataValue"]
+    ) -> "UnresolvedAssetJobDefinition":
+        return replace(self, metadata=metadata)
+
 
 @deprecated_param(
     param="partitions_def",
@@ -315,6 +310,9 @@ def define_asset_job(
             How this Job will be executed. Defaults to :py:class:`multi_or_in_process_executor`,
             which can be switched between multi-process and in-process modes of execution. The
             default mode of execution is multi-process.
+        hooks (Optional[AbstractSet[HookDefinition]]): A set of hooks to be attached to each asset in the job.
+            These hooks define logic that runs in response to events such as success or failure
+            during the execution of individual assets.
         op_retry_policy (Optional[RetryPolicy]): The default retry policy for all ops that compute assets in this job.
             Only used if retry policy is not defined on the asset definition.
         partitions_def (Optional[PartitionsDefinition]): (Deprecated)

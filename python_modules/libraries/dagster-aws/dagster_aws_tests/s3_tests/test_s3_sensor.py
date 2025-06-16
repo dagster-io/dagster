@@ -279,3 +279,10 @@ def test_get_objects_with_modified():
         assert len(objects) == 2
         assert objects[0].get("Key").endswith("C")
         assert objects[1].get("Key").endswith("B")
+
+        # Get objects later than the latest. This must return an empty list.
+        objects = get_objects(
+            bucket=BUCKET_NAME, prefix=PREFIX, since_last_modified=objects[-1].get("LastModified")
+        )
+
+        assert not objects

@@ -1,0 +1,3 @@
+dg plus pull env
+
+Environment variables saved to .env

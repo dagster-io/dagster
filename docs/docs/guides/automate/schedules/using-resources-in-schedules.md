@@ -1,13 +1,14 @@
 ---
-title: Using resources in schedules
+description: Specify resource dependencies in Dagster schedules by annotating resources as schedule function parameters.
 sidebar_position: 500
+title: Using resources in schedules
 ---
 
 This example demonstrates how to use resources in schedules. To specify a resource dependency, annotate the resource as a parameter to the schedule's function.
 
 :::note
 
-This article assumes familiarity with [resources](/guides/build/external-resources/), [code locations and definitions](/guides/deploy/code-locations/), and [schedule testing](/guides/automate/schedules/testing-schedules).
+This article assumes familiarity with [resources](/guides/build/external-resources/), [code locations and definitions](/deployment/code-locations), and [schedule testing](/guides/automate/schedules/testing-schedules).
 
 All Dagster definitions, including schedules and resources, must be attached to a <PyObject section="definitions" module="dagster" object="Definitions" /> call.
 

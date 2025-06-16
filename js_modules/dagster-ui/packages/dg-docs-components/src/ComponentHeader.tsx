@@ -1,8 +1,9 @@
-import {HTMLProps} from 'react';
+import {HTMLProps, useMemo} from 'react';
 import Markdown, {Components} from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-
+import {remark} from 'remark';
 import styles from './css/ComponentHeader.module.css';
+import strip from 'strip-markdown';
 
 import ComponentTags from './ComponentTags';
 import {ComponentType} from './types';
@@ -15,11 +16,16 @@ interface Props {
 export default function ComponentHeader({config, descriptionStyle}: Props) {
   const {description, name} = config;
 
-  // For truncated display, use only the first line in the description.
-  const displayedDescription =
-    descriptionStyle === 'truncated'
-      ? ((description || '').split('\n').find((str) => str.trim().length > 0) ?? '')
-      : description;
+  // For truncated display, use only the first text block in the description.
+  const displayedDescription = useMemo(
+    () =>
+      descriptionStyle === 'truncated'
+        ? (markdownToPlaintext(description || '')
+            .split('\n\n')
+            .find((str) => str.trim().length > 0) ?? '')
+        : description,
+    [descriptionStyle, description],
+  );
 
   return (
     <div className={styles.container}>
@@ -58,4 +64,10 @@ export default function ComponentHeader({config, descriptionStyle}: Props) {
 
 const componentsMinusLinks: Components = {
   a: ({children}: HTMLProps<HTMLAnchorElement>) => <span>{children}</span>,
+};
+
+const Remark = remark().use(strip);
+
+export const markdownToPlaintext = (md: string) => {
+  return Remark.processSync(md).toString().replace(/\\/g, '').trim();
 };

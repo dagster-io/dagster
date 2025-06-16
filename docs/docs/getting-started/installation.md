@@ -1,58 +1,103 @@
 ---
 title: Installing Dagster
-description: Learn how to install Dagster
+description: Learn how to install Dagster and create projects with the dg CLI.
 sidebar_position: 20
 sidebar_label: Installation
 ---
 
+import InstallUv from '@site/docs/partials/\_InstallUv.md';
+
 To follow the steps in this guide, you'll need:
 
 - To install Python 3.9 or higher. **Python 3.12 is recommended**.
-- To install pip, a Python package installer
 
-## Setting up a virtual environment
+## Recommended: Creating a new project with create-dagster
 
-After installing Python, it's recommended that you set up a virtual environment. This will isolate your Dagster project from the rest of your system and make it easier to manage dependencies.
+The recommended way to get started with Dagster is to create a project using the `create-dagster` command line utility. This will scaffold a Dagster project with our recommended structure and required dependencies.
 
-There are many ways to do this, but this guide will use `venv` as it doesn't require additional dependencies.
+### Using `create-dagster`
+
+The `create-dagster` utility can be installed with [Homebrew](https://brew.sh/) or `curl`, or invoked without installation using `uvx`.
 
 <Tabs>
-  <TabItem value="macos" label="MacOS">
-    ```bash python -m venv venv source venv/bin/activate ```
-  </TabItem>
-  <TabItem value="windows" label="Windows">
-    ```bash python -m venv venv source venv\Scripts\activate ```
-  </TabItem>
+<TabItem value="uvx" label="uvx (Recommended)">
+
+First, install the Python package manager [`uv`](https://docs.astral.sh/uv/) if you don't have it.
+
+This will also install the `uvx` command, which allows you to execute commands without having to install packages directly.
+
+<InstallUv />
+
+Now, you can run the `create-dagster` command using `uvx`:
+
+<CliInvocationExample contents="uvx create-dagster project my-project" />
+
+</TabItem>
+
+<TabItem value="brew" label="Homebrew">
+
+`create-dagster` is available in a Homebrew tap:
+
+<CliInvocationExample contents="brew install dagster-io/tap/create-dagster" />
+
+After installation, run the `create-dagster` command:
+
+<CliInvocationExample contents="create-dagster project my-project" />
+
+</TabItem>
+
+<TabItem value="curl" label="curl">
+
+Use `curl` to download a standalone installation script and execute it with `sh`:
+
+<CliInvocationExample contents="curl -LsSf https://dg.dagster.io/create-dagster/install.sh | sh" />
+
+Then run the `create-dagster` command:
+
+<CliInvocationExample contents="create-dagster project my-project" />
+
+</TabItem>
+
 </Tabs>
 
-:::tip
-**Looking for something more powerful than `venv`?** Try `pyenv` or `pyenv-virtualenv`, which can help you manage multiple versions of Python on a single machine. Learn more in the [pyenv GitHub repository](https://github.com/pyenv/pyenv).
-:::
+## Alternative: Manual installation in a virtual environment
 
-## Installing Dagster
+If you prefer to set up Dagster manually or are installing it into an existing project, you can install Dagster directly into your Python environment.
 
-To install Dagster in your virtual environment, open your terminal and run the following command:
+### Installing Dagster
 
-```bash
-pip install dagster dagster-webserver
-```
+<Tabs>
+<TabItem value="uv" label="uv">
+  <CliInvocationExample contents="uv add dagster dagster-webserver dagster-dg-cli" />
+</TabItem>
+<TabItem value="pip" label="pip">
+  <CliInvocationExample contents="pip install dagster dagster-webserver dagster-dg-cli" />
+</TabItem>
+</Tabs>
 
-This command will install the core Dagster library and the webserver, which is used to serve the Dagster UI.
-
-## Verifying installation
+## Verifying your project
 
 To verify that Dagster is installed correctly, run the following command:
 
-```bash
-dagster --version
-```
+<Tabs groupId="os">
+  <TabItem value="mac" label="Mac">
+    <CliInvocationExample contents="cd my-project" />
+    <CliInvocationExample contents="source .venv/bin/activate" />
+    <CliInvocationExample contents="dg --version" />
+  </TabItem>
+  <TabItem value="windows" label="Windows">
+    <CliInvocationExample contents="cd my-project" />
+    <CliInvocationExample contents=".venv\Scripts\activate" />
+    <CliInvocationExample contents="dg --version" />
+  </TabItem>
+  <TabItem value="linux" label="Linux">
+    <CliInvocationExample contents="cd my-project" />
+    <CliInvocationExample contents="source .venv/bin/activate" />
+    <CliInvocationExample contents="dg --version" />
+  </TabItem>
+</Tabs>
 
-The version numbers of Dagster should be printed in the terminal:
-
-```bash
-> dagster --version
-dagster, version 1.8.4
-```
+You should be presented with the version number of `dg` in your environment.
 
 ## Troubleshooting
 
@@ -64,4 +109,5 @@ If you encounter any issues during the installation process:
 ## Next steps
 
 - Get up and running with your first Dagster project in the [Quickstart](/getting-started/quickstart)
+- Learn more about the [`dg` CLI and modern Dagster development](/api/dg)
 - Learn to [create data assets in Dagster](/guides/build/assets/defining-assets)

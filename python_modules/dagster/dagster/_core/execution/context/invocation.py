@@ -38,6 +38,7 @@ from dagster._core.errors import (
     DagsterInvariantViolationError,
 )
 from dagster._core.execution.build_resources import build_resources, wrap_resources_for_execution
+from dagster._core.execution.context.asset_check_execution_context import AssetCheckExecutionContext
 from dagster._core.execution.context.compute import AssetExecutionContext, OpExecutionContext
 from dagster._core.execution.context.system import StepExecutionContext, TypeCheckContext
 from dagster._core.instance import DagsterInstance
@@ -778,6 +779,65 @@ class DirectOpExecutionContext(OpExecutionContext, BaseDirectExecutionContext):
         self._execution_properties.typed_event_stream_error_message = error_message
 
 
+class DirectAssetCheckExecutionContext(AssetCheckExecutionContext, BaseDirectExecutionContext):
+    def __init__(self, op_execution_context: DirectOpExecutionContext):
+        self._op_execution_context = op_execution_context
+
+    def bind(  # pyright: ignore[reportIncompatibleMethodOverride]
+        self,
+        op_def: OpDefinition,
+        pending_invocation: Optional[PendingNodeInvocation[OpDefinition]],
+        assets_def: Optional[AssetsDefinition],
+        config_from_args: Optional[Mapping[str, Any]],
+        resources_from_args: Optional[Mapping[str, Any]],
+    ) -> "DirectAssetCheckExecutionContext":
+        if assets_def is None:
+            raise DagsterInvariantViolationError(
+                "DirectAssetCheckExecutionContext can only be used to invoke an asset check."
+            )
+        if self._op_execution_context._per_invocation_properties is not None:  # noqa: SLF001
+            raise DagsterInvalidInvocationError(
+                f"This context is currently being used to execute {self.op_execution_context.alias}."
+                " The context cannot be used to execute another asset until"
+                f" {self.op_execution_context.alias} has finished executing."
+            )
+
+        self._op_execution_context = self._op_execution_context.bind(
+            op_def=op_def,
+            pending_invocation=pending_invocation,
+            assets_def=assets_def,
+            config_from_args=config_from_args,
+            resources_from_args=resources_from_args,
+        )
+
+        return self
+
+    def unbind(self):
+        self._op_execution_context.unbind()
+
+    @property
+    def per_invocation_properties(self) -> PerInvocationProperties:
+        return self.op_execution_context.per_invocation_properties
+
+    @property
+    def is_bound(self) -> bool:
+        return self.op_execution_context.is_bound
+
+    @property
+    def execution_properties(self) -> DirectExecutionProperties:
+        return self.op_execution_context.execution_properties
+
+    @property
+    def op_execution_context(self) -> DirectOpExecutionContext:
+        return self._op_execution_context
+
+    def for_type(self, dagster_type: DagsterType) -> TypeCheckContext:
+        return self.op_execution_context.for_type(dagster_type)
+
+    def observe_output(self, output_name: str, mapping_key: Optional[str] = None) -> None:
+        self.op_execution_context.observe_output(output_name=output_name, mapping_key=mapping_key)
+
+
 class DirectAssetExecutionContext(AssetExecutionContext, BaseDirectExecutionContext):
     """The ``context`` object available as the first argument to an asset's compute function when
     being invoked directly. Can also be used as a context manager.
@@ -933,6 +993,38 @@ def build_op_context(
         run_tags=check.opt_mapping_param(run_tags, "run_tags", key_type=str),
         event_loop=event_loop,
     )
+
+
+def build_asset_check_context(
+    resources: Optional[Mapping[str, Any]] = None,
+    resources_config: Optional[Mapping[str, Any]] = None,
+    asset_config: Optional[Mapping[str, Any]] = None,
+    instance: Optional[DagsterInstance] = None,
+) -> DirectAssetCheckExecutionContext:
+    """Builds an asset check execution context from provided parameters.
+
+    Args:
+        resources (Optional[Dict[str, Any]]): The resources to provide to the context. These can be
+            either values or resource definitions.
+        resources_config (Optional[Mapping[str, Any]]): The config to provide to the resources.
+        asset_config (Optional[Mapping[str, Any]]): The config to provide to the asset.
+        instance (Optional[DagsterInstance]): The dagster instance configured for the context.
+            Defaults to DagsterInstance.ephemeral().
+
+    Examples:
+        .. code-block:: python
+
+            context = build_asset_check_context()
+            asset_check_to_invoke(context)
+    """
+    op_context = build_op_context(
+        op_config=asset_config,
+        resources=resources,
+        resources_config=resources_config,
+        instance=instance,
+    )
+
+    return DirectAssetCheckExecutionContext(op_execution_context=op_context)
 
 
 def build_asset_context(

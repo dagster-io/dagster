@@ -5,14 +5,12 @@ export type IntegrationConfig = {
 
 export type IntegrationFrontmatter = {
   id: string;
-  status: string;
-  name: string;
   title: string;
-  excerpt: string;
+  name: string;
+  description: string;
   partnerlink: string;
   logoFilename: string | null;
-  categories: string[];
-  enabledBy: string[];
-  enables: string[];
   tags: string[];
+  pypi: string;
+  source: string;
 };

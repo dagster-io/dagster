@@ -122,6 +122,7 @@ export const ASSET_LATEST_INFO_FRAGMENT = gql`
 
   fragment AssetLatestInfoRun on Run {
     status
+    startTime
     endTime
     id
   }

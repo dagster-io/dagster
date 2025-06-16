@@ -1,10 +1,10 @@
 import {
   Alert,
   Box,
-  Heading,
   NonIdealState,
   Page,
   PageHeader,
+  Subtitle1,
   Table,
 } from '@dagster-io/ui-components';
 import {Link, Redirect, useLocation, useParams, useRouteMatch} from 'react-router-dom';
@@ -72,7 +72,7 @@ export const GuessJobLocationRoot = () => {
   return (
     <Page>
       <PageHeader
-        title={<Heading>{pipelineName}</Heading>}
+        title={<Subtitle1>{pipelineName}</Subtitle1>}
         icon="job"
         description={
           anyPipelines

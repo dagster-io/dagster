@@ -137,28 +137,37 @@ def test_ecs_pipes(
         assert asset_check_executions[0].status == AssetCheckExecutionRecordStatus.SUCCEEDED
 
 
-def test_ecs_pipes_interruption_forwarding(pipes_ecs_client: PipesECSClient):
-    def materialize_asset(env, return_dict):
-        os.environ.update(env)
-        try:
-            with instance_for_test() as instance:
-                materialize(  # this will be interrupted and raise an exception
-                    [ecs_asset],
-                    instance=instance,
-                    resources={"pipes_ecs_client": pipes_ecs_client},
-                )
-        finally:
-            assert len(pipes_ecs_client._client._task_runs) > 0  # noqa  # pyright: ignore[reportAttributeAccessIssue]
-            task_arn = next(iter(pipes_ecs_client._client._task_runs.keys()))  # noqa  # pyright: ignore[reportAttributeAccessIssue]
-            return_dict[0] = pipes_ecs_client._client.describe_tasks(  # noqa
-                cluster="test-cluster", tasks=[task_arn]
+def _materialize_asset(env, return_dict):
+    ecs_client = boto3.client("ecs", region_name="us-east-1", endpoint_url=_MOTO_SERVER_URL)
+    cloudwatch_client = boto3.client("logs", region_name="us-east-1", endpoint_url=_MOTO_SERVER_URL)
+    pipes = PipesECSClient(
+        client=LocalECSMockClient(ecs_client=ecs_client, cloudwatch_client=cloudwatch_client),  # type: ignore
+        message_reader=PipesCloudWatchMessageReader(
+            client=cloudwatch_client,
+        ),
+    )
+    os.environ.update(env)
+    try:
+        with instance_for_test() as instance:
+            materialize(  # this will be interrupted and raise an exception
+                [ecs_asset],
+                instance=instance,
+                resources={"pipes_ecs_client": pipes},
             )
+    finally:
+        assert len(pipes._client._task_runs) > 0  # noqa  # pyright: ignore[reportAttributeAccessIssue]
+        task_arn = next(iter(pipes._client._task_runs.keys()))  # noqa  # pyright: ignore[reportAttributeAccessIssue]
+        return_dict[0] = pipes._client.describe_tasks(  # noqa
+            cluster="test-cluster", tasks=[task_arn]
+        )
 
+
+def test_ecs_pipes_interruption_forwarding(pipes_ecs_client: PipesECSClient):
     with multiprocessing.Manager() as manager:
         return_dict = manager.dict()
 
         p = multiprocessing.Process(
-            target=materialize_asset,
+            target=_materialize_asset,
             args=(
                 {"SLEEP_SECONDS": "10"},
                 return_dict,

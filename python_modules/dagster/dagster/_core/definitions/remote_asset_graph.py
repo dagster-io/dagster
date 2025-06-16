@@ -35,6 +35,7 @@ from dagster._core.definitions.base_asset_graph import (
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationCondition,
 )
+from dagster._core.definitions.freshness import InternalFreshnessPolicy
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.metadata import ArbitraryMetadataMapping
 from dagster._core.definitions.partition import PartitionsDefinition
@@ -234,6 +235,7 @@ class RemoteWorkspaceAssetNode(RemoteAssetNode):
     def key(self) -> AssetKey:  # pyright: ignore[reportIncompatibleVariableOverride]
         return self.repo_scoped_asset_infos[0].asset_node.asset_node_snap.asset_key
 
+    ### KEEP THIS IN SYNC WITH THE JS CODE THAT MERGES THE SDA DEFINITIONS: https://github.com/dagster-io/dagster/blob/22e79ea7024bd13b197e3a2f66401197badceb75/js_modules/dagster-ui/packages/ui-core/src/assets/useAllAssets.tsx#L239-L256
     @property
     def parent_keys(self) -> AbstractSet[AssetKey]:  # pyright: ignore[reportIncompatibleVariableOverride]
         # combine deps from all nodes
@@ -324,6 +326,10 @@ class RemoteWorkspaceAssetNode(RemoteAssetNode):
     @property
     def backfill_policy(self) -> Optional[BackfillPolicy]:
         return self._materializable_node_snap.backfill_policy if self.is_materializable else None
+
+    @property
+    def internal_freshness_policy(self) -> Optional[InternalFreshnessPolicy]:
+        return InternalFreshnessPolicy.from_asset_spec_metadata(self.metadata)
 
     ##### REMOTE-SPECIFIC INTERFACE
     @cached_method

@@ -47,12 +47,14 @@ function CardLayout({
   title,
   description,
   community,
+  referenceArchitecture,
 }: {
   href: string;
   title: string;
   logo?: string;
   description?: string;
   community: boolean;
+  referenceArchitecture: boolean;
 }): ReactNode {
   return (
     <CardContainer href={href}>
@@ -70,10 +72,21 @@ function CardLayout({
           />
         </div>
         <div>
-          <Heading as="h2" className={clsx('', styles.cardTitle)} title={title}>
-            {title}
-          </Heading>
-          {community && <p className={clsx(styles.cardSubtitle)}>Community / Partner supported</p>}
+          <div style={{display: 'flex', flexDirection: 'row'}}>
+            <Heading as="h2" className={clsx('', styles.cardTitle)} title={title}>
+              {title}
+            </Heading>
+            {community && (
+              <span style={{marginLeft: 'auto'}}>
+                <div className={clsx(styles.cardTags)}>Community</div>
+              </span>
+            )}
+            {referenceArchitecture && (
+              <span style={{marginLeft: 'auto'}}>
+                <div className={clsx(styles.cardTags)}>Reference architecture</div>
+              </span>
+            )}
+          </div>
           {description && (
             <p className={clsx(styles.cardDescription)} title={description}>
               {description}
@@ -111,6 +124,7 @@ function CardLink({item}: {item: PropSidebarItemLink}): ReactNode {
   //const icon = item?.customProps?.myEmoji ?? (isInternalUrl(item.href) ? '📄️' : '🔗');
   const logo: string | null = item?.customProps?.logo || null;
   const community: boolean = item?.customProps?.community || false;
+  const referenceArchitecture: boolean = item?.customProps?.referenceArchitecture || false;
   const doc = useDocById(item.docId ?? undefined);
 
   return (
@@ -120,6 +134,7 @@ function CardLink({item}: {item: PropSidebarItemLink}): ReactNode {
       title={item.label}
       description={item.description ?? doc?.description}
       community={community}
+      referenceArchitecture={referenceArchitecture}
     />
   );
 }

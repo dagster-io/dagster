@@ -1,0 +1,15 @@
+dg list components
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ Key                                                         ┃ Summary                                                ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│ dagster.components.DefinitionsComponent                     │ An arbitrary set of dagster definitions.               │
+├─────────────────────────────────────────────────────────────┼────────────────────────────────────────────────────────┤
+│ dagster.components.DefsFolderComponent                      │ A folder which may contain multiple submodules, each   │
+│                                                             │ which define components.                               │
+├─────────────────────────────────────────────────────────────┼────────────────────────────────────────────────────────┤
+│ dagster.components.PipesSubprocessScriptCollectionComponent │ Assets that wrap Python scripts executed with          │
+│                                                             │ Dagster's PipesSubprocessClient.                       │
+├─────────────────────────────────────────────────────────────┼────────────────────────────────────────────────────────┤
+│ my_existing_project.components.Foo                          │ COMPONENT SUMMARY HERE.                                │
+└─────────────────────────────────────────────────────────────┴────────────────────────────────────────────────────────┘

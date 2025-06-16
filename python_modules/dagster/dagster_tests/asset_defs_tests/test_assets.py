@@ -16,6 +16,7 @@ from dagster import (
     Definitions,
     FreshnessPolicy,
     GraphOut,
+    HookContext,
     IdentityPartitionMapping,
     In,
     IOManager,
@@ -25,10 +26,13 @@ from dagster import (
     Output,
     ResourceDefinition,
     _check as check,
+    asset_check,
     build_asset_context,
     define_asset_job,
+    failure_hook,
     fs_io_manager,
     graph,
+    graph_asset,
     graph_multi_asset,
     io_manager,
     job,
@@ -40,6 +44,7 @@ from dagster import (
 )
 from dagster._check import CheckError
 from dagster._core.definitions import AssetIn, SourceAsset, asset, multi_asset
+from dagster._core.definitions.asset_check_result import AssetCheckResult
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_spec import (
@@ -48,7 +53,7 @@ from dagster._core.definitions.asset_spec import (
     AssetSpec,
 )
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
-from dagster._core.definitions.decorators.asset_decorator import graph_asset
+from dagster._core.definitions.decorators.hook_decorator import success_hook
 from dagster._core.definitions.events import AssetMaterialization
 from dagster._core.definitions.metadata.metadata_value import TextMetadataValue
 from dagster._core.definitions.result import MaterializeResult
@@ -1678,7 +1683,7 @@ def test_asset_takes_bare_resource():
         executed["yes"] = True
 
     defs = Definitions(assets=[blah])
-    defs.get_implicit_global_asset_job_def().execute_in_process()
+    defs.resolve_implicit_global_asset_job_def().execute_in_process()
     assert executed["yes"]
 
 
@@ -2568,3 +2573,887 @@ def test_unpartitioned_multiasset_metadata():
             "output_name_specified",
             "additional_a_output_metadata",
         }
+
+
+def test_execute_unselected_asset_check():
+    """Test the behavior that we allow yielding a check result for an unselected but well-specified asset check."""
+
+    @multi_asset(
+        specs=[AssetSpec("a"), AssetSpec("b")],
+        check_specs=[AssetCheckSpec("check1", asset="a"), AssetCheckSpec("check2", asset="b")],
+        can_subset=True,
+    )
+    def always_yields_b_check(context: AssetExecutionContext):
+        for _asset in context.selected_asset_keys:
+            yield AssetMaterialization(asset_key=_asset)
+        yield AssetCheckResult(check_name="check1", asset_key=AssetKey("a"), passed=True)
+
+    result = materialize_to_memory(
+        [always_yields_b_check],
+        selection="b",  # so b and b's check are selected
+    )
+    assert result.success
+    evals = result.get_asset_check_evaluations()
+    assert len(evals) == 1
+    assert evals[0].check_name == "check1"
+    assert evals[0].asset_key == AssetKey("a")
+
+
+def test_asset_hooks():
+    @success_hook
+    def my_hook(context: HookContext):
+        context.log.info("my_hook")
+
+    @asset(hooks={my_hook})
+    def my_asset(context: AssetExecutionContext):
+        context.log.info("my_asset")
+
+    @asset
+    def my_other_asset(context: AssetExecutionContext):
+        context.log.info("my_other_asset")
+
+    job = define_asset_job(
+        name="my_job",
+        selection=[my_asset, my_other_asset],
+    )
+
+    defs = Definitions(
+        assets=[my_asset, my_other_asset],
+        jobs=[job],
+    )
+
+    result = defs.get_job_def("my_job").execute_in_process()
+    hook_completed = [
+        event for event in result.all_events if "HOOK_COMPLETED" == event.event_type_value
+    ]
+    assert len(hook_completed) == 1
+    assert hook_completed[0].step_key == "my_asset"
+
+
+def test_multi_asset_hooks():
+    @success_hook
+    def success_hook_fn(context: HookContext):
+        context.log.info(f"Success hook triggered for {context.op.name}")
+
+    @failure_hook
+    def failure_hook_fn(context: HookContext):
+        context.log.info(f"Failure hook triggered for {context.op.name}")
+
+    @multi_asset(
+        outs={
+            "asset1": AssetOut(),
+            "asset2": AssetOut(),
+        },
+        hooks={success_hook_fn, failure_hook_fn},
+    )
+    def my_multi_asset(context: AssetExecutionContext):
+        return 1, 2
+
+    # Materialize the multi-asset and verify hooks
+    result = materialize([my_multi_asset])
+    assert result.success
+
+    # Verify that the success hook was triggered
+    hook_completed = [
+        event.event_type
+        for event in result.all_events
+        if "HOOK_COMPLETED" == event.event_type_value
+    ]
+    assert len(hook_completed) == 1
+    hook_skipped = [
+        event.event_type for event in result.all_events if "HOOK_SKIPPED" == event.event_type_value
+    ]
+    assert len(hook_skipped) == 1
+
+
+def test_graph_asset_hooks():
+    @success_hook
+    def my_hook(context: HookContext):
+        context.log.info("my_hook")
+
+    @op
+    def fetch_files_from_slack():
+        pass
+
+    @op
+    def store_files(files) -> None:
+        pass
+
+    @graph_asset(hooks={my_hook})
+    def my_graph_asset():
+        return store_files(fetch_files_from_slack())
+
+    job = define_asset_job(
+        name="my_job",
+        selection=[my_graph_asset],
+    )
+
+    defs = Definitions(
+        assets=[my_graph_asset],
+        jobs=[job],
+    )
+
+    result = defs.get_job_def("my_job").execute_in_process()
+    hook_completed = [
+        event for event in result.all_events if "HOOK_COMPLETED" == event.event_type_value
+    ]
+    assert len(hook_completed) == 2
+    assert hook_completed[0].step_key == "my_graph_asset.fetch_files_from_slack"
+    assert hook_completed[1].step_key == "my_graph_asset.store_files"
+
+
+def test_hook_requirements_forwarding():
+    @success_hook(required_resource_keys={"my_resource"})
+    def hook_with_requirements(context: HookContext):
+        assert context.resources.my_resource == "blah"
+        context.log.info("Hook executed with required resources")
+
+    @asset(hooks={hook_with_requirements})
+    def asset_with_hook(context):
+        context.log.info("Asset executed")
+        return 1
+
+    # Verify that the resource requirements from the hook are included in the asset's requirements
+    assert "my_resource" in asset_with_hook.required_resource_keys
+
+    # Execute the asset with the required resources
+    result = materialize(
+        [asset_with_hook],
+        resources={"my_resource": ResourceDefinition.hardcoded_resource("blah")},
+    )
+
+    # Verify that the hook was executed
+    hook_events = [
+        event for event in result.all_events if "HOOK_COMPLETED" == event.event_type_value
+    ]
+    assert len(hook_events) == 1
+
+
+def test_complex_graph_structure_hooks():
+    # Create resources for testing requirements
+    @resource
+    def job_resource(_):
+        return "job_resource"
+
+    @resource
+    def asset_resource(_):
+        return "asset_resource"
+
+    @resource
+    def op_resource(_):
+        return "op_resource"
+
+    # Create hooks with different resource requirements
+    @success_hook(required_resource_keys={"job_resource"})
+    def job_hook(context: HookContext):
+        assert context.resources.job_resource == "job_resource"
+        context.log.info("Job hook executed")
+
+    @success_hook(required_resource_keys={"asset_resource"})
+    def asset_hook(context: HookContext):
+        assert context.resources.asset_resource == "asset_resource"
+        context.log.info("Asset hook executed")
+
+    @success_hook(required_resource_keys={"op_resource"})
+    def op_hook(context: HookContext):
+        assert context.resources.op_resource == "op_resource"
+        context.log.info("Op hook executed")
+
+    # Create a regular asset with a hook
+    @asset(hooks={asset_hook})
+    def regular_asset(context):
+        context.log.info("Regular asset executed")
+        return 1
+
+    # Create a multi-asset with no hooks
+    @multi_asset(
+        outs={
+            "multi_out1": AssetOut(),
+            "multi_out2": AssetOut(),
+        }
+    )
+    def multi_asset_no_hooks(context):
+        context.log.info("Multi-asset executed")
+        return 1, 2
+
+    # Create a graph asset where one of the ops has a hook
+    @op
+    def first_op():
+        return 1
+
+    @op
+    def middle_op(value):
+        return value + 1
+
+    @op
+    def last_op(value):
+        return value + 1
+
+    @op
+    def sum_op(a, b):
+        return a + b
+
+    @graph_asset(
+        ins={
+            "regular_asset": AssetIn("regular_asset"),
+            "multi_out1": AssetIn("multi_out1"),
+        },
+    )
+    def complex_graph_asset(regular_asset, multi_out1):
+        # Use inputs from other assets
+        middle_result = middle_op.with_hooks({op_hook})(
+            sum_op(first_op(), sum_op(regular_asset, multi_out1))
+        )
+        return last_op(middle_result)
+
+    # Create a job with a hook
+    job = define_asset_job(
+        name="complex_job",
+        selection=[regular_asset, multi_asset_no_hooks, complex_graph_asset],
+        hooks={job_hook},
+    )
+
+    # Create definitions
+    defs = Definitions(
+        assets=[regular_asset, multi_asset_no_hooks, complex_graph_asset],
+        jobs=[job],
+        resources={
+            "job_resource": job_resource,
+            "asset_resource": asset_resource,
+            "op_resource": op_resource,
+        },
+    )
+
+    # Execute the job
+    result = defs.get_job_def("complex_job").execute_in_process()
+    assert result.success
+
+    # Extract hook events
+    hook_events = [
+        event for event in result.all_events if "HOOK_COMPLETED" == event.event_type_value
+    ]
+
+    # Check that all hooks were executed
+    job_hook_events = [e for e in hook_events if "job_hook" in str(e.message)]
+    asset_hook_events = [e for e in hook_events if "asset_hook" in str(e.message)]
+    op_hook_events = [e for e in hook_events if "op_hook" in str(e.message)]
+
+    # Job hook should be applied to all steps
+    # 7 ops => regular_asset, multi_asset_no_hooks,
+    #    first_op, middle_op, last_op, sum_op (x2)
+
+    step_keys_job_hook = [e.step_key for e in job_hook_events]
+    assert set(step_keys_job_hook) == {
+        "regular_asset",
+        "multi_asset_no_hooks",
+        "complex_graph_asset.first_op",
+        "complex_graph_asset.middle_op",
+        "complex_graph_asset.last_op",
+        "complex_graph_asset.sum_op",
+        "complex_graph_asset.sum_op_2",
+    }
+
+    # Asset hook should be applied only to the regular_asset
+    assert len(asset_hook_events) == 1
+    assert "regular_asset" == asset_hook_events[0].step_key
+
+    # Op hook should be applied only to the middle_op in the graph asset
+    assert len(op_hook_events) == 1
+    assert "complex_graph_asset.middle_op" == op_hook_events[0].step_key
+
+    # Verify the resource requirements were correctly propagated
+    # Check if asset_resource is included in regular_asset's required_resource_keys
+    assert "asset_resource" in regular_asset.required_resource_keys
+
+    # Check if op_resource is included in complex_graph_asset's required_resource_keys
+    assert "op_resource" in complex_graph_asset.required_resource_keys
+
+
+@pytest.fixture
+def hook_testing_utils():
+    """Fixture providing utilities for hook testing."""
+    executed_hooks = []
+
+    # Helper function to log execution
+    def log_execution(name):
+        return name
+
+    # Define hooks for testing
+    @success_hook
+    def track_hook_execution(context: HookContext):
+        executed_hooks.append(f"{context.step_key}_hook")
+        context.log.info(f"Hook executed for {context.step_key}")
+
+    @success_hook
+    def another_hook(context: HookContext):
+        executed_hooks.append(f"{context.step_key}_another_hook")
+        context.log.info(f"Another hook executed for {context.step_key}")
+
+    @success_hook
+    def third_hook(context: HookContext):
+        executed_hooks.append(f"{context.step_key}_third_hook")
+        context.log.info(f"Third hook executed for {context.step_key}")
+
+    def clear_tracking():
+        executed_hooks.clear()
+
+    return {
+        "executed_hooks": executed_hooks,
+        "log_execution": log_execution,
+        "track_hook_execution": track_hook_execution,
+        "another_hook": another_hook,
+        "third_hook": third_hook,
+        "clear_tracking": clear_tracking,
+    }
+
+
+def test_linear_chain_hooks(hook_testing_utils):
+    """Test linear chain dependency pattern with hooks: A → B → C → D."""
+    log_execution = hook_testing_utils["log_execution"]
+    track_hook_execution = hook_testing_utils["track_hook_execution"]
+    another_hook = hook_testing_utils["another_hook"]
+    executed_hooks = hook_testing_utils["executed_hooks"]
+
+    @asset(hooks={track_hook_execution})
+    def linear_a():
+        return log_execution("linear_a")
+
+    @asset(deps=["linear_a"])
+    def linear_b():
+        return log_execution("linear_b")
+
+    @asset(deps=["linear_b"], hooks={track_hook_execution, another_hook})
+    def linear_c():
+        return log_execution("linear_c")
+
+    @asset(deps=["linear_c"])
+    def linear_d():
+        return log_execution("linear_d")
+
+    # Define job
+    linear_job = define_asset_job("linear_job", selection=[linear_a, linear_b, linear_c, linear_d])
+    defs = Definitions(assets=[linear_a, linear_b, linear_c, linear_d], jobs=[linear_job])
+
+    # Execute and verify
+    result = defs.get_job_def("linear_job").execute_in_process()
+    assert result.success
+    assert len(executed_hooks) == 3
+    assert set(executed_hooks) == {
+        "linear_a_hook",
+        "linear_c_hook",
+        "linear_c_another_hook",
+    }
+
+
+def test_diamond_pattern_hooks(hook_testing_utils):
+    """Test diamond dependency pattern with hooks: A → (B, C) → D."""
+    log_execution = hook_testing_utils["log_execution"]
+    track_hook_execution = hook_testing_utils["track_hook_execution"]
+    another_hook = hook_testing_utils["another_hook"]
+    third_hook = hook_testing_utils["third_hook"]
+    executed_hooks = hook_testing_utils["executed_hooks"]
+    hook_testing_utils["clear_tracking"]()
+
+    @asset
+    def diamond_a():
+        return log_execution("diamond_a")
+
+    @asset(deps=["diamond_a"], hooks={track_hook_execution})
+    def diamond_b():
+        return log_execution("diamond_b")
+
+    @asset(deps=["diamond_a"], hooks={another_hook})
+    def diamond_c():
+        return log_execution("diamond_c")
+
+    @asset(deps=["diamond_b", "diamond_c"], hooks={third_hook})
+    def diamond_d():
+        return log_execution("diamond_d")
+
+    # Define job
+    diamond_job = define_asset_job(
+        "diamond_job", selection=[diamond_a, diamond_b, diamond_c, diamond_d]
+    )
+    defs = Definitions(assets=[diamond_a, diamond_b, diamond_c, diamond_d], jobs=[diamond_job])
+
+    # Execute and verify
+    result = defs.get_job_def("diamond_job").execute_in_process()
+    assert result.success
+    assert len(executed_hooks) == 3
+    assert set(executed_hooks) == {
+        "diamond_b_hook",
+        "diamond_c_another_hook",
+        "diamond_d_third_hook",
+    }
+
+
+def test_fan_out_hooks(hook_testing_utils):
+    """Test fan-out dependency pattern with hooks: A → (B, C, D, E)."""
+    log_execution = hook_testing_utils["log_execution"]
+    track_hook_execution = hook_testing_utils["track_hook_execution"]
+    another_hook = hook_testing_utils["another_hook"]
+    third_hook = hook_testing_utils["third_hook"]
+    executed_hooks = hook_testing_utils["executed_hooks"]
+    hook_testing_utils["clear_tracking"]()
+
+    @asset(hooks={track_hook_execution})
+    def fan_out_a():
+        return log_execution("fan_out_a")
+
+    @asset(deps=["fan_out_a"])
+    def fan_out_b():
+        return log_execution("fan_out_b")
+
+    @asset(deps=["fan_out_a"], hooks={another_hook})
+    def fan_out_c():
+        return log_execution("fan_out_c")
+
+    @asset(deps=["fan_out_a"])
+    def fan_out_d():
+        return log_execution("fan_out_d")
+
+    @asset(deps=["fan_out_a"], hooks={third_hook})
+    def fan_out_e():
+        return log_execution("fan_out_e")
+
+    # Define job
+    fan_out_job = define_asset_job(
+        "fan_out_job", selection=[fan_out_a, fan_out_b, fan_out_c, fan_out_d, fan_out_e]
+    )
+    defs = Definitions(
+        assets=[fan_out_a, fan_out_b, fan_out_c, fan_out_d, fan_out_e],
+        jobs=[fan_out_job],
+    )
+
+    # Execute and verify
+    result = defs.get_job_def("fan_out_job").execute_in_process()
+    assert result.success
+    assert len(executed_hooks) == 3
+    assert set(executed_hooks) == {
+        "fan_out_a_hook",
+        "fan_out_c_another_hook",
+        "fan_out_e_third_hook",
+    }
+
+
+def test_fan_in_hooks(hook_testing_utils):
+    """Test fan-in dependency pattern with hooks: (A, B, C, D) → E."""
+    log_execution = hook_testing_utils["log_execution"]
+    track_hook_execution = hook_testing_utils["track_hook_execution"]
+    another_hook = hook_testing_utils["another_hook"]
+    third_hook = hook_testing_utils["third_hook"]
+    executed_hooks = hook_testing_utils["executed_hooks"]
+    hook_testing_utils["clear_tracking"]()
+
+    @asset(hooks={track_hook_execution})
+    def fan_in_a():
+        return log_execution("fan_in_a")
+
+    @asset
+    def fan_in_b():
+        return log_execution("fan_in_b")
+
+    @asset(hooks={another_hook})
+    def fan_in_c():
+        return log_execution("fan_in_c")
+
+    @asset
+    def fan_in_d():
+        return log_execution("fan_in_d")
+
+    @asset(deps=["fan_in_a", "fan_in_b", "fan_in_c", "fan_in_d"], hooks={third_hook})
+    def fan_in_e():
+        return log_execution("fan_in_e")
+
+    # Define job
+    fan_in_job = define_asset_job(
+        "fan_in_job", selection=[fan_in_a, fan_in_b, fan_in_c, fan_in_d, fan_in_e]
+    )
+    defs = Definitions(
+        assets=[fan_in_a, fan_in_b, fan_in_c, fan_in_d, fan_in_e],
+        jobs=[fan_in_job],
+    )
+
+    # Execute and verify
+    result = defs.get_job_def("fan_in_job").execute_in_process()
+    assert result.success
+    assert len(executed_hooks) == 3
+    assert set(executed_hooks) == {
+        "fan_in_a_hook",
+        "fan_in_c_another_hook",
+        "fan_in_e_third_hook",
+    }
+
+
+def test_sibling_chain_hooks(hook_testing_utils):
+    """Test sibling chain dependency pattern with hooks: A → B → C, A → D → E."""
+    log_execution = hook_testing_utils["log_execution"]
+    track_hook_execution = hook_testing_utils["track_hook_execution"]
+    another_hook = hook_testing_utils["another_hook"]
+    third_hook = hook_testing_utils["third_hook"]
+    executed_hooks = hook_testing_utils["executed_hooks"]
+    hook_testing_utils["clear_tracking"]()
+
+    @asset(hooks={track_hook_execution})
+    def sibling_a():
+        return log_execution("sibling_a")
+
+    @asset(deps=["sibling_a"])
+    def sibling_b():
+        return log_execution("sibling_b")
+
+    @asset(deps=["sibling_b"], hooks={another_hook})
+    def sibling_c():
+        return log_execution("sibling_c")
+
+    @asset(deps=["sibling_a"], hooks={third_hook})
+    def sibling_d():
+        return log_execution("sibling_d")
+
+    @asset(deps=["sibling_d"])
+    def sibling_e():
+        return log_execution("sibling_e")
+
+    # Define job
+    sibling_job = define_asset_job(
+        "sibling_job", selection=[sibling_a, sibling_b, sibling_c, sibling_d, sibling_e]
+    )
+    defs = Definitions(
+        assets=[sibling_a, sibling_b, sibling_c, sibling_d, sibling_e],
+        jobs=[sibling_job],
+    )
+
+    # Execute and verify
+    result = defs.get_job_def("sibling_job").execute_in_process()
+    assert result.success
+    assert len(executed_hooks) == 3
+    assert set(executed_hooks) == {
+        "sibling_a_hook",
+        "sibling_c_another_hook",
+        "sibling_d_third_hook",
+    }
+
+
+def test_skip_level_hooks(hook_testing_utils):
+    """Test skip-level dependency pattern with hooks: A → B → C, A → C."""
+    log_execution = hook_testing_utils["log_execution"]
+    track_hook_execution = hook_testing_utils["track_hook_execution"]
+    another_hook = hook_testing_utils["another_hook"]
+    third_hook = hook_testing_utils["third_hook"]
+    executed_hooks = hook_testing_utils["executed_hooks"]
+    hook_testing_utils["clear_tracking"]()
+
+    @asset(hooks={track_hook_execution})
+    def skip_a():
+        return log_execution("skip_a")
+
+    @asset(deps=["skip_a"], hooks={another_hook})
+    def skip_b():
+        return log_execution("skip_b")
+
+    @asset(deps=["skip_a", "skip_b"], hooks={third_hook})
+    def skip_c():
+        return log_execution("skip_c")
+
+    # Define job
+    skip_job = define_asset_job("skip_job", selection=[skip_a, skip_b, skip_c])
+    defs = Definitions(assets=[skip_a, skip_b, skip_c], jobs=[skip_job])
+
+    # Execute and verify
+    result = defs.get_job_def("skip_job").execute_in_process()
+    assert result.success
+    assert len(executed_hooks) == 3
+    assert set(executed_hooks) == {
+        "skip_a_hook",
+        "skip_b_another_hook",
+        "skip_c_third_hook",
+    }
+
+
+def test_complex_dag_hooks(hook_testing_utils):
+    """Test complex DAG dependency pattern with hooks."""
+    log_execution = hook_testing_utils["log_execution"]
+    track_hook_execution = hook_testing_utils["track_hook_execution"]
+    another_hook = hook_testing_utils["another_hook"]
+    third_hook = hook_testing_utils["third_hook"]
+    executed_hooks = hook_testing_utils["executed_hooks"]
+    hook_testing_utils["clear_tracking"]()
+
+    @asset(hooks={track_hook_execution})
+    def complex_a():
+        return log_execution("complex_a")
+
+    @asset(deps=["complex_a"])
+    def complex_b():
+        return log_execution("complex_b")
+
+    @asset(deps=["complex_a"], hooks={another_hook})
+    def complex_c():
+        return log_execution("complex_c")
+
+    @asset(deps=["complex_b", "complex_c"])
+    def complex_d():
+        return log_execution("complex_d")
+
+    @asset(deps=["complex_c"], hooks={third_hook})
+    def complex_e():
+        return log_execution("complex_e")
+
+    @asset(deps=["complex_d", "complex_e"])
+    def complex_f():
+        return log_execution("complex_f")
+
+    # Define job
+    complex_job = define_asset_job(
+        "complex_job", selection=[complex_a, complex_b, complex_c, complex_d, complex_e, complex_f]
+    )
+    defs = Definitions(
+        assets=[complex_a, complex_b, complex_c, complex_d, complex_e, complex_f],
+        jobs=[complex_job],
+    )
+
+    # Execute and verify
+    result = defs.get_job_def("complex_job").execute_in_process()
+    assert result.success
+    assert len(executed_hooks) == 3
+    assert set(executed_hooks) == {
+        "complex_a_hook",
+        "complex_c_another_hook",
+        "complex_e_third_hook",
+    }
+
+
+def test_isolated_assets_hooks(hook_testing_utils):
+    """Test isolated assets with hooks: X, Y (no dependencies)."""
+    log_execution = hook_testing_utils["log_execution"]
+    track_hook_execution = hook_testing_utils["track_hook_execution"]
+    another_hook = hook_testing_utils["another_hook"]
+    executed_hooks = hook_testing_utils["executed_hooks"]
+    hook_testing_utils["clear_tracking"]()
+
+    @asset(hooks={track_hook_execution})
+    def isolated_x():
+        return log_execution("isolated_x")
+
+    @asset(hooks={another_hook})
+    def isolated_y():
+        return log_execution("isolated_y")
+
+    # Define job
+    isolated_job = define_asset_job("isolated_job", selection=[isolated_x, isolated_y])
+    defs = Definitions(assets=[isolated_x, isolated_y], jobs=[isolated_job])
+
+    # Execute and verify
+    result = defs.get_job_def("isolated_job").execute_in_process()
+    assert result.success
+    assert len(executed_hooks) == 2
+    assert set(executed_hooks) == {"isolated_x_hook", "isolated_y_another_hook"}
+
+
+def test_layered_dependencies_hooks(hook_testing_utils):
+    """Test layered dependency pattern with hooks: Layer1 → Layer2 → Layer3."""
+    log_execution = hook_testing_utils["log_execution"]
+    track_hook_execution = hook_testing_utils["track_hook_execution"]
+    another_hook = hook_testing_utils["another_hook"]
+    third_hook = hook_testing_utils["third_hook"]
+    executed_hooks = hook_testing_utils["executed_hooks"]
+    hook_testing_utils["clear_tracking"]()
+
+    # Layer 1
+    @asset(hooks={track_hook_execution})
+    def layer1_a():
+        return log_execution("layer1_a")
+
+    @asset
+    def layer1_b():
+        return log_execution("layer1_b")
+
+    # Layer 2
+    @asset(deps=["layer1_a"])
+    def layer2_a():
+        return log_execution("layer2_a")
+
+    @asset(deps=["layer1_a", "layer1_b"], hooks={another_hook})
+    def layer2_b():
+        return log_execution("layer2_b")
+
+    @asset(deps=["layer1_b"])
+    def layer2_c():
+        return log_execution("layer2_c")
+
+    # Layer 3
+    @asset(deps=["layer2_a", "layer2_b"], hooks={third_hook})
+    def layer3_a():
+        return log_execution("layer3_a")
+
+    @asset(deps=["layer2_b", "layer2_c"])
+    def layer3_b():
+        return log_execution("layer3_b")
+
+    # Define job
+    layer_job = define_asset_job(
+        "layer_job",
+        selection=[layer1_a, layer1_b, layer2_a, layer2_b, layer2_c, layer3_a, layer3_b],
+    )
+    defs = Definitions(
+        assets=[layer1_a, layer1_b, layer2_a, layer2_b, layer2_c, layer3_a, layer3_b],
+        jobs=[layer_job],
+    )
+
+    # Execute and verify
+    result = defs.get_job_def("layer_job").execute_in_process()
+    assert result.success
+    assert len(executed_hooks) == 3
+    assert set(executed_hooks) == {
+        "layer1_a_hook",
+        "layer2_b_another_hook",
+        "layer3_a_third_hook",
+    }
+
+
+def test_cyclic_dependencies_hooks(hook_testing_utils):
+    """Test cyclic dependencies within layers with hooks."""
+    log_execution = hook_testing_utils["log_execution"]
+    track_hook_execution = hook_testing_utils["track_hook_execution"]
+    another_hook = hook_testing_utils["another_hook"]
+    third_hook = hook_testing_utils["third_hook"]
+    executed_hooks = hook_testing_utils["executed_hooks"]
+    hook_testing_utils["clear_tracking"]()
+
+    @asset(hooks={track_hook_execution})
+    def cycle_layer1_a():
+        return log_execution("cycle_layer1_a")
+
+    @asset(hooks={another_hook})
+    def cycle_layer1_b():
+        return log_execution("cycle_layer1_b")
+
+    @asset(deps=["cycle_layer1_a", "cycle_layer1_b"])
+    def cycle_layer2_a():
+        return log_execution("cycle_layer2_a")
+
+    @asset(deps=["cycle_layer1_a"], hooks={another_hook})
+    def cycle_layer2_b():
+        return log_execution("cycle_layer2_b")
+
+    @asset(deps=["cycle_layer1_b"])
+    def cycle_layer2_c():
+        return log_execution("cycle_layer2_c")
+
+    @asset(deps=["cycle_layer2_a", "cycle_layer2_b"])
+    def cycle_layer3_a():
+        return log_execution("cycle_layer3_a")
+
+    @asset(deps=["cycle_layer2_a", "cycle_layer2_c"], hooks={third_hook})
+    def cycle_layer3_b():
+        return log_execution("cycle_layer3_b")
+
+    @asset(deps=["cycle_layer2_b", "cycle_layer2_c"])
+    def cycle_layer3_c():
+        return log_execution("cycle_layer3_c")
+
+    @asset(deps=["cycle_layer3_a", "cycle_layer3_b", "cycle_layer3_c"])
+    def cycle_output():
+        return log_execution("cycle_output")
+
+    # Define job
+    cycle_job = define_asset_job(
+        "cycle_job",
+        selection=[
+            cycle_layer1_a,
+            cycle_layer1_b,
+            cycle_layer2_a,
+            cycle_layer2_b,
+            cycle_layer2_c,
+            cycle_layer3_a,
+            cycle_layer3_b,
+            cycle_layer3_c,
+            cycle_output,
+        ],
+    )
+    defs = Definitions(
+        assets=[
+            cycle_layer1_a,
+            cycle_layer1_b,
+            cycle_layer2_a,
+            cycle_layer2_b,
+            cycle_layer2_c,
+            cycle_layer3_a,
+            cycle_layer3_b,
+            cycle_layer3_c,
+            cycle_output,
+        ],
+        jobs=[cycle_job],
+    )
+
+    # Execute and verify
+    result = defs.get_job_def("cycle_job").execute_in_process()
+    assert result.success
+    assert len(executed_hooks) == 4
+    assert set(executed_hooks) == {
+        "cycle_layer1_a_hook",
+        "cycle_layer1_b_another_hook",
+        "cycle_layer2_b_another_hook",
+        "cycle_layer3_b_third_hook",
+    }
+
+
+def test_metadata_update():
+    @asset(metadata={"foo": "bar", "four": 4})
+    def single(): ...
+
+    assert single.metadata_by_key[single.key]["foo"] == "bar"  # gets normalized later?
+    assert single.metadata_by_key[single.key]["four"] == 4
+
+    updated = single.with_attributes(
+        metadata_by_key={
+            single.key: {
+                **single.metadata_by_key[single.key],
+                "foo": "baz",
+            }
+        }
+    )
+    assert updated.metadata_by_key[updated.key]["foo"] == "baz"
+    assert updated.metadata_by_key[updated.key]["four"] == 4
+
+    # cant blank out metadata for this condition
+    # * @asset creates an OpDefinition with the metadata set on the output
+    # * The AssetsDefinition constructor merges the output metadata with the spec metadata
+    tried_to_blank = single.with_attributes(metadata_by_key={single.key: {}})
+    # so here we still get back the metadata from the op def output node
+    assert tried_to_blank.metadata_by_key[tried_to_blank.key] == {"foo": "bar", "four": 4}
+
+    asset_a = AssetSpec("a", metadata={"a": "foo"})
+    asset_b = AssetSpec("b", metadata={"b": 3})
+
+    @multi_asset(specs=[asset_a, asset_b])
+    def multi(): ...
+
+    assert multi.metadata_by_key[asset_a.key]["a"] == "foo"
+    assert multi.metadata_by_key[asset_b.key]["b"] == 3
+
+    updated = multi.with_attributes(
+        metadata_by_key={
+            asset_a.key: {
+                **multi.metadata_by_key[asset_a.key],
+                "a": "bar",
+            }
+        }
+    )
+    assert updated.metadata_by_key[asset_a.key]["a"] == "bar"
+
+    # same as above
+    tried_to_blank = multi.with_attributes(metadata_by_key={asset_a.key: {}, asset_b.key: {}})
+    assert tried_to_blank.metadata_by_key == {asset_a.key: {"a": "foo"}, asset_b.key: {"b": 3}}
+
+    @asset_check(asset=single, metadata={"foo": "bar"})
+    def my_check():
+        return AssetCheckResult(passed=True)
+
+    assert next(iter(my_check.check_specs)).metadata["foo"] == "bar"
+
+    blanked = my_check.with_attributes(metadata_by_key={my_check.check_key: {}})
+    assert next(iter(blanked.check_specs)).metadata == {}
+
+    updated = my_check.with_attributes(metadata_by_key={my_check.check_key: {"foo": "baz"}})
+    assert next(iter(updated.check_specs)).metadata["foo"] == "baz"

@@ -43,5 +43,7 @@ setup(
         "sqlalchemy!=1.4.42",  # workaround for https://github.com/snowflakedb/snowflake-sqlalchemy/issues/350
         "snowflake-sqlalchemy>=1.2",
     ],
+    # https://status.snowflake.com/incidents/txclg2cyzq32
+    extras_require={"test": ["certifi==2025.1.31"]},
     zip_safe=False,
 )

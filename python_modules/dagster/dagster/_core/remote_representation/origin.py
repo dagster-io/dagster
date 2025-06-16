@@ -4,8 +4,7 @@ from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from typing import TYPE_CHECKING, Any, NoReturn, Optional, cast
 
-import grpc
-from dagster_shared.record import IHaveNew, NamedTupleAdapter, record, record_custom
+from dagster_shared.record import IHaveNew, LegacyNamedTupleMixin, record, record_custom
 
 import dagster._check as check
 from dagster._core.definitions.selector import (
@@ -49,15 +48,16 @@ def _assign_grpc_location_name(port, socket, host):
 def _assign_loadable_target_origin_name(loadable_target_origin: LoadableTargetOrigin) -> str:
     check.inst_param(loadable_target_origin, "loadable_target_origin", LoadableTargetOrigin)
 
-    file_or_module = (
-        loadable_target_origin.package_name
-        if loadable_target_origin.package_name
-        else (
-            loadable_target_origin.module_name
-            if loadable_target_origin.module_name
-            else os.path.basename(cast("str", loadable_target_origin.python_file))
-        )
-    )
+    if loadable_target_origin.package_name:
+        file_or_module = loadable_target_origin.package_name
+    elif loadable_target_origin.module_name:
+        file_or_module = loadable_target_origin.module_name
+    elif loadable_target_origin.autoload_defs_module_name:
+        file_or_module = loadable_target_origin.autoload_defs_module_name
+    elif loadable_target_origin.python_file:
+        file_or_module = os.path.basename(loadable_target_origin.python_file)
+    else:
+        check.failed(f"Unexpected LoadableTargetOrigin structure: {loadable_target_origin}")
 
     return (
         f"{file_or_module}:{loadable_target_origin.attribute}"
@@ -112,9 +112,7 @@ class CodeLocationOrigin(ABC):
 # Different storage name for backcompat
 @whitelist_for_serdes(storage_name="RegisteredRepositoryLocationOrigin")
 @record(kw_only=False)
-class RegisteredCodeLocationOrigin(
-    NamedTupleAdapter["RegisteredCodeLocationOrigin"], CodeLocationOrigin
-):
+class RegisteredCodeLocationOrigin(LegacyNamedTupleMixin, CodeLocationOrigin):
     """Identifies a repository location of a handle managed using metadata stored outside of the
     origin - can only be loaded in an environment that is managing repository locations using
     its own mapping from location name to repository location metadata.
@@ -148,9 +146,7 @@ class RegisteredCodeLocationOrigin(
 # Different storage name for backcompat
 @whitelist_for_serdes(storage_name="InProcessRepositoryLocationOrigin")
 @record_custom
-class InProcessCodeLocationOrigin(
-    IHaveNew, NamedTupleAdapter["InProcessCodeLocationOrigin"], CodeLocationOrigin
-):
+class InProcessCodeLocationOrigin(IHaveNew, LegacyNamedTupleMixin, CodeLocationOrigin):
     loadable_target_origin: LoadableTargetOrigin  # pyright: ignore[reportIncompatibleMethodOverride]
     location_name: str  # pyright: ignore[reportIncompatibleMethodOverride]
     container_image: Optional[str]
@@ -198,9 +194,7 @@ class InProcessCodeLocationOrigin(
 # Different storage name for backcompat
 @whitelist_for_serdes(storage_name="ManagedGrpcPythonEnvRepositoryLocationOrigin")
 @record_custom
-class ManagedGrpcPythonEnvCodeLocationOrigin(
-    IHaveNew, NamedTupleAdapter["ManagedGrpcPythonEnvCodeLocationOrigin"], CodeLocationOrigin
-):
+class ManagedGrpcPythonEnvCodeLocationOrigin(IHaveNew, LegacyNamedTupleMixin, CodeLocationOrigin):
     """Identifies a repository location in a Python environment. Dagster creates a gRPC server
     for these repository locations on startup.
     """
@@ -223,6 +217,7 @@ class ManagedGrpcPythonEnvCodeLocationOrigin(
         metadata = {
             "python_file": self.loadable_target_origin.python_file,
             "module_name": self.loadable_target_origin.module_name,
+            "autoload_defs_module_name": self.loadable_target_origin.autoload_defs_module_name,
             "working_directory": self.loadable_target_origin.working_directory,
             "attribute": self.loadable_target_origin.attribute,
             "package_name": self.loadable_target_origin.package_name,
@@ -283,9 +278,7 @@ class ManagedGrpcPythonEnvCodeLocationOrigin(
     skip_when_empty_fields={"use_ssl", "additional_metadata"},
 )
 @record_custom
-class GrpcServerCodeLocationOrigin(
-    IHaveNew, NamedTupleAdapter["GrpcServerCodeLocationOrigin"], CodeLocationOrigin
-):
+class GrpcServerCodeLocationOrigin(IHaveNew, LegacyNamedTupleMixin, CodeLocationOrigin):
     """Identifies a repository location hosted in a gRPC server managed by the user. Dagster
     is not responsible for managing the lifecycle of the server.
     """
@@ -328,6 +321,9 @@ class GrpcServerCodeLocationOrigin(
         return {key: value for key, value in metadata.items() if value is not None}
 
     def reload_location(self, instance: "DagsterInstance") -> "GrpcServerCodeLocation":
+        # deferred for import perf
+        import grpc
+
         from dagster._core.remote_representation.code_location import GrpcServerCodeLocation
 
         try:
@@ -383,7 +379,7 @@ class GrpcServerCodeLocationOrigin(
     storage_field_names={"code_location_origin": "repository_location_origin"},
 )
 @record(kw_only=False)
-class RemoteRepositoryOrigin(NamedTupleAdapter["RemoteRepositoryOrigin"]):
+class RemoteRepositoryOrigin(LegacyNamedTupleMixin):
     """Serializable representation of an ExternalRepository that can be used to
     uniquely it or reload it in across process boundaries.
     """
@@ -426,7 +422,7 @@ class RemoteRepositoryOrigin(NamedTupleAdapter["RemoteRepositoryOrigin"]):
     },
 )
 @record(kw_only=False)
-class RemoteJobOrigin(NamedTupleAdapter["RemoteJobOrigin"]):
+class RemoteJobOrigin(LegacyNamedTupleMixin):
     """Serializable representation of an ExternalJob that can be used to
     uniquely it or reload it in across process boundaries.
     """
@@ -455,7 +451,7 @@ class RemoteJobOrigin(NamedTupleAdapter["RemoteJobOrigin"]):
     },
 )
 @record(kw_only=False)
-class RemoteInstigatorOrigin(NamedTupleAdapter["RemoteInstigatorOrigin"]):
+class RemoteInstigatorOrigin(LegacyNamedTupleMixin):
     """Serializable representation of an ExternalJob that can be used to
     uniquely it or reload it in across process boundaries.
     """

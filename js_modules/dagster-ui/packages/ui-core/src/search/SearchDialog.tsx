@@ -1,6 +1,6 @@
 // eslint-disable-next-line no-restricted-imports
 import {Overlay} from '@blueprintjs/core';
-import {Colors, FontFamily, Icon, Spinner, Tooltip} from '@dagster-io/ui-components';
+import {Colors, FontFamily, Icon, Spinner} from '@dagster-io/ui-components';
 import Fuse from 'fuse.js';
 import debounce from 'lodash/debounce';
 import * as React from 'react';
@@ -11,8 +11,6 @@ import {SearchResults} from './SearchResults';
 import {SearchResult} from './types';
 import {useGlobalSearch} from './useGlobalSearch';
 import {__updateSearchVisibility} from './useSearchVisibility';
-import {ShortcutHandler} from '../app/ShortcutHandler';
-import {TooltipShortcutInfo, TopNavButton} from '../app/TopNavButton';
 import {useTrackEvent} from '../app/analytics';
 
 const MAX_DISPLAYED_RESULTS = 50;
@@ -80,7 +78,7 @@ const sortResultsByFuseScore = (
   return (a.score ?? 0) - (b.score ?? 0);
 };
 
-export const SearchDialog = () => {
+export const useSearchDialog = () => {
   const history = useHistory();
   const {initialize, loading, searchPrimary, searchSecondary} = useGlobalSearch({
     searchContext: 'global',
@@ -144,18 +142,6 @@ export const SearchDialog = () => {
     [history],
   );
 
-  const shortcutFilter = React.useCallback((e: KeyboardEvent) => {
-    if (e.altKey || e.shiftKey) {
-      return false;
-    }
-
-    if (e.ctrlKey || e.metaKey) {
-      return e.code === 'KeyK';
-    }
-
-    return e.code === 'Slash';
-  }, []);
-
   const highlightedResult = renderedResults[highlight] || null;
 
   const onKeyDown = (e: React.KeyboardEvent) => {
@@ -195,18 +181,9 @@ export const SearchDialog = () => {
     }
   };
 
-  return (
-    <>
-      <ShortcutHandler onShortcut={openSearch} shortcutLabel="/" shortcutFilter={shortcutFilter}>
-        <Tooltip
-          content={<TooltipShortcutInfo label="Search" shortcutKey="/" />}
-          placement="bottom"
-        >
-          <TopNavButton onClick={openSearch}>
-            <Icon name="search" size={20} />
-          </TopNavButton>
-        </Tooltip>
-      </ShortcutHandler>
+  return {
+    openSearch,
+    overlay: (
       <Overlay
         backdropProps={{style: {backgroundColor: Colors.dialogBackground()}}}
         isOpen={shown}
@@ -237,8 +214,8 @@ export const SearchDialog = () => {
           />
         </Container>
       </Overlay>
-    </>
-  );
+    ),
+  };
 };
 
 const Container = styled.div`

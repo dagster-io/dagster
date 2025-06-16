@@ -7,9 +7,9 @@ import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
 import {AssetGlobalLineageLink, AssetPageHeader} from 'shared/assets/AssetPageHeader.oss';
 
 import {AssetView} from './AssetView';
-import {AssetsCatalog} from './AssetsCatalog';
 import {AssetsCatalogTable} from './AssetsCatalogTable';
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
+import {AssetsCatalog} from './catalog/AssetsCatalog';
 import {AssetKey} from './types';
 import {gql} from '../apollo-client';
 import {useAssetViewParams} from './useAssetViewParams';

@@ -160,4 +160,7 @@ def is_transient_task_stopped_reason(stopped_reason: str) -> bool:
     ):
         return True
 
+    if "The Service Discovery instance could not be registered" in stopped_reason:
+        return True
+
     return False

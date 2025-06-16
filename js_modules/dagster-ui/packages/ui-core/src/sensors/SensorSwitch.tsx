@@ -20,7 +20,7 @@ import {
   displaySensorMutationErrors,
 } from './SensorMutations';
 import {SENSOR_STATE_QUERY} from './SensorStateQuery';
-import {gql, useMutation, useQuery} from '../apollo-client';
+import {useMutation, useQuery} from '../apollo-client';
 import {
   SetSensorCursorMutation,
   SetSensorCursorMutationVariables,
@@ -32,7 +32,7 @@ import {
   StopRunningSensorMutationVariables,
 } from './types/SensorMutations.types';
 import {SensorStateQuery, SensorStateQueryVariables} from './types/SensorStateQuery.types';
-import {SensorSwitchFragment} from './types/SensorSwitch.types';
+import {SensorSwitchFragment} from './types/SensorSwitchFragment.types';
 import {usePermissionsForLocation} from '../app/Permissions';
 import {InstigationStatus, SensorType} from '../graphql/types';
 import {TimeFromNow} from '../ui/TimeFromNow';
@@ -279,21 +279,3 @@ const parseRunStatusSensorCursor = (cursor: string | null) => {
     return null;
   }
 };
-
-export const SENSOR_SWITCH_FRAGMENT = gql`
-  fragment SensorSwitchFragment on Sensor {
-    id
-    name
-    sensorState {
-      id
-      selectorId
-      status
-      typeSpecificData {
-        ... on SensorData {
-          lastCursor
-        }
-      }
-    }
-    sensorType
-  }
-`;

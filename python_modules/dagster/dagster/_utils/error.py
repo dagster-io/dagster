@@ -4,85 +4,14 @@ import os
 import sys
 import traceback
 import uuid
-from collections.abc import Sequence
 from types import TracebackType
-from typing import Any, Callable, NamedTuple, Optional, Union
+from typing import Optional, Union
 
+from dagster_shared.error import SerializableErrorInfo
 from typing_extensions import TypeAlias
 
 import dagster._check as check
 from dagster._core.errors import DagsterUserCodeExecutionError
-from dagster._serdes import whitelist_for_serdes
-
-
-# mypy does not support recursive types, so "cause" has to be typed `Any`
-@whitelist_for_serdes
-class SerializableErrorInfo(
-    NamedTuple(
-        "SerializableErrorInfo",
-        [
-            ("message", str),
-            ("stack", Sequence[str]),
-            ("cls_name", Optional[str]),
-            ("cause", Any),
-            ("context", Any),
-        ],
-    )
-):
-    # serdes log
-    # * added cause - default to None in constructor to allow loading old entries
-    # * added context - default to None for similar reasons
-    #
-    def __new__(
-        cls,
-        message: str,
-        stack: Sequence[str],
-        cls_name: Optional[str],
-        cause: Optional["SerializableErrorInfo"] = None,
-        context: Optional["SerializableErrorInfo"] = None,
-    ):
-        return super().__new__(cls, message, stack, cls_name, cause, context)
-
-    def __str__(self) -> str:
-        return self.to_string()
-
-    def to_string(self) -> str:
-        stack_str = "\nStack Trace:\n" + "".join(self.stack) if self.stack else ""
-        cause_str = (
-            "\nThe above exception was caused by the following exception:\n"
-            + self.cause.to_string()
-            if self.cause
-            else ""
-        )
-        context_str = (
-            "\nThe above exception occurred during handling of the following exception:\n"
-            + self.context.to_string()
-            if self.context
-            else ""
-        )
-
-        return f"{self.message}{stack_str}{cause_str}{context_str}"
-
-    def to_exception_message_only(self) -> "SerializableErrorInfo":
-        """Return a new SerializableErrorInfo with only the message and cause set.
-
-        This is done in cases when the context about the error should not be exposed to the user.
-        """
-        return SerializableErrorInfo(message=self.message, stack=[], cls_name=self.cls_name)
-
-
-def _serializable_error_info_from_tb(tb: traceback.TracebackException) -> SerializableErrorInfo:
-    return SerializableErrorInfo(
-        # usually one entry, multiple lines for SyntaxError
-        "".join(list(tb.format_exception_only())),
-        tb.stack.format(),
-        tb.exc_type.__name__ if tb.exc_type is not None else None,
-        _serializable_error_info_from_tb(tb.__cause__) if tb.__cause__ else None,
-        _serializable_error_info_from_tb(tb.__context__)
-        if tb.__context__ and not tb.__suppress_context__
-        else None,
-    )
-
 
 ExceptionInfo: TypeAlias = Union[
     tuple[type[BaseException], BaseException, TracebackType],
@@ -181,7 +110,7 @@ def _generate_partly_redacted_framework_error_message(
 ) -> SerializableErrorInfo:
     exc_type, e, tb = exc_info
     tb_exc = traceback.TracebackException(check.not_none(exc_type), check.not_none(e), tb)
-    error_info = _serializable_error_info_from_tb(tb_exc)
+    error_info = SerializableErrorInfo.from_traceback(tb_exc)
 
     return SerializableErrorInfo(
         message=error_info.message
@@ -240,7 +169,7 @@ def serializable_error_info_from_exc_info(
         return e.user_code_process_error_infos[0]
     else:
         tb_exc = traceback.TracebackException(exc_type, e, tb)
-        return _serializable_error_info_from_tb(tb_exc)
+        return SerializableErrorInfo.from_traceback(tb_exc)
 
 
 DAGSTER_FRAMEWORK_SUBSTRINGS = [
@@ -260,95 +189,3 @@ def unwrap_user_code_error(error_info: SerializableErrorInfo) -> SerializableErr
     if error_info.cls_name == "DagsterUserCodeLoadError":
         return unwrap_user_code_error(error_info.cause)
     return error_info
-
-
-NO_HINT = lambda _, __: None
-
-
-def remove_system_frames_from_error(
-    error_info: SerializableErrorInfo,
-    build_system_frame_removed_hint: Callable[[bool, int], Optional[str]] = NO_HINT,
-):
-    """Remove system frames from a SerializableErrorInfo, including Dagster framework boilerplate
-    and import machinery, which are generally not useful for users to debug their code.
-    """
-    return remove_matching_lines_from_error_info(
-        error_info,
-        DAGSTER_FRAMEWORK_SUBSTRINGS + IMPORT_MACHINERY_SUBSTRINGS,
-        build_system_frame_removed_hint,
-    )
-
-
-def remove_matching_lines_from_error_info(
-    error_info: SerializableErrorInfo,
-    match_substrs: Sequence[str],
-    build_system_frame_removed_hint: Callable[[bool, int], Optional[str]],
-):
-    """Utility which truncates a stacktrace to drop lines which match the given strings.
-    This is useful for e.g. removing Dagster framework lines from a stacktrace that
-    involves user code.
-
-    Args:
-        error_info (SerializableErrorInfo): The error info to truncate
-        matching_lines (Sequence[str]): The lines to truncate from the stacktrace
-
-    Returns:
-        SerializableErrorInfo: A new error info with the stacktrace truncated
-    """
-    return error_info._replace(
-        stack=remove_matching_lines_from_stack_trace(
-            error_info.stack, match_substrs, build_system_frame_removed_hint
-        ),
-        cause=(
-            remove_matching_lines_from_error_info(
-                error_info.cause, match_substrs, build_system_frame_removed_hint
-            )
-            if error_info.cause
-            else None
-        ),
-        context=(
-            remove_matching_lines_from_error_info(
-                error_info.context, match_substrs, build_system_frame_removed_hint
-            )
-            if error_info.context
-            else None
-        ),
-    )
-
-
-def remove_matching_lines_from_stack_trace(
-    stack: Sequence[str],
-    matching_lines: Sequence[str],
-    build_system_frame_removed_hint: Callable[[bool, int], Optional[str]],
-) -> Sequence[str]:
-    ctr = 0
-    out = []
-    is_first_hidden_frame = True
-
-    for i in range(len(stack)):
-        if not _line_contains_matching_string(stack[i], matching_lines):
-            if ctr > 0:
-                hint = build_system_frame_removed_hint(is_first_hidden_frame, ctr)
-                is_first_hidden_frame = False
-                if hint:
-                    out.append(hint)
-            ctr = 0
-            out.append(stack[i])
-        else:
-            ctr += 1
-
-    if ctr > 0:
-        hint = build_system_frame_removed_hint(is_first_hidden_frame, ctr)
-        if hint:
-            out.append(hint)
-
-    return out
-
-
-def _line_contains_matching_string(line: str, matching_strings: Sequence[str]):
-    split_by_comma = line.split(",")
-    if not split_by_comma:
-        return False
-
-    file_portion = split_by_comma[0]
-    return any(framework_substring in file_portion for framework_substring in matching_strings)

@@ -8,7 +8,7 @@ import styled from 'styled-components';
 import {showSharedToaster} from '../app/DomUtils';
 import {RepositoryLocationLoadStatus} from '../graphql/types';
 import {StatusAndMessage} from '../instance/DeploymentStatusType';
-import {CodeLocationRowStatusType} from '../workspace/VirtualizedCodeLocationRow';
+import {CodeLocationRowStatusType} from '../workspace/CodeLocationRowStatusType';
 import {WorkspaceContext} from '../workspace/WorkspaceContext/WorkspaceContext';
 import {CodeLocationStatusQuery} from '../workspace/WorkspaceContext/types/WorkspaceQueries.types';
 
@@ -100,7 +100,7 @@ export const useCodeLocationsStatus = (): StatusAndMessage | null => {
             <div>Definitions loaded with errors</div>
             <ViewCodeLocationsButton
               onClick={() => {
-                onClickViewButton(['Failed']);
+                onClickViewButton([CodeLocationRowStatusType.Failed]);
               }}
             />
           </Box>

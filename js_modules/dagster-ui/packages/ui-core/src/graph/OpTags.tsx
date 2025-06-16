@@ -91,6 +91,7 @@ import javascript from './kindtag-images/tool-javascript-color.svg';
 import jupyter from './kindtag-images/tool-jupyter-color.svg';
 import k8s from './kindtag-images/tool-k8s-color.svg';
 import kafka from './kindtag-images/tool-kafka-color.svg';
+import kedro from './kindtag-images/tool-kedro-color.svg';
 import lakefs from './kindtag-images/tool-lakefs-color.svg';
 import lightgbm from './kindtag-images/tool-lightgbm-color.svg';
 import linear from './kindtag-images/tool-linear-color.svg';
@@ -177,6 +178,7 @@ import starrocks from './kindtag-images/tool-starrocks-color.svg';
 import stepfunctions from './kindtag-images/tool-stepfunctions-color.svg';
 import stitch from './kindtag-images/tool-stitch-color.svg';
 import stripe from './kindtag-images/tool-stripe-color.svg';
+import supabase from './kindtag-images/tool-supabase-color.svg';
 import superset from './kindtag-images/tool-superset-color.svg';
 import tableau from './kindtag-images/tool-tableau-color.svg';
 import talend from './kindtag-images/tool-talend-color.svg';
@@ -186,6 +188,7 @@ import tensorflow from './kindtag-images/tool-tensorflow-color.svg';
 import teradata from './kindtag-images/tool-teradata-color.svg';
 import thoughtspot from './kindtag-images/tool-thoughtspot-color.svg';
 import tiktok from './kindtag-images/tool-tiktok-color.svg';
+import treasuredata from './kindtag-images/tool-treasuredata-color.svg';
 import trino from './kindtag-images/tool-trino-color.svg';
 import twilio from './kindtag-images/tool-twilio-color.svg';
 import typescript from './kindtag-images/tool-typescript-color.svg';
@@ -242,6 +245,7 @@ export type KnownTagType =
   | 'duckdb'
   | 'tensorflow'
   | 'teradata'
+  | 'treasuredata'
   | 'pandas'
   | 'semanticmodel'
   | 'googlesheets'
@@ -429,6 +433,7 @@ export type KnownTagType =
   | 'hadoop'
   | 'impala'
   | 'kafka'
+  | 'kedro'
   | 'mariadb'
   | 'minio'
   | 'pinot'
@@ -440,7 +445,8 @@ export type KnownTagType =
   | 'scylladb'
   | 'starrocks'
   | 'superset'
-  | 'spanner';
+  | 'spanner'
+  | 'supabase';
 
 export const KNOWN_TAGS: Record<KnownTagType, KnownTag> = {
   json: {
@@ -526,6 +532,10 @@ export const KNOWN_TAGS: Record<KnownTagType, KnownTag> = {
   teradata: {
     icon: teradata,
     content: 'Teradata',
+  },
+  treasuredata: {
+    icon: treasuredata,
+    content: 'Treasure Data',
   },
   pandas: {
     icon: pandas,
@@ -1302,6 +1312,10 @@ export const KNOWN_TAGS: Record<KnownTagType, KnownTag> = {
     icon: kafka,
     content: 'Kafka',
   },
+  kedro: {
+    icon: kedro,
+    content: 'Kedro',
+  },
   mariadb: {
     icon: mariadb,
     content: 'MariaDB',
@@ -1341,6 +1355,10 @@ export const KNOWN_TAGS: Record<KnownTagType, KnownTag> = {
   starrocks: {
     icon: starrocks,
     content: 'Starrocks',
+  },
+  supabase: {
+    icon: supabase,
+    content: 'Supabase',
   },
   superset: {
     icon: superset,

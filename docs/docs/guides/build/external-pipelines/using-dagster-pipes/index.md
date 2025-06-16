@@ -1,6 +1,6 @@
 ---
 title: "Using Dagster pipes"
-description: "Learn how to use Dagster Pipes's built-in subprocess implementation to invoke a subprocess with a given command and environment"
+description: "Learn how to use the built-in subprocess implementation of Dagster Pipes to invoke a subprocess with a given command and environment"
 sidebar_position: 10
 ---
 

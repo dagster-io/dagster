@@ -7,6 +7,7 @@ import account_circle from '../icon-svgs/account_circle.svg';
 import account_tree from '../icon-svgs/account_tree.svg';
 import add from '../icon-svgs/add.svg';
 import add_circle from '../icon-svgs/add_circle.svg';
+import admin from '../icon-svgs/admin.svg';
 import agent from '../icon-svgs/agent.svg';
 import alert from '../icon-svgs/alert.svg';
 import alternate_email from '../icon-svgs/alternate_email.svg';
@@ -44,6 +45,7 @@ import calendar from '../icon-svgs/calendar.svg';
 import campaign from '../icon-svgs/campaign.svg';
 import cancel from '../icon-svgs/cancel.svg';
 import catalog from '../icon-svgs/catalog.svg';
+import catalog_book from '../icon-svgs/catalog_book.svg';
 import changed_in_branch from '../icon-svgs/changed_in_branch.svg';
 import changelog from '../icon-svgs/changelog.svg';
 import changes_present from '../icon-svgs/changes_present.svg';
@@ -190,6 +192,7 @@ import heart from '../icon-svgs/heart.svg';
 import help_circle from '../icon-svgs/help_circle.svg';
 import history from '../icon-svgs/history.svg';
 import history_toggle_off from '../icon-svgs/history_toggle_off.svg';
+import home from '../icon-svgs/home.svg';
 import hourglass from '../icon-svgs/hourglass.svg';
 import hourglass_bottom from '../icon-svgs/hourglass_bottom.svg';
 import hybrid from '../icon-svgs/hybrid.svg';
@@ -318,6 +321,7 @@ import run_queued from '../icon-svgs/run_queued.svg';
 import run_started from '../icon-svgs/run_started.svg';
 import run_success from '../icon-svgs/run_success.svg';
 import run_with_subruns from '../icon-svgs/run_with_subruns.svg';
+import runs from '../icon-svgs/runs.svg';
 import schedule from '../icon-svgs/schedule.svg';
 import schema from '../icon-svgs/schema.svg';
 import scim_provision from '../icon-svgs/scim_provision.svg';
@@ -425,6 +429,7 @@ export const Icons = {
   account_tree,
   add,
   add_circle,
+  admin,
   agent,
   alert,
   alternate_email,
@@ -462,6 +467,7 @@ export const Icons = {
   campaign,
   cancel,
   catalog,
+  catalog_book,
   changed_in_branch,
   changelog,
   changes_present,
@@ -608,6 +614,7 @@ export const Icons = {
   help_circle,
   history,
   history_toggle_off,
+  home,
   hourglass,
   hourglass_bottom,
   hybrid,
@@ -726,6 +733,7 @@ export const Icons = {
   rss,
   rule,
   run,
+  runs,
   run_canceled,
   run_failed,
   run_queued,

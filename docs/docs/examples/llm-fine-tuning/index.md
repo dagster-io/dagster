@@ -3,9 +3,9 @@ title: LLM fine-tuning with OpenAI
 description: Learn how to fine-tune an LLM
 last_update:
   author: Dennis Hume
-sidebar_position: 10
 sidebar_custom_props:
   logo: images/integrations/openai.svg
+tags: [code-example]
 ---
 
 # Fine-tune an LLM
@@ -42,34 +42,32 @@ First, set up a new Dagster project.
 1. Clone the [Dagster repo](https://github.com/dagster-io/dagster) and navigate to the project:
 
    ```bash
-   cd examples/docs_projects/project-llm-fine-tune
+   cd examples/docs_projects/project_llm_fine_tune
    ```
 
-2. Create and activate a virtual environment:
+2. Install the required dependencies with `uv`:
+
+   ```bash
+   uv sync
+   ```
+
+3. Activate the virtual environment:
 
    <Tabs>
      <TabItem value="macos" label="MacOS">
-       ```bash uv venv dagster_example source dagster_example/bin/activate ```
+       ```source .venv/bin/activate ```
      </TabItem>
      <TabItem value="windows" label="Windows">
-       ```bash uv venv dagster_example dagster_example\Scripts\activate ```
+       ```.venv\Scripts\activate ```
      </TabItem>
    </Tabs>
-
-3. Install Dagster and the required dependencies:
-
-   ```bash
-   uv pip install -e ".[dev]"
-   ```
 
 ## Step 2: Launch the Dagster webserver
 
 To make sure Dagster and its dependencies were installed correctly, navigate to the project root directory and start the Dagster webserver:
 
-followed by a bash code snippet for
-
 ```bash
-dagster dev
+dg dev
 ```
 
 ## Next steps

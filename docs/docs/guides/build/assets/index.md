@@ -1,6 +1,7 @@
 ---
+description: Dagster asset definitions enable a declarative approach to data management, in which code is the source of truth on what data assets should exist and how those assets are computed.
+sidebar_position: 20
 title: Assets
-sidebar_position: 10
 ---
 
 An **asset** is an object in persistent storage, such as a table, file, or persisted machine learning model. An **asset definition** is a description, in code, of an asset that should exist and how to produce and update that asset.

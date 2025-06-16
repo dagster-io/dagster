@@ -117,7 +117,7 @@ from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.log_manager import coerce_valid_log_level
 from dagster._core.remote_representation.external import RemoteRepository
 from dagster._core.storage.dagster_run import DagsterRunStatus
-from dagster._core.storage.tags import RESUME_RETRY_TAG
+from dagster._core.storage.tags import EXTERNAL_JOB_SOURCE_TAG_KEY, RESUME_RETRY_TAG
 from dagster._core.workspace.context import WorkspaceProcessContext, WorkspaceRequestContext
 from dagster._core.workspace.load_target import PythonFileTarget
 from dagster._utils import file_relative_path, segfault
@@ -883,6 +883,11 @@ def tagged_job():
         return "Hello"
 
     simple_op()
+
+
+@job(tags={EXTERNAL_JOB_SOURCE_TAG_KEY: "airflow"})
+def some_external_job():
+    pass
 
 
 @resource
@@ -1701,7 +1706,12 @@ def asset_2():
     raise Exception("foo")
 
 
-@asset(deps=[AssetKey("asset_2")])
+@asset(
+    deps=[AssetKey("asset_2")],
+    internal_freshness_policy=InternalFreshnessPolicy.time_window(
+        fail_window=timedelta(minutes=10), warn_window=timedelta(minutes=5)
+    ),
+)
 def asset_3():
     yield Output(7)
 
@@ -2172,6 +2182,7 @@ def define_standard_jobs() -> Sequence[JobDefinition]:
         static_partitioned_job,
         tagged_job,
         two_ins_job,
+        some_external_job,
     ]
 
 

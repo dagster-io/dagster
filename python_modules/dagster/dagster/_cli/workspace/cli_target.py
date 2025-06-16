@@ -1,20 +1,21 @@
 import logging
 import os
 import sys
-from collections.abc import Iterator, Mapping, Sequence
+from collections.abc import Iterator, Mapping
 from contextlib import contextmanager
 from typing import Any, Callable, Optional, TypeVar, cast
 
 import click
 from click import UsageError
+from dagster_shared.cli import ClickOption, PythonPointerOpts, WorkspaceOpts, apply_click_params
 from dagster_shared.seven import JSONDecodeError, json
 from dagster_shared.yaml_utils import load_yaml_from_glob_list
-from typing_extensions import Never, Self, TypeAlias
+from typing_extensions import Never, Self
 
 import dagster._check as check
 from dagster import __version__ as dagster_version
 from dagster._cli.utils import has_pyproject_dagster_block, serialize_sorted_quoted
-from dagster._core.code_pointer import CodePointer
+from dagster._core.code_pointer import AutoloadDefsModuleCodePointer, CodePointer
 from dagster._core.definitions.reconstruct import repository_def_from_target_def
 from dagster._core.instance import DagsterInstance
 from dagster._core.origin import DEFAULT_DAGSTER_ENTRY_POINT, RepositoryPythonOrigin
@@ -68,7 +69,7 @@ WORKSPACE_CLI_ARGS = (
 def _get_workspace_load_target_from_cli_opts(
     workspace_opts: "WorkspaceOpts",
 ) -> WorkspaceLoadTarget:
-    if _are_attrs_falsey(workspace_opts, *WORKSPACE_CLI_ARGS):
+    if not workspace_opts.specifies_target():
         if workspace_opts.empty_workspace:
             return EmptyWorkspaceTarget()
         elif has_pyproject_dagster_block("pyproject.toml"):
@@ -236,7 +237,7 @@ def get_workspace_from_cli_opts(
     allow_in_process: bool = False,
     log_level: str = "INFO",
 ) -> Iterator[WorkspaceRequestContext]:
-    load_target = workspace_opts.to_load_target(allow_in_process)
+    load_target = workspace_opts_to_load_target(workspace_opts, allow_in_process)
     if isinstance(load_target, InProcessWorkspaceLoadTarget):
         logger.debug("Loading workspace in-process")
     else:
@@ -294,95 +295,32 @@ def get_job_from_cli_opts(
 # `extract_from_cli_options`.
 
 
-@record
-class PythonPointerOpts:
-    python_file: Optional[str] = None
-    module_name: Optional[str] = None
-    package_name: Optional[str] = None
-    working_directory: Optional[str] = None
-    attribute: Optional[str] = None
+def workspace_opts_to_load_target(
+    opts: WorkspaceOpts,
+    allow_in_process: bool = False,
+) -> WorkspaceLoadTarget:
+    load_target = _get_workspace_load_target_from_cli_opts(opts)
+    origins = load_target.create_origins()
 
-    @classmethod
-    def extract_from_cli_options(cls, cli_options: dict[str, Any]) -> Self:
-        # This is expected to always be called from a click entry point, so all options should be
-        # present in the dictionary. We rely on `@record` for type-checking.
-        return cls(
-            python_file=cli_options.pop("python_file"),
-            module_name=cli_options.pop("module_name"),
-            package_name=cli_options.pop("package_name"),
-            working_directory=cli_options.pop("working_directory"),
-            attribute=cli_options.pop("attribute"),
+    # We can load a workspace in-process if there is only one origin and the python executable is
+    # unspecified or matches that of the current process.
+    origins = load_target.create_origins()
+    can_load_in_process = len(origins) == 1 and _origin_executable_matches_current_process(
+        origins[0]
+    )
+    if allow_in_process and can_load_in_process:
+        origin = origins[0]
+        return InProcessWorkspaceLoadTarget(
+            [
+                InProcessCodeLocationOrigin(
+                    origin.loadable_target_origin,
+                    container_image=None,
+                    location_name=origin.location_name,
+                )
+            ]
         )
-
-    def to_workspace_opts(self) -> "WorkspaceOpts":
-        return WorkspaceOpts(
-            python_file=(self.python_file,) if self.python_file else None,
-            module_name=(self.module_name,) if self.module_name else None,
-            package_name=(self.package_name,) if self.package_name else None,
-            working_directory=self.working_directory,
-            attribute=self.attribute,
-        )
-
-
-@record
-class WorkspaceOpts:
-    empty_workspace: bool = False
-    workspace: Optional[Sequence[str]] = None
-
-    # Like PythonPointerParams but multiple files/modules/packages are allowed
-    python_file: Optional[Sequence[str]] = None
-    module_name: Optional[Sequence[str]] = None
-    package_name: Optional[Sequence[str]] = None
-    working_directory: Optional[str] = None
-    attribute: Optional[str] = None
-
-    # For gRPC server
-    grpc_port: Optional[int] = None
-    grpc_socket: Optional[str] = None
-    grpc_host: Optional[str] = None
-    use_ssl: bool = False
-
-    @classmethod
-    def extract_from_cli_options(cls, cli_options: dict[str, Any]) -> Self:
-        # This is expected to always be called from a click entry point, so all options should be
-        # present in the dictionary. We rely on `@record` for type-checking.
-        return cls(
-            empty_workspace=cli_options.pop("empty_workspace"),
-            workspace=cli_options.pop("workspace"),
-            python_file=cli_options.pop("python_file"),
-            module_name=cli_options.pop("module_name"),
-            package_name=cli_options.pop("package_name"),
-            working_directory=cli_options.pop("working_directory"),
-            attribute=cli_options.pop("attribute"),
-            grpc_port=cli_options.pop("grpc_port"),
-            grpc_socket=cli_options.pop("grpc_socket"),
-            grpc_host=cli_options.pop("grpc_host"),
-            use_ssl=cli_options.pop("use_ssl"),
-        )
-
-    def to_load_target(self, allow_in_process: bool = False) -> WorkspaceLoadTarget:
-        load_target = _get_workspace_load_target_from_cli_opts(self)
-        origins = load_target.create_origins()
-
-        # We can load a workspace in-process if there is only one origin and the python executable is
-        # unspecified or matches that of the current process.
-        origins = load_target.create_origins()
-        can_load_in_process = len(origins) == 1 and _origin_executable_matches_current_process(
-            origins[0]
-        )
-        if allow_in_process and can_load_in_process:
-            origin = origins[0]
-            return InProcessWorkspaceLoadTarget(
-                [
-                    InProcessCodeLocationOrigin(
-                        origin.loadable_target_origin,
-                        container_image=None,
-                        location_name=origin.location_name,
-                    )
-                ]
-            )
-        else:
-            return load_target
+    else:
+        return load_target
 
 
 def _origin_executable_matches_current_process(origin: CodeLocationOrigin) -> bool:
@@ -416,7 +354,7 @@ class RepositoryOpts:
 
 def run_config_option(*, name: str, command_name: str) -> Callable[[T_Callable], T_Callable]:
     def wrap(f: T_Callable) -> T_Callable:
-        return _apply_click_params(f, _generate_run_config_option(name, command_name))
+        return apply_click_params(f, _generate_run_config_option(name, command_name))
 
     return wrap
 
@@ -425,39 +363,22 @@ def job_name_option(f: Optional[T_Callable] = None, *, name: str) -> T_Callable:
     if f is None:
         return lambda f: job_name_option(f, name=name)  # type: ignore
     else:
-        return _apply_click_params(f, _generate_job_name_option(name))
+        return apply_click_params(f, _generate_job_name_option(name))
 
 
 def repository_name_option(f: Optional[T_Callable] = None, *, name: str) -> T_Callable:
     if f is None:
         return lambda f: repository_name_option(f, name=name)  # type: ignore
     else:
-        return _apply_click_params(f, _generate_repository_name_option(name))
-
-
-def workspace_options(f: T_Callable) -> T_Callable:
-    return _apply_click_params(f, *_generate_workspace_options())
-
-
-def python_pointer_options(f: T_Callable) -> T_Callable:
-    return _apply_click_params(f, *_generate_python_pointer_options(allow_multiple=False))
+        return apply_click_params(f, _generate_repository_name_option(name))
 
 
 def repository_options(f: T_Callable) -> T_Callable:
-    return _apply_click_params(
+    return apply_click_params(
         f,
         _generate_repository_name_option("repository"),
         _generate_code_location_name_option("location"),
     )
-
-
-ClickOption: TypeAlias = Callable[[T_Callable], T_Callable]
-
-
-def _apply_click_params(command: T_Callable, *click_params: ClickOption) -> T_Callable:
-    for click_param in click_params:
-        command = click_param(command)
-    return command
 
 
 # ########################
@@ -523,119 +444,17 @@ def _generate_run_config_option(name: str, command_name: str) -> ClickOption:
     )
 
 
-def _generate_python_pointer_options(allow_multiple: bool) -> Sequence[ClickOption]:
-    return [
-        click.option(
-            "--working-directory",
-            "-d",
-            help="Specify working directory to use when loading the repository or job",
-            envvar="DAGSTER_WORKING_DIRECTORY",
-        ),
-        click.option(
-            "--python-file",
-            "-f",
-            # Checks that the path actually exists lower in the stack, where we
-            # are better equipped to surface errors
-            type=click.Path(exists=False),
-            multiple=allow_multiple,
-            help=(
-                "Specify python file "
-                + ("or files (flag can be used multiple times) " if allow_multiple else "")
-                + "where dagster definitions reside as top-level symbols/variables and load "
-                + ("each" if allow_multiple else "the")
-                + " file as a code location in the current python environment."
-            ),
-            envvar="DAGSTER_PYTHON_FILE",
-        ),
-        click.option(
-            "--module-name",
-            "-m",
-            multiple=allow_multiple,
-            help=(
-                "Specify module "
-                + ("or modules (flag can be used multiple times) " if allow_multiple else "")
-                + "where dagster definitions reside as top-level symbols/variables and load "
-                + ("each" if allow_multiple else "the")
-                + " module as a code location in the current python environment."
-            ),
-            envvar="DAGSTER_MODULE_NAME",
-        ),
-        click.option(
-            "--package-name",
-            multiple=allow_multiple,
-            help="Specify Python package where repository or job function lives",
-            envvar="DAGSTER_PACKAGE_NAME",
-        ),
-        click.option(
-            "--attribute",
-            "-a",
-            help=(
-                "Attribute that is either a 1) repository or job or "
-                "2) a function that returns a repository or job"
-            ),
-            envvar="DAGSTER_ATTRIBUTE",
-        ),
-    ]
-
-
-def _generate_grpc_server_options(hidden=False) -> Sequence[ClickOption]:
-    return [
-        click.option(
-            "--grpc-port",
-            type=click.INT,
-            required=False,
-            help="Port to use to connect to gRPC server",
-            hidden=hidden,
-        ),
-        click.option(
-            "--grpc-socket",
-            type=click.Path(),
-            required=False,
-            help="Named socket to use to connect to gRPC server",
-            hidden=hidden,
-        ),
-        click.option(
-            "--grpc-host",
-            type=click.STRING,
-            required=False,
-            help="Host to use to connect to gRPC server, defaults to localhost",
-            hidden=hidden,
-        ),
-        click.option(
-            "--use-ssl",
-            is_flag=True,
-            default=False,
-            help="Use a secure channel when connecting to the gRPC server",
-            hidden=hidden,
-        ),
-    ]
-
-
-def _generate_workspace_options() -> Sequence[ClickOption]:
-    return [
-        click.option("--empty-workspace", is_flag=True, help="Allow an empty workspace"),
-        click.option(
-            "--workspace",
-            "-w",
-            multiple=True,
-            type=click.Path(exists=True),
-            help="Path to workspace file. Argument can be provided multiple times.",
-        ),
-        *_generate_python_pointer_options(allow_multiple=True),
-        *_generate_grpc_server_options(),
-    ]
-
-
 def _get_code_pointer_dict_from_python_pointer_opts(
     params: PythonPointerOpts,
 ) -> Mapping[str, CodePointer]:
     working_directory = params.working_directory or os.getcwd()
     loadable_targets = get_loadable_targets(
-        params.python_file,
-        params.module_name,
-        params.package_name,
-        working_directory,
-        params.attribute,
+        python_file=params.python_file,
+        module_name=params.module_name,
+        package_name=params.package_name,
+        working_directory=working_directory,
+        attribute=params.attribute,
+        autoload_defs_module_name=params.autoload_defs_module_name,
     )
 
     # repository_name -> code_pointer
@@ -654,6 +473,11 @@ def _get_code_pointer_dict_from_python_pointer_opts(
             code_pointer = CodePointer.from_python_package(
                 params.package_name, loadable_target.attribute, working_directory
             )
+        elif params.autoload_defs_module_name:
+            code_pointer = AutoloadDefsModuleCodePointer(
+                module=params.autoload_defs_module_name,
+                working_directory=working_directory,
+            )
         else:
             check.failed("Must specify a Python file or module name")
 
@@ -665,7 +489,20 @@ def _get_code_pointer_dict_from_python_pointer_opts(
 def get_repository_python_origin_from_cli_opts(
     params: PythonPointerOpts, repo_name: Optional[str] = None
 ) -> RepositoryPythonOrigin:
-    if sum([bool(x) for x in (params.python_file, params.module_name, params.package_name)]) != 1:
+    if (
+        sum(
+            [
+                bool(x)
+                for x in (
+                    params.python_file,
+                    params.module_name,
+                    params.package_name,
+                    params.autoload_defs_module_name,
+                )
+            ]
+        )
+        != 1
+    ):
         _raise_cli_usage_error()
 
     # Short-circuit the case where an attribute and no repository name is passed in,
@@ -691,6 +528,11 @@ def get_repository_python_origin_from_cli_opts(
                 params.package_name,
                 params.attribute,
                 working_directory,
+            )
+        elif params.autoload_defs_module_name:
+            code_pointer = AutoloadDefsModuleCodePointer(
+                module=params.autoload_defs_module_name,
+                working_directory=working_directory,
             )
         else:
             check.failed("Must specify a Python file or module name")

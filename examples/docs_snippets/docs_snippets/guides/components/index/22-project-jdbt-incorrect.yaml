@@ -1,6 +1,0 @@
-type: dagster_dt.dbt_project
-
-attributes:
-  project: ../../../../dbt/jdbt
-  translation:
-    key: "target/main/{{ node.name }}

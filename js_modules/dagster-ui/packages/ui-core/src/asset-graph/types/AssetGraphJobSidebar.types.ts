@@ -15,6 +15,7 @@ export type AssetGraphSidebarQuery = {
         id: string;
         pipelineSnapshotId: string;
         parentSnapshotId: string | null;
+        externalJobSource: string | null;
         name: string;
         description: string | null;
         metadataEntries: Array<
@@ -1323,4 +1324,4 @@ export type AssetGraphSidebarQuery = {
       };
 };
 
-export const AssetGraphSidebarQueryVersion = '724ef0733b9b187ffd012e40c02c3b3a5e32967dbcae46e2024b15dfd5bf0271';
+export const AssetGraphSidebarQueryVersion = 'f96f337caf1763ba5644cc79aead3a1b994ad2d4b53ef847a32a0599a9f76587';

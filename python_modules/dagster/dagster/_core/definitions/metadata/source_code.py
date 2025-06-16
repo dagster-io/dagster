@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Callable, Optional, Union
 
 from dagster_shared.dagster_model import DagsterModel
+from typing_extensions import TypeAlias
 
 import dagster._check as check
 from dagster._annotations import beta, public
@@ -45,6 +46,9 @@ class UrlCodeReference(DagsterModel):
     label: Optional[str] = None
 
 
+CodeReference: TypeAlias = Union[LocalFileCodeReference, UrlCodeReference]
+
+
 @beta
 @whitelist_for_serdes
 class CodeReferencesMetadataValue(DagsterModel, MetadataValue["CodeReferencesMetadataValue"]):  # pyright: ignore[reportIncompatibleMethodOverride]
@@ -58,7 +62,7 @@ class CodeReferencesMetadataValue(DagsterModel, MetadataValue["CodeReferencesMet
             references to source control.
     """
 
-    code_references: list[Union[LocalFileCodeReference, UrlCodeReference]]
+    code_references: list[CodeReference]
 
     @property
     def value(self) -> "CodeReferencesMetadataValue":
@@ -73,6 +77,32 @@ def local_source_path_from_fn(fn: Callable[..., Any]) -> Optional[LocalFileCodeR
     origin_line = inspect.getsourcelines(fn)[1]
 
     return LocalFileCodeReference(file_path=origin_file, line_number=origin_line)
+
+
+def merge_code_references(
+    asset_spec: "AssetSpec",
+    new_code_references: Sequence[CodeReference],
+) -> "AssetSpec":
+    existing_references_meta = CodeReferencesMetadataSet.extract(asset_spec.metadata)
+    references = (
+        existing_references_meta.code_references.code_references
+        if existing_references_meta.code_references
+        else []
+    )
+
+    return asset_spec.replace_attributes(
+        metadata={
+            **asset_spec.metadata,
+            **CodeReferencesMetadataSet(
+                code_references=CodeReferencesMetadataValue(
+                    code_references=[
+                        *references,
+                        *new_code_references,
+                    ],
+                )
+            ),
+        }
+    )
 
 
 class CodeReferencesMetadataSet(NamespacedMetadataSet):

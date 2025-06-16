@@ -1,7 +1,7 @@
 .container {
   overflow-y: auto;
   flex: 1;
-  padding: 24px 32px;
+  padding: 16px 24px;
 }
 
 .container a {

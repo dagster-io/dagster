@@ -1,12 +1,14 @@
+import qs from 'qs';
+
 import {AssetViewParams} from './types';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 
-export const decode = ({lineageDepth, showAllEvents, ...rest}: {[key: string]: any}) => {
+export const decode = ({lineageDepth, showAllEvents, ...rest}: qs.ParsedQs) => {
   const result: AssetViewParams = {...rest};
-  if (lineageDepth !== undefined) {
+  if (typeof lineageDepth === 'string') {
     result.lineageDepth = Number(lineageDepth);
   }
-  if (showAllEvents !== undefined) {
+  if (typeof showAllEvents === 'string') {
     result.showAllEvents =
       showAllEvents === 'true' ? true : showAllEvents === 'false' ? false : undefined;
   }

@@ -1,6 +1,7 @@
 ---
-title: 'Data freshness checks'
+description: Dagster freshness checks provide a way to identify data assets that are overdue for an update.
 sidebar_position: 300
+title: Data freshness checks
 ---
 
 import Beta from '@site/docs/partials/\_Beta.md';
@@ -86,9 +87,9 @@ If the asset hasn't been updated enough times, the check will pass with a messag
 Freshness check alerts are a Dagster+ feature.
 :::
 
-In Dagster+, you can set up alerts to notify you when assets are overdue for an update. Refer to the [Dagster+ alerting guide](/dagster-plus/features/alerts) for more information.
+In Dagster+, you can set up alerts to notify you when assets are overdue for an update. Refer to the [Dagster+ alerting guide](/guides/monitor/alerts) for more information.
 
 ## Next steps
 
 - Explore more [asset checks](/guides/test/asset-checks)
-- Explore how to [raise alerts when assets are overdue](/dagster-plus/features/alerts) (Dagster+ Pro)
+- Explore how to [raise alerts when assets are overdue](/guides/monitor/alerts) (Dagster+ Pro)

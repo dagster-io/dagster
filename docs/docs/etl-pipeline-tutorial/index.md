@@ -4,6 +4,7 @@ description: Learn how to build an ETL pipeline with Dagster
 last_update:
   author: Alex Noonan
 sidebar_class_name: hidden
+sidebar_position: 10
 ---
 
 # Build your first ETL pipeline
@@ -78,8 +79,6 @@ First, set up a new Dagster project.
   ```bash
   dg check defs
   ```
-
-## Step 2: Launch the Dagster webserver
 
 To make sure Dagster and its dependencies were installed correctly, navigate to the project root directory and start the Dagster webserver:"
 

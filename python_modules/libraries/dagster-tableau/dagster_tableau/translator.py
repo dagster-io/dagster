@@ -108,11 +108,18 @@ class TableauTagSet(NamespacedTagSet):
 
 class TableauMetadataSet(NamespacedMetadataSet):
     id: Optional[str] = None
-    workbook_id: Optional[str] = None
 
     @classmethod
     def namespace(cls) -> str:
         return "dagster-tableau"
+
+
+class TableauViewMetadataSet(TableauMetadataSet):
+    workbook_id: Optional[str] = None
+
+
+class TableauDataSourceMetadataSet(TableauMetadataSet):
+    has_extracts: bool = False
 
 
 class DagsterTableauTranslator:
@@ -135,7 +142,8 @@ class DagsterTableauTranslator:
         elif data.content_type == TableauContentType.DATA_SOURCE:
             return self.get_data_source_spec(data)
         else:
-            check.assert_never(data.content_type)
+            # switch back to check.assert_never when TableauContentType.WORKBOOK is handled
+            check.failed(f"unhandled type {data.content_type}")
 
     @deprecated(
         breaking_version="1.10",
@@ -184,7 +192,7 @@ class DagsterTableauTranslator:
             deps=data_source_keys if data_source_keys else None,
             tags={"dagster/storage_kind": "tableau", **TableauTagSet(asset_type="sheet")},
             metadata={
-                **TableauMetadataSet(
+                **TableauViewMetadataSet(
                     id=data.properties["luid"], workbook_id=data.properties["workbook"]["luid"]
                 )
             },
@@ -226,7 +234,7 @@ class DagsterTableauTranslator:
             deps=sheet_keys if sheet_keys else None,
             tags={"dagster/storage_kind": "tableau", **TableauTagSet(asset_type="dashboard")},
             metadata={
-                **TableauMetadataSet(
+                **TableauViewMetadataSet(
                     id=data.properties["luid"], workbook_id=data.properties["workbook"]["luid"]
                 )
             },
@@ -243,5 +251,9 @@ class DagsterTableauTranslator:
         return AssetSpec(
             key=AssetKey([_coerce_input_to_valid_name(data.properties["name"])]),
             tags={"dagster/storage_kind": "tableau", **TableauTagSet(asset_type="data_source")},
-            metadata={**TableauMetadataSet(id=data.properties["luid"], workbook_id=None)},
+            metadata={
+                **TableauDataSourceMetadataSet(
+                    id=data.properties["luid"], has_extracts=data.properties["hasExtracts"]
+                )
+            },
         )

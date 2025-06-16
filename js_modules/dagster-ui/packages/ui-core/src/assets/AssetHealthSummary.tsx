@@ -13,7 +13,6 @@ import {
   UnstyledButton,
   ifPlural,
 } from '@dagster-io/ui-components';
-import dayjs from 'dayjs';
 import React, {useMemo} from 'react';
 import {Link} from 'react-router-dom';
 import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
@@ -30,9 +29,12 @@ import {
   AssetHealthFreshnessMetaFragment,
   AssetHealthMaterializationDegradedNotPartitionedMetaFragment,
   AssetHealthMaterializationDegradedPartitionedMetaFragment,
-  AssetHealthMaterializationWarningPartitionedMetaFragment,
+  AssetHealthMaterializationHealthyPartitionedMetaFragment,
 } from '../asset-data/types/AssetHealthDataProvider.types';
+import {StatusCase} from '../asset-graph/AssetNodeStatusContent';
+import {StatusCaseDot} from '../asset-graph/sidebar/util';
 import {AssetHealthStatus, AssetKeyInput} from '../graphql/types';
+import {TimeFromNow} from '../ui/TimeFromNow';
 import {numberFormatter} from '../ui/formatters';
 
 export const AssetHealthSummary = React.memo(
@@ -70,6 +72,13 @@ const AssetHealthSummaryImpl = React.memo(
     }
 
     if (!liveData) {
+      if (iconOnly) {
+        return (
+          <div style={{padding: 11}}>
+            <StatusCaseDot statusCase={StatusCase.LOADING} />
+          </div>
+        );
+      }
       return <Skeleton $width={iconOnly ? 16 : 60} $height={16} />;
     }
 
@@ -144,7 +153,7 @@ const Criteria = React.memo(
       | AssetHealthCheckUnknownMetaFragment
       | AssetHealthMaterializationDegradedNotPartitionedMetaFragment
       | AssetHealthMaterializationDegradedPartitionedMetaFragment
-      | AssetHealthMaterializationWarningPartitionedMetaFragment
+      | AssetHealthMaterializationHealthyPartitionedMetaFragment
       | AssetHealthFreshnessMetaFragment
       | undefined
       | null;
@@ -160,7 +169,7 @@ const Criteria = React.memo(
               <Body>
                 <Link to={assetDetailsPathForKey(assetKey, {view: 'checks'})}>
                   {numberFormatter.format(metadata.numNotExecutedChecks)} /{' '}
-                  {numberFormatter.format(metadata.totalNumChecks)} check{' '}
+                  {numberFormatter.format(metadata.totalNumChecks)} check
                   {ifPlural(metadata.totalNumChecks, '', 's')} not executed
                 </Link>
               </Body>
@@ -223,17 +232,17 @@ const Criteria = React.memo(
         case 'AssetHealthMaterializationDegradedPartitionedMeta':
           return (
             <Body>
-              <Link to={assetDetailsPathForKey(assetKey, {view: 'partitions'})}>
+              <Link to={assetDetailsPathForKey(assetKey, {view: 'partitions', status: 'FAILED'})}>
                 Materialization failed in {numberFormatter.format(metadata.numFailedPartitions)} out
                 of {numberFormatter.format(metadata.totalNumPartitions)} partition
                 {ifPlural(metadata.totalNumPartitions, '', 's')}
               </Link>
             </Body>
           );
-        case 'AssetHealthMaterializationWarningPartitionedMeta':
+        case 'AssetHealthMaterializationHealthyPartitionedMeta':
           return (
             <Body>
-              <Link to={assetDetailsPathForKey(assetKey, {view: 'partitions'})}>
+              <Link to={assetDetailsPathForKey(assetKey, {view: 'partitions', status: 'MISSING'})}>
                 Materialization missing in {numberFormatter.format(metadata.numMissingPartitions)}{' '}
                 out of {numberFormatter.format(metadata.totalNumPartitions)} partition
                 {ifPlural(metadata.totalNumPartitions, '', 's')}
@@ -247,7 +256,8 @@ const Criteria = React.memo(
 
           return (
             <Body>
-              Last materialized {dayjs(Number(metadata.lastMaterializedTimestamp * 1000)).fromNow()}{' '}
+              Last materialized{' '}
+              <TimeFromNow unixTimestamp={Number(metadata.lastMaterializedTimestamp)} />
             </Body>
           );
         case undefined:
@@ -257,64 +267,64 @@ const Criteria = React.memo(
       }
     }, [metadata, assetKey]);
 
-    const text = useMemo(() => {
+    const {text, shouldDim} = useMemo(() => {
       switch (type) {
         case 'materialization':
           switch (status) {
             case AssetHealthStatus.DEGRADED:
-              return 'Failed to materialize';
+              return {text: 'Execution failed', shouldDim: false};
             case AssetHealthStatus.HEALTHY:
-              return 'Successfully materialized';
-            // Warning case is only possible for partitioned assets
+              return {text: 'Successfully executed', shouldDim: false};
             case AssetHealthStatus.WARNING:
-              return 'Missing partitions';
-            case AssetHealthStatus.NOT_APPLICABLE:
-            case AssetHealthStatus.UNKNOWN:
+              return {text: 'Execution warning', shouldDim: false};
             case undefined:
-              return 'No materializations';
+            case AssetHealthStatus.NOT_APPLICABLE:
+              return {text: 'No executions', shouldDim: true};
+            case AssetHealthStatus.UNKNOWN:
+              return {text: 'Execution status unknown', shouldDim: true};
             default:
               assertUnreachable(status);
           }
         case 'freshness':
           switch (status) {
             case AssetHealthStatus.HEALTHY:
-              return 'Freshness policy passing';
+              return {text: 'Freshness policy passing', shouldDim: false};
             case AssetHealthStatus.DEGRADED:
-              return 'Freshness policy failed';
+              return {text: 'Freshness policy failed', shouldDim: false};
             case AssetHealthStatus.WARNING:
-              return 'Freshness policy warning';
+              return {text: 'Freshness policy warning', shouldDim: false};
             case undefined:
             case AssetHealthStatus.NOT_APPLICABLE:
-              return 'No freshness policy defined';
+              return {text: 'No freshness policy defined', shouldDim: true};
             case AssetHealthStatus.UNKNOWN:
-              return 'Freshness policy not evaluated';
+              return {text: 'Freshness policy not evaluated', shouldDim: false};
             default:
               assertUnreachable(status);
           }
         case 'checks':
           switch (status) {
             case AssetHealthStatus.HEALTHY:
-              return 'All checks passed';
+              return {text: 'All checks passed', shouldDim: false};
             case AssetHealthStatus.DEGRADED:
               if (metadata && 'numFailedChecks' in metadata && 'totalNumChecks' in metadata) {
                 if (metadata.numFailedChecks === metadata.totalNumChecks) {
-                  return 'All checks failed';
+                  return {text: 'All checks failed', shouldDim: false};
                 }
-                return 'Some checks failed';
+                return {text: 'Some checks failed', shouldDim: false};
               }
-              return 'Checks failed';
+              return {text: 'Checks failed', shouldDim: false};
             case AssetHealthStatus.WARNING:
               if (metadata && 'numWarningChecks' in metadata && 'totalNumChecks' in metadata) {
                 if (metadata.numWarningChecks === metadata.totalNumChecks) {
-                  return 'All checks failed';
+                  return {text: 'All checks failed', shouldDim: false};
                 }
               }
-              return 'Some checks failed';
-            case AssetHealthStatus.NOT_APPLICABLE:
-              return 'No checks defined';
-            case AssetHealthStatus.UNKNOWN:
+              return {text: 'Some checks failed', shouldDim: false};
             case undefined:
-              return 'No checks evaluated';
+            case AssetHealthStatus.NOT_APPLICABLE:
+              return {text: 'No checks defined', shouldDim: true};
+            case AssetHealthStatus.UNKNOWN:
+              return {text: 'No checks evaluated', shouldDim: false};
             default:
               assertUnreachable(status);
           }
@@ -330,6 +340,7 @@ const Criteria = React.memo(
           rowGap: 2,
           padding: '4px 12px',
           alignItems: 'center',
+          opacity: shouldDim ? 0.5 : 1,
         }}
       >
         <Icon name={subStatusIconName} color={iconColor} style={{paddingTop: 2}} />

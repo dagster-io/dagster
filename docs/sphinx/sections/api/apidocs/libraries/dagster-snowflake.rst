@@ -23,8 +23,8 @@ I/O Manager
 .. autoconfigurable:: SnowflakeIOManager
   :annotation: IOManagerDefinition
 
-Resource
-========
+Resources
+=========
 
 .. autoconfigurable:: SnowflakeResource
   :annotation: ResourceDefinition

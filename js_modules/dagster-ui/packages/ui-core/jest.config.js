@@ -98,7 +98,7 @@ module.exports = {
   // projects: undefined,
 
   // Use this configuration option to add custom reporters to Jest
-  // reporters: undefined,
+  reporters: ['default', 'buildkite-test-collector/jest/reporter'],
 
   // Automatically reset mock state between every test
   // resetMocks: false,
@@ -136,7 +136,7 @@ module.exports = {
   // snapshotSerializers: [],
 
   // The test environment that will be used for testing
-  testEnvironment: 'jsdom',
+  testEnvironment: './src/quarantine-test-utils/custom-jest-environment.ts',
 
   // Options that will be passed to the testEnvironment
   // https://jestjs.io/docs/configuration#testenvironmentoptions-object
@@ -147,7 +147,7 @@ module.exports = {
   },
 
   // Adds a location field to test results
-  // testLocationInResults: false,
+  testLocationInResults: true,
 
   // The glob patterns Jest uses to detect test files
   testMatch: ['**/__tests__/**/*.test.[jt]s?(x)'],

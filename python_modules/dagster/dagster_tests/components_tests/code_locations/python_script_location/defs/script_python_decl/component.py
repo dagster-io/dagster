@@ -1,23 +1,20 @@
-from dagster import AssetSpec, AutomationCondition
-from dagster.components import ComponentLoadContext, component
-from dagster.components.lib.pipes_subprocess_script_collection import (
-    PipesSubprocessScript,
-    PipesSubprocessScriptCollectionComponent,
+from dagster import AssetSpec, AutomationCondition, ComponentLoadContext, component_instance
+from dagster.components.lib.executable_component.python_script_component import (
+    PythonScriptComponent,
 )
+from dagster.components.lib.executable_component.script_utils import ScriptSpec
 
 
-@component
-def load(context: ComponentLoadContext) -> PipesSubprocessScriptCollectionComponent:
-    return PipesSubprocessScriptCollectionComponent(
-        scripts=[
-            PipesSubprocessScript(
-                path="cool_script.py",
-                assets=[
-                    AssetSpec(
-                        key="cool_script",
-                        automation_condition=AutomationCondition.eager(),
-                    )
-                ],
+@component_instance
+def load(context: ComponentLoadContext) -> PythonScriptComponent:
+    return PythonScriptComponent(
+        execution=ScriptSpec(
+            path="cool_script.py",
+        ),
+        assets=[
+            AssetSpec(
+                key="cool_script",
+                automation_condition=AutomationCondition.eager(),
             )
-        ]
+        ],
     )

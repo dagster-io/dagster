@@ -1,5 +1,6 @@
 import pytest
 
+from dagster import Definitions
 from docs_snippets.guides.dagster.dagster_pipes.subprocess.custom_messages.dagster_code import (
     defs as custom_msg_defs,
 )
@@ -43,8 +44,8 @@ from docs_snippets.guides.dagster.dagster_pipes.subprocess.with_multi_asset.dags
         custom_msg_defs,
     ],
 )
-def test_execute(defs):
-    job_defs = defs.get_all_job_defs()
+def test_execute(defs: Definitions) -> None:
+    job_defs = defs.resolve_all_job_defs()
     for job_def in job_defs:
         result = job_def.execute_in_process()
         assert result.success

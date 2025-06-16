@@ -1,6 +1,6 @@
 ---
 title: "Op graphs"
-description: Op graphs are sets of interconnected ops or sub-graphs and form the core of jobs.
+description: Dagster Op graphs are sets of interconnected ops or sub-graphs and form the core of jobs.
 sidebar_position: 400
 ---
 

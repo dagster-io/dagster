@@ -10,6 +10,7 @@ from dbt_example.dagster_defs.lakehouse import lakehouse_assets_def, lakehouse_e
 from dbt_example.shared.load_iris import CSV_PATH, DB_PATH, IRIS_COLUMNS
 
 from .dbt_cloud_assets import get_dbt_cloud_assets
+from .dbt_cloud_resource import get_dbt_cloud_workspace
 from .federated_airflow_1 import get_other_team_airflow_assets, get_other_team_airflow_sensor
 from .federated_airflow_2 import (
     get_legacy_instance_airflow_assets,
@@ -23,6 +24,7 @@ automation_sensor = AutomationConditionSensorDefinition(
     default_status=DefaultSensorStatus.RUNNING,
     minimum_interval_seconds=1,
 )
+
 defs = Definitions(
     assets=[
         lakehouse_assets_def(
@@ -43,5 +45,5 @@ defs = Definitions(
         get_legacy_instance_airflow_sensor(),
         automation_sensor,
     ],
-    resources={"dbt": jaffle_shop_resource()},
+    resources={"dbt": jaffle_shop_resource(), "dbt_cloud": get_dbt_cloud_workspace()},
 )

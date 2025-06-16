@@ -14,6 +14,7 @@ import {
   PageHeader,
   SplitPanelContainer,
   Subheading,
+  Subtitle1,
   Table,
   Tag,
   Tooltip,
@@ -123,7 +124,7 @@ export const ResourceRoot = (props: Props) => {
   return (
     <Page style={{height: '100%', overflow: 'hidden'}}>
       <PageHeader
-        title={<Heading>{displayName}</Heading>}
+        title={<Subtitle1>{displayName}</Subtitle1>}
         tags={
           <Tag icon="resource">
             Resource in <RepositoryLink repoAddress={repoAddress} />

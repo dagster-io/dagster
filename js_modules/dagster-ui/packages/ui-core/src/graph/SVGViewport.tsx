@@ -336,8 +336,6 @@ const SVGViewportInner = forwardRef<SVGViewportRef, SVGViewportProps>(
       });
     }
 
-    // -- Mouse Handlers --
-
     const getOffsetXY = useCallback((e: MouseEvent | ReactMouseEvent): Point | null => {
       const el = element.current;
       if (!el) {

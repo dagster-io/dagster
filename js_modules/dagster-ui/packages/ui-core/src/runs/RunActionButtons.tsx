@@ -1,6 +1,5 @@
 import {Box, Button, Group, Icon} from '@dagster-io/ui-components';
 import {useCallback, useState} from 'react';
-import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
 
 import {IRunMetadataDict, IStepState} from './RunMetadataProvider';
 import {doneStatuses, failedStatuses} from './RunStatuses';
@@ -12,7 +11,7 @@ import {RunFragment, RunPageFragment} from './types/RunFragments.types';
 import {useJobAvailabilityErrorForRun} from './useJobAvailabilityErrorForRun';
 import {useJobReexecution} from './useJobReExecution';
 import {showSharedToaster} from '../app/DomUtils';
-import {featureEnabled} from '../app/Flags';
+import {useFeatureFlags} from '../app/Flags';
 import {GraphQueryItem, filterByQuery} from '../app/GraphQueryImpl';
 import {DEFAULT_DISABLED_REASON} from '../app/Permissions';
 import {ReexecutionStrategy} from '../graphql/types';
@@ -110,6 +109,7 @@ export const RunActionButtons = (props: RunActionButtonsProps) => {
 
   const repoMatch = useRepositoryForRunWithParentSnapshot(run);
   const jobError = useJobAvailabilityErrorForRun(run);
+  const {flagAssetRetries} = useFeatureFlags();
 
   const artifactsPersisted = run?.executionPlan?.artifactsPersisted;
 
@@ -190,9 +190,7 @@ export const RunActionButtons = (props: RunActionButtonsProps) => {
       }
 
       const selectionForPythonFiltering = selection.keys.map((k) => `${k}*`).join(',');
-      const selectionForUIFiltering = featureEnabled(FeatureFlag.flagSelectionSyntax)
-        ? selection.keys.map((k) => `name:"${k}"+`).join(' or ')
-        : selectionForPythonFiltering;
+      const selectionForUIFiltering = selection.keys.map((k) => `name:"${k}"+`).join(' or ');
 
       const selectionKeys = filterRunSelectionByQuery(graph, selectionForUIFiltering).all.map(
         (node) => node.name,
@@ -217,6 +215,16 @@ export const RunActionButtons = (props: RunActionButtonsProps) => {
     onClick: (e) => reexecute.onClick(run, ReexecutionStrategy.FROM_FAILURE, e.shiftKey),
   };
 
+  const fromAssetFailure: LaunchButtonConfiguration = {
+    icon: 'arrow_forward',
+    title: 'From asset failure',
+    disabled: !fromFailureEnabled,
+    tooltip: !fromFailureEnabled
+      ? 'Retry is only enabled when the pipeline has failed.'
+      : 'Retry the pipeline run, selecting only assets that did not complete successfully. Shift-click to adjust tags.',
+    onClick: (e) => reexecute.onClick(run, ReexecutionStrategy.FROM_ASSET_FAILURE, e.shiftKey),
+  };
+
   if (!artifactsPersisted) {
     [selected, same, fromFailure, fromSelected].forEach((option) => {
       option.disabled = true;
@@ -225,7 +233,14 @@ export const RunActionButtons = (props: RunActionButtonsProps) => {
     });
   }
 
-  const options = [full, same, selected, fromSelected, fromFailure];
+  const options = [
+    full,
+    same,
+    selected,
+    fromSelected,
+    fromFailure,
+    flagAssetRetries && run.executionPlan?.assetSelection.length ? fromAssetFailure : null,
+  ].filter(Boolean) as LaunchButtonConfiguration[];
   const preferredRerun = selection.present
     ? selected
     : fromFailureEnabled && currentRunIsFromFailure

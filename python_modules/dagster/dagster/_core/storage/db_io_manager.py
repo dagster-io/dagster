@@ -263,7 +263,11 @@ class DbIOManager(IOManager):
                         )
                     )
         else:
-            table = output_context.name
+            if "table" in output_context_metadata:
+                table = check.str_param(output_context_metadata["table"], "table")
+            else:
+                table = output_context.name
+
             if output_context_metadata.get("schema"):
                 schema = cast("str", output_context_metadata["schema"])
             elif self._schema:

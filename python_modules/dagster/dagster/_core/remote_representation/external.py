@@ -1,9 +1,11 @@
 from collections import defaultdict
-from collections.abc import Iterable, Iterator, Mapping, Sequence
+from collections.abc import Iterable, Iterator, Mapping, Sequence, Set
 from datetime import datetime
 from functools import cached_property
 from threading import RLock
 from typing import TYPE_CHECKING, AbstractSet, Callable, Optional, Union  # noqa: UP035
+
+from dagster_shared.error import DagsterError
 
 import dagster._check as check
 from dagster import AssetSelection
@@ -21,6 +23,7 @@ from dagster._core.definitions.run_request import InstigatorType
 from dagster._core.definitions.schedule_definition import DefaultScheduleStatus
 from dagster._core.definitions.selector import (
     InstigatorSelector,
+    JobSubsetSelector,
     RepositorySelector,
     ScheduleSelector,
     SensorSelector,
@@ -31,7 +34,6 @@ from dagster._core.definitions.sensor_definition import (
     SensorType,
 )
 from dagster._core.definitions.utils import get_default_automation_condition_sensor_selection
-from dagster._core.errors import DagsterError
 from dagster._core.execution.plan.handle import ResolvedFromDynamicStepHandle, StepHandle
 from dagster._core.instance import DagsterInstance
 from dagster._core.origin import JobPythonOrigin, RepositoryPythonOrigin
@@ -71,6 +73,7 @@ from dagster._core.remote_representation.origin import (
 from dagster._core.remote_representation.represented import RepresentedJob
 from dagster._core.snap import ExecutionPlanSnapshot
 from dagster._core.snap.job_snapshot import JobSnap
+from dagster._core.storage.tags import EXTERNAL_JOB_SOURCE_TAG_KEY
 from dagster._core.utils import toposort
 from dagster._serdes import create_snapshot_id
 from dagster._utils.cached_method import cached_method
@@ -657,6 +660,29 @@ class RemoteJob(RepresentedJob):
 
     def get_remote_origin_id(self) -> str:
         return self.get_remote_origin().get_id()
+
+    def get_external_job_source(self) -> Optional[str]:
+        """Retrieve the external job source from the job.
+
+        Prefers retrieval from the JobRefSnap, to avoid an expensive retrieval of the JobDataSnap.
+        """
+        if self._job_ref_snap is not None:
+            return self._job_ref_snap.get_preview_tags().get(EXTERNAL_JOB_SOURCE_TAG_KEY)
+        # If JobRefSnap is not available, fall back to the JobDataSnap.
+        return self.tags.get(EXTERNAL_JOB_SOURCE_TAG_KEY)
+
+    def get_subset_selector(
+        self, asset_selection: Set[AssetKey], asset_check_selection: Set[AssetCheckKey]
+    ) -> JobSubsetSelector:
+        """Returns a JobSubsetSelector to select a subset of this RemoteJob."""
+        return JobSubsetSelector(
+            location_name=self.handle.location_name,
+            repository_name=self.handle.repository_name,
+            job_name=self.name,
+            op_selection=self.op_selection,
+            asset_selection=asset_selection,
+            asset_check_selection=asset_check_selection,
+        )
 
 
 class RemoteExecutionPlan:
