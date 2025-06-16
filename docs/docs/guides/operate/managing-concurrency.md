@@ -38,13 +38,13 @@ You should be able to verify that you have set the pool correctly by viewing the
 
 ![Viewing the pool tag](/images/guides/operate/managing-concurrency/asset-pool-tag.png)
 
-Once you have assigned your assets and ops to a concurrency pool, you can configure a pool limit for that pool in your deployment by using the Dagster UI or the Dagster CLI.
+Once you have assigned your assets and ops to a concurrency pool, you can configure a pool limit for that pool in your deployment by using the [Dagster UI](/guides/operate/webserver) or the [`dagster` CLI](/guides/api/dagster/cli).
 
 To specify a limit for the pool "database" using the UI, navigate to the `Deployments` &rarr; `Concurrency` settings page and click the `Add pool limit` button:
 
 ![Setting the pool limit](/images/guides/operate/managing-concurrency/add-pool-ui.png)
 
-To specify a limit for the pool "database" using the CLI, use:
+To specify a limit for the pool "database" using the `dagster` CLI, use:
 
 ```
 dagster instance concurrency set database 1
@@ -112,13 +112,28 @@ concurrency:
 While pool limits allow you to [limit the number of ops executing across all runs](#limit-the-number-of-assets-or-ops-actively-executing-across-all-runs), to limit the number of ops executing _within a single run_, you need to configure your [run executor](/guides/operate/run-executors). You can
 limit concurrency for ops and assets in runs, by using `max_concurrent` in the run config, either in Python or using the Launchpad in the Dagster UI.
 
+:::info
+
+The default limit for op execution within a run depends on which executor you are using. For example, the <PyObject section="execution" module="dagster" object="multiprocess_executor" /> by default limits the number of ops executing to the value of `multiprocessing.cpu_count()` in the launched run.
+
+:::
+
+### Limit concurrent execution for a specific job
+
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/operate/managing_concurrency/concurrency_run_scoped_op_concurrency.py"
+  path="docs_snippets/docs_snippets/guides/operate/managing_concurrency/limit_execution_job.py"
   language="python"
   title="src/<project_name>/defs/assets.py"
 />
 
-The default limit for op execution within a run depends on which executor you are using. For example, the <PyObject section="execution" module="dagster" object="multiprocess_executor" /> by default limits the number of ops executing to the value of `multiprocessing.cpu_count()` in the launched run.
+### Limit concurrent execution for all runs in a code location
+
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/operate/managing_concurrency/limit_execution_code_location.py"
+  language="python"
+  title="src/<project_name>/defs/executor.py"
+/>
+
 
 ## Prevent runs from starting if another run is already occurring (advanced)
 
