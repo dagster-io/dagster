@@ -604,6 +604,20 @@ def test_with_description_replacements(test_jaffle_shop_manifest: dict[str, Any]
         assert expected_specs_by_key[asset_key].description == expected_description
 
 
+def test_with_subclassed_init(test_jaffle_shop_manifest: dict[str, Any]) -> None:
+    class CustomDagsterDbtTranslator(DagsterDbtTranslator):
+        def __init__(self):
+            pass
+
+    @dbt_assets(
+        manifest=test_jaffle_shop_manifest, dagster_dbt_translator=CustomDagsterDbtTranslator()
+    )
+    def my_dbt_assets(): ...
+
+    expected_specs = build_dbt_asset_specs(manifest=test_jaffle_shop_manifest)
+    assert my_dbt_assets.keys == {spec.key for spec in expected_specs}
+
+
 def test_with_metadata_replacements(test_jaffle_shop_manifest: dict[str, Any]) -> None:
     expected_metadata = {"customized": "metadata"}
 

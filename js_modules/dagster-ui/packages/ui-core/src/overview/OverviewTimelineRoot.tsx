@@ -1,6 +1,7 @@
 import {Box, Button, ButtonGroup, ErrorBoundary, TextInput} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {useDeferredValue, useMemo} from 'react';
+import {useHomeDarkLaunch} from 'shared/home/useHomeDarkLaunch.oss';
 
 import {GroupTimelineRunsBySelect} from './GroupTimelineRunsBySelect';
 import {groupRunsByAutomation} from './groupRunsByAutomation';
@@ -102,6 +103,10 @@ export const OverviewTimelineRoot = ({Header}: Props) => {
   const [groupRunsBy, setGroupRunsBy] = useGroupTimelineRunsBy();
 
   const runsForTimelineRet = useRunsForTimeline({rangeMs});
+
+  // Dagster+ Home dark launch queries.
+  // todo dish: Remove this when features are live on Home.
+  useHomeDarkLaunch();
 
   // Use deferred value to allow paginating quickly with the UI feeling more responsive.
   const {jobs, loading, refreshState} = useDeferredValue(runsForTimelineRet);

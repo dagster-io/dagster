@@ -235,6 +235,7 @@ class RemoteWorkspaceAssetNode(RemoteAssetNode):
     def key(self) -> AssetKey:  # pyright: ignore[reportIncompatibleVariableOverride]
         return self.repo_scoped_asset_infos[0].asset_node.asset_node_snap.asset_key
 
+    ### KEEP THIS IN SYNC WITH THE JS CODE THAT MERGES THE SDA DEFINITIONS: https://github.com/dagster-io/dagster/blob/22e79ea7024bd13b197e3a2f66401197badceb75/js_modules/dagster-ui/packages/ui-core/src/assets/useAllAssets.tsx#L239-L256
     @property
     def parent_keys(self) -> AbstractSet[AssetKey]:  # pyright: ignore[reportIncompatibleVariableOverride]
         # combine deps from all nodes

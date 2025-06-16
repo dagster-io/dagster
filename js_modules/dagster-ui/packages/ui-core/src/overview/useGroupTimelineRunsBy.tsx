@@ -22,9 +22,9 @@ export const useGroupTimelineRunsBy = (
 ): [GroupRunsBy, (value: GroupRunsBy) => void] => {
   const [storedValue, setStoredValue] = useStateWithStorage(GROUP_BY_KEY, validate);
 
-  const [queryValue, setQueryValue] = useQueryPersistedState<GroupRunsBy>({
+  const [queryValue, setQueryValue] = useQueryPersistedState<GroupRunsBy | null>({
     queryKey: 'groupBy',
-    encode: (value) => ({groupBy: value}),
+    encode: (value) => (value ? {groupBy: value} : {}),
     decode: (pair) => {
       if (typeof pair.groupBy === 'string') {
         const result = validate(pair.groupBy);
@@ -32,7 +32,7 @@ export const useGroupTimelineRunsBy = (
           return result;
         }
       }
-      return defaultValue;
+      return null;
     },
   });
 

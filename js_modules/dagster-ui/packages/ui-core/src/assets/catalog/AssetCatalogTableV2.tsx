@@ -61,9 +61,7 @@ export const AssetCatalogTableV2 = React.memo(() => {
     if (!favorites) {
       return assets ?? [];
     }
-    return (assets ?? []).filter((asset: AssetTableFragment) =>
-      favorites.has(tokenForAssetKey(asset.key)),
-    );
+    return (assets ?? []).filter((asset) => favorites.has(tokenForAssetKey(asset.key)));
   }, [favorites, assets]);
 
   const [errorState, setErrorState] = useState<SyntaxError[]>([]);
