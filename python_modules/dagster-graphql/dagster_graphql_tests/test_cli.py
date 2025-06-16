@@ -123,7 +123,7 @@ def test_basic_variables():
     }
     """
     variables = (
-        '{"pipelineName": "math", "repositoryName": "test", "repositoryLocationName":'
+        '{"pipelineName": "math", "repositoryName": "the_test_repo", "repositoryLocationName":'
         ' "test_cli_location"}'
     )
     workspace_path = file_relative_path(__file__, "./cli_test_workspace.yaml")
@@ -169,7 +169,7 @@ def test_start_execution_text():
             "executionParams": {
                 "selector": {
                     "repositoryLocationName": "test_cli_location",
-                    "repositoryName": "test",
+                    "repositoryName": "the_test_repo",
                     "pipelineName": "math",
                 },
                 "runConfigData": {"ops": {"add_one": {"inputs": {"num": {"value": 123}}}}},
@@ -202,7 +202,7 @@ def test_start_execution_file():
                 "selector": {
                     "pipelineName": "math",
                     "repositoryLocationName": "test_cli_location",
-                    "repositoryName": "test",
+                    "repositoryName": "the_test_repo",
                 },
                 "runConfigData": {"ops": {"add_one": {"inputs": {"num": {"value": 123}}}}},
             }
@@ -235,7 +235,7 @@ def test_start_execution_save_output():
             "executionParams": {
                 "selector": {
                     "repositoryLocationName": "test_cli_location",
-                    "repositoryName": "test",
+                    "repositoryName": "the_test_repo",
                     "pipelineName": "math",
                 },
                 "runConfigData": {"ops": {"add_one": {"inputs": {"num": {"value": 123}}}}},
@@ -281,7 +281,7 @@ def test_start_execution_predefined():
             "executionParams": {
                 "selector": {
                     "repositoryLocationName": "test_cli_location",
-                    "repositoryName": "test",
+                    "repositoryName": "the_test_repo",
                     "pipelineName": "math",
                 },
                 "runConfigData": {"ops": {"add_one": {"inputs": {"num": {"value": 123}}}}},
@@ -308,7 +308,7 @@ def test_logs_in_start_execution_predefined():
             "executionParams": {
                 "selector": {
                     "repositoryLocationName": "test_cli_location",
-                    "repositoryName": "test",
+                    "repositoryName": "the_test_repo",
                     "pipelineName": "math",
                 },
                 "runConfigData": {"ops": {"add_one": {"inputs": {"num": {"value": 123}}}}},

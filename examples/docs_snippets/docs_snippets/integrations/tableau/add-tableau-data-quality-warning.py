@@ -1,9 +1,4 @@
-from dagster_tableau import (
-    TableauCloudWorkspace,
-    build_tableau_materializable_assets_definition,
-    load_tableau_asset_specs,
-    parse_tableau_external_and_materializable_asset_specs,
-)
+from dagster_tableau import TableauCloudWorkspace, tableau_assets
 
 import dagster as dg
 
@@ -41,23 +36,22 @@ def tableau_run_failure_sensor(
                 )
 
 
-tableau_specs = load_tableau_asset_specs(
+@tableau_assets(
     workspace=tableau_workspace,
+    name="tableau_workspace_assets",
+    group_name="tableau",
 )
+def tableau_workspace_assets(
+    context: dg.AssetExecutionContext, tableau: TableauCloudWorkspace
+):
+    yield from tableau.refresh_and_poll(context=context)
 
-external_asset_specs, materializable_asset_specs = (
-    parse_tableau_external_and_materializable_asset_specs(tableau_specs)
-)
 
-# Pass the sensor, Tableau resource, upstream asset, Tableau assets specs and materializable assets definition at once
+# Pass the sensor, Tableau resource, upstream asset, Tableau assets definition at once
 defs = dg.Definitions(
     assets=[
         upstream_asset,
-        build_tableau_materializable_assets_definition(
-            resource_key="tableau",
-            specs=materializable_asset_specs,
-        ),
-        *external_asset_specs,
+        tableau_workspace_assets,
     ],
     sensors=[tableau_run_failure_sensor],
     resources={"tableau": tableau_workspace},
