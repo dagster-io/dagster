@@ -154,7 +154,7 @@ For example:
 "access_token": {"env": "GITHUB_ACCESS_TOKEN"}
 ```
 
-Refer to the [Handling secrets section](#handling-secrets) and [Per-environment configuration example](#per-environment-configuration-example) for examples.
+For more information, see the [Handling secrets](#handling-secrets) and [Per-environment configuration](#per-environment-configuration) sections.
 
 </TabItem>
 </Tabs>
