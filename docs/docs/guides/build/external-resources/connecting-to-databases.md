@@ -30,15 +30,19 @@ To run the example code in this article, you'll need:
 
 ## Step 1: Write a resource \{#step-one}
 
+import ScaffoldAsset from '@site/docs/partials/\_ScaffoldAsset.md';
+
+<ScaffoldAsset />
+
 This example creates a resource that represents a Snowflake database. Using `SnowflakeResource`, define a Dagster resource that connects to a Snowflake database:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/external-systems/databases/snowflake-resource.py" language="python" title="src/<project-name>/defs/assets.py" />
+<CodeExample path="docs_snippets/docs_snippets/guides/external-systems/databases/snowflake-resource.py" language="python" title="src/<project_name>/defs/assets.py" />
 
 ## Step 2: Use the resource in an asset \{#step-two}
 
 To use the resource, provide it as a parameter to an asset and define a function using <PyObject section="definitions" module="dagster" object="definitions" decorator />:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/external-systems/databases/use-in-asset.py" language="python" title="src/<project-name>/defs/assets.py" />
+<CodeExample path="docs_snippets/docs_snippets/guides/external-systems/databases/use-in-asset.py" language="python" title="src/<project_name>/defs/assets.py" />
 
 When you materialize these assets, Dagster will provide an initialized `SnowflakeResource` to the assets' `iris_db` parameter.
 

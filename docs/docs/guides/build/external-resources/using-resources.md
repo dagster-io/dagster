@@ -52,6 +52,6 @@ dg scaffold defs dagster.resources path/to/resources.py
 
 which will create:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dg/using-resources/4-scaffolded-resource-defs.py" />
+<CodeExample path="docs_snippets/docs_snippets/guides/dg/using-resources/4-scaffolded-resource-defs.py" title="src/<project_name>/defs/resources.py" />
 
 and you can fill out the resource dictionary as needed.

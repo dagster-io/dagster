@@ -10,6 +10,10 @@ You can mark any private state attributes using Pydantic's [`PrivateAttr`](https
 
 ## Lifecycle hooks
 
+import ScaffoldAsset from '@site/docs/partials/\_ScaffoldAsset.md';
+
+<ScaffoldAsset />
+
 When a resource is initialized during a Dagster run, the `setup_for_execution` method is called. This method is passed an <PyObject section="resources" module="dagster" object="InitResourceContext" /> object, which contains the resource's config and other run information. The resource can use this context to initialize any state it needs for the duration of the run.
 
 Once a resource is no longer needed, the `teardown_after_execution` method is called. This method is passed the same context object as `setup_for_execution`. This method can be useful for cleaning up any state that was initialized in `setup_for_execution`.
@@ -18,8 +22,8 @@ Once a resource is no longer needed, the `teardown_after_execution` method is ca
 
 In the following example, we set up an API token for a client resource based on the username and password provided in the config. The API token can then be used to query an API in the asset body.
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/resources/pythonic_resources.py" startAfter="start_with_state_example" endBefore="end_with_state_example" dedent="4" title="src/<project-name>/defs/assets.py" />
+<CodeExample path="docs_snippets/docs_snippets/concepts/resources/pythonic_resources.py" startAfter="start_with_state_example" endBefore="end_with_state_example" dedent="4" title="src/<project_name>/defs/assets.py" />
 
 For more complex use cases, you can override the `yield_for_execution`. By default, this context manager calls `setup_for_execution`, yields the resource, and then calls `teardown_after_execution`, but you can override it to provide any custom behavior. This is useful for resources that require a context to be open for the duration of a run, such as database connections or file handles.
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/resources/pythonic_resources.py" startAfter="start_with_complex_state_example" endBefore="end_with_complex_state_example" dedent="4" title="src/<project-name>/defs/assets.py" />
+<CodeExample path="docs_snippets/docs_snippets/concepts/resources/pythonic_resources.py" startAfter="start_with_complex_state_example" endBefore="end_with_complex_state_example" dedent="4" title="src/<project_name>/defs/assets.py" />
