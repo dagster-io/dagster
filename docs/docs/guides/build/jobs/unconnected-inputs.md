@@ -8,6 +8,10 @@ import OpsNote from '@site/docs/partials/\_OpsNote.md';
 
 <OpsNote />
 
+import ScaffoldAsset from '@site/docs/partials/\_ScaffoldAsset.md';
+
+<ScaffoldAsset />
+
 Ops in a job may have input definitions that don't correspond to the outputs of upstream ops.
 
 Values for these inputs can be provided in a few ways. Dagster will check the following, in order, and use the first available:
