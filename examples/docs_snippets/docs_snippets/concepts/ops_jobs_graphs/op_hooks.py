@@ -111,6 +111,10 @@ def my_success_hook(context):
     context.resources.my_conn.send("foo")
 
 
+# end_testing_hooks
+
+
+# start_testing_hooks_tests
 def test_my_success_hook():
     my_conn = mock.MagicMock()
     # construct dg.HookContext with mocked ``my_conn`` resource.
@@ -121,7 +125,7 @@ def test_my_success_hook():
     assert my_conn.send.call_count == 1
 
 
-# end_testing_hooks
+# end_testing_hooks_tests
 
 
 # start_repo_marker_1_with_configured

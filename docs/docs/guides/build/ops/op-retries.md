@@ -30,27 +30,27 @@ Dagster provides both declarative <PyObject section="ops" module="dagster" objec
 
 Here we start off with an op that is causing us to have to retry the whole job anytime it fails.
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/retries.py" startAfter="problem_start" endBefore="problem_end" />
+<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/retries.py" startAfter="problem_start" endBefore="problem_end" title="src/<project_name>/defs/assets.py"/>
 
 ### `RetryPolicy`
 
 To get this op to retry when an exception occurs, we can attach a <PyObject section="ops" module="dagster" object="RetryPolicy" />.
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/retries.py" startAfter="policy_start" endBefore="policy_end" />
+<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/retries.py" startAfter="policy_start" endBefore="policy_end" title="src/<project_name>/defs/assets.py"/>
 
 This improves the situation, but we may need additional configuration to control how many times to retry and/or how long to wait between each retry.
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/retries.py" startAfter="policy2_start" endBefore="policy2_end" />
+<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/retries.py" startAfter="policy2_start" endBefore="policy2_end" title="src/<project_name>/defs/assets.py"/>
 
 In addition to being able to set the policy directly on the op definition, it can also be set on specific invocations of an op, or a <PyObject section="jobs" module="dagster" object="job" decorator /> to apply to all ops contained within.
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/retries.py" startAfter="policy3_start" endBefore="policy3_end" />
+<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/retries.py" startAfter="policy3_start" endBefore="policy3_end" title="src/<project_name>/defs/assets.py"/>
 
 :::info
 
 Retry policies also work for asset jobs.
 
-<CodeExample path="docs_snippets/docs_snippets/deploying/asset_job_retries.py" />
+<CodeExample path="docs_snippets/docs_snippets/deploying/asset_job_retries.py" title="src/<project_name>/defs/assets.py"/>
 
 :::
 
@@ -58,6 +58,6 @@ Retry policies also work for asset jobs.
 
 In certain more nuanced situations, we may need to evaluate code to determine if we want to retry or not. For this we can use a manual <PyObject section="ops" module="dagster" object="RetryRequested" /> exception.
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/retries.py" startAfter="manual_start" endBefore="manual_end" />
+<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/retries.py" startAfter="manual_start" endBefore="manual_end" title="src/<project_name>/defs/assets.py"/>
 
 Using `raise from` will ensure the original exceptions information is captured by Dagster.

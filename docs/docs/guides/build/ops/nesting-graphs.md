@@ -28,13 +28,13 @@ We use the term _node_ to refer to both ops and graphs, because both ops and gra
 
 As a baseline, here's a job that does not use nesting. It starts with an op that returns a number, then uses two ops to convert it from Celsius to Fahrenheight, then logs the result:
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/unnested_ops.py" />
+<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/unnested_ops.py" title="src/<project_name>/defs/assets.py" />
 
 ### Nesting
 
 We can put the ops that perform the Celsius-to-Fahrenheit conversion into their own sub-graph and invoke that sub-graph from our job's main graph:
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/nested_graphs.py" startAfter="start_composite_solid_example_marker" endBefore="end_composite_solid_example_marker" />
+<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/nested_graphs.py" startAfter="start_composite_solid_example_marker" endBefore="end_composite_solid_example_marker" title="src/<project_name>/defs/assets.py" />
 
 When executed, the above example will do the exact same thing as the non-nested version, but the nesting allows better organization of code and simplifies the presentation of the main graph in the Dagster UI.
 
@@ -53,7 +53,7 @@ To provide configuration to ops inside a sub-graph when launching a run, you pro
 
 This example two ops that both take config and are wrapped by a graph, which is included inside a job.
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/nested_graphs.py" startAfter="start_composite_solid_config_marker" endBefore="end_composite_solid_config_marker" />
+<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/nested_graphs.py" startAfter="start_composite_solid_config_marker" endBefore="end_composite_solid_config_marker" title="src/<project_name>/defs/assets.py" />
 
 To kick off a run of this job, you will need to specify the config for both `add_n` and `multiply_by_m` through the sub-graph:
 
@@ -63,15 +63,15 @@ To kick off a run of this job, you will need to specify the config for both `add
 
 Sub-graphs can dictate config for the ops and sub-graphs inside them. If the full config is known at the time that you're defining the graph, you can pass a dictionary to the `config` argument of the <PyObject section="graphs" module="dagster" object="graph" decorator /> decorator.
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/graph_provides_config.py" />
+<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/graph_provides_config.py" title="src/<project_name>/defs/assets.py"/>
 
 Alternatively, you can use "config mapping", i.e. you can provide a function that accepts config that's provided to the graph and generates config for the nodes inside the graph.
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/graph_provides_config_mapping.py" />
+<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/graph_provides_config_mapping.py" title="src/<project_name>/defs/assets.py"/>
 
 To run a job that contains `to_fahrenheit` as a sub-graph, you need to provide a value for the `from_unit` config option:
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/composite_config_mapping.yaml" />
+<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/composite_config_mapping.yaml"/>
 
 ## Examples
 
@@ -79,4 +79,4 @@ To run a job that contains `to_fahrenheit` as a sub-graph, you need to provide a
 
 To have multiple outputs from a graph, you need to define the outputs it maps and return a dictionary, where the keys are the output names and the values are the output values.
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/nested_graphs.py" startAfter="start_composite_multi_output_marker" endBefore="end_composite_multi_output_marker" />
+<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/nested_graphs.py" startAfter="start_composite_multi_output_marker" endBefore="end_composite_multi_output_marker" title="src/<project_name>/defs/assets.py"/>
