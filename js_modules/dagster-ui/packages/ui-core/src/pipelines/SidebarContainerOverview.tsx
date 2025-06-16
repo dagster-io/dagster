@@ -1,4 +1,5 @@
-import {Box, MetadataTable} from '@dagster-io/ui-components';
+import {Box, MetadataTable, Tag, UnstyledButton} from '@dagster-io/ui-components';
+import {useMemo, useState} from 'react';
 
 import {Description} from './Description';
 import {SidebarSection, SidebarSubhead, SidebarTitle} from './SidebarComponents';
@@ -23,6 +24,7 @@ export const SidebarContainerOverview = ({
   repoAddress?: RepoAddress;
 }) => {
   const {options} = useRepositoryOptions();
+  const [showDagsterTags, setShowDagsterTags] = useState(false);
 
   // Determine if the pipeline or job snapshot is tied to a legacy pipeline. This is annoying
   // because snapshots only have a pipeline name + snapshotId, not a repository, but if a repo
@@ -45,6 +47,28 @@ export const SidebarContainerOverview = ({
       match?.pipelineSnapshotId !== parentSnapshotId;
     externalJobSource = container.externalJobSource;
   }
+
+  const tags = useMemo(
+    () => (container.__typename === 'PipelineSnapshot' ? container.tags : []),
+    [container],
+  );
+
+  const {nonDagsterTags, dagsterTags} = useMemo(() => {
+    const nonDagsterTags = [];
+    const dagsterTags = [];
+    for (const tag of tags) {
+      if (tag.key.startsWith('dagster/')) {
+        dagsterTags.push(tag);
+      } else {
+        nonDagsterTags.push(tag);
+      }
+    }
+
+    return {
+      nonDagsterTags,
+      dagsterTags,
+    };
+  }, [tags]);
 
   return (
     <div>
@@ -84,6 +108,41 @@ export const SidebarContainerOverview = ({
           </Box>
         </SidebarSection>
       )}
+
+      {container.__typename === 'PipelineSnapshot' && (
+        <SidebarSection title="Tags">
+          <Box
+            padding={{vertical: 16, horizontal: 24}}
+            flex={{direction: 'row', gap: 8, wrap: 'wrap'}}
+          >
+            {nonDagsterTags.map((tag) => (
+              <Tag key={tag.key} tooltipText={`${tag.key}: ${tag.value}`}>
+                {tag.key}: {tag.value}
+              </Tag>
+            ))}
+            {showDagsterTags ? (
+              <>
+                {dagsterTags.map((tag) => (
+                  <Tag key={tag.key} tooltipText={`${tag.key}: ${tag.value}`}>
+                    {tag.key}: {tag.value}
+                  </Tag>
+                ))}
+              </>
+            ) : null}
+            {dagsterTags.length > 0 ? (
+              <UnstyledButton onClick={() => setShowDagsterTags((current) => !current)}>
+                <Tag
+                  intent="primary"
+                  interactive
+                  icon={showDagsterTags ? 'visibility_off' : 'visibility'}
+                >
+                  {showDagsterTags ? 'Hide Dagster tags' : 'Show Dagster tags'}
+                </Tag>
+              </UnstyledButton>
+            ) : null}
+          </Box>
+        </SidebarSection>
+      )}
     </div>
   );
 };
@@ -104,6 +163,10 @@ export const SIDEBAR_ROOT_CONTAINER_FRAGMENT = gql`
         ...MetadataEntryFragment
       }
       externalJobSource
+      tags {
+        key
+        value
+      }
     }
   }
 
