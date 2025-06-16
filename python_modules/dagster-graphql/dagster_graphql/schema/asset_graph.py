@@ -730,7 +730,9 @@ class GrapheneAssetNode(graphene.ObjectType):
         partitions: Optional[Sequence[str]] = None,
     ) -> Sequence[Any]:  # (GrapheneAssetStaleStatus)
         if partitions is None:
-            partitions = self._get_partitions_def().get_partition_keys()
+            partitions = self._get_partitions_def().get_partition_keys(
+                dynamic_partitions_store=graphene_info.context.dynamic_partitions_loader
+            )
         else:
             self._validate_partitions_existence()
         return [
@@ -751,7 +753,9 @@ class GrapheneAssetNode(graphene.ObjectType):
         partitions: Optional[Sequence[str]] = None,
     ) -> Sequence[Sequence[GrapheneAssetStaleCause]]:
         if partitions is None:
-            partitions = self._get_partitions_def().get_partition_keys()
+            partitions = self._get_partitions_def().get_partition_keys(
+                dynamic_partitions_store=graphene_info.context.dynamic_partitions_loader
+            )
         else:
             self._validate_partitions_existence()
         return [self._get_staleCauses(partition) for partition in partitions]
@@ -792,7 +796,9 @@ class GrapheneAssetNode(graphene.ObjectType):
         self, graphene_info: ResolveInfo, partitions: Optional[Sequence[str]] = None
     ) -> Sequence[Optional[str]]:
         if partitions is None:
-            partitions = self._get_partitions_def().get_partition_keys()
+            partitions = self._get_partitions_def().get_partition_keys(
+                dynamic_partitions_store=graphene_info.context.dynamic_partitions_loader
+            )
         else:
             self._validate_partitions_existence()
         data_versions = [

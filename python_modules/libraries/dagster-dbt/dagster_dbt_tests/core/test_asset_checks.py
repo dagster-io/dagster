@@ -76,6 +76,25 @@ def test_without_asset_checks(test_asset_checks_manifest: dict[str, Any]) -> Non
     assert not result.get_asset_check_evaluations()
 
 
+def test_customized_checks(test_asset_checks_manifest: dict[str, Any]) -> None:
+    class CustomDagsterDbtTranslatorWithChecks(DagsterDbtTranslator):
+        def get_asset_check_spec(self, asset_spec, manifest, unique_id, project):
+            default_spec = super().get_asset_check_spec(asset_spec, manifest, unique_id, project)
+            return default_spec._replace(description="blah") if default_spec else None
+
+    @dbt_assets(
+        manifest=test_asset_checks_manifest,
+        dagster_dbt_translator=CustomDagsterDbtTranslatorWithChecks(),
+    )
+    def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
+        yield from dbt.cli(["build"], context=context).stream()
+
+    check_specs = list(my_dbt_assets.check_specs_by_output_name.values())
+    assert len(check_specs) == 26
+    for spec in check_specs:
+        assert spec.description == "blah"
+
+
 def test_asset_checks_enabled_by_default(test_asset_checks_manifest: dict[str, Any]) -> None:
     @dbt_assets(manifest=test_asset_checks_manifest)
     def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):

@@ -17,10 +17,7 @@ from dagster._core.execution.context.asset_check_execution_context import AssetC
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster._core.execution.plan.compute_generator import construct_config_from_context
 from dagster.components.core.context import ComponentLoadContext
-from dagster.components.lib.executable_component.component import (
-    ExecutableComponent,
-    OpMetadataSpec,
-)
+from dagster.components.lib.executable_component.component import ExecutableComponent, OpSpec
 from dagster.components.resolved.context import ResolutionContext
 from dagster.components.resolved.model import Resolver
 
@@ -42,7 +39,7 @@ ResolvableCallable: TypeAlias = Annotated[
 ]
 
 
-class FunctionSpec(OpMetadataSpec):
+class FunctionSpec(OpSpec):
     type: Literal["function"] = "function"
     fn: ResolvableCallable
 
@@ -100,7 +97,7 @@ class FunctionComponent(ExecutableComponent):
     execution: Union[FunctionSpec, ResolvableCallable]
 
     @property
-    def op_metadata_spec(self) -> OpMetadataSpec:
+    def op_spec(self) -> OpSpec:
         return (
             self.execution
             if isinstance(self.execution, FunctionSpec)
@@ -150,4 +147,4 @@ class FunctionComponent(ExecutableComponent):
 
     @cached_property
     def execute_fn_metadata(self) -> "ExecuteFnMetadata":
-        return ExecuteFnMetadata(check.inst(self.op_metadata_spec, FunctionSpec).fn)
+        return ExecuteFnMetadata(check.inst(self.op_spec, FunctionSpec).fn)

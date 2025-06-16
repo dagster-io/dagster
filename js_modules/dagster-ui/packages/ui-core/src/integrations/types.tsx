@@ -15,4 +15,5 @@ export type IntegrationFrontmatter = {
   partnerlink: string;
   source: string;
   tags: string[];
+  isPrivate: boolean;
 };

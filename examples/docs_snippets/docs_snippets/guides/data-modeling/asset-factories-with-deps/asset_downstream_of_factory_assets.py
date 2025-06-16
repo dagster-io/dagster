@@ -37,4 +37,6 @@ etl_tables = load_etl_tables_from_yaml(
 def aggregated_metrics(): ...
 
 
-defs = dg.Definitions(assets=[*etl_tables, aggregated_metrics])
+@dg.definitions
+def defs():
+    return dg.Definitions.merge(*etl_tables)
