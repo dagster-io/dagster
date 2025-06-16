@@ -18,9 +18,7 @@ To begin, you'll need a Dagster project. You can use an [existing components-rea
 
 Activate the project virtual environment:
 
-```
-source ../.venv/bin/activate
-```
+<CliInvocationExample contents="source ../.venv/bin/activate" />
 
 Finally, add the `dagster-sling` library to the project. We will also add `duckdb` to use as a destination for our Sling replication.
 
@@ -40,7 +38,7 @@ In its scaffolded form, the `defs.yaml` file contains the configuration for your
 
 <CodeExample path="docs_snippets/docs_snippets/guides/components/integrations/sling-component/5-component.yaml" title="my_project/defs/sling_ingest/defs.yaml" language="yaml" />
 
-The `replication.yaml` file still needs to be configured:
+The generated file is a template, which still needs to be configured:
 
 <CodeExample path="docs_snippets/docs_snippets/guides/components/integrations/sling-component/6-replication.yaml" title="my_project/defs/sling_ingest/replication.yaml" language="yaml" />
 
