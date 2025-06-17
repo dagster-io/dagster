@@ -78,13 +78,22 @@ def load_project_defs(project_root: Path) -> Definitions:
         project_root (Path): The path to the dg project root.
     """
     root_config_path = discover_config_file(project_root)
-    toml_config = load_toml_as_dict(check.not_none(root_config_path))
-
-    root_module_name = toml_config.get("project", {}).get("root_module")
-    defs_module_name = (
-        toml_config.get("project", {}).get("defs_module")
-        or f"{root_module_name}.{_DEFAULT_PROJECT_DEFS_SUBMODULE}"
+    toml_config = load_toml_as_dict(
+        check.not_none(
+            root_config_path,
+            additional_message=f"No config file found at project root {project_root}",
+        )
     )
+
+    project = toml_config.get("tool", {}).get("dg", {}).get("project", {})
+
+    root_module_name = project.get("root_module")
+    defs_module_name = project.get("defs_module")
+    check.invariant(
+        defs_module_name or root_module_name,
+        "Either defs_module or root_module must be set in the project config",
+    )
+    defs_module_name = defs_module_name or f"{root_module_name}.{_DEFAULT_PROJECT_DEFS_SUBMODULE}"
 
     defs_module = importlib.import_module(defs_module_name)
 
