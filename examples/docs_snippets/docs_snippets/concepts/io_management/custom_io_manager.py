@@ -69,7 +69,7 @@ class ExternalIOManager(dg.IOManager):
 class ConfigurableExternalIOManager(dg.ConfigurableIOManagerFactory):
     api_token: str
 
-    def create_io_manager(self, context) -> dg.ExternalIOManager:
+    def create_io_manager(self, context) -> ExternalIOManager:
         return ExternalIOManager(self.api_token)
 
 
