@@ -154,3 +154,38 @@ def test_snowflake_sql_component_with_templates(snowflake_connect, sql_template)
         # Clean up the temporary file if it was created
         if isinstance(sql_template, dict) and "path" in sql_template:
             os.unlink(sql_template["path"])
+
+
+@mock.patch("snowflake.connector.connect", new_callable=create_mock_connector)
+def test_snowflake_sql_component_with_execution(snowflake_connect):
+    """Test that the SnowflakeSqlComponent correctly handles execution parameter with op description."""
+    component_body = {
+        "type": "dagster_snowflake.SnowflakeSqlComponent",
+        "attributes": {
+            "sql_template": "SELECT * FROM MY_TABLE;",
+            "assets": [{"key": "TESTDB/TESTSCHEMA/TEST_TABLE"}],
+            "execution": {"description": "This is a test op description"},
+        },
+    }
+    with setup_snowflake_component(
+        component_body=component_body,
+    ) as (component, defs):
+        defs_with_resource = Definitions.merge(
+            defs,
+            Definitions(
+                resources={
+                    "snowflake": SnowflakeResource(
+                        account="test_account",
+                        user="test_user",
+                        password="test_password",
+                        database="TESTDB",
+                        schema="TESTSCHEMA",
+                    )
+                },
+            ),
+        )
+        asset_key = AssetKey(["TESTDB", "TESTSCHEMA", "TEST_TABLE"])
+        asset_def = defs_with_resource.get_assets_def(asset_key)
+
+        # Verify the op description is set correctly
+        assert asset_def.op.description == "This is a test op description"

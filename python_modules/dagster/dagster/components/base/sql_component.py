@@ -21,6 +21,8 @@ T = TypeVar("T")
 class SqlComponent(ExecutableComponent, Generic[T], ABC):
     """Base component which executes templated SQL."""
 
+    execution: Optional[OpSpec] = None
+
     @property
     @abstractmethod
     def sql_content(self) -> str:
@@ -34,9 +36,7 @@ class SqlComponent(ExecutableComponent, Generic[T], ABC):
 
     @property
     def op_spec(self) -> OpSpec:
-        if not self.assets:
-            raise ValueError("SqlComponent requires at least one asset  to be set.")
-        return OpSpec(name=self.assets[0].key.to_python_identifier())
+        return self.execution or OpSpec()
 
     def invoke_execute_fn(
         self,
