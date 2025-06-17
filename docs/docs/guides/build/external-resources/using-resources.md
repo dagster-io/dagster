@@ -20,7 +20,7 @@ For example, if you have created a new Dagster project with `dg` called `my_proj
 
 <CodeExample path="docs_snippets/docs_snippets/guides/dg/using-resources/2-resources-at-defs-root.py" title="src/my_project/defs/aresource.py" />
 
-You can then make that resource available anywhere else in your project by defining a <PyObject section="definitions" module="dagster" object="definitions" decorator /> function:
+You can then make that resource available anywhere else in your project by defining a <PyObject section="definitions" module="dagster" object="Definitions" decorator /> function:
 
 <CodeExample path="docs_snippets/docs_snippets/guides/dg/using-resources/3-resource-defs-at-project-root.py" title="src/my_project/defs/resources.py" />
 

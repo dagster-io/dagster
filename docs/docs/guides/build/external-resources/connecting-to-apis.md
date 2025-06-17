@@ -36,7 +36,7 @@ Using `ConfigurableResource`, define a Dagster resource with a method that retur
 
 ## Step 2: Use the resource in an asset
 
-To use the resource, provide it as a parameter to an asset and define a function using <PyObject section="definitions" module="dagster" object="definitions" decorator />:
+To use the resource, provide it as a parameter to an asset and define a function using <PyObject section="definitions" module="dagster" object="Definitions" decorator />:
 
 <CodeExample path="docs_snippets/docs_snippets/guides/external-systems/apis/use_minimal_resource_in_asset.py" language="python" title="src/<project_name>/defs/assets.py" />
 

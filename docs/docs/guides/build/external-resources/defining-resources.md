@@ -18,7 +18,7 @@ The configuration system has a few advantages over plain Python parameter passin
 
 ## With asset definitions
 
-The following example demonstrates defining a subclass of <PyObject section="resources" module="dagster" object="ConfigurableResource"/> that represents a connection to an external service. The resource can be configured by constructing a function using the <PyObject section="definitions" module="dagster" object="definitions" decorator />.
+The following example demonstrates defining a subclass of <PyObject section="resources" module="dagster" object="ConfigurableResource"/> that represents a connection to an external service. The resource can be configured by constructing a function using the <PyObject section="definitions" module="dagster" object="Definitions" decorator />.
 
 You can define methods on the resource class which depend on config values.
 
@@ -42,7 +42,7 @@ To specify resource dependencies on a schedule, annotate the resource type as a 
 
 ## With jobs
 
-The following example defines a subclass of <PyObject section="resources" module="dagster" object="ConfigurableResource"/> that represents a connection to an external service. The resource can be configured by constructing a function using the <PyObject section="definitions" module="dagster" object="definitions" decorator />.
+The following example defines a subclass of <PyObject section="resources" module="dagster" object="ConfigurableResource"/> that represents a connection to an external service. The resource can be configured by constructing a function using the <PyObject section="definitions" module="dagster" object="Definitions" decorator />.
 
 You can define methods on the resource class which depend on config values.
 
