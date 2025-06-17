@@ -6,33 +6,26 @@ last_update:
 sidebar_position: 40
 ---
 
-Dagster encourages software engineering best practices, one of which is keeping code [DRY](https://en.wikipedia.org/wiki/Don%27t_repeat_yourself). We saw the components for our podcast workflow and noted that everything exists within a factory function. Now we will show how to apply this factory to different podcasts and create distinct asset lineages for each, all within the same Dagster project.
+Dagster encourages software engineering best practices, one of which is keeping code [DRY](https://en.wikipedia.org/wiki/Don%27t_repeat_yourself). We will apply our factory pipeline to multiple podcasts which will create distinct asset lineages for each podcast, all within the same Dagster project.
 
-If you look at the `rss_pipeline_factory` function, it returns a <PyObject section="definitions" module="dagster" object="Definitions" /> object containing the four assets, a job for those assets, and the sensor for the specific podcast feed:
+If you look at the `rss_pipeline_factory` function, it returns a <PyObject section="definitions" module="dagster" object="Definitions" /> object containing the four assets, a job for those assets, and the sensor for the specific podcast feed. All of those pipelines use the same <PyObject section="resources" module="dagster" object="ConfigurableResource"/> which we can set at the project level:
 
 <CodeExample
-  path="docs_projects/project_dagster_modal_pipes/project_dagster_modal_pipes/pipeline_factory.py"
+  path="docs_projects/project_dagster_modal_pipes/src/project_dagster_modal_pipes/defs/resources.py"
+  language="python"
+  startAfter="start_resources"
+  endBefore="end_resources"
+  title="src/project_dagster_modal_pipes/defs/resources.py"
+/>
+
+With the resources set, the last step will be to initialize our three podcasts:
+
+<CodeExample
+  path="docs_projects/project_dagster_modal_pipes/src/project_dagster_modal_pipes/defs/feeds.py"
   language="python"
   startAfter="start_def"
   endBefore="end_def"
-/>
-
-We will invoke that factory function for three podcasts:
-
-<CodeExample
-  path="docs_projects/project_dagster_modal_pipes/project_dagster_modal_pipes/definitions.py"
-  language="python"
-  startAfter="start_factory"
-  endBefore="end_factory"
-/>
-
-Now we have a list of <PyObject section="definitions" module="dagster" object="Definitions" /> for the three podcasts. We will merge these together into a single definition in our Dagster project:
-
-<CodeExample
-  path="docs_projects/project_dagster_modal_pipes/project_dagster_modal_pipes/definitions.py"
-  language="python"
-  startAfter="start_def"
-  endBefore="end_def"
+  title="src/project_dagster_modal_pipes/defs/feeds.py"
 />
 
 We can now see all the assets in Dagster and know that we will ingest any new podcasts going forward.
