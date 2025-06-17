@@ -116,7 +116,6 @@ export type AssetAssetEventHistoryArgs = {
   cursor?: InputMaybe<Scalars['String']['input']>;
   eventTypeSelectors: Array<AssetEventHistoryEventTypeSelector>;
   limit: Scalars['Int']['input'];
-  partitionInLast?: InputMaybe<Scalars['Int']['input']>;
   partitions?: InputMaybe<Array<Scalars['String']['input']>>;
 };
 
@@ -124,7 +123,6 @@ export type AssetAssetMaterializationsArgs = {
   afterTimestampMillis?: InputMaybe<Scalars['String']['input']>;
   beforeTimestampMillis?: InputMaybe<Scalars['String']['input']>;
   limit?: InputMaybe<Scalars['Int']['input']>;
-  partitionInLast?: InputMaybe<Scalars['Int']['input']>;
   partitions?: InputMaybe<Array<Scalars['String']['input']>>;
 };
 
@@ -132,7 +130,6 @@ export type AssetAssetObservationsArgs = {
   afterTimestampMillis?: InputMaybe<Scalars['String']['input']>;
   beforeTimestampMillis?: InputMaybe<Scalars['String']['input']>;
   limit?: InputMaybe<Scalars['Int']['input']>;
-  partitionInLast?: InputMaybe<Scalars['Int']['input']>;
   partitions?: InputMaybe<Array<Scalars['String']['input']>>;
 };
 

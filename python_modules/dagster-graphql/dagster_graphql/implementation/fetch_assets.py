@@ -117,20 +117,20 @@ def get_assets(
         materialized_keys = instance.get_asset_keys(
             prefix=prefix, limit=limit, cursor=normalized_cursor_str
         )
+        asset_nodes_by_asset_key = {
+            asset_key: asset_node
+            for asset_key, asset_node in _get_asset_nodes_by_asset_key(graphene_info).items()
+            if (not prefix or asset_key.path[: len(prefix)] == prefix)
+            and (not normalized_cursor_str or asset_key.to_string() > normalized_cursor_str)
+            and (not asset_keys or asset_key in asset_keys)
+        }
+
+        merged_asset_keys = sorted(
+            set(materialized_keys).union(asset_nodes_by_asset_key.keys()), key=str
+        )
     else:
-        materialized_keys = asset_keys
+        merged_asset_keys = asset_keys
 
-    asset_nodes_by_asset_key = {
-        asset_key: asset_node
-        for asset_key, asset_node in _get_asset_nodes_by_asset_key(graphene_info).items()
-        if (not prefix or asset_key.path[: len(prefix)] == prefix)
-        and (not normalized_cursor_str or asset_key.to_string() > normalized_cursor_str)
-        and (not asset_keys or asset_key in asset_keys)
-    }
-
-    merged_asset_keys = sorted(
-        set(materialized_keys).union(asset_nodes_by_asset_key.keys()), key=str
-    )
     if limit:
         merged_asset_keys = merged_asset_keys[:limit]
 
