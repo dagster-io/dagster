@@ -10,7 +10,11 @@ import {hashObject} from '../util/hashObject';
 
 const referenceCache = new Map<string, any>();
 
-export const useStableReferenceByHash = <T,>(value: T, storeInMap = false, hashFn = hashObject) => {
+export const useStableReferenceByHash = <T,>(
+  value: T,
+  storeInMap = false,
+  hashFn = hashObject,
+): T => {
   const hash = useMemo(() => hashFn(value), [value, hashFn]);
   return useMemo(() => {
     const cached = referenceCache.get(hash);
