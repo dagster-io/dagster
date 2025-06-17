@@ -56,7 +56,7 @@ Sometimes you don't know the partitions in advance. For example, you might want 
 
 Consider this example:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/data-modeling/partitioning/dynamic_partitioning.py" language="python" title="Dynamic partitioning" title="src/<project_name>/defs/assets.py"/>
+<CodeExample path="docs_snippets/docs_snippets/guides/data-modeling/partitioning/dynamic_partitioning.py" language="python" title="src/<project_name>/defs/assets.py"/>
 
 In this example:
 
