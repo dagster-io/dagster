@@ -4,6 +4,10 @@ sidebar_position: 500
 title: Decommission the Airflow DAG
 ---
 
+import UseAirliftComponent from '@site/docs/partials/\_UseAirliftComponent.md';
+
+<UseAirliftComponent />
+
 Previously, we completed [migration](/migration/airflow-to-dagster/task-level-migration/migrate) of our example Airflow DAG to Dagster assets. Once we are confident in our migrated versions of the tasks, we can decommission the Airflow DAG.
 
 First, we can remove the DAG from our Airflow DAG directory.

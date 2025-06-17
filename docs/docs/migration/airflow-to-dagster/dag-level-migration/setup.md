@@ -4,6 +4,10 @@ sidebar_position: 100
 title: Setup
 ---
 
+import UseAirliftComponent from '@site/docs/partials/\_UseAirliftComponent.md';
+
+<UseAirliftComponent />
+
 In order the complete this tutorial, you'll need to:
 
 - Create a virtual environment

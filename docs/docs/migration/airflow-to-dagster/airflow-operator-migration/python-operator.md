@@ -4,6 +4,10 @@ sidebar_position: 300
 title: Migrating an Airflow PythonOperator to Dagster
 ---
 
+import UseAirliftComponent from '@site/docs/partials/\_UseAirliftComponent.md';
+
+<UseAirliftComponent />
+
 In this page, we'll explain migrating an Airflow `PythonOperator` to Dagster.
 
 ## About the Airflow PythonOperator

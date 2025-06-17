@@ -4,6 +4,10 @@ sidebar_position: 100
 title: Setup
 ---
 
+import UseAirliftComponent from '@site/docs/partials/\_UseAirliftComponent.md';
+
+<UseAirliftComponent />
+
 In this step, we'll:
 
 - Install the example code and review the project structure

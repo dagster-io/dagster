@@ -4,6 +4,10 @@ sidebar_position: 100
 title: Migrating an Airflow BashOperator to Dagster
 ---
 
+import UseAirliftComponent from '@site/docs/partials/\_UseAirliftComponent.md';
+
+<UseAirliftComponent />
+
 In this page, we'll explain migrating an Airflow `BashOperator` to Dagster.
 
 :::note

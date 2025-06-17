@@ -4,6 +4,10 @@ sidebar_position: 200
 title: Observe multiple Airflow instances from Dagster
 ---
 
+import UseAirliftComponent from '@site/docs/partials/\_UseAirliftComponent.md';
+
+<UseAirliftComponent />
+
 In the [previous step](/migration/airflow-to-dagster/federation/setup), we installed the tutorial example code and started two Airflow instances running locally. In this step, we'll create Dagster asset representations of Airflow DAGs in order to observe the Airflow instances from Dagster.
 
 ## Install the `dagster-airlift` package in your Dagster environment

@@ -13,11 +13,9 @@ import Beta from '@site/docs/partials/\_Beta.md';
 
 <Beta />
 
-:::info
+import UseAirliftComponent from '@site/docs/partials/\_UseAirliftComponent.md';
 
-If you are just getting started with Airlift, we recommend using the new [Airlift component](/guides/build/components/integrations/airflow-component-tutorial).
-
-:::
+<UseAirliftComponent />
 
 
 <p>{frontMatter.description}</p>

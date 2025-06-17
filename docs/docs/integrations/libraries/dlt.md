@@ -10,7 +10,7 @@ sidebar_custom_props:
 partnerlink: https://dlthub.com/
 ---
 
-:::info
+:::note
 
 If you are just getting started with the dlt integration, we recommend using the new [dlt component](/guides/build/components/integrations/dlt-component-tutorial).
 

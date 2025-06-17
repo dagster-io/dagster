@@ -4,6 +4,10 @@ sidebar_position: 300
 title: Observe Airflow tasks
 ---
 
+import UseAirliftComponent from '@site/docs/partials/\_UseAirliftComponent.md';
+
+<UseAirliftComponent />
+
 In the previous step, "[Peer the Airflow instance with a Dagster code location](/migration/airflow-to-dagster/task-level-migration/peer)", we connected the example Airflow instance to a Dagster code location.
 
 The next step is to represent the Airflow workflows more richly by observing the data assets that are produced by the Airflow tasks. Similar to the peering step, this step does not require any changes to Airflow code.

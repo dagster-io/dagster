@@ -10,7 +10,7 @@ sidebar_custom_props:
 partnerlink: https://www.fivetran.com/
 ---
 
-:::info
+:::note
 
 If you are just getting started with the Fivetran integration, we recommend using the new [Fivetran component](/guides/build/components/integrations/fivetran-component-tutorial).
 

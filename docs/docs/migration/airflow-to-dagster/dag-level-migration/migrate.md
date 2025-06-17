@@ -4,6 +4,10 @@ sidebar_position: 400
 title: Migrate DAG-mapped assets
 ---
 
+import UseAirliftComponent from '@site/docs/partials/\_UseAirliftComponent.md';
+
+<UseAirliftComponent />
+
 Previously, we completed the ["observe" stage](/migration/airflow-to-dagster/dag-level-migration/observe) of the Airflow DAG-level migration process by encoding the assets that are produced by each task. We also introduced partitioning to those assets.
 
 In the [task-level migration step](/migration/airflow-to-dagster/task-level-migration/migrate), we "proxied" execution on a per-task basis through a YAML document. For DAG-mapped assets, execution is proxied on a per-DAG basis. Proxying execution to Dagster will require all assets mapped to that DAG be executable within Dagster. Let's take a look at some fully migrated code mapped to DAGs instead of tasks:
