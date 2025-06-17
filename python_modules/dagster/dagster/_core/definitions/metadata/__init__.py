@@ -74,7 +74,7 @@ from dagster._utils.warnings import deprecation_warning, normalize_renamed_param
 
 ArbitraryMetadataMapping: TypeAlias = Mapping[str, Any]
 
-RawMetadataValue = Union[
+RawMetadataValue: TypeAlias = Union[
     MetadataValue,
     TableSchema,
     AssetKey,

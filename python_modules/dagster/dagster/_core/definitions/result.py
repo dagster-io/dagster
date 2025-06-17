@@ -1,27 +1,31 @@
 from collections.abc import Mapping, Sequence
-from typing import NamedTuple, Optional
+from datetime import datetime  # noqa
+from os import PathLike  # noqa
+from typing import Optional
+
+from dagster_shared.record import IHaveNew, record_custom
 
 import dagster._check as check
 from dagster._annotations import PublicAttr
 from dagster._core.definitions.asset_check_result import AssetCheckResult
 from dagster._core.definitions.data_version import DataVersion
 from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
-from dagster._core.definitions.metadata import RawMetadataMapping
+from dagster._core.definitions.metadata import (  # noqa
+    MetadataValue,
+    RawMetadataMapping,
+    TableSchema,
+)
 
 
-class AssetResult(
-    NamedTuple(
-        "_AssetResult",
-        [
-            ("asset_key", PublicAttr[Optional[AssetKey]]),
-            ("metadata", PublicAttr[Optional[RawMetadataMapping]]),
-            ("check_results", PublicAttr[Sequence[AssetCheckResult]]),
-            ("data_version", PublicAttr[Optional[DataVersion]]),
-            ("tags", PublicAttr[Optional[Mapping[str, str]]]),
-        ],
-    )
-):
+@record_custom
+class AssetResult(IHaveNew):
     """Base class for MaterializeResult and ObserveResult."""
+
+    asset_key: PublicAttr[Optional[AssetKey]] = None
+    metadata: PublicAttr[Optional[RawMetadataMapping]] = None
+    check_results: PublicAttr[Sequence[AssetCheckResult]] = []
+    data_version: PublicAttr[Optional[DataVersion]] = None
+    tags: PublicAttr[Optional[Mapping[str, str]]] = None
 
     def __new__(
         cls,
@@ -39,15 +43,9 @@ class AssetResult(
         return super().__new__(
             cls,
             asset_key=asset_key,
-            metadata=check.opt_nullable_mapping_param(
-                metadata,
-                "metadata",
-                key_type=str,
-            ),
-            check_results=check.opt_sequence_param(
-                check_results, "check_results", of_type=AssetCheckResult
-            ),
-            data_version=check.opt_inst_param(data_version, "data_version", DataVersion),
+            metadata=metadata,
+            check_results=check_results or [],
+            data_version=data_version,
             tags=validate_asset_event_tags(tags),
         )
 
