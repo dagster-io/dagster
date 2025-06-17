@@ -186,6 +186,7 @@ export type AssetGraphSidebarQuery = {
             }
           | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
         >;
+        tags: Array<{__typename: 'PipelineTag'; key: string; value: string}>;
         modes: Array<{
           __typename: 'Mode';
           id: string;
@@ -1324,4 +1325,4 @@ export type AssetGraphSidebarQuery = {
       };
 };
 
-export const AssetGraphSidebarQueryVersion = 'f96f337caf1763ba5644cc79aead3a1b994ad2d4b53ef847a32a0599a9f76587';
+export const AssetGraphSidebarQueryVersion = '4f2dbdd2f880492b69e02fb600314bfe6e0c76d95e5d0c63184b2736db7c1aa3';

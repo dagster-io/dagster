@@ -3,7 +3,6 @@ from enum import Enum
 from typing import Any, Literal, Optional
 
 from dagster import _check as check
-from dagster._annotations import deprecated
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.metadata.metadata_set import NamespacedMetadataSet
@@ -127,13 +126,6 @@ class DagsterTableauTranslator:
     Subclass this class to implement custom logic for each type of Tableau content.
     """
 
-    @deprecated(
-        breaking_version="1.10",
-        additional_warn_text="Use `DagsterTableauTranslator.get_asset_spec(...).key` instead",
-    )
-    def get_asset_key(self, data: TableauTranslatorData) -> AssetKey:
-        return self.get_asset_spec(data).key
-
     def get_asset_spec(self, data: TableauTranslatorData) -> AssetSpec:
         if data.content_type == TableauContentType.SHEET:
             return self.get_sheet_spec(data)
@@ -145,21 +137,13 @@ class DagsterTableauTranslator:
             # switch back to check.assert_never when TableauContentType.WORKBOOK is handled
             check.failed(f"unhandled type {data.content_type}")
 
-    @deprecated(
-        breaking_version="1.10",
-        additional_warn_text="Use `DagsterTableauTranslator.get_asset_spec(...).key` instead",
-    )
-    def get_sheet_asset_key(self, data: TableauTranslatorData) -> AssetKey:
-        return self.get_sheet_spec(data).key
-
-    """ If published data sources are available (i.e., parentPublishedDatasources exists and is not empty), it means you can form the lineage by using the luid of those published sources.
-    If the published data sources are missing, you create assets for embedded data sources by using their id.
-    """
-
     def get_sheet_spec(self, data: TableauTranslatorData) -> AssetSpec:
         sheet_embedded_data_sources = data.properties.get("parentEmbeddedDatasources", [])
 
         data_source_ids = set()
+        # If published data sources are available (i.e., parentPublishedDatasources exists and is not empty),
+        # it means you can form the lineage by using the luid of those published sources.
+        # If the published data sources are missing, you create assets for embedded data sources by using their id.
         for embedded_data_source in sheet_embedded_data_sources:
             published_data_source_list = embedded_data_source.get("parentPublishedDatasources", [])
             for published_data_source in published_data_source_list:
@@ -198,13 +182,6 @@ class DagsterTableauTranslator:
             },
         )
 
-    @deprecated(
-        breaking_version="1.10",
-        additional_warn_text="Use `DagsterTableauTranslator.get_asset_spec(...).key` instead",
-    )
-    def get_dashboard_asset_key(self, data: TableauTranslatorData) -> AssetKey:
-        return self.get_dashboard_spec(data).key
-
     def get_dashboard_spec(self, data: TableauTranslatorData) -> AssetSpec:
         dashboard_upstream_sheets = data.properties.get("sheets", [])
         sheet_ids = {sheet["luid"] for sheet in dashboard_upstream_sheets if sheet["luid"]}
@@ -239,13 +216,6 @@ class DagsterTableauTranslator:
                 )
             },
         )
-
-    @deprecated(
-        breaking_version="1.10",
-        additional_warn_text="Use `DagsterTableauTranslator.get_asset_spec(...).key` instead",
-    )
-    def get_data_source_asset_key(self, data: TableauTranslatorData) -> AssetKey:
-        return self.get_data_source_spec(data).key
 
     def get_data_source_spec(self, data: TableauTranslatorData) -> AssetSpec:
         return AssetSpec(

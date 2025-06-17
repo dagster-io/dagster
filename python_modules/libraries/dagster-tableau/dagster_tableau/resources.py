@@ -11,6 +11,7 @@ import jwt
 import requests
 import tableauserverclient as TSC
 from dagster import (
+    AssetExecutionContext,
     AssetSpec,
     ConfigurableResource,
     Definitions,
@@ -20,11 +21,10 @@ from dagster import (
     _check as check,
     get_dagster_logger,
 )
-from dagster._annotations import beta, deprecated
+from dagster._annotations import beta, superseded
 from dagster._core.definitions.definitions_load_context import StateBackedDefinitionsLoader
 from dagster._record import record
 from dagster._utils.cached_method import cached_method
-from dagster._utils.warnings import deprecation_warning
 from pydantic import Field, PrivateAttr
 from tableauserverclient.server.endpoint.auth_endpoint import Auth
 
@@ -33,6 +33,7 @@ from dagster_tableau.translator import (
     DagsterTableauTranslator,
     TableauContentData,
     TableauContentType,
+    TableauDataSourceMetadataSet,
     TableauMetadataSet,
     TableauTagSet,
     TableauTranslatorData,
@@ -125,6 +126,7 @@ class BaseTableauClient:
         """Cancels a given job."""
         return self._server.jobs.cancel(job_id)
 
+    @superseded(additional_warn_text="Use `refresh_and_poll` on the tableau resource instead.")
     def refresh_and_materialize_workbooks(
         self, specs: Sequence[AssetSpec], refreshable_workbook_ids: Optional[Sequence[str]]
     ) -> Iterator[Union[Output, ObserveResult]]:
@@ -153,6 +155,7 @@ class BaseTableauClient:
         job = self.poll_job(job_id=job.id, poll_interval=poll_interval, poll_timeout=poll_timeout)
         return job.workbook_id
 
+    @superseded(additional_warn_text="Use `refresh_and_poll` on the tableau resource instead.")
     def refresh_and_materialize(
         self, specs: Sequence[AssetSpec], refreshable_data_source_ids: Optional[Sequence[str]]
     ) -> Iterator[Union[Output, ObserveResult]]:
@@ -575,94 +578,81 @@ class BaseTableauWorkspace(ConfigurableResource):
             workbooks + sheets + dashboards + data_sources,
         )
 
-    @deprecated(
-        breaking_version="1.9.0",
-        additional_warn_text="Use dagster_tableau.load_tableau_asset_specs instead",
-    )
-    def build_defs(
-        self,
-        refreshable_workbook_ids: Optional[Sequence[str]] = None,
-        dagster_tableau_translator: type[DagsterTableauTranslator] = DagsterTableauTranslator,
-    ) -> Definitions:
-        """Returns a Definitions object which will load Tableau content from
-        the workspace and translate it into assets, using the provided translator.
-
-        Args:
-            refreshable_workbook_ids (Optional[Sequence[str]]): A list of workbook IDs. The workbooks provided must
-                have extracts as data sources and be refreshable in Tableau.
-
-                When materializing your Tableau assets, the workbooks provided are refreshed,
-                refreshing their sheets and dashboards before pulling their data in Dagster.
-
-                This feature is equivalent to selecting Refreshing Extracts for a workbook in Tableau UI
-                and only works for workbooks for which the data sources are extracts.
-                See https://help.tableau.com/current/api/rest_api/en-us/REST/rest_api_ref_workbooks_and_views.htm#update_workbook_now
-                for documentation.
-            dagster_tableau_translator (Type[DagsterTableauTranslator]): The translator to use
-                to convert Tableau content into AssetSpecs. Defaults to DagsterTableauTranslator.
-
-        Returns:
-            Definitions: A Definitions object which will build and return the Power BI content.
+    def refresh_and_poll(
+        self, context: AssetExecutionContext
+    ) -> Iterator[Union[Output, ObserveResult]]:
+        """Executes a refresh and poll process to materialize Tableau assets,
+        including data sources with extracts, views and workbooks.
+        This method can only be used in the context of an asset execution.
         """
-        from dagster_tableau.assets import build_tableau_materializable_assets_definition
-
-        resource_key = "tableau"
-
-        asset_specs = load_tableau_asset_specs(self, dagster_tableau_translator())
-
-        non_executable_asset_specs = [
-            spec
-            for spec in asset_specs
-            if TableauTagSet.extract(spec.tags).asset_type == "data_source"
+        assets_def = context.assets_def
+        specs = assets_def.specs
+        refreshable_data_source_ids = [
+            check.not_none(TableauDataSourceMetadataSet.extract(spec.metadata).id)
+            for spec in specs
+            if TableauDataSourceMetadataSet.extract(spec.metadata).has_extracts
         ]
 
-        executable_asset_specs = [
-            spec
-            for spec in asset_specs
-            if TableauTagSet.extract(spec.tags).asset_type in ["dashboard", "sheet"]
-        ]
+        with self.get_client() as client:
+            refreshed_data_source_ids = set()
+            for refreshable_data_source_id in refreshable_data_source_ids:
+                refreshed_data_source_ids.add(
+                    client.refresh_and_poll_data_source(refreshable_data_source_id)
+                )
 
-        return Definitions(
-            assets=[
-                build_tableau_materializable_assets_definition(
-                    resource_key=resource_key,
-                    specs=executable_asset_specs,
-                    refreshable_workbook_ids=refreshable_workbook_ids,
-                ),
-                *non_executable_asset_specs,
-            ],
-            resources={resource_key: self},
-        )
+            # If a sheet depends on a refreshed data source, then its workbook is considered refreshed
+            refreshed_workbook_ids = set()
+            specs_by_asset_key = {spec.key: spec for spec in specs}
+            for spec in specs:
+                if TableauTagSet.extract(spec.tags).asset_type == "sheet":
+                    for dep in spec.deps:
+                        # Only materializable data sources are included in materializable asset specs,
+                        # so we must verify for None values - data sources that are external specs are not available here.
+                        dep_spec = specs_by_asset_key.get(dep.asset_key, None)
+                        if (
+                            dep_spec
+                            and TableauMetadataSet.extract(dep_spec.metadata).id
+                            in refreshed_data_source_ids
+                        ):
+                            refreshed_workbook_ids.add(
+                                TableauViewMetadataSet.extract(spec.metadata).workbook_id
+                            )
+                            break
+
+            for spec in specs:
+                asset_type = check.inst(TableauTagSet.extract(spec.tags).asset_type, str)
+                asset_id = check.inst(TableauMetadataSet.extract(spec.metadata).id, str)
+
+                if asset_type == "data_source":
+                    yield from create_data_source_asset_event(
+                        data_source=client.get_data_source(asset_id),
+                        spec=spec,
+                        refreshed_data_source_ids=refreshed_data_source_ids,
+                    )
+                else:
+                    yield from create_view_asset_event(
+                        view=client.get_view(asset_id),
+                        spec=spec,
+                        refreshed_workbook_ids=refreshed_workbook_ids,
+                    )
 
 
 @beta
 def load_tableau_asset_specs(
     workspace: BaseTableauWorkspace,
-    dagster_tableau_translator: Optional[
-        Union[DagsterTableauTranslator, type[DagsterTableauTranslator]]
-    ] = None,
+    dagster_tableau_translator: Optional[DagsterTableauTranslator] = None,
 ) -> Sequence[AssetSpec]:
     """Returns a list of AssetSpecs representing the Tableau content in the workspace.
 
     Args:
         workspace (Union[TableauCloudWorkspace, TableauServerWorkspace]): The Tableau workspace to fetch assets from.
-        dagster_tableau_translator (Optional[Union[DagsterTableauTranslator, Type[DagsterTableauTranslator]]]):
+        dagster_tableau_translator (Optional[DagsterTableauTranslator]):
             The translator to use to convert Tableau content into :py:class:`dagster.AssetSpec`.
             Defaults to :py:class:`DagsterTableauTranslator`.
 
     Returns:
         List[AssetSpec]: The set of assets representing the Tableau content in the workspace.
     """
-    if isinstance(dagster_tableau_translator, type):
-        deprecation_warning(
-            subject="Support of `dagster_tableau_translator` as a Type[DagsterTableauTranslator]",
-            breaking_version="1.10",
-            additional_warn_text=(
-                "Pass an instance of DagsterTableauTranslator or subclass to `dagster_tableau_translator` instead."
-            ),
-        )
-        dagster_tableau_translator = dagster_tableau_translator()
-
     with workspace.process_config_and_initialize_cm() as initialized_workspace:
         return check.is_list(
             TableauWorkspaceDefsLoader(
