@@ -66,10 +66,16 @@ class InternalFreshnessPolicy(ABC):
 
     @staticmethod
     def cron(
-        deadline_cron: str, lower_bound_delta: timedelta, timezone: str = "UTC"
+        deadline_cron: str,
+        lower_bound_delta: timedelta,
+        lower_bound_warning_delta: Optional[timedelta] = None,
+        timezone: str = "UTC",
     ) -> "CronFreshnessPolicy":
         return CronFreshnessPolicy(
-            deadline_cron=deadline_cron, lower_bound_delta=lower_bound_delta, timezone=timezone
+            deadline_cron=deadline_cron,
+            lower_bound_delta=lower_bound_delta,
+            lower_bound_warning_delta=lower_bound_warning_delta,
+            timezone=timezone,
         )
 
 
@@ -98,10 +104,13 @@ class TimeWindowFreshnessPolicy(InternalFreshnessPolicy, IHaveNew):
         )
 
 
-@whitelist_for_serdes
+@whitelist_for_serdes(
+    skip_when_none_fields={"serializable_lower_bound_warning_delta"},
+)
 @record_custom(
     field_to_new_mapping={
         "serializable_lower_bound_delta": "lower_bound_delta",
+        "serializable_lower_bound_warning_delta": "lower_bound_warning_delta",
     }
 )
 class CronFreshnessPolicy(InternalFreshnessPolicy, IHaveNew):
@@ -132,6 +141,7 @@ class CronFreshnessPolicy(InternalFreshnessPolicy, IHaveNew):
 
     deadline_cron: str
     serializable_lower_bound_delta: SerializableTimeDelta
+    serializable_lower_bound_warning_delta: Optional[SerializableTimeDelta] = None
     timezone: str
 
     def __new__(
@@ -139,6 +149,7 @@ class CronFreshnessPolicy(InternalFreshnessPolicy, IHaveNew):
         deadline_cron: str,
         lower_bound_delta: Union[timedelta, SerializableTimeDelta],
         timezone: str = "UTC",
+        lower_bound_warning_delta: Optional[Union[timedelta, SerializableTimeDelta]] = None,
     ):
         check.str_param(deadline_cron, "deadline_cron")
         check.invariant(is_valid_cron_string(deadline_cron), "Invalid cron string.")
@@ -157,6 +168,30 @@ class CronFreshnessPolicy(InternalFreshnessPolicy, IHaveNew):
             actual_lower_bound_delta >= timedelta(minutes=1),
             f"lower_bound_delta must be greater than or equal to 1 minute, was {actual_lower_bound_delta.total_seconds()} seconds",
         )
+
+        if lower_bound_warning_delta:
+            if isinstance(lower_bound_warning_delta, SerializableTimeDelta):
+                serializable_lower_bound_warning_delta = lower_bound_warning_delta
+                actual_lower_bound_warning_delta = lower_bound_warning_delta.to_timedelta()
+            else:
+                actual_lower_bound_warning_delta = lower_bound_warning_delta
+                serializable_lower_bound_warning_delta = SerializableTimeDelta.from_timedelta(
+                    lower_bound_warning_delta
+                )
+        else:
+            actual_lower_bound_warning_delta = None
+            serializable_lower_bound_warning_delta = None
+
+        if actual_lower_bound_warning_delta:
+            check.invariant(
+                actual_lower_bound_warning_delta >= timedelta(minutes=1),
+                f"lower_bound_warning_delta must be greater than or equal to 1 minute, was {actual_lower_bound_warning_delta.total_seconds()} seconds",
+            )
+            check.invariant(
+                actual_lower_bound_warning_delta < actual_lower_bound_delta,
+                f"lower_bound_warning_delta must be less than lower_bound_delta of {actual_lower_bound_delta.total_seconds()} seconds, was {actual_lower_bound_warning_delta.total_seconds()} seconds",
+            )
+
         smallest_cron_interval = get_smallest_cron_interval(deadline_cron)
         check.invariant(
             actual_lower_bound_delta <= smallest_cron_interval,
@@ -174,6 +209,7 @@ class CronFreshnessPolicy(InternalFreshnessPolicy, IHaveNew):
             cls,
             deadline_cron=deadline_cron,
             serializable_lower_bound_delta=serializable_lower_bound_delta,
+            serializable_lower_bound_warning_delta=serializable_lower_bound_warning_delta,
             timezone=timezone,
         )
 
@@ -183,6 +219,17 @@ class CronFreshnessPolicy(InternalFreshnessPolicy, IHaveNew):
         Use this instead of accessing the serializable_lower_bound_delta directly.
         """
         return SerializableTimeDelta.to_timedelta(self.serializable_lower_bound_delta)
+
+    @property
+    def lower_bound_warning_delta(self) -> Optional[timedelta]:
+        """Returns the lower bound warning delta as a timedelta, or None if not set.
+        Use this instead of accessing the serializable_lower_bound_warning_delta directly.
+        """
+        return (
+            SerializableTimeDelta.to_timedelta(self.serializable_lower_bound_warning_delta)
+            if self.serializable_lower_bound_warning_delta
+            else None
+        )
 
 
 @whitelist_for_serdes
