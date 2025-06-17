@@ -11,16 +11,17 @@ import React, {useMemo} from 'react';
 import {Link} from 'react-router-dom';
 import {AssetAlertsSection} from 'shared/assets/AssetAlertsSection.oss';
 
+import {WorkspaceAssetFragment} from '../../workspace/WorkspaceContext/types/WorkspaceQueries.types';
 import {AssetEventMetadataEntriesTable} from '../AssetEventMetadataEntriesTable';
 import {metadataForAssetNode} from '../AssetMetadata';
 import {AutomationDetailsSection} from './AutomationDetailsSection';
 import {AttributeAndValue, NoValue, SectionEmptyState} from './Common';
 import {ComputeDetailsSection} from './ComputeDetailsSection';
 import {DefinitionSection} from './DefinitionSection';
+import {FreshnessPolicySection, FreshnessTag} from './FreshnessPolicySection';
 import {LineageSection} from './LineageSection';
 import {useAssetsLiveData} from '../../asset-data/AssetLiveDataProvider';
 import {LiveDataForNode} from '../../asset-graph/Utils';
-import {AssetNodeForGraphQueryFragment} from '../../asset-graph/types/useAssetGraphData.types';
 import {IntMetadataEntry} from '../../graphql/types';
 import {isCanonicalRowCountMetadataEntry} from '../../metadata/MetadataEntry';
 import {TableSchema, TableSchemaAssetContext} from '../../metadata/TableSchema';
@@ -40,7 +41,6 @@ import {AssetKey} from '../types';
 import {AssetTableDefinitionFragment} from '../types/AssetTableFragment.types';
 import {AssetViewDefinitionNodeFragment} from '../types/AssetView.types';
 import {useLatestEvents} from '../useLatestEvents';
-import {FreshnessPolicySection, FreshnessTag} from './FreshnessPolicySection';
 
 export const AssetNodeOverview = ({
   assetKey,
@@ -54,8 +54,8 @@ export const AssetNodeOverview = ({
   assetKey: AssetKey;
   assetNode: AssetViewDefinitionNodeFragment | undefined | null;
   cachedAssetNode: AssetTableDefinitionFragment | undefined | null;
-  upstream: AssetNodeForGraphQueryFragment[] | null;
-  downstream: AssetNodeForGraphQueryFragment[] | null;
+  upstream: WorkspaceAssetFragment[] | null;
+  downstream: WorkspaceAssetFragment[] | null;
   liveData: LiveDataForNode | undefined;
   dependsOnSelf: boolean;
 }) => {

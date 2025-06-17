@@ -58,7 +58,7 @@ def test_components_docs_adding_attributes_to_assets(
         context.run_command_and_snippet_output(
             cmd=textwrap.dedent(
                 f"""\
-                create-dagster project my-project --python-environment uv_managed --use-editable-dagster \\
+                create-dagster project my-project --uv-sync --use-editable-dagster \\
                     && source my-project/.venv/bin/activate \\
                     && cd my-project/src \\
                     && uv add --editable {EDITABLE_DIR / "dagster-sling"} \\
@@ -68,10 +68,10 @@ def test_components_docs_adding_attributes_to_assets(
             snippet_path=SNIPPETS_DIR
             / f"{context.get_next_snip_number()}-scaffold-project.txt",
             snippet_replace_regex=[
-                ("--python-environment uv_managed --use-editable-dagster ", ""),
+                ("--uv-sync --use-editable-dagster ", ""),
                 ("--editable.*dagster-sling", "dagster-sling"),
                 (".*&& source my-project/.venv/bin/activate.*\n", ""),
-                ("create-dagster", "uvx create-dagster"),
+                ("create-dagster", "uvx-U create-dagster"),
             ],
             ignore_output=True,
         )

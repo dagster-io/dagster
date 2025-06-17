@@ -50,6 +50,8 @@ enum DagsterEventType {
   STEP_EXPECTATION_RESULT
   ASSET_CHECK_EVALUATION_PLANNED
   ASSET_CHECK_EVALUATION
+  ASSET_HEALTH_CHANGED
+  ASSET_WIPED
   RUN_ENQUEUED
   RUN_DEQUEUED
   RUN_STARTING
@@ -928,11 +930,17 @@ type FreshnessPolicy {
   lastEvaluationTimestamp: String
 }
 
-union InternalFreshnessPolicy = TimeWindowFreshnessPolicy
+union InternalFreshnessPolicy = TimeWindowFreshnessPolicy | CronFreshnessPolicy
 
 type TimeWindowFreshnessPolicy {
   failWindowSeconds: Int!
   warnWindowSeconds: Int
+}
+
+type CronFreshnessPolicy {
+  deadlineCron: String!
+  lowerBoundDeltaSeconds: Int!
+  timezone: String!
 }
 
 type AutoMaterializePolicy {

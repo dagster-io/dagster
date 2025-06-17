@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional
 
 import click
-from dagster_dg_core.component import RemotePluginRegistry
+from dagster_dg_core.component import EnvRegistry
 from dagster_dg_core.config import normalize_cli_config
 from dagster_dg_core.context import DgContext
 from dagster_dg_core.env import ProjectEnvVars, get_project_specified_env_vars
@@ -113,7 +113,7 @@ def list_components_command(
     """List all available Dagster component types in the current Python environment."""
     cli_config = normalize_cli_config(global_options, click.get_current_context())
     dg_context = DgContext.for_defined_registry_environment(target_path, cli_config)
-    registry = RemotePluginRegistry.from_dg_context(dg_context)
+    registry = EnvRegistry.from_dg_context(dg_context)
 
     # Get all components (objects that have the 'component' feature)
     component_objects = sorted(
@@ -169,7 +169,7 @@ def list_registry_modules_command(
 
     cli_config = normalize_cli_config(global_options, click.get_current_context())
     dg_context = DgContext.for_defined_registry_environment(target_path, cli_config)
-    registry = RemotePluginRegistry.from_dg_context(dg_context)
+    registry = EnvRegistry.from_dg_context(dg_context)
 
     if output_json:
         json_output = [{"module": module} for module in sorted(registry.modules)]

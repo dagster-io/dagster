@@ -23,12 +23,14 @@ from dagster._core.definitions.source_asset import SourceAsset
 from dagster_shared.check.functions import CheckError
 
 
-def ensure_get_job_def_warns(defs: Definitions, name: str) -> None:
+def ensure_get_job_def_warns(defs: Definitions, name: str) -> str:
     warnings.resetwarnings()
     with warnings.catch_warnings(record=True) as w:
         defs.get_job_def(name)
         assert len(w) == 1
-        assert "require a call to resolve_job_def" in str(w[0].message)
+    message = str(w[0].message)
+    assert message
+    return message
 
 
 def ensure_resolve_job_succeeds(defs: Definitions, name: str) -> None:
@@ -59,7 +61,8 @@ def test_direct_job_def() -> None:
     defs = Definitions(jobs=[a_job])
 
     ensure_get_direct_job_def_succeeds(defs, a_job)
-    assert not defs.has_resolved_repository_def()
+    # resolves job anyway til 1.11
+    assert defs.has_resolved_repository_def()
 
 
 def test_resolve_direct_asset_job() -> None:
@@ -82,7 +85,7 @@ def test_get_direct_asset_job_fails() -> None:
 
     defs = Definitions(jobs=[asset_job])
 
-    ensure_get_job_def_warns(defs, "asset_job")
+    assert "Found asset job named asset_job" in ensure_get_job_def_warns(defs, "asset_job")
     assert defs.has_resolved_repository_def()
 
 
@@ -112,7 +115,7 @@ def test_sensor_target_job_get_fails() -> None:
 
     defs = Definitions(sensors=[my_sensor])
 
-    ensure_get_job_def_warns(defs, "asset_job")
+    assert "Found job or graph named asset_job" in ensure_get_job_def_warns(defs, "asset_job")
     assert defs.has_resolved_repository_def()
 
 
@@ -129,7 +132,7 @@ def test_sensor_get_direct_job_succeeds() -> None:
 
     defs = Definitions(sensors=[my_sensor])
 
-    ensure_get_job_def_warns(defs, direct_job.name)
+    assert "Found job or graph named direct_job" in ensure_get_job_def_warns(defs, direct_job.name)
     assert defs.has_resolved_repository_def()
 
 
@@ -159,7 +162,7 @@ def test_schedule_target_job_get_fails() -> None:
 
     defs = Definitions(schedules=[my_schedule])
 
-    ensure_get_job_def_warns(defs, "asset_job")
+    assert "Found job named asset_job" in ensure_get_job_def_warns(defs, "asset_job")
     assert defs.has_resolved_repository_def()
 
 
@@ -176,7 +179,7 @@ def test_schedule_get_direct_job_succeeds() -> None:
 
     defs = Definitions(schedules=[my_schedule])
 
-    ensure_get_job_def_warns(defs, direct_job.name)
+    assert "Found job named direct_job" in ensure_get_job_def_warns(defs, direct_job.name)
     assert defs.has_resolved_repository_def()
 
 

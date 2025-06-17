@@ -223,6 +223,18 @@ const sidebars: SidebarsConfig = {
     },
     {
       type: 'category',
+      label: 'dg',
+      collapsed: false,
+      link: {type: 'doc', id: 'api/dg/index'},
+      items:
+        [
+          'api/dg/create-dagster',
+          'api/dg/dg-cli',
+          'api/dg/dg-cli-configuration'
+        ],
+    },
+    {
+      type: 'category',
       label: 'Dagster core',
       collapsed: false,
       link: {type: 'doc', id: 'api/dagster/index'},

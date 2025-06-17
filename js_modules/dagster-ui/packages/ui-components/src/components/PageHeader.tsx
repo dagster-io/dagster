@@ -19,7 +19,7 @@ export const PageHeader = (props: Props) => {
   const {title, tags, right, tabs} = props;
   return (
     <PageHeaderContainer
-      background={Colors.backgroundLight()}
+      background={Colors.backgroundDefault()}
       padding={{horizontal: 24}}
       border="bottom"
     >

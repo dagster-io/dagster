@@ -237,3 +237,13 @@ def test_since_condition() -> None:
         reset_evaluation_id=8,
         reset_timestamp=timestamp,
     )
+
+
+def test_allow_ignore() -> None:
+    selection = dg.AssetSelection.groups("a")
+    a = dg.AutomationCondition.any_deps_updated()
+    b = dg.AutomationCondition.any_deps_in_progress()
+    initial = a.since(b)
+
+    assert initial.allow(selection) == a.allow(selection).since(b.allow(selection))
+    assert initial.ignore(selection) == a.ignore(selection).since(b.ignore(selection))

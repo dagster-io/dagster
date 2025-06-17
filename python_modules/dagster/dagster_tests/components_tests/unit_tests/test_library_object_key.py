@@ -1,7 +1,7 @@
 from pathlib import Path
 
 import pytest
-from dagster_shared.serdes.objects import PluginObjectKey
+from dagster_shared.serdes.objects import EnvRegistryKey
 
 dirpath = Path(".")
 
@@ -9,13 +9,13 @@ dirpath = Path(".")
 @pytest.mark.parametrize(
     ["typename", "key"],
     [
-        ("foo.bar", PluginObjectKey("foo", "bar")),
-        ("foo.Bar", PluginObjectKey("foo", "Bar")),
-        ("foo.bar.baz", PluginObjectKey("foo.bar", "baz")),
+        ("foo.bar", EnvRegistryKey("foo", "bar")),
+        ("foo.Bar", EnvRegistryKey("foo", "Bar")),
+        ("foo.bar.baz", EnvRegistryKey("foo.bar", "baz")),
     ],
 )
-def test_valid_keys(typename: str, key: PluginObjectKey) -> None:
-    assert PluginObjectKey.from_typename(typename) == key
+def test_valid_keys(typename: str, key: EnvRegistryKey) -> None:
+    assert EnvRegistryKey.from_typename(typename) == key
 
 
 @pytest.mark.parametrize(
@@ -28,4 +28,4 @@ def test_valid_keys(typename: str, key: PluginObjectKey) -> None:
 )
 def test_invalid_keys(typename: str) -> None:
     with pytest.raises(ValueError):
-        PluginObjectKey.from_typename(typename)
+        EnvRegistryKey.from_typename(typename)

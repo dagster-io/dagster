@@ -20,7 +20,7 @@ from dagster.components.core.package_entry import (
 )
 from dagster.components.core.snapshot import get_package_entry_snap
 from dagster_dg_core.utils import get_venv_executable
-from dagster_shared.serdes.objects import PluginObjectKey
+from dagster_shared.serdes.objects import EnvRegistryKey
 
 ensure_dagster_tests_import()
 
@@ -123,19 +123,16 @@ def test_components_from_dagster():
         ]
     ) as python_executable:
         component_types = _get_component_types_in_python_environment(python_executable)
-        assert "dagster.PipesSubprocessScriptCollectionComponent" in component_types
         assert "dagster_dbt.DbtProjectComponent" not in component_types
         assert "dagster_sling.SlingReplicationCollectionComponent" not in component_types
 
     with _temp_venv([*common_deps, "-e", dbt_root]) as python_executable:
         component_types = _get_component_types_in_python_environment(python_executable)
-        assert "dagster.PipesSubprocessScriptCollectionComponent" in component_types
         assert "dagster_dbt.DbtProjectComponent" in component_types
         assert "dagster_sling.SlingReplicationCollectionComponent" not in component_types
 
     with _temp_venv([*common_deps, "-e", sling_root]) as python_executable:
         component_types = _get_component_types_in_python_environment(python_executable)
-        assert "dagster.PipesSubprocessScriptCollectionComponent" in component_types
         assert "dagster_dbt.DbtProjectComponent" not in component_types
         assert "dagster_sling.SlingReplicationCollectionComponent" in component_types
 
@@ -144,7 +141,7 @@ def test_all_components_have_defined_summary():
     registry = discover_entry_point_package_objects()
     for component_name, component_type in registry.items():
         if isinstance(component_type, type) and issubclass(component_type, Component):
-            assert get_package_entry_snap(PluginObjectKey("a", "a"), component_type).summary, (
+            assert get_package_entry_snap(EnvRegistryKey("a", "a"), component_type).summary, (
                 f"Component {component_name} has no summary defined"
             )
 

@@ -1,15 +1,18 @@
+from collections.abc import Iterable
+from typing import Optional
+
 from dagster_shared import record
 from dagster_shared.serdes import whitelist_for_serdes
 
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.freshness import FreshnessState
-from dagster._core.loader import LoadingContext
+from dagster._core.loader import LoadableBy, LoadingContext
 from dagster._streamline.asset_health import AssetHealthStatus
 
 
 @whitelist_for_serdes
 @record.record
-class AssetFreshnessHealthState:
+class AssetFreshnessHealthState(LoadableBy[AssetKey]):
     """Maintains the latest freshness state for the asset."""
 
     freshness_state: FreshnessState
@@ -42,3 +45,16 @@ class AssetFreshnessHealthState:
         return cls(
             freshness_state=freshness_state_record.freshness_state,
         )
+
+    @classmethod
+    def _blocking_batch_load(
+        cls, keys: Iterable[AssetKey], context: LoadingContext
+    ) -> Iterable[Optional["AssetFreshnessHealthState"]]:
+        asset_freshness_health_states = (
+            context.instance.get_asset_freshness_health_state_for_assets(list(keys))
+        )
+
+        if asset_freshness_health_states is None:
+            return [None for _ in keys]
+        else:
+            return [asset_freshness_health_states.get(key) for key in keys]

@@ -1,5 +1,6 @@
 import asyncio
 import sys
+import tempfile
 from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from pathlib import Path
@@ -7,13 +8,14 @@ from typing import Any, Optional, Union, cast
 
 import dagster._check as check
 import graphene
+import yaml
 from dagster._core.definitions.asset_job import IMPLICIT_ASSET_JOB_NAME
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.instance import DagsterInstance
 from dagster._core.remote_representation.external import RemoteRepository
 from dagster._core.test_utils import wait_for_runs_to_finish
 from dagster._core.workspace.context import WorkspaceProcessContext, WorkspaceRequestContext
-from dagster._core.workspace.load_target import PythonFileTarget
+from dagster._core.workspace.load_target import PythonFileTarget, WorkspaceFileTarget
 from typing_extensions import Protocol, TypeAlias, TypedDict
 
 from dagster_graphql import __file__ as dagster_graphql_init_py
@@ -141,7 +143,7 @@ def execute_dagster_graphql_and_finish_runs(
 
 @contextmanager
 def define_out_of_process_context(
-    python_file: str,
+    python_or_workspace_file: str,
     fn_name: Optional[str],
     instance: DagsterInstance,
     read_only: bool = False,
@@ -150,7 +152,7 @@ def define_out_of_process_context(
     check.inst_param(instance, "instance", DagsterInstance)
 
     with define_out_of_process_workspace(
-        python_file, fn_name, instance, read_only=read_only
+        python_or_workspace_file, fn_name, instance, read_only=read_only
     ) as workspace_process_context:
         yield WorkspaceRequestContext(
             instance=instance,
@@ -163,17 +165,47 @@ def define_out_of_process_context(
         )
 
 
+# Args are tuples of (location_name, python_file, function_name)
+@contextmanager
+def temp_workspace_file(python_fns: list[tuple[str, str, Optional[str]]]) -> Iterator[str]:
+    with tempfile.TemporaryDirectory() as temp_dir:
+        temp_workspace_file = Path(temp_dir) / "workspace.yaml"
+
+        entries = []
+        for loc_name, file, fn in python_fns:
+            entries.append(
+                {
+                    "python_file": {
+                        "relative_path": file,
+                        "attribute": fn,
+                        "location_name": loc_name,
+                    }
+                }
+            )
+        temp_workspace_file.write_text(yaml.dump({"load_from": entries}))
+        yield str(temp_workspace_file)
+
+
 def define_out_of_process_workspace(
-    python_file: str, fn_name: Optional[str], instance: DagsterInstance, read_only: bool = False
+    python_or_workspace_file: str,
+    fn_name: Optional[str],
+    instance: DagsterInstance,
+    read_only: bool = False,
 ) -> WorkspaceProcessContext:
-    return WorkspaceProcessContext(
-        instance,
-        PythonFileTarget(
-            python_file=python_file,
+    if python_or_workspace_file.endswith(".yaml"):  # workspace
+        target = WorkspaceFileTarget(
+            paths=[python_or_workspace_file],
+        )
+    else:  # python file
+        target = PythonFileTarget(
+            python_file=python_or_workspace_file,
             attribute=fn_name,
             working_directory=None,
             location_name=main_repo_location_name(),
-        ),
+        )
+    return WorkspaceProcessContext(
+        instance,
+        target,
         version="",
         read_only=read_only,
     )
@@ -191,13 +223,18 @@ def infer_repository(graphql_context: WorkspaceRequestContext) -> RemoteReposito
     return code_location.get_repository("test_repo")
 
 
-def infer_repository_selector(graphql_context: WorkspaceRequestContext) -> Selector:
+def infer_repository_selector(
+    graphql_context: WorkspaceRequestContext, location_name: Optional[str] = None
+) -> Selector:
     if len(graphql_context.code_locations) == 1:
         # This is to account for having a single in process repository
         code_location = graphql_context.code_locations[0]
         repositories = code_location.get_repositories()
         assert len(repositories) == 1
         repository = next(iter(repositories.values()))
+    elif location_name:
+        code_location = graphql_context.get_code_location(location_name)
+        repository = code_location.get_repository(location_name)
     else:
         code_location = graphql_context.get_code_location(main_repo_location_name())
         repository = code_location.get_repository("test_repo")
@@ -214,8 +251,9 @@ def infer_job_selector(
     op_selection: Optional[Sequence[str]] = None,
     asset_selection: Optional[Sequence[GqlAssetKey]] = None,
     asset_check_selection: Optional[Sequence[GqlAssetCheckHandle]] = None,
+    location_name: Optional[str] = None,
 ) -> Selector:
-    selector = infer_repository_selector(graphql_context)
+    selector = infer_repository_selector(graphql_context, location_name)
     selector.update(
         {
             "pipelineName": job_name,
@@ -266,6 +304,7 @@ def materialize_assets(
     asset_selection: Optional[Sequence[AssetKey]] = None,
     partition_keys: Optional[Sequence[str]] = None,
     run_config_data: Optional[Mapping[str, Any]] = None,
+    location_name: Optional[str] = None,
 ) -> Union[GqlResult, Sequence[GqlResult]]:
     from dagster_graphql.client.query import LAUNCH_PIPELINE_EXECUTION_MUTATION
 
@@ -275,7 +314,10 @@ def materialize_assets(
         else None
     )
     selector = infer_job_selector(
-        context, IMPLICIT_ASSET_JOB_NAME, asset_selection=gql_asset_selection
+        context,
+        IMPLICIT_ASSET_JOB_NAME,
+        asset_selection=gql_asset_selection,
+        location_name=location_name,
     )
     if partition_keys:
         results = []
@@ -297,9 +339,6 @@ def materialize_assets(
             )
         return results
     else:
-        selector = infer_job_selector(
-            context, IMPLICIT_ASSET_JOB_NAME, asset_selection=gql_asset_selection
-        )
         return execute_dagster_graphql(
             context,
             LAUNCH_PIPELINE_EXECUTION_MUTATION,

@@ -15,6 +15,7 @@ from typing import (  # noqa: UP035
 )
 
 from dagster_shared.dagster_model.pydantic_compat_layer import model_fields
+from dagster_shared.error import DagsterError
 from pydantic import BaseModel
 from typing_extensions import TypeAlias, TypeGuard, get_args, get_origin
 
@@ -50,11 +51,7 @@ from dagster._core.definitions.resource_definition import (
     has_at_least_one_parameter,
 )
 from dagster._core.definitions.resource_requirement import ResourceRequirement
-from dagster._core.errors import (
-    DagsterError,
-    DagsterInvalidConfigError,
-    DagsterInvalidDefinitionError,
-)
+from dagster._core.errors import DagsterInvalidConfigError, DagsterInvalidDefinitionError
 from dagster._core.execution.context.init import InitResourceContext, build_init_resource_context
 from dagster._core.storage.io_manager import IOManagerDefinition
 from dagster._record import record

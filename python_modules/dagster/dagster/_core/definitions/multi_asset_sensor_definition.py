@@ -9,6 +9,7 @@ from dagster._annotations import deprecated_param, public, superseded
 from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.metadata import RawMetadataMapping
 from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.definitions.resource_annotation import get_resource_args
 from dagster._core.definitions.resource_definition import ResourceDefinition
@@ -1150,7 +1151,7 @@ class MultiAssetSensorDefinition(SensorDefinition):
         request_assets: Optional[AssetSelection] = None,
         required_resource_keys: Optional[set[str]] = None,
         tags: Optional[Mapping[str, str]] = None,
-        metadata: Optional[Mapping[str, object]] = None,
+        metadata: Optional[RawMetadataMapping] = None,
     ):
         resource_arg_names: set[str] = {
             arg.name for arg in get_resource_args(asset_materialization_fn)

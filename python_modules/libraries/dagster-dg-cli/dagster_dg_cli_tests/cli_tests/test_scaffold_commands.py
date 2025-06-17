@@ -1,3 +1,4 @@
+import importlib
 import json
 import subprocess
 import textwrap
@@ -66,7 +67,7 @@ def test_scaffold_defs_classname_alias(component_arg: str) -> None:
 def test_scaffold_defs_classname_conflict_no_alias() -> None:
     with (
         ProxyRunner.test(use_fixed_test_components=True) as runner,
-        isolated_example_project_foo_bar(runner, python_environment="uv_managed") as project_dir,
+        isolated_example_project_foo_bar(runner, uv_sync=True) as project_dir,
     ):
         # Need to use subprocess here because of cached in-process state
         with activate_venv(project_dir / ".venv"):
@@ -84,11 +85,49 @@ def test_scaffold_defs_classname_conflict_no_alias() -> None:
             assert f"type: {full_type}" in defs_yaml_path.read_text()
 
 
+def test_scaffold_defs_validation_failure() -> None:
+    with (
+        ProxyRunner.test(use_fixed_test_components=True) as runner,
+        isolated_example_project_foo_bar(runner),
+    ):
+        result = runner.invoke(
+            "scaffold", "defs", "dagster_test.components.SimplePipesScriptComponent", "qux"
+        )
+        assert_runner_result(result, exit_0=False)
+        assert (
+            result.output.strip()
+            == textwrap.dedent("""
+            Error validating scaffold parameters for `dagster_test.components.SimplePipesScriptComponent`:
+
+            [
+                {
+                    "type": "missing",
+                    "loc": [
+                        "asset_key"
+                    ],
+                    "msg": "Field required",
+                    "input": {},
+                    "url": "https://errors.pydantic.dev/2.11/v/missing"
+                },
+                {
+                    "type": "missing",
+                    "loc": [
+                        "filename"
+                    ],
+                    "msg": "Field required",
+                    "input": {},
+                    "url": "https://errors.pydantic.dev/2.11/v/missing"
+                }
+            ]
+        """).strip()
+        )
+
+
 @pytest.mark.parametrize("in_workspace", [True, False])
 def test_scaffold_defs_component_no_params_success(in_workspace: bool) -> None:
     with (
         ProxyRunner.test(use_fixed_test_components=True) as runner,
-        isolated_example_project_foo_bar(runner, in_workspace),
+        isolated_example_project_foo_bar(runner, in_workspace, uv_sync=True),
     ):
         result = runner.invoke(
             "scaffold", "defs", "dagster_test.components.AllMetadataEmptyComponent", "qux"
@@ -110,7 +149,7 @@ def test_scaffold_defs_component_no_params_success(in_workspace: bool) -> None:
 def test_scaffold_defs_component_substring_single_match_success(selection: str) -> None:
     with (
         ProxyRunner.test(use_fixed_test_components=True) as runner,
-        isolated_example_project_foo_bar(runner),
+        isolated_example_project_foo_bar(runner, uv_sync=True),
     ):
         result = runner.invoke(
             "scaffold",
@@ -322,8 +361,7 @@ def test_scaffold_defs_component_succeeds_scaffolded_component_type() -> None:
         ProxyRunner.test() as runner,
         isolated_example_project_foo_bar(
             runner,
-            # plugins not discoverable in process due to not doing a proper install
-            python_environment="uv_managed",
+            uv_sync=True,
         ) as project_dir,
     ):
         with activate_venv(project_dir / ".venv"):
@@ -336,6 +374,40 @@ def test_scaffold_defs_component_succeeds_scaffolded_component_type() -> None:
             assert Path("src/foo_bar/defs/qux").exists()
             defs_yaml_path = Path("src/foo_bar/defs/qux/defs.yaml")
             assert defs_yaml_path.exists()
+            assert "type: foo_bar.components.baz.Baz" in defs_yaml_path.read_text()
+
+
+# Make sure that we can always refer to a component in its defining module
+def test_scaffold_defs_component_succeeds_scaffolded_component_type_defining_module() -> None:
+    with (
+        ProxyRunner.test() as runner,
+        isolated_example_project_foo_bar(runner, uv_sync=True) as project_dir,
+    ):
+        with activate_venv(project_dir / ".venv"):
+            subprocess.run(["dg", "scaffold", "component", "Baz"], check=True)
+            # runner.invoke("scaffold", "component", "Baz")
+            # assert_runner_result(runner.invoke("scaffold", "component", "Baz"))
+            component_path = Path("src/foo_bar/components/baz.py")
+            assert component_path.exists()
+
+            # We scaffolded at foo_bar.components.baz, so that is what has been added as a registry module. We are now
+            # going to move the actual definition into a separate module, and ensure that we can
+            # still reference our component by its defining module reference, even though this
+            # module is not in the registry.
+            component_path.rename("src/foo_bar/baz.py")
+            component_path.write_text(
+                textwrap.dedent("""
+                from foo_bar.baz import Baz
+            """)
+            )
+
+            # target the defining module foo_bar.baz, not the registry module foo_bar.components.baz
+            subprocess.run(["dg", "scaffold", "defs", "foo_bar.baz.Baz", "qux"], check=True)
+            assert Path("src/foo_bar/defs/qux").exists()
+            defs_yaml_path = Path("src/foo_bar/defs/qux/defs.yaml")
+            assert defs_yaml_path.exists()
+
+            # The canonical name is still used in the scaffolded defs.yaml
             assert "type: foo_bar.components.baz.Baz" in defs_yaml_path.read_text()
 
 
@@ -702,6 +774,47 @@ def test_scaffold_defs_sensor() -> None:
         assert not Path("src/foo_bar/defs/defs.yaml").exists()
 
 
+# ########################
+# ##### DEFS OPTIONS
+# ########################
+
+
+def test_scaffold_defs_json_params_option_only_for_scaffold_params() -> None:
+    with (
+        ProxyRunner.test(use_fixed_test_components=True) as runner,
+        isolated_example_project_foo_bar(runner),
+    ):
+        # SimplePipesScriptComponent has scaffold params, so --json-params should be defined
+        result = runner.invoke(
+            "scaffold", "defs", "dagster_test.components.SimplePipesScriptComponent", "--help"
+        )
+        assert_runner_result(result)
+        assert "--json-params" in result.output
+
+        # AllMetadataEmptyComponent does not have scaffold params, so --json-params should not be
+        # defined
+        result = runner.invoke(
+            "scaffold", "defs", "dagster_test.components.AllMetadataEmptyComponent", "--help"
+        )
+        assert_runner_result(result)
+        assert "--json-params" not in result.output
+
+
+def test_scaffold_defs_format_option_only_for_components() -> None:
+    with (
+        ProxyRunner.test() as runner,
+        isolated_example_project_foo_bar(runner),
+    ):
+        result = runner.invoke("scaffold", "defs", "dagster.DefsFolderComponent", "--help")
+        assert_runner_result(result)
+        assert "--format" in result.output
+
+        # `asset` is not a component, so --format should not be defined
+        result = runner.invoke("scaffold", "defs", "dagster.asset", "--help")
+        assert_runner_result(result)
+        assert "--format" not in result.output
+
+
 # ##### REAL COMPONENTS
 
 
@@ -720,9 +833,7 @@ def test_scaffold_dbt_project_instance(params) -> None:
 
     with (
         ProxyRunner.test() as runner,
-        isolated_example_project_foo_bar(
-            runner, python_environment="uv_managed", **project_kwargs
-        ) as project_path,
+        isolated_example_project_foo_bar(runner, uv_sync=True, **project_kwargs) as project_path,
     ):
         # We need to add dagster-dbt also because we are using editable installs. Only
         # direct dependencies will be resolved by uv.tool.sources.
@@ -871,6 +982,7 @@ def test_scaffold_component_no_entry_point_success(
 
         result = runner.invoke("scaffold", "component", component_name)
         assert_runner_result(result)
+        importlib.invalidate_caches()  # Needed to make sure new submodule is discoverable
 
         component_module = component_key.rsplit(".", 1)[0]
         module_file = (Path("src") / "/".join(component_module.split("."))).with_suffix(".py")
@@ -882,10 +994,20 @@ def test_scaffold_component_no_entry_point_success(
 
         assert any(json_entry["key"] == component_key for json_entry in result_json)
 
-        registry_modules_str = textwrap.dedent(f"""
-            registry_modules = [
-                "{component_module}",
+        # Only the module that adds to the _component will add a line to registry modules. That's
+        # because the other cases are already covered by the default scaffolded wildcard
+        # `foo_bar.components.*`.
+        expected_registry_modules = [
+            "foo_bar.components.*",
+        ]
+        if "_components" in component_name:
+            expected_registry_modules.append("foo_bar._components.baz")
+        registry_modules_str = "\n".join(
+            [
+                "registry_modules = [",
+                *[f'    "{module}",' for module in expected_registry_modules],
+                "]",
             ]
-         """).strip()
+        )
         pyproject_toml = Path("pyproject.toml").read_text()
         assert registry_modules_str in pyproject_toml

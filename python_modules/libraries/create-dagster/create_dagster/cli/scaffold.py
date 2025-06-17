@@ -3,14 +3,7 @@ from pathlib import Path
 from typing import Optional
 
 import click
-from dagster_dg_core.config import (
-    DgProjectPythonEnvironment,
-    DgProjectPythonEnvironmentFlag,
-    DgRawWorkspaceConfig,
-    DgWorkspaceScaffoldProjectOptions,
-    discover_workspace_root,
-    normalize_cli_config,
-)
+from dagster_dg_core.config import discover_workspace_root, normalize_cli_config
 from dagster_dg_core.context import DgContext
 from dagster_dg_core.shared_options import dg_editable_dagster_options, dg_global_options
 from dagster_dg_core.utils import (
@@ -23,53 +16,79 @@ from dagster_dg_core.utils import (
     pushd,
 )
 from dagster_dg_core.utils.telemetry import cli_telemetry_wrapper
-from typing_extensions import get_args
 
 from create_dagster.scaffold import scaffold_project, scaffold_workspace
+from create_dagster.version_check import check_create_dagster_up_to_date
 
 
-def _print_package_install_warning_message() -> None:
+def _project_package_install_warning_message() -> str:
     pip_install_cmd = "pip install --editable ."
     uv_install_cmd = "uv sync"
-    click.secho(
-        format_multiline_str(
-            f"""
+    return format_multiline_str(
+        f"""
             The environment used for your project must include an installation of your project
             package. Please run `{uv_install_cmd}` (for uv) or `{pip_install_cmd}` (for pip) before
             running `dg` commands against your project.
-        """,
-        ),
+        """
+    )
+
+
+def _print_package_install_warning_message(install_msg_warning) -> None:
+    click.secho(
+        install_msg_warning,
         fg="yellow",
     )
 
 
+def _workspace_environment_install_warning_message() -> str:
+    pip_install_cmd = "pip install --editable ./deployments/local"
+    uv_install_cmd = "uv sync --directory ./deployments/local"
+    return format_multiline_str(
+        f"""
+        The Python environment used for your workspace must include an installation of the `dg`
+        CLI. Please run `{uv_install_cmd}` (for uv) or `{pip_install_cmd}` (for pip) before
+        running `dg` commands locally against your workspace.
+        """
+    )
+
+
+def _get_project_uv_sync_prompt_msg() -> str:
+    return format_multiline_str("""
+    A `uv` installation was detected. Run `uv sync`? This will create a uv.lock file and
+    the virtual environment you need to activate in order to work on this project.
+    If you wish to use a non-uv package manager, choose "n". (y/n)
+    """)
+
+
+def _get_workspace_environment_uv_sync_prompt_msg(local_environment_path: Path) -> str:
+    return format_multiline_str(f"""
+    A `uv` installation was detected. Run `uv sync --directory {local_environment_path}`?
+    This will create a uv.lock file and the virtual environment you need to activate in order to
+    use `dg` locally with this workspace. If you wish to use a non-uv package manager,
+    choose "n". (y/n)
+    """)
+
+
 def _should_run_uv_sync(
-    python_environment: DgProjectPythonEnvironmentFlag,
     venv_path: Path,
     uv_sync_flag: Optional[bool],
+    uv_sync_prompt_msg: str,
+    install_warning_msg: str,
 ) -> bool:
-    # This already will have occurred during the scaffolding step
-    if python_environment == "uv_managed" or uv_sync_flag is False:
-        return False
-    # This can force running `uv sync` even if a venv already exists
-    elif uv_sync_flag is True:
-        return True
+    if uv_sync_flag is not None:
+        return uv_sync_flag
     elif venv_path.exists():
-        _print_package_install_warning_message()
+        _print_package_install_warning_message(install_warning_msg)
         return False
     elif is_uv_installed():  # uv_sync_flag is unset (None)
         response = click.prompt(
-            format_multiline_str("""
-            A `uv` installation was detected. Run `uv sync`? This will create a uv.lock file and the
-            virtual environment you need to activate in order to work on this project. If you wish
-            to use a non-uv package manager, choose "n". (y/n)
-        """),
+            uv_sync_prompt_msg,
             default="y",
         ).lower()
         if response not in ("y", "n"):
             exit_with_error(f"Invalid response '{response}'. Please enter 'y' or 'n'.")
         if response == "n":
-            _print_package_install_warning_message()
+            _print_package_install_warning_message(install_warning_msg)
         return response == "y"
     else:
         return False
@@ -87,12 +106,6 @@ def _should_run_uv_sync(
 )
 @click.argument("path", type=Path)
 @click.option(
-    "--python-environment",
-    default="active",
-    type=click.Choice(get_args(DgProjectPythonEnvironmentFlag)),
-    help="Type of Python environment in which to launch subprocesses for this project.",
-)
-@click.option(
     "--uv-sync/--no-uv-sync",
     is_flag=True,
     default=None,
@@ -106,7 +119,6 @@ def _should_run_uv_sync(
 def scaffold_project_command(
     path: Path,
     use_editable_dagster: Optional[str],
-    python_environment: DgProjectPythonEnvironmentFlag,
     uv_sync: Optional[bool],
     **global_options: object,
 ) -> None:
@@ -145,19 +157,11 @@ def scaffold_project_command(
     """
     cli_config = normalize_cli_config(global_options, click.get_current_context())
     dg_context = DgContext.from_file_discovery_and_command_line_config(Path.cwd(), cli_config)
+    check_create_dagster_up_to_date(dg_context)
 
     if uv_sync is True and not is_uv_installed():
         exit_with_error("""
             uv is not installed. Please install uv to use the `--uv-sync` option.
-            See https://docs.astral.sh/uv/getting-started/installation/.
-        """)
-    elif uv_sync is False and python_environment == "uv_managed":
-        exit_with_error(
-            "The `--uv-sync` option cannot be set to False when using the `--python-environment uv_managed` option."
-        )
-    elif python_environment == "uv_managed" and not is_uv_installed():
-        exit_with_error("""
-            uv is not installed. Please install uv to use the `--python-environment uv_managed` option.
             See https://docs.astral.sh/uv/getting-started/installation/.
         """)
 
@@ -173,11 +177,16 @@ def scaffold_project_command(
         abs_path,
         dg_context,
         use_editable_dagster=use_editable_dagster,
-        python_environment=DgProjectPythonEnvironment.from_flag(python_environment),
     )
 
     venv_path = path / ".venv"
-    if _should_run_uv_sync(python_environment, venv_path, uv_sync):
+
+    if _should_run_uv_sync(
+        venv_path,
+        uv_sync,
+        uv_sync_prompt_msg=_get_project_uv_sync_prompt_msg(),
+        install_warning_msg=_project_package_install_warning_message(),
+    ):
         click.echo("Running `uv sync --group dev`...")
         with pushd(path):
             subprocess.run(["uv", "sync", "--group", "dev"], check=True)
@@ -202,22 +211,34 @@ def scaffold_project_command(
     context_settings={"help_option_names": ["-h", "--help"]},
 )
 @click.argument("path", type=Path)
+@click.option(
+    "--uv-sync/--no-uv-sync",
+    is_flag=True,
+    default=None,
+    help="""
+        Preemptively answer the "Run uv sync?" prompt presented after project initialization.
+    """.strip(),
+)
 @dg_editable_dagster_options
 @dg_global_options
 @cli_telemetry_wrapper
 def scaffold_workspace_command(
     path: Path,
     use_editable_dagster: Optional[str],
+    uv_sync: Optional[bool],
     **global_options: object,
 ):
     """Initialize a new Dagster workspace.
 
     The scaffolded workspace folder has the following structure::
 
-        ├── WORKSPACE_NAME
-        │   ├── projects
-        |   |   └── Dagster projects go here
-        │   └── dg.toml
+        ├── projects
+        │   └── Dagster projects go here
+        ├── deployments
+        │   └── local
+        │       ├── pyproject.toml
+        │       └── uv.lock
+        └── dg.toml
 
     Examples::
 
@@ -228,11 +249,9 @@ def scaffold_workspace_command(
             Scaffold a new workspace in the CWD. The workspace name is the last component of the CWD.
 
     """
-    workspace_config = DgRawWorkspaceConfig(
-        scaffold_project_options=DgWorkspaceScaffoldProjectOptions.get_raw_from_cli(
-            use_editable_dagster,
-        )
-    )
+    cli_config = normalize_cli_config(global_options, click.get_current_context())
+    dg_context = DgContext.from_file_discovery_and_command_line_config(Path.cwd(), cli_config)
+    check_create_dagster_up_to_date(dg_context)
 
     abs_path = path.resolve()
 
@@ -244,6 +263,40 @@ def scaffold_workspace_command(
     elif str(path) != "." and path.exists():
         exit_with_error(f"Folder already exists at {path}.")
 
-    click.echo(f"Creating a Dagster workspace at {path}.")
+    scaffold_workspace(
+        abs_path,
+        use_editable_dagster=use_editable_dagster,
+    )
 
-    scaffold_workspace(abs_path, workspace_config)
+    local_environment_path = abs_path / "deployments" / "local"
+    local_venv_path = local_environment_path / ".venv"
+
+    click.echo(
+        f"Scaffolded files for Dagster workspace at {abs_path}.\nA local environment to run `dg` commands against this workspace was created at {local_environment_path}."
+    )
+
+    shortest_local_environment_path = get_shortest_path_repr(local_environment_path)
+
+    if _should_run_uv_sync(
+        local_venv_path,
+        uv_sync,
+        uv_sync_prompt_msg=_get_workspace_environment_uv_sync_prompt_msg(
+            shortest_local_environment_path
+        ),
+        install_warning_msg=_workspace_environment_install_warning_message(),
+    ):
+        click.echo(f"Running `uv sync --directory {shortest_local_environment_path}`...")
+        with pushd(path):
+            subprocess.run(
+                ["uv", "sync"],
+                check=True,
+                cwd=local_environment_path,
+            )
+
+        click.echo("\nuv.lock and virtual environment created.")
+        display_venv_path = get_shortest_path_repr(local_venv_path)
+        click.echo(
+            f"""
+            Run `{get_venv_activation_cmd(display_venv_path)}` to activate your workspace's local virtual environment.
+            """.strip()
+        )

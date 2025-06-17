@@ -5,7 +5,6 @@ import {
   Dialog,
   DialogBody,
   DialogFooter,
-  Heading,
   Icon,
   MetadataTableWIP,
   Mono,
@@ -14,6 +13,7 @@ import {
   PageHeader,
   SpinnerWithText,
   Subheading,
+  Subtitle1,
   TextInput,
 } from '@dagster-io/ui-components';
 import {StyledRawCodeMirror} from '@dagster-io/ui-components/editor';
@@ -110,7 +110,7 @@ export const InstanceConcurrencyPage = () => {
   return (
     <Page style={{padding: 0}}>
       <PageHeader
-        title={<Heading>{pageTitle}</Heading>}
+        title={<Subtitle1>{pageTitle}</Subtitle1>}
         tabs={<InstanceTabs tab="concurrency" />}
       />
       <InstanceConcurrencyIndexContent />

@@ -3,7 +3,7 @@ import subprocess
 from pathlib import Path
 from typing import Literal, Optional, get_args
 
-import create_dagster
+import create_dagster.version_check
 import dagster_shared.check as check
 import pytest
 import tomlkit
@@ -16,6 +16,7 @@ from dagster_dg_core.utils import (
     has_toml_node,
     modify_toml_as_dict,
 )
+from dagster_shared.libraries import get_published_pypi_versions
 from typing_extensions import TypeAlias
 
 ensure_dagster_dg_tests_import()
@@ -34,17 +35,27 @@ from dagster_dg_core_tests.utils import (
 
 
 @pytest.mark.parametrize(
-    "cli_args",
+    "cli_args,input_str",
     [
-        ("helloworld",),
-        (".",),
+        (("helloworld",), "y\n"),
+        ((".",), "y\n"),
+        # skip the uv sync prompt and automatically uv sync
+        (("--uv-sync", "--", "."), None),
+        # skip the uv sync prompt and don't uv sync
+        (("--no-uv-sync", "--", "."), None),
     ],
     ids=[
         "with_name",
         "with_cwd",
+        "with_cwd_explicit_uv_sync",
+        "with_cwd_explicit_no_uv_sync",
     ],
 )
-def test_scaffold_workspace_command_success(monkeypatch, cli_args: tuple[str, ...]) -> None:
+def test_scaffold_workspace_command_success(
+    monkeypatch, cli_args: tuple[str, ...], input_str: Optional[str]
+) -> None:
+    monkeypatch.setattr("create_dagster.cli.scaffold.is_uv_installed", lambda: True)
+
     with ProxyRunner.test() as runner, runner.isolated_filesystem():
         if "." in cli_args:
             os.mkdir("helloworld")
@@ -55,7 +66,7 @@ def test_scaffold_workspace_command_success(monkeypatch, cli_args: tuple[str, ..
         else:
             expected_name = "dagster-workspace"
 
-        result = runner.invoke_create_dagster("workspace", *cli_args)
+        result = runner.invoke_create_dagster("workspace", *cli_args, input=input_str)
         assert_runner_result(result)
 
         if "." in cli_args:
@@ -64,6 +75,7 @@ def test_scaffold_workspace_command_success(monkeypatch, cli_args: tuple[str, ..
         assert Path(expected_name).exists()
         assert Path(f"{expected_name}/dg.toml").exists()
         assert Path(f"{expected_name}/projects").exists()
+        assert Path(f"{expected_name}/deployments/local/pyproject.toml").exists()
 
 
 def test_scaffold_workspace_already_exists_failure(monkeypatch) -> None:
@@ -122,7 +134,6 @@ def test_scaffold_workspace_already_exists_failure(monkeypatch) -> None:
         "dirname_arg_no_venv",
     ],
 )
-# def test_scaffold_project_outside_workspace_success(monkeypatch) -> None:
 def test_scaffold_project_success(
     monkeypatch, cli_args: tuple[str, ...], input_str: Optional[str], opts: dict[str, object]
 ) -> None:
@@ -384,29 +395,6 @@ def test_scaffold_project_use_editable_dagster_env_var_succeeds(monkeypatch) -> 
             )
 
 
-def test_scaffold_project_python_environment_uv_managed_success(monkeypatch) -> None:
-    dagster_git_repo_dir = discover_git_root(Path(__file__))
-    monkeypatch.setenv("DAGSTER_GIT_REPO_DIR", str(dagster_git_repo_dir))
-    with ProxyRunner.test() as runner, runner.isolated_filesystem():
-        result = runner.invoke_create_dagster(
-            "project",
-            "foo-bar",
-            "--python-environment",
-            "uv_managed",
-            "--use-editable-dagster",
-        )
-        assert_runner_result(result)
-        assert Path("foo-bar").exists()
-        assert Path("foo-bar/src/foo_bar").exists()
-        assert Path("foo-bar/src/foo_bar/defs").exists()
-        assert Path("foo-bar/tests").exists()
-        assert Path("foo-bar/pyproject.toml").exists()
-
-        # Check venv not created
-        assert Path("foo-bar/.venv").exists()
-        assert Path("foo-bar/uv.lock").exists()
-
-
 @pytest.mark.parametrize("option", get_args(EditableOption))
 def test_scaffold_project_editable_dagster_no_env_var_no_value_fails(
     option: EditableOption, monkeypatch
@@ -428,3 +416,45 @@ def test_scaffold_project_already_exists_fails() -> None:
         result = runner.invoke_create_dagster("project", "bar", "--uv-sync")
         assert_runner_result(result, exit_0=False)
         assert "already specifies a project at" in result.output
+
+
+# ########################
+# ##### VERSION WARNINGS
+# ########################
+
+
+@pytest.mark.parametrize("command", ["workspace", "project"])
+def test_dg_up_to_date_warning(monkeypatch, command: str) -> None:
+    versions = get_published_pypi_versions("create-dagster")
+    previous_version = versions[-2]
+
+    orig_version = create_dagster.version_check.__version__
+    monkeypatch.setattr(create_dagster.version_check, "__version__", str(previous_version))
+
+    # We have to set this because we turn it off for the rest of the test suite in root conftest.py
+    # to avoid bombing the PyPI API.
+    monkeypatch.setenv(
+        create_dagster.version_check.CREATE_DAGSTER_UPDATE_CHECK_ENABLED_ENV_VAR, "1"
+    )
+    with ProxyRunner.test() as runner:
+        warning_str = "There is a new version of `create-dagster` available"
+        pypi_log_str = "Checking for the latest version"
+
+        # Warns when version is outdated
+        with runner.isolated_filesystem():
+            result = runner.invoke_create_dagster(command, "foo", "--no-uv-sync", "--verbose")
+            assert_runner_result(result)
+            assert warning_str in result.output and pypi_log_str in result.output
+
+        # No log message when not verbose
+        with runner.isolated_filesystem():
+            result = runner.invoke_create_dagster(command, "foo", "--no-uv-sync")
+            assert_runner_result(result)
+            assert warning_str in result.output and pypi_log_str not in result.output
+
+        # Does not warn after resetting the version
+        monkeypatch.setattr(create_dagster.version_check, "__version__", orig_version)
+        with runner.isolated_filesystem():
+            result = runner.invoke_create_dagster(command, "foo", "--no-uv-sync")
+            assert_runner_result(result)
+            assert warning_str not in result.output and pypi_log_str not in result.output

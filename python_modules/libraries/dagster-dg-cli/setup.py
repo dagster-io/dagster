@@ -44,7 +44,7 @@ setup(
     },
     extras_require={
         "local": [
-            f"dagster=={ver}",
+            f"dagster{pin}",
         ],
         "mcp": [
             "mcp",

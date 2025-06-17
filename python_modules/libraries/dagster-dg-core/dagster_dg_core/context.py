@@ -1,25 +1,20 @@
 import datetime
-import json
 import logging
-import os
 import re
-import shutil
-import subprocess
 from collections.abc import Iterable, Mapping
 from functools import cached_property
 from pathlib import Path
-from typing import Any, Final, Optional, Union
+from typing import Any, Final, Optional
 
 from dagster_shared.record import record
 from dagster_shared.serdes.serdes import whitelist_for_serdes
+from dagster_shared.seven import resolve_module_pattern
 from packaging.version import Version
 from typing_extensions import Self
 
-from dagster_dg_core.cache import CachableDataType, DgCache
-from dagster_dg_core.component import RemotePluginRegistry
+from dagster_dg_core.component import EnvRegistry
 from dagster_dg_core.config import (
     DgConfig,
-    DgProjectPythonEnvironment,
     DgRawBuildConfig,
     DgRawCliConfig,
     DgWorkspaceProjectSpec,
@@ -45,13 +40,9 @@ from dagster_dg_core.utils import (
     get_venv_executable,
     has_toml_node,
     msg_with_potential_paths,
-    pushd,
-    resolve_local_venv,
     set_toml_node,
-    strip_activated_venv_from_env_vars,
     validate_dagster_availability,
 )
-from dagster_dg_core.utils.paths import hash_paths
 from dagster_dg_core.utils.warnings import emit_warning
 
 # Project
@@ -78,7 +69,6 @@ class DgContext:
     root_path: Path
     config: DgConfig
     cli_opts: Optional[DgRawCliConfig] = None
-    _cache: Optional[DgCache] = None
     _workspace_root_path: Optional[Path]
 
     # We need to preserve CLI options for the context to be able to derive new contexts, because
@@ -95,8 +85,7 @@ class DgContext:
         self.root_path = root_path
         self._workspace_root_path = workspace_root_path
         self.cli_opts = cli_opts
-        self._cache = None if config.cli.disable_cache else DgCache.from_config(config)
-        self.component_registry = RemotePluginRegistry.empty()
+        self.component_registry = EnvRegistry.empty()
 
         # Always run this check, its a no-op if there is no pyproject.toml.
         _validate_plugin_entry_point(self)
@@ -131,6 +120,7 @@ class DgContext:
                 )
             exit_with_error(NOT_PROJECT_ERROR_MESSAGE)
         _validate_project_venv_activated(context)
+        _validate_autoload_defs(context)
         return context
 
     @classmethod
@@ -281,48 +271,12 @@ class DgContext:
             root_path, self.cli_opts or {}
         )
 
-    # ########################
-    # ##### CACHE METHODS
-    # ########################
-
-    @property
-    def cache(self) -> DgCache:
-        if not self._cache:
-            raise DgError("Cache is disabled")
-        return self._cache
-
-    @property
-    def has_cache(self) -> bool:
-        return self._cache is not None
-
     def component_registry_paths(self) -> list[Path]:
         """Paths that should be watched for changes to the component registry."""
         return [
             self.root_path / "uv.lock",
             *([self.default_registry_module_path] if self.has_registry_module_entry_point else []),
         ]
-
-    # Allowing open-ended str data_type for now so we can do module names
-    def get_cache_key(self, data_type: Union[CachableDataType, str]) -> tuple[str, str, str]:
-        path_parts = [str(part) for part in self.root_path.parts if part != self.root_path.anchor]
-        paths_to_hash = [
-            self.root_path / "uv.lock",
-            *([self.default_registry_module_path] if self.has_registry_module_entry_point else []),
-        ]
-        env_hash = hash_paths(paths_to_hash)
-        return ("_".join(path_parts), env_hash, data_type)
-
-    def get_cache_key_for_module(self, module_name: str) -> tuple[str, str, str]:
-        if module_name.startswith(self.root_module_name):
-            path = self.get_path_for_local_module(module_name)
-            env_hash = hash_paths([path], includes=["*.py"])
-            path_parts = [str(part) for part in path.parts if part != "/"]
-            return ("_".join(path_parts), env_hash, "local_component_registry")
-        else:
-            return self.get_cache_key(module_name)
-
-    def get_cache_key_for_update_check_timestamp(self) -> tuple[str]:
-        return ("dg_update_check_timestamp",)
 
     # ########################
     # ##### WORKSPACE METHODS
@@ -340,7 +294,7 @@ class DgContext:
 
     def has_project(self, relative_path: Path) -> bool:
         if not self.is_in_workspace:
-            raise DgError("`has_project` is only available in a workspace context")
+            raise DgError("`has_project` is only available within a workspace")
         return bool(
             next(
                 (spec for spec in self.project_specs if spec.path == relative_path),
@@ -351,7 +305,7 @@ class DgContext:
     @property
     def project_specs(self) -> list[DgWorkspaceProjectSpec]:
         if not self.config.workspace:
-            raise DgError("`project_specs` is only available in a workspace context")
+            raise DgError("`project_specs` is only available within a workspace")
         return self.config.workspace.projects
 
     # ########################
@@ -367,6 +321,10 @@ class DgContext:
         else:
             raise DgError("Cannot determine root package name")
 
+    @property
+    def root_module_path(self) -> Path:
+        return self.get_path_for_local_module(self.root_module_name)
+
     # ########################
     # ##### PROJECT METHODS
     # ########################
@@ -380,49 +338,6 @@ class DgContext:
         if not self.is_project:
             raise DgError("`project_name` is only available in a Dagster project context")
         return self.root_path.name
-
-    def resolve_package_manager_executable(self) -> list[str]:
-        if self.has_uv_lock:
-            return ["uv", "pip"]
-
-        executable = self.get_executable("python")
-        has_pip = (
-            subprocess.run(
-                [str(executable), "-m", "pip"],
-                check=False,
-                capture_output=True,
-            ).returncode
-            == 0
-        )
-        return [str(executable), "-m", "pip"] if has_pip else ["uv", "pip"]
-
-    @cached_property
-    def dagster_version(self) -> Version:
-        return self._get_module_version("dagster")
-
-    def _get_module_version(self, module_name: str) -> Version:
-        with pushd(self.root_path):
-            args = [
-                "list",
-                "--format",
-                "json",
-            ]
-            python_args = ["--python", str(self._resolve_executable("python"))]
-            executable_args = self.resolve_package_manager_executable()
-            if executable_args[0] == "uv":
-                all_args = [*executable_args, *args, *python_args]
-            else:
-                all_args = [*executable_args, *python_args, *args]
-
-            result = subprocess.check_output(
-                all_args,
-                env=strip_activated_venv_from_env_vars(os.environ),
-            )
-        modules = json.loads(result)
-        for module in modules:
-            if module["name"] == module_name:
-                return Version(module["version"])
-        raise DgError(f"Module `{module_name}` not found")
 
     @property
     def project_python_executable(self) -> Path:
@@ -516,10 +431,6 @@ class DgContext:
             raise DgError(
                 "`code_location_target_module_name` is only available in a Dagster project context"
             )
-        if self.config.project.autoload_defs:
-            raise DgError(
-                "`code_location_target_module_name` is not valid when autoload_defs is enabled"
-            )
         return (
             self.config.project.code_location_target_module
             or f"{self.root_module_name}.{_DEFAULT_PROJECT_CODE_LOCATION_TARGET_MODULE}"
@@ -534,12 +445,6 @@ class DgContext:
         if not self.config.project:
             raise DgError("`code_location_name` is only available in a Dagster project context")
         return self.config.project.code_location_name or self.project_name
-
-    @property
-    def python_environment(self) -> DgProjectPythonEnvironment:
-        if not self.config.project:
-            raise DgError("`python_environment` is only available in a Dagster project context")
-        return self.config.project.python_environment
 
     # ########################
     # ##### PLUGIN METHODS
@@ -574,14 +479,24 @@ class DgContext:
             self.default_registry_root_module_name, require_exists=False
         )
 
-    @property
+    @cached_property
     def project_registry_modules(self) -> list[str]:
-        """Return a mapping of plugin object references for the current project."""
+        """Return a list of resolved plugin module references for the current project.
+
+        This resolves any wildcard patterns in the raw registry_modules configuration
+        into actual module names.
+        """
         if not self.config.project:
             raise DgError(
                 "`project_registry_modules` is only available in a Dagster project context"
             )
-        return self.config.project.registry_modules
+        return sorted(
+            set(
+                mod
+                for pattern in self.config.project.registry_modules
+                for mod in resolve_module_pattern(pattern)
+            )
+        )
 
     def add_project_registry_module(self, module_name: str) -> None:
         """Add a module name to the project plugin module registry."""
@@ -676,67 +591,6 @@ class DgContext:
     # ########################
 
     @property
-    def has_uv_lock(self) -> bool:
-        """Check if the uv.lock file exists in the root path."""
-        return (self.root_path / "uv.lock").exists()
-
-    def ensure_uv_lock(self, path: Optional[Path] = None) -> None:
-        path = path or self.root_path
-        if not (path / "uv.lock").exists():
-            self.ensure_uv_sync(path)
-
-    def ensure_uv_sync(self, path: Optional[Path] = None) -> None:
-        path = path or self.root_path
-        with pushd(path):
-            if not (path / "uv.lock").exists():
-                subprocess.check_output(
-                    ["uv", "sync"],
-                    env=strip_activated_venv_from_env_vars(os.environ),
-                )
-
-    @property
-    def use_dg_managed_environment(self) -> bool:
-        return bool(self.config.project and self.config.project.python_environment.uv_managed)
-
-    @property
-    def has_venv(self) -> bool:
-        return self.use_dg_managed_environment and (resolve_local_venv(self.root_path) is not None)
-
-    @cached_property
-    def venv_path(self) -> Path:
-        path = resolve_local_venv(self.root_path)
-        if not path:
-            raise DgError("Cannot find .venv")
-        return path
-
-    def has_executable(self, command: str) -> bool:
-        return self._resolve_executable(command) is not None
-
-    def get_executable(self, command: str) -> Path:
-        if not (executable := self._resolve_executable(command)):
-            raise DgError(f"Cannot find executable {command}")
-        return executable
-
-    def _resolve_executable(self, command: str) -> Optional[Path]:
-        if (
-            self.has_venv
-            and (venv_exec := get_venv_executable(self.venv_path, command))
-            and venv_exec.exists()
-        ):
-            return venv_exec
-        elif not self.use_dg_managed_environment and (global_exec := shutil.which(command)):
-            return Path(global_exec)
-        else:
-            return None
-
-    @property
-    def environment_desc(self) -> str:
-        if self.has_venv:
-            return f"Python environment at {self.venv_path}"
-        else:
-            return "active Python environment"
-
-    @property
     def config_file_path(self) -> Path:
         return self.dg_toml_path if self.dg_toml_path.exists() else self.pyproject_toml_path
 
@@ -789,10 +643,8 @@ def _validate_project_venv_activated(context: DgContext) -> None:
         )
     activated_venv = get_activated_venv()
     project_venv = context.root_path / ".venv"
-    if (
-        context.config.project.python_environment.active
-        and project_venv.exists()
-        and project_venv != activated_venv
+    if project_venv.exists() and (
+        not activated_venv or project_venv.resolve() != activated_venv.resolve()
     ):
         msg = generate_project_and_activated_venv_mismatch_warning(project_venv, activated_venv)
         emit_warning(
@@ -828,6 +680,33 @@ def _validate_plugin_entry_point(context: DgContext) -> None:
                 """,
                 context.config.cli.suppress_warnings,
             )
+
+
+def _validate_autoload_defs(context: DgContext) -> None:
+    """If the project has autoload_defs enabled, warn on the presence of a sibling definitions.py."""
+    if not context.config.project:
+        raise DgError("`_validate_autoload_defs` is only available in a Dagster project context")
+
+    # We only issue this warning for the default code location target module setting, since we catch
+    # a non-default setting during config validation.
+    if (
+        context.config.project.autoload_defs
+        and (
+            context.root_module_path / f"{_DEFAULT_PROJECT_CODE_LOCATION_TARGET_MODULE}.py"
+        ).exists()
+    ):
+        emit_warning(
+            "autoload_defs_with_definitions_py",
+            f"""
+            `project.autoload_defs` is enabled, but a code location load target module was also found at:
+
+                {context.code_location_target_path}
+
+            When `project.autoload_defs` is enabled, the code location load target module is not
+            automatically loaded. Consider removing the module at the above path to avoid confusion.
+        """,
+            context.config.cli.suppress_warnings,
+        )
 
 
 DG_UPDATE_CHECK_INTERVAL = datetime.timedelta(hours=1)

@@ -147,7 +147,7 @@ def test_union_resolvable_complex():
         foo: str
 
     # Test a nested model, in a sequence, with a custom resolver
-    class NumModel(Model):
+    class NumModel(Model, Resolvable):
         num: Annotated[int, Resolver(lambda _, v: int(v), model_field_type=str)]
 
     @dataclass
@@ -175,7 +175,7 @@ thing:
   - num: '456'
         """,
     )
-    assert isinstance(c.thing, list)
+    assert isinstance(c.thing, Sequence)
     assert len(c.thing) == 2
     assert c.thing[0].num == 123
     assert c.thing[1].num == 456

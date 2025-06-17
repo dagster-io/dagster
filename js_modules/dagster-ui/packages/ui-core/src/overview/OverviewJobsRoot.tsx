@@ -1,4 +1,4 @@
-import {Box, Heading, PageHeader} from '@dagster-io/ui-components';
+import {Box, PageHeader, Subtitle1} from '@dagster-io/ui-components';
 
 import {OverviewTabs} from './OverviewTabs';
 import {useTrackPageView} from '../app/analytics';
@@ -11,7 +11,7 @@ export const OverviewJobsRoot = () => {
 
   return (
     <Box flex={{direction: 'column'}} style={{height: '100%', overflow: 'hidden'}}>
-      <PageHeader title={<Heading>Overview</Heading>} tabs={<OverviewTabs tab="jobs" />} />
+      <PageHeader title={<Subtitle1>Overview</Subtitle1>} tabs={<OverviewTabs tab="jobs" />} />
       <JobsPageContent />
     </Box>
   );
