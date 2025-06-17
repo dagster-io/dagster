@@ -76,9 +76,8 @@ def load_defs_folder(defs_folder_path: Path) -> Definitions:
     """
     import sys
 
-    # append parent path to sys.path
-    sys.path.append(str(defs_folder_path.parent))
-    defs_module = importlib.import_module(defs_folder_path.name)
+    sys.path.append(str(defs_folder_path.parent.parent))
+    defs_module = importlib.import_module(".".join(defs_folder_path.parts[-2:]))
 
     return load_defs(defs_module, terminate_autoloading_on_keyword_files=False)
 
