@@ -7,7 +7,6 @@ from dagster import (
     DagsterInstance,
     _check as check,
 )
-from dagster._core.definitions.data_version import CachingStaleStatusResolver
 from dagster._core.remote_representation import RemoteRepository
 from dagster._core.scheduler.instigation import InstigatorState, InstigatorType
 
@@ -136,7 +135,3 @@ class RepositoryScopedBatchLoader:
             )
         )
         return self._get(RepositoryDataType.SCHEDULE_TICKS, origin_id, limit)
-
-
-# CachingStaleStatusResolver from core can be used directly as a GQL batch loader.
-StaleStatusLoader = CachingStaleStatusResolver
