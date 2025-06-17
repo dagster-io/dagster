@@ -305,6 +305,7 @@ def multi_observable_source_asset(
         decorator_name="@multi_observable_source_asset",
         execution_type=AssetExecutionType.OBSERVATION,
         pool=None,
+        hooks=None,
     )
 
     def inner(fn: Callable[..., Any]) -> AssetsDefinition:

@@ -3,12 +3,12 @@ import os
 from collections.abc import Mapping, Sequence
 from typing import Any, NamedTuple, Optional
 
+from dagster_shared.error import DagsterError
 from typing_extensions import Self
 
 import dagster._check as check
 from dagster._config import Field, IntSource
 from dagster._core.definitions.run_request import InstigatorType
-from dagster._core.errors import DagsterError
 from dagster._core.instance import DagsterInstance
 from dagster._core.remote_representation import RemoteSchedule
 from dagster._core.scheduler.instigation import (

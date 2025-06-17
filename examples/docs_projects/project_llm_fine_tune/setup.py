@@ -5,6 +5,7 @@ setup(
     packages=find_packages(exclude=["project_llm_fine_tune_tests"]),
     install_requires=[
         "dagster",
+        "dagster-dg-cli",
         "dagster-openai",
         "dagster-duckdb",
         "pandas",

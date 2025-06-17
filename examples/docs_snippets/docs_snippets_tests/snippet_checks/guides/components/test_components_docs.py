@@ -107,7 +107,7 @@ def test_components_docs_index(
                 ],
                 input_str="y\n",
                 ignore_output=True,
-                print_cmd="uvx create-dagster project jaffle-platform",
+                print_cmd="uvx -U create-dagster project jaffle-platform",
             )
             context.run_command_and_snippet_output(
                 cmd="cd jaffle-platform && source .venv/bin/activate",
@@ -219,6 +219,13 @@ def test_components_docs_index(
                     curl -O https://raw.githubusercontent.com/dbt-labs/jaffle-shop-classic/refs/heads/main/seeds/raw_payments.csv
                 """).strip(),
                 snippet_path=f"{next_snip_no()}-curl.txt",
+                ignore_output=True,
+            )
+
+            context.run_command_and_snippet_output(
+                cmd=f"{install_cmd} duckdb",
+                snippet_path=f"{next_snip_no()}-{package_manager}-add-duckdb.txt",
+                print_cmd=f"{install_cmd} duckdb",
                 ignore_output=True,
             )
 

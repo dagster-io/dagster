@@ -302,9 +302,8 @@ def generate_project_and_activated_venv_mismatch_warning(
     active_venv_path: Optional[Path],
 ) -> str:
     return f"""
-        Your project is configured with `project.python_environment.active = true`, but the active
-        virtual environment does not match the virtual environment found in the project root
-        directory. This may lead to unexpected behavior when running `dg` commands.
+        The active virtual environment does not match the virtual environment found in the project
+        root directory. This may lead to unexpected behavior when running `dg` commands.
 
             active virtual environment: {active_venv_path}
             project virtual environment: {project_venv_path}
@@ -426,13 +425,13 @@ def json_schema_property_to_click_option(
     # Handle object type fields as JSON strings
     if field_type == "object":
         option_type = str  # JSON string input
-        help_text = f"{key} (JSON string)"
+        help_text = f"[scaffolder parameter] {key} (JSON string)"
         callback = parse_json_option
 
     # Handle other basic types
     else:
         option_type = _JSON_SCHEMA_TYPE_TO_CLICK_TYPE[field_type]
-        help_text = key
+        help_text = f"(scaffolder param) {key}"
         callback = None
 
     return click.Option(

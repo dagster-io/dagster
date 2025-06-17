@@ -1706,7 +1706,12 @@ def asset_2():
     raise Exception("foo")
 
 
-@asset(deps=[AssetKey("asset_2")])
+@asset(
+    deps=[AssetKey("asset_2")],
+    internal_freshness_policy=InternalFreshnessPolicy.time_window(
+        fail_window=timedelta(minutes=10), warn_window=timedelta(minutes=5)
+    ),
+)
 def asset_3():
     yield Output(7)
 

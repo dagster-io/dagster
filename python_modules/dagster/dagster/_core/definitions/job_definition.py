@@ -131,7 +131,7 @@ class JobDefinition(IHasInternalInit):
 
         self._graph_def = graph_def
         self._current_level_node_defs = self._graph_def.node_defs
-        # Recursively explore all nodes in the this job
+        # Recursively explore all nodes in this job
         self._all_node_defs = _build_all_node_defs(self._current_level_node_defs)
         self._asset_layer = check.opt_inst_param(
             asset_layer, "asset_layer", AssetLayer
@@ -154,7 +154,7 @@ class JobDefinition(IHasInternalInit):
         )
         config = convert_config_input(config)
 
-        partitions_def = check.opt_inst_param(
+        self._original_partitions_def_argument = check.opt_inst_param(
             partitions_def, "partitions_def", PartitionsDefinition
         )
         # tags and description can exist on graph as well, but since
@@ -183,7 +183,7 @@ class JobDefinition(IHasInternalInit):
         for key in resource_defs.keys():
             if not key.isidentifier():
                 check.failed(f"Resource key '{key}' must be a valid Python identifier.")
-        was_provided_resources = (
+        self._was_provided_resources = (
             bool(resource_defs)
             if _was_explicitly_provided_resources is None
             else _was_explicitly_provided_resources
@@ -192,54 +192,15 @@ class JobDefinition(IHasInternalInit):
             DEFAULT_IO_MANAGER_KEY: default_job_io_manager,
             **resource_defs,
         }
-        self._required_resource_keys = self._get_required_resource_keys(was_provided_resources)
+        self._required_resource_keys = self._get_required_resource_keys(
+            self._was_provided_resources
+        )
 
         self._config_mapping = None
         self._partitioned_config = None
         self._run_config = None
         self._run_config_schema = None
         self._original_config_argument = config
-
-        if partitions_def:
-            self._partitioned_config = PartitionedConfig.from_flexible_config(
-                config, partitions_def
-            )
-        else:
-            if isinstance(config, ConfigMapping):
-                self._config_mapping = config
-            elif isinstance(config, PartitionedConfig):
-                self._partitioned_config = config
-                if asset_layer:
-                    for asset_key in asset_layer.asset_keys_by_node_output_handle.values():
-                        asset_partitions_def = asset_layer.get(asset_key).partitions_def
-                        check.invariant(
-                            asset_partitions_def is None
-                            or asset_partitions_def == config.partitions_def,
-                            "Can't supply a PartitionedConfig for 'config' with a different PartitionsDefinition"
-                            f" than supplied for a target asset 'partitions_def'. Asset: {asset_key.to_user_string()}",
-                        )
-
-            elif isinstance(config, dict):
-                self._run_config = config
-                # Using config mapping here is a trick to make it so that the preset will be used even
-                # when no config is supplied for the job.
-                self._config_mapping = _config_mapping_with_default_value(
-                    get_run_config_schema_for_job(
-                        graph_def,
-                        self.resource_defs,
-                        self.executor_def,
-                        self.loggers,
-                        asset_layer,
-                        was_explicitly_provided_resources=was_provided_resources,
-                    ),
-                    config,
-                    self.name,
-                )
-            elif config is not None:
-                check.failed(
-                    "config param must be a ConfigMapping, a PartitionedConfig, or a dictionary,"
-                    f" but is an object of type {type(config)}"
-                )
 
         self._subset_selection_data = _subset_selection_data
         self.input_values = input_values
@@ -409,6 +370,8 @@ class JobDefinition(IHasInternalInit):
 
         A partitioned config defines a way to map partition keys to run config for the job.
         """
+        if self.has_unresolved_configs:
+            self._resolve_configs()
         return self._partitioned_config
 
     @public
@@ -418,6 +381,8 @@ class JobDefinition(IHasInternalInit):
 
         A config mapping defines a way to map a top-level config schema to run config for the job.
         """
+        if self.has_unresolved_configs:
+            self._resolve_configs()
         return self._config_mapping
 
     @public
@@ -448,6 +413,8 @@ class JobDefinition(IHasInternalInit):
 
     @property
     def run_config(self) -> Optional[Mapping[str, Any]]:
+        if self.has_unresolved_configs:
+            self._resolve_configs()
         return self._run_config
 
     @property
@@ -492,6 +459,57 @@ class JobDefinition(IHasInternalInit):
     @property
     def op_retry_policy(self) -> Optional[RetryPolicy]:
         return self._op_retry_policy
+
+    @property
+    def has_unresolved_configs(self) -> bool:
+        return (
+            self._partitioned_config is None
+            and self._run_config is None
+            and self._config_mapping is None
+        )
+
+    @cached_method
+    def _resolve_configs(self) -> None:
+        config = self._original_config_argument
+        partition_def = self._original_partitions_def_argument
+        if partition_def:
+            self._partitioned_config = PartitionedConfig.from_flexible_config(config, partition_def)
+        else:
+            if isinstance(config, ConfigMapping):
+                self._config_mapping = config
+            elif isinstance(config, PartitionedConfig):
+                self._partitioned_config = config
+                if self.asset_layer:
+                    for asset_key in self._asset_layer.asset_keys_by_node_output_handle.values():
+                        asset_partitions_def = self._asset_layer.get(asset_key).partitions_def
+                        check.invariant(
+                            asset_partitions_def is None
+                            or asset_partitions_def == config.partitions_def,
+                            "Can't supply a PartitionedConfig for 'config' with a different PartitionsDefinition"
+                            f" than supplied for a target asset 'partitions_def'. Asset: {asset_key.to_user_string()}",
+                        )
+
+            elif isinstance(config, dict):
+                self._run_config = config
+                # Using config mapping here is a trick to make it so that the preset will be used even
+                # when no config is supplied for the job.
+                self._config_mapping = _config_mapping_with_default_value(
+                    get_run_config_schema_for_job(
+                        self._graph_def,
+                        self.resource_defs,
+                        self.executor_def,
+                        self.loggers,
+                        self._asset_layer,
+                        was_explicitly_provided_resources=self._was_provided_resources,
+                    ),
+                    config,
+                    self.name,
+                )
+            elif config is not None:
+                check.failed(
+                    "config param must be a ConfigMapping, a PartitionedConfig, or a dictionary,"
+                    f" but is an object of type {type(config)}"
+                )
 
     def node_def_named(self, name: str) -> NodeDefinition:
         check.str_param(name, "name")
@@ -568,6 +586,14 @@ class JobDefinition(IHasInternalInit):
                 for hook_def in self._hook_defs
                 for req in hook_def.get_resource_requirements(attached_to=f"job '{self._name}'")
             ],
+            *[
+                req
+                for assets_def in self.asset_layer.asset_graph.assets_defs
+                for hook_def in assets_def.hook_defs
+                for req in hook_def.get_resource_requirements(
+                    attached_to=f"asset '{assets_def.node_def.name}'"
+                )
+            ],
         ]
 
     def validate_resource_requirements_satisfied(self) -> None:
@@ -586,6 +612,7 @@ class JobDefinition(IHasInternalInit):
 
         A hook can be attached to any of the following objects
         * Node (node invocation)
+        * AssetsDefinition
         * JobDefinition
 
         Args:
@@ -595,7 +622,11 @@ class JobDefinition(IHasInternalInit):
             FrozenSet[HookDefinition]
         """
         check.inst_param(handle, "handle", NodeHandle)
-        hook_defs: set[HookDefinition] = set()
+        hook_defs = set(
+            self.asset_layer.assets_defs_by_node_handle[handle].hook_defs
+            if handle in self.asset_layer.assets_defs_by_node_handle
+            else []
+        )
 
         current = handle
         lineage = []
@@ -1091,7 +1122,7 @@ class JobDefinition(IHasInternalInit):
             _subset_selection_data=self._subset_selection_data,
             asset_layer=self.asset_layer,
             input_values=self.input_values,
-            partitions_def=self.partitions_def,
+            partitions_def=self._original_partitions_def_argument,
             _was_explicitly_provided_resources=None,
         )
         resolved_kwargs = {**base_kwargs, **kwargs}  # base kwargs overwritten for conflicts
@@ -1118,6 +1149,9 @@ class JobDefinition(IHasInternalInit):
 
     def with_logger_defs(self, logger_defs: Mapping[str, LoggerDefinition]) -> "JobDefinition":
         return self._copy(logger_defs=logger_defs)
+
+    def with_metadata(self, metadata: Mapping[str, RawMetadataValue]) -> "JobDefinition":
+        return self._copy(metadata=normalize_metadata(metadata))
 
     @property
     def op_selection(self) -> Optional[AbstractSet[str]]:

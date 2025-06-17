@@ -20,6 +20,7 @@ from dagster._annotations import (
     only_allow_hidden_params_in_kwargs,
     public,
 )
+from dagster._check import checked
 from dagster._core.definitions.asset_dep import AssetDep, CoercibleToAssetDep
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.declarative_automation.automation_condition import (
@@ -143,6 +144,8 @@ class AssetSpec(IHasInternalInit, IHaveNew, LegacyNamedTupleMixin):
         owners (Optional[Sequence[str]]): A list of strings representing owners of the asset. Each
             string can be a user's email address, or a team name prefixed with `team:`,
             e.g. `team:finops`.
+        automation_condition (Optional[AutomationCondition]): The automation condition to apply to
+            the asset.
         tags (Optional[Mapping[str, str]]): Tags for filtering and organizing. These tags are not
             attached to runs of the asset.
         kinds: (Optional[Set[str]]): A set of strings representing the kinds of the asset. These
@@ -455,6 +458,7 @@ def map_asset_specs(
     ]
 
 
+@checked
 def attach_internal_freshness_policy(
     spec: AssetSpec, policy: InternalFreshnessPolicy, overwrite_existing=True
 ) -> AssetSpec:

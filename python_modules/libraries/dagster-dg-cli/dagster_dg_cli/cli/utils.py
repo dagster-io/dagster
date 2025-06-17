@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Any, Optional
 
 import click
-from dagster_dg_core.component import RemotePluginRegistry, all_components_schema_from_dg_context
+from dagster_dg_core.component import EnvRegistry, all_components_schema_from_dg_context
 from dagster_dg_core.config import (
     DgRawBuildConfig,
     merge_build_configs,
@@ -28,7 +28,8 @@ from dagster_dg_core.utils.editor import (
 )
 from dagster_dg_core.utils.mcp_client.claude_desktop import get_claude_desktop_config_path
 from dagster_dg_core.utils.telemetry import cli_telemetry_wrapper
-from dagster_shared.serdes.objects import PluginObjectKey
+from dagster_shared import check
+from dagster_shared.serdes.objects import EnvRegistryKey
 from packaging.version import Version
 
 DEFAULT_SCHEMA_FOLDER_NAME = ".dg"
@@ -155,8 +156,8 @@ def inspect_component_type_command(
     """Get detailed information on a registered Dagster component type."""
     cli_config = normalize_cli_config(global_options, click.get_current_context())
     dg_context = DgContext.for_defined_registry_environment(target_path, cli_config)
-    registry = RemotePluginRegistry.from_dg_context(dg_context)
-    component_key = PluginObjectKey.from_typename(component_type)
+    registry = EnvRegistry.from_dg_context(dg_context)
+    component_key = EnvRegistryKey.from_typename(component_type)
     if not registry.has(component_key):
         exit_with_error(generate_missing_plugin_object_error_message(component_type))
     elif sum([description, scaffold_params_schema, component_schema]) > 1:
@@ -198,7 +199,9 @@ def _serialize_json_schema(schema: Mapping[str, Any]) -> str:
     return json.dumps(schema, indent=4)
 
 
-def _workspace_entry_for_project(dg_context: DgContext) -> dict[str, dict[str, str]]:
+def _workspace_entry_for_project(
+    dg_context: DgContext, use_executable_path: bool
+) -> dict[str, dict[str, str]]:
     if not dg_context.config.project:
         exit_with_error("Unexpected empty project config.")
 
@@ -216,7 +219,7 @@ def _workspace_entry_for_project(dg_context: DgContext) -> dict[str, dict[str, s
         "module_name": module_name,
         "location_name": dg_context.code_location_name,
     }
-    if dg_context.use_dg_managed_environment:
+    if use_executable_path:
         entry["executable_path"] = str(dg_context.project_python_executable)
     return {key: entry}
 
@@ -229,27 +232,25 @@ def create_temp_workspace_file(dg_context: DgContext) -> Iterator[str]:
     # defer for import performance
     import yaml
 
+    check.invariant(
+        dg_context.is_in_workspace or dg_context.is_project,
+        "can only create a workspace file within a project or workspace context",
+    )
+
     with tempfile.TemporaryDirectory() as temp_dir:
         temp_workspace_file = Path(temp_dir) / "workspace.yaml"
 
         entries = []
         if dg_context.is_project:
-            entries.append(_workspace_entry_for_project(dg_context))
-        elif dg_context.is_in_workspace:
+            entries.append(_workspace_entry_for_project(dg_context, use_executable_path=False))
+        else:
             for spec in dg_context.project_specs:
                 project_root = dg_context.root_path / spec.path
                 project_context: DgContext = dg_context.with_root_path(project_root)
 
-                if (
-                    project_context.use_dg_managed_environment
-                    and (project_context.root_path / ".env").exists()
-                    and project_context.dagster_version < MIN_ENV_VAR_INJECTION_VERSION
-                ):
-                    click.echo(
-                        f"Warning: Dagster version {project_context.dagster_version} is less than the minimum required version for .env file environment "
-                        f"variable injection ({MIN_ENV_VAR_INJECTION_VERSION}). Environment variables will not be injected for location {project_context.code_location_name}."
-                    )
-                entries.append(_workspace_entry_for_project(project_context))
+                entries.append(
+                    _workspace_entry_for_project(project_context, use_executable_path=True)
+                )
 
         temp_workspace_file.write_text(yaml.dump({"load_from": entries}))
         yield str(temp_workspace_file)
@@ -285,12 +286,17 @@ def create_temp_dagster_cloud_yaml_file(dg_context: DgContext, statedir: str) ->
     # defer for import performance
     import yaml
 
+    check.invariant(
+        dg_context.is_in_workspace or dg_context.is_project,
+        "can only create a workspace file within a project or workspace context",
+    )
+
     dagster_cloud_yaml_path = Path(statedir) / "dagster_cloud.yaml"
     with open(dagster_cloud_yaml_path, "w+") as temp_dagster_cloud_yaml_file:
         entries = []
         if dg_context.is_project:
             entries.append(_dagster_cloud_entry_for_project(dg_context, None))
-        elif dg_context.is_in_workspace:
+        else:
             for spec in dg_context.project_specs:
                 project_root = dg_context.root_path / spec.path
                 project_context: DgContext = dg_context.with_root_path(project_root)

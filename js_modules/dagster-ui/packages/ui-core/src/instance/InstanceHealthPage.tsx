@@ -1,4 +1,4 @@
-import {Box, Colors, Heading, PageHeader, Subheading} from '@dagster-io/ui-components';
+import {Box, Colors, PageHeader, Subheading, Subtitle1} from '@dagster-io/ui-components';
 import {useContext} from 'react';
 
 import {DaemonList} from './DaemonList';
@@ -61,7 +61,7 @@ export const InstanceHealthPage = () => {
   const {pageTitle} = useContext(InstancePageContext);
   return (
     <>
-      <PageHeader title={<Heading>{pageTitle}</Heading>} tabs={<InstanceTabs tab="health" />} />
+      <PageHeader title={<Subtitle1>{pageTitle}</Subtitle1>} tabs={<InstanceTabs tab="health" />} />
       <InstanceHealthPageContent />
     </>
   );

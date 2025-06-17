@@ -25,11 +25,14 @@ export type OverduePopoverQuery = {
           lastEvaluationTimestamp: string | null;
           maximumLagMinutes: number;
         } | null;
-        internalFreshnessPolicy: {
-          __typename: 'TimeWindowFreshnessPolicy';
-          failWindowSeconds: number;
-          warnWindowSeconds: number | null;
-        } | null;
+        internalFreshnessPolicy:
+          | {__typename: 'CronFreshnessPolicy'}
+          | {
+              __typename: 'TimeWindowFreshnessPolicy';
+              failWindowSeconds: number;
+              warnWindowSeconds: number | null;
+            }
+          | null;
         assetMaterializationUsedData: Array<{
           __typename: 'MaterializationUpstreamDataVersion';
           timestamp: string;

@@ -1,4 +1,6 @@
+import importlib
 import inspect
+import json
 import re
 import shutil
 import subprocess
@@ -9,7 +11,7 @@ from typing import Any
 
 import pytest
 from dagster.components.utils import format_error_message
-from dagster_dg_core.utils import activate_venv, ensure_dagster_dg_tests_import
+from dagster_dg_core.utils import activate_venv, ensure_dagster_dg_tests_import, set_toml_node
 
 ensure_dagster_dg_tests_import()
 
@@ -26,6 +28,7 @@ from dagster_dg_core_tests.utils import (
     isolated_example_workspace,
     match_json_output,
     match_terminal_box_output,
+    modify_dg_toml_config_as_dict,
     standardize_box_characters,
 )
 
@@ -146,6 +149,61 @@ def test_list_components_filtered():
             assert match_json_output(result.output.strip(), _EXPECTED_COMPONENTS_JSON)
 
 
+def test_list_components_project_wildcard_pattern():
+    with (
+        ProxyRunner.test() as runner,
+        isolated_example_project_foo_bar(runner),
+    ):
+        result = runner.invoke(
+            "scaffold", "component", "foo_bar.components.my_component.MyComponent"
+        )
+        importlib.invalidate_caches()  # Needed to make sure new submodule is discoverable
+        assert_runner_result(result)
+
+        # Remove the generated registry module entry, confirm that our scaffolded component is not
+        # listed
+        with modify_dg_toml_config_as_dict(Path("pyproject.toml")) as config:
+            set_toml_node(config, ("project", "registry_modules"), [])
+        result = runner.invoke("list", "components", "--json")
+        assert_runner_result(result)
+        components = [entry["key"] for entry in json.loads(result.output.strip())]
+        assert "foo_bar.components.my_component.MyComponent" not in components
+
+        # Add a wildcard matching our scaffolded component, confirm that it is listed
+        with modify_dg_toml_config_as_dict(Path("pyproject.toml")) as config:
+            set_toml_node(config, ("project", "registry_modules"), ["foo_bar.components.*"])
+        result = runner.invoke("list", "components", "--json")
+        assert_runner_result(result)
+        components = [entry["key"] for entry in json.loads(result.output.strip())]
+
+        assert "foo_bar.components.my_component.MyComponent" in components
+
+
+def test_list_components_project_wildcard_pattern_no_duplicates():
+    with (
+        ProxyRunner.test() as runner,
+        isolated_example_project_foo_bar(runner),
+    ):
+        result = runner.invoke(
+            "scaffold", "component", "foo_bar.components.my_component.MyComponent"
+        )
+        importlib.invalidate_caches()  # Needed to make sure new submodule is discoverable
+        assert_runner_result(result)
+
+        # Add a wildcard that will match a component already in the list
+        with modify_dg_toml_config_as_dict(Path("pyproject.toml")) as config:
+            existing_value = config["project"]["registry_modules"]
+            set_toml_node(
+                config, ("project", "registry_modules"), [*existing_value, "foo_bar.components.*"]
+            )
+        result = runner.invoke("list", "components", "--json")
+        assert_runner_result(result)
+        components = [entry["key"] for entry in json.loads(result.output.strip())]
+        assert (
+            len([c for c in components if c == "foo_bar.components.my_component.MyComponent"]) == 1
+        )
+
+
 def test_list_components_bad_entry_point_fails():
     _assert_entry_point_error(["list", "components"])
 
@@ -233,8 +291,8 @@ def test_list_defs_succeeds(use_json: bool, snapshot):
         isolated_example_project_foo_bar(
             runner,
             in_workspace=False,
-            python_environment="uv_managed",
             **project_kwargs,
+            uv_sync=True,
         ) as project_dir,
     ):
         with activate_venv(project_dir / ".venv"):
@@ -305,7 +363,7 @@ def test_list_defs_with_path(
         isolated_example_project_foo_bar(
             runner,
             in_workspace=False,
-            python_environment="uv_managed",
+            uv_sync=True,
             **project_kwargs,
         ) as project_dir,
         activate_venv(project_dir / ".venv"),
@@ -371,9 +429,7 @@ def _sample_defs():
 def test_list_defs_complex_assets_succeeds(snapshot):
     with (
         ProxyRunner.test() as runner,
-        isolated_example_project_foo_bar(
-            runner, in_workspace=False, python_environment="uv_managed"
-        ) as project_dir,
+        isolated_example_project_foo_bar(runner, in_workspace=False, uv_sync=True) as project_dir,
     ):
         with activate_venv(project_dir / ".venv"):
             subprocess.run(
@@ -400,9 +456,7 @@ def test_list_defs_complex_assets_succeeds(snapshot):
 def test_list_defs_column_selection():
     with (
         ProxyRunner.test() as runner,
-        isolated_example_project_foo_bar(
-            runner, in_workspace=False, python_environment="uv_managed"
-        ) as project_dir,
+        isolated_example_project_foo_bar(runner, in_workspace=False, uv_sync=True) as project_dir,
     ):
         with activate_venv(project_dir / ".venv"):
             subprocess.run(
@@ -450,9 +504,7 @@ def test_list_defs_column_selection():
 def test_list_defs_asset_subselection():
     with (
         ProxyRunner.test() as runner,
-        isolated_example_project_foo_bar(
-            runner, in_workspace=False, python_environment="uv_managed"
-        ) as project_dir,
+        isolated_example_project_foo_bar(runner, in_workspace=False, uv_sync=True) as project_dir,
     ):
         with activate_venv(project_dir / ".venv"):
             subprocess.run(
@@ -536,9 +588,7 @@ def _sample_complex_asset_defs():
 def test_list_defs_with_env_file_succeeds(snapshot):
     with (
         ProxyRunner.test() as runner,
-        isolated_example_project_foo_bar(
-            runner, in_workspace=False, python_environment="uv_managed"
-        ) as project_dir,
+        isolated_example_project_foo_bar(runner, in_workspace=False, uv_sync=True) as project_dir,
     ):
         with activate_venv(project_dir / ".venv"):
             subprocess.run(
@@ -584,8 +634,8 @@ def test_list_defs_fails_compact(capture_stderr_from_components_cli_invocations)
         isolated_example_project_foo_bar(
             runner,
             in_workspace=False,
-            python_environment="uv_managed",
             use_editable_dagster=True,
+            uv_sync=True,
         ) as project_dir,
     ):
         with activate_venv(project_dir / ".venv"):
@@ -702,9 +752,8 @@ def _assert_entry_point_error(cmd: list[str]):
         # Delete the components package referenced by the entry point
         shutil.rmtree("src/foo_bar/components")
 
-        # Disable cache to force re-discovery of deleted entry point
         result = subprocess.run(
-            ["dg", *cmd, "--disable-cache"],
+            ["dg", *cmd],
             check=False,
             capture_output=True,
         )

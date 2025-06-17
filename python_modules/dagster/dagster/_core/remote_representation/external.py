@@ -5,6 +5,8 @@ from functools import cached_property
 from threading import RLock
 from typing import TYPE_CHECKING, AbstractSet, Callable, Optional, Union  # noqa: UP035
 
+from dagster_shared.error import DagsterError
+
 import dagster._check as check
 from dagster import AssetSelection
 from dagster._config.snap import ConfigFieldSnap, ConfigSchemaSnapshot
@@ -32,7 +34,6 @@ from dagster._core.definitions.sensor_definition import (
     SensorType,
 )
 from dagster._core.definitions.utils import get_default_automation_condition_sensor_selection
-from dagster._core.errors import DagsterError
 from dagster._core.execution.plan.handle import ResolvedFromDynamicStepHandle, StepHandle
 from dagster._core.instance import DagsterInstance
 from dagster._core.origin import JobPythonOrigin, RepositoryPythonOrigin

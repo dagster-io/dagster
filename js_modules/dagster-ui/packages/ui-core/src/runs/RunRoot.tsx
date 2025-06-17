@@ -2,10 +2,10 @@ import {
   Box,
   Colors,
   FontFamily,
-  Heading,
   Icon,
   NonIdealState,
   PageHeader,
+  Subtitle1,
   Tag,
 } from '@dagster-io/ui-components';
 import {useMemo} from 'react';
@@ -238,7 +238,7 @@ const RunHeaderTitle = ({run, runId}: {run: RunPageFragment | null; runId: strin
 
   if (backfillTag) {
     return (
-      <Heading>
+      <Subtitle1>
         <Link to="/runs" style={{color: Colors.textLight()}}>
           Runs
         </Link>
@@ -251,15 +251,15 @@ const RunHeaderTitle = ({run, runId}: {run: RunPageFragment | null; runId: strin
         </Link>
         {' / '}
         {runId.slice(0, 8)}
-      </Heading>
+      </Subtitle1>
     );
   }
 
   return (
-    <Heading style={{display: 'flex', flexDirection: 'row', gap: 6}}>
+    <Subtitle1 style={{display: 'flex', flexDirection: 'row', gap: 6}}>
       <Link to="/runs">Runs</Link>
       <span>/</span>
       <span style={{fontFamily: FontFamily.monospace}}>{runId.slice(0, 8)}</span>
-    </Heading>
+    </Subtitle1>
   );
 };

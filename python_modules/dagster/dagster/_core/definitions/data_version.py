@@ -452,7 +452,9 @@ class CachingStaleStatusResolver:
         dep_asset = self.asset_graph.get(dep_key.asset_key)
         if dep_key.partition_key is None:
             current_data_version = self._get_current_data_version(key=dep_key)
-            return provenance.input_data_versions[dep_key.asset_key] != current_data_version
+            return self._data_versions_differ(
+                provenance.input_data_versions[dep_key.asset_key], current_data_version
+            )
         else:
             cursor = provenance.input_storage_ids[dep_key.asset_key]
             updated_record = self._instance.get_latest_data_version_record(
@@ -474,9 +476,37 @@ class CachingStaleStatusResolver:
                     else None
                 )
                 updated_version = extract_data_version_from_entry(updated_record.event_log_entry)
-                return previous_version != updated_version
+                return self._data_versions_differ(previous_version, updated_version)
             else:
                 return False
+
+    def _data_versions_differ(
+        self, prev_data_version: Optional[DataVersion], curr_data_version: Optional[DataVersion]
+    ) -> bool:
+        # We special case this to handle a complex niche scenario:
+        #
+        # - Data version system uses
+        #     - INITIAL for assets that are assumed to have a value despite no recorded data version
+        #       (external assets are always assumed to have a value)
+        #     - NULL for assets that are assumed to have no value (dagster-managed assets that have
+        #       never been materialized)
+        # - Suppose we have an asset X and two code locs, A and B. Asset X is defined as a
+        #   materializable asset in A and external asset in B.
+        # - Because there is no record for the asset, the framework generates a default data version.
+        #     - In A, this will be NULL (because it is a dagster-managed asset with no materialization)
+        #     - In B, this will be INITIAL (because it is an external asset assumed to have a value)
+        # - This discrepancy is fine until you introduce another asset Y that depends on X in code
+        #   location B. When you materialize Y (in code loc B), it will save X's data version as
+        #   INITIAL in the data provenance
+        # - Now when we compare the version of X on Y provenance (INITIAL) to the current version in
+        #   this code (NULL), they will look different, though X was never changed.
+        #
+        # To mitigate this, we treat the case where the previous data version is
+        # DEFAULT_DATA_VERSION and current data version is NULL_DATA_VERSION as unchanged.
+        if prev_data_version == DEFAULT_DATA_VERSION and curr_data_version == NULL_DATA_VERSION:
+            return False
+        else:
+            return prev_data_version != curr_data_version
 
     def _get_stale_causes_materialized(self, key: "AssetKeyPartitionKey") -> Iterator[StaleCause]:
         from dagster._core.definitions.events import AssetKeyPartitionKey

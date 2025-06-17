@@ -1,11 +1,12 @@
 [project]
-name = "project-llm-fine-tune"
+name = "project_llm_fine_tune"
 version = "0.0.1"
 description = "Project LLM Fine Tune"
 readme = "README.md"
 requires-python = ">=3.9"
 dependencies = [
     "dagster",
+    "dagster-dg-cli",
     "dagster-openai",
     "dagster-duckdb",
     "pandas",
@@ -24,4 +25,7 @@ directory_type = "project"
 
 [tool.dg.project]
 root_module = "project_llm_fine_tune"
-code_location_target_module = "project_llm_fine_tune.definitions"
+autoload_defs = true
+
+[tool.dg.project.python_environment]
+active = true

@@ -547,7 +547,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         return self._asset_node_snap.is_executable
 
     def resolve_assetHealth(self, graphene_info: ResolveInfo) -> Optional[GrapheneAssetHealth]:
-        if not graphene_info.context.instance.dagster_observe_supported():
+        if not graphene_info.context.instance.dagster_asset_health_queries_supported():
             return None
         return GrapheneAssetHealth(
             asset_key=self.assetKey,
@@ -730,7 +730,9 @@ class GrapheneAssetNode(graphene.ObjectType):
         partitions: Optional[Sequence[str]] = None,
     ) -> Sequence[Any]:  # (GrapheneAssetStaleStatus)
         if partitions is None:
-            partitions = self._get_partitions_def().get_partition_keys()
+            partitions = self._get_partitions_def().get_partition_keys(
+                dynamic_partitions_store=graphene_info.context.dynamic_partitions_loader
+            )
         else:
             self._validate_partitions_existence()
         return [
@@ -751,7 +753,9 @@ class GrapheneAssetNode(graphene.ObjectType):
         partitions: Optional[Sequence[str]] = None,
     ) -> Sequence[Sequence[GrapheneAssetStaleCause]]:
         if partitions is None:
-            partitions = self._get_partitions_def().get_partition_keys()
+            partitions = self._get_partitions_def().get_partition_keys(
+                dynamic_partitions_store=graphene_info.context.dynamic_partitions_loader
+            )
         else:
             self._validate_partitions_existence()
         return [self._get_staleCauses(partition) for partition in partitions]
@@ -792,7 +796,9 @@ class GrapheneAssetNode(graphene.ObjectType):
         self, graphene_info: ResolveInfo, partitions: Optional[Sequence[str]] = None
     ) -> Sequence[Optional[str]]:
         if partitions is None:
-            partitions = self._get_partitions_def().get_partition_keys()
+            partitions = self._get_partitions_def().get_partition_keys(
+                dynamic_partitions_store=graphene_info.context.dynamic_partitions_loader
+            )
         else:
             self._validate_partitions_existence()
         data_versions = [

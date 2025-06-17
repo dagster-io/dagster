@@ -2,11 +2,13 @@ from abc import ABC, abstractmethod
 from collections.abc import Sequence
 from typing import AbstractSet, Callable, Optional, cast  # noqa: UP035
 
+from dagster_shared.error import DagsterError
+
 import dagster._check as check
 from dagster._core.definitions import AssetCheckEvaluation, JobDefinition, NodeHandle
 from dagster._core.definitions.events import AssetMaterialization, AssetObservation
 from dagster._core.definitions.utils import DEFAULT_OUTPUT
-from dagster._core.errors import DagsterError, DagsterInvariantViolationError
+from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.events import (
     AssetObservationData,
     DagsterEvent,

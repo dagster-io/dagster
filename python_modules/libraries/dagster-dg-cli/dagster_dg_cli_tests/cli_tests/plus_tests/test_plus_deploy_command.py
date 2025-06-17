@@ -149,7 +149,7 @@ def project_setup_path(runner):
             args = [
                 "project",
                 "foo-bar-2",
-                *["--python-environment", "uv_managed"],
+                "--uv-sync",
             ]
 
             result = runner.invoke_create_dagster(*args)

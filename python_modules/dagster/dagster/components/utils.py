@@ -10,11 +10,11 @@ from types import ModuleType
 from typing import Any, TypeVar, Union
 
 import click
+from dagster_shared.error import DagsterError
 from pydantic import BaseModel
 
 from dagster import _check as check
 from dagster._core.definitions.asset_spec import AssetSpec
-from dagster._core.errors import DagsterError
 from dagster.components.resolved.context import ResolutionContext
 from dagster.components.resolved.core_models import (
     AssetAttributesModel,
