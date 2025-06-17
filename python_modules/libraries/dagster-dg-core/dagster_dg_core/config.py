@@ -241,8 +241,8 @@ class DgProjectConfig:
     def from_raw(cls, raw: "DgRawProjectConfig") -> Self:
         if raw.get("autoload_defs"):
             warnings.warn(
-                "Using autoload_defs in pyproject.toml is deprecated."
-                " Use a definitions.py file with @definitions and load_defs_folder instead."
+                "Using autoload_defs in pyproject.toml is deprecated, and will be removed in dagster 1.11.0."
+                " Use a definitions.py file with @definitions and load_project_defs instead."
             )
         return cls(
             root_module=raw["root_module"],
