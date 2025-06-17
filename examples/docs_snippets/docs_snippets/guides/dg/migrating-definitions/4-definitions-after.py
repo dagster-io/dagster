@@ -14,5 +14,5 @@ defs = dg.Definitions.merge(
         jobs=[regenerate_analytics_job],
         schedules=[regenerate_analytics_hourly_schedule],
     ),
-    dg.load_defs_folder(Path(__file__).parent / "defs"),
+    dg.load_project_defs(Path(__file__).parent.parent),
 )

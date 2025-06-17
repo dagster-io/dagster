@@ -3,6 +3,7 @@ from pathlib import Path
 from types import ModuleType
 from typing import Optional
 
+from dagster_dg_core.context import DgContext
 from dagster_shared import check
 from dagster_shared.serdes.objects.package_entry import json_for_all_components
 
@@ -68,18 +69,18 @@ def get_project_root(defs_root: ModuleType) -> Path:
 @public
 @preview(emit_runtime_warning=False)
 @suppress_dagster_warnings
-def load_defs_folder(defs_folder_path: Path) -> Definitions:
+def load_project_defs(project_root: Path) -> Definitions:
     """Constructs a Definitions object, loading all Dagster defs in the given folder.
 
     Args:
-        defs_folder_path (Path): The path to the defs folder.
+        project_root (Path): The path to the dg project root.
     """
-    import sys
+    dg_context = DgContext.for_project_environment(project_root, command_line_config={})
+    defs_module = importlib.import_module(dg_context.defs_module_name)
 
-    sys.path.append(str(defs_folder_path.parent.parent))
-    defs_module = importlib.import_module(".".join(defs_folder_path.parts[-2:]))
-
-    return load_defs(defs_module, terminate_autoloading_on_keyword_files=False)
+    return load_defs(
+        defs_module, project_root=project_root, terminate_autoloading_on_keyword_files=False
+    )
 
 
 # Public method so optional Nones are fine
@@ -87,7 +88,7 @@ def load_defs_folder(defs_folder_path: Path) -> Definitions:
 @preview(emit_runtime_warning=False)
 @deprecated(
     breaking_version="1.10.21",
-    additional_warn_text="Use load_defs_folder instead.",
+    additional_warn_text="Use load_project_defs instead.",
 )
 @suppress_dagster_warnings
 def load_defs(

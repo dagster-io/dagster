@@ -12,7 +12,7 @@ from dagster.components.core.context import ComponentLoadContext as ComponentLoa
 from dagster.components.core.load_defs import (
     build_component_defs as build_component_defs,
     load_defs as load_defs,
-    load_defs_folder as load_defs_folder,
+    load_project_defs as load_project_defs,
 )
 from dagster.components.definitions import definitions as definitions
 from dagster.components.resolved.base import Resolvable as Resolvable

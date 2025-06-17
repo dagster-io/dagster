@@ -2,11 +2,11 @@ from pathlib import Path
 
 from dagster import AssetSpec, AutomationCondition
 from dagster.components.core.context import ComponentLoadContext
-from dagster.components.core.load_defs import load_defs_folder
+from dagster.components.core.load_defs import load_project_defs
 
 
 def test_custom_scope() -> None:
-    defs = load_defs_folder(Path(__file__).parent / "custom_scope_component")
+    defs = load_project_defs(Path(__file__).parent / "custom_scope_component")
 
     assets = list(defs.assets or [])
     assert len(assets) == 1
