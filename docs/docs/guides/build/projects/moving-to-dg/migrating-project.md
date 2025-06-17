@@ -1,6 +1,6 @@
 ---
 description: Convert an existing Dagster project to use dg.
-sidebar_position: 100
+sidebar_position: 550
 title: Converting an existing project to use dg
 ---
 
