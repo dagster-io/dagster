@@ -1,0 +1,2 @@
+[tool.dg.project]
+defs_module = my_existing_project.defs
