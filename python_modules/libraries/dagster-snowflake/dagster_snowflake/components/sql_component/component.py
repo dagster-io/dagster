@@ -14,9 +14,6 @@ class SnowflakeSqlComponent(TemplatedSqlComponent[SnowflakeResource]):
         str, Field(description="The resource key to use for the Snowflake resource.")
     ] = "snowflake"
 
-    class Config:
-        extra = "allow"
-
     def execute(self, context: AssetExecutionContext, resource: SnowflakeResource) -> None:
         """Execute the SQL content using the Snowflake resource."""
         with resource.get_connection() as conn:
