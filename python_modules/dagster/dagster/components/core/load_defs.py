@@ -85,13 +85,16 @@ def load_project_defs(project_root: Path) -> Definitions:
         )
     )
 
-    project = toml_config.get("tool", {}).get("dg", {}).get("project", {})
+    if root_config_path and root_config_path.stem == "dg":
+        project = toml_config.get("project", {})
+    else:
+        project = toml_config.get("tool", {}).get("dg", {}).get("project", {})
 
     root_module_name = project.get("root_module")
     defs_module_name = project.get("defs_module")
     check.invariant(
         defs_module_name or root_module_name,
-        "Either defs_module or root_module must be set in the project config",
+        f"Either defs_module or root_module must be set in the project config {root_config_path}",
     )
     defs_module_name = defs_module_name or f"{root_module_name}.{_DEFAULT_PROJECT_DEFS_SUBMODULE}"
 

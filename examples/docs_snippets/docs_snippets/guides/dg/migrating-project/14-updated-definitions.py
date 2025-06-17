@@ -6,5 +6,5 @@ import dagster as dg
 
 defs = dg.Definitions.merge(
     dg.Definitions(assets=[my_asset]),
-    dg.load_project_defs(project_root=Path(__file__).parent.parent),
+    dg.load_project_defs(Path(__file__).parent.parent),
 )

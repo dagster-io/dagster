@@ -269,7 +269,7 @@ def test_migrating_project(
 
                     defs = dg.Definitions.merge(
                         dg.Definitions(assets=[my_asset]),
-                        dg.load_defs_folder(Path(__file__).parent / "defs"),
+                        dg.load_project_defs(Path(__file__).parent.parent),
                     )
                 """),
                 snippet_path=f"{context.get_next_snip_number()}-updated-definitions.py",
