@@ -23,7 +23,7 @@ Inside the body of the function, we can use `AssetCheckExecutionContext.selected
 
 As we don't know in advance which checks will be executed, we explicitly `yield` each asset check result that we're expected to create:
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/assets/asset_checks/subset_multi_asset_check.py" title="src/<project_name>/defs/assets.py" title="src/<project_name>/defs/assets.py"/>
+<CodeExample path="docs_snippets/docs_snippets/concepts/assets/asset_checks/subset_multi_asset_check.py" title="src/<project_name>/defs/assets.py"/>
 
 ## Subsetting checks in @multi_assets
 
