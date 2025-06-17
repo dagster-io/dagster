@@ -17,7 +17,11 @@ def resources() -> dg.Definitions:
                 aws_secret_access_key=dg.EnvVar("CLOUDFLARE_R2_SECRET_ACCESS_KEY"),
                 region_name="auto",
             ),
-            "modal": ModalClient(project_directory=Path(__file__).parent.parent.parent / "modal_project"),
+            "modal": ModalClient(
+                project_directory=Path(__file__).parent.parent.parent.parent
+                / "src"
+                / "modal_project"
+            ),
             "openai": OpenAIResource(api_key=dg.EnvVar("OPENAI_API_KEY")),
         }
     )
