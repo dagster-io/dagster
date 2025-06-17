@@ -1,4 +1,5 @@
 import json
+from pathlib import Path
 from unittest import mock
 
 from dagster import Definitions
@@ -82,8 +83,6 @@ def get_components_repo() -> RepositoryDefinition:
         import dagster_test.components
         from dagster.components.core.package_entry import get_package_objects_in_module
 
-        from dagster_graphql_tests.graphql.components import defs as defs
-
         objects = {}
         for name, obj in get_package_objects_in_module(dagster_test.components):
             key = EnvRegistryKey(name=name, namespace="dagster_test")
@@ -91,9 +90,11 @@ def get_components_repo() -> RepositoryDefinition:
 
         mock_discover_entry_point_package_objects.return_value = objects
 
-        from dagster.components.core.load_defs import load_defs
+        from dagster.components.core.load_defs import load_defs_folder
 
-        return load_defs(defs).get_repository_def()
+        defs_path = Path(__file__).parent / "defs"
+
+        return load_defs_folder(defs_path).get_repository_def()
 
 
 def test_get_docs_json():

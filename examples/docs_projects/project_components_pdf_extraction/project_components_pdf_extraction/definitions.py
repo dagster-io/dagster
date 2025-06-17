@@ -1,5 +1,5 @@
-from dagster import load_defs
+from pathlib import Path
 
-import project_components_pdf_extraction.defs
+from dagster import load_defs_folder
 
-defs = load_defs(defs_root=project_components_pdf_extraction.defs)
+defs = load_defs_folder(defs_folder_path=Path(__file__).parent / "defs")
