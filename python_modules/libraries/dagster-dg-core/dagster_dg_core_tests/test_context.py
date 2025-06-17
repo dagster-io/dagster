@@ -410,7 +410,16 @@ def test_invalid_config_project(config_file: ConfigFileType):
                 err_msg,
             )
 
+        # Test specifying autoload_defs and code_location_target_module
+        # errors.
         with _reset_config_file(config_file):
+            with modify_dg_toml_config_as_dict(Path(config_file)) as toml:
+                create_toml_node(
+                    toml,
+                    ("project", "autoload_defs"),
+                    True,
+                )
+
             full_code_location_key = _get_full_str_path(
                 config_file, "project.code_location_target_module"
             )
