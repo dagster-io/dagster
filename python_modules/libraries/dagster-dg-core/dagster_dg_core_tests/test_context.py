@@ -287,8 +287,9 @@ def test_context_with_autoload_defs_and_definitions_py():
         ProxyRunner.test() as runner,
         isolated_example_project_foo_bar(runner, in_workspace=False, uv_sync=True),
     ):
-        # New project has autoload_defs enabled by default, now let's create an empty definitions.py
-        Path("src/foo_bar/definitions.py").touch()
+        # Set autoload_defs to true in pyproject.toml
+        with modify_dg_toml_config_as_dict(Path("pyproject.toml")) as toml:
+            create_toml_node(toml, ("project", "autoload_defs"), True)
         with dg_warns("`project.autoload_defs` is enabled, but a code location load target"):
             DgContext.for_project_environment(Path.cwd(), {})
 
