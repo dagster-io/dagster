@@ -45,7 +45,7 @@ From the external code, you can report to Dagster that an asset check has been p
 
 On Dagster's side, the `PipesClientCompletedInvocation` object returned from `PipesSubprocessClient` includes a `get_asset_check_result` method, which you can use to access the <PyObject section="asset-checks" module="dagster" object="AssetCheckResult" /> event reported by the subprocess.
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/subprocess/with_asset_check/dagster_code.py"title="src/external_pipeline/defs/dagster_code.py" />
+<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/subprocess/with_asset_check/dagster_code.py" title="src/external_pipeline/defs/dagster_code.py" />
 
 </TabItem>
 </Tabs>

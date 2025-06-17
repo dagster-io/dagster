@@ -79,6 +79,6 @@ Materializing this asset will launch the AWS on EKS job and wait for it to compl
 
 Next, add the `PipesEMRContainersClient` resource to your project's <PyObject section="definitions" module="dagster" object="Definitions" /> object:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/emr-containers/dagster_code.py" startAfter="start_definitions_marker" endBefore="end_definitions_marker" title="src/<project_name>/defs/resouces.py" />
+<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/emr-containers/dagster_code.py" startAfter="start_definitions_marker" endBefore="end_definitions_marker" title="src/<project_name>/defs/resources.py" />
 
 Dagster will now be able to launch the AWS EMR Containers job from the `emr_containers_asset` asset, and receive logs and events from the job. If `include_stdio_in_messages` is set to `True`, the logs will be forwarded to the Dagster process.
