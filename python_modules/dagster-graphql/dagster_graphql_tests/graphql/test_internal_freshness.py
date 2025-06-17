@@ -56,11 +56,13 @@ def get_repo() -> RepositoryDefinition:
 # There is a separate implementation for plus graphql tests.
 def test_internal_freshness_policy():
     with instance_for_test() as instance:
-        assert not instance.internal_asset_freshness_enabled()
         with define_out_of_process_context(__file__, "get_repo", instance) as graphql_context:
             result = execute_dagster_graphql(
                 graphql_context,
                 GET_INTERNAL_FRESHNESS_POLICY,
                 variables={"assetKey": asset_with_internal_freshness_policy.key.to_graphql_input()},
             )
-            assert result.data["assetNodes"][0]["internalFreshnessPolicy"] is None
+            assert result.data["assetNodes"][0]["internalFreshnessPolicy"] == {
+                "failWindowSeconds": 600,
+                "warnWindowSeconds": None,
+            }
