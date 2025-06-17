@@ -1,4 +1,4 @@
-# ruff: sort: skip_file
+# ruff: isort: skip_file
 
 # start_pipeline_marker
 
