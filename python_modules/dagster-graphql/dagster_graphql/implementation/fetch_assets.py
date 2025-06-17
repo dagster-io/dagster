@@ -124,7 +124,9 @@ def get_assets(
 
     asset_nodes_by_asset_key = {
         asset_key: asset_node
-        for asset_key, asset_node in get_asset_nodes_by_asset_key(graphene_info).items()
+        for asset_key, asset_node in _get_asset_nodes_by_asset_key(
+            graphene_info, asset_keys
+        ).items()
         if (not prefix or asset_key.path[: len(prefix)] == prefix)
         and (not normalized_cursor_str or asset_key.to_string() > normalized_cursor_str)
         and (not asset_keys or asset_key in asset_keys)
@@ -207,8 +209,9 @@ def _graphene_asset_node(
     )
 
 
-def get_asset_nodes_by_asset_key(
+def _get_asset_nodes_by_asset_key(
     graphene_info: "ResolveInfo",
+    asset_keys: Optional[Sequence[AssetKey]] = None,
 ) -> Mapping[AssetKey, "GrapheneAssetNode"]:
     """If multiple repositories have asset nodes for the same asset key, chooses the asset node that
     has an op.
@@ -219,13 +222,22 @@ def get_asset_nodes_by_asset_key(
         loading_context=graphene_info.context,
     )
 
+    if asset_keys:
+        remote_nodes = [
+            graphene_info.context.asset_graph.get(asset_key)
+            for asset_key in asset_keys
+            if graphene_info.context.asset_graph.has(asset_key)
+        ]
+    else:
+        remote_nodes = graphene_info.context.asset_graph.asset_nodes
+
     return {
         remote_node.key: _graphene_asset_node(
             graphene_info,
             remote_node,
             stale_status_loader=stale_status_loader,
         )
-        for remote_node in graphene_info.context.asset_graph.asset_nodes
+        for remote_node in remote_nodes
     }
 
 
