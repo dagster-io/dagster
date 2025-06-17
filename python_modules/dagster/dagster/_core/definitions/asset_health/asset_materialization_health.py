@@ -263,6 +263,9 @@ async def get_materialization_status_and_metadata(
     )
     # captures streamline disabled or consumer state doesn't exist
     if asset_materialization_health_state is None:
+        if context.instance.streamline_read_asset_health_required():
+            return AssetHealthStatus.UNKNOWN, None
+
         if not context.asset_graph.has(asset_key):
             # if the asset is not in the asset graph, it could be because materializations are reported by
             # an external system, determine the status as best we can based on the asset record
