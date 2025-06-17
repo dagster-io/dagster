@@ -13,6 +13,13 @@ import Beta from '@site/docs/partials/\_Beta.md';
 
 <Beta />
 
+:::info
+
+If you are just getting started with Airlift, we recommend using the new [Airlift component](/guides/build/components/integrations/airflow-component-tutorial).
+
+:::
+
+
 <p>{frontMatter.description}</p>
 
 Using [`dagster-airflift`](/api/libraries/dagster-airlift), you can:

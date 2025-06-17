@@ -10,6 +10,12 @@ sidebar_custom_props:
 partnerlink: https://www.fivetran.com/
 ---
 
+:::info
+
+If you are just getting started with the Fivetran integration, we recommend using the new [Fivetran component](/guides/build/components/integrations/fivetran-component-tutorial).
+
+:::
+
 This guide provides instructions for using Dagster with Fivetran using the `dagster-fivetran` library. Your Fivetran connector tables can be represented as assets in the Dagster asset graph, allowing you to track lineage and dependencies between Fivetran assets and data assets you are already modeling in Dagster. You can also use Dagster to orchestrate Fivetran connectors, allowing you to trigger syncs for these on a cadence or based on upstream data changes.
 
 :::note
