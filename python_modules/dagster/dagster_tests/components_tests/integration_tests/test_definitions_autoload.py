@@ -198,7 +198,7 @@ def test_autoload_definitions_new_flag(
 ) -> None:
     if not terminate_autoloading_on_keyword_files:
         defs = load_project_defs(
-            Path(__file__).parent
+            project_root=Path(__file__).parent
             / "integration_test_defs"
             / "definitions"
             / "special_names_at_levels",
@@ -206,7 +206,7 @@ def test_autoload_definitions_new_flag(
     else:
         # Flag is not present on load_defs_folder
         module = importlib.import_module(
-            "dagster_tests.components_tests.integration_tests.integration_test_defs.definitions.special_names_at_levels"
+            "dagster_tests.components_tests.integration_tests.integration_test_defs.definitions.special_names_at_levels.special_names_at_levels"
         )
         defs = load_defs(
             module,

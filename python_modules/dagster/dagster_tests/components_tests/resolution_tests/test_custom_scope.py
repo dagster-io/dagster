@@ -1,12 +1,16 @@
+import importlib
 from pathlib import Path
 
 from dagster import AssetSpec, AutomationCondition
 from dagster.components.core.context import ComponentLoadContext
-from dagster.components.core.load_defs import load_project_defs
+from dagster.components.core.load_defs import load_defs
 
 
 def test_custom_scope() -> None:
-    defs = load_project_defs(Path(__file__).parent / "custom_scope_component")
+    module = importlib.import_module(
+        "dagster_tests.components_tests.resolution_tests.custom_scope_component"
+    )
+    defs = load_defs(module, project_root=Path(__file__).parent)
 
     assets = list(defs.assets or [])
     assert len(assets) == 1
