@@ -66,10 +66,16 @@ class InternalFreshnessPolicy(ABC):
 
     @staticmethod
     def cron(
-        deadline_cron: str, lower_bound_delta: timedelta, timezone: str = "UTC"
+        deadline_cron: str,
+        lower_bound_delta: timedelta,
+        lower_bound_warning_delta: Optional[timedelta] = None,
+        timezone: str = "UTC",
     ) -> "CronFreshnessPolicy":
         return CronFreshnessPolicy(
-            deadline_cron=deadline_cron, lower_bound_delta=lower_bound_delta, timezone=timezone
+            deadline_cron=deadline_cron,
+            lower_bound_delta=lower_bound_delta,
+            lower_bound_warning_delta=lower_bound_warning_delta,
+            timezone=timezone,
         )
 
 
@@ -98,10 +104,13 @@ class TimeWindowFreshnessPolicy(InternalFreshnessPolicy, IHaveNew):
         )
 
 
-@whitelist_for_serdes
+@whitelist_for_serdes(
+    skip_when_none_fields={"serializable_lower_bound_warning_delta"},
+)
 @record_custom(
     field_to_new_mapping={
         "serializable_lower_bound_delta": "lower_bound_delta",
+        "serializable_lower_bound_warning_delta": "lower_bound_warning_delta",
     }
 )
 class CronFreshnessPolicy(InternalFreshnessPolicy, IHaveNew):
@@ -109,29 +118,35 @@ class CronFreshnessPolicy(InternalFreshnessPolicy, IHaveNew):
 
     Args:
         deadline_cron: a cron string that defines a deadline for the asset to be materialized.
+
         lower_bound_delta: a timedelta that defines the lower bound for when the asset could have been materialized.
         If a deadline cron tick has passed and the most recent materialization is older than (deadline cron tick timestamp - lower bound delta), the asset is considered stale until it materializes again.
+
+        lower_bound_warning_delta: defines a time before each deadline cron tick at which the asset will start warning that it is about to become stale.
+        If the current time is on or after (deadline cron tick timestamp - lower_bound_warning_delta) but before the deadline cron tick, and the most recent materialization is older than (deadline cron tick timestamp - lower_bound_delta),
+        the asset will assume the `WARN` freshness state.
+
         timezone: optionally provide a timezone for cron evaluation. IANA time zone strings are supported. If not provided, defaults to UTC.
 
     Example:
     policy = InternalFreshnessPolicy.cron(
         deadline_cron="0 10 * * *", # 10am daily
         lower_bound_delta=timedelta(hours=1),
+        lower_bound_warning_delta=timedelta(minutes=30),
     )
 
     This policy expects the asset to materialize every day between 9:00 AM and 10:00 AM.
-
-    If the asset is materialized at 9:30 AM, the asset is fresh, and will continue to be fresh until at least the deadline next day (10AM)
-    If the asset is materialized at 9:59 AM, the asset is fresh, and will continue to be fresh until at least the deadline next day (10AM)
-    If the asset is not materialized by 10:00 AM, the asset is stale, and will continue to be stale until it is materialized.
-    If the asset is then materialized at 10:30AM, it becomes fresh again until at least the deadline the next day (10AM).
+    If the asset has not yet materialized by 9:30am, the asset starts warning that it is about to fail its freshness policy (freshness state `WARN`) until it materializes again.
+    If the asset has not yet materialized by 10:00 AM, the asset is stale (frehsness state `FAIL`), and will continue to be stale until it materializes again.
+    Once the asset materializes, it becomes fresh (freshness state `PASS`) until at least the deadline the next day (10AM).
 
     Keep in mind that the policy will always look at the last completed cron tick.
-    So in the example above, if asset freshness is evaluated at 9:59 AM, the policy will still consider the previous day's 9-10AM window.
+    So in the example above, if asset freshness is evaluated at 9:59 AM, the policy will still consider the previous day's 9-10AM window when calculating freshness state.
     """
 
     deadline_cron: str
     serializable_lower_bound_delta: SerializableTimeDelta
+    serializable_lower_bound_warning_delta: Optional[SerializableTimeDelta] = None
     timezone: str
 
     def __new__(
@@ -139,6 +154,7 @@ class CronFreshnessPolicy(InternalFreshnessPolicy, IHaveNew):
         deadline_cron: str,
         lower_bound_delta: Union[timedelta, SerializableTimeDelta],
         timezone: str = "UTC",
+        lower_bound_warning_delta: Optional[Union[timedelta, SerializableTimeDelta]] = None,
     ):
         check.str_param(deadline_cron, "deadline_cron")
         check.invariant(is_valid_cron_string(deadline_cron), "Invalid cron string.")
@@ -157,6 +173,30 @@ class CronFreshnessPolicy(InternalFreshnessPolicy, IHaveNew):
             actual_lower_bound_delta >= timedelta(minutes=1),
             f"lower_bound_delta must be greater than or equal to 1 minute, was {actual_lower_bound_delta.total_seconds()} seconds",
         )
+
+        if lower_bound_warning_delta:
+            if isinstance(lower_bound_warning_delta, SerializableTimeDelta):
+                serializable_lower_bound_warning_delta = lower_bound_warning_delta
+                actual_lower_bound_warning_delta = lower_bound_warning_delta.to_timedelta()
+            else:
+                actual_lower_bound_warning_delta = lower_bound_warning_delta
+                serializable_lower_bound_warning_delta = SerializableTimeDelta.from_timedelta(
+                    lower_bound_warning_delta
+                )
+        else:
+            actual_lower_bound_warning_delta = None
+            serializable_lower_bound_warning_delta = None
+
+        if actual_lower_bound_warning_delta:
+            check.invariant(
+                actual_lower_bound_warning_delta >= timedelta(minutes=1),
+                f"lower_bound_warning_delta must be greater than or equal to 1 minute, was {actual_lower_bound_warning_delta.total_seconds()} seconds",
+            )
+            check.invariant(
+                actual_lower_bound_warning_delta < actual_lower_bound_delta,
+                f"lower_bound_warning_delta must be less than lower_bound_delta of {actual_lower_bound_delta.total_seconds()} seconds, was {actual_lower_bound_warning_delta.total_seconds()} seconds",
+            )
+
         smallest_cron_interval = get_smallest_cron_interval(deadline_cron)
         check.invariant(
             actual_lower_bound_delta <= smallest_cron_interval,
@@ -174,6 +214,7 @@ class CronFreshnessPolicy(InternalFreshnessPolicy, IHaveNew):
             cls,
             deadline_cron=deadline_cron,
             serializable_lower_bound_delta=serializable_lower_bound_delta,
+            serializable_lower_bound_warning_delta=serializable_lower_bound_warning_delta,
             timezone=timezone,
         )
 
@@ -183,6 +224,17 @@ class CronFreshnessPolicy(InternalFreshnessPolicy, IHaveNew):
         Use this instead of accessing the serializable_lower_bound_delta directly.
         """
         return SerializableTimeDelta.to_timedelta(self.serializable_lower_bound_delta)
+
+    @property
+    def lower_bound_warning_delta(self) -> Optional[timedelta]:
+        """Returns the lower bound warning delta as a timedelta, or None if not set.
+        Use this instead of accessing the serializable_lower_bound_warning_delta directly.
+        """
+        return (
+            SerializableTimeDelta.to_timedelta(self.serializable_lower_bound_warning_delta)
+            if self.serializable_lower_bound_warning_delta
+            else None
+        )
 
 
 @whitelist_for_serdes
