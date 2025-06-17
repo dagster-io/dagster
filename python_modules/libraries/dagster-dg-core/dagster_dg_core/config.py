@@ -1,6 +1,5 @@
 import functools
 import textwrap
-import warnings
 from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from dataclasses import dataclass, field
@@ -239,11 +238,6 @@ class DgProjectConfig:
 
     @classmethod
     def from_raw(cls, raw: "DgRawProjectConfig") -> Self:
-        if raw.get("autoload_defs"):
-            warnings.warn(
-                "Using autoload_defs in pyproject.toml is deprecated."
-                " Use a definitions.py file with @definitions and load_defs_folder instead."
-            )
         return cls(
             root_module=raw["root_module"],
             autoload_defs=raw.get("autoload_defs", DgProjectConfig.autoload_defs),
