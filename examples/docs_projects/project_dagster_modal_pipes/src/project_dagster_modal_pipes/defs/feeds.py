@@ -14,7 +14,7 @@ USAGE
 
     Run Dagster
 
-        dagster dev
+        dg dev
 
 """
 
