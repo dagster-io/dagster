@@ -1,9 +1,10 @@
 from collections.abc import Mapping, Sequence
 from datetime import datetime  # noqa
 from os import PathLike  # noqa
-from typing import Any, Optional
+from typing import Any, Generic, Optional, TypeVar
 
 from dagster_shared.check.decorator import checked
+from dagster_shared.record import IHaveNew, LegacyNamedTupleMixin, record_custom
 
 import dagster._check as check
 from dagster._annotations import PublicAttr
@@ -13,9 +14,29 @@ from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
 from dagster._core.definitions.metadata import (  # noqa
     MetadataValue,
     RawMetadataMapping,
+    TableColumnLineage,
     TableSchema,
 )
 from dagster._core.definitions.utils import NoValueSentinel
+
+
+@checked
+def coerce_asset_result_args(
+    asset_key: Optional[CoercibleToAssetKey],
+    metadata: Optional[RawMetadataMapping],
+    check_results: Optional[Sequence[AssetCheckResult]],
+    data_version: Optional[DataVersion],
+    tags: Optional[Mapping[str, Any]],
+) -> Mapping[str, Any]:
+    from dagster._core.definitions.events import validate_asset_event_tags
+
+    return dict(
+        asset_key=AssetKey.from_coercible(asset_key) if asset_key else None,
+        metadata=metadata,
+        check_results=check_results or [],
+        data_version=data_version,
+        tags=validate_asset_event_tags(tags),
+    )
 
 
 class AssetResult:
@@ -27,24 +48,6 @@ class AssetResult:
     data_version: PublicAttr[Optional[DataVersion]]
     tags: PublicAttr[Optional[Mapping[str, str]]]
 
-    @checked
-    def __init__(
-        self,
-        *,  # enforce kwargs
-        asset_key: Optional[CoercibleToAssetKey] = None,
-        metadata: Optional[RawMetadataMapping] = None,
-        check_results: Optional[Sequence[AssetCheckResult]] = None,
-        data_version: Optional[DataVersion] = None,
-        tags: Optional[Mapping[str, str]] = None,
-    ):
-        from dagster._core.definitions.events import validate_asset_event_tags
-
-        self.asset_key = AssetKey.from_coercible(asset_key) if asset_key else None
-        self.metadata = metadata
-        self.check_results = check_results or []
-        self.data_version = data_version
-        self.tags = validate_asset_event_tags(tags)
-
     def check_result_named(self, check_name: str) -> AssetCheckResult:
         for check_result in self.check_results:
             if check_result.check_name == check_name:
@@ -53,7 +56,11 @@ class AssetResult:
         check.failed(f"Could not find check result named {check_name}")
 
 
-class MaterializeResult(AssetResult):
+T = TypeVar("T")
+
+
+@record_custom(checked=False)
+class MaterializeResult(AssetResult, Generic[T], IHaveNew, LegacyNamedTupleMixin):
     """An object representing a successful materialization of an asset. These can be returned from
     @asset and @multi_asset decorated functions to pass metadata or specify specific assets were
     materialized.
@@ -69,35 +76,37 @@ class MaterializeResult(AssetResult):
         value (Optional[Any]): The output value of the asset that was materialized.
     """
 
-    value: PublicAttr[Any]
+    asset_key: PublicAttr[Optional[AssetKey]]
+    metadata: PublicAttr[Optional[RawMetadataMapping]]
+    check_results: PublicAttr[Sequence[AssetCheckResult]]
+    data_version: PublicAttr[Optional[DataVersion]]
+    tags: PublicAttr[Optional[Mapping[str, str]]]
+    value: PublicAttr[T]
 
-    @checked
-    def __init__(
-        self,
-        *,  # enforce kwargs
+    def __new__(
+        cls,
         asset_key: Optional[CoercibleToAssetKey] = None,
         metadata: Optional[RawMetadataMapping] = None,
         check_results: Optional[Sequence[AssetCheckResult]] = None,
         data_version: Optional[DataVersion] = None,
         tags: Optional[Mapping[str, str]] = None,
-        value: Optional[Any] = NoValueSentinel,
+        value: T = NoValueSentinel,
     ):
-        self._value_unset = value is NoValueSentinel
-        self.value = None if self._value_unset else value
-        super().__init__(
-            asset_key=asset_key,
-            metadata=metadata,
-            check_results=check_results,
-            data_version=data_version,
-            tags=tags,
+        return super().__new__(
+            cls,
+            **coerce_asset_result_args(
+                asset_key=asset_key,
+                metadata=metadata,
+                check_results=check_results,
+                data_version=data_version,
+                tags=tags,
+            ),
+            value=value,
         )
 
-    @property
-    def value_unset(self) -> bool:
-        return self._value_unset
 
-
-class ObserveResult(AssetResult):
+@record_custom(checked=False)
+class ObserveResult(AssetResult, IHaveNew, LegacyNamedTupleMixin):
     """An object representing a successful observation of an asset. These can be returned from an
     @observable_source_asset decorated function to pass metadata.
 
@@ -111,3 +120,28 @@ class ObserveResult(AssetResult):
         tags (Optional[Mapping[str, str]]): Tags to record with the corresponding AssetObservation
             event.
     """
+
+    asset_key: PublicAttr[Optional[AssetKey]]
+    metadata: PublicAttr[Optional[RawMetadataMapping]]
+    check_results: PublicAttr[Sequence[AssetCheckResult]]
+    data_version: PublicAttr[Optional[DataVersion]]
+    tags: PublicAttr[Optional[Mapping[str, str]]]
+
+    def __new__(
+        cls,
+        asset_key: Optional[CoercibleToAssetKey] = None,
+        metadata: Optional[RawMetadataMapping] = None,
+        check_results: Optional[Sequence[AssetCheckResult]] = None,
+        data_version: Optional[DataVersion] = None,
+        tags: Optional[Mapping[str, str]] = None,
+    ):
+        return super().__new__(
+            cls,
+            **coerce_asset_result_args(
+                asset_key=asset_key,
+                metadata=metadata,
+                check_results=check_results,
+                data_version=data_version,
+                tags=tags,
+            ),
+        )

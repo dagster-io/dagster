@@ -2258,8 +2258,8 @@ def test_replace_asset_keys_for_asset_with_owners():
 def test_asset_spec_with_code_versions():
     @multi_asset(specs=[AssetSpec(key="a", code_version="1"), AssetSpec(key="b", code_version="2")])
     def multi_asset_with_versions():
-        yield MaterializeResult("a")  # pyright: ignore[reportCallIssue]
-        yield MaterializeResult("b")  # pyright: ignore[reportCallIssue]
+        yield MaterializeResult("a")
+        yield MaterializeResult("b")
 
     code_versions_by_key = {spec.key: spec.code_version for spec in multi_asset_with_versions.specs}
     assert code_versions_by_key == {AssetKey(["a"]): "1", AssetKey(["b"]): "2"}
@@ -2270,8 +2270,8 @@ def test_asset_spec_with_metadata():
         specs=[AssetSpec(key="a", metadata={"foo": "1"}), AssetSpec(key="b", metadata={"bar": "2"})]
     )
     def multi_asset_with_metadata():
-        yield MaterializeResult("a")  # pyright: ignore[reportCallIssue]
-        yield MaterializeResult("b")  # pyright: ignore[reportCallIssue]
+        yield MaterializeResult("a")
+        yield MaterializeResult("b")
 
     metadata_by_key = {spec.key: spec.metadata for spec in multi_asset_with_metadata.specs}
     assert metadata_by_key == {AssetKey(["a"]): {"foo": "1"}, AssetKey(["b"]): {"bar": "2"}}

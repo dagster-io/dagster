@@ -77,6 +77,7 @@ ArbitraryMetadataMapping: TypeAlias = Mapping[str, Any]
 RawMetadataValue: TypeAlias = Union[
     MetadataValue,
     TableSchema,
+    TableColumnLineage,
     AssetKey,
     os.PathLike,
     dict[Any, Any],
