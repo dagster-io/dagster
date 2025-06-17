@@ -1,5 +1,5 @@
 ---
-title: Using jobs in projects
+title: Using jobs in Dagster projects
 sidebar_position: 250
 description: Using jobs in Dagster dg projects for entities such as assets .
 ---
@@ -18,7 +18,7 @@ Before following this guide, you will need to [create a project](/guides/build/p
 
 For example, if you have created a new Dagster project with `dg` called `my_project`, you can define the jobs at `src/my_project/defs/jobs.py`:
 
-job binding can happen at any level of the `defs` hierarchy. If you moved `asset_one` in this example to a subdirectory, you could leave the existing `jobs.py` file at `src/defs/jobs.py`:
+Job binding can happen at any level of the `defs` hierarchy. If you moved `asset_one` in this example to a subdirectory, you could leave the existing `jobs.py` file at `src/defs/jobs.py`:
 
 ```
 src

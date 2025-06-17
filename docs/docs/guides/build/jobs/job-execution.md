@@ -36,7 +36,7 @@ Dagster supports the following methods to execute one-off jobs. Click the tabs f
 
 Using the Dagster UI, you can view, interact, and execute jobs.
 
-To view your job in the UI, use the [`dg dev`]/api/dg/dg-cli#dg-dev) command:
+To view your job in the UI, use the [`dg dev`](/api/dg/dg-cli#dg-dev) command:
 
 ```bash
 dg dev
