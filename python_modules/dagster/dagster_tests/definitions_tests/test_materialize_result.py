@@ -1,5 +1,6 @@
 import asyncio
 from collections.abc import Generator
+from typing import Any
 
 import pytest
 from dagster import (
@@ -20,9 +21,14 @@ from dagster import (
     multi_asset,
 )
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
-from dagster._core.errors import DagsterInvariantViolationError, DagsterStepOutputNotFoundError
+from dagster._core.errors import (
+    DagsterInvariantViolationError,
+    DagsterStepOutputNotFoundError,
+    DagsterTypeCheckDidNotPass,
+)
 from dagster._core.execution.context.invocation import build_asset_context
 from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionRecordStatus
+from dagster._core.storage.mem_io_manager import InMemoryIOManager
 
 
 def _exec_asset(asset_def, selection=None, partition_key=None, resources=None):
@@ -617,6 +623,67 @@ def test_materialize_result_value():
 
     assert result.success
     assert result.asset_value("asset_with_value") == "hello"
+
+
+def test_materialize_result_value_explicit_any_no_value():
+    class TestIOManager(InMemoryIOManager):
+        def handle_output(self, context: OutputContext, obj: Any):
+            raise Exception("Should not be called")
+
+    @asset
+    def explicit_any() -> Any:
+        return MaterializeResult()
+
+    @asset
+    def explicit_result_any() -> MaterializeResult[Any]:
+        return MaterializeResult()
+
+    # arguably, this could result in the IOManager being called
+    # with a value of None, but that is not the current behavior
+    result = materialize(
+        [explicit_any, explicit_result_any], resources={"io_manager": TestIOManager()}
+    )
+    assert result.success
+
+
+def test_materialize_result_value_annotated_no_type():
+    @asset
+    def asset_with_value() -> MaterializeResult:
+        return MaterializeResult(value="hello")
+
+    result = materialize([asset_with_value])
+
+    assert result.success
+    assert result.asset_value("asset_with_value") == "hello"
+
+
+def test_materialize_result_value_annotated_explicit_type():
+    @asset
+    def asset_with_value() -> MaterializeResult[str]:
+        return MaterializeResult(value="hello")
+
+    result = materialize([asset_with_value])
+
+    assert result.success
+    assert result.asset_value("asset_with_value") == "hello"
+
+
+def test_materialize_result_value_annotated_incorrect_type():
+    @asset
+    def asset_with_value() -> MaterializeResult[int]:
+        return MaterializeResult(value="hello")  # type: ignore
+
+    with pytest.raises(DagsterTypeCheckDidNotPass):
+        materialize([asset_with_value])
+
+
+def test_materialize_result_value_annotated_no_value():
+    @asset
+    def asset_with_value() -> MaterializeResult[int]:
+        return MaterializeResult()  # type: ignore
+
+    with pytest.raises(DagsterTypeCheckDidNotPass):
+        materialize([asset_with_value])
 
 
 def test_materialize_result_with_default_io_manager():

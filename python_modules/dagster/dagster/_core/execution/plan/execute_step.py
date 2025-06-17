@@ -40,6 +40,7 @@ from dagster._core.definitions.multi_dimensional_partitions import (
 )
 from dagster._core.definitions.result import AssetResult, MaterializeResult
 from dagster._core.definitions.source_asset import SYSTEM_METADATA_KEY_SOURCE_ASSET_OBSERVATION
+from dagster._core.definitions.utils import NoValueSentinel
 from dagster._core.errors import (
     DagsterAssetCheckFailedError,
     DagsterExecutionHandleOutputError,
@@ -69,20 +70,6 @@ from dagster._utils.warnings import beta_warning, disable_dagster_warnings
 
 class AssetResultOutput(Output):
     """This is a marker subclass that represents an Output that was produced from an AssetResult."""
-
-    def __init__(self, *args, value_unset: bool, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.value_unset = value_unset
-
-    def with_metadata(self, metadata):
-        return self.__class__(
-            value=self.value,
-            output_name=self.output_name,
-            metadata=metadata,
-            data_version=self.data_version,
-            tags=self.tags,
-            value_unset=self.value_unset,
-        )
 
 
 def _process_asset_results_to_events(
@@ -116,12 +103,10 @@ def _process_user_event(
         with disable_dagster_warnings():
             if isinstance(user_event, MaterializeResult):
                 value = user_event.value
-                value_unset = user_event.value_unset
             else:
-                value, value_unset = None, True
+                value = None
             yield AssetResultOutput(
                 value=value,
-                value_unset=value_unset,
                 output_name=output_name,
                 metadata=user_event.metadata,
                 data_version=user_event.data_version,
@@ -780,6 +765,7 @@ def _store_output(
     # don't store asset check outputs, asset observation outputs, asset result outputs, or Nothing
     # type outputs
     step_output = step_context.step.step_output_named(step_output_handle.output_name)
+
     if (
         step_output.properties.asset_check_key
         or (step_context.output_observes_source_asset(step_output_handle.output_name))
@@ -795,7 +781,7 @@ def _store_output(
             # the IO manager *will* be invoked.
             output_context.dagster_type.is_any
             and isinstance(output, AssetResultOutput)
-            and output.value_unset
+            and output.value is NoValueSentinel
         )
     ):
         yield from _log_materialization_or_observation_events_for_asset(
