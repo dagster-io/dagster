@@ -25,4 +25,3 @@ If you have a Hybrid deployment, you must make the dbt project accessible to the
 - When using a local agent, you must make your dbt project accessible to your Dagster code on the same machine as your agent.
 
 For more information, see "[Using dbt with Hybrid deployments in Dagster+](/integrations/libraries/dbt/using-dbt-with-dagster-plus/hybrid)".
-

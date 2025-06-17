@@ -104,13 +104,17 @@ Setting a custom base image isn't supported for GitLab CI/CD workflows out of th
     ```bash
     docker build -t dagster-project:latest --platform=linux/amd64 .
     ```
+
     :::
+
 3.  Upload your Docker image to Dagster+ using the `upload-base-image` command. This command will print out the tag used in Dagster+ to identify your image:
 
     ```bash
     dagster-cloud serverless upload-base-image local-image:tag
     ```
+
     To use the uploaded image run:
+
     ```bash
     dagster-cloud serverless deploy-python-executable ... --base-image-tag=sha256_518ad2f92b078c63c60e89f0310f13f19d3a1c7ea9e1976d67d59fcb7040d0d6
     ```

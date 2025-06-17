@@ -84,15 +84,15 @@ Note that if the class name is different from the module, you will need to prepe
 
 Required properties:
 
-* `module`: The module name
-* `section`: The section name in the docs (i.e. the name of the page)
-* `object`: The class or method
+- `module`: The module name
+- `section`: The section name in the docs (i.e. the name of the page)
+- `object`: The class or method
 
 Optional properties:
 
-* pluralize
-* displayText
-* decorator
+- pluralize
+- displayText
+- decorator
 
 The following example creates a link like this: [@assets](https://docs.dagster.io/api/dagster/assets#dagster.asset):
 

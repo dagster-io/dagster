@@ -45,7 +45,7 @@ To follow the steps in this guide, you'll need:
        ```source .venv/bin/activate```
      </TabItem>
      <TabItem value="windows" label="Windows">
-      ```.venv\Scripts\activate```
+       ```.venv\Scripts\activate```
      </TabItem>
    </Tabs>
 
@@ -115,9 +115,9 @@ The generated Dagster project should have the following structure:
 Now, create the assets for the ETL pipeline. Open `src/dagster-quickstart/defs/assets.py` file in your preferred editor and include the following code:
 
 <CodeExample
-   path="docs_snippets/docs_snippets/getting-started/quickstart.py"
-   language="python"
-   title="src/dagster-quickstart/defs/assets.py"
+  path="docs_snippets/docs_snippets/getting-started/quickstart.py"
+  language="python"
+  title="src/dagster-quickstart/defs/assets.py"
 />
 
 This may seem unusual if you're used to task-based orchestration. In that case, you'd have three separate steps for extracting, transforming, and loading.

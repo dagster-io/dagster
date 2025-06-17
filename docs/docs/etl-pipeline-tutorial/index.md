@@ -75,7 +75,7 @@ Run the following command to create the project directories and files for this t
 dagster project from-example --example getting_started_etl_tutorial
 ```
 
-This command will create a *getting_started_etl_tutorial* directory with the example files. Move the contents to your current directory (*dagster-etl-tutorial*):
+This command will create a _getting_started_etl_tutorial_ directory with the example files. Move the contents to your current directory (_dagster-etl-tutorial_):
 
 ```bash
 mv getting_started_etl_tutorial/* .

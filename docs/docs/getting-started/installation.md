@@ -67,12 +67,12 @@ If you prefer to set up Dagster manually or are installing it into an existing p
 ### Installing Dagster
 
 <Tabs>
-<TabItem value="uv" label="uv">
-  <CliInvocationExample contents="uv add dagster dagster-webserver dagster-dg-cli" />
-</TabItem>
-<TabItem value="pip" label="pip">
-  <CliInvocationExample contents="pip install dagster dagster-webserver dagster-dg-cli" />
-</TabItem>
+  <TabItem value="uv" label="uv">
+    <CliInvocationExample contents="uv add dagster dagster-webserver dagster-dg-cli" />
+  </TabItem>
+  <TabItem value="pip" label="pip">
+    <CliInvocationExample contents="pip install dagster dagster-webserver dagster-dg-cli" />
+  </TabItem>
 </Tabs>
 
 ## Verifying your project

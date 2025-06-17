@@ -110,7 +110,7 @@ const config: Config = {
           label: 'Migration',
           type: 'doc',
           docId: 'migration/index',
-          position: 'left'
+          position: 'left',
         },
         {
           label: 'Integrations',
