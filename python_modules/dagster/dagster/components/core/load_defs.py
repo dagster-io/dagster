@@ -1,11 +1,11 @@
 import importlib
 from pathlib import Path
 from types import ModuleType
-from typing import Optional
+from typing import Final, Optional
 
-from dagster_dg_core.context import DgContext
 from dagster_shared import check
 from dagster_shared.serdes.objects.package_entry import json_for_all_components
+from dagster_shared.utils.config import discover_config_file, load_toml_as_dict
 
 from dagster._annotations import deprecated, preview, public
 from dagster._core.definitions.definitions_class import Definitions
@@ -14,6 +14,7 @@ from dagster.components.core.context import ComponentLoadContext
 from dagster.components.core.tree import ComponentTree
 
 PLUGIN_COMPONENT_TYPES_JSON_METADATA_KEY = "plugin_component_types_json"
+_DEFAULT_PROJECT_DEFS_SUBMODULE: Final = "defs"
 
 
 @deprecated(breaking_version="0.2.0")
@@ -70,13 +71,22 @@ def get_project_root(defs_root: ModuleType) -> Path:
 @preview(emit_runtime_warning=False)
 @suppress_dagster_warnings
 def load_project_defs(project_root: Path) -> Definitions:
-    """Constructs a Definitions object, loading all Dagster defs in the given folder.
+    """Constructs a Definitions object, loading all Dagster defs in the project's
+    defs folder.
 
     Args:
         project_root (Path): The path to the dg project root.
     """
-    dg_context = DgContext.for_project_environment(project_root, command_line_config={})
-    defs_module = importlib.import_module(dg_context.defs_module_name)
+    root_config_path = discover_config_file(project_root)
+    toml_config = load_toml_as_dict(check.not_none(root_config_path))
+
+    root_module_name = toml_config.get("project", {}).get("root_module")
+    defs_module_name = (
+        toml_config.get("project", {}).get("defs_module")
+        or f"{root_module_name}.{_DEFAULT_PROJECT_DEFS_SUBMODULE}"
+    )
+
+    defs_module = importlib.import_module(defs_module_name)
 
     return load_defs(
         defs_module, project_root=project_root, terminate_autoloading_on_keyword_files=False
