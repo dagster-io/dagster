@@ -51,17 +51,6 @@ GLOBAL_OPTIONS = {
     not_none(option.name): option
     for option in [
         click.Option(
-            ["--cache-dir"],
-            default=str(DgCliConfig.cache_dir),
-            help="Specify a directory to use for the cache.",
-        ),
-        click.Option(
-            ["--disable-cache"],
-            is_flag=True,
-            default=DgCliConfig.disable_cache,
-            help="Disable the cache..",
-        ),
-        click.Option(
             ["--verbose"],
             is_flag=True,
             default=DgCliConfig.verbose,
@@ -133,7 +122,7 @@ PATH_OPTIONS = {
     not_none(option.name): option
     for option in [
         click.Option(
-            ["--path"],
+            ["--target-path"],
             type=click.Path(
                 resolve_path=True,
                 path_type=Path,

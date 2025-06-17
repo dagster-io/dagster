@@ -783,7 +783,7 @@ class GrapheneAssetWipeMutation(graphene.Mutation):
         name = "AssetWipeMutation"
 
     @capture_error
-    @check_permission(Permissions.WIPE_ASSETS)
+    @require_permission_check(Permissions.WIPE_ASSETS)
     def mutate(
         self,
         graphene_info: ResolveInfo,
@@ -798,6 +798,15 @@ class GrapheneAssetWipeMutation(graphene.Mutation):
             )
             for ap in assetPartitionRanges
         ]
+
+        asset_keys = {normalized_range.asset_key for normalized_range in normalized_ranges}
+
+        assert_permission_for_asset_graph(
+            graphene_info,
+            graphene_info.context.asset_graph,
+            list(asset_keys),
+            Permissions.WIPE_ASSETS,
+        )
 
         return wipe_assets(graphene_info, normalized_ranges)
 

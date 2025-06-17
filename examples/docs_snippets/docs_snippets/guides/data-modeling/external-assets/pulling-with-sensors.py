@@ -34,7 +34,3 @@ def raw_transactions_sensor(
     else:
         # Nothing has happened since the last check
         return dg.SensorResult()
-
-
-# Define the Definitions object
-defs = dg.Definitions(assets=[raw_transactions], sensors=[raw_transactions_sensor])

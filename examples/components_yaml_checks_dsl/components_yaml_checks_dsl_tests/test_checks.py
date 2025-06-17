@@ -8,7 +8,7 @@ from components_yaml_checks_dsl.definitions import defs
 def checks_specs_by_key(defs: Definitions) -> dict[str, AssetCheckSpec]:
     """Return a dictionary of check specs by key."""
     check_specs = {}
-    asset_graph = defs.get_asset_graph()
+    asset_graph = defs.resolve_asset_graph()
 
     for check_key in asset_graph.asset_check_keys:
         check_spec = asset_graph.get_check_spec(check_key)

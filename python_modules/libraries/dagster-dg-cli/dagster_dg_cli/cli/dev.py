@@ -8,7 +8,12 @@ import click
 from dagster_dg_core.config import normalize_cli_config
 from dagster_dg_core.context import DgContext
 from dagster_dg_core.shared_options import dg_global_options, dg_path_options
-from dagster_dg_core.utils import DgClickCommand, pushd, validate_dagster_availability
+from dagster_dg_core.utils import (
+    DgClickCommand,
+    exit_with_error,
+    pushd,
+    validate_dagster_availability,
+)
 from dagster_dg_core.utils.telemetry import cli_telemetry_wrapper
 from dagster_shared.cli import WorkspaceOpts, dg_workspace_options
 
@@ -65,8 +70,8 @@ T = TypeVar("T")
 @click.option(
     "--check-yaml/--no-check-yaml",
     flag_value=True,
-    default=True,
     help="Whether to schema-check defs.yaml files for the project before starting the dev server.",
+    default=None,
 )
 @dg_path_options
 @dg_global_options
@@ -79,8 +84,8 @@ def dev_command(
     port: Optional[int],
     host: Optional[str],
     live_data_poll_rate: int,
-    check_yaml: bool,
-    path: Path,
+    check_yaml: Optional[bool],
+    target_path: Path,
     **other_options: Mapping[str, object],
 ) -> None:
     """Start a local instance of Dagster.
@@ -113,9 +118,16 @@ def dev_command(
     # If not, use dg config to construct a workspace file and do a yaml check before
     # invoking dagster core
     cli_config = normalize_cli_config(other_options, click.get_current_context())
-    dg_context = DgContext.for_workspace_or_project_environment(path, cli_config)
+    dg_context = DgContext.for_workspace_or_project_environment(target_path, cli_config)
 
-    if dg_context.is_workspace:
+    if dg_context.is_project:
+        os.environ["DAGSTER_PROJECT_ENV_FILE_PATHS"] = json.dumps(
+            {dg_context.code_location_name: str(dg_context.root_path)}
+        )
+        if check_yaml is None:
+            # default to checking yaml in a project context
+            check_yaml = True
+    else:
         os.environ["DAGSTER_PROJECT_ENV_FILE_PATHS"] = json.dumps(
             {
                 dg_context.with_root_path(
@@ -124,10 +136,9 @@ def dev_command(
                 for project in dg_context.project_specs
             }
         )
-    else:
-        os.environ["DAGSTER_PROJECT_ENV_FILE_PATHS"] = json.dumps(
-            {dg_context.code_location_name: str(dg_context.root_path)}
-        )
+        if check_yaml is True:
+            exit_with_error("--check-yaml is not currently supported in a workspace context")
+        check_yaml = False
 
     with (
         pushd(dg_context.root_path),
@@ -136,9 +147,9 @@ def dev_command(
         if check_yaml:
             overall_check_result = True
             project_dirs = (
-                [project.path for project in dg_context.project_specs]
-                if dg_context.is_workspace
-                else [dg_context.root_path]
+                [dg_context.root_path]
+                if dg_context.is_project
+                else [project.path for project in dg_context.project_specs]
             )
             for project_dir in project_dirs:
                 check_result = check_yaml_fn(

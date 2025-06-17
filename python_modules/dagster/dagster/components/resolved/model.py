@@ -4,6 +4,7 @@ import textwrap
 import traceback
 from collections.abc import Sequence
 from dataclasses import dataclass
+from itertools import chain
 from typing import TYPE_CHECKING, Annotated, Any, Callable, Optional, TypeVar, Union
 
 from pydantic import BaseModel, ConfigDict
@@ -51,7 +52,10 @@ def resolve_union(resolvers: Sequence["Resolver"], context: "ResolutionContext",
     strategy. If all resolvers fail, a ResolutionException is raised.
     """
     accumulated_errors = []
-    for r in resolvers:
+    custom_resolvers = [r for r in resolvers if not r.is_default]
+    default_resolvers = [r for r in resolvers if r.is_default]
+    # the default resolver will pass through any value, so run those last
+    for r in chain(custom_resolvers, default_resolvers):
         try:
             result = r.fn.callable(context, field_value)
             if result is not None:
@@ -125,10 +129,10 @@ class Resolver:
         return Resolver(ParentFn(fn), **kwargs)
 
     @staticmethod
-    def union(*resolvers: "Resolver"):
-        field_types = tuple(r.model_field_type for r in resolvers)
+    def union(arg_resolver_pairs: Sequence[tuple[type, "Resolver"]]):
+        field_types = tuple(r.model_field_type or t for t, r in arg_resolver_pairs)
         return Resolver(
-            fn=functools.partial(resolve_union, resolvers),
+            fn=functools.partial(resolve_union, [r for _, r in arg_resolver_pairs]),
             model_field_type=Union[field_types],  # type: ignore
         )
 

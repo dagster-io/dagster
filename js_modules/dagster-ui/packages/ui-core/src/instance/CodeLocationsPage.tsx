@@ -1,4 +1,4 @@
-import {Box, Heading, PageHeader, Subheading, TextInput} from '@dagster-io/ui-components';
+import {Box, PageHeader, Subheading, Subtitle1, TextInput} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {useMemo} from 'react';
 
@@ -105,7 +105,10 @@ export const CodeLocationsPage = () => {
   const {pageTitle} = React.useContext(InstancePageContext);
   return (
     <Box flex={{direction: 'column'}} style={{height: '100%', overflow: 'hidden'}}>
-      <PageHeader title={<Heading>{pageTitle}</Heading>} tabs={<InstanceTabs tab="locations" />} />
+      <PageHeader
+        title={<Subtitle1>{pageTitle}</Subtitle1>}
+        tabs={<InstanceTabs tab="locations" />}
+      />
       <CodeLocationsPageContent />
     </Box>
   );

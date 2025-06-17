@@ -35,7 +35,7 @@ setup(
     python_requires=">=3.9,<3.13",
     install_requires=[
         f"dagster{pin}",
-        "sling>=1.1.5",
+        "sling>=1.1.5,<1.4.10",
         # Required due to a bug in uv that can cause sling-linux-amd64 to be installed instead.
         # See: https://github.com/astral-sh/uv/issues/10945
         "sling-mac-arm64; platform_system=='Darwin' and platform_machine=='arm64'",
@@ -44,10 +44,11 @@ setup(
     extras_require={
         "test": [
             "duckdb",
+            "dagster-dg-cli",
         ]
     },
     entry_points={
-        "dagster_dg_cli.plugin": [
+        "dagster_dg_cli.registry_modules": [
             "dagster_sling = dagster_sling",
         ],
     },

@@ -4,14 +4,26 @@ from datetime import datetime
 import pytest
 from dagster import (
     DagsterInvalidDefinitionError,
+    DailyPartitionsDefinition,
+    Definitions,
     ScheduleDefinition,
+    asset,
     build_schedule_context,
+    build_schedule_from_partitioned_job,
+    define_asset_job,
     graph,
     job,
     op,
 )
 from dagster._core.definitions.job_definition import JobDefinition
-from dagster._core.definitions.metadata.metadata_value import MetadataValue
+from dagster._core.definitions.metadata.metadata_value import (
+    IntMetadataValue,
+    MetadataValue,
+    TextMetadataValue,
+)
+from dagster._core.definitions.partitioned_schedule import (
+    UnresolvedPartitionedAssetScheduleDefinition,
+)
 from dagster._core.definitions.run_config import RunConfig
 from dagster._core.definitions.run_request import RunRequest
 
@@ -197,3 +209,49 @@ def test_with_updated_job():
     assert my_schedule_2.cron_schedule == "@daily"
     assert my_schedule_2.tags == {"foo": "bar"}
     assert my_schedule_2.metadata == {"baz": MetadataValue.text("qux")}
+
+
+def test_with_updated_metadata():
+    schedule = ScheduleDefinition(job_name="job", cron_schedule="@daily", metadata={"baz": "qux"})
+    assert schedule.metadata == {"baz": MetadataValue.text("qux")}
+
+    blanked = schedule.with_attributes(metadata={})
+    assert blanked.metadata == {}
+
+    @job
+    def my_job(): ...
+
+    schedule = ScheduleDefinition(job=my_job, cron_schedule="@daily", metadata={"foo": "bar"})
+    updated = schedule.with_attributes(metadata={**schedule.metadata, "foo": "baz"})
+    assert updated.metadata["foo"] == TextMetadataValue("baz")
+
+
+def test_unresolved_metadata():
+    @asset(partitions_def=DailyPartitionsDefinition(start_date="2020-01-01"))
+    def asset1(): ...
+
+    asset1_job = define_asset_job("asset1_job", selection=[asset1])
+    unresolved_schedule = build_schedule_from_partitioned_job(
+        asset1_job, name="my_schedule", metadata={"foo": "bar", "four": 4}
+    )
+    assert isinstance(unresolved_schedule, UnresolvedPartitionedAssetScheduleDefinition)
+    assert unresolved_schedule.metadata
+    assert unresolved_schedule.metadata["foo"] == "bar"
+
+    blanked = unresolved_schedule.with_metadata({})
+    assert blanked.metadata == {}
+
+    updated = unresolved_schedule.with_metadata({**unresolved_schedule.metadata, "foo": "baz"})
+    assert updated.metadata
+    assert updated.metadata["foo"] == "baz"
+    assert updated.metadata["four"] == 4
+
+    defs = Definitions(
+        schedules=[updated],
+        jobs=[asset1_job],
+        assets=[asset1],
+    )
+
+    schedule = defs.resolve_schedule_def("my_schedule")
+    assert schedule.metadata["foo"] == TextMetadataValue("baz")
+    assert schedule.metadata["four"] == IntMetadataValue(4)

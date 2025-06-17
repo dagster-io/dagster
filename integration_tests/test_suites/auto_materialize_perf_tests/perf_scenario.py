@@ -39,7 +39,7 @@ class ActivityHistory(NamedTuple):
     run_requests: Sequence[RunRequest]
 
     def play_history(self, defs: Definitions, instance: DagsterInstance) -> None:
-        asset_graph = defs.get_asset_graph()
+        asset_graph = defs.resolve_asset_graph()
 
         for run_request in self.run_requests:
             materialize(
@@ -150,7 +150,7 @@ class RandomAssets(NamedTuple):
         partition_keys_to_backfill: Optional[Sequence[str]] = None,
     ) -> PerfScenario:
         defs = self.build_definitions()
-        asset_graph = defs.get_asset_graph()
+        asset_graph = defs.resolve_asset_graph()
 
         run_requests: list[RunRequest] = []
 

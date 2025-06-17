@@ -354,8 +354,10 @@ class BackfillDaemon(DagsterDaemon):
         self._threadpool_executor: Optional[InheritContextThreadPoolExecutor] = None
         self._submit_threadpool_executor: Optional[InheritContextThreadPoolExecutor] = None
 
-        if settings.get("use_threads"):
-            num_workers = settings.get("num_workers")
+        # Backfill daemon is enabled by default for reasons explained at:
+        # https://github.com/dagster-io/dagster/pull/30189#issuecomment-2930805760
+        if settings.get("use_threads", True):
+            num_workers = settings.get("num_workers", 4)
             if num_workers:
                 self._threadpool_executor = self._exit_stack.enter_context(
                     InheritContextThreadPoolExecutor(

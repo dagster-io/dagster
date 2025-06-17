@@ -1,0 +1,4 @@
+**/*.mdx
+!index.mdx
+!dagster-definitions.mdx
+!dg-cli-configuration.mdx

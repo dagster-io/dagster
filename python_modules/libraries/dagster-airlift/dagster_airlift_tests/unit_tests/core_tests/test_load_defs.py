@@ -450,7 +450,7 @@ def test_multiple_tasks_to_single_asset_metadata() -> None:
     assert defs.assets
     assert len(list(defs.assets)) == 3  # two dags and one asset
 
-    assert defs.get_asset_graph().assets_def_for_key(AssetKey("an_asset")).specs_by_key[
+    assert defs.resolve_asset_graph().assets_def_for_key(AssetKey("an_asset")).specs_by_key[
         AssetKey("an_asset")
     ].metadata[TASK_MAPPING_METADATA_KEY] == [
         {"dag_id": "dag1", "task_id": "task1"},

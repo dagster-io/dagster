@@ -12,7 +12,7 @@ from dagster._core.remote_representation.origin import ManagedGrpcPythonEnvCodeL
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._grpc.__generated__ import dagster_api_pb2
 from dagster._grpc.__generated__.dagster_api_pb2_grpc import DagsterApiServicer
-from dagster._grpc.client import DEFAULT_GRPC_TIMEOUT
+from dagster._grpc.client import DEFAULT_GRPC_TIMEOUT, DEFAULT_REPOSITORY_GRPC_TIMEOUT
 from dagster._grpc.constants import GrpcServerCommand
 from dagster._grpc.types import (
     CancelExecutionRequest,
@@ -260,7 +260,9 @@ class DagsterProxyApiServicer(DagsterApiServicer):
         return self._query("GetCurrentImage", request, context)
 
     def StreamingExternalRepository(self, request, context):
-        return self._streaming_query("StreamingExternalRepository", request, context)
+        return self._streaming_query(
+            "StreamingExternalRepository", request, context, timeout=DEFAULT_REPOSITORY_GRPC_TIMEOUT
+        )
 
     def Heartbeat(self, request, context):
         self.__last_heartbeat_time = time.time()

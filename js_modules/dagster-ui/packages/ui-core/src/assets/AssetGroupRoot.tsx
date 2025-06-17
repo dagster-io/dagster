@@ -1,4 +1,4 @@
-import {Box, Heading, Page, PageHeader, Tabs, Tag} from '@dagster-io/ui-components';
+import {Box, Page, PageHeader, Subtitle1, Tabs, Tag} from '@dagster-io/ui-components';
 import React, {useCallback, useMemo} from 'react';
 import {useHistory, useParams} from 'react-router-dom';
 import {AssetGlobalLineageLink} from 'shared/assets/AssetPageHeader.oss';
@@ -103,7 +103,7 @@ export const AssetGroupRoot = ({
   return (
     <Page style={{display: 'flex', flexDirection: 'column', paddingBottom: 0}}>
       <PageHeader
-        title={<Heading>{groupName}</Heading>}
+        title={<Subtitle1>{groupName}</Subtitle1>}
         right={<ReloadAllButton label="Reload definitions" />}
         tags={<AssetGroupTags groupSelector={groupSelector} repoAddress={repoAddress} />}
         tabs={

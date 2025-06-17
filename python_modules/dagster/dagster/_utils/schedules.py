@@ -4,14 +4,16 @@ import functools
 import math
 import re
 from collections.abc import Iterator, Sequence
-from typing import Optional, Union
+from typing import TYPE_CHECKING, Optional, Union
 
 import dagster._check as check
-from dagster._core.definitions.partition import ScheduleType
-from dagster._time import get_timezone
+from dagster._time import get_current_datetime, get_timezone
 from dagster._vendored.croniter import croniter as _croniter
 from dagster._vendored.dateutil.relativedelta import relativedelta
 from dagster._vendored.dateutil.tz import datetime_ambiguous, datetime_exists
+
+if TYPE_CHECKING:
+    from dagster._core.definitions.partition import ScheduleType
 
 # Monthly schedules with 29-31 won't reliably run every month
 MAX_DAY_OF_MONTH_WITH_GUARANTEED_MONTHLY_INTERVAL = 28
@@ -360,13 +362,15 @@ def _find_schedule_time(
     hour: Optional[int],
     day_of_month: Optional[int],
     day_of_week: Optional[int],
-    schedule_type: ScheduleType,
+    schedule_type: "ScheduleType",
     date: datetime.datetime,
     ascending: bool,
     # lets us skip slow work to find the starting point if we know that
     # we are already on the boundary of the cron interval
     already_on_boundary: bool,
 ) -> datetime.datetime:
+    from dagster._core.definitions.partition import ScheduleType
+
     if schedule_type == ScheduleType.HOURLY:
         return _find_hourly_schedule_time(
             check.not_none(minutes), date, ascending, already_on_boundary
@@ -624,6 +628,8 @@ def cron_string_iterator(
     start_offset: int = 0,
 ) -> Iterator[datetime.datetime]:
     """Generator of datetimes >= start_timestamp for the given cron string."""
+    from dagster._core.definitions.partition import ScheduleType
+
     # leap day special casing
     if cron_string.endswith(" 29 2 *"):
         min_hour, _ = cron_string.split(" 29 2 *")
@@ -854,3 +860,69 @@ def get_next_cron_tick(
         execution_timezone=timezone,
     )
     return next(cron_iter)
+
+
+def get_smallest_cron_interval(
+    cron_string: str,
+    execution_timezone: Optional[str] = None,
+) -> datetime.timedelta:
+    """Find the smallest interval between cron ticks for a given cron schedule.
+
+    Uses a naive, sampling-based approach to find the minimum interval by generating
+    consecutive cron ticks and measuring the gaps between them.
+
+    Args:
+        cron_string: A cron string
+        execution_timezone: Timezone to use for cron evaluation (defaults to UTC)
+
+    Returns:
+        The smallest timedelta between any two consecutive cron ticks
+
+    Raises:
+        CheckError: If the cron string is invalid or not recognized by Dagster
+    """
+    check.invariant(
+        is_valid_cron_string(cron_string), desc=f"{cron_string} must be a valid cron string"
+    )
+
+    execution_timezone = execution_timezone or "UTC"
+
+    # Always start at current time in the specified timezone
+    start_time = get_current_datetime(tz=execution_timezone)
+
+    # Start sampling from a year ago to capture seasonal variations (DST, leap years)
+    sampling_start = start_time - datetime.timedelta(days=365)
+
+    # Generate consecutive cron ticks
+    cron_iter = schedule_execution_time_iterator(
+        start_timestamp=sampling_start.timestamp(),
+        cron_schedule=cron_string,
+        execution_timezone=execution_timezone,
+        ascending=True,
+    )
+
+    # Collect the first tick
+    prev_tick = next(cron_iter)
+    min_interval = None
+
+    # Sample 1000 ticks to cover various edge cases
+    for _ in range(999):
+        try:
+            current_tick = next(cron_iter)
+            interval = current_tick - prev_tick
+
+            # Update minimum interval
+            if min_interval is None or interval < min_interval:
+                min_interval = interval
+
+            prev_tick = current_tick
+
+        except StopIteration:
+            # This shouldn't happen with cron iterators, but handle gracefully
+            break
+
+    if min_interval is None:
+        # Fallback - should not happen with valid cron schedules
+        raise ValueError("Could not determine minimum interval from cron schedule")
+
+    return min_interval

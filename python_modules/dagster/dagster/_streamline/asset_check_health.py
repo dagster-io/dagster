@@ -1,15 +1,19 @@
+from collections.abc import Iterable
+from typing import Optional
+
 from dagster_shared import record
 from dagster_shared.serdes import whitelist_for_serdes
 
 from dagster._core.definitions.asset_check_spec import AssetCheckSeverity
 from dagster._core.definitions.asset_key import AssetCheckKey
-from dagster._core.loader import LoadingContext
+from dagster._core.definitions.events import AssetKey
+from dagster._core.loader import LoadableBy, LoadingContext
 from dagster._streamline.asset_health import AssetHealthStatus
 
 
 @whitelist_for_serdes
 @record.record
-class AssetCheckHealthState:
+class AssetCheckHealthState(LoadableBy[AssetKey]):
     """Maintains a list of asset checks for the asset in each terminal state. If a check is in progress,
     it will not move to a new list until the execution is complete.
     """
@@ -133,3 +137,16 @@ class AssetCheckHealthState:
             warning_checks=warning_checks,
             all_checks=check_keys,
         )
+
+    @classmethod
+    def _blocking_batch_load(
+        cls, keys: Iterable[AssetKey], context: LoadingContext
+    ) -> Iterable[Optional["AssetCheckHealthState"]]:
+        asset_check_health_states = context.instance.get_asset_check_health_state_for_assets(
+            list(keys)
+        )
+
+        if asset_check_health_states is None:
+            return [None for _ in keys]
+        else:
+            return [asset_check_health_states.get(key) for key in keys]

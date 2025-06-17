@@ -1,4 +1,5 @@
 import * as React from 'react';
+import {CSSProperties} from 'react';
 import styled from 'styled-components';
 
 import {Box} from './Box';
@@ -16,6 +17,7 @@ export type NonIdealStateProps = React.DetailedHTMLProps<
   description?: React.ReactNode;
   action?: React.ReactNode;
   shrinkable?: boolean;
+  maxWidth?: CSSProperties['maxWidth'];
 };
 
 export const NonIdealState = ({
@@ -24,6 +26,7 @@ export const NonIdealState = ({
   icon,
   action,
   shrinkable,
+  maxWidth = 500,
 }: NonIdealStateProps) => {
   const singleContentElement = [title, description, action].filter(Boolean).length === 1;
 
@@ -36,7 +39,7 @@ export const NonIdealState = ({
         margin: 'auto',
         borderRadius: 8,
         width: shrinkable ? 'initial' : 'max-content',
-        maxWidth: 500,
+        maxWidth,
       }}
     >
       {icon === 'spinner' ? (

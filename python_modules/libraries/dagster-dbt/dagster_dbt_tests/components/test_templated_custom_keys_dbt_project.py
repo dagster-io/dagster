@@ -63,7 +63,7 @@ def test_python_attributes_node_rename(dbt_path: Path) -> None:
             "translation": {"key": "some_prefix/{{ node.name }}"},
         },
     )
-    assert defs.get_asset_graph().get_all_asset_keys() == JAFFLE_SHOP_KEYS_WITH_PREFIX
+    assert defs.resolve_asset_graph().get_all_asset_keys() == JAFFLE_SHOP_KEYS_WITH_PREFIX
 
 
 def test_python_attributes_group(dbt_path: Path) -> None:
@@ -74,14 +74,14 @@ def test_python_attributes_group(dbt_path: Path) -> None:
             "translation": {"group_name": "some_group"},
         },
     )
-    assert defs.get_asset_graph().get_all_asset_keys() == JAFFLE_SHOP_KEYS
+    assert defs.resolve_asset_graph().get_all_asset_keys() == JAFFLE_SHOP_KEYS
     for key in JAFFLE_SHOP_KEYS:
         assert defs.resolve_assets_def(key).get_asset_spec(key).group_name == "some_group"
 
 
 def test_load_from_path(dbt_path: Path) -> None:
     with load_test_component_defs(dbt_path.parent.parent.parent) as defs:
-        assert defs.get_asset_graph().get_all_asset_keys() == JAFFLE_SHOP_KEYS_WITH_PREFIX
+        assert defs.resolve_asset_graph().get_all_asset_keys() == JAFFLE_SHOP_KEYS_WITH_PREFIX
 
 
 def test_render_vars_root(dbt_path: Path) -> None:
@@ -90,10 +90,10 @@ def test_render_vars_root(dbt_path: Path) -> None:
             DbtProjectComponent,
             {
                 "project": str(dbt_path),
-                "translation": {"group_name": "{{ env('GROUP_AS_ENV') }}"},
+                "translation": {"group_name": "{{ env.GROUP_AS_ENV }}"},
             },
         )
-        assert defs.get_asset_graph().get_all_asset_keys() == JAFFLE_SHOP_KEYS
+        assert defs.resolve_asset_graph().get_all_asset_keys() == JAFFLE_SHOP_KEYS
         for key in JAFFLE_SHOP_KEYS:
             assert defs.resolve_assets_def(key).get_asset_spec(key).group_name == "group_in_env"
 
@@ -105,8 +105,8 @@ def test_render_vars_asset_key(dbt_path: Path) -> None:
             {
                 "project": str(dbt_path),
                 "translation": {
-                    "key": "{{ env('ASSET_KEY_PREFIX') }}/{{ node.name }}",
+                    "key": "{{ env.ASSET_KEY_PREFIX }}/{{ node.name }}",
                 },
             },
         )
-        assert defs.get_asset_graph().get_all_asset_keys() == JAFFLE_SHOP_KEYS_WITH_PREFIX
+        assert defs.resolve_asset_graph().get_all_asset_keys() == JAFFLE_SHOP_KEYS_WITH_PREFIX

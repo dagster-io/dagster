@@ -6,7 +6,12 @@ from dagster._core.definitions.freshness import InternalFreshnessPolicy
 
 
 @asset
-def asset_1():
+def parent_asset():
+    pass
+
+
+@asset(deps=[parent_asset])
+def child_asset():
     pass
 
 
@@ -17,11 +22,15 @@ def asset_2():
 
 policy = InternalFreshnessPolicy.time_window(fail_window=timedelta(hours=24))
 
-defs = Definitions(assets=[asset_1, asset_2])
-defs.map_asset_specs(func=lambda spec: attach_internal_freshness_policy(spec, policy))
+defs = Definitions(assets=[parent_asset, child_asset, asset_2])
 
-# Or, you can optionally provide an asset selection string
-defs.map_asset_specs(
+# Apply the policy to multiple assets - in this case, all assets in defs
+defs = defs.map_asset_specs(
+    func=lambda spec: attach_internal_freshness_policy(spec, policy)
+)
+
+# Use map_resolved_asset_specs to apply the policy to a selection
+defs = defs.map_resolved_asset_specs(
     func=lambda spec: attach_internal_freshness_policy(spec, policy),
-    selection="asset_1",  # will only apply policy to asset_1
+    selection='key:"parent_asset"+',  # will apply policy to parent_asset and its downstream dependencies
 )

@@ -1749,6 +1749,8 @@ class DagsterInstance(DynamicPartitionsStore):
         # find the set of planned assets and checks
         to_reexecute: set[EntityKey] = set()
         for step in execution_plan_snapshot.steps:
+            if step.key not in execution_plan_snapshot.step_keys_to_execute:
+                continue
             to_reexecute_for_step = {
                 key
                 for key in step.entity_keys
@@ -2454,9 +2456,19 @@ class DagsterInstance(DynamicPartitionsStore):
         Args:
             asset_keys (Sequence[AssetKey]): Asset keys to wipe.
         """
+        from dagster._core.events import AssetWipedData, DagsterEvent, DagsterEventType
+
         check.list_param(asset_keys, "asset_keys", of_type=AssetKey)
         for asset_key in asset_keys:
             self._event_storage.wipe_asset(asset_key)
+            self.report_dagster_event(
+                run_id=RUNLESS_RUN_ID,
+                dagster_event=DagsterEvent(
+                    event_type_value=DagsterEventType.ASSET_WIPED.value,
+                    event_specific_data=AssetWipedData(asset_key=asset_key, partition_keys=None),
+                    job_name=RUNLESS_JOB_NAME,
+                ),
+            )
 
     def wipe_asset_partitions(
         self,
@@ -2466,10 +2478,22 @@ class DagsterInstance(DynamicPartitionsStore):
         """Wipes asset event history from the event log for the given asset key and partition keys.
 
         Args:
-            asset_key (Sequence[AssetKey]): Asset key to wipe.
+            asset_key (AssetKey): Asset key to wipe.
             partition_keys (Sequence[str]): Partition keys to wipe.
         """
+        from dagster._core.events import AssetWipedData, DagsterEvent, DagsterEventType
+
         self._event_storage.wipe_asset_partitions(asset_key, partition_keys)
+        self.report_dagster_event(
+            run_id=RUNLESS_RUN_ID,
+            dagster_event=DagsterEvent(
+                event_type_value=DagsterEventType.ASSET_WIPED.value,
+                event_specific_data=AssetWipedData(
+                    asset_key=asset_key, partition_keys=partition_keys
+                ),
+                job_name=RUNLESS_JOB_NAME,
+            ),
+        )
 
     @traced
     def get_materialized_partitions(
@@ -3608,6 +3632,9 @@ class DagsterInstance(DynamicPartitionsStore):
     def dagster_observe_supported(self) -> bool:
         return False
 
+    def dagster_asset_health_queries_supported(self) -> bool:
+        return False
+
     def can_read_failure_events_for_asset(self, asset_record: "AssetRecord") -> bool:
         return False
 
@@ -3620,17 +3647,17 @@ class DagsterInstance(DynamicPartitionsStore):
     def streamline_read_asset_health_supported(self) -> bool:
         return False
 
-    def get_asset_check_health_state_for_asset(
-        self, asset_key: AssetKey
-    ) -> Optional[AssetCheckHealthState]:
+    def get_asset_check_health_state_for_assets(
+        self, asset_keys: Sequence[AssetKey]
+    ) -> Optional[Mapping[AssetKey, Optional[AssetCheckHealthState]]]:
         return None
 
-    def get_asset_freshness_health_state_for_asset(
-        self, asset_key: AssetKey
-    ) -> Optional[AssetFreshnessHealthState]:
+    def get_asset_freshness_health_state_for_assets(
+        self, asset_keys: Sequence[AssetKey]
+    ) -> Optional[Mapping[AssetKey, Optional[AssetFreshnessHealthState]]]:
         return None
 
-    def get_asset_materialization_health_state_for_asset(
-        self, asset_key: AssetKey
-    ) -> Optional["AssetMaterializationHealthState"]:
+    def get_asset_materialization_health_state_for_assets(
+        self, asset_keys: Sequence[AssetKey]
+    ) -> Optional[Mapping[AssetKey, Optional["AssetMaterializationHealthState"]]]:
         return None

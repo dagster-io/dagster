@@ -1,17 +1,27 @@
-type: dagster.components.PipesSubprocessScriptCollectionComponent
+type: dagster.components.lib.executable_component.python_script_component.PythonScriptComponent
 
 attributes:
-  scripts:
-    - path: script_one.py
-      assets:
-        - key: a
-          automation_condition: "{{ automation_condition.eager() }}"
-        - key: b
-          automation_condition: "{{ automation_condition.on_cron('@daily') }}"
-          deps: [up1, up2]
-    - path: script_two.py
-      assets:
-        - key: c
-    - path: subdir/script_three.py
-      assets:
-        - key: override_key
+  execution:
+    path: script_one.py
+  assets:
+    - key: a
+      automation_condition: "{{ automation_condition.eager() }}"
+    - key: b
+      automation_condition: "{{ automation_condition.on_cron('@daily') }}"
+      deps: [up1, up2]
+---
+type: dagster.components.lib.executable_component.python_script_component.PythonScriptComponent
+
+attributes:
+  execution:
+    path: script_two.py
+  assets:
+    - key: c
+---
+type: dagster.components.lib.executable_component.python_script_component.PythonScriptComponent
+
+attributes:
+  execution:
+    path: subdir/script_three.py
+  assets:
+    - key: override_key

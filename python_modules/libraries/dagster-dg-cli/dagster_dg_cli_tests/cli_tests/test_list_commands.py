@@ -1,4 +1,6 @@
+import importlib
 import inspect
+import json
 import re
 import shutil
 import subprocess
@@ -9,7 +11,7 @@ from typing import Any
 
 import pytest
 from dagster.components.utils import format_error_message
-from dagster_dg_core.utils import activate_venv, ensure_dagster_dg_tests_import
+from dagster_dg_core.utils import activate_venv, ensure_dagster_dg_tests_import, set_toml_node
 
 ensure_dagster_dg_tests_import()
 
@@ -26,6 +28,7 @@ from dagster_dg_core_tests.utils import (
     isolated_example_workspace,
     match_json_output,
     match_terminal_box_output,
+    modify_dg_toml_config_as_dict,
     standardize_box_characters,
 )
 
@@ -146,6 +149,61 @@ def test_list_components_filtered():
             assert match_json_output(result.output.strip(), _EXPECTED_COMPONENTS_JSON)
 
 
+def test_list_components_project_wildcard_pattern():
+    with (
+        ProxyRunner.test() as runner,
+        isolated_example_project_foo_bar(runner),
+    ):
+        result = runner.invoke(
+            "scaffold", "component", "foo_bar.components.my_component.MyComponent"
+        )
+        importlib.invalidate_caches()  # Needed to make sure new submodule is discoverable
+        assert_runner_result(result)
+
+        # Remove the generated registry module entry, confirm that our scaffolded component is not
+        # listed
+        with modify_dg_toml_config_as_dict(Path("pyproject.toml")) as config:
+            set_toml_node(config, ("project", "registry_modules"), [])
+        result = runner.invoke("list", "components", "--json")
+        assert_runner_result(result)
+        components = [entry["key"] for entry in json.loads(result.output.strip())]
+        assert "foo_bar.components.my_component.MyComponent" not in components
+
+        # Add a wildcard matching our scaffolded component, confirm that it is listed
+        with modify_dg_toml_config_as_dict(Path("pyproject.toml")) as config:
+            set_toml_node(config, ("project", "registry_modules"), ["foo_bar.components.*"])
+        result = runner.invoke("list", "components", "--json")
+        assert_runner_result(result)
+        components = [entry["key"] for entry in json.loads(result.output.strip())]
+
+        assert "foo_bar.components.my_component.MyComponent" in components
+
+
+def test_list_components_project_wildcard_pattern_no_duplicates():
+    with (
+        ProxyRunner.test() as runner,
+        isolated_example_project_foo_bar(runner),
+    ):
+        result = runner.invoke(
+            "scaffold", "component", "foo_bar.components.my_component.MyComponent"
+        )
+        importlib.invalidate_caches()  # Needed to make sure new submodule is discoverable
+        assert_runner_result(result)
+
+        # Add a wildcard that will match a component already in the list
+        with modify_dg_toml_config_as_dict(Path("pyproject.toml")) as config:
+            existing_value = config["project"]["registry_modules"]
+            set_toml_node(
+                config, ("project", "registry_modules"), [*existing_value, "foo_bar.components.*"]
+            )
+        result = runner.invoke("list", "components", "--json")
+        assert_runner_result(result)
+        components = [entry["key"] for entry in json.loads(result.output.strip())]
+        assert (
+            len([c for c in components if c == "foo_bar.components.my_component.MyComponent"]) == 1
+        )
+
+
 def test_list_components_bad_entry_point_fails():
     _assert_entry_point_error(["list", "components"])
 
@@ -177,45 +235,45 @@ _EXPECTED_PLUGIN_JSON = textwrap.dedent("""
 """).strip()
 
 
-def test_list_plugin_modules_success():
+def test_list_registry_modules_success():
     with (
         ProxyRunner.test(use_fixed_test_components=True) as runner,
         isolated_components_venv(runner),
     ):
         with fixed_panel_width(width=120):
-            result = runner.invoke("list", "plugin-modules")
+            result = runner.invoke("list", "registry-modules")
             assert_runner_result(result)
 
             match_terminal_box_output(result.output.strip(), _EXPECTED_PLUGINS_TABLE)
 
 
-def test_list_plugin_modules_json_success():
+def test_list_registry_modules_json_success():
     with (
         ProxyRunner.test(use_fixed_test_components=True) as runner,
         isolated_components_venv(runner),
     ):
-        result = runner.invoke("list", "plugin-modules", "--json")
+        result = runner.invoke("list", "registry-modules", "--json")
         assert_runner_result(result)
 
         assert match_json_output(result.output.strip(), _EXPECTED_PLUGIN_JSON)
 
 
-def test_list_plugin_modules_includes_modules_with_no_objects():
+def test_list_registry_modules_includes_modules_with_no_objects():
     with (
         ProxyRunner.test() as runner,
-        isolated_example_project_foo_bar(runner, in_workspace=False),
+        isolated_example_component_library_foo_bar(runner),
     ):
-        result = runner.invoke("list", "plugin-modules")
+        result = runner.invoke("list", "registry-modules")
         assert_runner_result(result)
         assert "foo_bar" in result.output
 
 
-def test_list_plugin_modules_bad_entry_point_fails():
-    _assert_entry_point_error(["list", "plugin-modules"])
+def test_list_registry_modules_bad_entry_point_fails():
+    _assert_entry_point_error(["list", "registry-modules"])
 
 
-@pytest.mark.parametrize("alias", ["plugin-module", "plugin-modules"])
-def test_list_plugin_modules_aliases(alias: str):
+@pytest.mark.parametrize("alias", ["registry-module", "registry-modules"])
+def test_list_registry_modules_aliases(alias: str):
     with ProxyRunner.test() as runner:
         assert_runner_result(runner.invoke("list", alias, "--help"))
 
@@ -224,86 +282,17 @@ def test_list_plugin_modules_aliases(alias: str):
 # ##### DEFS
 # ########################
 
-_EXPECTED_DEFS = textwrap.dedent("""
-┌───────────┬──────────────────────────────────────────────────────────────┐
-┃ Section   ┃ Definitions                                                  ┃
-┡━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
-│ Assets    │ ┏━━━━━━━━━━━━┳━━━━━━━━━┳━━━━━━┳━━━━━━━┳━━━━━━━━━━━━━┓        │
-│           │ ┃ Key        ┃ Group   ┃ Deps ┃ Kinds ┃ Description ┃        │
-│           │ ┡━━━━━━━━━━━━╇━━━━━━━━━╇━━━━━━╇━━━━━━━╇━━━━━━━━━━━━━┩        │
-│           │ │ my_asset_1 │ default │      │       │             │        │
-│           │ ├────────────┼─────────┼──────┼───────┼─────────────┤        │
-│           │ │ my_asset_2 │ default │      │       │             │        │
-│           │ └────────────┴─────────┴──────┴───────┴─────────────┘        │
-│ Jobs      │ ┏━━━━━━━━┓                                                   │
-│           │ ┃ Name   ┃                                                   │
-│           │ ┡━━━━━━━━┩                                                   │
-│           │ │ my_job │                                                   │
-│           │ └────────┘                                                   │
-│ Schedules │ ┏━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┓                              │
-│           │ ┃ Name        ┃ Cron schedule ┃                              │
-│           │ ┡━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━┩                              │
-│           │ │ my_schedule │ @daily        │                              │
-│           │ └─────────────┴───────────────┘                              │
-│ Sensors   │ ┏━━━━━━━━━━━┓                                                │
-│           │ ┃ Name      ┃                                                │
-│           │ ┡━━━━━━━━━━━┩                                                │
-│           │ │ my_sensor │                                                │
-│           │ └───────────┘                                                │
-│ Resources │ ┌─────────────┬────────────────────────────────────────────┐ │
-│           │ │ Name        │ Type                                       │ │
-│           │ ┡━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩ │
-│           │ │ my_resource │ foo_bar.defs.mydefs.definitions.MyResource │ │
-│           │ └─────────────┴────────────────────────────────────────────┘ │
-└───────────┴──────────────────────────────────────────────────────────────┘
-""").strip()
-
-_EXPECTED_DEFS_JSON = textwrap.dedent("""
-    [
-        {
-            "key": "my_asset_1",
-            "deps": [],
-            "kinds": [],
-            "group": "default",
-            "description": null,
-            "automation_condition": null
-        },
-        {
-            "key": "my_asset_2",
-            "deps": [],
-            "kinds": [],
-            "group": "default",
-            "description": null,
-            "automation_condition": null
-        },
-        {
-            "name": "my_job"
-        },
-        {
-            "name": "my_schedule",
-            "cron_schedule": "@daily"
-        },
-        {
-            "name": "my_sensor"
-        },
-        {
-            "name": "my_resource",
-            "type": "foo_bar.defs.mydefs.definitions.MyResource"
-        }
-    ]
-""").strip()
-
 
 @pytest.mark.parametrize("use_json", [True, False])
-def test_list_defs_succeeds(use_json: bool):
+def test_list_defs_succeeds(use_json: bool, snapshot):
     project_kwargs: dict[str, Any] = {"use_editable_dagster": True}
     with (
         ProxyRunner.test() as runner,
         isolated_example_project_foo_bar(
             runner,
             in_workspace=False,
-            python_environment="uv_managed",
             **project_kwargs,
+            uv_sync=True,
         ) as project_dir,
     ):
         with activate_venv(project_dir / ".venv"):
@@ -318,12 +307,91 @@ def test_list_defs_succeeds(use_json: bool):
 
             if use_json:
                 result = subprocess.run(
-                    ["dg", "list", "defs", "--json"], capture_output=True, check=False
+                    ["dg", "list", "defs", "--json"], capture_output=True, check=True
                 )
-                assert result.stdout.decode("utf-8").strip() == _EXPECTED_DEFS_JSON
+                snapshot.assert_match(result.stdout.decode("utf-8").strip())
             else:
                 result = subprocess.run(["dg", "list", "defs"], check=True, capture_output=True)
-                match_terminal_box_output(result.stdout.decode("utf-8").strip(), _EXPECTED_DEFS)
+                snapshot.assert_match(result.stdout.decode("utf-8").strip())
+
+
+def _asset_1():
+    from dagster import asset
+
+    @asset
+    def my_asset_1():
+        pass
+
+
+def _asset_2():
+    from dagster import asset
+
+    @asset
+    def my_asset_2():
+        pass
+
+
+def _asset_3():
+    from dagster import asset
+
+    @asset
+    def my_asset_3():
+        pass
+
+
+@pytest.mark.parametrize(
+    "path,should_error,expected_assets,not_expected_assets",
+    [
+        ("src/foo_bar/defs", False, ["my_asset_1", "my_asset_2", "my_asset_3"], []),
+        ("src/foo_bar/defs/asset1.py", False, ["my_asset_1"], ["my_asset_2", "my_asset_3"]),
+        (
+            "src/foo_bar/defs/subfolder/asset2.py",
+            False,
+            ["my_asset_2"],
+            ["my_asset_1", "my_asset_3"],
+        ),
+        ("src/foo_bar/defs/subfolder", False, ["my_asset_2", "my_asset_3"], ["my_asset_1"]),
+        ("src/foo_bar/defs/does_not_exist.py", True, [], []),
+    ],
+)
+def test_list_defs_with_path(
+    path: str, should_error: bool, expected_assets: list[str], not_expected_assets: list[str]
+):
+    project_kwargs: dict[str, Any] = {"use_editable_dagster": True}
+    with (
+        ProxyRunner.test() as runner,
+        isolated_example_project_foo_bar(
+            runner,
+            in_workspace=False,
+            uv_sync=True,
+            **project_kwargs,
+        ) as project_dir,
+        activate_venv(project_dir / ".venv"),
+    ):
+        Path("src/foo_bar/defs/subfolder").mkdir(parents=True, exist_ok=True)
+
+        defs_source = textwrap.dedent(inspect.getsource(_asset_1).split("\n", 1)[1])
+        Path("src/foo_bar/defs/asset1.py").write_text(defs_source)
+
+        defs_source = textwrap.dedent(inspect.getsource(_asset_2).split("\n", 1)[1])
+        Path("src/foo_bar/defs/subfolder/asset2.py").write_text(defs_source)
+
+        defs_source = textwrap.dedent(inspect.getsource(_asset_3).split("\n", 1)[1])
+        Path("src/foo_bar/defs/subfolder/asset3.py").write_text(defs_source)
+
+        result = subprocess.run(
+            ["dg", "list", "defs", "--path", path], check=False, capture_output=True
+        )
+        if should_error:
+            assert result.returncode != 0
+        else:
+            assert result.returncode == 0, result.stderr.decode("utf-8")
+            output = result.stdout.decode("utf-8").strip()
+
+            for asset in expected_assets:
+                assert asset in output
+            for asset in not_expected_assets:
+                assert asset not in output
 
 
 def _sample_defs():
@@ -358,40 +426,10 @@ def _sample_defs():
     )
 
 
-_EXPECTED_COMPLEX_ASSET_DEFS = textwrap.dedent("""
-┏━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-┃ Section      ┃ Definitions                                                                      ┃
-┡━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
-│ Assets       │ ┏━━━━━━━━━┳━━━━━━━━━┳━━━━━━━┳━━━━━━━┳━━━━━━━━━━━━━━━━━━┓                         │
-│              │ ┃ Key     ┃ Group   ┃ Deps  ┃ Kinds ┃ Description      ┃                         │
-│              │ ┡━━━━━━━━━╇━━━━━━━━━╇━━━━━━━╇━━━━━━━╇━━━━━━━━━━━━━━━━━━┩                         │
-│              │ │ alpha   │ group_1 │       │ sling │                  │                         │
-│              │ ├─────────┼─────────┼───────┼───────┼──────────────────┤                         │
-│              │ │ beta    │ group_2 │       │ dbt   │ This is beta.    │                         │
-│              │ ├─────────┼─────────┼───────┼───────┼──────────────────┤                         │
-│              │ │ delta   │ group_2 │ alpha │ dbt   │                  │                         │
-│              │ │         │         │ beta  │       │                  │                         │
-│              │ ├─────────┼─────────┼───────┼───────┼──────────────────┤                         │
-│              │ │ epsilon │ group_2 │ delta │ dbt   │ This is epsilon. │                         │
-│              │ └─────────┴─────────┴───────┴───────┴──────────────────┘                         │
-│ Asset Checks │ ┏━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓ │
-│              │ ┃ Key                    ┃ Additional Deps ┃ Description                       ┃ │
-│              │ ┡━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩ │
-│              │ │ alpha:alpha_beta_check │ alpha           │ This check is for alpha and beta. │ │
-│              │ │                        │ beta            │                                   │ │
-│              │ ├────────────────────────┼─────────────────┼───────────────────────────────────┤ │
-│              │ │ alpha:alpha_check      │ alpha           │ This check is for alpha.          │ │
-│              │ └────────────────────────┴─────────────────┴───────────────────────────────────┘ │
-└──────────────┴──────────────────────────────────────────────────────────────────────────────────┘
-""").strip()
-
-
-def test_list_defs_complex_assets_succeeds():
+def test_list_defs_complex_assets_succeeds(snapshot):
     with (
         ProxyRunner.test() as runner,
-        isolated_example_project_foo_bar(
-            runner, in_workspace=False, python_environment="uv_managed"
-        ) as project_dir,
+        isolated_example_project_foo_bar(runner, in_workspace=False, uv_sync=True) as project_dir,
     ):
         with activate_venv(project_dir / ".venv"):
             subprocess.run(
@@ -412,9 +450,102 @@ def test_list_defs_complex_assets_succeeds():
                 f.write(defs_source)
 
             result = subprocess.run(["dg", "list", "defs"], check=True, capture_output=True)
-            match_terminal_box_output(
-                result.stdout.decode("utf-8").strip(), _EXPECTED_COMPLEX_ASSET_DEFS
+            snapshot.assert_match(result.stdout.decode("utf-8").strip())
+
+
+def test_list_defs_column_selection():
+    with (
+        ProxyRunner.test() as runner,
+        isolated_example_project_foo_bar(runner, in_workspace=False, uv_sync=True) as project_dir,
+    ):
+        with activate_venv(project_dir / ".venv"):
+            subprocess.run(
+                ["dg", "scaffold", "defs", "dagster.DefsFolderComponent", "mydefs"],
+                check=True,
             )
+
+            with Path("src/foo_bar/defs/mydefs/definitions.py").open("w") as f:
+                defs_source = textwrap.dedent(
+                    inspect.getsource(_sample_complex_asset_defs).split("\n", 1)[1]
+                )
+                f.write(defs_source)
+
+            result = subprocess.run(
+                ["dg", "list", "defs", "-c", "key"], check=True, capture_output=True
+            )
+            output = result.stdout.decode("utf-8")
+            assert "alpha" in output
+            assert "alpha:alpha_beta_check" in output
+            assert "dbt" not in output
+            assert "This is beta." not in output
+
+            result = subprocess.run(
+                ["dg", "list", "defs", "-c", "key", "-c", "description"],
+                check=True,
+                capture_output=True,
+            )
+            output = result.stdout.decode("utf-8")
+            assert "alpha" in output
+            assert "alpha:alpha_beta_check" in output
+            assert "dbt" not in output
+            assert "This is beta." in output
+
+            # Ensure key/name is always included
+            result = subprocess.run(
+                ["dg", "list", "defs", "-c", "kinds"], check=True, capture_output=True
+            )
+            output = result.stdout.decode("utf-8")
+            assert "alpha" in output
+            assert "alpha:alpha_beta_check" in output
+            assert "dbt" in output
+            assert "This is beta." not in output
+
+
+def test_list_defs_asset_subselection():
+    with (
+        ProxyRunner.test() as runner,
+        isolated_example_project_foo_bar(runner, in_workspace=False, uv_sync=True) as project_dir,
+    ):
+        with activate_venv(project_dir / ".venv"):
+            subprocess.run(
+                ["dg", "scaffold", "defs", "dagster.DefsFolderComponent", "mydefs"],
+                check=True,
+            )
+
+            result = subprocess.run(["dg", "list", "defs"], check=True, capture_output=True)
+            assert "No definitions are defined" in result.stdout.decode("utf-8")
+            assert "Definitions" not in result.stdout.decode(
+                "utf-8"
+            )  # no table header means no table
+
+            with Path("src/foo_bar/defs/mydefs/definitions.py").open("w") as f:
+                defs_source = textwrap.dedent(
+                    inspect.getsource(_sample_complex_asset_defs).split("\n", 1)[1]
+                )
+                f.write(defs_source)
+
+            result = subprocess.run(
+                ["dg", "list", "defs", "--assets", "group:group_1"], check=True, capture_output=True
+            )
+            assert result.returncode == 0
+            output = result.stdout.decode("utf-8")
+            assert "sling" in output  # proxy for alpha asset in selection
+            assert "This is beta." not in output  # proxy for beta asset in selection
+            assert "delta" not in output
+            assert "epsilon" not in output
+            assert "alpha:alpha_check" in output
+            assert "alpha:alpha_beta_check" in output
+            result = subprocess.run(
+                ["dg", "list", "defs", "--assets", "group:group_2"], check=True, capture_output=True
+            )
+            assert result.returncode == 0
+            output = result.stdout.decode("utf-8")
+            assert "sling" not in output  # proxy for alpha asset in selection
+            assert "This is beta." in output  # proxy for beta asset in selection
+            assert "delta" in output
+            assert "epsilon" in output
+            assert "alpha:alpha_check" not in output, output
+            assert "alpha:alpha_beta_check" not in output
 
 
 def _sample_complex_asset_defs():
@@ -454,25 +585,10 @@ def _sample_complex_asset_defs():
         return dg.AssetCheckResult(passed=True)
 
 
-_EXPECTED_ENV_VAR_ASSET_DEFS = textwrap.dedent("""
-┏━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-┃ Section ┃ Definitions                                    ┃
-┡━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
-│ Assets  │ ┏━━━━━━━┳━━━━━━━┳━━━━━━┳━━━━━━━┳━━━━━━━━━━━━━┓ │
-│         │ ┃ Key   ┃ Group ┃ Deps ┃ Kinds ┃ Description ┃ │
-│         │ ┡━━━━━━━╇━━━━━━━╇━━━━━━╇━━━━━━━╇━━━━━━━━━━━━━┩ │
-│         │ │ alpha │ bar   │      │ sling │             │ │
-│         │ └───────┴───────┴──────┴───────┴─────────────┘ │
-└─────────┴────────────────────────────────────────────────┘
-""").strip()
-
-
-def test_list_defs_with_env_file_succeeds():
+def test_list_defs_with_env_file_succeeds(snapshot):
     with (
         ProxyRunner.test() as runner,
-        isolated_example_project_foo_bar(
-            runner, in_workspace=False, python_environment="uv_managed"
-        ) as project_dir,
+        isolated_example_project_foo_bar(runner, in_workspace=False, uv_sync=True) as project_dir,
     ):
         with activate_venv(project_dir / ".venv"):
             subprocess.run(
@@ -493,9 +609,7 @@ def test_list_defs_with_env_file_succeeds():
                 f.write(env_file_contents)
 
             result = subprocess.run(["dg", "list", "defs"], check=True, capture_output=True)
-            match_terminal_box_output(
-                result.stdout.decode("utf-8").strip(), _EXPECTED_ENV_VAR_ASSET_DEFS
-            )
+            snapshot.assert_match(result.stdout.decode("utf-8").strip())
 
 
 def _sample_env_var_assets():
@@ -520,8 +634,8 @@ def test_list_defs_fails_compact(capture_stderr_from_components_cli_invocations)
         isolated_example_project_foo_bar(
             runner,
             in_workspace=False,
-            python_environment="uv_managed",
             use_editable_dagster=True,
+            uv_sync=True,
         ) as project_dir,
     ):
         with activate_venv(project_dir / ".venv"):
@@ -638,9 +752,8 @@ def _assert_entry_point_error(cmd: list[str]):
         # Delete the components package referenced by the entry point
         shutil.rmtree("src/foo_bar/components")
 
-        # Disable cache to force re-discovery of deleted entry point
         result = subprocess.run(
-            ["dg", *cmd, "--disable-cache"],
+            ["dg", *cmd],
             check=False,
             capture_output=True,
         )
@@ -649,7 +762,7 @@ def _assert_entry_point_error(cmd: list[str]):
         output = standardize_box_characters(result.stdout.decode("utf-8"))
 
         expected_header_message = format_error_message("""
-            Error loading entry point `foo_bar.components` in group `dagster_dg_cli.plugin`.
+            Error loading entry point `foo_bar.components` in group `dagster_dg_cli.registry_modules`.
         """)
         assert expected_header_message in output
 
