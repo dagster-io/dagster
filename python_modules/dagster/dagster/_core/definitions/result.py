@@ -1,9 +1,9 @@
 from collections.abc import Mapping, Sequence
 from datetime import datetime  # noqa
 from os import PathLike  # noqa
-from typing import Optional
+from typing import Any, Optional
 
-from dagster_shared.record import IHaveNew, record_custom
+from dagster_shared.check.decorator import checked
 
 import dagster._check as check
 from dagster._annotations import PublicAttr
@@ -15,20 +15,21 @@ from dagster._core.definitions.metadata import (  # noqa
     RawMetadataMapping,
     TableSchema,
 )
+from dagster._core.definitions.utils import NoValueSentinel
 
 
-@record_custom
-class AssetResult(IHaveNew):
+class AssetResult:
     """Base class for MaterializeResult and ObserveResult."""
 
-    asset_key: PublicAttr[Optional[AssetKey]] = None
-    metadata: PublicAttr[Optional[RawMetadataMapping]] = None
-    check_results: PublicAttr[Sequence[AssetCheckResult]] = []
-    data_version: PublicAttr[Optional[DataVersion]] = None
-    tags: PublicAttr[Optional[Mapping[str, str]]] = None
+    asset_key: PublicAttr[Optional[AssetKey]]
+    metadata: PublicAttr[Optional[RawMetadataMapping]]
+    check_results: PublicAttr[Sequence[AssetCheckResult]]
+    data_version: PublicAttr[Optional[DataVersion]]
+    tags: PublicAttr[Optional[Mapping[str, str]]]
 
-    def __new__(
-        cls,
+    @checked
+    def __init__(
+        self,
         *,  # enforce kwargs
         asset_key: Optional[CoercibleToAssetKey] = None,
         metadata: Optional[RawMetadataMapping] = None,
@@ -38,16 +39,11 @@ class AssetResult(IHaveNew):
     ):
         from dagster._core.definitions.events import validate_asset_event_tags
 
-        asset_key = AssetKey.from_coercible(asset_key) if asset_key else None
-
-        return super().__new__(
-            cls,
-            asset_key=asset_key,
-            metadata=metadata,
-            check_results=check_results or [],
-            data_version=data_version,
-            tags=validate_asset_event_tags(tags),
-        )
+        self.asset_key = AssetKey.from_coercible(asset_key) if asset_key else None
+        self.metadata = metadata
+        self.check_results = check_results or []
+        self.data_version = data_version
+        self.tags = validate_asset_event_tags(tags)
 
     def check_result_named(self, check_name: str) -> AssetCheckResult:
         for check_result in self.check_results:
@@ -70,7 +66,35 @@ class MaterializeResult(AssetResult):
         data_version (Optional[DataVersion]): The data version of the asset that was observed.
         tags (Optional[Mapping[str, str]]): Tags to record with the corresponding
             AssetMaterialization event.
+        value (Optional[Any]): The output value of the asset that was materialized.
     """
+
+    value: PublicAttr[Any]
+
+    @checked
+    def __init__(
+        self,
+        *,  # enforce kwargs
+        asset_key: Optional[CoercibleToAssetKey] = None,
+        metadata: Optional[RawMetadataMapping] = None,
+        check_results: Optional[Sequence[AssetCheckResult]] = None,
+        data_version: Optional[DataVersion] = None,
+        tags: Optional[Mapping[str, str]] = None,
+        value: Optional[Any] = NoValueSentinel,
+    ):
+        self._value_unset = value is NoValueSentinel
+        self.value = None if self._value_unset else value
+        super().__init__(
+            asset_key=asset_key,
+            metadata=metadata,
+            check_results=check_results,
+            data_version=data_version,
+            tags=tags,
+        )
+
+    @property
+    def value_unset(self) -> bool:
+        return self._value_unset
 
 
 class ObserveResult(AssetResult):

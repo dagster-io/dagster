@@ -274,6 +274,10 @@ class DagsterType:
         return self.kind == DagsterTypeKind.NOTHING
 
     @property
+    def is_any(self) -> bool:
+        return self.kind == DagsterTypeKind.ANY
+
+    @property
     def supports_fan_in(self) -> bool:
         return False
 
