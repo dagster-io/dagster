@@ -11,6 +11,7 @@ from dagster._core.definitions.freshness import (
     InternalFreshnessPolicy,
     TimeWindowFreshnessPolicy,
 )
+from dagster._core.definitions.metadata.metadata_value import TextMetadataValue
 from dagster._serdes import deserialize_value, serialize_value
 from dagster_shared.serdes.utils import SerializableTimeDelta
 
@@ -20,9 +21,10 @@ from dagster_tests.core_tests.host_representation_tests.test_external_data impor
 
 
 class TestInternalFreshnessPolicy:
+    # TestInternalFreshnessPolicy::test_internal_freshness_policy_from_asset_spec_metadata_handles_null
     def test_internal_freshness_policy_from_asset_spec_metadata_handles_null(self) -> None:
         """Special case handling for asset metadata that was set to "null" string literal."""
-        metadata = {"internal_freshness_policy": "null"}
+        metadata = {INTERNAL_FRESHNESS_POLICY_METADATA_KEY: TextMetadataValue("null")}
         policy = InternalFreshnessPolicy.from_asset_spec_metadata(metadata)
         assert policy is None
 
