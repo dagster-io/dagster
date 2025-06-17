@@ -25,7 +25,7 @@ A <PyObject section="hooks" module="dagster" object="success_hook" decorator /> 
 
 ## Defining an op hook
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/op_hooks.py" startAfter="start_repo_marker_0" endBefore="end_repo_marker_0" title="src/<project_name>/defs/assets.py"/>
+<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/op_hooks.py" startAfter="start_repo_marker_0" endBefore="end_repo_marker_0" title="src/<project_name>/defs/ops.py"/>
 
 ### Hook context
 
@@ -52,7 +52,7 @@ For example, you want to send a slack message to a channel when any op fails in 
 
 The <PyObject section="jobs" module="dagster" object="job" decorator /> decorator accepts `hooks` as a parameter. Likewise, when creating a job from a graph, hooks are also accepted as a parameter in the <PyObject section="graphs" module="dagster" object="GraphDefinition.to_job" /> function. In the below example, we can pass the `slack_message_on_failure` hook above in a set as a parameter to <PyObject section="jobs" module="dagster" object="job" decorator />. Then, slack messages will be sent when any op in the job fails.
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/op_hooks.py" startAfter="start_repo_marker_1" endBefore="end_repo_marker_1" title="src/<project_name>/defs/assets.py"/>
+<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/op_hooks.py" startAfter="start_repo_marker_1" endBefore="end_repo_marker_1" title="src/<project_name>/defs/ops.py"/>
 
 When you run this job, you can provide configuration to the slack resource in the run config:
 
@@ -60,13 +60,13 @@ When you run this job, you can provide configuration to the slack resource in th
 
 or by using the [configured API](/api/dagster/config#dagster.configured):
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/op_hooks.py" startAfter="start_repo_marker_1_with_configured" endBefore="end_repo_marker_1_with_configured" title="src/<project_name>/defs/assets.py" />
+<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/op_hooks.py" startAfter="start_repo_marker_1_with_configured" endBefore="end_repo_marker_1_with_configured" title="src/<project_name>/defs/ops.py" />
 
 ### Applying a hook on an op
 
 Sometimes a job is a shared responsibility or you only want to be alerted on high-priority op executions. So we also provide a way to set up hooks on op instances which enables you to apply policies on a per-op basis.
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/op_hooks.py" startAfter="start_repo_marker_2" endBefore="end_repo_marker_2" title="src/<project_name>/defs/assets.py"/>
+<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/op_hooks.py" startAfter="start_repo_marker_2" endBefore="end_repo_marker_2" title="src/<project_name>/defs/ops.py"/>
 
 In this case, op "b" won't trigger any hooks, while when op "a" fails or succeeds it will send a slack message.
 
@@ -74,7 +74,7 @@ In this case, op "b" won't trigger any hooks, while when op "a" fails or succeed
 
 You can test the functionality of a hook by invoking the hook definition. This will run the underlying decorated function. You can construct a context to provide to the invocation using the <PyObject section="hooks" module="dagster" object="build_hook_context" /> function.
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/op_hooks.py" startAfter="start_testing_hooks" endBefore="end_testing_hooks" title="src/<project_name>/defs/assets.py"/>
+<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/op_hooks.py" startAfter="start_testing_hooks" endBefore="end_testing_hooks" title="src/<project_name>/defs/ops.py"/>
 
 
 <CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/op_hooks.py" startAfter="start_testing_hooks_tests" endBefore="end_testing_hooks_tests" title="tests/test_assets.py"/>
@@ -86,7 +86,7 @@ You can test the functionality of a hook by invoking the hook definition. This w
 
 In many cases, you might want to know details about an op failure. You can get the exception object thrown in the failed op via the `op_exception` property on <PyObject section="hooks" module="dagster" object="HookContext" />:
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/op_hooks_context.py" startAfter="start_failure_hook_op_exception" endBefore="end_failure_hook_op_exception" title="src/<project_name>/defs/assets.py"/>
+<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/op_hooks_context.py" startAfter="start_failure_hook_op_exception" endBefore="end_failure_hook_op_exception" title="src/<project_name>/defs/ops.py"/>
 
 ## Patterns
 
@@ -100,7 +100,7 @@ Because executing a production job and a testing job share the same core of busi
 
 In this case, we can mock the `slack_resource` using a helper function <PyObject section="resources" module="dagster" object="ResourceDefinition" displayText="ResourceDefinition.hardcoded_resource()"/>, so it won't send slack messages during development.
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/op_hooks.py" startAfter="start_repo_marker_3" endBefore="end_repo_marker_3" title="src/<project_name>/defs/assets.py"/>
+<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/op_hooks.py" startAfter="start_repo_marker_3" endBefore="end_repo_marker_3" title="src/<project_name>/defs/ops.py"/>
 
 When we switch to production, we can provide the real slack token in the `run_config` and therefore enable sending messages to a certain slack channel when a hook is triggered.
 
@@ -108,7 +108,7 @@ When we switch to production, we can provide the real slack token in the `run_co
 
 Then, we can execute a job with the config through Python API, CLI, or the Dagster UI. Here's an example of using the Python API.
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/op_hooks.py" startAfter="start_repo_main" endBefore="end_repo_main" title="src/<project_name>/defs/assets.py"/>
+<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/op_hooks.py" startAfter="start_repo_main" endBefore="end_repo_main" title="src/<project_name>/defs/ops.py"/>
 
 ### Job-level hooks
 

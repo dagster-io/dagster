@@ -54,7 +54,7 @@ Ops support a variety of useful features for data orchestration, such as:
 
 To define an op, use the <PyObject section="ops" module="dagster" object="op" object="op" decorator /> decorator. The decorated function is called the `compute_fn`.
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/ops.py" startAfter="start_op_marker" endBefore="end_op_marker" title="src/<project_name>/defs/assets.py" />
+<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/ops.py" startAfter="start_op_marker" endBefore="end_op_marker" title="src/<project_name>/defs/ops.py" />
 
 ### Inputs and outputs
 
@@ -72,7 +72,7 @@ Inputs are passed as arguments to an op's `compute_fn`. The value of an input ca
 
 The most common way to define inputs is just to add arguments to the decorated function:
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/ops.py" startAfter="start_input_op_marker" endBefore="end_input_op_marker" title="src/<project_name>/defs/assets.py"/>
+<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/ops.py" startAfter="start_input_op_marker" endBefore="end_input_op_marker" title="src/<project_name>/defs/ops.py"/>
 
 An op only starts to execute once all of its inputs have been resolved. Inputs can be resolved in two ways:
 
@@ -81,7 +81,7 @@ An op only starts to execute once all of its inputs have been resolved. Inputs c
 
 You can use a [Dagster Type](/api/dagster/types) to provide a function that validates an op's input every time the op runs. In this case, you use a dictionary of <PyObject section="ops" module="dagster" object="In" pluralize /> corresponding to the decorated function arguments.
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/ops.py" startAfter="start_typed_input_op_marker" endBefore="end_typed_input_op_marker" title="src/<project_name>/defs/assets.py"/>
+<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/ops.py" startAfter="start_typed_input_op_marker" endBefore="end_typed_input_op_marker" title="src/<project_name>/defs/ops.py"/>
 
 #### Outputs
 
@@ -89,25 +89,25 @@ Outputs are yielded from an op's `compute_fn`. By default, all ops have a single
 
 When you have one output, you can return the output value directly.
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/ops.py" startAfter="start_output_op_marker" endBefore="end_output_op_marker" title="src/<project_name>/defs/assets.py"/>
+<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/ops.py" startAfter="start_output_op_marker" endBefore="end_output_op_marker" title="src/<project_name>/defs/ops.py"/>
 
 To define multiple outputs, or to use a different output name than "result", you can provide a dictionary of <PyObject section="ops" module="dagster"  object="Out" pluralize /> to the <PyObject section="ops" module="dagster" object="op" object="op" decorator /> decorator.
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/ops.py" startAfter="start_multi_output_op_marker" endBefore="end_multi_output_op_marker" title="src/<project_name>/defs/assets.py"/>
+<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/ops.py" startAfter="start_multi_output_op_marker" endBefore="end_multi_output_op_marker" title="src/<project_name>/defs/ops.py"/>
 
 Return type annotations can be used directly on ops. For a single output, the return annotation will be used directly for type checking.
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/ops.py" startAfter="start_return_annotation" endBefore="end_return_annotation" title="src/<project_name>/defs/assets.py"/>
+<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/ops.py" startAfter="start_return_annotation" endBefore="end_return_annotation" title="src/<project_name>/defs/ops.py"/>
 
 If there are multiple outputs, a tuple annotation can be specified. Each inner type of the tuple annotation should correspond to an output in the op.
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/ops.py" startAfter="start_tuple_return" endBefore="end_tuple_return" title="src/<project_name>/defs/assets.py"/>
+<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/ops.py" startAfter="start_tuple_return" endBefore="end_tuple_return" title="src/<project_name>/defs/ops.py"/>
 
 Outputs are expected to follow the order they are specified in the op's `out` dictionary. In the above example, the `int` output corresponds to `int_output`, and the `str` output corresponds to `str_output`.
 
 Note that if you would like to specify a single tuple output and still utilize type annotations, this can be done by providing either a single <PyObject section="ops" module="dagster"  object="Out" /> to the op, or none.
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/ops.py" startAfter="start_single_output_tuple" endBefore="end_single_output_tuple" title="src/<project_name>/defs/assets.py"/>
+<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/ops.py" startAfter="start_single_output_tuple" endBefore="end_single_output_tuple" title="src/<project_name>/defs/ops.py"/>
 
 Like inputs, outputs can also have [Dagster Types](/api/dagster/types).
 
@@ -121,7 +121,7 @@ Op functions can specify an annotated `config` parameter for the op's configurat
 
 For example, we can define an op where the API endpoint it queries is defined through its configuration:
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/ops.py" startAfter="start_configured_op_marker" endBefore="end_configured_op_marker" title="src/<project_name>/defs/assets.py"/>
+<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/ops.py" startAfter="start_configured_op_marker" endBefore="end_configured_op_marker" title="src/<project_name>/defs/ops.py"/>
 
 ### Op context
 
@@ -129,7 +129,7 @@ When writing an op, users can optionally provide a first parameter, `context`. W
 
 For example, to access the logger and log a info message:
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/ops.py" startAfter="start_op_context_marker" endBefore="end_op_context_marker" title="src/<project_name>/defs/assets.py"/>
+<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/ops.py" startAfter="start_op_context_marker" endBefore="end_op_context_marker" title="src/<project_name>/defs/ops.py"/>
 
 ## Using an op
 
@@ -143,4 +143,4 @@ You may find the need to create utilities that help generate ops. In most cases,
 
 To create an op factory, you define a function that returns an <PyObject section="ops" module="dagster" object="OpDefinition"/>, either directly or by decorating a function with the op decorator.
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/ops.py" startAfter="start_op_factory_pattern_marker" endBefore="end_op_factory_pattern_marker" title="src/<project_name>/defs/assets.py"/>
+<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/ops.py" startAfter="start_op_factory_pattern_marker" endBefore="end_op_factory_pattern_marker" title="src/<project_name>/defs/ops.py"/>
