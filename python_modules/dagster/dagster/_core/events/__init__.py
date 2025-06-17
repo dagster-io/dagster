@@ -38,6 +38,7 @@ from dagster._core.definitions.asset_check_evaluation import (
     AssetCheckEvaluation,
     AssetCheckEvaluationPlanned,
 )
+from dagster._core.definitions.asset_health.asset_health import AssetHealthStatus
 from dagster._core.definitions.events import (
     AssetLineageInfo,
     AssetMaterializationFailure,
@@ -64,7 +65,6 @@ from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
 from dagster._core.storage.tags import PARTITION_NAME_TAG
 from dagster._record import record
 from dagster._serdes import NamedTupleSerializer, whitelist_for_serdes
-from dagster._streamline.asset_health import AssetHealthStatus
 from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 from dagster._utils.timing import format_duration
 
