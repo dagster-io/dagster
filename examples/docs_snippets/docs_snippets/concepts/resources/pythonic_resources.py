@@ -71,6 +71,11 @@ def new_resources_assets_defs() -> "dg.Definitions":
 
     # end_new_resources_assets_defs
 
+    return dg.Definitions(
+        assets=[data_from_url],
+        resources={"data_url": "https://dagster.io"},
+    )
+
 
 def new_resources_ops_defs() -> "dg.Definitions":
     # start_new_resources_ops_defs
@@ -123,6 +128,13 @@ def new_resources_configurable_defs() -> "dg.Definitions":
         )
 
     # end_new_resources_configurable_defs
+
+    return dg.Definitions(
+        assets=[data_from_service],
+        resources={
+            "my_conn": MyConnectionResource(username="my_user"),
+        },
+    )
 
 
 def new_resources_configurable_defs_ops() -> "dg.Definitions":
@@ -208,6 +220,13 @@ def new_resource_runtime() -> "dg.Definitions":
             resources={"db_conn": DatabaseResource.configure_at_launch()},
         )
 
+    return dg.Definitions(
+        assets=[data_from_database],
+        jobs=[update_data_job],
+        resources={"db_conn": DatabaseResource.configure_at_launch()},
+        sensors=[table_update_sensor],
+    )
+
 
 def get_filestore_client(*args, **kwargs):
     pass
@@ -272,6 +291,17 @@ def new_resources_nesting() -> dg.Definitions:
 
     # end_new_resource_dep_job_runtime
 
+    return dg.Definitions(
+        assets=[my_asset],
+        resources={
+            "credentials": credentials,
+            "bucket": FileStoreBucket(
+                credentials=credentials,
+                region="us-east-1",
+            ),
+        },
+    )
+
 
 def new_resources_env_vars() -> None:
     # start_new_resources_env_vars
@@ -293,6 +323,15 @@ def new_resources_env_vars() -> None:
         )
 
     # end_new_resources_env_vars
+
+    return dg.Definitions(
+        resources={
+            "credentials": CredentialsResource(
+                username=dg.EnvVar("MY_USERNAME"),
+                password=dg.EnvVar("MY_PASSWORD"),
+            )
+        },
+    )
 
 
 class GitHubOrganization:
