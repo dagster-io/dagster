@@ -97,17 +97,14 @@ To verify that Dagster is installed correctly, run the following command:
   </TabItem>
 </Tabs>
 
-You should be presented with the version number of `dg` in your environment.
+You should see the version number of `dg` in your environment.
 
 ## Troubleshooting
 
-If you encounter any issues during the installation process:
-
-- Refer to the [Dagster GitHub repository](https://github.com/dagster-io/dagster) for troubleshooting, or
-- Reach out to the [Dagster community](/about/community)
+If you encounter any issues during the installation process, reach out to the [Dagster community](/about/community).
 
 ## Next steps
 
 - Get up and running with your first Dagster project in the [Quickstart](/getting-started/quickstart)
-- Learn more about the [`dg` CLI and modern Dagster development](/api/dg)
-- Learn to [create data assets in Dagster](/guides/build/assets/defining-assets)
+- [Create your own Dagster project with the `create-dagster` CLI](/guides/build/projects/creating-a-new-project)
+- Add [assets](/guides/build/assets/defining-assets) to your Dagster project

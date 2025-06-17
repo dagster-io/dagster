@@ -5,13 +5,7 @@ sidebar_position: 30
 sidebar_label: 'Quickstart'
 ---
 
-Welcome to Dagster! In this guide, you'll use Dagster to create a basic pipeline that:
-
-- Extracts data from a CSV file
-- Transforms the data
-- Loads the transformed data to a new CSV file
-
-## What you'll learn
+Welcome to Dagster! In this guide, you'll learn:
 
 - How to set up a basic Dagster project
 - How to create a single Dagster asset that encapsulates the entire Extract, Transform, and Load (ETL) process
@@ -19,15 +13,7 @@ Welcome to Dagster! In this guide, you'll use Dagster to create a basic pipeline
 
 ## Prerequisites
 
-<details>
-  <summary>Prerequisites</summary>
-
-To follow the steps in this guide, you'll need:
-
-- Basic Python knowledge
-- Python 3.9+ installed on your system. Refer to the [Installation guide](/getting-started/installation) for information.
-
-</details>
+To follow the steps in this guide, you'll need Python 3.9+ and `uv` installed on your system. For more information, see the [Installation guide](/getting-started/installation).
 
 ## Step 1: Set up the Dagster environment
 
@@ -41,7 +27,7 @@ To follow the steps in this guide, you'll need:
 2. Activate the virtual environment:
 
    <Tabs>
-     <TabItem value="macos" label="MacOS">
+     <TabItem value="macos" label="MacOS & Linux">
        ```source .venv/bin/activate```
      </TabItem>
      <TabItem value="windows" label="Windows">
@@ -55,9 +41,9 @@ To follow the steps in this guide, you'll need:
    uv pip install pandas
    ```
 
-## Step 2: Create the Dagster project structure
+### Dagster project structure
 
-The generated Dagster project should have the following structure:
+Your new Dagster project should have the following structure:
 
 ```
 .
@@ -75,13 +61,15 @@ The generated Dagster project should have the following structure:
 └── uv.lock
 ```
 
-1. Create an assets file using `dg` in the terminal:
+## Step 2: Scaffold an assets file
+
+Use the [`dg scaffold defs`](/api/dg/dg-cli#dg-scaffold) command to generate an assets file on the command line:
 
    ```bash
    dg scaffold defs dagster.asset assets.py
    ```
 
-   This will add a new file `assets.py` in the `defs` directory:
+   This will add a new file `assets.py` to the `defs` directory:
 
    ```
    .
@@ -91,7 +79,9 @@ The generated Dagster project should have the following structure:
                └── assets.py
    ```
 
-2. Add the `sample_data.csv` file:
+## Step 3: Add data
+
+Next, add the `sample_data.csv` file:
 
    ```bash
    mkdir src/dagster-quickstart/defs/data
@@ -120,9 +110,13 @@ Now, create the assets for the ETL pipeline. Open `src/dagster-quickstart/defs/a
    title="src/dagster-quickstart/defs/assets.py"
 />
 
-This may seem unusual if you're used to task-based orchestration. In that case, you'd have three separate steps for extracting, transforming, and loading.
+:::info Asset vs task-based orchestration
 
-However, in Dagster, you'll model your pipelines using assets as the fundamental building block, rather than tasks.
+This asset definition may seem unusual if you're used to task-based orchestration. In that case, you'd have three separate steps for extracting, transforming, and loading.
+
+However, in Dagster, you'll model your pipelines using [assets](/guides/build/assets) as the fundamental building block, rather than tasks.
+
+:::
 
 ## Step 4: Run the pipeline
 
@@ -169,4 +163,4 @@ id,name,age,city,age_group
 Congratulations! You've just built and run your first pipeline with Dagster. Next, you can:
 
 - Continue with the [ETL pipeline tutorial](/etl-pipeline-tutorial/) to learn how to build a more complex ETL pipeline
-- Learn how to [Think in assets](/guides/build/assets/)
+- [Create your own Dagster project](/guides/build/projects/creating-a-new-project) and [add assets](/guides/build/assets/defining-assets) to it
