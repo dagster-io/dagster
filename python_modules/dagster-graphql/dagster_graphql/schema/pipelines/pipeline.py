@@ -296,7 +296,7 @@ class GrapheneAsset(graphene.ObjectType):
             return self._definition.id
         return get_unique_asset_id(self.key)
 
-    def resolve_assetMaterializations(
+    async def resolve_assetMaterializations(
         self,
         graphene_info: ResolveInfo,
         partitions: Optional[Sequence[str]] = None,
@@ -309,6 +309,24 @@ class GrapheneAsset(graphene.ObjectType):
 
         before_timestamp = parse_timestamp(beforeTimestampMillis)
         after_timestamp = parse_timestamp(afterTimestampMillis)
+
+        if (
+            limit == 1
+            and not partitions
+            and not partitionInLast
+            and not before_timestamp
+            and not after_timestamp
+        ):
+            record = await AssetRecord.gen(graphene_info.context, self.key)
+            latest_materialization_event = (
+                record.asset_entry.last_materialization if record else None
+            )
+
+            if not latest_materialization_event:
+                return []
+
+            return [GrapheneMaterializationEvent(event=latest_materialization_event)]
+
         if partitionInLast and self._definition:
             partitions = self._definition.get_partition_keys()[-int(partitionInLast) :]
 

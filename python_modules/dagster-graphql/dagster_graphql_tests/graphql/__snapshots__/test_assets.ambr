@@ -1093,6 +1093,24 @@
     }),
   })
 # ---
+# name: TestAssetAwareEventLog.test_get_multiple_asset_key_materializations[0]
+  dict({
+    'assetOrError': dict({
+      'assetMaterializations': list([
+        dict({
+          'assetLineage': list([
+          ]),
+          'label': 'a',
+        }),
+        dict({
+          'assetLineage': list([
+          ]),
+          'label': 'a',
+        }),
+      ]),
+    }),
+  })
+# ---
 # name: TestAssetAwareEventLog.test_get_partitioned_asset_key_materialization[0]
   dict({
     'assetOrError': dict({
