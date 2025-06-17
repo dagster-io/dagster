@@ -32,9 +32,7 @@ BASIC_SNOWFLAKE_COMPONENT_BODY = {
     "type": "dagster_snowflake.SnowflakeSqlComponent",
     "attributes": {
         "sql_template": "SELECT * FROM MY_TABLE;",
-        "database": "TESTDB",
-        "table_schema": "TESTSCHEMA",
-        "table_name": "TEST_TABLE",
+        "assets": [{"key": "TESTDB/TESTSCHEMA/TEST_TABLE"}],
     },
 }
 
@@ -105,10 +103,8 @@ def test_snowflake_sql_component_with_templates(snowflake_connect, sql_template)
             "type": "dagster_snowflake.SnowflakeSqlComponent",
             "attributes": {
                 "sql_template": sql_template,
-                "database": "TESTDB",
-                "table_schema": "TESTSCHEMA",
-                "table_name": "TEST_TABLE",
-                "template_vars": {
+                "assets": [{"key": "TESTDB/TESTSCHEMA/TEST_TABLE"}],
+                "sql_template_vars": {
                     "date": "2024-03-20",
                     "limit": 100,
                 },

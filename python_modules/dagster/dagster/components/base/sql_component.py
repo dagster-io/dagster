@@ -1,29 +1,25 @@
 from abc import ABC, abstractmethod
-from collections.abc import Mapping
+from collections.abc import Iterable, Mapping
 from pathlib import Path
 from typing import Annotated, Any, Generic, Optional, Union
 
+from dagster_shared import check
 from jinja2 import Template
 from pydantic import BaseModel, Field
 from typing_extensions import TypeVar
 
-import dagster as dg
+from dagster._core.definitions.result import MaterializeResult
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
-from dagster.components.component.component import Component
 from dagster.components.core.context import ComponentLoadContext
-from dagster.components.resolved.core_models import Resolvable, ResolvedAssetAttributes
+from dagster.components.lib.executable_component.component import ExecutableComponent
+from dagster.components.resolved.core_models import OpSpec
 from dagster.components.resolved.model import Resolver
 
 T = TypeVar("T")
 
 
-class SqlComponent(Resolvable, BaseModel, Component, Generic[T], ABC):
+class SqlComponent(ExecutableComponent, Generic[T], ABC):
     """Base component which executes templated SQL."""
-
-    asset_attributes: Annotated[
-        Optional[ResolvedAssetAttributes],
-        Field(default=None, description="Asset attributes to apply to the created assets"),
-    ]
 
     @property
     @abstractmethod
@@ -36,28 +32,23 @@ class SqlComponent(Resolvable, BaseModel, Component, Generic[T], ABC):
         """Execute the SQL content."""
         ...
 
-    @abstractmethod
-    def get_asset_key(self) -> dg.AssetKey:
-        """The asset key to associate with this model."""
-        ...
-
     @property
-    @abstractmethod
-    def required_resource_key(self) -> str:
-        """The resource key required by this component."""
-        ...
+    def op_spec(self) -> OpSpec:
+        if not self.assets:
+            raise ValueError("SqlComponent requires at least one asset  to be set.")
+        return OpSpec(name=self.assets[0].key.to_python_identifier())
 
-    def build_defs(self, context: ComponentLoadContext) -> dg.Definitions:
-        @dg.asset(
-            **(self.asset_attributes or {}),
-            key=self.get_asset_key(),
-            required_resource_keys={self.required_resource_key},
+    def invoke_execute_fn(
+        self,
+        context: AssetExecutionContext,
+        component_load_context: ComponentLoadContext,
+    ) -> Iterable[MaterializeResult]:
+        check.invariant(
+            len(self.resource_keys) == 1, "SqlComponent must have exactly one resource key."
         )
-        def _materialize_sql(context: dg.AssetExecutionContext):
-            self.execute(context, getattr(context.resources, self.required_resource_key))
-
-        asset_def: dg.AssetsDefinition = _materialize_sql  # type: ignore
-        return dg.Definitions(assets=[asset_def])
+        self.execute(context, getattr(context.resources, next(iter(self.resource_keys))))
+        for asset in self.assets or []:
+            yield MaterializeResult(asset_key=asset.key)
 
 
 class SqlFile(BaseModel):
@@ -83,7 +74,7 @@ class TemplatedSqlComponent(SqlComponent[T]):
         ResolvedSqlTemplate,
         Field(description="The SQL template to execute, either as a string or from a file."),
     ]
-    template_vars: Annotated[
+    sql_template_vars: Annotated[
         Optional[Mapping[str, Any]],
         Field(default=None, description="Template variables to pass to the SQL template."),
     ]
@@ -95,4 +86,4 @@ class TemplatedSqlComponent(SqlComponent[T]):
             template_str = Path(template_str.path).read_text()
 
         template = Template(template_str)
-        return template.render(**(self.template_vars or {}))
+        return template.render(**(self.sql_template_vars or {}))
