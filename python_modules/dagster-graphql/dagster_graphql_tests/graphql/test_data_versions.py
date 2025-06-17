@@ -96,6 +96,7 @@ def test_stale_status():
             assert materialize_assets(context)
             wait_for_runs_to_finish(context.instance)
 
+        with define_out_of_process_context(__file__, "get_repo_v1", instance) as context:
             result = _fetch_data_versions(context, repo)
             foo = _get_asset_node(result, "foo")
             assert foo["dataVersion"] is not None
@@ -105,6 +106,7 @@ def test_stale_status():
             assert materialize_assets(context, asset_selection=[AssetKey(["foo"])])
             wait_for_runs_to_finish(context.instance)
 
+        with define_out_of_process_context(__file__, "get_repo_v1", instance) as context:
             result = _fetch_data_versions(context, repo)
             bar = _get_asset_node(result, "bar")
             assert bar["dataVersion"] is not None
@@ -172,6 +174,7 @@ def test_stale_status_partitioned():
             )
             wait_for_runs_to_finish(context.instance)
 
+        with define_out_of_process_context(__file__, "get_repo_partitioned", instance) as context:
             for key in ["foo", "bar", "dynamic_asset"]:
                 result = _fetch_partition_data_versions(context, AssetKey([key]), "alpha")
                 node = _get_asset_node(result)
@@ -190,6 +193,7 @@ def test_stale_status_partitioned():
             )
             wait_for_runs_to_finish(context.instance)
 
+        with define_out_of_process_context(__file__, "get_repo_partitioned", instance) as context:
             result = _fetch_partition_data_versions(context, AssetKey(["foo"]), "alpha")
             foo = _get_asset_node(result, "foo")
             assert foo["dataVersion"] == "from_config_foo_alpha"
