@@ -14,6 +14,15 @@ from dagster.components.core.load_defs import (
     load_defs as load_defs,
 )
 from dagster.components.definitions import definitions as definitions
+from dagster.components.lib.executable_component.function_component import (
+    FunctionComponent as FunctionComponent,
+)
+from dagster.components.lib.executable_component.python_script_component import (
+    PythonScriptComponent as PythonScriptComponent,
+)
+from dagster.components.lib.executable_component.uv_run_component import (
+    UvRunComponent as UvRunComponent,
+)
 from dagster.components.resolved.base import Resolvable as Resolvable
 from dagster.components.resolved.context import ResolutionContext as ResolutionContext
 from dagster.components.resolved.core_models import (
