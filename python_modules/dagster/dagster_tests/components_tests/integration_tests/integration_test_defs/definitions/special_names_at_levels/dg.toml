@@ -1,4 +1,2 @@
-[tool.dg]
-foo = "bar"
-[project]
+[tool.dg.project]
 defs_module = "dagster_tests.components_tests.integration_tests.integration_test_defs.definitions.special_names_at_levels"
