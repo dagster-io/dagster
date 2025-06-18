@@ -297,7 +297,7 @@ def test_components_docs_adding_attributes_to_assets(
                   replications:
                     - path: replication.yaml
                 post_processing:
-                  processors:
+                  assets:
                     - attributes:
                         automation_condition: "{{{{ custom_cron('@daily') }}}}"
                 """),

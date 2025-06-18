@@ -4,6 +4,6 @@ attributes:
   replications:
     - path: replication.yaml
 post_processing:
-  processors:
+  assets:
     - attributes:
         automation_condition: "{{ custom_cron('@daily') }}"
