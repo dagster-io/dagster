@@ -376,9 +376,9 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
                 },
             },
             freshness_policies_by_output_name={
-                spec.key.to_python_identifier(): spec.freshness_policy
+                spec.key.to_python_identifier(): spec.legacy_freshness_policy
                 for spec in specs
-                if spec.freshness_policy
+                if spec.legacy_freshness_policy
             },
             auto_materialize_policies_by_output_name={
                 spec.key.to_python_identifier(): spec.auto_materialize_policy

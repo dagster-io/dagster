@@ -768,9 +768,9 @@ def test_with_freshness_policy_replacements(test_jaffle_shop_manifest: dict[str,
     )
     def my_dbt_assets(): ...
 
-    for asset_key, freshness_policy in my_dbt_assets.freshness_policies_by_key.items():
+    for asset_key, freshness_policy in my_dbt_assets.legacy_freshness_policies_by_key.items():
         assert freshness_policy == expected_freshness_policy
-        assert expected_specs_by_key[asset_key].freshness_policy == expected_freshness_policy
+        assert expected_specs_by_key[asset_key].legacy_freshness_policy == expected_freshness_policy
 
 
 def test_with_auto_materialize_policy_replacements(
@@ -895,12 +895,12 @@ def test_dbt_meta_freshness_policy(test_meta_config_manifest: dict[str, Any]) ->
     @dbt_assets(manifest=test_meta_config_manifest)
     def my_dbt_assets(): ...
 
-    freshness_policies = my_dbt_assets.freshness_policies_by_key.items()
+    freshness_policies = my_dbt_assets.legacy_freshness_policies_by_key.items()
     assert freshness_policies
 
     for asset_key, freshness_policy in freshness_policies:
         assert freshness_policy == expected_freshness_policy
-        assert expected_specs_by_key[asset_key].freshness_policy == expected_freshness_policy
+        assert expected_specs_by_key[asset_key].legacy_freshness_policy == expected_freshness_policy
 
 
 def test_dbt_meta_asset_key(test_meta_config_manifest: dict[str, Any]) -> None:

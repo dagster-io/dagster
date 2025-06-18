@@ -209,7 +209,7 @@ def test_base_with_meta_config_translator():
         AssetKey(["target", "departments"]): "group_2",
     }
 
-    assert my_sling_assets.freshness_policies_by_key == {
+    assert my_sling_assets.legacy_freshness_policies_by_key == {
         AssetKey(["target", "departments"]): LegacyFreshnessPolicy(
             maximum_lag_minutes=0.0, cron_schedule="5 4 * * *", cron_schedule_timezone="UTC"
         )

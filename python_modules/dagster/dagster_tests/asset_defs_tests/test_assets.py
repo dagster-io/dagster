@@ -188,8 +188,8 @@ def test_retain_freshness_policy():
 
     replaced = bar.with_attributes(asset_key_replacements={AssetKey(["bar"]): AssetKey(["baz"])})
     assert (
-        replaced.specs_by_key[AssetKey(["baz"])].freshness_policy
-        == bar.specs_by_key[AssetKey(["bar"])].freshness_policy
+        replaced.specs_by_key[AssetKey(["baz"])].legacy_freshness_policy
+        == bar.specs_by_key[AssetKey(["bar"])].legacy_freshness_policy
     )
 
 
@@ -228,9 +228,9 @@ def test_graph_backed_retain_freshness_policy_and_auto_materialize_policy():
         }
     )
     specs_by_key = replaced.specs_by_key
-    assert specs_by_key[AssetKey("aa")].freshness_policy == fpa
-    assert specs_by_key[AssetKey("bb")].freshness_policy == fpb
-    assert specs_by_key[AssetKey("cc")].freshness_policy is None
+    assert specs_by_key[AssetKey("aa")].legacy_freshness_policy == fpa
+    assert specs_by_key[AssetKey("bb")].legacy_freshness_policy == fpb
+    assert specs_by_key[AssetKey("cc")].legacy_freshness_policy is None
 
     assert specs_by_key[AssetKey("aa")].auto_materialize_policy == ampa
     assert specs_by_key[AssetKey("bb")].auto_materialize_policy == ampb
@@ -972,7 +972,7 @@ def test_from_graph_w_key_prefix():
     ]
 
     assert this_is_a_prefix_the_asset_spec.group_name == "abc"
-    assert this_is_a_prefix_the_asset_spec.freshness_policy == freshness_policy
+    assert this_is_a_prefix_the_asset_spec.legacy_freshness_policy == freshness_policy
     assert this_is_a_prefix_the_asset_spec.description == description
     assert this_is_a_prefix_the_asset_spec.metadata == metadata
 
@@ -1024,7 +1024,7 @@ def test_from_op_w_key_prefix():
     ]
 
     assert this_is_a_prefix_the_asset_spec.group_name == "abc"
-    assert this_is_a_prefix_the_asset_spec.freshness_policy == freshness_policy
+    assert this_is_a_prefix_the_asset_spec.legacy_freshness_policy == freshness_policy
     assert this_is_a_prefix_the_asset_spec.description == description
     assert this_is_a_prefix_the_asset_spec.metadata == metadata
 

@@ -967,7 +967,7 @@ def test_graph_asset_with_args(automation_condition_arg):
     @graph_asset(
         group_name="group1",
         metadata={"my_metadata": "some_metadata"},
-        freshness_policy=LegacyFreshnessPolicy(maximum_lag_minutes=5),
+        legacy_freshness_policy=LegacyFreshnessPolicy(maximum_lag_minutes=5),
         resource_defs={"foo": foo_resource},
         tags={"foo": "bar"},
         owners=["team:team1", "claire@dagsterlabs.com"],
@@ -979,7 +979,7 @@ def test_graph_asset_with_args(automation_condition_arg):
 
     assert my_asset.group_names_by_key[AssetKey("my_asset")] == "group1"
     assert my_asset.metadata_by_key[AssetKey("my_asset")] == {"my_metadata": "some_metadata"}
-    assert my_asset.freshness_policies_by_key[AssetKey("my_asset")] == LegacyFreshnessPolicy(
+    assert my_asset.legacy_freshness_policies_by_key[AssetKey("my_asset")] == LegacyFreshnessPolicy(
         maximum_lag_minutes=5
     )
     assert my_asset.tags_by_key[AssetKey("my_asset")] == {"foo": "bar"}
@@ -1197,10 +1197,10 @@ def test_graph_multi_asset_decorator(automation_condition_arg):
     assert two_assets.code_versions_by_key[AssetKey("first_asset")] == "abc"
     assert two_assets.group_names_by_key[AssetKey("second_asset")] == "grp"
 
-    assert two_assets.freshness_policies_by_key.get(AssetKey("first_asset")) is None
-    assert two_assets.freshness_policies_by_key[AssetKey("second_asset")] == LegacyFreshnessPolicy(
-        maximum_lag_minutes=5
-    )
+    assert two_assets.legacy_freshness_policies_by_key.get(AssetKey("first_asset")) is None
+    assert two_assets.legacy_freshness_policies_by_key[
+        AssetKey("second_asset")
+    ] == LegacyFreshnessPolicy(maximum_lag_minutes=5)
 
     assert (
         two_assets.automation_conditions_by_key[AssetKey("first_asset")]

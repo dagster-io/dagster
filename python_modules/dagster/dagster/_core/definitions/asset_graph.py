@@ -113,8 +113,8 @@ class AssetNode(BaseAssetNode):
         return self._spec.partition_mappings
 
     @property
-    def freshness_policy(self) -> Optional[LegacyFreshnessPolicy]:
-        return self._spec.freshness_policy
+    def legacy_freshness_policy(self) -> Optional[LegacyFreshnessPolicy]:
+        return self._spec.legacy_freshness_policy
 
     @property
     def auto_materialize_policy(self) -> Optional[AutoMaterializePolicy]:

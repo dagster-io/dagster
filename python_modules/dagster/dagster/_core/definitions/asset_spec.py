@@ -104,9 +104,9 @@ def validate_kind_tags(kinds: Optional[AbstractSet[str]]) -> None:
 
 
 @hidden_param(
-    param="freshness_policy",
-    breaking_version="1.10.0",
-    additional_warn_text="use freshness checks instead.",
+    param="legacy_freshness_policy",
+    breaking_version="1.12.0",
+    additional_warn_text="use the freshness policy abstraction instead.",
 )
 @hidden_param(
     param="auto_materialize_policy",
@@ -161,7 +161,7 @@ class AssetSpec(IHasInternalInit, IHaveNew, LegacyNamedTupleMixin):
     group_name: PublicAttr[Optional[str]]
     skippable: PublicAttr[bool]
     code_version: PublicAttr[Optional[str]]
-    freshness_policy: PublicAttr[Optional[LegacyFreshnessPolicy]]
+    legacy_freshness_policy: PublicAttr[Optional[LegacyFreshnessPolicy]]
     automation_condition: PublicAttr[Optional[AutomationCondition]]
     owners: PublicAttr[Sequence[str]]
     tags: PublicAttr[Mapping[str, str]]
@@ -225,9 +225,9 @@ class AssetSpec(IHasInternalInit, IHaveNew, LegacyNamedTupleMixin):
             skippable=check.bool_param(skippable, "skippable"),
             group_name=check.opt_str_param(group_name, "group_name"),
             code_version=check.opt_str_param(code_version, "code_version"),
-            freshness_policy=check.opt_inst_param(
-                kwargs.get("freshness_policy"),
-                "freshness_policy",
+            legacy_freshness_policy=check.opt_inst_param(
+                kwargs.get("legacy_freshness_policy"),
+                "legacy_freshness_policy",
                 LegacyFreshnessPolicy,
             ),
             automation_condition=check.opt_inst_param(
@@ -270,7 +270,7 @@ class AssetSpec(IHasInternalInit, IHaveNew, LegacyNamedTupleMixin):
             skippable=skippable,
             group_name=group_name,
             code_version=code_version,
-            freshness_policy=kwargs.get("freshness_policy"),
+            legacy_freshness_policy=kwargs.get("legacy_freshness_policy"),
             automation_condition=automation_condition,
             owners=owners,
             tags=tags,
@@ -330,7 +330,7 @@ class AssetSpec(IHasInternalInit, IHaveNew, LegacyNamedTupleMixin):
         tags: Optional[Mapping[str, str]] = ...,
         kinds: Optional[set[str]] = ...,
         partitions_def: Optional[PartitionsDefinition] = ...,
-        freshness_policy: Optional[LegacyFreshnessPolicy] = ...,
+        legacy_freshness_policy: Optional[LegacyFreshnessPolicy] = ...,
     ) -> "AssetSpec":
         """Returns a new AssetSpec with the specified attributes replaced."""
         current_tags_without_kinds = {
@@ -347,7 +347,7 @@ class AssetSpec(IHasInternalInit, IHaveNew, LegacyNamedTupleMixin):
                 skippable=skippable if skippable is not ... else self.skippable,
                 group_name=group_name if group_name is not ... else self.group_name,
                 code_version=code_version if code_version is not ... else self.code_version,
-                freshness_policy=self.freshness_policy,
+                legacy_freshness_policy=self.legacy_freshness_policy,
                 automation_condition=automation_condition
                 if automation_condition is not ...
                 else self.automation_condition,
@@ -396,7 +396,7 @@ class AssetSpec(IHasInternalInit, IHaveNew, LegacyNamedTupleMixin):
                 skippable=self.skippable,
                 group_name=self.group_name,
                 code_version=self.code_version,
-                freshness_policy=self.freshness_policy,
+                freshness_policy=self.legacy_freshness_policy,
                 automation_condition=self.automation_condition,
                 owners=[*self.owners, *(owners if owners is not ... else [])],
                 tags={**current_tags_without_kinds, **(tags if tags is not ... else {})},
