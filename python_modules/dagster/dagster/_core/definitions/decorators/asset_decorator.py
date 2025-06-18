@@ -34,7 +34,10 @@ from dagster._core.definitions.events import (
     CoercibleToAssetKey,
     CoercibleToAssetKeyPrefix,
 )
-from dagster._core.definitions.freshness import INTERNAL_FRESHNESS_POLICY_METADATA_KEY
+from dagster._core.definitions.freshness import (
+    INTERNAL_FRESHNESS_POLICY_METADATA_KEY,
+    InternalFreshnessPolicy,
+)
 from dagster._core.definitions.freshness_policy import LegacyFreshnessPolicy
 from dagster._core.definitions.hook_definition import HookDefinition
 from dagster._core.definitions.input import GraphIn
@@ -307,8 +310,22 @@ def asset(
         **{f"{KIND_PREFIX}{kind}": "" for kind in kinds or []},
     }
 
+    freshness_policy = kwargs.get("freshness_policy")
     internal_freshness_policy = kwargs.get("internal_freshness_policy")
-    if internal_freshness_policy:
+    legacy_freshness_policy = None
+    if isinstance(freshness_policy, InternalFreshnessPolicy):
+        if internal_freshness_policy:
+            raise DagsterInvalidDefinitionError(
+                "Cannot specify both internal_freshness_policy and freshness_policy on the @asset decorator."
+            )
+        else:
+            metadata = {
+                **(metadata or {}),
+                INTERNAL_FRESHNESS_POLICY_METADATA_KEY: serialize_value(freshness_policy),
+            }
+    else:
+        legacy_freshness_policy = freshness_policy
+
         metadata = {
             **(metadata or {}),
             INTERNAL_FRESHNESS_POLICY_METADATA_KEY: serialize_value(internal_freshness_policy),
@@ -336,7 +353,7 @@ def asset(
         op_tags=op_tags,
         group_name=group_name,
         output_required=output_required,
-        freshness_policy=kwargs.get("freshness_policy"),
+        freshness_policy=legacy_freshness_policy,
         automation_condition=resolve_automation_condition(
             automation_condition, kwargs.get("auto_materialize_policy")
         ),

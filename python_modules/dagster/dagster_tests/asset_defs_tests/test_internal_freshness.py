@@ -12,6 +12,7 @@ from dagster._core.definitions.freshness import (
     TimeWindowFreshnessPolicy,
 )
 from dagster._core.definitions.metadata.metadata_value import TextMetadataValue
+from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._serdes import deserialize_value, serialize_value
 from dagster_shared.serdes.utils import SerializableTimeDelta
 
@@ -65,6 +66,34 @@ class TestInternalFreshnessPolicy:
             pass
 
         Definitions(assets=[asset_with_time_window_freshness, asset_with_cron_freshness])
+
+    def test_internal_freshness_policy_from_asset_decorator_with_freshness_policy(self) -> None:
+        @asset(
+            freshness_policy=InternalFreshnessPolicy.time_window(
+                fail_window=timedelta(minutes=10), warn_window=timedelta(minutes=5)
+            )
+        )
+        def asset_with_time_window_freshness():
+            pass
+
+        defs = Definitions(assets=[asset_with_time_window_freshness])
+
+    def test_internal_freshness_policy_from_asset_decorator_conflicting_freshness_parameters(
+        self,
+    ) -> None:
+        """Raise an error if a user tries to pass an InternalFreshnessPolicy to both `internal_freshness_policy` and `freshness_policy` args on the @asset decorator."""
+        with pytest.raises(DagsterInvalidDefinitionError):
+
+            @asset(
+                internal_freshness_policy=InternalFreshnessPolicy.time_window(
+                    fail_window=timedelta(minutes=10), warn_window=timedelta(minutes=5)
+                ),
+                freshness_policy=InternalFreshnessPolicy.time_window(
+                    fail_window=timedelta(minutes=10), warn_window=timedelta(minutes=5)
+                ),
+            )
+            def asset_with_conflicting_freshness():
+                pass
 
 
 class TestAttachInternalFreshnessPolicy:
