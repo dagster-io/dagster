@@ -224,6 +224,34 @@ def test_spec_is_available_in_scope() -> None:
         ]
 
 
+def test_asset_post_processors_deprecation_error() -> None:
+    with tempfile.TemporaryDirectory() as temp_dir:
+        with alter_sys_path(to_add=[str(temp_dir)], to_remove=[]):
+            with environ({"HOME": temp_dir, "SOME_PASSWORD": "password"}):
+                shutil.copytree(STUB_LOCATION_PATH, temp_dir, dirs_exist_ok=True)
+                component_path = Path(temp_dir) / COMPONENT_RELPATH
+
+                with _modify_yaml(component_path / "replication.yaml") as data:
+                    placeholder_data = data["streams"].pop("<PLACEHOLDER>")
+                    data["streams"][f"file://{temp_dir}/input.csv"] = placeholder_data
+
+                # Modify defs.yaml to include the deprecated asset_post_processors field
+                with _modify_yaml(component_path / "defs.yaml") as data:
+                    data["attributes"]["asset_post_processors"] = [
+                        {"target": "*", "attributes": {"group_name": "test_group"}}
+                    ]
+                    data["attributes"]["sling"]["connections"][0]["instance"] = f"{temp_dir}/duckdb"
+
+                context = ComponentLoadContext.for_test().for_path(component_path)
+                component = get_underlying_component(context)
+                assert isinstance(component, SlingReplicationCollectionComponent)
+
+                with pytest.raises(Exception) as exc_info:
+                    component.build_defs(context)
+                error_message = str(exc_info.value)
+                assert "The asset_post_processors field is deprecated" in error_message
+
+
 def map_spec(spec: AssetSpec) -> AssetSpec:
     return spec.replace_attributes(tags={"is_custom_spec": "yes"})
 
