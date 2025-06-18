@@ -80,7 +80,7 @@ def load_from_defs_folder(*, project_root: Path) -> Definitions:
     Args:
         project_root (Path): The path to the dg project root.
     """
-    root_config_path = discover_config_file(project_root)
+    root_config_path = discover_config_file(project_root, search_parent_dirs=False)
     toml_config = load_toml_as_dict(
         check.not_none(
             root_config_path,

@@ -84,6 +84,7 @@ def has_dg_file_config(
 def discover_config_file(
     path: Path,
     predicate: Optional[Callable[[Mapping[str, Any]], bool]] = None,
+    search_parent_dirs: bool = True,
 ) -> Optional[Path]:
     current_path = path.absolute()
     while True:
@@ -93,7 +94,7 @@ def discover_config_file(
             return dg_toml_path
         elif pyproject_toml_path.exists() and has_dg_file_config(pyproject_toml_path, predicate):
             return pyproject_toml_path
-        if current_path == current_path.parent:  # root
+        if current_path == current_path.parent or not search_parent_dirs:  # root
             return
         current_path = current_path.parent
 
