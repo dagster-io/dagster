@@ -769,13 +769,17 @@ def new_resource_on_schedule() -> None:
             tags={"date": formatted_date},
         )
 
+    # end_new_resource_on_schedule
+
+    # start_new_resource_on_schedule_defs
     @dg.definitions
     def resources():
         return dg.Definitions(
             resources={"date_formatter": DateFormatter(format="%Y-%m-%d")},
         )
 
-    # end_new_resource_on_schedule
+    # end_new_resource_on_schedule_defs
+
     # start_test_resource_on_schedule
 
     import dagster as dg

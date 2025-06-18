@@ -20,6 +20,14 @@ This article assumes familiarity with [resources](/guides/build/external-resourc
   title="src/<project_name>/defs/assets.py"
 />
 
+<CodeExample
+  path="docs_snippets/docs_snippets/concepts/resources/pythonic_resources.py"
+  startAfter="start_new_resource_on_schedule_defs"
+  endBefore="end_new_resource_on_schedule_defs"
+  dedent="4"
+  title="src/<project_name>/defs/resources.py"
+/>
+
 ## APIs in this guide
 
 | Name                                                                                  | Description                                                                         |
