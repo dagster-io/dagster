@@ -7,28 +7,28 @@ sidebar_label: Installation
 
 import InstallUv from '@site/docs/partials/\_InstallUv.md';
 
-To follow the steps in this guide, you'll need:
+:::note
 
-- To install Python 3.9 or higher. **Python 3.12 is recommended**.
+To follow the steps in this guide, you'll need to install Python 3.9 or higher. **Python 3.12 is recommended**.
 
-## Recommended: Creating a new project with create-dagster
+:::
 
-The recommended way to get started with Dagster is to create a project using the `create-dagster` command line utility. This will scaffold a Dagster project with our recommended structure and required dependencies.
+To get started with Dagster, you can scaffold a new project with the [`create-dagster` CLI](/api/dg/create-dagster) (recommended), manually create a new project, or update an existing project to install Dagster dependencies.
+* [Installation requirements for using the `create-dagster` CLI](#installation-requirements-for-using-the-create-dagster-cli)
+* [Installation requirements for manually creating or updating a project](#installation-requirements-for-manually-creating-or-updating-a-project)
 
-### Using `create-dagster`
+## Installation requirements for using the `create-dagster` CLI
 
-The `create-dagster` utility can be installed with [Homebrew](https://brew.sh/) or `curl`, or invoked without installation using `uvx`.
+If you're just getting started with Dagster, we recommend scaffolding a new project with the `create-dagster` command line utility, which will generate a Dagster project with our recommended structure and required dependencies.
 
 <Tabs>
-<TabItem value="uvx" label="uvx (Recommended)">
+<TabItem value="uv" label="uv (Recommended)">
 
-First, install the Python package manager [`uv`](https://docs.astral.sh/uv/) if you don't have it.
-
-This will also install the `uvx` command, which allows you to execute commands without having to install packages directly.
+Install the Python package manager [`uv`](https://docs.astral.sh/uv/getting-started/installation/):
 
 <InstallUv />
 
-Now, you can run the `create-dagster` command using `uvx`:
+Installing `uv` will install the [`uvx` command](https://docs.astral.sh/uv/guides/tools/), which allows you to execute commands without having to install packages directly. You can run the `create-dagster` command using `uvx`:
 
 <CliInvocationExample contents="uvx create-dagster project my-project" />
 
@@ -36,11 +36,11 @@ Now, you can run the `create-dagster` command using `uvx`:
 
 <TabItem value="brew" label="Homebrew">
 
-`create-dagster` is available in a Homebrew tap:
+The `create-dagster` command line utility is available in a Homebrew tap:
 
 <CliInvocationExample contents="brew install dagster-io/tap/create-dagster" />
 
-After installation, run the `create-dagster` command:
+After installation, you can run the `create-dagster` command:
 
 <CliInvocationExample contents="create-dagster project my-project" />
 
@@ -48,11 +48,11 @@ After installation, run the `create-dagster` command:
 
 <TabItem value="curl" label="curl">
 
-Use `curl` to download a standalone installation script and execute it with `sh`:
+Use `curl` to download a standalone installation script for the `create-dagster` command line utility and execute it with `sh`:
 
 <CliInvocationExample contents="curl -LsSf https://dg.dagster.io/create-dagster/install.sh | sh" />
 
-Then run the `create-dagster` command:
+After installation, you can run the `create-dagster` command:
 
 <CliInvocationExample contents="create-dagster project my-project" />
 
@@ -60,11 +60,9 @@ Then run the `create-dagster` command:
 
 </Tabs>
 
-## Alternative: Manual installation in a virtual environment
+## Installation requirements for manually creating or updating a project
 
-If you prefer to set up Dagster manually or are installing it into an existing project, you can install Dagster directly into your Python environment.
-
-### Installing Dagster
+If you prefer to set up Dagster manually or are installing it into an existing project, you can install Dagster directly into your Python environment:
 
 <Tabs>
 <TabItem value="uv" label="uv">
@@ -75,9 +73,9 @@ If you prefer to set up Dagster manually or are installing it into an existing p
 </TabItem>
 </Tabs>
 
-## Verifying your project
+## Verifying your Dagster installation
 
-To verify that Dagster is installed correctly, run the following command:
+To verify that Dagster is installed correctly, run the commands below. You should see the version number of `dg` in your environment.
 
 <Tabs groupId="os">
   <TabItem value="mac" label="Mac">
@@ -97,14 +95,12 @@ To verify that Dagster is installed correctly, run the following command:
   </TabItem>
 </Tabs>
 
-You should see the version number of `dg` in your environment.
-
 ## Troubleshooting
 
-If you encounter any issues during the installation process, reach out to the [Dagster community](/about/community).
+If you run into trouble during the installation process, reach out to the [Dagster community](/about/community).
 
 ## Next steps
 
-- Get up and running with your first Dagster project in the [Quickstart](/getting-started/quickstart)
-- [Create your own Dagster project with the `create-dagster` CLI](/guides/build/projects/creating-a-new-project)
+- Follow the [Quickstart](/getting-started/quickstart) to get up and running with a basic Dagster project
+- Follow the [ETL pipeline tutorial](/etl-pipeline-tutorial) to learn how to build a more complex ETL pipeline
 - Add [assets](/guides/build/assets/defining-assets) to your Dagster project
