@@ -1,5 +1,6 @@
 import functools
 import textwrap
+import warnings
 from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from dataclasses import dataclass, field
@@ -7,7 +8,6 @@ from pathlib import Path
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
     Literal,
     Optional,
     TypedDict,
@@ -25,17 +25,17 @@ from dagster_shared.merger import deep_merge_dicts
 from dagster_shared.plus.config import load_config
 from dagster_shared.seven import is_valid_module_pattern
 from dagster_shared.utils import remove_none_recursively
-from dagster_shared.utils.config import does_dg_config_file_exist, get_dg_config_path
+from dagster_shared.utils.config import (
+    DgConfigFileFormat,
+    detect_dg_config_file_format,
+    discover_config_file,
+    does_dg_config_file_exist,
+    get_dg_config_path,
+)
 from typing_extensions import Never, NotRequired, Required, Self, TypeAlias, TypeGuard
 
 from dagster_dg_core.error import DgError, DgValidationError
-from dagster_dg_core.utils import (
-    exit_with_error,
-    get_toml_node,
-    has_toml_node,
-    load_toml_as_dict,
-    modify_toml,
-)
+from dagster_dg_core.utils import exit_with_error, get_toml_node, has_toml_node, modify_toml
 from dagster_dg_core.utils.warnings import DgWarningIdentifier, emit_warning
 
 if TYPE_CHECKING:
@@ -43,10 +43,6 @@ if TYPE_CHECKING:
     import tomlkit.items
 
 T = TypeVar("T")
-
-# The format determines whether settings are nested under the `tool.dg` section
-# (`pyproject.toml`) or not (`dg.toml`).
-DgConfigFileFormat: TypeAlias = Literal["root", "nested"]
 
 
 def discover_workspace_root(path: Path) -> Optional[Path]:
@@ -57,25 +53,6 @@ def discover_workspace_root(path: Path) -> Optional[Path]:
 
 
 # NOTE: The presence of dg.toml will cause pyproject.toml to be ignored for purposes of dg config.
-def discover_config_file(
-    path: Path,
-    predicate: Optional[Callable[[Mapping[str, Any]], bool]] = None,
-) -> Optional[Path]:
-    current_path = path.absolute()
-    while True:
-        dg_toml_path = current_path / "dg.toml"
-        pyproject_toml_path = current_path / "pyproject.toml"
-        if dg_toml_path.exists() and has_dg_file_config(dg_toml_path, predicate):
-            return dg_toml_path
-        elif pyproject_toml_path.exists() and has_dg_file_config(pyproject_toml_path, predicate):
-            return pyproject_toml_path
-        if current_path == current_path.parent:  # root
-            return
-        current_path = current_path.parent
-
-
-# NOTE: The set/has/get_config_from_cli_context is only used for the dynamically generated scaffold
-# component commands. Hopefully we can get rid of it in the future.
 
 _CLI_CONTEXT_CONFIG_KEY = "config"
 
@@ -262,6 +239,23 @@ class DgProjectConfig:
 
     @classmethod
     def from_raw(cls, raw: "DgRawProjectConfig") -> Self:
+        if raw.get("autoload_defs"):
+            warnings.warn(
+                "Using autoload_defs in pyproject.toml is deprecated, and will be removed in dagster 1.11.0."
+                " Use a definitions.py file with @definitions and load_project_defs instead:\n"
+                + textwrap.dedent(
+                    """
+                    from pathlib import Path
+
+                    from dagster import definitions, load_from_defs_folder
+
+
+                    @definitions
+                    def defs():
+                        return load_from_defs_folder(project_root=Path(__file__).parent.parent.parent)
+                    """
+                )
+            )
         return cls(
             root_module=raw["root_module"],
             autoload_defs=raw.get("autoload_defs", DgProjectConfig.autoload_defs),
@@ -434,11 +428,6 @@ def is_project_file_config(config: "DgFileConfig") -> TypeGuard[DgProjectFileCon
 DgFileConfig: TypeAlias = Union[DgWorkspaceFileConfig, DgProjectFileConfig]
 
 
-def detect_dg_config_file_format(path: Path) -> DgConfigFileFormat:
-    """Check if the file is a dg-specific toml file."""
-    return "root" if path.name == "dg.toml" or path.name == ".dg.toml" else "nested"
-
-
 @contextmanager
 def modify_dg_toml_config(
     path: Path,
@@ -456,20 +445,6 @@ def modify_dg_toml_config(
             )
         else:
             yield get_toml_node(toml, ("tool", "dg"), tomlkit.items.Table)
-
-
-def has_dg_file_config(
-    path: Path, predicate: Optional[Callable[[Mapping[str, Any]], bool]] = None
-) -> bool:
-    toml = load_toml_as_dict(path)
-    # `dg.toml` is a special case where settings are defined at the top level
-    if detect_dg_config_file_format(path) == "root":
-        node = toml
-    else:
-        if "dg" not in toml.get("tool", {}):
-            return False
-        node = toml["tool"]["dg"]
-    return predicate(node) if predicate else True
 
 
 def load_dg_user_file_config(path: Optional[Path] = None) -> DgRawCliConfig:

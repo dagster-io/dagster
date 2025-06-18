@@ -1,5 +1,5 @@
-from dagster import load_defs
+from pathlib import Path
 
-from dbt_example.components import inner as inner
+from dagster import load_from_defs_folder
 
-defs = load_defs(defs_root=inner)
+defs = load_from_defs_folder(project_root=Path(__file__).parent.parent)

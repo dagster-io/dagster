@@ -10,43 +10,38 @@ Spark is often used with object stores such as Amazon S3. We are going to simula
 
 ## Prerequisites
 
-We are going to use [Docker](https://docs.docker.com/get-started/get-docker/) to emulate a typical Spark setup locally. Therefore, only Docker is required to reproduce this example.
+To run the examples, you'll need to:
 
-## Production considerations
+- Create a new Dagster project:
+   ```bash
+   uvx create-dagster project <project_name>
+   ```
+- Install the necessary Python libraries:
+  ```bash
+  uv pip install dagster-aws
+  ```
+- In the PySpark environment, you'll need to install the `dagster-pipes` Python package, and typically the Java AWS S3 SDK packages. For example:
 
-For demonstration purposes, this tutorial makes a few simplifications that you should consider when deploying in production:
+  ```shell
+  curl -fSL "https://repo1.maven.org/maven2/org/apache/hadoop/hadoop-aws/3.5.1/hadoop-aws-3.5.1.jar" \
+    -o /opt/bitnami/spark/jars/hadoop-aws-3.5.1.jar
 
-- We are going to be running Spark in local mode, sharing the same container with Dagster. In production, consider having two separate environments:
-
-  - **In the Dagster environment**, you'll need to have the following Python packages:
-
-    - `dagster`
-    - `dagster-webserver` --- to run the Dagster UI
-    - `dagster-aws` --- when using S3
-
-    You will also need to make the orchestration code available to Dagster (typically via a [code location](/deployment/code-locations)).
-
-  - **In the PySpark environment**, you'll need to install the `dagster-pipes` Python package, and typically the Java AWS S3 SDK packages. For example:
-
-    ```shell
-    curl -fSL "https://repo1.maven.org/maven2/org/apache/hadoop/hadoop-aws/3.5.1/hadoop-aws-3.5.1.jar" \
-      -o /opt/bitnami/spark/jars/hadoop-aws-3.5.1.jar
-
-    curl -fSL "https://repo1.maven.org/maven2/com/amazonaws/aws-java-sdk-bundle/1.12.780/aws-java-sdk-bundle-1.12.780.jar" \
-      -o /opt/bitnami/spark/jars/aws-java-sdk-bundle-1.12.780.jar
-    ```
-
-    Make sure `hadoop-aws` JAR and AWS Java SDK versions are compatible with your Spark/Hadoop build.
-
+  curl -fSL "https://repo1.maven.org/maven2/com/amazonaws/aws-java-sdk-bundle/1.12.780/aws-java-sdk-bundle-1.12.780.jar" \
+    -o /opt/bitnami/spark/jars/aws-java-sdk-bundle-1.12.780.jar
+  ```
 - We are going to upload the PySpark script to the S3 bucket directly inside the Dagster asset. In production, consider doing this via CI/CD instead.
 
-## Step 1: Writing the Dagster orchestration code (dagster_code.py)
+## Step 1: Write the Dagster code
+
+import ScaffoldAsset from '@site/docs/partials/\_ScaffoldAsset.md';
+
+<ScaffoldAsset />
 
 We will set up a few non-default Pipes components to streamline the otherwise challenging problem of orchestrating Spark jobs.
 
 1. Let's start by creating the asset and opening a Pipes session. We will be using S3 to pass Pipes messages from the Spark job to Dagster, so we will create `PipesS3MessageReader` and `PipesS3ContextInjector` objects. (Technically, it's not strictly required to use S3 for passing the Dagster context, but storing it there will decrease the CLI arguments size).
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/pyspark/dagster_code.py" startAfter="start_pipes_session_marker" endBefore="end_pipes_session_marker" />
+<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/pyspark/dagster_code.py" startAfter="start_pipes_session_marker" endBefore="end_pipes_session_marker" title="src/<project_name>/defs/assets.py" />
 
 Notice how `PipesS3MessageReader` has `include_stdio_in_messages=True`. This setting will configure the Pipes **message writer** in the Spark job to collect logs from the Spark driver and send them to Dagster via Pipes messages.
 

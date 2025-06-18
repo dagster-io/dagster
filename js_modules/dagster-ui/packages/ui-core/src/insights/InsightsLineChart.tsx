@@ -156,7 +156,7 @@ export const InsightsLineChart = (props: Props) => {
         text: metricLabel,
         color: textLighterRGB,
         font: {
-          weight: '700',
+          weight: 700,
           size: 12,
         },
       },
@@ -192,7 +192,7 @@ export const InsightsLineChart = (props: Props) => {
         text: 'Estimated cost',
         color: textLighterRGB,
         font: {
-          weight: '700',
+          weight: 700,
           size: 12,
         },
       },

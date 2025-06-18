@@ -261,14 +261,15 @@ def test_migrating_project(
             context.create_file(
                 Path("my_existing_project") / "definitions.py",
                 contents=format_multiline("""
-                    import my_existing_project.defs
+                    from pathlib import Path
+
                     from my_existing_project.assets import my_asset
 
                     import dagster as dg
 
                     defs = dg.Definitions.merge(
                         dg.Definitions(assets=[my_asset]),
-                        dg.components.load_defs(my_existing_project.defs),
+                        dg.load_from_defs_folder(project_root=Path(__file__).parent.parent),
                     )
                 """),
                 snippet_path=f"{context.get_next_snip_number()}-updated-definitions.py",

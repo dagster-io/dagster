@@ -1,16 +1,28 @@
 import asyncio
 
 import graphene
-from dagster._streamline.asset_health import (
+from dagster._core.definitions.asset_health.asset_check_health import (
+    AssetHealthCheckDegradedMetadata,
+    AssetHealthCheckMetadata,
+    AssetHealthCheckUnknownMetadata,
+    AssetHealthCheckWarningMetadata,
+    get_asset_check_status_and_metadata,
+)
+from dagster._core.definitions.asset_health.asset_freshness_health import (
+    get_freshness_status_and_metadata,
+)
+from dagster._core.definitions.asset_health.asset_health import (
     AssetHealthStatus,
     overall_status_from_component_statuses,
 )
-
-from dagster_graphql.implementation.fetch_asset_health import (
-    get_asset_check_status_and_metadata,
-    get_freshness_status_and_metadata,
+from dagster._core.definitions.asset_health.asset_materialization_health import (
+    AssetHealthMaterializationDegradedNotPartitionedMeta,
+    AssetHealthMaterializationDegradedPartitionedMeta,
+    AssetHealthMaterializationHealthyPartitionedMeta,
+    AssetHealthMaterializationMetadata,
     get_materialization_status_and_metadata,
 )
+
 from dagster_graphql.schema.entity_key import GrapheneAssetKey
 from dagster_graphql.schema.util import ResolveInfo
 
@@ -51,6 +63,29 @@ class GrapheneAssetHealthCheckMeta(graphene.Union):
         )
         name = "AssetHealthCheckMeta"
 
+    @staticmethod
+    def from_metadata_class(
+        metadata: AssetHealthCheckMetadata,
+    ) -> "GrapheneAssetHealthCheckMeta":
+        if isinstance(metadata, AssetHealthCheckDegradedMetadata):
+            return GrapheneAssetHealthCheckDegradedMeta(
+                numFailedChecks=metadata.num_failed_checks,
+                numWarningChecks=metadata.num_warning_checks,
+                totalNumChecks=metadata.total_num_checks,
+            )
+        elif isinstance(metadata, AssetHealthCheckWarningMetadata):
+            return GrapheneAssetHealthCheckWarningMeta(
+                numWarningChecks=metadata.num_warning_checks,
+                totalNumChecks=metadata.total_num_checks,
+            )
+        elif isinstance(metadata, AssetHealthCheckUnknownMetadata):
+            return GrapheneAssetHealthCheckUnknownMeta(
+                numNotExecutedChecks=metadata.num_not_executed_checks,
+                totalNumChecks=metadata.total_num_checks,
+            )
+        else:
+            raise ValueError(f"Unknown metadata class: {type(metadata)}")
+
 
 class GrapheneAssetHealthMaterializationDegradedPartitionedMeta(graphene.ObjectType):
     numFailedPartitions = graphene.NonNull(graphene.Int)
@@ -84,6 +119,28 @@ class GrapheneAssetHealthMaterializationMeta(graphene.Union):
             GrapheneAssetHealthMaterializationDegradedNotPartitionedMeta,
         )
         name = "AssetHealthMaterializationMeta"
+
+    @staticmethod
+    def from_metadata_class(
+        metadata: AssetHealthMaterializationMetadata,
+    ) -> "GrapheneAssetHealthMaterializationMeta":
+        if isinstance(metadata, AssetHealthMaterializationDegradedNotPartitionedMeta):
+            return GrapheneAssetHealthMaterializationDegradedNotPartitionedMeta(
+                failedRunId=metadata.failed_run_id
+            )
+        elif isinstance(metadata, AssetHealthMaterializationHealthyPartitionedMeta):
+            return GrapheneAssetHealthMaterializationHealthyPartitionedMeta(
+                numMissingPartitions=metadata.num_missing_partitions,
+                totalNumPartitions=metadata.total_num_partitions,
+            )
+        elif isinstance(metadata, AssetHealthMaterializationDegradedPartitionedMeta):
+            return GrapheneAssetHealthMaterializationDegradedPartitionedMeta(
+                numFailedPartitions=metadata.num_failed_partitions,
+                numMissingPartitions=metadata.num_missing_partitions,
+                totalNumPartitions=metadata.total_num_partitions,
+            )
+        else:
+            raise ValueError(f"Unknown metadata class: {type(metadata)}")
 
 
 class GrapheneAssetHealthFreshnessMeta(graphene.ObjectType):
@@ -129,7 +186,13 @@ class GrapheneAssetHealth(graphene.ObjectType):
                 get_materialization_status_and_metadata(graphene_info.context, self._asset_key)
             )
         _, materialization_status_metadata = await self.materialization_status_task
-        return materialization_status_metadata
+        return (
+            GrapheneAssetHealthMaterializationMeta.from_metadata_class(
+                materialization_status_metadata
+            )
+            if materialization_status_metadata
+            else None
+        )
 
     async def resolve_assetChecksStatus(self, graphene_info: ResolveInfo) -> AssetHealthStatus:
         if self.asset_check_status_task is None:
@@ -149,7 +212,11 @@ class GrapheneAssetHealth(graphene.ObjectType):
             )
 
         _, asset_checks_status_metadata = await self.asset_check_status_task
-        return asset_checks_status_metadata
+        return (
+            GrapheneAssetHealthCheckMeta.from_metadata_class(asset_checks_status_metadata)
+            if asset_checks_status_metadata
+            else None
+        )
 
     async def resolve_freshnessStatus(self, graphene_info: ResolveInfo) -> AssetHealthStatus:
         if self.freshness_status_task is None:
@@ -169,7 +236,13 @@ class GrapheneAssetHealth(graphene.ObjectType):
             )
 
         _, freshness_status_metadata = await self.freshness_status_task
-        return freshness_status_metadata
+        return (
+            GrapheneAssetHealthFreshnessMeta(
+                lastMaterializedTimestamp=freshness_status_metadata.last_materialized_timestamp
+            )
+            if freshness_status_metadata
+            else None
+        )
 
     async def resolve_assetHealth(self, graphene_info: ResolveInfo) -> AssetHealthStatus:
         if not graphene_info.context.instance.dagster_asset_health_queries_supported():

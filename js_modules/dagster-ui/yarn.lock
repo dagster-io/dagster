@@ -3868,7 +3868,7 @@ __metadata:
     babel-plugin-macros: "npm:^2.8.0"
     babel-plugin-transform-import-meta: "npm:^2.2.1"
     buildkite-test-collector: "npm:^1.8.1"
-    chart.js: "npm:^3.4.1"
+    chart.js: "npm:^4.5.0"
     chartjs-adapter-date-fns: "npm:^2.0.0"
     chartjs-plugin-zoom: "npm:^1.1.1"
     child-process: "npm:^1.0.2"
@@ -3905,7 +3905,7 @@ __metadata:
     prettier: "npm:^3.3.3"
     qs: "npm:^6.14.0"
     react: "npm:^18.3.1"
-    react-chartjs-2: "npm:^3.0.3"
+    react-chartjs-2: "npm:^5.1.0"
     react-docgen-typescript-plugin: "npm:^1.0.8"
     react-dom: "npm:^18.3.1"
     react-is: "npm:^18.3.1"
@@ -6299,6 +6299,13 @@ __metadata:
   peerDependencies:
     react: ^16.8.0
   checksum: 10/b2daed6366a5bfa0e7499d35e2a85ed8b5053f394b7b18187d0f8a9f9fef22f0e151f5adfffb4f3f7b85e44c2f3256c601af54447460eaae656f6814013af871
+  languageName: node
+  linkType: hard
+
+"@kurkle/color@npm:^0.3.0":
+  version: 0.3.4
+  resolution: "@kurkle/color@npm:0.3.4"
+  checksum: 10/a15bfb55eec4ff92ee27cdacff54e85c7497ec1f9e8e0e8eaec3d39320cc90b82eb7f716d92792a8235fad1617003c6e0c0d2cd07f6a79b7b138ca17ec5eb6e7
   languageName: node
   linkType: hard
 
@@ -11469,10 +11476,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"chart.js@npm:^3.4.1":
-  version: 3.9.1
-  resolution: "chart.js@npm:3.9.1"
-  checksum: 10/62ee137b296181d8d12e428cb83a02351768039ff672b8ff775534f844777e9c91a3213fc8c6c46b59175a47f23d1547178fdd64ff9afc37c2c1703b2cede93e
+"chart.js@npm:^4.5.0":
+  version: 4.5.0
+  resolution: "chart.js@npm:4.5.0"
+  dependencies:
+    "@kurkle/color": "npm:^0.3.0"
+  checksum: 10/3561fd996dbe20256f69d5e8b968f98b5bd0e3455e3a6336edba1d03c396fc9604e82dd48d92a87c04a187f7b7a0718a5512c9fc95ff755ca77bf571f88efe54
   languageName: node
   linkType: hard
 
@@ -22058,13 +22067,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"react-chartjs-2@npm:^3.0.3":
-  version: 3.3.0
-  resolution: "react-chartjs-2@npm:3.3.0"
+"react-chartjs-2@npm:^5.1.0":
+  version: 5.3.0
+  resolution: "react-chartjs-2@npm:5.3.0"
   peerDependencies:
-    chart.js: ^3.5.0
-    react: ^16.8.0 || ^17.0.0
-  checksum: 10/4e498933aed4b14aba5417f1c2ccd4c4ba21e3d81ec1f3fe5af83577fadd2e84b6d03d4396d1370aa11649a3151f514d0b8e80cd58c4114427846ee7f03103aa
+    chart.js: ^4.1.1
+    react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
+  checksum: 10/3cad39fa154be833f9d091ad09f6a630ec1e31cc2536ec63f20ad0e49847b291e7973274df1d30bbae5e5168488789407625cde52c020146b611a47c79092d45
   languageName: node
   linkType: hard
 

@@ -196,6 +196,7 @@ class AirflowInstanceComponent(Component, Resolvable):
     filter: Optional[ResolvedAirflowFilter] = None
     mappings: Optional[Sequence[AirflowDagMapping]] = None
     source_code_retrieval_enabled: Optional[bool] = None
+    # TODO: deprecate and then delete -- schrockn 2025-06-10
     asset_post_processors: Optional[Sequence[AssetPostProcessor]] = None
 
     def _get_instance(self) -> dg_airlift_core.AirflowInstance:
