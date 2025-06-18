@@ -56,10 +56,3 @@ def sales_summary(duckdb: DuckDBResource) -> None:
         )
         if not conn.fetchall():
             conn.execute("INSERT INTO sales_summary SELECT * from summary")
-
-
-@dg.definitions
-def resources():
-    return dg.Definitions(
-        resources={"duckdb": DuckDBResource(database="sales.duckdb", schema="public")}
-    )

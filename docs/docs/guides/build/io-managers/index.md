@@ -46,9 +46,13 @@ Consider the following example, which contains assets that construct a DuckDB co
 
 <CodeExample path="docs_snippets/docs_snippets/guides/external-systems/assets-without-io-managers.py" language="python" title="src/<project_name>/defs/assets.py" />
 
+<CodeExample path="docs_snippets/docs_snippets/guides/external-systems/resources-without-io-managers.py" language="python" title="src/<project_name>/defs/resources.py" />
+
 Using an I/O manager would remove the code that reads and writes data from the assets themselves, instead delegating it to the I/O manager. The assets would be left only with the code that applies transformations or retrieves the initial CSV file.
 
 <CodeExample path="docs_snippets/docs_snippets/guides/external-systems/assets-with-io-managers.py" language="python" title="src/<project_name>/defs/assets.py" />
+
+<CodeExample path="docs_snippets/docs_snippets/guides/external-systems/resources-io-managers.py" language="python" title="src/<project_name>/defs/resources.py" />
 
 To load upstream assets using an I/O manager, specify the asset as an input parameter to the asset function. In this example, the `DuckDBPandasIOManager` I/O manager will read the DuckDB table with the same name as the upstream asset (`raw_sales_data`) and pass the data to `clean_sales_data` as a Pandas DataFrame.
 
@@ -63,6 +67,8 @@ With I/O managers, swapping data stores consists of changing the implementation 
 In the following example, a Snowflake I/O manager replaced the DuckDB I/O manager.
 
 <CodeExample path="docs_snippets/docs_snippets/guides/external-systems/assets-with-snowflake-io-manager.py" language="python" title="src/<project_name>/defs/assets.py" />
+
+<CodeExample path="docs_snippets/docs_snippets/guides/external-systems/resources-snowflake.py" language="python" title="src/<project_name>/defs/resources.py" />
 
 ## Built-in I/O managers \{#built-in}
 

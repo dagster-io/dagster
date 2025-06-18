@@ -34,10 +34,6 @@ Pythonic I/O managers are defined as subclasses of <PyObject section="io-manager
 
 ### Handling partitioned assets
 
-import ScaffoldAsset from '@site/docs/partials/\_ScaffoldAsset.md';
-
-<ScaffoldAsset />
-
 I/O managers can be written to handle [partitioned](/guides/build/partitions-and-backfills/partitioning-assets) assets. For a partitioned asset, each invocation of `handle_output` will (over)write a single partition, and each invocation of `load_input` will load one or more partitions. When the I/O manager is backed by a filesystem or object store, then each partition will typically correspond to a file or object. When it's backed by a database, then each partition will typically correspond to a range of rows in a table that fall within a particular window.
 
 The default I/O manager has support for loading a partitioned upstream asset for a downstream asset with matching partitions out of the box (see the section below for loading multiple partitions). The <PyObject section="io-managers" module="dagster" object="UPathIOManager" /> can be used to handle partitions in custom filesystem-based I/O managers.
@@ -50,6 +46,10 @@ If you're working with time window partitions, you can also use the `asset_parti
 
 #### Handling partition mappings
 
+import ScaffoldAsset from '@site/docs/partials/\_ScaffoldAsset.md';
+
+<ScaffoldAsset />
+
 A single partition of one asset might depend on a range of partitions of an upstream asset.
 
 The default I/O manager has support for loading multiple upstream partitions. In this case, the downstream asset should use `Dict[str, ...]` (or leave it blank) type for the upstream `DagsterType`. Here is an example of loading multiple upstream partitions using the default partition mapping:
@@ -60,7 +60,7 @@ The `upstream_asset` becomes a mapping from partition keys to partition values. 
 
 A <PyObject section="partitions" module="dagster" object="PartitionMapping" /> can be provided to <PyObject section="assets" module="dagster" object="AssetIn" /> to configure the mapped upstream partitions.
 
-When writing a custom I/O manager for loading multiple upstream partitions, the mapped keys can be accessed using <PyObject section="io-managers" module="dagster" object="InputContext" />.
+When writing a custom I/O manager for loading multiple upstream partitions, the mapped keys can be accessed using <PyObject section="io-managers" module="dagster" object="InputContext" method="asset_partition_keys" displayText="InputContext.asset_partition_keys" />, <PyObject section="io-managers" module="dagster" object="InputContext" method="asset_partition_key_range" displayText="InputContext.asset_partition_key_range"/>, or <PyObject section="io-managers" module="dagster" object="InputContext" method="asset_partitions_time_window" displayText="InputContext.asset_partition_keys"/>.
 
 ### Writing a per-input I/O manager
 
