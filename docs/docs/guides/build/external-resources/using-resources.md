@@ -26,26 +26,7 @@ You can then make that resource available anywhere else in your project by defin
 
 You can now use the resource elsewhere in your project:
 
-<<<<<<< HEAD
-<CodeExample path="docs_snippets/docs_snippets/guides/dg/using-resources/1-asset-one.py" title="defs/asset_one.py"
- />
-
-
-Resource binding can happen at any level of the `defs` hierarchy. If you moved `asset_one` in this example to a subdirectory, you could leave the existing `resources.py` file at `src/resource_docs/defs/resources.py`:
-
-```
-src
-└── resource_docs
-    ├── definitions.py
-    ├── defs
-    │   ├── assets
-    │   │   └── asset_one.py # contains def asset_one():
-    │   └── resources.py # contains AResource()
-    └── resources.py # contains class AResource
-```
-=======
 <CodeExample path="docs_snippets/docs_snippets/guides/dg/using-resources/1-asset-one.py" title="src/my_project/defs/assets.py" />
->>>>>>> dgify-docs-and-examples
 
 ## Scaffolding resources
 
