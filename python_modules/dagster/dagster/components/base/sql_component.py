@@ -9,6 +9,7 @@ from pydantic import BaseModel, Field
 from typing_extensions import TypeVar
 
 from dagster._core.definitions.result import MaterializeResult
+from dagster._core.execution.context.asset_check_execution_context import AssetCheckExecutionContext
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster.components.core.context import ComponentLoadContext
 from dagster.components.lib.executable_component.component import ExecutableComponent
@@ -40,13 +41,16 @@ class SqlComponent(ExecutableComponent, Generic[T], ABC):
 
     def invoke_execute_fn(
         self,
-        context: AssetExecutionContext,
+        context: Union[AssetExecutionContext, AssetCheckExecutionContext],
         component_load_context: ComponentLoadContext,
     ) -> Iterable[MaterializeResult]:
         check.invariant(
             len(self.resource_keys) == 1, "SqlComponent must have exactly one resource key."
         )
-        self.execute(context, getattr(context.resources, next(iter(self.resource_keys))))
+        self.execute(
+            check.inst(context, AssetExecutionContext),
+            getattr(context.resources, next(iter(self.resource_keys))),
+        )
         for asset in self.assets or []:
             yield MaterializeResult(asset_key=asset.key)
 
