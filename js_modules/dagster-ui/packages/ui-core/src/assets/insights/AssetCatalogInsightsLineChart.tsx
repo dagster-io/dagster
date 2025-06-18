@@ -313,6 +313,7 @@ export const AssetCatalogInsightsLineChart = React.memo(
               data={getDataset(metrics, formatDatetime)}
               options={options}
               onClick={onClick}
+              updateMode="none"
             />
           </div>
         </div>
