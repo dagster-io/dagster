@@ -1,12 +1,10 @@
 ---
-title: Using schedules in projects
+title: Using schedules in Dagster projects
 sidebar_position: 250
 description: Using schedules in Dagster dg projects for entities such as assets and jobs.
 ---
 
-import DgComponentsRc from '@site/docs/partials/\_DgComponentsRc.md';
 
-<DgComponentsRc />
 
 :::note Prerequisites
 
