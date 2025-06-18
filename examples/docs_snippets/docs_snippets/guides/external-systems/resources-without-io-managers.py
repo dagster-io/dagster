@@ -1,4 +1,4 @@
-from dagster_duckdb_pandas import DuckDBResource
+from dagster_duckdb import DuckDBResource
 
 import dagster as dg
 

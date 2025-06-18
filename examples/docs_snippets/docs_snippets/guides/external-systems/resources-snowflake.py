@@ -1,4 +1,4 @@
-from dagster_snowflake import SnowflakePandasIOManager
+from dagster_snowflake_pandas import SnowflakePandasIOManager
 
 import dagster as dg
 
