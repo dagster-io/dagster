@@ -87,15 +87,26 @@ def discover_config_file(
 ) -> Optional[Path]:
     current_path = path.absolute()
     while True:
-        dg_toml_path = current_path / "dg.toml"
-        pyproject_toml_path = current_path / "pyproject.toml"
-        if dg_toml_path.exists() and has_dg_file_config(dg_toml_path, predicate):
-            return dg_toml_path
-        elif pyproject_toml_path.exists() and has_dg_file_config(pyproject_toml_path, predicate):
-            return pyproject_toml_path
+        config_file = locate_dg_config_in_folder(current_path, predicate)
+        if config_file:
+            return config_file
         if current_path == current_path.parent:  # root
-            return
+            return None
         current_path = current_path.parent
+
+
+def locate_dg_config_in_folder(
+    path: Path,
+    predicate: Optional[Callable[[Mapping[str, Any]], bool]] = None,
+) -> Optional[Path]:
+    current_path = path.absolute()
+    dg_toml_path = current_path / "dg.toml"
+    pyproject_toml_path = current_path / "pyproject.toml"
+    if dg_toml_path.exists() and has_dg_file_config(dg_toml_path, predicate):
+        return dg_toml_path
+    elif pyproject_toml_path.exists() and has_dg_file_config(pyproject_toml_path, predicate):
+        return pyproject_toml_path
+    return None
 
 
 def get_canonical_defs_module_name(defs_module_name: Optional[str], root_module_name: str) -> str:
