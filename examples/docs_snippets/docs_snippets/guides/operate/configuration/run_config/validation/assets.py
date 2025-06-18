@@ -13,6 +13,6 @@ def greeting(config: MyAssetConfig) -> str:
 
 asset_result = dg.materialize(
     [greeting],
-    run_config=dg.RunConfig({"greeting": MyAssetConfig(non_existent_config_value=1)}),
+    run_config=dg.RunConfig({"greeting": MyAssetConfig(nonexistent_config_value=1)}),
 )
 # end
