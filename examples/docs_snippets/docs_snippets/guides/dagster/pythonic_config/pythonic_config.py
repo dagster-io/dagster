@@ -292,7 +292,9 @@ def execute_with_bad_config() -> None:
 
     asset_result = dg.materialize(
         [greeting],
-        run_config=dg.RunConfig({"greeting": MyAssetConfig(nonexistent_config_value=1)}),  # type: ignore
+        run_config=dg.RunConfig(
+            {"greeting": MyAssetConfig(nonexistent_config_value=1)}
+        ),  # type: ignore
     )
 
     # end_execute_with_bad_config

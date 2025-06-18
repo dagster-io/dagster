@@ -8,7 +8,7 @@ from dagster_snowflake_pandas import SnowflakePandasIOManager
 @dg.definitions
 def resources() -> dg.Definitions:
     return dg.Definitions(
-        resources = {
+        resources={
             "local": {
                 "snowflake_io_manager": SnowflakePandasIOManager(
                     account="abc1234.us-east-1",
@@ -41,8 +41,7 @@ def resources() -> dg.Definitions:
         }
     )
 
+
 deployment_name = os.getenv("DAGSTER_DEPLOYMENT", "local")
 
-defs = dg.Definitions(
-    resources=resources[deployment_name]
-)
+defs = dg.Definitions(resources=resources[deployment_name])

@@ -28,6 +28,7 @@ class HNAPIClient(dg.ConfigurableResource):
         # omitted for brevity
         return []
 
+
 # highlight-start
 class StubHNClient:
     """Hacker News Client that returns fake data."""
@@ -52,13 +53,15 @@ class StubHNClient:
     @property
     def item_field_names(self) -> list:
         return ["id", "type", "title", "by"]
+
+
 # highlight-end
 
 
 @dg.definitions
 def resources() -> dg.Definitions:
     return dg.Definitions(
-        resources = {
+        resources={
             "local": {
                 # highlight-start
                 "hn_client": HNAPIClient(),
@@ -98,8 +101,7 @@ def resources() -> dg.Definitions:
         }
     )
 
+
 deployment_name = os.getenv("DAGSTER_DEPLOYMENT", "local")
 
-defs = dg.Definitions(
-    resources=resources[deployment_name]
-)
+defs = dg.Definitions(resources=resources[deployment_name])

@@ -6,11 +6,12 @@ import dagster as dg
 
 from dagster_snowflake_pandas import SnowflakePandasIOManager
 
+
 # Note that storing passwords in configuration is bad practice. It will be resolved soon.
 @dg.definitions
 def resources() -> dg.Definitions:
     return dg.Definitions(
-        resources = {
+        resources={
             # highlight-start
             "local": {
                 "snowflake_io_manager": SnowflakePandasIOManager(
@@ -36,10 +37,9 @@ def resources() -> dg.Definitions:
         }
     )
 
+
 # highlight-start
 deployment_name = os.getenv("DAGSTER_DEPLOYMENT", "local")
 
-defs = dg.Definitions(
-    resources=resources[deployment_name]
-)
+defs = dg.Definitions(resources=resources[deployment_name])
 # highlight-end

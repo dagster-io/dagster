@@ -20,6 +20,7 @@ def third_asset(context: dg.AssetExecutionContext):
     time.sleep(75)
     context.log.info("third asset executing")
 
+
 # highlight-start
 # limits concurrent asset execution for `my_job` runs to 2, overrides the limit set on the Definitions object
 my_job = dg.define_asset_job(

@@ -10,6 +10,7 @@ import requests
 
 from dagster_snowflake_pandas import SnowflakePandasIOManager
 
+
 # highlight-start
 class HNAPIClient(dg.ConfigurableResource):
     """Hacker News client that fetches live data."""
@@ -29,12 +30,15 @@ class HNAPIClient(dg.ConfigurableResource):
     def item_field_names(self) -> list:
         # omitted for brevity
         return []
+
+
 # highlight-end
+
 
 @dg.definitions
 def resources() -> dg.Definitions:
     return dg.Definitions(
-        resources = {
+        resources={
             "local": {
                 # highlight-start
                 "hn_client": HNAPIClient(),
@@ -74,8 +78,7 @@ def resources() -> dg.Definitions:
         }
     )
 
+
 deployment_name = os.getenv("DAGSTER_DEPLOYMENT", "local")
 
-defs = dg.Definitions(
-    resources=resources[deployment_name]
-)
+defs = dg.Definitions(resources=resources[deployment_name])

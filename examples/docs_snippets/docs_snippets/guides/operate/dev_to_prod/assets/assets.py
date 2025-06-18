@@ -19,8 +19,10 @@ ITEM_FIELD_NAMES = [
     "url",
 ]
 
+
 class ItemsConfig(Config):
     base_item_id: int
+
 
 @asset(
     io_manager_key="snowflake_io_manager",
@@ -40,6 +42,7 @@ def items(config: ItemsConfig) -> pd.DataFrame:
     result = pd.DataFrame(rows, columns=ITEM_FIELD_NAMES).drop_duplicates(subset=["id"])
     result.rename(columns={"by": "user_id"}, inplace=True)
     return result
+
 
 @asset(
     io_manager_key="snowflake_io_manager",

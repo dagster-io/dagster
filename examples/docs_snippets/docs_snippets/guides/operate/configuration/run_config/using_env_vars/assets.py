@@ -13,6 +13,8 @@ def greeting(config: MyAssetConfig) -> str:
 
 asset_result = dg.materialize(
     [greeting],
-    run_config=dg.RunConfig({"greeting": MyAssetConfig(person_name=dg.EnvVar("PERSON_NAME"))}),
+    run_config=dg.RunConfig(
+        {"greeting": MyAssetConfig(person_name=dg.EnvVar("PERSON_NAME"))}
+    ),
 )
 # end

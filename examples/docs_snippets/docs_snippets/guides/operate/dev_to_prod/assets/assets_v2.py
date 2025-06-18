@@ -17,6 +17,7 @@ ITEM_FIELD_NAMES = [
     "url",
 ]
 
+
 class ItemsConfig(Config):
     base_item_id: int
 
@@ -38,7 +39,10 @@ def items(config: ItemsConfig, hn_client) -> pd.DataFrame:
     )
     result.rename(columns={"by": "user_id"}, inplace=True)
     return result
+
+
 # highlight-end
+
 
 @asset(
     io_manager_key="snowflake_io_manager",
