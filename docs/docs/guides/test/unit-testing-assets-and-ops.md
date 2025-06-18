@@ -20,10 +20,6 @@ Before you begin implementing unit tests, note that:
 
 :::
 
-import ScaffoldAsset from '@site/docs/partials/\_ScaffoldAsset.md';
-
-<ScaffoldAsset />
-
 ## Unit test examples
 
 ### Assets and ops without arguments \{#no-arguments}
