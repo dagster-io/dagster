@@ -42,109 +42,133 @@ resource = TableauCloudWorkspace(
 
 @definitions
 def cacheable_asset_defs():
-    tableau_specs = load_tableau_asset_specs(
-        workspace=resource,
-    )
+    try:
+        tableau_specs = load_tableau_asset_specs(
+            workspace=resource,
+        )
 
-    external_asset_specs, materializable_asset_specs = (
-        parse_tableau_external_and_materializable_asset_specs(tableau_specs)
-    )
+        external_asset_specs, materializable_asset_specs = (
+            parse_tableau_external_and_materializable_asset_specs(tableau_specs)
+        )
 
-    resource_key = "tableau"
+        resource_key = "tableau"
 
-    return Definitions(
-        assets=[
-            # We don't pass a list of refreshable IDs - we yield observe results without refreshing Tableau assets.
-            build_tableau_materializable_assets_definition(
-                resource_key=resource_key,
-                specs=materializable_asset_specs,
-            ),
-            *external_asset_specs,
-        ],
-        jobs=[define_asset_job("all_asset_job")],
-        resources={resource_key: resource},
-    )
+        return Definitions(
+            assets=[
+                # We don't pass a list of refreshable IDs - we yield observe results without refreshing Tableau assets.
+                build_tableau_materializable_assets_definition(
+                    resource_key=resource_key,
+                    specs=materializable_asset_specs,
+                ),
+                *external_asset_specs,
+            ],
+            jobs=[define_asset_job("all_asset_job")],
+            resources={resource_key: resource},
+        )
+    finally:
+        # Clearing cache for other tests
+        resource.load_asset_specs.cache_clear()  # pyright: ignore[reportPossiblyUnboundVariable]
 
 
 @definitions
 def cacheable_asset_defs_refreshable_workbooks():
-    tableau_specs = load_tableau_asset_specs(
-        workspace=resource,
-    )
+    try:
+        tableau_specs = load_tableau_asset_specs(
+            workspace=resource,
+        )
 
-    external_asset_specs, materializable_asset_specs = (
-        parse_tableau_external_and_materializable_asset_specs(tableau_specs)
-    )
+        external_asset_specs, materializable_asset_specs = (
+            parse_tableau_external_and_materializable_asset_specs(tableau_specs)
+        )
 
-    resource_key = "tableau"
+        resource_key = "tableau"
 
-    return Definitions(
-        assets=[
-            build_tableau_materializable_assets_definition(
-                resource_key=resource_key,
-                specs=materializable_asset_specs,
-                refreshable_workbook_ids=["b75fc023-a7ca-4115-857b-4342028640d0"],
-            ),
-            *external_asset_specs,
-        ],
-        jobs=[define_asset_job("all_asset_job")],
-        resources={resource_key: resource},
-    )
+        return Definitions(
+            assets=[
+                build_tableau_materializable_assets_definition(
+                    resource_key=resource_key,
+                    specs=materializable_asset_specs,
+                    refreshable_workbook_ids=["b75fc023-a7ca-4115-857b-4342028640d0"],
+                ),
+                *external_asset_specs,
+            ],
+            jobs=[define_asset_job("all_asset_job")],
+            resources={resource_key: resource},
+        )
+    finally:
+        # Clearing cache for other tests
+        resource.load_asset_specs.cache_clear()  # pyright: ignore[reportPossiblyUnboundVariable]
 
 
 @definitions
 def cacheable_asset_defs_refreshable_data_sources():
-    tableau_specs = load_tableau_asset_specs(
-        workspace=resource,
-    )
-
-    external_asset_specs, materializable_asset_specs = (
-        parse_tableau_external_and_materializable_asset_specs(
-            tableau_specs, include_data_sources_with_extracts=True
+    try:
+        tableau_specs = load_tableau_asset_specs(
+            workspace=resource,
         )
-    )
 
-    resource_key = "tableau"
+        external_asset_specs, materializable_asset_specs = (
+            parse_tableau_external_and_materializable_asset_specs(
+                tableau_specs, include_data_sources_with_extracts=True
+            )
+        )
 
-    return Definitions(
-        assets=[
-            build_tableau_materializable_assets_definition(
-                resource_key=resource_key,
-                specs=materializable_asset_specs,
-                refreshable_data_source_ids=["1f5660c7-3b05-5ff0-90ce-4199226956c6"],
-            ),
-            *external_asset_specs,
-        ],
-        jobs=[define_asset_job("all_asset_job")],
-        resources={resource_key: resource},
-    )
+        resource_key = "tableau"
+
+        return Definitions(
+            assets=[
+                build_tableau_materializable_assets_definition(
+                    resource_key=resource_key,
+                    specs=materializable_asset_specs,
+                    refreshable_data_source_ids=["1f5660c7-3b05-5ff0-90ce-4199226956c6"],
+                ),
+                *external_asset_specs,
+            ],
+            jobs=[define_asset_job("all_asset_job")],
+            resources={resource_key: resource},
+        )
+    finally:
+        # Clearing cache for other tests
+        resource.load_asset_specs.cache_clear()  # pyright: ignore[reportPossiblyUnboundVariable]
 
 
 @definitions
 def cacheable_asset_defs_asset_decorator_with_context():
-    @tableau_assets(workspace=resource)
-    def my_tableau_assets(context: AssetExecutionContext, tableau: TableauCloudWorkspace):
-        yield from tableau.refresh_and_poll(context=context)
+    try:
 
-    return Definitions(
-        assets=[my_tableau_assets],
-        jobs=[define_asset_job("all_asset_job")],
-        resources={"tableau": resource},
-    )
+        @tableau_assets(workspace=resource)
+        def my_tableau_assets(context: AssetExecutionContext, tableau: TableauCloudWorkspace):
+            yield from tableau.refresh_and_poll(context=context)
+
+        return Definitions(
+            assets=[my_tableau_assets],
+            jobs=[define_asset_job("all_asset_job")],
+            resources={"tableau": resource},
+        )
+    finally:
+        # Clearing cache for other tests
+        resource.load_asset_specs.cache_clear()  # pyright: ignore[reportPossiblyUnboundVariable]
 
 
 @definitions
 def cacheable_asset_defs_custom_translator():
-    class MyCoolTranslator(DagsterTableauTranslator):
-        def get_asset_spec(self, data: TableauTranslatorData) -> AssetSpec:
-            default_spec = super().get_asset_spec(data)
-            return default_spec.replace_attributes(key=default_spec.key.with_prefix("my_prefix"))
+    try:
 
-    tableau_specs = load_tableau_asset_specs(
-        workspace=resource, dagster_tableau_translator=MyCoolTranslator()
-    )
+        class MyCoolTranslator(DagsterTableauTranslator):
+            def get_asset_spec(self, data: TableauTranslatorData) -> AssetSpec:
+                default_spec = super().get_asset_spec(data)
+                return default_spec.replace_attributes(
+                    key=default_spec.key.with_prefix("my_prefix")
+                )
 
-    return Definitions(assets=[*tableau_specs], jobs=[define_asset_job("all_asset_job")])
+        tableau_specs = load_tableau_asset_specs(
+            workspace=resource, dagster_tableau_translator=MyCoolTranslator()
+        )
+
+        return Definitions(assets=[*tableau_specs], jobs=[define_asset_job("all_asset_job")])
+    finally:
+        # Clearing cache for other tests
+        resource.load_asset_specs.cache_clear()  # pyright: ignore[reportPossiblyUnboundVariable]
 
 
 def test_load_assets_workspace_data_refreshable_workbooks(
