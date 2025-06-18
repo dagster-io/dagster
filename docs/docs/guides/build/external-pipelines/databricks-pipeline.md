@@ -24,7 +24,7 @@ To run the examples, you'll need to:
   ```bash
   uv pip install dagster-databricks
   ```
-- Refer to the [Dagster installation guide](/getting-started/installation) for more info. In Databricks**, you'll need:
+- Refer to the [Dagster installation guide](/getting-started/installation) for more info. In Databricks, you'll need:
   - **A Databricks workspace**. If you don't have this, follow the [Databricks quickstart](https://docs.databricks.com/workflows/jobs/jobs-quickstart.html) to set one up.
   - **The following information about your Databricks workspace**:
 
@@ -35,7 +35,7 @@ To run the examples, you'll need to:
 
     ```shell
     export DATABRICKS_HOST=<your-host-url>
-    export DATABRICKS_TOKEN<your-personal-access-token>
+    export DATABRICKS_TOKEN=<your-personal-access-token>
     ```
 
 ## Step 1: Create an asset computed in Databricks
@@ -50,8 +50,9 @@ import ScaffoldAsset from '@site/docs/partials/\_ScaffoldAsset.md';
 
 In your Dagster project, create a file named `dagster_databricks_pipes.py` and paste in the following code:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/databricks/databricks_asset_client.py" title="src/<project_name>/defs/assets.py
-"/>
+
+<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/databricks/databricks_asset_client.py" title="src/<project_name>/defs/assets.py" />
+
 
 Let's review what's happening in this code:
 
