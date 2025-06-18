@@ -527,7 +527,7 @@ def create_assets_def_from_fn_and_decorator_args(
                     dagster_type=args.dagster_type if args.dagster_type else NoValueSentinel,
                     group_name=args.group_name,
                     code_version=args.code_version,
-                    freshness_policy=args.legacy_freshness_policy,
+                    legacy_freshness_policy=args.legacy_freshness_policy,
                     automation_condition=args.automation_condition,
                     backfill_policy=args.backfill_policy,
                     owners=args.owners,

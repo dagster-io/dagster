@@ -113,7 +113,7 @@ def test_assets(schema_prefix, auto_materialize_policy, monkeypatch):
 )
 @pytest.mark.parametrize("auto_materialize_policy", [None, AutoMaterializePolicy.lazy()])
 def test_assets_with_normalization(
-    schema_prefix, source_asset, freshness_policy, auto_materialize_policy
+    schema_prefix, source_asset, legacy_freshness_policy, auto_materialize_policy
 ):
     ab_resource = airbyte_resource(
         build_init_resource_context(
@@ -136,12 +136,14 @@ def test_assets_with_normalization(
         normalization_tables={destination_tables[1]: bar_normalization_tables},
         asset_key_prefix=["some", "prefix"],
         deps=[AssetKey(source_asset)] if source_asset else None,
-        legacy_freshness_policy=freshness_policy,
+        legacy_freshness_policy=legacy_freshness_policy,
         auto_materialize_policy=auto_materialize_policy,
     )
     ab_assets_name = f"airbyte_sync_{connection_id.replace('-', '_')}"
 
-    assert all(spec.legacy_freshness_policy == freshness_policy for spec in ab_assets[0].specs)
+    assert all(
+        spec.legacy_freshness_policy == legacy_freshness_policy for spec in ab_assets[0].specs
+    )
 
     assert ab_assets[0].keys == {AssetKey(["some", "prefix", t]) for t in destination_tables} | {
         AssetKey(["some", "prefix", t]) for t in bar_normalization_tables

@@ -34,7 +34,8 @@ freshness_policy_scenarios = [
     AssetDaemonScenario(
         id="one_asset_lazy_never_materialized_nothing_dep",
         initial_spec=ScenarioSpec(asset_specs=[AssetSpec("B", deps=["A"])]).with_asset_properties(
-            auto_materialize_policy=AutoMaterializePolicy.lazy(), freshness_policy=freshness_30m
+            auto_materialize_policy=AutoMaterializePolicy.lazy(),
+            legacy_freshness_policy=freshness_30m,
         ),
         execution_fn=lambda state: state.evaluate_tick().assert_requested_runs(run_request("B")),
     ),
@@ -42,7 +43,7 @@ freshness_policy_scenarios = [
         id="one_asset_lazy_with_freshness_policy_never_materialized",
         initial_spec=one_asset.with_asset_properties(
             auto_materialize_policy=AutoMaterializePolicy.lazy(),
-            freshness_policy=LegacyFreshnessPolicy(maximum_lag_minutes=10),
+            legacy_freshness_policy=LegacyFreshnessPolicy(maximum_lag_minutes=10),
         ),
         execution_fn=lambda state: state.evaluate_tick().assert_requested_runs(run_request("A")),
     ),
@@ -50,7 +51,7 @@ freshness_policy_scenarios = [
         id="two_assets_eager_with_freshness_policies",
         initial_spec=two_assets_in_sequence.with_asset_properties(
             auto_materialize_policy=AutoMaterializePolicy.eager(),
-            freshness_policy=LegacyFreshnessPolicy(maximum_lag_minutes=1000),
+            legacy_freshness_policy=LegacyFreshnessPolicy(maximum_lag_minutes=1000),
         ),
         execution_fn=lambda state: state.evaluate_tick()
         .assert_requested_runs(run_request(["A", "B"]))
@@ -62,7 +63,7 @@ freshness_policy_scenarios = [
         id="one_asset_depends_on_two_lazy",
         initial_spec=one_asset_depends_on_two.with_asset_properties(
             auto_materialize_policy=AutoMaterializePolicy.lazy(),
-            freshness_policy=freshness_30m,
+            legacy_freshness_policy=freshness_30m,
         ),
         execution_fn=lambda state: state.with_runs(run_request(["A", "B", "C"]))
         .with_current_time_advanced(minutes=35)
@@ -90,7 +91,7 @@ freshness_policy_scenarios = [
         id="diamond_lazy_basic",
         initial_spec=diamond.with_asset_properties(
             auto_materialize_policy=AutoMaterializePolicy.lazy(),
-            freshness_policy=freshness_30m,
+            legacy_freshness_policy=freshness_30m,
         ),
         execution_fn=lambda state: state.evaluate_tick()
         # at first, nothing materialized, so must materialize everything
@@ -119,7 +120,7 @@ freshness_policy_scenarios = [
         id="diamond_lazy_half_run_stale",
         initial_spec=diamond.with_asset_properties(
             auto_materialize_policy=AutoMaterializePolicy.lazy(),
-            freshness_policy=freshness_30m,
+            legacy_freshness_policy=freshness_30m,
         ),
         execution_fn=lambda state: state.with_runs(run_request(["A", "B"]))
         .with_current_time_advanced(minutes=35)
@@ -131,7 +132,7 @@ freshness_policy_scenarios = [
         id="diamond_lazy_half_run_and_failures",
         initial_spec=diamond.with_asset_properties(
             auto_materialize_policy=AutoMaterializePolicy.lazy(),
-            freshness_policy=freshness_30m,
+            legacy_freshness_policy=freshness_30m,
         ),
         execution_fn=lambda state: state.with_runs(run_request(["A", "B"]))
         .evaluate_tick()
@@ -178,7 +179,7 @@ freshness_policy_scenarios = [
         id="diamond_lazy_root_unselected",
         initial_spec=diamond.with_asset_properties(
             auto_materialize_policy=AutoMaterializePolicy.lazy(),
-            freshness_policy=freshness_30m,
+            legacy_freshness_policy=freshness_30m,
         ).with_asset_properties(keys=["A"], auto_materialize_policy=None),
         execution_fn=lambda state: state.evaluate_tick()
         .assert_requested_runs()
@@ -193,8 +194,8 @@ freshness_policy_scenarios = [
         initial_spec=extended_diamond.with_asset_properties(
             auto_materialize_policy=AutoMaterializePolicy.lazy(),
         )
-        .with_asset_properties(keys=["E"], freshness_policy=freshness_30m)
-        .with_asset_properties(keys=["F"], freshness_policy=freshness_60m),
+        .with_asset_properties(keys=["E"], legacy_freshness_policy=freshness_30m)
+        .with_asset_properties(keys=["F"], legacy_freshness_policy=freshness_60m),
         execution_fn=lambda state: state.with_runs(
             run_request(["A", "C", "E"]), run_request(["B", "D", "F"])
         )
@@ -220,10 +221,10 @@ freshness_policy_scenarios = [
         initial_spec=two_assets_depend_on_one.with_asset_properties(
             auto_materialize_policy=AutoMaterializePolicy.lazy(),
         )
-        .with_asset_properties(keys=["B"], freshness_policy=freshness_30m)
+        .with_asset_properties(keys=["B"], legacy_freshness_policy=freshness_30m)
         .with_asset_properties(
             keys=["C"],
-            freshness_policy=LegacyFreshnessPolicy(
+            legacy_freshness_policy=LegacyFreshnessPolicy(
                 cron_schedule="0 7 * * *", maximum_lag_minutes=7 * 60
             ),
         )
@@ -245,8 +246,8 @@ freshness_policy_scenarios = [
             auto_materialize_policy=AutoMaterializePolicy.lazy(),
         )
         .with_asset_properties(keys=["A"], deps=["source"])
-        .with_asset_properties(keys=["E"], freshness_policy=freshness_30m)
-        .with_asset_properties(keys=["F"], freshness_policy=freshness_60m),
+        .with_asset_properties(keys=["E"], legacy_freshness_policy=freshness_30m)
+        .with_asset_properties(keys=["F"], legacy_freshness_policy=freshness_60m),
         execution_fn=lambda state: state.with_runs(
             run_request(["A", "C", "E"]), run_request(["B", "D", "F"])
         )
@@ -261,7 +262,7 @@ freshness_policy_scenarios = [
         .with_asset_properties(
             "B",
             auto_materialize_policy=AutoMaterializePolicy.lazy(),
-            freshness_policy=freshness_30m,
+            legacy_freshness_policy=freshness_30m,
         )
         .with_current_time(time_partitions_start_str)
         .with_current_time_advanced(days=1),

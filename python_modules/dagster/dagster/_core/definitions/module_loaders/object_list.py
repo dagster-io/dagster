@@ -384,7 +384,7 @@ class DagsterObjectsList:
                 return_list.append(
                     dagster_def.with_attributes_for_all(
                         group_name,
-                        freshness_policy=legacy_freshness_policy,
+                        legacy_freshness_policy=legacy_freshness_policy,
                         auto_materialize_policy=automation_condition.as_auto_materialize_policy()
                         if automation_condition
                         else None,

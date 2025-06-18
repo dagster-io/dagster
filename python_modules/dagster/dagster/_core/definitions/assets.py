@@ -1882,7 +1882,7 @@ def _asset_specs_from_attr_key_params(
                     description=validated_descriptions_by_key.get(key),
                     metadata=validated_metadata_by_key.get(key),
                     tags=validated_tags_by_key.get(key),
-                    freshness_policy=validated_freshness_policies_by_key.get(key),
+                    legacy_freshness_policy=validated_freshness_policies_by_key.get(key),
                     automation_condition=validated_automation_conditions_by_key.get(key),
                     owners=validated_owners_by_key.get(key),
                     group_name=validated_group_names_by_key.get(key),

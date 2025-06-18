@@ -157,7 +157,7 @@ class DagsterDbtTranslator:
             group_name=self.get_group_name(resource_props),
             code_version=self.get_code_version(resource_props),
             automation_condition=self.get_automation_condition(resource_props),
-            freshness_policy=self.get_freshness_policy(resource_props),
+            legacy_freshness_policy=self.get_freshness_policy(resource_props),
             owners=self.get_owners(owners_resource_props),
             tags=self.get_tags(resource_props),
             kinds={"dbt", manifest.get("metadata", {}).get("adapter_type", "dbt")},

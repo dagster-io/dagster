@@ -33,7 +33,9 @@ freshness_with_observable_source_assets = [
     observable_source_asset_def("observable_source"),
     asset_def("asset0"),
     asset_def("asset1", ["observable_source", "asset0"]),
-    asset_def("asset2", ["asset1"], freshness_policy=LegacyFreshnessPolicy(maximum_lag_minutes=30)),
+    asset_def(
+        "asset2", ["asset1"], legacy_freshness_policy=LegacyFreshnessPolicy(maximum_lag_minutes=30)
+    ),
 ]
 
 

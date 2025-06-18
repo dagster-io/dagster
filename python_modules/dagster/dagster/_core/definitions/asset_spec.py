@@ -396,7 +396,7 @@ class AssetSpec(IHasInternalInit, IHaveNew, LegacyNamedTupleMixin):
                 skippable=self.skippable,
                 group_name=self.group_name,
                 code_version=self.code_version,
-                freshness_policy=self.legacy_freshness_policy,
+                legacy_freshness_policy=self.legacy_freshness_policy,
                 automation_condition=self.automation_condition,
                 owners=[*self.owners, *(owners if owners is not ... else [])],
                 tags={**current_tags_without_kinds, **(tags if tags is not ... else {})},

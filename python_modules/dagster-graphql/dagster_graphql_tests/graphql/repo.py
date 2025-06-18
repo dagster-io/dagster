@@ -1832,7 +1832,7 @@ def fresh_diamond_right(fresh_diamond_top):
 
 
 @asset(
-    freshness_policy=LegacyFreshnessPolicy(maximum_lag_minutes=30),
+    legacy_freshness_policy=LegacyFreshnessPolicy(maximum_lag_minutes=30),
     auto_materialize_policy=AutoMaterializePolicy.lazy(),
 )
 def fresh_diamond_bottom(fresh_diamond_left, fresh_diamond_right):

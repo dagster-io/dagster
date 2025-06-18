@@ -42,7 +42,7 @@ class DagsterSlingTranslator:
             group_name=self._resolve_back_compat_method(
                 "get_group_name", self._default_group_name_fn, stream_definition
             ),
-            freshness_policy=self._resolve_back_compat_method(
+            legacy_freshness_policy=self._resolve_back_compat_method(
                 "get_freshness_policy", self._default_freshness_policy_fn, stream_definition
             ),
             auto_materialize_policy=self._resolve_back_compat_method(

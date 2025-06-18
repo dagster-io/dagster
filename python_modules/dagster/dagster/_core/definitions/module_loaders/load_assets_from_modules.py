@@ -5,7 +5,6 @@ from types import ModuleType
 from typing import Optional, Union, cast, get_args
 
 import dagster._check as check
-from dagster._annotations import deprecated_param
 from dagster._core.definitions.asset_checks import has_only_asset_checks
 from dagster._core.definitions.asset_key import (
     CoercibleToAssetKeyPrefix,
@@ -53,11 +52,11 @@ def find_subclasses_in_module(
 AssetLoaderTypes = Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition, AssetSpec]
 
 
-@deprecated_param(param="legacy_freshness_policy", breaking_version="1.12.0")
 def load_assets_from_modules(
     modules: Iterable[ModuleType],
     group_name: Optional[str] = None,
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
+    *,
     legacy_freshness_policy: Optional[LegacyFreshnessPolicy] = None,
     auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
     automation_condition: Optional[AutomationCondition] = None,
@@ -123,7 +122,6 @@ def load_assets_from_modules(
     )
 
 
-@deprecated_param(param="legacy_freshness_policy", breaking_version="1.12.0")
 def load_assets_from_current_module(
     group_name: Optional[str] = None,
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
