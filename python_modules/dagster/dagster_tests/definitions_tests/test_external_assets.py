@@ -267,7 +267,7 @@ def test_how_partitioned_source_assets_are_backwards_compatible() -> None:
 def test_observable_source_asset_decorator() -> None:
     freshness_policy = LegacyFreshnessPolicy(maximum_lag_minutes=30)
 
-    @observable_source_asset(freshness_policy=freshness_policy)
+    @observable_source_asset(legacy_freshness_policy=freshness_policy)
     def an_observable_source_asset() -> DataVersion:
         return DataVersion("foo")
 

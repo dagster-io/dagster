@@ -99,7 +99,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         "group_names_by_key",
         "metadata_by_key",
         "tags_by_key",
-        "freshness_policies_by_key",
+        "legacy_freshness_policies_by_key",
         "auto_materialize_policies_by_key",
         "partition_mappings",
         "descriptions_by_key",
@@ -133,7 +133,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         group_names_by_key: Optional[Mapping[AssetKey, str]] = None,
         metadata_by_key: Optional[Mapping[AssetKey, ArbitraryMetadataMapping]] = None,
         tags_by_key: Optional[Mapping[AssetKey, Mapping[str, str]]] = None,
-        freshness_policies_by_key: Optional[Mapping[AssetKey, LegacyFreshnessPolicy]] = None,
+        legacy_freshness_policies_by_key: Optional[Mapping[AssetKey, LegacyFreshnessPolicy]] = None,
         backfill_policy: Optional[BackfillPolicy] = None,
         # descriptions by key is more accurately understood as _overriding_ the descriptions
         # by key that are in the OutputDefinitions associated with the asset key.
@@ -240,7 +240,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
             check.invariant(group_names_by_key is None)
             check.invariant(metadata_by_key is None)
             check.invariant(tags_by_key is None)
-            check.invariant(freshness_policies_by_key is None)
+            check.invariant(legacy_freshness_policies_by_key is None)
             check.invariant(auto_materialize_policies_by_key is None)
             check.invariant(automation_conditions_by_key is None)
             check.invariant(descriptions_by_key is None)
@@ -283,7 +283,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
                 tags_by_key=tags_by_key,
                 owners_by_key=owners_by_key,
                 group_names_by_key=group_names_by_key,
-                freshness_policies_by_key=freshness_policies_by_key,
+                legacy_freshness_policies_by_key=legacy_freshness_policies_by_key,
                 automation_conditions_by_key=automation_conditions_by_key,
                 metadata_by_key=metadata_by_key,
                 descriptions_by_key=descriptions_by_key,
@@ -1814,7 +1814,7 @@ def _asset_specs_from_attr_key_params(
     group_names_by_key: Optional[Mapping[AssetKey, str]],
     metadata_by_key: Optional[Mapping[AssetKey, ArbitraryMetadataMapping]],
     tags_by_key: Optional[Mapping[AssetKey, Mapping[str, str]]],
-    freshness_policies_by_key: Optional[Mapping[AssetKey, LegacyFreshnessPolicy]],
+    legacy_freshness_policies_by_key: Optional[Mapping[AssetKey, LegacyFreshnessPolicy]],
     automation_conditions_by_key: Optional[Mapping[AssetKey, AutomationCondition]],
     code_versions_by_key: Optional[Mapping[AssetKey, str]],
     descriptions_by_key: Optional[Mapping[AssetKey, str]],
@@ -1841,9 +1841,9 @@ def _asset_specs_from_attr_key_params(
         code_versions_by_key, "code_versions_by_key", key_type=AssetKey, value_type=str
     )
 
-    validated_freshness_policies_by_key = check.opt_mapping_param(
-        freshness_policies_by_key,
-        "freshness_policies_by_key",
+    validated_legacy_freshness_policies_by_key = check.opt_mapping_param(
+        legacy_freshness_policies_by_key,
+        "legacy_freshness_policies_by_key",
         key_type=AssetKey,
         value_type=LegacyFreshnessPolicy,
     )
@@ -1882,7 +1882,7 @@ def _asset_specs_from_attr_key_params(
                     description=validated_descriptions_by_key.get(key),
                     metadata=validated_metadata_by_key.get(key),
                     tags=validated_tags_by_key.get(key),
-                    freshness_policy=validated_freshness_policies_by_key.get(key),
+                    legacy_freshness_policy=validated_legacy_freshness_policies_by_key.get(key),
                     automation_condition=validated_automation_conditions_by_key.get(key),
                     owners=validated_owners_by_key.get(key),
                     group_name=validated_group_names_by_key.get(key),

@@ -654,19 +654,19 @@ class BaseAssetGraph(ABC, Generic[T_AssetNode]):
         ...
 
     @cached_method
-    def get_downstream_freshness_policies(
+    def get_downstream_legacy_freshness_policies(
         self, *, asset_key: AssetKey
     ) -> AbstractSet[LegacyFreshnessPolicy]:
         asset = self.get(asset_key)
         downstream_policies = set().union(
             *(
-                self.get_downstream_freshness_policies(asset_key=child_key)
+                self.get_downstream_legacy_freshness_policies(asset_key=child_key)
                 for child_key in self.get(asset_key).child_keys
                 if child_key != asset_key
             )
         )
-        if asset.partitions_def is None and asset.freshness_policy is not None:
-            downstream_policies.add(asset.freshness_policy)
+        if asset.partitions_def is None and asset.legacy_freshness_policy is not None:
+            downstream_policies.add(asset.legacy_freshness_policy)
 
         return downstream_policies
 

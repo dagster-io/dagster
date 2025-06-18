@@ -182,7 +182,7 @@ def test_retain_group():
 def test_retain_freshness_policy():
     fp = LegacyFreshnessPolicy(maximum_lag_minutes=24.5)
 
-    @asset(freshness_policy=fp)
+    @asset(legacy_freshness_policy=fp)
     def bar():
         pass
 
@@ -995,7 +995,7 @@ def test_from_op_w_key_prefix():
     def foo():
         return 1
 
-    freshness_policy = LegacyFreshnessPolicy(maximum_lag_minutes=60)
+    legacy_freshness_policy = LegacyFreshnessPolicy(maximum_lag_minutes=60)
     description = "This is a description!"
     metadata = {"test_metadata": "This is some metadata"}
 
@@ -1004,7 +1004,7 @@ def test_from_op_w_key_prefix():
         keys_by_input_name={},
         keys_by_output_name={"result": AssetKey(["the", "asset"])},
         key_prefix=["this", "is", "a", "prefix"],
-        freshness_policies_by_output_name={"result": freshness_policy},
+        freshness_policies_by_output_name={"result": legacy_freshness_policy},
         descriptions_by_output_name={"result": description},
         metadata_by_output_name={"result": metadata},
         group_name="abc",
@@ -1024,7 +1024,7 @@ def test_from_op_w_key_prefix():
     ]
 
     assert this_is_a_prefix_the_asset_spec.group_name == "abc"
-    assert this_is_a_prefix_the_asset_spec.legacy_freshness_policy == freshness_policy
+    assert this_is_a_prefix_the_asset_spec.legacy_freshness_policy == legacy_freshness_policy
     assert this_is_a_prefix_the_asset_spec.description == description
     assert this_is_a_prefix_the_asset_spec.metadata == metadata
 

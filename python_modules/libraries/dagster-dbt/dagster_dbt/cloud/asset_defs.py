@@ -421,9 +421,9 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
                     ].get(id),
                     deps=(cacheable_data.internal_asset_deps or {}).get(id),
                     metadata=(cacheable_data.metadata_by_output_name or {}).get(id),
-                    freshness_policy=(cacheable_data.freshness_policies_by_output_name or {}).get(
-                        id
-                    ),
+                    legacy_freshness_policy=(
+                        cacheable_data.freshness_policies_by_output_name or {}
+                    ).get(id),
                     auto_materialize_policy=(
                         cacheable_data.auto_materialize_policies_by_output_name or {}
                     ).get(id),

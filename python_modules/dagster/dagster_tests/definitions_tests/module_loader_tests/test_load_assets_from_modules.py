@@ -252,7 +252,7 @@ def test_load_assets_with_freshness_policy():
     check_freshness_policy(assets, LegacyFreshnessPolicy(maximum_lag_minutes=50))
 
     assets = load_assets_from_package_module(
-        asset_package, freshness_policy=LegacyFreshnessPolicy(maximum_lag_minutes=50)
+        asset_package, legacy_freshness_policy=LegacyFreshnessPolicy(maximum_lag_minutes=50)
     )
     check_freshness_policy(assets, LegacyFreshnessPolicy(maximum_lag_minutes=50))
 

@@ -1179,7 +1179,9 @@ def test_graph_multi_asset_decorator(automation_condition_arg):
     @graph_multi_asset(
         outs={
             "first_asset": AssetOut(code_version="abc", **automation_condition_arg),
-            "second_asset": AssetOut(freshness_policy=LegacyFreshnessPolicy(maximum_lag_minutes=5)),
+            "second_asset": AssetOut(
+                legacy_freshness_policy=LegacyFreshnessPolicy(maximum_lag_minutes=5)
+            ),
         },
         group_name="grp",
         resource_defs={"foo": foo_resource},

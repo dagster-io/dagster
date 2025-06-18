@@ -539,7 +539,7 @@ class CachingDataTimeResolver:
         evaluation_time: datetime.datetime,
     ) -> Optional[FreshnessMinutes]:
         asset = self.asset_graph.get(asset_key)
-        if asset.freshness_policy is None:
+        if asset.legacy_freshness_policy is None:
             raise DagsterInvariantViolationError(
                 "Cannot calculate minutes late for asset without a FreshnessPolicy"
             )
@@ -549,7 +549,7 @@ class CachingDataTimeResolver:
         else:
             current_data_time = self.get_current_data_time(asset_key, current_time=evaluation_time)
 
-        return asset.freshness_policy.minutes_overdue(
+        return asset.legacy_freshness_policy.minutes_overdue(
             data_time=current_data_time,
             evaluation_time=evaluation_time,
         )
