@@ -130,6 +130,7 @@ EXCLUDED_FILES = {
     f"{snippets_folder}/tutorial/connecting/connecting_with_config.py",
     f"{snippets_folder}/tutorial/connecting/connecting_with_envvar.py",
     f"{snippets_folder}/tutorial/scheduling/with_schedule/with_schedule.py",
+    f"{snippets_folder}/guides/dagster/dagster_pipes/databricks/resources.py",
 }
 EXCLUDED_DIRS = {
     # integrations are excluded because they have external dependencies that are easier to manage in
