@@ -269,7 +269,6 @@ def execute_with_bad_config() -> None:
     def print_greeting(config: MyOpConfig):
         print(f"hello {config.person_name}")  # noqa: T201
 
-
     class MyAssetConfig(dg.Config):
         person_name: str
 
