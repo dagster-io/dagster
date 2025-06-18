@@ -1,3 +1,4 @@
+# start_use_minimal_resource_in_asset
 import requests
 
 import dagster as dg
@@ -25,6 +26,10 @@ def sfo_sunrise(context: dg.AssetExecutionContext, sun_resource: SunResource) ->
     context.log.info(f"Sunrise in San Francisco is at {sunrise}.")
 
 
+# end_use_minimal_resource_in_asset
+
+
+# start_use_minimal_resource_in_asset_defs
 # highlight-start
 # Include the resource in the Definitions object
 @dg.definitions
@@ -33,3 +38,5 @@ def resources():
 
 
 # highlight-end
+
+# end_use_minimal_resource_in_asset_defs

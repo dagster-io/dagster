@@ -119,6 +119,9 @@ def new_resources_configurable_defs() -> "dg.Definitions":
     def data_from_service(my_conn: MyConnectionResource) -> dict[str, Any]:
         return my_conn.request("/fetch_data").json()
 
+    # end_new_resources_configurable_defs
+
+    # start_new_resources_configurable_defs_defs
     @dg.definitions
     def resources():
         return dg.Definitions(
@@ -127,7 +130,7 @@ def new_resources_configurable_defs() -> "dg.Definitions":
             },
         )
 
-    # end_new_resources_configurable_defs
+    # end_new_resources_configurable_defs_defs
 
     return dg.Definitions(
         assets=[data_from_service],
@@ -161,6 +164,9 @@ def new_resources_configurable_defs_ops() -> "dg.Definitions":
     def update_service_job():
         update_service()
 
+    # end_new_resources_configurable_defs_ops
+
+    # start_new_resources_configurable_defs_ops_defs
     @dg.definitions
     def resources():
         return dg.Definitions(
@@ -169,7 +175,7 @@ def new_resources_configurable_defs_ops() -> "dg.Definitions":
             },
         )
 
-    # end_new_resources_configurable_defs_ops
+    # end_new_resources_configurable_defs_ops_defs
 
 
 def new_resource_runtime() -> "dg.Definitions":
@@ -185,13 +191,16 @@ def new_resource_runtime() -> "dg.Definitions":
     def data_from_database(db_conn: DatabaseResource):
         return db_conn.read()
 
+    # end_new_resource_runtime
+
+    # start_new_resource_runtime_defs
     @dg.definitions
     def resources():
         return dg.Definitions(
             resources={"db_conn": DatabaseResource.configure_at_launch()},
         )
 
-    # end_new_resource_runtime
+    # end_new_resource_runtime_defs
 
     # start_new_resource_runtime_launch
     import dagster as dg
@@ -363,13 +372,16 @@ def raw_github_resource() -> None:
     def public_github_repos(github: dg.ResourceParam[GitHub]):
         return github.organization("dagster-io").repositories()
 
+    # end_raw_github_resource
+
+    # start_raw_github_resource_defs
     @dg.definitions
     def resources():
         return dg.Definitions(
             resources={"github": GitHub(...)},
         )
 
-    # end_raw_github_resource
+    # end_raw_github_resource_defs
 
 
 from contextlib import AbstractContextManager

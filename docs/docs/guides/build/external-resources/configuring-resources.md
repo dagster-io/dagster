@@ -36,6 +36,8 @@ You can use the `configure_at_launch()` method to defer the construction of a co
 
 <CodeExample path="docs_snippets/docs_snippets/concepts/resources/pythonic_resources.py" startAfter="start_new_resource_runtime" endBefore="end_new_resource_runtime" dedent="4" title="src/<project_name>/defs/assets.py" />
 
+<CodeExample path="docs_snippets/docs_snippets/concepts/resources/pythonic_resources.py" startAfter="start_new_resource_runtime_defs" endBefore="end_new_resource_runtime_defs" dedent="4" title="src/<project_name>/defs/resources.py" />
+
 ### Providing resource launch time configuration in Python code
 
 Then, configuration for the resource can be provided at launch time in the Launchpad or in Python code using the `config` parameter of the <PyObject section="schedules-sensors" module="dagster" object="RunRequest" />:

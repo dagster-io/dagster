@@ -1,3 +1,4 @@
+# start_use_configurable_resource_in_asset
 import requests
 
 import dagster as dg
@@ -31,6 +32,10 @@ def sfo_sunrise(context: dg.AssetExecutionContext, sun_resource: SunResource) ->
     context.log.info(f"Sunrise in San Francisco is at {sunrise}.")
 
 
+# end_use_configurable_resource_in_asset
+
+
+# start_use_configurable_resource_in_asset_defs
 @dg.definitions
 def resources():
     return dg.Definitions(
@@ -45,3 +50,6 @@ def resources():
         },
         # highlight-end
     )
+
+
+# end_use_configurable_resource_in_asset_defs

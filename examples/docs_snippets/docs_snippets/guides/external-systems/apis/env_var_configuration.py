@@ -1,3 +1,4 @@
+# start_env_var_configuration
 import requests
 
 import dagster as dg
@@ -27,7 +28,10 @@ def home_sunrise(context: dg.AssetExecutionContext, sun_resource: SunResource) -
 
 # highlight-end
 
+# end_env_var_configuration
 
+
+# start_env_var_configuration_defs
 @dg.definitions
 def resources():
     return dg.Definitions(
@@ -42,3 +46,6 @@ def resources():
         },
         # highlight-end
     )
+
+
+# end_env_var_configuration_defs

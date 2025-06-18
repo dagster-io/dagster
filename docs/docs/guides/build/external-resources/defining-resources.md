@@ -48,4 +48,6 @@ You can define methods on the resource class which depend on config values.
 
 <CodeExample path="docs_snippets/docs_snippets/concepts/resources/pythonic_resources.py" startAfter="start_new_resources_configurable_defs_ops" endBefore="end_new_resources_configurable_defs_ops" dedent="4" title="src/<project_name>/defs/assets.py" />
 
+<CodeExample path="docs_snippets/docs_snippets/concepts/resources/pythonic_resources.py" startAfter="start_new_resources_configurable_defs_ops_defs" endBefore="end_new_resources_configurable_defs_ops_defs" dedent="4" title="src/<project_name>/defs/resources.py" />
+
 There are many supported config types that can be used when defining resources. Refer to the [advanced config types documentation](/guides/operate/configuration/advanced-config-types) for a more comprehensive overview of the available config types.
