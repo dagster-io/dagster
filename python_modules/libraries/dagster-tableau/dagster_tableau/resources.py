@@ -21,7 +21,7 @@ from dagster import (
     _check as check,
     get_dagster_logger,
 )
-from dagster._annotations import beta, superseded
+from dagster._annotations import beta, beta_param, superseded
 from dagster._core.definitions.definitions_load_context import StateBackedDefinitionsLoader
 from dagster._record import record
 from dagster._utils.cached_method import cached_method
@@ -641,6 +641,7 @@ class BaseTableauWorkspace(ConfigurableResource):
 
 
 @beta
+@beta_param(param="workbook_selector_fn")
 def load_tableau_asset_specs(
     workspace: BaseTableauWorkspace,
     dagster_tableau_translator: Optional[DagsterTableauTranslator] = None,
