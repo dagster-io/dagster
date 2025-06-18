@@ -113,6 +113,10 @@ class RemoteAssetNode(BaseAssetNode, ABC):
         return self.resolve_to_singular_repo_scoped_node().asset_node_snap.legacy_freshness_policy
 
     @property
+    def freshness_policy(self) -> Optional[InternalFreshnessPolicy]:
+        return self.resolve_to_singular_repo_scoped_node().asset_node_snap.freshness_policy
+
+    @property
     def code_version(self) -> Optional[str]:
         # It is currently not possible to access the code version for an observation definition if a
         # materialization definition also exists. This needs to be fixed.
@@ -326,10 +330,6 @@ class RemoteWorkspaceAssetNode(RemoteAssetNode):
     @property
     def backfill_policy(self) -> Optional[BackfillPolicy]:
         return self._materializable_node_snap.backfill_policy if self.is_materializable else None
-
-    @property
-    def internal_freshness_policy(self) -> Optional[InternalFreshnessPolicy]:
-        return InternalFreshnessPolicy.from_asset_spec_metadata(self.metadata)
 
     ##### REMOTE-SPECIFIC INTERFACE
     @cached_method
