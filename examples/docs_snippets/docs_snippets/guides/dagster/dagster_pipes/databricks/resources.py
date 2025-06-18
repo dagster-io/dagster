@@ -1,11 +1,9 @@
 import os
 
-
 from dagster_databricks import PipesDatabricksClient
-from databricks.sdk import WorkspaceClient
-
 
 import dagster as dg
+from databricks.sdk import WorkspaceClient
 
 pipes_databricks_resource = PipesDatabricksClient(
     client=WorkspaceClient(
