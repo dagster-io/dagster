@@ -216,7 +216,7 @@ def union_schema_config() -> None:
 
 def metadata_config() -> None:
     #  start_metadata_config
-    from dagster import Config
+    import dagster as dg
     from pydantic import Field
 
     class MyMetadataConfig(dg.Config):
@@ -260,7 +260,7 @@ def optional_config() -> None:
 
 
 def execute_with_bad_config() -> None:
-    from dagster import op, job, materialize, Config, RunConfig
+    import dagster as dg
 
     class MyOpConfig(dg.Config):
         person_name: str
@@ -269,7 +269,6 @@ def execute_with_bad_config() -> None:
     def print_greeting(config: MyOpConfig):
         print(f"hello {config.person_name}")  # noqa: T201
 
-    from dagster import asset, Config
 
     class MyAssetConfig(dg.Config):
         person_name: str

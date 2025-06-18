@@ -1,9 +1,7 @@
 import pandas as pd
-
 import requests
 
 from dagster import Config, asset
-
 
 ITEM_FIELD_NAMES = [
     "id",

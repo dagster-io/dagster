@@ -1,10 +1,10 @@
 # highlight-start
 import os
-# highlight-end
-
-import dagster as dg
 
 from dagster_snowflake_pandas import SnowflakePandasIOManager
+
+# highlight-end
+import dagster as dg
 
 
 # Note that storing passwords in configuration is bad practice. It will be resolved soon.

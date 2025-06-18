@@ -1,12 +1,10 @@
+import os
 from typing import Any, Optional
 
-import os
+import requests
+from dagster_snowflake_pandas import SnowflakePandasIOManager
 
 import dagster as dg
-
-import requests
-
-from dagster_snowflake_pandas import SnowflakePandasIOManager
 
 
 class HNAPIClient(dg.ConfigurableResource):

@@ -2,7 +2,6 @@ import pandas as pd
 
 from dagster import Config, asset
 
-
 ITEM_FIELD_NAMES = [
     "id",
     "parent",

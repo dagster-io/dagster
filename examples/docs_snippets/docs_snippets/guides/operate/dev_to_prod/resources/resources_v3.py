@@ -1,8 +1,8 @@
 import os
 
-import dagster as dg
-
 from dagster_snowflake_pandas import SnowflakePandasIOManager
+
+import dagster as dg
 
 
 @dg.definitions

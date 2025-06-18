@@ -1,14 +1,12 @@
 # highlight-start
-from typing import Any, Optional
 # highlight-end
-
 import os
-
-import dagster as dg
+from typing import Any, Optional
 
 import requests
-
 from dagster_snowflake_pandas import SnowflakePandasIOManager
+
+import dagster as dg
 
 
 # highlight-start
