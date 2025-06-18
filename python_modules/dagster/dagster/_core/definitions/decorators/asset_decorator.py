@@ -133,8 +133,8 @@ def _validate_hidden_non_argument_dep_param(
     additional_warn_text="use `automation_condition` instead.",
 )
 @hidden_param(
-    param="freshness_policy",
-    breaking_version="1.10.0",
+    param="legacy_freshness_policy",
+    breaking_version="1.12.0",
     additional_warn_text="use freshness checks instead.",
 )
 @hidden_param(
@@ -336,7 +336,7 @@ def asset(
         op_tags=op_tags,
         group_name=group_name,
         output_required=output_required,
-        freshness_policy=kwargs.get("freshness_policy"),
+        legacy_freshness_policy=kwargs.get("legacy_freshness_policy"),
         automation_condition=resolve_automation_condition(
             automation_condition, kwargs.get("auto_materialize_policy")
         ),
@@ -412,7 +412,7 @@ class AssetDecoratorArgs(NamedTuple):
     op_tags: Optional[Mapping[str, Any]]
     group_name: Optional[str]
     output_required: bool
-    freshness_policy: Optional[LegacyFreshnessPolicy]
+    legacy_freshness_policy: Optional[LegacyFreshnessPolicy]
     automation_condition: Optional[AutomationCondition]
     backfill_policy: Optional[BackfillPolicy]
     retry_policy: Optional[RetryPolicy]
@@ -527,7 +527,7 @@ def create_assets_def_from_fn_and_decorator_args(
                     dagster_type=args.dagster_type if args.dagster_type else NoValueSentinel,
                     group_name=args.group_name,
                     code_version=args.code_version,
-                    freshness_policy=args.freshness_policy,
+                    freshness_policy=args.legacy_freshness_policy,
                     automation_condition=args.automation_condition,
                     backfill_policy=args.backfill_policy,
                     owners=args.owners,
@@ -774,7 +774,7 @@ def graph_asset(
     tags: Optional[Mapping[str, str]] = ...,
     owners: Optional[Sequence[str]] = None,
     kinds: Optional[AbstractSet[str]] = None,
-    freshness_policy: Optional[LegacyFreshnessPolicy] = ...,
+    legacy_freshness_policy: Optional[LegacyFreshnessPolicy] = ...,
     auto_materialize_policy: Optional[AutoMaterializePolicy] = ...,
     automation_condition: Optional[AutomationCondition] = ...,
     backfill_policy: Optional[BackfillPolicy] = ...,
@@ -786,8 +786,8 @@ def graph_asset(
 
 
 @hidden_param(
-    param="freshness_policy",
-    breaking_version="1.10.0",
+    param="legacy_freshness_policy",
+    breaking_version="1.12.0",
     additional_warn_text="use freshness checks instead",
 )
 @hidden_param(
@@ -903,7 +903,7 @@ def graph_asset(
             metadata=metadata,
             tags=tags,
             owners=owners,
-            freshness_policy=kwargs.get("freshness_policy"),
+            legacy_freshness_policy=kwargs.get("legacy_freshness_policy"),
             automation_condition=resolve_automation_condition(
                 automation_condition, kwargs.get("auto_materialize_policy")
             ),
@@ -928,7 +928,7 @@ def graph_asset(
             metadata=metadata,
             tags=tags,
             owners=owners,
-            freshness_policy=kwargs.get("freshness_policy"),
+            legacy_freshness_policy=kwargs.get("legacy_freshness_policy"),
             automation_condition=resolve_automation_condition(
                 automation_condition, kwargs.get("auto_materialize_policy")
             ),
@@ -955,7 +955,7 @@ def graph_asset_no_defaults(
     metadata: Optional[RawMetadataMapping],
     tags: Optional[Mapping[str, str]],
     owners: Optional[Sequence[str]],
-    freshness_policy: Optional[LegacyFreshnessPolicy],
+    legacy_freshness_policy: Optional[LegacyFreshnessPolicy],
     automation_condition: Optional[AutomationCondition],
     backfill_policy: Optional[BackfillPolicy],
     resource_defs: Optional[Mapping[str, ResourceDefinition]],
@@ -1017,7 +1017,7 @@ def graph_asset_no_defaults(
         metadata_by_output_name={"result": metadata} if metadata else None,
         tags_by_output_name={"result": tags_with_kinds} if tags_with_kinds else None,
         freshness_policies_by_output_name=(
-            {"result": freshness_policy} if freshness_policy else None
+            {"result": legacy_freshness_policy} if legacy_freshness_policy else None
         ),
         automation_conditions_by_output_name=(
             {"result": automation_condition} if automation_condition else None
@@ -1121,9 +1121,9 @@ def graph_multi_asset(
 
         # source freshness policies from the AssetOuts (if any)
         freshness_policies_by_output_name = {
-            output_name: out.freshness_policy
+            output_name: out.legacy_freshness_policy
             for output_name, out in outs.items()
-            if isinstance(out, AssetOut) and out.freshness_policy is not None
+            if isinstance(out, AssetOut) and out.legacy_freshness_policy is not None
         }
 
         # source auto materialize policies from the AssetOuts (if any)

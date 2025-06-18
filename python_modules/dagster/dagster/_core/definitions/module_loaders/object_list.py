@@ -349,7 +349,7 @@ class DagsterObjectsList:
         key_prefix: Optional[CoercibleToAssetKeyPrefix],
         source_key_prefix: Optional[CoercibleToAssetKeyPrefix],
         group_name: Optional[str],
-        freshness_policy: Optional[LegacyFreshnessPolicy],
+        legacy_freshness_policy: Optional[LegacyFreshnessPolicy],
         automation_condition: Optional[AutomationCondition],
         backfill_policy: Optional[BackfillPolicy],
     ) -> "DagsterObjectsList":
@@ -365,7 +365,7 @@ class DagsterObjectsList:
                 new_asset = dagster_def.map_asset_specs(
                     _spec_mapper_disallow_group_override(group_name, automation_condition)
                 ).with_attributes(
-                    backfill_policy=backfill_policy, freshness_policy=freshness_policy
+                    backfill_policy=backfill_policy, legacy_freshness_policy=legacy_freshness_policy
                 )
                 return_list.append(
                     new_asset.coerce_to_checks_def()
@@ -384,7 +384,7 @@ class DagsterObjectsList:
                 return_list.append(
                     dagster_def.with_attributes_for_all(
                         group_name,
-                        freshness_policy=freshness_policy,
+                        freshness_policy=legacy_freshness_policy,
                         auto_materialize_policy=automation_condition.as_auto_materialize_policy()
                         if automation_condition
                         else None,

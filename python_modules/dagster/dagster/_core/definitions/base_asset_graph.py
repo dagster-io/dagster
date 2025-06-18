@@ -152,7 +152,7 @@ class BaseAssetNode(BaseEntityNode[AssetKey]):
 
     @property
     @abstractmethod
-    def freshness_policy(self) -> Optional[LegacyFreshnessPolicy]: ...
+    def legacy_freshness_policy(self) -> Optional[LegacyFreshnessPolicy]: ...
 
     @property
     @abstractmethod

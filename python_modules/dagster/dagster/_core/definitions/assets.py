@@ -324,7 +324,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
 
             check.invariant(
                 not (
-                    spec.freshness_policy
+                    spec.legacy_freshness_policy
                     and spec.partitions_def is not None
                     and not isinstance(spec.partitions_def, TimeWindowPartitionsDefinition)
                 ),
@@ -1013,11 +1013,11 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         }
 
     @property
-    def freshness_policies_by_key(self) -> Mapping[AssetKey, LegacyFreshnessPolicy]:
+    def legacy_freshness_policies_by_key(self) -> Mapping[AssetKey, LegacyFreshnessPolicy]:
         return {
-            key: spec.freshness_policy
+            key: spec.legacy_freshness_policy
             for key, spec in self._specs_by_key.items()
-            if spec.freshness_policy
+            if spec.legacy_freshness_policy
         }
 
     @property
@@ -1266,7 +1266,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         asset_key_replacements: Mapping[AssetKey, AssetKey] = {},
         group_names_by_key: Mapping[AssetKey, str] = {},
         tags_by_key: Mapping[AssetKey, Mapping[str, str]] = {},
-        freshness_policy: Optional[
+        legacy_freshness_policy: Optional[
             Union[LegacyFreshnessPolicy, Mapping[AssetKey, LegacyFreshnessPolicy]]
         ] = None,
         automation_condition: Optional[
@@ -1303,7 +1303,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
                 new_value=automation_condition, attr_name="automation_condition"
             )
             update_replace_dict_and_conflicts(
-                new_value=freshness_policy, attr_name="freshness_policy"
+                new_value=legacy_freshness_policy, attr_name="legacy_freshness_policy"
             )
             update_replace_dict_and_conflicts(new_value=tags_by_key, attr_name="tags")
             update_replace_dict_and_conflicts(
@@ -1496,7 +1496,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
                 op_tags=None,
                 automation_condition=None,
                 auto_observe_interval_minutes=None,
-                freshness_policy=None,
+                legacy_freshness_policy=None,
                 _required_resource_keys=None,
             )
 

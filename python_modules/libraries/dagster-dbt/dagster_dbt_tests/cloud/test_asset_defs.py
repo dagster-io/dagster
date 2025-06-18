@@ -467,7 +467,7 @@ def test_custom_freshness_policy(dbt_cloud, dbt_cloud_service):
         dbt_assets_definition_cacheable_data
     )
 
-    assert dbt_cloud_assets[0].freshness_policies_by_key == {
+    assert dbt_cloud_assets[0].legacy_freshness_policies_by_key == {
         key: LegacyFreshnessPolicy(maximum_lag_minutes=len(key.path[-1]))
         for key in dbt_cloud_assets[0].keys
     }

@@ -329,7 +329,7 @@ class PrefixOrGroupWrappedCacheableAssetsDefinition(WrappedCacheableAssetsDefini
         return assets_def.with_attributes(
             asset_key_replacements=asset_key_replacements,
             group_names_by_key=group_names_by_key,
-            freshness_policy=self._freshness_policy,
+            legacy_freshness_policy=self._freshness_policy,
             automation_condition=automation_condition,
             backfill_policy=self._backfill_policy,
         )
