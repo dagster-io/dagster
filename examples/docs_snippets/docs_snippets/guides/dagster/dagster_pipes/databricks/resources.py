@@ -1,6 +1,9 @@
 import os
 
-from dagster_databricks import PipesDatabricksClient, WorkspaceClient
+
+from dagster_databricks import PipesDatabricksClient
+from databricks.sdk import WorkspaceClient
+
 
 import dagster as dg
 

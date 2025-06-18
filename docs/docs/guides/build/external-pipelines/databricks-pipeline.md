@@ -89,7 +89,9 @@ The [`dagster-databricks`](/api/libraries/dagster-databricks) library provides a
 
 Add the following to the bottom of `dagster_databricks_pipes.py` to define the resource and a <PyObject section="definitions" module="dagster" object="Definitions" /> object that binds it to the `databricks_asset`:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/databricks/resources.py" title="scr/<project_name>/defs/resources.py"/>
+
+<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/databricks/resources.py" title="src/<project_name>/defs/resources.py"/>
+
 
 ### Step 2: Write a script for execution on Databricks
 
