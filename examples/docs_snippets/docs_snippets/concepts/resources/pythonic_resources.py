@@ -770,18 +770,23 @@ def new_resource_on_schedule() -> None:
             tags={"date": formatted_date},
         )
 
-    defs = dg.Definitions(
-        jobs=[process_data],
-        schedules=[process_data_schedule],
-        resources={"date_formatter": DateFormatter(format="%Y-%m-%d")},
-    )
     # end_new_resource_on_schedule
+
+    # start_new_resource_on_schedule_defs
+    @dg.definitions
+    def resources():
+        return dg.Definitions(
+            resources={"date_formatter": DateFormatter(format="%Y-%m-%d")},
+        )
+
+    # end_new_resource_on_schedule_defs
+
     # start_test_resource_on_schedule
 
-    from dagster import build_schedule_context
+    import dagster as dg
 
     def test_process_data_schedule():
-        context = build_schedule_context(
+        context = dg.build_schedule_context(
             scheduled_execution_time=datetime.datetime(2020, 1, 1)
         )
         run_request = process_data_schedule(
