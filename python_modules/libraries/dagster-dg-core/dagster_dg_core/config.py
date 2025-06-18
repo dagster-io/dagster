@@ -1,5 +1,6 @@
 import functools
 import textwrap
+import warnings
 from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from dataclasses import dataclass, field
@@ -238,6 +239,23 @@ class DgProjectConfig:
 
     @classmethod
     def from_raw(cls, raw: "DgRawProjectConfig") -> Self:
+        if raw.get("autoload_defs"):
+            warnings.warn(
+                "Using autoload_defs in pyproject.toml is deprecated, and will be removed in dagster 1.11.0."
+                " Use a definitions.py file with @definitions and load_project_defs instead:\n"
+                + textwrap.dedent(
+                    """
+                    from pathlib import Path
+
+                    from dagster import definitions, load_from_defs_folder
+
+
+                    @definitions
+                    def defs():
+                        return load_from_defs_folder(project_root=Path(__file__).parent.parent.parent)
+                    """
+                )
+            )
         return cls(
             root_module=raw["root_module"],
             autoload_defs=raw.get("autoload_defs", DgProjectConfig.autoload_defs),
