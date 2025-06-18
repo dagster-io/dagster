@@ -1,5 +1,5 @@
 from pathlib import Path
 
-from dagster import load_project_defs
+from dagster import load_from_defs_folder
 
-defs_obj = load_project_defs(project_root=Path(__file__).parent.parent)
+defs_obj = load_from_defs_folder(project_root=Path(__file__).parent.parent)
