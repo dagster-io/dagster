@@ -18,25 +18,25 @@ In this step, you will:
 
 ## 1. Create a time-based partitioned asset
 
-Dagster natively supports partitioning assets by datetime groups. We want to create an asset that calculates the monthly performance for each sales rep. To create the monthly partition copy the following code below the `missing_dimension_check` asset check.
+Dagster natively supports partitioning assets by datetime groups. We want to create an asset that calculates the monthly performance for each sales rep. To create the monthly partition copy the following code below the `missing_dimension_check` asset check in the `assets.py`.
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial_components/src/etl_tutorial_components/defs/assets.py"
+  path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/src/etl_tutorial/defs/assets.py"
   language="python"
   startAfter="start_monthly_partition"
   endBefore="end_monthly_partition"
-  title="src/etl_tutorial_components/defs/assets.py"
+  title="src/etl_tutorial/defs/assets.py"
 />
 
 Partition data are accessed within an asset by context. We want to create an asset that does this calculation for a given month from the partition
 and deletes any previous value for that month. Copy the following asset under the `monthly_partition` we just created.
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial_components/src/etl_tutorial_components/defs/assets.py"
+  path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/src/etl_tutorial/defs/assets.py"
   language="python"
   startAfter="start_monthly_sales_performance_asset"
   endBefore="end_monthly_sales_performance_asset"
-  title="src/etl_tutorial_components/defs/assets.py"
+  title="src/etl_tutorial/defs/assets.py"
 />
 
 :::info
@@ -50,21 +50,21 @@ Using known defined partitions is a simple way to break up your dataset when you
 1. To create the statically-defined partition for the product category, copy this code beneath the `monthly_sales_performance` asset:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial_components/src/etl_tutorial_components/defs/assets.py"
+  path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/src/etl_tutorial/defs/assets.py"
   language="python"
   startAfter="start_product_category_partition"
   endBefore="end_product_category_partition"
-  title="src/etl_tutorial_components/defs/assets.py"
+  title="src/etl_tutorial/defs/assets.py"
 />
 
 2. Now that the partition has been defined, we can use that in an asset that calculates the product category performance:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial_components/src/etl_tutorial_components/defs/assets.py"
+  path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/src/etl_tutorial/defs/assets.py"
   language="python"
   startAfter="start_product_performance_asset"
   endBefore="end_product_performance_asset"
-  title="src/etl_tutorial_components/defs/assets.py"
+  title="src/etl_tutorial/defs/assets.py"
 />
 
 ## 3. Materialize partitioned assets
@@ -78,6 +78,12 @@ To materialize these assets:
 5. Select the `product_performance` asset, then **Materialize selected**.
 6. Ensure all partitions are selected, then launch a backfill.
 
+## Summary
+
+The `etl_tutorial` module still has the same structure since everything we have added is still in the `assets.py`:
+
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/tree/step-2.txt" />
+
 ## Next steps
 
-Now that we have the main assets in our ETL pipeline, it's time to add [automation to our pipeline](/etl-pipeline-tutorial/data-quality)
+Now that we have the main assets in our ETL pipeline, it's time to add [automation your pipeline](/etl-pipeline-tutorial/automate-your-pipeline)

@@ -4,14 +4,13 @@ description: Learn how to build an ETL pipeline with Dagster
 last_update:
   author: Alex Noonan
 sidebar_class_name: hidden
-sidebar_position: 10
 ---
 
 # Build your first ETL pipeline
 
-In this tutorial, you'll build an ETL pipeline with Dagster that:
+In this tutorial, you'll build a full ETL pipeline with Dagster that:
 
-- Imports sales data into DuckDB using Sling
+- Imports data into DuckDB using Sling
 - Transforms data into reports with dbt
 - Runs scheduled reports automatically
 - Generates one-time reports on demand
@@ -44,13 +43,13 @@ To follow the steps in this guide, you'll need:
 1. Open your terminal and scaffold a new project with `uv`:
 
    ```bash
-   uvx create-dagster project etl_tutorial_components
+   uvx create-dagster project etl_tutorial
    ```
 
 2. Change into that project
 
    ```bash
-   cd etl_tutorial_components
+   cd etl_tutorial
    ```
 
 3. Activate the project virtual environment:
@@ -64,23 +63,16 @@ To follow the steps in this guide, you'll need:
      </TabItem>
    </Tabs>
 
-4. Install the required dependencies:
 
-   ```bash
-   uv pip install dagster-duckdb dagster-dbt dagster-sling dagster-evidence dagster-webserver
-   ```
-
-5. Check the project structure:
-
-   ```bash
-   dg check defs
-   ```
-
-6. To make sure Dagster and its dependencies were installed correctly, navigate to the project root directory and start the Dagster webserver:
+4. To make sure Dagster and its dependencies were installed correctly, start the Dagster webserver:
 
    ```bash
    dg dev
    ```
+
+   In your browser, navigate to [http://127.0.0.1:3000](http://127.0.0.1:3000)
+
+TODO: Screenshot
 
 At this point the project will be empty but we will continue to add to it throughout the tutorial.
 
