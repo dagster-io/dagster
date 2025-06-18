@@ -222,7 +222,6 @@ def defs_from_subdirs(context: ComponentLoadContext) -> Definitions:
     return DefsFolderComponent(
         path=context.path,
         children=find_components_from_context(context),
-        asset_post_processors=None,
     ).build_defs(context)
 
 
