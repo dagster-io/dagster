@@ -8,19 +8,18 @@ from jinja2 import Template
 from pydantic import BaseModel, Field
 from typing_extensions import TypeVar
 
-from dagster import Model
 from dagster._core.definitions.result import MaterializeResult
 from dagster._core.execution.context.asset_check_execution_context import AssetCheckExecutionContext
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster.components.core.context import ComponentLoadContext
 from dagster.components.lib.executable_component.component import ExecutableComponent
 from dagster.components.resolved.core_models import OpSpec
-from dagster.components.resolved.model import Resolver
+from dagster.components.resolved.model import Model, Resolver
 
 T = TypeVar("T")
 
 
-class SqlComponent(ExecutableComponent, Model, Generic[T], ABC):
+class SqlComponent(ExecutableComponent, Model, BaseModel, Generic[T], ABC):
     """Base component which executes templated SQL."""
 
     execution: Optional[OpSpec] = None
@@ -72,7 +71,7 @@ ResolvedSqlTemplate = Annotated[
 ]
 
 
-class TemplatedSqlComponent(SqlComponent[T]):
+class TemplatedSqlComponent(SqlComponent[T], Generic[T]):
     """A component that executes templated SQL from a string or file."""
 
     sql_template: Annotated[
