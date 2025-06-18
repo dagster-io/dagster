@@ -719,13 +719,16 @@ def new_resource_on_sensor() -> None:
 
         context.update_cursor(str(num_users))
 
+    # end_new_resource_on_sensor
+
+    # start_new_resource_on_sensor_defs
     @dg.definitions
     def resources():
         return dg.Definitions(
             resources={"users_api": UsersAPI(url="https://my-api.com/users")},
         )
 
-    # end_new_resource_on_sensor
+    # end_new_resource_on_sensor_defs
 
     # start_test_resource_on_sensor
 

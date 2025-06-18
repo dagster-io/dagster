@@ -40,6 +40,12 @@ To follow the steps in this guide, you'll need:
 
 Sensors are defined with the `@sensor` decorator. The following example includes a `check_for_new_files` function that simulates finding new files. In a real scenario, this function would check an actual system or directory.
 
+:::tip
+
+You can scaffold assets and sensors from the command line with the `dg scaffold` command. For more information, see the [`dg` CLI docs](/api/dg/dg-cli#dg-scaffold).
+
+:::
+
 If the sensor finds new files, it starts a run of `my_job`. If not, it skips the run and logs `No new files found` in the Dagster UI.
 
 <CodeExample path="docs_snippets/docs_snippets/guides/automation/simple-sensor-example.py" language="python" title="src/<project_name>/defs/assets.py" />

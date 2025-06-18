@@ -4,10 +4,6 @@ sidebar_position: 500
 title: Creating sensors that react to run statuses
 ---
 
-import ScaffoldSensor from '@site/docs/partials/\_ScaffoldSensor.md';
-
-<ScaffoldSensor />
-
 If you want to act on the status of a run, Dagster provides a way to create a sensor that reacts to run statuses. You can use <PyObject section="schedules-sensors" module="dagster" object="run_status_sensor" /> with a specified <PyObject section="internals" module="dagster" object="DagsterRunStatus" /> to decorate a function that will run when the given status occurs. This can be used to launch other runs, send alerts to a monitoring service on run failure, or report a run success.
 
 Here is an example of a run status sensor that launches a run of `status_reporting_job` if a run is successful:

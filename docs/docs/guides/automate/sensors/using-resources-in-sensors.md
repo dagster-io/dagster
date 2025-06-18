@@ -22,4 +22,12 @@ Here, a resource is provided which provides access to an external API. The same 
   title="src/<project_name>/defs/assets.py"
 />
 
+<CodeExample
+  path="docs_snippets/docs_snippets/concepts/resources/pythonic_resources.py"
+  startAfter="start_new_resource_on_sensor_defs"
+  endBefore="end_new_resource_on_sensor_defs"
+  dedent="4"
+  title="src/<project_name>/defs/resources.py"
+/>
+
 For more information on resources, refer to the [Resources documentation](/guides/build/external-resources). To see how to test schedules with resources, refer to the section on testing sensors with resources in "[Testing sensors](/guides/automate/sensors/testing-sensors)".
