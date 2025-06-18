@@ -5,10 +5,11 @@ my_project
 ├── components
 │   ├── __init__.py
 │   └── custom_sling_replication_component.py
+├── definitions.py
 └── defs
     ├── __init__.py
     └── my_sling_sync
         ├── defs.yaml
         └── replication.yaml
 
-4 directories, 6 files
+4 directories, 7 files
