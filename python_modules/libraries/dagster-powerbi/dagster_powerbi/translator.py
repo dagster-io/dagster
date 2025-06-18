@@ -150,6 +150,7 @@ class PowerBITagSet(NamespacedTagSet):
 class PowerBIMetadataSet(NamespacedMetadataSet):
     web_url: Optional[UrlMetadataValue] = None
     id: Optional[str] = None
+    name: Optional[str] = None
 
     @classmethod
     def namespace(cls) -> str:
@@ -222,7 +223,12 @@ class DagsterPowerBITranslator:
                 ]
             ),
             deps=report_keys,
-            metadata={**PowerBIMetadataSet(web_url=MetadataValue.url(url) if url else None)},
+            metadata={
+                **PowerBIMetadataSet(
+                    web_url=MetadataValue.url(url) if url else None,
+                    name=data.properties.get("displayName"),
+                )
+            },
             tags={**PowerBITagSet(asset_type="dashboard")},
             kinds={"powerbi", "dashboard"},
         )
@@ -262,7 +268,12 @@ class DagsterPowerBITranslator:
         return AssetSpec(
             key=AssetKey(["report", _clean_asset_name(data.properties["name"])]),
             deps=[dataset_key] if dataset_key else None,
-            metadata={**PowerBIMetadataSet(web_url=MetadataValue.url(url) if url else None)},
+            metadata={
+                **PowerBIMetadataSet(
+                    web_url=MetadataValue.url(url) if url else None,
+                    name=data.properties.get("name"),
+                )
+            },
             tags={**PowerBITagSet(asset_type="report")},
             kinds={"powerbi", "report"},
             owners=[owner] if owner and is_valid_asset_owner(owner) else None,
@@ -320,7 +331,9 @@ class DagsterPowerBITranslator:
             deps=source_keys,
             metadata={
                 **PowerBIMetadataSet(
-                    web_url=MetadataValue.url(url) if url else None, id=data.properties["id"]
+                    web_url=MetadataValue.url(url) if url else None,
+                    id=data.properties["id"],
+                    name=data.properties.get("name"),
                 ),
                 **table_meta,
             },
