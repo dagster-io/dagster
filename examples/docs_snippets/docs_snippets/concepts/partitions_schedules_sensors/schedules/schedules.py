@@ -25,23 +25,27 @@ basic_schedule = dg.ScheduleDefinition(
 
 
 # start_run_config_schedule
-@dg.op(config_schema={"scheduled_date": str})
-def configurable_op(context: dg.OpExecutionContext):
-    context.log.info(context.op_config["scheduled_date"])
+import dagster as dg
 
 
-@dg.job
-def configurable_job():
-    configurable_op()
+class AssetConfig(dg.Config):
+    scheduled_date: str
 
 
-@dg.schedule(job=configurable_job, cron_schedule="0 0 * * *")
+@dg.asset
+def configurable_asset(context: dg.AssetExecutionContext, config: AssetConfig):
+    context.log.info(config.scheduled_date)
+
+
+@dg.schedule(target=configurable_asset, cron_schedule="0 0 * * *")
 def configurable_job_schedule(context: dg.ScheduleEvaluationContext):
     scheduled_date = context.scheduled_execution_time.strftime("%Y-%m-%d")
     return dg.RunRequest(
         run_key=None,
         run_config={
-            "ops": {"configurable_op": {"config": {"scheduled_date": scheduled_date}}}
+            "ops": {
+                "configurable_asset": {"config": {"scheduled_date": scheduled_date}}
+            }
         },
         tags={"date": scheduled_date},
     )
