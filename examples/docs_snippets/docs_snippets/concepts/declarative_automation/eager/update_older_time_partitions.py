@@ -1,5 +1,5 @@
-from dagster import AutomationCondition
+import dagster as dg
 
-condition = AutomationCondition.eager().without(
-    AutomationCondition.in_latest_time_window(),
+condition = dg.AutomationCondition.eager().without(
+    dg.AutomationCondition.in_latest_time_window(),
 )
