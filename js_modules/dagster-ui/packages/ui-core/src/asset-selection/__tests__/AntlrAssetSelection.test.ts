@@ -32,7 +32,16 @@ const TEST_GRAPH: AssetGraphQueryItem[] = [
   },
   {
     name: 'B2',
-    node: buildAssetNode(),
+    node: buildAssetNode({
+      repository: buildRepository({
+        name: '',
+        location: buildRepositoryLocation({name: ''}),
+      }),
+      owners: [],
+      tags: [],
+      groupName: undefined,
+      kinds: [],
+    }),
     inputs: [{dependsOn: [{solid: {name: 'A'}}]}],
     outputs: [{dependedBy: [{solid: {name: 'C'}}]}],
   },
@@ -168,6 +177,26 @@ describe('parseAssetSelectionQuery', () => {
 
     it('should parse code location query', () => {
       assertQueryResult('code_location:"repo@my_location"', ['C']);
+    });
+
+    it('should be able to filter to assets without any code location', () => {
+      assertQueryResult('code_location:""', ['B2']);
+    });
+
+    it('should be able to filter to assets without any tags', () => {
+      assertQueryResult('tag:""', ['B2', 'C']);
+    });
+
+    it('should be able to filter to assets without any owners', () => {
+      assertQueryResult('owner:""', ['B', 'B2', 'C']);
+    });
+
+    it('should be able to filter to assets without any group', () => {
+      assertQueryResult('group:""', ['B2']);
+    });
+
+    it('should be able to filter to assets without any kind', () => {
+      assertQueryResult('kind:""', ['A', 'B2', 'C']);
     });
   });
 });

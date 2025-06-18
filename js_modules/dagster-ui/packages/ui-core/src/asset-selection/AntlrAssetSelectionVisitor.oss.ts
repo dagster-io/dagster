@@ -175,45 +175,65 @@ export class AntlrAssetSelectionVisitor
       value = getValue(ctx.value(1));
     }
     return new Set(
-      [...this.all_assets].filter((i) =>
-        i.node.tags.some((t) => t.key === key && (!value || t.value === value)),
-      ),
+      [...this.all_assets].filter((i) => {
+        if (i.node.tags.length > 0) {
+          return i.node.tags.some((t) => t.key === key && (!value || t.value === value));
+        }
+        return key === '' && !value;
+      }),
     );
   }
 
   visitOwnerAttributeExpr(ctx: OwnerAttributeExprContext) {
     const value: string = getValue(ctx.value());
     return new Set(
-      [...this.all_assets].filter((i) =>
-        i.node.owners.some((o) => {
-          if (o.__typename === 'TeamAssetOwner') {
-            return o.team === value;
-          } else {
-            return o.email === value;
-          }
-        }),
-      ),
+      [...this.all_assets].filter((i) => {
+        if (i.node.owners.length > 0) {
+          return i.node.owners.some((o) => {
+            if (o.__typename === 'TeamAssetOwner') {
+              return o.team === value;
+            } else {
+              return o.email === value;
+            }
+          });
+        }
+        return value === '';
+      }),
     );
   }
 
   visitGroupAttributeExpr(ctx: GroupAttributeExprContext) {
     const value: string = getValue(ctx.value());
-    return new Set([...this.all_assets].filter((i) => i.node.groupName === value));
+    return new Set(
+      [...this.all_assets].filter((i) => {
+        if (i.node.groupName) {
+          return i.node.groupName === value;
+        }
+        return value === '';
+      }),
+    );
   }
 
   visitKindAttributeExpr(ctx: KindAttributeExprContext) {
     const value: string = getValue(ctx.value());
-    return new Set([...this.all_assets].filter((i) => i.node.kinds.some((k) => k === value)));
+    return new Set(
+      [...this.all_assets].filter((i) => {
+        if (i.node.kinds.length > 0) {
+          return i.node.kinds.some((k) => k === value);
+        }
+        return value === '';
+      }),
+    );
   }
 
   visitCodeLocationAttributeExpr(ctx: CodeLocationAttributeExprContext) {
     const value: string = getValue(ctx.value());
     const selection = new Set<AssetGraphQueryItem>();
     for (const asset of this.all_assets) {
-      const location = buildRepoPathForHuman(
-        asset.node.repository.name,
-        asset.node.repository.location.name,
-      );
+      const repository = asset.node.repository;
+      const location = repository.name
+        ? buildRepoPathForHuman(repository.name, repository.location.name)
+        : '';
       if (location === value) {
         selection.add(asset);
       }
