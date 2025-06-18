@@ -1,8 +1,8 @@
 from pathlib import Path
 
-from dagster import definitions, load_project_defs
+from dagster import definitions, load_from_defs_folder
 
 
 @definitions
 def defs():
-    return load_project_defs(project_root=Path(__file__).parent.parent)
+    return load_from_defs_folder(project_root=Path(__file__).parent.parent)

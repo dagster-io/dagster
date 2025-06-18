@@ -93,7 +93,7 @@ def test_components_docs_migrating_definitions(update_snippets: bool) -> None:
                     jobs=[regenerate_analytics_job],
                     schedules=[regenerate_analytics_hourly_schedule],
                 ),
-                dg.load_project_defs(Path(__file__).parent.parent),
+                dg.load_from_defs_folder(project_root=Path(__file__).parent.parent),
             )
         """),
             SNIPPETS_DIR / f"{context.get_next_snip_number()}-definitions-after.py",
@@ -139,7 +139,7 @@ def test_components_docs_migrating_definitions(update_snippets: bool) -> None:
                 from pathlib import Path
                 import dagster as dg
 
-                defs = dg.load_project_defs(Path(__file__).parent.parent)
+                defs = dg.load_from_defs_folder(project_root=Path(__file__).parent.parent)
             """),
             SNIPPETS_DIR / f"{context.get_next_snip_number()}-definitions-after-all.py",
         )

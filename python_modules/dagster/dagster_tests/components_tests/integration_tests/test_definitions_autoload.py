@@ -2,7 +2,7 @@ import importlib
 from pathlib import Path
 
 import pytest
-from dagster import AssetKey, Definitions, load_defs, load_project_defs
+from dagster import AssetKey, Definitions, load_defs, load_from_defs_folder
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._utils.env import environ
 from dagster.components.core.context import ComponentLoadContext
@@ -197,7 +197,7 @@ def test_autoload_definitions_new_flag(
     terminate_autoloading_on_keyword_files: bool, expected_keys: set[AssetKey]
 ) -> None:
     if not terminate_autoloading_on_keyword_files:
-        defs = load_project_defs(
+        defs = load_from_defs_folder(
             project_root=Path(__file__).parent
             / "integration_test_defs"
             / "definitions"

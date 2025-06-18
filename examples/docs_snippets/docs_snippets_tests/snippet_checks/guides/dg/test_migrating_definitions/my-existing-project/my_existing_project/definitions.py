@@ -17,5 +17,5 @@ defs = dg.Definitions.merge(
         jobs=[sync_tables_job, regenerate_analytics_job],
         schedules=[sync_tables_daily_schedule, regenerate_analytics_hourly_schedule],
     ),
-    dg.components.load_project_defs(project_root=Path(__file__).parent.parent),
+    dg.components.load_from_defs_folder(project_root=Path(__file__).parent.parent),
 )

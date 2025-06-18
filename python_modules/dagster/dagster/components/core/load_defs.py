@@ -70,7 +70,7 @@ def get_project_root(defs_root: ModuleType) -> Path:
 @public
 @preview(emit_runtime_warning=False)
 @suppress_dagster_warnings
-def load_project_defs(project_root: Path) -> Definitions:
+def load_from_defs_folder(*, project_root: Path) -> Definitions:
     """Constructs a Definitions object, loading all Dagster defs in the project's
     defs folder.
 
@@ -110,7 +110,7 @@ def load_project_defs(project_root: Path) -> Definitions:
 @preview(emit_runtime_warning=False)
 @deprecated(
     breaking_version="1.10.21",
-    additional_warn_text="Use load_project_defs instead.",
+    additional_warn_text="Use load_from_defs_folder instead.",
 )
 @suppress_dagster_warnings
 def load_defs(
