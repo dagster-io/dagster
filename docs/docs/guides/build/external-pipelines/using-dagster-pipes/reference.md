@@ -21,7 +21,7 @@ In the external code, you can access extras via the `PipesContext` object:
 
 The `run` method to the `PipesSubprocessClient` resource also accepts `env` and `extras` , which allow you to specify environment variables and extra arguments when executing the subprocess:
 
-Note: We're using `os.environ` in this example, but Dagster's recommendation is to use <PyObject section="resources" module="dagster" object="EnvVar" /> in production.
+Note: We're using `os.environ` in this example, but we recommend using <PyObject section="resources" module="dagster" object="EnvVar" /> in production.
 
 <CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/subprocess/with_extras_env/dagster_code.py" title="src/external_pipeline/defs/dagster_code.py" />
 

@@ -14,7 +14,7 @@ In this part of the tutorial, you'll create a Dagster asset that, in its executi
 
 :::
 
-## Step 1: Define the Dagster project
+## Step 1: Create a Dagster project
 
 First we will create a new Dagster project:
 
@@ -22,13 +22,15 @@ First we will create a new Dagster project:
 uvx create-dagster project external_pipeline
 ```
 
-Next we can scaffold the assets files:
+## Step 3: Scaffold and define the asset
+
+Next, we can scaffold the asset file:
 
 ```bash
 dg scaffold defs dagster.assets dagster_code.py
 ```
 
-Before we define our asset code we can add a standalone Python script named `external_code.py` within the directory we just scaffolded (`src/external_pipeline/defs/`). The external code looks like the following:
+Before we define our asset code, we will add a standalone Python script named `external_code.py` within the directory we just scaffolded (`src/external_pipeline/defs/`). Later, we will invoke a subprocess that executes this external code from the asset using the `pipes_subprocess_client resource`. The external code looks like the following:
 
 <CodeExample
    path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/subprocess/part_1/external_code.py"
@@ -46,7 +48,7 @@ Next, you’ll define the asset. Copy and paste the following into the file `src
    title="src/external_pipeline/defs/dagster_code.py"
 />
 
-Here’s what we did in this example:
+Here’s what we did in this code:
 
 - Created an asset named `subprocess_asset`
 - Provided <PyObject section="execution" module="dagster" object="AssetExecutionContext" /> as the `context` argument to the asset. This object provides system information such as resources, config, and logging. We’ll come back to this a bit later in this section.
@@ -57,7 +59,7 @@ Here’s what we did in this example:
 
 ### Step 1.2: Invoke the external code from the asset
 
-Then, invoke a subprocess that executes the external code from the asset using the `pipes_subprocess_client` resource:
+Next, invoke a subprocess that executes the external code from the asset using the `pipes_subprocess_client` resource:
 
 <CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/subprocess/part_1/dagster_code.py" startAfter="start_asset_marker" endBefore="end_asset_marker" title="src/external_pipeline/defs/dagster_code.py" />
 
