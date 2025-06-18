@@ -1,7 +1,7 @@
-# highlight-start
-from dagster_cloud.dagster_insights import create_snowflake_insights_asset_and_schedule
-
-# highlight-end
+from dagster_cloud.dagster_insights import (
+    InsightsSnowflakeResource,
+    create_snowflake_insights_asset_and_schedule,
+)
 from dagster_dbt import DbtCliResource, dbt_assets
 from path import Path
 
@@ -19,3 +19,16 @@ def my_asset(context: dg.AssetExecutionContext, dbt: DbtCliResource):
     # highlight-start
     yield from dbt.cli(["build"], context=context).stream().with_insights()
     # highlight-end
+
+
+defs = dg.Definitions(
+    # highlight-start
+    assets=[my_asset, *insights_definitions.assets],
+    schedules=[insights_definitions.schedule],
+    resources={
+        "snowflake": InsightsSnowflakeResource(
+            user=dg.EnvVar("SNOWFLAKE_USER"), password=dg.EnvVar("SNOWFLAKE_PASSWORD")
+        )
+    },
+    # highlight-end
+)

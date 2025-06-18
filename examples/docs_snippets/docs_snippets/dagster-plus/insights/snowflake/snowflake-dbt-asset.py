@@ -7,3 +7,8 @@ import dagster as dg
 @dbt_assets(manifest=Path(__file__).parent / "manifest.json")
 def my_asset(context: dg.AssetExecutionContext, dbt: DbtCliResource):
     yield from dbt.cli(["build"], context=context).stream()
+
+
+defs = dg.Definitions(
+    assets=[my_asset],
+)
