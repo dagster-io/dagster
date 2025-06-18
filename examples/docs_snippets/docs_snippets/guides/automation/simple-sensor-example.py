@@ -40,9 +40,6 @@ def new_file_sensor():
         # highlight-end
 
 
-defs = dg.Definitions(assets=[my_asset], jobs=[my_job], sensors=[new_file_sensor])
-
-
 if __name__ == "__main__":
     new_file_sensor()
     dg.materialize(

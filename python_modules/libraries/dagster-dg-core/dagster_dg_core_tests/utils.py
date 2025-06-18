@@ -267,6 +267,12 @@ def isolated_example_project_foo_bar(
             shutil.move(curr_pkg_root, new_pkg_root)
             Path("foo-bar", "src").rmdir()
 
+            # Adjust definitions.py to match root package layout
+            definitions_py = Path("foo-bar") / "foo_bar" / "definitions.py"
+            definitions_py.write_text(
+                definitions_py.read_text().replace(".parent.parent", ".parent")
+            )
+
             module_parent_dir = Path("foo-bar").resolve()
 
             with modify_toml_as_dict(Path("foo-bar/pyproject.toml")) as toml:

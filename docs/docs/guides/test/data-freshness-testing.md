@@ -49,6 +49,7 @@ The example below defines a freshness check on an asset that fails if the asset'
 <CodeExample
   path="docs_snippets/docs_snippets/guides/data-assets/quality-testing/freshness-checks/materializable-asset-freshness-check.py"
   language="python"
+  title="src/<project_name>/defs/assets.py"
 />
 
 ## External asset freshness \{#external-assets}
@@ -62,6 +63,7 @@ The example below defines a freshness check and adds a schedule to run the check
 <CodeExample
   path="docs_snippets/docs_snippets/guides/data-assets/quality-testing/freshness-checks/external-asset-freshness-check.py"
   language="python"
+  title="src/<project_name>/defs/assets.py"
 />
 
 ### Testing freshness with anomaly detection \{#anomaly-detection}
@@ -75,6 +77,7 @@ Instead of applying policies on an asset-by-asset basis, Dagster+ Pro users can 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/data-assets/quality-testing/freshness-checks/anomaly-detection.py"
   language="python"
+  title="src/<project_name>/defs/assets.py"
 />
 
 :::note

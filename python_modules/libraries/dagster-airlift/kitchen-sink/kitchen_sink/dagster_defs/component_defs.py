@@ -1,5 +1,5 @@
-from dagster import load_defs
+from pathlib import Path
 
-import kitchen_sink.dagster_defs.inner_component_defs as inner_component_defs
+from dagster import load_from_defs_folder
 
-defs = load_defs(defs_root=inner_component_defs)
+defs = load_from_defs_folder(project_root=Path(__file__).parent.parent.parent)
