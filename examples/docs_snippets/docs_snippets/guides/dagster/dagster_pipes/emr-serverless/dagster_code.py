@@ -1,5 +1,3 @@
-# start_asset_marker
-
 from dagster_aws.pipes import PipesEMRServerlessClient
 
 import dagster as dg
@@ -23,20 +21,3 @@ def emr_serverless_asset(
             },
         },
     ).get_results()
-
-
-# end_asset_marker
-
-# start_definitions_marker
-
-import dagster as dg
-
-
-@dg.definitions
-def resources():
-    return dg.Definitions(
-        resources={"pipes_emr_serverless_client": PipesEMRServerlessClient()}
-    )
-
-
-# end_definitions_marker

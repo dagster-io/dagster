@@ -4,10 +4,6 @@ description: "Learn to integrate Dagster Pipes with Databricks to launch externa
 sidebar_position: 50
 ---
 
-import ScaffoldAsset from '@site/docs/partials/\_ScaffoldAsset.md';
-
-<ScaffoldAsset />
-
 This article covers how to use [Dagster Pipes](/guides/build/external-pipelines/) with Dagster's [Databricks integration](/integrations/libraries/databricks) to launch Databricks jobs.
 
 Pipes allows your Databricks jobs to stream logs (including `stdout` and `stderr` of the driver process) and events back to Dagster. This does not require a full Dagster environment on Databricks; instead:
@@ -15,33 +11,32 @@ Pipes allows your Databricks jobs to stream logs (including `stdout` and `stderr
 - The Databricks environment needs to include [`dagster-pipes`](https://pypi.org/project/dagster-pipes), a single-file Python package with no dependencies that can be installed from PyPI or easily vendored, and
 -  Databricks jobs must be launched from Dagster
 
-<details>
-    <summary>Prerequisites</summary>
 
-    - **In the Dagster environment**, you'll need to install the following packages:
+## Prerequisites
+
+To run the examples, you'll need to:
+
+- Create a new Dagster project:
+   ```bash
+   uvx create-dagster project <project_name>
+   ```
+- Install the necessary Python libraries:
+  ```bash
+  uv pip install dagster-databricks
+  ```
+- Refer to the [Dagster installation guide](/getting-started/installation) for more info. In Databricks**, you'll need:
+  - **A Databricks workspace**. If you don't have this, follow the [Databricks quickstart](https://docs.databricks.com/workflows/jobs/jobs-quickstart.html) to set one up.
+  - **The following information about your Databricks workspace**:
+
+    - `host` - The host URL of your Databricks workspace, ex: `https://dbc-xxxxxxx-yyyy.cloud.databricks.com/`
+    - `token` - A personal access token for the Databricks workspace. Refer to the Databricks API authentication documentation for more info about retrieving these values.
+
+    You should set and export the Databricks host and token environment variables in your shell session:
 
     ```shell
-    uv pip install dagster dagster-webserver dagster-databricks
+    export DATABRICKS_HOST=<your-host-url>
+    export DATABRICKS_TOKEN<your-personal-access-token>
     ```
-
-    Refer to the [Dagster installation guide](/getting-started/installation) for more info.
-
-    - **In Databricks**, you'll need:
-
-    - **A Databricks workspace**. If you don't have this, follow the [Databricks quickstart](https://docs.databricks.com/workflows/jobs/jobs-quickstart.html) to set one up.
-    - **The following information about your Databricks workspace**:
-
-        - `host` - The host URL of your Databricks workspace, ex: `https://dbc-xxxxxxx-yyyy.cloud.databricks.com/`
-        - `token` - A personal access token for the Databricks workspace. Refer to the Databricks API authentication documentation for more info about retrieving these values.
-
-        You should set and export the Databricks host and token environment variables in your shell session:
-
-        ```shell
-        export DATABRICKS_HOST=<your-host-url>
-        export DATABRICKS_TOKEN<your-personal-access-token>
-        ```
-
-</details>
 
 ## Step 1: Create an asset computed in Databricks
 
@@ -49,9 +44,14 @@ In this step, you'll create a Dagster asset that, when materialized, opens a Dag
 
 ### Step 1.1: Define the Dagster asset
 
+import ScaffoldAsset from '@site/docs/partials/\_ScaffoldAsset.md';
+
+<ScaffoldAsset />
+
 In your Dagster project, create a file named `dagster_databricks_pipes.py` and paste in the following code:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/databricks/databricks_asset_client.py" startAfter="start_databricks_asset" endBefore="end_databricks_asset" />
+<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/databricks/databricks_asset_client.py" title="src/<project_name>/defs/assets.py
+"/>
 
 Let's review what's happening in this code:
 
@@ -79,15 +79,19 @@ Let's review what's happening in this code:
 - **Returns a <PyObject section="assets" module="dagster" object="MaterializeResult" /> object representing the result of execution**. This is obtained by calling `get_materialize_result` on the `PipesClientCompletedInvocation` object returned by `run` after the Databricks job has finished. **Note**: Execution can take several minutes even for trivial scripts due to Databricks cluster provisioning times.
 {/* TODO replace `PipesClientCompletedInvocation` with <PyObject section="pipes" module="dagster" object="PipesClientCompletedInvocation" /> */}
 
-### Step 1.2: Define the Databricks Pipes client and definitions
+### Step 1.2: Define the Databricks Pipes client and Definitions
+
+import ScaffoldResource from '@site/docs/partials/\_ScaffoldResource.md';
+
+<ScaffoldResource />
 
 The [`dagster-databricks`](/api/libraries/dagster-databricks) library provides a <PyObject section="libraries" module="dagster_databricks" object="PipesDatabricksClient" />, which is a pre-built Dagster resource that allows you to quickly get Pipes working with your Databricks workspace.
 
 Add the following to the bottom of `dagster_databricks_pipes.py` to define the resource and a <PyObject section="definitions" module="dagster" object="Definitions" /> object that binds it to the `databricks_asset`:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/databricks/databricks_asset_client.py" startAfter="start_definitions" endBefore="end_definitions" title="src/<project_name>/defs/resources.py" />
+<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/databricks/resources.py" title="scr/<project_name>/defs/resources.py"/>
 
-## Step 2: Write a script for execution on Databricks
+### Step 2: Write a script for execution on Databricks
 
 The next step is to write the code that will be executed on Databricks. In the Databricks task specification in [Step 1.1](#step-11-define-the-dagster-asset), we referenced a file `dbfs:/my_python_script.py` in the `spark_python_task`:
 

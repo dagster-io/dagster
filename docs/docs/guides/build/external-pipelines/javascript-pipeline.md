@@ -10,33 +10,21 @@ For production pipelines, we recommend using the [`@dagster-io/dagster-pipes` np
 
 :::
 
-import ScaffoldAsset from '@site/docs/partials/\_ScaffoldAsset.md';
-
-<ScaffoldAsset />
-
 This guide covers how to run JavaScript with Dagster using Pipes, however, the same principle will apply to other languages.
 
-<details>
-<summary>Prerequisites</summary>
+## Prerequisites
 
-To follow this guide, you'll need:
+To run the examples, you'll need to:
 
-- Familiarity with [Assets](/guides/build/assets/)
-- A basic understanding of JavaScript and Node.js
-
-To run the examples, you'll need to install:
-
-- [Node.js](https://nodejs.org/en/download/package-manager/)
-- The following Python packages:
-
+- Create a new Dagster project:
    ```bash
-   uv pip install dagster dagster-webserver
+   uvx create-dagster project <project_name>
    ```
-- The following Node packages:
+- Install [Node.js](https://nodejs.org/en/download/package-manager/)
+- Add the following Node packages:
    ```bash
    npm install @tensorflow/tfjs
    ```
-</details>
 
 ## Step 1: Create a script using Tensorflow in JavaScript
 
@@ -48,6 +36,10 @@ Create a file named `tensorflow/main.js` with the following contents:
 
 ## Step 2: Create a Dagster asset that runs the script
 
+import ScaffoldAsset from '@site/docs/partials/\_ScaffoldAsset.md';
+
+<ScaffoldAsset />
+
 In Dagster, create an asset that:
 
 - Uses the `PipesSubprocessClient` resource to run the script with `node`
@@ -57,10 +49,19 @@ In Dagster, create an asset that:
 
 When the asset is materialized, the stdout and stderr will be captured automatically and shown in the asset logs. If the command passed to Pipes returns a successful exit code, Dagster will produce an asset materialization result.
 
-## Step 3: Send and receive data from the script
+## Step 3: Define a Definitions object
+
+import ScaffoldResource from '@site/docs/partials/\_ScaffoldResource.md';
+
+<ScaffoldResource />
+
+To make the resource loadable and accessible, such as the CLI, UI, and Dagster+, you’ll create a function with the <PyObject section="definitions" module="dagster" object="Definitions" decorator />.
+
+<CodeExample path="docs_snippets/docs_snippets/guides/non-python/resources.py" language="python" title="src/<project_name>/defs/resources.py" />
+
+## Step 4: Send and receive data from the script
 
 To send context to your script or emit events back to Dagster, you can use environment variables provided by the `PipesSubprocessClient`.
-
 
 - `DAGSTER_PIPES_CONTEXT` - Input context
 - `DAGSTER_PIPES_MESSAGES` - Output context
@@ -71,7 +72,7 @@ Create a new file with the following helper functions that read the environment 
 
 Both environment variables are base64 encoded, zip compressed JSON objects. Each JSON object contains a path that indicates where to read or write data.
 
-## Step 4: Emit events and report materializations from your external process
+## Step 5: Emit events and report materializations from your external process
 
 Using the utility functions to decode the Dagster Pipes environment variables, you can send additional parameters into the JavaScript process. You can also output more information into the asset materializations.
 
@@ -88,7 +89,7 @@ The metadata format shown above (`{"raw_value": value, "type": type}`) is part o
 
 :::
 
-## Step 5: Update the asset to provide extra parameters
+## Step 6: Update the asset to provide extra parameters
 
 Finally, update your Dagster asset to pass in the model information that's used by the script:
 

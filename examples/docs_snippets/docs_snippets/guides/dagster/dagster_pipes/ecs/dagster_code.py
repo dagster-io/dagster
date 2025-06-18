@@ -15,18 +15,3 @@ def ecs_pipes_asset(
             "count": 1,
         },
     ).get_materialize_result()
-
-
-# end_asset_marker
-
-
-# start_definitions_marker
-import dagster as dg
-
-
-@dg.definitions
-def resources():
-    return dg.Definitions(resources={"pipes_ecs_client": PipesECSClient()})
-
-
-# end_definitions_marker

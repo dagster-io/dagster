@@ -12,10 +12,3 @@ def subprocess_asset(
         dg.file_relative_path(__file__, "external_code.py"),
     ]
     return pipes_subprocess_client.run(command=cmd, context=context).get_results()
-
-
-@dg.definitions
-def resources():
-    return dg.Definitions(
-        resources={"pipes_subprocess_client": dg.PipesSubprocessClient()}
-    )

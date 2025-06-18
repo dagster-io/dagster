@@ -4,36 +4,26 @@ description: "Learn to integrate Dagster Pipes with GCP Dataproc to launch exter
 sidebar_position: 40
 ---
 
-import ScaffoldAsset from '@site/docs/partials/\_ScaffoldAsset.md';
-
-<ScaffoldAsset />
-
 This article covers how to use [Dagster Pipes](/guides/build/external-pipelines/) to [submit jobs](https://cloud.google.com/dataproc/docs/guides/submit-job) to [GCP Dataproc](https://cloud.google.com/dataproc).
 
 The [dagster-gcp](/api/libraries/dagster-gcp) integration library provides the <PyObject section="libraries" module="dagster_gcp" object="pipes.PipesDataprocJobClient" /> resource, which can be used to launch GCP Dataproc jobs from Dagster assets and ops. Dagster can receive events such as logs, asset checks, or asset materializations from jobs launched with this client. The client requires minimal code changes to your Dataproc jobs.
 
+## Prerequisites
 
-<details>
-  <summary>Prerequisites</summary>
+To run the examples, you'll need to:
 
-    - **In the Dagster environment**, you'll need to:
-
-      - Install the following packages:
-
-          ```shell
-          uv pip install dagster dagster-webserver 'dagster-gcp[dataproc]'
-          ```
-
-          Refer to the [Dagster installation guide](/getting-started/installation) for more info.
-
-      - **Configure GCP authentication for applications**. If you don't have this set up already, refer to the [GCP authentication guide](https://cloud.google.com/docs/authentication/gcloud).
-
-    - **In GCP**, you'll need:
-
-      - An existing project with a Dataproc cluster.
-      - Prepared infrastructure such as GCS buckets, IAM roles, and other resources required for your Dataproc job.
-
-</details>
+- Create a new Dagster project:
+   ```bash
+   uvx create-dagster project <project_name>
+   ```
+- Install the necessary Python libraries:
+  ```bash
+  uv pip install 'dagster-gcp[dataproc]'
+  ```
+- Configure GCP authentication for applications. If you don't have this set up already, refer to the [GCP authentication guide](https://cloud.google.com/docs/authentication/gcloud)
+- In GCP, you'll need:
+  - An existing project with a Dataproc cluster.
+  - Prepared infrastructure such as GCS buckets, IAM roles, and other resources required for your Dataproc job.
 
 ## Step 1: Install the dagster-pipes module in your Dataproc environment
 
@@ -61,6 +51,10 @@ The metadata format shown above (`{"raw_value": value, "type": type}`) is part o
 :::
 
 ## Step 3: Create an asset using the PipesDataprocJobClient to launch the job
+
+import ScaffoldAsset from '@site/docs/partials/\_ScaffoldAsset.md';
+
+<ScaffoldAsset />
 
 In the Dagster asset/op code, use the `PipesDataprocJobClient` resource to launch the job:
 

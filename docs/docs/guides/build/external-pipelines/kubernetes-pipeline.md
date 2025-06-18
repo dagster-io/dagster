@@ -10,10 +10,6 @@ This article focuses on using an out-of-the-box Kubernetes resource. For further
 
 :::
 
-import ScaffoldAsset from '@site/docs/partials/\_ScaffoldAsset.md';
-
-<ScaffoldAsset />
-
 This article covers how to use [Dagster Pipes](/guides/build/external-pipelines/) with Dagster's [Kubernetes integration](/integrations/libraries/kubernetes) to launch Kubernetes pods and execute external code.
 
 Pipes allows your code to interact with Dagster outside of a full Dagster environment. Instead, the environment only needs to contain [`dagster-pipes`](https://pypi.org/project/dagster-pipes), a single-file Python package with no dependencies that can be installed from PyPI or easily vendored. `dagster-pipes` handles streaming `stdout`/`stderr` and Dagster events back to the orchestration process.
@@ -24,20 +20,19 @@ You can omit the `dagster-pipes` dependency entirely if you do not wish to use t
 
 :::
 
-<details>
-    <summary>Prerequisites</summary>
+## Prerequisites
 
-    - **In the Dagster environment**, you'll need to install the following packages:
+To run the examples, you'll need to:
 
-    ```shell
-    uv pip install dagster dagster-webserver dagster-k8s
-    ```
-
-    Refer to the [Dagster installation guide](/getting-started/installation) for more info.
-
-    - **A Kubernetes cluster**. This can be an existing cluster, or, if you're working locally, you can use [kind](https://kind.sigs.k8s.io/) or [Docker Desktop](https://docs.docker.com/desktop/kubernetes/).
-
-</details>
+- Create a new Dagster project:
+   ```bash
+   uvx create-dagster project <project_name>
+   ```
+- Install the necessary Python libraries:
+  ```bash
+  uv pip install dagster-k8s
+  ```
+- A Kubernetes cluster. This can be an existing cluster, or, if you're working locally, you can use [kind](https://kind.sigs.k8s.io/) or [Docker Desktop](https://docs.docker.com/desktop/kubernetes/).
 
 ## Step 1: Define the external Kubernetes code container
 
@@ -114,11 +109,13 @@ In this step, you'll create a Dagster asset that, when materialized, opens a Dag
 
 ### Step 2.1: Define the Dagster asset
 
-In your Dagster project, create a file named `dagster_k8s_pipes.py` and paste in the following code:
+import ScaffoldAsset from '@site/docs/partials/\_ScaffoldAsset.md';
+
+<ScaffoldAsset />
+
+In your Dagster project, create a file named `assets.py` and paste in the following code:
 
 ```python
-# dagster_k8s_pipes.py
-
 import dagster as dg
 from dagster_k8s import PipesK8sClient
 
@@ -163,9 +160,13 @@ Depending on your Kubernetes setup, there may be a few additional things you nee
 
 ### Step 2.2: Create Dagster Definitions
 
+import ScaffoldResource from '@site/docs/partials/\_ScaffoldResource.md';
+
+<ScaffoldResource />
+
 Next, you'll add the asset and Kubernetes resource to your project's code location via the <PyObject section="definitions" module="dagster" object="Definitions" /> object. This makes the resource available to [other Dagster definitions in the project](/deployment/code-locations).
 
-Copy and paste the following to the bottom of `dagster_k8s_pipes.py`:
+Copy and paste the following to the bottom of `resources.py`:
 
 ```python
 @dg.definitions
@@ -177,9 +178,9 @@ def resources():
     )
 ```
 
-At this point, `dagster_k8s_pipes.py` should look like the following:
+At this point, the files should look like the following:
 
-```python
+```python title="src/<project_name>/defs/assets.py"
 import dagster as dg
 from dagster_k8s import PipesK8sClient
 
@@ -193,6 +194,11 @@ def k8s_pipes_asset(context: dg.AssetExecutionContext, k8s_pipes_client: PipesK8
             "some_parameter": 1
       }
   ).get_materialize_result()
+```
+
+```python title="src/<project_name>/defs/resources.py"
+import dagster as dg
+from dagster_k8s import PipesK8sClient
 
 
 @dg.definitions

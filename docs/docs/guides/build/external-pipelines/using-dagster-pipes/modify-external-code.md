@@ -10,10 +10,11 @@ This is part two of the [Using Dagster Pipes to run a local subprocess](/guides/
 
 :::
 
-At this point, you should have two files:
+At this point, you should have three files:
 
 - `external_code.py` which is a standalone Python script that you want to orchestrate with Dagster.
-- `dagster_code.py` which includes a Dagster asset and other Dagster definitions.
+- `dagster_code.py` which includes a Dagster asset.
+- `resources.py` which includes the Dagster definitions.
 
 In this section, you'll learn how to modify the standalone Python script to work with [Dagster Pipes](/guides/build/external-pipelines) in order to stream information back to Dagster. To do this, you'll:
 

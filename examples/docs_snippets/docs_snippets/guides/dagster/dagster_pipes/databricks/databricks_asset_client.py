@@ -1,6 +1,3 @@
-# start_databricks_asset
-### dagster_databricks_pipes.py
-
 import os
 import sys
 
@@ -51,23 +48,3 @@ def databricks_asset(
         context=context,
         extras=extras,
     ).get_materialize_result()
-
-
-# end_databricks_asset
-
-# start_definitions
-
-pipes_databricks_resource = PipesDatabricksClient(
-    client=WorkspaceClient(
-        host=os.environ["DATABRICKS_HOST"],
-        token=os.environ["DATABRICKS_TOKEN"],
-    )
-)
-
-
-@dg.definitions
-def resources():
-    return dg.Definitions(resources={"pipes_databricks": pipes_databricks_resource})
-
-
-# end_definitions
