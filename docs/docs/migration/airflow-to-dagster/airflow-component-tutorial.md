@@ -1,8 +1,7 @@
 ---
-title: Dagster & Airflow with components
-sidebar_position: 300
+title: Using Dagster and Airflow together
+sidebar_position: 20
 description: The dagster-airlift library provides an AirflowInstanceComponent, which you can use to peer a Dagster project with an Airflow instance.
-unlisted: true
 ---
 
 import DgComponentsRc from '@site/docs/partials/\_DgComponentsRc.md';
@@ -28,7 +27,7 @@ source .venv/bin/activate
 Finally, add the `dagster-airlift` library to the project:
 
 ```
-uv add 'dagster-airlift'
+uv add 'dagster-airlift[core]'
 ```
 
 ### 2. Scaffold an AirflowInstanceComponent

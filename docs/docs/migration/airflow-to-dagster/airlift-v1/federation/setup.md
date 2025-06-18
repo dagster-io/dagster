@@ -4,6 +4,10 @@ sidebar_position: 100
 title: Setup
 ---
 
+import UseAirliftComponent from '@site/docs/partials/\_UseAirliftComponent.md';
+
+<UseAirliftComponent />
+
 In this step, we'll:
 
 - Install the example code and review the project structure
@@ -91,4 +95,4 @@ You should be able to see the `customer_metrics` DAG in the Airflow UI:
 
 ## Next steps
 
-In the next step, "[Observe multiple Airflow instances from Dagster](/migration/airflow-to-dagster/federation/observe)", we'll add asset representations of our DAGs and set up lineage across both Airflow instances.
+In the next step, "[Observe multiple Airflow instances from Dagster](/migration/airflow-to-dagster/airlift-v1/federation/observe)", we'll add asset representations of our DAGs and set up lineage across both Airflow instances.

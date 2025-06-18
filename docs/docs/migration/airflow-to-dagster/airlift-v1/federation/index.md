@@ -4,6 +4,10 @@ sidebar_position: 10
 title: Federate execution across Airflow instances with Dagster
 ---
 
+import UseAirliftComponent from '@site/docs/partials/\_UseAirliftComponent.md';
+
+<UseAirliftComponent />
+
 You can use `dagster-airlift` to observe DAGs from multiple Airflow instances and federate execution between them using Dagster as a centralized control plane, all without changing your Airflow code.
 
 ## Tutorial overview
@@ -19,4 +23,4 @@ We'll walk you through an example of using `dagster-airlift` to observe the `war
 
 ## Next steps
 
-To get started with this tutorial, follow the [setup steps](/migration/airflow-to-dagster/federation/setup) to install the example code, set up a local environment, and run two instances of Airflow locally.
+To get started with this tutorial, follow the [setup steps](/migration/airflow-to-dagster/airlift-v1/federation/setup) to install the example code, set up a local environment, and run two instances of Airflow locally.

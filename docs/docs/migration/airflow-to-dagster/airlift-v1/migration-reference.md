@@ -4,6 +4,10 @@ sidebar_position: 50
 title: Airflow to Dagster migration reference
 ---
 
+import UseAirliftComponent from '@site/docs/partials/\_UseAirliftComponent.md';
+
+<UseAirliftComponent />
+
 `dagster-airlift` is a toolkit for observing and migrating Airflow DAGs within Dagster. This reference page provides additional information for working with `dagster-airlift` that is not provided within the migration guides.
 
 - [Supporting custom authorization](#supporting-custom-authorization)

@@ -1,8 +1,12 @@
 ---
-description: Set up a virtual environment, install Dagster and the tutorial example code, and configure a local Airflow instance to complete the DAG-level Airflow to Dagster migration tutorial.
+description: Set up a virtual environment, install Dagster, and configure a local Airflow instance to follow the task-level Airflow to Dagster migration tutorial.
 sidebar_position: 100
 title: Setup
 ---
+
+import UseAirliftComponent from '@site/docs/partials/\_UseAirliftComponent.md';
+
+<UseAirliftComponent />
 
 In order the complete this tutorial, you'll need to:
 
@@ -82,4 +86,4 @@ You should be able to see the `rebuild_customers_list` DAG in the Airflow UI, ma
 
 ## Next steps
 
-In the next step, "[Peer your Airflow instance with a Dagster code location](/migration/airflow-to-dagster/dag-level-migration/peer)", we'll peer our Dagster installation with our Airflow instance.
+In the next step, "[Peer your Airflow instance with a Dagster code location](/migration/airflow-to-dagster/airlift-v1/task-level-migration/peer)", we'll peer our Dagster installation with our Airflow instance.
