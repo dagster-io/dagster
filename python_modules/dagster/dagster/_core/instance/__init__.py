@@ -90,8 +90,6 @@ from dagster._core.storage.tags import (
 )
 from dagster._core.types.pagination import PaginatedResults
 from dagster._serdes import ConfigurableClass
-from dagster._streamline.asset_check_health import AssetCheckHealthState
-from dagster._streamline.asset_freshness_health import AssetFreshnessHealthState
 from dagster._time import datetime_from_timestamp, get_current_datetime, get_current_timestamp
 from dagster._utils import PrintFn, is_uuid, traced
 from dagster._utils.error import serializable_error_info_from_exc_info
@@ -116,6 +114,13 @@ RUNLESS_JOB_NAME = ""
 if TYPE_CHECKING:
     from dagster._core.debug import DebugRunPayload
     from dagster._core.definitions.asset_check_spec import AssetCheckKey
+    from dagster._core.definitions.asset_health.asset_check_health import AssetCheckHealthState
+    from dagster._core.definitions.asset_health.asset_freshness_health import (
+        AssetFreshnessHealthState,
+    )
+    from dagster._core.definitions.asset_health.asset_materialization_health import (
+        AssetMaterializationHealthState,
+    )
     from dagster._core.definitions.asset_key import EntityKey
     from dagster._core.definitions.base_asset_graph import BaseAssetGraph
     from dagster._core.definitions.job_definition import JobDefinition
@@ -196,7 +201,6 @@ if TYPE_CHECKING:
     from dagster._core.storage.sql import AlembicVersion
     from dagster._core.workspace.context import BaseWorkspaceRequestContext
     from dagster._daemon.types import DaemonHeartbeat, DaemonStatus
-    from dagster._streamline.asset_materialization_health import AssetMaterializationHealthState
 
 
 DagsterInstanceOverrides: TypeAlias = Mapping[str, Any]
@@ -3649,12 +3653,12 @@ class DagsterInstance(DynamicPartitionsStore):
 
     def get_asset_check_health_state_for_assets(
         self, asset_keys: Sequence[AssetKey]
-    ) -> Optional[Mapping[AssetKey, Optional[AssetCheckHealthState]]]:
+    ) -> Optional[Mapping[AssetKey, Optional["AssetCheckHealthState"]]]:
         return None
 
     def get_asset_freshness_health_state_for_assets(
         self, asset_keys: Sequence[AssetKey]
-    ) -> Optional[Mapping[AssetKey, Optional[AssetFreshnessHealthState]]]:
+    ) -> Optional[Mapping[AssetKey, Optional["AssetFreshnessHealthState"]]]:
         return None
 
     def get_asset_materialization_health_state_for_assets(

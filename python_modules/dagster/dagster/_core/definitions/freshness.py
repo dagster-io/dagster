@@ -54,7 +54,7 @@ class InternalFreshnessPolicy(ABC):
         # We had a few asset spec metadatas with internal freshness policies set to literal "null" string,
         # need special handling for those cases.
         # https://github.com/dagster-io/dagster/pull/30615
-        if serialized_policy is None or serialized_policy == "null":
+        if serialized_policy is None or serialized_policy.value == "null":
             return None
         return deserialize_value(serialized_policy.value, cls)  # pyright: ignore
 

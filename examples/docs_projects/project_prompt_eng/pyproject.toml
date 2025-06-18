@@ -1,18 +1,19 @@
 [project]
-name = "project-prompt-engineering"
+name = "project_prompt_eng"
 version = "0.0.1"
 description = "Project Prompt Engineering"
 readme = "README.md"
 requires-python = ">=3.9"
 dependencies = [
     "dagster",
+    "dagster-dg-cli",
     "dagster-anthropic",
     "pydantic",
     "requests",
 ]
 
-[tool.uv]
-dev-dependencies = [
+[project.optional-dependencies]
+dev = [
     "ruff",
     "pytest",
     "dagster-webserver",
@@ -23,4 +24,7 @@ directory_type = "project"
 
 [tool.dg.project]
 root_module = "project_prompt_eng"
-code_location_target_module = "project_prompt_eng.definitions"
+autoload_defs = true
+
+[tool.dg.project.python_environment]
+active = true

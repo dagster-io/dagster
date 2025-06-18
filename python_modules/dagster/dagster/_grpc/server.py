@@ -557,6 +557,11 @@ class DagsterApiServer(DagsterApiServicer):
         self,
         remote_repo_origin: RemoteRepositoryOrigin,
     ) -> RepositoryDefinition:
+        if not self._loaded_repositories:
+            raise Exception(
+                f"Could not load definitions since the code server is in an error state: {check.not_none(self._serializable_load_error)}"
+            )
+
         loaded_repos = check.not_none(self._loaded_repositories)
         if remote_repo_origin.repository_name not in loaded_repos.definitions_by_name:
             raise Exception(
@@ -568,6 +573,11 @@ class DagsterApiServer(DagsterApiServicer):
         self,
         remote_repo_origin: RemoteRepositoryOrigin,
     ) -> ReconstructableRepository:
+        if not self._loaded_repositories:
+            raise Exception(
+                f"Could not load definitions since the code server is in an error state: {check.not_none(self._serializable_load_error)}"
+            )
+
         loaded_repos = check.not_none(self._loaded_repositories)
         if remote_repo_origin.repository_name not in loaded_repos.definitions_by_name:
             raise Exception(
