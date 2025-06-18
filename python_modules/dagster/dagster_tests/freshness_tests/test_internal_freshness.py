@@ -54,7 +54,7 @@ class TestTimeWindowFreshnessPolicy:
         """Can we define an asset from decorator with a time window freshness policy?"""
 
         @asset(
-            internal_freshness_policy=TimeWindowFreshnessPolicy.from_timedeltas(
+            freshness_policy=TimeWindowFreshnessPolicy.from_timedeltas(
                 fail_window=timedelta(minutes=10), warn_window=timedelta(minutes=5)
             )
         )
@@ -79,14 +79,14 @@ class TestTimeWindowFreshnessPolicy:
         def create_spec_and_verify_policy(asset_key: str, fail_window: timedelta, warn_window=None):
             asset = AssetSpec(
                 key=AssetKey(asset_key),
-                internal_freshness_policy=InternalFreshnessPolicy.time_window(
+                freshness_policy=InternalFreshnessPolicy.time_window(
                     fail_window=fail_window, warn_window=warn_window
                 ),
             )
 
             asset_node_snaps = _get_asset_node_snaps_from_definitions(Definitions(assets=[asset]))
             snap = asset_node_snaps[0]
-            policy = snap.internal_freshness_policy
+            policy = snap.freshness_policy
             assert isinstance(policy, TimeWindowFreshnessPolicy)
             assert policy.fail_window == SerializableTimeDelta.from_timedelta(fail_window)
             if warn_window:
@@ -207,9 +207,7 @@ class TestTimeWindowFreshnessPolicy:
             pass
 
         @asset(
-            internal_freshness_policy=InternalFreshnessPolicy.time_window(
-                fail_window=timedelta(hours=24)
-            )
+            freshness_policy=InternalFreshnessPolicy.time_window(fail_window=timedelta(hours=24))
         )
         def asset_with_policy():
             pass
@@ -337,7 +335,7 @@ class TestCronFreshnessPolicy:
 
     def test_cron_freshness_policy_apply_to_asset(self) -> None:
         @asset(
-            internal_freshness_policy=InternalFreshnessPolicy.cron(
+            freshness_policy=InternalFreshnessPolicy.cron(
                 deadline_cron="0 10 * * *",
                 lower_bound_delta=timedelta(hours=1),
                 timezone="UTC",
@@ -359,7 +357,7 @@ class TestCronFreshnessPolicy:
         """Can we apply a cron freshness policy to an asset spec?"""
         asset_spec = AssetSpec(
             key="foo",
-            internal_freshness_policy=InternalFreshnessPolicy.cron(
+            freshness_policy=InternalFreshnessPolicy.cron(
                 deadline_cron="0 10 * * *",
                 lower_bound_delta=timedelta(hours=1),
             ),

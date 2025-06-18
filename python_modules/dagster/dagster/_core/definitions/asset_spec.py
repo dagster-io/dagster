@@ -11,7 +11,7 @@ from typing import (  # noqa: UP035
     overload,
 )
 
-from dagster_shared.serdes import serialize_value, whitelist_for_serdes
+from dagster_shared.serdes import whitelist_for_serdes
 
 import dagster._check as check
 from dagster._annotations import (
@@ -27,10 +27,7 @@ from dagster._core.definitions.declarative_automation.automation_condition impor
     AutomationCondition,
 )
 from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
-from dagster._core.definitions.freshness import (
-    INTERNAL_FRESHNESS_POLICY_METADATA_KEY,
-    InternalFreshnessPolicy,
-)
+from dagster._core.definitions.freshness import InternalFreshnessPolicy
 from dagster._core.definitions.freshness_policy import LegacyFreshnessPolicy
 from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.definitions.partition_mapping import PartitionMapping
@@ -113,11 +110,6 @@ def validate_kind_tags(kinds: Optional[AbstractSet[str]]) -> None:
     breaking_version="1.10.0",
     additional_warn_text="use `automation_condition` instead",
 )
-@hidden_param(
-    param="internal_freshness_policy",
-    breaking_version="1.10.0",
-    additional_warn_text="experimental feature, use freshness checks instead",
-)
 @record_custom
 class AssetSpec(IHasInternalInit, IHaveNew, LegacyNamedTupleMixin):
     """Specifies the core attributes of an asset, except for the function that materializes or
@@ -162,6 +154,7 @@ class AssetSpec(IHasInternalInit, IHaveNew, LegacyNamedTupleMixin):
     skippable: PublicAttr[bool]
     code_version: PublicAttr[Optional[str]]
     legacy_freshness_policy: PublicAttr[Optional[LegacyFreshnessPolicy]]
+    freshness_policy: PublicAttr[Optional[InternalFreshnessPolicy]]
     automation_condition: PublicAttr[Optional[AutomationCondition]]
     owners: PublicAttr[Sequence[str]]
     tags: PublicAttr[Mapping[str, str]]
@@ -182,6 +175,7 @@ class AssetSpec(IHasInternalInit, IHaveNew, LegacyNamedTupleMixin):
         tags: Optional[Mapping[str, str]] = None,
         kinds: Optional[set[str]] = None,
         partitions_def: Optional[PartitionsDefinition] = None,
+        freshness_policy: Optional[InternalFreshnessPolicy] = None,
         **kwargs,
     ):
         from dagster._core.definitions.asset_dep import coerce_to_deps_and_check_duplicates
@@ -207,15 +201,6 @@ class AssetSpec(IHasInternalInit, IHaveNew, LegacyNamedTupleMixin):
         }
         validate_kind_tags(kind_tags)
 
-        internal_freshness_policy: Optional[InternalFreshnessPolicy] = kwargs.get(
-            "internal_freshness_policy"
-        )
-        if internal_freshness_policy:
-            metadata = {
-                **(metadata or {}),
-                INTERNAL_FRESHNESS_POLICY_METADATA_KEY: serialize_value(internal_freshness_policy),
-            }
-
         return super().__new__(
             cls,
             key=key,
@@ -225,6 +210,12 @@ class AssetSpec(IHasInternalInit, IHaveNew, LegacyNamedTupleMixin):
             skippable=check.bool_param(skippable, "skippable"),
             group_name=check.opt_str_param(group_name, "group_name"),
             code_version=check.opt_str_param(code_version, "code_version"),
+            freshness_policy=check.opt_inst_param(
+                freshness_policy,
+                "freshness_policy",
+                InternalFreshnessPolicy,
+                additional_message="If you are using a LegacyFreshnessPolicy, pass this in with the `legacy_freshness_policy` parameter instead.",
+            ),
             legacy_freshness_policy=check.opt_inst_param(
                 kwargs.get("legacy_freshness_policy"),
                 "legacy_freshness_policy",
@@ -466,14 +457,7 @@ def attach_internal_freshness_policy(
 
     You can use this in Definitions.map_asset_specs to attach a freshness policy to an asset spec.
     """
-    if INTERNAL_FRESHNESS_POLICY_METADATA_KEY in spec.metadata:
-        if overwrite_existing:
-            return spec.merge_attributes(
-                metadata={INTERNAL_FRESHNESS_POLICY_METADATA_KEY: serialize_value(policy)}  # pyright: ignore[reportArgumentType]
-            )
-        else:
-            return spec
-
-    return spec.merge_attributes(
-        metadata={INTERNAL_FRESHNESS_POLICY_METADATA_KEY: serialize_value(policy)}  # pyright: ignore[reportArgumentType]
-    )
+    if overwrite_existing:
+        return spec._replace(freshness_policy=policy)
+    else:
+        return spec._replace(freshness_policy=spec.freshness_policy or policy)
