@@ -27,7 +27,7 @@ source .venv/bin/activate
 Finally, add the `dagster-airlift` library to the project:
 
 ```
-uv add 'dagster-airlift'
+uv add 'dagster-airlift[core]'
 ```
 
 ### 2. Scaffold an AirflowInstanceComponent
