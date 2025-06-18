@@ -138,7 +138,7 @@ class TableauWorkspaceData:
             },
         )
 
-    # Cache workspace data selection for a specific connector_selector_fn
+    # Cache workspace data selection for a specific workbook_selector_fn
     @cached_method
     def to_workspace_data_selection(
         self, workbook_selector_fn: Optional[WorkbookSelectorFn]
