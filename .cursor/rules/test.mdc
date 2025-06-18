@@ -1,0 +1,6 @@
+---
+description:
+globs: *.py
+alwaysApply: false
+---
+When modifying tests, or code which has easily identifiable tests, run the tests using `pytest` after any substantial change unless prompted not to explicitly. Use these tests to inform fixes to your change.
