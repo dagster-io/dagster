@@ -2,7 +2,7 @@
 description: Airflow allows Dagster to connect to live Airflow instances through Airflow’s REST API to observe Airflow executions as they happen, allowing you to easily transition the operation of Airflow pipelines into Dagster, or use Dagster as the control plane across multiple Airflow instances.
 sidebar_position: 40
 title: Migrate from Airflow to Dagster
-sidebar_label: Migrating with Airlift v1 (deprecated)
+sidebar_label: Migrating with Airlift v1
 ---
 
 import UseAirliftComponent from '@site/docs/partials/\_UseAirliftComponent.md';

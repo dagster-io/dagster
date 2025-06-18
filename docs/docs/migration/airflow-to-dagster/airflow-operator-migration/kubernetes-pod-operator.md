@@ -4,10 +4,6 @@ sidebar_position: 400
 title: Migrating an Airflow KubernetesPodOperator to Dagster
 ---
 
-import UseAirliftComponent from '@site/docs/partials/\_UseAirliftComponent.md';
-
-<UseAirliftComponent />
-
 In this page, we'll explain migrating an Airflow `KubernetesPodOperator` to Dagster.
 
 ## About the Airflow KubernetesPodOperator

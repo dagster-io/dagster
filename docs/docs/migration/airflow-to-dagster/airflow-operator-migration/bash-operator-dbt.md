@@ -4,10 +4,6 @@ sidebar_position: 200
 title: Migrating an Airflow BashOperator (dbt) to Dagster
 ---
 
-import UseAirliftComponent from '@site/docs/partials/\_UseAirliftComponent.md';
-
-<UseAirliftComponent />
-
 In this page, we'll explain migrating an Airflow `BashOperator` that runs a `dbt` command to Dagster.
 
 ## About the Airflow BashOperator
