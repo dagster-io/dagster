@@ -6,9 +6,9 @@ from typing import Optional
 from dagster_shared import check
 from dagster_shared.serdes.objects.package_entry import json_for_all_components
 from dagster_shared.utils.config import (
-    discover_config_file,
     get_canonical_defs_module_name,
     load_toml_as_dict,
+    locate_dg_config_in_folder,
 )
 
 from dagster._annotations import deprecated, preview, public
@@ -80,7 +80,7 @@ def load_from_defs_folder(*, project_root: Path) -> Definitions:
     Args:
         project_root (Path): The path to the dg project root.
     """
-    root_config_path = discover_config_file(project_root)
+    root_config_path = locate_dg_config_in_folder(project_root)
     toml_config = load_toml_as_dict(
         check.not_none(
             root_config_path,
