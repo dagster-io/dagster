@@ -12,6 +12,8 @@ from dagster_tableau import TableauCloudWorkspace, TableauServerWorkspace, load_
 from dagster_tableau.asset_utils import parse_tableau_external_and_materializable_asset_specs
 from dagster_tableau.translator import DagsterTableauTranslator, TableauTranslatorData
 
+from dagster_tableau_tests.conftest import TEST_PROJECT_ID, TEST_PROJECT_NAME, TEST_WORKBOOK_ID
+
 
 @responses.activate
 @pytest.mark.parametrize(
@@ -287,3 +289,77 @@ def test_parse_asset_specs(
         )
         assert len(external_asset_specs) == 1
         assert len(materializable_asset_specs) == 4
+
+
+@responses.activate
+@pytest.mark.parametrize(
+    "attribute, value, expected_result",
+    [
+        (None, None, 1),
+        ("id", TEST_WORKBOOK_ID, 1),
+        ("project_name", TEST_PROJECT_NAME, 1),
+        ("project_id", TEST_PROJECT_ID, 1),
+        ("id", "non_matching_workbook_id", 0),
+        ("project_name", "non_matching_project_name", 0),
+        ("project_id", "non_matching_project_id", 0),
+    ],
+    ids=[
+        "no_selector_present_workbook",
+        "workbook_id_selector_present_workbook",
+        "project_name_selector_present_workbook",
+        "project_id_selector_present_workbook",
+        "workbook_id_selector_absent_workbook",
+        "project_name_selector_absent_workbook",
+        "project_id_selector_absent_workbook",
+    ],
+)
+@pytest.mark.parametrize(
+    "clazz,host_key,host_value",
+    [
+        (TableauServerWorkspace, "server_name", "fake_server_name"),
+        (TableauCloudWorkspace, "pod_name", "fake_pod_name"),
+    ],
+)
+@pytest.mark.usefixtures("site_name")
+@pytest.mark.usefixtures("sign_in")
+@pytest.mark.usefixtures("get_workbooks")
+@pytest.mark.usefixtures("get_workbook")
+def test_fivetran_connector_selector(
+    attribute: str,
+    value: str,
+    expected_result: int,
+    clazz: Union[type[TableauCloudWorkspace], type[TableauServerWorkspace]],
+    host_key: str,
+    host_value: str,
+    site_name: str,
+    sign_in: MagicMock,
+    get_workbooks: MagicMock,
+    get_workbook: MagicMock,
+) -> None:
+    connected_app_client_id = uuid.uuid4().hex
+    connected_app_secret_id = uuid.uuid4().hex
+    connected_app_secret_value = uuid.uuid4().hex
+    username = "fake_username"
+
+    resource_args = {
+        "connected_app_client_id": connected_app_client_id,
+        "connected_app_secret_id": connected_app_secret_id,
+        "connected_app_secret_value": connected_app_secret_value,
+        "username": username,
+        "site_name": site_name,
+        host_key: host_value,
+    }
+
+    resource = clazz(**resource_args)  # type: ignore
+    resource.build_client()
+
+    workbook_selector_fn = (
+        (lambda workbook: getattr(workbook, attribute) == value) if attribute else None
+    )
+
+    actual_workspace_data = resource.fetch_tableau_workspace_data()
+    selected_workspace_data = actual_workspace_data.to_workspace_data_selection(
+        workbook_selector_fn=workbook_selector_fn
+    )
+
+    assert len(selected_workspace_data.workbooks_by_id) == expected_result

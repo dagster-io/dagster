@@ -1,6 +1,6 @@
 from collections.abc import Mapping, Sequence
 from enum import Enum
-from typing import Any, Literal, Optional
+from typing import Any, Callable, Literal, Optional
 
 from dagster import _check as check
 from dagster._core.definitions.asset_key import AssetKey
@@ -9,11 +9,32 @@ from dagster._core.definitions.metadata.metadata_set import NamespacedMetadataSe
 from dagster._core.definitions.tags.tag_set import NamespacedTagSet
 from dagster._record import record
 from dagster._serdes import whitelist_for_serdes
+from dagster._utils.cached_method import cached_method
 from dagster._utils.names import clean_name_lower_with_dots
+from typing_extensions import TypeAlias
 
 TABLEAU_PREFIX = "tableau/"
 
 _coerce_input_to_valid_name = clean_name_lower_with_dots
+
+
+WorkbookSelectorFn: TypeAlias = Callable[["TableauWorkbookMetadata"], bool]
+
+
+def get_data_source_ids_from_sheet_props(props: Mapping[str, Any]) -> set[str]:
+    sheet_embedded_data_sources = props.get("parentEmbeddedDatasources", [])
+
+    data_source_ids = set()
+    # If published data sources are available (i.e., parentPublishedDatasources exists and is not empty),
+    # it means you can form the lineage by using the luid of those published sources.
+    # If the published data sources are missing, you create assets for embedded data sources by using their id.
+    for embedded_data_source in sheet_embedded_data_sources:
+        published_data_source_list = embedded_data_source.get("parentPublishedDatasources", [])
+        for published_data_source in published_data_source_list:
+            data_source_ids.add(published_data_source["luid"])
+        if not published_data_source_list:
+            data_source_ids.add(embedded_data_source["id"])
+    return data_source_ids
 
 
 @whitelist_for_serdes
@@ -57,6 +78,27 @@ class TableauTranslatorData:
 
 @whitelist_for_serdes
 @record
+class TableauWorkbookMetadata:
+    """Represents the metadata of a Tableau workbook, based on data as returned from the API."""
+
+    id: str
+    project_name: str
+    project_id: str
+
+    @classmethod
+    def from_workbook_properties(
+        cls,
+        workbook_properties: Mapping[str, Any],
+    ) -> "TableauWorkbookMetadata":
+        return cls(
+            id=workbook_properties["luid"],
+            project_name=workbook_properties["projectName"],
+            project_id=workbook_properties["projectLuid"],
+        )
+
+
+@whitelist_for_serdes
+@record
 class TableauWorkspaceData:
     """A record representing all content in a Tableau workspace.
     Provided as context for the translator so that it can resolve dependencies between content.
@@ -94,6 +136,54 @@ class TableauWorkspaceData:
                 for data_source in content_data
                 if data_source.content_type == TableauContentType.DATA_SOURCE
             },
+        )
+
+    # Cache workspace data selection for a specific connector_selector_fn
+    @cached_method
+    def to_workspace_data_selection(
+        self, workbook_selector_fn: Optional[WorkbookSelectorFn]
+    ) -> "TableauWorkspaceData":
+        if not workbook_selector_fn:
+            return self
+
+        workbooks_by_id_selection = {}
+        for workbook_id, workbook in self.workbooks_by_id.items():
+            tableau_workbook_metadata = TableauWorkbookMetadata.from_workbook_properties(
+                workbook_properties=workbook.properties
+            )
+            if workbook_selector_fn(tableau_workbook_metadata):
+                workbooks_by_id_selection[workbook_id] = workbook
+
+        workbook_ids_selection = set(workbooks_by_id_selection.keys())
+
+        sheets_by_id_selection = {
+            sheet_id: sheet
+            for sheet_id, sheet in self.sheets_by_id.items()
+            if sheet.properties["workbook"]["luid"] in workbook_ids_selection
+        }
+        dashboards_by_id_selection = {
+            dashboard_id: dashboard
+            for dashboard_id, dashboard in self.dashboards_by_id.items()
+            if dashboard.properties["workbook"]["luid"] in workbook_ids_selection
+        }
+
+        data_source_ids_selection = set()
+        for sheet in sheets_by_id_selection.values():
+            sheet_data_source_ids = get_data_source_ids_from_sheet_props(props=sheet.properties)
+            data_source_ids_selection.update(sheet_data_source_ids)
+
+        data_sources_by_id_selection = {
+            data_source_id: data_source
+            for data_source_id, data_source in self.data_sources_by_id.items()
+            if data_source.properties["luid"] in data_source_ids_selection
+        }
+
+        return TableauWorkspaceData(
+            site_name=self.site_name,
+            workbooks_by_id=workbooks_by_id_selection,
+            sheets_by_id=sheets_by_id_selection,
+            dashboards_by_id=dashboards_by_id_selection,
+            data_sources_by_id=data_sources_by_id_selection,
         )
 
 
@@ -140,18 +230,7 @@ class DagsterTableauTranslator:
             check.failed(f"unhandled type {data.content_type}")
 
     def get_sheet_spec(self, data: TableauTranslatorData) -> AssetSpec:
-        sheet_embedded_data_sources = data.properties.get("parentEmbeddedDatasources", [])
-
-        data_source_ids = set()
-        # If published data sources are available (i.e., parentPublishedDatasources exists and is not empty),
-        # it means you can form the lineage by using the luid of those published sources.
-        # If the published data sources are missing, you create assets for embedded data sources by using their id.
-        for embedded_data_source in sheet_embedded_data_sources:
-            published_data_source_list = embedded_data_source.get("parentPublishedDatasources", [])
-            for published_data_source in published_data_source_list:
-                data_source_ids.add(published_data_source["luid"])
-            if not published_data_source_list:
-                data_source_ids.add(embedded_data_source["id"])
+        data_source_ids = get_data_source_ids_from_sheet_props(props=data.properties)
 
         data_source_keys = [
             self.get_asset_spec(
