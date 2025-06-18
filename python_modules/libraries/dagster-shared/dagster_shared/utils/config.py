@@ -2,7 +2,7 @@ import os
 import sys
 from collections.abc import Mapping
 from pathlib import Path
-from typing import Any, Callable, Optional
+from typing import Any, Callable, Final, Optional
 
 from typing_extensions import Literal, TypeAlias
 
@@ -52,6 +52,7 @@ def does_dg_config_file_exist() -> bool:
 # The format determines whether settings are nested under the `tool.dg` section
 # (`pyproject.toml`) or not (`dg.toml`).
 DgConfigFileFormat: TypeAlias = Literal["root", "nested"]
+_DEFAULT_PROJECT_DEFS_SUBMODULE: Final = "defs"
 
 
 def detect_dg_config_file_format(path: Path) -> DgConfigFileFormat:
@@ -95,3 +96,7 @@ def discover_config_file(
         if current_path == current_path.parent:  # root
             return
         current_path = current_path.parent
+
+
+def get_canonical_defs_module_name(defs_module_name: Optional[str], root_module_name: str) -> str:
+    return defs_module_name or f"{root_module_name}.{_DEFAULT_PROJECT_DEFS_SUBMODULE}"

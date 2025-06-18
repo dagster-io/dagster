@@ -9,6 +9,7 @@ from typing import Any, Final, Optional
 from dagster_shared.record import record
 from dagster_shared.serdes.serdes import whitelist_for_serdes
 from dagster_shared.seven import resolve_module_pattern
+from dagster_shared.utils.config import get_canonical_defs_module_name
 from packaging.version import Version
 from typing_extensions import Self
 
@@ -46,7 +47,6 @@ from dagster_dg_core.utils import (
 from dagster_dg_core.utils.warnings import emit_warning
 
 # Project
-_DEFAULT_PROJECT_DEFS_SUBMODULE: Final = "defs"
 _DEFAULT_PROJECT_CODE_LOCATION_TARGET_MODULE: Final = "definitions"
 _DEFAULT_PROJECT_PLUGIN_MODULE: Final = "components"
 _DEFAULT_PROJECT_PLUGIN_MODULE_REGISTRY_FILE: Final = "plugin_modules.json"
@@ -391,9 +391,8 @@ class DgContext:
     def defs_module_name(self) -> str:
         if not self.config.project:
             raise DgError("`defs_module_name` is only available in a Dagster project context")
-        return (
-            self.config.project.defs_module
-            or f"{self.root_module_name}.{_DEFAULT_PROJECT_DEFS_SUBMODULE}"
+        return get_canonical_defs_module_name(
+            self.config.project.defs_module, self.root_module_name
         )
 
     @cached_property

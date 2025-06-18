@@ -1,11 +1,15 @@
 import importlib
 from pathlib import Path
 from types import ModuleType
-from typing import Final, Optional
+from typing import Optional
 
 from dagster_shared import check
 from dagster_shared.serdes.objects.package_entry import json_for_all_components
-from dagster_shared.utils.config import discover_config_file, load_toml_as_dict
+from dagster_shared.utils.config import (
+    discover_config_file,
+    get_canonical_defs_module_name,
+    load_toml_as_dict,
+)
 
 from dagster._annotations import deprecated, preview, public
 from dagster._core.definitions.definitions_class import Definitions
@@ -14,7 +18,6 @@ from dagster.components.core.context import ComponentLoadContext
 from dagster.components.core.tree import ComponentTree
 
 PLUGIN_COMPONENT_TYPES_JSON_METADATA_KEY = "plugin_component_types_json"
-_DEFAULT_PROJECT_DEFS_SUBMODULE: Final = "defs"
 
 
 @deprecated(breaking_version="0.2.0")
@@ -96,7 +99,7 @@ def load_from_defs_folder(*, project_root: Path) -> Definitions:
         defs_module_name or root_module_name,
         f"Either defs_module or root_module must be set in the project config {root_config_path}",
     )
-    defs_module_name = defs_module_name or f"{root_module_name}.{_DEFAULT_PROJECT_DEFS_SUBMODULE}"
+    defs_module_name = get_canonical_defs_module_name(defs_module_name, root_module_name)
 
     defs_module = importlib.import_module(defs_module_name)
 
