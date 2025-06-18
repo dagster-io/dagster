@@ -324,7 +324,7 @@ def test_parse_asset_specs(
 @pytest.mark.usefixtures("sign_in")
 @pytest.mark.usefixtures("get_workbooks")
 @pytest.mark.usefixtures("get_workbook")
-def test_fivetran_connector_selector(
+def test_tableau_workbook_selector(
     attribute: str,
     value: str,
     expected_result: int,
