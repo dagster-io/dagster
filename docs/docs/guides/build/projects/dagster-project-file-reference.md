@@ -1,7 +1,7 @@
 ---
 title: "Dagster project file reference"
 description: "A reference of the files in a Dagster project."
-sidebar_position: 300
+sidebar_position: 200
 ---
 
 This reference contains details about [default](#default-files) and [configuration](#configuration-files) files in a Dagster project, including:
@@ -28,14 +28,6 @@ The following demonstrates a Dagster project using the default project skeleton,
 ├── setup.py
 └── tox.ini
 ```
-
-:::note
-
-While this specific example uses a project created by scaffolding, projects created [using an official example](/guides/build/projects/creating-a-new-project#using-an-official-example) will also contain these files. In official examples, `assets.py` will be a subdirectory instead of a Python file.
-
-:::
-
-Let's take a look at what each of these files and directories does:
 
 ### my_dagster_project/ directory
 
