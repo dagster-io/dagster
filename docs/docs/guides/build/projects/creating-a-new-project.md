@@ -75,7 +75,7 @@ For more information and examples, see [Using environment variables and secrets]
 Tests can be added to the `tests` directory and run using `pytest`:
 
 ```bash
-pytest my_dagster_project_tests
+pytest tests
 ```
 
 For more information on testing, see the following docs:

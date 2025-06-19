@@ -100,7 +100,7 @@ Next, create a `sample_data.csv` file. This file will act as the data source for
 
 ## Step 3: Define the asset
 
-To define the assets for the ETL pipeline, open `src/dagster-quickstart/defs/assets.py` file in your preferred editor and copy in the following code:
+To define the assets for the ETL pipeline, open `src/dagster_quickstart/defs/assets.py` file in your preferred editor and copy in the following code:
 
 <CodeExample
    path="docs_snippets/docs_snippets/getting-started/quickstart.py"
