@@ -10,6 +10,12 @@ import DgComponentsRc from '@site/docs/partials/\_DgComponentsRc.md';
 
 With `dg` and components, you can easily configure components depending on the environment in which they are run. To demonstrate this, we'll walk through setting up an example ELT pipeline with a Sling component which reads Snowflake credentials from environment variables.
 
+:::tip
+
+For more information on using environment variables with non-component Dagster code, see [Using environment variables and secrets in Dagster code](/guides/operate/configuration/using-environment-variables-and-secrets).
+
+:::
+
 ## 1. Create a new Dagster components project
 
 First, we'll set up a basic ELT pipeline using Sling in an empty Dagster components project:
