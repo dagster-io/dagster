@@ -3,6 +3,7 @@ import {useState} from 'react';
 
 import {Alert, AlertIntent} from '../Alert';
 import {Box} from '../Box';
+import {Button} from '../Button';
 
 // eslint-disable-next-line import/no-default-export
 export default {
@@ -10,7 +11,7 @@ export default {
   component: Alert,
 } as Meta;
 
-const intents: AlertIntent[] = ['info', 'warning', 'error', 'success'];
+const intents: AlertIntent[] = ['info', 'warning', 'error', 'success', 'none'];
 
 export const Intents = () => {
   const [isClosed, updateClosed] = useState<boolean[]>(intents.map(() => false));
@@ -42,6 +43,17 @@ export const Intents = () => {
             title="You can dismiss me."
             description="This alert can be dismissed."
             onClose={() => setClosed(i, true)}
+          />
+        ) : null,
+      )}
+      {intents.map((intent, i) =>
+        !isClosed[i] ? (
+          <Alert
+            key={`${intent}-custom-right-button`}
+            intent={intent}
+            title="You can take a CTA action on me."
+            description="This alert has a button."
+            rightButton={<Button onClick={() => setClosed(i, true)}>Go to Billing</Button>}
           />
         ) : null,
       )}
