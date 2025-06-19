@@ -6,7 +6,7 @@ from abc import abstractmethod
 from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from functools import lru_cache
-from typing import Any, Optional, Union
+from typing import Optional, Union
 
 import jwt
 import requests
@@ -588,6 +588,7 @@ class BaseTableauWorkspace(ConfigurableResource):
         """Retrieves all Tableau content from the workspace using the TableauWorkspaceDefsLoader
         and returns it as a TableauWorkspaceData object. If the workspace data has already been fetched,
         the cached TableauWorkspaceData object is returned.
+
         Returns:
             TableauWorkspaceData: A snapshot of the Tableau workspace's content.
         """
