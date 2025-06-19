@@ -36,31 +36,7 @@ For more information, see the [Installation doc](/getting-started/installation).
   </TabItem>
 </Tabs>
 
-### Project structure
-
-The `create-dagster project` command creates a directory with a standard Python package structure with some additions:
-
-<Tabs groupId="package-manager">
-  <TabItem value="uv" label="uv">
-    <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/3-uv-tree.txt" />
-  </TabItem>
-  <TabItem value="pip" label="pip">
-    <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/3-pip-tree.txt" />
-  </TabItem>
-</Tabs>
-
-:::tip
-
-To use `tree`, install it with `brew install tree` (Mac), or follow the [installation instructions](https://oldmanprogrammer.net/source.php?dir=projects/tree/INSTALL).
-
-:::
-
-- The Python package `my_project` lives in `src/my_project` and contains the deployable code that defines your Dagster pipelines.
-- `my_project/definitions.py` is the entry point that Dagster will load when deploying your code location.
-- `src/my_project/defs` will contain your Dagster definitions and [component](/guides/build/components) definitions.
-- `src/my_project/components` is where you will define custom components, and optionally other code you wish to share across Dagster definitions.
-- `tests` is a separate Python package defined at the top level (outside `src`). It should contain tests for the `my_project` package.
-- `pyproject.toml` is a standard Python package configuration file. In addition to the regular Python package metadata, it contains a `tool.dg` section for `dg`-specific settings.
+The `create-dagster project` command creates a directory with a standard Python package structure with some additions. For more information on the files and directories in a Dagster project, see the [Dagster project file reference](/guides/build/projects/dagster-project-file-reference).
 
 ## 3. Add assets
 

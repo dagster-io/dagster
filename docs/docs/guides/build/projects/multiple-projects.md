@@ -1,6 +1,5 @@
 ---
-title: 'Managing multiple projects with dg'
-sidebar_label: 'Managing multiple projects'
+title: 'Managing multiple projects with workspaces'
 sidebar_position: 400
 description: Manage multiple isolated Dagster projects using dg, each with unique environments, by creating a workspace directory with create-dagster project.
 ---

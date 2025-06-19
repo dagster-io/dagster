@@ -1,5 +1,5 @@
 ---
-description: Moving existing Dagster definitions to the defs directory of a dg-compatible project.
+description: Moving existing Dagster definitions to the defs directory of a Components-compatible project.
 sidebar_position: 560
 title: Autoloading existing Dagster definitions
 ---

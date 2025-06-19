@@ -1,7 +1,7 @@
 ---
-description: Convert an existing Dagster project to use dg.
+description: Convert an existing Dagster project to be compatible with Components.
 sidebar_position: 550
-title: Converting an existing project to use dg
+title: Converting an existing project
 ---
 
 import DgComponentsRc from '@site/docs/partials/\_DgComponentsRc.md';
