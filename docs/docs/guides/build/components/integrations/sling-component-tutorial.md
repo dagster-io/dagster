@@ -12,7 +12,7 @@ The [dagster-sling](/integrations/libraries/sling) library provides a `SlingRepl
 
 ## 1. Prepare a Dagster project
 
-To begin, you'll need a Dagster project. You can use an [existing components-ready project](/guides/build/projects/migrating-project) or create a new one:
+To begin, you'll need a Dagster project. You can use an [existing components-ready project](/guides/build/projects/moving-to-dg/migrating-project) or create a new one:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/sling-component/1-scaffold-project.txt" />
 
