@@ -4,6 +4,8 @@ description: "Learn to integrate Dagster Pipes with AWS EMR to launch external c
 sidebar_position: 300
 ---
 
+import ScaffoldProject from '@site/docs/partials/\_ScaffoldProject.md';
+
 This article covers how to use [Dagster Pipes](/guides/build/external-pipelines/) with [AWS EMR](https://aws.amazon.com/emr/).
 
 The [dagster-aws](/api/libraries/dagster-aws) integration library provides the <PyObject section="libraries" object="pipes.PipesEMRClient" module="dagster_aws" /> resource, which can be used to launch AWS EMR jobs from Dagster assets and ops. Dagster can receive regular events such as logs, asset checks, or asset materializations from jobs launched with this client. Using it requires minimal code changes to your EMR jobs.
@@ -14,9 +16,7 @@ The [dagster-aws](/api/libraries/dagster-aws) integration library provides the <
 To run the examples, you'll need to:
 
 - Create a new Dagster project:
-   ```bash
-   uvx create-dagster project <project_name>
-   ```
+  <ScaffoldProject />
 - Install the necessary Python libraries:
   ```bash
   uv pip install dagster-aws

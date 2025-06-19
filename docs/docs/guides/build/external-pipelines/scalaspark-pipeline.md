@@ -4,6 +4,8 @@ description: "Learn to integrate Dagster Pipes with Scala and Spark to orchestra
 sidebar_position: 71
 ---
 
+import ScaffoldProject from '@site/docs/partials/\_ScaffoldProject.md';
+
 This tutorial is focused on using Dagster Pipes to launch & monitor Apache Spark jobs implemented in Scala. The [Spark integration page](/integrations/libraries/spark) provides more information on using Pipes with specific Spark providers, such as AWS EMR or Databricks.
 
 Spark is often used with object stores such as Amazon S3. In our example, Dagster will use an S3
@@ -15,9 +17,7 @@ from Spark).
 To run the examples, you'll need to:
 
 - Create a new Dagster project:
-   ```bash
-   uvx create-dagster project <project_name>
-   ```
+  <ScaffoldProject />
 - An [AWS S3 bucket](https://docs.aws.amazon.com/AmazonS3/latest/userguide/GetStartedWithS3.html) to be used for communication between Spark and Dagster (and the corresponding `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`).
 - [Docker](https://docs.docker.com/get-started/get-docker/) to emulate a typical Spark setup locally.
   This setup includes Apache Spark and the Java SDK, as well as the required Dagster libraries to run a development orchestration server.

@@ -4,6 +4,8 @@ sidebar_position: 20
 title: Build pipelines in JavaScript
 ---
 
+import ScaffoldProject from '@site/docs/partials/\_ScaffoldProject.md';
+
 :::info
 
 For production pipelines, we recommend using the [`@dagster-io/dagster-pipes` npm package](https://www.npmjs.com/package/@dagster-io/dagster-pipes), which enables integration between any TypeScript process and Dagster.
@@ -17,9 +19,7 @@ This guide covers how to run JavaScript with Dagster using Pipes, however, the s
 To run the examples, you'll need to:
 
 - Create a new Dagster project:
-   ```bash
-   uvx create-dagster project <project_name>
-   ```
+   <ScaffoldProject />
 - Install [Node.js](https://nodejs.org/en/download/package-manager/)
 - Add the following Node packages:
    ```bash

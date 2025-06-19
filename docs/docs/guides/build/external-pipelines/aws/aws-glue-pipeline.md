@@ -4,6 +4,8 @@ description: "Learn to integrate Dagster Pipes with AWS Glue to launch external 
 sidebar_position: 500
 ---
 
+import ScaffoldProject from '@site/docs/partials/\_ScaffoldProject.md';
+
 # AWS Glue & Dagster Pipes
 
 This article covers how to use [Dagster Pipes](/guides/build/external-pipelines/) with [AWS Glue](https://aws.amazon.com/glue/).
@@ -15,9 +17,7 @@ The [dagster-aws](/api/libraries/dagster-aws) integration library provides the <
 To run the examples, you'll need to:
 
 - Create a new Dagster project:
-   ```bash
-   uvx create-dagster project <project_name>
-   ```
+  <ScaffoldProject />
 - Install the necessary Python libraries:
   ```bash
   uv pip install dagster-aws

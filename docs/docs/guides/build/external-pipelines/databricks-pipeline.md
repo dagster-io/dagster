@@ -4,6 +4,8 @@ description: "Learn to integrate Dagster Pipes with Databricks to launch externa
 sidebar_position: 50
 ---
 
+import ScaffoldProject from '@site/docs/partials/\_ScaffoldProject.md';
+
 This article covers how to use [Dagster Pipes](/guides/build/external-pipelines/) with Dagster's [Databricks integration](/integrations/libraries/databricks) to launch Databricks jobs.
 
 Pipes allows your Databricks jobs to stream logs (including `stdout` and `stderr` of the driver process) and events back to Dagster. This does not require a full Dagster environment on Databricks; instead:
@@ -17,9 +19,7 @@ Pipes allows your Databricks jobs to stream logs (including `stdout` and `stderr
 To run the examples, you'll need to:
 
 - Create a new Dagster project:
-   ```bash
-   uvx create-dagster project <project_name>
-   ```
+  <ScaffoldProject />
 - Install the necessary Python libraries:
   ```bash
   uv pip install dagster-databricks
