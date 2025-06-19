@@ -67,7 +67,7 @@ def cacheable_asset_defs():
         )
     finally:
         # Clearing cache for other tests
-        resource.load_asset_specs.cache_clear()  # pyright: ignore[reportPossiblyUnboundVariable]
+        resource.load_asset_specs.cache_clear()
 
 
 @definitions
@@ -97,7 +97,7 @@ def cacheable_asset_defs_refreshable_workbooks():
         )
     finally:
         # Clearing cache for other tests
-        resource.load_asset_specs.cache_clear()  # pyright: ignore[reportPossiblyUnboundVariable]
+        resource.load_asset_specs.cache_clear()
 
 
 @definitions
@@ -129,7 +129,7 @@ def cacheable_asset_defs_refreshable_data_sources():
         )
     finally:
         # Clearing cache for other tests
-        resource.load_asset_specs.cache_clear()  # pyright: ignore[reportPossiblyUnboundVariable]
+        resource.load_asset_specs.cache_clear()
 
 
 @definitions
@@ -147,7 +147,7 @@ def cacheable_asset_defs_asset_decorator_with_context():
         )
     finally:
         # Clearing cache for other tests
-        resource.load_asset_specs.cache_clear()  # pyright: ignore[reportPossiblyUnboundVariable]
+        resource.load_asset_specs.cache_clear()
 
 
 @definitions
@@ -168,7 +168,7 @@ def cacheable_asset_defs_custom_translator():
         return Definitions(assets=[*tableau_specs], jobs=[define_asset_job("all_asset_job")])
     finally:
         # Clearing cache for other tests
-        resource.load_asset_specs.cache_clear()  # pyright: ignore[reportPossiblyUnboundVariable]
+        resource.load_asset_specs.cache_clear()
 
 
 def test_load_assets_workspace_data_refreshable_workbooks(
