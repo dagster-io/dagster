@@ -98,7 +98,7 @@ Next, create a `sample_data.csv` file. This file will act as the data source for
    4,Diana,31,Los Angeles
    ```
 
-## Step 3: Define the asset
+## Step 4: Define the asset
 
 To define the assets for the ETL pipeline, open `src/dagster_quickstart/defs/assets.py` file in your preferred editor and copy in the following code:
 
@@ -137,7 +137,7 @@ All components validated successfully.
 All definitions loaded successfully.
 ```
 
-## Step 4: Run the pipeline
+## Step 5: Run the pipeline
 
 1. In the terminal, navigate to your project's root directory and run:
 
@@ -166,7 +166,7 @@ dg launch --assets "*"
 ```
 :::
 
-## Step 5: Verify the results
+## Step 6: Verify the results
 
 In your terminal, run:
 
