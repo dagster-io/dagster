@@ -288,7 +288,7 @@ export const OpJobPartitionsViewContent = React.memo(
         >
           <Subheading>Status</Subheading>
           <Box flex={{gap: 8}}>
-            <Button onClick={() => setShowSteps(!showSteps)} active={showBackfillSetup}>
+            <Button onClick={() => setShowSteps(!showSteps)}>
               {showSteps ? 'Hide per-step status' : 'Show per-step status'}
             </Button>
             <Button
@@ -300,12 +300,11 @@ export const OpJobPartitionsViewContent = React.memo(
             </Button>
             {canLaunchPartitionBackfill ? (
               <Button
+                icon={<Icon name="add_circle" />}
                 onClick={() => {
                   void partitionsQueryResult.refetch();
                   setShowBackfillSetup(!showBackfillSetup);
                 }}
-                icon={<Icon name="add_circle" />}
-                active={showBackfillSetup}
               >
                 Launch backfill…
               </Button>
