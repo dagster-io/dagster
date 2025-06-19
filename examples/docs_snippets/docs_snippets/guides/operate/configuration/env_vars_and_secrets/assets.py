@@ -7,6 +7,7 @@ from .resources import SomeResource
 
 
 @dg.asset
-def my_asset(some_resource: SomeResource) -> None:
-    ...
+def my_asset(some_resource: SomeResource) -> None: ...
+
+
 # end
