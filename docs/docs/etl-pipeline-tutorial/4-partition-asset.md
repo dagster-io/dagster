@@ -78,6 +78,8 @@ To materialize these assets:
 5. Select the `product_performance` asset, then **Materialize selected**.
 6. Ensure all partitions are selected, then launch a backfill.
 
+TODO: Screenshot
+
 ## Summary
 
 The `etl_tutorial` module still has the same structure since everything we have added is still in the `assets.py`:

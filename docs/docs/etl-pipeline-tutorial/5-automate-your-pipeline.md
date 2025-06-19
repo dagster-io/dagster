@@ -35,6 +35,8 @@ To accomplish this:
 
 The job is now executing.
 
+TODO: Screenshot
+
 Additionally, if you navigate to the Runs tab, you should see that materializations for `monthly_sales_performance` and `product_performance` have run as well.
 
 ## Summary

@@ -11,13 +11,13 @@ Next you will use [dbt](https://www.getdbt.com/) to model the data ingested with
 
 ## 1. Add the dbt project
 
-First we will need a dbt project to work with. Run the following to add a dbt project to the root of the `etl_tutorial`
+First we will need a dbt project to work with. Run the following to add a dbt project to the root of the `etl_tutorial`:
 
 ```bash
 git clone --depth=1 https://github.com/dagster-io/jaffle-platform.git transform && rm -rf transform/.git
 ```
 
-There will now be a new directory `transform` within our project.
+There will now be a directory `transform` within the root of the project.
 
 ```
 .
@@ -31,10 +31,10 @@ There will now be a new directory `transform` within our project.
 
 ## 2. Define the dbt Component
 
-Now that there is a dbt project to work with, we will install the Dagster dbt integration:
+Now that there is a dbt project to work with, we will install the Dagster dbt integration as well as the dbt adaptor for DuckDB:
 
 ```bash
-uv pip install dagster-dbt
+uv pip install dagster-dbt dbt-duckdb
 ```
 
 Now we can scaffold our dbt component, providing a path to the dbt project that was just added:

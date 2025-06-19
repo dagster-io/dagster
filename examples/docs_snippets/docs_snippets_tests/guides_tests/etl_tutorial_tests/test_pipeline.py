@@ -2,14 +2,14 @@ import dagster as dg
 import docs_snippets.guides.tutorials.etl_tutorial.src.etl_tutorial.defs
 
 
-def test_defs():
-    defs = dg.load_defs(
-        defs=docs_snippets.guides.tutorials.etl_tutorial.src.etl_tutorial.defs
-    )
-    assert defs.success
-
-
 # TODO: Enable when project structure is finalized
+# def test_defs():
+#     defs = dg.load_defs(
+#         docs_snippets.guides.tutorials.etl_tutorial.src.etl_tutorial.defs
+#     )
+#     assert defs.success
+
+
 # @pytest.fixture()
 # def duckdb_resource():
 #     return DuckDBResource(

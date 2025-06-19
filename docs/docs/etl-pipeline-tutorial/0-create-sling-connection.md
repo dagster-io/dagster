@@ -19,7 +19,6 @@ uv pip install dagster-sling
 
 This will install the Dagster library for Sling. Using `dg` this library also provides access to the Sling component. In order to view the Sling component, run `dg list`:
 
-
 ```bash
 dg list components
 ```

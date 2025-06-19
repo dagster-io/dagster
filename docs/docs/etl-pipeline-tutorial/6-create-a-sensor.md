@@ -63,7 +63,7 @@ Now copy the following sensor code in the `defs/sensors.py` file:
 3. Turn on the `adhoc_request_sensor`.
 4. Click on the `adhoc_request_sensor` details.
 
-   ![2048 resolution](/images/tutorial/etl-tutorial/sensor-evaluation.png)
+TODO: Screenshot
 
 5. Create a `data/requests` directory in `dagster_tutorial`. Then include a `request.json` file:
 
@@ -78,7 +78,7 @@ Now copy the following sensor code in the `defs/sensors.py` file:
 
 6. Click on the green tick to see the run for this request.
 
-   ![2048 resolution](/images/tutorial/etl-tutorial/sensor-asset-run.png)
+TODO: Screenshot
 
 ## Summary
 

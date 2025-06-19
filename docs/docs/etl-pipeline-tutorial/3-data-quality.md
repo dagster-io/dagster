@@ -34,7 +34,7 @@ Asset checks will run when an asset is materialized, but asset checks can also b
 3. Select the "Checks" tab.
 4. Click the **Execute** button for `missing_dimension_check`.
 
-# TODO Screenshot
+TODO: Screenshot
 
 ## Summary
 
