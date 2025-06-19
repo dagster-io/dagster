@@ -49,7 +49,7 @@ def test_fetch_tableau_workspace_data(
     resource = clazz(**resource_args)  # type: ignore
     resource.build_client()
 
-    actual_workspace_data = resource.fetch_tableau_workspace_data()
+    actual_workspace_data = resource.get_or_fetch_workspace_data()
     assert len(actual_workspace_data.workbooks_by_id) == 1
     assert len(actual_workspace_data.sheets_by_id) == 2
     assert len(actual_workspace_data.dashboards_by_id) == 1
@@ -96,14 +96,14 @@ def test_invalid_workbook(
     with pytest.raises(
         CheckError, match=f"Invalid data for Tableau workbook for id {workbook_id}."
     ):
-        resource.fetch_tableau_workspace_data()
+        resource.get_or_fetch_workspace_data()
 
     # Test empty workbook
     get_workbook.return_value = {"data": {"workbooks": []}}
     with pytest.raises(
         Exception, match=f"Could not retrieve data for Tableau workbook for id {workbook_id}."
     ):
-        resource.fetch_tableau_workspace_data()
+        resource.get_or_fetch_workspace_data()
 
 
 @responses.activate
@@ -293,15 +293,15 @@ def test_parse_asset_specs(
 
 @responses.activate
 @pytest.mark.parametrize(
-    "attribute, value, expected_result",
+    "attribute, value, expected_result_before_selection, expected_result_after_selection",
     [
-        (None, None, 1),
-        ("id", TEST_WORKBOOK_ID, 1),
-        ("project_name", TEST_PROJECT_NAME, 1),
-        ("project_id", TEST_PROJECT_ID, 1),
-        ("id", "non_matching_workbook_id", 0),
-        ("project_name", "non_matching_project_name", 0),
-        ("project_id", "non_matching_project_id", 0),
+        (None, None, 1, 1),
+        ("id", TEST_WORKBOOK_ID, 1, 1),
+        ("project_name", TEST_PROJECT_NAME, 1, 1),
+        ("project_id", TEST_PROJECT_ID, 1, 1),
+        ("id", "non_matching_workbook_id", 1, 0),
+        ("project_name", "non_matching_project_name", 1, 0),
+        ("project_id", "non_matching_project_id", 1, 0),
     ],
     ids=[
         "no_selector_present_workbook",
@@ -327,7 +327,8 @@ def test_parse_asset_specs(
 def test_tableau_workbook_selector(
     attribute: str,
     value: str,
-    expected_result: int,
+    expected_result_before_selection: int,
+    expected_result_after_selection: int,
     clazz: Union[type[TableauCloudWorkspace], type[TableauServerWorkspace]],
     host_key: str,
     host_value: str,
@@ -357,9 +358,10 @@ def test_tableau_workbook_selector(
         (lambda workbook: getattr(workbook, attribute) == value) if attribute else None
     )
 
-    actual_workspace_data = resource.fetch_tableau_workspace_data()
-    selected_workspace_data = actual_workspace_data.to_workspace_data_selection(
+    workspace_data = resource.get_or_fetch_workspace_data()
+    assert len(workspace_data.workbooks_by_id) == expected_result_before_selection
+
+    workspace_data_selection = workspace_data.to_workspace_data_selection(
         workbook_selector_fn=workbook_selector_fn
     )
-
-    assert len(selected_workspace_data.workbooks_by_id) == expected_result
+    assert len(workspace_data_selection.workbooks_by_id) == expected_result_after_selection
