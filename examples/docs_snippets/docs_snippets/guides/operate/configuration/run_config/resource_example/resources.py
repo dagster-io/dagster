@@ -20,7 +20,7 @@ class MyDatabaseResource(dg.ConfigurableResource):
 def resources() -> dg.Definitions:
     return dg.Definitions(
         resources={
-            # To send a query to the dabatase, you can call my_db_resource.query("QUERY HERE")
+            # To send a query to the database, you can call my_db_resource.query("QUERY HERE")
             # in the asset, op, or job where you reference my_db_resource
             "my_db_resource": MyDatabaseResource(connection_url="")
         }
