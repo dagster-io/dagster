@@ -52,6 +52,7 @@ def test_dg_docs_scaffolding_project(update_snippets: bool) -> None:
         _run_command(r"rm uv.lock")
         context.run_command_and_snippet_output(
             cmd="tree",
-            snippet_path=SNIPPETS_DIR / f"{context.get_next_snip_number()}-tree-non-uv.txt",
+            snippet_path=SNIPPETS_DIR
+            / f"{context.get_next_snip_number()}-tree-non-uv.txt",
             # custom_comparison_fn=compare_tree_output
         )
