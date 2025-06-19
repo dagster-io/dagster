@@ -54,6 +54,9 @@ EXCLUDED_FILES = {
     f"{snippets_folder}/guides/operate/configuration/env_vars_and_secrets/assets.py",
     f"{snippets_folder}/guides/operate/configuration/run_config/asset_example/assets.py",
     f"{snippets_folder}/guides/operate/configuration/run_config/op_example/ops.py",
+    f"{snippets_folder}/guides/operate/configuration/run_config/providing_config_values/assets.py",
+    f"{snippets_folder}/guides/operate/configuration/run_config/using_env_vars/assets.py",
+    f"{snippets_folder}/guides/operate/configuration/run_config/validation/assets.py",
     # migrated from legacy `docs_snippets/`
     f"{snippets_folder}/concepts/assets/asset_group_module.py",
     f"{snippets_folder}/concepts/assets/asset_input_managers_numpy.py",
