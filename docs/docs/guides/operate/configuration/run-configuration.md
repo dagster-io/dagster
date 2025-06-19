@@ -28,6 +28,8 @@ Here, we define a basic asset in `assets.py` and its configurable parameters in 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/operate/configuration/run_config/asset_example/assets.py"
   title="src/<project_name>/defs/assets.py"
+  startAfter="start"
+  endBefore="end"
 />
 
 <CodeExample

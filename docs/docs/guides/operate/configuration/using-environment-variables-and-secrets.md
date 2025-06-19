@@ -174,7 +174,7 @@ A resource is typically used to connect to an external service or system, such a
 Let's take a look at an example that creates a resource called `SomeResource` and supplies it to assets. Let's start by looking at the resource:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/operate/configuration/env_vars_and_secrets/resources_v1.py"
+  path="docs_snippets/docs_snippets/guides/operate/configuration/env_vars_and_secrets/resources.py"
   title="src/<project_name>/defs/resources.py"
 />
 
@@ -185,21 +185,17 @@ Let's review what's happening here:
 
 By including a reference to `SomeResource` in a `@dg.definitions`-decorated function, we make that resource available to assets defined elsewhere in the `src/<project_name>/defs` directory:
 
-```python title="src/<project_name>/defs/assets.py"
-
-from .resources import SomeResource
-
-import dagster as dg
-
-@dg.asset
-def my_asset(some_resource: SomeResource) -> None:
-    connection = some_resource.connect
-```
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/operate/configuration/env_vars_and_secrets/assets.py"
+  title="src/<project_name>/defs/assets.py"
+  startAfter="start"
+  endBefore="end"
+/>
 
 As storing secrets in configuration is bad practice, we'll use an environment variable:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/operate/configuration/env_vars_and_secrets/resources_v1.py"
+  path="docs_snippets/docs_snippets/guides/operate/configuration/env_vars_and_secrets/resources_v2.py"
   title="src/<project_name>/defs/resources.py"
 />
 

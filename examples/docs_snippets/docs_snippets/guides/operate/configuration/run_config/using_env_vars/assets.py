@@ -1,4 +1,4 @@
-# pyright: reportMissingImports=none
+# pyright: reportMissingImports=false
 
 # start
 import dagster as dg
