@@ -1,5 +1,6 @@
 # isort:skip_file
 
+from pathlib import Path
 import dagster as dg
 import my_existing_project.defs
 from my_existing_project.analytics import assets as analytics_assets
@@ -16,5 +17,5 @@ defs = dg.Definitions.merge(
         jobs=[sync_tables_job, regenerate_analytics_job],
         schedules=[sync_tables_daily_schedule, regenerate_analytics_hourly_schedule],
     ),
-    dg.components.load_defs(my_existing_project.defs),
+    dg.components.load_from_defs_folder(project_root=Path(__file__).parent.parent),
 )

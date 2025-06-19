@@ -5,6 +5,11 @@ from typing import Optional
 
 from dagster_shared import check
 from dagster_shared.serdes.objects.package_entry import json_for_all_components
+from dagster_shared.utils.config import (
+    get_canonical_defs_module_name,
+    load_toml_as_dict,
+    locate_dg_config_in_folder,
+)
 
 from dagster._annotations import deprecated, preview, public
 from dagster._core.definitions.definitions_class import Definitions
@@ -44,8 +49,12 @@ def get_project_root(defs_root: ModuleType) -> Path:
         FileNotFoundError: If no project root with pyproject.toml or setup.py is found.
     """
     # Get the module's file path
-
     module_path = getattr(defs_root, "__file__", None)
+    if module_path is None:
+        # For modules without __file__ attribute (e.g. namespace packages), try to get path from __path__
+        module_paths = getattr(defs_root, "__path__", None)
+        if module_paths and len(module_paths) > 0:
+            module_path = module_paths[0]
     if not module_path:
         raise FileNotFoundError(f"Module {defs_root} has no __file__ attribute")
 
@@ -61,9 +70,51 @@ def get_project_root(defs_root: ModuleType) -> Path:
     raise FileNotFoundError("No project root with pyproject.toml or setup.py found")
 
 
+@public
+@preview(emit_runtime_warning=False)
+@suppress_dagster_warnings
+def load_from_defs_folder(*, project_root: Path) -> Definitions:
+    """Constructs a Definitions object, loading all Dagster defs in the project's
+    defs folder.
+
+    Args:
+        project_root (Path): The path to the dg project root.
+    """
+    root_config_path = locate_dg_config_in_folder(project_root)
+    toml_config = load_toml_as_dict(
+        check.not_none(
+            root_config_path,
+            additional_message=f"No config file found at project root {project_root}",
+        )
+    )
+
+    if root_config_path and root_config_path.stem == "dg":
+        project = toml_config.get("project", {})
+    else:
+        project = toml_config.get("tool", {}).get("dg", {}).get("project", {})
+
+    root_module_name = project.get("root_module")
+    defs_module_name = project.get("defs_module")
+    check.invariant(
+        defs_module_name or root_module_name,
+        f"Either defs_module or root_module must be set in the project config {root_config_path}",
+    )
+    defs_module_name = get_canonical_defs_module_name(defs_module_name, root_module_name)
+
+    defs_module = importlib.import_module(defs_module_name)
+
+    return load_defs(
+        defs_module, project_root=project_root, terminate_autoloading_on_keyword_files=False
+    )
+
+
 # Public method so optional Nones are fine
 @public
 @preview(emit_runtime_warning=False)
+@deprecated(
+    breaking_version="1.10.21",
+    additional_warn_text="Use load_from_defs_folder instead.",
+)
 @suppress_dagster_warnings
 def load_defs(
     defs_root: ModuleType,

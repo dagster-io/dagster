@@ -50,6 +50,13 @@ EXCLUDED_FILES = {
     f"{snippets_folder}/guides/dg/using-resources/3-resource-defs-at-project-root.py",
     f"{snippets_folder}/guides/components/integrations/dlt-component/5-loads.py",
     f"{snippets_folder}/guides/components/integrations/dlt-component/7-customized-loads.py",
+    # resources are defined in a separate file so import references are failing tests
+    f"{snippets_folder}/guides/operate/configuration/env_vars_and_secrets/assets.py",
+    f"{snippets_folder}/guides/operate/configuration/run_config/asset_example/assets.py",
+    f"{snippets_folder}/guides/operate/configuration/run_config/op_example/ops.py",
+    f"{snippets_folder}/guides/operate/configuration/run_config/providing_config_values/assets.py",
+    f"{snippets_folder}/guides/operate/configuration/run_config/using_env_vars/assets.py",
+    f"{snippets_folder}/guides/operate/configuration/run_config/validation/assets.py",
     # migrated from legacy `docs_snippets/`
     f"{snippets_folder}/concepts/assets/asset_group_module.py",
     f"{snippets_folder}/concepts/assets/asset_input_managers_numpy.py",
@@ -130,6 +137,7 @@ EXCLUDED_FILES = {
     f"{snippets_folder}/tutorial/connecting/connecting_with_config.py",
     f"{snippets_folder}/tutorial/connecting/connecting_with_envvar.py",
     f"{snippets_folder}/tutorial/scheduling/with_schedule/with_schedule.py",
+    f"{snippets_folder}/guides/dagster/dagster_pipes/databricks/resources.py",
 }
 EXCLUDED_DIRS = {
     # integrations are excluded because they have external dependencies that are easier to manage in

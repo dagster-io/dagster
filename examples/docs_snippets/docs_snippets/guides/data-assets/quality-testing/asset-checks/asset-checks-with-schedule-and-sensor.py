@@ -44,12 +44,3 @@ check_sensor = dg.make_email_on_run_failure_sensor(
     monitored_jobs=[check_job],
 )
 # highlight-end
-
-
-defs = dg.Definitions(
-    assets=[orders],
-    asset_checks=[orders_id_has_no_nulls],
-    jobs=[asset_job, check_job],
-    schedules=[asset_schedule, check_schedule],
-    sensors=[check_sensor],
-)

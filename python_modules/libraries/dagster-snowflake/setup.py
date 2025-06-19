@@ -51,4 +51,9 @@ setup(
         ],
     },
     zip_safe=False,
+    entry_points={
+        "dagster_dg_cli.registry_modules": [
+            "dagster_snowflake = dagster_snowflake",
+        ],
+    },
 )

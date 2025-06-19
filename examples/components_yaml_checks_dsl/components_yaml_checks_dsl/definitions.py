@@ -1,8 +1,8 @@
-from dagster import definitions, load_defs
+from pathlib import Path
 
-import components_yaml_checks_dsl.defs
+from dagster import definitions, load_from_defs_folder
 
 
 @definitions
 def defs():
-    return load_defs(defs_root=components_yaml_checks_dsl.defs)
+    return load_from_defs_folder(project_root=Path(__file__).parent.parent)

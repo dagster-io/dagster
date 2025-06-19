@@ -32,7 +32,7 @@ def test_pipes_subprocess_script_hello_world() -> None:
 
         with sandbox.load(
             component_body={
-                "type": "dagster.components.lib.executable_component.uv_run_component.UvRunComponent",
+                "type": "dagster.components.UvRunComponent",
                 "attributes": {
                     "execution": {
                         "name": "op_name",

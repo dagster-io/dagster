@@ -52,7 +52,7 @@ Click on the **Launchpad** tab, then press the **Launch Run** button to execute 
 
 By default, Dagster will run the job using the <PyObject section="execution" module="dagster" object="multiprocess_executor" /> - that means each step in the job runs in its own process, and steps that don't depend on each other can run in parallel.
 
-The Launchpad also offers a configuration editor to let you interactively build up the configuration. Refer to the [run configuration documentation](/guides/operate/configuration/run-configuration#specifying-runtime-configuration) for more info.
+The Launchpad also offers a configuration editor to let you interactively build up the configuration. Refer to the [run configuration documentation](/guides/operate/configuration/run-configuration#providing-config-values-at-runtime) for more info.
 
 </TabItem>
 <TabItem value="Command line">

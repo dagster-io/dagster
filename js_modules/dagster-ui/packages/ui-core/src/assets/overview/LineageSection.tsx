@@ -85,13 +85,11 @@ const AssetLinksWithStatus = ({
       ))}
       <Box>
         {displayed.length < assets.length ? (
-          <Button small onClick={() => setDisplayedCount(Number.MAX_SAFE_INTEGER)}>
+          <Button onClick={() => setDisplayedCount(Number.MAX_SAFE_INTEGER)}>
             Show {assets.length - displayed.length} more
           </Button>
         ) : displayed.length > displayedByDefault ? (
-          <Button small onClick={() => setDisplayedCount(displayedByDefault)}>
-            Show less
-          </Button>
+          <Button onClick={() => setDisplayedCount(displayedByDefault)}>Show less</Button>
         ) : undefined}
       </Box>
     </Box>

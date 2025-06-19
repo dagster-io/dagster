@@ -1,3 +1,4 @@
+# start_file
 import dagster as dg
 
 
@@ -11,8 +12,13 @@ def load_file(config: FilepathConfig) -> str:
         return file.read()
 
 
-# highlight-start
+# end_file
+
+
+# start_test
 def test_load_file() -> None:
     assert load_file(FilepathConfig(path="path1.txt")) == "contents1"
     assert load_file(FilepathConfig(path="path2.txt")) == "contents2"
-    # highlight-end
+
+
+# end_test
