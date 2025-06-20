@@ -38,8 +38,9 @@ from dagster._core.definitions.multi_dimensional_partitions import (
     MultiPartitionKey,
     get_tags_from_multi_partition_key,
 )
-from dagster._core.definitions.result import AssetResult
+from dagster._core.definitions.result import AssetResult, MaterializeResult
 from dagster._core.definitions.source_asset import SYSTEM_METADATA_KEY_SOURCE_ASSET_OBSERVATION
+from dagster._core.definitions.utils import NoValueSentinel
 from dagster._core.errors import (
     DagsterAssetCheckFailedError,
     DagsterExecutionHandleOutputError,
@@ -69,9 +70,6 @@ from dagster._utils.warnings import beta_warning, disable_dagster_warnings
 
 class AssetResultOutput(Output):
     """This is a marker subclass that represents an Output that was produced from an AssetResult."""
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
 
 
 def _process_asset_results_to_events(
@@ -103,8 +101,12 @@ def _process_user_event(
             yield from _process_user_event(step_context, check_result)
 
         with disable_dagster_warnings():
+            if isinstance(user_event, MaterializeResult):
+                value = user_event.value
+            else:
+                value = None
             yield AssetResultOutput(
-                value=None,
+                value=value,
                 output_name=output_name,
                 metadata=user_event.metadata,
                 data_version=user_event.data_version,
@@ -763,11 +765,24 @@ def _store_output(
     # don't store asset check outputs, asset observation outputs, asset result outputs, or Nothing
     # type outputs
     step_output = step_context.step.step_output_named(step_output_handle.output_name)
+
     if (
         step_output.properties.asset_check_key
         or (step_context.output_observes_source_asset(step_output_handle.output_name))
-        or isinstance(output, AssetResultOutput)
         or output_context.dagster_type.is_nothing
+        or (
+            # FIXME: currently, when an output type is unset, this quickly gets coerced to the Any type,
+            # making it impossible to distinguish between a user declaring that they expect an output
+            # of any type, and a user not declaring any expectation at all.
+            #
+            # For now, we assume that if the output type is Any AND the user has not explicitly set a
+            # value for their materialize result, that they do not expect the IO manager to be invoked.
+            # In contrast, if the user does explicitly set the output value to any value (including None),
+            # the IO manager *will* be invoked.
+            output_context.dagster_type.is_any
+            and isinstance(output, AssetResultOutput)
+            and output.value is NoValueSentinel
+        )
     ):
         yield from _log_materialization_or_observation_events_for_asset(
             step_context=step_context,
