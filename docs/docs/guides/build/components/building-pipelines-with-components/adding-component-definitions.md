@@ -4,10 +4,7 @@ sidebar_position: 200
 description: Add Dagster components to your project with YAML using the dg scaffold defs command.
 ---
 
-import DgComponentsRc from '@site/docs/partials/\_DgComponentsRc.md';
 import DgScaffoldDefsTip from '@site/docs/partials/\_DgScaffoldDefsTip.md';
-
-<DgComponentsRc />
 
 You can scaffold Dagster Component definitions in your project from the command line with the `dg scaffold defs` command, which will create a new directory inside your `defs/` folder that contains a `defs.yaml` file.
 

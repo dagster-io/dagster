@@ -94,59 +94,86 @@ With the exception of [`dagster_cloud.yaml`](/deployment/code-locations/dagster-
 
 For local development, a project with a single code location might look like this:
 
-```shell
-.
-└── my-project
-    ├── dagster.yaml ## optional, used for instance settings
-    ├── pyproject.toml
-    ├── src
-    │   └── my_project
-    │       ├── __init__.py
-    │       ├── definitions.py
-    │       └── defs
-    │           └── __init__.py
-    ├── tests
-    │   └── __init__.py
-    └── uv.lock
-```
+<Tabs groupId="package-manager">
+  <TabItem value="uv" label="uv" >
+
+  ```shell
+  .
+  └── my-project
+      ├── dagster.yaml  ## optional, used for instance settings
+      ├── pyproject.toml
+      ├── src
+      │   └── my_project
+      │       ├── __init__.py
+      │       ├── definitions.py
+      │       └── defs
+      │           └── __init__.py
+      ├── tests
+      │   └── __init__.py
+      └── uv.lock
+  ```
+  </TabItem>
+  <TabItem value="pip" label="pip">
+
+  ```shell
+  .
+  └── my-project
+      ├── dagster.yaml  ## optional, used for instance settings
+      ├── pyproject.toml
+      ├── src
+      │   └── my_project
+      │       ├── __init__.py
+      │       ├── definitions.py
+      │       └── defs
+      │           └── __init__.py
+      └── tests
+          └── __init__.py
+  ```
+  </TabItem>
+</Tabs>
 
 </TabItem>
 <TabItem value="Multiple code locations">
 
-For local development, a workspace with multiple projects that each define a different code location might look like this:
+For local development, a workspace with multiple code locations might look like this:
 
-```shell
-.
-├── dagster.yaml    ## optional, used for instance settings
-├── deployments
-│   └── local
-│       ├── pyproject.toml
-│       └── uv.lock
-├── dg.toml         ## defines multiple projects
-└── projects
-    ├── project-1
-    │   ├── pyproject.toml
-    │   ├── src
-    │   │   └── project_1
-    │   │       ├── __init__.py
-    │   │       ├── definitions.py
-    │   │       └── defs
-    │   │           └── __init__.py
-    │   ├── tests
-    │   │   └── __init__.py
-    │   └── uv.lock
-    └── project-2
-        ├── pyproject.toml
-        ├── src
-        │   └── project_2
-        │       ├── __init__.py
-        │       ├── definitions.py
-        │       └── defs
-        │           └── __init__.py
-        ├── tests
-        │   └── __init__.py
-        └── uv.lock
-```
+<Tabs groupId="package-manager">
+  <TabItem label="uv" value="uv">
+  ```shell
+  .
+  └── my-project
+      ├── dagster.yaml
+      ├── pyproject.toml
+      ├── src
+      │   └── my_project
+      │       ├── __init__.py
+      │       ├── definitions.py
+      │       └── defs
+      │           └── __init__.py
+      ├── tests
+      │   └── __init__.py
+      ├── uv.lock
+      └── workspace.yaml
+    ```
+  </TabItem>
+  <TabItem label="pip" value="pip">
+  ```shell
+  .
+  └── my-project
+      ├── dagster.yaml
+      ├── pyproject.toml
+      ├── src
+      │   └── my_project
+      │       ├── __init__.py
+      │       ├── definitions.py
+      │       └── defs
+      │           └── __init__.py
+      ├── tests
+      │   └── __init__.py
+      └── workspace.yaml
+  ```
+  </TabItem>
+</Tabs>
 
 For more information on creating a Dagster workspace with multiple projects, see [Managing multiple projects with workspaces](/guides/build/projects/multiple-projects).
 
@@ -159,21 +186,43 @@ Once you're ready to move from working locally to deploying Dagster to your infr
 
 A Dagster project deployed to your infrastructure might look like this:
 
-```shell
-.
-├── dagster.yaml    ## optional, used for instance settings
-├── pyproject.toml
-├── src
-│   └── my_project
-│       ├── __init__.py
-│       ├── definitions.py
-│       └── defs
-│           └── __init__.py
-├── tests
-│   └── __init__.py
-├── uv.lock
-└── workspace.yaml    ## defines multiple code locations
-```
+<Tabs groupId="package-manager">
+  <TabItem label="uv" value="uv">
+    ```shell
+    .
+    └── my-project
+        ├── dagster.yaml  ## optional, used for instance settings
+        ├── pyproject.toml
+        ├── src
+        │   └── my_project
+        │       ├── __init__.py
+        │       ├── definitions.py
+        │       └── defs
+        │           └── __init__.py
+        ├── tests
+        │   └── __init__.py
+        ├── uv.lock
+        └── workspace.yaml  ## defines multiple code locations
+     ```
+  </TabItem>
+  <TabItem value="pip" label="pip">
+    ```shell
+    .
+    └── my-project
+        ├── dagster.yaml  ## optional, used for instance settings
+        ├── pyproject.toml
+        ├── src
+        │   └── my_project
+        │       ├── __init__.py
+        │       ├── definitions.py
+        │       └── defs
+        │           └── __init__.py
+        ├── tests
+        │   └── __init__.py
+        └── workspace.yaml  ## defines multiple code locations
+      ```
+    </TabItem>
+</Tabs>
 
 ### Dagster+ deployment
 
@@ -184,22 +233,43 @@ Depending on whether you're using Dagster+ Serverless or Hybrid, your project st
 
 For a Dagster+ Serverless deployment, a project might look like this:
 
-```shell
-.
-├── dagster_cloud.yaml        ## defines code locations
-├── deployment_settings.yaml  ## optional, defines settings for full deployments
-├── pyproject.toml
-├── src
-│   └── my_project
-│       ├── __init__.py
-│       ├── definitions.py
-│       └── defs
-│           └── __init__.py
-├── tests
-│   └── __init__.py
-└── uv.lock
-```
-
+<Tabs groupId="package-manager">
+  <TabItem value="uv" label="uv">
+    ```shell
+    .
+    └── my-project
+        ├── dagster_cloud.yaml        ## defines code locations
+        ├── deployment_settings.yaml  ## optional, defines settings for full deployments
+        ├── pyproject.toml
+        ├── src
+        │   └── my_project
+        │       ├── __init__.py
+        │       ├── definitions.py
+        │       └── defs
+        │           └── __init__.py
+        ├── tests
+        │   └── __init__.py
+        └── uv.lock
+    ```
+  </TabItem>
+  <TabItem value="pip" label="pip">
+    ```shell
+    .
+    └── my-project
+        ├── dagster_cloud.yaml        ## defines code locations
+        ├── deployment_settings.yaml  ## optional, defines settings for full deployments
+        ├── pyproject.toml
+        ├── src
+        │   └── my_project
+        │       ├── __init__.py
+        │       ├── definitions.py
+        │       └── defs
+        │           └── __init__.py
+        └── tests
+            └── __init__.py
+    ```
+  </TabItem>
+</Tabs>
 </TabItem>
 <TabItem value="Hybrid deployment">
 

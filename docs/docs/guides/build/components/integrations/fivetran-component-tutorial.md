@@ -4,10 +4,6 @@ description: The dagster-fivetran library provides a FivetranAccountComponent, w
 sidebar_position: 400
 ---
 
-import DgComponentsRc from '@site/docs/partials/\_DgComponentsRc.md';
-
-<DgComponentsRc />
-
 The [dagster-fivetran](/integrations/libraries/fivetran) library provides a `FivetranAccountComponent` which can be used to easily represent Fivetran connectors as assets in Dagster.
 
 ## 1. Prepare a Dagster project

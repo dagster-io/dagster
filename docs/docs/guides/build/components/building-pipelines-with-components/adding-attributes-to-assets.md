@@ -4,10 +4,6 @@ sidebar_position: 400
 title: Adding attributes to assets in a subdirectory
 ---
 
-import DgComponentsRc from '@site/docs/partials/\_DgComponentsRc.md';
-
-<DgComponentsRc />
-
 Attaching and modifying meta information on definitions such as assets is important in Dagster projects. You want to have groups, teams, owners, kinds, tags, and metadata set correctly to organize definitions and ensure that other tools and processes that rely on them correctly function.
 
 Within a dg-driven `defs` project layout, you can apply attribute transformations at any point in the directory structure. This supports uses cases ranging from ensuring that all definitions in a particular folder have an owner set to a particular team to more complex workflows involving applying a group conditionally based on other properties of the definition.

@@ -5,6 +5,4 @@ sidebar_position: 500
 unlisted: true
 ---
 
-import DgComponentsRc from '@site/docs/partials/\_DgComponentsRc.md';
-
-<DgComponentsRc />
+TODO
