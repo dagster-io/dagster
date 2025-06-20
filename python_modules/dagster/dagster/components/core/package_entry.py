@@ -5,9 +5,11 @@ import sys
 from collections.abc import Iterable, Sequence
 from types import ModuleType
 
-from dagster_shared.error import DagsterError
+from dagster_shared.error import DagsterError, DagsterUnresolvableSymbolError
 from dagster_shared.serdes.objects import EnvRegistryKey
+from dagster_shared.seven import load_module_object
 
+from dagster.components.scaffold.scaffold import has_scaffolder
 from dagster.components.utils import format_error_message
 
 PACKAGE_ENTRY_ATTR = "__dg_package_entry__"
@@ -88,14 +90,9 @@ def get_package_objects_in_module(
             yield attr, value
 
 
-def load_package_object(key: EnvRegistryKey) -> object:
-    module_name, attr = key.namespace, key.name
+def is_scaffoldable_object_key(key: EnvRegistryKey) -> bool:
     try:
-        module = importlib.import_module(module_name)
-        if not hasattr(module, attr):
-            raise DagsterError(f"Module `{module_name}` has no attribute `{attr}`.")
-        return getattr(module, attr)
-    except ModuleNotFoundError as e:
-        raise DagsterError(f"Module `{module_name}` not found.") from e
-    except ImportError as e:
-        raise DagsterError(f"Error loading module `{module_name}`.") from e
+        obj = load_module_object(key.namespace, key.name)
+        return has_scaffolder(obj)
+    except DagsterUnresolvableSymbolError:
+        return False

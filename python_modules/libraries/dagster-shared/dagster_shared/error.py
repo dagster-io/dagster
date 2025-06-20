@@ -20,6 +20,10 @@ class DagsterError(Exception):
         return False
 
 
+class DagsterUnresolvableSymbolError(DagsterError):
+    """Exception raised when a Python symbol reference can't be resolved."""
+
+
 # TODO: Eventually we need to move the rest of the code in dagster._utils.error into dagster_shared,
 # but that is a significant refactor. Currently we're just moving SerializableErrorInfo so that we
 # can use it with the dg packages`.
