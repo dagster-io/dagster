@@ -7,7 +7,7 @@ from dagster_shared.serdes import whitelist_for_serdes
 import dagster._check as check
 from dagster._core.definitions.asset_health.asset_health import AssetHealthStatus
 from dagster._core.definitions.asset_key import AssetKey
-from dagster._core.definitions.freshness import FreshnessState
+from dagster._core.definitions.freshness import FreshnessState, FreshnessStateRecord
 from dagster._core.loader import LoadableBy, LoadingContext
 from dagster._core.storage.event_log.base import AssetRecord
 
@@ -36,11 +36,11 @@ class AssetFreshnessHealthState(LoadableBy[AssetKey]):
             return AssetHealthStatus.UNKNOWN
 
     @classmethod
-    def compute_for_asset(
+    async def compute_for_asset(
         cls, asset_key: AssetKey, loading_context: LoadingContext
     ) -> "AssetFreshnessHealthState":
         """Gets the freshness state for the asset from the DB."""
-        freshness_state_record = loading_context.instance.get_entity_freshness_state(asset_key)
+        freshness_state_record = await FreshnessStateRecord.gen(loading_context, asset_key)
 
         if freshness_state_record is None:
             # freshness policy has no evaluations yet
@@ -87,7 +87,7 @@ async def get_freshness_status_and_metadata(
             or context.asset_graph.get(asset_key).internal_freshness_policy is None
         ):
             return AssetHealthStatus.NOT_APPLICABLE, None
-        asset_freshness_health_state = AssetFreshnessHealthState.compute_for_asset(
+        asset_freshness_health_state = await AssetFreshnessHealthState.compute_for_asset(
             asset_key,
             context,
         )

@@ -129,8 +129,7 @@ def sigma_materialization_fixture(responses: aioresponses) -> None:
     )
 
 
-@pytest.fixture(name="sigma_sample_data")
-def sigma_sample_data_fixture(responses: aioresponses) -> None:
+def _add_sample_responses(responses: aioresponses) -> None:
     # Single workbook, dataset
     responses.add(
         method=hdrs.METH_GET,
@@ -396,3 +395,19 @@ def sigma_sample_data_fixture(responses: aioresponses) -> None:
         ),
         status=200,
     )
+
+
+@pytest.fixture(name="sigma_sample_data")
+def sigma_sample_data_fixture(responses: aioresponses) -> None:
+    _add_sample_responses(responses)
+
+
+@pytest.fixture(name="sigma_sample_rate_limited_data")
+def sigma_sample_rate_limited_data_fixture(responses: aioresponses) -> None:
+    # rate limited, but recovers
+    responses.add(
+        method=hdrs.METH_GET,
+        url="https://aws-api.sigmacomputing.com/v2/workbooks?limit=1000",
+        status=429,
+    )
+    _add_sample_responses(responses)

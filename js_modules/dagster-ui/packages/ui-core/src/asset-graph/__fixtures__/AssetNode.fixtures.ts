@@ -14,6 +14,7 @@ import {
   buildAssetNode,
   buildMaterializationEvent,
   buildRun,
+  buildTeamAssetOwner,
   buildUserAssetOwner,
 } from '../../graphql/types';
 import {LiveDataForNodeWithStaleData} from '../Utils';
@@ -71,8 +72,8 @@ export const AssetNodeFragmentBasic: AssetNodeFragment = buildAssetNode({
     buildUserAssetOwner({
       email: 'test@company.com',
     }),
-    buildUserAssetOwner({
-      email: 'test2@company.com',
+    buildTeamAssetOwner({
+      team: 'Team Foo',
     }),
   ],
 });
@@ -830,6 +831,34 @@ export const AssetNodeScenariosBase = [
     definition: {
       ...AssetNodeFragmentBasic,
       assetKey: buildAssetKey({path: ['very_long_asset_which_was_totally_reasonable_at_the_time']}),
+    },
+    expectedText: [],
+  },
+  {
+    title: 'Single owner - long team name',
+    liveData: LiveDataForNodeMaterialized,
+    definition: {
+      ...AssetNodeFragmentBasic,
+      assetKey: buildAssetKey({path: ['very_long_asset_which_was_totally_reasonable_at_the_time']}),
+      owners: [
+        buildTeamAssetOwner({
+          team: 'Team Foobar Fizz Buzz Definitely Requires Truncation',
+        }),
+      ],
+    },
+    expectedText: [],
+  },
+  {
+    title: 'Single owner - long user name',
+    liveData: LiveDataForNodeMaterialized,
+    definition: {
+      ...AssetNodeFragmentBasic,
+      assetKey: buildAssetKey({path: ['very_long_asset_which_was_totally_reasonable_at_the_time']}),
+      owners: [
+        buildUserAssetOwner({
+          email: 'madeline.manning.mathison@boringcompany.com',
+        }),
+      ],
     },
     expectedText: [],
   },

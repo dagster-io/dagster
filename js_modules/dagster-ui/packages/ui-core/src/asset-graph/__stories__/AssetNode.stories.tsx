@@ -1,6 +1,6 @@
 import {MockedProvider} from '@apollo/client/testing';
 import {Box, Checkbox} from '@dagster-io/ui-components';
-import React, {useState} from 'react';
+import {useState} from 'react';
 
 import {AssetBaseData} from '../../asset-data/AssetBaseDataProvider';
 import {AssetLiveDataProvider} from '../../asset-data/AssetLiveDataProvider';
@@ -9,7 +9,7 @@ import {KNOWN_TAGS} from '../../graph/OpTags';
 import {buildAssetKey, buildAssetNode, buildStaleCause} from '../../graphql/types';
 import {AssetNode, AssetNodeMinimal} from '../AssetNode';
 import {AssetNode2025} from '../AssetNode2025';
-import {AssetNodeFacet, AssetNodeFacetDefaults} from '../AssetNodeFacets';
+import {AllAssetNodeFacets, AssetNodeFacet} from '../AssetNodeFacets';
 import {AssetNodeFacetsPicker} from '../AssetNodeFacetsPicker';
 import {AssetNodeLink} from '../ForeignNode';
 import {tokenForAssetKey} from '../Utils';
@@ -24,7 +24,7 @@ export default {
 
 export const LiveStates = () => {
   const [newDesign, setNewDesign] = useState<boolean>(true);
-  const [facets, setFacets] = useState<Set<AssetNodeFacet>>(new Set(AssetNodeFacetDefaults));
+  const [facets, setFacets] = useState<Set<AssetNodeFacet>>(new Set(AllAssetNodeFacets));
 
   const caseWithLiveData = (scenario: (typeof Mocks.AssetNodeScenariosBase)[0]) => {
     const definitionCopy = {

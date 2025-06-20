@@ -1,4 +1,4 @@
-import {Box, ButtonLink, Colors} from '@dagster-io/ui-components';
+import {Box, ButtonLink} from '@dagster-io/ui-components';
 import qs from 'qs';
 import {useCallback, useContext, useLayoutEffect, useMemo, useRef, useState} from 'react';
 import {useHistory} from 'react-router-dom';
@@ -309,11 +309,7 @@ export const useCodeLocationsStatus = (): StatusAndMessage | null => {
 };
 
 const ViewCodeLocationsButton = ({onClick}: {onClick: () => void}) => {
-  return (
-    <ViewButton onClick={onClick} color={Colors.accentWhite()}>
-      View
-    </ViewButton>
-  );
+  return <ViewButton onClick={onClick}>View</ViewButton>;
 };
 
 const ViewButton = styled(ButtonLink)`

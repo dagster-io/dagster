@@ -988,6 +988,10 @@ class DagsterInstance(DynamicPartitionsStore):
         return self.get_settings("auto_materialize").get("enabled", True)
 
     @property
+    def freshness_enabled(self) -> bool:
+        return self.get_settings("freshness").get("enabled", False)
+
+    @property
     def auto_materialize_minimum_interval_seconds(self) -> int:
         return self.get_settings("auto_materialize").get("minimum_interval_seconds")
 
@@ -3367,6 +3371,7 @@ class DagsterInstance(DynamicPartitionsStore):
             SchedulerDaemon,
             SensorDaemon,
         )
+        from dagster._daemon.freshness import FreshnessDaemon
         from dagster._daemon.run_coordinator.queued_run_coordinator_daemon import (
             QueuedRunCoordinatorDaemon,
         )
@@ -3385,6 +3390,8 @@ class DagsterInstance(DynamicPartitionsStore):
             daemons.append(EventLogConsumerDaemon.daemon_type())
         if self.auto_materialize_enabled or self.auto_materialize_use_sensors:
             daemons.append(AssetDaemon.daemon_type())
+        if self.freshness_enabled:
+            daemons.append(FreshnessDaemon.daemon_type())
         return daemons
 
     def get_daemon_statuses(
@@ -3614,9 +3621,10 @@ class DagsterInstance(DynamicPartitionsStore):
             ),
         )
 
-    def get_entity_freshness_state(self, entity_key: AssetKey) -> Optional[FreshnessStateRecord]:
-        warnings.warn("`get_entity_freshness_state` is not yet implemented for OSS.")
-        return None
+    def get_freshness_state_records(
+        self, keys: Sequence[AssetKey]
+    ) -> Mapping[AssetKey, FreshnessStateRecord]:
+        return self._event_storage.get_freshness_state_records(keys)
 
     def get_asset_check_support(self) -> "AssetCheckInstanceSupport":
         from dagster._core.storage.asset_check_execution_record import AssetCheckInstanceSupport
