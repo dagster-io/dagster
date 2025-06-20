@@ -4,10 +4,6 @@ sidebar_position: 100
 title: Creating and registering a component
 ---
 
-import DgComponentsRc from '@site/docs/partials/\_DgComponentsRc.md';
-
-<DgComponentsRc />
-
 The components system makes it easy to create new components that you and your teammates can reuse across your Dagster project.
 
 In most cases, components map to a specific technology. For example, you might create a `DockerScriptComponent` that executes a script in a Docker container, or a `SnowflakeQueryComponent` that runs a query on Snowflake.

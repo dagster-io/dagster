@@ -3192,6 +3192,10 @@
       "destination": "/etl-pipeline-tutorial"
     },
     {
+      "source": "/guides/labs/components/creating-new-components/dg-plugin",
+      "destination": "/guides/build/components/creating-new-components"
+    },
+    {
       "source": "/guides/labs/components/:path*",
       "destination": "/guides/build/components/:path*"
     },

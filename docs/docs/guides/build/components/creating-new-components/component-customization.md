@@ -4,10 +4,6 @@ description: Advanced customization for components you have created.
 sidebar_position: 200
 ---
 
-import DgComponentsRc from '@site/docs/partials/\_DgComponentsRc.md';
-
-<DgComponentsRc />
-
 ## Prerequisites
 
 Before following the steps below, you will need to [create and register a component](/guides/build/components/creating-new-components/creating-and-registering-a-component).

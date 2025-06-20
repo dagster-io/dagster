@@ -4,10 +4,6 @@ description: The dagster-dlt library provides a DltLoadCollectionComponent, whic
 sidebar_position: 100
 ---
 
-import DgComponentsRc from '@site/docs/partials/\_DgComponentsRc.md';
-
-<DgComponentsRc />
-
 The [dagster-dlt](/integrations/libraries/dlt) library provides a `DltLoadCollectionComponent` which can be used to easily represent a collection of dlt sources and pipelines as assets in Dagster.
 
 ## 1. Prepare a Dagster project

@@ -4,10 +4,6 @@ sidebar_position: 400
 title: Subclassing components to customize behavior
 ---
 
-import DgComponentsRc from '@site/docs/partials/\_DgComponentsRc.md';
-
-<DgComponentsRc />
-
 You can customize the behavior of a component beyond what is available in the `defs.yaml` file by creating a subclass of the component.
 
 There are two ways you can customize a component:

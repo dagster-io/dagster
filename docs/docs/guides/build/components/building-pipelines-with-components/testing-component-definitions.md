@@ -4,10 +4,6 @@ description: How to test component definitions.
 sidebar_position: 600
 ---
 
-import DgComponentsRc from '@site/docs/partials/\_DgComponentsRc.md';
-
-<DgComponentsRc />
-
 After creating components in your `defs` folder, you will want to test them. Dagster provides testing utilities that make testing components simple.
 
 The core function is `get_component_defs_within_project` and it has the following signature:

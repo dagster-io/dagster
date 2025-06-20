@@ -4,10 +4,6 @@ description: Use built-in Dagster Component integrations to build data pipelines
 sidebar_position: 100
 ---
 
-import DgComponentsRc from '@site/docs/partials/\_DgComponentsRc.md';
-
-<DgComponentsRc />
-
 import DocCardList from '@theme/DocCardList';
 
 <DocCardList />

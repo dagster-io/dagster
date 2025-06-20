@@ -4,10 +4,6 @@ description: The dagster-airbyte library provides an AirbyteCloudWorkspaceCompon
 sidebar_position: 401
 ---
 
-import DgComponentsRc from '@site/docs/partials/\_DgComponentsRc.md';
-
-<DgComponentsRc />
-
 The [dagster-airbyte](/integrations/libraries/airbyte) library provides an `AirbyteCloudWorkspaceComponent` which can be used to easily represent Airbyte Cloud connections as assets in Dagster.
 
 ## 1. Prepare a Dagster project
