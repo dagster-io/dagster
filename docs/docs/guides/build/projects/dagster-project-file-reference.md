@@ -16,10 +16,37 @@ The following demonstrates a Dagster project using the default project skeleton,
 
 <Tabs groupId="package-manager">
   <TabItem value="uv" label="uv">
-    <CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/scaffolding-project/2-tree-uv.txt" />
+    ```
+    .
+    └── my-project
+        ├── pyproject.toml
+        ├── src
+        │   └── my_project
+        │       ├── __init__.py
+        │       ├── definitions.py
+        │       └── defs
+        │           └── __init__.py
+        ├── tests
+        │   └── __init__.py
+        └── uv.lock
+    ```
+    {/* <CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/scaffolding-project/2-tree.txt" /> */}
   </TabItem>
   <TabItem value="pip" label="pip">
-    <CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/scaffolding-project/2-tree-non-uv.txt" />
+    ```
+    .
+    └── my-project
+        ├── pyproject.toml
+        ├── src
+        │   └── my_project
+        │       ├── __init__.py
+        │       ├── definitions.py
+        │       └── defs
+        │           └── __init__.py
+        └── tests
+            └── __init__.py
+    ```
+    {/* <CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/scaffolding-project/2-tree-pip.txt" /> */}
   </TabItem>
 </Tabs>
 
