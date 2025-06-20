@@ -24,7 +24,6 @@ There will now be a directory `transform` within the root of the project contain
 ├── pyproject.toml
 ├── src
 ├── tests
-│   └── __init__.py
 ├── transform # dbt project
 └── uv.lock
 ```

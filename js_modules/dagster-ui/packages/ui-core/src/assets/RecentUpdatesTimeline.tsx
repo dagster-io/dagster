@@ -20,7 +20,7 @@ import {AssetKey} from './types';
 import {useRecentAssetEvents} from './useRecentAssetEvents';
 import {Timestamp} from '../app/time/Timestamp';
 import {AssetRunLink} from '../asset-graph/AssetRunLinking';
-import {AssetEventHistoryEventTypeSelector, TimestampMetadataEntry} from '../graphql/types';
+import {AssetEventHistoryEventTypeSelector} from '../graphql/types';
 import {RunStatusWithStats} from '../runs/RunStatusDots';
 import {titleForRun} from '../runs/RunUtils';
 import {useFormatDateTime} from '../ui/useFormatDateTime';
@@ -64,25 +64,29 @@ export const RecentUpdatesTimeline = ({assetKey, events, loading}: Props) => {
           event.__typename === 'FailedToMaterializeEvent'
         ) {
           return event;
-        } else {
-          const lastUpdated = event.metadataEntries.find(
-            (entry) =>
-              entry.__typename === 'TimestampMetadataEntry' &&
-              entry.label === 'dagster/last_updated_timestamp',
-          );
-          const ts = lastUpdated
-            ? (lastUpdated as TimestampMetadataEntry).timestamp
-            : event.timestamp;
-
-          if (!seenTimestamps.has(ts)) {
-            seenTimestamps.add(ts);
-            return {
-              ...event,
-              timestamp: `${ts}`,
-            };
-          }
-          return null;
         }
+
+        const timestampEntries = event.metadataEntries.filter(
+          (entry) => entry.__typename === 'TimestampMetadataEntry',
+        );
+
+        const lastUpdated = timestampEntries.find(
+          (entry) => entry.label === 'dagster/last_updated_timestamp',
+        );
+
+        // The metadata timestamp is in seconds.
+        const lastUpdatedSec = lastUpdated?.timestamp;
+        const ts = lastUpdatedSec ? lastUpdatedSec * 1000 : event.timestamp;
+
+        if (!seenTimestamps.has(ts)) {
+          seenTimestamps.add(ts);
+          return {
+            ...event,
+            timestamp: `${ts}`,
+          };
+        }
+
+        return null;
       })
       .filter((e) => e) as AssetEventType[];
   }, [events]);

@@ -1,5 +1,5 @@
 ---
-title: Create Sling connection
+title: Ingest data
 description: Ingest data with Sling
 sidebar_position: 10
 ---
@@ -119,4 +119,4 @@ You have seen how to use `dg` and components to quickly spin up Dagster assets a
 
 ## Next steps
 
-- Continue this tutorial with your [dbt](/etl-pipeline-tutorial/create-dbt-connection)
+- Continue this tutorial with your [dbt](/etl-pipeline-tutorial/create-dbt-component)

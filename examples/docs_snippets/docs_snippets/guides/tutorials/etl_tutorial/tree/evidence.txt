@@ -1,7 +1,5 @@
 src
 └── etl_tutorial
-    ├── __init__.py
     └── defs
-        ├── __init__.py
         └── dashboard
             └── defs.yaml
