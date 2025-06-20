@@ -1,5 +1,6 @@
 from collections.abc import Sequence
 from dataclasses import dataclass, field
+from enum import Enum
 from typing import Annotated, Literal, NamedTuple, Optional, Union
 
 import dagster as dg
@@ -583,3 +584,22 @@ def test_non_resolvable_resolver():
     # but if Resolver is used on a class that does not subclass Resolvable, we throw
     with pytest.raises(ResolutionException, match="Subclass Resolvable"):
         Bad.model()
+
+
+def test_enums():
+    class Thing(Enum):
+        FOO = "FOO"
+        BAR = "BAR"
+
+    class Direct(Resolvable, Model):
+        thing: Thing
+
+    assert Direct.resolve_from_dict({"thing": "FOO"})
+
+    class Wrapper(Model):
+        thing: Thing
+
+    class Indirect(Resolvable, Model):
+        wrapper: Wrapper
+
+    assert Indirect.resolve_from_dict({"wrapper": {"thing": "BAR"}})
