@@ -726,6 +726,28 @@ def test_to_string_basic():
     assert (
         str(AssetSelection.groups("marketing", "finance")) == 'group:"marketing" or group:"finance"'
     )
+    assert str(AssetSelection.groups()) == "group:<null>"
+    assert str(AssetSelection.groups("")) == 'group:""'
+    assert str(AssetSelection.kind(None)) == "kind:<null>"
+    assert str(AssetSelection.kind("")) == 'kind:""'
+    assert str(AssetSelection.tag(None, "")) == "tag:<null>"
+    assert str(AssetSelection.tag("", None)) == 'tag:""'
+    assert str(AssetSelection.owner(None)) == "owner:<null>"
+    assert str(AssetSelection.owner("")) == 'owner:""'
+    assert str(CodeLocationAssetSelection(selected_code_location=None)) == "code_location:<null>"
+    assert str(ColumnAssetSelection(selected_column=None)) == "column:<null>"
+    assert str(ColumnAssetSelection(selected_column="")) == 'column:""'
+    assert str(ColumnTagAssetSelection(key=None, value=None)) == "column_tag:<null>"
+    assert str(ColumnTagAssetSelection(key="", value=None)) == 'column_tag:""'
+    assert str(TableNameAssetSelection(selected_table_name=None)) == "table_name:<null>"
+    assert str(TableNameAssetSelection(selected_table_name="")) == 'table_name:""'
+    assert (
+        str(ChangedInBranchAssetSelection(selected_changed_in_branch=None))
+        == "changed_in_branch:<null>"
+    )
+    assert (
+        str(ChangedInBranchAssetSelection(selected_changed_in_branch="")) == 'changed_in_branch:""'
+    )
 
 
 def test_to_string_binary_operators():
@@ -813,7 +835,7 @@ def test_from_string():
         depth=MAX_NUM, include_self=True
     ) | AssetSelection.assets("my_asset").upstream(depth=MAX_NUM, include_self=True)
     assert AssetSelection.from_string("tag:foo=bar") == AssetSelection.tag("foo", "bar")
-    assert AssetSelection.from_string("tag:foo") == AssetSelection.tag("foo", "")
+    assert AssetSelection.from_string("tag:foo") == AssetSelection.tag("foo", None)
     assert AssetSelection.from_string("key:prefix/thing") == KeyWildCardAssetSelection(
         selected_key_wildcard="prefix/thing"
     )
@@ -908,6 +930,27 @@ def test_owner() -> None:
 
     assert AssetSelection.owner("owner1@owner.com").resolve([assets]) == {
         AssetKey("asset1"),
+        AssetKey("asset3"),
+    }
+
+
+def test_kind() -> None:
+    @multi_asset(
+        specs=[
+            AssetSpec("asset1", kinds=["my_kind"]),
+            AssetSpec("asset2", kinds=[""]),
+            AssetSpec("asset3"),
+        ]
+    )
+    def assets(): ...
+
+    assert AssetSelection.kind("my_kind").resolve([assets]) == {
+        AssetKey("asset1"),
+    }
+    assert AssetSelection.kind("").resolve([assets]) == {
+        AssetKey("asset2"),
+    }
+    assert AssetSelection.kind(None).resolve([assets]) == {
         AssetKey("asset3"),
     }
 

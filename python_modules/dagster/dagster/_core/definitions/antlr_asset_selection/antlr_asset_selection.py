@@ -20,7 +20,6 @@ from dagster._core.definitions.asset_selection import (
     StatusAssetSelection,
     TableNameAssetSelection,
 )
-from dagster._core.storage.tags import KIND_PREFIX
 
 
 class AntlrInputErrorListener(ErrorListener):
@@ -120,7 +119,7 @@ class AntlrAssetSelectionVisitor(AssetSelectionVisitor):
 
     def visitTagAttributeExpr(self, ctx: AssetSelectionParser.TagAttributeExprContext):
         key = self.visit(ctx.value(0))
-        value = self.visit(ctx.value(1)) if ctx.EQUAL() else ""
+        value = self.visit(ctx.value(1)) if ctx.EQUAL() else None
         return AssetSelection.tag(key, value, include_sources=self.include_sources)
 
     def visitOwnerAttributeExpr(self, ctx: AssetSelectionParser.OwnerAttributeExprContext):
@@ -133,7 +132,7 @@ class AntlrAssetSelectionVisitor(AssetSelectionVisitor):
 
     def visitKindAttributeExpr(self, ctx: AssetSelectionParser.KindAttributeExprContext):
         kind = self.visit(ctx.value())
-        return AssetSelection.tag(f"{KIND_PREFIX}{kind}", "", include_sources=self.include_sources)
+        return AssetSelection.kind(kind, include_sources=self.include_sources)
 
     def visitCodeLocationAttributeExpr(
         self, ctx: AssetSelectionParser.CodeLocationAttributeExprContext
@@ -154,6 +153,8 @@ class AntlrAssetSelectionVisitor(AssetSelectionVisitor):
             return ctx.QUOTED_STRING().getText().strip('"')
         elif ctx.UNQUOTED_STRING():
             return ctx.UNQUOTED_STRING().getText()
+        elif ctx.NULL_STRING():
+            return None
 
     def visitStatusAttributeExpr(self, ctx: AssetSelectionParser.StatusAttributeExprContext):
         status = self.visit(ctx.value())
@@ -169,7 +170,7 @@ class AntlrAssetSelectionVisitor(AssetSelectionVisitor):
 
     def visitColumnTagAttributeExpr(self, ctx: AssetSelectionParser.ColumnTagAttributeExprContext):
         key = self.visit(ctx.value(0))
-        value = self.visit(ctx.value(1)) if ctx.EQUAL() else ""
+        value = self.visit(ctx.value(1)) if ctx.EQUAL() else None
         return ColumnTagAssetSelection(key=key, value=value)
 
     def visitChangedInBranchAttributeExpr(

@@ -31,6 +31,7 @@ from dagster._core.selector.subset_selector import (
     fetch_sources,
     parse_clause,
 )
+from dagster._core.storage.tags import KIND_PREFIX
 from dagster._record import copy, record
 
 CoercibleToAssetSelection: TypeAlias = Union[
@@ -239,13 +240,18 @@ class AssetSelection(ABC):
             include_sources (bool): If True, then include external assets matching the group in the
                 selection.
         """
-        check.tuple_param(group_strs, "group_strs", of_type=str)
-        return GroupsAssetSelection(selected_groups=group_strs, include_sources=include_sources)
+        check.tuple_param(group_strs, "group_strs", of_type=Optional[str])
+        return GroupsAssetSelection(
+            selected_groups=list(filter(lambda x: x is not None, group_strs)),
+            include_sources=include_sources,
+        )
 
     @public
     @staticmethod
     @beta_param(param="include_sources")
-    def tag(key: str, value: str, include_sources: bool = False) -> "AssetSelection":
+    def tag(
+        key: Optional[str], value: Optional[str], include_sources: bool = False
+    ) -> "AssetSelection":
         """Returns a selection that includes materializable assets that have the provided tag, and
         all the asset checks that target them.
 
@@ -255,6 +261,18 @@ class AssetSelection(ABC):
                 selection.
         """
         return TagAssetSelection(key=key, value=value, include_sources=include_sources)
+
+    @staticmethod
+    def kind(kind: Optional[str], include_sources: bool = False) -> "AssetSelection":
+        """Returns a selection that includes materializable assets that have the provided kind, and
+        all the asset checks that target them.
+
+        Args:
+            kind (str): The kind to select.
+            include_sources (bool): If True, then include external assets matching the kind in the
+                selection.
+        """
+        return KindAssetSelection(kind_str=kind, include_sources=include_sources)
 
     @staticmethod
     @beta_param(param="include_sources")
@@ -277,7 +295,7 @@ class AssetSelection(ABC):
             check.failed(f"Invalid tag selection string: {string}. Must have no more than one '='.")
 
     @staticmethod
-    def owner(owner: str) -> "AssetSelection":
+    def owner(owner: Optional[str]) -> "AssetSelection":
         """Returns a selection that includes assets that have the provided owner, and all the
         asset checks that target them.
 
@@ -934,7 +952,7 @@ class GroupsAssetSelection(AssetSelection):
             key
             for group in self.selected_groups
             for key in asset_graph.asset_keys_for_group(group)
-            if key in base_set
+            if key is not None and key in base_set
         }
 
     def to_serializable_asset_selection(self, asset_graph: BaseAssetGraph) -> "AssetSelection":
@@ -944,21 +962,63 @@ class GroupsAssetSelection(AssetSelection):
         return len(self.selected_groups) > 1
 
     def to_selection_str(self) -> str:
-        if len(self.selected_groups) == 1:
-            return f'group:"{self.selected_groups[0]}"'
+        if len(self.selected_groups) == 0:
+            return "group:<null>"
+        return " or ".join(f'group:"{group}"' for group in self.selected_groups)
+
+
+@whitelist_for_serdes
+@record
+class KindAssetSelection(AssetSelection):
+    include_sources: bool
+    kind_str: Optional[str]
+
+    def resolve_inner(
+        self,
+        asset_graph: BaseAssetGraph,
+        allow_missing: bool,
+    ) -> AbstractSet[AssetKey]:
+        base_set = (
+            asset_graph.get_all_asset_keys()
+            if self.include_sources
+            else asset_graph.materializable_asset_keys
+        )
+
+        if self.kind_str is None:
+            return {
+                key
+                for key in base_set
+                if (
+                    not any(
+                        tag_key.startswith(KIND_PREFIX) for tag_key in asset_graph.get(key).tags
+                    )
+                )
+                or (not asset_graph.get(key).tags)
+            }
         else:
-            return " or ".join(f'group:"{group}"' for group in self.selected_groups)
+            return {
+                key
+                for key in base_set
+                if asset_graph.get(key).tags.get(f"{KIND_PREFIX}{self.kind_str}") is not None
+            }
+
+    def to_selection_str(self) -> str:
+        if self.kind_str is None:
+            return "kind:<null>"
+        return f'kind:"{self.kind_str}"'
 
 
 @whitelist_for_serdes
 @record
 class TagAssetSelection(AssetSelection):
-    key: str
-    value: str
+    key: Optional[str]
+    value: Optional[str]
     include_sources: bool
 
     def resolve_inner(
-        self, asset_graph: BaseAssetGraph, allow_missing: bool
+        self,
+        asset_graph: BaseAssetGraph,
+        allow_missing: bool,
     ) -> AbstractSet[AssetKey]:
         base_set = (
             asset_graph.get_all_asset_keys()
@@ -969,16 +1029,17 @@ class TagAssetSelection(AssetSelection):
         return {key for key in base_set if asset_graph.get(key).tags.get(self.key) == self.value}
 
     def to_selection_str(self) -> str:
-        if self.value:
-            return f'tag:"{self.key}"="{self.value}"'
-        else:
+        if self.key is None:
+            return "tag:<null>"
+        if not self.value:
             return f'tag:"{self.key}"'
+        return f'tag:"{self.key}"="{self.value}"'
 
 
 @whitelist_for_serdes
 @record
 class OwnerAssetSelection(AssetSelection):
-    selected_owner: str
+    selected_owner: Optional[str]
 
     def resolve_inner(
         self, asset_graph: BaseAssetGraph, allow_missing: bool
@@ -990,6 +1051,8 @@ class OwnerAssetSelection(AssetSelection):
         }
 
     def to_selection_str(self) -> str:
+        if self.selected_owner is None:
+            return "owner:<null>"
         return f'owner:"{self.selected_owner}"'
 
 
@@ -1000,7 +1063,7 @@ class CodeLocationAssetSelection(AssetSelection):
     an in-process asset graph.
     """
 
-    selected_code_location: str
+    selected_code_location: Optional[str]
 
     def resolve_inner(
         self, asset_graph: BaseAssetGraph, allow_missing: bool
@@ -1043,6 +1106,8 @@ class CodeLocationAssetSelection(AssetSelection):
         }
 
     def to_selection_str(self) -> str:
+        if self.selected_code_location is None:
+            return "code_location:<null>"
         return f'code_location:"{self.selected_code_location}"'
 
 
@@ -1053,7 +1118,7 @@ class ColumnAssetSelection(AssetSelection):
     an in-process asset graph.
     """
 
-    selected_column: str
+    selected_column: Optional[str]
 
     def resolve_inner(
         self, asset_graph: BaseAssetGraph, allow_missing: bool
@@ -1062,6 +1127,8 @@ class ColumnAssetSelection(AssetSelection):
         raise NotImplementedError
 
     def to_selection_str(self) -> str:
+        if self.selected_column is None:
+            return "column:<null>"
         return f'column:"{self.selected_column}"'
 
 
@@ -1072,7 +1139,7 @@ class TableNameAssetSelection(AssetSelection):
     an in-process asset graph.
     """
 
-    selected_table_name: str
+    selected_table_name: Optional[str]
 
     def resolve_inner(
         self, asset_graph: BaseAssetGraph, allow_missing: bool
@@ -1081,6 +1148,8 @@ class TableNameAssetSelection(AssetSelection):
         raise NotImplementedError
 
     def to_selection_str(self) -> str:
+        if self.selected_table_name is None:
+            return "table_name:<null>"
         return f'table_name:"{self.selected_table_name}"'
 
 
@@ -1091,8 +1160,8 @@ class ColumnTagAssetSelection(AssetSelection):
     an in-process asset graph.
     """
 
-    key: str
-    value: str
+    key: Optional[str]
+    value: Optional[str]
 
     def resolve_inner(
         self, asset_graph: BaseAssetGraph, allow_missing: bool
@@ -1101,10 +1170,12 @@ class ColumnTagAssetSelection(AssetSelection):
         raise NotImplementedError
 
     def to_selection_str(self) -> str:
-        if self.value:
-            return f'column_tag:"{self.key}"="{self.value}"'
-        else:
+        if self.key is None:
+            return "column_tag:<null>"
+        if not self.value:
             return f'column_tag:"{self.key}"'
+        else:
+            return f'column_tag:"{self.key}"="{self.value}"'
 
 
 @whitelist_for_serdes
@@ -1114,7 +1185,7 @@ class ChangedInBranchAssetSelection(AssetSelection):
     an in-process asset graph.
     """
 
-    selected_changed_in_branch: str
+    selected_changed_in_branch: Optional[str]
 
     def resolve_inner(
         self, asset_graph: BaseAssetGraph, allow_missing: bool
@@ -1123,13 +1194,15 @@ class ChangedInBranchAssetSelection(AssetSelection):
         raise NotImplementedError
 
     def to_selection_str(self) -> str:
+        if self.selected_changed_in_branch is None:
+            return "changed_in_branch:<null>"
         return f'changed_in_branch:"{self.selected_changed_in_branch}"'
 
 
 @whitelist_for_serdes
 @record
 class StatusAssetSelection(AssetSelection):
-    selected_status: str
+    selected_status: Optional[str]
 
     def resolve_inner(
         self, asset_graph: BaseAssetGraph, allow_missing: bool
@@ -1138,6 +1211,8 @@ class StatusAssetSelection(AssetSelection):
         raise NotImplementedError
 
     def to_selection_str(self) -> str:
+        if self.selected_status is None:
+            return "status:<null>"
         return f'status:"{self.selected_status}"'
 
 
