@@ -37,7 +37,17 @@ export function getValue(ctx: ValueContext | KeyValueContext): string {
   if ('UNQUOTED_WILDCARD_STRING' in ctx && ctx.UNQUOTED_WILDCARD_STRING()) {
     return ctx.text;
   }
+  if ('NULL_STRING' in ctx && ctx.NULL_STRING()) {
+    return '';
+  }
   throw new Error('Invalid value');
+}
+
+export function isNullValue(ctx: ValueContext | KeyValueContext): boolean {
+  if ('NULL_STRING' in ctx && ctx.NULL_STRING()) {
+    return true;
+  }
+  return false;
 }
 
 export function getSupplementaryDataKey({

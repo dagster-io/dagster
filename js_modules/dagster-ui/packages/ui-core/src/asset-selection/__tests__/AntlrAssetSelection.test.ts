@@ -180,23 +180,23 @@ describe('parseAssetSelectionQuery', () => {
     });
 
     it('should be able to filter to assets without any code location', () => {
-      assertQueryResult('code_location:""', ['B2']);
+      assertQueryResult('code_location:<null>', ['B2']);
     });
 
     it('should be able to filter to assets without any tags', () => {
-      assertQueryResult('tag:""', ['B2', 'C']);
+      assertQueryResult('tag:<null>', ['B2', 'C']);
     });
 
     it('should be able to filter to assets without any owners', () => {
-      assertQueryResult('owner:""', ['B', 'B2', 'C']);
+      assertQueryResult('owner:<null>', ['B', 'B2', 'C']);
     });
 
     it('should be able to filter to assets without any group', () => {
-      assertQueryResult('group:""', ['B2']);
+      assertQueryResult('group:<null>', ['B2']);
     });
 
     it('should be able to filter to assets without any kind', () => {
-      assertQueryResult('kind:""', ['A', 'B2', 'C']);
+      assertQueryResult('kind:<null>', ['A', 'B2', 'C']);
     });
   });
 });

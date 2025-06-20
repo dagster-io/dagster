@@ -8,6 +8,7 @@ import {
   getSupplementaryDataKey,
   getTraversalDepth,
   getValue,
+  isNullValue,
 } from './util';
 import {GraphTraverser} from '../app/GraphQueryImpl';
 import {tokenForAssetKey} from '../asset-graph/Utils';
@@ -174,18 +175,20 @@ export class AntlrAssetSelectionVisitor
     if (ctx.EQUAL()) {
       value = getValue(ctx.value(1));
     }
+    const isNullKey = isNullValue(ctx.value(0));
     return new Set(
       [...this.all_assets].filter((i) => {
         if (i.node.tags.length > 0) {
           return i.node.tags.some((t) => t.key === key && (!value || t.value === value));
         }
-        return key === '' && !value;
+        return isNullKey && !value;
       }),
     );
   }
 
   visitOwnerAttributeExpr(ctx: OwnerAttributeExprContext) {
     const value: string = getValue(ctx.value());
+    const isNull = isNullValue(ctx.value());
     return new Set(
       [...this.all_assets].filter((i) => {
         if (i.node.owners.length > 0) {
@@ -197,31 +200,33 @@ export class AntlrAssetSelectionVisitor
             }
           });
         }
-        return value === '';
+        return isNull;
       }),
     );
   }
 
   visitGroupAttributeExpr(ctx: GroupAttributeExprContext) {
     const value: string = getValue(ctx.value());
+    const isNull = isNullValue(ctx.value());
     return new Set(
       [...this.all_assets].filter((i) => {
         if (i.node.groupName) {
           return i.node.groupName === value;
         }
-        return value === '';
+        return isNull;
       }),
     );
   }
 
   visitKindAttributeExpr(ctx: KindAttributeExprContext) {
     const value: string = getValue(ctx.value());
+    const isNull = isNullValue(ctx.value());
     return new Set(
       [...this.all_assets].filter((i) => {
         if (i.node.kinds.length > 0) {
           return i.node.kinds.some((k) => k === value);
         }
-        return value === '';
+        return isNull;
       }),
     );
   }
