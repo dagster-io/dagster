@@ -1,5 +1,4 @@
 src
 └── etl_tutorial
-    ├── __init__.py
     └── defs
         └── resources.py

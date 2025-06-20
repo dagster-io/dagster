@@ -89,5 +89,5 @@ One new files have been added to the `etl_tutorial` module, `sensors.py`:
 Sensors provide a fine grained way to build event driven systems. Combined with declarative automation, there are a number of ways to automate your pipelines.
 
 # Next steps
-- Continue this tutorial with adding [Evidence](/etl-pipeline-tutorial/create-evidence-connection)
+- Continue this tutorial with adding [Evidence](/etl-pipeline-tutorial/create-evidence-component)
 

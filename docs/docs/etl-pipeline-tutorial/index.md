@@ -43,13 +43,13 @@ To follow the steps in this guide, you'll need:
 1. Open your terminal and scaffold a new project with `uv`:
 
    ```bash
-   uvx create-dagster project etl_tutorial
+   uvx create-dagster project etl-tutorial
    ```
 
 2. Change into that project
 
    ```bash
-   cd etl_tutorial
+   cd etl-tutorial
    ```
 
 3. Activate the project virtual environment:
@@ -78,4 +78,4 @@ At this point the project will be empty but we will continue to add to it throug
 
 ## Next steps
 
-- Continue this tutorial by [creating and materializing assets](/etl-pipeline-tutorial/create-and-materialize-assets)
+- Continue this tutorial with [ingest data](/etl-pipeline-tutorial/ingest-data)

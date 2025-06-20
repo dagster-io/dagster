@@ -25,7 +25,6 @@ There will now be a directory `dashboard` within the root of the project.
 ├── dashboard # Evidence project
 ├── src
 ├── tests
-│   └── __init__.py
 ├── transform
 └── uv.lock
 ```
