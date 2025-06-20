@@ -1,3 +1,4 @@
+import textwrap
 from collections.abc import Iterator, Mapping, Sequence
 from dataclasses import dataclass, field
 from functools import cached_property
@@ -160,9 +161,25 @@ class SlingReplicationCollectionComponent(Component, Resolvable):
         yield from iterator
 
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
-        defs = Definitions(
+        if self.asset_post_processors:
+            raise Exception(
+                "The asset_post_processors field is deprecated, place your post-processors in the assets"
+                " field in the top-level post_processing field instead, as in this example:\n"
+                + textwrap.dedent(
+                    """
+                    type: dagster_sling.SlingReplicationCollectionComponent
+
+                    attributes: ~
+
+                    post_processing:
+                      assets:
+                        - target: "*"
+                          attributes:
+                            group_name: "my_group"
+                    """
+                )
+            )
+
+        return Definitions(
             assets=[self.build_asset(context, replication) for replication in self.replications],
         )
-        for post_processor in self.asset_post_processors or []:
-            defs = post_processor(defs)
-        return defs
