@@ -12,7 +12,6 @@ By default, Dagster+ Serverless will package your code as PEX files and deploy t
 - [Use a different base image](#use-a-different-base-image)
 - [Include data files](#include-data-files)
 - [Disable PEX deploys](#disable-pex-deploys)
-- [Use private Python packages](#use-private-python-packages)
 
 ## Add dependencies
 
@@ -249,47 +248,3 @@ dagster-cloud serverless deploy --base-image=my_base_image:latest --location-nam
 
 </TabItem>
 </Tabs>
-
-## Use private Python packages
-
-If you use PEX deploys in your workflow (`ENABLE_FAST_DEPLOYS: 'true'`), the following steps can install a package from a private GitHub repository, e.g. `my-org/private-repo`, as a dependency:
-
-1.  In your `deploy.yml` file, add the following to the top of `steps:` section in the `dagster-cloud-default-deploy` job.
-
-    ```yaml
-    - name: Checkout internal repository
-      uses: actions/checkout@v3
-      with:
-        token: ${{ secrets.GH_PAT }}
-        repository: my-org/private-repo
-        path: deps/private-repo
-        ref: some-branch # optional to check out a specific branch
-
-    - name: Build a wheel
-      # adjust the `cd` command to cd into the directory with setup.py
-      run: >
-        cd deps/private-repo &&
-        python setup.py bdist_wheel &&
-        mkdir -p $GITHUB_WORKSPACE/deps &&
-        cp dist/*whl $GITHUB_WORKSPACE/deps
-
-    # If you have multiple private packages, the above two steps should be repeated for each but the following step is only
-    # needed once
-    - name: Configure dependency resolution to use the wheel built above
-      run: >
-        echo "[global]" > $GITHUB_WORKSPACE/deps/pip.conf &&
-        echo "find-links = " >> $GITHUB_WORKSPACE/deps/pip.conf &&
-        echo "    file://$GITHUB_WORKSPACE/deps/" >> $GITHUB_WORKSPACE/deps/pip.conf &&
-        echo "PIP_CONFIG_FILE=$GITHUB_WORKSPACE/deps/pip.conf" > $GITHUB_ENV
-    ```
-
-2.  Create a GitHub personal access token and set it as the `GH_PAT` secret for your Actions.
-3.  In your Dagster project's `setup.py` file, add your package name to the `install_requires` section:
-    ```python
-        install_requires=[
-          "dagster",
-          "dagster-cloud",
-          "private-package",   # add this line - must match your private Python package name
-    ```
-
-Once the `deploy.yml` is updated and changes pushed to your repo, then any subsequent code deploy should checkout your private repository, build the package and install it as a dependency in your Dagster+ project. Repeat the above steps for your `branch_deployments.yml` if needed.
