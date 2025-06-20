@@ -28,9 +28,6 @@ def get_buildkite_quarantined_objects(
         headers = {"Authorization": f"Bearer {token}"}
         url = f"https://api.buildkite.com/v2/analytics/organizations/{org_slug}/suites/{suite_slug}/tests/{annotation}"
 
-        response = requests.get(url, headers=headers)
-        response.raise_for_status()
-
         start_time = time.time()
         timeout = 10
 
