@@ -298,9 +298,7 @@ def scope_custom_group_name_dagster_map_asset_specs():
         yield from dbt.cli(["build"], context=context).stream()
 
     my_dbt_assets = my_dbt_assets.map_asset_specs(
-        lambda spec: spec.replace_attributes(
-            group_name="snowflake"
-        )
+        lambda spec: spec.replace_attributes(group_name="snowflake")
     )
 
     # end_custom_group_name_dagster_map_asset_specs
