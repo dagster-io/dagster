@@ -1,5 +1,36 @@
 # Changelog
 
+## 1.10.21 (core) / 0.26.21 (libraries)
+
+### New
+
+- [dagster-tableau] The `tableau_assets` decorator is now available to create the asset definitions of all materializable assets in a given Tableau workspace. These assets can be subsetted and materialized using the `TableauCloudWorkspace.refresh_and_poll` method.
+- [dagster-tableau] The deprecated `get_*_asset_key` methods on the `DagsterTableauTranslator` class have been removed.
+- [ui] Show tags for a Job on the sidebar of the Job page. [#30728](https://github.com/dagster-io/dagster/pull/30728)
+
+### Bugfixes
+
+- Fixed a bug where "falsey" defualt config values were not showing up in the launchpad. This has been fixed for all cases except the empty dictionary.
+- Fixed an issue with the new "re-execute from asset failure" functionality that could cause additional steps to be included if the job was previously re-executed from step failure.
+- Fixed an issue where the `staleStatusByPartition`, `staleCausesByPartition`, and `dataVersionByPartition` fields on the graphql `AssetNode` would fail when called on an asset with dynamic partitions.
+- [dagster-dbt] Fixed an issue where creating a DagsterDbtTranslator that didn't call the parent class's constructor in its `__init__` method would raise an Exception during execution.
+- [dagster-sling] Removed upper-bound pin on the `sling` dependency.
+- [dagster-sling] Fixed an issue with the `SlingResource` that could cause values specified with `EnvVar`s to provide the env var name instead of the env var value to the sling replication configuration.
+- [dagster-fivetran] Introduced a `dagster-fivetran snapshot` command, allowing Fivetran workspaces to be captured to a file for faster subsequent loading.
+
+### Dagster Plus
+
+- [ui] The integrations marketplace (currently behind a feature flag) now allows you to create, edit, and delete private packages.
+
+### dg & Components (Preview)
+
+- A clean and informative error message is now printed when an invalid set of parameters is passed to `dg scaffold defs ...`.
+- Component asset specs now allow specifying partition definitions through the `partitions_def` key.
+- The `dg` cache is no longer operative, since `dg` now operates in the same python environment as the projects it manipulates. Config options for the cache have been removed.
+- The `load_defs` entrypoint has been deprecated in favor of `load_from_defs_folder`, which takes a single path for a folder to load definitions from rather than a module object.
+- The `asset_post_processors` field on `SlingReplicationCollectionComponent` and `AirflowInstanceComponent` is no longer supported, and has been replaced with the top-level `post_processors` field.
+- Fixed an issue where dg projects using `autoload_defs=true` could not be deployed to Dagster+.
+
 ## 1.10.20 (core) / 0.26.20 (libraries)
 
 ### New
