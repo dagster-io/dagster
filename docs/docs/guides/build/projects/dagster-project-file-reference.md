@@ -30,7 +30,6 @@ The following demonstrates a Dagster project using the default project skeleton,
         │   └── __init__.py
         └── uv.lock
     ```
-    {/* <CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/scaffolding-project/2-tree.txt" /> */}
   </TabItem>
   <TabItem value="pip" label="pip">
     ```
@@ -46,7 +45,6 @@ The following demonstrates a Dagster project using the default project skeleton,
         └── tests
             └── __init__.py
     ```
-    {/* <CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/scaffolding-project/2-tree-pip.txt" /> */}
   </TabItem>
 </Tabs>
 
