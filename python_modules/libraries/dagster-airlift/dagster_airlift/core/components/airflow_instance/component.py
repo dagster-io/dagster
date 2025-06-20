@@ -209,7 +209,8 @@ class AirflowInstanceComponent(Component, Resolvable):
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
         if self.asset_post_processors:
             raise Exception(
-                "The asset_post_processors field is deprecated, use the top-level post_processing field instead:\n"
+                "The asset_post_processors field is deprecated, place your post-processors in the assets"
+                " field in the top-level post_processing field instead, as in this example:\n"
                 + textwrap.dedent(
                     """
                     type: dagster_airlift.core.components.AirflowInstanceComponent
