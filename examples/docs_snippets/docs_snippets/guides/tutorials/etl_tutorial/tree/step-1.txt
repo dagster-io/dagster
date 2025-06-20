@@ -1,11 +1,11 @@
 src
 └── etl_tutorial
     ├── __init__.py
+    ├── definitions.py
     └── defs
         ├── __init__.py
         ├── ingest_files
         │   ├── defs.yaml
         │   └── replication.yaml
-        ├── jdbt
-        │   └── defs.yaml
-        └── definitions.py
+        └── jdbt
+            └── defs.yaml

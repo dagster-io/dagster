@@ -1,6 +1,7 @@
 src
 └── etl_tutorial
     ├── __init__.py
+    ├── definitions.py
     └── defs
         ├── __init__.py
         ├── dashboard
@@ -11,6 +12,5 @@ src
         ├── jdbt
         │   └── defs.yaml
         ├── assets.py
-        ├── definitions.py
         ├── resources.py
         └── sensors.py

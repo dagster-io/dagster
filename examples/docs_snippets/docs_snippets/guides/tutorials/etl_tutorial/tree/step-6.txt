@@ -1,6 +1,7 @@
 src
 └── etl_tutorial
     ├── __init__.py
+    ├── definitions.py
     └── defs
         ├── __init__.py
         ├── ingest_files
@@ -9,6 +10,5 @@ src
         ├── jdbt
         │   └── defs.yaml
         ├── assets.py
-        ├── definitions.py
         ├── resources.py
         └── sensors.py

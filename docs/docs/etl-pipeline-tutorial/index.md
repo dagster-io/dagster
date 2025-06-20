@@ -43,13 +43,13 @@ To follow the steps in this guide, you'll need:
 1. Open your terminal and scaffold a new project with `uv`:
 
    ```bash
-   uvx create-dagster project etl_tutorial
+   uvx create-dagster project etl-tutorial
    ```
 
 2. Change into that project
 
    ```bash
-   cd etl_tutorial
+   cd etl-tutorial
    ```
 
 3. Activate the project virtual environment:
