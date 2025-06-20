@@ -9,4 +9,5 @@ src
         ├── jdbt
         │   └── defs.yaml
         ├── assets.py
+        ├── definitions.py
         └── resources.py

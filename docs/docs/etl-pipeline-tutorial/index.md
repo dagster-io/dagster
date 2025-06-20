@@ -78,4 +78,4 @@ At this point the project will be empty but we will continue to add to it throug
 
 ## Next steps
 
-- Continue this tutorial by [creating and materializing assets](/etl-pipeline-tutorial/create-and-materialize-assets)
+- Continue this tutorial with [ingest data](/etl-pipeline-tutorial/ingest-data)

@@ -6,5 +6,6 @@ src
         ├── ingest_files
         │   ├── defs.yaml
         │   └── replication.yaml
-        └── jdbt
-            └── defs.yaml
+        ├── jdbt
+        │   └── defs.yaml
+        └── definitions.py
