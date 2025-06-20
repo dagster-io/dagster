@@ -726,35 +726,27 @@ def test_to_string_basic():
     assert (
         str(AssetSelection.groups("marketing", "finance")) == 'group:"marketing" or group:"finance"'
     )
-    assert str(AssetSelection.groups("", is_null=True)) == "group:<null>"
-    assert str(AssetSelection.groups("", is_null=False)) == 'group:""'
-    assert str(AssetSelection.kind("", is_null=True)) == "kind:<null>"
-    assert str(AssetSelection.kind("", is_null=False)) == 'kind:""'
-    assert str(AssetSelection.tag("", "", is_null=True)) == "tag:<null>"
-    assert str(AssetSelection.tag("", "", is_null=False)) == 'tag:""'
-    assert str(AssetSelection.owner("", is_null=True)) == "owner:<null>"
-    assert str(AssetSelection.owner("", is_null=False)) == 'owner:""'
+    assert str(AssetSelection.groups()) == "group:<null>"
+    assert str(AssetSelection.groups("")) == 'group:""'
+    assert str(AssetSelection.kind(None)) == "kind:<null>"
+    assert str(AssetSelection.kind("")) == 'kind:""'
+    assert str(AssetSelection.tag(None, "")) == "tag:<null>"
+    assert str(AssetSelection.tag("", None)) == 'tag:""'
+    assert str(AssetSelection.owner(None)) == "owner:<null>"
+    assert str(AssetSelection.owner("")) == 'owner:""'
+    assert str(CodeLocationAssetSelection(selected_code_location=None)) == "code_location:<null>"
+    assert str(ColumnAssetSelection(selected_column=None)) == "column:<null>"
+    assert str(ColumnAssetSelection(selected_column="")) == 'column:""'
+    assert str(ColumnTagAssetSelection(key=None, value=None)) == "column_tag:<null>"
+    assert str(ColumnTagAssetSelection(key="", value=None)) == 'column_tag:""'
+    assert str(TableNameAssetSelection(selected_table_name=None)) == "table_name:<null>"
+    assert str(TableNameAssetSelection(selected_table_name="")) == 'table_name:""'
     assert (
-        str(CodeLocationAssetSelection(selected_code_location="", is_null=True))
-        == "code_location:<null>"
-    )
-    assert (
-        str(CodeLocationAssetSelection(selected_code_location="", is_null=False))
-        == 'code_location:""'
-    )
-    assert str(ColumnAssetSelection(selected_column="", is_null=True)) == "column:<null>"
-    assert str(ColumnAssetSelection(selected_column="", is_null=False)) == 'column:""'
-    assert str(ColumnTagAssetSelection(key="", value="", is_null=True)) == "column_tag:<null>"
-    assert str(ColumnTagAssetSelection(key="", value="", is_null=False)) == 'column_tag:""'
-    assert str(TableNameAssetSelection(selected_table_name="", is_null=True)) == "table_name:<null>"
-    assert str(TableNameAssetSelection(selected_table_name="", is_null=False)) == 'table_name:""'
-    assert (
-        str(ChangedInBranchAssetSelection(selected_changed_in_branch="", is_null=True))
+        str(ChangedInBranchAssetSelection(selected_changed_in_branch=None))
         == "changed_in_branch:<null>"
     )
     assert (
-        str(ChangedInBranchAssetSelection(selected_changed_in_branch="", is_null=False))
-        == 'changed_in_branch:""'
+        str(ChangedInBranchAssetSelection(selected_changed_in_branch="")) == 'changed_in_branch:""'
     )
 
 
@@ -843,7 +835,7 @@ def test_from_string():
         depth=MAX_NUM, include_self=True
     ) | AssetSelection.assets("my_asset").upstream(depth=MAX_NUM, include_self=True)
     assert AssetSelection.from_string("tag:foo=bar") == AssetSelection.tag("foo", "bar")
-    assert AssetSelection.from_string("tag:foo") == AssetSelection.tag("foo", "")
+    assert AssetSelection.from_string("tag:foo") == AssetSelection.tag("foo", None)
     assert AssetSelection.from_string("key:prefix/thing") == KeyWildCardAssetSelection(
         selected_key_wildcard="prefix/thing"
     )
@@ -958,7 +950,7 @@ def test_kind() -> None:
     assert AssetSelection.kind("").resolve([assets]) == {
         AssetKey("asset2"),
     }
-    assert AssetSelection.kind("", is_null=True).resolve([assets]) == {
+    assert AssetSelection.kind(None).resolve([assets]) == {
         AssetKey("asset3"),
     }
 
