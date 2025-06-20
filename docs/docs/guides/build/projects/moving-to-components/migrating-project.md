@@ -94,15 +94,15 @@ We're not quite done adding configuration. `dg` uses the Python [entry
 point](https://packaging.python.org/en/latest/specifications/entry-points/) API
 to expose custom component types and other scaffoldable objects from user
 projects. Our entry point declaration will specify a submodule as the location
-where our project exposes plugin objects. By convention, this submodule is
+where our project exposes registry modules. By convention, this submodule is
 named `<root_module>.lib`. In our case, it will be `my_existing_project.lib`.
 Let's create this submodule now:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/migrating-project/6-create-lib.txt" />
 
-:::tip
-See the [plugin guide](/guides/build/components/creating-new-components/creating-dg-plugin) for more on `dg` plugins.
-:::
+{/* :::tip */}
+{/* See the [Registry modules guide](todo) for more on registry modules */}
+{/* ::: */}
 
 We'll need to add a `dagster_dg_cli.registry_modules` entry point to our project and then
 reinstall the project package into our virtual environment. The reinstallation

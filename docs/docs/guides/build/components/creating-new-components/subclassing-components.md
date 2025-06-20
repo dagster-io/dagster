@@ -6,10 +6,10 @@ title: Subclassing components to customize behavior
 
 You can customize the behavior of a component beyond what is available in the `defs.yaml` file by creating a subclass of the component.
 
-There are two ways you can customize a component:
+{/* There are two ways you can customize a component: */}
 
-- For one-off customizations, you can create a _local_ component, defined in a Python file in the same directory as your `defs.yaml` file. Customarily, this local component is defined in a file named `component.py` in the component directory.
-- For customizations which may be reused across multiple components, you can create a _global_ component, defined in a Python file in the `components` directory. This requires that your project is a [`dg` plugin](./creating-dg-plugin) (projects scaffolded using the `dg` CLI are automatically plugins).
+{/* - For one-off customizations, you can create a _local_ component, defined in a Python file in the same directory as your `defs.yaml` file. Customarily, this local component is defined in a file named `component.py` in the component directory. */}
+{/* - For customizations which may be reused across multiple components, you can create a _global_ component, defined in a Python file in the `components` directory. This requires that your project is a [`dg` plugin](./creating-dg-plugin) (projects scaffolded using the `dg` CLI are automatically plugins). */}
 
 ## Creating a customized component
 
