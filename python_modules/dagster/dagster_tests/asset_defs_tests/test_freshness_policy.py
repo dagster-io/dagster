@@ -2,7 +2,7 @@ import datetime
 
 import pytest
 from dagster._check import ParameterCheckError
-from dagster._core.definitions.freshness_policy import FreshnessPolicy
+from dagster._core.definitions.freshness_policy import LegacyFreshnessPolicy
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._time import create_datetime
 
@@ -17,28 +17,28 @@ from dagster._time import create_datetime
     ],
     [
         (
-            FreshnessPolicy(maximum_lag_minutes=30),
+            LegacyFreshnessPolicy(maximum_lag_minutes=30),
             create_datetime(2022, 1, 1, 0),
             create_datetime(2022, 1, 1, 0, 25),
             0,
             25,
         ),
         (
-            FreshnessPolicy(maximum_lag_minutes=120),
+            LegacyFreshnessPolicy(maximum_lag_minutes=120),
             create_datetime(2022, 1, 1, 0),
             create_datetime(2022, 1, 1, 1),
             0,
             60,
         ),
         (
-            FreshnessPolicy(maximum_lag_minutes=30),
+            LegacyFreshnessPolicy(maximum_lag_minutes=30),
             create_datetime(2022, 1, 1, 0),
             create_datetime(2022, 1, 1, 1),
             30,
             60,
         ),
         (
-            FreshnessPolicy(maximum_lag_minutes=500),
+            LegacyFreshnessPolicy(maximum_lag_minutes=500),
             None,
             create_datetime(2022, 1, 1, 0, 25),
             None,
@@ -46,7 +46,7 @@ from dagster._time import create_datetime
         ),
         # materialization happened before SLA
         (
-            FreshnessPolicy(cron_schedule="@daily", maximum_lag_minutes=15),
+            LegacyFreshnessPolicy(cron_schedule="@daily", maximum_lag_minutes=15),
             create_datetime(2022, 1, 1, 23, 55),
             create_datetime(2022, 1, 2, 0, 10),
             0,
@@ -54,7 +54,7 @@ from dagster._time import create_datetime
         ),
         # materialization happened after SLA, but is fine now
         (
-            FreshnessPolicy(cron_schedule="@daily", maximum_lag_minutes=15),
+            LegacyFreshnessPolicy(cron_schedule="@daily", maximum_lag_minutes=15),
             create_datetime(2022, 1, 1, 0, 30),
             create_datetime(2022, 1, 1, 1, 0),
             0,
@@ -62,7 +62,7 @@ from dagster._time import create_datetime
         ),
         # materialization for this data has not happened yet (day before)
         (
-            FreshnessPolicy(cron_schedule="@daily", maximum_lag_minutes=60),
+            LegacyFreshnessPolicy(cron_schedule="@daily", maximum_lag_minutes=60),
             create_datetime(2022, 1, 1, 22, 0),
             create_datetime(2022, 1, 2, 2, 0),
             # by midnight, expected data from up to 2022-01-02T23:00, but actual data is from
@@ -72,14 +72,14 @@ from dagster._time import create_datetime
         ),
         # weird one: at the end of each hour, your data should be no more than 5 hours old
         (
-            FreshnessPolicy(cron_schedule="@hourly", maximum_lag_minutes=60 * 5),
+            LegacyFreshnessPolicy(cron_schedule="@hourly", maximum_lag_minutes=60 * 5),
             create_datetime(2022, 1, 1, 1, 0),
             create_datetime(2022, 1, 1, 4, 0),
             0,
             180,
         ),
         (
-            FreshnessPolicy(cron_schedule="@hourly", maximum_lag_minutes=60 * 5),
+            LegacyFreshnessPolicy(cron_schedule="@hourly", maximum_lag_minutes=60 * 5),
             create_datetime(2022, 1, 1, 1, 15),
             create_datetime(2022, 1, 1, 7, 45),
             # schedule is evaluated on the hour, so most recent schedule tick is 7AM. At this point
@@ -90,7 +90,7 @@ from dagster._time import create_datetime
         ),
         # timezone tests
         (
-            FreshnessPolicy(
+            LegacyFreshnessPolicy(
                 cron_schedule="0 3 * * *",
                 cron_schedule_timezone="America/Los_Angeles",
                 maximum_lag_minutes=60,
@@ -103,7 +103,7 @@ from dagster._time import create_datetime
         ),
         (
             # same as above, but specifying the input to the function in UTC
-            FreshnessPolicy(
+            LegacyFreshnessPolicy(
                 cron_schedule="0 3 * * *",
                 cron_schedule_timezone="America/Los_Angeles",
                 maximum_lag_minutes=60,
@@ -119,7 +119,7 @@ from dagster._time import create_datetime
             120,
         ),
         (
-            FreshnessPolicy(
+            LegacyFreshnessPolicy(
                 cron_schedule="0 3 * * *",
                 cron_schedule_timezone="America/Los_Angeles",
                 maximum_lag_minutes=60,
@@ -150,14 +150,14 @@ def test_policies_available_equals_evaluation_time(
 
 def test_invalid_freshness_policies():
     with pytest.raises(DagsterInvalidDefinitionError, match="Invalid cron schedule"):
-        FreshnessPolicy(cron_schedule="xyz-123-bad-schedule", maximum_lag_minutes=60)
+        LegacyFreshnessPolicy(cron_schedule="xyz-123-bad-schedule", maximum_lag_minutes=60)
 
     with pytest.raises(DagsterInvalidDefinitionError, match="Invalid cron schedule timezone"):
-        FreshnessPolicy(
+        LegacyFreshnessPolicy(
             cron_schedule="0 1 * * *",
             maximum_lag_minutes=60,
             cron_schedule_timezone="Not/ATimezone",
         )
 
     with pytest.raises(ParameterCheckError, match="without a cron_schedule"):
-        FreshnessPolicy(maximum_lag_minutes=0, cron_schedule_timezone="America/Los_Angeles")
+        LegacyFreshnessPolicy(maximum_lag_minutes=0, cron_schedule_timezone="America/Los_Angeles")

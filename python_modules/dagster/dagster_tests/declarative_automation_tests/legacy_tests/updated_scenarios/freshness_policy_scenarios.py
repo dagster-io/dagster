@@ -1,4 +1,4 @@
-from dagster import AutoMaterializePolicy, FreshnessPolicy
+from dagster import AutoMaterializePolicy, LegacyFreshnessPolicy
 from dagster._core.definitions.asset_spec import AssetSpec
 
 from dagster_tests.declarative_automation_tests.scenario_utils.asset_daemon_scenario import (
@@ -17,8 +17,8 @@ from dagster_tests.declarative_automation_tests.scenario_utils.scenario_specs im
 )
 from dagster_tests.declarative_automation_tests.scenario_utils.scenario_state import ScenarioSpec
 
-freshness_30m = FreshnessPolicy(maximum_lag_minutes=30)
-freshness_60m = FreshnessPolicy(maximum_lag_minutes=60)
+freshness_30m = LegacyFreshnessPolicy(maximum_lag_minutes=30)
+freshness_60m = LegacyFreshnessPolicy(maximum_lag_minutes=60)
 extended_diamond = ScenarioSpec(
     asset_specs=[*diamond.asset_specs, AssetSpec("E", deps=["C"]), AssetSpec("F", deps=["D"])]
 )
@@ -42,7 +42,7 @@ freshness_policy_scenarios = [
         id="one_asset_lazy_with_freshness_policy_never_materialized",
         initial_spec=one_asset.with_asset_properties(
             auto_materialize_policy=AutoMaterializePolicy.lazy(),
-            freshness_policy=FreshnessPolicy(maximum_lag_minutes=10),
+            freshness_policy=LegacyFreshnessPolicy(maximum_lag_minutes=10),
         ),
         execution_fn=lambda state: state.evaluate_tick().assert_requested_runs(run_request("A")),
     ),
@@ -50,7 +50,7 @@ freshness_policy_scenarios = [
         id="two_assets_eager_with_freshness_policies",
         initial_spec=two_assets_in_sequence.with_asset_properties(
             auto_materialize_policy=AutoMaterializePolicy.eager(),
-            freshness_policy=FreshnessPolicy(maximum_lag_minutes=1000),
+            freshness_policy=LegacyFreshnessPolicy(maximum_lag_minutes=1000),
         ),
         execution_fn=lambda state: state.evaluate_tick()
         .assert_requested_runs(run_request(["A", "B"]))
@@ -223,7 +223,9 @@ freshness_policy_scenarios = [
         .with_asset_properties(keys=["B"], freshness_policy=freshness_30m)
         .with_asset_properties(
             keys=["C"],
-            freshness_policy=FreshnessPolicy(cron_schedule="0 7 * * *", maximum_lag_minutes=7 * 60),
+            freshness_policy=LegacyFreshnessPolicy(
+                cron_schedule="0 7 * * *", maximum_lag_minutes=7 * 60
+            ),
         )
         .with_current_time("2023-01-01T06:00"),
         execution_fn=lambda state: state.with_runs(run_request(["A", "B", "C"]))

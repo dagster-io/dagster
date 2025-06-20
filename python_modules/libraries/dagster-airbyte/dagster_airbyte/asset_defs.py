@@ -13,7 +13,7 @@ from dagster import (
     AssetKey,
     AssetOut,
     AutoMaterializePolicy,
-    FreshnessPolicy,
+    LegacyFreshnessPolicy,
     Nothing,
     Output,
     ResourceDefinition,
@@ -72,7 +72,7 @@ def _build_airbyte_asset_defn_metadata(
     group_name: Optional[str] = None,
     io_manager_key: Optional[str] = None,
     schema_by_table_name: Optional[Mapping[str, TableSchema]] = None,
-    freshness_policy: Optional[FreshnessPolicy] = None,
+    freshness_policy: Optional[LegacyFreshnessPolicy] = None,
     auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
 ) -> AssetsDefinitionCacheableData:
     asset_key_prefix = (
@@ -260,7 +260,7 @@ def build_airbyte_assets(
     deps: Optional[Iterable[Union[CoercibleToAssetKey, AssetsDefinition, SourceAsset]]] = None,
     upstream_assets: Optional[set[AssetKey]] = None,
     schema_by_table_name: Optional[Mapping[str, TableSchema]] = None,
-    freshness_policy: Optional[FreshnessPolicy] = None,
+    freshness_policy: Optional[LegacyFreshnessPolicy] = None,
     stream_to_asset_map: Optional[Mapping[str, str]] = None,
     auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
 ) -> Sequence[AssetsDefinition]:
@@ -592,7 +592,7 @@ class AirbyteCoreCacheableAssetsDefinition(CacheableAssetsDefinition):
         connection_filter: Optional[Callable[[AirbyteConnectionMetadata], bool]],
         connection_to_asset_key_fn: Optional[Callable[[AirbyteConnectionMetadata, str], AssetKey]],
         connection_to_freshness_policy_fn: Optional[
-            Callable[[AirbyteConnectionMetadata], Optional[FreshnessPolicy]]
+            Callable[[AirbyteConnectionMetadata], Optional[LegacyFreshnessPolicy]]
         ],
         connection_to_auto_materialize_policy_fn: Optional[
             Callable[[AirbyteConnectionMetadata], Optional[AutoMaterializePolicy]]
@@ -708,7 +708,7 @@ class AirbyteInstanceCacheableAssetsDefinition(AirbyteCoreCacheableAssetsDefinit
         connection_filter: Optional[Callable[[AirbyteConnectionMetadata], bool]],
         connection_to_asset_key_fn: Optional[Callable[[AirbyteConnectionMetadata, str], AssetKey]],
         connection_to_freshness_policy_fn: Optional[
-            Callable[[AirbyteConnectionMetadata], Optional[FreshnessPolicy]]
+            Callable[[AirbyteConnectionMetadata], Optional[LegacyFreshnessPolicy]]
         ],
         connection_to_auto_materialize_policy_fn: Optional[
             Callable[[AirbyteConnectionMetadata], Optional[AutoMaterializePolicy]]
@@ -822,7 +822,7 @@ class AirbyteYAMLCacheableAssetsDefinition(AirbyteCoreCacheableAssetsDefinition)
         connection_directories: Optional[Sequence[str]],
         connection_to_asset_key_fn: Optional[Callable[[AirbyteConnectionMetadata, str], AssetKey]],
         connection_to_freshness_policy_fn: Optional[
-            Callable[[AirbyteConnectionMetadata], Optional[FreshnessPolicy]]
+            Callable[[AirbyteConnectionMetadata], Optional[LegacyFreshnessPolicy]]
         ],
         connection_to_auto_materialize_policy_fn: Optional[
             Callable[[AirbyteConnectionMetadata], Optional[AutoMaterializePolicy]]
@@ -914,7 +914,7 @@ def load_assets_from_airbyte_instance(
         Callable[[AirbyteConnectionMetadata, str], AssetKey]
     ] = None,
     connection_to_freshness_policy_fn: Optional[
-        Callable[[AirbyteConnectionMetadata], Optional[FreshnessPolicy]]
+        Callable[[AirbyteConnectionMetadata], Optional[LegacyFreshnessPolicy]]
     ] = None,
     connection_to_auto_materialize_policy_fn: Optional[
         Callable[[AirbyteConnectionMetadata], Optional[AutoMaterializePolicy]]
