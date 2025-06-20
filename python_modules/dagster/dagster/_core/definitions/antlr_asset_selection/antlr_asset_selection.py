@@ -20,7 +20,6 @@ from dagster._core.definitions.asset_selection import (
     StatusAssetSelection,
     TableNameAssetSelection,
 )
-from dagster._core.storage.tags import KIND_PREFIX
 
 
 class AntlrInputErrorListener(ErrorListener):
@@ -33,6 +32,10 @@ def parse_traversal_depth(optional_digits):
     if optional_digits is None:
         return None
     return int(optional_digits.getText())
+
+
+def is_null_value(ctx: AssetSelectionParser.ValueContext):
+    return ctx.NULL_STRING() is not None
 
 
 class AntlrAssetSelectionVisitor(AssetSelectionVisitor):
@@ -121,25 +124,35 @@ class AntlrAssetSelectionVisitor(AssetSelectionVisitor):
     def visitTagAttributeExpr(self, ctx: AssetSelectionParser.TagAttributeExprContext):
         key = self.visit(ctx.value(0))
         value = self.visit(ctx.value(1)) if ctx.EQUAL() else ""
-        return AssetSelection.tag(key, value, include_sources=self.include_sources)
+        return AssetSelection.tag(
+            key, value, include_sources=self.include_sources, is_null=is_null_value(ctx.value(0))
+        )
 
     def visitOwnerAttributeExpr(self, ctx: AssetSelectionParser.OwnerAttributeExprContext):
         owner = self.visit(ctx.value())
-        return AssetSelection.owner(owner)
+        return AssetSelection.owner(owner, is_null=is_null_value(ctx.value()))
 
     def visitGroupAttributeExpr(self, ctx: AssetSelectionParser.GroupAttributeExprContext):
         group = self.visit(ctx.value())
-        return AssetSelection.groups(group, include_sources=self.include_sources)
+        return AssetSelection.groups(
+            group, include_sources=self.include_sources, is_null=is_null_value(ctx.value())
+        )
 
     def visitKindAttributeExpr(self, ctx: AssetSelectionParser.KindAttributeExprContext):
         kind = self.visit(ctx.value())
-        return AssetSelection.tag(f"{KIND_PREFIX}{kind}", "", include_sources=self.include_sources)
+        return AssetSelection.kind(
+            kind,
+            include_sources=self.include_sources,
+            is_null=is_null_value(ctx.value()),
+        )
 
     def visitCodeLocationAttributeExpr(
         self, ctx: AssetSelectionParser.CodeLocationAttributeExprContext
     ):
         code_location = self.visit(ctx.value())
-        return CodeLocationAssetSelection(selected_code_location=code_location)
+        return CodeLocationAssetSelection(
+            selected_code_location=code_location, is_null=is_null_value(ctx.value())
+        )
 
     def visitKeyValue(self, ctx: AssetSelectionParser.KeyValueContext):
         if ctx.QUOTED_STRING():
@@ -154,6 +167,8 @@ class AntlrAssetSelectionVisitor(AssetSelectionVisitor):
             return ctx.QUOTED_STRING().getText().strip('"')
         elif ctx.UNQUOTED_STRING():
             return ctx.UNQUOTED_STRING().getText()
+        elif ctx.NULL_STRING():
+            return ""
 
     def visitStatusAttributeExpr(self, ctx: AssetSelectionParser.StatusAttributeExprContext):
         status = self.visit(ctx.value())
@@ -161,22 +176,26 @@ class AntlrAssetSelectionVisitor(AssetSelectionVisitor):
 
     def visitColumnAttributeExpr(self, ctx: AssetSelectionParser.ColumnAttributeExprContext):
         column = self.visit(ctx.value())
-        return ColumnAssetSelection(selected_column=column)
+        return ColumnAssetSelection(selected_column=column, is_null=is_null_value(ctx.value()))
 
     def visitTableNameAttributeExpr(self, ctx: AssetSelectionParser.TableNameAttributeExprContext):
         table_name = self.visit(ctx.value())
-        return TableNameAssetSelection(selected_table_name=table_name)
+        return TableNameAssetSelection(
+            selected_table_name=table_name, is_null=is_null_value(ctx.value())
+        )
 
     def visitColumnTagAttributeExpr(self, ctx: AssetSelectionParser.ColumnTagAttributeExprContext):
         key = self.visit(ctx.value(0))
         value = self.visit(ctx.value(1)) if ctx.EQUAL() else ""
-        return ColumnTagAssetSelection(key=key, value=value)
+        return ColumnTagAssetSelection(key=key, value=value, is_null=is_null_value(ctx.value(0)))
 
     def visitChangedInBranchAttributeExpr(
         self, ctx: AssetSelectionParser.ChangedInBranchAttributeExprContext
     ):
         branch = self.visit(ctx.value())
-        return ChangedInBranchAssetSelection(selected_changed_in_branch=branch)
+        return ChangedInBranchAssetSelection(
+            selected_changed_in_branch=branch, is_null=is_null_value(ctx.value())
+        )
 
 
 class AntlrAssetSelectionParser:

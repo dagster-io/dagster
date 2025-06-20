@@ -12,7 +12,7 @@ def serializedATN():
     return [
         4,
         1,
-        28,
+        29,
         120,
         2,
         0,
@@ -282,10 +282,12 @@ def serializedATN():
         0,
         23,
         24,
-        1,
+        2,
         0,
         25,
         26,
+        28,
+        28,
         1,
         0,
         25,
@@ -1137,6 +1139,10 @@ class AssetSelectionParser(Parser):
         "'changed_in_branch'",
         "'sinks'",
         "'roots'",
+        "<INVALID>",
+        "<INVALID>",
+        "<INVALID>",
+        "'<null>'",
     ]
 
     symbolicNames = [
@@ -1168,6 +1174,7 @@ class AssetSelectionParser(Parser):
         "QUOTED_STRING",
         "UNQUOTED_STRING",
         "UNQUOTED_WILDCARD_STRING",
+        "NULL_STRING",
         "WS",
     ]
 
@@ -1221,7 +1228,8 @@ class AssetSelectionParser(Parser):
     QUOTED_STRING = 25
     UNQUOTED_STRING = 26
     UNQUOTED_WILDCARD_STRING = 27
-    WS = 28
+    NULL_STRING = 28
+    WS = 29
 
     def __init__(self, input: TokenStream, output: TextIO = sys.stdout):
         super().__init__(input, output)
@@ -2447,6 +2455,9 @@ class AssetSelectionParser(Parser):
             super().__init__(parent, invokingState)
             self.parser = parser
 
+        def NULL_STRING(self):
+            return self.getToken(AssetSelectionParser.NULL_STRING, 0)
+
         def QUOTED_STRING(self):
             return self.getToken(AssetSelectionParser.QUOTED_STRING, 0)
 
@@ -2478,7 +2489,7 @@ class AssetSelectionParser(Parser):
             self.enterOuterAlt(localctx, 1)
             self.state = 115
             _la = self._input.LA(1)
-            if not (_la == 25 or _la == 26):
+            if not (((_la) & ~0x3F) == 0 and ((1 << _la) & 369098752) != 0):
                 self._errHandler.recoverInline(self)
             else:
                 self._errHandler.reportMatch(self)

@@ -726,6 +726,36 @@ def test_to_string_basic():
     assert (
         str(AssetSelection.groups("marketing", "finance")) == 'group:"marketing" or group:"finance"'
     )
+    assert str(AssetSelection.groups("", is_null=True)) == "group:<null>"
+    assert str(AssetSelection.groups("", is_null=False)) == 'group:""'
+    assert str(AssetSelection.kind("", is_null=True)) == "kind:<null>"
+    assert str(AssetSelection.kind("", is_null=False)) == 'kind:""'
+    assert str(AssetSelection.tag("", "", is_null=True)) == "tag:<null>"
+    assert str(AssetSelection.tag("", "", is_null=False)) == 'tag:""'
+    assert str(AssetSelection.owner("", is_null=True)) == "owner:<null>"
+    assert str(AssetSelection.owner("", is_null=False)) == 'owner:""'
+    assert (
+        str(CodeLocationAssetSelection(selected_code_location="", is_null=True))
+        == "code_location:<null>"
+    )
+    assert (
+        str(CodeLocationAssetSelection(selected_code_location="", is_null=False))
+        == 'code_location:""'
+    )
+    assert str(ColumnAssetSelection(selected_column="", is_null=True)) == "column:<null>"
+    assert str(ColumnAssetSelection(selected_column="", is_null=False)) == 'column:""'
+    assert str(ColumnTagAssetSelection(key="", value="", is_null=True)) == "column_tag:<null>"
+    assert str(ColumnTagAssetSelection(key="", value="", is_null=False)) == 'column_tag:""'
+    assert str(TableNameAssetSelection(selected_table_name="", is_null=True)) == "table_name:<null>"
+    assert str(TableNameAssetSelection(selected_table_name="", is_null=False)) == 'table_name:""'
+    assert (
+        str(ChangedInBranchAssetSelection(selected_changed_in_branch="", is_null=True))
+        == "changed_in_branch:<null>"
+    )
+    assert (
+        str(ChangedInBranchAssetSelection(selected_changed_in_branch="", is_null=False))
+        == 'changed_in_branch:""'
+    )
 
 
 def test_to_string_binary_operators():
@@ -908,6 +938,27 @@ def test_owner() -> None:
 
     assert AssetSelection.owner("owner1@owner.com").resolve([assets]) == {
         AssetKey("asset1"),
+        AssetKey("asset3"),
+    }
+
+
+def test_kind() -> None:
+    @multi_asset(
+        specs=[
+            AssetSpec("asset1", kinds=["my_kind"]),
+            AssetSpec("asset2", kinds=[""]),
+            AssetSpec("asset3"),
+        ]
+    )
+    def assets(): ...
+
+    assert AssetSelection.kind("my_kind").resolve([assets]) == {
+        AssetKey("asset1"),
+    }
+    assert AssetSelection.kind("").resolve([assets]) == {
+        AssetKey("asset2"),
+    }
+    assert AssetSelection.kind("", is_null=True).resolve([assets]) == {
         AssetKey("asset3"),
     }
 
