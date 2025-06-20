@@ -42,7 +42,7 @@ def load_asset_checks_from_modules(
             key_prefix=asset_key_prefix,
             source_key_prefix=None,
             group_name=None,
-            freshness_policy=None,
+            legacy_freshness_policy=None,
             automation_condition=None,
             backfill_policy=None,
         )

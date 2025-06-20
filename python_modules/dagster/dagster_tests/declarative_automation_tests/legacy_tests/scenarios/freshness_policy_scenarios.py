@@ -20,7 +20,7 @@ freshness_60m = LegacyFreshnessPolicy(maximum_lag_minutes=60)
 non_subsettable_multi_asset_on_top = [
     multi_asset_def(["asset1", "asset2", "asset3"], can_subset=False),
     asset_def("asset4", ["asset1"]),
-    asset_def("asset5", ["asset2"], freshness_policy=freshness_30m),
+    asset_def("asset5", ["asset2"], legacy_freshness_policy=freshness_30m),
 ]
 subsettable_multi_asset_on_top = [
     multi_asset_def(["asset1", "asset2", "asset3"], can_subset=True)
@@ -47,16 +47,16 @@ subsettable_multi_asset_complex = [
             "company_stats": {"orders_augmented"},
             "daily_order_summary": {"order_stats"},
         },
-        freshness_policies={"daily_order_summary": freshness_30m},
+        legacy_freshness_policies={"daily_order_summary": freshness_30m},
     ),
     asset_def("company_perf", ["company_stats"]),
     asset_def("top_users", ["orders_augmented", "company_perf"]),
-    asset_def("avg_order", ["company_perf"], freshness_policy=freshness_30m),
+    asset_def("avg_order", ["company_perf"], legacy_freshness_policy=freshness_30m),
 ]
 
 daily_to_unpartitioned = [
     asset_def("daily", partitions_def=DailyPartitionsDefinition(start_date="2020-01-01")),
-    asset_def("unpartitioned", ["daily"], freshness_policy=freshness_30m),
+    asset_def("unpartitioned", ["daily"], legacy_freshness_policy=freshness_30m),
 ]
 
 freshness_policy_scenarios = {

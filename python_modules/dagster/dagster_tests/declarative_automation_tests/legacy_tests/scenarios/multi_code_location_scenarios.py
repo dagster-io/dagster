@@ -17,12 +17,12 @@ freshness_30m = LegacyFreshnessPolicy(maximum_lag_minutes=30)
 freshness_inf = LegacyFreshnessPolicy(maximum_lag_minutes=99999)
 
 diamond_freshness = diamond[:-1] + [
-    asset_def("asset4", ["asset2", "asset3"], freshness_policy=freshness_30m)
+    asset_def("asset4", ["asset2", "asset3"], legacy_freshness_policy=freshness_30m)
 ]
 
 overlapping_freshness_inf = diamond + [
-    asset_def("asset5", ["asset3"], freshness_policy=freshness_30m),
-    asset_def("asset6", ["asset4"], freshness_policy=freshness_inf),
+    asset_def("asset5", ["asset3"], legacy_freshness_policy=freshness_30m),
+    asset_def("asset6", ["asset4"], legacy_freshness_policy=freshness_inf),
 ]
 
 

@@ -52,7 +52,7 @@ lazy_assets_nothing_dep = [
         "asset3",
         ["asset2"],
         auto_materialize_policy=AutoMaterializePolicy.lazy(),
-        freshness_policy=LegacyFreshnessPolicy(maximum_lag_minutes=60),
+        legacy_freshness_policy=LegacyFreshnessPolicy(maximum_lag_minutes=60),
     ),
 ]
 single_lazy_asset = [asset_def("asset1", auto_materialize_policy=AutoMaterializePolicy.lazy())]
@@ -60,13 +60,17 @@ single_lazy_asset_with_freshness_policy = [
     asset_def(
         "asset1",
         auto_materialize_policy=AutoMaterializePolicy.lazy(),
-        freshness_policy=LegacyFreshnessPolicy(maximum_lag_minutes=60),
+        legacy_freshness_policy=LegacyFreshnessPolicy(maximum_lag_minutes=60),
     )
 ]
 overlapping_freshness_inf = diamond + [
-    asset_def("asset5", ["asset3"], freshness_policy=LegacyFreshnessPolicy(maximum_lag_minutes=30)),
     asset_def(
-        "asset6", ["asset4"], freshness_policy=LegacyFreshnessPolicy(maximum_lag_minutes=99999999)
+        "asset5", ["asset3"], legacy_freshness_policy=LegacyFreshnessPolicy(maximum_lag_minutes=30)
+    ),
+    asset_def(
+        "asset6",
+        ["asset4"],
+        legacy_freshness_policy=LegacyFreshnessPolicy(maximum_lag_minutes=99999999),
     ),
 ]
 vee = [
@@ -119,7 +123,7 @@ non_auto_to_lazy = [
         "auto",
         ["non_auto"],
         auto_materialize_policy=AutoMaterializePolicy.lazy(),
-        freshness_policy=LegacyFreshnessPolicy(maximum_lag_minutes=60),
+        legacy_freshness_policy=LegacyFreshnessPolicy(maximum_lag_minutes=60),
     ),
 ]
 
