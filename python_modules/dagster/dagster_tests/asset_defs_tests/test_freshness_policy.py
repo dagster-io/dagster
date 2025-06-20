@@ -1,9 +1,13 @@
 import datetime
+import os
 
+import dagster as dg
 import pytest
 from dagster._check import ParameterCheckError
 from dagster._core.definitions.freshness_policy import LegacyFreshnessPolicy
 from dagster._core.errors import DagsterInvalidDefinitionError
+from dagster._core.remote_representation.external_data import RepositorySnap
+from dagster._serdes import deserialize_value, serialize_value
 from dagster._time import create_datetime
 
 
@@ -161,3 +165,42 @@ def test_invalid_freshness_policies():
 
     with pytest.raises(ParameterCheckError, match="without a cron_schedule"):
         LegacyFreshnessPolicy(maximum_lag_minutes=0, cron_schedule_timezone="America/Los_Angeles")
+
+
+def test_legacy_freshness_backcompat():
+    """We've renamed FreshnessPolicy to LegacyFreshnessPolicy in the latest version of Dagster.
+    Can host cloud on latest Dagster version deserialize an asset snap that was created on an older Dagster version
+    for an asset with legacy freshness policy?
+    """
+    this_dir = os.path.dirname(os.path.abspath(__file__))
+
+    @dg.asset(
+        freshness_policy=dg.LegacyFreshnessPolicy(
+            maximum_lag_minutes=1,
+            cron_schedule="0 1 * * *",
+            cron_schedule_timezone="America/Los_Angeles",
+        )
+    )
+    def foo():
+        pass
+
+    defs = dg.Definitions(
+        assets=[foo],
+    )
+    new_snap = RepositorySnap.from_def(defs.get_repository_def())
+    with open(
+        os.path.join(this_dir, "snapshots", "repo_with_asset_with_legacy_freshness.json")
+    ) as f:
+        old_snap_serialized = f.read()
+
+    # First, check that both serialized snapshots are the same
+    with open(
+        os.path.join(this_dir, "snapshots", "repo_with_asset_with_legacy_freshness_new.json"), "w"
+    ) as f:
+        f.write(serialize_value(new_snap))
+
+    # Then, check that we can deserialize the old snapshot with new Dagster version
+    old_snap_deserialized = deserialize_value(old_snap_serialized, RepositorySnap)
+
+    # Then, check that the deserialized snapshots are the same
+    assert new_snap == old_snap_deserialized
