@@ -72,27 +72,16 @@ else:
     # TODO: pending alternative dataframe support
     raise ImportError(
         "Unable to import pandera pandas functionality. This could be due to:\n"
-        "1. Pandera not being installed.\n"
-        "2. Pandera <= 0.24.0.'\n"
-        "3. Missing pandas dependency.\n"
+        "1. Using Pandera < 0.24.0.'\n"
+        "2. Missing pandas dependency.\n"
         "Please install pandera >= 0.24.0 with pandas to use dagster-pandera."
     )
 
-# Type aliases - uses a comprehensive union to cover all possible scenarios
-DagsterPanderaSchema: TypeAlias = Union[
-    "pandera.pandas.DataFrameSchema",
-    "pandera.polars.DataFrameSchema",
-]
+DagsterPanderaSchema: TypeAlias = Union[pa_pd.DataFrameSchema, "pandera.polars.DataFrameSchema"]
 DagsterPanderaSchemaModel: TypeAlias = type[
-    Union[
-        "pandera.pandas.DataFrameModel",
-        "pandera.polars.DataFrameModel",
-    ]
+    Union[pa_pd.DataFrameModel, "pandera.polars.DataFrameModel"]
 ]
-DagsterPanderaColumn: TypeAlias = Union[
-    "pandera.pandas.Column",
-    "pandera.polars.Column",
-]
+DagsterPanderaColumn: TypeAlias = Union[pa_pd.Column, "pandera.polars.Column"]
 
 DagsterLibraryRegistry.register("dagster-pandera", __version__)
 
@@ -129,7 +118,7 @@ def pandera_schema_to_dagster_type(
     - `failure_sample` a table containing up to the first 10 validation errors.
 
     Args:
-        schema (Union[pa.DataFrameSchema, Type[pa.DataFrameModel]]): A pandera DataFrame schema or schema model
+        schema (Union[pa.DataFrameSchema, Type[pa.DataFrameModel]])
 
     Returns:
         DagsterType: Dagster Type constructed from the Pandera schema.
