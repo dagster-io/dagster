@@ -8,6 +8,8 @@ import {
   UpTraversalContext,
   ValueContext,
 } from './generated/AssetSelectionParser';
+import {ValueContext as OpSelectionValueContext} from '../op-selection/generated/OpSelectionParser';
+import {ValueContext as RunSelectionValueContext} from '../run-selection/generated/RunSelectionParser';
 
 export function getTraversalDepth(ctx: UpTraversalContext | DownTraversalContext): number {
   const digits = ctx.DIGITS();
@@ -27,7 +29,9 @@ export function getFunctionName(ctx: FunctionNameContext): string {
   throw new Error('Invalid function name');
 }
 
-export function getValue(ctx: ValueContext | KeyValueContext): string {
+export function getValue(
+  ctx: ValueContext | KeyValueContext | OpSelectionValueContext | RunSelectionValueContext,
+): string {
   if (ctx.QUOTED_STRING()) {
     return ctx.text.slice(1, -1);
   }

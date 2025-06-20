@@ -9,6 +9,8 @@ import {AssetHealthStatus} from '../../graphql/types';
 import {weakMapMemoize} from '../../util/weakMapMemoize';
 import {buildRepoPathForHuman} from '../../workspace/buildRepoAddress';
 
+const emptyTag = {key: '', value: ''};
+
 export const getAttributesMap = (assets: AssetGraphQueryItem[]) => {
   const assetNamesSet: Set<string> = new Set();
   const seenTags: Set<string> = new Set();
@@ -28,12 +30,10 @@ export const getAttributesMap = (assets: AssetGraphQueryItem[]) => {
         if (seenTags.has(JSON.stringify(tag))) {
           return;
         }
-        seenTags.add(JSON.stringify(tag));
         tagSet.add(memoizedTag(tag.key, tag.value));
       });
-    } else if (!seenTags.has('')) {
-      seenTags.add('');
-      tagSet.add({key: '', value: ''});
+    } else {
+      tagSet.add(memoizedTag('', ''));
     }
     if (asset.node.owners.length > 0) {
       asset.node.owners.forEach((owner) => {
