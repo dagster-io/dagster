@@ -291,7 +291,7 @@ def format_multiline_str(message: str) -> str:
 
 def generate_missing_plugin_object_error_message(plugin_object_key: str) -> str:
     return f"""
-        No plugin object `{plugin_object_key}` is registered. Use `dg list plugins`
+        No plugin object `{plugin_object_key}` is registered. Use `dg list components`
         to see the registered plugin objects in your environment. You may need to install a package
         that provides `{plugin_object_key}` into your environment.
     """
