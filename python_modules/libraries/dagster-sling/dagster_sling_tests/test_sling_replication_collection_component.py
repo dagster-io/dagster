@@ -32,6 +32,9 @@ from dagster.components.testing import (
 )
 from dagster_shared import check
 from dagster_sling import SlingReplicationCollectionComponent, SlingResource
+from dagster_sling.components.sling_replication_collection.component import (
+    SlingReplicationSpecModel,
+)
 
 ensure_dagster_tests_import()
 
@@ -80,7 +83,7 @@ def temp_sling_component_instance(
                     data["attributes"]["replications"] = replication_specs
 
                 # update the defs yaml to add a duckdb instance
-                data["attributes"]["sling"]["connections"][0]["instance"] = f"{temp_dir}/duckdb"
+                data["attributes"]["connections"][0]["instance"] = f"{temp_dir}/duckdb"
 
             context = ComponentLoadContext.for_test().for_path(component_path)
             component = get_underlying_component(context)
@@ -151,12 +154,11 @@ def test_python_params_include_metadata() -> None:
 
 def test_load_from_path() -> None:
     with temp_sling_component_instance() as (component, defs):
-        resource = getattr(component, "resource")
-        assert isinstance(resource, SlingResource)
-        assert len(resource.connections) == 1
-        assert resource.connections[0].name == "DUCKDB"
-        assert resource.connections[0].type == "duckdb"
-        assert resource.connections[0].password == "password"
+        assert isinstance(component, SlingReplicationCollectionComponent)
+        connections = component.connections
+        assert connections[0].name == "DUCKDB"
+        assert connections[0].type == "duckdb"
+        assert connections[0].password == "password"
 
         assert defs.resolve_asset_graph().get_all_asset_keys() == {
             AssetKey("input_csv"),
@@ -166,14 +168,19 @@ def test_load_from_path() -> None:
 
 def test_sling_subclass() -> None:
     class DebugSlingReplicationComponent(SlingReplicationCollectionComponent):
-        def execute(  # pyright: ignore[reportIncompatibleMethodOverride]
-            self, context: AssetExecutionContext, sling: SlingResource
+        def execute(
+            self, context: AssetExecutionContext, replication_spec_model: SlingReplicationSpecModel
         ) -> Iterator[Union[AssetMaterialization, MaterializeResult]]:
-            return sling.replicate(context=context, debug=True)
+            return SlingResource(connections=self.connections).replicate(
+                context=context, debug=True
+            )
 
     defs = build_component_defs_for_test(
         DebugSlingReplicationComponent,
-        {"sling": {}, "replications": [{"path": str(REPLICATION_PATH)}]},
+        {
+            "connections": [],
+            "replications": [{"path": str(REPLICATION_PATH)}],
+        },
     )
     assert defs.resolve_asset_graph().get_all_asset_keys() == {
         AssetKey("input_csv"),
@@ -274,7 +281,7 @@ def test_udf_map_spec(map_fn: Callable[[AssetSpec], Any]) -> None:
     defs = build_component_defs_for_test(
         DebugSlingReplicationComponent,
         {
-            "sling": {},
+            "connections": [],
             "replications": [
                 {"path": str(REPLICATION_PATH), "translation": "{{ map_spec(spec) }}"}
             ],
