@@ -204,5 +204,5 @@ Now your project is fully compatible with `dg`!
 
 ## Next steps
 
-- [Restructure existing definitions](/guides/build/projects/moving-to-dg/migrating-definitions)
+- [Restructure existing definitions](/guides/build/projects/moving-to-components/migrating-definitions)
 - [Add a new definition to your project](/api/dg/dg-cli)

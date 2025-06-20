@@ -10,7 +10,7 @@ import DgComponentsRc from '@site/docs/partials/\_DgComponentsRc.md';
 
 :::note
 
-This guide covers using existing Dagster definitions with a `dg`-compatible project. To convert an existing project to use `dg`, see "[Converting an existing project to use `dg`](/guides/build/projects/moving-to-dg/migrating-project)".
+This guide covers using existing Dagster definitions with a `dg`-compatible project. To convert an existing project to use `dg`, see "[Converting an existing project to use `dg`](/guides/build/projects/moving-to-components/migrating-project)".
 
 :::
 
