@@ -4,11 +4,11 @@ description: Set schedules and utilize asset based automation
 sidebar_position: 60
 ---
 
-There are several ways to automate pipelines and assets [in Dagster](/guides/automate). In this step you will:
+There are several ways to automate assets [in Dagster](/guides/automate). In this step you will:
 
 - Add automation to assets to run when upstream assets are materialized.
 
-## 1. Scheduled jobs
+## 1. Scheduled assets
 
 Cron-based schedules are common in data orchestration. For our pipeline, assume that updated CSVs are uploaded to a file location at a specific time every week by an external process.
 
@@ -22,27 +22,9 @@ Now let's look at `monthly_sales_performance`. This asset should be executed onc
 
 We already set this in the `monthly_sales_performance` and `product_performance` by setting the `automation_condition`. We want it to update when all the dependencies are updated. To accomplish this, we will use the `eager` automation condition.
 
-## 3. Enable and test automations
-
-To accomplish this:
-
-1. Navigate to the Automation page.
-2. Select all automations.
-3. Using actions, start all automations.
-4. Select the `analysis_update_job`.
-5. Test the schedule and evaluate for any time in the dropdown menu.
-6. Open in Launchpad.
-
-The job is now executing.
-
-TODO: Screenshot
-
-Additionally, if you navigate to the Runs tab, you should see that materializations for `monthly_sales_performance` and `product_performance` have run as well.
-
 ## Summary
 
-dddd
-
+Associating automation directly with assets provides flexibility and allows you to compose complex automation conditions across your data platform.  
 
 ## Next steps
 

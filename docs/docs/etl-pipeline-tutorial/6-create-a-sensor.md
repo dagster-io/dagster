@@ -48,7 +48,7 @@ First we will use `dg` to create the sensor file:
 dg scaffold dagster.sensor sensors.py
 ```
 
-Now copy the following sensor code in the `defs/sensors.py` file:
+Now copy the following sensor code in the `sensors.py` file:
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/src/etl_tutorial/defs/sensors.py"
@@ -81,6 +81,12 @@ TODO: Screenshot
 TODO: Screenshot
 
 ## Summary
+
+One new files have been added to the `etl_tutorial` module, `sensors.py`:
+
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/tree/step-6.txt" />
+
+Sensors provide a fine grained way to build event driven systems. Combined with declarative automation, there are a number of ways to automate your pipelines.
 
 # Next steps
 - Continue this tutorial with adding [Evidence](/etl-pipeline-tutorial/create-evidence-connection)

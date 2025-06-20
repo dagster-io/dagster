@@ -62,6 +62,12 @@ However we can still configure our Evidence component to be dependent on multipl
 
 ## Summary
 
+Here is the final structure of the `etl_tutorial` module:
+
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/tree/step-7.txt" />
+
+This contains a fully functional data platform that handles the end to end workflows necessary for working with data.
+
 ## Recommended next steps
 
 - Join our [Slack community](https://dagster.io/slack).

@@ -82,9 +82,7 @@ TODO: Screenshot
 
 ## Summary
 
-The `etl_tutorial` module still has the same structure since everything we have added is still in the `assets.py`:
-
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/tree/step-2.txt" />
+ Partitions provide operational flexibility by allowing you to launch runs that materialize only a subset of your data without affecting the rest, and support backfilling capabilities to reprocess historical data for specific time periods or categories. As you are developing assets, consider where partitions might be helpful.
 
 ## Next steps
 

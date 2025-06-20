@@ -11,6 +11,5 @@ src
         ├── jdbt
         │   └── defs.yaml
         ├── assets.py
-        ├── jobs.py
         ├── resources.py
         └── sensors.py
