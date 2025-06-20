@@ -21,6 +21,7 @@ from dagster.components.resolved.context import ResolutionContext
 from dagster.components.resolved.core_models import AssetAttributesModel, AssetPostProcessor, OpSpec
 from dagster.components.scaffold.scaffold import scaffold_with
 from dagster.components.utils import TranslatorResolvingInfo
+from pydantic import BaseModel, ConfigDict, Field
 from typing_extensions import TypeAlias
 
 from dagster_sling.asset_decorator import sling_assets
@@ -91,13 +92,6 @@ def resolve_resource(
     return SlingResource(**context.resolve_value(sling.model_dump())) if sling else SlingResource()
 
 
-def resolve_connection(
-    context: ResolutionContext,
-    connection: SlingConnectionResource,
-) -> SlingConnectionResource:
-    return SlingConnectionResource(**context.resolve_value(connection.model_dump()))
-
-
 def replicate(
     context: AssetExecutionContext,
     connections: list[SlingConnectionResource],
@@ -106,8 +100,39 @@ def replicate(
     yield from sling.replicate(context=context)
 
 
-ResolvedSlingConnection: TypeAlias = Annotated[
-    SlingConnectionResource, Resolver(resolve_connection)
+class SlingConnectionResourcePropertiesModel(Resolvable, BaseModel):
+    """Properties of a Sling connection resource."""
+
+    # each connection type supports a variety of different properties
+    model_config = ConfigDict(extra="allow")
+
+    type: str = Field(
+        description="Type of the source connection, must match the Sling connection types. Use 'file' for local storage."
+    )
+    connection_string: Optional[str] = Field(
+        description="The optional connection string for the source database, if not using keyword arguments.",
+        default=None,
+    )
+
+
+def resolve_connections(
+    context: ResolutionContext,
+    connections: Mapping[str, SlingConnectionResourcePropertiesModel],
+) -> list[SlingConnectionResource]:
+    return [
+        SlingConnectionResource(
+            name=name,
+            **context.resolve_value(connection.model_dump()),
+        )
+        for name, connection in connections.items()
+    ]
+
+
+ResolvedSlingConnections: TypeAlias = Annotated[
+    list[SlingConnectionResource],
+    Resolver(
+        resolve_connections, model_field_type=Mapping[str, SlingConnectionResourcePropertiesModel]
+    ),
 ]
 
 
@@ -125,7 +150,7 @@ class SlingReplicationCollectionComponent(Component, Resolvable):
     file. See Sling's [documentation](https://docs.slingdata.io/concepts/replication#overview) on `replication.yaml`.
     """
 
-    connections: list[ResolvedSlingConnection] = field(default_factory=list)
+    connections: ResolvedSlingConnections = field(default_factory=list)
     replications: Sequence[SlingReplicationSpecModel] = field(default_factory=list)
     # TODO: deprecate and then delete -- schrockn 2025-06-10
     asset_post_processors: Optional[Sequence[AssetPostProcessor]] = None

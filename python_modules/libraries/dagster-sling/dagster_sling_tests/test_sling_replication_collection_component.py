@@ -83,7 +83,7 @@ def temp_sling_component_instance(
                     data["attributes"]["replications"] = replication_specs
 
                 # update the defs yaml to add a duckdb instance
-                data["attributes"]["connections"][0]["instance"] = f"{temp_dir}/duckdb"
+                data["attributes"]["connections"]["DUCKDB"]["instance"] = f"{temp_dir}/duckdb"
 
             context = ComponentLoadContext.for_test().for_path(component_path)
             component = get_underlying_component(context)
@@ -178,7 +178,7 @@ def test_sling_subclass() -> None:
     defs = build_component_defs_for_test(
         DebugSlingReplicationComponent,
         {
-            "connections": [],
+            "connections": {},
             "replications": [{"path": str(REPLICATION_PATH)}],
         },
     )
@@ -198,7 +198,7 @@ class TestSlingTranslation(TestTranslation):
         defs = build_component_defs_for_test(
             SlingReplicationCollectionComponent,
             {
-                "sling": {},
+                "connections": {},
                 "replications": [{"path": str(REPLICATION_PATH), "translation": attributes}],
             },
         )
@@ -247,7 +247,7 @@ def test_asset_post_processors_deprecation_error() -> None:
                     data["attributes"]["asset_post_processors"] = [
                         {"target": "*", "attributes": {"group_name": "test_group"}}
                     ]
-                    data["attributes"]["sling"]["connections"][0]["instance"] = f"{temp_dir}/duckdb"
+                    data["attributes"]["connections"]["DUCKDB"]["instance"] = f"{temp_dir}/duckdb"
 
                 context = ComponentLoadContext.for_test().for_path(component_path)
                 component = get_underlying_component(context)
@@ -281,7 +281,7 @@ def test_udf_map_spec(map_fn: Callable[[AssetSpec], Any]) -> None:
     defs = build_component_defs_for_test(
         DebugSlingReplicationComponent,
         {
-            "connections": [],
+            "connections": {},
             "replications": [
                 {"path": str(REPLICATION_PATH), "translation": "{{ map_spec(spec) }}"}
             ],
