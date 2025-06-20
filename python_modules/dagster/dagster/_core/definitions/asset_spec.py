@@ -262,6 +262,7 @@ class AssetSpec(IHasInternalInit, IHaveNew, LegacyNamedTupleMixin):
             group_name=group_name,
             code_version=code_version,
             legacy_freshness_policy=kwargs.get("legacy_freshness_policy"),
+            freshness_policy=kwargs.get("freshness_policy"),
             automation_condition=automation_condition,
             owners=owners,
             tags=tags,
