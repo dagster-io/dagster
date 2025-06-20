@@ -13,8 +13,7 @@ class CustomSlingReplicationComponent(SlingReplicationCollectionComponent):
     def execute(
         self,
         context: dg.AssetExecutionContext,
-        sling: SlingResource,
         replication_spec_model: SlingReplicationSpecModel,
     ) -> Iterator:
         context.log.info("*******************CUSTOM*************************")
-        return sling.replicate(context=context, debug=True)
+        return self.sling_resource.replicate(context=context, debug=True)
