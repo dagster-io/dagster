@@ -118,7 +118,7 @@ def sling_assets(
 def get_sling_asset_specs(
     replication_config: SlingReplicationParam,
     dagster_sling_translator: Optional[DagsterSlingTranslator] = None,
-    partitions_def: Optional[PartitionsDefinition] = None,
+    partitions_def: Optional[PartitionsDefinition] = ...,
 ) -> list[AssetSpec]:
     replication_config = validate_replication(replication_config)
 
@@ -140,7 +140,7 @@ def get_sling_asset_specs(
             return asset_spec.replace_attributes(code_version=code_version)
         return asset_spec
 
-    return [
+    specs = [
         update_code_version_if_unset_by_translator(
             dagster_sling_translator.get_asset_spec(stream).merge_attributes(
                 metadata={
@@ -148,9 +148,12 @@ def get_sling_asset_specs(
                     METADATA_KEY_REPLICATION_CONFIG: replication_config,
                 }
             )
-        ).replace_attributes(
-            partitions_def=partitions_def,
-            skippable=True,
         )
         for stream in streams
+    ]
+    return [
+        spec.replace_attributes(
+            partitions_def=partitions_def or spec.partitions_def, skippable=True
+        )
+        for spec in specs
     ]

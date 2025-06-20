@@ -134,11 +134,10 @@ def test_components_docs_sling_workspace(
                 type: dagster_sling.SlingReplicationCollectionComponent
 
                 attributes:
-                  sling:
-                    connections:
-                      - name: DUCKDB
-                        type: duckdb
-                        instance: /tmp/my_project.duckdb
+                  connections:
+                    DUCKDB:
+                      type: duckdb
+                      instance: /tmp/my_project.duckdb
                   replications:
                     - path: ./replication.yaml
                     """
@@ -159,11 +158,10 @@ def test_components_docs_sling_workspace(
                 type: dagster_sling.SlingReplicationCollectionComponent
 
                 attributes:
-                  sling:
-                    connections:
-                      - name: DUCKDB
-                        type: duckdb
-                        instance: /tmp/my_project.duckdb
+                  connections:
+                    DUCKDB:
+                      type: duckdb
+                      instance: /tmp/my_project.duckdb
                   replications:
                     - path: ./replication.yaml
                       translation:
