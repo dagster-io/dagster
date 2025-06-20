@@ -19,10 +19,10 @@ For more information, see the [Installation guide](/getting-started/installation
 
 ### `uv` (recommended)
 
-1. Scaffold a new Dagster project, replacing `<project_name>` with the name of your project:
+1. Scaffold a new Dagster project, replacing `<project-name>` with the name of your project:
 
    ```bash
-   uvx -U create-dagster project <project_name>
+   uvx -U create-dagster project <project-name>
    ```
 
 2. Respond `y` to the prompt to run `uv sync` after scaffolding:
@@ -53,16 +53,16 @@ For more information, see the [Installation guide](/getting-started/installation
 
 ### `pip`
 
-1. Scaffold a new Dagster project, replacing `<project_name>` with the name of your project:
+1. Scaffold a new Dagster project, replacing `<project-name>` with the name of your project:
 
   ```bash
-  create-dagster project <project_name>
+  create-dagster project <project-name>
    ```
 
 2. Change to the project directory:
 
   ```bash
-  cd <project_name>
+  cd <project-name>
   ```
 
 3. Create and activate a virtual environment:
