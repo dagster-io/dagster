@@ -34,10 +34,6 @@ def parse_traversal_depth(optional_digits):
     return int(optional_digits.getText())
 
 
-def is_null_value(ctx: AssetSelectionParser.ValueContext):
-    return ctx.NULL_STRING() is not None
-
-
 class AntlrAssetSelectionVisitor(AssetSelectionVisitor):
     def __init__(self, include_sources: bool):
         self.include_sources = include_sources
@@ -125,26 +121,26 @@ class AntlrAssetSelectionVisitor(AssetSelectionVisitor):
         key = self.visit(ctx.value(0))
         value = self.visit(ctx.value(1)) if ctx.EQUAL() else None
         return AssetSelection.tag(
-            key if not is_null_value(ctx.value(0)) else None,
+            key,
             value,
             include_sources=self.include_sources,
         )
 
     def visitOwnerAttributeExpr(self, ctx: AssetSelectionParser.OwnerAttributeExprContext):
         owner = self.visit(ctx.value())
-        return AssetSelection.owner(owner if not is_null_value(ctx.value()) else None)
+        return AssetSelection.owner(owner)
 
     def visitGroupAttributeExpr(self, ctx: AssetSelectionParser.GroupAttributeExprContext):
         group = self.visit(ctx.value())
         return AssetSelection.groups(
-            group if not is_null_value(ctx.value()) else None,
+            group,
             include_sources=self.include_sources,
         )
 
     def visitKindAttributeExpr(self, ctx: AssetSelectionParser.KindAttributeExprContext):
         kind = self.visit(ctx.value())
         return AssetSelection.kind(
-            kind if not is_null_value(ctx.value()) else None,
+            kind,
             include_sources=self.include_sources,
         )
 
@@ -152,9 +148,7 @@ class AntlrAssetSelectionVisitor(AssetSelectionVisitor):
         self, ctx: AssetSelectionParser.CodeLocationAttributeExprContext
     ):
         code_location = self.visit(ctx.value())
-        return CodeLocationAssetSelection(
-            selected_code_location=code_location if not is_null_value(ctx.value()) else None
-        )
+        return CodeLocationAssetSelection(selected_code_location=code_location)
 
     def visitKeyValue(self, ctx: AssetSelectionParser.KeyValueContext):
         if ctx.QUOTED_STRING():
@@ -170,7 +164,7 @@ class AntlrAssetSelectionVisitor(AssetSelectionVisitor):
         elif ctx.UNQUOTED_STRING():
             return ctx.UNQUOTED_STRING().getText()
         elif ctx.NULL_STRING():
-            return ""
+            return None
 
     def visitStatusAttributeExpr(self, ctx: AssetSelectionParser.StatusAttributeExprContext):
         status = self.visit(ctx.value())
@@ -178,21 +172,17 @@ class AntlrAssetSelectionVisitor(AssetSelectionVisitor):
 
     def visitColumnAttributeExpr(self, ctx: AssetSelectionParser.ColumnAttributeExprContext):
         column = self.visit(ctx.value())
-        return ColumnAssetSelection(
-            selected_column=column if not is_null_value(ctx.value()) else None
-        )
+        return ColumnAssetSelection(selected_column=column)
 
     def visitTableNameAttributeExpr(self, ctx: AssetSelectionParser.TableNameAttributeExprContext):
         table_name = self.visit(ctx.value())
-        return TableNameAssetSelection(
-            selected_table_name=table_name if not is_null_value(ctx.value()) else None
-        )
+        return TableNameAssetSelection(selected_table_name=table_name)
 
     def visitColumnTagAttributeExpr(self, ctx: AssetSelectionParser.ColumnTagAttributeExprContext):
         key = self.visit(ctx.value(0))
         value = self.visit(ctx.value(1)) if ctx.EQUAL() else None
         return ColumnTagAssetSelection(
-            key=key if not is_null_value(ctx.value(0)) else None,
+            key=key,
             value=value,
         )
 
@@ -200,9 +190,7 @@ class AntlrAssetSelectionVisitor(AssetSelectionVisitor):
         self, ctx: AssetSelectionParser.ChangedInBranchAttributeExprContext
     ):
         branch = self.visit(ctx.value())
-        return ChangedInBranchAssetSelection(
-            selected_changed_in_branch=branch if not is_null_value(ctx.value()) else None
-        )
+        return ChangedInBranchAssetSelection(selected_changed_in_branch=branch)
 
 
 class AntlrAssetSelectionParser:
