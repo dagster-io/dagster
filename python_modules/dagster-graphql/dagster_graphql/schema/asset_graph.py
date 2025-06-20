@@ -866,9 +866,9 @@ class GrapheneAssetNode(graphene.ObjectType):
         if not graphene_info.context.instance.internal_asset_freshness_enabled():
             return None
 
-        if self._asset_node_snap.internal_freshness_policy:
+        if self._asset_node_snap.freshness_policy:
             return GrapheneInternalFreshnessPolicy.from_policy(
-                self._asset_node_snap.internal_freshness_policy
+                self._asset_node_snap.freshness_policy
             )
         return None
 

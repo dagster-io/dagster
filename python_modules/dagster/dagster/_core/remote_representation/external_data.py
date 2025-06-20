@@ -1386,6 +1386,7 @@ class BackcompatTeamOwnerFieldDeserializer(FieldSerializer):
         "description": "op_description",
         "partitions": "partitions_def_data",
         "legacy_freshness_policy": "freshness_policy",
+        "freshness_policy": "new_freshness_policy",
     },
     field_serializers={
         "metadata": MetadataFieldSerializer,
@@ -1419,6 +1420,7 @@ class AssetNodeSnap(IHaveNew):
     tags: Optional[Mapping[str, str]]
     group_name: str
     legacy_freshness_policy: Optional[LegacyFreshnessPolicy]
+    freshness_policy: Optional[InternalFreshnessPolicy]
     is_source: bool
     is_observable: bool
     # If a set of assets can't be materialized independently from each other, they will all
@@ -1453,6 +1455,7 @@ class AssetNodeSnap(IHaveNew):
         tags: Optional[Mapping[str, str]] = None,
         group_name: Optional[str] = None,
         legacy_freshness_policy: Optional[LegacyFreshnessPolicy] = None,
+        freshness_policy: Optional[InternalFreshnessPolicy] = None,
         is_source: Optional[bool] = None,
         is_observable: bool = False,
         execution_set_identifier: Optional[str] = None,
@@ -1530,6 +1533,8 @@ class AssetNodeSnap(IHaveNew):
             # the default here for backcompat.
             group_name=group_name or DEFAULT_GROUP_NAME,
             legacy_freshness_policy=legacy_freshness_policy,
+            freshness_policy=freshness_policy
+            or InternalFreshnessPolicy.from_asset_spec_metadata(metadata),
             is_source=is_source,
             is_observable=is_observable,
             execution_set_identifier=execution_set_identifier,
@@ -1560,10 +1565,6 @@ class AssetNodeSnap(IHaveNew):
             return self.auto_materialize_policy.to_automation_condition()
         else:
             return None
-
-    @property
-    def internal_freshness_policy(self) -> Optional[InternalFreshnessPolicy]:
-        return InternalFreshnessPolicy.from_asset_spec_metadata(self.metadata)
 
 
 ResourceJobUsageMap: TypeAlias = dict[str, list[ResourceJobUsageEntry]]
@@ -1758,6 +1759,7 @@ def asset_node_snaps_from_repo(repo: RepositoryDefinition) -> Sequence[AssetNode
                 tags=asset_node.tags,
                 group_name=asset_node.group_name,
                 legacy_freshness_policy=asset_node.legacy_freshness_policy,
+                freshness_policy=asset_node.freshness_policy,
                 is_source=asset_node.is_external,
                 is_observable=asset_node.is_observable,
                 execution_set_identifier=repo.asset_graph.get_execution_set_identifier(key),

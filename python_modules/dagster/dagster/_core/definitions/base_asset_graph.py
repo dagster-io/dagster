@@ -21,6 +21,7 @@ from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.asset_key import AssetKey, EntityKey, T_EntityKey
 from dagster._core.definitions.backfill_policy import BackfillPolicy
 from dagster._core.definitions.events import AssetKeyPartitionKey
+from dagster._core.definitions.freshness import InternalFreshnessPolicy
 from dagster._core.definitions.freshness_policy import LegacyFreshnessPolicy
 from dagster._core.definitions.metadata import ArbitraryMetadataMapping
 from dagster._core.definitions.partition import PartitionsDefinition, PartitionsSubset
@@ -153,6 +154,10 @@ class BaseAssetNode(BaseEntityNode[AssetKey]):
     @property
     @abstractmethod
     def legacy_freshness_policy(self) -> Optional[LegacyFreshnessPolicy]: ...
+
+    @property
+    @abstractmethod
+    def freshness_policy(self) -> Optional[InternalFreshnessPolicy]: ...
 
     @property
     @abstractmethod

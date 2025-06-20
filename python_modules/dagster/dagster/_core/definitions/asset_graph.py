@@ -22,6 +22,7 @@ from dagster._core.definitions.declarative_automation.automation_condition impor
     AutomationCondition,
 )
 from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.freshness import InternalFreshnessPolicy
 from dagster._core.definitions.freshness_policy import LegacyFreshnessPolicy
 from dagster._core.definitions.metadata import ArbitraryMetadataMapping
 from dagster._core.definitions.partition import PartitionsDefinition
@@ -115,6 +116,10 @@ class AssetNode(BaseAssetNode):
     @property
     def legacy_freshness_policy(self) -> Optional[LegacyFreshnessPolicy]:
         return self._spec.legacy_freshness_policy
+
+    @property
+    def freshness_policy(self) -> Optional[InternalFreshnessPolicy]:
+        return self._spec.freshness_policy
 
     @property
     def auto_materialize_policy(self) -> Optional[AutoMaterializePolicy]:

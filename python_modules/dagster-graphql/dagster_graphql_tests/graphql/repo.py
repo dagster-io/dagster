@@ -1693,7 +1693,7 @@ def req_config_job():
 
 @asset(
     owners=["user@dagsterlabs.com", "team:team1"],
-    internal_freshness_policy=InternalFreshnessPolicy.time_window(
+    freshness_policy=InternalFreshnessPolicy.time_window(
         fail_window=timedelta(minutes=10), warn_window=timedelta(minutes=5)
     ),
 )
@@ -1708,7 +1708,7 @@ def asset_2():
 
 @asset(
     deps=[AssetKey("asset_2")],
-    internal_freshness_policy=InternalFreshnessPolicy.time_window(
+    freshness_policy=InternalFreshnessPolicy.time_window(
         fail_window=timedelta(minutes=10), warn_window=timedelta(minutes=5)
     ),
 )
