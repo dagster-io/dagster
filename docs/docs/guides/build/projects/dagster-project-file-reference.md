@@ -32,7 +32,7 @@ To use `tree`, install it with `brew install tree` (Mac), or follow the [install
 - The Python package `my_project` lives in `src/my_project` and contains the deployable code that defines your Dagster pipelines.
 - `my_project/definitions.py` is the entry point that Dagster will load when deploying your code location.
 - `src/my_project/defs` will contain your Dagster definitions and [component](/guides/build/components) definitions.
-- `src/my_project/components` is where you will define custom components, and optionally other code you wish to share across Dagster definitions.
+- `src/my_project/components` (not pictured) is an optional folder used to define [custom components](/guides/build/components/creating-new-components), and optionally other code you wish to share across Dagster definitions.
 - `tests` is a separate Python package defined at the top level (outside `src`). It should contain tests for the `my_project` package.
 - `pyproject.toml` is a standard Python package configuration file. In addition to the regular Python package metadata, it contains a `tool.dg` section for `dg`-specific settings.
 
@@ -97,7 +97,7 @@ For local development, a workspace with multiple projects that each define a dif
 │   └── local
 │       ├── pyproject.toml
 │       └── uv.lock
-├── dg.toml         ## defines multiple code locations
+├── dg.toml         ## defines multiple projects
 └── projects
     ├── project-1
     │   ├── pyproject.toml

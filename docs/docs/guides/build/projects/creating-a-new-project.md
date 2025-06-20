@@ -10,14 +10,14 @@ The easiest way to start building a Dagster project is by using the [`create-dag
 
 Before creating a Dagster project, you must do one of the following:
 
-* If you will be using `uv` to manage your virtual environment, install `uv` (recommended)
-* If you will be using `pip` to manage your environment, install the `create-dagster` CLI with Homebrew, `curl`, or `pip`
+* [If you will be using `uv` as a package manager](#uv-recommended), install `uv` (**Recommended**).
+* [If you will be using `pip` as a package manager](#pip), install the `create-dagster` CLI with Homebrew, `curl`, or `pip`.
 
-For more information, see the [Installation doc](/getting-started/installation).
+For more information, see the [Installation guide](/getting-started/installation).
 
 ## Step 1. Scaffold a new Dagster project
 
-### `uv` venv (recommended)
+### `uv` (recommended)
 
 1. Scaffold a new Dagster project, replacing `<project_name>` with the name of your project:
 
@@ -51,7 +51,7 @@ For more information, see the [Installation doc](/getting-started/installation).
 </Tabs>
 
 
-### `pip` venv
+### `pip`
 
 1. Scaffold a new Dagster project, replacing `<project_name>` with the name of your project:
 
