@@ -252,7 +252,7 @@ export const AssetCatalogInsightsLineChart = React.memo(
 
       const clickedElements = chart.getElementsAtEventForMode(
         event.nativeEvent,
-        'y',
+        'index',
         {axis: 'x', intersect: false},
         false, // get elements in the clicked position even if animations are not completed
       );
