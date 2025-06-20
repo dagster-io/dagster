@@ -30,7 +30,9 @@ export const Default = () => {
         flex={{direction: 'column', alignItems: 'stretch'}}
         style={{width: 320}}
       >
-        <Button>Full-width Flex Child</Button>
+        <Button>
+          <div style={{width: '100%', textAlign: 'center'}}>Full-width Flex Child</div>
+        </Button>
       </Box>
     </Group>
   );
