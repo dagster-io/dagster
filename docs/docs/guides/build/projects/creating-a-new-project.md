@@ -31,7 +31,7 @@ For more information, see the [Installation guide](/getting-started/installation
 
 3. Change to the project directory:
 
-   ```
+   ```bash
    cd <project-name>
    ```
 
@@ -39,12 +39,12 @@ For more information, see the [Installation guide](/getting-started/installation
 
 <Tabs>
   <TabItem value="macos" label="MacOS/Unix">
-    ```
+    ```bash
     source .venv/bin/activate
     ```
   </TabItem>
   <TabItem value="windows" label="Windows">
-  ```
+  ```bash
   .venv\Scripts\activate
   ```
   </TabItem>
@@ -61,7 +61,7 @@ For more information, see the [Installation guide](/getting-started/installation
 
 2. Change to the project directory:
 
-  ```
+  ```bash
   cd <project_name>
   ```
 
@@ -69,18 +69,18 @@ For more information, see the [Installation guide](/getting-started/installation
 
 <Tabs>
   <TabItem value="macos" label="MacOS/Unix">
-    ```
+    ```bash
     python -m venv venv
     ```
-    ```
+    ```bash
     source .venv/bin/activate
     ```
   </TabItem>
   <TabItem value="windows" label="Windows">
-    ```
+    ```bash
     python -m venv venv
     ```
-    ```
+    ```bash
     .venv\Scripts\activate
     ```
   </TabItem>
@@ -88,13 +88,13 @@ For more information, see the [Installation guide](/getting-started/installation
 
 4. Install required dependencies:
 
-  ```
+  ```bash
   pip install dagster dagster-webserver dagster-dg
   ```
 
 5. Install your project as an editable package:
 
-  ```
+  ```bash
   pip install --editable .
   ```
 
