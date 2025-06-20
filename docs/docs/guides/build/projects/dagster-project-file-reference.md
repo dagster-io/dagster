@@ -135,7 +135,7 @@ For local development, a project with a single code location might look like thi
 </TabItem>
 <TabItem value="Multiple code locations">
 
-For local development, a workspace with multiple projects that each define a different code location might look like this:
+For local development, a workspace with multiple code locations might look like this:
 
 <Tabs groupId="package-manager">
   <TabItem label="uv" value="uv">
