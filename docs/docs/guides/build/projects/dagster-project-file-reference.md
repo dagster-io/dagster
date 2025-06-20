@@ -18,7 +18,7 @@ The following demonstrates a Dagster project using the default project skeleton,
   <TabItem value="uv" label="uv">
     <CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/scaffolding-project/2-tree-uv.txt" />
   </TabItem>
-  <TabItem value="non-uv" label="non-uv">
+  <TabItem value="pip" label="pip">
     <CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/scaffolding-project/2-tree-non-uv.txt" />
   </TabItem>
 </Tabs>
@@ -92,34 +92,35 @@ For local development, a workspace with multiple projects that each define a dif
 
 ```shell
 .
-├── dagster.yaml ## optional, used for instance settings
+├── dagster.yaml    ## optional, used for instance settings
 ├── deployments
 │   └── local
 │       ├── pyproject.toml
 │       └── uv.lock
-├── dg.toml
-├── projects
-│   ├── project-1
-│   │   ├── pyproject.toml
-│   │   ├── src
-│   │   │   └── project_1
-│   │   │       ├── __init__.py
-│   │   │       └── defs
-│   │   │           └── __init__.py
-│   │   ├── tests
-│   │   │   └── __init__.py
-│   │   └── uv.lock
-│   └── project-2
-│       ├── pyproject.toml
-│       ├── src
-│       │   └── project_2
-│       │       ├── __init__.py
-│       │       └── defs
-│       │           └── __init__.py
-│       ├── tests
-│       │   └── __init__.py
-│       └── uv.lock
-└── workspace.yaml ## defines multiple code locations
+├── dg.toml         ## defines multiple code locations
+└── projects
+    ├── project-1
+    │   ├── pyproject.toml
+    │   ├── src
+    │   │   └── project_1
+    │   │       ├── __init__.py
+    │   │       ├── definitions.py
+    │   │       └── defs
+    │   │           └── __init__.py
+    │   ├── tests
+    │   │   └── __init__.py
+    │   └── uv.lock
+    └── project-2
+        ├── pyproject.toml
+        ├── src
+        │   └── project_2
+        │       ├── __init__.py
+        │       ├── definitions.py
+        │       └── defs
+        │           └── __init__.py
+        ├── tests
+        │   └── __init__.py
+        └── uv.lock
 ```
 
 For more information on creating a Dagster workspace with multiple projects, see [Managing multiple projects with workspaces](/guides/build/projects/multiple-projects).
@@ -140,12 +141,13 @@ A Dagster project deployed to your infrastructure might look like this:
 ├── src
 │   └── my_project
 │       ├── __init__.py
+│       ├── definitions.py
 │       └── defs
 │           └── __init__.py
 ├── tests
 │   └── __init__.py
 ├── uv.lock
-└── workspace.yaml  ## defines multiple code locations
+└── workspace.yaml    ## defines multiple code locations
 ```
 
 ### Dagster+ deployment
@@ -159,12 +161,13 @@ For a Dagster+ Serverless deployment, a project might look like this:
 
 ```shell
 .
-├── dagster_cloud.yaml       ## defines code locations
-├── deployment_settings.yaml ## optional, defines settings for full deployments
+├── dagster_cloud.yaml        ## defines code locations
+├── deployment_settings.yaml  ## optional, defines settings for full deployments
 ├── pyproject.toml
 ├── src
 │   └── my_project
 │       ├── __init__.py
+│       ├── definitions.py
 │       └── defs
 │           └── __init__.py
 ├── tests
@@ -179,13 +182,14 @@ For a Dagster+ Hybrid deployment, a project might look like this:
 
 ```shell
 .
-├── dagster_cloud.yaml          ## defines code locations
-├── dagster.yaml                ## optional, hybrid agent custom configuration
-├── deployment_settings.yaml    ## optional, defines settings for full deployments
+├── dagster_cloud.yaml        ## defines code locations
+├── dagster.yaml              ## optional, hybrid agent custom configuration
+├── deployment_settings.yaml  ## optional, defines settings for full deployments
 ├── pyproject.toml
 ├── src
 │   └── my_project
 │       ├── __init__.py
+│       ├── definitions.py
 │       └── defs
 │           └── __init__.py
 ├── tests
