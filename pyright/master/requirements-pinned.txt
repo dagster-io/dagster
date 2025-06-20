@@ -456,7 +456,7 @@ packaging==24.2
 pandas==2.2.3
 pandas-gbq==0.28.0
 pandas-stubs==2.2.3.250308
-pandera==0.23.1
+pandera==0.24.0
 pandocfilters==1.5.1
 papermill==2.6.0
 paramiko==3.5.1
