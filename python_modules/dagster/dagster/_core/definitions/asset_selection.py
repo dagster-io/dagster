@@ -964,10 +964,7 @@ class GroupsAssetSelection(AssetSelection):
     def to_selection_str(self) -> str:
         if len(self.selected_groups) == 0:
             return "group:<null>"
-        elif len(self.selected_groups) == 1:
-            return f'group:"{self.selected_groups[0]}"'
-        else:
-            return " or ".join(f'group:"{group}"' for group in self.selected_groups)
+        return " or ".join(f'group:"{group}"' for group in self.selected_groups)
 
 
 @whitelist_for_serdes
