@@ -6,10 +6,9 @@ sidebar_position: 200
 
 This reference contains details about [default](#default-files) and [configuration](#configuration-files) files in a Dagster project, including:
 
-- File names
-- What the files do
-- Where files should be located in a project directory
-- Resources for structuring your Dagster project
+- Names of files and directories and their purposes
+- Recommended locations of files in a project directory
+- Scenario-specifc best practices for structuring your Dagster project
 
 ## Default files
 

@@ -10,39 +10,105 @@ The easiest way to start building a Dagster project is by using the [`create-dag
 
 Before creating a Dagster project, you must do one of the following:
 
-* Install `uv` (recommended)
-* If not using `uv`, install the `create-dagster` CLI with Homebrew or `curl`
+* If you will be using `uv` to manage your virtual environment, install `uv` (recommended)
+* If you will be using `pip` to manage your environment, install the `create-dagster` CLI with Homebrew, `curl`, or `pip`
 
 For more information, see the [Installation doc](/getting-started/installation).
 
-## 1. Create a project with the `create-dagster` CLI
+## Step 1. Scaffold a new Dagster project
+
+### `uv` venv (recommended)
+
+1. Scaffold a new Dagster project, replacing `<project_name>` with the name of your project:
+
+   ```bash
+   uvx -U create-dagster project <project_name>
+   ```
+
+2. Respond `y` to the prompt to run `uv sync` after scaffolding:
+
+   ![Responding y to uv sync prompt](/images/getting-started/quickstart/uv_sync_yes.png)
+
+3. Change to the project directory:
+
+   ```
+   cd <project-name>
+   ```
+
+4. Activate the virtual environment:
 
 <Tabs>
-  <TabItem value="uv" label="uv">
-  If you are using `uv`, you can run `create-dagster` with [`uvx`](https://docs.astral.sh/uv/guides/tools/):
-
-  ```
-  uvx -U create-dagster project my-project
-  ```
-
+  <TabItem value="macos" label="MacOS/Unix">
+    ```
+    source .venv/bin/activate
+    ```
   </TabItem>
-  <TabItem value="non-uv" label="Homebrew or curl">
-
-  If you are not using `uv`, you must install `create-dagster` with Homebrew, `curl`, or `pip`, then run the following command:
-
+  <TabItem value="windows" label="Windows">
   ```
-  create-dagster project my-project
+  .venv\Scripts\activate
   ```
   </TabItem>
 </Tabs>
 
+
+### `pip` venv
+
+1. Scaffold a new Dagster project, replacing `<project_name>` with the name of your project:
+
+  ```bash
+  create-dagster project <project_name>
+   ```
+
+2. Change to the project directory:
+
+  ```
+  cd <project_name>
+  ```
+
+3. Create and activate a virtual environment:
+
+<Tabs>
+  <TabItem value="macos" label="MacOS/Unix">
+    ```
+    python -m venv venv
+    ```
+    ```
+    source .venv/bin/activate
+    ```
+  </TabItem>
+  <TabItem value="windows" label="Windows">
+    ```
+    python -m venv venv
+    ```
+    ```
+    .venv\Scripts\activate
+    ```
+  </TabItem>
+</Tabs>
+
+4. Install required dependencies:
+
+  ```
+  pip install dagster dagster-webserver dagster-dg
+  ```
+
+5. Install your project as an editable package:
+
+  ```
+  pip install --editable .
+  ```
+
+:::info
+
 The `create-dagster project` command creates a directory with a standard Python package structure with some additions. For more information on the files and directories in a Dagster project, see the [Dagster project file reference](/guides/build/projects/dagster-project-file-reference).
 
-## 3. Add assets
+:::
+
+## Step 2. Add assets
 
 Assets are the core abstraction in Dagster and can represent logical units of data such as tables, datasets, or machine learning models. Assets can have dependencies on other assets, forming the data lineage for your pipelines. To add assets to your project, see [Defining assets](/guides/build/assets/defining-assets).
 
-## 4: View assets in the UI
+## Step 3: View assets in the UI
 
 To start the [Dagster UI](/guides/operate/webserver), run:
 
@@ -79,9 +145,9 @@ pytest tests
 ```
 
 For more information on testing, see the following docs:
-* The [Testing guides](/guides/test) for help with asset checks, data freshness checks, unit testing assets and ops, and testing partitioned config and jobs
-* [Testing component definitions](/guides/build/components/building-pipelines-with-components/testing-component-definitions) if you have scaffolded definitions from an existing component
-* [Testing your component](/guides/build/components/creating-new-components/testing-your-component) if you have created a custom component
+* The [Testing guides](/guides/test) have guidance on asset checks, data freshness checks, unit testing assets and ops, and testing partitioned config and jobs.
+* [Testing component definitions](/guides/build/components/building-pipelines-with-components/testing-component-definitions) contains testing best practices for definitions scaffolded existing components.
+* [Testing your component](/guides/build/components/creating-new-components/testing-your-component) has best practices for testing custom components.
 
 ## Next steps
 
