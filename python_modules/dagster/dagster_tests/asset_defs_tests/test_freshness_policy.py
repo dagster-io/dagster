@@ -204,3 +204,17 @@ def test_legacy_freshness_backcompat():
 
     # Then, check that the deserialized snapshots are the same
     assert new_snap == old_snap_deserialized
+
+
+def test_freshness_policy_deprecated_import():
+    """We should be able to import FreshnessPolicy from `dagster.deprecated` and use it to define a freshness policy on an asset."""
+    from dagster.deprecated import FreshnessPolicy
+
+    policy = FreshnessPolicy(maximum_lag_minutes=1)
+    assert isinstance(policy, LegacyFreshnessPolicy)
+
+    @dg.asset(freshness_policy=policy)
+    def foo():
+        pass
+
+    dg.Definitions(assets=[foo])
