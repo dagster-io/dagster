@@ -192,7 +192,7 @@ overrides==7.7.0
 packaging==25.0
 pandas==2.2.3
 pandas-stubs==2.2.3.250308
-pandera==0.23.1
+pandera==0.24.0
 pandocfilters==1.5.1
 parsedatetime==2.6
 parso==0.8.4

@@ -30,7 +30,6 @@ export const AllAssetNodeFacets = [
 export const AssetNodeFacetDefaults = [
   AssetNodeFacet.UnsyncedTag,
   AssetNodeFacet.Checks,
-  AssetNodeFacet.Freshness,
   AssetNodeFacet.LatestEvent,
   AssetNodeFacet.Status,
   AssetNodeFacet.KindTag,

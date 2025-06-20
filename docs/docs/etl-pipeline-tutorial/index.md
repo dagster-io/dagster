@@ -4,28 +4,27 @@ description: Learn how to build an ETL pipeline with Dagster
 last_update:
   author: Alex Noonan
 sidebar_class_name: hidden
-sidebar_position: 10
 ---
 
 # Build your first ETL pipeline
 
-In this tutorial, you'll build an ETL pipeline with Dagster that:
+In this tutorial, you'll build a full ETL pipeline with Dagster that:
 
-- Imports sales data to DuckDB
-- Transforms data into reports
+- Imports data into DuckDB using Sling
+- Transforms data into reports with dbt
 - Runs scheduled reports automatically
 - Generates one-time reports on demand
+- Visualizes the data with Evidence
 
 ## You will learn to:
 
-- Set up a Dagster project with the recommended project structure
-- Create and materialize assets
-- Create and materialize dependant assets
+- How to set up a Dagster project with the recommended project structure
+- Integrate with other tools
+- Create and materialize assets and dependencies
 - Ensure data quality with asset checks
 - Create and materialize partitioned assets
 - Automate the pipeline
-- Create and materialize a sensor asset
-- Refactor your project when it becomes more complex
+- Create and materialize assets with sensors
 
 <details>
   <summary>Prerequisites</summary>
@@ -34,107 +33,48 @@ To follow the steps in this guide, you'll need:
 
 - Basic Python knowledge
 - Python 3.9+ installed on your system. Refer to the [Installation guide](/getting-started/installation) for information.
-- Familiarity with SQL and Python data manipulation libraries, such as Pandas.
+- Familiarity with SQL and Python.
 - Understanding of data pipelines and the extract, transform, and load process.
 
 </details>
 
-## Step 1: Set up your Dagster environment
+## Set up your Dagster project
 
-First, set up a new Dagster project.
-
-1. Open your terminal and create a new directory for your project:
+1. Open your terminal and scaffold a new project with `uv`:
 
    ```bash
-   mkdir dagster-etl-tutorial
-   cd dagster-etl-tutorial
+   uvx create-dagster project etl_tutorial
    ```
 
-2. Create and activate a virtual environment:
+2. Change into that project
+
+   ```bash
+   cd etl_tutorial
+   ```
+
+3. Activate the project virtual environment:
 
    <Tabs>
      <TabItem value="macos" label="MacOS">
-       ```bash python -m venv dagster_tutorial source dagster_tutorial/bin/activate ```
+       ```source .venv/bin/activate ```
      </TabItem>
      <TabItem value="windows" label="Windows">
-       ```bash python -m venv dagster_tutorial dagster_tutorial\Scripts\activate ```
+       ```.venv\Scripts\activate ```
      </TabItem>
    </Tabs>
 
-3. Install Dagster and the required dependencies:
+
+4. To make sure Dagster and its dependencies were installed correctly, start the Dagster webserver:
 
    ```bash
-   pip install dagster dagster-webserver pandas dagster-duckdb
+   dg dev
    ```
 
-## Step 2: Create the Dagster project structure
+   In your browser, navigate to [http://127.0.0.1:3000](http://127.0.0.1:3000)
 
-Run the following command to create the project directories and files for this tutorial:
+TODO: Screenshot
 
-```bash
-dagster project from-example --example getting_started_etl_tutorial
-```
-
-This command will create a *getting_started_etl_tutorial* directory with the example files. Move the contents to your current directory (*dagster-etl-tutorial*):
-
-```bash
-mv getting_started_etl_tutorial/* .
-rmdir getting_started_etl_tutorial
-```
-
-Your project should now have this structure:
-{/* vale off */}
-
-```
-dagster-etl-tutorial/
-├── data/
-│   └── products.csv
-│   └── sales_data.csv
-│   └── sales_reps.csv
-│   └── sample_request/
-│       └── request.json
-├── etl_tutorial/
-│   └── definitions.py
-├── pyproject.toml
-├── setup.cfg
-├── setup.py
-```
-
-{/* vale on */}
-
-:::info
-Dagster has several example projects you can install depending on your use case. To see the full list, run `dagster project list-examples`. For more information on the `dagster project` command, see the [API documentation](https://docs-preview.dagster.io/api/cli#dagster-project).
-:::
-
-### Dagster project structure
-
-#### dagster-etl-tutorial root directory
-
-In the `dagster-etl-tutorial` root directory, there are three configuration files that are common in Python package management. These files manage dependencies and identify the Dagster modules in the project.
-| File | Purpose |
-|------|---------|
-| pyproject.toml | This file is used to specify build system requirements and package metadata for Python projects. It is part of the Python packaging ecosystem. |
-| setup.cfg | This file is used for configuration of your Python package. It can include metadata about the package, dependencies, and other configuration options. |
-| setup.py | This script is used to build and distribute your Python package. It is a standard file in Python projects for specifying package details. |
-
-#### etl_tutorial directory
-
-This is the main directory where you will define your assets, jobs, schedules, sensors, and resources.
-| File | Purpose |
-|------|---------|
-| definitions.py | This file is typically used to define jobs, schedules, and sensors. It organizes the various components of your Dagster project. This allows Dagster to load the definitions in a module. |
-
-#### data directory
-
-The data directory contains the raw data files for the project. We will reference these files in our software-defined assets in the next step of the tutorial.
-
-## Step 3: Launch the Dagster webserver
-
-To make sure Dagster and its dependencies were installed correctly, navigate to the project root directory and start the Dagster webserver:"
-
-```bash
-dagster dev
-```
+At this point the project will be empty but we will continue to add to it throughout the tutorial.
 
 ## Next steps
 
