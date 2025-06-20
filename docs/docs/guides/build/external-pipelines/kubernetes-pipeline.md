@@ -4,6 +4,8 @@ description: "Learn to integrate Dagster Pipes with Kubernetes to launch externa
 sidebar_position: 60
 ---
 
+import ScaffoldProject from '@site/docs/partials/\_ScaffoldProject.md';
+
 :::note
 
 This article focuses on using an out-of-the-box Kubernetes resource. For further customization, use the [`open_pipes_session`](/guides/build/external-pipelines/dagster-pipes-details-and-customization) approach instead.
@@ -25,9 +27,7 @@ You can omit the `dagster-pipes` dependency entirely if you do not wish to use t
 To run the examples, you'll need to:
 
 - Create a new Dagster project:
-   ```bash
-   uvx create-dagster project <project_name>
-   ```
+    <ScaffoldProject />
 - Install the necessary Python libraries:
   ```bash
   uv pip install dagster-k8s

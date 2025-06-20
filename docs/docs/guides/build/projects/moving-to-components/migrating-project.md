@@ -1,7 +1,7 @@
 ---
-description: Convert an existing Dagster project to use dg.
-sidebar_position: 100
-title: Converting an existing project to use dg
+description: Convert an existing Dagster project to be compatible with Components.
+sidebar_position: 550
+title: Converting an existing project
 ---
 
 import DgComponentsRc from '@site/docs/partials/\_DgComponentsRc.md';
@@ -204,5 +204,5 @@ Now your project is fully compatible with `dg`!
 
 ## Next steps
 
-- [Restructure existing definitions](/guides/build/projects/migrating-definitions)
+- [Restructure existing definitions](/guides/build/projects/moving-to-components/migrating-definitions)
 - [Add a new definition to your project](/api/dg/dg-cli)

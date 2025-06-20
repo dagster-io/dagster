@@ -4,6 +4,8 @@ description: "Learn to integrate Dagster Pipes with PySpark to orchestrate PySpa
 sidebar_position: 70
 ---
 
+import ScaffoldProject from '@site/docs/partials/\_ScaffoldProject.md';
+
 This tutorial is focused on using Dagster Pipes to launch & monitor general PySpark jobs. The [Spark integration page](/integrations/libraries/spark) provides more information on using Pipes with specific Spark providers, such as AWS EMR or Databricks.
 
 Spark is often used with object stores such as Amazon S3. We are going to simulate this setup locally with [MinIO](https://min.io/), which has an API compatible with AWS S3. All communication between Dagster and the Spark job (metadata and logs collection) will happen through a MinIO bucket.
@@ -13,9 +15,7 @@ Spark is often used with object stores such as Amazon S3. We are going to simula
 To run the examples, you'll need to:
 
 - Create a new Dagster project:
-   ```bash
-   uvx create-dagster project <project_name>
-   ```
+  <ScaffoldProject />
 - Install the necessary Python libraries:
   ```bash
   uv pip install dagster-aws

@@ -1,6 +1,6 @@
 ---
-description: Moving existing Dagster definitions to the defs directory of a dg-compatible project.
-sidebar_position: 100
+description: Moving existing Dagster definitions to the defs directory of a Components-compatible project.
+sidebar_position: 560
 title: Autoloading existing Dagster definitions
 ---
 
@@ -10,7 +10,7 @@ import DgComponentsRc from '@site/docs/partials/\_DgComponentsRc.md';
 
 :::note
 
-This guide covers using existing Dagster definitions with a `dg`-compatible project. To convert an existing project to use `dg`, see "[Converting an existing project to use `dg`](/guides/build/projects/migrating-project)".
+This guide covers using existing Dagster definitions with a `dg`-compatible project. To convert an existing project to use `dg`, see "[Converting an existing project to use `dg`](/guides/build/projects/moving-to-components/migrating-project)".
 
 :::
 

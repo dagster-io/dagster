@@ -5,6 +5,7 @@ sidebar_position: 200
 ---
 
 import Preview from '@site/docs/partials/\_Preview.md';
+import ScaffoldProject from '@site/docs/partials/\_ScaffoldProject.md';
 
 <Preview />
 
@@ -17,9 +18,7 @@ The [dagster-aws](/api/libraries/dagster-aws) integration library provides the <
 To run the examples, you'll need to:
 
 - Create a new Dagster project:
-   ```bash
-   uvx create-dagster project <project_name>
-   ```
+  <ScaffoldProject />
 - Install the necessary Python libraries:
   ```bash
   uv pip install dagster-aws

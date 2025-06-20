@@ -4,6 +4,8 @@ description: "Learn to integrate Dagster Pipes with AWS Lambda to launch externa
 sidebar_position: 600
 ---
 
+import ScaffoldProject from '@site/docs/partials/\_ScaffoldProject.md';
+
 :::note
 
 This article focuses on using an out-of-the-box Amazon Web Services (AWS) Lambda resource. For further customization, use the [`open_pipes_session`](/guides/build/external-pipelines/dagster-pipes-details-and-customization) instead.
@@ -20,9 +22,7 @@ Dagster Pipes allows your code to interact with Dagster outside of a full Dagste
 To run the examples, you'll need to:
 
 - Create a new Dagster project:
-   ```bash
-   uvx create-dagster project <project_name>
-   ```
+   <ScaffoldProject />
 - Install the necessary Python libraries:
   ```bash
   uv pip install dagster-aws

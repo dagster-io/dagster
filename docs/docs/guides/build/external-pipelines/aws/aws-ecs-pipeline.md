@@ -4,6 +4,8 @@ description: "Learn to integrate Dagster Pipes with AWS ECS to launch external c
 sidebar_position: 100
 ---
 
+import ScaffoldProject from '@site/docs/partials/\_ScaffoldProject.md';
+
 This article covers how to use [Dagster Pipes](/guides/build/external-pipelines/) with [AWS ECS](https://aws.amazon.com/ecs/).
 
 The [dagster-aws](/api/libraries/dagster-aws) integration library provides the <PyObject section="libraries" object="pipes.PipesECSClient" module="dagster_aws" /> resource which can be used to launch AWS ECS tasks from Dagster assets and ops. Dagster can receive regular events like logs, asset checks, or asset materializations from jobs launched with this client. Using it requires minimal code changes on the task side.
@@ -13,9 +15,7 @@ The [dagster-aws](/api/libraries/dagster-aws) integration library provides the <
 To run the examples, you'll need to:
 
 - Create a new Dagster project:
-   ```bash
-   uvx create-dagster project <project_name>
-   ```
+  <ScaffoldProject />
 - Install the necessary Python libraries:
   ```bash
   uv pip install dagster-aws

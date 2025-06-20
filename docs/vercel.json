@@ -1920,7 +1920,7 @@
     },
     {
       "source": "/guides/labs/components/migrating-definitions",
-      "destination": "/guides/build/projects/migrating-definitions"
+      "destination": "/guides/build/projects/moving-to-components/migrating-definitions"
     },
     {
       "source": "/guides/labs/components/setting-up-a-deployment",
@@ -3221,15 +3221,15 @@
     },
     {
       "source": "/guides/labs/dg/incrementally-adopting-dg",
-      "destination": "/guides/build/projects/migrating-project"
+      "destination": "/guides/build/projects/moving-to-components/migrating-project"
     },
     {
       "source": "guides/labs/dg/incrementally-adopting-dg/migrating-definitions",
-      "destination": "/guides/build/projects/migrating-definitions"
+      "destination": "/guides/build/projects/moving-to-components/migrating-definitions"
     },
     {
       "source": "/guides/labs/dg/incrementally-adopting-dg/migrating-project",
-      "destination": "/guides/build/projects/migrating-project"
+      "destination": "/guides/build/projects/moving-to-components/migrating-project"
     },
     {
       "source": "/guides/labs/dg/configuring-dg",
