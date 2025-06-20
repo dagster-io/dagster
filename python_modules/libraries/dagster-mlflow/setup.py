@@ -33,7 +33,8 @@ setup(
     python_requires=">=3.9,<3.13",
     install_requires=[
         f"dagster{pin}",
-        "mlflow",
+        # MLFlow 2.15.1 has a path traversal vuln, fixed in 2.17.1. https://github.com/dagster-io/dagster/security/dependabot/784
+        "mlflow<=2.15.1",
         "pandas",
         "protobuf!=5.29.0",  # https://github.com/protocolbuffers/protobuf/issues/19430
     ],
