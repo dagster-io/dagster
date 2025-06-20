@@ -2,7 +2,6 @@
 title: 'Freshness policies'
 description: Dagster Freshness policies help you understand which of your assets have materialized recently and which ones are running behind - a key component of asset health.
 sidebar_position: 100
-unlisted: True
 ---
 
 import FreshnessPoliciesPreview from '@site/docs/partials/\_FreshnessPoliciesPreview.md';
@@ -19,11 +18,24 @@ For example, freshness policies can help identify stale assets caused by:
 - Runs not being scheduled due to an upstream failure
 - Runs taking longer than expected to complete
 
+### Enabling freshness policies
+
+Freshness policies are not enabled by default while in preview state. To use them in open source and local development, add the following to your `dagster.yaml`
+```
+freshness:
+  enabled: True
+```
+
+To use freshness policies in Dagster+, sign up for the [Observability update early access program](/guides/labs/observability-update/#how-to-join-and-enable-the-beta).
+
+
 ### Relationship to existing `FreshnessPolicy`
 
-There is an existing `FreshnessPolicy` API that has been deprecated for quite some time. We're opting to reuse the name for the new freshness APIs, which requires us to migrate off the legacy API.
+There is an existing `FreshnessPolicy` API that has been deprecated since version 1.6. We're opting to reuse the name for the new freshness APIs, and have renamed the deprecated functionality to `LegacyFreshnessPolicy`. To continue using the deprecated functionality, follow the instructions in the 1.11 migration guide (TODO: link). You may see the following error message if you attempt to use `LegacyFreshnessPolicy` without following the migration guide: (TODO import error message).
 
-To avoid naming conflicts with the legacy API during this migration, we've prefixed the new APIs, class names, and method arguments with "internal", for example, `InternalFreshnessPolicy` and the `internal_freshness_policy` argument on the `@asset` decorator. Once the migration is complete and the new APIs exit preview mode, the "internal" prefix will be removed and `FreshnessPolicy` will be the name of the new APIs.
+### Relationship to freshness checks
+
+Freshness policies are not yet recommended for production use, but are intended to supercede freshness checks in a future release. Freshness checks are still and will continue to be supported for the foreseeable future. A migration guide will be provided.
 
 ## Freshness policy types
 
@@ -109,7 +121,6 @@ Freshness policies are not currently supported for source observable assets (<Py
 ## Future enhancements
 
 - More freshness policy types, including:
-  - Cron-based
   - Anomaly detection-based
   - Custom (user-defined) freshness
 - Support for source observable assets
