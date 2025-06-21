@@ -31,18 +31,18 @@ import ProjectCreationPrereqs from '@site/docs/partials/\_ProjectCreationPrereqs
       ```
    4. Activate the virtual environment:
 
-   <Tabs>
-     <TabItem value="macos" label="MacOS/Unix">
-       ```
-       source .venv/bin/activate
-       ```
-     </TabItem>
-     <TabItem value="windows" label="Windows">
-      ```
-      .venv\Scripts\activate
-      ```
-     </TabItem>
-   </Tabs>
+    <Tabs>
+      <TabItem value="macos" label="MacOS/Unix">
+        ```
+        source .venv/bin/activate
+        ```
+      </TabItem>
+      <TabItem value="windows" label="Windows">
+        ```
+        .venv\Scripts\activate
+        ```
+      </TabItem>
+    </Tabs>
    </TabItem>
    <TabItem value="pip" label="pip">
    1. Open your terminal and scaffold a new Dagster project. You can replace `my-project` with a different project name if you wish:
