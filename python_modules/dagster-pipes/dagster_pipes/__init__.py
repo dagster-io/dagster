@@ -485,10 +485,15 @@ class _PipesLoggerHandler(logging.Handler):
 
 
 def _pipes_exc_from_tb(tb: TracebackException):
+    if sys.version_info >= (3, 13):
+        name = tb.exc_type_str.split(".")[-1]
+    else:
+        name = tb.exc_type.__name__ if tb.exc_type is not None else None
+
     return PipesException(
         message="".join(list(tb.format_exception_only())),
         stack=tb.stack.format(),
-        name=tb.exc_type.__name__ if tb.exc_type is not None else None,
+        name=name,
         cause=_pipes_exc_from_tb(tb.__cause__) if tb.__cause__ else None,
         context=_pipes_exc_from_tb(tb.__context__) if tb.__context__ else None,
     )
