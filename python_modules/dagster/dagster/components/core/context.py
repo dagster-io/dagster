@@ -9,7 +9,7 @@ from typing import Any
 from dagster_shared import check
 from dagster_shared.yaml_utils.source_position import SourcePositionTree
 
-from dagster._annotations import PublicAttr, preview, public
+from dagster._annotations import PublicAttr, public
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._utils import pushd
 from dagster.components.resolved.context import ResolutionContext
@@ -19,10 +19,29 @@ RESOLUTION_CONTEXT_STASH_KEY = "component_load_context"
 
 
 @public
-@preview(emit_runtime_warning=False)
-@dataclass
+@dataclass(frozen=True)
 class ComponentLoadContext:
-    """Context available when instantiating Components."""
+    """Context available when instantiating Components.
+
+    While loading the defs folder of a project, a unique context instance is created for each python
+    module or or folder in the defs folder.
+
+    Args:
+        path (Path): The path where of component that is currently being loading.
+            e.g. /path/to/project/src/project/defs/my_component.py
+        project_root (Path): The path to the project root, the folder that contains the pyproject.toml
+            or setup.py for the project.
+        defs_module_path (Path): The path to the root defs folder.
+            e.g. /path/to/project/src/project/defs
+        defs_module_name (str): The name of the defs module at the root of the defs folder. For most
+            projects this will be "project_name.defs". This can be used by components to resolve
+            relative imports that are passed as parameters to components to absolute imports.
+        resolution_context (ResolutionContext): The resolution context that is passed to resolvers
+            in component templating system.
+        terminate_autoloading_on_keyword_files (bool): Whether to terminate the defs autoloading
+            process when encountering a definitions.py or component.py file. This will be removed
+            after 1.11.
+    """
 
     path: PublicAttr[Path]
     project_root: PublicAttr[Path]
@@ -32,8 +51,10 @@ class ComponentLoadContext:
     terminate_autoloading_on_keyword_files: bool
 
     def __post_init__(self):
-        self.resolution_context = self.resolution_context.with_stashed_value(
-            RESOLUTION_CONTEXT_STASH_KEY, self
+        object.__setattr__(
+            self,
+            "resolution_context",
+            self.resolution_context.with_stashed_value(RESOLUTION_CONTEXT_STASH_KEY, self),
         )
 
     @staticmethod
