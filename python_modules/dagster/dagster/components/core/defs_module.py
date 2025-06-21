@@ -278,7 +278,7 @@ class DefsFolderComponent(Component):
     - **Add Tags**: Apply consistent tagging across selected assets
     - **Modify Metadata**: Add or update metadata on targeted assets
 
-    Please see documentation on post_processing for more examples.
+    Please see documentation on post processing and the selection syntax for more examples.
 
     Component Discovery:
 
