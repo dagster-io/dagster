@@ -278,7 +278,7 @@ For dbt models, seeds, and snapshots, the default asset key will be the configur
 | --------------------- | --------- | ------------ | ------------------- |
 | model, seed, snapshot | `None`    | `MODEL_NAME` | `MODEL_NAME`        |
 |                       | `SCHEMA`  | `MODEL_NAME` | `SCHEMA/MODEL_NAME` |
-|                       | `None`    | my_model     | some_model          |
+|                       | `None`    | my_model     | my_model            |
 |                       | marketing | my_model     | marketing/my_model  |
 
 For dbt sources, the default asset key will be the name of the source concatenated with the name of the source table.
