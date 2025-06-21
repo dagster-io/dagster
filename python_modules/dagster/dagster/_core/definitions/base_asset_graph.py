@@ -732,8 +732,16 @@ class BaseAssetGraph(ABC, Generic[T_AssetNode]):
                 )
 
                 for child_key in self.get(asset_key).child_keys:
+                    has_explicit_partition_mapping = self.get(child_key).partition_mappings.get(asset_key) is not None
                     partition_mapping = self.get_partition_mapping(child_key, asset_key)
+                    parent_partitions_def = self.get(asset_key).partitions_def
                     child_partitions_def = self.get(child_key).partitions_def
+
+                    if child_key == AssetKey.from_user_string("some_asset4"):
+                        print("wahoo")
+
+                    if not has_explicit_partition_mapping and parent_partitions_def is None and isinstance(partition_mapping, AllPartitionMapping):
+                        raise Exception(f"Asset {asset_key} is unpartitioned, and has no explicit partition mapping to {child_key}. This is not supported for backfilling, because it will result in every downstream partition being executed.")
 
                     if child_partitions_def:
                         if partitions_subset is None:
