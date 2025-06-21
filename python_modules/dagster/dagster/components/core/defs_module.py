@@ -222,7 +222,7 @@ class DefsFolderComponent(Component):
     - Python modules containing Dagster definitions
     - Nested subdirectories containing more components
 
-    Here is is how a DefsFolderComponent is used in a project by the framework, along
+    Here is how a DefsFolderComponent is used in a project by the framework, along
     with other framework-defined classes.
 
     .. code-block:: text
