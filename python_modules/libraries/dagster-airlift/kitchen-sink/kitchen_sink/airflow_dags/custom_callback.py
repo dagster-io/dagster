@@ -31,7 +31,7 @@ default_args = {
 with DAG(
     "affected_dag",
     default_args=default_args,
-    schedule_interval=None,
+    schedule=None,
     is_paused_upon_creation=False,
 ) as affected_dag:
     build_print_task("print_task") >> build_print_task("downstream_print_task")  # type: ignore
@@ -39,7 +39,7 @@ with DAG(
 with DAG(
     "unaffected_dag",
     default_args=default_args,
-    schedule_interval=None,
+    schedule=None,
     is_paused_upon_creation=False,
 ) as unaffected_dag:
     build_print_task("print_task") >> build_print_task("downstream_print_task")  # type: ignore

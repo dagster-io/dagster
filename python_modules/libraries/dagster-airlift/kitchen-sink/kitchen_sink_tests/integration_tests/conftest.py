@@ -63,6 +63,8 @@ def airflow_instance_fixture(
         cwd=makefile_dir(),
         expected_num_dags=expected_num_dags,
     ) as process:
+        print("AIRFLOW IS STOOD UP")
+        print("-------------")
         yield process
 
 
