@@ -1,7 +1,7 @@
 import inspect
 from typing import Callable, Generic, Optional, TypeVar, Union, cast
 
-from dagster._annotations import preview, public
+from dagster._annotations import public
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.repository_definition.repository_definition import (
     RepositoryDefinition,
@@ -46,7 +46,6 @@ class LazyDefinitions(Generic[T_Defs]):
 
 
 @public
-@preview(emit_runtime_warning=False)
 def definitions(
     fn: Union[Callable[[], Definitions], Callable[[ComponentLoadContext], Definitions]],
 ) -> Callable[..., Definitions]:
@@ -108,4 +107,4 @@ def definitions(
 # For backwards compatibility with existing test cases
 def lazy_repository(fn: Callable[[], RepositoryDefinition]) -> Callable[[], RepositoryDefinition]:
     lazy_defs = LazyDefinitions[RepositoryDefinition](load_fn=fn, has_context_arg=False)
-    return cast("Callable[[],RepositoryDefinition]", lazy_defs)
+    return cast("Callable[[], RepositoryDefinition]", lazy_defs)
