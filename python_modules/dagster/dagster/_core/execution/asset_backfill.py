@@ -743,6 +743,9 @@ def _submit_runs_and_update_backfill_in_chunks(
     for run_request_idx, run_request in enumerate(run_requests):
         run_id = reserved_run_ids[run_request_idx] if reserved_run_ids else None
         try:
+            # create a new request context for each run in case the code location server
+            # is swapped out in the middle of the submission process
+            workspace = workspace_process_context.create_request_context()
             submit_asset_run(
                 run_id,
                 run_request._replace(
@@ -755,6 +758,7 @@ def _submit_runs_and_update_backfill_in_chunks(
                 run_request_idx,
                 instance,
                 workspace_process_context,
+                workspace,
                 run_request_execution_data_cache,
                 {},
                 logger,
