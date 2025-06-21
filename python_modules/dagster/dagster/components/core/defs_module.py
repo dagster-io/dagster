@@ -13,7 +13,7 @@ from dagster_shared.yaml_utils.source_position import SourcePosition, ValueAndSo
 from pydantic import BaseModel, ConfigDict, TypeAdapter
 
 import dagster._check as check
-from dagster._annotations import preview, public
+from dagster._annotations import public
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.metadata.source_code import (
@@ -202,14 +202,15 @@ class ComponentPath:
 
 
 @public
-@preview(emit_runtime_warning=False)
 @dataclass
 class DefsFolderComponent(Component):
     """A folder which may contain multiple submodules, each
     which define components.
 
-    Optionally enables postprocessing to modify the Dagster definitions
-    produced by submodules.
+    This is can used by users to mutate the metadata of definitions created by submodules.
+    This is is done via the top-level `post_processing` attribute.
+
+    It is also used by the framework to represent folders in the component hierarchy.
     """
 
     path: Path
