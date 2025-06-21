@@ -21,26 +21,91 @@ RESOLUTION_CONTEXT_STASH_KEY = "component_load_context"
 @public
 @dataclass(frozen=True)
 class ComponentLoadContext:
-    """Context available when instantiating Components.
+    """Context object that provides environment and path information during component loading.
 
-    While loading the defs folder of a project, a unique context instance is created for each python
-    module or or folder in the defs folder.
+    This context is automatically created and passed to component definitions when loading
+    a project's defs folder. Each Python module or folder in the defs directory receives
+    a unique context instance that provides access to project structure, paths, and
+    utilities for dynamic component instantiation.
+
+    The context enables components to:
+    - Access project and module path information
+    - Load other modules and definitions within the project
+    - Resolve relative imports and module names
+    - Access templating and resolution capabilities
 
     Args:
-        path (Path): The path where of component that is currently being loading.
-            e.g. /path/to/project/src/project/defs/my_component.py
-        project_root (Path): The path to the project root, the folder that contains the pyproject.toml
-            or setup.py for the project.
-        defs_module_path (Path): The path to the root defs folder.
-            e.g. /path/to/project/src/project/defs
-        defs_module_name (str): The name of the defs module at the root of the defs folder. For most
-            projects this will be "project_name.defs". This can be used by components to resolve
-            relative imports that are passed as parameters to components to absolute imports.
-        resolution_context (ResolutionContext): The resolution context that is passed to resolvers
-            in component templating system.
-        terminate_autoloading_on_keyword_files (bool): Whether to terminate the defs autoloading
-            process when encountering a definitions.py or component.py file. This will be removed
-            after 1.11.
+        path: The filesystem path of the component currently being loaded.
+            For a file: ``/path/to/project/src/project/defs/my_component.py``
+            For a directory: ``/path/to/project/src/project/defs/my_component/``
+        project_root: The root directory of the Dagster project, typically containing
+            ``pyproject.toml`` or ``setup.py``. Example: ``/path/to/project``
+        defs_module_path: The filesystem path to the root defs folder.
+            Example: ``/path/to/project/src/project/defs``
+        defs_module_name: The Python module name for the root defs folder, used for
+            import resolution. Typically follows the pattern ``"project_name.defs"``.
+            Example: ``"my_project.defs"``
+        resolution_context: The resolution context used by the component templating
+            system for parameter resolution and variable substitution.
+        terminate_autoloading_on_keyword_files: Controls whether autoloading stops
+            when encountering ``definitions.py`` or ``component.py`` files.
+            **Deprecated**: This parameter will be removed after version 1.11.
+
+    Examples:
+        Using context in a component definition:
+
+        .. code-block:: python
+
+            import dagster as dg
+            from pathlib import Path
+
+            @dg.definitions
+            def my_component_defs(context: dg.ComponentLoadContext):
+                # Load a Python module relative to the current component
+                shared_module = context.load_defs_relative_python_module(
+                    Path("../shared/utilities.py")
+                )
+
+                # Get the module name for the current component
+                module_name = context.defs_relative_module_name(context.path)
+
+                # Create assets using context information
+                @dg.asset(name=f"{module_name}_processed_data")
+                def processed_data():
+                    return shared_module.process_data()
+
+                return dg.Definitions(assets=[processed_data])
+
+        Loading definitions from another component:
+
+        .. code-block:: python
+
+            @dg.definitions
+            def dependent_component(context: dg.ComponentLoadContext):
+                # Load definitions from another component
+                upstream_module = context.load_defs_relative_python_module(
+                    Path("../upstream_component")
+                )
+                upstream_defs = context.load_defs(upstream_module)
+
+                @dg.asset(deps=[upstream_defs.assets])
+                def my_downstream_asset(): ...
+
+                # Use upstream assets in this component
+                return dg.Definitions(
+                    assets=[my_downstream_asset],
+                    # Include upstream definitions if needed
+                )
+
+    Note:
+        This context is automatically provided by Dagster's autoloading system and
+        should not be instantiated manually in most cases. For testing purposes,
+        use ``ComponentLoadContext.for_test()`` to create a test instance.
+
+    See Also:
+        - :py:func:`dagster.definitions`: Decorator that receives this context
+        - :py:class:`dagster.Definitions`: The object typically returned by context-using functions
+        - :py:class:`dagster.components.resolved.context.ResolutionContext`: Underlying resolution context
     """
 
     path: PublicAttr[Path]
