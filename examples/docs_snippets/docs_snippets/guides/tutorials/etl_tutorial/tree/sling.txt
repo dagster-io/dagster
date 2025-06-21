@@ -1,6 +1,6 @@
 src
 └── etl_tutorial
     └── defs
-        └── ingest_files
+        └── ingest
             ├── defs.yaml
             └── replication.yaml

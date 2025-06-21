@@ -63,7 +63,7 @@ This adds a file, `resources.py`, to the `etl_tutorial` module:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/tree/resources.txt" />
 
-Within this file we will define the resource using the <PyObject section="resources" module="dagster" object="resource" decorator />.
+Within this file we will define the resource using the <PyObject section="definitions" module="dagster" object="Definitions" decorator />.
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/src/etl_tutorial/defs/resources.py"

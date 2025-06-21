@@ -34,7 +34,7 @@ There will now be a directory `dashboard` within the root of the project.
 Let's add the Dagster's Evidence integration:
 
 ```bash
-uv pip install dagster-sling
+uv pip install dagster-evidence
 ```
 
 Now we can scaffold Evidence with `dg`:

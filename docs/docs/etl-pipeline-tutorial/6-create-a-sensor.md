@@ -39,7 +39,7 @@ To define a sensor in Dagster, use the `@sensor` decorator. This decorator is ap
 
 Sensors include the following elements:
 
-- **Job**: The job that the sensor will trigger when the conditions are met.
+- **Target** or **Job**: The target (asset) or job that the sensor will trigger when the conditions are met.
 - **RunRequest**: An object that specifies the configuration for the job run. It includes a `run_key` to ensure idempotency and a `run_config` for job-specific settings.
 
 First we will use `dg` to create the sensor file:
