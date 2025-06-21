@@ -6,97 +6,121 @@ sidebar_position: 100
 
 The easiest way to start building a Dagster project is by using the [`create-dagster` CLI](/api/dg/create-dagster). This CLI tool allows you to create a special type of Python package, called a _project_, that defines a [Dagster code location](/deployment/code-locations/managing-code-locations-with-definitions).
 
-## Prerequisites
+import ProjectCreationPrereqs from '@site/docs/partials/\_ProjectCreationPrereqs.md';
 
-Before creating a Dagster project, you must do one of the following:
-
-* [If you will be using `uv` as a package manager](#uv-recommended), install `uv` (**Recommended**).
-* [If you will be using `pip` as a package manager](#pip), install the `create-dagster` CLI with Homebrew, `curl`, or `pip`.
-
-For more information, see the [Installation guide](/getting-started/installation).
+<ProjectCreationPrereqs />
 
 ## Step 1. Scaffold a new Dagster project
 
-### `uv` (recommended)
+<Tabs groupId="package-manager">
+   <TabItem value="uv" label="uv">
+   1. Open your terminal and scaffold a new Dagster project. You can replace `my-project` with a different project name if you wish:
 
-1. Scaffold a new Dagster project, replacing `<project-name>` with the name of your project:
+      ```shell
+      uvx -U create-dagster project my-project
+      ```
+   
+   2. Respond `y` to the prompt to run `uv sync` after scaffolding
 
-   ```bash
-   uvx -U create-dagster project <project-name>
-   ```
+      ![Responding y to uv sync prompt](/images/getting-started/quickstart/uv_sync_yes.png)
 
-2. Respond `y` to the prompt to run `uv sync` after scaffolding:
+   3. Change to the project directory:
 
-   ![Responding y to uv sync prompt](/images/getting-started/quickstart/uv_sync_yes.png)
+      ```shell
+      cd my-project
+      ```
+   4. Activate the virtual environment:
 
-3. Change to the project directory:
+   <Tabs>
+     <TabItem value="macos" label="MacOS/Unix">
+       ```
+       source .venv/bin/activate
+       ```
+     </TabItem>
+     <TabItem value="windows" label="Windows">
+      ```
+      .venv\Scripts\activate
+      ```
+     </TabItem>
+   </Tabs>
+   </TabItem>
+   <TabItem value="pip" label="pip">
+   1. Open your terminal and scaffold a new Dagster project. You can replace `my-project` with a different project name if you wish:
 
-   ```bash
-   cd <project-name>
-   ```
+      ```shell
+      create-dagster project my-project
+      ```
+   2. Change to the project directory:
 
-4. Activate the virtual environment:
+      ```shell
+      cd my-project
+      ```
+   
+   3. Create and activate a virtual environment:
 
-<Tabs>
-  <TabItem value="macos" label="MacOS/Unix">
-    ```bash
-    source .venv/bin/activate
-    ```
-  </TabItem>
-  <TabItem value="windows" label="Windows">
-  ```bash
-  .venv\Scripts\activate
-  ```
-  </TabItem>
+   <Tabs>
+     <TabItem value="macos" label="MacOS/Unix">
+      ```shell
+      python -m venv .venv
+      ```
+      ```shell
+      source .venv/bin/activate
+      ```
+     </TabItem>
+     <TabItem value="windows" label="Windows">
+      ```shell
+      python -m venv .venv
+      ```
+      ```shell
+      .venv\Scripts\activate
+      ```
+     </TabItem>
+   </Tabs>
+   
+   4. Install your project as an editable package:
+
+      ```shell
+      pip install --editable .
+      ```
+   </TabItem>
 </Tabs>
 
+Your new Dagster project should have the following structure:
 
-### `pip`
+<Tabs groupId="package-manager">
 
-1. Scaffold a new Dagster project, replacing `<project-name>` with the name of your project:
-
-  ```bash
-  create-dagster project <project-name>
+   <TabItem value="uv" label="uv">
+   ```shell
+   .
+   └── my-project
+      ├── pyproject.toml
+      ├── src
+      │   └── my_project
+      │       ├── __init__.py
+      │       ├── definitions.py
+      │       └── defs
+      │           └── __init__.py
+      ├── tests
+      │   └── __init__.py
+      └── uv.lock
    ```
-
-2. Change to the project directory:
-
-  ```bash
-  cd <project-name>
-  ```
-
-3. Create and activate a virtual environment:
-
-<Tabs>
-  <TabItem value="macos" label="MacOS/Unix">
-    ```bash
-    python -m venv venv
-    ```
-    ```bash
-    source .venv/bin/activate
-    ```
-  </TabItem>
-  <TabItem value="windows" label="Windows">
-    ```bash
-    python -m venv venv
-    ```
-    ```bash
-    .venv\Scripts\activate
-    ```
-  </TabItem>
+   </TabItem>
+   <TabItem value="pip" label="pip">
+   ```shell
+   .
+   └── my-project
+      ├── pyproject.toml
+      ├── src
+      │   └── my_project
+      │       ├── __init__.py
+      │       ├── definitions.py
+      │       └── defs
+      │           └── __init__.py
+      └── tests
+         └── __init__.py
+   ```
+   </TabItem>
 </Tabs>
-
-4. Install required dependencies:
-
-  ```bash
-  pip install dagster dagster-webserver dagster-dg
-  ```
-
-5. Install your project as an editable package:
-
-  ```bash
-  pip install --editable .
-  ```
 
 :::info
 
@@ -120,13 +144,18 @@ To see your assets, navigate to [http://localhost:3000](http://localhost:3000).
 
 ## Step 4: Continue development
 
-- [Adding new Python dependencies](#add-new-python-dependencies)
+- [Add new Python dependencies](#add-new-python-dependencies)
+- [Add integrations](#add-integrations)
 - [Use environment variables and secrets](#use-environment-variables-and-secrets)
 - [Add and run unit tests](#add-and-run-unit-tests)
 
 ### Add new Python dependencies
 
 You can specify new Python dependencies in `pyproject.toml`.
+
+### Add integrations
+
+See the [Integrations docs](/integrations/libraries) for a full list of Dagster-supported and community-supported integrations.
 
 ### Use environment variables and secrets
 
