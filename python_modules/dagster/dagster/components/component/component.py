@@ -10,7 +10,7 @@ from pydantic import BaseModel, TypeAdapter
 from typing_extensions import Self
 
 import dagster._check as check
-from dagster._annotations import PublicAttr, preview, public
+from dagster._annotations import PublicAttr, public
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.metadata.source_code import CodeReference, LocalFileCodeReference
 from dagster._core.definitions.utils import validate_component_owner
@@ -24,10 +24,9 @@ if TYPE_CHECKING:
 
 
 @public
-@preview(emit_runtime_warning=False)
 @record_custom
 class ComponentTypeSpec(IHaveNew):
-    """Specifies the core attributes of a component.
+    """Specifies the core attributes of a component. Used when defining custom components.
 
     Args:
         description (Optional[str]): Human-readable description of this component.
@@ -67,13 +66,78 @@ class ComponentTypeSpec(IHaveNew):
 
 
 @public
-@preview(emit_runtime_warning=False)
 @scaffold_with(DefaultComponentScaffolder)
 class Component(ABC):
-    """Components are a tool for dynamically creating Dagster definitions.
-    A Component subclass must implement the build_defs method. It may also
-    inherit from Resolvable or implement get_model_cls to support instantiation
-    via yaml.
+    """A component is a class that creates Dagster definitions. Inherit from it when creating a custom component.
+
+    Components have a few responsibilities:
+
+    - A definitions factory: Implement the build_defs function, which creates the definitions
+    - Optionally specify schema via Resolvable. This is used to instantiate the component and provide schema
+      to yaml files that can configure the component. The schema also has integrated documenation,
+      surfaced in the Dagster UI.
+    - Optionally specify a scaffolder. This is used to scaffold the component when invoking tools such as
+      `dg scaffold defs` and
+
+    **Definitions Factory**:
+
+    The workhouse function of a component is the build_defs methods, implemented by the user when
+    defining a custom component . This is called by framework when it is crawling the defs folder
+    of a project to create the definitions for that project.
+
+    This is also called in testing utilities with context objects with parameters that simulate
+    the loading process. You may also directly invoke build_defs in tests if so desired.
+
+    **Schema**:
+
+    Optionally a Component can specify a schema used when instantiating the component. To do this
+    you make a component inherit from Resolvable.
+
+    The Resolvable abstract class can be used with @dataclass, pydantic.BaseModel, or dagster.Model (which
+    lightly wraps pydantic.BaseModel). It is up to the user to decide. Prefer dagster.Model for
+    new components or schema classes, as it sets defaults that result in the best error messages and
+    user experience.
+
+    Resolvable allows a component parameterized with a yaml file or Python business objects. Its role
+    in the system is to manage the resolution and mapping between the schema and those business objects.
+
+    **Scaffolding**:
+
+    Components can also define custom scaffolding with the @scaffold_with decorator. This decorator
+    takes a Scaffolder subtype, which specifies custom scaffolding for the component. This scaffolding
+    can provide default structure for its corresponding defs.yaml file, stubs for integration-specific
+    configuration files. Scaffold parameters can be passed to the scaffolder via dg scaffold defs.
+
+    Components are discoverable by Dagster tooling in a project that specifies registry modules in its
+    pyproject.toml or setup.py. These modules are inspected by tools such as dg for components, which
+    are then in turn discoverable by users by commands `dg list components` or `dg scaffold defs`. These
+    componets always appear in automatically generated documentation in the Dagster UI.
+
+    Examples:
+    A component that creates a single, hardcoded asset.
+
+    .. code-block:: python
+
+        class MyComponent(dg.Component):
+            def build_defs(self, context: dg.ComponentLoadContext) -> dg.Definitions:
+                @dg.asset
+                def dummy_asset() -> None: ...
+
+                return dg.Definitions(assets=[dummy_asset])
+
+    A component that creates a single asset and is parameterized with a yaml file.
+
+    .. code-block:: python
+
+        class ReturnValueComponent(dg.Component, dg.Resolvable, dg.Model):
+            value: str
+
+            def build_defs(self, context: dg.ComponentLoadContext) -> dg.Definitions:
+                @dg.asset
+                def return_value_asset() -> None:
+                    return self.value
+
+                return dg.Definitions(assets=[return_value_asset])
     """
 
     @classmethod
