@@ -16,6 +16,7 @@ import {
   IncompleteAttributeExpressionMissingKeyContext,
   IncompleteAttributeExpressionMissingValueContext,
   IncompletePlusTraversalExpressionContext,
+  NullStringValueContext,
   ParenthesizedExpressionContext,
   PostAttributeValueWhitespaceContext,
   QuotedStringValueContext,
@@ -114,6 +115,11 @@ export class SyntaxHighlightingVisitor
   }
 
   visitUnquotedStringValue(ctx: UnquotedStringValueContext) {
+    this.addClass(ctx, 'value');
+    this.visitChildren(ctx);
+  }
+
+  visitNullStringValue(ctx: NullStringValueContext) {
     this.addClass(ctx, 'value');
     this.visitChildren(ctx);
   }

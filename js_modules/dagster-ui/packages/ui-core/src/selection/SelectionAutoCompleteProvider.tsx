@@ -247,6 +247,15 @@ export const createProvider = <
     };
   }
 
+  function nullSuggestion({textCallback}: {textCallback?: (text: string) => string}) {
+    return {
+      text: textCallback ? textCallback('<null>') : '<null>',
+      jsx: (
+        <SuggestionJSXBase label={<span style={{color: Colors.textLighter()}}>No value</span>} />
+      ),
+    };
+  }
+
   function createAttributeValueSuggestion({
     value,
     textCallback,
@@ -256,10 +265,16 @@ export const createProvider = <
   }) {
     if (typeof value !== 'string') {
       const valueText = value.value ? `"${value.key}"="${value.value}"` : `"${value.key}"`;
+      if (value.key === '' && !value.value) {
+        return nullSuggestion({textCallback});
+      }
       return {
         text: textCallback ? textCallback(valueText) : valueText,
         jsx: <AttributeValueTagSuggestion tag={value} />,
       };
+    }
+    if (value === '') {
+      return nullSuggestion({textCallback});
     }
     return {
       text: textCallback ? textCallback(`"${value}"`) : `"${value}"`,
