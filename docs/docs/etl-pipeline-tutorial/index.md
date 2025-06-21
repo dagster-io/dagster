@@ -26,18 +26,13 @@ In this tutorial, you'll build a full ETL pipeline with Dagster that:
 - Automate the pipeline
 - Create and materialize assets with sensors
 
-<details>
-  <summary>Prerequisites</summary>
+## Prerequisites
 
-To follow the steps in this guide, you'll need:
+To follow the steps in this tutorial, you'll need:
 
-- Basic Python knowledge
-- Python 3.9+ installed on your system.
-- Install `uv`. Refer to the [Installation guide](/getting-started/installation) for information.
-- Familiarity with SQL and Python.
-- Understanding of data pipelines and the extract, transform, and load process.
-
-</details>
+* Python 3.9+ and `uv` installed. For more information, see the [Installation guide](/getting-started/installation).
+* Familiarity with Python and SQL.
+* A basic understanding of data pipelines and the extract, transform, and load (ETL) process.
 
 ## Set up your Dagster project
 
@@ -79,4 +74,4 @@ At this point the project will be empty but we will continue to add to it throug
 
 ## Next steps
 
-- Continue this tutorial with [ingest data](/etl-pipeline-tutorial/ingest-data)
+- Continue this tutorial with [extract data](/etl-pipeline-tutorial/extract-data)

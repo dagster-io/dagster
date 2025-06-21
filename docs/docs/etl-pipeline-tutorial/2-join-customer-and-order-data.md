@@ -1,6 +1,6 @@
 ---
-title: Create and materialize assets
-description: Create and materialize assets
+title: Join customer and order data
+description: Create a custom asset to join customer and order data
 sidebar_position: 30
 ---
 
@@ -8,10 +8,6 @@ We have integrated with Sling and dbt to bring in and model the data. Next we wi
 
 - Build software-defined assets
 - Add a DuckDB resource
-
-## Relationship between components and definitions
-
-TODO
 
 ## 1. Create an asset
 

@@ -1,5 +1,5 @@
 ---
-title: Create dbt component
+title: Transform data
 description: Transform data with dbt
 sidebar_position: 20
 ---
@@ -46,7 +46,7 @@ This will add the directory `transform` to the `etl_tutorial` module:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/tree/dbt.txt" />
 
-## 3. Configure the dbt component
+## 3. Configure the dbt `defs.yaml`
 
 This component only generates a single file, `defs.yaml`, to configure the `dagster_dbt.DbtProjectComponent` component.  Most of this file was configured when we scaffolded the component and provided the path to the dbt project:
 
@@ -85,4 +85,4 @@ This will return a table of all the definitions within the Dagster project. As w
 
 ## Next steps
 
-- Continue this tutorial with your [create and materialize assets](/etl-pipeline-tutorial/create-and-materialize-assets)
+- Continue this tutorial with your [join customer and order data](/etl-pipeline-tutorial/join-customer-and-order-data)

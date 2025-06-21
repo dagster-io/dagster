@@ -1,6 +1,6 @@
 ---
-title: Ingest data
-description: Ingest data with Sling
+title: Extract data
+description: Extract data with Sling
 sidebar_position: 10
 ---
 
@@ -109,6 +109,12 @@ You can also launch specific assets by [selecting their asset keys](/guides/buil
 dg launch --assets target/main/raw_customers,target/main/raw_orders,target/main/raw_payments
 ```
 
+:::info
+
+TODO: Relationship between components and definitions
+
+:::
+
 ## Summary
 
 We have already handled the ingestion layer of our ETL pipeline. The `etl_tutorial` module should look like this:
@@ -119,4 +125,4 @@ You have seen how to use `dg` and components to quickly spin up Dagster assets a
 
 ## Next steps
 
-- Continue this tutorial with your [dbt](/etl-pipeline-tutorial/create-dbt-component)
+- Continue this tutorial with your [transform data](/etl-pipeline-tutorial/transform-data)
