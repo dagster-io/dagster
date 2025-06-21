@@ -58,9 +58,8 @@ def a_job():
 
 # end_different_input_managers
 
+
 # start_plain_input_manager
-
-
 # in this case PandasIOManager is an existing IO Manager
 class MyNumpyLoader(PandasIOManager):
     def load_input(self, context: dg.InputContext) -> np.ndarray:  # pyright: ignore[reportIncompatibleMethodOverride]
@@ -86,8 +85,6 @@ def my_job():
 
 
 # start_better_input_manager
-
-
 # this IO Manager is owned by a different team
 class BetterPandasIOManager(dg.ConfigurableIOManager):
     def _get_path(self, output_context):

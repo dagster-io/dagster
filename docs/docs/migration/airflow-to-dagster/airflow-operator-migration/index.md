@@ -1,6 +1,6 @@
 ---
 description: Migrate common Airflow operators to Dagster.
-sidebar_position: 40
+sidebar_position: 30
 title: Migrating Airflow operators to Dagster
 ---
 

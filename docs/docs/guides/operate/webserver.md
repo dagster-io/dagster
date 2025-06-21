@@ -6,14 +6,14 @@ sidebar_position: 20
 
 The Dagster webserver serves the Dagster UI, a web-based interface for viewing and interacting with Dagster objects. It also responds to GraphQL queries.
 
-In the UI, you can inspect Dagster objects (ex: assets, jobs, schedules), launch runs, view launched runs, and view assets produced by those runs.
+In the UI, you can inspect Dagster objects (such as assets, jobs, schedules), launch runs, view launched runs, and view assets produced by those runs.
 
 ## Launching the webserver
 
 The easiest way to launch the webserver from the command line during local development is to run:
 
 ```shell
-dagster dev
+dg dev
 ```
 
 This command launches both the Dagster webserver and the [Dagster daemon](/deployment/execution/dagster-daemon), allowing you to start a full local deployment of Dagster from the command line.
@@ -21,12 +21,6 @@ This command launches both the Dagster webserver and the [Dagster daemon](/deplo
 The command will print out the URL you can access the UI from in the browser, usually on port 3000.
 
 When invoked, the webserver will fetch definitions - such as assets, jobs, schedules, sensors, and resources - from a <PyObject section="definitions" module="dagster" object="Definitions" /> object in a Python module or package or the code locations configured in an open source deployment's [workspace files](/deployment/code-locations/workspace-yaml). For more information, see the [code locations documentation](/deployment/code-locations).
-
-You can also launch the webserver by itself from the command line by running:
-
-```shell
-dagster-webserver
-```
 
 Note that several Dagster features, like schedules and sensors, require the Dagster daemon to be running in order to function.
 

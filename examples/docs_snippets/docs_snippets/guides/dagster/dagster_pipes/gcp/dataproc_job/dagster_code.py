@@ -56,30 +56,31 @@ def dataproc_job_asset(
 # end_asset_marker
 
 # start_definitions_marker
+import dagster as dg
 
-from dagster import Definitions  # noqa
 
+@dg.definitions
+def resources():
+    return dg.Definitions(
+        resources={
+            "dataproc_job_client": PipesDataprocJobClient(
+                client=JobControllerClient(
+                    client_options={
+                        "api_endpoint": "us-central1-dataproc.googleapis.com:443"
+                    },
+                ),
+                message_reader=PipesGCSMessageReader(
+                    bucket="dagster-pipes",
+                    client=GCSClient(project="dagster-infra"),
+                    include_stdio_in_messages=True,
+                ),
+                context_injector=PipesGCSContextInjector(
+                    bucket="dagster-pipes",
+                    client=GCSClient(project="dagster-infra"),
+                ),
+            )
+        },
+    )
 
-defs = Definitions(
-    assets=[dataproc_job_asset],
-    resources={
-        "dataproc_job_client": PipesDataprocJobClient(
-            client=JobControllerClient(
-                client_options={
-                    "api_endpoint": "us-central1-dataproc.googleapis.com:443"
-                },
-            ),
-            message_reader=PipesGCSMessageReader(
-                bucket="dagster-pipes",
-                client=GCSClient(project="dagster-infra"),
-                include_stdio_in_messages=True,
-            ),
-            context_injector=PipesGCSContextInjector(
-                bucket="dagster-pipes",
-                client=GCSClient(project="dagster-infra"),
-            ),
-        )
-    },
-)
 
 # end_definitions_marker

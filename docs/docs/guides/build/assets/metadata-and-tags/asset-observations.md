@@ -22,7 +22,7 @@ about a given asset. Asset observation events can be logged at runtime within op
 
 To make Dagster aware that we have recorded metadata about an asset, we can log an <PyObject section="assets" module="dagster" object="AssetObservation" /> event from within an op. To do this, we use the method <PyObject section="execution" module="dagster" object="OpExecutionContext.log_event" /> on the context:
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/assets/observations.py" startAfter="start_observation_asset_marker_0" endBefore="end_observation_asset_marker_0" />
+<CodeExample path="docs_snippets/docs_snippets/concepts/assets/observations.py" startAfter="start_observation_asset_marker_0" endBefore="end_observation_asset_marker_0" title="src/<project_name>/defs/assets.py" />
 
 We should now see an observation event in the event log when we execute this asset.
 
@@ -32,7 +32,7 @@ We should now see an observation event in the event log when we execute this ass
 
 There are a variety of types of metadata that can be associated with an observation event, all through the <PyObject section="metadata" module="dagster" object="MetadataValue" /> class. Each observation event optionally takes a dictionary of metadata that is then displayed in the event log and the **Asset Details** page. Check our API docs for <PyObject section="metadata" module="dagster" object="MetadataValue" /> for more details on the types of event metadata available.
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/assets/observations.py" startAfter="start_observation_asset_marker_2" endBefore="end_observation_asset_marker_2" />
+<CodeExample path="docs_snippets/docs_snippets/concepts/assets/observations.py" startAfter="start_observation_asset_marker_2" endBefore="end_observation_asset_marker_2" title="src/<project_name>/defs/assets.py" />
 
 In the **Asset Details** page, we can see observations in the Asset Activity table:
 
@@ -42,7 +42,7 @@ In the **Asset Details** page, we can see observations in the Asset Activity tab
 
 If you are observing a single slice of an asset (e.g. a single day's worth of data on a larger table), rather than mutating or creating it entirely, you can indicate this to Dagster by including the `partition` argument on the object.
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/assets/observations.py" startAfter="start_partitioned_asset_observation" endBefore="end_partitioned_asset_observation" />
+<CodeExample path="docs_snippets/docs_snippets/concepts/assets/observations.py" startAfter="start_partitioned_asset_observation" endBefore="end_partitioned_asset_observation" title="src/<project_name>/defs/assets.py" />
 
 ### Observable source assets
 
@@ -59,7 +59,7 @@ materialize downstream assets when this occurs.
 
 The <PyObject section="assets" module="dagster" object="observable_source_asset" /> decorator provides a convenient way to define source assets with observation functions. The below observable source asset takes a file hash and returns it as the data version. Every time you run the observation function, a new observation will be generated with this hash set as its data version.
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/assets/observable_source_assets.py" startAfter="start_plain" endBefore="end_plain" />
+<CodeExample path="docs_snippets/docs_snippets/concepts/assets/observable_source_assets.py" startAfter="start_plain" endBefore="end_plain" title="src/<project_name>/defs/assets.py" />
 
 When the file content changes, the hash and therefore the data version will change - this will notify Dagster that downstream assets derived from an older value (i.e. a different data version) of this source asset might need to be updated.
 
@@ -69,7 +69,7 @@ Source asset observations can be triggered via the "Observe sources" button in t
 
 Source asset observations can also be run as part of an asset job. This allows you to run source asset observations on a schedule:
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/assets/observable_source_assets.py" startAfter="start_schedule" endBefore="end_schedule" />
+<CodeExample path="docs_snippets/docs_snippets/concepts/assets/observable_source_assets.py" startAfter="start_schedule" endBefore="end_schedule" title="src/<project_name>/defs/assets.py" />
 
 :::note
 

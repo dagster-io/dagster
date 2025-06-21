@@ -4,6 +4,10 @@ sidebar_position: 100
 title: Defining schedules
 ---
 
+import ScaffoldSchedule from '@site/docs/partials/\_ScaffoldSchedule.md';
+
+<ScaffoldSchedule />
+
 ## Defining basic schedules
 
 The following examples demonstrate how to define some basic schedules.
@@ -17,6 +21,7 @@ This example demonstrates how to define a schedule using <PyObject section="sche
   path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/schedules/schedules.py"
   startAfter="start_basic_schedule"
   endBefore="end_basic_schedule"
+  title="src/<project_name>/defs/assets.py"
 />
 
 :::note
@@ -65,6 +70,7 @@ This example demonstrates how to emit log messages from a schedule during its ev
   path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/schedules/schedules.py"
   startAfter="start_schedule_logging"
   endBefore="end_schedule_logging"
+  title="src/<project_name>/defs/schedules.py"
 />
 
 :::note

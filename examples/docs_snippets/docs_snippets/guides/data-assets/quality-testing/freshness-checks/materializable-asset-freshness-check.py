@@ -21,9 +21,3 @@ freshness_checks_sensor = dg.build_sensor_for_freshness_checks(
     freshness_checks=hourly_sales_freshness_check
 )
 # highlight-end
-
-defs = dg.Definitions(
-    assets=[hourly_sales],
-    asset_checks=hourly_sales_freshness_check,
-    sensors=[freshness_checks_sensor],
-)

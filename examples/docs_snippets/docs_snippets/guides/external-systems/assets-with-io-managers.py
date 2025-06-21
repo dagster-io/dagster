@@ -21,14 +21,3 @@ def clean_sales_data(raw_sales_data: pd.DataFrame) -> pd.DataFrame:
 @dg.asset
 def sales_summary(clean_sales_data: pd.DataFrame) -> pd.DataFrame:
     return clean_sales_data.groupby(["owner"])["amount"].sum().reset_index()
-
-
-defs = dg.Definitions(
-    assets=[raw_sales_data, clean_sales_data, sales_summary],
-    # highlight-start
-    # Define the I/O manager and pass it to `Definitions`
-    resources={
-        "io_manager": DuckDBPandasIOManager(database="sales.duckdb", schema="public")
-    },
-    # highlight-end
-)

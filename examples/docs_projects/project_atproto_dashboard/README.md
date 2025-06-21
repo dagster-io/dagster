@@ -2,9 +2,9 @@
 
 An end-to-end demonstration of ingestion data from the ATProto API, modeling it with dbt, and presenting it with Power BI.
 
-![Architecture Diagram](./architecture-diagram.png)
+![Architecture Diagram](_static/architecture-diagram.png)
 
-![Project asset lineage](./lineage.svg)
+![Project asset lineage](_static/lineage.svg)
 
 ## Features used
 

@@ -12,6 +12,7 @@ If you had written a status sensor like this (assuming you implemented the funct
   path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/sensors/sensor_alert.py"
   startAfter="start_simple_success_sensor"
   endBefore="end_simple_success_sensor"
+  title="src/<project_name>/defs/sensors.py"
 />
 
 We can first write a simple job that will succeed:
@@ -20,6 +21,7 @@ We can first write a simple job that will succeed:
   path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/sensors/sensor_alert.py"
   startAfter="start_run_status_sensor_testing_with_context_setup"
   endBefore="end_run_status_sensor_testing_with_context_setup"
+  title="src/<project_name>/defs/assets.py"
 />
 
 Then we can execute this job and pull the attributes we need to build the `context`. We provide a function <PyObject section="schedules-sensors" module="dagster" object="build_run_status_sensor_context" /> that will return the correct context object:
@@ -28,6 +30,7 @@ Then we can execute this job and pull the attributes we need to build the `conte
   path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/sensors/sensor_alert.py"
   startAfter="start_run_status_sensor_testing_marker"
   endBefore="end_run_status_sensor_testing_marker"
+  title="src/<project_name>/defs/sensors.py"
 />
 
 {/* TODO the methods and statuses below do not exist in API docs */}
@@ -39,6 +42,7 @@ We can use the same pattern to build the context for <PyObject section="schedule
   path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/sensors/sensor_alert.py"
   startAfter="start_simple_fail_sensor"
   endBefore="end_simple_fail_sensor"
+  title="src/<project_name>/defs/sensors.py"
 />
 
 We first need to make a simple job that will fail:
@@ -47,6 +51,7 @@ We first need to make a simple job that will fail:
   path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/sensors/sensor_alert.py"
   startAfter="start_failure_sensor_testing_with_context_setup"
   endBefore="end_failure_sensor_testing_with_context_setup"
+  title="src/<project_name>/defs/assets.py"
 />
 
 Then we can execute the job and create our context:
@@ -55,6 +60,7 @@ Then we can execute the job and create our context:
   path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/sensors/sensor_alert.py"
   startAfter="start_alert_sensor_testing_with_context_marker"
   endBefore="end_alert_sensor_testing_with_context_marker"
+  title="src/<project_name>/defs/sensors.py"
 />
 
 Note the additional function call <PyObject section="schedules-sensors" module="dagster" object="RunStatusSensorContext" method="for_run_failure" /> after creating the `context`. The `context` provided by <PyObject section="schedules-sensors" module="dagster" object="run_failure_sensor" /> is a subclass of the context provided by <PyObject section="schedules-sensors" module="dagster" object="run_status_sensor" /> and can be built using this additional call.

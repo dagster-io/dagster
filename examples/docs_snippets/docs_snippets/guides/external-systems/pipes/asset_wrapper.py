@@ -14,7 +14,8 @@ def wrapper_asset(
     ).get_results()
 
 
-defs = dg.Definitions(
-    assets=[wrapper_asset],
-    resources={"pipes_subprocess_client": dg.PipesSubprocessClient()},
-)
+@dg.definitions
+def resources():
+    return dg.Definitions(
+        resources={"pipes_subprocess_client": dg.PipesSubprocessClient()}
+    )

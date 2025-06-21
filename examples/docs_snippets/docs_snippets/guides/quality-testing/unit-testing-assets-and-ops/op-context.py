@@ -1,3 +1,4 @@
+# start_file
 import dagster as dg
 
 
@@ -7,8 +8,13 @@ def load_file(context: dg.OpExecutionContext) -> str:
         return file.read()
 
 
-# highlight-start
+# end_file
+
+
+# start_test
 def test_load_file() -> None:
     context = dg.build_asset_context(partition_key="2024-08-16")
     assert load_file(context) == "Contents for August 16th, 2024"
-    # highlight-end
+
+
+# end_test

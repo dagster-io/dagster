@@ -1,6 +1,6 @@
 ---
 description: Dagster resources are objects used by Dagster assets and ops that provide access to external systems, databases, or services.
-sidebar_position: 40
+sidebar_position: 50
 title: External resources
 ---
 

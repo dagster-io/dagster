@@ -1,13 +1,13 @@
 # start_marker
-from dagster import AssetIn, asset
+import dagster as dg
 
 
-@asset(key_prefix=["one", "two", "three"])
+@dg.asset(key_prefix=["one", "two", "three"])
 def upstream_asset():
     return [1, 2, 3]
 
 
-@asset(ins={"upstream_asset": AssetIn(key_prefix=["one", "two", "three"])})
+@dg.asset(ins={"upstream_asset": dg.AssetIn(key_prefix=["one", "two", "three"])})
 def downstream_asset(upstream_asset):
     return upstream_asset + [4]
 

@@ -12,6 +12,7 @@ Here is an example of a run status sensor that launches a run of `status_reporti
   path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/sensors/run_status_run_requests.py"
   startAfter="start"
   endBefore="end"
+  title="src/<project_name>/defs/sensors.py"
 />
 
 `request_job` is the job that will be run when the `RunRequest` is returned.
@@ -24,14 +25,7 @@ Here is an example of a sensor that reports job success in a Slack message:
   path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/sensors/sensor_alert.py"
   startAfter="start_success_sensor_marker"
   endBefore="end_success_sensor_marker"
+  title="src/<project_name>/defs/sensors.py"
 />
 
 When a run status sensor is triggered by a run but doesn't return anything, Dagster will report an event back to the run to indicate that the sensor ran.
-
-Once you have written your sensor, you can add the sensor to a <PyObject section="definitions" module="dagster" object="Definitions" /> object so it can be enabled and used the same as other sensors:
-
-<CodeExample
-  path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/sensors/sensor_alert.py"
-  startAfter="start_definitions_marker"
-  endBefore="end_definitions_marker"
-/>

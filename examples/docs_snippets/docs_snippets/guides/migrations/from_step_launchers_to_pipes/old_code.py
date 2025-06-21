@@ -29,10 +29,11 @@ def downstream(
     return
 
 
-definitions = dg.Definitions(
-    assets=[upstream, downstream],
-    resources={
-        "pyspark_step_launcher": emr_pyspark_step_launcher,
-        "pyspark_io_manager": MyPysparkIOManager(),
-    },
-)
+@dg.definitions
+def resources():
+    return dg.Definitions(
+        resources={
+            "pyspark_step_launcher": emr_pyspark_step_launcher,
+            "pyspark_io_manager": MyPysparkIOManager(),
+        },
+    )

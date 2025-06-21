@@ -1,3 +1,4 @@
+# start_file
 import dagster as dg
 
 
@@ -12,7 +13,10 @@ def processed_file(
     return f"{primary_file}{config.separator}{secondary_file}"
 
 
-# highlight-start
+# end_file
+
+
+# start_test
 def test_processed_file() -> None:
     assert (
         processed_file(
@@ -22,4 +26,6 @@ def test_processed_file() -> None:
         )
         == "abc,def"
     )
-    # highlight-end
+
+
+# end_test

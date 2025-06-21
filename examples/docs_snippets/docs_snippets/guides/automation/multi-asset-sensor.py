@@ -32,8 +32,3 @@ def asset_a_and_b_sensor(context):
         context.advance_all_cursors()
         return dg.RunRequest(run_key=context.cursor, run_config={})
     return None
-
-
-defs = dg.Definitions(
-    assets=[asset_a, asset_b, asset_c], jobs=[asset_job], sensors=[asset_a_and_b_sensor]
-)

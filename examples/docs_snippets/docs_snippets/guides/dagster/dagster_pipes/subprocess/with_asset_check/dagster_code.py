@@ -25,10 +25,3 @@ def no_empty_order_check(
         return dg.AssetCheckResult(passed=True)
 
     return dg.AssetCheckResult(passed=False)
-
-
-defs = dg.Definitions(
-    assets=[my_asset],
-    asset_checks=[no_empty_order_check],
-    resources={"pipes_subprocess_client": dg.PipesSubprocessClient()},
-)

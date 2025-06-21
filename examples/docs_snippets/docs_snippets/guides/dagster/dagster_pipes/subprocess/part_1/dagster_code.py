@@ -1,4 +1,3 @@
-# start_asset_marker
 import shutil
 
 import dagster as dg
@@ -12,16 +11,3 @@ def subprocess_asset(
     return pipes_subprocess_client.run(
         command=cmd, context=context
     ).get_materialize_result()
-
-
-# end_asset_marker
-
-# start_definitions_marker
-
-from dagster import Definitions
-
-defs = Definitions(
-    assets=[subprocess_asset],
-    resources={"pipes_subprocess_client": dg.PipesSubprocessClient()},
-)
-# end_definitions_marker

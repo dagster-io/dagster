@@ -1,17 +1,9 @@
+# start_use_in_asset
 import pandas as pd
 from dagster_snowflake import SnowflakeResource
 from snowflake.connector.pandas_tools import write_pandas
 
 import dagster as dg
-
-iris_db = SnowflakeResource(
-    password="snowflake_password",
-    warehouse="snowflake_warehouse",
-    account="snowflake_account",
-    user="snowflake_user",
-    database="iris_database",
-    schema="iris_schema",
-)
 
 
 @dg.asset
@@ -48,10 +40,28 @@ def iris_setosa(iris_db: SnowflakeResource) -> None:
         )
 
 
-defs = dg.Definitions(
-    assets=[iris_dataset, iris_setosa],
-    # highlight-start
-    # Include the resource in the `Definitions` object
-    resources={"iris_db": iris_db},
-    # highlight-end
+# end_use_in_asset
+
+
+# start_use_in_asset_defs
+iris_db = SnowflakeResource(
+    password="snowflake_password",
+    warehouse="snowflake_warehouse",
+    account="snowflake_account",
+    user="snowflake_user",
+    database="iris_database",
+    schema="iris_schema",
 )
+
+
+@dg.definitions
+def resources():
+    return dg.Definitions(
+        # highlight-start
+        # Include the resource in the `Definitions` object
+        resources={"iris_db": iris_db},
+        # highlight-end
+    )
+
+
+# end_use_in_asset_defs

@@ -63,11 +63,3 @@ def all_regions_sensor(context: dg.SensorEvaluationContext):
         run_requests=[dg.RunRequest(partition_key=region) for region in all_regions],
         dynamic_partitions_requests=[region_partitions.build_add_request(all_regions)],
     )
-
-
-# Define the Definitions object
-defs = dg.Definitions(
-    assets=[regional_sales_data, daily_sales_summary],
-    jobs=[regional_sales_job],
-    sensors=[all_regions_sensor],
-)

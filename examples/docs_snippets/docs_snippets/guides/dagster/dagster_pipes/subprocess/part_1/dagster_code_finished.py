@@ -11,9 +11,3 @@ def subprocess_asset(
     return pipes_subprocess_client.run(
         command=cmd, context=context
     ).get_materialize_result()
-
-
-defs = dg.Definitions(
-    assets=[subprocess_asset],
-    resources={"pipes_subprocess_client": dg.PipesSubprocessClient()},
-)

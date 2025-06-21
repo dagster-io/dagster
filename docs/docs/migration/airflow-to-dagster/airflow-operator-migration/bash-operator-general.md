@@ -45,7 +45,7 @@ You can write a Dagster <PyObject section="assets" object="asset" module="dagste
 
 ### Step 3: Using dagster-airlift to proxy execution
 
-Finally, you can use `dagster-airlift` to proxy the execution of the original task to Dagster. For more information, see "[Migrate from Airflow to Dagster at the task level](../task-level-migration/)".
+Finally, you can use `dagster-airlift` to proxy the execution of the original task to Dagster. For more information, see "[Migrate from Airflow to Dagster at the task level](/migration/airflow-to-dagster/airlift-v1/task-level-migration)".
 
 ### Step 4: Implementing richer integrations
 
@@ -53,7 +53,7 @@ For many of the use cases that you might be using the BashOperator for, Dagster 
 
 #### Running a Python script
 
-As mentioned above, you can use the <PyObject section="pipes" object="PipesSubprocessClient" module="dagster"/> to run a Python script in a subprocess. But you can also modify this script to send additional information and logging back to Dagster. See the [Dagster Pipes tutorial](/guides/build/external-pipelines/) for more information.
+As mentioned above, you can use the <PyObject section="pipes" object="PipesSubprocessClient" module="dagster"/> to run a Python script in a subprocess. But you can also modify this script to send additional information and logging back to Dagster. See the [Dagster Pipes tutorial](/guides/build/external-pipelines) for more information.
 
 #### Running a dbt command
 

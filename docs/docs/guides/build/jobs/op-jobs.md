@@ -40,7 +40,7 @@ Within the decorated function body, you can use function calls to indicate the d
 
 In this example, the `add_one` op depends on the `return_five` op's output. Because this data dependency exists, the `add_one` op executes after `return_five` runs successfully and emits the required output:
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/simple_job.py" />
+<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/simple_job.py" title="src/<project_name>/defs/assets.py"/>
 
 When defining an op job, you can provide any of the following:
 
@@ -58,11 +58,11 @@ You can model this by building multiple op jobs that use the same underlying gra
 
 To do this, define a graph using the <PyObject section="graphs" module="dagster" object="graph" decorator /> decorator:
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/jobs_from_graphs.py" startAfter="start_define_graph" endBefore="end_define_graph" />
+<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/jobs_from_graphs.py" startAfter="start_define_graph" endBefore="end_define_graph" title="src/<project_name>/defs/assets.py"/>
 
 Then build op jobs from it using the <PyObject section="graphs" module="dagster" object="GraphDefinition" method="to_job" /> method:
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/jobs_from_graphs.py" startAfter="start_define_jobs" endBefore="end_define_jobs" />
+<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/jobs_from_graphs.py" startAfter="start_define_jobs" endBefore="end_define_jobs" title="src/<project_name>/defs/assets.py"/>
 
 `to_job` accepts the same arguments as the <PyObject section="jobs" module="dagster" object="job" decorator />decorator, such as providing resources, configuration, etc.
 
@@ -82,7 +82,7 @@ The options are discussed below:
 
 You can supply a <PyObject section="config" module="dagster" object="RunConfig"/> object or raw config dictionary. The supplied config will be used to configure the op job whenever it's launched. It will show up in the Dagster UI Launchpad and can be overridden.
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/jobs_with_default_config.py" />
+<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/jobs_with_default_config.py" title="src/<project_name>/defs/assets.py"/>
 
 ### Partitioned configuration
 
@@ -96,13 +96,7 @@ Supplying a <PyObject section="config" module="dagster" object="ConfigMapping" /
 
 Instead of needing to configure every op and resource individually when launching the op job, you can supply a smaller number of values to the outer config. The <PyObject section="config" module="dagster" object="ConfigMapping" /> will then translate it into config for all the job's ops and resources.
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/jobs_with_config_mapping.py" />
-
-## Making op jobs available to Dagster tools
-
-You make jobs available to the UI, GraphQL, and command line by including them in a <PyObject section="definitions" module="dagster" object="Definitions"/> object at the top level of Python module or file. The tool loads that module as a [code location](/deployment/code-locations). If you include schedules or sensors, the code location will automatically include jobs that those schedules or sensors target.
-
-<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/repo_with_job.py" />
+<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/jobs_with_config_mapping.py" title="src/<project_name>/defs/assets.py"/>
 
 ## Testing op jobs
 

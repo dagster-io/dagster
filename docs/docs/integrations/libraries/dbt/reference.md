@@ -144,7 +144,7 @@ In your CI/CD workflows for your Dagster project:
    - Package your dbt project
 
 :::note
-If you are using [Components](/guides/labs/components), you can prepare your `DbtProjectComponent` using `dagster-dbt project prepare-and-package --components path/to/project-root`
+If you are using [Components](/guides/build/components), you can prepare your `DbtProjectComponent` using `dagster-dbt project prepare-and-package --components path/to/project-root`
 :::
 
 In the CI/CD workflows for your dbt project, set up a dispatch action to trigger a deployment of your Dagster project
@@ -169,7 +169,7 @@ In your CI/CD workflows for your Dagster and dbt project:
    - Package your dbt project
 
 :::note
-If you are using [Components](/guides/labs/components), you can prepare your `DbtProjectComponent` using `dagster-dbt project prepare-and-package --components path/to/project-root`
+If you are using [Components](/guides/build/components), you can prepare your `DbtProjectComponent` using `dagster-dbt project prepare-and-package --components path/to/project-root`
 :::
 
 ## Leveraging dbt defer with branch deployments

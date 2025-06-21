@@ -51,6 +51,3 @@ def updated_file_sensor(context):
     # Update the cursor
     context.update_cursor(str(max_mtime))
     # highlight-end
-
-
-defs = dg.Definitions(assets=[my_asset], jobs=[my_job], sensors=[updated_file_sensor])

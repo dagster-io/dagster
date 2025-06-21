@@ -1,6 +1,6 @@
 ---
 description: Structuring a Dagster project by technology or concept, merging definitions, and configuring multiple code locations.
-sidebar_position: 200
+sidebar_position: 300
 title: Structuring your Dagster project
 ---
 
@@ -10,30 +10,49 @@ To learn how to create a new Dagster project, see [Creating a new Dagster projec
 
 :::
 
-There are many ways to structure your Dagster project, and it can be difficult to know where to start. In this guide, we will walk you through our recommendations for how to organize your Dagster project. As your project grows, you are welcome to deviate from these recommendations.
+There are many ways to structure your Dagster project, and it can be difficult to know where to start. In this guide, we will walk you through our recommendations for organizing your Dagster project.
 
 ## Your initial project structure
 
-When you first scaffold your project using the Dagster command-line tool, an `assets.py` and `definitions.py` are created in the root of your project.
+When you first scaffold your project using the `create-dagster` CLI, it looks like the following:
 
 ```sh
-$ dagster project scaffold --name example-dagster-project
+$ create-dagster project my-project
 ```
 
-```
-.
-├── README.md
-├── example_dagster_project
-│   ├── __init__.py
-│   ├── assets.py
-│   └── definitions.py
-├── example_dagster_project_tests
-│   ├── __init__.py
-│   └── test_assets.py
-├── pyproject.toml
-├── setup.cfg
-└── setup.py
-```
+<Tabs groupId="package-manager">
+  <TabItem value="uv" label="uv">
+    ```
+    .
+    └── my-project
+        ├── pyproject.toml
+        ├── src
+        │   └── my_project
+        │       ├── __init__.py
+        │       ├── definitions.py
+        │       └── defs
+        │           └── __init__.py
+        ├── tests
+        │   └── __init__.py
+        └── uv.lock
+    ```
+  </TabItem>
+  <TabItem value="pip" label="pip">
+    ```
+    .
+    └── my-project
+        ├── pyproject.toml
+        ├── src
+        │   └── my_project
+        │       ├── __init__.py
+        │       ├── definitions.py
+        │       └── defs
+        │           └── __init__.py
+        └── tests
+            └── __init__.py
+    ```
+  </TabItem>
+</Tabs>
 
 This is a great structure as you are first getting started, however, as you begin to introduce more assets, jobs, resources, sensors, and utility code, you may find that your Python files are growing too large to manage.
 
@@ -51,86 +70,130 @@ Data engineers often have a strong understanding of the underlying technologies 
 
 Within the technology modules, submodules can be created to further organize your code.
 
-```
-.
-└── example_dagster_project/
-    ├── dbt/
-    │   ├── __init__.py
-    │   ├── assets.py
-    │   ├── resources.py
-    │   └── definitions.py
-    ├── dlt/
-    │   ├── __init__.py
-    │   ├── pipelines/
-    │   │   ├── __init__.py
-    │   │   ├── github.py
-    │   │   └── hubspot.py
-    │   ├── assets.py
-    │   ├── resources.py
-    │   └── definitions.py
-    └── definitions.py
-```
+<Tabs groupId="package-manager">
+<TabItem value="uv" label="uv">
+        ```
+        .
+        ├── pyproject.toml
+        ├── src
+        │   └── my_project
+        │       ├── __init__.py
+        │       ├── definitions.py
+        │       └── defs
+        │           ├── __init__.py
+        │           ├── dbt
+        │           │   ├── assets.py
+        │           │   └── resources.py
+        │           └── dlt
+        │               ├── assets.py
+        │               ├── pipelines
+        │               │   ├── github.py
+        │               │   └── hubspot.py
+        │               └── resources.py
+        ├── tests
+        │   └── __init__.py
+        └── uv.lock
+        ```
+</TabItem>
+<TabItem value="pip" label="pip">
+        ```
+        .
+        ├── pyproject.toml
+        ├── src
+        │   └── my_project
+        │       ├── __init__.py
+        │       ├── definitions.py
+        │       └── defs
+        │           ├── __init__.py
+        │           ├── dbt
+        │           │   ├── assets.py
+        │           │   └── resources.py
+        │           └── dlt
+        │               ├── assets.py
+        │               ├── pipelines
+        │               │   ├── github.py
+        │               │   └── hubspot.py
+        │               └── resources.py
+        └── tests
+            └── __init__.py
+        ```
+</TabItem>
+</Tabs>
+
 
 ### Option 2: Structured by concept
 
-It's also possible to introduce a layer of categorization by the overarching data processing concept. For example, whether the job is performing some kind of transformation, ingestion of data, or processing operation.
+You can also organize your project by data processing concept, for example, data transformation, ingestion, or processing. This provides additional context to engineers who may not be as familiar with the underlying technologies:
 
-This provides additional context to the engineers who may not have as strong of a familiarity with the underlying technologies that are being used.
+<Tabs groupId="package-manager">
+<TabItem value="uv" label="uv">
+    ```
+    .
+    ├── pyproject.toml
+    ├── src
+    │   └── my_project
+    │       ├── __init__.py
+    │       ├── definitions.py
+    │       └── defs
+    │           ├── __init__.py
+    │           ├── ingestion
+    │           │   └── dlt
+    │           │       ├── assets.py
+    │           │       └── resources.py
+    │           └── transformation
+    │               ├── adhoc
+    │               │   ├── assets.py
+    │               │   └── resources.py
+    │               └── dbt
+    │                   ├── assets.py
+    │                   ├── partitions.py
+    │                   └── resources.py
+    ├── tests
+    │   └── __init__.py
+    └── uv.lock
+    ```
+</TabItem>
+<TabItem value="pip" label="pip">
+    ```
+    .
+    ├── pyproject.toml
+    ├── src
+    │   └── my_project
+    │       ├── __init__.py
+    │       ├── definitions.py
+    │       └── defs
+    │           ├── __init__.py
+    │           ├── ingestion
+    │           │   └── dlt
+    │           │       ├── assets.py
+    │           │       └── resources.py
+    │           └── transformation
+    │               ├── adhoc
+    │               │   ├── assets.py
+    │               │   └── resources.py
+    │               └── dbt
+    │                   ├── assets.py
+    │                   ├── partitions.py
+    │                   └── resources.py
+    └── tests
+        └── __init__.py
+    ```
+</TabItem>
+</Tabs>
 
-```
-.
-└── example_dagster_project/
-    ├── ingestion/
-    │   └── dlt/
-    │       ├── assets.py
-    │       ├── resources.py
-    │       └── definitions.py
-    ├── transformation/
-    │   ├── dbt/
-    │   │   ├── assets.py
-    │   │   ├── resources.py
-    │   │   └── partitions.py
-    │   │   └── definitions.py
-    │   └── adhoc/
-    │       ├── assets.py
-    │       ├── resources.py
-    │       └── definitions.py
-    └── definitions.py
-```
+## Configuring multiple projects in a workspace
 
-## Merging definitions objects
+This guide has outlined how to structure a single project that defines a single code location. Most people will only need one project and code location. However, Dagster also allows you to create a workspace with multiple projects that define multiple code locations.
 
-It's possible to define multiple `Definitions` objects, often with one for each submodule in your project. These definitions can then be merged at the root of your project using the `Definitions.merge` method.
+A helpful pattern uses multiple projects to separate conflicting dependencies, where each definition has its own package requirements and deployment specs.
 
-The benefit of such a structure is that dependencies like resources and partitions can be scoped to their corresponding definitions.
-
-```py title="example-merge-definitions.py"
-import dbt.definitions
-import dlt.definitions
-
-
-defs = Definitions.merge(
-    dbt.definitions.dbt_definitions,
-    dlt.definitions.dlt_definitions,
-)
-```
-
-## Configuring multiple code locations
-
-This guide has outlined how to structure a project within a single code location, however, Dagster also allows you to structure a project spanning multiple location.
-
-In most cases, one code location should be sufficient. A helpful pattern uses multiple code locations to separate conflicting dependencies, where each definition has its own package requirements and deployment specs.
-
-To include multiple code locations in a single project, you'll need to add a configuration file to your project:
-
-- **If using Dagster+**, add a `dagster_cloud.yaml` file to the root of your project.
-- **If developing locally or deploying to your infrastructure**, add a workspace.yaml file to the root of your project.
+To learn more about creating a workspace with multiple projects, see [Managing multiple projects with workspaces](/guides/build/projects/multiple-projects).
 
 ## External projects
 
-As your data platform evolves, Dagster will enable you to orchestrate other data tools, such as dbt, Sling, or Jupyter notebooks.
+As your data platform evolves, you can integrate other data tools, such as dbt, Sling, or Jupyter notebooks.
 
-For these projects, it's recommended to store them outside your Dagster project. See the `dbt_project` example below.
+We recommended storing these projects outside your Dagster project. See the `dbt_project` example below:
 
 ```
 .
@@ -152,7 +215,3 @@ For these projects, it's recommended to store them outside your Dagster project.
 │       └── assert_true.sql
 └── example_dagster_project/
 ```
-
-## Next steps
-
-- Explore the <PyObject section="definitions" module="dagster" object="Definitions.merge" /> API docs

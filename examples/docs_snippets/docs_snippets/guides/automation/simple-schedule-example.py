@@ -19,9 +19,3 @@ daily_schedule = dg.ScheduleDefinition(
     cron_schedule="0 0 * * *",  # Runs at midnight daily
 )
 # highlight-end
-
-defs = dg.Definitions(
-    assets=[customer_data, sales_report],
-    jobs=[daily_refresh_job],
-    schedules=[daily_schedule],
-)

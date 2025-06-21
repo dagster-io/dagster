@@ -1,0 +1,4 @@
+dg check defs
+
+All components validated successfully.
+All definitions loaded successfully.

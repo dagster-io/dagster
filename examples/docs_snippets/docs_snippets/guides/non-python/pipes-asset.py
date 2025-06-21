@@ -16,10 +16,3 @@ def tensorflow_model(
         context=context,
         extras={},
     ).get_materialize_result()
-
-
-# Define the Dagster Definitions object
-defs = dg.Definitions(
-    assets=[tensorflow_model],
-    resources={"pipes_subprocess_client": dg.PipesSubprocessClient()},
-)

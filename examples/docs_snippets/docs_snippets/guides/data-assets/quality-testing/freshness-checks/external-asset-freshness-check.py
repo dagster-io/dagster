@@ -53,16 +53,14 @@ freshness_checks_sensor = dg.build_sensor_for_freshness_checks(
 # highlight-end
 
 
-defs = dg.Definitions(
-    assets=[hourly_sales],
-    asset_checks=hourly_sales_freshness_check,
-    schedules=[freshness_check_schedule],
-    sensors=[freshness_checks_sensor],
-    resources={
-        "snowflake": dg_snowflake.SnowflakeResource(
-            user=dg.EnvVar("SNOWFLAKE_USER"),
-            account=dg.EnvVar("SNOWFLAKE_ACCOUNT"),
-            password=dg.EnvVar("SNOWFLAKE_PASSWORD"),
-        )
-    },
-)
+@dg.definitions
+def resources():
+    return dg.Definitions(
+        resources={
+            "snowflake": dg_snowflake.SnowflakeResource(
+                user=dg.EnvVar("SNOWFLAKE_USER"),
+                account=dg.EnvVar("SNOWFLAKE_ACCOUNT"),
+                password=dg.EnvVar("SNOWFLAKE_PASSWORD"),
+            )
+        },
+    )

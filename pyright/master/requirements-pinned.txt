@@ -483,10 +483,10 @@ posthog==4.0.1
 premailer==3.10.0
 prison==0.2.1
 progressbar2==4.5.0
--e examples/docs_projects/project_atproto_dashboard
--e examples/docs_projects/project_components_pdf_extraction
--e examples/docs_projects/project_dagster_modal_pipes
--e examples/docs_projects/project_prompt_eng
+# -e examples/docs_projects/project_atproto_dashboard
+# -e examples/docs_projects/project_components_pdf_extraction
+# -e examples/docs_projects/project_dagster_modal_pipes
+# -e examples/docs_projects/project_prompt_eng
 prometheus-client==0.21.1
 prometheus-flask-exporter==0.23.2
 prompt-toolkit==3.0.51
