@@ -1,7 +1,7 @@
 import inspect
 from typing import Callable, Generic, Optional, TypeVar, Union, cast
 
-from dagster._annotations import preview, public
+from dagster._annotations import public
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.repository_definition.repository_definition import (
     RepositoryDefinition,
@@ -15,7 +15,7 @@ T_Defs = TypeVar("T_Defs", Definitions, RepositoryDefinition)
 
 @record
 class LazyDefinitions(Generic[T_Defs]):
-    """An object that can be invoked to load a set of definitions. Useful in tests when you want to regenerate the same definitions in multiple contexts."""
+    """An object that can be invoked to load a set of definitions."""
 
     load_fn: Callable[..., T_Defs]
     has_context_arg: bool
@@ -46,18 +46,18 @@ class LazyDefinitions(Generic[T_Defs]):
 
 
 @public
-@preview(emit_runtime_warning=False)
 def definitions(
     fn: Union[Callable[[], Definitions], Callable[[ComponentLoadContext], Definitions]],
 ) -> Callable[..., Definitions]:
-    """Marks a function as an entry point for loading a set of Dagster definitions. It is an alternative
-    to directly instantiating a Definitions object and assigning it to a local variable. This enables
-    a user to import a python module that contains a loadable definitions object without having
-    to create it at import time.
+    """Marks a function as an entry point for loading a set of Dagster definitions. It is a preferable
+    alternative to directly instantiating a Definitions object and assigning it to a local variable when you
+    want a Definitions object discoverable by Dagster's tools. This enables a user to import a python
+    module that contains a loadable definitions object without having to create it at import time.
 
     The function can optionally accept a ComponentLoadContext parameter. If it does, the context will be
-    passed to the function when it is called. If it doesn't, the function will be called without any
-    parameters.
+    passed to the function when it is called in the context of loading definitions in the context of an
+    autoloaded defs folders.  If the context parameters does not exist, the function will be called by the
+    framework without any parameters.
 
     Returns:
         Callable[..., Definitions]: A callable that will load a set of definitions when invoked.
