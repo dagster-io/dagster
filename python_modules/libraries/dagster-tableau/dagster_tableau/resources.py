@@ -325,6 +325,8 @@ class BaseTableauClient:
                 createdAt
                 updatedAt
                 uri
+                projectName
+                projectLuid
                 sheets {
                   luid
                   name

@@ -15,6 +15,10 @@ FAKE_POD_NAME = "fake_pod_name"
 
 TEST_EMBEDDED_DATA_SOURCE_ID = "1f5660c7-3b05-5ff0-90ce-4199226956c6"
 
+TEST_WORKBOOK_ID = "b75fc023-a7ca-4115-857b-4342028640d0"
+TEST_PROJECT_NAME = "test_project_name"
+TEST_PROJECT_ID = "test_project_id"
+
 
 SAMPLE_DATA_SOURCE = {
     "luid": "0f5660c7-2b05-4ff0-90ce-3199226956c6",
@@ -43,7 +47,7 @@ SAMPLE_SHEET = {
             ]
         }
     ],
-    "workbook": {"luid": "b75fc023-a7ca-4115-857b-4342028640d0"},
+    "workbook": {"luid": TEST_WORKBOOK_ID},
 }
 
 SAMPLE_SHEET_2 = {
@@ -55,7 +59,7 @@ SAMPLE_SHEET_2 = {
     "parentEmbeddedDatasources": [
         {**SAMPLE_EMBEDDED_DATA_SOURCE, "parentPublishedDatasources": []}
     ],
-    "workbook": {"luid": "b75fc023-a7ca-4115-857b-4342028640d0"},
+    "workbook": {"luid": TEST_WORKBOOK_ID},
 }
 
 SHEET_LIST = []
@@ -69,16 +73,18 @@ SAMPLE_DASHBOARD = {
     "updatedAt": "2024-09-13T00:15:23Z",
     "path": "TestWorkbook/Dashboard_Sales",
     "sheets": [{"luid": "ae8a5f27-8b2f-44e9-aec3-94fe6c638f4f"}],
-    "workbook": {"luid": "b75fc023-a7ca-4115-857b-4342028640d0"},
+    "workbook": {"luid": TEST_WORKBOOK_ID},
 }
 
 
 SAMPLE_WORKBOOK = {
-    "luid": "b75fc023-a7ca-4115-857b-4342028640d0",
+    "luid": TEST_WORKBOOK_ID,
     "name": "Test Workbook",
     "createdAt": "2024-09-05T21:33:26Z",
     "updatedAt": "2024-09-13T00:15:27Z",
     "uri": "sites/49445/workbooks/690496",
+    "projectName": TEST_PROJECT_NAME,
+    "projectLuid": TEST_PROJECT_ID,
     "sheets": SHEET_LIST,
     "dashboards": [
         {
@@ -87,11 +93,11 @@ SAMPLE_WORKBOOK = {
     ],
 }
 
-SAMPLE_WORKBOOKS = {"workbooks": {"workbook": [{"id": "b75fc023-a7ca-4115-857b-4342028640d0"}]}}
+SAMPLE_WORKBOOKS = {"workbooks": {"workbook": [{"id": TEST_WORKBOOK_ID}]}}
 
 SAMPLE_VIEW_SHEET = {
     "view": {
-        "workbook": {"id": "b75fc023-a7ca-4115-857b-4342028640d0"},
+        "workbook": {"id": TEST_WORKBOOK_ID},
         "owner": {"id": "2a59b27f-a842-4c7a-a6ed-8c9f814e6119"},
         "tags": {},
         "location": {"id": "7239fbb5-f0a3-426f-b9c0-05f829c6cd64", "type": "PersonalSpace"},
@@ -106,7 +112,7 @@ SAMPLE_VIEW_SHEET = {
 
 SAMPLE_VIEW_DASHBOARD = {
     "view": {
-        "workbook": {"id": "b75fc023-a7ca-4115-857b-4342028640d0"},
+        "workbook": {"id": TEST_WORKBOOK_ID},
         "owner": {"id": "2a59b27f-a842-4c7a-a6ed-8c9f814e6119"},
         "tags": {},
         "location": {"id": "7239fbb5-f0a3-426f-b9c0-05f829c6cd64", "type": "PersonalSpace"},
@@ -137,7 +143,7 @@ def api_token_fixture() -> str:
 
 @pytest.fixture(name="workbook_id")
 def workbook_id_fixture() -> str:
-    return "b75fc023-a7ca-4115-857b-4342028640d0"
+    return TEST_WORKBOOK_ID
 
 
 @pytest.fixture(name="sheet_id")

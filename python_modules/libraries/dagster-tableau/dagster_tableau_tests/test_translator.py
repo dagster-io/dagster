@@ -3,8 +3,10 @@ from dagster._core.definitions.asset_spec import AssetSpec
 from dagster_tableau import DagsterTableauTranslator
 from dagster_tableau.translator import TableauTranslatorData, TableauWorkspaceData
 
+from dagster_tableau_tests.conftest import TEST_PROJECT_ID, TEST_PROJECT_NAME, TEST_WORKBOOK_ID
 
-def test_translator_sheet_spec(workspace_data: TableauWorkspaceData, workbook_id: str) -> None:
+
+def test_translator_sheet_spec(workspace_data: TableauWorkspaceData) -> None:
     translator = DagsterTableauTranslator()
     asset_key_list = ["superstore_datasource", "embedded_superstore_datasource"]
     index = 0
@@ -19,7 +21,9 @@ def test_translator_sheet_spec(workspace_data: TableauWorkspaceData, workbook_id
         ]
         assert asset_spec.metadata == {
             "dagster-tableau/id": sheet.properties.get("luid"),
-            "dagster-tableau/workbook_id": workbook_id,
+            "dagster-tableau/workbook_id": TEST_WORKBOOK_ID,
+            "dagster-tableau/project_name": TEST_PROJECT_NAME,
+            "dagster-tableau/project_id": TEST_PROJECT_ID,
         }
         assert asset_spec.tags == {
             "dagster/storage_kind": "tableau",
@@ -31,9 +35,7 @@ def test_translator_sheet_spec(workspace_data: TableauWorkspaceData, workbook_id
         index += 1
 
 
-def test_translator_dashboard_spec(
-    workspace_data: TableauWorkspaceData, dashboard_id: str, workbook_id: str
-) -> None:
+def test_translator_dashboard_spec(workspace_data: TableauWorkspaceData, dashboard_id: str) -> None:
     dashboard = next(iter(workspace_data.dashboards_by_id.values()))
 
     translator = DagsterTableauTranslator()
@@ -44,7 +46,9 @@ def test_translator_dashboard_spec(
     assert asset_spec.key.path == ["test_workbook", "dashboard", "dashboard_sales"]
     assert asset_spec.metadata == {
         "dagster-tableau/id": dashboard_id,
-        "dagster-tableau/workbook_id": workbook_id,
+        "dagster-tableau/workbook_id": TEST_WORKBOOK_ID,
+        "dagster-tableau/project_name": TEST_PROJECT_NAME,
+        "dagster-tableau/project_id": TEST_PROJECT_ID,
     }
     assert asset_spec.tags == {
         "dagster/storage_kind": "tableau",

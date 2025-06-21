@@ -114,7 +114,9 @@ class TableauMetadataSet(NamespacedMetadataSet):
 
 
 class TableauViewMetadataSet(TableauMetadataSet):
-    workbook_id: Optional[str] = None
+    workbook_id: str
+    project_name: str
+    project_id: str
 
 
 class TableauDataSourceMetadataSet(TableauMetadataSet):
@@ -177,7 +179,10 @@ class DagsterTableauTranslator:
             tags={"dagster/storage_kind": "tableau", **TableauTagSet(asset_type="sheet")},
             metadata={
                 **TableauViewMetadataSet(
-                    id=data.properties["luid"], workbook_id=data.properties["workbook"]["luid"]
+                    id=data.properties["luid"],
+                    workbook_id=data.properties["workbook"]["luid"],
+                    project_name=workbook_data.properties["projectName"],
+                    project_id=workbook_data.properties["projectLuid"],
                 )
             },
         )
@@ -212,7 +217,10 @@ class DagsterTableauTranslator:
             tags={"dagster/storage_kind": "tableau", **TableauTagSet(asset_type="dashboard")},
             metadata={
                 **TableauViewMetadataSet(
-                    id=data.properties["luid"], workbook_id=data.properties["workbook"]["luid"]
+                    id=data.properties["luid"],
+                    workbook_id=data.properties["workbook"]["luid"],
+                    project_name=workbook_data.properties["projectName"],
+                    project_id=workbook_data.properties["projectLuid"],
                 )
             },
         )
