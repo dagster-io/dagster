@@ -20,7 +20,10 @@ T = TypeVar("T")
 
 
 class SqlComponent(ExecutableComponent, Model, BaseModel, Generic[T], ABC):
-    """Base component which executes templated SQL."""
+    """Base component which executes templated SQL. Subclasses
+    implement instructions on where to load the SQL content from
+    and how to execute it.
+    """
 
     execution: Optional[OpSpec] = None
 
@@ -71,8 +74,11 @@ ResolvedSqlTemplate = Annotated[
 ]
 
 
-class TemplatedSqlComponent(SqlComponent[T], Generic[T]):
-    """A component that executes templated SQL from a string or file."""
+class TemplatedSqlComponentMixin:
+    """A component mixin that builds templated SQL from a string or file.
+    User-defined components can inherit from this mixin to incorporate behavior
+    of loading SQL from a string or file.
+    """
 
     sql_template: Annotated[
         ResolvedSqlTemplate,
