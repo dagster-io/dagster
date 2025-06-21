@@ -8,13 +8,20 @@ We love to see our community members get involved! If you are planning to contri
 
 ## Environment setup
 
-1. [Install uv](https://docs.astral.sh/uv/getting-started/installation/). On macOS, you can use `curl` to download the script and execute it with `sh`:
+1. Clone the Dagster repository to the destination of your choice:
+
+   ```bash
+   git clone git@github.com:dagster-io/dagster.git
+   cd dagster
+   ```
+
+2. [Install uv](https://docs.astral.sh/uv/getting-started/installation/). On macOS, Linux, or WSL, you can use `curl` to download the script and execute it with `sh`:
 
    ```bash
    curl -LsSf https://astral.sh/uv/install.sh | sh
    ```
 
-2. Create and activate a virtual environment using uv with a Python version that Dagster supports:
+3. Create and activate a virtual environment using uv with a Python version that Dagster supports:
 
    ```bash
    uv venv --python 3.12
@@ -23,31 +30,35 @@ We love to see our community members get involved! If you are planning to contri
 
    Dagster supports Python 3.9 through 3.12.
 
-3. Ensure that you have node installed by running `node -v`, and that you have [yarn](https://yarnpkg.com/lang/en/) installed. If you are on macOS, you can install yarn with Homebrew:
+4. Ensure that you have a supported version of [node](https://nodejs.org/en/download) by running `node -v`, and that you have [yarn](https://yarnpkg.com/lang/en/) installed. Once you have node installed, you can use `npm` to install yarn.
 
    ```bash
-   brew install yarn
+   npm install --global yarn
    ```
 
-4. Clone the Dagster repository to the destination of your choice:
+   Dagster supports Node 20.X and above.
 
-   ```bash
-   git clone git@github.com:dagster-io/dagster.git
-   ```
-
-5. Run `make dev_install` at the root of the repository. This sets up a full Dagster developer environment with all modules and runs tests that do not require heavy external dependencies such as docker. This will take a few minutes. Note that certain sections of the makefile (`sanity_check`, which is part of `rebuild_ui`) require POSIX-compliant shells and will fail on CMD and powershell—if developing on windows, using something like WSL or git-bash is recommended.
+5. Run `make dev_install` at the root of the repository. This sets up a full Dagster developer environment with all modules and runs tests that do not require heavy external dependencies such as docker. Note that certain sections of the makefile (`sanity_check`, which is part of `rebuild_ui`) require POSIX-compliant shells and will fail on CMD and powershell—if developing on windows, using something like WSL or git-bash is recommended.
 
    ```bash
    make dev_install
    ```
 
-   **Note for Macs with an Apple silicon chip**: Some users have reported installation problems due to missing wheels for arm64 Macs when installing the `grpcio` package. To install the `dagster` development environment using our pre-built wheel of the `grpcio` package for M1, M2, and M3 machines, run `make dev_install_m1_grpcio_wheel` instead of `make dev_install`.
+   This will take a few minutes.
+
+<details>
+  <summary>Note for Macs with an Apple silicon chip</summary>
+
+    Some users have reported installation problems due to missing wheels for arm64 Macs when installing the `grpcio` package. To install the `dagster` development environment using our pre-built wheel of the `grpcio` package for M1, M2, and M3 machines, run `make dev_install_m1_grpcio_wheel` instead of `make dev_install`.
+ </details>
 
 6. Run some tests manually to make sure things are working:
 
    ```bash
    python -m pytest python_modules/dagster/dagster_tests
    ```
+
+   Depending on the speed of your computer, running the entire test suite can take an hour or more. `pytest` supports only running a subset of tests, for example `python -m pytest python_modules/dagster/dagster_tests/core_tests` will only run tests in the `core_tests` folder. See [this page](https://docs.pytest.org/en/stable/how-to/usage.html#specifying-which-tests-to-run) for more information on this feature.
 
 ## Developing Dagster
 
