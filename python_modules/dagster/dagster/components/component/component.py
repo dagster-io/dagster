@@ -73,7 +73,7 @@ class Component(ABC):
     Components are the primary building blocks for programmatically creating Dagster
     definitions. They enable building multiple interrelated definitions for use cases, provide
     schema-based configuration, and built-in scaffolding support to simplify
-    component instantiation in projects.Components are automatically discovered by
+    component instantiation in projects. Components are automatically discovered by
     Dagster tooling and can be instantiated from YAML configuration files or Python code that
     conform to the declared schema.
 
