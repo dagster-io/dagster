@@ -46,9 +46,9 @@ def test_new_resource_code_contextmanager() -> None:
 def test_new_third_party_resource_old_code_broken() -> None:
     defs = new_third_party_resource_old_code_broken()
 
-    assert defs.get_job_def("new_asset_job").execute_in_process().success
+    assert defs.resolve_job_def("new_asset_job").execute_in_process().success
     assert (
-        not defs.get_job_def("existing_asset_job")
+        not defs.resolve_job_def("existing_asset_job")
         .execute_in_process(raise_on_error=False)
         .success
     )
@@ -57,5 +57,5 @@ def test_new_third_party_resource_old_code_broken() -> None:
 def test_new_third_party_resource_fixed() -> None:
     defs = new_third_party_resource_fixed()
 
-    assert defs.get_job_def("new_asset_job").execute_in_process().success
-    assert defs.get_job_def("existing_asset_job").execute_in_process().success
+    assert defs.resolve_job_def("new_asset_job").execute_in_process().success
+    assert defs.resolve_job_def("existing_asset_job").execute_in_process().success
