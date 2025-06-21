@@ -68,76 +68,181 @@ class ComponentTypeSpec(IHaveNew):
 @public
 @scaffold_with(DefaultComponentScaffolder)
 class Component(ABC):
-    """A component is a class that creates Dagster definitions. Inherit from it when creating a custom component.
+    """Abstract base class for creating reusable Dagster components.
 
-    Components have a few responsibilities:
+    Components are the primary building blocks for creating modular, configurable Dagster
+    definitions. They encapsulate business logic, provide schema-based configuration,
+    and enable code reuse across projects. Components are automatically discovered by
+    Dagster tooling and can be instantiated from YAML configuration files or Python code.
 
-    - A definitions factory: Implement the build_defs function, which creates the definitions
-    - Optionally specify schema via Resolvable. This is used to instantiate the component and provide schema
-      to yaml files that can configure the component. The schema also has integrated documenation,
-      surfaced in the Dagster UI.
-    - Optionally specify a scaffolder. This is used to scaffold the component when invoking tools such as
-      `dg scaffold defs` and
+    Key Capabilities:
+    - **Definition Factory**: Creates Dagster assets, jobs, schedules, and other definitions
+    - **Schema-Based Configuration**: Optional parameterization via YAML or Python objects
+    - **Scaffolding Support**: Custom project structure generation via ``dg scaffold`` commands
+    - **Tool Integration**: Automatic discovery by Dagster CLI and UI tools
+    - **Testing Utilities**: Built-in methods for testing component behavior
 
-    **Definitions Factory**:
+    Core Architecture:
 
-    The workhouse function of a component is the build_defs methods, implemented by the user when
-    defining a custom component . This is called by framework when it is crawling the defs folder
-    of a project to create the definitions for that project.
+    Every component must implement the ``build_defs()`` method, which serves as a factory
+    for creating Dagster definitions. Components can optionally inherit from ``Resolvable``
+    to add schema-based configuration capabilities, enabling parameterization through YAML
+    files or structured Python objects.
 
-    This is also called in testing utilities with context objects with parameters that simulate
-    the loading process. You may also directly invoke build_defs in tests if so desired.
-
-    **Schema**:
-
-    Optionally a Component can specify a schema used when instantiating the component. To do this
-    you make a component inherit from Resolvable.
-
-    The Resolvable abstract class can be used with @dataclass, pydantic.BaseModel, or dagster.Model (which
-    lightly wraps pydantic.BaseModel). It is up to the user to decide. Prefer dagster.Model for
-    new components or schema classes, as it sets defaults that result in the best error messages and
-    user experience.
-
-    Resolvable allows a component parameterized with a yaml file or Python business objects. Its role
-    in the system is to manage the resolution and mapping between the schema and those business objects.
-
-    **Scaffolding**:
-
-    Components can also define custom scaffolding with the @scaffold_with decorator. This decorator
-    takes a Scaffolder subtype, which specifies custom scaffolding for the component. This scaffolding
-    can provide default structure for its corresponding defs.yaml file, stubs for integration-specific
-    configuration files. Scaffold parameters can be passed to the scaffolder via dg scaffold defs.
-
-    Components are discoverable by Dagster tooling in a project that specifies registry modules in its
-    pyproject.toml or setup.py. These modules are inspected by tools such as dg for components, which
-    are then in turn discoverable by users by commands `dg list components` or `dg scaffold defs`. These
-    componets always appear in automatically generated documentation in the Dagster UI.
+    Args:
+        This is an abstract base class and should be subclassed rather than instantiated directly.
+        Configuration parameters are defined by subclassing ``Resolvable`` and adding fields.
 
     Examples:
-    A component that creates a single, hardcoded asset.
+        Simple component with hardcoded definitions:
+
+        .. code-block:: python
+
+            import dagster as dg
+
+            class SimpleDataComponent(dg.Component):
+                \"\"\"Component that creates a basic data processing asset.\"\"\"
+
+                def build_defs(self, context: dg.ComponentLoadContext) -> dg.Definitions:
+                    @dg.asset
+                    def raw_data():
+                        return [1, 2, 3, 4, 5]
+
+                    @dg.asset
+                    def processed_data(raw_data):
+                        return [x * 2 for x in raw_data]
+
+                    return dg.Definitions(assets=[raw_data, processed_data])
+
+        Configurable component with schema:
+
+        .. code-block:: python
+
+            import dagster as dg
+            from typing import List
+
+            class DatabaseTableComponent(dg.Component, dg.Resolvable, dg.Model):
+                \"\"\"Component for creating assets from database tables.\"\"\"
+
+                table_name: str
+                columns: List[str]
+                database_url: str = "postgresql://localhost/mydb"
+
+                def build_defs(self, context: dg.ComponentLoadContext) -> dg.Definitions:
+                    @dg.asset(name=f"{self.table_name}_data")
+                    def table_asset():
+                        # Use self.table_name, self.columns, etc.
+                        return f"SELECT {', '.join(self.columns)} FROM {self.table_name}"
+
+                    return dg.Definitions(assets=[table_asset])
+
+        Using the component in a YAML file (``defs.yaml``):
+
+        .. code-block:: yaml
+
+            type: my_project.components.DatabaseTableComponent
+            attributes:
+              table_name: "users"
+              columns: ["id", "name", "email"]
+              database_url: "postgresql://prod-db/analytics"
+
+        Loading and testing a component:
+
+        .. code-block:: python
+
+            # Load from YAML
+            component = DatabaseTableComponent.from_yaml_path(Path("defs.yaml"))
+
+            # Load from dictionary
+            component = DatabaseTableComponent.from_attributes_dict(
+                attributes={
+                    "table_name": "orders",
+                    "columns": ["id", "total", "customer_id"]
+                }
+            )
+
+            # Test the component
+            context = dg.ComponentLoadContext.for_test()
+            defs = component.build_defs(context)
+            assert len(defs.assets) == 1
+
+    Component Discovery:
+
+    Components are automatically discovered by Dagster tooling when defined in modules
+    specified in your project's ``pyproject.toml`` registry configuration:
+
+    .. code-block:: toml
+
+        [tool.dagster]
+        module_name = "my_project"
+        registry_modules = ["my_project.components"]
+
+    This enables CLI commands like:
+
+    .. code-block:: bash
+
+        dg list components # List available components
+        dg scaffold defs MyComponent path/to/component  # Generate component scaffolding
+
+    Schema and Configuration:
+
+    To make a component configurable, inherit from both ``Component`` and ``Resolvable``,
+    along with a model base class:
+
+    - ``dg.Model``: Recommended for new components (wraps Pydantic with Dagster defaults)
+    - ``pydantic.BaseModel``: Direct Pydantic usage
+    - ``@dataclass``: Python dataclasses with validation
+
+    Custom Scaffolding:
+
+    Components can provide custom scaffolding behavior using the ``@scaffold_with`` decorator:
 
     .. code-block:: python
 
-        class MyComponent(dg.Component):
+        import dagster as dg
+        from dagster.components.scaffold import Scaffolder, ScaffoldRequest
+        from pathlib import Path
+
+        class DatabaseComponentScaffolder(Scaffolder):
+            def scaffold(self, request: ScaffoldRequest) -> None:
+                # Create component directory
+                component_dir = request.target_path
+                component_dir.mkdir(parents=True, exist_ok=True)
+
+                # Generate defs.yaml with template
+                defs_file = component_dir / "defs.yaml"
+                defs_file.write_text(f'''
+    type: {request.type_name}
+    attributes:
+    table_name: "example_table"
+    columns: ["id", "name"]
+    database_url: "${{DATABASE_URL}}"
+    '''.strip())
+
+                # Generate SQL query template
+                sql_file = component_dir / "query.sql"
+                sql_file.write_text("SELECT * FROM example_table;")
+
+        @dg.scaffold_with(DatabaseComponentScaffolder)
+        class DatabaseTableComponent(dg.Component, dg.Resolvable, dg.Model):
+            table_name: str
+            columns: list[str]
+
             def build_defs(self, context: dg.ComponentLoadContext) -> dg.Definitions:
-                @dg.asset
-                def dummy_asset() -> None: ...
+                # Component implementation
+                pass
 
-                return dg.Definitions(assets=[dummy_asset])
+    Note:
+        Components are abstract and must implement ``build_defs()``. The component system
+        automatically handles instantiation, parameter resolution, and integration with
+        Dagster's loading mechanisms.
 
-    A component that creates a single asset and is parameterized with a yaml file.
-
-    .. code-block:: python
-
-        class ReturnValueComponent(dg.Component, dg.Resolvable, dg.Model):
-            value: str
-
-            def build_defs(self, context: dg.ComponentLoadContext) -> dg.Definitions:
-                @dg.asset
-                def return_value_asset() -> None:
-                    return self.value
-
-                return dg.Definitions(assets=[return_value_asset])
+    See Also:
+        - :py:class:`dagster.Definitions`: The object returned by ``build_defs()``
+        - :py:class:`dagster.ComponentLoadContext`: Context provided to ``build_defs()``
+        - :py:class:`dagster.components.resolved.base.Resolvable`: Base for configurable components
+        - :py:class:`dagster.Model`: Recommended base class for component schemas
+        - :py:func:`dagster.scaffold_with`: Decorator for custom scaffolding
     """
 
     @classmethod
