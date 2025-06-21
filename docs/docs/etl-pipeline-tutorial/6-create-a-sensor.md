@@ -39,7 +39,7 @@ To define a sensor in Dagster, use the `@sensor` decorator. This decorator is ap
 
 Sensors include the following elements:
 
-- **Job**: The job that the sensor will trigger when the conditions are met.
+- **Target** or **job**: The target (asset) or job that the sensor will trigger when the conditions are met.
 - **RunRequest**: An object that specifies the configuration for the job run. It includes a `run_key` to ensure idempotency and a `run_config` for job-specific settings.
 
 First we will use `dg` to create the sensor file:
@@ -89,5 +89,5 @@ One new files have been added to the `etl_tutorial` module, `sensors.py`:
 Sensors provide a fine grained way to build event driven systems. Combined with declarative automation, there are a number of ways to automate your pipelines.
 
 # Next steps
-- Continue this tutorial with adding [Evidence](/etl-pipeline-tutorial/create-evidence-component)
+- Continue this tutorial to [visualize data](/etl-pipeline-tutorial/visualize-data)
 

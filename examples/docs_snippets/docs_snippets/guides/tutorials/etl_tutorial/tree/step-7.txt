@@ -6,10 +6,10 @@ src
         ├── __init__.py
         ├── dashboard
         │   └── defs.yaml
-        ├── ingest_files
+        ├── ingest
         │   ├── defs.yaml
         │   └── replication.yaml
-        ├── jdbt
+        ├── transform
         │   └── defs.yaml
         ├── assets.py
         ├── resources.py

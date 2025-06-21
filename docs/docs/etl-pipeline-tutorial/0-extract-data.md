@@ -1,10 +1,10 @@
 ---
-title: Ingest data
-description: Ingest data with Sling
+title: Extract data
+description: Extract data with Sling
 sidebar_position: 10
 ---
 
-In the first step of the tutorial, you will use [Sling](https://slingdata.io/), a tool for ELT operations, to load files into [DuckDB](https://duckdb.org/), an analytical database. This data will serve as the foundation for the rest of the ETL tutorial. In this step, you will:
+In the first step of the tutorial, you will use [Sling](https://slingdata.io/), an ETL framework, to load files into [DuckDB](https://duckdb.org/), an analytical database. This data will serve as the foundation for the rest of the ETL tutorial. In this step, you will:
 
 - Integrate with Sling
 - Build software-defined assets from a Sling project using Dagster components
@@ -35,10 +35,10 @@ The standard Dagster library supports several components, but after adding `dags
 We can now scaffold the Sling component using `dg`:
 
 ```bash
-dg scaffold defs 'dagster_sling.SlingReplicationCollectionComponent' ingest_files
+dg scaffold defs 'dagster_sling.SlingReplicationCollectionComponent' ingest
 ```
 
-This adds a Sling component, `ingest_files`, to the `etl_tutorial` module:
+This adds a Sling component, `ingest`, to the `etl_tutorial` module:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/tree/sling.txt" />
 
@@ -57,9 +57,9 @@ All of these files are located in the cloud storage and we would like to ingest 
 Sling manages these configurations with the `replication.yaml`. This file is specific to Sling and is one of the files added when we scaffolded the Sling component with `dg`. Update the `replication.yaml` file to the following:
 
 <CodeExample
-    path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/src/etl_tutorial/defs/ingest_files/replication.yaml"
+    path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/src/etl_tutorial/defs/ingest/replication.yaml"
     language="yaml"
-    title="src/etl_tutorial/defs/ingest_files/replication.yaml"
+    title="src/etl_tutorial/defs/ingest/replication.yaml"
 />
 
 This defines what files are being pulled in and the destination. The important part to understand are the `streams` which map the files to specific tables.
@@ -69,9 +69,9 @@ This defines what files are being pulled in and the destination. The important p
 The other configuration that needs to be set is in the `defs.yaml`. This is the Dagster specific file that defines the `SlingReplicationCollectionComponent` component. Here we will set the destination as DuckDB database details. We will also set the path to the `replication.yaml` that we defined previously.
 
 <CodeExample
-    path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/src/etl_tutorial/defs/ingest_files/defs.yaml"
+    path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/src/etl_tutorial/defs/ingest/defs.yaml"
     language="yaml"
-    title="src/etl_tutorial/defs/ingest_files/defs.yaml"
+    title="src/etl_tutorial/defs/ingest/defs.yaml"
 />
 
 That is everything necessary for the component. To ensure everything is configured correctly you can use `dg check` in the command line:
@@ -109,6 +109,12 @@ You can also launch specific assets by [selecting their asset keys](/guides/buil
 dg launch --assets target/main/raw_customers,target/main/raw_orders,target/main/raw_payments
 ```
 
+:::info
+
+TODO: Relationship between components and definitions
+
+:::
+
 ## Summary
 
 We have already handled the ingestion layer of our ETL pipeline. The `etl_tutorial` module should look like this:
@@ -119,4 +125,4 @@ You have seen how to use `dg` and components to quickly spin up Dagster assets a
 
 ## Next steps
 
-- Continue this tutorial with your [dbt](/etl-pipeline-tutorial/create-dbt-component)
+- Continue this tutorial with your [transform data](/etl-pipeline-tutorial/transform-data)

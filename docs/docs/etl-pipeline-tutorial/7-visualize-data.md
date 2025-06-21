@@ -1,6 +1,6 @@
 ---
-title: Create Evidence connection
-description: Connect to Evidence to visualize data
+title: Visualize data
+description: Visualize data with Evidence
 sidebar_position: 80
 ---
 
@@ -34,7 +34,7 @@ There will now be a directory `dashboard` within the root of the project.
 Let's add the Dagster's Evidence integration:
 
 ```bash
-uv pip install dagster-sling
+uv pip install dagster-evidence
 ```
 
 Now we can scaffold Evidence with `dg`:
@@ -47,7 +47,7 @@ This will add the directory `dashboard` to the `etl_tutorial` module:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/tree/evidence.txt" />
 
-## 3. Configure the Evidence component
+## 3. Configure the Evidence `defs.yaml`
 
 Unlike our other components which generated individual assets for each model in our project. The Evidence component will register a single asset for the entire Evidence deployment.
 

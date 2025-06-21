@@ -1,6 +1,6 @@
 ---
-title: Create and materialize assets
-description: Create and materialize assets
+title: Join customer and order data
+description: Create a custom asset to join customer and order data
 sidebar_position: 30
 ---
 
@@ -8,10 +8,6 @@ We have integrated with Sling and dbt to bring in and model the data. Next we wi
 
 - Build software-defined assets
 - Add a DuckDB resource
-
-## Relationship between components and definitions
-
-TODO
 
 ## 1. Create an asset
 
@@ -63,7 +59,7 @@ This adds a file, `resources.py`, to the `etl_tutorial` module:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/tree/resources.txt" />
 
-Within this file we will define the resource using the <PyObject section="resources" module="dagster" object="resource" decorator />.
+Within this file we will define the resource using the <PyObject section="definitions" module="dagster" object="Definitions" decorator />.
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/src/etl_tutorial/defs/resources.py"
