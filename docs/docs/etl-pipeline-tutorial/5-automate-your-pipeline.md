@@ -28,4 +28,4 @@ Associating automation directly with assets provides flexibility and allows you 
 
 ## Next steps
 
-- Continue this tutorial with adding a [sensor based asset](/etl-pipeline-tutorial/create-a-sensor)
+- Continue this tutorial with adding a [sensor](/etl-pipeline-tutorial/create-a-sensor)

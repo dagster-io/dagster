@@ -4,8 +4,8 @@ src
     ├── definitions.py
     └── defs
         ├── __init__.py
-        ├── ingest_files
+        ├── ingest
         │   ├── defs.yaml
         │   └── replication.yaml
-        └── jdbt
+        └── transform
             └── defs.yaml

@@ -1,5 +1,5 @@
 src
 └── etl_tutorial
     └── defs
-        └── jdbt
+        └── transform
             └── defs.yaml
