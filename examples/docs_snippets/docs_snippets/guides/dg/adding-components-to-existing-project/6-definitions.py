@@ -23,21 +23,22 @@ defs = dg.Definitions.merge(
         schedules=[sync_tables_daily_schedule, regenerate_analytics_hourly_schedule],
     ),
     dg.build_defs_for_component(
-        component=SlingReplicationCollectionComponent(
-            connections=[
-                SlingConnectionResource(
-                    name="DUCKDB",
-                    type="duckdb",
-                    instance="/tmp/jaffle_platform.duckdb",
-                )
-            ],
-            replications=[
-                SlingReplicationSpecModel(
-                    path=(
-                        Path(__file__).parent / "elt" / "sling" / "replication.yaml"
-                    ).as_posix(),
-                )
-            ],
+        component=dagster_sling.SlingReplicationCollectionComponent.from_attributes_dict(
+            attributes={
+                "connections": {
+                    "DUCKDB": {
+                        "type": "duckdb",
+                        "instance": "/tmp/jaffle_platform.duckdb",
+                    }
+                },
+                "replications": [
+                    {
+                        "path": (
+                            Path(__file__).parent / "elt" / "sling" / "replication.yaml"
+                        ).as_posix(),
+                    }
+                ],
+            }
         )
     ),
 )

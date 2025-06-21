@@ -17,5 +17,8 @@ dg list components
 │ dagster.UvRunComponent             │ Represents a Python script, alongside the set of assets or asset checks that it │
 │                                    │ is responsible for executing.                                                   │
 ├────────────────────────────────────┼─────────────────────────────────────────────────────────────────────────────────┤
+│ dagster.DefsFolderComponent        │ A component that represents a directory containing multiple Dagster definition  │
+│                                    │ modules.                                                                        │
+├────────────────────────────────────┼─────────────────────────────────────────────────────────────────────────────────┤
 │ my_existing_project.components.Foo │ COMPONENT SUMMARY HERE.                                                         │
 └────────────────────────────────────┴─────────────────────────────────────────────────────────────────────────────────┘

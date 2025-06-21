@@ -71,14 +71,14 @@ class Component(ABC):
     """Abstract base class for creating Dagster components.
 
     Components are the primary building blocks for programmatically creating Dagster
-    definitions. They enable building multiple interrelated definitions for use cases, provide
-    schema-based configuration, and built-in scaffolding support to simplify
+    definitions. They enable building multiple interrelated definitions for specific use cases,
+    provide schema-based configuration, and built-in scaffolding support to simplify
     component instantiation in projects. Components are automatically discovered by
     Dagster tooling and can be instantiated from YAML configuration files or Python code that
     conform to the declared schema.
 
     Key Capabilities:
-    - **Definition Factory**: Creates Dagster assets, jobs, schedules, and other definitions.
+    - **Definition Factory**: Creates Dagster assets, jobs, schedules, and other definitions
     - **Schema-Based Configuration**: Optional parameterization via YAML or Python objects
     - **Scaffolding Support**: Custom project structure generation via ``dg scaffold`` commands
     - **Tool Integration**: Automatic discovery by Dagster CLI and UI tools
@@ -88,10 +88,6 @@ class Component(ABC):
     - Every component must implement the ``build_defs()`` method, which serves as a factory for creating Dagster definitions.
     - Components can optionally inherit from ``Resolvable`` to add schema-based configuration capabilities, enabling parameterization through YAML files or structured Python objects.
     - Components can attach a custom scaffolder with the ``@scaffold_with`` decorator.
-
-    Args:
-        This is an abstract base class and should be subclassed rather than instantiated directly.
-        Configuration parameters are defined by subclassing ``Resolvable`` and adding fields.
 
     Examples:
         Simple component with hardcoded definitions:
@@ -222,17 +218,13 @@ class Component(ABC):
                 # Component implementation
                 pass
 
-    Note:
-        Components are abstract and must implement ``build_defs()``. The component system
-        automatically handles instantiation, parameter resolution, and integration with
-        Dagster's loading mechanisms.
-
     See Also:
         - :py:class:`dagster.Definitions`: The object returned by ``build_defs()``
         - :py:class:`dagster.ComponentLoadContext`: Context provided to ``build_defs()``
         - :py:class:`dagster.components.resolved.base.Resolvable`: Base for configurable components
         - :py:class:`dagster.Model`: Recommended base class for component schemas
         - :py:func:`dagster.scaffold_with`: Decorator for custom scaffolding
+
     """
 
     @classmethod
