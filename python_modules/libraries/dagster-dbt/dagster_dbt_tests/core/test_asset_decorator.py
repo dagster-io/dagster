@@ -31,6 +31,7 @@ from dagster import (
     asset,
     materialize,
 )
+from dagster._core.definitions.dependency import BlockingAssetChecksDependencyDefinition
 from dagster._core.definitions.tags import build_kind_tag, has_kind
 from dagster._core.definitions.utils import DEFAULT_IO_MANAGER_KEY
 from dagster._core.execution.context.compute import AssetExecutionContext
@@ -1121,11 +1122,41 @@ def test_dbt_with_python_interleaving(
         },
         # the second invocation of my_dbt_assets depends on the first, and the python step
         NodeInvocation(name="my_dbt_assets"): {
-            "__subset_input__stg_orders": DependencyDefinition(
-                node="my_dbt_assets_2", output="stg_orders"
+            "__subset_input__stg_orders": BlockingAssetChecksDependencyDefinition(
+                asset_check_dependencies=[
+                    DependencyDefinition(
+                        node="my_dbt_assets_2",
+                        output="stg_orders_accepted_values_stg_orders_status__placed__shipped__completed__return_pending__returned",
+                    ),
+                    DependencyDefinition(
+                        node="my_dbt_assets_2",
+                        output="stg_orders_not_null_stg_orders_order_id",
+                    ),
+                    DependencyDefinition(
+                        node="my_dbt_assets_2",
+                        output="stg_orders_unique_stg_orders_order_id",
+                    ),
+                ],
+                other_dependency=DependencyDefinition(node="my_dbt_assets_2", output="stg_orders"),
             ),
-            "__subset_input__stg_payments": DependencyDefinition(
-                node="my_dbt_assets_2", output="stg_payments"
+            "__subset_input__stg_payments": BlockingAssetChecksDependencyDefinition(
+                asset_check_dependencies=[
+                    DependencyDefinition(
+                        node="my_dbt_assets_2",
+                        output="stg_payments_accepted_values_stg_payments_payment_method__credit_card__coupon__bank_transfer__gift_card",
+                    ),
+                    DependencyDefinition(
+                        node="my_dbt_assets_2",
+                        output="stg_payments_not_null_stg_payments_payment_id",
+                    ),
+                    DependencyDefinition(
+                        node="my_dbt_assets_2",
+                        output="stg_payments_unique_stg_payments_payment_id",
+                    ),
+                ],
+                other_dependency=DependencyDefinition(
+                    node="my_dbt_assets_2", output="stg_payments"
+                ),
             ),
             "dagster_python_augmented_customers": DependencyDefinition(
                 node="dagster__python_augmented_customers", output="result"
