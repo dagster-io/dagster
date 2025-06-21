@@ -91,7 +91,7 @@ class ComponentLoadContext:
             self.resolution_context.with_source_position_tree(source_position_tree)
         )
 
-    def for_path(self, path: Path) -> "ComponentLoadContext":
+    def replace_path(self, path: Path) -> "ComponentLoadContext":
         return dataclasses.replace(self, path=path)
 
     def defs_relative_module_name(self, path: Path) -> str:

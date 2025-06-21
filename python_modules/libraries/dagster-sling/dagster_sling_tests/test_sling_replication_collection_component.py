@@ -82,7 +82,7 @@ def temp_sling_component_instance(
                 # update the defs yaml to add a duckdb instance
                 data["attributes"]["sling"]["connections"][0]["instance"] = f"{temp_dir}/duckdb"
 
-            context = ComponentLoadContext.for_test().for_path(component_path)
+            context = ComponentLoadContext.for_test().replace_path(component_path)
             component = get_underlying_component(context)
             assert isinstance(component, SlingReplicationCollectionComponent)
             yield component, component.build_defs(context)

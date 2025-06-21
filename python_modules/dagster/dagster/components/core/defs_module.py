@@ -228,7 +228,7 @@ class DefsFolderComponent(Component):
 
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
         return Definitions.merge(
-            *[child.build_defs(context.for_path(path)) for path, child in self.children.items()]
+            *[child.build_defs(context.replace_path(path)) for path, child in self.children.items()]
         )
 
     @classmethod
@@ -272,7 +272,7 @@ def find_components_from_context(context: ComponentLoadContext) -> Mapping[Path,
         relative_subpath = subpath.relative_to(context.path)
         if any(relative_subpath.match(pattern) for pattern in EXPLICITLY_IGNORED_GLOB_PATTERNS):
             continue
-        component = get_component(context.for_path(subpath))
+        component = get_component(context.replace_path(subpath))
         if component:
             found[subpath] = component
     return found
