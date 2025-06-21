@@ -1,5 +1,5 @@
 ---
-title: Create dbt connection
+title: Create dbt component
 description: Transform data with dbt
 sidebar_position: 20
 ---
