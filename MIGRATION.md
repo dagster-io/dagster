@@ -1,6 +1,6 @@
-# Version migration
+# Upgrading Dagster
 
-When new releases include breaking changes or deprecations, this document describes how to migrate.
+When new releases include breaking changes or deprecations, this document explains how to upgrade your projects.
 
 ## Migrating to 1.10.0
 
