@@ -78,18 +78,21 @@ Some notes on developing in Dagster:
 For development, run an instance of the webserver providing GraphQL service on a different port than the webapp, with any pipeline. For example:
 
 ```bash
-cd dagster/examples/docs_snippets/docs_snippets/intro_tutorial/basics/connecting_ops/
+cd examples/docs_snippets/docs_snippets/intro_tutorial/basics/connecting_ops/
 dagster-webserver -p 3333 -f complex_job.py
 ```
 
 Keep this running. Then, in another terminal, run the local development (autoreloading, etc.) version of the webapp:
 
+:::tip
+Don't forget to activate the virtual environment (`source .venv/scripts/activate`) when you open another terminal!
+:::
 ```bash
-cd dagster/js_modules/dagster-ui
+cd js_modules/dagster-ui
 make dev_webapp
 ```
 
-During development, you might find these commands useful. Run them from `dagster/js_modules/dagster-ui`:
+During development, you might find these commands useful. Run them from `js_modules/dagster-ui`:
 
 - `yarn ts`: Typescript typechecking
 - `yarn lint`: Linting with autofix
