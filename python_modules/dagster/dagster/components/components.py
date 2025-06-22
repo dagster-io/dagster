@@ -2,6 +2,9 @@ from dagster.components.core.defs_module import DefsFolderComponent as DefsFolde
 from dagster.components.lib.definitions_component import (
     DefinitionsComponent as DefinitionsComponent,
 )
+from dagster.components.lib.executable_component.python_script_component import (
+    PythonScriptComponent as PythonScriptComponent,
+)
 
 # These just modify the exsiting Dagster decorators
 from dagster.components.lib.shim_components.asset import asset as asset

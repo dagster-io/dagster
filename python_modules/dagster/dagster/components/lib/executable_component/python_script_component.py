@@ -53,11 +53,10 @@ class PythonScriptComponent(ExecutableComponent):
         component_load_context: ComponentLoadContext,
     ) -> Sequence["PipesExecutionResult"]:
         assert not self.resource_keys, "Pipes subprocess scripts cannot have resources"
-        return invoke_runner(
-            context=context,
-            command=get_cmd(
-                script_runner_exe=[check.not_none(shutil.which("python"), "python not found")],
-                spec=self.execution,
-                path=str(component_load_context.path),
-            ),
+        cmd = get_cmd(
+            script_runner_exe=[check.not_none(shutil.which("python"), "python not found")],
+            spec=self.execution,
+            path=str(component_load_context.path),
         )
+        context.log.info(f"cmd: {cmd}")
+        return invoke_runner(context=context, command=cmd)
