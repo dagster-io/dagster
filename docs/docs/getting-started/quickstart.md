@@ -19,86 +19,87 @@ import ProjectCreationPrereqs from '@site/docs/partials/\_ProjectCreationPrereqs
 
 <Tabs groupId="package-manager">
    <TabItem value="uv" label="uv">
-   1. Open your terminal and scaffold a new Dagster project:
+      1. Open your terminal and scaffold a new Dagster project:
 
-      ```shell
-      uvx -U create-dagster project dagster-quickstart
-      ```
-   
-   2. Respond `y` to the prompt to run `uv sync` after scaffolding
+         ```shell
+         uvx -U create-dagster project dagster-quickstart
+         ```
+      
+      2. Respond `y` to the prompt to run `uv sync` after scaffolding
 
-      ![Responding y to uv sync prompt](/images/getting-started/quickstart/uv_sync_yes.png)
+         ![Responding y to uv sync prompt](/images/getting-started/quickstart/uv_sync_yes.png)
 
-   3. Change to the `dagster-quickstart` directory:
+      3. Change to the `dagster-quickstart` directory:
 
-      ```shell
-      cd dagster-quickstart
-      ```
-   4. Activate the virtual environment:
+         ```shell
+         cd dagster-quickstart
+         ```
+      4. Activate the virtual environment:
 
-      <Tabs>
-         <TabItem value="macos" label="MacOS/Unix">
-            ```
-            source .venv/bin/activate
-            ```
-         </TabItem>
-         <TabItem value="windows" label="Windows">
-            ```
-            .venv\Scripts\activate
-            ```
-         </TabItem>
-      </Tabs>
+         <Tabs>
+            <TabItem value="macos" label="MacOS/Unix">
+               ```shell
+               source .venv/bin/activate
+               ```
+            </TabItem>
+            <TabItem value="windows" label="Windows">
+               ```shell
+               .venv\Scripts\activate
+               ```
+            </TabItem>
+         </Tabs>
 
-   5. Install the required dependencies in the virtual environment:
+      5. Install the required dependencies in the virtual environment:
 
-      ```bash
-      uv pip install pandas
-      ```
+         ```shell
+         uv pip install pandas
+         ```
    </TabItem>
+
    <TabItem value="pip" label="pip">
-   1. Open your terminal and scaffold a new Dagster project:
+      1. Open your terminal and scaffold a new Dagster project:
 
-      ```shell
-      create-dagster project dagster-quickstart
-      ```
-   2. Change to the `dagster-quickstart` directory:
+         ```shell
+         create-dagster project dagster-quickstart
+         ```
+      2. Change to the `dagster-quickstart` directory:
 
-      ```shell
-      cd dagster-quickstart
-      ```
-   
-   3. Create and activate a virtual environment:
+         ```shell
+         cd dagster-quickstart
+         ```
+      
+      3. Create and activate a virtual environment:
 
-   <Tabs>
-     <TabItem value="macos" label="MacOS/Unix">
-      ```shell
-      python -m venv .venv
-      ```
-      ```shell
-      source .venv/bin/activate
-      ```
-     </TabItem>
-     <TabItem value="windows" label="Windows">
-      ```shell
-      python -m venv .venv
-      ```
-      ```shell
-      .venv\Scripts\activate
-      ```
-     </TabItem>
-   </Tabs>
+         <Tabs>
+            <TabItem value="macos" label="MacOS/Unix">
+               ```shell
+               python -m venv .venv
+               ```
+               ```shell
+               source .venv/bin/activate
+               ```
+            </TabItem>
+            <TabItem value="windows" label="Windows">
+               ```shell
+               python -m venv .venv
+               ```
+               ```shell
+               .venv\Scripts\activate
+               ```
+            </TabItem>
+         </Tabs>
 
-   4. Install the required dependencies:
+      4. Install the required dependencies:
 
-      ```shell
-      pip install pandas
-      ```
-   
-   5. Install your project as an editable package:
+         ```shell
+         pip install pandas
+         ```
+      
+      5. Install your project as an editable package:
 
-      ```shell
-      pip install --editable .
-      ```
+         ```shell
+         pip install --editable .
+         ```
    </TabItem>
 </Tabs>
 
@@ -107,35 +108,35 @@ Your new Dagster project should have the following structure:
 <Tabs groupId="package-manager">
 
    <TabItem value="uv" label="uv">
-   ```shell
-   .
-   └── dagster-quickstart
-      ├── pyproject.toml
-      ├── src
-      │   └── dagster_quickstart
-      │       ├── __init__.py
-      │       ├── definitions.py
-      │       └── defs
-      │           └── __init__.py
-      ├── tests
-      │   └── __init__.py
-      └── uv.lock
-   ```
+      ```shell
+      .
+      └── dagster-quickstart
+         ├── pyproject.toml
+         ├── src
+         │   └── dagster_quickstart
+         │       ├── __init__.py
+         │       ├── definitions.py
+         │       └── defs
+         │           └── __init__.py
+         ├── tests
+         │   └── __init__.py
+         └── uv.lock
+      ```
    </TabItem>
    <TabItem value="pip" label="pip">
-   ```shell
-   .
-   └── dagster-quickstart
-      ├── pyproject.toml
-      ├── src
-      │   └── dagster_quickstart
-      │       ├── __init__.py
-      │       ├── definitions.py
-      │       └── defs
-      │           └── __init__.py
-      └── tests
-         └── __init__.py
-   ```
+      ```shell
+      .
+      └── dagster-quickstart
+         ├── pyproject.toml
+         ├── src
+         │   └── dagster_quickstart
+         │       ├── __init__.py
+         │       ├── definitions.py
+         │       └── defs
+         │           └── __init__.py
+         └── tests
+            └── __init__.py
+      ```
    </TabItem>
 </Tabs>
 
@@ -143,13 +144,13 @@ Your new Dagster project should have the following structure:
 
 Use the [`dg scaffold defs`](/api/dg/dg-cli#dg-scaffold) command to generate an assets file on the command line:
 
-   ```bash
+   ```shell
    dg scaffold defs dagster.asset assets.py
    ```
 
    This will add a new file `assets.py` to the `defs` directory:
 
-   ```
+   ```shell
    src
    └── dagster_quickstart
       ├── __init__.py
@@ -162,7 +163,7 @@ Use the [`dg scaffold defs`](/api/dg/dg-cli#dg-scaffold) command to generate an 
 
 Next, create a `sample_data.csv` file. This file will act as the data source for your Dagster pipeline:
 
-   ```bash
+   ```shell
    mkdir src/dagster_quickstart/defs/data && touch src/dagster_quickstart/defs/data/sample_data.csv
    ```
 
