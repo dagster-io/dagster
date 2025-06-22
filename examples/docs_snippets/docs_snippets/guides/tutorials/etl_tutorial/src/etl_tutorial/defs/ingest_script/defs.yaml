@@ -1,0 +1,9 @@
+type: dagster.components.PythonScriptComponent
+
+attributes:
+  execution: 
+    path: import_csvs_to_duckdb.py
+  assets:
+    - key: raw_customers
+    - key: raw_orders
+    - key: raw_payments
