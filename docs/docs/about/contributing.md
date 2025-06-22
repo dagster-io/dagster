@@ -8,7 +8,7 @@ We love to see our community members get involved! If you are planning to contri
 
 ## Environment setup
 
-You can develop for dagster using macOS, Linux, or Windows. If using Windows, you will need to install [WSL](https://learn.microsoft.com/windows/wsl/install) to follow the steps in this guide.
+You can develop for Dagster using macOS, Linux, or Windows. If using Windows, you will need to install [WSL](https://learn.microsoft.com/windows/wsl/install) to follow the steps in this guide.
 
 1. Clone the Dagster repository to the destination of your choice:
 
