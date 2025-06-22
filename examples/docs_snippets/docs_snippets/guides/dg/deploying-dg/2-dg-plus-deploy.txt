@@ -1,0 +1,8 @@
+dg plus deploy
+
+Current branch is HEAD, so deploying to prod.
+Do you want to continue? [y/N]: y
+Deploying to prod.
+...
+Agent synced changes to jaffle-platform. Changes should now be visible in Dagster Cloud.
+View the status of your locations at https://hooli.dagster.cloud/prod/locations.
