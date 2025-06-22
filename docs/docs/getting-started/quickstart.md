@@ -37,16 +37,16 @@ import ProjectCreationPrereqs from '@site/docs/partials/\_ProjectCreationPrereqs
    4. Activate the virtual environment:
 
       <Tabs>
-      <TabItem value="macos" label="MacOS/Unix">
-         ```
-         source .venv/bin/activate
-         ```
-      </TabItem>
-      <TabItem value="windows" label="Windows">
-         ```
-         .venv\Scripts\activate
-         ```
-      </TabItem>
+         <TabItem value="macos" label="MacOS/Unix">
+            ```
+            source .venv/bin/activate
+            ```
+         </TabItem>
+         <TabItem value="windows" label="Windows">
+            ```
+            .venv\Scripts\activate
+            ```
+         </TabItem>
       </Tabs>
 
    5. Install the required dependencies in the virtual environment:
