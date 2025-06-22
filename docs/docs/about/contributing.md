@@ -8,6 +8,8 @@ We love to see our community members get involved! If you are planning to contri
 
 ## Environment setup
 
+You can develop for dagster using macOS, Linux, or Windows. If using Windows, you will need to install [WSL](https://learn.microsoft.com/windows/wsl/install) to follow the steps in this guide.
+
 1. Clone the Dagster repository to the destination of your choice:
 
    ```bash
@@ -15,7 +17,7 @@ We love to see our community members get involved! If you are planning to contri
    cd dagster
    ```
 
-2. [Install uv](https://docs.astral.sh/uv/getting-started/installation/). On macOS, Linux, or WSL, you can use `curl` to download the script and execute it with `sh`:
+2. [Install uv](https://docs.astral.sh/uv/getting-started/installation/). You can use `curl` to download the script and execute it with `sh`:
 
    ```bash
    curl -LsSf https://astral.sh/uv/install.sh | sh
