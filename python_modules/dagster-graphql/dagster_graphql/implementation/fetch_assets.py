@@ -13,6 +13,7 @@ from dagster import (
 )
 from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.partition import PartitionsDefinition, PartitionsSubset
+from dagster._core.definitions.remote_asset_graph import RemoteAssetNode
 from dagster._core.definitions.time_window_partitions import (
     PartitionRangeStatus,
     TimeWindowPartitionsDefinition,
@@ -116,31 +117,25 @@ def get_assets(
         materialized_keys = instance.get_asset_keys(
             prefix=prefix, limit=limit, cursor=normalized_cursor_str
         )
+        asset_nodes_by_asset_key = {
+            asset_key: asset_node
+            for asset_key, asset_node in _get_asset_nodes_by_asset_key(graphene_info).items()
+            if (not prefix or asset_key.path[: len(prefix)] == prefix)
+            and (not normalized_cursor_str or asset_key.to_string() > normalized_cursor_str)
+            and (not asset_keys or asset_key in asset_keys)
+        }
+
+        merged_asset_keys = sorted(
+            set(materialized_keys).union(asset_nodes_by_asset_key.keys()), key=str
+        )
     else:
-        materialized_keys = asset_keys
+        merged_asset_keys = asset_keys
 
-    asset_nodes_by_asset_key = {
-        asset_key: asset_node
-        for asset_key, asset_node in get_asset_nodes_by_asset_key(graphene_info).items()
-        if (not prefix or asset_key.path[: len(prefix)] == prefix)
-        and (not normalized_cursor_str or asset_key.to_string() > normalized_cursor_str)
-        and (not asset_keys or asset_key in asset_keys)
-    }
-
-    merged_asset_keys = sorted(
-        set(materialized_keys).union(asset_nodes_by_asset_key.keys()), key=str
-    )
     if limit:
         merged_asset_keys = merged_asset_keys[:limit]
 
     return GrapheneAssetConnection(
-        nodes=[
-            GrapheneAsset(
-                key=asset_key,
-                definition=asset_nodes_by_asset_key.get(asset_key),
-            )
-            for asset_key in merged_asset_keys
-        ],
+        nodes=[GrapheneAsset(key=asset_key) for asset_key in merged_asset_keys],
         cursor=merged_asset_keys[-1].to_string() if merged_asset_keys else None,
     )
 
@@ -191,16 +186,14 @@ def get_asset_node_definition_collisions(
     return results
 
 
-def get_asset_nodes_by_asset_key(
+def _get_asset_nodes_by_asset_key(
     graphene_info: "ResolveInfo",
-) -> Mapping[AssetKey, "GrapheneAssetNode"]:
+) -> Mapping[AssetKey, RemoteAssetNode]:
     """If multiple repositories have asset nodes for the same asset key, chooses the asset node that
     has an op.
     """
-    from dagster_graphql.schema.asset_graph import GrapheneAssetNode
-
     return {
-        remote_node.key: GrapheneAssetNode(remote_node)
+        remote_node.key: remote_node
         for remote_node in graphene_info.context.asset_graph.asset_nodes
     }
 
@@ -223,7 +216,6 @@ def get_asset_node(
 def get_asset(
     graphene_info: "ResolveInfo", asset_key: AssetKey
 ) -> Union["GrapheneAsset", "GrapheneAssetNotFoundError"]:
-    from dagster_graphql.schema.asset_graph import GrapheneAssetNode
     from dagster_graphql.schema.errors import GrapheneAssetNotFoundError
     from dagster_graphql.schema.pipelines.pipeline import GrapheneAsset
 
@@ -234,14 +226,7 @@ def get_asset(
     if not has_remote_node and not instance.has_asset_key(asset_key):
         return GrapheneAssetNotFoundError(asset_key=asset_key)
 
-    if has_remote_node:
-        def_node = GrapheneAssetNode(
-            graphene_info.context.asset_graph.get(asset_key),
-        )
-    else:
-        def_node = None
-
-    return GrapheneAsset(key=asset_key, definition=def_node)
+    return GrapheneAsset(key=asset_key)
 
 
 def get_asset_materialization_event_records(
