@@ -78,17 +78,16 @@ class Component(ABC):
     conform to the declared schema.
 
     Key Capabilities:
-    - **Definition Factory**: Creates Dagster assets, jobs, schedules, and other definitions
+    - **Definition Factory**: Creates Dagster assets, jobs, schedules, and other definitions.
     - **Schema-Based Configuration**: Optional parameterization via YAML or Python objects
     - **Scaffolding Support**: Custom project structure generation via ``dg scaffold`` commands
     - **Tool Integration**: Automatic discovery by Dagster CLI and UI tools
     - **Testing Utilities**: Built-in methods for testing component behavior
 
     Implementing a component:
-
-    * Every component must implement the ``build_defs()`` method, which serves as a factory for creating Dagster definitions.
-    * Components can optionally inherit from ``Resolvable`` to add schema-based configuration capabilities, enabling parameterization through YAML files or structured Python objects.
-    * Components can attach a custom scaffolder with the ``@scaffold_with`` decorator.
+    - Every component must implement the ``build_defs()`` method, which serves as a factory for creating Dagster definitions.
+    - Components can optionally inherit from ``Resolvable`` to add schema-based configuration capabilities, enabling parameterization through YAML files or structured Python objects.
+    - Components can attach a custom scaffolder with the ``@scaffold_with`` decorator.
 
     Args:
         This is an abstract base class and should be subclassed rather than instantiated directly.
@@ -183,9 +182,11 @@ class Component(ABC):
 
     .. code-block:: python
 
+        import textwrap
+
         import dagster as dg
-        from dagster.components.scaffold import Scaffolder, ScaffoldRequest
-        from pathlib import Path
+        from dagster.components import Scaffolder, ScaffoldRequest
+
 
         class DatabaseComponentScaffolder(Scaffolder):
             def scaffold(self, request: ScaffoldRequest) -> None:
@@ -195,17 +196,22 @@ class Component(ABC):
 
                 # Generate defs.yaml with template
                 defs_file = component_dir / "defs.yaml"
-                defs_file.write_text(f'''
-        type: {request.type_name}
-        attributes:
-        table_name: "example_table"
-        columns: ["id", "name"]
-        database_url: "${{DATABASE_URL}}"
-        '''.strip())
+                defs_file.write_text(
+                    textwrap.dedent(
+                        f'''
+                    type: {request.type_name}
+                    attributes:
+                        table_name: "example_table"
+                        columns: ["id", "name"]
+                        database_url: "${{DATABASE_URL}}"
+                '''.strip()
+                    )
+                )
 
                 # Generate SQL query template
                 sql_file = component_dir / "query.sql"
                 sql_file.write_text("SELECT * FROM example_table;")
+
 
         @dg.scaffold_with(DatabaseComponentScaffolder)
         class DatabaseTableComponent(dg.Component, dg.Resolvable, dg.Model):

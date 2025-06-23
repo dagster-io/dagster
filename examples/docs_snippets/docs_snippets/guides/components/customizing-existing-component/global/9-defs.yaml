@@ -1,6 +1,10 @@
 type: my_project.components.custom_sling_replication_component.CustomSlingReplicationComponent
 
 attributes:
+  connections:
+    DUCKDB:
+      type: duckdb
+      instance: /tmp/jaffle_platform.duckdb
   replications:
     - path: replication.yaml
 post_processing:

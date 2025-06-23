@@ -28,7 +28,7 @@ class PythonScriptComponent(ExecutableComponent):
 
     Examples:
     ```yaml
-    type: dagster.components.PythonScriptComponent
+    type: dagster.PythonScriptComponent
     attributes:
       execution:
         path: update_table.py
