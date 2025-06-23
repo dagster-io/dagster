@@ -4,12 +4,10 @@ description: Transform data with dbt
 sidebar_position: 20
 ---
 
-A data platform typically involves various roles working together, each contributing in different ways. Some individuals will be more involved in certain areas than others. For example, with [dbt](https://www.getdbt.com/), analysts may focus primarily on modeling the data but still want their models integrated into the overall pipeline.
+A data platform typically involves people in various roles working together, each contributing in different ways. Some individuals will be more involved in certain areas than others. For example, with [dbt](https://www.getdbt.com/), analysts may focus primarily on modeling the data, but still want their models integrated into the overall pipeline.
 
-Next you will incorporate a dbt project to model the data. In this step, you will:
+In this step, we will incorporate a dbt project to model the data we loaded with DuckDB.
 
-- Integrate with dbt
-- Build software-defined assets for dbt models in a dbt project
 
 ## 1. Add the dbt project
 
@@ -30,17 +28,22 @@ There will now be a directory `transform` within the root of the project contain
 └── uv.lock
 ```
 
-This dbt project is already set with models that work with the raw data we brought in previously and requires no modifications.
 
-## 2. Define the dbt Component
+:::note
 
-Now that you have a dbt project to work with, you'll install both the Dagster dbt integration and the dbt adapter for DuckDB. Add both packages to your Dagster project:
+This dbt project already contains models that work with the raw data we brought in previously and requires no modifications.
+
+:::
+
+## 2. Scaffold a dbt component definition
+
+Now that we have a dbt project to work with, we need to install both the Dagster dbt integration and the dbt adapter for DuckDB:
 
 ```bash
 uv pip install dagster-dbt dbt-duckdb
 ```
 
-Next we can scaffold our dbt component by providing the path to the dbt project we added earlier:
+Next, we can scaffold a dbt component definition by providing the path to the dbt project we added earlier:
 
 ```bash
 dg scaffold defs dagster_dbt.DbtProjectComponent transform --project-path transform/jdbt
@@ -52,7 +55,7 @@ This will add the directory `transform` to the `etl_tutorial` module:
 
 ## 3. Configure the dbt `defs.yaml`
 
-This component generates a single file, `defs.yaml`, which configures the `dagster_dbt`.`DbtProjectComponent`. Most of the file’s contents were automatically set when we scaffolded the component and provided the path to the dbt project:
+The dbt component creates a single file, `defs.yaml`, which configures the `dagster_dbt`.`DbtProjectComponent`. Most of the file’s contents were generated when we scaffolded the component and provided the path to the dbt project:
 
 ```yaml title="src/etl_tutorial/defs/transform/defs.yaml"
 type: dagster_dbt.DbtProjectComponent
@@ -91,13 +94,13 @@ This will return a table of all the definitions within the Dagster project. As w
 
 You might be wondering about the relationship between components and definitions. Components. At a high level you a component builds a definition for a specific purpose.
 
-**Components** are objects that programmatically build assets and other Dagster object. They accept specific parameters and use them to build the actual definitions you need. In the case of `DbtProjectComponent` this would be the dbt project path and the definitions it creates are the assets for each dbt model.
+**Components** are objects that programmatically build assets and other Dagster objects. They accept specific parameters and use them to build the actual definitions you need. In the case of `DbtProjectComponent`, this would be the dbt project path and the definitions it creates are the assets for each dbt model.
 
 
-**Definitions** are objects that combine metadata about an entity with a Python function that defines how it behaves. For example, when we used the `@asset` decorator on the functions for our DuckDB ingestion. This tells Dagster both what the asset is and how to materialize it.
+**Definitions** are objects that combine metadata about an entity with a Python function that defines how it behaves -- for example, when we used the `@asset` decorator on the functions for our DuckDB ingestion. This tells Dagster both what the asset is and how to materialize it.
 
 :::
 
 ## Next steps
 
-- Continue this tutorial with your [add a resource](/etl-pipeline-tutorial/add-a-resource)
+In the next step, we will [add a DuckDB resource](/etl-pipeline-tutorial/add-a-resource) to our project.

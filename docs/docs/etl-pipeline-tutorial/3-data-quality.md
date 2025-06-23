@@ -11,7 +11,7 @@ Data quality is critical in data pipelines. Inspecting individual assets ensures
 
 ## 1. Define an asset check
 
-In Dagster, you define [asset checks](/guides/test/asset-checks) similarly to how you define assets. Asset checks run when an asset is materialized and ensure that certain criteria are met.
+In Dagster, you define [asset checks](/guides/test/asset-checks) the same way you define assets. Asset checks run when an asset is materialized and ensure that certain criteria are met.
 
 You can place an asset check in the `assets.py` file alongside the asset it validates. In our case, we'll query the `raw_customers` table—created by our asset—and verify that the `id` column contains no null values:
 
@@ -49,7 +49,7 @@ The asset check is using the same `DuckDBResource` resource we defined for the a
 ```
 :::
 
-With the Dagster UI, you can now see that an asset check is associated with the `joined_data` asset.
+In the Dagster UI, you can now see that an asset check is associated with the `joined_data` asset:
 
 ![2048 resolution](/images/tutorial/etl-tutorial/asset-check.png)
 

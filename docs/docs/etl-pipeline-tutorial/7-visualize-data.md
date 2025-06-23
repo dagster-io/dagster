@@ -37,7 +37,7 @@ cd dashboard && npm install
 
 ## 2. Define the Evidence Component
 
-Let's add the Dagster's Evidence integration:
+Next, we will need to install Dagster's [Evidence integration](https://docs.dagster.io/integrations/libraries/evidence):
 
 ```bash
 uv pip install dagster-evidence
@@ -67,7 +67,7 @@ However we can still configure our Evidence component to be dependent on multipl
 
 ## 4. Execute the Evidence asset
 
-With the Evidence component configured, our assets graph should look like this.
+With the Evidence component configured, our assets graph should look like this:
 
 ![2048 resolution](/images/tutorial/etl-tutorial/assets-evidence.png)
 
@@ -77,7 +77,7 @@ Execute the downstream `dashboard` asset which will build our Evidence dashboard
 cd dashboard/build && python -m http.server
 ```
 
-You should see a dashboard like the following at [http://localhost:8000/](http://localhost:8000/).
+You should see a dashboard like the following at [http://localhost:8000/](http://localhost:8000/):
 
 ![2048 resolution](/images/tutorial/etl-tutorial/evidence-dashboard.png)
 

@@ -68,7 +68,7 @@ To follow the steps in this tutorial, you'll need:
 
    In your browser, navigate to [http://127.0.0.1:3000](http://127.0.0.1:3000)
 
-   At this point the project will be empty but we will continue to add to it throughout the tutorial.
+   At this point the project will be empty, but we will continue to add to it throughout the tutorial.
 
    ![2048 resolution](/images/tutorial/etl-tutorial/empty-project.png)
 
