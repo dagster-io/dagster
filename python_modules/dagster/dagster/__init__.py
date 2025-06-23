@@ -640,6 +640,11 @@ from dagster._utils.warnings import (
     PreviewWarning as PreviewWarning,
     SupersessionWarning as SupersessionWarning,
 )
+from dagster.components import (
+    FunctionComponent as FunctionComponent,
+    PythonScriptComponent as PythonScriptComponent,
+    UvRunComponent as UvRunComponent,
+)
 from dagster.components.component.component import (
     Component as Component,
     ComponentTypeSpec as ComponentTypeSpec,

@@ -320,16 +320,15 @@ def test_component_docs_using_env(
                     type: dagster_sling.SlingReplicationCollectionComponent
 
                     attributes:
-                      sling:
-                        connections:
-                          - name: SNOWFLAKE
-                            type: snowflake
-                            account: "{{ env.SNOWFLAKE_ACCOUNT }}"
-                            user: "{{ env.SNOWFLAKE_USER }}"
-                            password: "{{ env.SNOWFLAKE_PASSWORD }}"
-                            database: "{{ env.SNOWFLAKE_DATABASE }}"
-                        replications:
-                          - path: replication.yaml
+                      connections:
+                        SNOWFLAKE:
+                          type: snowflake
+                          account: "{{ env.SNOWFLAKE_ACCOUNT }}"
+                          user: "{{ env.SNOWFLAKE_USER }}"
+                          password: "{{ env.SNOWFLAKE_PASSWORD }}"
+                          database: "{{ env.SNOWFLAKE_DATABASE }}"
+                      replications:
+                        - path: replication.yaml
                     """),
             )
 
@@ -356,16 +355,15 @@ def test_component_docs_using_env(
                     type: dagster_sling.SlingReplicationCollectionComponent
 
                     attributes:
-                      sling:
-                        connections:
-                          - name: SNOWFLAKE
-                            type: snowflake
-                            account: "{{ env.SNOWFLAKE_ACCOUNT }}"
-                            user: "{{ env.SNOWFLAKE_USER }}"
-                            password: "{{ env.SNOWFLAKE_PASSWORD }}"
-                            database: "{{ env.SNOWFLAKE_DATABASE }}"
-                        replications:
-                          - path: replication.yaml
+                      connections:
+                        SNOWFLAKE:
+                          type: snowflake
+                          account: "{{ env.SNOWFLAKE_ACCOUNT }}"
+                          user: "{{ env.SNOWFLAKE_USER }}"
+                          password: "{{ env.SNOWFLAKE_PASSWORD }}"
+                          database: "{{ env.SNOWFLAKE_DATABASE }}"
+                      replications:
+                        - path: replication.yaml
 
                     requirements:
                       env:
