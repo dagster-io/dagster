@@ -144,7 +144,7 @@ export const InsightsBarChart = (props: Props) => {
         display: true,
         text: metricLabel,
         font: {
-          weight: '700',
+          weight: 700,
           size: 12,
         },
       },

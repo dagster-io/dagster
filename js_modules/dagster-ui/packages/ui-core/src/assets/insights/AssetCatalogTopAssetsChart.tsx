@@ -5,6 +5,7 @@ import {
   Box,
   Button,
   Colors,
+  FontFamily,
   Icon,
   MiddleTruncate,
   Mono,
@@ -119,6 +120,10 @@ export const AssetCatalogTopAssetsChart = React.memo(
           x: {
             beginAtZero: true,
             max: maxValue,
+            ticks: {
+              color: rgbColors[Colors.textLight()],
+              font: {size: 12, family: FontFamily.monospace},
+            },
             grid: {color: rgbColors[Colors.keylineDefault()], borderDash: [4, 4]},
           },
           y: {grid: {display: false}, ticks: {display: false}, beginAtZero: true},

@@ -14,6 +14,8 @@ from dagster._core.definitions.partition import StaticPartitionsDefinition
 from dagster._core.definitions.time_window_partitions import (
     DailyPartitionsDefinition,
     HourlyPartitionsDefinition,
+    TimeWindowPartitionsDefinition,
+    WeeklyPartitionsDefinition,
 )
 from dagster.components.resolved.context import ResolutionContext
 from dagster.components.resolved.core_models import (
@@ -125,6 +127,44 @@ def test_asset_spec_hourly_partitions_def():
     assert spec.partitions_def.end == datetime.datetime(
         year=2021, month=1, day=1, hour=2, tzinfo=datetime.timezone.utc
     )
+
+
+def test_asset_spec_weekly_partitions_def():
+    model = AssetSpecKwargs.model()(
+        key="asset_key",
+        partitions_def={
+            "type": "weekly",
+            "start_date": "2021-01-01",
+            "timezone": "UTC",
+        },
+    )
+
+    spec = resolve_asset_spec(model=model, context=ResolutionContext.default())
+    assert isinstance(spec.partitions_def, WeeklyPartitionsDefinition)
+    assert spec.partitions_def.start == datetime.datetime(
+        year=2021, month=1, day=1, tzinfo=datetime.timezone.utc
+    )
+
+
+def test_asset_spec_time_window_partitions_def():
+    model = AssetSpecKwargs.model()(
+        key="asset_key",
+        partitions_def={
+            "type": "time_window",
+            "start_date": "2021-01-01",
+            "timezone": "UTC",
+            "fmt": "%Y-%m-%d",
+            "cron_schedule": "0 11/2 * * *",
+        },
+    )
+
+    spec = resolve_asset_spec(model=model, context=ResolutionContext.default())
+    assert isinstance(spec.partitions_def, TimeWindowPartitionsDefinition)
+    assert spec.partitions_def.start == datetime.datetime(
+        year=2021, month=1, day=1, tzinfo=datetime.timezone.utc
+    )
+    assert spec.partitions_def.timezone == "UTC"
+    assert spec.partitions_def.cron_schedule == "0 11/2 * * *"
 
 
 def test_asset_spec_static_partitions_def():

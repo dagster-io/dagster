@@ -68,8 +68,8 @@ def component_for_test(temp_cwd: Path):
 
 def test_load_dags_basic(component_for_test: type[AirflowInstanceComponent]) -> None:
     defs = build_component_defs_for_test(
-        component_for_test,
-        {
+        component_type=component_for_test,
+        attrs={
             "auth": {
                 "type": "basic_auth",
                 "webserver_url": "http://localhost:8080",
@@ -77,7 +77,9 @@ def test_load_dags_basic(component_for_test: type[AirflowInstanceComponent]) -> 
                 "password": "admin",
             },
             "name": "test_instance",
-            "asset_post_processors": [
+        },
+        post_processing={
+            "assets": [
                 {
                     "target": "*",
                     "attributes": {
@@ -86,7 +88,7 @@ def test_load_dags_basic(component_for_test: type[AirflowInstanceComponent]) -> 
                         },
                     },
                 }
-            ],
+            ]
         },
     )
 
@@ -188,8 +190,8 @@ def test_mapped_assets(component_for_test: type[AirflowInstanceComponent], temp_
 
     # Next, add an airlift component which references the asset
     defs = build_component_defs_for_test(
-        component_for_test,
-        {
+        component_type=component_for_test,
+        attrs={
             "auth": {
                 "type": "basic_auth",
                 "webserver_url": "http://localhost:8080",
@@ -209,16 +211,14 @@ def test_mapped_assets(component_for_test: type[AirflowInstanceComponent], temp_
                     "assets": [{"by_key": "my_asset_2"}, {"spec": {"key": "my_ext_asset_2"}}],
                 }
             ],
-            "asset_post_processors": [
+        },
+        post_processing={
+            "assets": [
                 {
                     "target": "*",
-                    "attributes": {
-                        "metadata": {
-                            "foo": "bar",
-                        },
-                    },
+                    "attributes": {"metadata": {"foo": "bar"}},
                 }
-            ],
+            ]
         },
     )
 

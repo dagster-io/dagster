@@ -50,6 +50,8 @@ enum DagsterEventType {
   STEP_EXPECTATION_RESULT
   ASSET_CHECK_EVALUATION_PLANNED
   ASSET_CHECK_EVALUATION
+  ASSET_HEALTH_CHANGED
+  ASSET_WIPED
   RUN_ENQUEUED
   RUN_DEQUEUED
   RUN_STARTING
@@ -606,21 +608,18 @@ type Asset {
   key: AssetKey!
   assetMaterializations(
     partitions: [String!]
-    partitionInLast: Int
     beforeTimestampMillis: String
     afterTimestampMillis: String
     limit: Int
   ): [MaterializationEvent!]!
   assetObservations(
     partitions: [String!]
-    partitionInLast: Int
     beforeTimestampMillis: String
     afterTimestampMillis: String
     limit: Int
   ): [ObservationEvent!]!
   assetEventHistory(
     partitions: [String!]
-    partitionInLast: Int
     beforeTimestampMillis: String
     afterTimestampMillis: String
     limit: Int!

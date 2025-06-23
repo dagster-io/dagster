@@ -3,6 +3,10 @@ import re
 import sys
 from typing import List, Optional
 
+from dagster_buildkite.quarantine_utils import (
+    get_buildkite_quarantined_objects,
+    filter_and_print_steps_by_quarantined,
+)
 from dagster_buildkite.steps.dagster import build_dagster_steps, build_repo_wide_steps
 from dagster_buildkite.steps.dagster_ui import (
     build_dagster_ui_components_steps,
@@ -122,30 +126,38 @@ def build_dagster_oss_main_steps() -> List[BuildkiteStep]:
     steps += build_dagster_ui_core_steps()
     steps += build_dagster_steps()
 
-    skip_quarantined_steps = os.getenv("SKIPPED_QUARANTINED_STEPS") or ""
-    mute_quarantined_steps = os.getenv("MUTED_QUARANTINED_STEPS") or ""
-    print(
-        f"skip_quarantined_steps = {skip_quarantined_steps}",
-        file=sys.stderr,
-    )
-    print(
-        f"mute_quarantined_steps = {mute_quarantined_steps}",
-        file=sys.stderr,
-    )
-    if skip_quarantined_steps or mute_quarantined_steps:
-        steps, skipped_steps, muted_steps = filter_steps_by_quarantined(
-            steps, skip_quarantined_steps, mute_quarantined_steps
-        )
-        if skipped_steps:
-            for step in skipped_steps:
-                print(
-                    f"Skipped step: {step.get('label') or 'unnamed'}", file=sys.stderr
-                )
-        if muted_steps:
-            for step in muted_steps:
-                print(f"Muted step: {step.get('label') or 'unnamed'}", file=sys.stderr)
+    BUILDKITE_TEST_QUARANTINE_TOKEN = os.getenv("BUILDKITE_TEST_QUARANTINE_TOKEN")
+    BUILDKITE_ORGANIZATION_SLUG = os.getenv("BUILDKITE_ORGANIZATION_SLUG")
+    BUILDKITE_STEP_SUITE_SLUG = os.getenv("BUILDKITE_STEP_SUITE_SLUG")
 
-    return steps
+    buildkite_suite_mute_quarantined_objects = get_buildkite_quarantined_objects(
+        BUILDKITE_TEST_QUARANTINE_TOKEN,
+        BUILDKITE_ORGANIZATION_SLUG,
+        BUILDKITE_STEP_SUITE_SLUG,
+        "muted",
+        suppress_errors=True,
+    )
+    print(
+        f"buildkite_suite_mute_quarantined_objects = {buildkite_suite_mute_quarantined_objects}",
+        file=sys.stderr,
+    )
+    buildkite_suite_skip_quarantined_objects = get_buildkite_quarantined_objects(
+        BUILDKITE_TEST_QUARANTINE_TOKEN,
+        BUILDKITE_ORGANIZATION_SLUG,
+        BUILDKITE_STEP_SUITE_SLUG,
+        "skipped",
+        suppress_errors=True,
+    )
+    print(
+        f"buildkite_suite_skip_quarantined_objects = {buildkite_suite_skip_quarantined_objects}",
+        file=sys.stderr,
+    )
+
+    return filter_and_print_steps_by_quarantined(
+        steps,
+        {obj.name for obj in buildkite_suite_skip_quarantined_objects},
+        {obj.name for obj in buildkite_suite_mute_quarantined_objects},
+    )
 
 
 def _get_setting(name: str) -> Optional[str]:

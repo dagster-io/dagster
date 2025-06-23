@@ -116,7 +116,6 @@ export type AssetAssetEventHistoryArgs = {
   cursor?: InputMaybe<Scalars['String']['input']>;
   eventTypeSelectors: Array<AssetEventHistoryEventTypeSelector>;
   limit: Scalars['Int']['input'];
-  partitionInLast?: InputMaybe<Scalars['Int']['input']>;
   partitions?: InputMaybe<Array<Scalars['String']['input']>>;
 };
 
@@ -124,7 +123,6 @@ export type AssetAssetMaterializationsArgs = {
   afterTimestampMillis?: InputMaybe<Scalars['String']['input']>;
   beforeTimestampMillis?: InputMaybe<Scalars['String']['input']>;
   limit?: InputMaybe<Scalars['Int']['input']>;
-  partitionInLast?: InputMaybe<Scalars['Int']['input']>;
   partitions?: InputMaybe<Array<Scalars['String']['input']>>;
 };
 
@@ -132,7 +130,6 @@ export type AssetAssetObservationsArgs = {
   afterTimestampMillis?: InputMaybe<Scalars['String']['input']>;
   beforeTimestampMillis?: InputMaybe<Scalars['String']['input']>;
   limit?: InputMaybe<Scalars['Int']['input']>;
-  partitionInLast?: InputMaybe<Scalars['Int']['input']>;
   partitions?: InputMaybe<Array<Scalars['String']['input']>>;
 };
 
@@ -1102,10 +1099,12 @@ export enum DagsterEventType {
   ASSET_CHECK_EVALUATION = 'ASSET_CHECK_EVALUATION',
   ASSET_CHECK_EVALUATION_PLANNED = 'ASSET_CHECK_EVALUATION_PLANNED',
   ASSET_FAILED_TO_MATERIALIZE = 'ASSET_FAILED_TO_MATERIALIZE',
+  ASSET_HEALTH_CHANGED = 'ASSET_HEALTH_CHANGED',
   ASSET_MATERIALIZATION = 'ASSET_MATERIALIZATION',
   ASSET_MATERIALIZATION_PLANNED = 'ASSET_MATERIALIZATION_PLANNED',
   ASSET_OBSERVATION = 'ASSET_OBSERVATION',
   ASSET_STORE_OPERATION = 'ASSET_STORE_OPERATION',
+  ASSET_WIPED = 'ASSET_WIPED',
   ENGINE_EVENT = 'ENGINE_EVENT',
   FRESHNESS_STATE_CHANGE = 'FRESHNESS_STATE_CHANGE',
   FRESHNESS_STATE_EVALUATION = 'FRESHNESS_STATE_EVALUATION',

@@ -1,4 +1,5 @@
 import {Box, Button, Colors, FontFamily, NonIdealState} from '@dagster-io/ui-components';
+import {CategoryScale, ChartEvent, Chart as ChartJS, LinearScale} from 'chart.js';
 import React, {useCallback, useMemo, useRef, useState} from 'react';
 import {Line} from 'react-chartjs-2';
 import styled from 'styled-components';
@@ -6,6 +7,8 @@ import styled from 'styled-components';
 import {colorHash} from '../app/Util';
 import {useRGBColorsForTheme} from '../app/useRGBColorsForTheme';
 import {numberFormatter} from '../ui/formatters';
+
+ChartJS.register(LinearScale, CategoryScale);
 
 type PointValue = number | null | undefined;
 type Point = {x: string; y: PointValue};
@@ -40,7 +43,7 @@ export const PartitionGraph = React.memo(
     );
     const showLargeGraphMessage = _showLargeGraphMessage && partitionNames.length > 1000;
 
-    const onGraphClick = useCallback((event: MouseEvent) => {
+    const onGraphClick = useCallback((event: ChartEvent) => {
       const instance = chart.current;
       if (!instance) {
         return;
@@ -49,16 +52,22 @@ export const PartitionGraph = React.memo(
       if (!xAxis) {
         return;
       }
-      const {offsetX, offsetY} = event;
+
+      const nativeEvent = event.native;
+      if (!(nativeEvent instanceof MouseEvent)) {
+        return;
+      }
+
+      const {offsetX, offsetY} = nativeEvent;
 
       const isChartClick =
-        event.type === 'click' &&
+        nativeEvent.type === 'click' &&
         offsetX <= instance.chartArea.right &&
         offsetX >= instance.chartArea.left &&
         offsetY <= instance.chartArea.bottom &&
         offsetY >= instance.chartArea.top;
 
-      if (!isChartClick || !event.shiftKey) {
+      if (!isChartClick || !nativeEvent.shiftKey) {
         return;
       }
 
@@ -111,12 +120,12 @@ export const PartitionGraph = React.memo(
 
       return {
         title: titleOptions,
-        animation: false,
+        animation: false as const,
         scales,
         plugins: {
           legend: {
             display: false,
-            onClick: (_e: MouseEvent, _legendItem: any) => {},
+            onClick: (_e: ChartEvent, _legendItem: any) => {},
           },
         },
         onClick: onGraphClick,
@@ -217,7 +226,7 @@ export const PartitionGraph = React.memo(
       // We have a useMemo around the entire <PartitionGraphSet /> and there aren't many extra renders.
       return (
         <PartitionGraphContainer>
-          <Line data={() => graphData} height={300} options={defaultOptions as any} ref={chart} />
+          <Line data={graphData} height={300} options={defaultOptions} ref={chart} />
         </PartitionGraphContainer>
       );
     }

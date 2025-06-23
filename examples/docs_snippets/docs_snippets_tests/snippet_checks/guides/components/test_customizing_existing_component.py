@@ -207,11 +207,10 @@ def test_components_docs_adding_attributes_to_assets(
                 {type_str}
 
                 attributes:
-                  sling:
-                    connections:
-                      - name: DUCKDB
-                        type: duckdb
-                        instance: /tmp/jaffle_platform.duckdb
+                  connections:
+                    DUCKDB:
+                      type: duckdb
+                      instance: /tmp/jaffle_platform.duckdb
                   replications:
                     - path: replication.yaml
                 """),
@@ -289,14 +288,14 @@ def test_components_docs_adding_attributes_to_assets(
                 {type_str}
 
                 attributes:
-                  sling:
-                    connections:
-                      - name: DUCKDB
-                        type: duckdb
-                        instance: /tmp/jaffle_platform.duckdb
+                  connections:
+                    DUCKDB:
+                      type: duckdb
+                      instance: /tmp/jaffle_platform.duckdb
                   replications:
                     - path: replication.yaml
-                  asset_post_processors:
+                post_processing:
+                  assets:
                     - attributes:
                         automation_condition: "{{{{ custom_cron('@daily') }}}}"
                 """),
