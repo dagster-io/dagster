@@ -20,7 +20,11 @@ from dagster._core.definitions.resource_requirement import ResourceAddable
 from dagster._serdes import whitelist_for_serdes
 
 
-@whitelist_for_serdes
+@whitelist_for_serdes(
+    storage_field_names={
+        "legacy_freshness_policies_by_output_name": "freshness_policies_by_output_name",
+    }
+)
 class AssetsDefinitionCacheableData(
     NamedTuple(
         "_AssetsDefinitionCacheableData",
@@ -33,7 +37,10 @@ class AssetsDefinitionCacheableData(
             ("key_prefix", Optional[CoercibleToAssetKeyPrefix]),
             ("can_subset", bool),
             ("extra_metadata", Optional[Mapping[Any, Any]]),
-            ("freshness_policies_by_output_name", Optional[Mapping[str, LegacyFreshnessPolicy]]),
+            (
+                "legacy_freshness_policies_by_output_name",
+                Optional[Mapping[str, LegacyFreshnessPolicy]],
+            ),
             (
                 "auto_materialize_policies_by_output_name",
                 Optional[Mapping[str, AutoMaterializePolicy]],
@@ -56,7 +63,9 @@ class AssetsDefinitionCacheableData(
         key_prefix: Optional[Sequence[str]] = None,
         can_subset: bool = False,
         extra_metadata: Optional[Mapping[Any, Any]] = None,
-        freshness_policies_by_output_name: Optional[Mapping[str, LegacyFreshnessPolicy]] = None,
+        legacy_freshness_policies_by_output_name: Optional[
+            Mapping[str, LegacyFreshnessPolicy]
+        ] = None,
         auto_materialize_policies_by_output_name: Optional[
             Mapping[str, AutoMaterializePolicy]
         ] = None,
@@ -94,9 +103,9 @@ class AssetsDefinitionCacheableData(
             ),
             can_subset=check.opt_bool_param(can_subset, "can_subset", default=False),
             extra_metadata=extra_metadata,
-            freshness_policies_by_output_name=check.opt_nullable_mapping_param(
-                freshness_policies_by_output_name,
-                "freshness_policies_by_output_name",
+            legacy_freshness_policies_by_output_name=check.opt_nullable_mapping_param(
+                legacy_freshness_policies_by_output_name,
+                "legacy_freshness_policies_by_output_name",
                 key_type=str,
                 value_type=LegacyFreshnessPolicy,
             ),

@@ -216,7 +216,7 @@ def test_graph_backed_retain_freshness_policy_and_auto_materialize_policy():
 
     my_graph_asset = AssetsDefinition.from_graph(
         my_graph,
-        freshness_policies_by_output_name={"a": fpa, "b": fpb},
+        legacy_freshness_policies_by_output_name={"a": fpa, "b": fpb},
         auto_materialize_policies_by_output_name={"a": ampa, "b": ampb},
     )
 
@@ -953,7 +953,7 @@ def test_from_graph_w_key_prefix():
         keys_by_input_name={},
         keys_by_output_name={"result": AssetKey(["the", "asset"])},
         key_prefix=["this", "is", "a", "prefix"],
-        freshness_policies_by_output_name={"result": freshness_policy},
+        legacy_freshness_policies_by_output_name={"result": freshness_policy},
         descriptions_by_output_name={"result": description},
         metadata_by_output_name={"result": metadata},
         group_name="abc",
@@ -1004,7 +1004,7 @@ def test_from_op_w_key_prefix():
         keys_by_input_name={},
         keys_by_output_name={"result": AssetKey(["the", "asset"])},
         key_prefix=["this", "is", "a", "prefix"],
-        freshness_policies_by_output_name={"result": legacy_freshness_policy},
+        legacy_freshness_policies_by_output_name={"result": legacy_freshness_policy},
         descriptions_by_output_name={"result": description},
         metadata_by_output_name={"result": metadata},
         group_name="abc",

@@ -98,7 +98,7 @@ def with_deps(
         group_names_by_key=assets_def.group_names_by_key,
         metadata_by_key=assets_def.metadata_by_key,
         tags_by_key=assets_def.tags_by_key,
-        freshness_policies_by_key=assets_def.legacy_freshness_policies_by_key,
+        legacy_freshness_policies_by_key=assets_def.legacy_freshness_policies_by_key,
         backfill_policy=assets_def.backfill_policy,
         descriptions_by_key=assets_def.descriptions_by_key,
         check_specs_by_output_name=assets_def.check_specs_by_output_name,
