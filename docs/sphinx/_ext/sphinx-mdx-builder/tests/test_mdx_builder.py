@@ -237,7 +237,7 @@ class TestMdxBuilder:
 
         # Find all source links in the content
         source_link_pattern = (
-            r'<a[^>]*href="([^"]*tests/dummy_module\.py#L\d+)"[^>]*>\[source\]</a>'
+            r"<a[^>]*href='([^']*tests/dummy_module\.py#L\d+)'[^>]*>\[source\]</a>"
         )
         source_links = re.findall(source_link_pattern, content)
 
