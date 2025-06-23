@@ -72,7 +72,7 @@ With all of that done, we are ready to create our assets. We will define an asse
     title="src/etl_tutorial/defs/assets.py"
 />
 
-To ensure everything is configured correctly you can use [`dg check`]((/api/dg/dg-cli#dg-check)) in the command line:
+To ensure everything is configured correctly you can use [`dg check`](/api/dg/dg-cli#dg-check) in the command line:
 
 ```bash
 dg check defs
@@ -114,7 +114,7 @@ You will see three assets one for each our the three raw files (customers, order
 
    ![2048 resolution](/images/tutorial/etl-tutorial/ingest-assets-run.png)
 
-You can also launch those assets via the command line by using [`dg launch`]((/api/dg/dg-cli#dg-launch)):
+You can also launch those assets via the command line by using [`dg launch`](/api/dg/dg-cli#dg-launch):
 
 ```bash
 dg launch --assets "*"

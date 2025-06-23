@@ -12,7 +12,7 @@ In this step, you will:
 
 ## 1. Define the DuckDB resource
 
-In Dagster, [resources](/guides/build/resources) are reusable components that provide external context or functionality such as  database connections, clients, or configurations. These can be used by a number of different Dagster objects but we will first apply them to our assets.
+In Dagster, [resources](/guides/build/external-resources) are reusable components that provide external context or functionality such as  database connections, clients, or configurations. These can be used by a number of different Dagster objects but we will first apply them to our assets.
 
 We will use the `dagster-duckdb` library so add it to our project:
 

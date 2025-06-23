@@ -79,7 +79,7 @@ We have now layered dbt into the project. The `etl_tutorial` module should look 
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/tree/step-1.txt" />
 
-Once again you can materialize your assets within the UI or using `dg launch` from the command line. You can also use [`dg list`]((/api/dg/dg-cli#dg-list)) to get a full overview of the definitions in your project by executing:
+Once again you can materialize your assets within the UI or using `dg launch` from the command line. You can also use [`dg list`](/api/dg/dg-cli#dg-list) to get a full overview of the definitions in your project by executing:
 
 ```bash
 dg list defs
