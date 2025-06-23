@@ -117,14 +117,12 @@ def test_components_from_dagster():
     sling_root = _get_editable_package_root("dagster-sling")
 
     # No extras
-    with _temp_venv(
-        [
-            *common_deps,
-        ]
-    ) as python_executable:
+    with _temp_venv([*common_deps]) as python_executable:
         component_types = _get_component_types_in_python_environment(python_executable)
         assert "dagster_dbt.DbtProjectComponent" not in component_types
         assert "dagster_sling.SlingReplicationCollectionComponent" not in component_types
+        for t in ["FunctionComponent", "PythonScriptComponent", "UvRunComponent"]:
+            assert f"dagster.{t}" in component_types
 
     with _temp_venv([*common_deps, "-e", dbt_root]) as python_executable:
         component_types = _get_component_types_in_python_environment(python_executable)
