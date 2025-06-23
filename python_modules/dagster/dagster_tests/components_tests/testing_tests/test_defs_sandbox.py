@@ -22,7 +22,7 @@ def test_nested_component() -> None:
 
         with sandbox.load(
             component_body={
-                "type": "dagster.components.FunctionComponent",
+                "type": "dagster.FunctionComponent",
                 "attributes": {
                     "execution": {
                         "name": "nested_component",
