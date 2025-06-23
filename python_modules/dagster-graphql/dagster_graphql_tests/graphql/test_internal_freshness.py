@@ -63,4 +63,16 @@ def test_internal_freshness_policy():
                 GET_INTERNAL_FRESHNESS_POLICY,
                 variables={"assetKey": asset_with_internal_freshness_policy.key.to_graphql_input()},
             )
-            assert result.data["assetNodes"][0]["internalFreshnessPolicy"] is None
+            assert result.data["assetNodes"][0]["internalFreshnessPolicy"] is not None
+            result = execute_dagster_graphql(
+                graphql_context,
+                """
+query getFreshnessEnabled {
+    instance {
+        freshnessEvaluationEnabled
+    }
+}
+                """,
+                variables={},
+            )
+            assert result.data["instance"]["freshnessEvaluationEnabled"] is False

@@ -467,18 +467,6 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
             return run_record.dagster_run
         return None
 
-    def run_has_tag(self, run_id: str, tag_key: str, tag_value: Optional[str]) -> bool:
-        run = self._get_run_by_id(run_id)
-        if run is None:
-            return False
-
-        run_tags = run.tags
-
-        if tag_value is None:
-            return tag_key in run_tags
-        else:
-            return run_tags.get(tag_key) == tag_value
-
     @cached_method
     def _get_planned_materializations_for_run_from_snapshot(
         self, *, snapshot_id: str

@@ -1,6 +1,14 @@
 create-dagster CLI
 ==================
 
+Installation
+------------
+
+See the `Installation <https://docs.dagster.io/getting-started/installation>`_ guide.
+
+Commands
+--------
+
 .. currentmodule:: create_dagster
 
 .. click:: create_dagster.cli.scaffold:scaffold_project_command

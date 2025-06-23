@@ -1,5 +1,6 @@
 import asyncio
 from collections.abc import Generator
+from typing import Any
 
 import pytest
 from dagster import (
@@ -9,8 +10,10 @@ from dagster import (
     AssetKey,
     AssetOut,
     AssetSpec,
+    InputContext,
     IOManager,
     MaterializeResult,
+    OutputContext,
     StaticPartitionsDefinition,
     asset,
     instance_for_test,
@@ -18,9 +21,14 @@ from dagster import (
     multi_asset,
 )
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
-from dagster._core.errors import DagsterInvariantViolationError, DagsterStepOutputNotFoundError
+from dagster._core.errors import (
+    DagsterInvariantViolationError,
+    DagsterStepOutputNotFoundError,
+    DagsterTypeCheckDidNotPass,
+)
 from dagster._core.execution.context.invocation import build_asset_context
 from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionRecordStatus
+from dagster._core.storage.mem_io_manager import InMemoryIOManager
 
 
 def _exec_asset(asset_def, selection=None, partition_key=None, resources=None):
@@ -604,3 +612,222 @@ def test_materialize_result_with_partitions_direct_invocation():
 
     res = partitioned_asset(context)
     assert res.metadata["key"] == "red"  # pyright: ignore[reportAttributeAccessIssue]
+
+
+def test_materialize_result_value():
+    @asset
+    def asset_with_value():
+        return MaterializeResult(value="hello")
+
+    result = materialize([asset_with_value])
+
+    assert result.success
+    assert result.asset_value("asset_with_value") == "hello"
+
+
+def test_materialize_result_value_explicit_any_no_value():
+    class TestIOManager(InMemoryIOManager):
+        def handle_output(self, context: OutputContext, obj: Any):
+            raise Exception("Should not be called")
+
+    @asset
+    def explicit_any() -> Any:
+        return MaterializeResult()
+
+    @asset
+    def explicit_result_any() -> MaterializeResult[Any]:
+        return MaterializeResult()
+
+    # arguably, this could result in the IOManager being called
+    # with a value of None, but that is not the current behavior
+    result = materialize(
+        [explicit_any, explicit_result_any], resources={"io_manager": TestIOManager()}
+    )
+    assert result.success
+
+
+def test_materialize_result_value_annotated_no_type():
+    @asset
+    def asset_with_value() -> MaterializeResult:
+        return MaterializeResult(value="hello")
+
+    result = materialize([asset_with_value])
+
+    assert result.success
+    assert result.asset_value("asset_with_value") == "hello"
+
+
+def test_materialize_result_value_annotated_explicit_type():
+    @asset
+    def asset_with_value() -> MaterializeResult[str]:
+        return MaterializeResult(value="hello")
+
+    result = materialize([asset_with_value])
+
+    assert result.success
+    assert result.asset_value("asset_with_value") == "hello"
+
+
+def test_materialize_result_value_annotated_incorrect_type():
+    @asset
+    def asset_with_value() -> MaterializeResult[int]:
+        return MaterializeResult(value="hello")  # type: ignore
+
+    with pytest.raises(DagsterTypeCheckDidNotPass):
+        materialize([asset_with_value])
+
+
+def test_materialize_result_value_annotated_no_value():
+    @asset
+    def asset_with_value() -> MaterializeResult[int]:
+        return MaterializeResult()  # type: ignore
+
+    with pytest.raises(DagsterTypeCheckDidNotPass):
+        materialize([asset_with_value])
+
+
+def test_materialize_result_with_default_io_manager():
+    @asset
+    def up():
+        return MaterializeResult(value="hello")
+
+    @asset(
+        deps=[up],
+    )
+    def down(up: str):
+        return MaterializeResult(value=up + " world")
+
+    result = materialize(assets=[up, down])
+    assert result.success
+    assert result.asset_value("down") == "hello world"
+
+
+def test_materialize_result_with_custom_io_manager_default_key():
+    class CustomIOManager(IOManager):
+        def __init__(self):
+            self._storage = {}
+
+        def load_input(self, context: InputContext):
+            return self._storage[context.asset_key]
+
+        def handle_output(self, context: OutputContext, obj):
+            self._storage[context.asset_key] = obj
+
+    @asset
+    def up():
+        return MaterializeResult(value="hello")
+
+    @asset(
+        deps=[up],
+    )
+    def down(up: str):
+        return MaterializeResult(value=up + " world")
+
+    io_manager = CustomIOManager()
+    result = materialize(assets=[up, down], resources={"io_manager": io_manager})
+    assert result.success
+    assert result.asset_value("down") == "hello world"
+
+
+def test_materialize_result_with_custom_io_manager_custom_key():
+    class CustomIOManager(IOManager):
+        def __init__(self):
+            self._storage = {}
+
+        def load_input(self, context: InputContext):
+            return self._storage[context.asset_key]
+
+        def handle_output(self, context: OutputContext, obj):
+            self._storage[context.asset_key] = obj
+
+    @asset(io_manager_key="io_whatever_manager")
+    def up():
+        return MaterializeResult(value="hello")
+
+    @asset(
+        deps=[up],
+        io_manager_key="io_whatever_manager",
+    )
+    def down(up: str):
+        return MaterializeResult(value=up + " world")
+
+    io_manager = CustomIOManager()
+    result = materialize(assets=[up, down], resources={"io_whatever_manager": io_manager})
+    assert result.success
+    assert result.asset_value("down") == "hello world"
+
+
+def test_materialize_result_with_asset_key_ref():
+    @asset
+    def up():
+        return MaterializeResult(value="hello")
+
+    @asset(
+        deps=["up"],
+    )
+    def down(up: str):
+        return MaterializeResult(value=up + " world")
+
+    result = materialize(assets=[up, down])
+    assert result.success
+    assert result.asset_value("down") == "hello world"
+
+
+def test_materialize_result_with_custom_io_manager_type_mutate():
+    class CustomIOManager(IOManager):
+        def __init__(self):
+            self._storage = {}
+
+        def load_input(self, context: InputContext):
+            return self._storage[context.asset_key]
+
+        def handle_output(self, context: OutputContext, obj):
+            self._storage[context.asset_key] = obj
+
+    @asset
+    def up():
+        # Not generically typed for now
+        return MaterializeResult(value=1)
+
+    @asset(
+        deps=[up],
+    )
+    def down(up: int):
+        # Not generically typed for now
+        return MaterializeResult(value=up + 1)
+
+    io_manager = CustomIOManager()
+    result = materialize(assets=[up, down], resources={"io_manager": io_manager})
+    assert result.success
+    assert result.asset_value("down") == 2
+
+
+def test_multi_asset_with_asset_spec_io_manager():
+    class CustomIOManager(IOManager):
+        def __init__(self):
+            self._storage = {}
+
+        def load_input(self, context: InputContext):
+            return self._storage[context.asset_key]
+
+        def handle_output(self, context: OutputContext, obj):
+            self._storage[context.asset_key] = obj
+
+    @multi_asset(specs=[AssetSpec("one").with_io_manager_key("custom_io_manager")])
+    def multi_asset_one(context: AssetExecutionContext):
+        return MaterializeResult(value="hello")
+
+    @multi_asset(
+        specs=[
+            AssetSpec("two", deps=["one"]).with_io_manager_key("custom_io_manager"),
+        ],
+    )
+    def multi_asset_two(context: AssetExecutionContext, one: str):
+        return MaterializeResult(value=one + " world")
+
+    io_manager = CustomIOManager()
+    result = materialize(
+        assets=[multi_asset_one, multi_asset_two], resources={"custom_io_manager": io_manager}
+    )
+    assert result.success
+    assert result.asset_value("two") == "hello world"

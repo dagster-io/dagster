@@ -194,6 +194,9 @@ async def get_asset_check_status_and_metadata(
     asset_check_health_state = await AssetCheckHealthState.gen(context, asset_key)
     # captures streamline disabled or consumer state doesn't exist
     if asset_check_health_state is None:
+        if context.instance.streamline_read_asset_health_required():
+            return AssetHealthStatus.UNKNOWN, None
+
         # Note - this will only compute check health if there is a definition for the asset and checks in the
         # asset graph. If check results are reported for assets or checks that are not in the asset graph, those
         # results will not be picked up. If we add storage methods to get all check results for an asset by
