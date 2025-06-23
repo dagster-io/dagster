@@ -64,7 +64,7 @@ Now copy the following sensor code in the `sensors.py` file:
 3. Turn on the `adhoc_request_sensor`.
 4. Click on the `adhoc_request_sensor` details.
 
-TODO: Screenshot
+{/* TODO: Screenshot */}
 
 5. Create a `data/requests` directory in `dagster_tutorial`. Then include a `request.json` file:
 
@@ -79,7 +79,7 @@ TODO: Screenshot
 
 6. Click on the green tick to see the run for this request.
 
-TODO: Screenshot
+{/* TODO: Screenshot */}
 
 ## Summary
 

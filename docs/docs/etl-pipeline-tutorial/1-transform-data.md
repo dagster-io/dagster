@@ -92,10 +92,9 @@ This will return a table of all the definitions within the Dagster project. As w
 
 :::info
 
-You might be wondering about the relationship between components and definitions. Components. At a high level you a component builds a definition for a specific purpose.
+You might be wondering about the relationship between components and definitions. At a high level, a component builds a definition for a specific purpose.
 
 **Components** are objects that programmatically build assets and other Dagster objects. They accept specific parameters and use them to build the actual definitions you need. In the case of `DbtProjectComponent`, this would be the dbt project path and the definitions it creates are the assets for each dbt model.
-
 
 **Definitions** are objects that combine metadata about an entity with a Python function that defines how it behaves -- for example, when we used the `@asset` decorator on the functions for our DuckDB ingestion. This tells Dagster both what the asset is and how to materialize it.
 
@@ -103,4 +102,4 @@ You might be wondering about the relationship between components and definitions
 
 ## Next steps
 
-In the next step, we will [add a DuckDB resource](/etl-pipeline-tutorial/add-a-resource) to our project.
+In the next step, we will [add a DuckDB resource](/etl-pipeline-tutorial/add-a-resource) to our project to more efficiently manage manage our database connections.

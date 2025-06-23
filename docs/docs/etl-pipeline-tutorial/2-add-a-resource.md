@@ -6,8 +6,6 @@ sidebar_position: 30
 
 We've now created our own assets and combined them with assets from a component. In this step, we will revisit the ingestion assets we defined, and include another Dagster object to assist with managing our database connection with DuckDB. Currently, each of our assets handles each connection separately, but this resource will allow us to centralize our connection to DuckDB into a single object so the connection can be shared across all our assets.
 
-
-
 ## 1. Define the DuckDB resource
 
 In Dagster, [resources](/guides/build/external-resources) are reusable components that provide external context or functionality such as database connections, clients, or configurations. Resources can be used by a number of different Dagster objects, but we will first apply them to our assets.
