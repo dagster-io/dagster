@@ -1,6 +1,5 @@
 import {
   Box,
-  Colors,
   Container,
   Icon,
   IconName,
@@ -9,13 +8,12 @@ import {
   MenuItem,
   Popover,
   Row,
-  Subtitle,
   Tab,
   Tabs,
   UnstyledButton,
 } from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
-import React, {useDeferredValue, useMemo, useRef} from 'react';
+import React, {useMemo, useRef} from 'react';
 import {CreateCatalogViewButton} from 'shared/assets/CreateCatalogViewButton.oss';
 import {useCatalogViews} from 'shared/assets/catalog/useCatalogViews.oss';
 
@@ -30,6 +28,7 @@ import {
   TILE_WIDTH,
 } from './AssetSelectionSummaryTile';
 import {Grid, SectionedGrid, SectionedList} from './ListGridViews';
+import {SelectionSectionHeader} from './SelectionSectionHeader';
 import {ViewType, getGroupedAssets} from './util';
 import {COMMON_COLLATOR} from '../../app/Util';
 import {usePrefixedCacheKey} from '../../app/usePrefixedCacheKey';
@@ -38,7 +37,6 @@ import {useQueryPersistedState} from '../../hooks/useQueryPersistedState';
 import {useStateWithStorage} from '../../hooks/useStateWithStorage';
 import {InsightsIcon} from '../../insights/InsightsIcon';
 import {LoadingSpinner} from '../../ui/Loading';
-import {numberFormatter} from '../../ui/formatters';
 import {weakMapMemoize} from '../../util/weakMapMemoize';
 import {AssetTableFragment} from '../types/AssetTableFragment.types';
 import {useAllAssets} from '../useAllAssets';
@@ -167,6 +165,7 @@ export const AssetsGroupedView = ({assets}: {assets: AssetTableFragment[]}) => {
                   <MenuItem text="List" onClick={() => setDisplayAs('List')} />
                 </Menu>
               }
+              placement="bottom-end"
             >
               <UnstyledButton $outlineOnHover style={{padding: 8, borderRadius: 4}}>
                 <Box flex={{direction: 'row', alignItems: 'center', gap: 2}}>
@@ -275,73 +274,6 @@ const propertyToLabelAndIcon: Record<Property, {label: string; icon: IconName}> 
     label: 'Code locations',
     icon: 'folder',
   },
-};
-
-// DRY: Shared Section Header for Selections
-const SelectionSectionHeader = ({
-  icon,
-  label,
-  count,
-  border,
-  isOpen,
-  toggleOpen,
-  children,
-  displayAs,
-}: {
-  icon: IconName;
-  label: string;
-  count: number;
-  border: 'top-and-bottom' | 'bottom';
-  isOpen: boolean;
-  toggleOpen: () => void;
-  children?: React.ReactNode;
-  displayAs: 'List' | 'Grid';
-}) => {
-  const actuallyOpen = useDeferredValue(isOpen);
-  return (
-    <Box padding={{bottom: actuallyOpen && displayAs === 'Grid' ? 12 : 0}}>
-      <Box
-        flex={{
-          direction: 'row',
-          alignItems: 'center',
-          gap: 8,
-          justifyContent: 'space-between',
-        }}
-        padding={{horizontal: 24, vertical: 2}}
-        style={{height: 44}}
-        background={Colors.backgroundLight()}
-        border={border}
-      >
-        <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
-          <Icon name={icon} />
-          <Subtitle>
-            {label} ({numberFormatter.format(count)})
-          </Subtitle>
-          <UnstyledButton
-            onClick={(e) => {
-              e.stopPropagation();
-              toggleOpen();
-            }}
-            onDoubleClick={(e) => {
-              e.stopPropagation();
-            }}
-            onKeyDown={(e) => {
-              if (e.code === 'Space') {
-                e.preventDefault();
-              }
-            }}
-            style={{cursor: 'pointer', width: 18}}
-          >
-            <Icon
-              name="arrow_drop_down"
-              style={{transform: isOpen ? 'rotate(0deg)' : 'rotate(-90deg)'}}
-            />
-          </UnstyledButton>
-        </Box>
-        {children}
-      </Box>
-    </Box>
-  );
 };
 
 function createSelectionSection({
