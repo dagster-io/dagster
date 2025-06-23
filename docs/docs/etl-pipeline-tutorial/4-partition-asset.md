@@ -42,11 +42,6 @@ and deletes any previous value for that month. Copy the following asset under th
 Do not worry about the `automation_condition` in the `dg.asset` decorator for now. This is not necessary but will make more sense when we discuss automation later.
 :::
 
-:::note
-
-
-:::
-
 ## 2. Materialize partitioned assets
 
 To materialize these assets:
@@ -54,11 +49,16 @@ To materialize these assets:
 1. Navigate to the assets page.
 2. Reload definitions.
 3. Select the `monthly_sales_performance` asset, then **Materialize selected**.
-4. Ensure all partitions are selected, then launch a backfill.
-5. Select the `product_performance` asset, then **Materialize selected**.
-6. Ensure all partitions are selected, then launch a backfill.
 
-TODO: Screenshot
+   When launching a partitioned asset, you will need to select the which partitions to execute. Because our partition has a start date (`"2018-01-01"`) and no end date, there will be partitions for every month from 2018. Only select partitions for the first four months of 2018. 
+
+   ```
+   [2018-01-01...2018-05-01]
+   ```
+
+4. Launch a backfill. After the execution is finished you can see the subset of total partitions that have executed.
+
+   ![2048 resolution](/images/tutorial/etl-tutorial/asset-partition-execution.png)
 
 ## Summary
 

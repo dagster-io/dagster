@@ -71,7 +71,7 @@ The component is correctly configured for our dbt project but we need to make on
 
 Adding in the `translation` attribute aligns the keys of our dbt models with the source tables. Associating them together ensures the proper lineage across our assets.
 
-TODO: Screenshot
+![2048 resolution](/images/tutorial/etl-tutorial/ingest-assets-run.png)
 
 ## Summary
 
@@ -79,7 +79,7 @@ We have now layered dbt into the project. The `etl_tutorial` module should look 
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/tree/step-1.txt" />
 
-Once again you can materialize your assets within the UI or using `dg launch` from the command line. You can also use `dg` to get a full overview of the definitions in your project by executing:
+Once again you can materialize your assets within the UI or using `dg launch` from the command line. You can also use [`dg list`]((/api/dg/dg-cli#dg-list)) to get a full overview of the definitions in your project by executing:
 
 ```bash
 dg list defs
@@ -89,9 +89,12 @@ This will return a table of all the definitions within the Dagster project. As w
 
 :::info
 
-You might be wondering about the relationship between components and assets. You can view components as organizational containers that hold assets and other Dagster objects, usually to serve a specific purpose.
+You might be wondering about the relationship between components and definitions. Components. At a high level you a component builds a definition for a specific purpose.
 
-In this case the dbt component create assets for each model in a dbt project. As models are added or changed within the dbt project, Dagster assets will be change accordingly.
+**Components** are objects that programmatically build assets and other Dagster object. They accept specific parameters and use them to build the actual definitions you need. In the case of `DbtProjectComponent` this would be the dbt project path and the definitions it creates are the assets for each dbt model.
+
+
+**Definitions** are objects that combine metadata about an entity with a Python function that defines how it behaves. For example, when we used the `@asset` decorator on the functions for our DuckDB ingestion. This tells Dagster both what the asset is and how to materialize it.
 
 :::
 

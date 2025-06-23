@@ -4,7 +4,7 @@ description: Add a resource to your assets
 sidebar_position: 30
 ---
 
-We've now created our own assets and combined them with assets from a component. We will circle back to the ingestion assets we defined and include another Dagster object to improve our project by including a resource.
+We've now created our own assets and combined them with assets from a component. We will circle back to the ingestion assets we defined and include another Dagster object to help how we manage our database connection with DuckDB.
 
 In this step, you will:
 
@@ -12,7 +12,7 @@ In this step, you will:
 
 ## 1. Define the DuckDB resource
 
-In Dagster, resources are reusable components that provide external context or functionality such as  database connections, clients, or configurations. These can be used by a number of different Dagster objects but we will first apply them to our assets.
+In Dagster, [resources](/guides/build/resources) are reusable components that provide external context or functionality such as  database connections, clients, or configurations. These can be used by a number of different Dagster objects but we will first apply them to our assets.
 
 We will use the `dagster-duckdb` library so add it to our project:
 
@@ -63,7 +63,7 @@ This centralizes our connection to DuckDB into a single object. Currently each o
 
 ## 2. Add a resource to our assets
 
-With our resource defined we need to update our asset code. Since most of our assets share the `import_url_to_duckdb` to execute the query we will first update that function to use the `DuckDBResource` to handle query execution:
+With our resource defined we need to update our asset code. Since all of our ingestion assets rely on the `import_url_to_duckdb` to execute the query we will first update that function to use the `DuckDBResource` to handle query execution:
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/src/etl_tutorial/defs/assets.py"
@@ -82,10 +82,22 @@ Now we can update the assets themselves. The only difference is that each asset 
   language="python"
   startAfter="start_ingest_assets_2"
   endBefore="end_ingest_assets_2"
-  title="src/etl_tutorial/defs/assets/py"
+  title="src/etl_tutorial/defs/assets.py"
 />
 
 The `DuckDBResource` connection will then be passed to the `import_url_to_duckdb` responsible for running the query.
+
+Back in the UI, your assets will not appear any different. However you can view it within the definition.
+
+1. Click **Deployment**, then click "etl-tutorial" to see your deployment.
+2. Click **Definitions**.
+3. Navigate to the "Resources" section to view all of your resources and select "duckdb".
+
+![2048 resolution](/images/tutorial/etl-tutorial/resources.png)
+
+You can see that this resource has 3 uses which lines up with our three assets.
+
+![2048 resolution](/images/tutorial/etl-tutorial/resources-dep.png)
 
 ## Summary
 

@@ -18,6 +18,9 @@ def serialize_duckdb_query(duckdb_path: str, sql: str):
 
 
 # start_import_url_to_duckdb
+...
+
+
 def import_url_to_duckdb(url: str, duckdb_path: str, table_name: str):
     create_query = f"""
         create or replace table {table_name} as (
@@ -32,6 +35,9 @@ def import_url_to_duckdb(url: str, duckdb_path: str, table_name: str):
 
 
 # start_ingest_assets_1
+...
+
+
 import dagster as dg
 
 
@@ -67,8 +73,6 @@ def raw_payments() -> None:
 
 # start_import_url_to_duckdb_with_resource
 from dagster_duckdb import DuckDBResource
-
-import dagster as dg
 
 
 def import_url_to_duckdb(url: str, duckdb: DuckDBResource, table_name: str):
@@ -278,6 +282,65 @@ def monthly_orders(context: dg.AssetExecutionContext, duckdb: DuckDBResource):
 
 
 # end_monthly_sales_performance_asset
+
+
+# start_monthly_sales_performance_asset_highlight
+@dg.asset(
+    deps=["stg_orders"],
+    kinds={"duckdb"},
+    partitions_def=monthly_partition,
+    # highlight-start
+    automation_condition=dg.AutomationCondition.eager(),
+    # highlight-end
+    description="Monthly sales performance",
+)
+def monthly_orders(context: dg.AssetExecutionContext, duckdb: DuckDBResource):
+    # end_monthly_sales_performance_asset_highlight
+    partition_date_str = context.partition_key
+    month_to_fetch = partition_date_str[:-3]
+    table_name = "jaffle_platform.main.monthly_orders"
+
+    with duckdb.get_connection() as conn:
+        conn.execute(
+            f"""
+            create table if not exists {table_name} (
+                partition_date varchar,
+                status varchar,
+                order_num double
+            );
+
+            delete from {table_name} where partition_date = '{month_to_fetch}';
+
+            insert into {table_name}
+            select
+                '{month_to_fetch}' as partition_date,
+                status,
+                count(*) as order_num
+            from jaffle_platform.main.stg_orders
+            where strftime(order_date, '%Y-%m') = '{month_to_fetch}'
+            group by '{month_to_fetch}', status;
+            """
+        )
+
+        preview_query = (
+            f"select * from {table_name} where partition_date = '{month_to_fetch}';"
+        )
+        preview_df = conn.execute(preview_query).fetchdf()
+        row_count = conn.execute(
+            f"""
+            select count(*)
+            from {table_name}
+            where partition_date = '{month_to_fetch}'
+            """
+        ).fetchone()
+        count = row_count[0] if row_count else 0
+
+    return dg.MaterializeResult(
+        metadata={
+            "row_count": dg.MetadataValue.int(count),
+            "preview": dg.MetadataValue.md(preview_df.to_markdown(index=False)),
+        }
+    )
 
 
 # start_adhoc_request_asset

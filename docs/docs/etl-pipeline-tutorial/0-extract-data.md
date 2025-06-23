@@ -12,7 +12,7 @@ The first step in our pipeline will be loading files into [DuckDB](https://duckd
 
 We will start by writing our ingestion [assets](/guides/build/assets). Assets serve as the building blocks for our platform in Dagster and represent the underlying entities in our pipelines (such as database tables, machine learning models...).
 
-When building assets, the first step is to scaffold the assets file with the Dagster CLI `dg`. This provides a number of commands that can help structure and navigate a Dagster project. We will use `dg scaffold` to include assets:
+When building assets, the first step is to scaffold the assets file with the Dagster CLI [`dg`](/api/dg/dg-cli). This provides a number of commands that can help structure and navigate a Dagster project. We will use [`dg scaffold`](/api/dg/dg-cli#dg-scaffold) to include assets:
 
 ```bash
 dg scaffold defs dagster.asset assets.py
@@ -72,13 +72,18 @@ With all of that done, we are ready to create our assets. We will define an asse
     title="src/etl_tutorial/defs/assets.py"
 />
 
-To ensure everything is configured correctly you can use `dg check` in the command line:
+To ensure everything is configured correctly you can use [`dg check`]((/api/dg/dg-cli#dg-check)) in the command line:
 
 ```bash
 dg check defs
 ```
 
 This step confirms that the Dagster `definition` can load successfully and helps identify any errors in the project.
+
+```bash
+All components validated successfully.
+All definitions loaded successfully.
+```
 
 In Dagster, the `definition` refers to the collection of all Dagster objects that make up your project. As we continue through this tutorial, we’ll add several more objects to the pipeline.
 
@@ -99,7 +104,7 @@ Now that our assets are configured, you can view the asset catalog within the Da
 1. Navigate to **Deployment**.
 2. Click Reload definitions.
 
-TODO: Screenshot
+   ![2048 resolution](/images/tutorial/etl-tutorial/ingest-assets.png)
 
 You will see three assets one for each our the three raw files (customers, orders, payments) that we are loading into DuckDB:
 
@@ -107,7 +112,9 @@ You will see three assets one for each our the three raw files (customers, order
 2. Click materialize all.
 3. Navigate to the runs tab and select the most recent run. Here you can see the logs from the run.
 
-You can also launch those assets via the command line by using `dg`:
+   ![2048 resolution](/images/tutorial/etl-tutorial/ingest-assets-run.png)
+
+You can also launch those assets via the command line by using [`dg launch`]((/api/dg/dg-cli#dg-launch)):
 
 ```bash
 dg launch --assets "*"

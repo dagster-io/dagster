@@ -29,6 +29,12 @@ There will now be a directory `dashboard` within the root of the project.
 └── uv.lock
 ```
 
+Change into that directory and install the necessary packages with [`npm`](https://www.npmjs.com/):
+
+```bash
+cd dashboard && npm install
+```
+
 ## 2. Define the Evidence Component
 
 Let's add the Dagster's Evidence integration:
@@ -59,13 +65,29 @@ However we can still configure our Evidence component to be dependent on multipl
     title="src/etl_tutorial/defs/dashboard/defs.yaml"
 />
 
+## 4. Execute the Evidence asset
+
+With the Evidence component configured, our assets graph should look like this.
+
+![2048 resolution](/images/tutorial/etl-tutorial/assets-evidence.png)
+
+Execute the downstream `dashboard` asset which will build our Evidence dashboards. You can now run Evidence:
+
+```bash
+cd dashboard/build && python -m http.server
+```
+
+You should see a dashboard like the following at [http://localhost:8000/](http://localhost:8000/).
+
+![2048 resolution](/images/tutorial/etl-tutorial/evidence-dashboard.png)
+
 ## Summary
 
-Here is the final structure of the `etl_tutorial` module:
+Here is the final structure of our `etl_tutorial` project:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/tree/step-7.txt" />
 
-This contains a fully functional data platform that handles the end to end workflows necessary for working with data.
+We have now built a fully functional, end-to-end data platform that handles everything from data ingestion to modeling and visualization.
 
 ## Recommended next steps
 

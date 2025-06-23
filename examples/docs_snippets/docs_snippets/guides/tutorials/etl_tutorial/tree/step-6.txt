@@ -7,5 +7,4 @@ src
         ├── assets.py
         ├── dashboard
         │   └── defs.yaml
-        ├── resources.py
-        └── sensors.py
+        └── resources.py

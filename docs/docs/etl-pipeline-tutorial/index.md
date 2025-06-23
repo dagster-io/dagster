@@ -30,7 +30,7 @@ You will learn to:
 
 To follow the steps in this tutorial, you'll need:
 
-* Python 3.9+ and `uv` installed. For more information, see the [Installation guide](/getting-started/installation).
+* Python 3.9+ and [`uv`](https://docs.astral.sh/uv/) installed. For more information, see the [Installation guide](/getting-started/installation).
 * Familiarity with Python and SQL.
 * A basic understanding of data pipelines and the extract, transform, and load (ETL) process.
 
@@ -42,7 +42,7 @@ To follow the steps in this tutorial, you'll need:
    uvx create-dagster project etl-tutorial
    ```
 
-2. Change directory into your new project
+2. Change directory into your new project:
 
    ```bash
    cd etl-tutorial
@@ -68,9 +68,9 @@ To follow the steps in this tutorial, you'll need:
 
    In your browser, navigate to [http://127.0.0.1:3000](http://127.0.0.1:3000)
 
-TODO: Screenshot
+   At this point the project will be empty but we will continue to add to it throughout the tutorial.
 
-At this point the project will be empty but we will continue to add to it throughout the tutorial.
+   ![2048 resolution](/images/tutorial/etl-tutorial/empty-project.png)
 
 ## Next steps
 

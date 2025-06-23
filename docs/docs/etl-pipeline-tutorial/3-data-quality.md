@@ -4,16 +4,16 @@ description: Ensure assets are correct with asset checks
 sidebar_position: 40
 ---
 
-Data quality is critical in data pipelines. Inspecting individual assets ensures that data quality issues are caught before they affect the entire pipeline.
-
-In Dagster, you define [asset checks](/guides/test/asset-checks) like you define assets. Asset checks run when an asset is materialized. In this step, you will:
+Data quality is critical in data pipelines. Inspecting individual assets ensures that data quality issues are caught before they affect the entire pipeline. In this step, you will:
 
 - Define an asset check
 - Execute that asset check in the UI
 
 ## 1. Define an asset check
 
-Asset check can go in the `assets.py` file next to the asset we just defined. An asset check can be any logic we want. In our case we query the `raw_customers` table created by our asset and ensure that `id` is not null:
+In Dagster, you define [asset checks](/guides/test/asset-checks) similarly to how you define assets. Asset checks run when an asset is materialized and ensure that certain criteria are met.
+
+You can place an asset check in the `assets.py` file alongside the asset it validates. In our case, we'll query the `raw_customers` table—created by our asset—and verify that the `id` column contains no null values:
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/src/etl_tutorial/defs/assets.py"
@@ -51,16 +51,16 @@ The asset check is using the same `DuckDBResource` resource we defined for the a
 
 With the Dagster UI, you can now see that an asset check is associated with the `joined_data` asset.
 
-TODO: Screenshot
+![2048 resolution](/images/tutorial/etl-tutorial/asset-check.png)
 
 Asset checks will run when an asset is materialized, but asset checks can also be executed manually in the UI:
 
 1. Reload your Definitions.
 2. Navigate to the Asset Details page for the `raw_customers` asset.
 3. Select the "Checks" tab.
-4. Click the **Execute** button for `missing_dimension_check`.
+4. Click the **Execute** button (assuming the asset has already executed) for `missing_dimension_check`.
 
-TODO: Screenshot
+   ![2048 resolution](/images/tutorial/etl-tutorial/asset-check-execution.png)
 
 ## Summary
 

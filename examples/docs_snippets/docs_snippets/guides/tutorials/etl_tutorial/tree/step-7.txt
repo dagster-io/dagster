@@ -8,6 +8,5 @@ src
         ├── dashboard
         │   └── defs.yaml
         ├── resources.py
-        ├── sensors.py
         └── transform
             └── defs.yaml
