@@ -118,6 +118,8 @@ You should see three assets, one for each of the three raw files (customers, ord
 
 To materialize the assets:
 
+To materialize the assets:
+
 1. Click **Assets**, then click "View global asset lineage" to see all of your assets.
 2. Click materialize all.
 3. Navigate to the runs tab and select the most recent run. Here you can see the logs from the run.
