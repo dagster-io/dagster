@@ -86,10 +86,8 @@ class Component(ABC):
 
     Implementing a component:
 
-    * Every component must implement the ``build_defs()`` method, which serves as a factory
-    for creating Dagster definitions.
-    * Components can optionally inherit from ``Resolvable`` to add schema-based configuration
-    capabilities, enabling parameterization through YAML files or structured Python objects.
+    * Every component must implement the ``build_defs()`` method, which serves as a factory for creating Dagster definitions.
+    * Components can optionally inherit from ``Resolvable`` to add schema-based configuration capabilities, enabling parameterization through YAML files or structured Python objects.
     * Components can attach a custom scaffolder with the ``@scaffold_with`` decorator.
 
     Args:
@@ -198,12 +196,12 @@ class Component(ABC):
                 # Generate defs.yaml with template
                 defs_file = component_dir / "defs.yaml"
                 defs_file.write_text(f'''
-    type: {request.type_name}
-    attributes:
-    table_name: "example_table"
-    columns: ["id", "name"]
-    database_url: "${{DATABASE_URL}}"
-    '''.strip())
+        type: {request.type_name}
+        attributes:
+        table_name: "example_table"
+        columns: ["id", "name"]
+        database_url: "${{DATABASE_URL}}"
+        '''.strip())
 
                 # Generate SQL query template
                 sql_file = component_dir / "query.sql"
