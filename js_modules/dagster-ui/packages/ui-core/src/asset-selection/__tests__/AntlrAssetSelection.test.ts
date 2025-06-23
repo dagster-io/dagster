@@ -24,7 +24,7 @@ const TEST_GRAPH: AssetGraphQueryItem[] = [
   {
     name: 'B',
     node: buildAssetNode({
-      tags: [buildDefinitionTag({key: 'foo', value: 'baz'})],
+      tags: [buildDefinitionTag({key: 'foo', value: ''})],
       kinds: ['python', 'snowflake'],
     }),
     inputs: [{dependsOn: [{solid: {name: 'A'}}]}],
@@ -158,7 +158,7 @@ describe('parseAssetSelectionQuery', () => {
     });
 
     it('should parse tag query', () => {
-      assertQueryResult('tag:foo', ['A', 'B']);
+      assertQueryResult('tag:foo', ['B']);
       assertQueryResult('tag:foo=bar', ['A']);
     });
 
@@ -184,7 +184,7 @@ describe('parseAssetSelectionQuery', () => {
     });
 
     it('should be able to filter to assets without any tags', () => {
-      assertQueryResult('tag:<null>', ['B2', 'C']);
+      assertQueryResult('tag:<null>', []);
     });
 
     it('should be able to filter to assets without any owners', () => {

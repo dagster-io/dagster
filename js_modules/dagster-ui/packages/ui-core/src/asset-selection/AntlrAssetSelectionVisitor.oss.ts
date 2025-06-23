@@ -175,13 +175,11 @@ export class AntlrAssetSelectionVisitor
     if (ctx.EQUAL()) {
       value = getValue(ctx.value(1));
     }
-    const isNullKey = isNullValue(ctx.value(0));
     return new Set(
       [...this.all_assets].filter((i) => {
-        if (i.node.tags.length > 0) {
-          return i.node.tags.some((t) => t.key === key && (!value || t.value === value));
-        }
-        return isNullKey && !value;
+        return i.node.tags.some(
+          (t) => t.key === key && ((!value && !t.value) || t.value === value),
+        );
       }),
     );
   }
