@@ -173,7 +173,7 @@ class Component(ABC):
     along with a model base class. Pydantic models and dataclasses are supported largely
     so that pre-existing code can be used as schema without having to modify it. We recommend
     using ``dg.Model`` for new components, which wraps Pydantic with Dagster defaults for better
-    developer experience..
+    developer experience.
 
     - ``dg.Model``: Recommended for new components (wraps Pydantic with Dagster defaults)
     - ``pydantic.BaseModel``: Direct Pydantic usage
