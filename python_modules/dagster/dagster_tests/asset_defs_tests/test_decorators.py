@@ -944,6 +944,9 @@ def test_graph_asset_decorator_no_args():
 @ignore_warning("Parameter `owners` .* is currently in beta")
 @ignore_warning("Parameter `auto_materialize_policy` .* is deprecated")
 @ignore_warning("Parameter `freshness_policy` .* is deprecated")
+@ignore_warning("Parameter `legacy_freshness_policies_by_output_name`")
+@ignore_warning("Parameter `legacy_freshness_policy`")
+@ignore_warning("Class `LegacyFreshnessPolicy`")
 @pytest.mark.parametrize(
     "automation_condition_arg",
     [
@@ -1085,6 +1088,7 @@ def test_graph_asset_w_key_prefix():
     assert str_prefix.keys_by_output_name["result"].path == ["prefix", "str_prefix"]
 
 
+@ignore_warning("Parameter `legacy_freshness_policies_by_output_name`")
 def test_graph_asset_w_config_dict():
     class FooConfig(Config):
         val: int
@@ -1114,6 +1118,7 @@ def test_graph_asset_w_config_dict():
     assert result.output_for_node("bar", "first_asset") == 1
 
 
+@ignore_warning("Parameter `legacy_freshness_policies_by_output_name`")
 def test_graph_asset_w_config_mapping():
     class FooConfig(Config):
         val: int
@@ -1156,6 +1161,9 @@ def test_graph_asset_w_config_mapping():
 @ignore_warning("Parameter `resource_defs`")
 @ignore_warning("Parameter `auto_materialize_policy`")
 @ignore_warning("Parameter `freshness_policy`")
+@ignore_warning("Class `LegacyFreshnessPolicy`")
+@ignore_warning("Parameter `legacy_freshness_policies_by_output_name`")
+@ignore_warning("Parameter `legacy_freshness_policy`")
 @pytest.mark.parametrize(
     "automation_condition_arg",
     [
@@ -1223,6 +1231,7 @@ def test_graph_multi_asset_decorator(automation_condition_arg):
     assert materialize_to_memory([x, y, two_assets]).success
 
 
+@ignore_warning("Parameter `legacy_freshness_policies_by_output_name`")
 def test_graph_multi_asset_w_key_prefix():
     @op(out={"one": Out(), "two": Out()})
     def two_in_two_out(context, in1, in2):
@@ -1266,6 +1275,7 @@ def test_graph_multi_asset_w_key_prefix():
     }
 
 
+@ignore_warning("Parameter `legacy_freshness_policies_by_output_name`")
 def test_graph_asset_w_ins_and_param_args():
     @asset
     def upstream():
@@ -1294,6 +1304,7 @@ def test_graph_asset_w_ins_and_param_args():
 
 
 @ignore_warning("Parameter `tags` of initializer `AssetOut.__init__` is currently in beta")
+@ignore_warning("Parameter `legacy_freshness_policies_by_output_name`")
 def test_multi_asset_graph_asset_w_tags():
     @op
     def return_1():
@@ -1324,6 +1335,7 @@ def test_multi_asset_graph_asset_w_tags():
 
 
 @ignore_warning("Parameter `owners` of initializer `AssetOut.__init__` is currently in beta")
+@ignore_warning("Parameter `legacy_freshness_policies_by_output_name`")
 def test_multi_asset_graph_asset_w_owners():
     @op
     def return_1():
@@ -1353,6 +1365,7 @@ def test_multi_asset_graph_asset_w_owners():
     assert the_asset.owners_by_key[AssetKey("no_owner")] == []
 
 
+@ignore_warning("Parameter `legacy_freshness_policies_by_output_name`")
 def test_graph_asset_w_ins_and_kwargs():
     @asset
     def upstream():
