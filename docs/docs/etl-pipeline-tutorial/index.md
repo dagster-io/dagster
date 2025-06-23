@@ -10,15 +10,15 @@ sidebar_class_name: hidden
 
 In this tutorial, you'll build a full ETL pipeline with Dagster that:
 
-- Imports data into DuckDB using Sling
-- Transforms data into reports with dbt
+- Ingests data into [DuckDB](https://duckdb.org/) using [Sling](https://slingdata.io/)
+- Transforms data into reports with [dbt](https://www.getdbt.com/)
 - Runs scheduled reports automatically
 - Generates one-time reports on demand
 - Visualizes the data with Evidence
 
-## You will learn to:
+You will learn to:
 
-- How to set up a Dagster project with the recommended project structure
+- Set up a Dagster project with the recommended project structure
 - Integrate with other tools
 - Create and materialize assets and dependencies
 - Ensure data quality with asset checks
@@ -42,7 +42,7 @@ To follow the steps in this tutorial, you'll need:
    uvx create-dagster project etl-tutorial
    ```
 
-2. Change into that project
+2. Change directory into your new project
 
    ```bash
    cd etl-tutorial

@@ -32,6 +32,12 @@ The standard Dagster library supports several components, but after adding `dags
 └───────────────────────────────────────────────────┴─────────────────────────────────────────────────────────────┘
 ```
 
+:::note
+
+You may see additional components listed as well as `SlingReplicationCollectionComponent`
+
+:::
+
 We can now scaffold the Sling component using `dg`:
 
 ```bash
@@ -91,7 +97,7 @@ Now that the Sling component has been configured you can view the asset catalog 
 
 TODO: Screenshot
 
-You will see six assets. Each of the three files (customers, orders, payments) is represented by a pair of assets, one representing the file in cloud storage and one for the file as table within DuckDB with Sling. You can launch these assets in the UI:
+You will see six assets. Each of the three files (customers, orders, payments) is represented by a pair of assets, one representing the file in cloud storage and one for the file as table within DuckDB with Sling:
 
 1. Click **Assets**, then click "View global asset lineage" to see all of your assets.
 2. Click materialize all.
@@ -100,7 +106,7 @@ You will see six assets. Each of the three files (customers, orders, payments) i
 You can also launch those assets via the command line by using `dg`:
 
 ```bash
-dg launch --assets *
+dg launch --assets "*"
 ```
 
 You can also launch specific assets by [selecting their asset keys](/guides/build/assets/asset-selection-syntax/):

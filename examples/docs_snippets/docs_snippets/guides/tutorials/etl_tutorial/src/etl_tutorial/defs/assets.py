@@ -1,9 +1,9 @@
+# start_joined_data_asset
 from dagster_duckdb import DuckDBResource
 
 import dagster as dg
 
 
-# start_joined_data_asset
 @dg.asset(
     deps=["stg_orders", "stg_customers"],
     kinds={"duckdb"},
@@ -178,7 +178,7 @@ def payment_performance(context: dg.AssetExecutionContext, duckdb: DuckDBResourc
                 sum(amount) as total_amount
             from jaffle_platform.main.stg_payments
             where category = '{payment_method_partition}'
-            group by '{payment_method_partition}', product_name;
+            group by payment_method, product_name;
             """
         )
         preview_query = f"select * from product_performance where payment_method = '{payment_method_partition}';"

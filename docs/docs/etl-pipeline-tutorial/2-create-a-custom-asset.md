@@ -1,5 +1,5 @@
 ---
-title: Join customer and order data
+title: Create a custom asset
 description: Create a custom asset to join customer and order data
 sidebar_position: 30
 ---
@@ -64,7 +64,7 @@ Within this file we will define the resource using the <PyObject section="defini
 <CodeExample
   path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/src/etl_tutorial/defs/resources.py"
   language="python"
-  title="src/etl_tutorial/defs/resources/py"
+  title="src/etl_tutorial/defs/resources.py"
 />
 
 This will allow all assets within the Dagster project to access the DuckDB database connection.

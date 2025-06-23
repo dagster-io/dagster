@@ -45,7 +45,7 @@ Sensors include the following elements:
 First we will use `dg` to create the sensor file:
 
 ```bash
-dg scaffold dagster.sensor sensors.py
+dg scaffold defs dagster.sensor sensors.py
 ```
 
 Now copy the following sensor code in the `sensors.py` file:

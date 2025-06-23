@@ -50,7 +50,7 @@ This will add the directory `transform` to the `etl_tutorial` module:
 
 This component only generates a single file, `defs.yaml`, to configure the `dagster_dbt.DbtProjectComponent` component.  Most of this file was configured when we scaffolded the component and provided the path to the dbt project:
 
-```yaml
+```yaml title="src/etl_tutorial/defs/transform/defs.yaml"
 type: dagster_dbt.DbtProjectComponent
 
 attributes:
@@ -85,4 +85,4 @@ This will return a table of all the definitions within the Dagster project. As w
 
 ## Next steps
 
-- Continue this tutorial with your [join customer and order data](/etl-pipeline-tutorial/join-customer-and-order-data)
+- Continue this tutorial with your [create a custom asset](/etl-pipeline-tutorial/create-a-custom-asset)
