@@ -226,7 +226,7 @@ class TestMdxBuilder:
 
         # Test functions with different wrapper patterns
         wrapper_functions = [
-            ("test_dagster_style_logger", 202, 208),  # LoggerDefinition with logger_fn
+            ("test_dagster_style_logger", 202, 208),  # Custom wrapper with logger_fn
             ("test_func_wrapper", 224, 230),  # GenericWrapper with func
             ("test_function_wrapper", 234, 240),  # GenericWrapper with function
             ("test_callback_wrapper", 243, 249),  # GenericWrapper with callback

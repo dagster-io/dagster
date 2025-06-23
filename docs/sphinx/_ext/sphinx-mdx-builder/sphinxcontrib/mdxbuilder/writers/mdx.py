@@ -190,13 +190,7 @@ class MdxTranslator(SphinxTranslator):
             "__func__",  # Method objects
             "fget",  # Property objects
             "__call__",  # Callable objects (last resort)
-            # Framework-specific patterns (generic names to avoid coupling):
-            "logger_fn",  # Dagster LoggerDefinition
-            "op_fn",  # Dagster OpDefinition
-            "resource_fn",  # Dagster ResourceDefinition
-            "sensor_fn",  # Dagster SensorDefinition
-            "schedule_fn",  # Dagster ScheduleDefinition
-            "hook_fn",  # Dagster HookDefinition
+            # Generic function storage patterns:
             "decorated",  # Generic decorated function access
             "inner",  # Generic inner function access
             "wrapped",  # Alternative to __wrapped__
@@ -204,6 +198,17 @@ class MdxTranslator(SphinxTranslator):
             "_fn",  # Private function storage (short form)
             "callback",  # Callback-style wrappers
             "handler",  # Handler-style wrappers
+            "target",  # Target function in wrappers
+            "original",  # Original function reference
+            "impl",  # Implementation function
+            "implementation",  # Full implementation name
+            # Common framework patterns (type_fn suffix pattern):
+            "fn",  # Simple fn suffix
+            "logger_fn",  # Any logger-type function
+            "main_fn",  # Main function reference
+            "exec_fn",  # Execution function
+            "run_fn",  # Run function
+            "call_fn",  # Call function
         ]
 
         current_obj = obj
