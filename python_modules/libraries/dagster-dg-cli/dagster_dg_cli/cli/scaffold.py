@@ -808,6 +808,10 @@ def scaffold_github_actions_command(git_root: Optional[Path], **global_options: 
             "TEMPLATE_PROJECT_DIR",
             str(dg_context.root_path.relative_to(git_root)),
         )
+        .replace(
+            "TEMPLATE_DAGSTER_VERSION",
+            CLI_VERSION_OR_LATEST,
+        )
     )
 
     registry_urls = None
