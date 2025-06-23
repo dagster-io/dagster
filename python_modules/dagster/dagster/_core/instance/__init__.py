@@ -3659,6 +3659,9 @@ class DagsterInstance(DynamicPartitionsStore):
     def streamline_read_asset_health_supported(self) -> bool:
         return False
 
+    def streamline_read_asset_health_required(self) -> bool:
+        return False
+
     def get_asset_check_health_state_for_assets(
         self, asset_keys: Sequence[AssetKey]
     ) -> Optional[Mapping[AssetKey, Optional["AssetCheckHealthState"]]]:
