@@ -184,7 +184,7 @@ describe('parseAssetSelectionQuery', () => {
     });
 
     it('should be able to filter to assets without any tags', () => {
-      assertQueryResult('tag:<null>', []);
+      assertQueryResult('tag:<null>', ['B2', 'C']);
     });
 
     it('should be able to filter to assets without any owners', () => {
