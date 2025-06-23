@@ -64,7 +64,7 @@ attributes:
   project: '{{ project_root }}/transform/jdbt'
 ```
 
-The component is correctly configured for our dbt project but we need to make one addition:
+The component is correctly configured for our dbt project, but we need to make one addition:
 
 <CodeExample
     path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/src/etl_tutorial/defs/transform/defs.yaml"

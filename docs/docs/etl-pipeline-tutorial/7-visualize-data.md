@@ -1,17 +1,14 @@
 ---
-title: Visualize data
-description: Visualize data with Evidence
+title: Build a dashboard to visualize data
+description: Visualize data with an Evidence dashboard
 sidebar_position: 80
 ---
 
-We will include one final component downstream of everything we have built. This will visualize some of the data we have been modeling in a dashboard using [Evidence](https://evidence.dev/). In this step, you will:
-
-- Integrate with Evidence
-- Build an Evidence deployment asset connected to your model assets
+In this step, we will visualize some of the data we have been modeling in a dashboard using [Evidence](https://evidence.dev/) connected to our model assets.
 
 ## 1. Add the Evidence project
 
-We need an Evidence project. We will clone one that is already configured to work with the data we have modeled with dbt:
+First, we will clone an Evidence project that is already configured to work with the data we have modeled with dbt:
 
 ```bash
 git clone --depth=1 https://github.com/dagster-io/jaffle-dashboard.git dashboard && rm -rf dashboard/.git

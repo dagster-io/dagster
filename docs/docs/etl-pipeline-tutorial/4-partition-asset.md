@@ -4,7 +4,7 @@ description: Partitioning Assets by datetime and categories
 sidebar_position: 50
 ---
 
-[Partitions](/guides/build/partitions-and-backfills/partitioning-assets) are a core abstraction in Dagster, that allow you to manage large datasets, process incremental updates, and improve pipeline performance. You can partition assets the following ways:
+[Partitions](/guides/build/partitions-and-backfills/partitioning-assets) are a core abstraction in Dagster that allow you to manage large datasets, process incremental updates, and improve pipeline performance. You can partition assets the following ways:
 
 - Time-based: Split data by time periods (e.g., daily, monthly)
 - Category-based: Divide by known categories (e.g., country, product type)
@@ -65,4 +65,4 @@ Partitions provide operational flexibility by allowing you to launch runs that m
 
 ## Next steps
 
-Now that we have the main assets in our ETL pipeline, it's time to add [automation your pipeline](/etl-pipeline-tutorial/automate-your-pipeline)
+Now that we have the main assets in our ETL pipeline, it's time to [automate our pipeline](/etl-pipeline-tutorial/automate-your-pipeline).
