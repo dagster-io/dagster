@@ -219,6 +219,48 @@ class TestMdxBuilder:
             "Source links should have proper security attributes"
         )
 
+    def test_decorated_function_source_links(self, built_docs):
+        """Test that decorated functions have source links generated properly."""
+        dummy_module_file = built_docs / "dummy_module.mdx"
+        content = dummy_module_file.read_text()
+
+        # Check that the decorated function is documented
+        assert "test_decorated_logger" in content, "Should document decorated function"
+
+        # Check that source links are present for decorated functions
+        # This test is designed to catch the missing source link issue
+        assert "[source]" in content, "Should have source links for decorated functions"
+        
+        # Look for the specific source link for the decorated function
+        # The source link should point to the line where the function is defined
+        import re
+        
+        # Find all source links in the content
+        source_link_pattern = r'<a[^>]*href="([^"]*tests/dummy_module\.py#L\d+)"[^>]*>\[source\]</a>'
+        source_links = re.findall(source_link_pattern, content)
+        
+        # Check that we have source links (this will fail if decorated functions are missing them)
+        assert len(source_links) > 0, "Should have at least one source link for functions"
+        
+        # Specifically check if there's a source link that includes the line number
+        # where test_decorated_logger is defined (around line 162)
+        decorated_function_source_found = False
+        for link in source_links:
+            if "dummy_module.py#L" in link:
+                # Extract line number from the link
+                line_match = re.search(r'#L(\d+)', link)
+                if line_match:
+                    line_num = int(line_match.group(1))
+                    # The decorated function starts around line 158-162
+                    if 158 <= line_num <= 165:
+                        decorated_function_source_found = True
+                        break
+        
+        assert decorated_function_source_found, (
+            "Should have source link for decorated function test_decorated_logger. "
+            f"Found source links: {source_links}"
+        )
+
 
 def test_direct_builder_import():
     """Test that the builder can be imported directly."""

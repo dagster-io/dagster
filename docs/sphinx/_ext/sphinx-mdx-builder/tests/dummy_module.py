@@ -7,6 +7,14 @@ from enum import Enum
 from typing import Any, Optional
 
 
+def decorator_with_args(**kwargs):
+    """A decorator that takes arguments to simulate @logger decorator."""
+    def decorator(func):
+        func._decorator_metadata = kwargs
+        return func
+    return decorator
+
+
 class Color(Enum):
     """Color enumeration for testing enum documentation."""
 
@@ -145,3 +153,22 @@ EXAMPLE_CARS = [
     Car("Honda", "Civic", 2019, 4, Color.RED),
     Car("Ford", "Mustang", 2021, 2, Color.RED),
 ]
+
+
+@decorator_with_args(
+    config={"log_level": "INFO", "name": "test_logger"},
+    description="A test decorated logger function."
+)
+def test_decorated_logger(init_context=None):
+    """This is a test function with a decorator to replicate the colored_console_logger issue.
+    
+    This function simulates the dagster._loggers.colored_console_logger pattern
+    where source links might be missing for decorated functions.
+    
+    Args:
+        init_context: The initialization context (optional)
+        
+    Returns:
+        str: A test logger message
+    """
+    return f"Test logger initialized with context: {init_context}"
