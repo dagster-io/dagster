@@ -4,10 +4,7 @@ src
     ├── definitions.py
     └── defs
         ├── __init__.py
-        ├── ingest
-        │   ├── defs.yaml
-        │   └── replication.yaml
-        ├── transform
-        │   └── defs.yaml
         ├── assets.py
-        └── resources.py
+        ├── resources.py
+        └── transform
+            └── defs.yaml

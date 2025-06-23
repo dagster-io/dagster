@@ -14,7 +14,6 @@ sidebar_position: 50
 In this step, you will:
 
 - Create a time-based asset partitioned by month
-- Create a category-based asset partitioned by product category
 
 ## 1. Create a time-based partitioned asset
 
@@ -43,31 +42,12 @@ and deletes any previous value for that month. Copy the following asset under th
 Do not worry about the `automation_condition` in the `dg.asset` decorator for now. This is not necessary but will make more sense when we discuss automation later.
 :::
 
-## 2. Create a category-based partitioned asset
+:::note
 
-Using known defined partitions is a simple way to break up your dataset when you know the different groups you want to subset it by. In our pipeline, we want to create an asset that represents the performance of each product category.
 
-1. To create the statically-defined partition for the product category, copy this code beneath the `monthly_sales_performance` asset:
+:::
 
-<CodeExample
-  path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/src/etl_tutorial/defs/assets.py"
-  language="python"
-  startAfter="start_product_category_partition"
-  endBefore="end_product_category_partition"
-  title="src/etl_tutorial/defs/assets.py"
-/>
-
-2. Now that the partition has been defined, we can use that in an asset that calculates the product category performance:
-
-<CodeExample
-  path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/src/etl_tutorial/defs/assets.py"
-  language="python"
-  startAfter="start_product_performance_asset"
-  endBefore="end_product_performance_asset"
-  title="src/etl_tutorial/defs/assets.py"
-/>
-
-## 3. Materialize partitioned assets
+## 2. Materialize partitioned assets
 
 To materialize these assets:
 
@@ -82,7 +62,7 @@ TODO: Screenshot
 
 ## Summary
 
- Partitions provide operational flexibility by allowing you to launch runs that materialize only a subset of your data without affecting the rest, and support backfilling capabilities to reprocess historical data for specific time periods or categories. As you are developing assets, consider where partitions might be helpful.
+Partitions provide operational flexibility by allowing you to launch runs that materialize only a subset of your data without affecting the rest, and support backfilling capabilities to reprocess historical data for specific time periods or categories. As you are developing assets, consider where partitions might be helpful.
 
 ## Next steps
 

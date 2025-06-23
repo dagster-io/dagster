@@ -4,13 +4,10 @@ src
     ├── definitions.py
     └── defs
         ├── __init__.py
-        ├── dashboard
-        │   └── defs.yaml
-        ├── ingest
-        │   ├── defs.yaml
-        │   └── replication.yaml
-        ├── transform
-        │   └── defs.yaml
         ├── assets.py
+        ├── dashboard
+        │   └── defs.yaml
         ├── resources.py
-        └── sensors.py
+        ├── sensors.py
+        └── transform
+            └── defs.yaml

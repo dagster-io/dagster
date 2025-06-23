@@ -13,7 +13,7 @@ In Dagster, you define [asset checks](/guides/test/asset-checks) like you define
 
 ## 1. Define an asset check
 
-Asset check can go in the `assets.py` file next to the asset we just defined. An asset check can be any logic we want. In our case we query the `joined_data` table created by our asset and ensure that `customer_id` is not null:
+Asset check can go in the `assets.py` file next to the asset we just defined. An asset check can be any logic we want. In our case we query the `raw_customers` table created by our asset and ensure that `id` is not null:
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/src/etl_tutorial/defs/assets.py"
@@ -56,7 +56,7 @@ TODO: Screenshot
 Asset checks will run when an asset is materialized, but asset checks can also be executed manually in the UI:
 
 1. Reload your Definitions.
-2. Navigate to the Asset Details page for the `joined_data` asset.
+2. Navigate to the Asset Details page for the `raw_customers` asset.
 3. Select the "Checks" tab.
 4. Click the **Execute** button for `missing_dimension_check`.
 

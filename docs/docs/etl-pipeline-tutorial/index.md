@@ -10,7 +10,7 @@ sidebar_class_name: hidden
 
 In this tutorial, you'll build a full ETL pipeline with Dagster that:
 
-- Ingests data into [DuckDB](https://duckdb.org/) using [Sling](https://slingdata.io/)
+- Ingests data into [DuckDB](https://duckdb.org/)
 - Transforms data into reports with [dbt](https://www.getdbt.com/)
 - Runs scheduled reports automatically
 - Generates one-time reports on demand
