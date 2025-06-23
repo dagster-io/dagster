@@ -36,7 +36,11 @@ def test_airflow_instance(airflow_instance: None) -> None:
     # Attempt a nonexistent file token
     with pytest.raises(DagsterError, match="Failed to fetch source code."):
         instance.get_dag_source_code(
-            DagInfo(dag_id="nonexistent", webserver_url=AIRFLOW_BASE_URL, metadata={"file_token": "nonexistent"})
+            DagInfo(
+                dag_id="nonexistent",
+                webserver_url=AIRFLOW_BASE_URL,
+                metadata={"file_token": "nonexistent"},
+            )
         )
 
     task_info = instance.get_task_info(dag_id="print_dag", task_id="print_task")

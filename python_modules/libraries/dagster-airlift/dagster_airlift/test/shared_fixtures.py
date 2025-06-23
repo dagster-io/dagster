@@ -147,7 +147,8 @@ def reserialize_fixture(airflow_instance: None) -> Callable[[], None]:
 def _airflow_is_serving(port: int) -> bool:
     """Check that airflow is serving at the given port."""
     try:
-        response = requests.get(f"http://localhost:{port}")
+        response = requests.get(f"http://localhost:{port}", timeout=60)
+        print(f"Airflow is serving at {port}? {response.status_code == 200}")
         return response.status_code == 200
     except:
         return False
@@ -160,7 +161,24 @@ def optionally_stash_jwt_token(port: int) -> None:
         yield
     else:
         print("Attempting to first check if Airflow is running at all")
-        print(requests.get("http://localhost:8080/api/v2/version", timeout=10))
+        import airflow
+
+        print(f"CONFIRMED AIRFLOW VERSION: {airflow.__version__}")
+        print("Can connect to Airflow?")
+        try:
+            print(requests.get("http://localhost:8080", timeout=10))
+        except Exception as e:
+            print(f"Error connecting to Airflow: {e}")
+        print("Can connect to Airflow API v1?")
+        try:
+            print(requests.get("http://localhost:8080/api/v1/version", timeout=10))
+        except Exception as e:
+            print(f"Error connecting to Airflow API v1: {e}")
+        print("Can connect to Airflow API v2?")
+        try:
+            print(requests.get("http://localhost:8080/api/v2/version", timeout=10))
+        except Exception as e:
+            print(f"Error connecting to Airflow API v2: {e}")
         print("--------------------------------")
         # Make a request to Airflow's auth/token endpoint to get a JWT token
         response = requests.get("http://localhost:8080/auth/token", timeout=10)
@@ -189,7 +207,9 @@ def stand_up_airflow(
         stdout=stdout_channel,
     )
     try:
-        _airflow_is_serving(port=port)
+        print("Checking if Airflow is serving")
+        is_serving = _airflow_is_serving(port=port)
+        print(f"Airflow is serving {is_serving}")
         with optionally_stash_jwt_token(port=port):
             _airflow_is_ready(port=port, expected_num_dags=expected_num_dags)
             yield process
