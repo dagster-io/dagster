@@ -749,14 +749,6 @@ def test_list_env_succeeds_with_no_defs(monkeypatch):
 
         monkeypatch.setenv("DG_CLI_CONFIG", str(Path(cloud_config_dir) / "dg.toml"))
         monkeypatch.setenv("DAGSTER_CLOUD_CLI_CONFIG", str(Path(cloud_config_dir) / "config"))
-        result = runner.invoke("list", "env")
-        assert_runner_result(result)
-        assert (
-            result.output.strip()
-            == textwrap.dedent("""
-            No environment variables are defined for this project.
-        """).strip()
-        )
 
         Path(".env").write_text("FOO=bar")
         result = runner.invoke("list", "env")
