@@ -717,7 +717,7 @@ def _get_build_fragment_for_locations(
             .replace("TEMPLATE_LOCATION_NAME", location_ctx.code_location_name)
             .replace("TEMPLATE_LOCATION_PATH", str(location_ctx.root_path.relative_to(git_root)))
             .replace("TEMPLATE_IMAGE_REGISTRY", registry_url)
-            .replace("TEMPLATE_DAGSTER_VERSION", cli_version)
+            .replace("TEMPLATE_DAGSTER_VERSION", CLI_VERSION_OR_LATEST)
         )
     return "\n" + "\n".join(output)
 
