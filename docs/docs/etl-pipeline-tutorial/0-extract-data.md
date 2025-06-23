@@ -126,17 +126,22 @@ To materialize the assets:
 
    ![2048 resolution](/images/tutorial/etl-tutorial/ingest-assets-run.png)
 
-You can also launch those assets via the command line by using [`dg launch`](/api/dg/dg-cli#dg-launch):
+
+:::tip
+
+You can also materialize assets from the command line with [`dg` launch](/api/dg/dg-cli#dg-launch). You will need to pass an asset selection -- in this case, `*` selects all assets:
 
 ```bash
 dg launch --assets "*"
 ```
 
-You can also launch specific assets by [selecting their asset keys](/guides/build/assets/asset-selection-syntax/):
+To launch specific assets, pass an [asset selection](/guides/build/assets/asset-selection-syntax) that selects them:
 
 ```bash
-dg launch --assets target/main/raw_customers,target/main/raw_orders,target/main/raw_payments
+dg launch --asset target/main/raw_customers,target/main/raw_orders,target/main/raw_payments
 ```
+
+:::
 
 ## Summary
 
@@ -147,4 +152,4 @@ At this point, we have handled the ingestion layer of our ETL pipeline. The `etl
 
 ## Next steps
 
-- Continue this tutorial with your [transform data](/etl-pipeline-tutorial/transform-data)
+In the [next step](/etl-pipeline-tutorial/transform-data), we will build downstream assets that transform the data we have loaded into DuckDB.
