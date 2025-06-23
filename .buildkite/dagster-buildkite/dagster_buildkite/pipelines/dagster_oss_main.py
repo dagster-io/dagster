@@ -135,6 +135,7 @@ def build_dagster_oss_main_steps() -> List[BuildkiteStep]:
         BUILDKITE_ORGANIZATION_SLUG,
         BUILDKITE_STEP_SUITE_SLUG,
         "muted",
+        suppress_errors=True,
     )
     print(
         f"buildkite_suite_mute_quarantined_objects = {buildkite_suite_mute_quarantined_objects}",
@@ -145,6 +146,7 @@ def build_dagster_oss_main_steps() -> List[BuildkiteStep]:
         BUILDKITE_ORGANIZATION_SLUG,
         BUILDKITE_STEP_SUITE_SLUG,
         "skipped",
+        suppress_errors=True,
     )
     print(
         f"buildkite_suite_skip_quarantined_objects = {buildkite_suite_skip_quarantined_objects}",
