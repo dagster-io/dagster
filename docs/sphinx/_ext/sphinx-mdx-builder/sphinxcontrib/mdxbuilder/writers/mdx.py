@@ -168,6 +168,77 @@ class MdxTranslator(SphinxTranslator):
             ord(">"): "&gt;",
         }
 
+    def _unwrap_function_object(self, obj):
+        """Attempt to unwrap function-like objects to get the underlying callable.
+
+        This method handles various common patterns used by decorators and frameworks
+        that wrap functions in custom objects while preserving access to the original function.
+
+        Args:
+            obj: The object to unwrap
+
+        Returns:
+            The unwrapped function if found, otherwise the original object
+        """
+        # Common patterns for accessing wrapped functions
+        function_attributes = [
+            # Standard functools.wraps pattern (already handled above via __wrapped__)
+            "__wrapped__",
+            # Common patterns in various frameworks:
+            "func",  # Used by many decorators
+            "function",  # Alternative naming
+            "__func__",  # Method objects
+            "fget",  # Property objects
+            "__call__",  # Callable objects (last resort)
+            # Framework-specific patterns (generic names to avoid coupling):
+            "logger_fn",  # Dagster LoggerDefinition
+            "op_fn",  # Dagster OpDefinition
+            "resource_fn",  # Dagster ResourceDefinition
+            "sensor_fn",  # Dagster SensorDefinition
+            "schedule_fn",  # Dagster ScheduleDefinition
+            "hook_fn",  # Dagster HookDefinition
+            "decorated",  # Generic decorated function access
+            "inner",  # Generic inner function access
+            "wrapped",  # Alternative to __wrapped__
+            "_func",  # Private function storage
+            "_fn",  # Private function storage (short form)
+            "callback",  # Callback-style wrappers
+            "handler",  # Handler-style wrappers
+        ]
+
+        current_obj = obj
+
+        # Try each attribute pattern
+        for attr_name in function_attributes:
+            if hasattr(current_obj, attr_name):
+                potential_func = getattr(current_obj, attr_name)
+
+                # Verify it's actually a callable and has source code
+                if callable(potential_func):
+                    try:
+                        # Test if we can get source info from this object
+                        if inspect.getsourcefile(potential_func):
+                            current_obj = potential_func
+                            break
+                    except (TypeError, OSError):
+                        # If this attribute doesn't have source info, continue to next
+                        continue
+
+        # Handle callable objects that might contain the function logic
+        # but only if we haven't found a better candidate
+        if current_obj is obj and callable(obj) and not inspect.isfunction(obj):
+            # For callable objects, try to access their __call__ method's source
+            # This is a last resort and might not always work
+            if hasattr(obj, "__call__") and hasattr(obj.__call__, "__func__"):
+                try:
+                    call_method = obj.__call__.__func__
+                    if inspect.getsourcefile(call_method):
+                        current_obj = call_method
+                except (TypeError, OSError):
+                    pass
+
+        return current_obj
+
     ############################################################
     # Utility and State Methods
     ############################################################
@@ -205,6 +276,9 @@ class MdxTranslator(SphinxTranslator):
             # unwrap the root function if function is wrapped
             while hasattr(obj, "__wrapped__"):
                 obj = obj.__wrapped__
+
+            # Handle various patterns of function-wrapping objects
+            obj = self._unwrap_function_object(obj)
 
             try:
                 source_file = inspect.getsourcefile(obj)

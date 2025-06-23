@@ -7,12 +7,59 @@ from enum import Enum
 from typing import Any, Optional
 
 
-def decorator_with_args(**kwargs):
-    """A decorator that takes arguments to simulate @logger decorator."""
+class LoggerDefinition:
+    """A mock LoggerDefinition class that simulates Dagster's LoggerDefinition."""
+
+    def __init__(self, logger_fn, config_schema=None, description=None):
+        self._logger_fn = logger_fn
+        self.config_schema = config_schema
+        self.description = description
+
+    @property
+    def logger_fn(self):
+        """Access the underlying logger function."""
+        return self._logger_fn
+
+
+def logger(config_schema=None, description=None):
+    """A decorator that simulates Dagster's @logger decorator.
+
+    This returns a LoggerDefinition object instead of the function directly,
+    which is the key difference that causes source link issues.
+    """
 
     def decorator(func):
-        func.decorator_metadata = kwargs
-        return func
+        return LoggerDefinition(
+            logger_fn=func, config_schema=config_schema, description=description
+        )
+
+    return decorator
+
+
+class GenericWrapper:
+    """A generic wrapper class that demonstrates common wrapping patterns."""
+
+    def __init__(self, func, pattern_name="func"):
+        # Store the function using different attribute patterns
+        if pattern_name == "func":
+            self.func = func
+        elif pattern_name == "function":
+            self.function = func
+        elif pattern_name == "wrapped":
+            self.wrapped = func
+        elif pattern_name == "callback":
+            self.callback = func
+        else:
+            # Default to func
+            self.func = func
+        self.pattern_name = pattern_name
+
+
+def generic_wrapper(pattern_name="func"):
+    """A decorator that creates various types of function wrappers."""
+
+    def decorator(func):
+        return GenericWrapper(func, pattern_name)
 
     return decorator
 
@@ -157,11 +204,11 @@ EXAMPLE_CARS = [
 ]
 
 
-@decorator_with_args(
-    config={"log_level": "INFO", "name": "test_logger"},
+@logger(
+    config_schema={"log_level": "INFO", "name": "test_logger"},
     description="A test decorated logger function.",
 )
-def test_decorated_logger(init_context=None):
+def test_dagster_style_logger(init_context=None):
     """This is a test function with a decorator to replicate the colored_console_logger issue.
 
     This function simulates the dagster._loggers.colored_console_logger pattern
@@ -174,3 +221,31 @@ def test_decorated_logger(init_context=None):
         str: A test logger message
     """
     return f"Test logger initialized with context: {init_context}"
+
+
+@generic_wrapper(pattern_name="func")
+def test_func_wrapper(param1, param2="default"):
+    """A function wrapped using the 'func' attribute pattern.
+
+    This tests the most common wrapper pattern where the function
+    is stored in a 'func' attribute.
+    """
+    return f"Function called with {param1} and {param2}"
+
+
+@generic_wrapper(pattern_name="function")
+def test_function_wrapper(data):
+    """A function wrapped using the 'function' attribute pattern.
+
+    This tests an alternative naming convention for storing functions.
+    """
+    return f"Processing data: {data}"
+
+
+@generic_wrapper(pattern_name="callback")
+def test_callback_wrapper():
+    """A function wrapped using the 'callback' attribute pattern.
+
+    This tests callback-style wrappers common in event systems.
+    """
+    return "Callback executed"

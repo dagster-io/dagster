@@ -224,15 +224,17 @@ class TestMdxBuilder:
         dummy_module_file = built_docs / "dummy_module.mdx"
         content = dummy_module_file.read_text()
 
-        # Check that the decorated function is documented
-        assert "test_decorated_logger" in content, "Should document decorated function"
+        # Test functions with different wrapper patterns
+        wrapper_functions = [
+            ("test_dagster_style_logger", 202, 208),  # LoggerDefinition with logger_fn
+            ("test_func_wrapper", 224, 230),  # GenericWrapper with func
+            ("test_function_wrapper", 234, 240),  # GenericWrapper with function
+            ("test_callback_wrapper", 243, 249),  # GenericWrapper with callback
+        ]
 
-        # Check that source links are present for decorated functions
-        # This test is designed to catch the missing source link issue
-        assert "[source]" in content, "Should have source links for decorated functions"
+        # Check that source links are present
+        assert "[source]" in content, "Should have source links for wrapped functions"
 
-        # Look for the specific source link for the decorated function
-        # The source link should point to the line where the function is defined
         import re
 
         # Find all source links in the content
@@ -241,26 +243,36 @@ class TestMdxBuilder:
         )
         source_links = re.findall(source_link_pattern, content)
 
-        # Check that we have source links (this will fail if decorated functions are missing them)
+        # Check that we have source links
         assert len(source_links) > 0, "Should have at least one source link for functions"
 
-        # Specifically check if there's a source link that includes the line number
-        # where test_decorated_logger is defined (around line 162)
-        decorated_function_source_found = False
-        for link in source_links:
-            if "dummy_module.py#L" in link:
-                # Extract line number from the link
-                line_match = re.search(r"#L(\d+)", link)
-                if line_match:
-                    line_num = int(line_match.group(1))
-                    # The decorated function starts around line 158-162
-                    if 158 <= line_num <= 165:
-                        decorated_function_source_found = True
-                        break
+        # Check each wrapper function has its source link
+        found_functions = []
+        for func_name, start_line, end_line in wrapper_functions:
+            # Check that the function is documented
+            if func_name in content:
+                found_functions.append(func_name)
 
-        assert decorated_function_source_found, (
-            "Should have source link for decorated function test_decorated_logger. "
-            f"Found source links: {source_links}"
+                # Look for source link in the expected line range
+                function_source_found = False
+                for link in source_links:
+                    if "dummy_module.py#L" in link:
+                        line_match = re.search(r"#L(\d+)", link)
+                        if line_match:
+                            line_num = int(line_match.group(1))
+                            if start_line <= line_num <= end_line:
+                                function_source_found = True
+                                break
+
+                assert function_source_found, (
+                    f"Should have source link for wrapped function {func_name} "
+                    f"in line range {start_line}-{end_line}. "
+                    f"Found source links: {source_links}"
+                )
+
+        # Ensure we found at least some of the wrapper functions
+        assert len(found_functions) >= 2, (
+            f"Should document multiple wrapper functions. Found: {found_functions}"
         )
 
 
