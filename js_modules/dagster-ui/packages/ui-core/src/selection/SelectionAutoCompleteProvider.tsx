@@ -9,6 +9,7 @@ import {
 } from '@dagster-io/ui-components';
 import React from 'react';
 
+import styles from './SelectionAutoComplete.module.css';
 import {assertUnreachable} from '../app/Util';
 
 export interface SelectionAutoCompleteProvider {
@@ -250,9 +251,7 @@ export const createProvider = <
   function nullSuggestion({textCallback}: {textCallback?: (text: string) => string}) {
     return {
       text: textCallback ? textCallback('<null>') : '<null>',
-      jsx: (
-        <SuggestionJSXBase label={<span style={{color: Colors.textLighter()}}>No value</span>} />
-      ),
+      jsx: <SuggestionJSXBase label={<span className={styles.nullString}>No value</span>} />,
     };
   }
 
