@@ -9,9 +9,11 @@ from typing import Any, Optional
 
 def decorator_with_args(**kwargs):
     """A decorator that takes arguments to simulate @logger decorator."""
+
     def decorator(func):
-        func._decorator_metadata = kwargs
+        func.decorator_metadata = kwargs
         return func
+
     return decorator
 
 
@@ -157,17 +159,17 @@ EXAMPLE_CARS = [
 
 @decorator_with_args(
     config={"log_level": "INFO", "name": "test_logger"},
-    description="A test decorated logger function."
+    description="A test decorated logger function.",
 )
 def test_decorated_logger(init_context=None):
     """This is a test function with a decorator to replicate the colored_console_logger issue.
-    
+
     This function simulates the dagster._loggers.colored_console_logger pattern
     where source links might be missing for decorated functions.
-    
+
     Args:
         init_context: The initialization context (optional)
-        
+
     Returns:
         str: A test logger message
     """
