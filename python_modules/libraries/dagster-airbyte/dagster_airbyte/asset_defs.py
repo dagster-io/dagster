@@ -205,8 +205,8 @@ def _build_airbyte_assets_from_metadata(
                 ),
                 io_manager_key=io_manager_key,
                 legacy_freshness_policy=(
-                    assets_defn_meta.freshness_policies_by_output_name.get(k)
-                    if assets_defn_meta.freshness_policies_by_output_name
+                    assets_defn_meta.legacy_freshness_policies_by_output_name.get(k)
+                    if assets_defn_meta.legacy_freshness_policies_by_output_name
                     else None
                 ),
                 dagster_type=Nothing,
