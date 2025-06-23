@@ -161,7 +161,7 @@ def _build_airbyte_asset_defn_metadata(
                 for table in tables
             }
         ),
-        freshness_policies_by_output_name=(
+        legacy_freshness_policies_by_output_name=(
             {output: legacy_freshness_policy for output in outputs}
             if legacy_freshness_policy
             else None
