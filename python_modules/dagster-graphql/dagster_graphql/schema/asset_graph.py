@@ -58,7 +58,6 @@ from dagster_graphql.implementation.fetch_assets import (
 from dagster_graphql.implementation.fetch_partition_subsets import (
     regenerate_and_check_partition_subsets,
 )
-from dagster_graphql.implementation.loader import StaleStatusLoader
 from dagster_graphql.schema import external
 from dagster_graphql.schema.asset_checks import (
     AssetChecksOrErrorUnion,
@@ -348,9 +347,7 @@ class GrapheneAssetNode(graphene.ObjectType):
 
     def __init__(
         self,
-        *,
         remote_node: RemoteAssetNode,
-        stale_status_loader: Optional[StaleStatusLoader] = None,
     ):
         from dagster_graphql.implementation.fetch_assets import get_unique_asset_id
 
@@ -360,12 +357,6 @@ class GrapheneAssetNode(graphene.ObjectType):
         self._asset_node_snap = repo_scoped_node.asset_node_snap
         self._repository_handle = repo_scoped_node.repository_handle
         self._repository_selector = self._repository_handle.to_selector()
-
-        self._stale_status_loader = check.opt_inst_param(
-            stale_status_loader,
-            "stale_status_loader",
-            StaleStatusLoader,
-        )
 
         self._remote_job = None  # lazily loaded
         self._node_definition_snap = None  # lazily loaded
@@ -400,14 +391,6 @@ class GrapheneAssetNode(graphene.ObjectType):
     @property
     def asset_node_snap(self) -> AssetNodeSnap:
         return self._asset_node_snap
-
-    @property
-    def stale_status_loader(self) -> StaleStatusLoader:
-        loader = check.not_none(
-            self._stale_status_loader,
-            "stale_status_loader must exist in order to access data versioning information",
-        )
-        return loader
 
     def _get_asset_graph_differ(self, graphene_info: ResolveInfo) -> Optional[AssetGraphDiffer]:
         if self._asset_graph_differ is not None:
@@ -722,7 +705,9 @@ class GrapheneAssetNode(graphene.ObjectType):
     ) -> Any:  # (GrapheneAssetStaleStatus)
         if partition:
             self._validate_partitions_existence()
-        return self.stale_status_loader.get_status(self._asset_node_snap.asset_key, partition)
+        return graphene_info.context.stale_status_loader.get_status(
+            self._asset_node_snap.asset_key, partition
+        )
 
     def resolve_staleStatusByPartition(
         self,
@@ -736,7 +721,9 @@ class GrapheneAssetNode(graphene.ObjectType):
         else:
             self._validate_partitions_existence()
         return [
-            self.stale_status_loader.get_status(self._asset_node_snap.asset_key, partition)
+            graphene_info.context.stale_status_loader.get_status(
+                self._asset_node_snap.asset_key, partition
+            )
             for partition in partitions
         ]
 
@@ -745,7 +732,7 @@ class GrapheneAssetNode(graphene.ObjectType):
     ) -> Sequence[GrapheneAssetStaleCause]:
         if partition:
             self._validate_partitions_existence()
-        return self._get_staleCauses(partition)
+        return self._get_staleCauses(graphene_info, partition)
 
     def resolve_staleCausesByPartition(
         self,
@@ -758,12 +745,12 @@ class GrapheneAssetNode(graphene.ObjectType):
             )
         else:
             self._validate_partitions_existence()
-        return [self._get_staleCauses(partition) for partition in partitions]
+        return [self._get_staleCauses(graphene_info, partition) for partition in partitions]
 
     def _get_staleCauses(
-        self, partition: Optional[str] = None
+        self, graphene_info: ResolveInfo, partition: Optional[str] = None
     ) -> Sequence[GrapheneAssetStaleCause]:
-        causes = self.stale_status_loader.get_stale_root_causes(
+        causes = graphene_info.context.stale_status_loader.get_stale_root_causes(
             self._asset_node_snap.asset_key, partition
         )
         return [
@@ -787,7 +774,7 @@ class GrapheneAssetNode(graphene.ObjectType):
     ) -> Optional[str]:
         if partition:
             self._validate_partitions_existence()
-        version = self.stale_status_loader.get_current_data_version(
+        version = graphene_info.context.stale_status_loader.get_current_data_version(
             self._asset_node_snap.asset_key, partition
         )
         return None if version == NULL_DATA_VERSION else version.value
@@ -802,7 +789,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         else:
             self._validate_partitions_existence()
         data_versions = [
-            self.stale_status_loader.get_current_data_version(
+            graphene_info.context.stale_status_loader.get_current_data_version(
                 self._asset_node_snap.asset_key, partition
             )
             for partition in partitions
@@ -863,9 +850,6 @@ class GrapheneAssetNode(graphene.ObjectType):
     def resolve_internalFreshnessPolicy(
         self, graphene_info: ResolveInfo
     ) -> Optional[GrapheneInternalFreshnessPolicy]:
-        if not graphene_info.context.instance.internal_asset_freshness_enabled():
-            return None
-
         if self._asset_node_snap.internal_freshness_policy:
             return GrapheneInternalFreshnessPolicy.from_policy(
                 self._asset_node_snap.internal_freshness_policy

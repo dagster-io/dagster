@@ -89,7 +89,6 @@ from dagster_graphql.implementation.fetch_schedules import (
 from dagster_graphql.implementation.fetch_sensors import get_sensor_or_error, get_sensors_or_error
 from dagster_graphql.implementation.fetch_solids import get_graph_or_error
 from dagster_graphql.implementation.fetch_ticks import get_instigation_ticks
-from dagster_graphql.implementation.loader import StaleStatusLoader
 from dagster_graphql.implementation.run_config_schema import resolve_run_config_schema_or_error
 from dagster_graphql.implementation.utils import (
     UserFacingGraphQLError,
@@ -1099,16 +1098,9 @@ class GrapheneQuery(graphene.ObjectType):
             else:
                 return graphene_info.context.asset_graph
 
-        stale_status_loader = StaleStatusLoader(
-            instance=graphene_info.context.instance,
-            asset_graph=load_asset_graph,
-            loading_context=graphene_info.context,
-        )
-
         nodes = [
             GrapheneAssetNode(
                 remote_node=remote_node,
-                stale_status_loader=stale_status_loader,
             )
             for remote_node in results
         ]

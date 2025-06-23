@@ -104,6 +104,27 @@ GET_ASSET_MATERIALIZATION = """
     }
 """
 
+GET_MULTIPLE_ASSET_MATERIALIZATION = """
+    query AssetQuery($assetKey: AssetKeyInput!) {
+        assetOrError(assetKey: $assetKey) {
+            ... on Asset {
+                assetMaterializations(limit: 2) {
+                    label
+                    assetLineage {
+                        assetKey {
+                            path
+                        }
+                        partitions
+                    }
+                }
+            }
+            ... on AssetNotFoundError {
+                __typename
+            }
+        }
+    }
+"""
+
 GET_ASSET_MATERIALIZATION_WITH_PARTITION = """
     query AssetQuery($assetKey: AssetKeyInput!) {
         assetOrError(assetKey: $assetKey) {
@@ -1133,6 +1154,20 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         result = execute_dagster_graphql(
             graphql_context,
             GET_ASSET_MATERIALIZATION,
+            variables={"assetKey": {"path": ["a"]}},
+        )
+        assert result.data
+        snapshot.assert_match(result.data)
+
+    def test_get_multiple_asset_key_materializations(
+        self, graphql_context: WorkspaceRequestContext, snapshot
+    ):
+        for i in range(3):
+            _create_run(graphql_context, "single_asset_job")
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_MULTIPLE_ASSET_MATERIALIZATION,
             variables={"assetKey": {"path": ["a"]}},
         )
         assert result.data
