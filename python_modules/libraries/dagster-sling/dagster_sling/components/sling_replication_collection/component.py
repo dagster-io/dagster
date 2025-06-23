@@ -130,10 +130,6 @@ class SlingReplicationCollectionComponent(Component, Resolvable):
     # TODO: deprecate and then delete -- schrockn 2025-06-10
     asset_post_processors: Optional[Sequence[AssetPostProcessor]] = None
 
-    @cached_property
-    def sling_resource(self) -> SlingResource:
-        return SlingResource(connections=self.connections)
-
     def build_asset(
         self, context: ComponentLoadContext, replication_spec_model: SlingReplicationSpecModel
     ) -> AssetsDefinition:
@@ -171,7 +167,8 @@ class SlingReplicationCollectionComponent(Component, Resolvable):
         context: AssetExecutionContext,
         replication_spec_model: SlingReplicationSpecModel,
     ) -> Iterator[Union[AssetMaterialization, MaterializeResult]]:
-        iterator = self.sling_resource.replicate(context=context)
+        sling_resource = SlingResource(connections=self.connections)
+        iterator = sling_resource.replicate(context=context)
         if "column_metadata" in replication_spec_model.include_metadata:
             iterator = iterator.fetch_column_metadata()
         if "row_count" in replication_spec_model.include_metadata:

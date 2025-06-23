@@ -129,7 +129,7 @@ class TestSlingOpCustomization(TestOpCustomization):
             assert len(replications) == 1
             op = replications[0].op
             assert op
-            assert assertion(op)
+            assert assertion(op), f"Op spec {op} does not match assertion {assertion}"
 
 
 def test_python_params_include_metadata() -> None:
@@ -198,7 +198,7 @@ class TestSlingTranslation(TestTranslation):
         defs = build_component_defs_for_test(
             SlingReplicationCollectionComponent,
             {
-                "sling": {},
+                "connections": [],
                 "replications": [{"path": str(REPLICATION_PATH), "translation": attributes}],
             },
         )
@@ -207,7 +207,9 @@ class TestSlingTranslation(TestTranslation):
             key = key_modifier(key)
 
         assets_def = defs.resolve_assets_def(key)
-        assert assertion(assets_def.get_asset_spec(key))
+        assert assertion(assets_def.get_asset_spec(key)), (
+            f"Asset spec {assets_def.get_asset_spec(key)} does not match assertion {assertion}"
+        )
 
 
 def test_scaffold_sling():
@@ -247,7 +249,7 @@ def test_asset_post_processors_deprecation_error() -> None:
                     data["attributes"]["asset_post_processors"] = [
                         {"target": "*", "attributes": {"group_name": "test_group"}}
                     ]
-                    data["attributes"]["sling"]["connections"][0]["instance"] = f"{temp_dir}/duckdb"
+                    data["attributes"]["connections"][0]["instance"] = f"{temp_dir}/duckdb"
 
                 context = ComponentLoadContext.for_test().for_path(component_path)
                 component = get_underlying_component(context)

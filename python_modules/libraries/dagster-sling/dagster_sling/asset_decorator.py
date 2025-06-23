@@ -104,22 +104,6 @@ def sling_assets(
             def my_assets(context, sling: SlingResource):
                 yield from sling.replicate(context=context)
     """
-    return multi_asset(
-        name=name,
-        partitions_def=partitions_def,
-        can_subset=True,
-        op_tags=op_tags,
-        backfill_policy=backfill_policy,
-        specs=get_sling_asset_specs(replication_config, dagster_sling_translator, partitions_def),
-        pool=pool,
-    )
-
-
-def get_sling_asset_specs(
-    replication_config: SlingReplicationParam,
-    dagster_sling_translator: Optional[DagsterSlingTranslator] = None,
-    partitions_def: Optional[PartitionsDefinition] = None,
-) -> list[AssetSpec]:
     replication_config = validate_replication(replication_config)
 
     raw_streams = get_streams_from_replication(replication_config)
@@ -140,17 +124,22 @@ def get_sling_asset_specs(
             return asset_spec.replace_attributes(code_version=code_version)
         return asset_spec
 
-    return [
-        update_code_version_if_unset_by_translator(
-            dagster_sling_translator.get_asset_spec(stream).merge_attributes(
-                metadata={
-                    METADATA_KEY_TRANSLATOR: dagster_sling_translator,
-                    METADATA_KEY_REPLICATION_CONFIG: replication_config,
-                }
+    return multi_asset(
+        name=name,
+        partitions_def=partitions_def,
+        can_subset=True,
+        op_tags=op_tags,
+        backfill_policy=backfill_policy,
+        specs=[
+            update_code_version_if_unset_by_translator(
+                dagster_sling_translator.get_asset_spec(stream).merge_attributes(
+                    metadata={
+                        METADATA_KEY_TRANSLATOR: dagster_sling_translator,
+                        METADATA_KEY_REPLICATION_CONFIG: replication_config,
+                    }
+                )
             )
-        ).replace_attributes(
-            partitions_def=partitions_def,
-            skippable=True,
-        )
-        for stream in streams
-    ]
+            for stream in streams
+        ],
+        pool=pool,
+    )
