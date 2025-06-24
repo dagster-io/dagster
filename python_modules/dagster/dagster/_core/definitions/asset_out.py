@@ -20,6 +20,7 @@ from dagster._core.definitions.events import (
     CoercibleToAssetKey,
     CoercibleToAssetKeyPrefix,
 )
+from dagster._core.definitions.freshness import InternalFreshnessPolicy
 from dagster._core.definitions.freshness_policy import LegacyFreshnessPolicy
 from dagster._core.definitions.input import NoValueSentinel
 from dagster._core.definitions.output import Out
@@ -102,6 +103,7 @@ class AssetOut:
         tags: Optional[Mapping[str, str]] = None,
         kinds: Optional[set[str]] = None,
         legacy_freshness_policy: Optional[LegacyFreshnessPolicy] = None,
+        freshness_policy: Optional[InternalFreshnessPolicy] = None,
         **kwargs,
     ):
         # Accept a hidden "spec" argument to allow for the AssetOut to be constructed from an AssetSpec
@@ -129,6 +131,7 @@ class AssetOut:
                 automation_condition,
                 auto_materialize_policy,
                 legacy_freshness_policy,
+                freshness_policy,
                 owners,
                 tags,
                 kinds,
@@ -159,6 +162,11 @@ class AssetOut:
                     legacy_freshness_policy,
                     "legacy_freshness_policy",
                     LegacyFreshnessPolicy,
+                ),
+                freshness_policy=check.opt_inst_param(
+                    freshness_policy,
+                    "freshness_policy",
+                    InternalFreshnessPolicy,
                 ),
                 owners=check.opt_sequence_param(owners, "owners", of_type=str),
                 tags=normalize_tags(tags or {}, strict=True),
@@ -193,6 +201,10 @@ class AssetOut:
     @property
     def legacy_freshness_policy(self) -> Optional[LegacyFreshnessPolicy]:
         return self._spec.legacy_freshness_policy
+
+    @property
+    def freshness_policy(self) -> Optional[InternalFreshnessPolicy]:
+        return self._spec.freshness_policy
 
     @property
     def automation_condition(self) -> Optional[AutomationCondition]:

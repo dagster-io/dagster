@@ -324,6 +324,7 @@ def asset(
         group_name=group_name,
         output_required=output_required,
         legacy_freshness_policy=kwargs.get("legacy_freshness_policy"),
+        freshness_policy=freshness_policy,
         automation_condition=resolve_automation_condition(
             automation_condition, kwargs.get("auto_materialize_policy")
         ),
@@ -400,6 +401,7 @@ class AssetDecoratorArgs(NamedTuple):
     group_name: Optional[str]
     output_required: bool
     legacy_freshness_policy: Optional[LegacyFreshnessPolicy]
+    freshness_policy: Optional[InternalFreshnessPolicy]
     automation_condition: Optional[AutomationCondition]
     backfill_policy: Optional[BackfillPolicy]
     retry_policy: Optional[RetryPolicy]
@@ -515,6 +517,7 @@ def create_assets_def_from_fn_and_decorator_args(
                     group_name=args.group_name,
                     code_version=args.code_version,
                     legacy_freshness_policy=args.legacy_freshness_policy,
+                    freshness_policy=args.freshness_policy,
                     automation_condition=args.automation_condition,
                     backfill_policy=args.backfill_policy,
                     owners=args.owners,

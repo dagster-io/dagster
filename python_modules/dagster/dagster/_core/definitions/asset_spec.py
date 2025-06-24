@@ -323,6 +323,7 @@ class AssetSpec(IHasInternalInit, IHaveNew, LegacyNamedTupleMixin):
         kinds: Optional[set[str]] = ...,
         partitions_def: Optional[PartitionsDefinition] = ...,
         legacy_freshness_policy: Optional[LegacyFreshnessPolicy] = ...,
+        freshness_policy: Optional[InternalFreshnessPolicy] = ...,
     ) -> "AssetSpec":
         """Returns a new AssetSpec with the specified attributes replaced."""
         current_tags_without_kinds = {
@@ -340,6 +341,9 @@ class AssetSpec(IHasInternalInit, IHaveNew, LegacyNamedTupleMixin):
                 group_name=group_name if group_name is not ... else self.group_name,
                 code_version=code_version if code_version is not ... else self.code_version,
                 legacy_freshness_policy=self.legacy_freshness_policy,
+                freshness_policy=freshness_policy
+                if freshness_policy is not ...
+                else self.freshness_policy,
                 automation_condition=automation_condition
                 if automation_condition is not ...
                 else self.automation_condition,
@@ -389,6 +393,7 @@ class AssetSpec(IHasInternalInit, IHaveNew, LegacyNamedTupleMixin):
                 group_name=self.group_name,
                 code_version=self.code_version,
                 legacy_freshness_policy=self.legacy_freshness_policy,
+                freshness_policy=self.freshness_policy,
                 automation_condition=self.automation_condition,
                 owners=[*self.owners, *(owners if owners is not ... else [])],
                 tags={**current_tags_without_kinds, **(tags if tags is not ... else {})},
