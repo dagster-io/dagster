@@ -17,6 +17,3 @@ def weekly_sales() -> None: ...
 )
 def weekly_sales_report(context: dg.AssetExecutionContext):
     context.log.info("Loading data for my_dataset")
-
-
-defs = dg.Definitions(assets=[daily_sales, weekly_sales, weekly_sales_report])
