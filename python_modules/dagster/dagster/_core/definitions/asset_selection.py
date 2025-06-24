@@ -54,7 +54,7 @@ def is_coercible_to_asset_selection(
 
 
 class AssetSelection(ABC):
-    """An AssetSelection defines a query over a set of assets and asset checks, normally all that are defined in a code location.
+    """An AssetSelection defines a query over a set of assets and asset checks, normally all that are defined in a project.
 
     You can use the "|", "&", and "-" operators to create unions, intersections, and differences of selections, respectively.
 
@@ -1051,7 +1051,7 @@ class OwnerAssetSelection(AssetSelection):
 @whitelist_for_serdes
 @record
 class CodeLocationAssetSelection(AssetSelection):
-    """Used to represent a UI asset selection by code location. This should not be resolved against
+    """Used to represent a UI asset selection by project. This should not be resolved against
     an in-process asset graph.
     """
 

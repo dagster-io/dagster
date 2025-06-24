@@ -23,7 +23,7 @@ PLUGIN_COMPONENT_TYPES_JSON_METADATA_KEY = "plugin_component_types_json"
 @deprecated(breaking_version="0.2.0")
 @suppress_dagster_warnings
 def build_component_defs(components_root: Path) -> Definitions:
-    """Build a Definitions object for all the component instances in a given code location.
+    """Build a Definitions object for all the component instances in a given project.
 
     Args:
         components_root (Path): The path to the components root. This is a directory containing
