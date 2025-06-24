@@ -4,7 +4,7 @@ description: The dagster-dbt library provides a DbtProjectComponent, which can b
 sidebar_position: 500
 ---
 
-The [dagster-dbt](/integrations/libraries/dbt) library provides a `DbtProjectComponent` which is the easiest way to represent dbt models as assets in Dagster.
+The [dagster-dbt](/integrations/libraries/dbt) library provides a `DbtProjectComponent`, the simplest way to represent dbt models as assets in Dagster.
 
 ## 1. Prepare a Dagster project
 
@@ -16,7 +16,7 @@ Activate the project virtual environment:
 
 <CliInvocationExample contents="source .venv/bin/activate" />
 
-Then, add the `dagster-dbt` library to the project:
+Then, add the `dagster-dbt` library to the project, along with a duckdb adapter:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/dbt-component/2-add-dbt.txt" />
 

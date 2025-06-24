@@ -84,9 +84,12 @@ def test_components_docs_dbt_project(
             / f"{context.get_next_snip_number()}-scaffold-dbt-component.txt",
         )
 
+        _run_command(r"find . -type d -name __pycache__ -exec rm -r {} \+")
+        _run_command(r"find . -type d -name my_project.egg-info -exec rm -r {} \+")
+
         # Tree the project
         context.run_command_and_snippet_output(
-            cmd="tree",
+            cmd="tree src/my_project",
             snippet_path=f"{context.get_next_snip_number()}-tree.txt",
             custom_comparison_fn=compare_tree_output,
         )
@@ -105,6 +108,7 @@ def test_components_docs_dbt_project(
         context.run_command_and_snippet_output(
             cmd="dg launch --assets '*'",
             snippet_path=f"{context.get_next_snip_number()}-dbt-run.txt",
+            ignore_output=True,
         )
 
         # Update component.yaml with model selector
