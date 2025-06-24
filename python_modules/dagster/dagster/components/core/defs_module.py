@@ -13,7 +13,7 @@ from dagster_shared.yaml_utils.source_position import SourcePosition, ValueAndSo
 from pydantic import BaseModel, ConfigDict, TypeAdapter
 
 import dagster._check as check
-from dagster._annotations import preview, public
+from dagster._annotations import public
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.metadata.source_code import (
@@ -202,14 +202,97 @@ class ComponentPath:
 
 
 @public
-@preview(emit_runtime_warning=False)
 @dataclass
 class DefsFolderComponent(Component):
-    """A folder which may contain multiple submodules, each
-    which define components.
+    """A component that represents a directory containing multiple Dagster definition modules.
 
-    Optionally enables postprocessing to modify the Dagster definitions
-    produced by submodules.
+    DefsFolderComponent serves as a container for organizing and managing multiple subcomponents
+    within a folder structure. It automatically discovers and loads components from subdirectories
+    and files, enabling hierarchical organization of Dagster definitions. This component also
+    supports post-processing capabilities to modify metadata and properties of definitions
+    created by its child components.
+
+    Key Features:
+    - **Post-Processing**: Allows modification of child component definitions via configuration
+    - **Automatic Discovery**: Recursively finds and loads components from subdirectories
+    - **Hierarchical Organization**: Enables nested folder structures for complex projects
+
+    The component automatically scans its directory for:
+    - YAML component definitions (``defs.yaml`` files)
+    - Python modules containing Dagster definitions
+    - Nested subdirectories containing more components
+
+    Here is how a DefsFolderComponent is used in a project by the framework, along
+    with other framework-defined classes.
+
+    .. code-block:: text
+
+        my_project/
+        └── defs/
+            ├── analytics/             # DefsFolderComponent
+            │   ├── defs.yaml          # Post-processing configuration
+            │   ├── user_metrics/      # User-defined component
+            │   │   └── defs.yaml
+            │   └── sales_reports/     # User-defined component
+            │       └── defs.yaml
+            └── data_ingestion/        # DefsFolderComponent
+                ├── api_sources/       # DefsFolderComponent
+                │   └── some_defs.py   # DagsterDefsComponent
+                └── file_sources/      # DefsFolderComponent
+                    └── files.py       # DagsterDefsComponent
+
+    Args:
+        path: The filesystem path to the directory containing child components.
+        children: A mapping of child paths to their corresponding Component instances.
+            This is typically populated automatically during component discovery.
+
+
+    DefsFolderComponent supports post-processing through its ``defs.yaml`` configuration,
+    allowing you to modify definitions created by child components using target selectors
+
+    Examples:
+        Using post-processing in a folder's ``defs.yaml``:
+
+        .. code-block:: yaml
+
+            # analytics/defs.yaml
+            type: dagster.components.DefsFolderComponent
+            post_processing:
+              assets:
+                - target: "*" # add a top level tag to all assets in the folder
+                  attributes:
+                    tags:
+                      top_level_tag: "true"
+                - target: "tag:defs_tag=true" # add a tag to all assets in the folder with the tag "defs_tag"
+                  attributes:
+                    tags:
+                      new_tag: "true"
+
+
+    Please see documentation on post processing and the selection syntax for more examples.
+
+    Component Discovery:
+
+    The component automatically discovers children using these patterns:
+
+    1. **YAML Components**: Subdirectories with ``defs.yaml`` files
+    2. **Python Modules**: Any ``.py`` files containing Dagster definitions
+    3. **Nested Folders**: Subdirectories that contain any of the above
+
+
+    Files and directories matching these patterns are ignored:
+    - ``__pycache__`` directories
+    - Hidden directories (starting with ``.``)
+
+    .. note::
+
+        DefsFolderComponent instances are typically created automatically by Dagster's
+        component loading system. Manual instantiation is rarely needed unless building
+        custom loading logic or testing scenarios.
+
+        When used with post-processing, the folder's ``defs.yaml`` should only contain
+        post-processing configuration, not component type definitions.
+
     """
 
     path: Path

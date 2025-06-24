@@ -5,8 +5,8 @@ dg list components
 ┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
 │ dagster.DefinitionsComponent  │ An arbitrary set of Dagster definitions.                                             │
 ├───────────────────────────────┼──────────────────────────────────────────────────────────────────────────────────────┤
-│ dagster.DefsFolderComponent   │ A folder which may contain multiple submodules, each                                 │
-│                               │ which define components.                                                             │
+│ dagster.DefsFolderComponent   │ A component that represents a directory containing multiple Dagster definition       │
+│                               │ modules.                                                                             │
 ├───────────────────────────────┼──────────────────────────────────────────────────────────────────────────────────────┤
 │ dagster.FunctionComponent     │ Represents a Python function, alongside the set of assets or asset checks that it is │
 │                               │ responsible for executing.                                                           │
