@@ -22,7 +22,7 @@ Finally, add the `dagster-fivetran` library to the project:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/fivetran-component/2-add-fivetran.txt" />
 
-## 2. Scaffold a Fivetran component
+## 2. scaffold a Fivetran component
 
 Now that you have a Dagster project, you can scaffold a Fivetran component. You'll need to provide your Fivetran account ID and API credentials:
 

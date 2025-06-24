@@ -52,7 +52,7 @@ def test_components_docs_dbt_project(
     ):
         # Scaffold code location
         context.run_command_and_snippet_output(
-            cmd="create-dagster project my-project --uv-sync --use-editable-dagster && cd my-project/src",
+            cmd="create-dagster project my-project --uv-sync --use-editable-dagster && cd my-project",
             snippet_path=f"{context.get_next_snip_number()}-scaffold-project.txt",
             snippet_replace_regex=[
                 ("--uv-sync --use-editable-dagster ", ""),
@@ -61,7 +61,7 @@ def test_components_docs_dbt_project(
             ignore_output=True,
         )
 
-        stack.enter_context(activate_venv("../.venv"))
+        stack.enter_context(activate_venv(".venv"))
         context.run_command_and_snippet_output(
             cmd=f"uv add --editable {EDITABLE_DIR / 'dagster-dbt'} && uv add dbt-duckdb",
             snippet_path=f"{context.get_next_snip_number()}-add-dbt.txt",
@@ -71,43 +71,27 @@ def test_components_docs_dbt_project(
 
         # Clone jaffle shop dbt project into src/dbt
         context.run_command_and_snippet_output(
-            cmd="git clone --depth=1 https://github.com/dbt-labs/jaffle-shop.git dbt && rm -rf dbt/.git",
+            cmd="git clone --depth=1 https://github.com/dagster-io/jaffle-platform.git dbt && rm -rf dbt/.git",
             snippet_path=f"{context.get_next_snip_number()}-jaffle-clone.txt",
             ignore_output=True,
         )
 
-        # Create minimal dbt profiles.yml in src/dbt
-        context.create_file(
-            Path("dbt") / "profiles.yml",
-            contents=textwrap.dedent(
-                """
-                jaffle_shop:
-                  target: dev
-                  outputs:
-                    dev:
-                      type: duckdb
-                      path: ":memory:"
-                """
-            ),
-            snippet_path=None,
-        )
-
         # scaffold dbt component
         context.run_command_and_snippet_output(
-            cmd='dg scaffold defs dagster_dbt.DbtProjectComponent dbt_ingest \\\n  --project-path "../../dbt"',
+            cmd='dg scaffold defs dagster_dbt.DbtProjectComponent dbt_ingest \\\n  --project-path "dbt/jdbt"',
             snippet_path=SNIPPETS_DIR
             / f"{context.get_next_snip_number()}-scaffold-dbt-component.txt",
         )
 
         # Tree the project
         context.run_command_and_snippet_output(
-            cmd="tree my_project/defs",
+            cmd="tree",
             snippet_path=f"{context.get_next_snip_number()}-tree.txt",
             custom_comparison_fn=compare_tree_output,
         )
 
         context.check_file(
-            Path("my_project") / "defs" / "dbt_ingest" / "defs.yaml",
+            Path("src") / "my_project" / "defs" / "dbt_ingest" / "defs.yaml",
             snippet_path=f"{context.get_next_snip_number()}-component.yaml",
         )
 
@@ -118,13 +102,13 @@ def test_components_docs_dbt_project(
 
         # Update component.yaml with model selector
         context.create_file(
-            Path("my_project") / "defs" / "dbt_ingest" / "defs.yaml",
+            Path("src") / "my_project" / "defs" / "dbt_ingest" / "defs.yaml",
             contents=textwrap.dedent(
                 """\
                 type: dagster_dbt.DbtProjectComponent
 
                 attributes:
-                  project: "../../dbt"
+                  project: '{{ project_root }}/dbt/jdbt'
                   select: "customers"
                 """
             ),
@@ -138,13 +122,13 @@ def test_components_docs_dbt_project(
 
         # Update component.yaml with translation
         context.create_file(
-            Path("my_project") / "defs" / "dbt_ingest" / "defs.yaml",
+            Path("src") / "my_project" / "defs" / "dbt_ingest" / "defs.yaml",
             contents=textwrap.dedent(
                 """\
                 type: dagster_dbt.DbtProjectComponent
 
                 attributes:
-                  project: "../../dbt"
+                  project: '{{ project_root }}/dbt/jdbt'
                   select: "customers"
                   translation:
                     group_name: dbt_models

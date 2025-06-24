@@ -1,8 +1,32 @@
-tree my_project/defs
+tree
 
-my_project/defs
-├── __init__.py
-└── dbt_ingest
-    └── defs.yaml
+.
+├── dbt
+│   └── jdbt
+│       ├── dbt_project.yml
+│       ├── models
+│       │   ├── customers.sql
+│       │   ├── orders.sql
+│       │   ├── sources.yml
+│       │   └── stg
+│       │       ├── stg_customers.sql
+│       │       ├── stg_orders.sql
+│       │       └── stg_payments.sql
+│       ├── profiles.yml
+│       └── README.md
+├── pyproject.toml
+├── src
+│   └── my_project
+│       ├── __init__.py
+│       ├── __pycache__
+│       │   └── __init__.cpython-311.pyc
+│       ├── definitions.py
+│       └── defs
+│           ├── __init__.py
+│           └── dbt_ingest
+│               └── defs.yaml
+├── tests
+│   └── __init__.py
+└── uv.lock
 
-2 directories, 2 files
+11 directories, 17 files
