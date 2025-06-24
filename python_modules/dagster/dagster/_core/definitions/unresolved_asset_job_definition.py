@@ -331,7 +331,7 @@ def define_asset_job(
             def asset1():
                 ...
 
-            defs = Definitions(
+            Definitions(
                 assets=[asset1],
                 jobs=[define_asset_job("all_assets")],
             )
@@ -341,13 +341,13 @@ def define_asset_job(
             def asset1():
                 ...
 
-            defs = Definitions(
+            Definitions(
                 assets=[asset1],
                 jobs=[define_asset_job("all_assets", selection=[asset1])],
             )
 
             # A job that targets all the assets in a group:
-            defs = Definitions(
+            Definitions(
                 assets=assets,
                 jobs=[define_asset_job("marketing_job", selection=AssetSelection.groups("marketing"))],
             )
@@ -357,7 +357,7 @@ def define_asset_job(
                 ...
 
             # A job that observes a source asset:
-            defs = Definitions(
+            Definitions(
                 assets=assets,
                 jobs=[define_asset_job("observation_job", selection=[source_asset])],
             )
@@ -367,7 +367,7 @@ def define_asset_job(
             def asset1():
                 ...
 
-            defs = Definitions(
+            Definitions(
                 assets=[asset1],
                 jobs=[define_asset_job("all_assets")],
                 resources={"slack_client": prod_slack_client},

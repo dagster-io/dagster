@@ -59,7 +59,7 @@ def build_snowflake_io_manager(
 
             snowflake_io_manager = build_snowflake_io_manager([SnowflakePandasTypeHandler(), SnowflakePySparkTypeHandler()])
 
-            defs = Definitions(
+            Definitions(
                 assets=[my_table, my_second_table],
                 resources={
                     "io_manager": snowflake_io_manager.configured({
@@ -75,7 +75,7 @@ def build_snowflake_io_manager(
 
         .. code-block:: python
 
-            defs = Definitions(
+            Definitions(
                 assets=[my_table]
                 resources={"io_manager" snowflake_io_manager.configured(
                     {"database": "my_database", "schema": "my_schema", ...} # will be used as the schema
