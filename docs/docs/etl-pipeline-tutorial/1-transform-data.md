@@ -4,10 +4,10 @@ description: Transform data with dbt
 sidebar_position: 20
 ---
 
-Next you will use [dbt](https://www.getdbt.com/) to model the data ingested with Sling. In this step, you will:
+A data platform typically involves people in various roles working together, each contributing in different ways. Some individuals will be more involved in certain areas than others. For example, with [dbt](https://www.getdbt.com/), analysts may focus primarily on modeling the data, but still want their models integrated into the overall pipeline.
 
-- Integrate with dbt
-- Build software-defined assets for dbt models in a dbt project
+In this step, we will incorporate a dbt project to model the data we loaded with DuckDB.
+
 
 ## 1. Add the dbt project
 
@@ -28,15 +28,22 @@ There will now be a directory `transform` within the root of the project contain
 └── uv.lock
 ```
 
-## 2. Define the dbt Component
 
-Now that there is a dbt project to work with, we will install the Dagster dbt integration as well as the dbt adaptor for DuckDB. Add both to your Dagster project:
+:::note
+
+This dbt project already contains models that work with the raw data we brought in previously and requires no modifications.
+
+:::
+
+## 2. Scaffold a dbt component definition
+
+Now that we have a dbt project to work with, we need to install both the Dagster dbt integration and the dbt adapter for DuckDB:
 
 ```bash
 uv pip install dagster-dbt dbt-duckdb
 ```
 
-Now we can scaffold our dbt component, providing a path to the dbt project that added above:
+Next, we can scaffold a dbt component definition by providing the path to the dbt project we added earlier:
 
 ```bash
 dg scaffold defs dagster_dbt.DbtProjectComponent transform --project-path transform/jdbt
@@ -48,16 +55,16 @@ This will add the directory `transform` to the `etl_tutorial` module:
 
 ## 3. Configure the dbt `defs.yaml`
 
-This component only generates a single file, `defs.yaml`, to configure the `dagster_dbt.DbtProjectComponent` component.  Most of this file was configured when we scaffolded the component and provided the path to the dbt project:
+The dbt component creates a single file, `defs.yaml`, which configures the `dagster_dbt`.`DbtProjectComponent`. Most of the file’s contents were generated when we scaffolded the component and provided the path to the dbt project:
 
-```yaml
+```yaml title="src/etl_tutorial/defs/transform/defs.yaml"
 type: dagster_dbt.DbtProjectComponent
 
 attributes:
   project: '{{ project_root }}/transform/jdbt'
 ```
 
-The component is correctly configured for our dbt project but we need to make one addition:
+The component is correctly configured for our dbt project, but we need to make one addition:
 
 <CodeExample
     path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/src/etl_tutorial/defs/transform/defs.yaml"
@@ -65,17 +72,17 @@ The component is correctly configured for our dbt project but we need to make on
     title="src/etl_tutorial/defs/transform/defs.yaml"
 />
 
-Adding in the `translation` attribute aligns the keys of our dbt models with the source tables from Sling. Associating them together ensures the proper lineage of our assets.
+Adding in the `translation` attribute aligns the keys of our dbt models with the source tables. Associating them together ensures the proper lineage across our assets.
 
-TODO: Screenshot
+![2048 resolution](/images/tutorial/etl-tutorial/ingest-assets-run.png)
 
 ## Summary
 
-Sling and dbt are both layered into our Dagster project. The `etl_tutorial` module should look like this:
+We have now layered dbt into the project. The `etl_tutorial` module should look like this:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/tree/step-1.txt" />
 
-Once again you can materialize your assets within the UI or using `dg launch` from the command line. You can also use `dg` to get a full overview of the definitions in your project by executing:
+Once again you can materialize your assets within the UI or using `dg launch` from the command line. You can also use [`dg list`](/api/dg/dg-cli#dg-list) to get a full overview of the definitions in your project by executing:
 
 ```bash
 dg list defs
@@ -83,6 +90,16 @@ dg list defs
 
 This will return a table of all the definitions within the Dagster project. As we add more objects, you can rerun this command to see how our project grows.
 
+:::info
+
+You might be wondering about the relationship between components and definitions. At a high level, a component builds a definition for a specific purpose.
+
+**Components** are objects that programmatically build assets and other Dagster objects. They accept specific parameters and use them to build the actual definitions you need. In the case of `DbtProjectComponent`, this would be the dbt project path and the definitions it creates are the assets for each dbt model.
+
+**Definitions** are objects that combine metadata about an entity with a Python function that defines how it behaves -- for example, when we used the `@asset` decorator on the functions for our DuckDB ingestion. This tells Dagster both what the asset is and how to materialize it.
+
+:::
+
 ## Next steps
 
-- Continue this tutorial with your [join customer and order data](/etl-pipeline-tutorial/join-customer-and-order-data)
+In the next step, we will [add a DuckDB resource](/etl-pipeline-tutorial/add-a-resource) to our project to more efficiently manage manage our database connections.

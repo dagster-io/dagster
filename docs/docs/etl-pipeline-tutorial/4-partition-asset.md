@@ -4,17 +4,15 @@ description: Partitioning Assets by datetime and categories
 sidebar_position: 50
 ---
 
-[Partitions](/guides/build/partitions-and-backfills/partitioning-assets) are a core abstraction in Dagster, that allow you to manage large datasets, process incremental updates, and improve pipeline performance. You can partition assets the following ways:
+[Partitions](/guides/build/partitions-and-backfills/partitioning-assets) are a core abstraction in Dagster that allow you to manage large datasets, process incremental updates, and improve pipeline performance. You can partition assets the following ways:
 
 - Time-based: Split data by time periods (e.g., daily, monthly)
 - Category-based: Divide by known categories (e.g., country, product type)
 - Two-dimensional: Combine two partition types (e.g., country + date)
 - Dynamic: Create partitions based on runtime conditions
 
-In this step, you will:
+In this step, you will create a time-based asset partitioned by month.
 
-- Create a time-based asset partitioned by month
-- Create a category-based asset partitioned by product category
 
 ## 1. Create a time-based partitioned asset
 
@@ -43,47 +41,28 @@ and deletes any previous value for that month. Copy the following asset under th
 Do not worry about the `automation_condition` in the `dg.asset` decorator for now. This is not necessary but will make more sense when we discuss automation later.
 :::
 
-## 2. Create a category-based partitioned asset
-
-Using known defined partitions is a simple way to break up your dataset when you know the different groups you want to subset it by. In our pipeline, we want to create an asset that represents the performance of each product category.
-
-1. To create the statically-defined partition for the product category, copy this code beneath the `monthly_sales_performance` asset:
-
-<CodeExample
-  path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/src/etl_tutorial/defs/assets.py"
-  language="python"
-  startAfter="start_product_category_partition"
-  endBefore="end_product_category_partition"
-  title="src/etl_tutorial/defs/assets.py"
-/>
-
-2. Now that the partition has been defined, we can use that in an asset that calculates the product category performance:
-
-<CodeExample
-  path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/src/etl_tutorial/defs/assets.py"
-  language="python"
-  startAfter="start_product_performance_asset"
-  endBefore="end_product_performance_asset"
-  title="src/etl_tutorial/defs/assets.py"
-/>
-
-## 3. Materialize partitioned assets
+## 2. Materialize partitioned assets
 
 To materialize these assets:
 
 1. Navigate to the assets page.
 2. Reload definitions.
 3. Select the `monthly_sales_performance` asset, then **Materialize selected**.
-4. Ensure all partitions are selected, then launch a backfill.
-5. Select the `product_performance` asset, then **Materialize selected**.
-6. Ensure all partitions are selected, then launch a backfill.
 
-TODO: Screenshot
+   When materializing a partitioned asset, you will need to select which partitions to execute. Because our partition has a start date (`"2018-01-01"`) and no end date, there will be partitions for every month starting from 2018. Only select partitions for the first four months of 2018:
+
+   ```
+   [2018-01-01...2018-05-01]
+   ```
+
+4. Launch a backfill. After the execution is finished, you can see the subset of total partitions that have executed:
+
+   ![2048 resolution](/images/tutorial/etl-tutorial/asset-partition-execution.png)
 
 ## Summary
 
- Partitions provide operational flexibility by allowing you to launch runs that materialize only a subset of your data without affecting the rest, and support backfilling capabilities to reprocess historical data for specific time periods or categories. As you are developing assets, consider where partitions might be helpful.
+Partitions provide operational flexibility by allowing you to launch runs that materialize only a subset of your data without affecting the rest, and support backfilling capabilities to reprocess historical data for specific time periods or categories. As you are developing assets, consider where partitions might be helpful.
 
 ## Next steps
 
-Now that we have the main assets in our ETL pipeline, it's time to add [automation your pipeline](/etl-pipeline-tutorial/automate-your-pipeline)
+Now that we have the main assets in our ETL pipeline, it's time to [automate our pipeline](/etl-pipeline-tutorial/automate-your-pipeline).

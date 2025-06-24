@@ -3,14 +3,14 @@ name = "etl_tutorial"
 requires-python = ">=3.9,<3.13"
 version = "0.1.0"
 dependencies = [
-    "dagster==1.10.20",
+    "dagster",
     "dagster-dg-cli",
     "dagster-webserver",
     "dagster-dbt",
     "dagster-duckdb",
     "dagster-evidence",
-    "dagster-sling",
     "dbt-duckdb",
+    "duckdb",
     "pandas",
 ]
 
@@ -29,7 +29,6 @@ directory_type = "project"
 
 [tool.dg.project]
 root_module = "etl_tutorial"
-autoload_defs = true
 registry_modules = [
     "etl_tutorial.components.*",
 ]

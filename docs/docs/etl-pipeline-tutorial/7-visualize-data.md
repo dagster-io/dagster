@@ -1,17 +1,14 @@
 ---
-title: Visualize data
-description: Visualize data with Evidence
+title: Build a dashboard to visualize data
+description: Visualize data with an Evidence dashboard
 sidebar_position: 80
 ---
 
-We will include one final component downstream of everything we have built. This will visualize some of the data we have been modeling in a dashboard using [Evidence](https://evidence.dev/). In this step, you will:
-
-- Integrate with Evidence
-- Build an Evidence deployment asset connected to your model assets
+In this step, we will visualize some of the data we have been modeling in a dashboard using [Evidence](https://evidence.dev/) connected to our model assets.
 
 ## 1. Add the Evidence project
 
-We need an Evidence project. We will clone one that is already configured to work with the data we have modeled with dbt:
+First, we will clone an Evidence project that is already configured to work with the data we have modeled with dbt:
 
 ```bash
 git clone --depth=1 https://github.com/dagster-io/jaffle-dashboard.git dashboard && rm -rf dashboard/.git
@@ -29,9 +26,15 @@ There will now be a directory `dashboard` within the root of the project.
 └── uv.lock
 ```
 
+Change into that directory and install the necessary packages with [`npm`](https://www.npmjs.com/):
+
+```bash
+cd dashboard && npm install
+```
+
 ## 2. Define the Evidence Component
 
-Let's add the Dagster's Evidence integration:
+Next, we will need to install Dagster's [Evidence integration](https://docs.dagster.io/integrations/libraries/evidence):
 
 ```bash
 uv pip install dagster-evidence
@@ -59,13 +62,29 @@ However we can still configure our Evidence component to be dependent on multipl
     title="src/etl_tutorial/defs/dashboard/defs.yaml"
 />
 
+## 4. Execute the Evidence asset
+
+With the Evidence component configured, our assets graph should look like this:
+
+![2048 resolution](/images/tutorial/etl-tutorial/assets-evidence.png)
+
+Execute the downstream `dashboard` asset which will build our Evidence dashboards. You can now run Evidence:
+
+```bash
+cd dashboard/build && python -m http.server
+```
+
+You should see a dashboard like the following at [http://localhost:8000/](http://localhost:8000/):
+
+![2048 resolution](/images/tutorial/etl-tutorial/evidence-dashboard.png)
+
 ## Summary
 
-Here is the final structure of the `etl_tutorial` module:
+Here is the final structure of our `etl_tutorial` project:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/tree/step-7.txt" />
 
-This contains a fully functional data platform that handles the end to end workflows necessary for working with data.
+We have now built a fully functional, end-to-end data platform that handles everything from data ingestion to modeling and visualization.
 
 ## Recommended next steps
 

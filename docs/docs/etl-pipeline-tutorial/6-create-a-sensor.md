@@ -2,6 +2,7 @@
 title: Create a sensor
 description: Use sensors to create event driven pipelines
 sidebar_position: 70
+unlisted: true
 ---
 
 [Sensors](/guides/automate/sensors) allow you to automate workflows based on external events or conditions, making them useful for event-driven automation, especially in situations where jobs occur at irregular cadences or in rapid succession.
@@ -45,7 +46,7 @@ Sensors include the following elements:
 First we will use `dg` to create the sensor file:
 
 ```bash
-dg scaffold dagster.sensor sensors.py
+dg scaffold defs dagster.sensor sensors.py
 ```
 
 Now copy the following sensor code in the `sensors.py` file:
@@ -63,7 +64,7 @@ Now copy the following sensor code in the `sensors.py` file:
 3. Turn on the `adhoc_request_sensor`.
 4. Click on the `adhoc_request_sensor` details.
 
-TODO: Screenshot
+{/* TODO: Screenshot */}
 
 5. Create a `data/requests` directory in `dagster_tutorial`. Then include a `request.json` file:
 
@@ -78,7 +79,7 @@ TODO: Screenshot
 
 6. Click on the green tick to see the run for this request.
 
-TODO: Screenshot
+{/* TODO: Screenshot */}
 
 ## Summary
 

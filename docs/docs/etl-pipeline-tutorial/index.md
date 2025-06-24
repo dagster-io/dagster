@@ -10,15 +10,15 @@ sidebar_class_name: hidden
 
 In this tutorial, you'll build a full ETL pipeline with Dagster that:
 
-- Imports data into DuckDB using Sling
-- Transforms data into reports with dbt
+- Ingests data into [DuckDB](https://duckdb.org/)
+- Transforms data into reports with [dbt](https://www.getdbt.com/)
 - Runs scheduled reports automatically
 - Generates one-time reports on demand
 - Visualizes the data with Evidence
 
-## You will learn to:
+You will learn to:
 
-- How to set up a Dagster project with the recommended project structure
+- Set up a Dagster project with the recommended project structure
 - Integrate with other tools
 - Create and materialize assets and dependencies
 - Ensure data quality with asset checks
@@ -30,7 +30,7 @@ In this tutorial, you'll build a full ETL pipeline with Dagster that:
 
 To follow the steps in this tutorial, you'll need:
 
-* Python 3.9+ and `uv` installed. For more information, see the [Installation guide](/getting-started/installation).
+* Python 3.9+ and [`uv`](https://docs.astral.sh/uv/) installed. For more information, see the [Installation guide](/getting-started/installation).
 * Familiarity with Python and SQL.
 * A basic understanding of data pipelines and the extract, transform, and load (ETL) process.
 
@@ -42,7 +42,7 @@ To follow the steps in this tutorial, you'll need:
    uvx create-dagster project etl-tutorial
    ```
 
-2. Change into that project
+2. Change directory into your new project:
 
    ```bash
    cd etl-tutorial
@@ -68,9 +68,9 @@ To follow the steps in this tutorial, you'll need:
 
    In your browser, navigate to [http://127.0.0.1:3000](http://127.0.0.1:3000)
 
-TODO: Screenshot
+   At this point the project will be empty, but we will continue to add to it throughout the tutorial.
 
-At this point the project will be empty but we will continue to add to it throughout the tutorial.
+   ![2048 resolution](/images/tutorial/etl-tutorial/empty-project.png)
 
 ## Next steps
 
