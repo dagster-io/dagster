@@ -278,7 +278,7 @@ class DagsterType:
     @property
     def is_nullable(self) -> bool:
         return self.kind == DagsterTypeKind.NULLABLE
-    
+
     @property
     def is_any(self) -> bool:
         return self.kind == DagsterTypeKind.ANY
