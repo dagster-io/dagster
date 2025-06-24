@@ -59,4 +59,3 @@ Now, you can configure an instance of the `SlingReplicationCollectionComponent` 
 ## Next steps
 
 - [Convert your project to be fully Components-compatible](/guides/build/projects/moving-to-components/migrating-project)
-- [Learn more about Components](/guides/build/projects/components)
