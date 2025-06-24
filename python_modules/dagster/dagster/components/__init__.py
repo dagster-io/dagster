@@ -29,7 +29,6 @@ from dagster.components.resolved.base import Resolvable as Resolvable
 from dagster.components.resolved.context import ResolutionContext as ResolutionContext
 from dagster.components.resolved.core_models import (
     AssetAttributesModel as AssetAttributesModel,
-    AssetPostProcessorModel as AssetPostProcessorModel,
     ResolvedAssetCheckSpec as ResolvedAssetCheckSpec,
     ResolvedAssetKey as ResolvedAssetKey,
     ResolvedAssetSpec as ResolvedAssetSpec,
