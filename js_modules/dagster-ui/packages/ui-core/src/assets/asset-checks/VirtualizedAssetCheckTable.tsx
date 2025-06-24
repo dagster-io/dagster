@@ -154,6 +154,7 @@ export const ASSET_CHECK_TABLE_FRAGMENT = gql`
     name
     description
     canExecuteIndividually
+    blocking
     automationCondition {
       label
       expandedLabel
