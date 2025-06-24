@@ -72,7 +72,6 @@ def get_project_root(defs_root: ModuleType) -> Path:
 
 
 @public
-@preview(emit_runtime_warning=False)
 @suppress_dagster_warnings
 def build_defs_for_component(component: Component) -> Definitions:
     """Constructs Definitions from a standalone component. This is useful for
