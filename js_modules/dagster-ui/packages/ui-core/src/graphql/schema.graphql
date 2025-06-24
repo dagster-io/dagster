@@ -2697,6 +2697,7 @@ type Instance {
   concurrencyLimit(concurrencyKey: String): ConcurrencyKeyInfo!
   useAutoMaterializeSensors: Boolean!
   poolConfig: PoolConfig
+  freshnessEvaluationEnabled: Boolean!
 }
 
 type RunQueueConfig {
