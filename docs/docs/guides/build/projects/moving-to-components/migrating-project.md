@@ -9,7 +9,7 @@ import DgComponentsRc from '@site/docs/partials/\_DgComponentsRc.md';
 <DgComponentsRc />
 
 Suppose we have an existing Dagster project. Our project defines a Python
-package with a single Dagster asset. The asset is exposed in a top-level
+package with a a single Dagster asset. The asset is exposed in a top-level
 `Definitions` object in `my_existing_project/definitions.py`. We'll consider
 both a case where we have been using [uv](https://docs.astral.sh/uv/) with `pyproject.toml` and [`pip`](https://pip.pypa.io/en/stable/) with `setup.py`.
 
