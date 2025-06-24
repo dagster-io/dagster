@@ -465,7 +465,7 @@ function createRegex(pattern: string, interpretWildcards: boolean): RegExp {
   if (!interpretWildcards) {
     // Escape all regex special characters
     const escaped = pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    return new RegExp(escaped);
+    return new RegExp(escaped, 'i');
   }
 
   // Escape all regex special characters except asterisks
@@ -474,5 +474,5 @@ function createRegex(pattern: string, interpretWildcards: boolean): RegExp {
   // Replace asterisks with .* for wildcard matching
   const wildcardPattern = escaped.replace(/\*/g, '.*');
 
-  return new RegExp(wildcardPattern);
+  return new RegExp(wildcardPattern, 'i');
 }
