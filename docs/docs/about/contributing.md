@@ -8,7 +8,7 @@ We love to see our community members get involved! If you are planning to contri
 
 ## Environment setup
 
-You can develop for Dagster using macOS, Linux, or Windows. If using Windows, you will need to install [WSL](https://learn.microsoft.com/windows/wsl/install) to follow the steps in this guide.
+You can develop for Dagster using macOS, Linux, or Windows. If using Windows, you will need to install and use [WSL](https://learn.microsoft.com/windows/wsl/install) to follow the steps in this guide.
 
 1. Clone the Dagster repository to the destination of your choice:
 
@@ -32,13 +32,11 @@ You can develop for Dagster using macOS, Linux, or Windows. If using Windows, yo
 
    Dagster supports Python 3.9 through 3.12.
 
-4. Ensure that you have a supported version of [node](https://nodejs.org/en/download) by running `node -v`, and that you have [yarn](https://yarnpkg.com/lang/en/) installed. Once you have node installed, you can use `npm` to install yarn.
+4. Ensure that you have a supported version of [node](https://nodejs.org/en/download) (20.X and above) by running `node -v`, and that you have [yarn](https://yarnpkg.com/lang/en/) installed. Once you have node installed, you can use `npm` to install yarn.
 
    ```bash
    npm install --global yarn
    ```
-
-   Dagster supports Node 20.X and above.
 
 5. Run `make dev_install` at the root of the repository. This sets up a full Dagster developer environment with all modules and runs tests that do not require heavy external dependencies such as docker. Note that certain sections of the makefile (`sanity_check`, which is part of `rebuild_ui`) require POSIX-compliant shells and will fail on CMD and powershell—if developing on windows, using something like WSL or git-bash is recommended.
 
@@ -85,7 +83,7 @@ dagster-webserver -p 3333 -f complex_job.py
 Keep this running. Then, in another terminal, run the local development (autoreloading, etc.) version of the webapp:
 
 :::tip
-Don't forget to activate the virtual environment (`source .venv/scripts/activate`) when you open another terminal!
+Don't forget to activate the virtual environment (`source .venv/bin/activate`) when you open another terminal!
 :::
 ```bash
 cd js_modules/dagster-ui
