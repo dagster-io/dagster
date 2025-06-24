@@ -738,6 +738,12 @@ _DEPRECATED_RENAMED: Final[Mapping[str, tuple[Callable, str]]] = {
     # "Foo": (Bar, "1.1.0"),
 }
 
+_DEPRECATED_WITH_ERROR: Final[Mapping[str, str]] = {
+    ##### EXAMPLE
+    # "Foo": "Use Bar instead.",
+    "FreshnessPolicy": "FreshnessPolicy has been renamed to LegacyFreshnessPolicy. Import it as FreshnessPolicy from `dagster.deprecated` or as LegacyFreshnessPolicy from top-level Dagster.",
+}
+
 
 def __getattr__(name: str) -> TypingAny:
     if name in _DEPRECATED:
@@ -756,6 +762,8 @@ def __getattr__(name: str) -> TypingAny:
             stacklevel=stacklevel,
         )
         return value
+    elif name in _DEPRECATED_WITH_ERROR:
+        raise ImportError(_DEPRECATED_WITH_ERROR[name])
     else:
         raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
 

@@ -229,6 +229,15 @@ def test_freshness_policy_deprecated_import():
     dg.Definitions(assets=[foo])
 
 
+def test_freshness_policy_old_import_raises():
+    """We should not be able to import FreshnessPolicy from top level dagster module."""
+    with pytest.raises(
+        ImportError,
+        match="FreshnessPolicy has been renamed to LegacyFreshnessPolicy. Import it as FreshnessPolicy from `dagster.deprecated` or as LegacyFreshnessPolicy from top-level Dagster.",
+    ):
+        from dagster import FreshnessPolicy  # noqa: F401
+
+
 def test_freshness_policy_metadata_backcompat():
     """We should be able to deserialize freshness policy from an asset spec that stores the policy in its metadata."""
     from dagster._core.definitions.freshness import TimeWindowFreshnessPolicy
