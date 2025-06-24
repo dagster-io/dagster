@@ -176,7 +176,7 @@ class ScenarioSpec:
                         "group_name",
                         "code_version",
                         "automation_condition",
-                        "freshness_policy",
+                        "legacy_freshness_policy",
                         "partitions_def",
                         "metadata",
                     }

@@ -18,7 +18,7 @@ from dagster._core.definitions.decorators.decorator_assets_definition_builder im
     create_check_specs_by_output_name,
 )
 from dagster._core.definitions.events import CoercibleToAssetKey, CoercibleToAssetKeyPrefix
-from dagster._core.definitions.freshness_policy import FreshnessPolicy
+from dagster._core.definitions.freshness_policy import LegacyFreshnessPolicy
 from dagster._core.definitions.metadata import RawMetadataMapping
 from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.definitions.resource_annotation import get_resource_args
@@ -47,7 +47,7 @@ def observable_source_asset(
     resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
     partitions_def: Optional[PartitionsDefinition] = None,
     auto_observe_interval_minutes: Optional[float] = None,
-    freshness_policy: Optional[FreshnessPolicy] = None,
+    legacy_freshness_policy: Optional[LegacyFreshnessPolicy] = None,
     automation_condition: Optional[AutomationCondition] = None,
     op_tags: Optional[Mapping[str, Any]] = None,
     tags: Optional[Mapping[str, str]] = None,
@@ -62,8 +62,8 @@ def observable_source_asset(
     additional_warn_text="use `automation_condition` instead.",
 )
 @hidden_param(
-    param="freshness_policy",
-    breaking_version="1.10.0",
+    param="legacy_freshness_policy",
+    breaking_version="1.12.0",
     additional_warn_text="use freshness checks instead.",
 )
 @beta
@@ -141,7 +141,7 @@ def observable_source_asset(
         resource_defs,
         partitions_def,
         kwargs.get("auto_observe_interval_minutes"),
-        kwargs.get("freshness_policy"),
+        kwargs.get("legacy_freshness_policy"),
         automation_condition,
         op_tags,
         tags=normalize_tags(tags, strict=True),
@@ -163,7 +163,7 @@ class _ObservableSourceAsset:
         resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
         partitions_def: Optional[PartitionsDefinition] = None,
         auto_observe_interval_minutes: Optional[float] = None,
-        freshness_policy: Optional[FreshnessPolicy] = None,
+        legacy_freshness_policy: Optional[LegacyFreshnessPolicy] = None,
         automation_condition: Optional[AutomationCondition] = None,
         op_tags: Optional[Mapping[str, Any]] = None,
         tags: Optional[Mapping[str, str]] = None,
@@ -184,7 +184,7 @@ class _ObservableSourceAsset:
         self.resource_defs = resource_defs
         self.partitions_def = partitions_def
         self.auto_observe_interval_minutes = auto_observe_interval_minutes
-        self.freshness_policy = freshness_policy
+        self.legacy_freshness_policy = legacy_freshness_policy
         self.automation_condition = automation_condition
         self.op_tags = op_tags
         self.tags = tags
@@ -221,7 +221,7 @@ class _ObservableSourceAsset:
                 op_tags=self.op_tags,
                 partitions_def=self.partitions_def,
                 auto_observe_interval_minutes=self.auto_observe_interval_minutes,
-                freshness_policy=self.freshness_policy,
+                legacy_freshness_policy=self.legacy_freshness_policy,
                 automation_condition=self.automation_condition,
                 tags=self.tags,
             )

@@ -16,7 +16,7 @@ from dagster._core.definitions.declarative_automation.legacy.valid_asset_subset 
     ValidAssetSubset,
 )
 from dagster._core.definitions.events import AssetKeyPartitionKey
-from dagster._core.definitions.freshness_policy import FreshnessPolicy
+from dagster._core.definitions.freshness_policy import LegacyFreshnessPolicy
 from dagster._core.definitions.time_window_partitions import TimeWindow
 from dagster._utils.schedules import cron_string_iterator
 
@@ -31,7 +31,7 @@ if TYPE_CHECKING:
 
 
 def get_execution_period_for_policy(
-    freshness_policy: FreshnessPolicy,
+    freshness_policy: LegacyFreshnessPolicy,
     effective_data_time: Optional[datetime.datetime],
     current_time: datetime.datetime,
 ) -> TimeWindow:
@@ -67,8 +67,8 @@ def get_execution_period_for_policy(
 
 
 def get_execution_period_and_evaluation_data_for_policies(
-    local_policy: Optional[FreshnessPolicy],
-    policies: AbstractSet[FreshnessPolicy],
+    local_policy: Optional[LegacyFreshnessPolicy],
+    policies: AbstractSet[LegacyFreshnessPolicy],
     effective_data_time: Optional[datetime.datetime],
     current_time: datetime.datetime,
 ) -> tuple[Optional[TimeWindow], Optional["TextRuleEvaluationData"]]:
@@ -130,7 +130,7 @@ def get_expected_data_time_for_asset_key(
     current_time = context.evaluation_time
 
     # don't bother calculating if no downstream assets have freshness policies
-    if not asset_graph.get_downstream_freshness_policies(asset_key=asset_key):
+    if not asset_graph.get_downstream_legacy_freshness_policies(asset_key=asset_key):
         return None
     # if asset will not be materialized, just return the current time
     elif not will_materialize:
@@ -176,7 +176,7 @@ def freshness_evaluation_results_for_asset_key(
     current_time = context.evaluation_time
 
     if (
-        not context.asset_graph.get_downstream_freshness_policies(asset_key=asset_key)
+        not context.asset_graph.get_downstream_legacy_freshness_policies(asset_key=asset_key)
         or context.asset_graph.get(asset_key).is_partitioned
     ):
         return context.empty_subset(), []
@@ -216,8 +216,8 @@ def freshness_evaluation_results_for_asset_key(
         execution_period,
         evaluation_data,
     ) = get_execution_period_and_evaluation_data_for_policies(
-        local_policy=context.asset_graph.get(asset_key).freshness_policy,
-        policies=context.asset_graph.get_downstream_freshness_policies(asset_key=asset_key),
+        local_policy=context.asset_graph.get(asset_key).legacy_freshness_policy,
+        policies=context.asset_graph.get_downstream_legacy_freshness_policies(asset_key=asset_key),
         effective_data_time=effective_data_time,
         current_time=current_time,
     )

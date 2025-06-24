@@ -14,7 +14,6 @@ from dagster import (
     DagsterEventType,
     DailyPartitionsDefinition,
     Definitions,
-    FreshnessPolicy,
     GraphOut,
     HookContext,
     IdentityPartitionMapping,
@@ -22,6 +21,7 @@ from dagster import (
     IOManager,
     IOManagerDefinition,
     LastPartitionMapping,
+    LegacyFreshnessPolicy,
     Out,
     Output,
     ResourceDefinition,
@@ -180,22 +180,22 @@ def test_retain_group():
 
 
 def test_retain_freshness_policy():
-    fp = FreshnessPolicy(maximum_lag_minutes=24.5)
+    fp = LegacyFreshnessPolicy(maximum_lag_minutes=24.5)
 
-    @asset(freshness_policy=fp)
+    @asset(legacy_freshness_policy=fp)
     def bar():
         pass
 
     replaced = bar.with_attributes(asset_key_replacements={AssetKey(["bar"]): AssetKey(["baz"])})
     assert (
-        replaced.specs_by_key[AssetKey(["baz"])].freshness_policy
-        == bar.specs_by_key[AssetKey(["bar"])].freshness_policy
+        replaced.specs_by_key[AssetKey(["baz"])].legacy_freshness_policy
+        == bar.specs_by_key[AssetKey(["bar"])].legacy_freshness_policy
     )
 
 
 def test_graph_backed_retain_freshness_policy_and_auto_materialize_policy():
-    fpa = FreshnessPolicy(maximum_lag_minutes=24.5)
-    fpb = FreshnessPolicy(
+    fpa = LegacyFreshnessPolicy(maximum_lag_minutes=24.5)
+    fpb = LegacyFreshnessPolicy(
         maximum_lag_minutes=30.5, cron_schedule="0 0 * * *", cron_schedule_timezone="US/Eastern"
     )
     ampa = AutoMaterializePolicy.eager()
@@ -216,7 +216,7 @@ def test_graph_backed_retain_freshness_policy_and_auto_materialize_policy():
 
     my_graph_asset = AssetsDefinition.from_graph(
         my_graph,
-        freshness_policies_by_output_name={"a": fpa, "b": fpb},
+        legacy_freshness_policies_by_output_name={"a": fpa, "b": fpb},
         auto_materialize_policies_by_output_name={"a": ampa, "b": ampb},
     )
 
@@ -228,9 +228,9 @@ def test_graph_backed_retain_freshness_policy_and_auto_materialize_policy():
         }
     )
     specs_by_key = replaced.specs_by_key
-    assert specs_by_key[AssetKey("aa")].freshness_policy == fpa
-    assert specs_by_key[AssetKey("bb")].freshness_policy == fpb
-    assert specs_by_key[AssetKey("cc")].freshness_policy is None
+    assert specs_by_key[AssetKey("aa")].legacy_freshness_policy == fpa
+    assert specs_by_key[AssetKey("bb")].legacy_freshness_policy == fpb
+    assert specs_by_key[AssetKey("cc")].legacy_freshness_policy is None
 
     assert specs_by_key[AssetKey("aa")].auto_materialize_policy == ampa
     assert specs_by_key[AssetKey("bb")].auto_materialize_policy == ampb
@@ -944,7 +944,7 @@ def test_from_graph_w_key_prefix():
     def silly_graph():
         return bar(foo())
 
-    freshness_policy = FreshnessPolicy(maximum_lag_minutes=60)
+    freshness_policy = LegacyFreshnessPolicy(maximum_lag_minutes=60)
     description = "This is a description!"
     metadata = {"test_metadata": "This is some metadata"}
 
@@ -953,7 +953,7 @@ def test_from_graph_w_key_prefix():
         keys_by_input_name={},
         keys_by_output_name={"result": AssetKey(["the", "asset"])},
         key_prefix=["this", "is", "a", "prefix"],
-        freshness_policies_by_output_name={"result": freshness_policy},
+        legacy_freshness_policies_by_output_name={"result": freshness_policy},
         descriptions_by_output_name={"result": description},
         metadata_by_output_name={"result": metadata},
         group_name="abc",
@@ -972,7 +972,7 @@ def test_from_graph_w_key_prefix():
     ]
 
     assert this_is_a_prefix_the_asset_spec.group_name == "abc"
-    assert this_is_a_prefix_the_asset_spec.freshness_policy == freshness_policy
+    assert this_is_a_prefix_the_asset_spec.legacy_freshness_policy == freshness_policy
     assert this_is_a_prefix_the_asset_spec.description == description
     assert this_is_a_prefix_the_asset_spec.metadata == metadata
 
@@ -995,7 +995,7 @@ def test_from_op_w_key_prefix():
     def foo():
         return 1
 
-    freshness_policy = FreshnessPolicy(maximum_lag_minutes=60)
+    legacy_freshness_policy = LegacyFreshnessPolicy(maximum_lag_minutes=60)
     description = "This is a description!"
     metadata = {"test_metadata": "This is some metadata"}
 
@@ -1004,7 +1004,7 @@ def test_from_op_w_key_prefix():
         keys_by_input_name={},
         keys_by_output_name={"result": AssetKey(["the", "asset"])},
         key_prefix=["this", "is", "a", "prefix"],
-        freshness_policies_by_output_name={"result": freshness_policy},
+        legacy_freshness_policies_by_output_name={"result": legacy_freshness_policy},
         descriptions_by_output_name={"result": description},
         metadata_by_output_name={"result": metadata},
         group_name="abc",
@@ -1024,7 +1024,7 @@ def test_from_op_w_key_prefix():
     ]
 
     assert this_is_a_prefix_the_asset_spec.group_name == "abc"
-    assert this_is_a_prefix_the_asset_spec.freshness_policy == freshness_policy
+    assert this_is_a_prefix_the_asset_spec.legacy_freshness_policy == legacy_freshness_policy
     assert this_is_a_prefix_the_asset_spec.description == description
     assert this_is_a_prefix_the_asset_spec.metadata == metadata
 
