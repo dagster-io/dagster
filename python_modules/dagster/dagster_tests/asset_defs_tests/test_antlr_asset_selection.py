@@ -16,7 +16,6 @@ from dagster._core.definitions.asset_selection import (
     TableNameAssetSelection,
 )
 from dagster._core.definitions.decorators.asset_decorator import asset
-from dagster._core.storage.tags import KIND_PREFIX
 
 
 @pytest.mark.parametrize(
@@ -46,6 +45,10 @@ from dagster._core.storage.tags import KIND_PREFIX
         (
             'owner:"owner@owner.com"',
             '(start (expr (traversalAllowedExpr (attributeExpr owner : (value "owner@owner.com")))) <EOF>)',
+        ),
+        (
+            "owner:<null>",
+            "(start (expr (traversalAllowedExpr (attributeExpr owner : (value <null>)))) <EOF>)",
         ),
         (
             'group:"my_group"',
@@ -105,6 +108,8 @@ def test_antlr_tree(selection_str, expected_tree_str) -> None:
         "owner",
         "tag:foo=",
         "owner:owner@owner.com",
+        "owner:<none>",
+        "key:<fake>",
     ],
 )
 def test_antlr_tree_invalid(selection_str):
@@ -186,7 +191,7 @@ def test_antlr_tree_invalid(selection_str):
         ("group:my_group", AssetSelection.groups("my_group", include_sources=True)),
         (
             "kind:my_kind",
-            AssetSelection.tag(f"{KIND_PREFIX}my_kind", "", include_sources=True),
+            AssetSelection.kind("my_kind", include_sources=True),
         ),
         (
             "code_location:my_location",
@@ -197,6 +202,26 @@ def test_antlr_tree_invalid(selection_str):
         ("table_name:my_table", TableNameAssetSelection(selected_table_name="my_table")),
         ("column_tag:my_key=my_value", ColumnTagAssetSelection(key="my_key", value="my_value")),
         ("changed_in_branch:any", ChangedInBranchAssetSelection(selected_changed_in_branch="any")),
+        ('tag:"<null>"', AssetSelection.tag("<null>", "", include_sources=True)),
+        ('tag:""', AssetSelection.tag("", "", include_sources=True)),
+        ('tag:"fake"=""', AssetSelection.tag("fake", "", include_sources=True)),
+        ("owner:<null>", AssetSelection.owner(None)),
+        ("group:<null>", AssetSelection.groups(include_sources=True)),
+        (
+            "kind:<null>",
+            AssetSelection.kind(None, include_sources=True),
+        ),
+        (
+            "code_location:<null>",
+            CodeLocationAssetSelection(selected_code_location=None),
+        ),
+        ("column:<null>", ColumnAssetSelection(selected_column=None)),
+        ("table_name:<null>", TableNameAssetSelection(selected_table_name=None)),
+        ("column_tag:fake=<null>", ColumnTagAssetSelection(key="fake", value="")),
+        (
+            "changed_in_branch:<null>",
+            ChangedInBranchAssetSelection(selected_changed_in_branch=None),
+        ),
     ],
 )
 def test_antlr_visit_basic(selection_str, expected_assets) -> None:
