@@ -28,7 +28,7 @@ class TestInternalFreshnessPolicy:
         assert policy is None
 
 
-class TestAttachInternalFreshnessPolicy:
+class TestApplyFreshnessPolicy:
     def test_apply_freshness_policy_explicit_none_fails(self) -> None:
         """Check that we cannot apply a null policy to assets."""
 
