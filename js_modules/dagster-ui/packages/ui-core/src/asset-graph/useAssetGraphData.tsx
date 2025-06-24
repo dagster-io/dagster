@@ -252,7 +252,7 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
 const computeGraphData = indexedDBAsyncMemoize<GraphDataState, typeof computeGraphDataWrapper>(
   computeGraphDataWrapper,
   'computeGraphData',
-  (props) => hashObject({props, version: 2}),
+  (props) => hashObject({props, version: 3}),
 );
 
 const buildGraphQueryItems = (nodes: AssetNode[]) => {
@@ -381,7 +381,7 @@ async function computeGraphDataWrapper(
 const buildGraphData = indexedDBAsyncMemoize<GraphData, typeof buildGraphDataWrapper>(
   buildGraphDataWrapper,
   'buildGraphData',
-  (props) => hashObject({props, version: 2}),
+  (props) => hashObject({props, version: 3}),
 );
 
 async function buildGraphDataWrapper(

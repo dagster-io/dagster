@@ -42,6 +42,7 @@ import {
   LeftParenTokenContext,
   NotExpressionContext,
   NotTokenContext,
+  NullStringValueContext,
   OrExpressionContext,
   OrTokenContext,
   ParenthesizedExprContext,
@@ -437,6 +438,19 @@ export interface SelectionAutoCompleteListener extends ParseTreeListener {
    * @param ctx the parse tree
    */
   exitUnquotedStringValue?: (ctx: UnquotedStringValueContext) => void;
+
+  /**
+   * Enter a parse tree produced by the `NullStringValue`
+   * labeled alternative in `SelectionAutoCompleteParser.value`.
+   * @param ctx the parse tree
+   */
+  enterNullStringValue?: (ctx: NullStringValueContext) => void;
+  /**
+   * Exit a parse tree produced by the `NullStringValue`
+   * labeled alternative in `SelectionAutoCompleteParser.value`.
+   * @param ctx the parse tree
+   */
+  exitNullStringValue?: (ctx: NullStringValueContext) => void;
 
   /**
    * Enter a parse tree produced by the `DigitsValue`

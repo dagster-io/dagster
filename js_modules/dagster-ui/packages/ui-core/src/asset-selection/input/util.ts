@@ -11,6 +11,7 @@ import {buildRepoPathForHuman} from '../../workspace/buildRepoAddress';
 
 export const getAttributesMap = (assets: AssetGraphQueryItem[]) => {
   const assetNamesSet: Set<string> = new Set();
+  const seenTags: Set<string> = new Set();
   const tagSet: Set<{key: string; value: string}> = new Set();
   const ownersSet: Set<string> = new Set();
   const groupsSet: Set<string> = new Set();
@@ -19,35 +20,52 @@ export const getAttributesMap = (assets: AssetGraphQueryItem[]) => {
 
   assets.forEach((asset) => {
     assetNamesSet.add(asset.name);
-    asset.node.tags.forEach((tag) => {
-      if (isKindTag(tag)) {
-        return;
-      }
-      tagSet.add(memoizedTag(tag.key, tag.value));
-    });
-    asset.node.owners.forEach((owner) => {
-      switch (owner.__typename) {
-        case 'TeamAssetOwner':
-          ownersSet.add(owner.team);
-          break;
-        case 'UserAssetOwner':
-          ownersSet.add(owner.email);
-          break;
-        default:
-          assertUnreachable(owner);
-      }
-    });
+    if (asset.node.tags.length > 0) {
+      asset.node.tags.forEach((tag) => {
+        if (isKindTag(tag)) {
+          return;
+        }
+        if (seenTags.has(JSON.stringify(tag))) {
+          return;
+        }
+        tagSet.add(memoizedTag(tag.key, tag.value));
+      });
+    }
+    if (asset.node.owners.length > 0) {
+      asset.node.owners.forEach((owner) => {
+        switch (owner.__typename) {
+          case 'TeamAssetOwner':
+            ownersSet.add(owner.team);
+            break;
+          case 'UserAssetOwner':
+            ownersSet.add(owner.email);
+            break;
+          default:
+            assertUnreachable(owner);
+        }
+      });
+    } else {
+      ownersSet.add('');
+    }
     if (asset.node.groupName) {
       groupsSet.add(asset.node.groupName);
+    } else {
+      groupsSet.add('');
     }
-    asset.node.kinds.forEach((kind) => {
-      kindsSet.add(kind);
-    });
-    const location = buildRepoPathForHuman(
-      asset.node.repository.name,
-      asset.node.repository.location.name,
-    );
-    codeLocationSet.add(location);
+    if (asset.node.kinds.length > 0) {
+      asset.node.kinds.forEach((kind) => {
+        kindsSet.add(kind);
+      });
+    } else {
+      kindsSet.add('');
+    }
+    const repository = asset.node.repository;
+    if (repository && repository.location.name && repository.name) {
+      const location = buildRepoPathForHuman(repository.name, repository.location.name);
+      codeLocationSet.add(location);
+    } else {
+      codeLocationSet.add('');
+    }
   });
 
   const assetNames = Array.from(assetNamesSet).sort();
