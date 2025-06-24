@@ -112,9 +112,10 @@ def test_migrating_project(
                 )
 
             # Test to make sure everything is working
-            _run_command(
-                "dagster asset materialize --select '*' -m 'my_existing_project.definitions'"
-            )
+            if not update_snippets:
+                _run_command(
+                    "dagster asset materialize --select '*' -m 'my_existing_project.definitions'"
+                )
 
             if package_manager == "uv":
                 # We're using a local `dg` install in reality to avoid polluting global env but we'll fake the global one
