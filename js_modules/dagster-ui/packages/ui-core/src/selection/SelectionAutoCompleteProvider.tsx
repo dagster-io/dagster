@@ -391,7 +391,14 @@ export const createProvider = <
     getAttributeValueResultsMatchingQuery: ({attribute, query, textCallback}) => {
       const values = attributesMap[attribute as keyof typeof attributesMap];
       const shouldTreatAsteriskAsWildcard = attribute === primaryAttributeKey;
-      const queryToUseAsRegex = shouldTreatAsteriskAsWildcard ? query.replace(/\*/g, '.*') : query;
+
+      // Escape special characters in the query to avoid regex injection
+      const cleanedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+      const queryToUseAsRegex = shouldTreatAsteriskAsWildcard
+        ? cleanedQuery.replace(/\\.\\*/g, '.*')
+        : cleanedQuery;
+
       const regex = new RegExp(queryToUseAsRegex, 'i');
       const results =
         values
