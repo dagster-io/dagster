@@ -356,7 +356,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         self._specs_by_key = {}
         for spec in normalized_specs:
             if spec.key in self._specs_by_key and self._specs_by_key[spec.key] != spec:
-                warnings.warn(
+                raise DagsterInvalidDefinitionError(
                     "Received conflicting AssetSpecs with the same key:\n"
                     f"{self._specs_by_key[spec.key]}\n"
                     f"{spec}\n"
