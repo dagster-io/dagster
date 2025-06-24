@@ -32,7 +32,7 @@ Now that you have a Dagster project with a dbt project, you can scaffold a dbt c
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/dbt-component/4-scaffold-dbt-component.txt" />
 
-The scaffold call will generate a `defs.yaml` file:
+The scaffold call will generate a `defs.yaml` file in your project structure:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/dbt-component/5-tree.txt" />
 
@@ -40,7 +40,7 @@ In its scaffolded form, the `defs.yaml` file contains the configuration for your
 
 <CodeExample path="docs_snippets/docs_snippets/guides/components/integrations/dbt-component/6-component.yaml" title="my_project/defs/dbt_ingest/defs.yaml" language="yaml" />
 
-This is sufficient to load our dbt models as assets. You can use `dg list defs` to see the asset representation:
+This is sufficient to load your dbt models as assets. You can use `dg list defs` to see the asset representation:
 
 <WideContent maxSize={1100}>
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/dbt-component/7-list-defs.txt" />
@@ -54,8 +54,7 @@ To execute your dbt models, you can use the `dg launch` command to kick off a ru
 
 ## 5. Select or exclude specific models
 
-You can select specific dbt models to include in your component using the `select` or `exclude` attributes. This allows you to filter which models are represented as assets, using
-[dbt's selection syntax](https://docs.getdbt.com/reference/node-selection/syntax).
+You can control which dbt models are included in your component using the `select` or `exclude` attributes. This allows you to filter which models are represented as assets, using [dbt's selection syntax](https://docs.getdbt.com/reference/node-selection/syntax). For example, to include only the `customers` model:
 
 <CodeExample path="docs_snippets/docs_snippets/guides/components/integrations/dbt-component/8-customized-component.yaml" title="my_project/defs/dbt_ingest/defs.yaml" language="yaml" />
 
@@ -65,7 +64,7 @@ You can select specific dbt models to include in your component using the `selec
 
 ## 6. Customize dbt assets
 
-Properties of the assets emitted by each dbt model can be customized in the `defs.yaml` file using the `translation` key:
+You can customize the properties of the assets emitted by each dbt model using the `translation` key in your `defs.yaml` file. This allows you to modify asset metadata such as group names, descriptions, and other properties:
 
 <CodeExample path="docs_snippets/docs_snippets/guides/components/integrations/dbt-component/10-customized-component.yaml" title="my_project/defs/dbt_ingest/defs.yaml" language="yaml" />
 
