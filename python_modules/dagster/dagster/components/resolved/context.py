@@ -64,17 +64,19 @@ class ResolutionContext:
     respective python types using the available template variables.
 
     Example:
-    .. code-block:: python
-        import datetime
-        import dagster as dg
 
-        def resolve_timestamp(
-            context: dg.ResolutionContext,
-            raw_timestamp: str,
-        ) -> datetime.datetime:
-            return datetime.datetime.fromisoformat(
-                context.resolve_value(raw_timestamp, as_type=str),
-            )
+        .. code-block:: python
+
+            import datetime
+            import dagster as dg
+
+            def resolve_timestamp(
+                context: dg.ResolutionContext,
+                raw_timestamp: str,
+            ) -> datetime.datetime:
+                return datetime.datetime.fromisoformat(
+                    context.resolve_value(raw_timestamp, as_type=str),
+                )
 
     """
 
