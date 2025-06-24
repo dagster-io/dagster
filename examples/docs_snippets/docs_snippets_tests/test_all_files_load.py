@@ -45,6 +45,8 @@ EXCLUDED_FILES = {
     f"{snippets_folder}/guides/dg/using-resources/1-asset-one.py",
     f"{snippets_folder}/guides/dg/using-resources/2-resources-at-defs-root.py",
     f"{snippets_folder}/guides/dg/using-resources/3-resource-defs-at-project-root.py",
+    f"{snippets_folder}/guides/dg/adding-components-to-existing-project/2-definitions-before.py",
+    f"{snippets_folder}/guides/dg/adding-components-to-existing-project/6-definitions.py",
     f"{snippets_folder}/guides/components/integrations/dlt-component/5-loads.py",
     f"{snippets_folder}/guides/components/integrations/dlt-component/7-customized-loads.py",
     # resources are defined in a separate file so import references are failing tests
