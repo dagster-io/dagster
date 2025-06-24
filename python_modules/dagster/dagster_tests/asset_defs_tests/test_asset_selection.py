@@ -66,7 +66,9 @@ from typing_extensions import TypeAlias
 earth = SourceAsset(["celestial", "earth"], group_name="planets")
 
 
-@asset(ins={"earth": AssetIn(key=AssetKey(["celestial", "earth"]))}, group_name="ladies")
+@asset(
+    ins={"earth": AssetIn(key=AssetKey(["celestial", "earth"]))}, group_name="ladies"
+)
 def alice(earth):
     return "alice"
 
@@ -136,13 +138,28 @@ _AssetList: TypeAlias = Iterable[Union[AssetsDefinition, SourceAsset]]
 
 @pytest.fixture
 def all_assets() -> _AssetList:
-    return [earth, alice, bob, candace, danny, edgar, fiona, george, robots, aliens, zebra]
+    return [
+        earth,
+        alice,
+        bob,
+        candace,
+        danny,
+        edgar,
+        fiona,
+        george,
+        robots,
+        aliens,
+        zebra,
+    ]
 
 
 def _asset_keys_of(assets_defs: _AssetList) -> AbstractSet[AssetKey]:
     return reduce(
         operator.or_,
-        [item.keys if isinstance(item, AssetsDefinition) else {item.key} for item in assets_defs],
+        [
+            item.keys if isinstance(item, AssetsDefinition) else {item.key}
+            for item in assets_defs
+        ],
         set(),
     )
 
@@ -156,7 +173,9 @@ def test_asset_selection_all(all_assets: _AssetList):
 
 
 def test_asset_selection_and(all_assets: _AssetList):
-    sel = AssetSelection.assets("alice", "bob") & AssetSelection.assets("bob", "candace")
+    sel = AssetSelection.assets("alice", "bob") & AssetSelection.assets(
+        "bob", "candace"
+    )
     assert sel.resolve(all_assets) == _asset_keys_of({bob})
 
 
@@ -239,20 +258,24 @@ def test_asset_selection_assets(all_assets: _AssetList):
 
 
 def test_asset_selection_or(all_assets: _AssetList):
-    sel = AssetSelection.assets("alice", "bob") | AssetSelection.assets("bob", "candace")
+    sel = AssetSelection.assets("alice", "bob") | AssetSelection.assets(
+        "bob", "candace"
+    )
     assert sel.resolve(all_assets) == _asset_keys_of({alice, bob, candace})
 
 
 def test_asset_selection_subtraction(all_assets: _AssetList):
-    sel = AssetSelection.assets("alice", "bob") - AssetSelection.assets("bob", "candace")
+    sel = AssetSelection.assets("alice", "bob") - AssetSelection.assets(
+        "bob", "candace"
+    )
     assert sel.resolve(all_assets) == _asset_keys_of({alice})
 
     sel = AssetSelection.groups("ladies") - AssetSelection.groups("gentlemen")
     assert sel.resolve(all_assets) == _asset_keys_of({alice, candace, fiona})
 
-    sel = (AssetSelection.groups("ladies") | AssetSelection.assets("bob")) - AssetSelection.groups(
-        "ladies"
-    )
+    sel = (
+        AssetSelection.groups("ladies") | AssetSelection.assets("bob")
+    ) - AssetSelection.groups("ladies")
     assert sel.resolve(all_assets) == _asset_keys_of({bob})
 
 
@@ -272,7 +295,9 @@ def test_asset_selection_sinks(all_assets: _AssetList):
     assert sel.resolve(all_assets) == _asset_keys_of({bob})
 
     sel = AssetSelection.all().sinks()
-    assert sel.resolve(all_assets) == _asset_keys_of({edgar, george, robots, aliens, zebra})
+    assert sel.resolve(all_assets) == _asset_keys_of(
+        {edgar, george, robots, aliens, zebra}
+    )
 
     sel = AssetSelection.groups("ladies").sinks()
     # fiona is a sink because it has no downstream dependencies within the "ladies" group
@@ -290,7 +315,9 @@ def test_asset_selection_required_multi_asset_neighbors(all_assets: _AssetList):
     sel = AssetSelection.assets("rosie").required_multi_asset_neighbors()
     assert sel.resolve(all_assets) == _asset_keys_of({robots})
 
-    sel = AssetSelection.assets("alice", "bob", "walle").required_multi_asset_neighbors()
+    sel = AssetSelection.assets(
+        "alice", "bob", "walle"
+    ).required_multi_asset_neighbors()
     assert sel.resolve(all_assets) == _asset_keys_of({alice, bob, robots})
 
     # aliens are subsettable, so no expansion from required_multi_asset_neighbors
@@ -310,7 +337,9 @@ def test_asset_selection_upstream(all_assets: _AssetList):
 
 def test_downstream_include_self(all_assets: _AssetList):
     selection = AssetSelection.assets("candace").downstream(include_self=False)
-    assert selection.resolve(all_assets) == _asset_keys_of({danny, edgar, fiona, george})
+    assert selection.resolve(all_assets) == _asset_keys_of(
+        {danny, edgar, fiona, george}
+    )
 
     selection = AssetSelection.groups("gentlemen").downstream(include_self=False)
     assert selection.resolve(all_assets) == _asset_keys_of({fiona})
@@ -321,7 +350,9 @@ def test_downstream_include_self(all_assets: _AssetList):
 
 def test_upstream_include_self(all_assets: _AssetList):
     selection = AssetSelection.assets("george").upstream(include_self=False)
-    assert selection.resolve(all_assets) == _asset_keys_of({danny, fiona, alice, bob, candace})
+    assert selection.resolve(all_assets) == _asset_keys_of(
+        {danny, fiona, alice, bob, candace}
+    )
 
     selection = AssetSelection.groups("gentlemen").upstream(include_self=False)
     assert selection.resolve(all_assets) == _asset_keys_of({fiona, alice, candace})
@@ -372,7 +403,9 @@ def test_materializable() -> None:
     def c(b):
         pass
 
-    assert AssetSelection.assets("source_upstream", "obs_source_upstream", "b", "c").resolve(
+    assert AssetSelection.assets(
+        "source_upstream", "obs_source_upstream", "b", "c"
+    ).resolve(
         [
             source_upstream,
             obs_source_upstream,
@@ -414,7 +447,9 @@ def test_sources():
         pass
 
     with pytest.warns(DeprecationWarning):
-        assert AssetSelection.assets("a", "b", "c").sources().resolve([a, b, c]) == {a.key}
+        assert AssetSelection.assets("a", "b", "c").sources().resolve([a, b, c]) == {
+            a.key
+        }
 
 
 @pytest.mark.parametrize(
@@ -434,7 +469,8 @@ def test_sources():
             MultiPartitionMapping(
                 {
                     "time": DimensionPartitionMapping(
-                        "time", TimeWindowPartitionMapping(start_offset=-1, end_offset=-1)
+                        "time",
+                        TimeWindowPartitionMapping(start_offset=-1, end_offset=-1),
                     ),
                     "abc": DimensionPartitionMapping("abc", IdentityPartitionMapping()),
                 }
@@ -464,7 +500,9 @@ def test_from_coercible_multi_asset():
     def other_asset(): ...
 
     assert (
-        AssetSelection.from_coercible([my_multi_asset]).resolve([my_multi_asset, other_asset])
+        AssetSelection.from_coercible([my_multi_asset]).resolve(
+            [my_multi_asset, other_asset]
+        )
         == my_multi_asset.keys
     )
 
@@ -522,12 +560,16 @@ def test_asset_selection_type_checking():
 
     with pytest.raises(CheckError):
         AssetChecksForAssetKeysSelection(selected_asset_keys=invalid_argument)  # pyright: ignore[reportArgumentType]
-    test = AssetChecksForAssetKeysSelection(selected_asset_keys=valid_asset_key_sequence)
+    test = AssetChecksForAssetKeysSelection(
+        selected_asset_keys=valid_asset_key_sequence
+    )
     assert isinstance(test, AssetChecksForAssetKeysSelection)
 
     with pytest.raises(CheckError):
         AssetCheckKeysSelection(selected_asset_check_keys=invalid_argument)  # pyright: ignore[reportArgumentType]
-    test = AssetCheckKeysSelection(selected_asset_check_keys=valid_asset_check_key_sequence)
+    test = AssetCheckKeysSelection(
+        selected_asset_check_keys=valid_asset_check_key_sequence
+    )
     assert isinstance(test, AssetCheckKeysSelection)
 
     with pytest.raises(CheckError):
@@ -542,7 +584,9 @@ def test_asset_selection_type_checking():
 
     with pytest.raises(CheckError):
         SubtractAssetSelection(left=invalid_argument, right=invalid_argument)  # pyright: ignore[reportArgumentType]
-    test = SubtractAssetSelection(left=valid_asset_selection, right=valid_asset_selection)
+    test = SubtractAssetSelection(
+        left=valid_asset_selection, right=valid_asset_selection
+    )
     assert isinstance(test, SubtractAssetSelection)
 
     with pytest.raises(CheckError):
@@ -562,10 +606,14 @@ def test_asset_selection_type_checking():
 
     with pytest.raises(CheckError):
         DownstreamAssetSelection(child=invalid_argument, depth=0, include_self=False)  # pyright: ignore[reportArgumentType]
-    test = DownstreamAssetSelection(child=valid_asset_selection, depth=0, include_self=False)
+    test = DownstreamAssetSelection(
+        child=valid_asset_selection, depth=0, include_self=False
+    )
     assert isinstance(test, DownstreamAssetSelection)
 
-    test = GroupsAssetSelection(selected_groups=valid_string_sequence, include_sources=False)
+    test = GroupsAssetSelection(
+        selected_groups=valid_string_sequence, include_sources=False
+    )
     assert isinstance(test, GroupsAssetSelection)
 
     with pytest.raises(CheckError):
@@ -577,7 +625,9 @@ def test_asset_selection_type_checking():
         GroupsAssetSelection(selected_groups=invalid_argument, include_sources=False)
 
     with pytest.raises(CheckError):
-        KeyPrefixesAssetSelection(selected_key_prefixes=invalid_argument, include_sources=False)
+        KeyPrefixesAssetSelection(
+            selected_key_prefixes=invalid_argument, include_sources=False
+        )
 
     test = KeyPrefixesAssetSelection(
         selected_key_prefixes=valid_string_sequence_sequence, include_sources=False
@@ -586,7 +636,9 @@ def test_asset_selection_type_checking():
 
     with pytest.raises(CheckError):
         UpstreamAssetSelection(child=invalid_argument, depth=0, include_self=False)  # pyright: ignore[reportArgumentType]
-    test = UpstreamAssetSelection(child=valid_asset_selection, depth=0, include_self=False)
+    test = UpstreamAssetSelection(
+        child=valid_asset_selection, depth=0, include_self=False
+    )
     assert isinstance(test, UpstreamAssetSelection)
 
     with pytest.raises(CheckError):
@@ -612,7 +664,9 @@ def test_all_asset_selection_subclasses_serializable():
             asset_selection_module.ChainedAssetSelection,
             asset_selection_module.OperandListAssetSelection,
         ]:
-            assert asset_selection_subclass.__name__ in _WHITELIST_MAP.object_serializers
+            assert (
+                asset_selection_subclass.__name__ in _WHITELIST_MAP.object_serializers
+            )
 
 
 def test_to_serializable_asset_selection():
@@ -634,7 +688,10 @@ def test_to_serializable_asset_selection():
     asset_graph = AssetGraph.from_assets([asset1, asset2, check1])
 
     def assert_serializable_same(asset_selection: AssetSelection) -> None:
-        assert asset_selection.to_serializable_asset_selection(asset_graph) == asset_selection
+        assert (
+            asset_selection.to_serializable_asset_selection(asset_graph)
+            == asset_selection
+        )
 
     assert_serializable_same(AssetSelection.groups("a"))
     assert_serializable_same(AssetSelection.key_prefixes(["foo", "bar"]))
@@ -645,14 +702,20 @@ def test_to_serializable_asset_selection():
     assert_serializable_same(AssetSelection.checks(check1))
 
     assert_serializable_same(AssetSelection.sinks(AssetSelection.groups("a")))
-    assert_serializable_same(AssetSelection.downstream(AssetSelection.groups("a"), depth=1))
-    assert_serializable_same(AssetSelection.upstream(AssetSelection.groups("a"), depth=1))
+    assert_serializable_same(
+        AssetSelection.downstream(AssetSelection.groups("a"), depth=1)
+    )
+    assert_serializable_same(
+        AssetSelection.upstream(AssetSelection.groups("a"), depth=1)
+    )
     assert_serializable_same(
         AssetSelection.required_multi_asset_neighbors(AssetSelection.groups("a"))
     )
     assert_serializable_same(AssetSelection.roots(AssetSelection.groups("a")))
     assert_serializable_same(AssetSelection.sources(AssetSelection.groups("a")))
-    assert_serializable_same(AssetSelection.upstream_source_assets(AssetSelection.groups("a")))
+    assert_serializable_same(
+        AssetSelection.upstream_source_assets(AssetSelection.groups("a"))
+    )
 
     assert_serializable_same(AssetSelection.groups("a") & AssetSelection.groups("b"))
     assert_serializable_same(AssetSelection.groups("a") | AssetSelection.groups("b"))
@@ -664,9 +727,11 @@ def test_to_serializable_asset_selection():
         == asset1_selection
     )
 
-    assert AssetSelection.sinks(UnserializableAssetSelection()).to_serializable_asset_selection(
-        asset_graph
-    ) == AssetSelection.sinks(asset1_selection)
+    assert AssetSelection.sinks(
+        UnserializableAssetSelection()
+    ).to_serializable_asset_selection(asset_graph) == AssetSelection.sinks(
+        asset1_selection
+    )
     assert AssetSelection.downstream(
         UnserializableAssetSelection(), depth=1
     ).to_serializable_asset_selection(asset_graph) == AssetSelection.downstream(
@@ -679,20 +744,24 @@ def test_to_serializable_asset_selection():
     )
     assert AssetSelection.required_multi_asset_neighbors(
         UnserializableAssetSelection()
-    ).to_serializable_asset_selection(asset_graph) == AssetSelection.required_multi_asset_neighbors(
+    ).to_serializable_asset_selection(
+        asset_graph
+    ) == AssetSelection.required_multi_asset_neighbors(asset1_selection)
+    assert AssetSelection.roots(
+        UnserializableAssetSelection()
+    ).to_serializable_asset_selection(asset_graph) == AssetSelection.roots(
         asset1_selection
     )
-    assert AssetSelection.roots(UnserializableAssetSelection()).to_serializable_asset_selection(
-        asset_graph
-    ) == AssetSelection.roots(asset1_selection)
-    assert AssetSelection.sources(UnserializableAssetSelection()).to_serializable_asset_selection(
-        asset_graph
-    ) == AssetSelection.sources(asset1_selection)
+    assert AssetSelection.sources(
+        UnserializableAssetSelection()
+    ).to_serializable_asset_selection(asset_graph) == AssetSelection.sources(
+        asset1_selection
+    )
     assert AssetSelection.upstream_source_assets(
         UnserializableAssetSelection()
-    ).to_serializable_asset_selection(asset_graph) == AssetSelection.upstream_source_assets(
-        asset1_selection
-    )
+    ).to_serializable_asset_selection(
+        asset_graph
+    ) == AssetSelection.upstream_source_assets(asset1_selection)
 
     assert (
         UnserializableAssetSelection() & AssetSelection.groups("b")
@@ -724,7 +793,8 @@ def test_to_string_basic():
 
     assert str(AssetSelection.groups("marketing")) == 'group:"marketing"'
     assert (
-        str(AssetSelection.groups("marketing", "finance")) == 'group:"marketing" or group:"finance"'
+        str(AssetSelection.groups("marketing", "finance"))
+        == 'group:"marketing" or group:"finance"'
     )
     assert str(AssetSelection.groups()) == "group:<null>"
     assert str(AssetSelection.groups("")) == 'group:""'
@@ -733,7 +803,10 @@ def test_to_string_basic():
     assert str(AssetSelection.tag("", "")) == 'tag:""'
     assert str(AssetSelection.owner(None)) == "owner:<null>"
     assert str(AssetSelection.owner("")) == 'owner:""'
-    assert str(CodeLocationAssetSelection(selected_code_location=None)) == "code_location:<null>"
+    assert (
+        str(CodeLocationAssetSelection(selected_code_location=None))
+        == "code_location:<null>"
+    )
     assert str(ColumnAssetSelection(selected_column=None)) == "column:<null>"
     assert str(ColumnAssetSelection(selected_column="")) == 'column:""'
     assert str(ColumnTagAssetSelection(key="fake", value="")) == 'column_tag:"fake"'
@@ -745,13 +818,20 @@ def test_to_string_basic():
         == "changed_in_branch:<null>"
     )
     assert (
-        str(ChangedInBranchAssetSelection(selected_changed_in_branch="")) == 'changed_in_branch:""'
+        str(ChangedInBranchAssetSelection(selected_changed_in_branch=""))
+        == 'changed_in_branch:""'
     )
     assert AssetSelection.from_string("kind:dbt").to_selection_str() == 'kind:"dbt"'
     assert AssetSelection.from_string("owner:dbt").to_selection_str() == 'owner:"dbt"'
-    assert AssetSelection.from_string("tag:foo=bar").to_selection_str() == 'tag:"foo"="bar"'
+    assert (
+        AssetSelection.from_string("tag:foo=bar").to_selection_str()
+        == 'tag:"foo"="bar"'
+    )
     assert AssetSelection.from_string("tag:foo").to_selection_str() == 'tag:"foo"'
-    assert AssetSelection.from_string("key:prefix/thing").to_selection_str() == 'key:"prefix/thing"'
+    assert (
+        AssetSelection.from_string("key:prefix/thing").to_selection_str()
+        == 'key:"prefix/thing"'
+    )
     assert (
         AssetSelection.from_string('key:"prefix/thing*"').to_selection_str()
         == 'key:"prefix/thing*"'
@@ -778,9 +858,18 @@ def test_to_string_binary_operators():
     assert str(foo_bar | (baz & bork)) == 'key:"foo/bar" or (key:"baz" and key:"bork")'
     assert str(foo_bar & (baz | bork)) == 'key:"foo/bar" and (key:"baz" or key:"bork")'
 
-    assert str(foo_bar - baz - bork) == '(key:"foo/bar" and not key:"baz") and not key:"bork"'
-    assert str((foo_bar - baz) - bork) == '(key:"foo/bar" and not key:"baz") and not key:"bork"'
-    assert str(foo_bar - (baz - bork)) == 'key:"foo/bar" and not (key:"baz" and not key:"bork")'
+    assert (
+        str(foo_bar - baz - bork)
+        == '(key:"foo/bar" and not key:"baz") and not key:"bork"'
+    )
+    assert (
+        str((foo_bar - baz) - bork)
+        == '(key:"foo/bar" and not key:"baz") and not key:"bork"'
+    )
+    assert (
+        str(foo_bar - (baz - bork))
+        == 'key:"foo/bar" and not (key:"baz" and not key:"bork")'
+    )
 
     assert (
         str(AssetSelection.assets("foo/bar", "baz") & AssetSelection.assets("bork"))
@@ -819,38 +908,42 @@ def test_deserialize_old_all_asset_selection():
 def test_from_string():
     assert AssetSelection.from_string("*") == AssetSelection.all(include_sources=False)
     assert AssetSelection.from_string("my_asset") == AssetSelection.assets("my_asset")
-    assert AssetSelection.from_string("*my_asset") == AssetSelection.assets("my_asset").upstream(
-        depth=MAX_NUM, include_self=True
-    )
-    assert AssetSelection.from_string("+my_asset") == AssetSelection.assets("my_asset").upstream(
-        depth=1, include_self=True
-    )
-    assert AssetSelection.from_string("++my_asset") == AssetSelection.assets("my_asset").upstream(
-        depth=2, include_self=True
-    )
-    assert AssetSelection.from_string("my_asset*") == AssetSelection.assets("my_asset").downstream(
-        depth=MAX_NUM, include_self=True
-    )
-    assert AssetSelection.from_string("my_asset+") == AssetSelection.assets("my_asset").downstream(
-        depth=1, include_self=True
-    )
-    assert AssetSelection.from_string("my_asset++") == AssetSelection.assets("my_asset").downstream(
-        depth=2, include_self=True
-    )
-    assert AssetSelection.from_string("+my_asset+") == AssetSelection.assets("my_asset").downstream(
-        depth=1, include_self=True
-    ) | AssetSelection.assets("my_asset").upstream(depth=1, include_self=True)
-    assert AssetSelection.from_string("*my_asset*") == AssetSelection.assets("my_asset").downstream(
-        depth=MAX_NUM, include_self=True
-    ) | AssetSelection.assets("my_asset").upstream(depth=MAX_NUM, include_self=True)
+    assert AssetSelection.from_string("*my_asset") == AssetSelection.assets(
+        "my_asset"
+    ).upstream(depth=MAX_NUM, include_self=True)
+    assert AssetSelection.from_string("+my_asset") == AssetSelection.assets(
+        "my_asset"
+    ).upstream(depth=1, include_self=True)
+    assert AssetSelection.from_string("++my_asset") == AssetSelection.assets(
+        "my_asset"
+    ).upstream(depth=2, include_self=True)
+    assert AssetSelection.from_string("my_asset*") == AssetSelection.assets(
+        "my_asset"
+    ).downstream(depth=MAX_NUM, include_self=True)
+    assert AssetSelection.from_string("my_asset+") == AssetSelection.assets(
+        "my_asset"
+    ).downstream(depth=1, include_self=True)
+    assert AssetSelection.from_string("my_asset++") == AssetSelection.assets(
+        "my_asset"
+    ).downstream(depth=2, include_self=True)
+    assert AssetSelection.from_string("+my_asset+") == AssetSelection.assets(
+        "my_asset"
+    ).downstream(depth=1, include_self=True) | AssetSelection.assets(
+        "my_asset"
+    ).upstream(depth=1, include_self=True)
+    assert AssetSelection.from_string("*my_asset*") == AssetSelection.assets(
+        "my_asset"
+    ).downstream(depth=MAX_NUM, include_self=True) | AssetSelection.assets(
+        "my_asset"
+    ).upstream(depth=MAX_NUM, include_self=True)
     assert AssetSelection.from_string("tag:foo=bar") == AssetSelection.tag("foo", "bar")
     assert AssetSelection.from_string("tag:foo") == AssetSelection.tag("foo", "")
     assert AssetSelection.from_string("key:prefix/thing") == KeyWildCardAssetSelection(
         selected_key_wildcard="prefix/thing"
     )
-    assert AssetSelection.from_string('key:"prefix/thing*"') == KeyWildCardAssetSelection(
-        selected_key_wildcard="prefix/thing*"
-    )
+    assert AssetSelection.from_string(
+        'key:"prefix/thing*"'
+    ) == KeyWildCardAssetSelection(selected_key_wildcard="prefix/thing*")
 
 
 def test_tag():
@@ -908,19 +1001,28 @@ def test_key_wildcard():
     )
     def assets(): ...
 
-    assert KeyWildCardAssetSelection(selected_key_wildcard="asset").resolve([assets]) == set()
+    assert (
+        KeyWildCardAssetSelection(selected_key_wildcard="asset").resolve([assets])
+        == set()
+    )
 
-    assert KeyWildCardAssetSelection(selected_key_wildcard="asset1").resolve([assets]) == {
+    assert KeyWildCardAssetSelection(selected_key_wildcard="asset1").resolve(
+        [assets]
+    ) == {
         AssetKey("asset1"),
     }
 
-    assert KeyWildCardAssetSelection(selected_key_wildcard="prefix/*").resolve([assets]) == {
+    assert KeyWildCardAssetSelection(selected_key_wildcard="prefix/*").resolve(
+        [assets]
+    ) == {
         AssetKey(["prefix", "asset1"]),
         AssetKey(["prefix", "asset2"]),
         AssetKey(["prefix", "asset3"]),
     }
 
-    assert KeyWildCardAssetSelection(selected_key_wildcard="*/asset*").resolve([assets]) == {
+    assert KeyWildCardAssetSelection(selected_key_wildcard="*/asset*").resolve(
+        [assets]
+    ) == {
         AssetKey(["prefix", "asset1"]),
         AssetKey(["prefix", "asset2"]),
         AssetKey(["prefix", "asset3"]),
@@ -1016,7 +1118,9 @@ def test_code_location() -> None:
         == set()
     )
 
-    selection = CodeLocationAssetSelection(selected_code_location="bar_repo@code_location1")
+    selection = CodeLocationAssetSelection(
+        selected_code_location="bar_repo@code_location1"
+    )
     assert selection.resolve_inner(
         remote_repo.asset_graph,
         allow_missing=False,
