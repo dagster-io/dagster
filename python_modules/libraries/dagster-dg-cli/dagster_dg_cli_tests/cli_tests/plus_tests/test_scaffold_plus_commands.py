@@ -53,7 +53,7 @@ def validate_github_actions_workflow(workflow_path: Path, *, expected_version: s
     Prints a nicely formatted error message if it does not.
     """
     assert f"@{expected_version}" in workflow_path.read_text(), (
-        f"TEMPLATE_DAGSTER_VERSION should be replaced with @{expected_version} in the workflow"
+        f"TEMPLATE_DAGSTER_CLOUD_ACTION_VERSION should be replaced with @{expected_version} in the workflow"
     )
     assert "TEMPLATE_" not in workflow_path.read_text(), (
         "TEMPLATE_ placeholders should be replaced in the workflow"

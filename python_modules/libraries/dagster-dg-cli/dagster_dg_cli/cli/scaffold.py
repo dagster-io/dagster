@@ -55,10 +55,10 @@ from dagster_dg_cli.utils.plus.build import (
 from dagster_dg_cli.utils.plus.gql_client import DagsterPlusGraphQLClient
 
 
-def get_cli_version_or_latest() -> str:
+def get_cli_version_or_main() -> str:
     from dagster_dg_cli.version import __version__ as cli_version
 
-    return "latest" if cli_version.endswith("+dev") else f"v{cli_version}"
+    return "main" if cli_version.endswith("+dev") else f"v{cli_version}"
 
 
 # These commands are not dynamically generated, but perhaps should be.
@@ -722,7 +722,7 @@ def _get_build_fragment_for_locations(
             .replace("TEMPLATE_LOCATION_NAME", location_ctx.code_location_name)
             .replace("TEMPLATE_LOCATION_PATH", str(location_ctx.root_path.relative_to(git_root)))
             .replace("TEMPLATE_IMAGE_REGISTRY", registry_url)
-            .replace("TEMPLATE_DAGSTER_VERSION", get_cli_version_or_latest())
+            .replace("TEMPLATE_DAGSTER_CLOUD_ACTION_VERSION", get_cli_version_or_main())
         )
     return "\n" + "\n".join(output)
 
@@ -814,8 +814,8 @@ def scaffold_github_actions_command(git_root: Optional[Path], **global_options: 
             str(dg_context.root_path.relative_to(git_root)),
         )
         .replace(
-            "TEMPLATE_DAGSTER_VERSION",
-            get_cli_version_or_latest(),
+            "TEMPLATE_DAGSTER_CLOUD_ACTION_VERSION",
+            get_cli_version_or_main(),
         )
     )
 
