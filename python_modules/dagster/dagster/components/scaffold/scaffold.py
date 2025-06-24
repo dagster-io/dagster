@@ -22,17 +22,28 @@ TModel = TypeVar("TModel", bound=BaseModel, default=NoParams)
 
 
 @public
-@preview(emit_runtime_warning=False)
 def scaffold_with(
     scaffolder_cls: Union[type["Scaffolder[Any]"], "ScaffolderUnavailableReason"],
 ) -> Callable[[T], T]:
-    """A decorator that declares what Scaffolder is used to scaffold the artifact.
+    """A decorator that declares what :py:class:`Scaffolder` is used to scaffold the artifact.
 
     Args:
         scaffolder_cls: A class that inherits from Scaffolder
 
     Returns:
         Decorator function that enhances the target class
+
+    Example:
+        .. code-block:: python
+            import dagster as dg
+
+            class MyArtifactScaffolder(dg.Scaffolder):
+                ...
+
+            @dg.scaffold_with(MyArtifactScaffolder)
+            class MyArtifact:
+                ...
+
     """
     from dagster.components.core.package_entry import PACKAGE_ENTRY_ATTR
 
