@@ -1,10 +1,7 @@
 from pathlib import Path
 
 import dagster_sling
-from dagster_sling.components.sling_replication_collection.component import (
-    SlingReplicationCollectionComponent,
-    SlingReplicationSpecModel,
-)
+from dagster_sling import SlingReplicationCollectionComponent, SlingReplicationSpecModel
 from dagster_sling.resources import SlingConnectionResource
 from my_existing_project.analytics import assets as analytics_assets
 from my_existing_project.analytics.jobs import (
