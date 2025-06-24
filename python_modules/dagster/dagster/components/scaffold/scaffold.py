@@ -83,10 +83,12 @@ ScaffoldFormatOptions: TypeAlias = Literal["yaml", "python"]
 
 
 @public
-@preview(emit_runtime_warning=False)
 @dataclass
 class ScaffoldRequest(Generic[TModel]):
-    """The details about the current scaffolding operation."""
+    """Details about the current scaffolding operation.
+
+    This is passed to the :py:class:`Scaffolder` class when scaffolding a target.
+    """
 
     # fully qualified class name of the decorated object
     type_name: str
