@@ -1,8 +1,11 @@
 from pathlib import Path
 
 import dagster_sling
-from dagster_sling import SlingReplicationCollectionComponent, SlingReplicationSpecModel
-from dagster_sling.resources import SlingConnectionResource
+from dagster_sling import (
+    SlingConnectionResource,
+    SlingReplicationCollectionComponent,
+    SlingReplicationSpecModel,
+)
 from my_existing_project.analytics import assets as analytics_assets
 from my_existing_project.analytics.jobs import (
     regenerate_analytics_hourly_schedule,
