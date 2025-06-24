@@ -36,7 +36,7 @@ class MSTeamsResource(ConfigurableResource):
             def teams_job():
                 teams_op()
 
-            defs = Definitions(
+            Definitions(
                 jobs=[teams_job],
                 resources={
                     "msteams": MSTeamsResource(

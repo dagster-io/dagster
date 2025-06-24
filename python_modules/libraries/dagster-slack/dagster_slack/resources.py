@@ -26,7 +26,7 @@ class SlackResource(ConfigurableResource):
             def slack_job():
                 slack_op()
 
-            defs = Definitions(
+            Definitions(
                 jobs=[slack_job],
                 resources={
                     "slack": SlackResource(token=EnvVar("MY_SLACK_TOKEN")),

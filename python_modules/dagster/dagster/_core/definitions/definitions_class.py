@@ -380,7 +380,7 @@ class Definitions(IHaveNew):
 
     .. code-block:: python
 
-        defs = Definitions(
+        Definitions(
             assets=[asset_one, asset_two],
             schedules=[a_schedule],
             sensors=[a_sensor],

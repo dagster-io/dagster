@@ -50,7 +50,7 @@ def build_duckdb_io_manager(
 
             duckdb_io_manager = build_duckdb_io_manager([DuckDBPandasTypeHandler()])
 
-            defs = Definitions(
+            Definitions(
                 assets=[my_table]
                 resources={"io_manager" duckdb_io_manager.configured({"database": "my_db.duckdb"})}
             )
@@ -60,7 +60,7 @@ def build_duckdb_io_manager(
 
     .. code-block:: python
 
-        defs = Definitions(
+        Definitions(
             assets=[my_table]
             resources={"io_manager" duckdb_io_manager.configured(
                 {"database": "my_db.duckdb", "schema": "my_schema"} # will be used as the schema
@@ -154,7 +154,7 @@ class DuckDBIOManager(ConfigurableIOManagerFactory):
             def my_table() -> pd.DataFrame:  # the name of the asset will be the table name
                 ...
 
-            defs = Definitions(
+            Definitions(
                 assets=[my_table],
                 resources={"io_manager": MyDuckDBIOManager(database="my_db.duckdb")}
             )
@@ -164,7 +164,7 @@ class DuckDBIOManager(ConfigurableIOManagerFactory):
 
     .. code-block:: python
 
-        defs = Definitions(
+        Definitions(
             assets=[my_table],
             resources={"io_manager": MyDuckDBIOManager(database="my_db.duckdb", schema="my_schema")}
         )
@@ -216,7 +216,7 @@ class DuckDBIOManager(ConfigurableIOManagerFactory):
 
     .. code-block:: python
 
-        defs = Definitions(
+        Definitions(
             assets=[my_table],
             resources={"io_manager": MyDuckDBIOManager(database="my_db.duckdb",
                                                        connection_config={"arrow_large_buffer_size": True})}
