@@ -256,7 +256,7 @@ def define_asset_job(
 ) -> UnresolvedAssetJobDefinition:
     """Creates a definition of a job which will either materialize a selection of assets or observe
     a selection of source assets. This will only be resolved to a JobDefinition once placed in a
-    code location.
+    project.
 
     Args:
         name (str):
@@ -321,12 +321,12 @@ def define_asset_job(
 
 
     Returns:
-        UnresolvedAssetJobDefinition: The job, which can be placed inside a code location.
+        UnresolvedAssetJobDefinition: The job, which can be placed inside a project.
 
     Examples:
         .. code-block:: python
 
-            # A job that targets all assets in the code location:
+            # A job that targets all assets in the project:
             @asset
             def asset1():
                 ...

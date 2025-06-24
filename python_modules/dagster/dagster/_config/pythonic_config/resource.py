@@ -31,7 +31,10 @@ from dagster._config.pythonic_config.config import (
     MakeConfigCacheable,
     infer_schema_from_config_class,
 )
-from dagster._config.pythonic_config.conversion_utils import TResValue, _curry_config_schema
+from dagster._config.pythonic_config.conversion_utils import (
+    TResValue,
+    _curry_config_schema,
+)
 from dagster._config.pythonic_config.typing_utils import (
     BaseResourceMeta,
     LateBoundTypesForResourceTypeChecking,
@@ -51,8 +54,14 @@ from dagster._core.definitions.resource_definition import (
     has_at_least_one_parameter,
 )
 from dagster._core.definitions.resource_requirement import ResourceRequirement
-from dagster._core.errors import DagsterInvalidConfigError, DagsterInvalidDefinitionError
-from dagster._core.execution.context.init import InitResourceContext, build_init_resource_context
+from dagster._core.errors import (
+    DagsterInvalidConfigError,
+    DagsterInvalidDefinitionError,
+)
+from dagster._core.execution.context.init import (
+    InitResourceContext,
+    build_init_resource_context,
+)
 from dagster._core.storage.io_manager import IOManagerDefinition
 from dagster._record import record
 from dagster._utils.cached_method import cached_method
@@ -178,7 +187,7 @@ class ConfigurableResourceFactory(
 
     * An existing class from a third-party library that the user does not control.
     * A complex class that requires substantial internal state management or itself requires arguments beyond its config values.
-    * A class with expensive initialization that should not be invoked on code location load, but rather lazily on first use in an op or asset during a run.
+    * A class with expensive initialization that should not be invoked on project load, but rather lazily on first use in an op or asset during a run.
     * A class that you desire to be a plain Python class, rather than a Pydantic class, for whatever reason.
 
     This class is a subclass of both :py:class:`ResourceDefinition` and :py:class:`Config`, and
