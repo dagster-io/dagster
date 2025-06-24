@@ -3246,6 +3246,10 @@
     {
       "source": "/guides/labs/dg",
       "destination": "/getting-started/installation"
+    },
+    {
+      "source": "/guides/labs/freshness",
+      "destination": "/guides/labs/observability-update/freshness"
     }
   ],
   "trailingSlash": false
