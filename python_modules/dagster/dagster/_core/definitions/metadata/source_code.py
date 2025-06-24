@@ -333,28 +333,27 @@ def _convert_local_path_to_git_path_single_definition(
     )
 
 
-def base_git_url(url: str, branch: str, platform: Platform | None) -> str:
+def base_git_url(url: str, branch: str, platform: Optional[Platform]) -> str:
     if platform is None:
         if "gitlab" in url:
             platform = "gitlab"
         elif "github" in url:
             platform = "github"
-
-    match platform:
-        case "gitlab":
-            return f"{url}/-/tree/{branch}"
-        case "github":
-            return f"{url}/tree/{branch}"
-        case None:
+        else:
             raise ValueError(
                 "Invalid `git_url`."
                 " Unable to infer the source control platform from the `git_url`. Please supply a `platform`."
             )
-        case _:
-            raise ValueError(
-                "Invalid `platform`."
-                " Only gitlab and github are supported for linking to source control at this time."
-            )
+
+    if platform == "gitlab":
+        return f"{url}/-/tree/{branch}"
+    if platform == "github":
+        return f"{url}/tree/{branch}"
+    
+    raise ValueError(
+        "Invalid `platform`."
+        " Only gitlab and github are supported for linking to source control at this time."
+    )
 
 
 @beta
@@ -365,7 +364,7 @@ def link_code_references_to_git(
     git_url: str,
     git_branch: str,
     file_path_mapping: FilePathMapping,
-    platform: Platform | None = None,
+    platform: Optional[Platform] = None,
 ) -> Sequence[Union["AssetsDefinition", "SourceAsset", "CacheableAssetsDefinition", "AssetSpec"]]:
     """Wrapper function which converts local file path code references to source control URLs
     based on the provided source control URL and branch.
