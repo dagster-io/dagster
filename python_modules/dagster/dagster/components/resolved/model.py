@@ -24,9 +24,23 @@ if TYPE_CHECKING:
 
 
 @public
-@preview(emit_runtime_warning=False)
 class Model(BaseModel):
-    """pydantic BaseModel configured to disallow extra fields in order to help catch errors earlier."""
+    """pydantic BaseModel configured with recommended default settings for use with the Resolved framework.
+
+    Extra fields are disallowed when instantiating this model to help catch errors earlier.
+
+    Example:
+    ```python
+    import dagster as dg
+
+    class MyModel(dg.Resolvable, dg.Model):
+        name: str
+        age: int
+
+    # raises exception
+    MyModel(name="John", age=30, other="field")
+    ```
+    """
 
     model_config = ConfigDict(extra="forbid")
 
