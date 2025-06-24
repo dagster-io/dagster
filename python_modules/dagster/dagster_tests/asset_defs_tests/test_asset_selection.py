@@ -947,8 +947,8 @@ def test_owner() -> None:
 def test_kind() -> None:
     @multi_asset(
         specs=[
-            AssetSpec("asset1", kinds=["my_kind"]),
-            AssetSpec("asset2", kinds=[""]),
+            AssetSpec("asset1", kinds={"my_kind"}),
+            AssetSpec("asset2", kinds={""}),
             AssetSpec("asset3"),
         ]
     )
