@@ -91,7 +91,7 @@ def scaffold_object(
 
     params_model = parse_params_model(obj=obj, json_params=json_params)
 
-    click.echo(f"Creating a component at {path}.")
+    click.echo(f"Creating defs at {path}.")
     if not path.exists():
         path.mkdir(parents=True)
 
