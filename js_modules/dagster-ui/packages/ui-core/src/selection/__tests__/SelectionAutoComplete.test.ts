@@ -6,7 +6,7 @@ describe('createAssetSelectionHint', () => {
     key: ['asset1', 'asset2', 'asset3', 'prefix/thing1', 'prefix/thing2'],
     tag: ['tag1', 'tag2', 'tag3', 'key=value1', 'key=value2'],
     owner: ['marco@dagsterlabs.com', 'team:frontend'],
-    group: ['group1', 'group2'],
+    group: ['group1', 'group2', 'star-*-group'],
     kind: ['kind1', 'kind2'],
     code_location: ['repo1@location1', 'repo2@location2', 'assumptions@location3'],
   };
@@ -207,6 +207,9 @@ describe('createAssetSelectionHint', () => {
         }),
         expect.objectContaining({
           text: 'group:"group2"',
+        }),
+        expect.objectContaining({
+          text: 'group:"star-*-group"',
         }),
         expect.objectContaining({
           text: 'code_location:"repo1@location1"',
@@ -1260,6 +1263,36 @@ describe('createAssetSelectionHint', () => {
         }),
       ],
       to: 8,
+    });
+  });
+
+  it('Ignores * in other attribute', () => {
+    expect(testAutocomplete('group:"*|"')).toEqual({
+      from: 6,
+      list: [
+        expect.objectContaining({
+          text: '"star-*-group"',
+        }),
+      ],
+      to: 9,
+    });
+    expect(testAutocomplete('owner:"*|"')).toEqual({
+      from: 6,
+      list: [
+        expect.objectContaining({
+          type: 'no-match',
+        }),
+      ],
+      to: 9,
+    });
+    expect(testAutocomplete('tag:"*|"')).toEqual({
+      from: 4,
+      list: [
+        expect.objectContaining({
+          type: 'no-match',
+        }),
+      ],
+      to: 7,
     });
   });
 });
