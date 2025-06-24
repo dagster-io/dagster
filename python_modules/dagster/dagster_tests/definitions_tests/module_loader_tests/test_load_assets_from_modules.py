@@ -41,7 +41,9 @@ def check_freshness_policy(assets, freshness_policy):
         if isinstance(a, AssetsDefinition):
             asset_keys = a.keys
             for asset_key in asset_keys:
-                assert a.freshness_policies_by_key.get(asset_key) == freshness_policy, asset_key
+                assert a.legacy_freshness_policies_by_key.get(asset_key) == freshness_policy, (
+                    asset_key
+                )
 
 
 def check_auto_materialize_policy(assets, auto_materialize_policy):
@@ -245,12 +247,12 @@ def test_load_assets_with_freshness_policy():
 
     assets = load_assets_from_modules(
         [asset_package, module_with_assets],
-        freshness_policy=LegacyFreshnessPolicy(maximum_lag_minutes=50),
+        legacy_freshness_policy=LegacyFreshnessPolicy(maximum_lag_minutes=50),
     )
     check_freshness_policy(assets, LegacyFreshnessPolicy(maximum_lag_minutes=50))
 
     assets = load_assets_from_package_module(
-        asset_package, freshness_policy=LegacyFreshnessPolicy(maximum_lag_minutes=50)
+        asset_package, legacy_freshness_policy=LegacyFreshnessPolicy(maximum_lag_minutes=50)
     )
     check_freshness_policy(assets, LegacyFreshnessPolicy(maximum_lag_minutes=50))
 

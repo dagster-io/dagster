@@ -133,7 +133,7 @@ def test_group_name_from_get_asset_spec(stream, expected):
 )
 def test_freshness_policy_from_get_asset_spec(stream, expected):
     translator = DagsterSlingTranslator()
-    assert translator.get_asset_spec(stream).freshness_policy == expected
+    assert translator.get_asset_spec(stream).legacy_freshness_policy == expected
 
 
 @pytest.mark.parametrize(

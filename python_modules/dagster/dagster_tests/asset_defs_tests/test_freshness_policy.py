@@ -175,7 +175,7 @@ def test_legacy_freshness_backcompat():
     this_dir = os.path.dirname(os.path.abspath(__file__))
 
     @dg.asset(
-        freshness_policy=dg.LegacyFreshnessPolicy(
+        legacy_freshness_policy=dg.LegacyFreshnessPolicy(
             maximum_lag_minutes=1,
             cron_schedule="0 1 * * *",
             cron_schedule_timezone="America/Los_Angeles",
@@ -213,7 +213,7 @@ def test_freshness_policy_deprecated_import():
     policy = FreshnessPolicy(maximum_lag_minutes=1)
     assert isinstance(policy, LegacyFreshnessPolicy)
 
-    @dg.asset(freshness_policy=policy)
+    @dg.asset(legacy_freshness_policy=policy)
     def foo():
         pass
 

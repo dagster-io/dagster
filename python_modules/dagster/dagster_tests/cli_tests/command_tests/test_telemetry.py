@@ -315,7 +315,7 @@ def test_get_stats_from_remote_repo_observable_source_assets():
 
 
 def test_get_stats_from_remote_repo_freshness_policies():
-    @asset(freshness_policy=LegacyFreshnessPolicy(maximum_lag_minutes=30))
+    @asset(legacy_freshness_policy=LegacyFreshnessPolicy(maximum_lag_minutes=30))
     def asset1(): ...
 
     @asset
