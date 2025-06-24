@@ -112,7 +112,7 @@ class CompositeYamlComponent(Component):
         self.asset_post_processors_list = asset_post_processor_lists
 
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
-        yaml_path = _find_defs_or_component_yaml(context.path)
+        component_yaml = check.not_none(_find_defs_or_component_yaml(context.path))
 
         defs_list = []
         for component, source_position, asset_post_processors in zip(
@@ -122,14 +122,12 @@ class CompositeYamlComponent(Component):
                 post_process_defs(
                     component.build_defs(context).permissive_map_resolved_asset_specs(
                         func=lambda spec: _add_defs_yaml_code_reference_to_spec(
-                            component_yaml_path=yaml_path,
+                            component_yaml_path=component_yaml,
                             load_context=context,
                             component=component,
                             source_position=source_position,
                             asset_spec=spec,
-                        )
-                        if yaml_path
-                        else spec,
+                        ),
                         selection=None,
                     ),
                     list(asset_post_processors),
