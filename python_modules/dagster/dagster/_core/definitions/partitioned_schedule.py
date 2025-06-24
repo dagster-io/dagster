@@ -114,7 +114,7 @@ def build_schedule_from_partitioned_job(
             # The created schedule will fire daily
             asset1_job_schedule = build_schedule_from_partitioned_job(asset1_job)
 
-            defs = Definitions(assets=[asset1], schedules=[asset1_job_schedule])
+            Definitions(assets=[asset1], schedules=[asset1_job_schedule])
 
             ################
             # Non-asset job
@@ -132,7 +132,7 @@ def build_schedule_from_partitioned_job(
                 do_stuff_partitioned,
             )
 
-            defs = Definitions(schedules=[do_stuff_partitioned_schedule])
+            Definitions(schedules=[do_stuff_partitioned_schedule])
     """
     check.invariant(
         not (day_of_week and day_of_month),

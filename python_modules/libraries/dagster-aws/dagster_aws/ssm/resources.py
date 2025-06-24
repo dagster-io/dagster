@@ -51,7 +51,7 @@ class SSMResource(ResourceWithBoto3Configuration):
             def example_job():
                 example_ssm_op()
 
-            defs = Definitions(
+            Definitions(
                 jobs=[example_job],
                 resources={
                     'ssm': SSMResource(

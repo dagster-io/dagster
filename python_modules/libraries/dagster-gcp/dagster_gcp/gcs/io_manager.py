@@ -111,7 +111,7 @@ class GCSPickleIOManager(ConfigurableIOManager):
         def asset2(asset1):
             return asset1[:5]
 
-        defs = Definitions(
+        Definitions(
             assets=[asset1, asset2],
             resources={
                 "io_manager": GCSPickleIOManager(
@@ -215,7 +215,7 @@ def gcs_pickle_io_manager(init_context):
         def asset2(asset1):
             return asset1[:5]
 
-        defs = Definitions(
+        Definitions(
             assets=[asset1, asset2],
             resources={
                     "io_manager": gcs_pickle_io_manager.configured(

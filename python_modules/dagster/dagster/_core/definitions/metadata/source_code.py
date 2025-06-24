@@ -353,7 +353,7 @@ def link_code_references_to_git(
     Example:
         .. code-block:: python
 
-                defs = Definitions(
+                Definitions(
                     assets=link_code_references_to_git(
                         with_source_code_references([my_dbt_assets]),
                         git_url="https://github.com/dagster-io/dagster",

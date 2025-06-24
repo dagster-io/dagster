@@ -380,7 +380,7 @@ class Definitions(IHaveNew):
 
     .. code-block:: python
 
-        defs = Definitions(
+        Definitions(
             assets=[asset_one, asset_two],
             schedules=[a_schedule],
             sensors=[a_sensor],
@@ -626,7 +626,7 @@ class Definitions(IHaveNew):
         )
 
     def resolve_all_job_defs(self) -> Sequence[JobDefinition]:
-        """Get all the Job definitions in the code location.
+        """Get all the Job definitions in the project.
         This includes both jobs passed into the Definitions object and any implicit jobs created.
         All jobs returned from this function will have all resource dependencies resolved.
         """
@@ -643,7 +643,7 @@ class Definitions(IHaveNew):
 
     def resolve_implicit_global_asset_job_def(self) -> JobDefinition:
         """A useful conveninence method when there is a single defined global asset job.
-        This occurs when all assets in the code location use a single partitioning scheme.
+        This occurs when all assets in the project use a single partitioning scheme.
         If there are multiple partitioning schemes you must use get_implicit_job_def_for_assets
         instead to access to the correct implicit asset one.
         """
@@ -844,7 +844,7 @@ class Definitions(IHaveNew):
         """Add reconstruction metadata to the Definitions object. This is typically used to cache data
         loaded from some external API that is computed during initialization of a code server.
         The cached data is then made available on the DefinitionsLoadContext during
-        reconstruction of the same code location context (such as a run worker), allowing use of the
+        reconstruction of the same project context (such as a run worker), allowing use of the
         cached data to avoid additional external API queries. Values are expected to be serialized
         in advance and must be strings.
         """

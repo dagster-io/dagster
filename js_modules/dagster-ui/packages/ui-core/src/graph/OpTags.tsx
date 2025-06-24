@@ -59,6 +59,7 @@ import druid from './kindtag-images/tool-druid-color.svg';
 import duckdb from './kindtag-images/tool-duckdb-color.svg';
 import elasticsearch from './kindtag-images/tool-elasticsearch-color.svg';
 import evidence from './kindtag-images/tool-evidence.svg';
+import exasol from './kindtag-images/tool-exasol-color.svg';
 import excel from './kindtag-images/tool-excel-color.svg';
 import facebook from './kindtag-images/tool-facebook-color.svg';
 import fivetran from './kindtag-images/tool-fivetran-color.svg';
@@ -341,6 +342,7 @@ export type KnownTagType =
   | 'discord'
   | 'docker'
   | 'doubao'
+  | 'exasol'
   | 'facebook'
   | 'gcs'
   | 'gemini'
@@ -1295,6 +1297,10 @@ export const KNOWN_TAGS: Record<KnownTagType, KnownTag> = {
   elasticsearch: {
     icon: elasticsearch,
     content: 'Elasticsearch',
+  },
+  exasol: {
+    icon: exasol,
+    content: 'Exasol',
   },
   flink: {
     icon: flink,

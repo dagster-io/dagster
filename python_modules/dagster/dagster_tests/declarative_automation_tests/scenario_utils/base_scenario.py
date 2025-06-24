@@ -50,7 +50,7 @@ from dagster._core.definitions.automation_tick_evaluation_context import (
 from dagster._core.definitions.base_asset_graph import BaseAssetGraph
 from dagster._core.definitions.data_version import DataVersionsByPartition
 from dagster._core.definitions.events import CoercibleToAssetKey
-from dagster._core.definitions.freshness_policy import FreshnessPolicy
+from dagster._core.definitions.freshness_policy import LegacyFreshnessPolicy
 from dagster._core.definitions.observe import observe
 from dagster._core.definitions.partition import PartitionsSubset, ScheduleType
 from dagster._core.definitions.time_window_partitions import get_time_partitions_def
@@ -605,7 +605,7 @@ def asset_def(
     key: str,
     deps: Optional[Union[list[str], Mapping[str, Optional[PartitionMapping]]]] = None,
     partitions_def: Optional[PartitionsDefinition] = None,
-    freshness_policy: Optional[FreshnessPolicy] = None,
+    legacy_freshness_policy: Optional[LegacyFreshnessPolicy] = None,
     auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
     code_version: Optional[str] = None,
     config_schema: Optional[Mapping[str, Field]] = None,
@@ -630,7 +630,7 @@ def asset_def(
         deps=non_argument_deps,
         ins=ins,
         config_schema=config_schema or {"fail": Field(bool, default_value=False)},
-        freshness_policy=freshness_policy,
+        legacy_freshness_policy=legacy_freshness_policy,
         auto_materialize_policy=auto_materialize_policy,
         code_version=code_version,
         **asset_def_kwargs,
@@ -648,7 +648,7 @@ def multi_asset_def(
     keys: list[str],
     deps: Optional[Union[list[str], Mapping[str, set[str]]]] = None,
     can_subset: bool = False,
-    freshness_policies: Optional[Mapping[str, FreshnessPolicy]] = None,
+    legacy_freshness_policies: Optional[Mapping[str, LegacyFreshnessPolicy]] = None,
 ) -> AssetsDefinition:
     if deps is None:
         non_argument_deps = None
@@ -664,7 +664,9 @@ def multi_asset_def(
         outs={
             key: AssetOut(
                 is_required=not can_subset,
-                freshness_policy=freshness_policies.get(key) if freshness_policies else None,
+                legacy_freshness_policy=legacy_freshness_policies.get(key)
+                if legacy_freshness_policies
+                else None,
             )
             for key in keys
         },
@@ -740,7 +742,7 @@ def get_implicit_auto_materialize_policy(
             AutoMaterializeRule.skip_on_required_but_nonexistent_parents(),
             AutoMaterializeRule.skip_on_backfill_in_progress(),
         }
-        if not bool(asset_graph.get_downstream_freshness_policies(asset_key=asset_key)):
+        if not bool(asset_graph.get_downstream_legacy_freshness_policies(asset_key=asset_key)):
             rules.add(AutoMaterializeRule.materialize_on_parent_updated())
         return AutoMaterializePolicy(
             rules=rules,

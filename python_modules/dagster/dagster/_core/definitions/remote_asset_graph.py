@@ -36,7 +36,7 @@ from dagster._core.definitions.declarative_automation.automation_condition impor
     AutomationCondition,
 )
 from dagster._core.definitions.freshness import InternalFreshnessPolicy
-from dagster._core.definitions.freshness_policy import FreshnessPolicy
+from dagster._core.definitions.freshness_policy import LegacyFreshnessPolicy
 from dagster._core.definitions.metadata import ArbitraryMetadataMapping
 from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.definitions.partition_mapping import PartitionMapping
@@ -107,10 +107,10 @@ class RemoteAssetNode(BaseAssetNode, ABC):
         return partitions_snap.get_partitions_definition() if partitions_snap else None
 
     @property
-    def freshness_policy(self) -> Optional[FreshnessPolicy]:
+    def legacy_freshness_policy(self) -> Optional[LegacyFreshnessPolicy]:
         # It is currently not possible to access the freshness policy for an observation definition
         # if a materialization definition also exists. This needs to be fixed.
-        return self.resolve_to_singular_repo_scoped_node().asset_node_snap.freshness_policy
+        return self.resolve_to_singular_repo_scoped_node().asset_node_snap.legacy_freshness_policy
 
     @property
     def code_version(self) -> Optional[str]:

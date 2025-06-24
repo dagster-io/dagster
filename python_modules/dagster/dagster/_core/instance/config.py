@@ -607,6 +607,7 @@ def dagster_instance_config_schema() -> Mapping[str, Field]:
                 ),
             }
         ),
+        "freshness": Field({"enabled": Field(Bool)}, is_required=False),
         "concurrency": get_concurrency_config(),
     }
 

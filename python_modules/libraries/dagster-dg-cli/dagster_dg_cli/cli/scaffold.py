@@ -54,6 +54,13 @@ from dagster_dg_cli.utils.plus.build import (
 )
 from dagster_dg_cli.utils.plus.gql_client import DagsterPlusGraphQLClient
 
+
+def get_cli_version_or_main() -> str:
+    from dagster_dg_cli.version import __version__ as cli_version
+
+    return "main" if cli_version.endswith("+dev") else f"v{cli_version}"
+
+
 # These commands are not dynamically generated, but perhaps should be.
 HARDCODED_COMMANDS = {"component"}
 
@@ -135,12 +142,12 @@ class ScaffoldDefsGroup(DgClickGroup):
             context_settings={"help_option_names": ["-h", "--help"]},
             aliases=aliases,
         )
-        @click.argument("instance_name", type=str)
+        @click.argument("defs_path", type=str)
         @click.pass_context
         @cli_telemetry_wrapper
         def scaffold_command(
             cli_context: click.Context,
-            instance_name: str,
+            defs_path: str,
             **other_opts: Any,
         ) -> None:
             f"""Scaffold a {key.name} object.
@@ -181,7 +188,7 @@ class ScaffoldDefsGroup(DgClickGroup):
                 cli_context,
                 cli_config,
                 key,
-                instance_name,
+                defs_path,
                 key_value_scaffolder_params,
                 scaffolder_format,
                 json_scaffolder_params,
@@ -354,7 +361,7 @@ def scaffold_defs_inline_component(
     cli_config = get_config_from_cli_context(context)
     dg_context = DgContext.for_project_environment(Path.cwd(), cli_config)
 
-    if dg_context.has_component_instance(path):
+    if dg_context.has_folder_at_defs_path(path):
         exit_with_error(f"A component instance at `{path}` already exists.")
 
     scaffold_inline_component(
@@ -715,6 +722,7 @@ def _get_build_fragment_for_locations(
             .replace("TEMPLATE_LOCATION_NAME", location_ctx.code_location_name)
             .replace("TEMPLATE_LOCATION_PATH", str(location_ctx.root_path.relative_to(git_root)))
             .replace("TEMPLATE_IMAGE_REGISTRY", registry_url)
+            .replace("TEMPLATE_DAGSTER_CLOUD_ACTION_VERSION", get_cli_version_or_main())
         )
     return "\n" + "\n".join(output)
 
@@ -805,6 +813,10 @@ def scaffold_github_actions_command(git_root: Optional[Path], **global_options: 
             "TEMPLATE_PROJECT_DIR",
             str(dg_context.root_path.relative_to(git_root)),
         )
+        .replace(
+            "TEMPLATE_DAGSTER_CLOUD_ACTION_VERSION",
+            get_cli_version_or_main(),
+        )
     )
 
     registry_urls = None
@@ -868,7 +880,7 @@ def _core_scaffold(
     cli_context: click.Context,
     cli_config: DgRawCliConfig,
     object_key: EnvRegistryKey,
-    instance_name: str,
+    defs_path: str,
     key_value_params: Mapping[str, Any],
     scaffold_format: ScaffoldFormatOptions,
     json_params: Optional[Mapping[str, Any]] = None,
@@ -879,8 +891,10 @@ def _core_scaffold(
     registry = EnvRegistry.from_dg_context(dg_context)
     if not registry.has(object_key):
         exit_with_error(f"Scaffoldable object type `{object_key.to_typename()}` not found.")
-    elif dg_context.has_component_instance(instance_name):
-        exit_with_error(f"A component instance named `{instance_name}` already exists.")
+    elif dg_context.has_folder_at_defs_path(defs_path):
+        exit_with_error(
+            f"Folder at `{(dg_context.defs_path / defs_path).absolute()}` already exists."
+        )
 
     # Specified key-value params will be passed to this function with their default value of
     # `None` even if the user did not set them. Filter down to just the ones that were set by
@@ -904,7 +918,7 @@ def _core_scaffold(
 
     try:
         scaffold_registry_object(
-            Path(dg_context.defs_path) / instance_name,
+            Path(dg_context.defs_path) / defs_path,
             object_key.to_typename(),
             scaffold_params,
             dg_context,

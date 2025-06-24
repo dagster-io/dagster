@@ -10,11 +10,11 @@ def create_db_connection():
 
 # start example
 import pandas as pd
-from dagster import graph_asset, op
+import dagster as dg
 from dagster_slack import SlackResource
 
 
-@op
+@dg.op
 def fetch_files_from_slack(slack: SlackResource) -> pd.DataFrame:
     files = slack.get_client().files_list(channel="#random")
     return pd.DataFrame(
@@ -30,12 +30,12 @@ def fetch_files_from_slack(slack: SlackResource) -> pd.DataFrame:
     )
 
 
-@op
+@dg.op
 def store_files(files):
     return files.to_sql(name="slack_files", con=create_db_connection())
 
 
-@graph_asset
+@dg.graph_asset
 def slack_files_table():
     return store_files(fetch_files_from_slack())
 
@@ -50,30 +50,30 @@ store_slack_files = dg.define_asset_job(
 
 
 # start_basic_dependencies
-from dagster import asset, graph_asset, op
+import dagster as dg
 
 
-@asset
+@dg.asset
 def upstream_asset():
     return 1
 
 
-@op
+@dg.op
 def add_one(input_num):
     return input_num + 1
 
 
-@op
+@dg.op
 def multiply_by_two(input_num):
     return input_num * 2
 
 
-@graph_asset
+@dg.graph_asset
 def middle_asset(upstream_asset):
     return multiply_by_two(add_one(upstream_asset))
 
 
-@asset
+@dg.asset
 def downstream_asset(middle_asset):
     return middle_asset + 7
 
@@ -86,17 +86,19 @@ basic_deps_job = dg.define_asset_job(
 )
 
 
-@op(out={"one": dg.Out(), "two": dg.Out()})
+@dg.op(out={"one": dg.Out(), "two": dg.Out()})
 def two_outputs(upstream):
     yield dg.Output(output_name="one", value=upstream)
     yield dg.Output(output_name="two", value=upstream)
 
 
 # start_basic_dependencies_2
-from dagster import AssetOut, graph_multi_asset
+import dagster as dg
 
 
-@graph_multi_asset(outs={"first_asset": AssetOut(), "second_asset": AssetOut()})
+@dg.graph_multi_asset(
+    outs={"first_asset": dg.AssetOut(), "second_asset": dg.AssetOut()}
+)
 def two_assets(upstream_asset):
     one, two = two_outputs(upstream_asset)
     return {"first_asset": one, "second_asset": two}
@@ -109,10 +111,10 @@ second_basic_deps_job = dg.define_asset_job(
 )
 
 # start_explicit_dependencies
-from dagster import AssetOut, graph_multi_asset
+import dagster as dg
 
 
-@graph_multi_asset(outs={"asset_one": AssetOut(), "asset_two": AssetOut()})
+@dg.graph_multi_asset(outs={"asset_one": dg.AssetOut(), "asset_two": dg.AssetOut()})
 def one_and_two(upstream_asset):
     one, two = two_outputs(upstream_asset)
     return {"asset_one": one, "asset_two": two}

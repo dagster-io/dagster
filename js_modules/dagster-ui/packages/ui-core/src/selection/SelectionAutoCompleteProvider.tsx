@@ -9,6 +9,7 @@ import {
 } from '@dagster-io/ui-components';
 import React from 'react';
 
+import styles from './SelectionAutoComplete.module.css';
 import {assertUnreachable} from '../app/Util';
 
 export interface SelectionAutoCompleteProvider {
@@ -75,7 +76,7 @@ export interface SelectionAutoCompleteProvider {
    * @param textCallback - An optional callback to transform the display text of each result. Used to insert spaces or double quotes if necessary depending on surrounding context
    * @returns An array of attribute values along with their attribute names that match the query.
    */
-  getAttributeValueIncludeAttributeResultsMatchingQuery: (prop: {
+  getAllResults: (prop: {
     query: string;
     textCallback?: (value: string) => string;
   }) => Array<Suggestion>;
@@ -247,6 +248,13 @@ export const createProvider = <
     };
   }
 
+  function nullSuggestion({textCallback}: {textCallback?: (text: string) => string}) {
+    return {
+      text: textCallback ? textCallback('<null>') : '<null>',
+      jsx: <SuggestionJSXBase label={<span className={styles.nullString}>No value</span>} />,
+    };
+  }
+
   function createAttributeValueSuggestion({
     value,
     textCallback,
@@ -256,10 +264,16 @@ export const createProvider = <
   }) {
     if (typeof value !== 'string') {
       const valueText = value.value ? `"${value.key}"="${value.value}"` : `"${value.key}"`;
+      if (value.key === '' && !value.value) {
+        return nullSuggestion({textCallback});
+      }
       return {
         text: textCallback ? textCallback(valueText) : valueText,
         jsx: <AttributeValueTagSuggestion tag={value} />,
       };
+    }
+    if (value === '') {
+      return nullSuggestion({textCallback});
     }
     return {
       text: textCallback ? textCallback(`"${value}"`) : `"${value}"`,
@@ -317,7 +331,7 @@ export const createProvider = <
     };
   }
 
-  function createAttributeValueIncludeAttributeSuggestion({
+  function createAttributeAndValueSuggestion({
     attribute,
     value,
     textCallback,
@@ -377,8 +391,8 @@ export const createProvider = <
     getAttributeValueResultsMatchingQuery: ({attribute, query, textCallback}) => {
       const values = attributesMap[attribute as keyof typeof attributesMap];
       const shouldTreatAsteriskAsWildcard = attribute === primaryAttributeKey;
-      const queryToUseAsRegex = shouldTreatAsteriskAsWildcard ? query.replace(/\*/g, '.*') : query;
-      const regex = new RegExp(queryToUseAsRegex, 'i');
+
+      const regex = createRegex(query, shouldTreatAsteriskAsWildcard);
       const results =
         values
           ?.filter((value) => {
@@ -429,13 +443,13 @@ export const createProvider = <
     getSubstringResultMatchingQuery: ({query, textCallback}) => {
       return createSubstringSuggestion({query, textCallback});
     },
-    getAttributeValueIncludeAttributeResultsMatchingQuery: ({query, textCallback}) => {
+    getAllResults: ({query, textCallback}) => {
       return Object.keys(attributesMap).flatMap((attribute) => {
         return (
           attributesMap[attribute]
             ?.filter((value) => doesValueIncludeQuery({value, query}))
             .map((value) =>
-              createAttributeValueIncludeAttributeSuggestion({
+              createAttributeAndValueSuggestion({
                 attribute,
                 value,
                 textCallback,
@@ -446,3 +460,19 @@ export const createProvider = <
     },
   };
 };
+
+function createRegex(pattern: string, interpretWildcards: boolean): RegExp {
+  if (!interpretWildcards) {
+    // Escape all regex special characters
+    const escaped = pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return new RegExp(escaped, 'i');
+  }
+
+  // Escape all regex special characters except asterisks
+  const escaped = pattern.replace(/[.+?^${}()|[\]\\]/g, '\\$&');
+
+  // Replace asterisks with .* for wildcard matching
+  const wildcardPattern = escaped.replace(/\*/g, '.*');
+
+  return new RegExp(wildcardPattern, 'i');
+}

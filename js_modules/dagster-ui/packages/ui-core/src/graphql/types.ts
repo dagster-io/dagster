@@ -2106,6 +2106,7 @@ export type Instance = {
   concurrencyLimits: Array<ConcurrencyKeyInfo>;
   daemonHealth: DaemonHealth;
   executablePath: Scalars['String']['output'];
+  freshnessEvaluationEnabled: Scalars['Boolean']['output'];
   hasInfo: Scalars['Boolean']['output'];
   id: Scalars['String']['output'];
   info: Maybe<Scalars['String']['output']>;
@@ -9600,6 +9601,10 @@ export const buildInstance = (
           : buildDaemonHealth({}, relationshipsToOmit),
     executablePath:
       overrides && overrides.hasOwnProperty('executablePath') ? overrides.executablePath! : 'fuga',
+    freshnessEvaluationEnabled:
+      overrides && overrides.hasOwnProperty('freshnessEvaluationEnabled')
+        ? overrides.freshnessEvaluationEnabled!
+        : true,
     hasInfo: overrides && overrides.hasOwnProperty('hasInfo') ? overrides.hasInfo! : true,
     id: overrides && overrides.hasOwnProperty('id') ? overrides.id! : 'deleniti',
     info: overrides && overrides.hasOwnProperty('info') ? overrides.info! : 'qui',

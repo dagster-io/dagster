@@ -99,7 +99,7 @@ class FunctionComponent(ExecutableComponent):
 
     Examples:
     ```yaml
-    type: dagster.components.FunctionComponent
+    type: dagster.FunctionComponent
     attributes:
       execution:
         fn: .my_module.update_table

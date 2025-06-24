@@ -18,7 +18,7 @@ from typing import (  # noqa: UP035
 from dagster_shared.record import replace
 
 import dagster._check as check
-from dagster._annotations import beta_param, public
+from dagster._annotations import beta_param, deprecated_param, public
 from dagster._core.definitions.asset_check_spec import AssetCheckSpec
 from dagster._core.definitions.asset_dep import AssetDep
 from dagster._core.definitions.asset_graph_computation import AssetGraphComputation
@@ -37,7 +37,7 @@ from dagster._core.definitions.declarative_automation.automation_condition impor
 )
 from dagster._core.definitions.dependency import NodeHandle
 from dagster._core.definitions.events import CoercibleToAssetKey, CoercibleToAssetKeyPrefix
-from dagster._core.definitions.freshness_policy import FreshnessPolicy
+from dagster._core.definitions.freshness_policy import LegacyFreshnessPolicy
 from dagster._core.definitions.hook_definition import HookDefinition
 from dagster._core.definitions.metadata import ArbitraryMetadataMapping
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
@@ -99,7 +99,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         "group_names_by_key",
         "metadata_by_key",
         "tags_by_key",
-        "freshness_policies_by_key",
+        "legacy_freshness_policies_by_key",
         "auto_materialize_policies_by_key",
         "partition_mappings",
         "descriptions_by_key",
@@ -133,7 +133,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         group_names_by_key: Optional[Mapping[AssetKey, str]] = None,
         metadata_by_key: Optional[Mapping[AssetKey, ArbitraryMetadataMapping]] = None,
         tags_by_key: Optional[Mapping[AssetKey, Mapping[str, str]]] = None,
-        freshness_policies_by_key: Optional[Mapping[AssetKey, FreshnessPolicy]] = None,
+        legacy_freshness_policies_by_key: Optional[Mapping[AssetKey, LegacyFreshnessPolicy]] = None,
         backfill_policy: Optional[BackfillPolicy] = None,
         # descriptions by key is more accurately understood as _overriding_ the descriptions
         # by key that are in the OutputDefinitions associated with the asset key.
@@ -240,7 +240,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
             check.invariant(group_names_by_key is None)
             check.invariant(metadata_by_key is None)
             check.invariant(tags_by_key is None)
-            check.invariant(freshness_policies_by_key is None)
+            check.invariant(legacy_freshness_policies_by_key is None)
             check.invariant(auto_materialize_policies_by_key is None)
             check.invariant(automation_conditions_by_key is None)
             check.invariant(descriptions_by_key is None)
@@ -283,7 +283,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
                 tags_by_key=tags_by_key,
                 owners_by_key=owners_by_key,
                 group_names_by_key=group_names_by_key,
-                freshness_policies_by_key=freshness_policies_by_key,
+                legacy_freshness_policies_by_key=legacy_freshness_policies_by_key,
                 automation_conditions_by_key=automation_conditions_by_key,
                 metadata_by_key=metadata_by_key,
                 descriptions_by_key=descriptions_by_key,
@@ -324,7 +324,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
 
             check.invariant(
                 not (
-                    spec.freshness_policy
+                    spec.legacy_freshness_policy
                     and spec.partitions_def is not None
                     and not isinstance(spec.partitions_def, TimeWindowPartitionsDefinition)
                 ),
@@ -356,7 +356,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         self._specs_by_key = {}
         for spec in normalized_specs:
             if spec.key in self._specs_by_key and self._specs_by_key[spec.key] != spec:
-                warnings.warn(
+                raise DagsterInvalidDefinitionError(
                     "Received conflicting AssetSpecs with the same key:\n"
                     f"{self._specs_by_key[spec.key]}\n"
                     f"{spec}\n"
@@ -424,6 +424,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
 
     @public
     @beta_param(param="resource_defs")
+    @deprecated_param(param="legacy_freshness_policies_by_output_name", breaking_version="1.12.0")
     @staticmethod
     def from_graph(
         graph_def: "GraphDefinition",
@@ -440,7 +441,9 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         descriptions_by_output_name: Optional[Mapping[str, str]] = None,
         metadata_by_output_name: Optional[Mapping[str, Optional[ArbitraryMetadataMapping]]] = None,
         tags_by_output_name: Optional[Mapping[str, Optional[Mapping[str, str]]]] = None,
-        freshness_policies_by_output_name: Optional[Mapping[str, Optional[FreshnessPolicy]]] = None,
+        legacy_freshness_policies_by_output_name: Optional[
+            Mapping[str, Optional[LegacyFreshnessPolicy]]
+        ] = None,
         automation_conditions_by_output_name: Optional[
             Mapping[str, Optional[AutomationCondition]]
         ] = None,
@@ -501,7 +504,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
                 tags to be associated with each of the output assets for this node. Keys are the names
                 of outputs, and values are dictionaries of tags to be associated with the related
                 asset.
-            freshness_policies_by_output_name (Optional[Mapping[str, Optional[FreshnessPolicy]]]): Defines a
+            legacy_freshness_policies_by_output_name (Optional[Mapping[str, Optional[FreshnessPolicy]]]): Defines a
                 FreshnessPolicy to be associated with some or all of the output assets for this node.
                 Keys are the names of the outputs, and values are the FreshnessPolicies to be attached
                 to the associated asset.
@@ -529,7 +532,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
             descriptions_by_output_name=descriptions_by_output_name,
             metadata_by_output_name=metadata_by_output_name,
             tags_by_output_name=tags_by_output_name,
-            freshness_policies_by_output_name=freshness_policies_by_output_name,
+            legacy_freshness_policies_by_output_name=legacy_freshness_policies_by_output_name,
             automation_conditions_by_output_name=_resolve_automation_conditions_by_output_name(
                 automation_conditions_by_output_name,
                 auto_materialize_policies_by_output_name,
@@ -543,6 +546,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
 
     @public
     @staticmethod
+    @deprecated_param(param="legacy_freshness_policies_by_output_name", breaking_version="1.12.0")
     def from_op(
         op_def: OpDefinition,
         *,
@@ -557,7 +561,9 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         descriptions_by_output_name: Optional[Mapping[str, str]] = None,
         metadata_by_output_name: Optional[Mapping[str, Optional[ArbitraryMetadataMapping]]] = None,
         tags_by_output_name: Optional[Mapping[str, Optional[Mapping[str, str]]]] = None,
-        freshness_policies_by_output_name: Optional[Mapping[str, Optional[FreshnessPolicy]]] = None,
+        legacy_freshness_policies_by_output_name: Optional[
+            Mapping[str, Optional[LegacyFreshnessPolicy]]
+        ] = None,
         automation_conditions_by_output_name: Optional[
             Mapping[str, Optional[AutomationCondition]]
         ] = None,
@@ -611,9 +617,9 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
                 tags to be associated with each othe output assets for this node. Keys are the names
                 of outputs, and values are dictionaries of tags to be associated with the related
                 asset.
-            freshness_policies_by_output_name (Optional[Mapping[str, Optional[FreshnessPolicy]]]): Defines a
-                FreshnessPolicy to be associated with some or all of the output assets for this node.
-                Keys are the names of the outputs, and values are the FreshnessPolicies to be attached
+            legacy_freshness_policies_by_output_name (Optional[Mapping[str, Optional[LegacyFreshnessPolicy]]]): Defines a
+                LegacyFreshnessPolicy to be associated with some or all of the output assets for this node.
+                Keys are the names of the outputs, and values are the LegacyFreshnessPolicies to be attached
                 to the associated asset.
             automation_conditions_by_output_name (Optional[Mapping[str, Optional[AutomationCondition]]]): Defines an
                 AutomationCondition to be associated with some or all of the output assets for this node.
@@ -634,7 +640,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
             descriptions_by_output_name=descriptions_by_output_name,
             metadata_by_output_name=metadata_by_output_name,
             tags_by_output_name=tags_by_output_name,
-            freshness_policies_by_output_name=freshness_policies_by_output_name,
+            legacy_freshness_policies_by_output_name=legacy_freshness_policies_by_output_name,
             automation_conditions_by_output_name=_resolve_automation_conditions_by_output_name(
                 automation_conditions_by_output_name,
                 auto_materialize_policies_by_output_name,
@@ -660,7 +666,9 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         descriptions_by_output_name: Optional[Mapping[str, str]] = None,
         metadata_by_output_name: Optional[Mapping[str, Optional[ArbitraryMetadataMapping]]] = None,
         tags_by_output_name: Optional[Mapping[str, Optional[Mapping[str, str]]]] = None,
-        freshness_policies_by_output_name: Optional[Mapping[str, Optional[FreshnessPolicy]]] = None,
+        legacy_freshness_policies_by_output_name: Optional[
+            Mapping[str, Optional[LegacyFreshnessPolicy]]
+        ] = None,
         code_versions_by_output_name: Optional[Mapping[str, Optional[str]]] = None,
         automation_conditions_by_output_name: Optional[
             Mapping[str, Optional[AutomationCondition]]
@@ -772,7 +780,9 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
             tags_by_key=_output_dict_to_asset_dict(tags_by_output_name),
             owners_by_key=_output_dict_to_asset_dict(owners_by_output_name),
             group_names_by_key=group_names_by_key,
-            freshness_policies_by_key=_output_dict_to_asset_dict(freshness_policies_by_output_name),
+            legacy_freshness_policies_by_key=_output_dict_to_asset_dict(
+                legacy_freshness_policies_by_output_name
+            ),
             automation_conditions_by_key=_output_dict_to_asset_dict(
                 automation_conditions_by_output_name
             ),
@@ -1007,11 +1017,11 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         }
 
     @property
-    def freshness_policies_by_key(self) -> Mapping[AssetKey, FreshnessPolicy]:
+    def legacy_freshness_policies_by_key(self) -> Mapping[AssetKey, LegacyFreshnessPolicy]:
         return {
-            key: spec.freshness_policy
+            key: spec.legacy_freshness_policy
             for key, spec in self._specs_by_key.items()
-            if spec.freshness_policy
+            if spec.legacy_freshness_policy
         }
 
     @property
@@ -1260,8 +1270,8 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         asset_key_replacements: Mapping[AssetKey, AssetKey] = {},
         group_names_by_key: Mapping[AssetKey, str] = {},
         tags_by_key: Mapping[AssetKey, Mapping[str, str]] = {},
-        freshness_policy: Optional[
-            Union[FreshnessPolicy, Mapping[AssetKey, FreshnessPolicy]]
+        legacy_freshness_policy: Optional[
+            Union[LegacyFreshnessPolicy, Mapping[AssetKey, LegacyFreshnessPolicy]]
         ] = None,
         automation_condition: Optional[
             Union[AutomationCondition, Mapping[AssetKey, AutomationCondition]]
@@ -1297,7 +1307,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
                 new_value=automation_condition, attr_name="automation_condition"
             )
             update_replace_dict_and_conflicts(
-                new_value=freshness_policy, attr_name="freshness_policy"
+                new_value=legacy_freshness_policy, attr_name="legacy_freshness_policy"
             )
             update_replace_dict_and_conflicts(new_value=tags_by_key, attr_name="tags")
             update_replace_dict_and_conflicts(
@@ -1490,7 +1500,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
                 op_tags=None,
                 automation_condition=None,
                 auto_observe_interval_minutes=None,
-                freshness_policy=None,
+                legacy_freshness_policy=None,
                 _required_resource_keys=None,
             )
 
@@ -1808,7 +1818,7 @@ def _asset_specs_from_attr_key_params(
     group_names_by_key: Optional[Mapping[AssetKey, str]],
     metadata_by_key: Optional[Mapping[AssetKey, ArbitraryMetadataMapping]],
     tags_by_key: Optional[Mapping[AssetKey, Mapping[str, str]]],
-    freshness_policies_by_key: Optional[Mapping[AssetKey, FreshnessPolicy]],
+    legacy_freshness_policies_by_key: Optional[Mapping[AssetKey, LegacyFreshnessPolicy]],
     automation_conditions_by_key: Optional[Mapping[AssetKey, AutomationCondition]],
     code_versions_by_key: Optional[Mapping[AssetKey, str]],
     descriptions_by_key: Optional[Mapping[AssetKey, str]],
@@ -1835,11 +1845,11 @@ def _asset_specs_from_attr_key_params(
         code_versions_by_key, "code_versions_by_key", key_type=AssetKey, value_type=str
     )
 
-    validated_freshness_policies_by_key = check.opt_mapping_param(
-        freshness_policies_by_key,
-        "freshness_policies_by_key",
+    validated_legacy_freshness_policies_by_key = check.opt_mapping_param(
+        legacy_freshness_policies_by_key,
+        "legacy_freshness_policies_by_key",
         key_type=AssetKey,
-        value_type=FreshnessPolicy,
+        value_type=LegacyFreshnessPolicy,
     )
 
     validated_automation_conditions_by_key = check.opt_mapping_param(
@@ -1876,7 +1886,7 @@ def _asset_specs_from_attr_key_params(
                     description=validated_descriptions_by_key.get(key),
                     metadata=validated_metadata_by_key.get(key),
                     tags=validated_tags_by_key.get(key),
-                    freshness_policy=validated_freshness_policies_by_key.get(key),
+                    legacy_freshness_policy=validated_legacy_freshness_policies_by_key.get(key),
                     automation_condition=validated_automation_conditions_by_key.get(key),
                     owners=validated_owners_by_key.get(key),
                     group_name=validated_group_names_by_key.get(key),

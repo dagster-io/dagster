@@ -2,7 +2,12 @@ from collections.abc import Mapping, Sequence
 from typing import Any, Optional, Union
 
 import dagster._check as check
-from dagster._annotations import hidden_param, only_allow_hidden_params_in_kwargs, public
+from dagster._annotations import (
+    deprecated_param,
+    hidden_param,
+    only_allow_hidden_params_in_kwargs,
+    public,
+)
 from dagster._core.definitions.asset_dep import AssetDep
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
@@ -15,7 +20,7 @@ from dagster._core.definitions.events import (
     CoercibleToAssetKey,
     CoercibleToAssetKeyPrefix,
 )
-from dagster._core.definitions.freshness_policy import FreshnessPolicy
+from dagster._core.definitions.freshness_policy import LegacyFreshnessPolicy
 from dagster._core.definitions.input import NoValueSentinel
 from dagster._core.definitions.output import Out
 from dagster._core.definitions.partition import PartitionsDefinition
@@ -31,11 +36,7 @@ from dagster._utils.warnings import disable_dagster_warnings
 EMPTY_ASSET_KEY_SENTINEL = AssetKey([])
 
 
-@hidden_param(
-    param="freshness_policy",
-    breaking_version="1.10.0",
-    additional_warn_text="use freshness checks instead",
-)
+@deprecated_param(param="legacy_freshness_policy", breaking_version="1.12.0")
 @hidden_param(
     param="auto_materialize_policy",
     breaking_version="1.10.0",
@@ -65,8 +66,6 @@ class AssetOut:
         group_name (Optional[str]): A string name used to organize multiple assets into groups. If
             not provided, the name "default" is used.
         code_version (Optional[str]): The version of the code that generates this asset.
-        freshness_policy (Optional[FreshnessPolicy]): (Deprecated) A policy which indicates how up
-            to date this asset is intended to be.
         automation_condition (Optional[AutomationCondition]): AutomationCondition to apply to the
             specified asset.
         backfill_policy (Optional[BackfillPolicy]): BackfillPolicy to apply to the specified asset.
@@ -102,6 +101,7 @@ class AssetOut:
         owners: Optional[Sequence[str]] = None,
         tags: Optional[Mapping[str, str]] = None,
         kinds: Optional[set[str]] = None,
+        legacy_freshness_policy: Optional[LegacyFreshnessPolicy] = None,
         **kwargs,
     ):
         # Accept a hidden "spec" argument to allow for the AssetOut to be constructed from an AssetSpec
@@ -119,7 +119,6 @@ class AssetOut:
         )
 
         auto_materialize_policy = kwargs.get("auto_materialize_policy")
-        freshness_policy = kwargs.get("freshness_policy")
         has_any_spec_args = any(
             [
                 key,
@@ -129,7 +128,7 @@ class AssetOut:
                 code_version,
                 automation_condition,
                 auto_materialize_policy,
-                freshness_policy,
+                legacy_freshness_policy,
                 owners,
                 tags,
                 kinds,
@@ -156,8 +155,10 @@ class AssetOut:
                     "automation_condition",
                     AutomationCondition,
                 ),
-                freshness_policy=check.opt_inst_param(
-                    freshness_policy, "freshness_policy", FreshnessPolicy
+                legacy_freshness_policy=check.opt_inst_param(
+                    legacy_freshness_policy,
+                    "legacy_freshness_policy",
+                    LegacyFreshnessPolicy,
                 ),
                 owners=check.opt_sequence_param(owners, "owners", of_type=str),
                 tags=normalize_tags(tags or {}, strict=True),
@@ -190,8 +191,8 @@ class AssetOut:
         return self._spec.code_version
 
     @property
-    def freshness_policy(self) -> Optional[FreshnessPolicy]:
-        return self._spec.freshness_policy
+    def legacy_freshness_policy(self) -> Optional[LegacyFreshnessPolicy]:
+        return self._spec.legacy_freshness_policy
 
     @property
     def automation_condition(self) -> Optional[AutomationCondition]:
