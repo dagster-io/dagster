@@ -117,6 +117,11 @@ def test_components_existing_project(update_snippets: bool) -> None:
                     from pathlib import Path
 
                     import dagster_sling
+                    from dagster_sling.components.sling_replication_collection.component import (
+                        SlingReplicationCollectionComponent,
+                        SlingReplicationSpecModel,
+                    )
+                    from dagster_sling.resources import SlingConnectionResource
                     from my_existing_project.analytics import assets as analytics_assets
                     from my_existing_project.analytics.jobs import (
                         regenerate_analytics_hourly_schedule,
@@ -134,22 +139,21 @@ def test_components_existing_project(update_snippets: bool) -> None:
                             schedules=[sync_tables_daily_schedule, regenerate_analytics_hourly_schedule],
                         ),
                         dg.build_defs_for_component(
-                            component=dagster_sling.SlingReplicationCollectionComponent.from_attributes_dict(
-                                attributes={
-                                    "connections": {
-                                        "DUCKDB": {
-                                            "type": "duckdb",
-                                            "instance": "/tmp/jaffle_platform.duckdb",
-                                        }
-                                    },
-                                    "replications": [
-                                        {
-                                            "path": (
-                                                Path(__file__).parent / "elt" / "sling" / "replication.yaml"
-                                            ).as_posix(),
-                                        }
-                                    ]
-                                }
+                            component=SlingReplicationCollectionComponent(
+                                connections=[
+                                    SlingConnectionResource(
+                                        name="DUCKDB",
+                                        type="duckdb",
+                                        instance="/tmp/jaffle_platform.duckdb",
+                                    )
+                                ],
+                                replications=[
+                                    SlingReplicationSpecModel(
+                                        path=(
+                                            Path(__file__).parent / "elt" / "sling" / "replication.yaml"
+                                        ).as_posix(),
+                                    )
+                                ],
                             )
                         ),
                     )
