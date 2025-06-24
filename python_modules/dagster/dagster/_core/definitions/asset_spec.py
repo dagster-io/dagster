@@ -451,7 +451,7 @@ def map_asset_specs(
 
 
 @checked
-def attach_internal_freshness_policy(
+def apply_freshness_policy(
     spec: AssetSpec, policy: InternalFreshnessPolicy, overwrite_existing=True
 ) -> AssetSpec:
     """Apply a freshness policy to an asset spec, attaching it to the spec's metadata.

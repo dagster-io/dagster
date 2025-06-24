@@ -3,7 +3,7 @@ from datetime import timedelta
 import pytest
 from dagster import AssetKey, AssetsDefinition, AssetSpec, Definitions
 from dagster._check import CheckError, ParameterCheckError
-from dagster._core.definitions.asset_spec import attach_internal_freshness_policy
+from dagster._core.definitions.asset_spec import apply_freshness_policy
 from dagster._core.definitions.decorators.asset_decorator import asset
 from dagster._core.definitions.freshness import (
     INTERNAL_FRESHNESS_POLICY_METADATA_KEY,
@@ -29,7 +29,7 @@ class TestInternalFreshnessPolicy:
 
 
 class TestAttachInternalFreshnessPolicy:
-    def test_attach_internal_freshness_policy_explicit_none_fails(self) -> None:
+    def test_apply_freshness_policy_explicit_none_fails(self) -> None:
         """Check that we cannot apply a null policy to assets."""
 
         @asset
@@ -40,7 +40,7 @@ class TestAttachInternalFreshnessPolicy:
 
         with pytest.raises(ParameterCheckError):
             defs.map_asset_specs(
-                func=lambda spec: attach_internal_freshness_policy(
+                func=lambda spec: apply_freshness_policy(
                     spec,
                     None,  # pyright: ignore[reportArgumentType]
                     overwrite_existing=False,
@@ -120,7 +120,7 @@ class TestTimeWindowFreshnessPolicy:
                 assert deserialized.warn_window is None
 
         asset_spec = AssetSpec(key="foo")
-        asset_spec = attach_internal_freshness_policy(
+        asset_spec = apply_freshness_policy(
             asset_spec,
             InternalFreshnessPolicy.time_window(
                 fail_window=timedelta(minutes=10), warn_window=timedelta(minutes=5)
@@ -133,14 +133,14 @@ class TestTimeWindowFreshnessPolicy:
         )
 
         # Overwrite the policy with a new one
-        asset_spec = attach_internal_freshness_policy(
+        asset_spec = apply_freshness_policy(
             asset_spec, InternalFreshnessPolicy.time_window(fail_window=timedelta(minutes=60))
         )
         assert_freshness_policy(asset_spec, expected_fail_window=timedelta(minutes=60))
 
         # Don't overwrite existing metadata
         spec_with_metadata = AssetSpec(key="bar", metadata={"existing": "metadata"})
-        spec_with_metadata = attach_internal_freshness_policy(
+        spec_with_metadata = apply_freshness_policy(
             spec_with_metadata,
             InternalFreshnessPolicy.time_window(fail_window=timedelta(minutes=60)),
         )
@@ -151,8 +151,8 @@ class TestTimeWindowFreshnessPolicy:
             expected_warn_window=None,
         )
 
-    def test_map_asset_specs_attach_time_window_freshness_policy(self) -> None:
-        """Can we map attach_internal_freshness_policy over a selection of assets and asset specs?"""
+    def test_map_asset_specs_apply_time_window_freshness_policy(self) -> None:
+        """Can we map apply_freshness_policy over a selection of assets and asset specs?"""
 
         @asset
         def foo_asset():
@@ -165,7 +165,7 @@ class TestTimeWindowFreshnessPolicy:
             fail_window=timedelta(minutes=10), warn_window=timedelta(minutes=5)
         )
         mapped_defs = defs.map_resolved_asset_specs(
-            func=lambda spec: attach_internal_freshness_policy(spec, freshness_policy)
+            func=lambda spec: apply_freshness_policy(spec, freshness_policy)
         )
 
         assets_and_specs = mapped_defs.assets
@@ -215,7 +215,7 @@ class TestTimeWindowFreshnessPolicy:
 
         # If no policy is attached, overwrite with new policy containing fail window of 10 minutes
         mapped_defs = defs.map_asset_specs(
-            func=lambda spec: attach_internal_freshness_policy(
+            func=lambda spec: apply_freshness_policy(
                 spec,
                 InternalFreshnessPolicy.time_window(fail_window=timedelta(minutes=10)),
                 overwrite_existing=False,
@@ -361,7 +361,7 @@ class TestCronFreshnessPolicy:
                 lower_bound_delta=timedelta(hours=1),
             ),
         )
-        asset_spec = attach_internal_freshness_policy(
+        asset_spec = apply_freshness_policy(
             asset_spec,
             InternalFreshnessPolicy.cron(
                 deadline_cron="0 10 * * *",
