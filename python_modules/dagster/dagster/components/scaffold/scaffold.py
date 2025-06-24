@@ -101,12 +101,19 @@ class ScaffoldRequest(Generic[TModel]):
 
 
 @public
-@preview(emit_runtime_warning=False)
 class Scaffolder(Generic[TModel]):
-    """Handles scaffolding its associated scaffold target."""
+    """Handles scaffolding its associated scaffold target based on user-supplied parameters.
+    Invoked by a user using the `dg scaffold` CLI command.
+
+    To associate a scaffolder with its target class, use the :py:func:`scaffold_with` decorator.
+    """
 
     @classmethod
     def get_scaffold_params(cls) -> type[TModel]:
+        """Returns the model class that contains the parameters for scaffolding. By default,
+        this is :py:class:`NoParams`, indicating that no additional parameters can be supplied
+        to the scaffolder.
+        """
         return NoParams  # type: ignore
 
     @abstractmethod
@@ -114,6 +121,7 @@ class Scaffolder(Generic[TModel]):
         """Scaffold the target with the given request.
 
         Args:
-            request: The scaffold request containing type name, target path, format, project root and params
+            request: The scaffold request containing type name, target path, format, project root and params.
+                The params are validated against the model returned by :py:meth:`get_scaffold_params`.
         """
         ...
