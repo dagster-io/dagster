@@ -741,7 +741,7 @@ _DEPRECATED_RENAMED: Final[Mapping[str, tuple[Callable, str]]] = {
 _DEPRECATED_WITH_ERROR: Final[Mapping[str, str]] = {
     ##### EXAMPLE
     # "Foo": "Use Bar instead.",
-    "FreshnessPolicy": "FreshnessPolicy has been renamed to LegacyFreshnessPolicy. Import it as FreshnessPolicy from `dagster.deprecated` or as LegacyFreshnessPolicy from top-level Dagster.",
+    "FreshnessPolicy": "FreshnessPolicy was renamed to LegacyFreshnessPolicy in 1.11.0. For more information, please refer to the section 'Migrating to 1.11.0' in the migration guide (MIGRATION.md)."
 }
 
 

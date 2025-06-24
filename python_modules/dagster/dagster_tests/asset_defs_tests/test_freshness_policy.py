@@ -233,7 +233,7 @@ def test_freshness_policy_old_import_raises():
     """We should not be able to import FreshnessPolicy from top level dagster module."""
     with pytest.raises(
         ImportError,
-        match="FreshnessPolicy has been renamed to LegacyFreshnessPolicy. Import it as FreshnessPolicy from `dagster.deprecated` or as LegacyFreshnessPolicy from top-level Dagster.",
+        match=r"FreshnessPolicy was renamed to LegacyFreshnessPolicy in 1.11.0. For more information, please refer to the section 'Migrating to 1.11.0' in the migration guide \(MIGRATION.md\)",
     ):
         from dagster import FreshnessPolicy  # noqa: F401
 
