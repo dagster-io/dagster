@@ -227,3 +227,22 @@ def test_freshness_policy_deprecated_import():
         pass
 
     dg.Definitions(assets=[foo])
+
+
+def test_freshness_policy_metadata_backcompat():
+    """We should be able to deserialize freshness policy from an asset spec that stores the policy in its metadata."""
+    from dagster._core.definitions.freshness import TimeWindowFreshnessPolicy
+
+    this_dir = os.path.dirname(os.path.abspath(__file__))
+    with open(
+        os.path.join(
+            this_dir, "snapshots", "repo_with_asset_with_internal_freshness_in_metadata.json"
+        )
+    ) as f:
+        snap_with_metadata_policy = deserialize_value(f.read(), RepositorySnap)
+
+    policy = snap_with_metadata_policy.asset_nodes[0].freshness_policy
+    assert policy is not None
+    assert isinstance(policy, TimeWindowFreshnessPolicy)
+    assert policy.fail_window.to_timedelta() == datetime.timedelta(hours=24)
+    assert policy.warn_window.to_timedelta() == datetime.timedelta(hours=12)
