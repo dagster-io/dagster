@@ -12,6 +12,7 @@ from dagster._core.definitions.metadata import (
 from dagster._core.definitions.metadata.source_code import (
     AnchorBasedFilePathMapping,
     FilePathMapping,
+    Platform,
     base_git_url,
     link_code_references_to_git,
 )
@@ -237,7 +238,7 @@ def test_asset_code_origins_source_control_custom_mapping() -> None:
         ("http://x.com", "my_b", "gitlab", "http://x.com/-/tree/my_b"),
     ],
 )
-def test_base_git_url(url: str, branch: str, platform: str, expected: str) -> None:
+def test_base_git_url(url: str, branch: str, platform: Platform, expected: str) -> None:
     base_url = base_git_url(url, branch, platform)
 
     assert base_url == expected
@@ -249,5 +250,6 @@ def test_base_git_url_invalid_git_url() -> None:
 
 
 def test_base_git_url_invalid_platform() -> None:
+    platform: Platform = "bogus_platform"  # type: ignore
     with pytest.raises(ValueError, match="Invalid `platform`"):
-        base_git_url("http://x.com", "my_b", "bogus_platform")
+        base_git_url("http://x.com", "my_b", platform)
