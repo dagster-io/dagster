@@ -30,7 +30,7 @@ def build_duckdb_io_manager(
     Args:
         type_handlers (Sequence[DbTypeHandler]): Each handler defines how to translate between
             DuckDB tables and an in-memory type - e.g. a Pandas DataFrame. If only
-            one DbTypeHandler is provided, it will be used as teh default_load_type.
+            one DbTypeHandler is provided, it will be used as the default_load_type.
         default_load_type (Type): When an input has no type annotation, load it as this type.
 
     Returns:
