@@ -1120,7 +1120,7 @@ def graph_multi_asset(
         }
 
         # source freshness policies from the AssetOuts (if any)
-        freshness_policies_by_output_name = {
+        legacy_freshness_policies_by_output_name = {
             output_name: out.legacy_freshness_policy
             for output_name, out in outs.items()
             if isinstance(out, AssetOut) and out.legacy_freshness_policy is not None
@@ -1170,7 +1170,7 @@ def graph_multi_asset(
             group_name=group_name,
             can_subset=can_subset,
             metadata_by_output_name=metadata_by_output_name,
-            legacy_freshness_policies_by_output_name=freshness_policies_by_output_name,
+            legacy_freshness_policies_by_output_name=legacy_freshness_policies_by_output_name,
             automation_conditions_by_output_name=automation_conditions_by_output_name,
             backfill_policy=backfill_policy,
             descriptions_by_output_name=descriptions_by_output_name,
