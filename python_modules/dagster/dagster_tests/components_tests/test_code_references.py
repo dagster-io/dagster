@@ -1,6 +1,7 @@
 import tempfile
 from pathlib import Path
 
+from dagster import build_defs_for_component
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
 from dagster._core.definitions.decorators.asset_decorator import asset
@@ -45,7 +46,7 @@ def test_composite_yaml_component_code_references():
             asset_post_processor_lists=[[]],
         )
 
-        defs = component.build_defs(ComponentLoadContext.for_test())
+        defs = build_defs_for_component(component=component)
         assets = list(defs.assets or [])
         assert len(assets) == 2
         spec = next(a for a in assets if isinstance(a, AssetSpec))
