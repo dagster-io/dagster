@@ -61,7 +61,7 @@ def build_bigquery_io_manager(
 
             bigquery_io_manager = build_bigquery_io_manager([BigQueryPandasTypeHandler()])
 
-            defs = Definitions(
+            Definitions(
                 assets=[my_table, my_second_table],
                 resources={
                     "io_manager": bigquery_io_manager.configured({
@@ -75,7 +75,7 @@ def build_bigquery_io_manager(
 
         .. code-block:: python
 
-            defs = Definitions(
+            Definitions(
                 assets=[my_table],
                 resources={
                         "io_manager": bigquery_io_manager.configured({

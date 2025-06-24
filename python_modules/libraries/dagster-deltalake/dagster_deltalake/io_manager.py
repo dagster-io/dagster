@@ -87,7 +87,7 @@ class DeltaLakeIOManager(ConfigurableIOManagerFactory):
             def my_table() -> pd.DataFrame:  # the name of the asset will be the table name
                 ...
 
-            defs = Definitions(
+            Definitions(
                 assets=[my_table],
                 resources={"io_manager": MyDeltaLakeIOManager()}
             )

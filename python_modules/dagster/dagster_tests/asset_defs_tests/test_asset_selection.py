@@ -136,7 +136,19 @@ _AssetList: TypeAlias = Iterable[Union[AssetsDefinition, SourceAsset]]
 
 @pytest.fixture
 def all_assets() -> _AssetList:
-    return [earth, alice, bob, candace, danny, edgar, fiona, george, robots, aliens, zebra]
+    return [
+        earth,
+        alice,
+        bob,
+        candace,
+        danny,
+        edgar,
+        fiona,
+        george,
+        robots,
+        aliens,
+        zebra,
+    ]
 
 
 def _asset_keys_of(assets_defs: _AssetList) -> AbstractSet[AssetKey]:
@@ -434,7 +446,8 @@ def test_sources():
             MultiPartitionMapping(
                 {
                     "time": DimensionPartitionMapping(
-                        "time", TimeWindowPartitionMapping(start_offset=-1, end_offset=-1)
+                        "time",
+                        TimeWindowPartitionMapping(start_offset=-1, end_offset=-1),
                     ),
                     "abc": DimensionPartitionMapping("abc", IdentityPartitionMapping()),
                 }
