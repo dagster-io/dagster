@@ -392,14 +392,7 @@ export const createProvider = <
       const values = attributesMap[attribute as keyof typeof attributesMap];
       const shouldTreatAsteriskAsWildcard = attribute === primaryAttributeKey;
 
-      // Escape special characters in the query to avoid regex injection
-      const cleanedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-
-      const queryToUseAsRegex = shouldTreatAsteriskAsWildcard
-        ? cleanedQuery.replace(/\\.\\*/g, '.*')
-        : cleanedQuery;
-
-      const regex = new RegExp(queryToUseAsRegex, 'i');
+      const regex = createRegex(query, shouldTreatAsteriskAsWildcard);
       const results =
         values
           ?.filter((value) => {
@@ -467,3 +460,19 @@ export const createProvider = <
     },
   };
 };
+
+function createRegex(pattern: string, interpretWildcards: boolean): RegExp {
+  if (!interpretWildcards) {
+    // Escape all regex special characters
+    const escaped = pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return new RegExp(escaped);
+  }
+
+  // Escape all regex special characters except asterisks
+  const escaped = pattern.replace(/[.+?^${}()|[\]\\]/g, '\\$&');
+
+  // Replace asterisks with .* for wildcard matching
+  const wildcardPattern = escaped.replace(/\*/g, '.*');
+
+  return new RegExp(wildcardPattern);
+}
