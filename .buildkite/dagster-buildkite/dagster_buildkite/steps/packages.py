@@ -473,6 +473,12 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
             for deps_factor in ["dbt17", "dbt18", "dbt19"]
             for command_factor in ["cloud", "core-main", "core-derived-metadata"]
         ],
+        # dbt-core 1.7's protobuf<5 constraint conflicts with the grpc requirement for Python 3.13
+        unsupported_python_versions=(
+            lambda tox_factor: [AvailablePythonVersion.V3_13]
+            if tox_factor.startswith("dbt17")
+            else []
+        ),
     ),
     PackageSpec(
         "python_modules/libraries/dagster-snowflake",
