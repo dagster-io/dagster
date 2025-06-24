@@ -62,4 +62,3 @@ common Dagster types.
 
     Allows resolving to an AssetCheckSpec via a YAML-friendly schema.
 
-.. autoclass:: AssetPostProcessorModel
