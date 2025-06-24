@@ -6,18 +6,18 @@ When new releases include breaking changes or deprecations, this document descri
 
 ### Breaking changes
 
-`FreshnessPolicy` (deprecated as of `1.6`) has been renamed to `LegacyFreshnessPolicy`. The deprecated freshness policies will henceforth be referred to in docs and code as "legacy freshness policies". No changes in functionality.
-
-You can still import and use the legacy freshness policies from the `deprecated` module:
-
-```
-from dagster.deprecated import FreshnessPolicy  # imports LegacyFreshnessPolicy
-```
+The `FreshnessPolicy` class (which has been marked as deprecated as of Dagster version 1.6), has been renamed to `LegacyFreshnessPolicy`. The deprecated freshness policies will henceforth be referred to in docs and code as "legacy freshness policies". There are no immediate changes in functionality.
 
 Existing imports of `FreshnessPolicy` will fail with an `ImportError`:
 
-```
+```python
 from dagster import FreshnessPolicy
+```
+
+You can still import and use the legacy freshness policies from the `deprecated` module:
+
+```python
+from dagster.deprecated import FreshnessPolicy  # imports LegacyFreshnessPolicy
 ```
 
 Accordingly, the `freshness_policy` parameter has been renamed to `legacy_freshness_policy` in these public APIs:
@@ -27,7 +27,7 @@ Accordingly, the `freshness_policy` parameter has been renamed to `legacy_freshn
 - `@asset`
 - `@asset_check`
 - `AssetSpec.replace_attributes()`
-- `AssetSpec.merge_attributes`
+- `AssetSpec.merge_attributes()`
 
 Other relevant parameter renames:
 
