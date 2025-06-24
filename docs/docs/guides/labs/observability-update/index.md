@@ -19,7 +19,7 @@ The Dagster+ Summer Update is a collection of new functionality that marks a maj
 
 The full suite of new features is available in limited early access. Sign up to join the early access program [here](https://dagster.io/summer).
 
-Once you are a member of the early access program, you can enable or disable the new experiences in your user settings, via the "Experimental new observe UIs" setting.
+Once you are a member of the early access program, you can enable or disable the new experiences in your user settings, via the "New health & observability UIs" setting.
 
 ## Features
 - Asset health reporting
