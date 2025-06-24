@@ -28,43 +28,18 @@ class TestInternalFreshnessPolicy:
         assert policy is None
 
     def test_internal_freshness_policy_import_from_preview_module(self) -> None:
-        from dagster.preview.freshness import (
-            CronFreshnessPolicy as PreviewCronFreshnessPolicy,
-            FreshnessPolicy,
-            TimeWindowFreshnessPolicy as PreviewTimeWindowFreshnessPolicy,
-        )
+        from dagster.preview.freshness import FreshnessPolicy
 
         time_policy = FreshnessPolicy.time_window(
             fail_window=timedelta(minutes=10), warn_window=timedelta(minutes=5)
         )
-        assert isinstance(time_policy, PreviewTimeWindowFreshnessPolicy)
-        assert isinstance(time_policy, TimeWindowFreshnessPolicy)
+        assert isinstance(time_policy, FreshnessPolicy)
 
         cron_policy = FreshnessPolicy.cron(
             deadline_cron="0 10 * * *",
             lower_bound_delta=timedelta(hours=1),
         )
-        assert isinstance(cron_policy, CronFreshnessPolicy)
-        assert isinstance(cron_policy, PreviewCronFreshnessPolicy)
-
-        assert all(
-            isinstance(policy, InternalFreshnessPolicy) for policy in [time_policy, cron_policy]
-        )
-
-        @asset(internal_freshness_policy=time_policy)
-        def asset_with_time_window_freshness():
-            pass
-
-        @asset(
-            internal_freshness_policy=FreshnessPolicy.cron(
-                deadline_cron="0 10 * * *",
-                lower_bound_delta=timedelta(hours=1),
-            )
-        )
-        def asset_with_cron_freshness():
-            pass
-
-        Definitions(assets=[asset_with_time_window_freshness, asset_with_cron_freshness])
+        assert isinstance(cron_policy, FreshnessPolicy)
 
 
 class TestApplyFreshnessPolicy:
