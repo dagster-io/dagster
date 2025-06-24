@@ -8,8 +8,6 @@ import FreshnessPoliciesPreview from '@site/docs/partials/\_FreshnessPoliciesPre
 
 <FreshnessPoliciesPreview />
 
-## Overview
-
 Freshness policies help you understand which of your assets have materialized recently and which ones are running behind - a key component of asset health. Freshness policies also communicate expectations for data freshness, allowing downstream asset consumers to determine how often assets are expected to be updated.
 
 For example, freshness policies can help identify stale assets caused by:

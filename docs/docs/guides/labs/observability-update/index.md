@@ -11,8 +11,6 @@ These features are under active development, and are in limited early access. Yo
 
 :::
 
-## Overview
-
 The Dagster+ Summer Update is a collection of new functionality that marks a major leap forward in observability and orchestration for data platforms. It focuses on improving real-time understanding of data health, operational metrics, and historical trends. With a redesigned user experience, the update makes it easier for teams to monitor, troubleshoot, and explore their data workflows.
 
 ### How to join and enable the beta
