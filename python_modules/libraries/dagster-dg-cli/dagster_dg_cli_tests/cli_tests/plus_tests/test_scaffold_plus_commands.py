@@ -48,7 +48,7 @@ def _get_error_message(file: Path, details: dict[str, Any]):
     return f"Action validator found errors in {file}:\n{contents_snippet}\n\n{details['detail']}"
 
 
-def validate_github_actions_workflow(workflow_path: Path, *, expected_version: str = "latest"):
+def validate_github_actions_workflow(workflow_path: Path, *, expected_version: str = "main"):
     """Runs action-validator on the given file, and asserts that it returns a zero exit code.
     Prints a nicely formatted error message if it does not.
     """
@@ -296,7 +296,7 @@ def test_scaffold_github_actions_command_success_serverless(
         assert not Path("dagster_cloud.yaml").exists()
         assert "https://github.com/hooli/example-repo/settings/secrets/actions" in result.output
 
-        expected_version = f"v{version_override}" if version_override else "latest"
+        expected_version = f"v{version_override}" if version_override else "main"
         validate_github_actions_workflow(
             Path(".github/workflows/dagster-plus-deploy.yml"),
             expected_version=expected_version,
