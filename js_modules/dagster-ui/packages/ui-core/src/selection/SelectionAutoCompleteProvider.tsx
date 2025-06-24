@@ -76,7 +76,7 @@ export interface SelectionAutoCompleteProvider {
    * @param textCallback - An optional callback to transform the display text of each result. Used to insert spaces or double quotes if necessary depending on surrounding context
    * @returns An array of attribute values along with their attribute names that match the query.
    */
-  getAttributeValueIncludeAttributeResultsMatchingQuery: (prop: {
+  getAllResults: (prop: {
     query: string;
     textCallback?: (value: string) => string;
   }) => Array<Suggestion>;
@@ -331,7 +331,7 @@ export const createProvider = <
     };
   }
 
-  function createAttributeValueIncludeAttributeSuggestion({
+  function createAttributeAndValueSuggestion({
     attribute,
     value,
     textCallback,
@@ -443,13 +443,13 @@ export const createProvider = <
     getSubstringResultMatchingQuery: ({query, textCallback}) => {
       return createSubstringSuggestion({query, textCallback});
     },
-    getAttributeValueIncludeAttributeResultsMatchingQuery: ({query, textCallback}) => {
+    getAllResults: ({query, textCallback}) => {
       return Object.keys(attributesMap).flatMap((attribute) => {
         return (
           attributesMap[attribute]
             ?.filter((value) => doesValueIncludeQuery({value, query}))
             .map((value) =>
-              createAttributeValueIncludeAttributeSuggestion({
+              createAttributeAndValueSuggestion({
                 attribute,
                 value,
                 textCallback,
