@@ -74,19 +74,13 @@ def get_project_root(defs_root: ModuleType) -> Path:
 @public
 @preview(emit_runtime_warning=False)
 @suppress_dagster_warnings
-def build_defs_for_component(*, component: Component) -> Definitions:
+def build_defs_for_component(component: Component) -> Definitions:
     """Constructs Definitions from a standalone component. This is useful for
     loading individual components in a non-component project.
 
     Args:
         component (Component): The component to load defs from.
     """
-    from dagster.components.core.defs_module import CompositeYamlComponent
-
-    if isinstance(component, CompositeYamlComponent):
-        return Definitions.merge(
-            *[c.build_defs(ComponentLoadContext.for_test()) for c in component.components]
-        )
     return component.build_defs(ComponentLoadContext.for_test())
 
 
