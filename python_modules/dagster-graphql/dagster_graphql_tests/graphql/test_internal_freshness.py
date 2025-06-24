@@ -29,7 +29,7 @@ query GetInternalFreshnessPolicy($assetKey: AssetKeyInput!) {
 
 
 @asset(
-    freshness=InternalFreshnessPolicy.time_window(
+    freshness_policy=InternalFreshnessPolicy.time_window(
         fail_window=timedelta(minutes=10), warn_window=timedelta(minutes=5)
     )
 )
@@ -37,7 +37,7 @@ def asset_with_freshness_with_warn_window():
     pass
 
 
-@asset(freshness=InternalFreshnessPolicy.time_window(fail_window=timedelta(minutes=10)))
+@asset(freshness_policy=InternalFreshnessPolicy.time_window(fail_window=timedelta(minutes=10)))
 def asset_with_freshness():
     pass
 
