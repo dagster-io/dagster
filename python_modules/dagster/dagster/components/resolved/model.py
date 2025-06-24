@@ -74,9 +74,34 @@ def resolve_union(resolvers: Sequence["Resolver"], context: "ResolutionContext",
 
 
 @public
-@preview(emit_runtime_warning=False)
 class Resolver:
-    """Contains information on how to resolve a field from a model."""
+    """Contains information on how to resolve a value from YAML into the corresponding :py:class:`Resolved` class field.
+
+    You can attach a resolver to a field's type annotation to control how the value is resolved.
+
+    Example:
+        .. code-block:: python
+
+            import datetime
+            from typing import Annotated
+            import dagster as dg
+
+            def resolve_timestamp(
+                context: dg.ResolutionContext,
+                raw_timestamp: str,
+            ) -> datetime.datetime:
+                return datetime.datetime.fromisoformat(
+                    context.resolve_value(raw_timestamp, as_type=str),
+                )
+
+            class MyClass(dg.Resolvable, dg.Model):
+                event: str
+                # the yaml field will be a string, which is then parsed into a datetime object
+                timestamp: Annotated[
+                    datetime.datetime,
+                    dg.Resolver(resolve_timestamp, model_field_type=str),
+                ]
+    """
 
     def __init__(
         self,
