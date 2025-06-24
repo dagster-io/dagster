@@ -113,7 +113,7 @@ data:
     {{- $runRetries := .Values.dagsterDaemon.runRetries }}
     run_retries:
       enabled: {{ $runRetries.enabled }}
-      {{- if $runRetries.maxRetries }}
+      {{- if gt $runRetries.maxRetries 0 }}
       max_retries: {{ $runRetries.maxRetries }}
       {{- end }}
       {{- if hasKey $runRetries "retryOnAssetOrOpFailure" }}
