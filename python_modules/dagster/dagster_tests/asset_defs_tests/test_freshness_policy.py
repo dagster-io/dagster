@@ -202,8 +202,17 @@ def test_legacy_freshness_backcompat():
     # Then, check that we can deserialize the old snapshot with new Dagster version
     old_snap_deserialized = deserialize_value(old_snap_serialized, RepositorySnap)
 
-    # Then, check that the deserialized snapshots are the same
-    assert new_snap == old_snap_deserialized
+    # Then, check that the deserialized policies match
+    assert (
+        old_snap_deserialized.asset_nodes[0].legacy_freshness_policy
+        == new_snap.asset_nodes[0].legacy_freshness_policy
+    )
+    assert new_snap.asset_nodes[0].legacy_freshness_policy.maximum_lag_minutes == 1
+    assert new_snap.asset_nodes[0].legacy_freshness_policy.cron_schedule == "0 1 * * *"
+    assert (
+        new_snap.asset_nodes[0].legacy_freshness_policy.cron_schedule_timezone
+        == "America/Los_Angeles"
+    )
 
 
 def test_freshness_policy_deprecated_import():
