@@ -60,6 +60,7 @@ from dagster._core.test_utils import (
     new_cwd,
 )
 from dagster._daemon.asset_daemon import AssetDaemon
+from dagster._daemon.controller import create_daemons_from_instance
 from dagster._serdes import ConfigurableClass
 from dagster._serdes.config_class import ConfigurableClassData
 from typing_extensions import Self
@@ -409,6 +410,7 @@ def test_get_required_daemon_types():
         SchedulerDaemon,
         SensorDaemon,
     )
+    from dagster._daemon.freshness import FreshnessDaemon
     from dagster._daemon.run_coordinator import QueuedRunCoordinatorDaemon
 
     with instance_for_test() as instance:
@@ -427,6 +429,7 @@ def test_get_required_daemon_types():
                 "class": "TestRunLauncher",
             },
             "run_monitoring": {"enabled": True},
+            "freshness": {"enabled": True},
         }
     ) as instance:
         assert instance.get_required_daemon_types() == [
@@ -436,7 +439,9 @@ def test_get_required_daemon_types():
             QueuedRunCoordinatorDaemon.daemon_type(),
             MonitoringDaemon.daemon_type(),
             AssetDaemon.daemon_type(),
+            FreshnessDaemon.daemon_type(),
         ]
+        assert len(create_daemons_from_instance(instance)) == 7
 
     with instance_for_test(
         overrides={
