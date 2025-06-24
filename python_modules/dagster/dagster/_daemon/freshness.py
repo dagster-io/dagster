@@ -7,7 +7,6 @@ from dagster._core.definitions.freshness import (
     FreshnessState,
     FreshnessStateChange,
     FreshnessStateRecord,
-    InternalFreshnessPolicy,
 )
 from dagster._core.definitions.freshness_evaluator import FRESHNESS_EVALUATORS_BY_POLICY_TYPE
 from dagster._core.definitions.remote_asset_graph import BaseAssetNode
@@ -75,9 +74,7 @@ class FreshnessDaemon(IntervalDaemon):
         # The freshness policy from 1.11 onwards is stored as a first-class property on the asset node.
         # Prior to 1.11, it was stored as a metadata field on the asset spec.
         # We need to support both cases.
-        freshness_policy = (
-            node.freshness_policy or InternalFreshnessPolicy.from_asset_spec_metadata(node.metadata)
-        )
+        freshness_policy = node.freshness_policy_or_from_metadata
         if not freshness_policy:
             return FreshnessState.NOT_APPLICABLE
 
