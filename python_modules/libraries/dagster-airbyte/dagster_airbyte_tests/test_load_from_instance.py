@@ -6,9 +6,9 @@ import responses
 from dagster import (
     AssetKey,
     EnvVar,
-    FreshnessPolicy,
     InputContext,
     IOManager,
+    LegacyFreshnessPolicy,
     OutputContext,
     asset,
     io_manager,
@@ -34,7 +34,7 @@ from dagster_airbyte_tests.utils import (
     get_project_job_json,
 )
 
-TEST_FRESHNESS_POLICY = FreshnessPolicy(maximum_lag_minutes=60)
+TEST_FRESHNESS_POLICY = LegacyFreshnessPolicy(maximum_lag_minutes=60)
 
 
 @pytest.fixture(name="airbyte_instance", params=[True, False], scope="module")

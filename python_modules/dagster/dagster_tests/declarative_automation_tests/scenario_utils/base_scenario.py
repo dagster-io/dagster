@@ -50,7 +50,7 @@ from dagster._core.definitions.automation_tick_evaluation_context import (
 from dagster._core.definitions.base_asset_graph import BaseAssetGraph
 from dagster._core.definitions.data_version import DataVersionsByPartition
 from dagster._core.definitions.events import CoercibleToAssetKey
-from dagster._core.definitions.freshness_policy import FreshnessPolicy
+from dagster._core.definitions.freshness_policy import LegacyFreshnessPolicy
 from dagster._core.definitions.observe import observe
 from dagster._core.definitions.partition import PartitionsSubset, ScheduleType
 from dagster._core.definitions.time_window_partitions import get_time_partitions_def
@@ -605,7 +605,7 @@ def asset_def(
     key: str,
     deps: Optional[Union[list[str], Mapping[str, Optional[PartitionMapping]]]] = None,
     partitions_def: Optional[PartitionsDefinition] = None,
-    freshness_policy: Optional[FreshnessPolicy] = None,
+    freshness_policy: Optional[LegacyFreshnessPolicy] = None,
     auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
     code_version: Optional[str] = None,
     config_schema: Optional[Mapping[str, Field]] = None,
@@ -648,7 +648,7 @@ def multi_asset_def(
     keys: list[str],
     deps: Optional[Union[list[str], Mapping[str, set[str]]]] = None,
     can_subset: bool = False,
-    freshness_policies: Optional[Mapping[str, FreshnessPolicy]] = None,
+    freshness_policies: Optional[Mapping[str, LegacyFreshnessPolicy]] = None,
 ) -> AssetsDefinition:
     if deps is None:
         non_argument_deps = None

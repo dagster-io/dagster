@@ -3,7 +3,7 @@ import responses
 from dagster import (
     AssetKey,
     AutoMaterializePolicy,
-    FreshnessPolicy,
+    LegacyFreshnessPolicy,
     TableColumn,
     TableSchema,
     asset,
@@ -108,7 +108,7 @@ def test_assets(schema_prefix, auto_materialize_policy, monkeypatch):
 @responses.activate
 @pytest.mark.parametrize("schema_prefix", ["", "the_prefix_"])
 @pytest.mark.parametrize("source_asset", [None, "my_source_asset_key"])
-@pytest.mark.parametrize("freshness_policy", [None, FreshnessPolicy(maximum_lag_minutes=60)])
+@pytest.mark.parametrize("freshness_policy", [None, LegacyFreshnessPolicy(maximum_lag_minutes=60)])
 @pytest.mark.parametrize("auto_materialize_policy", [None, AutoMaterializePolicy.lazy()])
 def test_assets_with_normalization(
     schema_prefix, source_asset, freshness_policy, auto_materialize_policy
