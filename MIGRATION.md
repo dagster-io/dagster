@@ -15,11 +15,13 @@ from dagster.deprecated import FreshnessPolicy  # imports LegacyFreshnessPolicy
 ```
 
 Existing imports of `FreshnessPolicy` will fail with an `ImportError`:
+
 ```
 from dagster import FreshnessPolicy
 ```
 
 Accordingly, the `freshness_policy` parameter has been renamed to `legacy_freshness_policy` in these public APIs:
+
 - `AssetsDefinition.from_graph()`
 - `AssetsDefinition.from_op()`
 - `@asset`
@@ -28,6 +30,7 @@ Accordingly, the `freshness_policy` parameter has been renamed to `legacy_freshn
 - `AssetSpec.merge_attributes`
 
 Other relevant parameter renames:
+
 - In `AssetsDefinition.from_op()`, parameter `freshness_policies_by_output_name` is renamed to `legacy_freshness_policies_by_output_name`
 - In `AssetsDefinition.from_graph()`, parameter `freshness_policies_by_output_name` is renamed to `legacy_freshness_policies_by_output_name`
 
