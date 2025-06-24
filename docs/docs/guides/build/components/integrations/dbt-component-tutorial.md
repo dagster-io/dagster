@@ -50,24 +50,24 @@ This is sufficient to load your dbt models as assets. You can use `dg list defs`
 
 To execute your dbt models, you can use the `dg launch` command to kick off a run through the CLI:
 
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/dbt-component/12-dbt-run.txt" />
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/dbt-component/8-dbt-run.txt" />
 
 ## 5. Select or exclude specific models
 
 You can control which dbt models are included in your component using the `select` or `exclude` attributes. This allows you to filter which models are represented as assets, using [dbt's selection syntax](https://docs.getdbt.com/reference/node-selection/syntax). For example, to include only the `customers` model:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/components/integrations/dbt-component/8-customized-component.yaml" title="my_project/defs/dbt_ingest/defs.yaml" language="yaml" />
+<CodeExample path="docs_snippets/docs_snippets/guides/components/integrations/dbt-component/9-customized-component.yaml" title="my_project/defs/dbt_ingest/defs.yaml" language="yaml" />
 
 <WideContent maxSize={1100}>
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/dbt-component/9-list-defs.txt" />
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/dbt-component/10-list-defs.txt" />
 </WideContent>
 
 ## 6. Customize dbt assets
 
 You can customize the properties of the assets emitted by each dbt model using the `translation` key in your `defs.yaml` file. This allows you to modify asset metadata such as group names, descriptions, and other properties:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/components/integrations/dbt-component/10-customized-component.yaml" title="my_project/defs/dbt_ingest/defs.yaml" language="yaml" />
+<CodeExample path="docs_snippets/docs_snippets/guides/components/integrations/dbt-component/11-customized-component.yaml" title="my_project/defs/dbt_ingest/defs.yaml" language="yaml" />
 
 <WideContent maxSize={1100}>
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/dbt-component/11-list-defs.txt" />
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/dbt-component/12-list-defs.txt" />
 </WideContent>

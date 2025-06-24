@@ -13,6 +13,7 @@ from docs_snippets_tests.snippet_checks.guides.components.utils import (
     EDITABLE_DIR,
 )
 from docs_snippets_tests.snippet_checks.utils import (
+    _run_command,
     compare_tree_output,
     isolated_snippet_generation_environment,
 )
@@ -100,6 +101,12 @@ def test_components_docs_dbt_project(
             snippet_path=f"{context.get_next_snip_number()}-list-defs.txt",
         )
 
+        # Test dbt run
+        context.run_command_and_snippet_output(
+            cmd="dg launch --assets '*'",
+            snippet_path=f"{context.get_next_snip_number()}-dbt-run.txt",
+        )
+
         # Update component.yaml with model selector
         context.create_file(
             Path("src") / "my_project" / "defs" / "dbt_ingest" / "defs.yaml",
@@ -144,7 +151,6 @@ def test_components_docs_dbt_project(
         )
 
         # Test dbt run
-        context.run_command_and_snippet_output(
+        _run_command(
             cmd="dg launch --assets '*'",
-            snippet_path=f"{context.get_next_snip_number()}-dbt-run.txt",
         )
