@@ -58,6 +58,7 @@ class Resolvable:
     Example:
 
     .. code-block:: python
+
         import datetime
         from typing import Annotated
 
@@ -109,6 +110,7 @@ class Resolvable:
         )
 
         assert in_python == in_yaml
+
     """
 
     @classmethod

@@ -7,7 +7,7 @@ from pydantic import BaseModel
 from typing_extensions import TypeAlias, TypeVar
 
 from dagster import _check as check
-from dagster._annotations import preview, public
+from dagster._annotations import public
 
 # Constant for object attribute name
 SCAFFOLDER_CLS_ATTRIBUTE: str = "__scaffolder_cls__"
