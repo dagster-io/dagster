@@ -1,4 +1,4 @@
-from my_project.resources import AResource
+from my_project.defs.aresource import AResource
 
 import dagster as dg
 

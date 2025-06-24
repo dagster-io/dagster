@@ -192,10 +192,10 @@ def test_dynamic_subcommand_help_message():
             assert match_terminal_box_output(
                 result.output.strip(),
                 textwrap.dedent("""
-                Usage: dg scaffold defs [GLOBAL OPTIONS] dagster_test.components.SimplePipesScriptComponent [OPTIONS] INSTANCE_NAME
+                Usage: dg scaffold defs [GLOBAL OPTIONS] dagster_test.components.SimplePipesScriptComponent [OPTIONS] DEFS_PATH
 
                 ╭─ Arguments ──────────────────────────────────────────────────────────────────────────────────────────────────────────╮
-                │ *    instance_name      TEXT  [required]                                                                             │
+                │ *    defs_path      TEXT  [required]                                                                                 │
                 ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
                 ╭─ Options ────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
                 │ --format               [yaml|python]  Format of the component configuration (yaml or python)                         │

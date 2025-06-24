@@ -16,7 +16,7 @@ def test_pipes_subprocess_script_hello_world() -> None:
 
         with sandbox.load(
             component_body={
-                "type": "dagster.components.PythonScriptComponent",
+                "type": "dagster.PythonScriptComponent",
                 "attributes": {
                     "execution": {
                         "name": "op_name",
@@ -53,7 +53,7 @@ def test_pipes_subprocess_script_with_custom_materialize_result() -> None:
 
         with sandbox.load(
             component_body={
-                "type": "dagster.components.PythonScriptComponent",
+                "type": "dagster.PythonScriptComponent",
                 "attributes": {
                     "execution": {
                         "path": "op_name.py",
@@ -81,7 +81,7 @@ def test_pipes_subprocess_script_with_name_override() -> None:
     with scaffold_defs_sandbox(component_cls=PythonScriptComponent) as sandbox:
         with sandbox.load(
             component_body={
-                "type": "dagster.components.PythonScriptComponent",
+                "type": "dagster.PythonScriptComponent",
                 "attributes": {
                     "execution": {
                         "name": "op_name_override",
@@ -116,7 +116,7 @@ def test_pipes_subprocess_script_with_checks_only() -> None:
 
         with sandbox.load(
             component_body={
-                "type": "dagster.components.PythonScriptComponent",
+                "type": "dagster.PythonScriptComponent",
                 "attributes": {
                     "execution": {
                         "path": "only_checks.py",
@@ -169,7 +169,7 @@ def test_pipes_subprocess_with_args() -> None:
         copy_code_to_file(template_vars_content, template_vars_path)
         with sandbox.load(
             component_body={
-                "type": "dagster.components.PythonScriptComponent",
+                "type": "dagster.PythonScriptComponent",
                 "attributes": {
                     "execution": {
                         "path": "op_name.py",
@@ -210,7 +210,7 @@ def test_pipes_subprocess_with_inline_str() -> None:
         copy_code_to_file(op_name_contents, execute_path)
         with sandbox.load(
             component_body={
-                "type": "dagster.components.PythonScriptComponent",
+                "type": "dagster.PythonScriptComponent",
                 "attributes": {
                     "execution": {
                         "path": "op_name.py",

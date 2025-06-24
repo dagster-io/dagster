@@ -28,7 +28,7 @@ class UvRunComponent(ExecutableComponent):
 
     Example:
     ```yaml
-    type: dagster.components.UvRunComponent
+    type: dagster.UvRunComponent
     attributes:
       execution:
         path: update_table.py

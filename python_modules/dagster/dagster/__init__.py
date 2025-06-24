@@ -252,7 +252,9 @@ from dagster._core.definitions.executor_definition import (
     multiple_process_executor_requirements as multiple_process_executor_requirements,
     multiprocess_executor as multiprocess_executor,
 )
-from dagster._core.definitions.freshness_policy import FreshnessPolicy as FreshnessPolicy
+from dagster._core.definitions.freshness_policy import (
+    LegacyFreshnessPolicy as LegacyFreshnessPolicy,
+)
 from dagster._core.definitions.graph_definition import GraphDefinition as GraphDefinition
 from dagster._core.definitions.hook_definition import HookDefinition as HookDefinition
 from dagster._core.definitions.input import (
@@ -640,6 +642,11 @@ from dagster._utils.warnings import (
     PreviewWarning as PreviewWarning,
     SupersessionWarning as SupersessionWarning,
 )
+from dagster.components import (
+    FunctionComponent as FunctionComponent,
+    PythonScriptComponent as PythonScriptComponent,
+    UvRunComponent as UvRunComponent,
+)
 from dagster.components.component.component import (
     Component as Component,
     ComponentTypeSpec as ComponentTypeSpec,
@@ -653,6 +660,7 @@ from dagster.components.components import (
 from dagster.components.core.context import ComponentLoadContext as ComponentLoadContext
 from dagster.components.core.load_defs import (
     build_component_defs as build_component_defs,
+    build_defs_for_component as build_defs_for_component,
     load_defs as load_defs,
     load_from_defs_folder as load_from_defs_folder,
 )
@@ -662,7 +670,6 @@ from dagster.components.resolved.base import Resolvable as Resolvable
 from dagster.components.resolved.context import ResolutionContext as ResolutionContext
 from dagster.components.resolved.core_models import (
     AssetAttributesModel as AssetAttributesModel,
-    AssetPostProcessorModel as AssetPostProcessorModel,
     ResolvedAssetCheckSpec as ResolvedAssetCheckSpec,
     ResolvedAssetKey as ResolvedAssetKey,
     ResolvedAssetSpec as ResolvedAssetSpec,

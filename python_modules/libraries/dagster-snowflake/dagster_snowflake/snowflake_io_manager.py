@@ -30,7 +30,7 @@ def build_snowflake_io_manager(
     Args:
         type_handlers (Sequence[DbTypeHandler]): Each handler defines how to translate between
             slices of Snowflake tables and an in-memory type - e.g. a Pandas DataFrame. If only
-            one DbTypeHandler is provided, it will be used as teh default_load_type.
+            one DbTypeHandler is provided, it will be used as the default_load_type.
         default_load_type (Type): When an input has no type annotation, load it as this type.
 
     Returns:
@@ -59,7 +59,7 @@ def build_snowflake_io_manager(
 
             snowflake_io_manager = build_snowflake_io_manager([SnowflakePandasTypeHandler(), SnowflakePySparkTypeHandler()])
 
-            defs = Definitions(
+            Definitions(
                 assets=[my_table, my_second_table],
                 resources={
                     "io_manager": snowflake_io_manager.configured({
@@ -75,7 +75,7 @@ def build_snowflake_io_manager(
 
         .. code-block:: python
 
-            defs = Definitions(
+            Definitions(
                 assets=[my_table]
                 resources={"io_manager" snowflake_io_manager.configured(
                     {"database": "my_database", "schema": "my_schema", ...} # will be used as the schema

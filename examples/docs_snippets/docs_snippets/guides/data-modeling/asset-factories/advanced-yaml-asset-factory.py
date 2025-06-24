@@ -10,7 +10,6 @@ import dagster as dg
 
 
 def build_etl_job(
-    s3_resource: s3.S3Resource,
     bucket: str,
     source_object: str,
     target_object: str,
@@ -68,4 +67,6 @@ def load_etl_jobs_from_yaml(yaml_path: str) -> dg.Definitions:
 # highlight-end
 
 
-defs = load_etl_jobs_from_yaml("etl_jobs_with_jinja.yaml")
+@dg.definitions
+def defs():
+    return load_etl_jobs_from_yaml("etl_jobs_with_jinja.yaml")

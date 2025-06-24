@@ -12,7 +12,7 @@ from dagster import (
     AutoMaterializePolicy,
     AutomationCondition,
     DagsterInvalidDefinitionError,
-    FreshnessPolicy,
+    LegacyFreshnessPolicy,
     PartitionMapping,
 )
 from dagster._annotations import beta, public
@@ -157,7 +157,7 @@ class DagsterDbtTranslator:
             group_name=self.get_group_name(resource_props),
             code_version=self.get_code_version(resource_props),
             automation_condition=self.get_automation_condition(resource_props),
-            freshness_policy=self.get_freshness_policy(resource_props),
+            legacy_freshness_policy=self.get_freshness_policy(resource_props),
             owners=self.get_owners(owners_resource_props),
             tags=self.get_tags(resource_props),
             kinds={"dbt", manifest.get("metadata", {}).get("adapter_type", "dbt")},
@@ -495,7 +495,7 @@ class DagsterDbtTranslator:
     @beta(emit_runtime_warning=False)
     def get_freshness_policy(
         self, dbt_resource_props: Mapping[str, Any]
-    ) -> Optional[FreshnessPolicy]:
+    ) -> Optional[LegacyFreshnessPolicy]:
         """A function that takes a dictionary representing properties of a dbt resource, and
         returns the Dagster :py:class:`dagster.FreshnessPolicy` for that resource.
 

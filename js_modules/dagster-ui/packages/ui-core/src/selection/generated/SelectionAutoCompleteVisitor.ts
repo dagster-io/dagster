@@ -42,6 +42,7 @@ import {
   LeftParenTokenContext,
   NotExpressionContext,
   NotTokenContext,
+  NullStringValueContext,
   OrExpressionContext,
   OrTokenContext,
   ParenthesizedExprContext,
@@ -301,6 +302,14 @@ export interface SelectionAutoCompleteVisitor<Result> extends ParseTreeVisitor<R
    * @return the visitor result
    */
   visitUnquotedStringValue?: (ctx: UnquotedStringValueContext) => Result;
+
+  /**
+   * Visit a parse tree produced by the `NullStringValue`
+   * labeled alternative in `SelectionAutoCompleteParser.value`.
+   * @param ctx the parse tree
+   * @return the visitor result
+   */
+  visitNullStringValue?: (ctx: NullStringValueContext) => Result;
 
   /**
    * Visit a parse tree produced by the `DigitsValue`

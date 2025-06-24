@@ -3,7 +3,7 @@ from typing import Optional
 
 from dagster import DailyPartitionsDefinition, PartitionKeyRange
 from dagster._core.definitions.events import AssetKey, AssetMaterialization
-from dagster._core.definitions.freshness_policy import FreshnessPolicy
+from dagster._core.definitions.freshness_policy import LegacyFreshnessPolicy
 from dagster._core.definitions.time_window_partitions import HourlyPartitionsDefinition
 from dagster._core.events import DagsterEvent, StepMaterializationData
 from dagster._core.events.log import EventLogEntry
@@ -33,7 +33,9 @@ freshness_with_observable_source_assets = [
     observable_source_asset_def("observable_source"),
     asset_def("asset0"),
     asset_def("asset1", ["observable_source", "asset0"]),
-    asset_def("asset2", ["asset1"], freshness_policy=FreshnessPolicy(maximum_lag_minutes=30)),
+    asset_def(
+        "asset2", ["asset1"], legacy_freshness_policy=LegacyFreshnessPolicy(maximum_lag_minutes=30)
+    ),
 ]
 
 

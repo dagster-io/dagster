@@ -16,9 +16,3 @@ def subprocess_asset(
             "MY_ENV_VAR_IN_SUBPROCESS": "my_value",
         },
     ).get_materialize_result()
-
-
-defs = dg.Definitions(
-    assets=[subprocess_asset],
-    resources={"pipes_subprocess_client": dg.PipesSubprocessClient()},
-)

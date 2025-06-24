@@ -1,23 +1,23 @@
 # start_marker
-from dagster import OpExecutionContext, graph, op
+import dagster as dg
 
 
-@op
-def return_one(context: OpExecutionContext) -> int:
+@dg.op
+def return_one(context: dg.OpExecutionContext) -> int:
     return 1
 
 
-@op
-def add_one(context: OpExecutionContext, number: int):
+@dg.op
+def add_one(context: dg.OpExecutionContext, number: int):
     return number + 1
 
 
-@op
-def adder(context: OpExecutionContext, a: int, b: int) -> int:
+@dg.op
+def adder(context: dg.OpExecutionContext, a: int, b: int) -> int:
     return a + b
 
 
-@graph
+@dg.graph
 def inputs_and_outputs():
     value = return_one()
     a = add_one(value)

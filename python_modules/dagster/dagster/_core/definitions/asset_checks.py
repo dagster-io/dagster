@@ -37,7 +37,7 @@ class AssetChecksDefinition(AssetsDefinition):
             group_names_by_key=None,
             metadata_by_key=None,
             tags_by_key=None,
-            freshness_policies_by_key=None,
+            legacy_freshness_policies_by_key=None,
             backfill_policy=None,
             descriptions_by_key=None,
             check_specs_by_output_name=check_specs_by_output_name,

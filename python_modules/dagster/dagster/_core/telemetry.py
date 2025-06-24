@@ -270,7 +270,7 @@ def get_stats_from_remote_repo(remote_repo: "RemoteRepository") -> Mapping[str, 
             if isinstance(asset.partitions, MultiPartitionsSnap):
                 num_multi_partitioned_assets_in_repo += 1
 
-        if asset.freshness_policy is not None:
+        if asset.legacy_freshness_policy is not None:
             num_assets_with_freshness_policies_in_repo += 1
 
         if asset.auto_materialize_policy is not None:
