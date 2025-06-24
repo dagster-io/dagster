@@ -660,6 +660,7 @@ from dagster.components.components import (
 from dagster.components.core.context import ComponentLoadContext as ComponentLoadContext
 from dagster.components.core.load_defs import (
     build_component_defs as build_component_defs,
+    build_defs_for_component as build_defs_for_component,
     load_defs as load_defs,
     load_from_defs_folder as load_from_defs_folder,
 )

@@ -14,6 +14,7 @@ from dagster_shared.utils.config import (
 from dagster._annotations import deprecated, preview, public
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._utils.warnings import suppress_dagster_warnings
+from dagster.components.component.component import Component
 from dagster.components.core.context import ComponentLoadContext
 from dagster.components.core.tree import ComponentTree
 
@@ -68,6 +69,25 @@ def get_project_root(defs_root: ModuleType) -> Path:
         current_dir = current_dir.parent
 
     raise FileNotFoundError("No project root with pyproject.toml or setup.py found")
+
+
+@public
+@preview(emit_runtime_warning=False)
+@suppress_dagster_warnings
+def build_defs_for_component(*, component: Component) -> Definitions:
+    """Constructs Definitions from a standalone component. This is useful for
+    loading individual components in a non-component project.
+
+    Args:
+        component (Component): The component to load defs from.
+    """
+    from dagster.components.core.defs_module import CompositeYamlComponent
+
+    if isinstance(component, CompositeYamlComponent):
+        return Definitions.merge(
+            *[c.build_defs(ComponentLoadContext.for_test()) for c in component.components]
+        )
+    return component.build_defs(ComponentLoadContext.for_test())
 
 
 @public
