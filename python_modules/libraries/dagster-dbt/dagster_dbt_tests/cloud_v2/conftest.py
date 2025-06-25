@@ -725,7 +725,7 @@ def credentials_fixture() -> DbtCloudCredentials:
 
 
 @pytest.fixture(name="workspace", scope="function")
-def workspace_fixture(credentials: DbtCloudCredentials) -> DbtCloudWorkspace:
+def workspace_fixture(credentials: DbtCloudCredentials) -> Generator[DbtCloudWorkspace, None, None]:
     workspace = DbtCloudWorkspace(
         credentials=credentials,
         project_id=TEST_PROJECT_ID,
