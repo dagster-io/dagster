@@ -202,7 +202,7 @@ def _assert_matches_or_update_snippet(
         )
         assert comparison_fn(contents, snippet_contents), (
             "CLI snippets do not match. You may need to regenerate this snippet:"
-            f"\n`cd $DAGSTER_GIT_REPO/examples/docs_snippets && tox -e docs_snapshot_update -- {path_relative_to_docs.as_posix()}"
+            f"\n`cd $DAGSTER_GIT_REPO/examples/docs_snippets && tox -e docs_snapshot_update -- {path_relative_to_docs.as_posix()}`"
         )
 
 
