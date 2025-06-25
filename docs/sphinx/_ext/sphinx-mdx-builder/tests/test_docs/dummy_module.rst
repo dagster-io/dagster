@@ -41,6 +41,14 @@ Functions
 
 .. autofunction:: dummy_module.get_car_summary
 
+.. autofunction:: dummy_module.test_dagster_style_logger
+
+.. autofunction:: dummy_module.test_func_wrapper
+
+.. autofunction:: dummy_module.test_function_wrapper
+
+.. autofunction:: dummy_module.test_callback_wrapper
+
 Constants
 ---------
 

@@ -219,6 +219,62 @@ class TestMdxBuilder:
             "Source links should have proper security attributes"
         )
 
+    def test_decorated_function_source_links(self, built_docs):
+        """Test that decorated functions have source links generated properly."""
+        dummy_module_file = built_docs / "dummy_module.mdx"
+        content = dummy_module_file.read_text()
+
+        # Test functions with different wrapper patterns
+        wrapper_functions = [
+            ("test_dagster_style_logger", 202, 208),  # Custom wrapper with logger_fn
+            ("test_func_wrapper", 224, 230),  # GenericWrapper with func
+            ("test_function_wrapper", 234, 240),  # GenericWrapper with function
+            ("test_callback_wrapper", 243, 249),  # GenericWrapper with callback
+        ]
+
+        # Check that source links are present
+        assert "[source]" in content, "Should have source links for wrapped functions"
+
+        import re
+
+        # Find all source links in the content
+        source_link_pattern = (
+            r"<a[^>]*href='([^']*tests/dummy_module\.py#L\d+)'[^>]*>\[source\]</a>"
+        )
+        source_links = re.findall(source_link_pattern, content)
+
+        # Check that we have source links
+        assert len(source_links) > 0, "Should have at least one source link for functions"
+
+        # Check each wrapper function has its source link
+        found_functions = []
+        for func_name, start_line, end_line in wrapper_functions:
+            # Check that the function is documented
+            if func_name in content:
+                found_functions.append(func_name)
+
+                # Look for source link in the expected line range
+                function_source_found = False
+                for link in source_links:
+                    if "dummy_module.py#L" in link:
+                        line_match = re.search(r"#L(\d+)", link)
+                        if line_match:
+                            line_num = int(line_match.group(1))
+                            if start_line <= line_num <= end_line:
+                                function_source_found = True
+                                break
+
+                assert function_source_found, (
+                    f"Should have source link for wrapped function {func_name} "
+                    f"in line range {start_line}-{end_line}. "
+                    f"Found source links: {source_links}"
+                )
+
+        # Ensure we found at least some of the wrapper functions
+        assert len(found_functions) >= 2, (
+            f"Should document multiple wrapper functions. Found: {found_functions}"
+        )
+
 
 def test_direct_builder_import():
     """Test that the builder can be imported directly."""
