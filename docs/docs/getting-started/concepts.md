@@ -278,11 +278,20 @@ A `code location` is a collection of <PyObject section="definitions" module="dag
     end
 ```
 
-A `Component` is an opinionated project layout built around a <PyObject section="definitions" module="dagster" object="Definitions" />. The <PyObject section="definitions" module="dagster" object="Definitions" /> contains Dagster objects used to accomplish a specific task—such as a standard workflow or an integration. Components are designed to help you quickly bootstrap parts of your Dagster project and serve as templates for repeatable patterns.
+A `Component` is an opinionated project layout built around a <PyObject section="definitions" module="dagster" object="Definitions" /> object. The <PyObject section="definitions" module="dagster" object="Definitions" /> object contains Dagster objects used to accomplish a specific task, such as assets, asset checks, schedules, sensors, resources, and integrations. 
 
-| Concept                     | Relationship                                 |
-| --------------------------- | -------------------------------------------- |
-| [definitions](#definitions) | `component` produces a `Definitions` object  |
+Components are objects that programmatically build assets and other definitions such as asset checks, schedules, resources, and sensors. They accept schematized configuration parameters (which are specified using YAML or lightweight Python) and use them to build the actual definitions you need. Components are designed to help you quickly bootstrap parts of your Dagster project and serve as templates for repeatable patterns.
+
+| Concept                       | Relationship                                             |
+| ----------------------------- | -------------------------------------------------------- |
+| [`asset`](#asset)             | `component` build `assets` and other `definitions`       |
+| [`asset check`](#asset-check) | `component` build `asset_checks` and other `definitions` |
+| [definitions](#definitions)   | `component` build `assets` and other `definitions`       |
+| [`job`](#job)                 | `component` build `jobs` and other `definitions`         |
+| [`schedule`](#schedule)       | `component` build `schedules` and other `definitions`    |
+| [`sensor`](#sensor)           | `component` build `sensors` and other `definitions`      |
+| [`resource`](#resource)       | `component` build `resources` and other `definitions`    |
+`
 
 ### Config
 
