@@ -74,7 +74,8 @@ def test_creating_a_component(
             contents=(COMPONENTS_SNIPPETS_DIR / "with-config-schema.py").read_text(),
         )
         # Sanity check that the component type is registered properly
-        _run_command("dg list components")
+        if not update_snippets:
+            _run_command("dg list components")
 
         # Add build defs
         context.create_file(
@@ -148,7 +149,8 @@ def test_creating_a_component(
             Path("src") / "my_project" / "defs" / "my_shell_command" / "script.sh",
             f"{context.get_next_snip_number()}-scaffolded-component-script.sh",
         )
-        _run_command("dg launch --assets '*'")
+        if not update_snippets:
+            _run_command("dg launch --assets '*'")
 
         # Test "Providing resolution logic for non-standard types" section
         # in docs/docs/guides/labs/components/creating-new-components/component-customization.md
@@ -187,6 +189,7 @@ def test_creating_a_component(
             yaml_contents,
             snippet_path=f"{context.get_next_snip_number()}-custom-scope-defs.yaml",
         )
-        _run_command("dg check yaml")
-        _run_command("dg check defs")
-        _run_command("dg launch --assets '*' --partition '2024-01-01'")
+        if not update_snippets:
+            _run_command("dg check yaml")
+            _run_command("dg check defs")
+            _run_command("dg launch --assets '*' --partition '2024-01-01'")

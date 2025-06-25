@@ -539,6 +539,7 @@ export type AssetNode = {
   description: Maybe<Scalars['String']['output']>;
   freshnessInfo: Maybe<AssetFreshnessInfo>;
   freshnessPolicy: Maybe<FreshnessPolicy>;
+  freshnessStatusInfo: Maybe<FreshnessStatusInfo>;
   graphName: Maybe<Scalars['String']['output']>;
   groupName: Scalars['String']['output'];
   hasAssetChecks: Scalars['Boolean']['output'];
@@ -1875,6 +1876,12 @@ export type FreshnessPolicy = {
   cronScheduleTimezone: Maybe<Scalars['String']['output']>;
   lastEvaluationTimestamp: Maybe<Scalars['String']['output']>;
   maximumLagMinutes: Scalars['Float']['output'];
+};
+
+export type FreshnessStatusInfo = {
+  __typename: 'FreshnessStatusInfo';
+  freshnessStatus: AssetHealthStatus;
+  freshnessStatusMetadata: Maybe<AssetHealthFreshnessMeta>;
 };
 
 export type Graph = SolidContainer & {
@@ -7157,6 +7164,12 @@ export const buildAssetNode = (
         : relationshipsToOmit.has('FreshnessPolicy')
           ? ({} as FreshnessPolicy)
           : buildFreshnessPolicy({}, relationshipsToOmit),
+    freshnessStatusInfo:
+      overrides && overrides.hasOwnProperty('freshnessStatusInfo')
+        ? overrides.freshnessStatusInfo!
+        : relationshipsToOmit.has('FreshnessStatusInfo')
+          ? ({} as FreshnessStatusInfo)
+          : buildFreshnessStatusInfo({}, relationshipsToOmit),
     graphName: overrides && overrides.hasOwnProperty('graphName') ? overrides.graphName! : 'et',
     groupName:
       overrides && overrides.hasOwnProperty('groupName') ? overrides.groupName! : 'asperiores',
@@ -9249,6 +9262,27 @@ export const buildFreshnessPolicy = (
       overrides && overrides.hasOwnProperty('maximumLagMinutes')
         ? overrides.maximumLagMinutes!
         : 6.15,
+  };
+};
+
+export const buildFreshnessStatusInfo = (
+  overrides?: Partial<FreshnessStatusInfo>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'FreshnessStatusInfo'} & FreshnessStatusInfo => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('FreshnessStatusInfo');
+  return {
+    __typename: 'FreshnessStatusInfo',
+    freshnessStatus:
+      overrides && overrides.hasOwnProperty('freshnessStatus')
+        ? overrides.freshnessStatus!
+        : AssetHealthStatus.DEGRADED,
+    freshnessStatusMetadata:
+      overrides && overrides.hasOwnProperty('freshnessStatusMetadata')
+        ? overrides.freshnessStatusMetadata!
+        : relationshipsToOmit.has('AssetHealthFreshnessMeta')
+          ? ({} as AssetHealthFreshnessMeta)
+          : buildAssetHealthFreshnessMeta({}, relationshipsToOmit),
   };
 };
 

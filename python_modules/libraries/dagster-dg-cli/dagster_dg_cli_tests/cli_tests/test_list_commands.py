@@ -574,6 +574,23 @@ def _sample_complex_asset_defs():
     def epsilon(delta):
         pass
 
+    @dg.asset(deps=[alpha, beta, delta, epsilon])
+    def omega():
+        """This is omega asset and it has a very very very long description that should be truncated.
+
+        Wow look at all this amazing context that should very much not all show up in the output because
+        it's far too long. This really should be truncated because there's no way anyone wants to read
+        this much output in tabular form, it's simply too much.
+
+        Args:
+            fake_arg (Optional[str]): A fake argument wow very unimportant.
+            fake_arg_2 (Optional[str]): A fake argument wow very unimportant as well.
+
+        Raises:
+            ValueError: If the fake argument is not None.
+        """
+        pass
+
     @dg.asset_check(asset=alpha)
     def alpha_check() -> dg.AssetCheckResult:
         """This check is for alpha."""

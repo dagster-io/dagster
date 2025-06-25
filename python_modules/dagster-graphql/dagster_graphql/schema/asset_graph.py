@@ -7,6 +7,9 @@ from dagster import (
     _check as check,
 )
 from dagster._core.definitions.asset_graph_differ import AssetDefinitionChangeType, AssetGraphDiffer
+from dagster._core.definitions.asset_health.asset_freshness_health import (
+    get_freshness_status_and_metadata,
+)
 from dagster._core.definitions.asset_spec import SYSTEM_METADATA_KEY_AUTO_CREATED_STUB_ASSET
 from dagster._core.definitions.data_version import (
     NULL_DATA_VERSION,
@@ -85,7 +88,10 @@ from dagster_graphql.schema.dagster_types import (
 )
 from dagster_graphql.schema.entity_key import GrapheneAssetKey
 from dagster_graphql.schema.errors import GrapheneAssetNotFoundError
-from dagster_graphql.schema.freshness import GrapheneInternalFreshnessPolicy
+from dagster_graphql.schema.freshness import (
+    GrapheneFreshnessStatusInfo,
+    GrapheneInternalFreshnessPolicy,
+)
 from dagster_graphql.schema.freshness_policy import (
     GrapheneAssetFreshnessInfo,
     GrapheneFreshnessPolicy,
@@ -271,6 +277,7 @@ class GrapheneAssetNode(graphene.ObjectType):
     description = graphene.String()
     freshnessInfo = graphene.Field(GrapheneAssetFreshnessInfo)
     freshnessPolicy = graphene.Field(GrapheneFreshnessPolicy)
+    freshnessStatusInfo = graphene.Field(GrapheneFreshnessStatusInfo)
     internalFreshnessPolicy = graphene.Field(GrapheneInternalFreshnessPolicy)
     autoMaterializePolicy = graphene.Field(GrapheneAutoMaterializePolicy)
     automationCondition = graphene.Field(GrapheneAutomationCondition)
@@ -847,12 +854,32 @@ class GrapheneAssetNode(graphene.ObjectType):
             return GrapheneFreshnessPolicy(self._asset_node_snap.legacy_freshness_policy)
         return None
 
+    async def resolve_freshnessStatusInfo(
+        self, graphene_info: ResolveInfo
+    ) -> Optional[GrapheneFreshnessStatusInfo]:
+        from dagster_graphql.schema.asset_health import GrapheneAssetHealthFreshnessMeta
+
+        if not self._asset_node_snap.freshness_policy:
+            return None
+
+        freshness_status, freshness_status_metadata = await get_freshness_status_and_metadata(
+            graphene_info.context, self._asset_node_snap.asset_key
+        )
+        return GrapheneFreshnessStatusInfo(
+            freshnessStatus=freshness_status,
+            freshnessStatusMetadata=GrapheneAssetHealthFreshnessMeta(
+                lastMaterializedTimestamp=freshness_status_metadata.last_materialized_timestamp
+            )
+            if freshness_status_metadata
+            else None,
+        )
+
     def resolve_internalFreshnessPolicy(
         self, graphene_info: ResolveInfo
     ) -> Optional[GrapheneInternalFreshnessPolicy]:
-        if self._asset_node_snap.internal_freshness_policy:
+        if self._asset_node_snap.freshness_policy:
             return GrapheneInternalFreshnessPolicy.from_policy(
-                self._asset_node_snap.internal_freshness_policy
+                self._asset_node_snap.freshness_policy
             )
         return None
 

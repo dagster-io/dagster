@@ -52,7 +52,7 @@ def get_buildkite_quarantined_objects(
             url = next_url
 
     except Exception as e:
-        print(e)
+        print(e, file=sys.stderr)
         if not suppress_errors:
             raise e
 

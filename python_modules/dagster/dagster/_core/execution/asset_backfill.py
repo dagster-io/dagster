@@ -686,6 +686,9 @@ def _get_requested_asset_graph_subset_from_run_requests(
                     for asset_key in cast("Sequence[AssetKey]", run_request.asset_selection)
                 },
                 asset_graph,
+                # don't need expensive checks for whether the partition keys are still in the subset
+                # when just determining what was previously requested in this backfill
+                validate_time_range=False,
             )
 
     return requested_subset
@@ -1839,8 +1842,8 @@ def get_can_run_with_parent_subsets(
             ],
         )
     if (
-        parent_node.resolve_to_singular_repo_scoped_node().repository_handle  # type: ignore
-        != candidate_node.resolve_to_singular_repo_scoped_node().repository_handle  # type: ignore
+        parent_node.resolve_to_singular_repo_scoped_node().repository_handle
+        != candidate_node.resolve_to_singular_repo_scoped_node().repository_handle
     ):
         return (
             asset_graph_view.get_empty_subset(key=candidate_asset_key),
