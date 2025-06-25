@@ -21,6 +21,7 @@ from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.asset_key import AssetKey, EntityKey, T_EntityKey
 from dagster._core.definitions.backfill_policy import BackfillPolicy
 from dagster._core.definitions.events import AssetKeyPartitionKey
+from dagster._core.definitions.freshness import InternalFreshnessPolicy
 from dagster._core.definitions.freshness_policy import LegacyFreshnessPolicy
 from dagster._core.definitions.metadata import ArbitraryMetadataMapping
 from dagster._core.definitions.partition import PartitionsDefinition, PartitionsSubset
@@ -153,6 +154,26 @@ class BaseAssetNode(BaseEntityNode[AssetKey]):
     @property
     @abstractmethod
     def legacy_freshness_policy(self) -> Optional[LegacyFreshnessPolicy]: ...
+
+    @property
+    @abstractmethod
+    def freshness_policy(self) -> Optional[InternalFreshnessPolicy]:
+        """WARNING: This field is not backwards compatible for policies created prior to 1.11.0.
+        For backwards compatibility, use freshness_policy_or_from_metadata instead.
+        """
+        ...
+
+    @property
+    def freshness_policy_or_from_metadata(self) -> Optional[InternalFreshnessPolicy]:
+        """Prior to 1.11.0, freshness policy was stored in the node metadata. Freshness policy is a first-class attribute of the asset starting in 1.11.0.
+
+        This field is backwards compatible since it checks for the policy in both the top-level attribute and the node metadata.
+        """
+        from dagster._core.definitions.freshness import InternalFreshnessPolicy
+
+        return self.freshness_policy or InternalFreshnessPolicy.from_asset_spec_metadata(
+            self.metadata
+        )
 
     @property
     @abstractmethod

@@ -3,7 +3,7 @@ from datetime import timedelta
 import pytest
 from dagster import AssetKey, AssetsDefinition, AssetSpec, Definitions
 from dagster._check import CheckError, ParameterCheckError
-from dagster._core.definitions.asset_spec import attach_internal_freshness_policy
+from dagster._core.definitions.asset_spec import apply_freshness_policy
 from dagster._core.definitions.decorators.asset_decorator import asset
 from dagster._core.definitions.freshness import (
     INTERNAL_FRESHNESS_POLICY_METADATA_KEY,
@@ -21,7 +21,6 @@ from dagster_tests.core_tests.host_representation_tests.test_external_data impor
 
 
 class TestInternalFreshnessPolicy:
-    # TestInternalFreshnessPolicy::test_internal_freshness_policy_from_asset_spec_metadata_handles_null
     def test_internal_freshness_policy_from_asset_spec_metadata_handles_null(self) -> None:
         """Special case handling for asset metadata that was set to "null" string literal."""
         metadata = {INTERNAL_FRESHNESS_POLICY_METADATA_KEY: TextMetadataValue("null")}
@@ -29,8 +28,8 @@ class TestInternalFreshnessPolicy:
         assert policy is None
 
 
-class TestAttachInternalFreshnessPolicy:
-    def test_attach_internal_freshness_policy_explicit_none_fails(self) -> None:
+class TestApplyFreshnessPolicy:
+    def test_apply_freshness_policy_explicit_none_fails(self) -> None:
         """Check that we cannot apply a null policy to assets."""
 
         @asset
@@ -41,7 +40,7 @@ class TestAttachInternalFreshnessPolicy:
 
         with pytest.raises(ParameterCheckError):
             defs.map_asset_specs(
-                func=lambda spec: attach_internal_freshness_policy(
+                func=lambda spec: apply_freshness_policy(
                     spec,
                     None,  # pyright: ignore[reportArgumentType]
                     overwrite_existing=False,
@@ -54,7 +53,7 @@ class TestTimeWindowFreshnessPolicy:
         """Can we define an asset from decorator with a time window freshness policy?"""
 
         @asset(
-            internal_freshness_policy=TimeWindowFreshnessPolicy.from_timedeltas(
+            freshness_policy=TimeWindowFreshnessPolicy.from_timedeltas(
                 fail_window=timedelta(minutes=10), warn_window=timedelta(minutes=5)
             )
         )
@@ -62,16 +61,11 @@ class TestTimeWindowFreshnessPolicy:
             pass
 
         spec = asset_with_internal_freshness_policy.get_asset_spec()
-        policy = spec.metadata.get(INTERNAL_FRESHNESS_POLICY_METADATA_KEY)
+        policy = spec.freshness_policy
         assert policy is not None
-        deserialized = deserialize_value(policy)
-        assert isinstance(deserialized, TimeWindowFreshnessPolicy)
-        assert deserialized.fail_window == SerializableTimeDelta.from_timedelta(
-            timedelta(minutes=10)
-        )
-        assert deserialized.warn_window == SerializableTimeDelta.from_timedelta(
-            timedelta(minutes=5)
-        )
+        assert isinstance(policy, TimeWindowFreshnessPolicy)
+        assert policy.fail_window == SerializableTimeDelta.from_timedelta(timedelta(minutes=10))
+        assert policy.warn_window == SerializableTimeDelta.from_timedelta(timedelta(minutes=5))
 
     def test_asset_spec_with_time_window_freshness_policy(self) -> None:
         """Can we define an asset spec with a time window freshness policy?"""
@@ -79,14 +73,14 @@ class TestTimeWindowFreshnessPolicy:
         def create_spec_and_verify_policy(asset_key: str, fail_window: timedelta, warn_window=None):
             asset = AssetSpec(
                 key=AssetKey(asset_key),
-                internal_freshness_policy=InternalFreshnessPolicy.time_window(
+                freshness_policy=InternalFreshnessPolicy.time_window(
                     fail_window=fail_window, warn_window=warn_window
                 ),
             )
 
             asset_node_snaps = _get_asset_node_snaps_from_definitions(Definitions(assets=[asset]))
             snap = asset_node_snaps[0]
-            policy = snap.internal_freshness_policy
+            policy = snap.freshness_policy
             assert isinstance(policy, TimeWindowFreshnessPolicy)
             assert policy.fail_window == SerializableTimeDelta.from_timedelta(fail_window)
             if warn_window:
@@ -102,26 +96,22 @@ class TestTimeWindowFreshnessPolicy:
             "asset2", fail_window=timedelta(minutes=10), warn_window=timedelta(minutes=5)
         )
 
-    def test_attach_time_window_freshness_policy(self) -> None:
-        """Can we attach an internal freshness policy to an asset spec?"""
+    def test_apply_freshness_policy_to_asset_spec(self) -> None:
+        """Can we apply a freshness policy to an asset spec?"""
 
         def assert_freshness_policy(spec, expected_fail_window, expected_warn_window=None):
-            metadata = spec.metadata
-            assert INTERNAL_FRESHNESS_POLICY_METADATA_KEY in metadata
-            deserialized = deserialize_value(metadata[INTERNAL_FRESHNESS_POLICY_METADATA_KEY])
-            assert isinstance(deserialized, TimeWindowFreshnessPolicy)
-            assert deserialized.fail_window == SerializableTimeDelta.from_timedelta(
-                expected_fail_window
-            )
+            policy = spec.freshness_policy
+            assert isinstance(policy, TimeWindowFreshnessPolicy)
+            assert policy.fail_window == SerializableTimeDelta.from_timedelta(expected_fail_window)
             if expected_warn_window:
-                assert deserialized.warn_window == SerializableTimeDelta.from_timedelta(
+                assert policy.warn_window == SerializableTimeDelta.from_timedelta(
                     expected_warn_window
                 )
             else:
-                assert deserialized.warn_window is None
+                assert policy.warn_window is None
 
         asset_spec = AssetSpec(key="foo")
-        asset_spec = attach_internal_freshness_policy(
+        asset_spec = apply_freshness_policy(
             asset_spec,
             InternalFreshnessPolicy.time_window(
                 fail_window=timedelta(minutes=10), warn_window=timedelta(minutes=5)
@@ -134,14 +124,14 @@ class TestTimeWindowFreshnessPolicy:
         )
 
         # Overwrite the policy with a new one
-        asset_spec = attach_internal_freshness_policy(
+        asset_spec = apply_freshness_policy(
             asset_spec, InternalFreshnessPolicy.time_window(fail_window=timedelta(minutes=60))
         )
         assert_freshness_policy(asset_spec, expected_fail_window=timedelta(minutes=60))
 
         # Don't overwrite existing metadata
         spec_with_metadata = AssetSpec(key="bar", metadata={"existing": "metadata"})
-        spec_with_metadata = attach_internal_freshness_policy(
+        spec_with_metadata = apply_freshness_policy(
             spec_with_metadata,
             InternalFreshnessPolicy.time_window(fail_window=timedelta(minutes=60)),
         )
@@ -152,8 +142,8 @@ class TestTimeWindowFreshnessPolicy:
             expected_warn_window=None,
         )
 
-    def test_map_asset_specs_attach_time_window_freshness_policy(self) -> None:
-        """Can we map attach_internal_freshness_policy over a selection of assets and asset specs?"""
+    def test_map_asset_specs_apply_time_window_freshness_policy(self) -> None:
+        """Can we map apply_freshness_policy over a selection of assets and asset specs?"""
 
         @asset
         def foo_asset():
@@ -166,7 +156,7 @@ class TestTimeWindowFreshnessPolicy:
             fail_window=timedelta(minutes=10), warn_window=timedelta(minutes=5)
         )
         mapped_defs = defs.map_resolved_asset_specs(
-            func=lambda spec: attach_internal_freshness_policy(spec, freshness_policy)
+            func=lambda spec: apply_freshness_policy(spec, freshness_policy)
         )
 
         assets_and_specs = mapped_defs.assets
@@ -178,8 +168,7 @@ class TestTimeWindowFreshnessPolicy:
                 if isinstance(asset_or_spec, AssetsDefinition)
                 else asset_or_spec
             )
-            assert INTERNAL_FRESHNESS_POLICY_METADATA_KEY in spec.metadata
-            policy = deserialize_value(spec.metadata[INTERNAL_FRESHNESS_POLICY_METADATA_KEY])
+            policy = spec.freshness_policy
             assert isinstance(policy, TimeWindowFreshnessPolicy)
             assert policy.fail_window == SerializableTimeDelta.from_timedelta(timedelta(minutes=10))
             assert policy.warn_window == SerializableTimeDelta.from_timedelta(timedelta(minutes=5))
@@ -207,9 +196,7 @@ class TestTimeWindowFreshnessPolicy:
             pass
 
         @asset(
-            internal_freshness_policy=InternalFreshnessPolicy.time_window(
-                fail_window=timedelta(hours=24)
-            )
+            freshness_policy=InternalFreshnessPolicy.time_window(fail_window=timedelta(hours=24))
         )
         def asset_with_policy():
             pass
@@ -218,7 +205,7 @@ class TestTimeWindowFreshnessPolicy:
 
         # If no policy is attached, overwrite with new policy containing fail window of 10 minutes
         mapped_defs = defs.map_asset_specs(
-            func=lambda spec: attach_internal_freshness_policy(
+            func=lambda spec: apply_freshness_policy(
                 spec,
                 InternalFreshnessPolicy.time_window(fail_window=timedelta(minutes=10)),
                 overwrite_existing=False,
@@ -229,15 +216,15 @@ class TestTimeWindowFreshnessPolicy:
 
         # Should see new policy applied to asset without existing policy
         spec_no_policy = next(spec for spec in specs if spec.key == AssetKey("asset_no_policy"))
-        assert spec_no_policy.metadata.get(INTERNAL_FRESHNESS_POLICY_METADATA_KEY) is not None
-        assert spec_no_policy.metadata[INTERNAL_FRESHNESS_POLICY_METADATA_KEY] == serialize_value(
-            InternalFreshnessPolicy.time_window(fail_window=timedelta(minutes=10))
+        assert spec_no_policy.freshness_policy is not None
+        assert spec_no_policy.freshness_policy == InternalFreshnessPolicy.time_window(
+            fail_window=timedelta(minutes=10)
         )
 
         spec_with_policy = next(spec for spec in specs if spec.key == AssetKey("asset_with_policy"))
-        assert spec_with_policy.metadata.get(INTERNAL_FRESHNESS_POLICY_METADATA_KEY) is not None
-        assert spec_with_policy.metadata[INTERNAL_FRESHNESS_POLICY_METADATA_KEY] == serialize_value(
-            InternalFreshnessPolicy.time_window(fail_window=timedelta(hours=24))
+        assert spec_with_policy.freshness_policy is not None
+        assert spec_with_policy.freshness_policy == InternalFreshnessPolicy.time_window(
+            fail_window=timedelta(hours=24)
         )
 
 
@@ -337,7 +324,7 @@ class TestCronFreshnessPolicy:
 
     def test_cron_freshness_policy_apply_to_asset(self) -> None:
         @asset(
-            internal_freshness_policy=InternalFreshnessPolicy.cron(
+            freshness_policy=InternalFreshnessPolicy.cron(
                 deadline_cron="0 10 * * *",
                 lower_bound_delta=timedelta(hours=1),
                 timezone="UTC",
@@ -347,24 +334,23 @@ class TestCronFreshnessPolicy:
             pass
 
         asset_spec = asset_with_internal_freshness_policy.get_asset_spec()
-        policy = asset_spec.metadata.get(INTERNAL_FRESHNESS_POLICY_METADATA_KEY)
+        policy = asset_spec.freshness_policy
         assert policy is not None
-        deserialized = deserialize_value(policy)
-        assert isinstance(deserialized, CronFreshnessPolicy)
-        assert deserialized.deadline_cron == "0 10 * * *"
-        assert deserialized.lower_bound_delta == timedelta(hours=1)
-        assert deserialized.timezone == "UTC"
+        assert isinstance(policy, CronFreshnessPolicy)
+        assert policy.deadline_cron == "0 10 * * *"
+        assert policy.lower_bound_delta == timedelta(hours=1)
+        assert policy.timezone == "UTC"
 
     def test_cron_freshness_policy_apply_to_asset_spec(self) -> None:
         """Can we apply a cron freshness policy to an asset spec?"""
         asset_spec = AssetSpec(
             key="foo",
-            internal_freshness_policy=InternalFreshnessPolicy.cron(
+            freshness_policy=InternalFreshnessPolicy.cron(
                 deadline_cron="0 10 * * *",
                 lower_bound_delta=timedelta(hours=1),
             ),
         )
-        asset_spec = attach_internal_freshness_policy(
+        asset_spec = apply_freshness_policy(
             asset_spec,
             InternalFreshnessPolicy.cron(
                 deadline_cron="0 10 * * *",
@@ -372,11 +358,8 @@ class TestCronFreshnessPolicy:
                 timezone="UTC",
             ),
         )
-        assert asset_spec.metadata.get(INTERNAL_FRESHNESS_POLICY_METADATA_KEY) is not None
-        deserialized = deserialize_value(
-            asset_spec.metadata[INTERNAL_FRESHNESS_POLICY_METADATA_KEY]
-        )
-        assert isinstance(deserialized, CronFreshnessPolicy)
-        assert deserialized.deadline_cron == "0 10 * * *"
-        assert deserialized.lower_bound_delta == timedelta(hours=1)
-        assert deserialized.timezone == "UTC"
+        assert asset_spec.freshness_policy is not None
+        assert isinstance(asset_spec.freshness_policy, CronFreshnessPolicy)
+        assert asset_spec.freshness_policy.deadline_cron == "0 10 * * *"
+        assert asset_spec.freshness_policy.lower_bound_delta == timedelta(hours=1)
+        assert asset_spec.freshness_policy.timezone == "UTC"

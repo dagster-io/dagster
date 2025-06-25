@@ -132,7 +132,7 @@ def observable_source_asset_random_execution_error(context):
 
 
 @dg.asset(
-    internal_freshness_policy=InternalFreshnessPolicy.time_window(
+    freshness_policy=InternalFreshnessPolicy.time_window(
         fail_window=timedelta(minutes=5), warn_window=timedelta(minutes=1)
     )
 )

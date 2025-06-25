@@ -34,7 +34,7 @@ from dagster._core.definitions.events import (
     CoercibleToAssetKey,
     CoercibleToAssetKeyPrefix,
 )
-from dagster._core.definitions.freshness import INTERNAL_FRESHNESS_POLICY_METADATA_KEY
+from dagster._core.definitions.freshness import InternalFreshnessPolicy
 from dagster._core.definitions.freshness_policy import LegacyFreshnessPolicy
 from dagster._core.definitions.hook_definition import HookDefinition
 from dagster._core.definitions.input import GraphIn
@@ -52,7 +52,6 @@ from dagster._core.definitions.utils import (
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.storage.tags import KIND_PREFIX
 from dagster._core.types.dagster_type import DagsterType
-from dagster._serdes import serialize_value
 from dagster._utils.tags import normalize_tags
 from dagster._utils.warnings import disable_dagster_warnings
 
@@ -142,12 +141,6 @@ def _validate_hidden_non_argument_dep_param(
     emit_runtime_warning=False,
     breaking_version="1.10.0",
 )
-@hidden_param(
-    param="internal_freshness_policy",
-    emit_runtime_warning=False,
-    breaking_version="1.10.0",
-    additional_warn_text="experimental, use freshness checks instead.",
-)
 def asset(
     compute_fn: Optional[Callable[..., Any]] = None,
     *,
@@ -170,6 +163,7 @@ def asset(
     group_name: Optional[str] = None,
     output_required: bool = True,
     automation_condition: Optional[AutomationCondition] = None,
+    freshness_policy: Optional[InternalFreshnessPolicy] = None,
     backfill_policy: Optional[BackfillPolicy] = None,
     retry_policy: Optional[RetryPolicy] = None,
     code_version: Optional[str] = None,
@@ -307,13 +301,6 @@ def asset(
         **{f"{KIND_PREFIX}{kind}": "" for kind in kinds or []},
     }
 
-    internal_freshness_policy = kwargs.get("internal_freshness_policy")
-    if internal_freshness_policy:
-        metadata = {
-            **(metadata or {}),
-            INTERNAL_FRESHNESS_POLICY_METADATA_KEY: serialize_value(internal_freshness_policy),
-        }
-
     only_allow_hidden_params_in_kwargs(asset, kwargs)
 
     args = AssetDecoratorArgs(
@@ -337,6 +324,7 @@ def asset(
         group_name=group_name,
         output_required=output_required,
         legacy_freshness_policy=kwargs.get("legacy_freshness_policy"),
+        freshness_policy=freshness_policy,
         automation_condition=resolve_automation_condition(
             automation_condition, kwargs.get("auto_materialize_policy")
         ),
@@ -413,6 +401,7 @@ class AssetDecoratorArgs(NamedTuple):
     group_name: Optional[str]
     output_required: bool
     legacy_freshness_policy: Optional[LegacyFreshnessPolicy]
+    freshness_policy: Optional[InternalFreshnessPolicy]
     automation_condition: Optional[AutomationCondition]
     backfill_policy: Optional[BackfillPolicy]
     retry_policy: Optional[RetryPolicy]
@@ -528,6 +517,7 @@ def create_assets_def_from_fn_and_decorator_args(
                     group_name=args.group_name,
                     code_version=args.code_version,
                     legacy_freshness_policy=args.legacy_freshness_policy,
+                    freshness_policy=args.freshness_policy,
                     automation_condition=args.automation_condition,
                     backfill_policy=args.backfill_policy,
                     owners=args.owners,
