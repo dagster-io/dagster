@@ -207,6 +207,7 @@ def test_legacy_freshness_backcompat():
         old_snap_deserialized.asset_nodes[0].legacy_freshness_policy
         == new_snap.asset_nodes[0].legacy_freshness_policy
     )
+    assert new_snap.asset_nodes[0].legacy_freshness_policy
     assert new_snap.asset_nodes[0].legacy_freshness_policy.maximum_lag_minutes == 1
     assert new_snap.asset_nodes[0].legacy_freshness_policy.cron_schedule == "0 1 * * *"
     assert (
@@ -254,4 +255,5 @@ def test_freshness_policy_metadata_backcompat():
     assert policy is not None
     assert isinstance(policy, TimeWindowFreshnessPolicy)
     assert policy.fail_window.to_timedelta() == datetime.timedelta(hours=24)
+    assert policy.warn_window
     assert policy.warn_window.to_timedelta() == datetime.timedelta(hours=12)
