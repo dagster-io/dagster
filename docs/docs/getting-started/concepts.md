@@ -146,7 +146,7 @@ Dagster provides a variety of abstractions for building and orchestrating data p
     Asset ==> Definitions
 ```
 
-An <PyObject section="assets" module="dagster" object="asset" /> represents a logical unit of data such as a table, dataset, or machine learning model. Assets can have dependencies on other assets, forming the data lineage for your pipelines. As the core abstraction in Dagster, assets can interact with many other Dagster entities to facilitate certain tasks. When you define an asset, either with the <PyObject section="assets" module="dagster" object="asset" decorator /> decorator or via a <PyObject section="components" module="dagster" object="component" />, the definition is automatically added to a top-level <PyObject section="definitions" module="dagster" object="Definitions" /> object.
+An <PyObject section="assets" module="dagster" object="asset" /> represents a logical unit of data such as a table, dataset, or machine learning model. Assets can have dependencies on other assets, forming the data lineage for your pipelines. As the core abstraction in Dagster, assets can interact with many other Dagster entities to facilitate certain tasks. When you define an asset, either with the <PyObject section="assets" module="dagster" object="asset" decorator /> decorator or via a [component](/guides/build/components), the definition is automatically added to a top-level <PyObject section="definitions" module="dagster" object="Definitions" /> object.
 
 | Concept                     | Relationship                                                        |
 | --------------------------- | ------------------------------------------------------------------- |
@@ -372,7 +372,7 @@ A <PyObject section="config" module="dagster" object="Config" displayText="confi
 
 In Dagster, "definitions" means two things:
 - The objects that combine metadata about Dagster entities with Python functions that define how they behave, for example, <PyObject section="assets" module="dagster" object="asset" />, <PyObject section="schedules-sensors" module="dagster" object="ScheduleDefinition" /> , and [resource](/api/dagster/resources) definitions.
-- The top-level <PyObject section="definitions" module="dagsetr" object="Definitions" /> object that contains references to all the definitions in a Dagster project. Entities included in the `Definitions` object will be deployed and visible within the Dagster UI.
+- The top-level <PyObject section="definitions" module="dagster" object="Definitions" /> object that contains references to all the definitions in a Dagster project. Entities included in the `Definitions` object will be deployed and visible within the Dagster UI.
 
 | Concept                         | Relationship                                                                     |
 | ------------------------------- | -------------------------------------------------------------------------------- |
