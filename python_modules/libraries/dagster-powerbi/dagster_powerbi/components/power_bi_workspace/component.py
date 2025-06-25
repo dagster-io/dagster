@@ -7,8 +7,9 @@ from dagster._core.definitions.asset_spec import AssetSpec
 from dagster.components import Component, ComponentLoadContext, Model, Resolvable, Resolver
 from dagster.components.resolved.base import resolve_fields
 from dagster.components.resolved.context import ResolutionContext
-from dagster.components.resolved.core_models import AssetAttributesModel
+from dagster.components.resolved.core_models import AssetAttributesModel, AssetSpecUpdateKwargs
 from dagster.components.utils import TranslatorResolvingInfo
+from dagster_shared.record import record
 from pydantic import BaseModel
 from typing_extensions import TypeAlias
 
@@ -18,7 +19,11 @@ from dagster_powerbi.resource import (
     PowerBIWorkspace,
     load_powerbi_asset_specs,
 )
-from dagster_powerbi.translator import DagsterPowerBITranslator, PowerBITranslatorData
+from dagster_powerbi.translator import (
+    DagsterPowerBITranslator,
+    PowerBIContentType,
+    PowerBITranslatorData,
+)
 
 
 class PowerBITokenModel(Model):
@@ -47,6 +52,9 @@ def resolve_powerbi_credentials(
     )
 
 
+TranslationFn: TypeAlias = Callable[[AssetSpec, PowerBITranslatorData], AssetSpec]
+
+
 def resolve_translation(context: ResolutionContext, model):
     info = TranslatorResolvingInfo(
         "data",
@@ -63,13 +71,74 @@ def resolve_translation(context: ResolutionContext, model):
     )
 
 
-TranslationFn: TypeAlias = Callable[[AssetSpec, PowerBITranslatorData], AssetSpec]
-
 ResolvedTranslationFn: TypeAlias = Annotated[
     TranslationFn,
     Resolver(
         resolve_translation,
         model_field_type=Union[str, AssetAttributesModel],
+    ),
+]
+
+
+@record
+class PowerBIAssetArgs(AssetSpecUpdateKwargs, Resolvable):
+    for_dashboard: Optional[ResolvedTranslationFn] = None
+    for_report: Optional[ResolvedTranslationFn] = None
+    for_semantic_model: Optional[ResolvedTranslationFn] = None
+
+
+def resolve_multilayer_translation(context: ResolutionContext, model):
+    """The PowerBI translation schema supports defining global transforms
+    as well as per-content-type transforms. This resolver composes the
+    per-content-type transforms with the global transforms.
+    """
+    info = TranslatorResolvingInfo(
+        "data",
+        asset_attributes=model,
+        resolution_context=context,
+        model_key="translation",
+    )
+
+    def _translation_fn(base_asset_spec: AssetSpec, data: PowerBITranslatorData):
+        processed_spec = info.get_asset_spec(
+            base_asset_spec,
+            {
+                "data": data,
+                "spec": base_asset_spec,
+            },
+        )
+
+        nested_translation_fns = resolve_fields(
+            model=model,
+            resolved_cls=PowerBIAssetArgs,
+            context=context.with_scope(
+                **{
+                    "data": data,
+                    "spec": processed_spec,
+                }
+            ),
+        )
+        for_semantic_model = nested_translation_fns.get("for_semantic_model")
+        for_dashboard = nested_translation_fns.get("for_dashboard")
+        for_report = nested_translation_fns.get("for_report")
+
+        if data.content_type == PowerBIContentType.SEMANTIC_MODEL and for_semantic_model:
+            return for_semantic_model(processed_spec, data)
+        if data.content_type == PowerBIContentType.DASHBOARD and for_dashboard:
+            return for_dashboard(processed_spec, data)
+        if data.content_type == PowerBIContentType.REPORT and for_report:
+            return for_report(processed_spec, data)
+
+        return processed_spec
+
+    return _translation_fn
+
+
+ResolvedMultilayerTranslationFn: TypeAlias = Annotated[
+    TranslationFn,
+    Resolver(
+        resolve_multilayer_translation,
+        model_field_type=Union[str, PowerBIAssetArgs.model()],
     ),
 ]
 
@@ -114,7 +183,7 @@ class PowerBIWorkspaceComponent(Component, Resolvable):
         ),
     ]
     use_workspace_scan: bool = True
-    translation: Optional[ResolvedTranslationFn] = None
+    translation: Optional[ResolvedMultilayerTranslationFn] = None
 
     @cached_property
     def translator(self) -> DagsterPowerBITranslator:
