@@ -202,8 +202,18 @@ def test_legacy_freshness_backcompat():
     # Then, check that we can deserialize the old snapshot with new Dagster version
     old_snap_deserialized = deserialize_value(old_snap_serialized, RepositorySnap)
 
-    # Then, check that the deserialized snapshots are the same
-    assert new_snap == old_snap_deserialized
+    # Then, check that the deserialized policies match
+    assert (
+        old_snap_deserialized.asset_nodes[0].legacy_freshness_policy
+        == new_snap.asset_nodes[0].legacy_freshness_policy
+    )
+    assert new_snap.asset_nodes[0].legacy_freshness_policy
+    assert new_snap.asset_nodes[0].legacy_freshness_policy.maximum_lag_minutes == 1
+    assert new_snap.asset_nodes[0].legacy_freshness_policy.cron_schedule == "0 1 * * *"
+    assert (
+        new_snap.asset_nodes[0].legacy_freshness_policy.cron_schedule_timezone
+        == "America/Los_Angeles"
+    )
 
 
 def test_freshness_policy_deprecated_import():
@@ -218,3 +228,32 @@ def test_freshness_policy_deprecated_import():
         pass
 
     dg.Definitions(assets=[foo])
+
+
+def test_freshness_policy_old_import_raises():
+    """We should not be able to import FreshnessPolicy from top level dagster module."""
+    with pytest.raises(
+        ImportError,
+        match=r"FreshnessPolicy was renamed to LegacyFreshnessPolicy in 1.11.0. For more information, please refer to the section 'Migrating to 1.11.0' in the migration guide \(MIGRATION.md\)",
+    ):
+        from dagster import FreshnessPolicy  # noqa: F401
+
+
+def test_freshness_policy_metadata_backcompat():
+    """We should be able to deserialize freshness policy from an asset spec that stores the policy in its metadata."""
+    from dagster._core.definitions.freshness import TimeWindowFreshnessPolicy
+
+    this_dir = os.path.dirname(os.path.abspath(__file__))
+    with open(
+        os.path.join(
+            this_dir, "snapshots", "repo_with_asset_with_internal_freshness_in_metadata.json"
+        )
+    ) as f:
+        snap_with_metadata_policy = deserialize_value(f.read(), RepositorySnap)
+
+    policy = snap_with_metadata_policy.asset_nodes[0].freshness_policy
+    assert policy is not None
+    assert isinstance(policy, TimeWindowFreshnessPolicy)
+    assert policy.fail_window.to_timedelta() == datetime.timedelta(hours=24)
+    assert policy.warn_window
+    assert policy.warn_window.to_timedelta() == datetime.timedelta(hours=12)

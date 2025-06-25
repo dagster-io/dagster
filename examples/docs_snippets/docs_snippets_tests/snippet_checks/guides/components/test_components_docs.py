@@ -276,7 +276,8 @@ def test_components_docs_index(
 
             # Test sling sync
 
-            _run_command("dg launch --assets '*'")
+            if not update_snippets:
+                _run_command("dg launch --assets '*'")
             context.run_command_and_snippet_output(
                 cmd='duckdb /tmp/jaffle_platform.duckdb -c "SELECT * FROM raw_customers LIMIT 5;"',
                 snippet_path=f"{next_snip_no()}-duckdb-select.txt",
@@ -353,7 +354,8 @@ def test_components_docs_index(
             )
 
             # Run dbt, check works
-            _run_command("dg launch --assets '*'")
+            if not update_snippets:
+                _run_command("dg launch --assets '*'")
             context.run_command_and_snippet_output(
                 cmd='duckdb /tmp/jaffle_platform.duckdb -c "SELECT * FROM orders LIMIT 5;"',
                 snippet_path=f"{next_snip_no()}-duckdb-select-orders.txt",
@@ -454,4 +456,5 @@ def test_components_docs_index(
                 """),
             )
 
-            _run_command("dg launch --assets '* and not key:jaffle_dashboard'")
+            if not update_snippets:
+                _run_command("dg launch --assets '* and not key:jaffle_dashboard'")

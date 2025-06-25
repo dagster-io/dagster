@@ -24,9 +24,15 @@ To update the snippets, invoke the `docs_snapshot_update` environment:
 tox -e docs_snapshot_update
 ```
 
+Typically, you will want to only regenerate a subset of the snippets, which is faster:
+
+```bash
+tox -e docs_snapshot_update -- docs_snippets_tests/snippet_checks/guides/components/integrations/test_dbt_component.py
+```
+
 ### Running the commands with make
 
-These commands are aliased in the `/docs` directory, through the Makefile, for convenience:
+These commands are aliased in the `/docs` directory, through the Makefile, for convenience - they run all tests and regenerate all snippets, which can take a few minutes.
 
 ```bash
 # Regenerate CLI snippets

@@ -143,7 +143,7 @@ class FreshnessDaemonTests(ABC):
 
         def create_defs() -> Definitions:
             @asset(
-                internal_freshness_policy=InternalFreshnessPolicy.time_window(
+                freshness_policy=InternalFreshnessPolicy.time_window(
                     fail_window=datetime.timedelta(hours=24),
                     warn_window=datetime.timedelta(hours=12),
                 )
@@ -213,7 +213,7 @@ class FreshnessDaemonTests(ABC):
 
         def create_defs() -> Definitions:
             @asset(
-                internal_freshness_policy=InternalFreshnessPolicy.time_window(
+                freshness_policy=InternalFreshnessPolicy.time_window(
                     fail_window=datetime.timedelta(minutes=60),
                     warn_window=datetime.timedelta(minutes=30),
                 )
@@ -222,7 +222,7 @@ class FreshnessDaemonTests(ABC):
                 return 1
 
             @asset(
-                internal_freshness_policy=InternalFreshnessPolicy.time_window(
+                freshness_policy=InternalFreshnessPolicy.time_window(
                     fail_window=datetime.timedelta(minutes=120),
                     warn_window=datetime.timedelta(minutes=60),
                 )
@@ -231,7 +231,7 @@ class FreshnessDaemonTests(ABC):
                 return 2
 
             @asset(
-                internal_freshness_policy=InternalFreshnessPolicy.time_window(
+                freshness_policy=InternalFreshnessPolicy.time_window(
                     fail_window=datetime.timedelta(minutes=30),
                     warn_window=datetime.timedelta(minutes=15),
                 )
@@ -319,7 +319,7 @@ class FreshnessDaemonTests(ABC):
 
         def create_defs() -> Definitions:
             @asset(
-                internal_freshness_policy=InternalFreshnessPolicy.time_window(
+                freshness_policy=InternalFreshnessPolicy.time_window(
                     fail_window=datetime.timedelta(minutes=60),
                     warn_window=datetime.timedelta(minutes=30),
                 )

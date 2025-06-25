@@ -162,7 +162,8 @@ def test_components_docs_adding_attributes_to_assets(
                 / f"{context.get_next_snip_number()}-defs.yaml",
             )
 
-        _run_command("dg check yaml")
+        if not update_snippets:
+            _run_command("dg check yaml")
 
         # Set up DuckDB to run, verify everything works ok
         _run_command(
@@ -215,7 +216,8 @@ def test_components_docs_adding_attributes_to_assets(
                     - path: replication.yaml
                 """),
         )
-        _run_command("dg launch --assets '*'")
+        if not update_snippets:
+            _run_command("dg launch --assets '*'")
 
         # Add debug logic
         context.create_file(
@@ -250,7 +252,8 @@ def test_components_docs_adding_attributes_to_assets(
         )
 
         # Validate works properly
-        _run_command("dg launch --assets '*'")
+        if not update_snippets:
+            _run_command("dg launch --assets '*'")
 
         # Add custom scope
         context.create_file(
@@ -307,4 +310,5 @@ def test_components_docs_adding_attributes_to_assets(
             ],
         )
         # Validate works properly
-        _run_command("dg launch --assets '*'")
+        if not update_snippets:
+            _run_command("dg launch --assets '*'")

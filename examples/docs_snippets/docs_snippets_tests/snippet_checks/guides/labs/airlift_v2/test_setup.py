@@ -66,7 +66,8 @@ def test_setup_basic_auth(update_snippets: bool) -> None:
             snippet_path=f"{context.get_next_snip_number()}-cat.txt",
         )
 
-        _run_command("dg check yaml --no-validate-requirements")
+        if not update_snippets:
+            _run_command("dg check yaml --no-validate-requirements")
 
 
 def test_component_files() -> None:

@@ -122,10 +122,8 @@ def load_from_defs_folder(*, project_root: Path) -> Definitions:
 
 
 # Public method so optional Nones are fine
-@public
-@preview(emit_runtime_warning=False)
 @deprecated(
-    breaking_version="1.10.21",
+    breaking_version="1.11",
     additional_warn_text="Use load_from_defs_folder instead.",
 )
 @suppress_dagster_warnings

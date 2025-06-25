@@ -112,9 +112,10 @@ def test_components_docs_migrating_definitions(update_snippets: bool) -> None:
         )
 
         # validate loads
-        _run_command(
-            "uv pip freeze && uv run dagster asset materialize --select '*' -m 'my_existing_project.definitions'"
-        )
+        if not update_snippets:
+            _run_command(
+                "uv pip freeze && uv run dagster asset materialize --select '*' -m 'my_existing_project.definitions'"
+            )
 
         # migrate analytics
         _run_command("mkdir -p my_existing_project/defs/analytics")
@@ -145,9 +146,10 @@ def test_components_docs_migrating_definitions(update_snippets: bool) -> None:
         )
 
         # validate loads
-        _run_command(
-            "uv pip freeze && uv run dagster asset materialize --select '*' -m 'my_existing_project.definitions'"
-        )
+        if not update_snippets:
+            _run_command(
+                "uv pip freeze && uv run dagster asset materialize --select '*' -m 'my_existing_project.definitions'"
+            )
 
         with activate_venv(".venv"):
             context.run_command_and_snippet_output(

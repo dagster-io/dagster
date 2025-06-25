@@ -49,6 +49,13 @@ INTERNAL_FRESHNESS_POLICY_METADATA_KEY = "dagster/internal_freshness_policy"
 
 
 class InternalFreshnessPolicy(ABC):
+    """Base class for all freshness policies.
+    The "internal" prefix is a temporary measure to distinguish these policies from an existing, deprecated freshness policy model
+    which has since been renamed to `LegacyFreshnessPolicy`.
+    Expect the name of this class to change to `FreshnessPolicy` in a future release.
+
+    """
+
     @classmethod
     def from_asset_spec_metadata(
         cls, metadata: Mapping[str, Any]
