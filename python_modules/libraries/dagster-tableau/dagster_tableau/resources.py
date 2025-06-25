@@ -581,6 +581,38 @@ class BaseTableauWorkspace(ConfigurableResource):
             workbooks + sheets + dashboards + data_sources,
         )
 
+    # Cache spec retrieval for a specific translator class and workbook_selector_fn
+    @cached_method
+    def load_asset_specs(
+        self,
+        dagster_tableau_translator: Optional[DagsterTableauTranslator] = None,
+        workbook_selector_fn: Optional[WorkbookSelectorFn] = None,
+    ) -> Sequence[AssetSpec]:
+        """Returns a list of AssetSpecs representing the Tableau content in the workspace.
+
+        Args:
+            dagster_tableau_translator (Optional[DagsterTableauTranslator]):
+                The translator to use to convert Tableau content into :py:class:`dagster.AssetSpec`.
+                Defaults to :py:class:`DagsterTableauTranslator`.
+            workbook_selector_fn (Optional[WorkbookSelectorFn]):
+                A function that allows for filtering which Tableau workbook assets are created for,
+                including data sources, sheets and dashboards.
+
+        Returns:
+            List[AssetSpec]: The set of assets representing the Tableau content in the workspace.
+        """
+        with self.process_config_and_initialize_cm() as initialized_workspace:
+            return check.is_list(
+                TableauWorkspaceDefsLoader(
+                    workspace=initialized_workspace,
+                    translator=dagster_tableau_translator or DagsterTableauTranslator(),
+                    workbook_selector_fn=workbook_selector_fn,
+                )
+                .build_defs()
+                .assets,
+                AssetSpec,
+            )
+
     def refresh_and_poll(
         self, context: AssetExecutionContext
     ) -> Iterator[Union[Output, ObserveResult]]:
@@ -661,17 +693,10 @@ def load_tableau_asset_specs(
     Returns:
         List[AssetSpec]: The set of assets representing the Tableau content in the workspace.
     """
-    with workspace.process_config_and_initialize_cm() as initialized_workspace:
-        return check.is_list(
-            TableauWorkspaceDefsLoader(
-                workspace=initialized_workspace,
-                translator=dagster_tableau_translator or DagsterTableauTranslator(),
-                workbook_selector_fn=workbook_selector_fn,
-            )
-            .build_defs()
-            .assets,
-            AssetSpec,
-        )
+    return workspace.load_asset_specs(
+        dagster_tableau_translator=dagster_tableau_translator,
+        workbook_selector_fn=workbook_selector_fn,
+    )
 
 
 @beta
