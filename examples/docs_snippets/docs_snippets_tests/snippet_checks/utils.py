@@ -196,8 +196,13 @@ def _assert_matches_or_update_snippet(
         else:
             print(f"Snippet {snippet_path} passed")  # noqa: T201
 
+        test_file_being_run = Path(inspect.stack()[2].filename)
+        path_relative_to_docs = test_file_being_run.relative_to(
+            DAGSTER_ROOT / "examples" / "docs_snippets"
+        )
         assert comparison_fn(contents, snippet_contents), (
-            "CLI snippets do not match.\nYou may need to run `make regenerate_cli_snippets` in the `dagster/docs` directory.\nYou may also use `make test_cli_snippets_simulate_bk` to simulate the CI environment locally."
+            "CLI snippets do not match. You may need to regenerate this snippet:"
+            f"\n`cd $DAGSTER_GIT_REPO/examples/docs_snippets && tox -e docs_snapshot_update -- {path_relative_to_docs.as_posix()}"
         )
 
 
