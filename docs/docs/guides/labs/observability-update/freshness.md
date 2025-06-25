@@ -18,7 +18,7 @@ For example, freshness policies can help identify stale assets caused by:
 
 ### Enabling freshness policies
 
-Freshness policies are not enabled by default while in preview. To use them in open source and local development, add the following to your `dagster.yaml`
+Freshness policies are not enabled by default while in preview. To use them in open source and local development, add the following to your `dagster.yaml`:
 ```
 freshness:
   enabled: True
