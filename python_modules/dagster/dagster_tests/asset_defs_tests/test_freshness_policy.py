@@ -255,4 +255,5 @@ def test_freshness_policy_metadata_backcompat():
     assert policy is not None
     assert isinstance(policy, TimeWindowFreshnessPolicy)
     assert policy.fail_window.to_timedelta() == datetime.timedelta(hours=24)
+    assert policy.warn_window
     assert policy.warn_window.to_timedelta() == datetime.timedelta(hours=12)
