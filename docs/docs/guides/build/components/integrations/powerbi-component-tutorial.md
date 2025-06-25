@@ -34,7 +34,7 @@ The scaffold call will generate a `defs.yaml` file:
 
 ## 3. Configure your Power BI workspace
 
-Update the `defs.yaml` file with your workspace ID and credentials:
+Update the `defs.yaml` file with your workspace ID. You will also need to provide either an API access token or service principal credentials. For more information on how to create a service principal, see [Embed Power BI content with service principal and an application secret](https://learn.microsoft.com/en-us/power-bi/developer/embedded/embed-service-principal) in the Power BI documentation.
 
 <CodeExample path="docs_snippets/docs_snippets/guides/components/integrations/powerbi-component/6-populated-component.yaml" title="my_project/defs/powerbi_ingest/defs.yaml" language="yaml" />
 

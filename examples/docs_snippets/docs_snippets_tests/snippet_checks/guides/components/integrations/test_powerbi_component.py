@@ -124,6 +124,10 @@ def test_components_docs_powerbi_workspace(
                       client_id: "{{ env.POWERBI_CLIENT_ID }}"
                       client_secret: "{{ env.POWERBI_CLIENT_SECRET }}"
                       tenant_id: "{{ env.POWERBI_TENANT_ID }}"
+
+                    # Alternatively, you can use an API access token
+                    # credentials:
+                    #   token: "{{ env.POWERBI_API_TOKEN }}"
                 """
             ),
             snippet_path=f"{context.get_next_snip_number()}-populated-component.yaml",
