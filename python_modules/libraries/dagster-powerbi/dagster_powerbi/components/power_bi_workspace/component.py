@@ -71,13 +71,12 @@ def resolve_translation(context: ResolutionContext, model):
     )
 
 
-resolver = Resolver(
-    resolve_translation,
-    model_field_type=Union[str, AssetAttributesModel],
-)
 ResolvedTranslationFn: TypeAlias = Annotated[
     TranslationFn,
-    resolver,
+    Resolver(
+        resolve_translation,
+        model_field_type=Union[str, AssetAttributesModel],
+    ),
 ]
 
 
