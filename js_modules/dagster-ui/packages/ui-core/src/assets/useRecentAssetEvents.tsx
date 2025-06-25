@@ -51,10 +51,16 @@ export function useLatestAssetPartitions(assetKey: AssetKey | undefined, limit: 
   return value;
 }
 
+const DEFAULT_EVENT_TYPE_SELECTORS = [
+  AssetEventHistoryEventTypeSelector.MATERIALIZATION,
+  AssetEventHistoryEventTypeSelector.OBSERVATION,
+  AssetEventHistoryEventTypeSelector.FAILED_TO_MATERIALIZE,
+];
+
 export function useRecentAssetEvents(
   assetKey: AssetKey | undefined,
   limit: number,
-  eventTypeSelectors: AssetEventHistoryEventTypeSelector[],
+  eventTypeSelectors?: AssetEventHistoryEventTypeSelector[],
 ) {
   const queryResult = useQuery<RecentAssetEventsQuery, RecentAssetEventsQueryVariables>(
     RECENT_ASSET_EVENTS_QUERY,
@@ -64,11 +70,7 @@ export function useRecentAssetEvents(
       variables: {
         assetKey: {path: assetKey?.path || []},
         limit,
-        eventTypeSelectors: eventTypeSelectors || [
-          AssetEventHistoryEventTypeSelector.MATERIALIZATION,
-          AssetEventHistoryEventTypeSelector.OBSERVATION,
-          AssetEventHistoryEventTypeSelector.FAILED_TO_MATERIALIZE,
-        ],
+        eventTypeSelectors: eventTypeSelectors || DEFAULT_EVENT_TYPE_SELECTORS,
       },
     },
   );
