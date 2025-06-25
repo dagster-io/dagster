@@ -10,6 +10,12 @@ sidebar_custom_props:
 partnerlink: https://slingdata.io/
 ---
 
+:::note
+
+If you are just getting started with the dlt integration, we recommend using the new [Sling component](/guides/build/components/integrations/sling-component-tutorial).
+
+:::
+
 <p>{frontMatter.description}</p>
 
 ## How it works
