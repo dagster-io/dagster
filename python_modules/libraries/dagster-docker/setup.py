@@ -41,6 +41,7 @@ setup(
     extras_require={
         "test": [
             "flaky",
+            "botocore>=1.21.49",  # first botocore version that works on python 3.9+
         ],
     },
     zip_safe=False,
