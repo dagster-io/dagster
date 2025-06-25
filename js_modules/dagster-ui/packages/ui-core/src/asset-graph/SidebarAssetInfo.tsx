@@ -49,6 +49,9 @@ import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
+const OBSERVATION_EVENT_TYPE_SELECTOR = [AssetEventHistoryEventTypeSelector.OBSERVATION];
+const MATERIALIZATION_EVENT_TYPE_SELECTOR = [AssetEventHistoryEventTypeSelector.MATERIALIZATION];
+
 export const SidebarAssetInfo = ({graphNode}: {graphNode: GraphNode}) => {
   const {assetKey, definition} = graphNode;
   const {liveData} = useAssetLiveData(assetKey, 'sidebar');
@@ -67,11 +70,11 @@ export const SidebarAssetInfo = ({graphNode}: {graphNode: GraphNode}) => {
   const {lastMaterialization} = liveData || {};
   const asset = data?.assetNodeOrError.__typename === 'AssetNode' ? data.assetNodeOrError : null;
 
-  const recentEvents = useRecentAssetEvents(asset?.assetKey, 1, [
-    definition.isObservable
-      ? AssetEventHistoryEventTypeSelector.OBSERVATION
-      : AssetEventHistoryEventTypeSelector.MATERIALIZATION,
-  ]);
+  const recentEvents = useRecentAssetEvents(
+    asset?.assetKey,
+    1,
+    definition.isObservable ? OBSERVATION_EVENT_TYPE_SELECTOR : MATERIALIZATION_EVENT_TYPE_SELECTOR,
+  );
 
   if (!asset) {
     return (

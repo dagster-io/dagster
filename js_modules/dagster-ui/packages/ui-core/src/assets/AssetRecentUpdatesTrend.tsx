@@ -22,7 +22,6 @@ import {useRefreshAtInterval} from '../app/QueryRefresh';
 import {Timestamp} from '../app/time/Timestamp';
 import {AssetLatestInfoFragment} from '../asset-data/types/AssetBaseDataProvider.types';
 import {AssetHealthFragment} from '../asset-data/types/AssetHealthDataProvider.types';
-import {AssetEventHistoryEventTypeSelector} from '../graphql/types';
 import {TimeFromNow} from '../ui/TimeFromNow';
 
 export const AssetRecentUpdatesTrend = React.memo(({asset}: {asset: AssetHealthFragment}) => {
@@ -33,11 +32,7 @@ export const AssetRecentUpdatesTrend = React.memo(({asset}: {asset: AssetHealthF
     latestInfo,
     loading,
     refetch,
-  } = useRecentAssetEvents(shouldQuery ? asset.key : undefined, 5, [
-    AssetEventHistoryEventTypeSelector.MATERIALIZATION,
-    AssetEventHistoryEventTypeSelector.FAILED_TO_MATERIALIZE,
-    AssetEventHistoryEventTypeSelector.OBSERVATION,
-  ]);
+  } = useRecentAssetEvents(shouldQuery ? asset.key : undefined, 5);
 
   const {events} = useMemo(() => {
     if (!latestInfo?.inProgressRunIds.length && !latestInfo?.unstartedRunIds.length) {

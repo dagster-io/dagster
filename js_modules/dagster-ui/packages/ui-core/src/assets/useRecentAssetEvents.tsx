@@ -60,7 +60,7 @@ const DEFAULT_EVENT_TYPE_SELECTORS = [
 export function useRecentAssetEvents(
   assetKey: AssetKey | undefined,
   limit: number,
-  eventTypeSelectors?: AssetEventHistoryEventTypeSelector[],
+  eventTypeSelectors: AssetEventHistoryEventTypeSelector[] = DEFAULT_EVENT_TYPE_SELECTORS,
 ) {
   const queryResult = useQuery<RecentAssetEventsQuery, RecentAssetEventsQueryVariables>(
     RECENT_ASSET_EVENTS_QUERY,
@@ -70,7 +70,7 @@ export function useRecentAssetEvents(
       variables: {
         assetKey: {path: assetKey?.path || []},
         limit,
-        eventTypeSelectors: eventTypeSelectors || DEFAULT_EVENT_TYPE_SELECTORS,
+        eventTypeSelectors,
       },
     },
   );

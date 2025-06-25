@@ -9,6 +9,11 @@ import {
 } from './useRecentAssetEvents';
 import {AssetEventHistoryEventTypeSelector} from '../graphql/types';
 
+const EVENT_TYPE_SELECTORS = [
+  AssetEventHistoryEventTypeSelector.MATERIALIZATION,
+  AssetEventHistoryEventTypeSelector.OBSERVATION,
+];
+
 export const AssetTimeMetadataPlots = ({
   assetKey,
   limit,
@@ -20,10 +25,7 @@ export const AssetTimeMetadataPlots = ({
   asSidebarSection?: boolean;
   columnCount?: number;
 }) => {
-  const {events, loading} = useRecentAssetEvents(assetKey, limit, [
-    AssetEventHistoryEventTypeSelector.MATERIALIZATION,
-    AssetEventHistoryEventTypeSelector.OBSERVATION,
-  ]);
+  const {events, loading} = useRecentAssetEvents(assetKey, limit, EVENT_TYPE_SELECTORS);
   const grouped = useGroupedEvents('time', events, undefined);
 
   if (loading) {
