@@ -62,9 +62,9 @@ You can customize the metadata and grouping of Power BI assets using the `transl
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/powerbi-component/11-list-defs.txt" />
 </WideContent>
 
-## 6. Translate semantic models
+### Customize specific data types
 
-You can target specific data types, such as semantic models, for translation. For example, you can add a tag to all semantic models:
+You may also specify distinct translation behavior for specific data types. For example, you can add a tag to all semantic models:
 
 <CodeExample path="docs_snippets/docs_snippets/guides/components/integrations/powerbi-component/12-customized-semantic-translation.yaml" title="my_project/defs/powerbi_ingest/defs.yaml" language="yaml" />
 

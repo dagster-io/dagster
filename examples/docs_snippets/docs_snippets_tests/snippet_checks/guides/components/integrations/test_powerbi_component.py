@@ -217,6 +217,6 @@ def test_components_docs_powerbi_workspace(
             Path("my_project") / "defs" / "powerbi_ingest" / "defs.yaml"
         )
         context.run_command_and_snippet_output(
-            cmd="dg list defs",
+            cmd="dg list defs --columns name,kinds,tags",
             snippet_path=f"{context.get_next_snip_number()}-list-defs.txt",
         )
