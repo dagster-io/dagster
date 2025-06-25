@@ -27,6 +27,20 @@ class TestInternalFreshnessPolicy:
         policy = InternalFreshnessPolicy.from_asset_spec_metadata(metadata)
         assert policy is None
 
+    def test_internal_freshness_policy_import_from_preview_module(self) -> None:
+        from dagster.preview.freshness import FreshnessPolicy
+
+        time_policy = FreshnessPolicy.time_window(
+            fail_window=timedelta(minutes=10), warn_window=timedelta(minutes=5)
+        )
+        assert isinstance(time_policy, FreshnessPolicy)
+
+        cron_policy = FreshnessPolicy.cron(
+            deadline_cron="0 10 * * *",
+            lower_bound_delta=timedelta(hours=1),
+        )
+        assert isinstance(cron_policy, FreshnessPolicy)
+
 
 class TestApplyFreshnessPolicy:
     def test_apply_freshness_policy_explicit_none_fails(self) -> None:
