@@ -68,7 +68,7 @@ export function useRecentAssetEvents(
       skip: !assetKey,
       fetchPolicy: 'cache-and-network',
       variables: {
-        assetKey: {path: assetKey?.path || []},
+        assetKey: useMemo(() => ({path: assetKey?.path || []}), [assetKey]),
         limit,
         eventTypeSelectors,
       },
