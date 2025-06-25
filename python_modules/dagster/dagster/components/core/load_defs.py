@@ -11,7 +11,7 @@ from dagster_shared.utils.config import (
     locate_dg_config_in_folder,
 )
 
-from dagster._annotations import deprecated, preview, public
+from dagster._annotations import deprecated, public
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._utils.warnings import suppress_dagster_warnings
 from dagster.components.component.component import Component
@@ -84,14 +84,40 @@ def build_defs_for_component(component: Component) -> Definitions:
 
 
 @public
-@preview(emit_runtime_warning=False)
 @suppress_dagster_warnings
 def load_from_defs_folder(*, project_root: Path) -> Definitions:
-    """Constructs a Definitions object, loading all Dagster defs in the project's
-    defs folder.
+    """Constructs a Definitions object by automatically discovering and loading all Dagster
+    definitions from a project's defs folder structure.
+
+    This function serves as the primary entry point for loading definitions in dg-managed
+    projects. It reads the project configuration (dg.toml or pyproject.toml), identifies
+    the defs module, and recursively loads all components, assets, jobs, and other Dagster
+    definitions from the project structure.
+
+    The function automatically handles:
+
+    * Reading project configuration to determine the defs module location
+    * Importing and traversing the defs module hierarchy
+    * Loading component definitions and merging them into a unified Definitions object
+    * Enriching definitions with plugin component metadata from entry points
 
     Args:
-        project_root (Path): The path to the dg project root.
+        project_root (Path): The absolute path to the dg project root directory. This should be the directory containing the project's configuration file (dg.toml or pyproject.toml with [tool.dg] section).
+
+    Returns:
+        Definitions: A merged Definitions object containing all discovered definitions from the project's defs folder, enriched with component metadata.
+
+    Example:
+        .. code-block:: python
+
+            from pathlib import Path
+            import dagster as dg
+
+            @dg.definitions
+            def defs():
+                project_path = Path("/path/to/my/dg/project")
+                return dg.load_from_defs_folder(project_root=project_path)
+
     """
     root_config_path = locate_dg_config_in_folder(project_root)
     toml_config = load_toml_as_dict(
