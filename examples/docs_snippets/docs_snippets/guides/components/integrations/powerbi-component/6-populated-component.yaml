@@ -1,0 +1,7 @@
+type: dagster_powerbi.PowerBIWorkspaceComponent
+
+attributes:
+  workspace:
+    workspace_id: "{{ env.POWERBI_WORKSPACE_ID }}"
+    credentials:
+      token: "{{ env.POWERBI_API_TOKEN }}"
