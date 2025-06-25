@@ -4,7 +4,9 @@ attributes:
   workspace:
     workspace_id: "{{ env.POWERBI_WORKSPACE_ID }}"
     credentials:
-      token: "{{ env.POWERBI_API_TOKEN }}"
+      client_id: "{{ env.POWERBI_CLIENT_ID }}"
+      client_secret: "{{ env.POWERBI_CLIENT_SECRET }}"
+      tenant_id: "{{ env.POWERBI_TENANT_ID }}"
   translation:
     group_name: powerbi_data
     description: "PowerBI {{ data.content_type.value }}: {{ data.properties.name }}"

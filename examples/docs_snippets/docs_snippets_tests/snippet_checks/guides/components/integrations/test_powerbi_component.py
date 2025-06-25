@@ -60,7 +60,15 @@ def test_components_docs_powerbi_workspace(
             )
         )
         stack.enter_context(
-            environ({"POWERBI_API_TOKEN": "XX", "POWERBI_WORKSPACE_ID": "XX"})
+            environ(
+                {
+                    "POWERBI_API_TOKEN": "XX",
+                    "POWERBI_WORKSPACE_ID": "XX",
+                    "POWERBI_CLIENT_ID": "XX",
+                    "POWERBI_CLIENT_SECRET": "XX",
+                    "POWERBI_TENANT_ID": "XX",
+                }
+            )
         )
         # Scaffold code location
         context.run_command_and_snippet_output(
@@ -113,7 +121,9 @@ def test_components_docs_powerbi_workspace(
                   workspace:
                     workspace_id: "{{ env.POWERBI_WORKSPACE_ID }}"
                     credentials:
-                      token: "{{ env.POWERBI_API_TOKEN }}"
+                      client_id: "{{ env.POWERBI_CLIENT_ID }}"
+                      client_secret: "{{ env.POWERBI_CLIENT_SECRET }}"
+                      tenant_id: "{{ env.POWERBI_TENANT_ID }}"
                 """
             ),
             snippet_path=f"{context.get_next_snip_number()}-populated-component.yaml",
@@ -144,7 +154,9 @@ def test_components_docs_powerbi_workspace(
                   workspace:
                     workspace_id: "{{ env.POWERBI_WORKSPACE_ID }}"
                     credentials:
-                      token: "{{ env.POWERBI_API_TOKEN }}"
+                      client_id: "{{ env.POWERBI_CLIENT_ID }}"
+                      client_secret: "{{ env.POWERBI_CLIENT_SECRET }}"
+                      tenant_id: "{{ env.POWERBI_TENANT_ID }}"
                   enable_semantic_model_refresh: True
                 """
             ),
@@ -168,7 +180,9 @@ def test_components_docs_powerbi_workspace(
                   workspace:
                     workspace_id: "{{ env.POWERBI_WORKSPACE_ID }}"
                     credentials:
-                      token: "{{ env.POWERBI_API_TOKEN }}"
+                      client_id: "{{ env.POWERBI_CLIENT_ID }}"
+                      client_secret: "{{ env.POWERBI_CLIENT_SECRET }}"
+                      tenant_id: "{{ env.POWERBI_TENANT_ID }}"
                   enable_semantic_model_refresh:
                     - Sales Data Model
                 """
@@ -195,7 +209,9 @@ def test_components_docs_powerbi_workspace(
                   workspace:
                     workspace_id: "{{ env.POWERBI_WORKSPACE_ID }}"
                     credentials:
-                      token: "{{ env.POWERBI_API_TOKEN }}"
+                      client_id: "{{ env.POWERBI_CLIENT_ID }}"
+                      client_secret: "{{ env.POWERBI_CLIENT_SECRET }}"
+                      tenant_id: "{{ env.POWERBI_TENANT_ID }}"
                   translation:
                     group_name: powerbi_data
                     description: "PowerBI {{ data.content_type.value }}: {{ data.properties.name }}"
@@ -223,7 +239,9 @@ def test_components_docs_powerbi_workspace(
                   workspace:
                     workspace_id: "{{ env.POWERBI_WORKSPACE_ID }}"
                     credentials:
-                      token: "{{ env.POWERBI_API_TOKEN }}"
+                      client_id: "{{ env.POWERBI_CLIENT_ID }}"
+                      client_secret: "{{ env.POWERBI_CLIENT_SECRET }}"
+                      tenant_id: "{{ env.POWERBI_TENANT_ID }}"
                   enable_semantic_model_refresh:
                     - Sales Data Model
                   translation:
