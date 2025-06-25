@@ -185,7 +185,7 @@ class PowerBIWorkspaceComponent(Component, Resolvable):
     ]
     use_workspace_scan: bool = True
     # Takes a list of semantic model names to enable refresh for, or True to enable for all semantic models
-    enable_semantic_model_refresh: Union[bool, list[str]] = True
+    enable_semantic_model_refresh: Union[bool, list[str]] = False
     translation: Optional[ResolvedMultilayerTranslationFn] = None
 
     @cached_property
