@@ -67,3 +67,8 @@ Built-in Components
 -------------------
 
 .. autoclass:: DefsFolderComponent
+
+Loading Components
+------------------
+
+.. autofunction:: load_from_defs_folder
