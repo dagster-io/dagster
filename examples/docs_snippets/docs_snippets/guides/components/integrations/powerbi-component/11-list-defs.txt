@@ -1,4 +1,4 @@
-dg list defs --columns name,kinds,is_executable
+dg list defs --assets 'key:semantic_model*' --columns name,kinds,is_executable
 
 ┏━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
 ┃ Section ┃ Definitions                                                              ┃
@@ -6,22 +6,6 @@ dg list defs --columns name,kinds,is_executable
 │ Assets  │ ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┓ │
 │         │ ┃ Key                                 ┃ Kinds          ┃ Is executable ┃ │
 │         │ ┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━┩ │
-│         │ │ dashboard/Marketing_Dashboard       │ dashboard      │ False         │ │
-│         │ │                                     │ powerbi        │               │ │
-│         │ ├─────────────────────────────────────┼────────────────┼───────────────┤ │
-│         │ │ dashboard/Sales_Dashboard           │ dashboard      │ False         │ │
-│         │ │                                     │ powerbi        │               │ │
-│         │ ├─────────────────────────────────────┼────────────────┼───────────────┤ │
-│         │ │ marketing                           │                │ False         │ │
-│         │ ├─────────────────────────────────────┼────────────────┼───────────────┤ │
-│         │ │ report/Marketing_Report             │ powerbi        │ False         │ │
-│         │ │                                     │ report         │               │ │
-│         │ ├─────────────────────────────────────┼────────────────┼───────────────┤ │
-│         │ │ report/Sales_Report                 │ powerbi        │ False         │ │
-│         │ │                                     │ report         │               │ │
-│         │ ├─────────────────────────────────────┼────────────────┼───────────────┤ │
-│         │ │ sales                               │                │ False         │ │
-│         │ ├─────────────────────────────────────┼────────────────┼───────────────┤ │
 │         │ │ semantic_model/Marketing_Data_Model │ powerbi        │ False         │ │
 │         │ │                                     │ semantic model │               │ │
 │         │ ├─────────────────────────────────────┼────────────────┼───────────────┤ │
