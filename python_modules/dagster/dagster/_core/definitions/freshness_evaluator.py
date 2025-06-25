@@ -47,9 +47,7 @@ class TimeWindowFreshnessPolicyEvaluator(FreshnessPolicyEvaluator):
         If the asset was materialized outside the policy time window, return FAIL.
         If the asset was materialized within the policy time window but outside the warning time window (if provided), return WARN.
         """
-        freshness_policy = check.not_none(
-            InternalFreshnessPolicy.from_asset_spec_metadata(node.metadata)
-        )
+        freshness_policy = check.not_none(node.freshness_policy_or_from_metadata)
 
         time_window_policy = check.inst(
             freshness_policy,
@@ -118,9 +116,7 @@ class CronFreshnessPolicyEvaluator(FreshnessPolicyEvaluator):
         Asset is stale starting at 9am, will remain stale until it materializes again.
         """
         # Get the policy, making sure it's a cron policy
-        freshness_policy = check.not_none(
-            InternalFreshnessPolicy.from_asset_spec_metadata(node.metadata)
-        )
+        freshness_policy = check.not_none(node.freshness_policy_or_from_metadata)
 
         cron_policy = check.inst(
             freshness_policy,

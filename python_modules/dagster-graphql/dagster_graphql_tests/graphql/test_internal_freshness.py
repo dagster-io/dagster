@@ -29,39 +29,37 @@ query GetInternalFreshnessPolicy($assetKey: AssetKeyInput!) {
 
 
 @asset(
-    internal_freshness_policy=InternalFreshnessPolicy.time_window(
+    freshness_policy=InternalFreshnessPolicy.time_window(
         fail_window=timedelta(minutes=10), warn_window=timedelta(minutes=5)
     )
 )
-def asset_with_internal_freshness_policy_with_warn_window():
+def asset_with_freshness_with_warn_window():
     pass
 
 
-@asset(
-    internal_freshness_policy=InternalFreshnessPolicy.time_window(fail_window=timedelta(minutes=10))
-)
-def asset_with_internal_freshness_policy():
+@asset(freshness_policy=InternalFreshnessPolicy.time_window(fail_window=timedelta(minutes=10)))
+def asset_with_freshness():
     pass
 
 
 def get_repo() -> RepositoryDefinition:
     return Definitions(
         assets=[
-            asset_with_internal_freshness_policy,
-            asset_with_internal_freshness_policy_with_warn_window,
+            asset_with_freshness,
+            asset_with_freshness_with_warn_window,
         ]
     ).get_repository_def()
 
 
 # There is a separate implementation for plus graphql tests.
-def test_internal_freshness_policy():
+def test_freshness():
     with instance_for_test() as instance:
         assert not instance.internal_asset_freshness_enabled()
         with define_out_of_process_context(__file__, "get_repo", instance) as graphql_context:
             result = execute_dagster_graphql(
                 graphql_context,
                 GET_INTERNAL_FRESHNESS_POLICY,
-                variables={"assetKey": asset_with_internal_freshness_policy.key.to_graphql_input()},
+                variables={"assetKey": asset_with_freshness.key.to_graphql_input()},
             )
             assert result.data["assetNodes"][0]["internalFreshnessPolicy"] is not None
             result = execute_dagster_graphql(

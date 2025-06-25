@@ -850,9 +850,9 @@ class GrapheneAssetNode(graphene.ObjectType):
     def resolve_internalFreshnessPolicy(
         self, graphene_info: ResolveInfo
     ) -> Optional[GrapheneInternalFreshnessPolicy]:
-        if self._asset_node_snap.internal_freshness_policy:
+        if self._asset_node_snap.freshness_policy:
             return GrapheneInternalFreshnessPolicy.from_policy(
-                self._asset_node_snap.internal_freshness_policy
+                self._asset_node_snap.freshness_policy
             )
         return None
 
