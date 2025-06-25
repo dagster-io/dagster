@@ -70,16 +70,33 @@ def test_components_docs_dbt_project(
             ignore_output=True,
         )
 
-        # Clone jaffle shop dbt project into src/dbt
+        # Clone jaffle shop dbt project
         context.run_command_and_snippet_output(
-            cmd="git clone --depth=1 https://github.com/dagster-io/jaffle-platform.git dbt && rm -rf dbt/.git",
+            cmd="git clone --depth=1 https://github.com/dbt-labs/jaffle_shop.git dbt && rm -rf dbt/.git",
             snippet_path=f"{context.get_next_snip_number()}-jaffle-clone.txt",
             ignore_output=True,
         )
 
+        # Create profiles.yml for DuckDB configuration
+        context.create_file(
+            Path("dbt") / "profiles.yml",
+            contents=textwrap.dedent(
+                """\
+                jaffle_shop:
+                  target: dev
+                  outputs:
+                    dev:
+                      type: duckdb
+                      path: tutorial.duckdb
+                      threads: 24
+                """
+            ),
+            snippet_path=f"{context.get_next_snip_number()}-profiles.yml",
+        )
+
         # scaffold dbt component
         context.run_command_and_snippet_output(
-            cmd='dg scaffold defs dagster_dbt.DbtProjectComponent dbt_ingest \\\n  --project-path "dbt/jdbt"',
+            cmd='dg scaffold defs dagster_dbt.DbtProjectComponent dbt_ingest \\\n  --project-path "dbt"',
             snippet_path=SNIPPETS_DIR
             / f"{context.get_next_snip_number()}-scaffold-dbt-component.txt",
         )
@@ -119,7 +136,7 @@ def test_components_docs_dbt_project(
                 type: dagster_dbt.DbtProjectComponent
 
                 attributes:
-                  project: '{{ project_root }}/dbt/jdbt'
+                  project: '{{ project_root }}/dbt'
                   select: "customers"
                 """
             ),
@@ -139,7 +156,7 @@ def test_components_docs_dbt_project(
                 type: dagster_dbt.DbtProjectComponent
 
                 attributes:
-                  project: '{{ project_root }}/dbt/jdbt'
+                  project: '{{ project_root }}/dbt'
                   select: "customers"
                   translation:
                     group_name: dbt_models

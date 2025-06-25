@@ -228,8 +228,8 @@ const sidebars: SidebarsConfig = {
       link: {type: 'doc', id: 'api/dg/index'},
       items:
         [
-          'api/dg/create-dagster',
-          'api/dg/dg-cli',
+        //  'api/dg/create-dagster',
+         // 'api/dg/dg-cli',
           'api/dg/dg-cli-configuration'
         ],
     },
