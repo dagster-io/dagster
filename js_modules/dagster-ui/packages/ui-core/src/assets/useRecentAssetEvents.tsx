@@ -58,22 +58,27 @@ const DEFAULT_EVENT_TYPE_SELECTORS = [
 ];
 
 export function useRecentAssetEvents(
-  assetKey: AssetKey | undefined,
+  _assetKey: AssetKey | undefined,
   limit: number,
   eventTypeSelectors: AssetEventHistoryEventTypeSelector[] = DEFAULT_EVENT_TYPE_SELECTORS,
 ) {
+  const assetKeyHash = useMemo(() => JSON.stringify(_assetKey?.path || []), [_assetKey]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const assetKey = useMemo(() => ({path: _assetKey?.path || []}), [assetKeyHash]);
+
   const queryResult = useQuery<RecentAssetEventsQuery, RecentAssetEventsQueryVariables>(
     RECENT_ASSET_EVENTS_QUERY,
     {
       skip: !assetKey,
       fetchPolicy: 'cache-and-network',
       variables: {
-        assetKey: useMemo(() => ({path: assetKey?.path || []}), [assetKey]),
+        assetKey,
         limit,
         eventTypeSelectors,
       },
     },
   );
+
   const {data, loading, refetch} = queryResult;
 
   const value = useMemo(() => {
