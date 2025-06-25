@@ -5,7 +5,6 @@ import uuid
 from abc import abstractmethod
 from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager
-from functools import lru_cache
 from typing import Any, Optional, Union
 
 import jwt
@@ -583,7 +582,7 @@ class BaseTableauWorkspace(ConfigurableResource):
         )
 
     # Cache spec retrieval for a specific translator class and workbook_selector_fn
-    @lru_cache(maxsize=1)
+    @cached_method
     def load_asset_specs(
         self,
         dagster_tableau_translator: Optional[DagsterTableauTranslator] = None,

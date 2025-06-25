@@ -30,145 +30,156 @@ from dagster_tableau_tests.conftest import (
     FAKE_USERNAME,
 )
 
-resource = TableauCloudWorkspace(
-    connected_app_client_id=FAKE_CONNECTED_APP_CLIENT_ID,
-    connected_app_secret_id=FAKE_CONNECTED_APP_SECRET_ID,
-    connected_app_secret_value=FAKE_CONNECTED_APP_SECRET_VALUE,
-    username=FAKE_USERNAME,
-    site_name=FAKE_SITE_NAME,
-    pod_name=FAKE_POD_NAME,
-)
-
 
 @definitions
 def cacheable_asset_defs():
-    try:
-        tableau_specs = load_tableau_asset_specs(
-            workspace=resource,
-        )
+    resource = TableauCloudWorkspace(
+        connected_app_client_id=FAKE_CONNECTED_APP_CLIENT_ID,
+        connected_app_secret_id=FAKE_CONNECTED_APP_SECRET_ID,
+        connected_app_secret_value=FAKE_CONNECTED_APP_SECRET_VALUE,
+        username=FAKE_USERNAME,
+        site_name=FAKE_SITE_NAME,
+        pod_name=FAKE_POD_NAME,
+    )
 
-        external_asset_specs, materializable_asset_specs = (
-            parse_tableau_external_and_materializable_asset_specs(tableau_specs)
-        )
+    tableau_specs = load_tableau_asset_specs(
+        workspace=resource,
+    )
 
-        resource_key = "tableau"
+    external_asset_specs, materializable_asset_specs = (
+        parse_tableau_external_and_materializable_asset_specs(tableau_specs)
+    )
 
-        return Definitions(
-            assets=[
-                # We don't pass a list of refreshable IDs - we yield observe results without refreshing Tableau assets.
-                build_tableau_materializable_assets_definition(
-                    resource_key=resource_key,
-                    specs=materializable_asset_specs,
-                ),
-                *external_asset_specs,
-            ],
-            jobs=[define_asset_job("all_asset_job")],
-            resources={resource_key: resource},
-        )
-    finally:
-        # Clearing cache for other tests
-        resource.load_asset_specs.cache_clear()
+    resource_key = "tableau"
+
+    return Definitions(
+        assets=[
+            # We don't pass a list of refreshable IDs - we yield observe results without refreshing Tableau assets.
+            build_tableau_materializable_assets_definition(
+                resource_key=resource_key,
+                specs=materializable_asset_specs,
+            ),
+            *external_asset_specs,
+        ],
+        jobs=[define_asset_job("all_asset_job")],
+        resources={resource_key: resource},
+    )
 
 
 @definitions
 def cacheable_asset_defs_refreshable_workbooks():
-    try:
-        tableau_specs = load_tableau_asset_specs(
-            workspace=resource,
-        )
+    resource = TableauCloudWorkspace(
+        connected_app_client_id=FAKE_CONNECTED_APP_CLIENT_ID,
+        connected_app_secret_id=FAKE_CONNECTED_APP_SECRET_ID,
+        connected_app_secret_value=FAKE_CONNECTED_APP_SECRET_VALUE,
+        username=FAKE_USERNAME,
+        site_name=FAKE_SITE_NAME,
+        pod_name=FAKE_POD_NAME,
+    )
+    tableau_specs = load_tableau_asset_specs(
+        workspace=resource,
+    )
 
-        external_asset_specs, materializable_asset_specs = (
-            parse_tableau_external_and_materializable_asset_specs(tableau_specs)
-        )
+    external_asset_specs, materializable_asset_specs = (
+        parse_tableau_external_and_materializable_asset_specs(tableau_specs)
+    )
 
-        resource_key = "tableau"
+    resource_key = "tableau"
 
-        return Definitions(
-            assets=[
-                build_tableau_materializable_assets_definition(
-                    resource_key=resource_key,
-                    specs=materializable_asset_specs,
-                    refreshable_workbook_ids=["b75fc023-a7ca-4115-857b-4342028640d0"],
-                ),
-                *external_asset_specs,
-            ],
-            jobs=[define_asset_job("all_asset_job")],
-            resources={resource_key: resource},
-        )
-    finally:
-        # Clearing cache for other tests
-        resource.load_asset_specs.cache_clear()
+    return Definitions(
+        assets=[
+            build_tableau_materializable_assets_definition(
+                resource_key=resource_key,
+                specs=materializable_asset_specs,
+                refreshable_workbook_ids=["b75fc023-a7ca-4115-857b-4342028640d0"],
+            ),
+            *external_asset_specs,
+        ],
+        jobs=[define_asset_job("all_asset_job")],
+        resources={resource_key: resource},
+    )
 
 
 @definitions
 def cacheable_asset_defs_refreshable_data_sources():
-    try:
-        tableau_specs = load_tableau_asset_specs(
-            workspace=resource,
-        )
+    resource = TableauCloudWorkspace(
+        connected_app_client_id=FAKE_CONNECTED_APP_CLIENT_ID,
+        connected_app_secret_id=FAKE_CONNECTED_APP_SECRET_ID,
+        connected_app_secret_value=FAKE_CONNECTED_APP_SECRET_VALUE,
+        username=FAKE_USERNAME,
+        site_name=FAKE_SITE_NAME,
+        pod_name=FAKE_POD_NAME,
+    )
 
-        external_asset_specs, materializable_asset_specs = (
-            parse_tableau_external_and_materializable_asset_specs(
-                tableau_specs, include_data_sources_with_extracts=True
-            )
-        )
+    tableau_specs = load_tableau_asset_specs(
+        workspace=resource,
+    )
 
-        resource_key = "tableau"
-
-        return Definitions(
-            assets=[
-                build_tableau_materializable_assets_definition(
-                    resource_key=resource_key,
-                    specs=materializable_asset_specs,
-                    refreshable_data_source_ids=["1f5660c7-3b05-5ff0-90ce-4199226956c6"],
-                ),
-                *external_asset_specs,
-            ],
-            jobs=[define_asset_job("all_asset_job")],
-            resources={resource_key: resource},
+    external_asset_specs, materializable_asset_specs = (
+        parse_tableau_external_and_materializable_asset_specs(
+            tableau_specs, include_data_sources_with_extracts=True
         )
-    finally:
-        # Clearing cache for other tests
-        resource.load_asset_specs.cache_clear()
+    )
+
+    resource_key = "tableau"
+
+    return Definitions(
+        assets=[
+            build_tableau_materializable_assets_definition(
+                resource_key=resource_key,
+                specs=materializable_asset_specs,
+                refreshable_data_source_ids=["1f5660c7-3b05-5ff0-90ce-4199226956c6"],
+            ),
+            *external_asset_specs,
+        ],
+        jobs=[define_asset_job("all_asset_job")],
+        resources={resource_key: resource},
+    )
 
 
 @definitions
 def cacheable_asset_defs_asset_decorator_with_context():
-    try:
+    resource = TableauCloudWorkspace(
+        connected_app_client_id=FAKE_CONNECTED_APP_CLIENT_ID,
+        connected_app_secret_id=FAKE_CONNECTED_APP_SECRET_ID,
+        connected_app_secret_value=FAKE_CONNECTED_APP_SECRET_VALUE,
+        username=FAKE_USERNAME,
+        site_name=FAKE_SITE_NAME,
+        pod_name=FAKE_POD_NAME,
+    )
 
-        @tableau_assets(workspace=resource)
-        def my_tableau_assets(context: AssetExecutionContext, tableau: TableauCloudWorkspace):
-            yield from tableau.refresh_and_poll(context=context)
+    @tableau_assets(workspace=resource)
+    def my_tableau_assets(context: AssetExecutionContext, tableau: TableauCloudWorkspace):
+        yield from tableau.refresh_and_poll(context=context)
 
-        return Definitions(
-            assets=[my_tableau_assets],
-            jobs=[define_asset_job("all_asset_job")],
-            resources={"tableau": resource},
-        )
-    finally:
-        # Clearing cache for other tests
-        resource.load_asset_specs.cache_clear()
+    return Definitions(
+        assets=[my_tableau_assets],
+        jobs=[define_asset_job("all_asset_job")],
+        resources={"tableau": resource},
+    )
 
 
 @definitions
 def cacheable_asset_defs_custom_translator():
-    try:
+    resource = TableauCloudWorkspace(
+        connected_app_client_id=FAKE_CONNECTED_APP_CLIENT_ID,
+        connected_app_secret_id=FAKE_CONNECTED_APP_SECRET_ID,
+        connected_app_secret_value=FAKE_CONNECTED_APP_SECRET_VALUE,
+        username=FAKE_USERNAME,
+        site_name=FAKE_SITE_NAME,
+        pod_name=FAKE_POD_NAME,
+    )
 
-        class MyCoolTranslator(DagsterTableauTranslator):
-            def get_asset_spec(self, data: TableauTranslatorData) -> AssetSpec:
-                default_spec = super().get_asset_spec(data)
-                return default_spec.replace_attributes(
-                    key=default_spec.key.with_prefix("my_prefix")
-                )
+    class MyCoolTranslator(DagsterTableauTranslator):
+        def get_asset_spec(self, data: TableauTranslatorData) -> AssetSpec:
+            default_spec = super().get_asset_spec(data)
+            return default_spec.replace_attributes(key=default_spec.key.with_prefix("my_prefix"))
 
-        tableau_specs = load_tableau_asset_specs(
-            workspace=resource, dagster_tableau_translator=MyCoolTranslator()
-        )
+    tableau_specs = load_tableau_asset_specs(
+        workspace=resource, dagster_tableau_translator=MyCoolTranslator()
+    )
 
-        return Definitions(assets=[*tableau_specs], jobs=[define_asset_job("all_asset_job")])
-    finally:
-        # Clearing cache for other tests
-        resource.load_asset_specs.cache_clear()
+    return Definitions(assets=[*tableau_specs], jobs=[define_asset_job("all_asset_job")])
 
 
 def test_load_assets_workspace_data_refreshable_workbooks(
