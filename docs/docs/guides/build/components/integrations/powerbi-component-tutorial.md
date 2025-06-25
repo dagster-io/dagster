@@ -44,7 +44,7 @@ Update the `defs.yaml` file with your workspace ID. You will also need to provid
 
 ## 4. Enable semantic model refresh
 
-You can enable refresh semantic models by adding the `enable_semantic_model_refresh` key. To enable refresh for all semantic models, set the value to `True`.
+You can enable refreshing semantic models by adding the `enable_semantic_model_refresh` key. To enable refresh for all semantic models, set the value to `True`.
 
 <CodeExample path="docs_snippets/docs_snippets/guides/components/integrations/powerbi-component/8-customized-component.yaml" title="my_project/defs/powerbi_ingest/defs.yaml" language="yaml" />
 
@@ -52,7 +52,7 @@ You can enable refresh semantic models by adding the `enable_semantic_model_refr
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/powerbi-component/9-list-defs.txt" />
 </WideContent>
 
-To enable refresh for specific semantic models, set the value to a list of semantic model names:
+To enable refreshing specific semantic models, set the value to a list of semantic model names:
 
 <CodeExample path="docs_snippets/docs_snippets/guides/components/integrations/powerbi-component/10-customized-component.yaml" title="my_project/defs/powerbi_ingest/defs.yaml" language="yaml" />
 
