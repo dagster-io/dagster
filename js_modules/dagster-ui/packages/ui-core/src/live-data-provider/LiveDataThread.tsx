@@ -1,8 +1,8 @@
 import {LiveDataScheduler} from './LiveDataScheduler';
 import {LiveDataThreadManager} from './LiveDataThreadManager';
-import {BATCH_PARALLEL_FETCHES, BATCH_SIZE, threadIDToLimits} from './util';
+import {BATCH_PARALLEL_FETCHES, BATCH_SIZE, THREAD_ID, threadIDToLimits} from './util';
 
-export type LiveDataThreadID = string;
+export type LiveDataThreadID = string | THREAD_ID;
 
 export class LiveDataThread<T> {
   private listenersCount: {[key: string]: number};
