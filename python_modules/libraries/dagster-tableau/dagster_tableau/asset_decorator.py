@@ -1,21 +1,23 @@
 from typing import Any, Callable, Optional
 
 from dagster import AssetsDefinition, multi_asset
-from dagster._annotations import beta
+from dagster._annotations import beta, beta_param
 from dagster._core.errors import DagsterInvariantViolationError
 
 from dagster_tableau.asset_utils import parse_tableau_external_and_materializable_asset_specs
 from dagster_tableau.resources import BaseTableauWorkspace, load_tableau_asset_specs
-from dagster_tableau.translator import DagsterTableauTranslator
+from dagster_tableau.translator import DagsterTableauTranslator, WorkbookSelectorFn
 
 
 @beta
+@beta_param(param="workbook_selector_fn")
 def tableau_assets(
     *,
     workspace: BaseTableauWorkspace,
     name: Optional[str] = None,
     group_name: Optional[str] = None,
     dagster_tableau_translator: Optional[DagsterTableauTranslator] = None,
+    workbook_selector_fn: Optional[WorkbookSelectorFn] = None,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]:
     """Create a definition for how to refresh the extracted data sources and views of a given Tableau workspace.
 
@@ -26,6 +28,9 @@ def tableau_assets(
         dagster_tableau_translator (Optional[DagsterTableauTranslator], optional): The translator to use
             to convert Tableau content into :py:class:`dagster.AssetSpec`.
             Defaults to :py:class:`DagsterTableauTranslator`.
+        workbook_selector_fn (Optional[WorkbookSelectorFn]):
+            A function that allows for filtering which Tableau workbook assets are created for,
+            including data sources, sheets and dashboards.
 
     Examples:
         Refresh extracted data sources and views in Tableau:
@@ -107,7 +112,9 @@ def tableau_assets(
     external_asset_specs, materializable_asset_specs = (
         parse_tableau_external_and_materializable_asset_specs(
             load_tableau_asset_specs(
-                workspace=workspace, dagster_tableau_translator=dagster_tableau_translator
+                workspace=workspace,
+                dagster_tableau_translator=dagster_tableau_translator,
+                workbook_selector_fn=workbook_selector_fn,
             ),
             include_data_sources_with_extracts=True,
         )
