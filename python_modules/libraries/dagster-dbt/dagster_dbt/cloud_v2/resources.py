@@ -1,6 +1,6 @@
 import logging
 from collections.abc import Sequence
-from functools import cached_property, lru_cache
+from functools import cached_property
 from typing import NamedTuple, Optional, Union
 
 from dagster import (
@@ -248,8 +248,8 @@ class DbtCloudWorkspace(ConfigurableResource):
             selector=DBT_DEFAULT_SELECTOR,
         ).get_or_fetch_state()
 
-    # Cache spec retrieval for a specific translator class.
-    @lru_cache(maxsize=1)
+    # Cache spec retrieval for a specific translator class and dbt selection args.
+    @cached_method
     def load_specs(
         self,
         select: str,
