@@ -292,7 +292,7 @@ class DagsterPowerBITranslator:
         dataset_id = data.properties["id"]
         source_ids = data.properties.get("sources", [])
         source_keys = [
-            self.get_data_source_spec(
+            self.get_asset_spec(
                 PowerBITranslatorData(
                     content_data=data.workspace_data.data_sources_by_id[source_id],
                     workspace_data=data.workspace_data,

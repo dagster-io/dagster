@@ -236,6 +236,9 @@ def test_per_content_type_translation(
                     "tags": {"is_report": "true"},
                     "metadata": {"base_key": "{{ spec.key.to_user_string() }}"},
                 },
+                "for_data_source": {
+                    "key_prefix": "data_source",
+                },
             },
         },
     }
@@ -266,3 +269,8 @@ def test_per_content_type_translation(
         assert report_spec.tags.get("custom_tag") == "custom_value"
         assert report_spec.tags.get("is_report") == "true"
         assert report_spec.metadata.get("base_key") == "report/Sales_Returns_Sample_v201912"
+
+        data_source_def = defs.get_assets_def(
+            AssetKey(["data_source", "sales_marketing_datas_xlsx"])
+        )
+        assert data_source_def
