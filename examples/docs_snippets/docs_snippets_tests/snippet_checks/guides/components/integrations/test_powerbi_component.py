@@ -145,6 +145,30 @@ def test_components_docs_powerbi_workspace(
                     workspace_id: "{{ env.POWERBI_WORKSPACE_ID }}"
                     credentials:
                       token: "{{ env.POWERBI_API_TOKEN }}"
+                  enable_semantic_model_refresh: True
+                """
+            ),
+            snippet_path=f"{context.get_next_snip_number()}-customized-component.yaml",
+        )
+        _swap_to_mock_powerbi_component(
+            Path("my_project") / "defs" / "powerbi_ingest" / "defs.yaml"
+        )
+        context.run_command_and_snippet_output(
+            cmd="dg list defs",
+            snippet_path=f"{context.get_next_snip_number()}-list-defs.txt",
+        )
+
+        context.create_file(
+            Path("my_project") / "defs" / "powerbi_ingest" / "defs.yaml",
+            contents=textwrap.dedent(
+                """\
+                type: dagster_powerbi.PowerBIWorkspaceComponent
+
+                attributes:
+                  workspace:
+                    workspace_id: "{{ env.POWERBI_WORKSPACE_ID }}"
+                    credentials:
+                      token: "{{ env.POWERBI_API_TOKEN }}"
                   enable_semantic_model_refresh:
                     - Sales Data Model
                 """
@@ -172,8 +196,6 @@ def test_components_docs_powerbi_workspace(
                     workspace_id: "{{ env.POWERBI_WORKSPACE_ID }}"
                     credentials:
                       token: "{{ env.POWERBI_API_TOKEN }}"
-                  enable_semantic_model_refresh:
-                    - Sales Data Model
                   translation:
                     group_name: powerbi_data
                     description: "PowerBI {{ data.content_type.value }}: {{ data.properties.name }}"

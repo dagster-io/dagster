@@ -5,5 +5,6 @@ attributes:
     workspace_id: "{{ env.POWERBI_WORKSPACE_ID }}"
     credentials:
       token: "{{ env.POWERBI_API_TOKEN }}"
-  enable_semantic_model_refresh:
-    - Sales Data Model
+  translation:
+    group_name: powerbi_data
+    description: "PowerBI {{ data.content_type.value }}: {{ data.properties.name }}"

@@ -44,7 +44,7 @@ Update the `defs.yaml` file with your workspace ID and credentials:
 
 ## 4. Enable semantic model refresh
 
-You can enable refresh for specific semantic models by adding the `enable_semantic_model_refresh` key:
+You can enable refresh semantic models by adding the `enable_semantic_model_refresh` key. To enable refresh for all semantic models, set the value to `True`.
 
 <CodeExample path="docs_snippets/docs_snippets/guides/components/integrations/powerbi-component/8-customized-component.yaml" title="my_project/defs/powerbi_ingest/defs.yaml" language="yaml" />
 
@@ -52,9 +52,7 @@ You can enable refresh for specific semantic models by adding the `enable_semant
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/powerbi-component/9-list-defs.txt" />
 </WideContent>
 
-## 5. Customize Power BI asset metadata
-
-You can customize the metadata and grouping of Power BI assets using the `translation` key:
+To enable refresh for specific semantic models, set the value to a list of semantic model names:
 
 <CodeExample path="docs_snippets/docs_snippets/guides/components/integrations/powerbi-component/10-customized-component.yaml" title="my_project/defs/powerbi_ingest/defs.yaml" language="yaml" />
 
@@ -62,12 +60,22 @@ You can customize the metadata and grouping of Power BI assets using the `transl
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/powerbi-component/11-list-defs.txt" />
 </WideContent>
 
+## 5. Customize Power BI asset metadata
+
+You can customize the metadata and grouping of Power BI assets using the `translation` key:
+
+<CodeExample path="docs_snippets/docs_snippets/guides/components/integrations/powerbi-component/12-customized-component.yaml" title="my_project/defs/powerbi_ingest/defs.yaml" language="yaml" />
+
+<WideContent maxSize={1100}>
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/powerbi-component/13-list-defs.txt" />
+</WideContent>
+
 ### Customize specific data types
 
 You may also specify distinct translation behavior for specific data types. For example, you can add a tag to all semantic models:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/components/integrations/powerbi-component/12-customized-semantic-translation.yaml" title="my_project/defs/powerbi_ingest/defs.yaml" language="yaml" />
+<CodeExample path="docs_snippets/docs_snippets/guides/components/integrations/powerbi-component/14-customized-semantic-translation.yaml" title="my_project/defs/powerbi_ingest/defs.yaml" language="yaml" />
 
 <WideContent maxSize={1100}>
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/powerbi-component/13-list-defs.txt" />
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/powerbi-component/15-list-defs.txt" />
 </WideContent>
