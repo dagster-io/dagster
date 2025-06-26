@@ -1,0 +1,10 @@
+tree my_project/defs
+
+my_project/defs
+├── __init__.py
+├── daily_revenue
+│   ├── daily_revenue.sql
+│   └── defs.yaml
+└── resources.py
+
+2 directories, 4 files

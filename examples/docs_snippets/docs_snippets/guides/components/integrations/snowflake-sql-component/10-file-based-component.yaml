@@ -1,0 +1,16 @@
+type: dagster_snowflake.SnowflakeTemplatedSqlComponent
+
+attributes:
+  sql_template:
+    path: daily_revenue.sql
+
+  sql_template_vars:
+    table_name: SALES_TRANSACTIONS
+    date_column: TRANSACTION_DATE
+    amount_column: SALE_AMOUNT
+    start_date: "2024-01-01"
+
+  assets:
+    - key: ANALYTICS/DAILY_REVENUE
+      group_name: analytics
+      kinds: [snowflake]

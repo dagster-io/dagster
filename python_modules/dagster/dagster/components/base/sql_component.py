@@ -31,12 +31,19 @@ class SqlComponent(ExecutableComponent, Model, BaseModel, Generic[T], ABC):
     execution: Optional[OpSpec] = None
 
     @abstractmethod
-    def get_sql_content(self, context: AssetExecutionContext) -> str:
+    def get_sql_content(
+        self, context: AssetExecutionContext, component_load_context: ComponentLoadContext
+    ) -> str:
         """The SQL content to execute."""
         ...
 
     @abstractmethod
-    def execute(self, context: AssetExecutionContext, resource: T) -> None:
+    def execute(
+        self,
+        context: AssetExecutionContext,
+        component_load_context: ComponentLoadContext,
+        resource: T,
+    ) -> None:
         """Execute the SQL content."""
         ...
 
@@ -54,6 +61,7 @@ class SqlComponent(ExecutableComponent, Model, BaseModel, Generic[T], ABC):
         )
         self.execute(
             check.inst(context, AssetExecutionContext),
+            component_load_context,
             getattr(context.resources, next(iter(self.resource_keys))),
         )
         for asset in self.assets or []:
@@ -91,10 +99,12 @@ class TemplatedSqlComponentMixin:
         Field(default=None, description="Template variables to pass to the SQL template."),
     ]
 
-    def get_sql_content(self, context: AssetExecutionContext) -> str:
+    def get_sql_content(
+        self, context: AssetExecutionContext, component_load_context: ComponentLoadContext
+    ) -> str:
         template_str = self.sql_template
         if isinstance(template_str, SqlFile):
-            template_str = Path(template_str.path).read_text()
+            template_str = (component_load_context.path / Path(template_str.path)).read_text()
 
         template = Template(template_str)
         return template.render(**(self.sql_template_vars or {}))

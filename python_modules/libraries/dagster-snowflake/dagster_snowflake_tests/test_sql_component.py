@@ -8,6 +8,7 @@ import pytest
 from dagster import AssetKey, Definitions
 from dagster._core.definitions.materialize import materialize
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
+from dagster.components.core.context import ComponentLoadContext
 from dagster.components.testing import scaffold_defs_sandbox
 from dagster_snowflake.components import SnowflakeTemplatedSqlComponent
 from dagster_snowflake.components.sql_component.component import BaseSnowflakeSqlComponent
@@ -190,7 +191,9 @@ class RefreshExternalTableComponent(BaseSnowflakeSqlComponent):
 
     table_name: str
 
-    def get_sql_content(self, context: AssetExecutionContext) -> str:
+    def get_sql_content(
+        self, context: AssetExecutionContext, component_load_context: ComponentLoadContext
+    ) -> str:
         return f"ALTER TABLE {self.table_name} REFRESH;"
 
 
