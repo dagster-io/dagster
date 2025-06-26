@@ -20,7 +20,7 @@ from dagster_dg_core.utils import (
     DgClickCommand,
     DgClickGroup,
     exit_with_error,
-    generate_missing_plugin_object_error_message,
+    generate_missing_registry_object_error_message,
 )
 from dagster_dg_core.utils.editor import (
     install_or_update_yaml_schema_extension,
@@ -159,7 +159,7 @@ def inspect_component_type_command(
     registry = EnvRegistry.from_dg_context(dg_context)
     component_key = EnvRegistryKey.from_typename(component_type)
     if not registry.has(component_key):
-        exit_with_error(generate_missing_plugin_object_error_message(component_type))
+        exit_with_error(generate_missing_registry_object_error_message(component_type))
     elif sum([description, scaffold_params_schema, component_schema]) > 1:
         exit_with_error(
             "Only one of --description, --scaffold-params-schema, and --component-schema can be specified."
