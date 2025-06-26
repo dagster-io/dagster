@@ -5,7 +5,7 @@ import uuid
 from abc import abstractmethod
 from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager
-from typing import Any, Optional, Union
+from typing import Optional, Union
 
 import jwt
 import requests
@@ -581,6 +581,20 @@ class BaseTableauWorkspace(ConfigurableResource):
             workbooks + sheets + dashboards + data_sources,
         )
 
+    def get_or_fetch_workspace_data(
+        self,
+    ) -> TableauWorkspaceData:
+        """Retrieves all Tableau content from the workspace using the TableauWorkspaceDefsLoader
+        and returns it as a TableauWorkspaceData object. If the workspace data has already been fetched,
+        the cached TableauWorkspaceData object is returned.
+
+        Returns:
+            TableauWorkspaceData: A snapshot of the Tableau workspace's content.
+        """
+        return TableauWorkspaceDefsLoader(
+            workspace=self, translator=DagsterTableauTranslator()
+        ).get_or_fetch_state()
+
     # Cache spec retrieval for a specific translator class and workbook_selector_fn
     @cached_method
     def load_asset_specs(
@@ -738,7 +752,7 @@ class TableauServerWorkspace(BaseTableauWorkspace):
 
 
 @record
-class TableauWorkspaceDefsLoader(StateBackedDefinitionsLoader[Mapping[str, Any]]):
+class TableauWorkspaceDefsLoader(StateBackedDefinitionsLoader[TableauWorkspaceData]):
     workspace: BaseTableauWorkspace
     translator: DagsterTableauTranslator
     workbook_selector_fn: Optional[WorkbookSelectorFn] = None
@@ -747,10 +761,10 @@ class TableauWorkspaceDefsLoader(StateBackedDefinitionsLoader[Mapping[str, Any]]
     def defs_key(self) -> str:
         return f"{TABLEAU_RECONSTRUCTION_METADATA_KEY_PREFIX}/{self.workspace.site_name}"
 
-    def fetch_state(self) -> TableauWorkspaceData:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def fetch_state(self) -> TableauWorkspaceData:
         return self.workspace.fetch_tableau_workspace_data()
 
-    def defs_from_state(self, state: TableauWorkspaceData) -> Definitions:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def defs_from_state(self, state: TableauWorkspaceData) -> Definitions:
         selected_state = state.to_workspace_data_selection(
             workbook_selector_fn=self.workbook_selector_fn
         )
