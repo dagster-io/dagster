@@ -1,6 +1,6 @@
 import {Box, Colors, Icon, MiddleTruncate, UnstyledButton} from '@dagster-io/ui-components';
 import * as React from 'react';
-import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
+import {observeEnabled} from 'shared/app/observeEnabled.oss';
 import styled from 'styled-components';
 
 import {StatusDot, StatusDotNode} from './StatusDot';
@@ -10,7 +10,6 @@ import {
   FolderNodeNonAssetType,
   getDisplayName,
 } from './util';
-import {featureEnabled} from '../../app/Flags';
 import {AssetHealthSummary} from '../../assets/AssetHealthSummary';
 import {ExplorerPath} from '../../pipelines/PipelinePathUtils';
 import {AssetGroup} from '../AssetGraphExplorer';
@@ -128,7 +127,7 @@ const AssetSidebarAssetLabel = ({
         isSelected={isSelected}
         isLastSelected={isLastSelected}
         icon={
-          featureEnabled(FeatureFlag.flagUseNewObserveUIs) ? (
+          observeEnabled() ? (
             <div style={{marginLeft: -8, marginRight: -8}}>
               <AssetHealthSummary iconOnly assetKey={node.assetKey} />
             </div>

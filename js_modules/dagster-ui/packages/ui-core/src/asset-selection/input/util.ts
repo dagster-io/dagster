@@ -1,7 +1,6 @@
 import {IconName} from '@dagster-io/ui-components';
-import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
+import {observeEnabled} from 'shared/app/observeEnabled.oss';
 
-import {featureEnabled} from '../../app/Flags';
 import {assertUnreachable} from '../../app/Util';
 import {AssetGraphQueryItem} from '../../asset-graph/types';
 import {isKindTag} from '../../graph/KindTags';
@@ -82,7 +81,7 @@ export const getAttributesMap = (assets: AssetGraphQueryItem[]) => {
     kind: kinds,
     code_location: codeLocations,
   };
-  if (featureEnabled(FeatureFlag.flagUseNewObserveUIs)) {
+  if (observeEnabled()) {
     const statuses = [
       AssetHealthStatus.HEALTHY,
       AssetHealthStatus.DEGRADED,
