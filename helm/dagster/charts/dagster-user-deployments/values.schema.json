@@ -2,6 +2,7 @@
     "$defs": {
         "Affinity": {
             "$ref": "https://kubernetesjsonschema.dev/v1.18.0/_definitions.json#/definitions/io.k8s.api.core.v1.Affinity",
+            "additionalProperties": true,
             "title": "Affinity",
             "type": "object"
         },
@@ -119,6 +120,7 @@
         },
         "PodSecurityContext": {
             "$ref": "https://kubernetesjsonschema.dev/v1.18.0/_definitions.json#/definitions/io.k8s.api.core.v1.PodSecurityContext",
+            "additionalProperties": true,
             "title": "PodSecurityContext",
             "type": "object"
         },
@@ -148,6 +150,7 @@
         },
         "Resources": {
             "$ref": "https://kubernetesjsonschema.dev/v1.18.0/_definitions.json#/definitions/io.k8s.api.core.v1.ResourceRequirements",
+            "additionalProperties": true,
             "title": "Resources",
             "type": "object"
         },
@@ -167,6 +170,7 @@
         },
         "SecurityContext": {
             "$ref": "https://kubernetesjsonschema.dev/v1.18.0/_definitions.json#/definitions/io.k8s.api.core.v1.SecurityContext",
+            "additionalProperties": true,
             "title": "SecurityContext",
             "type": "object"
         },
@@ -208,6 +212,7 @@
         "Tolerations": {
             "$ref": "https://kubernetesjsonschema.dev/v1.18.0/_definitions.json#/definitions/io.k8s.api.core.v1.PodSpec/properties/tolerations",
             "items": {
+                "additionalProperties": true,
                 "type": "object"
             },
             "title": "Tolerations",
