@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Annotated, Any
 
 import pytest
 from dagster import (
@@ -295,6 +295,38 @@ def test_multi_asset_internal_asset_deps_invalid():
         )
         def _my_asset():
             pass
+
+
+def test_multi_asset_annotations() -> None:
+    @multi_asset(
+        specs=[
+            AssetSpec("C", deps=["A", "B", "NonArg"]),
+            AssetSpec("D", deps=["C"]),
+        ]
+    )
+    def the_ma(
+        context: AssetExecutionContext,
+        A: Annotated[str, AssetIn(metadata={"some": "metadata"})],
+        input_name_doesnt_match_B: Annotated[int, AssetIn(key="B")],
+    ): ...
+
+    assert len(the_ma.op.input_defs) == 3
+    input_A = the_ma.op.input_defs[0]
+    assert input_A.name == "A"
+    assert input_A.metadata == {"some": "metadata"}
+    assert input_A.dagster_type.display_name == "String"
+
+    input_B = the_ma.op.input_defs[2]
+    assert input_B.name == "input_name_doesnt_match_B"
+    assert input_B.dagster_type.display_name == "Int"
+
+    input_NonArg = the_ma.op.input_defs[1]
+    assert input_NonArg.name == "NonArg"
+    assert input_NonArg.dagster_type.is_nothing
+
+    assert the_ma.keys_by_input_name.get("A") == AssetKey("A")
+    assert the_ma.keys_by_input_name.get("input_name_doesnt_match_B") == AssetKey("B")
+    assert the_ma.keys_by_input_name.get("NonArg") == AssetKey("NonArg")
 
 
 def test_asset_with_dagster_type():
