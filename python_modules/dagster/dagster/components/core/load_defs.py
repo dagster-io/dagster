@@ -3,6 +3,7 @@ from pathlib import Path
 from types import ModuleType
 from typing import Optional
 
+from dagster_shared import check
 from dagster_shared.serdes.objects.package_entry import json_for_all_components
 from dagster_shared.utils.config import (
     get_canonical_defs_module_name,
