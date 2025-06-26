@@ -66,7 +66,7 @@ You can develop for Dagster using macOS, Linux, or Windows. If using Windows, yo
 
 7. (optional)
 
-   You can further verify your environment is setup by running Dagster's test suite, however this can take an hour or more to complete.
+   You can further verify your environment is set up by running Dagster's test suite, however this can take an hour or more to complete.
    ```bash
    python -m pytest python_modules/dagster/dagster_tests
    ```
