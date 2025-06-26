@@ -16,6 +16,7 @@ class DgAssetMetadata:
     automation_condition: Optional[str]
     tags: Sequence[tuple[str, str]]
     metadata: Sequence[tuple[str, str]]
+    is_executable: bool
 
 
 @record

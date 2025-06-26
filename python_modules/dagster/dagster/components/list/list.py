@@ -176,6 +176,7 @@ def list_definitions(
                             if k not in IGNORE_METADATA_KEYS_LIST_DEFINITIONS
                         ]
                     ),
+                    is_executable=node.is_executable,
                 )
             )
         for key in selected_checks if selected_checks is not None else asset_graph.asset_check_keys:
