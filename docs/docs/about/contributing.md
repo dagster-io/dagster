@@ -38,7 +38,7 @@ You can develop for Dagster using macOS, Linux, or Windows. If using Windows, yo
    npm install --global yarn
    ```
 
-5. Run `make dev_install` at the root of the repository. This sets up a full Dagster developer environment with all modules and runs tests that do not require heavy external dependencies such as docker. Note that certain sections of the makefile (`sanity_check`, which is part of `rebuild_ui`) require POSIX-compliant shells and will fail on CMD and powershell—if developing on windows, using something like WSL or git-bash is recommended.
+5. Run `make dev_install` at the root of the repository. This sets up a full Dagster developer environment with all modules and runs tests that do not require heavy external dependencies such as docker.
 
    ```bash
    make dev_install
@@ -52,13 +52,25 @@ You can develop for Dagster using macOS, Linux, or Windows. If using Windows, yo
     Some users have reported installation problems due to missing wheels for arm64 Macs when installing the `grpcio` package. To install the `dagster` development environment using our pre-built wheel of the `grpcio` package for M1, M2, and M3 machines, run `make dev_install_m1_grpcio_wheel` instead of `make dev_install`.
  </details>
 
-6. Run some tests manually to make sure things are working:
+6. Verify `dagster` and `dagster-webserver` are installed and editable
+  
+    ```bash
+   $ dagster --version
+    dagster, version 1!0+dev
 
+   $ dagster-webserver --version
+   dagster-webserver, version 1!0+dev
+   ```
+
+   As long as you see `version 1!0+dev` in the output, you are all set up and ready to start making code changes to Dagster! 🎉  
+
+7. (optional)
+
+   You can further verify your environment is setup by running Dagster's test suite, however this can take an hour or more to complete.
    ```bash
    python -m pytest python_modules/dagster/dagster_tests
    ```
-
-   Depending on the speed of your computer, running the entire test suite can take an hour or more. `pytest` supports only running a subset of tests, for example `python -m pytest python_modules/dagster/dagster_tests/core_tests` will only run tests in the `core_tests` folder. See [this page](https://docs.pytest.org/en/stable/how-to/usage.html#specifying-which-tests-to-run) for more information on this feature.
+   To run only some of the tests, see [this page](https://docs.pytest.org/en/stable/how-to/usage.html#specifying-which-tests-to-run) of the `pytest` documentation.
 
 ## Developing Dagster
 
