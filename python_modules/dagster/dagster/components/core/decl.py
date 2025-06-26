@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Generic, Optional, TypeVar, Union
 
 from dagster_shared.serdes.objects import EnvRegistryKey
+from dagster_shared.seven import load_module_object
 from dagster_shared.yaml_utils import parse_yamls_with_source_position
 from dagster_shared.yaml_utils.source_position import SourcePosition, ValueAndSourcePositionTree
 from pydantic import BaseModel, TypeAdapter
@@ -31,7 +32,6 @@ from dagster.components.core.defs_module import (
     context_with_injected_scope,
     find_defs_or_component_yaml,
 )
-from dagster.components.core.package_entry import load_package_object
 from dagster.components.resolved.core_models import AssetPostProcessor
 
 T = TypeVar("T", bound=Component)
@@ -122,7 +122,7 @@ class YamlDecl(ComponentDecl):
         # find the component type
         type_str = self.context.normalize_component_type_str(self.component_file_model.type)
         key = EnvRegistryKey.from_typename(type_str)
-        obj = load_package_object(key)
+        obj = load_module_object(key.namespace, key.name)
         if not isinstance(obj, type) or not issubclass(obj, Component):
             raise DagsterInvalidDefinitionError(
                 f"Component type {type_str} is of type {type(obj)}, but must be a subclass of dagster.Component"
