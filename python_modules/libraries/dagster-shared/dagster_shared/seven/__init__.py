@@ -226,6 +226,18 @@ def is_valid_module_pattern(pattern: str) -> bool:
 
 
 def load_module_object(module_name: str, attr: str) -> object:
+    """Loads a top-level attribute from a module.
+
+    Args:
+        module_name: The name of the module to load the attribute from.
+        attr: The name of the attribute to load.
+
+    Returns:
+        The attribute value.
+
+    Raises:
+        DagsterUnresolvableSymbolError: If the module or attribute is not found.
+    """
     from dagster_shared.error import DagsterUnresolvableSymbolError
 
     try:
