@@ -23,46 +23,46 @@ Dagster provides a variety of abstractions for building and orchestrating data p
   graph TD
 
     AssetCheck(AssetCheck)
-    %% click AssetCheck href "concepts#asset-check"
+    %% click AssetCheck href "#asset-check"
 
     Asset(Asset)
-    %%click Asset href "concepts#asset"
+    %%click Asset href "#asset"
 
     Config(Config)
-    %%click Config href "concepts#config"
+    %%click Config href "#config"
 
     CodeLocation(Code Location)
-    %%click CodeLocation href "concepts#code-location"
+    %%click CodeLocation href "#code-location"
 
     Definitions(Definitions)
-    %%click Definitions href "concepts#definitions"
+    %%click Definitions href "#definitions"
 
     Graph(Graph)
-    %%click Graph href "concepts#graph"
+    %%click Graph href "#graph"
 
     IoManager(IO Manager)
-    %%click IoManager href "concepts#io-manager"
+    %%click IoManager href "#io-manager"
 
     Job(Job)
-    %%click Job href "concepts#job"
+    %%click Job href "#job"
 
     Op(Op)
-    %%click Op href "concepts#op"
+    %%click Op href "#op"
 
     Partition(Partition)
-    %%click Partition href "concepts#partition"
+    %%click Partition href "#partition"
 
     Resource(Resource)
-    %%click Resource href "concepts#resource"
+    %%click Resource href "#resource"
 
     Schedule(Schedule)
-    %%click Schedule href "concepts#schedule"
+    %%click Schedule href "#schedule"
 
     Sensor(Sensor)
-    %%click Sensor href "concepts#sensor"
+    %%click Sensor href "#sensor"
 
     Type(Type)
-    %%click Type href "concepts#type"
+    %%click Type href "#type"
 
     Type ==> Op
     Op ==> Graph
@@ -70,7 +70,7 @@ Dagster provides a variety of abstractions for building and orchestrating data p
 
     Job ==> Schedule
     Job ==> Sensor
-    Job ==> Component
+    Job ==> Definitions
 
     Partition ==> Asset
     IoManager ==> Asset
@@ -79,8 +79,9 @@ Dagster provides a variety of abstractions for building and orchestrating data p
     Resource ==> Schedule
     Resource ==> Sensor
 
-    AssetCheck ==> Component
+    Component ==> AssetCheck
     AssetCheck ==> Asset
+    AssetSpec ==> Asset
 
     Config ==> Schedule
     Config ==> Sensor
@@ -91,17 +92,20 @@ Dagster provides a variety of abstractions for building and orchestrating data p
     Asset ==> Schedule
     Asset ==> Sensor
 
-    subgraph Component
-    Definitions
-    end
+    Component ==> Asset
+    Component ==> Schedule
+    Component ==> Sensor
+    Component ==> IoManager
+    Component ==> Resource
+    Component ==> Job
 
-    Asset ==> Component
-    Schedule ==> Component
-    Sensor ==> Component
-    IoManager ==> Component
-    Resource ==> Component
+    Asset ==> Definitions
+    Schedule ==> Definitions
+    Sensor ==> Definitions
+    IoManager ==> Definitions
+    Resource ==> Definitions
 
-    Component ==> CodeLocation
+    Definitions ==> CodeLocation
 ```
 
 ## Asset
@@ -130,9 +134,13 @@ Dagster provides a variety of abstractions for building and orchestrating data p
     style IOManager fill:#BDBAB7,stroke:#BDBAB7,stroke-width:2px
     style Resource fill:#BDBAB7,stroke:#BDBAB7,stroke-width:2px
     style AssetCheck fill:#BDBAB7,stroke:#BDBAB7,stroke-width:2px
+    style AssetSpec fill:#BDBAB7,stroke:#BDBAB7,stroke-width:2px
+    style Component fill:#BDBAB7,stroke:#BDBAB7,stroke-width:2px
     style Definitions fill:#BDBAB7,stroke:#BDBAB7,stroke-width:2px
 
+    Component -.-> Asset
     AssetCheck -.-> Asset
+    AssetSpec -.-> Asset
     Config -.-> Asset
     Partition -.-> Asset
     Resource -.-> Asset
@@ -179,12 +187,14 @@ An <PyObject section="assets" module="dagster" object="asset" /> represents a lo
   }
 }%%
   graph LR
+    style Component fill:#BDBAB7,stroke:#BDBAB7,stroke-width:2px
     style Asset fill:#BDBAB7,stroke:#BDBAB7,stroke-width:2px
 
     AssetCheck(Asset Check)
 
     style Definitions fill:#BDBAB7,stroke:#BDBAB7,stroke-width:2px
 
+    Component -.-> AssetCheck
     AssetCheck -.-> Asset
     AssetCheck ==> Definitions
 ```
@@ -273,10 +283,30 @@ A [code location](/deployment/code-locations/) is a collection of Dagster entity
   }
 }%%
   graph LR
-    subgraph Component
-    Definitions(Definitions)
-    end
-``` 
+    style Asset fill:#BDBAB7,stroke:#BDBAB7,stroke-width:2px
+    style AssetCheck fill:#BDBAB7,stroke:#BDBAB7,stroke-width:2px
+    style Job fill:#BDBAB7,stroke:#BDBAB7,stroke-width:2px
+    style Resource fill:#BDBAB7,stroke:#BDBAB7,stroke-width:2px
+    style Schedule fill:#BDBAB7,stroke:#BDBAB7,stroke-width:2px
+    style Sensor fill:#BDBAB7,stroke:#BDBAB7,stroke-width:2px
+    style Definitions fill:#BDBAB7,stroke:#BDBAB7,stroke-width:2px
+
+    Component(Component)
+
+    Component -.-> Asset
+    Component -.-> AssetCheck
+    Component -.-> Job
+    Component -.-> Resource
+    Component -.-> Schedule
+    Component -.-> Sensor
+
+    Asset ==> Definitions
+    AssetCheck ==> Definitions
+    Job ==> Definitions
+    Resource ==> Definitions
+    Schedule ==> Definitions
+    Sensor ==> Definitions
+```
 
 Components are objects that programmatically build <PyObject section="assets" module="dagster" object="asset" pluralize /> and other Dagster entity definitions, such as <PyObject section="asset-checks" module="dagster" object="asset_check" pluralize />, <PyObject section="schedules-sensors" module="dagster" object="schedule" pluralize />, <PyObject section="resources" module="dagster" object="ResourceDefinition" displayText="resources" />, and <PyObject section="schedules-sensors" module="dagster" object="sensor" pluralize />. They accept schematized configuration parameters (which are specified using YAML or lightweight Python) and use them to build the actual definitions you need. Components are designed to help you quickly bootstrap parts of your Dagster project and serve as templates for repeatable patterns.
 
