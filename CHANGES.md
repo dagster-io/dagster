@@ -44,7 +44,7 @@ The `dg` CLI provides a single surface for scaffolding, local iteration, executi
 
 ### UI
 
-- **Unified asset selection syntax** lets you combine lineage traversal, attribute filters, and boolean logic in a single expression; the same grammar powers Alerts, Insights, Saved Selections, the Asset Catalog, and Components YAML. An analogous op-selection grammar is available in the Gantt view of a single run. [[docs](https://docs.dagster.io/guides/build/assets/asset-selection-syntax/reference)]
+- **Unified asset selection syntax** lets you combine lineage traversal, attribute filters, and boolean logic in a single expression; the same syntax powers Alerts, Insights, Saved Selections, the Asset Catalog, and Components YAML. An analogous op-selection syntax is available in the Gantt view of a single run. [[docs](https://docs.dagster.io/guides/build/assets/asset-selection-syntax/reference)]
 - **Redesigned, customizable asset-graph nodes** with health overlays and deeper zoom.
 - **Runs › Backfills** consolidates all backfill activity under the Runs page for faster navigation.
 
