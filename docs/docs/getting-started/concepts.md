@@ -312,14 +312,13 @@ Components are objects that programmatically build <PyObject section="assets" mo
 
 | Concept                     | Relationship                                             |
 | --------------------------- | -------------------------------------------------------- |
-| [asset](#asset)             | `component` build `assets` and other `definitions`       |
-| [asset check](#asset-check) | `component` build `asset_checks` and other `definitions` |
-| [definitions](#definitions) | `component` build `assets` and other `definitions`       |
-| [job](#job)                 | `component` build `jobs` and other `definitions`         |
-| [schedule](#schedule)       | `component` build `schedules` and other `definitions`    |
-| [sensor](#sensor)           | `component` build `sensors` and other `definitions`      |
-| [resource](#resource)       | `component` build `resources` and other `definitions`    |
-`
+| [asset](#asset)             | `component` builds `assets` and other `definitions`       |
+| [asset check](#asset-check) | `component` builds `asset_checks` and other `definitions` |
+| [definitions](#definitions) | `component` builds `assets` and other `definitions`       |
+| [job](#job)                 | `component` builds `jobs` and other `definitions`         |
+| [schedule](#schedule)       | `component` builds `schedules` and other `definitions`    |
+| [sensor](#sensor)           | `component` builds `sensors` and other `definitions`      |
+| [resource](#resource)       | `component` builds `resources` and other `definitions`    |
 
 ## Config
 
@@ -412,7 +411,7 @@ In Dagster, "definitions" means two things:
 | [job](#job)                     | Top-level `Definitions` object may contain one or more `job` definitions         |
 | [resource](#resource)           | Top-level `Definitions` object may contain one or more `resource` definitions    |
 | [schedule](#schedule)           | Top-level `Definitions` object may contain one or more `schedule` definitions    |
-| [sensor](#sensor)               |Top-level `Definitions` object may contain one or more `sensor` definitions       |
+| [sensor](#sensor)               | Top-level `Definitions` object may contain one or more `sensor` definitions      |
 | [component](#component)         | `definition` may be the output of a `component`                                  |
 | [code location](#code-location) | `definitions` must be deployed in a `code location`                              |
 
