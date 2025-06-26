@@ -1,13 +1,14 @@
 import abc
 import inspect
 from collections.abc import Callable, Iterator, Mapping, Sequence
+from contextlib import nullcontext
 from pathlib import Path
 from typing import Generic, Optional, TypeVar, Union
 
-from dagster_shared.serdes.objects import PluginObjectKey
+from dagster_shared.serdes.objects import EnvRegistryKey
 from dagster_shared.yaml_utils import parse_yamls_with_source_position
 from dagster_shared.yaml_utils.source_position import SourcePosition, ValueAndSourcePositionTree
-from pydantic import TypeAdapter
+from pydantic import BaseModel, TypeAdapter
 
 import dagster._check as check
 from dagster._core.errors import DagsterInvalidDefinitionError
@@ -26,10 +27,12 @@ from dagster.components.core.defs_module import (
     CompositeYamlComponent,
     DagsterDefsComponent,
     DefsFolderComponent,
+    asset_post_processor_list_from_post_processing_dict,
     context_with_injected_scope,
     find_defs_or_component_yaml,
 )
 from dagster.components.core.package_entry import load_package_object
+from dagster.components.resolved.core_models import AssetPostProcessor
 
 T = TypeVar("T", bound=Component)
 
@@ -100,10 +103,25 @@ class YamlDecl(ComponentDecl):
         self.source_tree = source_tree
         self.component_file_model = component_file_model
 
+    def _get_attributes_model(self, model_cls: Optional[type[BaseModel]]) -> Optional[BaseModel]:
+        if model_cls is None or not self.source_tree or not self.component_file_model.attributes:
+            return None
+
+        attributes_position_tree = self.source_tree.source_position_tree.children.get(
+            "attributes", None
+        )
+        with (
+            enrich_validation_errors_with_source_position(attributes_position_tree, ["attributes"])
+            if attributes_position_tree
+            else nullcontext()
+        ):
+            return TypeAdapter(model_cls).validate_python(self.component_file_model.attributes)
+        return None
+
     def _load_component(self) -> "Component":
         # find the component type
         type_str = self.context.normalize_component_type_str(self.component_file_model.type)
-        key = PluginObjectKey.from_typename(type_str)
+        key = EnvRegistryKey.from_typename(type_str)
         obj = load_package_object(key)
         if not isinstance(obj, type) or not issubclass(obj, Component):
             raise DagsterInvalidDefinitionError(
@@ -120,23 +138,24 @@ class YamlDecl(ComponentDecl):
 
         model_cls = obj.get_model_cls()
 
-        # grab the attributes from the yaml file
-        if model_cls is None:
-            attributes = None
-        elif self.source_tree:
-            attributes_position_tree = self.source_tree.source_position_tree.children["attributes"]
-            with enrich_validation_errors_with_source_position(
-                attributes_position_tree, ["attributes"]
-            ):
-                attributes = TypeAdapter(model_cls).validate_python(
-                    self.component_file_model.attributes
-                )
-        else:
-            attributes = TypeAdapter(model_cls).validate_python(
-                self.component_file_model.attributes
-            )
+        attributes = self._get_attributes_model(model_cls)
 
         return obj.load(attributes, context)
+
+    def get_asset_post_processor_lists(self) -> list[AssetPostProcessor]:
+        post_processing_position_tree = self.source_tree.source_position_tree.children.get(
+            "post_processing", None
+        )
+        with (
+            enrich_validation_errors_with_source_position(
+                post_processing_position_tree, ["post_processing"]
+            )
+            if post_processing_position_tree
+            else nullcontext()
+        ):
+            return asset_post_processor_list_from_post_processing_dict(
+                self.context.resolution_context, self.component_file_model.post_processing
+            )
 
 
 class YamlFileDecl(ComponentDecl[CompositeYamlComponent]):
@@ -158,6 +177,9 @@ class YamlFileDecl(ComponentDecl[CompositeYamlComponent]):
         return CompositeYamlComponent(
             components=[decl._load_component() for decl in self.decls],  # noqa: SLF001
             source_positions=self.source_positions,
+            asset_post_processor_lists=[
+                decl.get_asset_post_processor_lists() for decl in self.decls
+            ],
         )
 
 
@@ -189,7 +211,6 @@ class DefsFolderDecl(ComponentDecl[DefsFolderComponent]):
         return DefsFolderComponent(
             path=self.path,
             children={subpath: decl._load_component() for subpath, decl in self.children.items()},  # noqa: SLF001
-            asset_post_processors=None,
         )
 
     def iterate_component_decls(self) -> Iterator[ComponentDecl]:

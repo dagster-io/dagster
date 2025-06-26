@@ -7,7 +7,7 @@ from typing import Any, Optional, TypeVar, Union
 
 from dagster_shared.record import record
 from dagster_shared.yaml_utils.source_position import SourcePosition
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, TypeAdapter
 
 import dagster._check as check
 from dagster._annotations import public
@@ -27,6 +27,7 @@ from dagster.components.component.template_vars import find_inline_template_vars
 from dagster.components.core.context import ComponentLoadContext
 from dagster.components.definitions import LazyDefinitions
 from dagster.components.resolved.base import Resolvable
+from dagster.components.resolved.context import ResolutionContext
 from dagster.components.resolved.core_models import AssetPostProcessor, post_process_defs
 from dagster.components.resolved.model import Model
 
@@ -442,3 +443,16 @@ def context_with_injected_scope(
             },
         },
     )
+
+
+def asset_post_processor_list_from_post_processing_dict(
+    resolution_context: ResolutionContext, post_processing: Optional[Mapping[str, Any]]
+) -> list[AssetPostProcessor]:
+    if not post_processing:
+        return []
+
+    post_processing_model = ComponentPostProcessingModel.resolve_from_model(
+        context=resolution_context,
+        model=TypeAdapter(ComponentPostProcessingModel.model()).validate_python(post_processing),
+    )
+    return list(post_processing_model.assets or [])
