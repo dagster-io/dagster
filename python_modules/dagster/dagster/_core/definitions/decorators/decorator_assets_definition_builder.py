@@ -2,7 +2,16 @@ from collections import Counter
 from collections.abc import Iterable, Mapping, Sequence
 from functools import cached_property
 from inspect import Parameter
-from typing import AbstractSet, Any, Callable, NamedTuple, Optional  # noqa: UP035
+from typing import (  # noqa: UP035
+    AbstractSet,
+    Annotated,
+    Any,
+    Callable,
+    NamedTuple,
+    Optional,
+    get_args,
+    get_origin,
+)
 
 import dagster._check as check
 from dagster._config.config_schema import UserConfigSchema
@@ -80,6 +89,14 @@ def validate_can_coexist(asset_in: AssetIn, asset_dep: AssetDep) -> None:
         )
 
 
+def _get_asset_in_from_param(param: Parameter) -> AssetIn:
+    """Extracts an AssetIn from an annotated parameter if it exists, otherwise returns a default AssetIn."""
+    annotation = param.annotation
+    if get_origin(annotation) == Annotated:
+        return next((arg for arg in get_args(annotation) if isinstance(arg, AssetIn)), AssetIn())
+    return AssetIn()
+
+
 def build_and_validate_named_ins(
     fn: Callable[..., Any],
     deps: Optional[Iterable[AssetDep]],
@@ -124,9 +141,9 @@ def build_and_validate_named_ins(
         if dep.asset_key in asset_ins_by_key:
             validate_can_coexist(asset_ins_by_key[dep.asset_key], dep)
 
-    # create a default AssetIn for each input name, then override with any explicitly passed AssetIns
+    # create an AssetIn for each function parameter, then combine with any explicitly passed AssetIns
     asset_ins_by_input_name: dict[str, AssetIn] = {
-        **{input_name: AssetIn() for input_name in single_asset_input_param_names},
+        **{param.name: _get_asset_in_from_param(param) for param in single_asset_input_params},
         **passed_asset_ins,
     }
 
