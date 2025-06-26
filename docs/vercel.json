@@ -3187,6 +3187,10 @@
       "destination": "/guides/build/components/creating-new-components"
     },
     {
+      "source": "/guides/build/components/creating-new-components/creating-dg-plugin",
+      "destination": "/guides/build/components/creating-new-components"
+    },
+    {
       "source": "/guides/labs/components/:path*",
       "destination": "/guides/build/components/:path*"
     },
