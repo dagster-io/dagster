@@ -102,8 +102,9 @@ def test_components_docs_snowflake_sql(
             Path("my_project") / "defs" / "resources.py",
             contents=textwrap.dedent(
                 """\
-                import dagster as dg
                 from dagster_snowflake import SnowflakeResource
+
+                import dagster as dg
 
                 defs = dg.Definitions(
                     resources={

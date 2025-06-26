@@ -24,8 +24,7 @@ class MockSnowflakeCursor:
     """Mock Snowflake cursor that no-ops on execute."""
 
     def execute(self, query: str, *args, **kwargs):
-        # No-op - just log that we would execute the query
-        print(f"Mock Snowflake executing: {query}")
+        pass
 
     def fetchall(self):
         return []

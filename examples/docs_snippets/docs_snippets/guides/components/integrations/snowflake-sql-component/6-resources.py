@@ -1,5 +1,6 @@
-import dagster as dg
 from dagster_snowflake import SnowflakeResource
+
+import dagster as dg
 
 defs = dg.Definitions(
     resources={
