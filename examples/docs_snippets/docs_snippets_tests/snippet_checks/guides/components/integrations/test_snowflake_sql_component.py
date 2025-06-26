@@ -122,6 +122,12 @@ def test_components_docs_snowflake_sql(
             snippet_path=f"{context.get_next_snip_number()}-resources.py",
         )
 
+        context.run_command_and_snippet_output(
+            cmd="tree my_project/defs",
+            snippet_path=f"{context.get_next_snip_number()}-tree.txt",
+            custom_comparison_fn=compare_tree_output,
+        )
+
         # Now populate the defs.yaml file with the correct content
         context.create_file(
             Path("my_project") / "defs" / "daily_revenue" / "defs.yaml",
@@ -138,15 +144,17 @@ def test_components_docs_snowflake_sql(
                     WHERE {{ date_column }} >= '{{ start_date }}'
                     GROUP BY DATE_TRUNC('day', {{ date_column }})
                     ORDER BY date
-                  assets:
-                    - key: ANALYTICS/DAILY_REVENUE
-                      group_name: analytics
-                      kinds: [snowflake]
+
                   sql_template_vars:
                     table_name: SALES_TRANSACTIONS
                     date_column: TRANSACTION_DATE
                     amount_column: SALE_AMOUNT
                     start_date: "2024-01-01"
+
+                  assets:
+                    - key: ANALYTICS/DAILY_REVENUE
+                      group_name: analytics
+                      kinds: [snowflake]
                 """
             ),
             snippet_path=f"{context.get_next_snip_number()}-customized-component.yaml",

@@ -14,7 +14,7 @@ To begin, you'll need a Dagster project. You can use an [existing components-rea
 
 Activate the project virtual environment:
 
-<CliInvocationExample content="source ../.venv/bin/activate" />
+<CliInvocationExample contents="source ../.venv/bin/activate" />
 
 Finally, add the `dagster-snowflake` library to the project:
 
@@ -30,28 +30,32 @@ The scaffold call will generate a `defs.yaml` file:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/snowflake-sql-component/4-tree.txt" />
 
-## 3. Configure Snowflake resources
+## 3. Configure Snowflake resource
 
-You'll need to configure a Snowflake resource to enable your component to connect to your Snowflake instance. Create a `resources.py` file in your `defs` directory:
+You'll need to configure a Snowflake [resource](/guides/build/external-resources) to enable your component to connect to your Snowflake instance. For more information on the Snowflake resource, see the [Using Snowflake with Dagster](/integrations/libraries/snowflake/using-snowflake-with-dagster#step-1-configure-the-snowflake-resource) guide.
+
+Create a `resources.py` file in your `defs` directory:
 
 <CodeExample path="docs_snippets/docs_snippets/guides/components/integrations/snowflake-sql-component/6-resources.py" title="my_project/defs/resources.py" language="python" />
 
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/snowflake-sql-component/7-tree.txt" />
+
 You will only need a single resource in your project for each Snowflake instance you'd like to connect to - this resource can be used by multiple components.
 
-## 4. Customize the component with your SQL
+## 4. Write custom SQL
 
 You can customize the SQL template and define the assets that will be created. Update your `defs.yaml` file with a SQL template and template variables. You can also specify properties for the asset in Dagster, such as a group name and kind tag:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/components/integrations/snowflake-sql-component/7-customized-component.yaml" title="my_project/defs/daily_revenue/defs.yaml" language="yaml" />
+<CodeExample path="docs_snippets/docs_snippets/guides/components/integrations/snowflake-sql-component/8-customized-component.yaml" title="my_project/defs/daily_revenue/defs.yaml" language="yaml" />
 
 You can run `dg list defs` to see the asset corresponding to your component:
 
 <WideContent maxSize={1100}>
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/snowflake-sql-component/8-list-defs.txt" />
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/snowflake-sql-component/9-list-defs.txt" />
 </WideContent>
 
 ## 5. Launch your assets
 
 Now, you can launch your asset using the UI or CLI to execute your SQL query and rebuild the table in Snowflake:
 
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/snowflake-sql-component/9-launch.txt" />
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/snowflake-sql-component/10-launch.txt" />
