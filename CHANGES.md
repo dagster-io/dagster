@@ -6,12 +6,12 @@
 
 ### Components — Configurable, reusable building blocks for data pipelines (now stable)
 
-Components, first released as Preview in 1.10.6, have reached Release Candidate status. APIs are stable, fully documented, and are the recommended, product-ready defaults for new Dagster projects.
+Components, first released as Preview in 1.10.6, have reached Release Candidate status. APIs are stable, fully documented, and are the recommended, production-ready defaults for new Dagster projects.
 
-- **Declarative spec:** A short YAML block in `defs.yaml`, or a lightweight `Component` subclass in Python, lets you spin up assets, resources, schedules, IO managers, and checks, removing boilerplate while keeping every definition type-checked.
-- **Custom Components:** Subclassing `Component` lets you wrap any internal script or SaaS behind a strongly-typed interface; get the same autocompletion and docs as first-party integrations.
-- **Pythonic Templating:** Register variables or helpers with `@template_var` so pipeline authors edit parameters directly in YAML without touching Python. Optional inline components keep small bits of Python co-located.
-- **Powerful tooling:** High quality errors, strongly typed schema, tooling used in CI/CD, and auto-generated reference docs in UI.
+- **Simplified interface:** A short YAML block in `defs.yaml`, or a lightweight `Component` subclass in Python, lets you spin up assets, resources, schedules, IO managers, and checks, removing boilerplate while keeping every definition type-checked.
+- **Custom components:** Subclassing `Component` lets you wrap any internal script or third-party tool behind a strongly-typed interface; get the same autocompletion and docs as first-party integrations.
+- **Pythonic templating:** Register variables or helpers with `@template_var` so pipeline authors edit parameters directly in YAML without touching Python. Optional inline components keep small bits of Python co-located.
+- **Powerful tooling:** High quality errors, strongly-typed schemas, rich CLI support, and auto-generated docs directly in the UI.
 - **Read the docs:** http://docs.dagster.io/guides/build/components/
 
 ### `dg` — **the everything-CLI for developer experience (now stable)**
@@ -19,9 +19,9 @@ Components, first released as Preview in 1.10.6, have reached Release Candidate 
 The `dg` CLI provides a single surface for scaffolding, local iteration, execution, and static analysis; introduced as Preview in 1.10.6, it has also reached Release Candidate status.
 
 - **Scaffolding:** Namespaced scaffold commands such as `dg scaffold defs dagster.asset assets.py`, `dg scaffold component …` to quickly generate definitions without boilerplate.
-- **Local development & ad-hoc execution:** `dg dev` spins up local instance with UI; `dg launch` to run jobs and assets from the CLI.
-- **Introspection & checks:** `dg list` enumerates definitions; `dg check` validates YAML and Python against schemas.
-- **Utility bundle:** `dg utils` provides support for Cursor/VSCode schema setup, JSON-schema export, and deep component inspect.
+- **Local development & ad-hoc execution:** `dg dev` spins up local instance with UI; `dg launch` runs jobs and assets from the CLI.
+- **Introspection & checks:** `dg list` enumerates definitions; `dg check` validates YAML and Python code.
+- **Utility bundle:** `dg utils` provides support for Cursor/VSCode schema setup, JSON-schema export, and deep component inspection.
 - **CLI reference:** https://docs.dagster.io/api/dg/dg-cli
 
 ### `create-dagster` — one-shot project scaffold
@@ -40,11 +40,11 @@ The `dg` CLI provides a single surface for scaffolding, local iteration, executi
   - **`BackfillPolicy`** is now GA
   - Backfills can now use a threadpool for more efficient run submission. By default, the daemon will now use 4 workers.
 - **Concurrency enhancements** – run blocking is now on by default for concurrency pools, preventing oversubscription when scheduling runs.
-- **FreshnessPolicy** — A new **`FreshnessPolicy`** API is introduced, replacing the deprecated `FreshnessPolicy` API (which has been renamed to `LegacyFreshnessPolicy`). The API is under active development, and will eventually also supersede freshness checks as the primary way of specifying and evaluating asset freshness. For more details, check out the GitHub discussion [GH discussion] and docs: https://docs.dagster.io/guides/labs/freshness
+- **FreshnessPolicy** — A new **`FreshnessPolicy`** API is introduced, replacing the deprecated `FreshnessPolicy` API (which has been renamed to `LegacyFreshnessPolicy`). The API is under active development, and will eventually also supersede freshness checks as the primary way of specifying and evaluating asset freshness. For more details, check out the docs: https://docs.dagster.io/guides/labs/freshness
 
 ### UI
 
-- **Unified asset selection syntax** lets you combine lineage traversal, attribute filters, and boolean logic in a single expression; the same grammar powers Alerts, Insights, Saved Selections, the Asset Catalog, Components YAML, and the Python `AssetSelection` API. An analogous op-selection grammar is available in the Gantt view of a single run. [[docs](https://docs.dagster.io/guides/build/assets/asset-selection-syntax/reference)]
+- **Unified asset selection syntax** lets you combine lineage traversal, attribute filters, and boolean logic in a single expression; the same grammar powers Alerts, Insights, Saved Selections, the Asset Catalog, and Components YAML. An analogous op-selection grammar is available in the Gantt view of a single run. [[docs](https://docs.dagster.io/guides/build/assets/asset-selection-syntax/reference)]
 - **Redesigned, customizable asset-graph nodes** with health overlays and deeper zoom.
 - **Runs › Backfills** consolidates all backfill activity under the Runs page for faster navigation.
 
