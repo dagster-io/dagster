@@ -25,6 +25,8 @@ import {AssetHealthFragment} from '../asset-data/types/AssetHealthDataProvider.t
 import {AssetEventHistoryEventTypeSelector} from '../graphql/types';
 import {TimeFromNow} from '../ui/TimeFromNow';
 
+const INTERVAL_MSEC = 30 * 1000;
+
 export const AssetRecentUpdatesTrend = React.memo(({asset}: {asset: AssetHealthFragment}) => {
   // Wait 100ms to avoid querying during fast scrolling of the table
   const shouldQuery = useDelayedState(500);
@@ -48,7 +50,7 @@ export const AssetRecentUpdatesTrend = React.memo(({asset}: {asset: AssetHealthF
 
   useRefreshAtInterval({
     refresh: refetch,
-    intervalMs: 3000,
+    intervalMs: INTERVAL_MSEC,
     enabled: shouldQuery,
   });
 
