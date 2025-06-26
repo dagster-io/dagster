@@ -272,7 +272,7 @@
     },
     {
       "source": "/examples/conditional_execution",
-      "destination": "/guides/build/assets/asset-jobs"
+      "destination": "/guides/build/jobs/asset-jobs"
     },
     {
       "source": "/examples/config_mapping",
@@ -284,7 +284,7 @@
     },
     {
       "source": "/examples/dep_dsl",
-      "destination": "/guides/build/assets/asset-jobs"
+      "destination": "/guides/build/jobs/asset-jobs"
     },
     {
       "source": "/examples/deploy_docker",
@@ -296,7 +296,7 @@
     },
     {
       "source": "/examples/fan_in_pipeline",
-      "destination": "/guides/build/assets/asset-jobs"
+      "destination": "/guides/build/jobs/asset-jobs"
     },
     {
       "source": "/examples/ge_example",
@@ -312,7 +312,7 @@
     },
     {
       "source": "/examples/nothing",
-      "destination": "/guides/build/assets/asset-jobs"
+      "destination": "/guides/build/jobs/asset-jobs"
     },
     {
       "source": "/examples/pipeline_tags",
@@ -324,7 +324,7 @@
     },
     {
       "source": "/examples/dynamic_graph",
-      "destination": "/guides/build/assets/asset-jobs"
+      "destination": "/guides/build/jobs/asset-jobs"
     },
     {
       "source": "/examples/memoized_development",
@@ -449,7 +449,7 @@
     },
     {
       "source": "/concepts/ops-jobs-graphs/jobs-graphs",
-      "destination": "/guides/build/graphs"
+      "destination": "/guides/build/ops/graphs"
     },
     {
       "source": "/concepts/solids-pipelines/pipeline-execution",
@@ -754,7 +754,7 @@
     },
     {
       "source": "/concepts/assets/asset-jobs",
-      "destination": "/guides/build/assets/asset-jobs"
+      "destination": "/guides/build/jobs/asset-jobs"
     },
     {
       "source": "/guides/build/assets/asset-jobs",
@@ -942,15 +942,15 @@
     },
     {
       "source": "/concepts/ops-jobs-graphs/graphs",
-      "destination": "/guides/build/graphs"
+      "destination": "/guides/build/ops/graphs"
     },
     {
       "source": "/concepts/ops-jobs-graphs/nesting-graphs",
-      "destination": "/guides/build/graphs"
+      "destination": "/guides/build/ops/nesting-graphs"
     },
     {
       "source": "/concepts/ops-jobs-graphs/dynamic-graphs",
-      "destination": "/guides/build/graphs"
+      "destination": "/guides/build/ops/dynamic-graphs"
     },
     {
       "source": "/guides/build/graphs",
@@ -958,15 +958,15 @@
     },
     {
       "source": "/concepts/ops-jobs-graphs/jobs",
-      "destination": "/guides/build/assets/asset-jobs"
+      "destination": "/guides/build/jobs"
     },
     {
       "source": "/concepts/ops-jobs-graphs/op-jobs",
-      "destination": "/guides/build/assets/asset-jobs"
+      "destination": "/guides/build/jobs/op-jobs"
     },
     {
       "source": "/concepts/ops-jobs-graphs/job-execution",
-      "destination": "/guides/build/assets/asset-jobs"
+      "destination": "/guides/build/jobs/job-execution"
     },
     {
       "source": "/concepts/metadata-tags",
@@ -1847,10 +1847,6 @@
       "destination": "/about/contributing"
     },
     {
-      "source": "/integrations/airlift/federation-tutorial/overview",
-      "destination": "/integrations/libraries/airlift"
-    },
-    {
       "source": "/integrations/airlift/tutorial/overview",
       "destination": "/integrations/libraries/airlift"
     },
@@ -1874,11 +1870,6 @@
     {
       "source": "/next/guides/build/components/:path",
       "destination": "/guides/build/components/:path"
-    },
-    {
-      "source": "/guides/build/components",
-      "destination": "/guides/build/components/",
-      "permanent": false
     },
     {
       "source": "/next/:path*",
@@ -3165,7 +3156,7 @@
     },
     {
       "source": "/guides/labs/create-dagster",
-      "destination": "/api/dagster/create-dagster"
+      "destination": "/api/dg/create-dagster"
     },
     {
       "source": "/guides/labs/components/creating-new-component-types",
