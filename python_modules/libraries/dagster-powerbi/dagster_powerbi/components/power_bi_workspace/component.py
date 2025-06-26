@@ -228,6 +228,10 @@ class PowerBIWorkspaceComponent(Component, Resolvable):
             return ProxyDagsterPowerBITranslator(self.translation)
         return DagsterPowerBITranslator()
 
+    @cached_property
+    def workspace_resource(self) -> PowerBIWorkspace:
+        return self.workspace
+
     def _should_spec_be_refreshable(self, spec: AssetSpec) -> bool:
         return spec.tags.get("dagster-powerbi/asset_type") == "semantic_model" and (
             self.enable_semantic_model_refresh is True
@@ -249,13 +253,13 @@ class PowerBIWorkspaceComponent(Component, Resolvable):
             name="_".join(spec.key.path),
         )
         def asset_fn(context: AssetExecutionContext) -> None:
-            self.workspace.trigger_and_poll_refresh(dataset_id)
+            self.workspace_resource.trigger_and_poll_refresh(dataset_id)
 
         return asset_fn
 
     def build_defs(self, context: ComponentLoadContext) -> dg.Definitions:
         specs = load_powerbi_asset_specs(
-            workspace=self.workspace,
+            workspace=self.workspace_resource,
             dagster_powerbi_translator=self.translator,
             use_workspace_scan=self.use_workspace_scan,
         )
