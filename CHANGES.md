@@ -40,7 +40,7 @@ The `dg` CLI provides a single surface for scaffolding, local iteration, executi
   - **`BackfillPolicy`** is now GA
   - Backfills can now use a threadpool for more efficient run submission. By default, the daemon will now use 4 workers.
 - **Concurrency enhancements** – run blocking is now on by default for concurrency pools, preventing oversubscription when scheduling runs.
-- **FreshnessPolicy** — A new **`FreshnessPolicy`** API is introduced, replacing the deprecated `FreshnessPolicy` API (which has been renamed to `LegacyFreshnessPolicy`). The API is under active development, and will eventually also supersede freshness checks as the primary way of specifying and evaluating asset freshness. For more details, check out the docs: https://docs.dagster.io/guides/labs/freshness
+- **FreshnessPolicy** — A new **`FreshnessPolicy`** API is introduced, replacing the deprecated `FreshnessPolicy` API (which has been renamed to `LegacyFreshnessPolicy`). The API is under active development, and will eventually also supersede freshness checks as the primary way of specifying and evaluating asset freshness. For more details, check out the [GitHub announcement](https://github.com/dagster-io/dagster/discussions/30934) and the [docs](https://docs.dagster.io/guides/labs/freshness).
 
 ### UI
 
