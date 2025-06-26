@@ -91,8 +91,8 @@ def _build_asset_check_named_ins(
 
     return build_and_validate_named_ins(
         fn=fn,
-        asset_ins=all_ins,
         deps=all_deps.values(),
+        passed_asset_ins=all_ins,
     )
 
 
@@ -366,12 +366,12 @@ def multi_asset_check(
 
         named_ins_by_asset_key = build_and_validate_named_ins(
             fn=fn,
-            asset_ins={
+            deps=all_deps_by_key.values(),
+            passed_asset_ins={
                 inp_name: AssetIn.from_coercible(coercible) for inp_name, coercible in ins.items()
             }
             if ins
             else {},
-            deps=all_deps_by_key.values(),
         )
         validate_named_ins_subset_of_deps(named_ins_by_asset_key, all_deps_by_key)
 

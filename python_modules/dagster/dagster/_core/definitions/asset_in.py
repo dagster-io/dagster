@@ -83,5 +83,8 @@ class AssetIn(
     def from_coercible(cls, coercible: "CoercibleToAssetIn") -> "AssetIn":
         return coercible if isinstance(coercible, AssetIn) else AssetIn(key=coercible)
 
+    def resolve_key(self, input_name: str) -> AssetKey:
+        return self.key or AssetKey.from_coercible(input_name).with_prefix(self.key_prefix or [])
+
 
 CoercibleToAssetIn = Union[AssetIn, CoercibleToAssetKey]
