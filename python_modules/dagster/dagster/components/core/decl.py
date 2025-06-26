@@ -196,8 +196,7 @@ class YamlDecl(YamlBackedComponentDecl):
         )
 
     def _load_component(self) -> "Component":
-        context = self.context_with_component_injected_scope
-        context = context.with_source_position_tree(
+        context = self.context_with_component_injected_scope.with_source_position_tree(
             check.not_none(self.source_tree).source_position_tree,
         )
 
@@ -305,7 +304,7 @@ def build_component_decl_from_context(context: ComponentLoadContext) -> Optional
         )
     # folder
     elif context.path.is_dir():
-        children = build_component_decls_from_directory_items(context)
+        children = build_component_decls_from_directory_items(context, None)
         if children:
             return DefsFolderDecl(
                 context=context,
@@ -319,14 +318,20 @@ def build_component_decl_from_context(context: ComponentLoadContext) -> Optional
 
 
 def build_component_decls_from_directory_items(
-    context: ComponentLoadContext,
+    context: ComponentLoadContext, component_file_model: Optional[ComponentFileModel]
 ) -> Mapping[Path, ComponentDecl]:
     found = {}
     for subpath in context.path.iterdir():
         relative_subpath = subpath.relative_to(context.path)
         if any(relative_subpath.match(pattern) for pattern in EXPLICITLY_IGNORED_GLOB_PATTERNS):
             continue
-        component_node = build_component_decl_from_context(context.for_path(subpath))
+        path_context = context_with_injected_scope(
+            context,
+            DefsFolderComponent,
+            component_file_model.template_vars_module if component_file_model else None,
+        ).for_path(subpath)
+
+        component_node = build_component_decl_from_context(path_context)
         if component_node:
             found[subpath] = component_node
     return found
@@ -410,7 +415,7 @@ def build_component_decl_from_yaml_document(
     check.invariant(component_decl_type in (YamlDecl, DefsFolderDecl))
 
     if component_decl_type == DefsFolderDecl:
-        children = build_component_decls_from_directory_items(context)
+        children = build_component_decls_from_directory_items(context, component_file_model)
         return DefsFolderDecl(
             context=context,
             path=path,
