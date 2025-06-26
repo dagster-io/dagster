@@ -15,10 +15,9 @@ import {
 } from '@dagster-io/ui-components';
 import React, {useMemo} from 'react';
 import {Link} from 'react-router-dom';
-import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
+import {observeEnabled} from 'shared/app/observeEnabled.oss';
 
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
-import {featureEnabled} from '../app/Flags';
 import {assertUnreachable} from '../app/Util';
 import {useAssetHealthData} from '../asset-data/AssetHealthDataProvider';
 import {
@@ -39,7 +38,7 @@ import {numberFormatter} from '../ui/formatters';
 
 export const AssetHealthSummary = React.memo(
   ({assetKey, iconOnly}: {assetKey: {path: string[]}; iconOnly?: boolean}) => {
-    if (!featureEnabled(FeatureFlag.flagUseNewObserveUIs)) {
+    if (!observeEnabled()) {
       return null;
     }
 

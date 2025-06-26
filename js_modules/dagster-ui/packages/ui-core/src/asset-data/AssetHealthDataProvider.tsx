@@ -1,8 +1,7 @@
-import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
+import {observeEnabled} from 'shared/app/observeEnabled.oss';
 
 import {ApolloClient, gql, useApolloClient} from '../apollo-client';
 import {showCustomAlert} from '../app/CustomAlertProvider';
-import {featureEnabled} from '../app/Flags';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {tokenForAssetKey, tokenToAssetKey} from '../asset-graph/Utils';
@@ -29,7 +28,7 @@ function init() {
       const assetKeys = keys.map(tokenToAssetKey);
 
       let healthResponse;
-      if (featureEnabled(FeatureFlag.flagUseNewObserveUIs)) {
+      if (observeEnabled()) {
         healthResponse = await client.query<AssetHealthQuery, AssetHealthQueryVariables>({
           query: ASSETS_HEALTH_INFO_QUERY,
           fetchPolicy: 'no-cache',
@@ -94,7 +93,7 @@ export function useAssetsHealthData(
   assetKeys: AssetKeyInput[],
   thread: LiveDataThreadID = 'AssetHealth', // Use AssetHealth to get 250 batch size
 ) {
-  const keys = memoizedAssetKeys(featureEnabled(FeatureFlag.flagUseNewObserveUIs) ? assetKeys : []);
+  const keys = memoizedAssetKeys(observeEnabled() ? assetKeys : []);
   const result = AssetHealthData.useLiveData(keys, thread);
   useBlockTraceUntilTrue(
     'useAssetsHealthData',
