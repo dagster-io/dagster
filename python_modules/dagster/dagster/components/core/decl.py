@@ -21,7 +21,7 @@ from dagster._utils.pydantic_yaml import (
 )
 from dagster.components.component.component import Component
 from dagster.components.component.component_loader import is_component_loader
-from dagster.components.core.context import ComponentDeclLoadContext
+from dagster.components.core.context import ComponentDeclLoadContext, ComponentLoadContext
 from dagster.components.core.defs_module import (
     EXPLICITLY_IGNORED_GLOB_PATTERNS,
     ComponentFileModel,
@@ -143,7 +143,7 @@ class YamlBackedComponentDecl(ComponentDecl[T]):
     component_file_model: Optional[ComponentFileModel]
 
     @cached_property
-    def context_with_component_injected_scope(self) -> ComponentLoadContext:
+    def context_with_component_injected_scope(self) -> ComponentDeclLoadContext:
         if not self.component_file_model:
             return self.context
         return context_with_injected_scope(
@@ -208,7 +208,9 @@ class YamlDecl(YamlBackedComponentDecl):
             self.source_tree, self.component_file_model, model_cls
         )
 
-        return self.component_cls.load(attributes, context)
+        return self.component_cls.load(
+            attributes, ComponentLoadContext.from_decl_load_context(context, self)
+        )
 
 
 @record
