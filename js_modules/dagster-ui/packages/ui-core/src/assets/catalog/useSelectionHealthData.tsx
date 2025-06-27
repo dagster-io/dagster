@@ -12,7 +12,7 @@ type SelectionHealthData = {
 };
 
 type SelectionFilterData = {
-  assets: AssetFragment[];
+  assets: ReturnType<typeof useAllAssets>['assets'];
   loading: boolean;
 };
 
@@ -181,36 +181,28 @@ const SelectionHealthDataObserver = React.memo(
     );
 
     useLayoutEffect(() => {
-      newHealthListeners.forEach((listener) => {
-        if (healthListeners.has(listener)) {
-          // Don't notify listeners that are new because they will be notified by the next effect
-          return;
-        }
-        listener(healthData);
-      });
+      healthListeners.forEach(
+        (listener) => !newHealthListeners.has(listener) && listener(healthData),
+      );
       // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [healthData]);
+    }, [healthData, healthListeners]);
+    useLayoutEffect(() => {
+      filterListeners.forEach(
+        (listener) => !newFilterListeners.has(listener) && listener(filterData),
+      );
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [filterData, filterListeners]);
 
     useLayoutEffect(() => {
       newHealthListeners.forEach((listener) => listener(healthData));
       // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [newHealthListeners, healthData]);
-
+    }, [newHealthListeners]);
     useLayoutEffect(() => {
       newFilterListeners.forEach((listener) => {
-        if (filterListeners.has(listener)) {
-          // Don't notify listeners that are new because they will be notified by the next effect
-          return;
-        }
         listener(filterData);
       });
       // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [filterData]);
-
-    useLayoutEffect(() => {
-      newFilterListeners.forEach((listener) => listener(filterData));
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [newFilterListeners, filterData]);
+    }, [newFilterListeners]);
 
     useLayoutEffect(() => {
       if (!healthListeners.size) {
