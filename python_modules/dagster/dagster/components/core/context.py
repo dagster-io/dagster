@@ -4,7 +4,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
 from types import ModuleType
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Union
 
 from dagster_shared import check
 from dagster_shared.yaml_utils.source_position import SourcePositionTree
@@ -15,6 +15,8 @@ from dagster._utils import pushd
 from dagster.components.resolved.context import ResolutionContext
 
 if TYPE_CHECKING:
+    from dagster.components.component.component import Component
+    from dagster.components.core.defs_module import ComponentPath
     from dagster.components.core.tree import ComponentTree
 
 
@@ -216,3 +218,14 @@ class ComponentLoadContext:
         It is as if one typed "import a_project.defs.my_component.my_python_file" in the python interpreter.
         """
         return importlib.import_module(self.defs_relative_module_name(path))
+
+    def load_component_at_path(self, defs_path: Union[Path, "ComponentPath"]) -> "Component":
+        """Loads a component from the given path.
+
+        Args:
+            defs_path: Path to the component to load. If relative, resolves relative to the defs root.
+
+        Returns:
+            Component: The component loaded from the given path.
+        """
+        return self.component_tree.load_component_at_path(defs_path)

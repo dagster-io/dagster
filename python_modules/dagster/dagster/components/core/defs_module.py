@@ -169,7 +169,7 @@ def get_component(context: ComponentLoadContext) -> Optional[Component]:
 
     component_decl = build_component_decl_from_context(context)
     if component_decl:
-        return component_decl._load_component()  # noqa: SLF001
+        return context.load_component_at_path(component_decl.path)
     return None
 
 
@@ -399,7 +399,8 @@ def invoke_inline_template_var(context: ComponentLoadContext, tv: Callable) -> A
 def load_yaml_component_from_path(context: ComponentLoadContext, component_def_path: Path):
     from dagster.components.core.decl import build_component_decl_from_yaml_file
 
-    return build_component_decl_from_yaml_file(context, component_def_path)._load_component()  # noqa: SLF001
+    decl = build_component_decl_from_yaml_file(context, component_def_path)
+    return context.load_component_at_path(decl.path)
 
 
 # When we remove component.yaml, we can remove this function for just a defs.yaml check
