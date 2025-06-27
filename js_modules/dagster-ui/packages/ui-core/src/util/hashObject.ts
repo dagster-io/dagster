@@ -1,11 +1,9 @@
-import {weakMapMemoize} from './weakMapMemoize';
-
 /**
  * Creates a fast deterministic hash from a large JSON object iteratively
  * @param obj - The JSON object to hash (must not contain circular references)
  * @returns A deterministic hash string
  */
-export const hashObject = weakMapMemoize((obj: any): string => {
+export const hashObject = (obj: any): string => {
   // Using MurmurHash3
   let h1: number = 0x12345678; // Seed
 
@@ -187,4 +185,4 @@ export const hashObject = weakMapMemoize((obj: any): string => {
   h1 ^= h1 >>> 16;
 
   return h1.toString(16).padStart(8, '0');
-});
+};

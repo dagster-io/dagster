@@ -11,12 +11,10 @@ import {GraphData, buildGraphData as buildGraphDataImpl, tokenForAssetKey} from 
 import {AssetGraphQueryItem, AssetNode} from './types';
 import {featureEnabled} from '../app/Flags';
 import {GraphQueryItem} from '../app/GraphQueryImpl';
-import {indexedDBAsyncMemoize} from '../app/Util';
 import {AssetKey} from '../assets/types';
 import {useAllAssetsNodes} from '../assets/useAllAssets';
 import {AssetGroupSelector, PipelineSelector} from '../graphql/types';
 import {useBlockTraceUntilTrue} from '../performance/TraceContext';
-import {hashObject} from '../util/hashObject';
 import {weakMapMemoize} from '../util/weakMapMemoize';
 import {workerSpawner} from '../workers/workerSpawner';
 import {WorkspaceAssetFragment} from '../workspace/WorkspaceContext/types/WorkspaceQueries.types';
@@ -74,7 +72,7 @@ export function useFullAssetGraphData(
       return;
     }
     const requestId = ++currentRequestRef.current;
-    buildGraphData(
+    buildGraphDataWrapper(
       {
         nodes: allNodes,
       },
@@ -194,7 +192,7 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
 
     setGraphDataLoading(true);
 
-    computeGraphData(
+    computeGraphDataWrapper(
       {
         repoFilteredNodes,
         graphQueryItems,
@@ -250,12 +248,6 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
     allAssetKeys: state.allAssetKeys,
   };
 }
-
-const computeGraphData = indexedDBAsyncMemoize<GraphDataState, typeof computeGraphDataWrapper>(
-  computeGraphDataWrapper,
-  'computeGraphData',
-  (props) => hashObject({props, version: 3}),
-);
 
 const buildGraphQueryItems = (nodes: AssetNode[]) => {
   const items: {[name: string]: AssetGraphQueryItem} = {};
@@ -379,12 +371,6 @@ async function computeGraphDataWrapper(
   }
   return computeGraphDataImpl(props);
 }
-
-const buildGraphData = indexedDBAsyncMemoize<GraphData, typeof buildGraphDataWrapper>(
-  buildGraphDataWrapper,
-  'buildGraphData',
-  (props) => hashObject({props, version: 3}),
-);
 
 async function buildGraphDataWrapper(
   props: Omit<BuildGraphDataMessageType, 'id' | 'type'>,
