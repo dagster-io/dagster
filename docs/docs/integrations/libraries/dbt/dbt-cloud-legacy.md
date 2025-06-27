@@ -1,6 +1,6 @@
 ---
-title: Dagster & dbt Cloud
-sidebar_label: dbt Cloud integration
+title: Dagster & dbt Cloud (Legacy)
+sidebar_label: dbt Cloud integration (Legacy)
 description: Dagster allows you to run dbt Cloud jobs alongside other technologies. You can schedule them to run as a step in a larger pipeline and manage them as a data asset.
 tags: [dagster-supported, etl]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-dbt
@@ -8,31 +8,22 @@ pypi: https://pypi.org/project/dagster-dbt/
 sidebar_custom_props:
   logo: images/integrations/dbt/dbt.svg
 partnerlink:
-sidebar_position: 500
+sidebar_position: 1000
 ---
 
-import Beta from '@site/docs/partials/\_Beta.md';
+import Deprecated from '@site/docs/partials/\_Deprecated.md';
 
-<Beta />
+<Deprecated />
 
-Our new and improved dbt Cloud integration offers two capabilities:
-
-1. **Observability** - You can see your dbt Cloud assets in the Dagster Asset Graph and double click into run/materialization history
-2. **Orchestration** - You can use Dagster to schedule runs/materializations of your dbt Cloud assets, either on a cron, or based on upstream dependencies
+<p>{frontMatter.description}</p>
 
 ## Installation
 
 <PackageInstallInstructions packageName="dagster-dbt" />
 
-## Observability Example
-Please see the inline comments for an explanation what this code does!
+## Example
 
-<CodeExample path="docs_snippets/docs_snippets/integrations/dbt/dbt_cloud_observability.py" language="python" />
-
-## Orchestration Example
-Please see the inline comments for an explanation what this code does!
-
-<CodeExample path="docs_snippets/docs_snippets/integrations/dbt/dbt_cloud_orchestration.py" language="python" />
+<CodeExample path="docs_snippets/docs_snippets/integrations/dbt/dbt_cloud_legacy.py" language="python" />
 
 ## About dbt Cloud
 
