@@ -1,4 +1,4 @@
-import React, {useContext, useLayoutEffect, useMemo} from 'react';
+import React, {useContext, useLayoutEffect, useMemo, useRef} from 'react';
 
 import {useAssetsHealthData} from '../../asset-data/AssetHealthDataProvider';
 import {AssetHealthFragment} from '../../asset-data/types/AssetHealthDataProvider.types';
@@ -89,17 +89,32 @@ const SelectionHealthDataObserver = React.memo(
       skip,
     );
 
+    const previousListeners = useRef<Set<(data: SelectionHealthData) => void>>(dataListeners);
+    const newListeners = useMemo(() => {
+      const newListeners = new Set<(data: SelectionHealthData) => void>();
+      dataListeners.forEach((listener) => {
+        if (!previousListeners.current.has(listener)) {
+          newListeners.add(listener);
+        }
+      });
+      return newListeners;
+    }, [dataListeners, previousListeners]);
+    previousListeners.current = newListeners;
+
     const isLoading = loading || filtered.length !== Object.keys(liveDataByNode).length;
 
-    useLayoutEffect(() => {
-      const data: SelectionHealthData = {
+    const data: SelectionHealthData = useMemo(
+      () => ({
         liveDataByNode,
         assetCount: filtered.length,
         loading: isLoading,
-      };
+      }),
+      [liveDataByNode, filtered.length, isLoading],
+    );
 
-      dataListeners.forEach((listener) => listener(data));
-    }, [dataListeners, liveDataByNode, filtered.length, isLoading]);
+    useLayoutEffect(() => {
+      newListeners.forEach((listener) => listener(data));
+    }, [newListeners, data]);
 
     return <></>;
   },
