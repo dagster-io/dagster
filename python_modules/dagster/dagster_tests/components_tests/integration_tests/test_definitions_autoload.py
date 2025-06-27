@@ -6,14 +6,18 @@ import pytest
 from dagster import AssetKey, load_defs, load_from_defs_folder
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._utils.env import environ
-from dagster.components.core.decl import ComponentDecl, DagsterDefsDecl, DefsFolderDecl
+from dagster.components.core.decl import (
+    ComponentDecl,
+    DagsterDefsDecl,
+    DefsFolderDecl,
+    YamlFileDecl,
+)
 from dagster.components.core.defs_module import (
     ComponentPath,
     CompositeYamlComponent,
     DefsFolderComponent,
 )
-from dagster.components.core.tree import ComponentTree
-from dagster.components.testing import get_underlying_component
+from dagster.components.core.tree import ComponentTree, LegacyAutoloadingComponentTree
 from dagster_shared import check
 from pydantic import ValidationError
 
@@ -32,9 +36,7 @@ def assert_tree_node_structure_matches(
             file_path=node_path.file_path.relative_to(tree.defs_module_path),
             instance_key=node_path.instance_key,
         ): node
-        for node_path, node in check.inst(
-            tree.find_root_decl(), DefsFolderDecl
-        ).iterate_path_component_decl_pairs()
+        for node_path, node in tree.find_root_decl().iterate_path_component_decl_pairs()
     }
     unrepresented_paths = set(nodes_by_path.keys())
 
@@ -60,9 +62,11 @@ def assert_tree_node_structure_matches(
             f"Expected {expected_type} at {component_path} but got {type(matching_node)}"
         )
         unrepresented_paths.remove(component_path)
-    assert not unrepresented_paths, (
-        f"Unrepresented paths: {[(path, nodes_by_path[path]) for path in unrepresented_paths]}"
+    output_str = "\n".join(
+        f"{path.file_path}{f'@{path.instance_key}' if path.instance_key is not None else ''}: {type(nodes_by_path[path])}"
+        for path in unrepresented_paths
     )
+    assert not unrepresented_paths, f"Unrepresented paths: {output_str}"
 
 
 @pytest.mark.parametrize(
@@ -75,6 +79,7 @@ def test_definitions_component_with_explicit_file_relative_imports(
     assert_tree_node_structure_matches(
         component_tree,
         {
+            ".": DefsFolderDecl,
             "__init__.py": DagsterDefsDecl,
             "explicit_file_relative_imports": DefsFolderDecl,
             "explicit_file_relative_imports/some_file.py": DagsterDefsDecl,
@@ -98,6 +103,7 @@ def test_definitions_component_with_explicit_file_relative_imports_init(
     assert_tree_node_structure_matches(
         component_tree,
         {
+            ".": DefsFolderDecl,
             "__init__.py": DagsterDefsDecl,
             "explicit_file_relative_imports_init": DefsFolderDecl,
             "explicit_file_relative_imports_init/__init__.py": DagsterDefsDecl,
@@ -121,8 +127,9 @@ def test_definitions_component_with_explicit_file_relative_imports_complex(
     assert_tree_node_structure_matches(
         component_tree,
         {
+            ".": DefsFolderDecl,
             "__init__.py": DagsterDefsDecl,
-            "explicit_file_relative_imports_complex": DagsterDefsDecl,  # because of definitions.py special name
+            "explicit_file_relative_imports_complex/definitions.py": DagsterDefsDecl,  # no folder bc definitions.py special name
             # rest not loaded because of definitions.py
             # "explicit_file_relative_imports_complex/some_other_file.py": DagsterDefsDecl,
             # "explicit_file_relative_imports_complex/submodule": DefsFolderDecl,
@@ -188,17 +195,18 @@ def test_autoload_definitions_nested(component_tree: ComponentTree) -> None:
     assert_tree_node_structure_matches(
         component_tree,
         {
+            ".": DefsFolderDecl,
             "__init__.py": DagsterDefsDecl,
             "definitions_at_levels": DefsFolderDecl,
             "definitions_at_levels/top_level.py": DagsterDefsDecl,
-            "definitions_at_levels/defs_object": DagsterDefsDecl,  # definitions.py special name
+            "definitions_at_levels/defs_object/definitions.py": DagsterDefsDecl,  # no folder bc definitions.py special name
             "definitions_at_levels/loose_defs": DefsFolderDecl,
             "definitions_at_levels/loose_defs/asset.py": DagsterDefsDecl,
             "definitions_at_levels/loose_defs/inner": DefsFolderDecl,
             "definitions_at_levels/loose_defs/inner/asset.py": DagsterDefsDecl,
             "definitions_at_levels/loose_defs/inner/innerer": DefsFolderDecl,
             "definitions_at_levels/loose_defs/inner/innerer/asset.py": DagsterDefsDecl,
-            "definitions_at_levels/loose_defs/inner/innerer/innerest": DagsterDefsDecl,  # definitions.py special name
+            "definitions_at_levels/loose_defs/inner/innerer/innerest/definitions.py": DagsterDefsDecl,  # no folder bc definitions.py special name
             "definitions_at_levels/loose_defs/inner/innerer/in_init": DefsFolderDecl,
             "definitions_at_levels/loose_defs/inner/innerer/in_init/__init__.py": DagsterDefsDecl,
         },
@@ -268,10 +276,39 @@ def test_ignored_empty_dir():
     src_path = Path(path_str)
     with create_project_from_components(path_str) as (project_root, project_name):
         module = importlib.import_module(f"{project_name}.defs.{src_path.stem}")
-        context = ComponentTree.from_module(
+        tree = LegacyAutoloadingComponentTree.from_module(
             defs_module=module, project_root=project_root
-        ).load_context
-        defs_root = check.inst(get_underlying_component(context), DefsFolderComponent)
+        )
+
+        check.inst(tree.find_root_decl(), YamlFileDecl)
+        assert_tree_node_structure_matches(
+            tree,
+            {
+                ".": YamlFileDecl,
+                ComponentPath(file_path=Path("."), instance_key=0): DefsFolderDecl,
+                "top_level.py": DagsterDefsDecl,
+                "loose_defs": YamlFileDecl,
+                ComponentPath(file_path=Path("loose_defs"), instance_key=0): DefsFolderDecl,
+                "loose_defs/asset.py": DagsterDefsDecl,
+                "loose_defs/inner": DefsFolderDecl,
+                "loose_defs/inner/asset.py": DagsterDefsDecl,
+                "loose_defs/inner/innerer": DefsFolderDecl,
+                "loose_defs/inner/innerer/asset.py": DagsterDefsDecl,
+                "loose_defs/inner/innerer/another_level": YamlFileDecl,
+                ComponentPath(
+                    file_path=Path("loose_defs/inner/innerer/another_level"), instance_key=0
+                ): DefsFolderDecl,
+                "loose_defs/inner/innerer/another_level/in_init": DefsFolderDecl,
+                "loose_defs/inner/innerer/another_level/in_init/__init__.py": DagsterDefsDecl,
+                "loose_defs/inner/innerer/another_level/innerest/definitions.py": DagsterDefsDecl,  # no folder bc definitions.py special name
+                "defs_object": YamlFileDecl,
+                ComponentPath(file_path=Path("defs_object"), instance_key=0): DefsFolderDecl,
+                "defs_object/defs_object/definitions.py": DagsterDefsDecl,  # no folder bc definitions.py special name
+            },
+        )
+
+        defs_root_yaml = check.inst(tree.load_root_component(), CompositeYamlComponent)
+        defs_root = check.inst(defs_root_yaml.components[0], DefsFolderComponent)
         for comp in defs_root.iterate_components():
             if isinstance(comp, DefsFolderComponent):
                 assert comp.children
