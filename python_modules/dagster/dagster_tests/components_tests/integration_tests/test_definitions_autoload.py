@@ -6,7 +6,6 @@ import pytest
 from dagster import AssetKey, load_defs, load_from_defs_folder
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._utils.env import environ
-from dagster.components.core.context import ComponentLoadContext
 from dagster.components.core.decl import ComponentDecl, DagsterDefsDecl, DefsFolderDecl
 from dagster.components.core.defs_module import (
     ComponentPath,
@@ -267,7 +266,9 @@ def test_ignored_empty_dir():
     src_path = Path(path_str)
     with create_project_from_components(path_str) as (project_root, project_name):
         module = importlib.import_module(f"{project_name}.defs.{src_path.stem}")
-        context = ComponentLoadContext.for_module(module, project_root)
+        context = ComponentTree.from_module(
+            defs_module=module, project_root=project_root
+        ).load_context
         defs_root = check.inst(get_underlying_component(context), DefsFolderComponent)
         for comp in defs_root.iterate_components():
             if isinstance(comp, DefsFolderComponent):

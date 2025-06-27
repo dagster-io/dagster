@@ -4,9 +4,10 @@ from functools import cached_property
 from pathlib import Path
 from types import ModuleType
 from typing import Optional
+from unittest import mock
 
 from dagster_shared.record import record
-from typing_extensions import TypeVar
+from typing_extensions import Self, TypeVar
 
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._utils.cached_method import cached_method
@@ -14,6 +15,8 @@ from dagster.components.component.component import Component
 from dagster.components.core.context import ComponentLoadContext
 from dagster.components.core.decl import ComponentDecl, DefsFolderDecl
 from dagster.components.core.defs_module import ComponentPath, DefsFolderComponent
+from dagster.components.resolved.context import ResolutionContext
+from dagster.components.utils import get_path_from_module
 
 PLUGIN_COMPONENT_TYPES_JSON_METADATA_KEY = "plugin_component_types_json"
 
@@ -31,11 +34,49 @@ def _get_canonical_path_string(root_path: Path, path: Path) -> str:
     checked=False,  # cant handle ModuleType
 )
 class ComponentTree:
+    """Manages and caches the component loading process, including finding component decls
+    to build the initial decl tree, loading these components, and eventually building the
+    defs.
+    """
+
     defs_module: ModuleType
     project_root: Path
 
+    @property
+    def defs_module_name(self) -> str:
+        return self.defs_module.__name__
+
+    @property
+    def defs_module_path(self) -> Path:
+        return get_path_from_module(self.defs_module)
+
     @staticmethod
-    def load(path_within_project: Path) -> "ComponentTree":
+    def for_test() -> "ComponentTree":
+        return TestComponentTree.for_test()
+
+    @staticmethod
+    def from_module(
+        defs_module: ModuleType,
+        project_root: Path,
+    ) -> "ComponentTree":
+        """Convenience method for creating a ComponentTree from a module.
+
+        Args:
+            defs_module: The defs module of the project, typically the `defs` directory.
+            project_root: The root of the project.
+            terminate_autoloading_on_keyword_files: Whether to terminate autoloading on keyword files such as
+                `definitions.py` or `component.py`.
+
+        Returns:
+            A ComponentTree.
+        """
+        return ComponentTree(
+            defs_module=defs_module,
+            project_root=project_root,
+        )
+
+    @classmethod
+    def load(cls, path_within_project: Path) -> Self:
         """Using the provided path, find the nearest parent python project and load the
         ComponentTree using its configuration.
         """
@@ -44,15 +85,23 @@ class ComponentTree:
         # replace with dagster_shared impl of path crawl and config resolution
         dg_context = DgContext.for_project_environment(path_within_project, command_line_config={})
 
-        return ComponentTree(
-            defs_module=importlib.import_module(dg_context.defs_module_name),
+        defs_module = importlib.import_module(dg_context.defs_module_name)
+
+        return cls(
+            defs_module=defs_module,
             project_root=dg_context.root_path,
         )
 
     @cached_property
     def load_context(self):
-        return ComponentLoadContext.for_module(
-            defs_module=self.defs_module, project_root=self.project_root
+        return ComponentLoadContext(
+            path=self.defs_module_path,
+            project_root=self.project_root,
+            defs_module_path=self.defs_module_path,
+            defs_module_name=self.defs_module_name,
+            resolution_context=ResolutionContext.default(),
+            terminate_autoloading_on_keyword_files=False,
+            component_tree=self,
         )
 
     @cached_method
@@ -167,3 +216,77 @@ class ComponentTree:
             for component in self.load_root_component().iterate_components()
             if isinstance(component, of_type)
         ]
+
+
+class TestComponentTree(ComponentTree):
+    """Variant of ComponentTree that is used for testing purposes. Mocks out the
+    definitions module name and path.
+    """
+
+    @staticmethod
+    def for_test() -> "TestComponentTree":
+        """Convenience method for creating a ComponentTree for testing purposes."""
+        return TestComponentTree(
+            defs_module=mock.Mock(),
+            project_root=Path.cwd(),
+        )
+
+    @property
+    def defs_module_name(self) -> str:
+        return "test"
+
+    @property
+    def defs_module_path(self) -> Path:
+        return Path.cwd()
+
+    @cached_property
+    def load_context(self):
+        return ComponentLoadContext(
+            path=self.defs_module_path,
+            project_root=self.project_root,
+            defs_module_path=self.defs_module_path,
+            defs_module_name=self.defs_module_name,
+            resolution_context=ResolutionContext.default(),
+            terminate_autoloading_on_keyword_files=True,
+            component_tree=self,
+        )
+
+
+class LegacyAutoloadingComponentTree(ComponentTree):
+    """ComponentTree variant which terminates autoloading of defs on the keyword
+    files `definitions.py` and `component.py`. This should only be used for legacy
+    test and load_defs codepaths.
+    """
+
+    @cached_property
+    def load_context(self):
+        return ComponentLoadContext(
+            path=self.defs_module_path,
+            project_root=self.project_root,
+            defs_module_path=self.defs_module_path,
+            defs_module_name=self.defs_module_name,
+            resolution_context=ResolutionContext.default(),
+            terminate_autoloading_on_keyword_files=True,
+            component_tree=self,
+        )
+
+    @staticmethod
+    def from_module(
+        defs_module: ModuleType,
+        project_root: Path,
+    ) -> "ComponentTree":
+        """Convenience method for creating a ComponentTree from a module.
+
+        Args:
+            defs_module: The defs module of the project, typically the `defs` directory.
+            project_root: The root of the project.
+            terminate_autoloading_on_keyword_files: Whether to terminate autoloading on keyword files such as
+                `definitions.py` or `component.py`.
+
+        Returns:
+            A ComponentTree.
+        """
+        return LegacyAutoloadingComponentTree(
+            defs_module=defs_module,
+            project_root=project_root,
+        )

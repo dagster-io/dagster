@@ -8,7 +8,7 @@ from typing import Optional, Union
 import pytest
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._utils import pushd
-from dagster.components.core.tree import ComponentTree
+from dagster.components.core.tree import ComponentTree, LegacyAutoloadingComponentTree
 
 from dagster_tests.components_tests.utils import create_project_from_components
 
@@ -36,7 +36,7 @@ def construct_component_tree_for_test(
     with create_project_from_components(
         str(src_path), local_component_defn_to_inject=local_component_defn_to_inject
     ) as (_, project_name):
-        yield ComponentTree(
+        yield LegacyAutoloadingComponentTree.from_module(
             defs_module=importlib.import_module(f"{project_name}.defs"),
             project_root=src_path.parent.parent,
         )

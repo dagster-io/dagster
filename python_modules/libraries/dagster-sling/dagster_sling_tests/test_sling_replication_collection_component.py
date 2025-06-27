@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Any, Callable, Optional, Union
 
 import pytest
 import yaml
-from dagster import AssetKey, ComponentLoadContext
+from dagster import AssetKey
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.definitions_class import Definitions
@@ -24,6 +24,7 @@ from dagster._core.instance_for_test import instance_for_test
 from dagster._core.test_utils import ensure_dagster_tests_import
 from dagster._utils import alter_sys_path
 from dagster._utils.env import environ
+from dagster.components.core.tree import ComponentTree
 from dagster.components.resolved.core_models import AssetAttributesModel, OpSpec
 from dagster.components.testing import (
     TestOpCustomization,
@@ -94,7 +95,7 @@ def temp_sling_component_instance(
                 else:
                     data["attributes"]["connections"]["DUCKDB"]["instance"] = f"{temp_dir}/duckdb"
 
-            context = ComponentLoadContext.for_test().for_path(component_path)
+            context = ComponentTree.for_test().load_context.for_path(component_path)
             component = get_underlying_component(context)
             assert isinstance(component, SlingReplicationCollectionComponent)
             yield component, component.build_defs(context)
@@ -281,7 +282,7 @@ def test_asset_post_processors_deprecation_error() -> None:
                     ]
                     data["attributes"]["connections"]["DUCKDB"]["instance"] = f"{temp_dir}/duckdb"
 
-                context = ComponentLoadContext.for_test().for_path(component_path)
+                context = ComponentTree.for_test().load_context.for_path(component_path)
                 component = get_underlying_component(context)
                 assert isinstance(component, SlingReplicationCollectionComponent)
 

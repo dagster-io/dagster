@@ -322,12 +322,12 @@ class Component(ABC):
         Returns:
             A Component instance.
         """
-        from dagster.components.core.context import ComponentLoadContext
+        from dagster.components.core.tree import ComponentTree
 
         model_cls = cls.get_model_cls()
         assert model_cls
         model = TypeAdapter(model_cls).validate_python(attributes)
-        return cls.load(model, context if context else ComponentLoadContext.for_test())
+        return cls.load(model, context if context else ComponentTree.for_test().load_context)
 
     @classmethod
     def from_yaml_path(
@@ -342,9 +342,9 @@ class Component(ABC):
         Returns:
             A Component instance.
         """
-        from dagster.components.core.context import ComponentLoadContext
         from dagster.components.core.defs_module import load_yaml_component_from_path
+        from dagster.components.core.tree import ComponentTree
 
         return load_yaml_component_from_path(
-            context=context or ComponentLoadContext.for_test(), component_def_path=yaml_path
+            context=context or ComponentTree.for_test().load_context, component_def_path=yaml_path
         )
