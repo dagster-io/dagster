@@ -27,7 +27,9 @@ export const AssetSelectionSummaryListItemFromSelection = React.memo(
   }) => {
     const assetSelection = item.selection.querySelection ?? '';
 
-    const {liveDataByNode, loading, assetCount} = useSelectionHealthData(assetSelection);
+    const {liveDataByNode, loading, assetCount} = useSelectionHealthData({
+      selection: assetSelection,
+    });
     const {jsx} = useMemo(
       () => getHealthStatuses({liveDataByNode, loading, assetCount}),
       [liveDataByNode, loading, assetCount],

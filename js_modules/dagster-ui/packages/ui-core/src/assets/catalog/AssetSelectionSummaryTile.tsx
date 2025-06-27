@@ -31,7 +31,9 @@ export const AssetSelectionSummaryTileFromSelection = React.memo(
   ({icon, selection}: {icon: React.ReactNode; selection: Selection}) => {
     const assetSelection = selection.selection.querySelection ?? '';
 
-    const {liveDataByNode, loading, assetCount} = useSelectionHealthData(assetSelection);
+    const {liveDataByNode, loading, assetCount} = useSelectionHealthData({
+      selection: assetSelection,
+    });
     const {jsx} = useMemo(
       () => getHealthStatuses({liveDataByNode, loading, assetCount}),
       [liveDataByNode, loading, assetCount],
