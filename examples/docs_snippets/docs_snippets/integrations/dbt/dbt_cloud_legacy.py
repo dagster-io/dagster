@@ -1,5 +1,9 @@
 # ruff: isort: skip_file
+import os
 
+from dagster_dbt import dbt_cloud_resource, load_assets_from_dbt_cloud_job
+
+import dagster as dg
 
 def scope_define_instance():
     # start_define_dbt_cloud_instance
