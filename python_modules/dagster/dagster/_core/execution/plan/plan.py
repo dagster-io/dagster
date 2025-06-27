@@ -386,7 +386,7 @@ class _PlanBuilder:
         if input_config and input_name in input_config:
             return FromConfig(input_name=input_name, node_handle=None)
 
-        if input_def.dagster_type.is_nothing:
+        if input_def.dagster_type.is_nothing or input_def.dagster_type.is_nullable:
             return None
 
         # Otherwise we throw an error.
