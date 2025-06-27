@@ -712,7 +712,15 @@ function renderButton({
   launchMock?: MockedResponse<Record<string, any>>;
   preferredJobName?: string;
 }) {
-  const assetKeys = ('all' in scope ? scope.all : scope.selected).map((s) => s.assetKey);
+  const assetKeys = (
+    'all' in scope
+      ? scope.all
+      : 'selected' in scope
+        ? scope.selected
+        : scope.single
+          ? [scope.single]
+          : []
+  ).map((s) => s.assetKey);
 
   const mocks: MockedResponse<Record<string, any>>[] = [
     LaunchAssetLoaderResourceJob7Mock,
