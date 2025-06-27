@@ -166,38 +166,15 @@ def load_defs(
             autoloading process when encountering a definitions.py or component.py file.
             Defaults to True.
     """
-    from dagster.components.core.defs_module import DefsFolderComponent, get_component
-
     project_root = project_root if project_root else get_project_root(defs_root)
 
-    # create a top-level DefsModule component from the root module
     tree = (
         LegacyAutoloadingComponentTree.from_module(defs_module=defs_root, project_root=project_root)
         if terminate_autoloading_on_keyword_files
-        else ComponentTree.from_module(
-            defs_module=defs_root,
-            project_root=project_root,
-        )
-    )
-    context = tree.load_context
-
-    # Despite the argument being named defs_root, load_defs supports loading arbitrary components
-    # directly, so use get_component instead of DefsFolderComponent.get
-    root_component = check.not_none(
-        get_component(context), "Could not resolve root module to a component."
+        else ComponentTree.from_module(defs_module=defs_root, project_root=project_root)
     )
 
-    # If we did get a folder component back, assume its the root tree
-    tree = (
-        ComponentTree.from_module(defs_module=defs_root, project_root=project_root)
-        if isinstance(root_component, DefsFolderComponent)
-        else None
-    )
-
-    return Definitions.merge(
-        root_component.build_defs(context),
-        get_library_json_enriched_defs(tree),
-    )
+    return tree.build_defs()
 
 
 def get_library_json_enriched_defs(tree: Optional[ComponentTree]) -> Definitions:
