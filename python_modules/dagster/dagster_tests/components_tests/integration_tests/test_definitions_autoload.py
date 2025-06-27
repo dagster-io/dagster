@@ -1,12 +1,19 @@
 import importlib
 from pathlib import Path
+from typing import Union
 
 import pytest
-from dagster import AssetKey, Definitions, load_defs, load_from_defs_folder
+from dagster import AssetKey, load_defs, load_from_defs_folder
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._utils.env import environ
 from dagster.components.core.context import ComponentLoadContext
-from dagster.components.core.defs_module import CompositeYamlComponent, DefsFolderComponent
+from dagster.components.core.decl import ComponentDecl, DagsterDefsDecl, DefsFolderDecl
+from dagster.components.core.defs_module import (
+    ComponentPath,
+    CompositeYamlComponent,
+    DefsFolderComponent,
+)
+from dagster.components.core.tree import ComponentTree
 from dagster.components.testing import get_underlying_component
 from dagster_shared import check
 from pydantic import ValidationError
@@ -18,16 +25,85 @@ from dagster_tests.components_tests.integration_tests.component_loader import (
 from dagster_tests.components_tests.utils import create_project_from_components
 
 
-@pytest.mark.parametrize("defs", ["definitions/explicit_file_relative_imports"], indirect=True)
-def test_definitions_component_with_explicit_file_relative_imports(defs: Definitions) -> None:
+def assert_tree_node_structure_matches(
+    tree: ComponentTree, structure: dict[Union[str, ComponentPath], type[ComponentDecl]]
+):
+    nodes_by_path = {
+        ComponentPath(
+            file_path=node_path.file_path.relative_to(tree.find_root_decl().path),
+            instance_key=node_path.instance_key,
+        ): node
+        for node_path, node in tree.find_root_decl().iterate_path_component_decl_pairs()
+    }
+    unrepresented_paths = set(nodes_by_path.keys())
+
+    for path, expected_type in structure.items():
+        component_path = (
+            path
+            if isinstance(path, ComponentPath)
+            else ComponentPath(file_path=Path(path), instance_key=None)
+        )
+        matching_node = next(
+            (
+                decl
+                for node, decl in nodes_by_path.items()
+                if node.file_path.as_posix() == component_path.file_path.as_posix()
+                and node.instance_key == component_path.instance_key
+            ),
+            None,
+        )
+        assert matching_node is not None, (
+            f"Could not find {component_path} in paths {list(nodes_by_path.keys())}"
+        )
+        assert isinstance(matching_node, expected_type), (
+            f"Expected {expected_type} at {component_path} but got {type(matching_node)}"
+        )
+        unrepresented_paths.remove(component_path)
+    assert not unrepresented_paths, (
+        f"Unrepresented paths: {[(path, nodes_by_path[path]) for path in unrepresented_paths]}"
+    )
+
+
+@pytest.mark.parametrize(
+    "component_tree", ["definitions/explicit_file_relative_imports"], indirect=True
+)
+def test_definitions_component_with_explicit_file_relative_imports(
+    component_tree: ComponentTree,
+) -> None:
+    assert isinstance(component_tree.find_root_decl(), DefsFolderDecl)
+    assert_tree_node_structure_matches(
+        component_tree,
+        {
+            "__init__.py": DagsterDefsDecl,
+            "explicit_file_relative_imports": DefsFolderDecl,
+            "explicit_file_relative_imports/some_file.py": DagsterDefsDecl,
+            "explicit_file_relative_imports/some_other_file.py": DagsterDefsDecl,
+        },
+    )
+    defs = component_tree.build_defs()
     assert {spec.key for spec in defs.resolve_all_asset_specs()} == {
         AssetKey("asset_in_some_file"),
         AssetKey("asset_in_some_other_file"),
     }
 
 
-@pytest.mark.parametrize("defs", ["definitions/explicit_file_relative_imports_init"], indirect=True)
-def test_definitions_component_with_explicit_file_relative_imports_init(defs: Definitions) -> None:
+@pytest.mark.parametrize(
+    "component_tree", ["definitions/explicit_file_relative_imports_init"], indirect=True
+)
+def test_definitions_component_with_explicit_file_relative_imports_init(
+    component_tree: ComponentTree,
+) -> None:
+    assert isinstance(component_tree.find_root_decl(), DefsFolderDecl)
+    assert_tree_node_structure_matches(
+        component_tree,
+        {
+            "__init__.py": DagsterDefsDecl,
+            "explicit_file_relative_imports_init": DefsFolderDecl,
+            "explicit_file_relative_imports_init/__init__.py": DagsterDefsDecl,
+            "explicit_file_relative_imports_init/some_other_file.py": DagsterDefsDecl,
+        },
+    )
+    defs = component_tree.build_defs()
     assert {spec.key for spec in defs.resolve_all_asset_specs()} == {
         AssetKey("asset_in_init_file"),
         AssetKey("asset_in_some_other_file"),
@@ -35,11 +111,24 @@ def test_definitions_component_with_explicit_file_relative_imports_init(defs: De
 
 
 @pytest.mark.parametrize(
-    "defs", ["definitions/explicit_file_relative_imports_complex"], indirect=True
+    "component_tree", ["definitions/explicit_file_relative_imports_complex"], indirect=True
 )
 def test_definitions_component_with_explicit_file_relative_imports_complex(
-    defs: Definitions,
+    component_tree: ComponentTree,
 ) -> None:
+    assert isinstance(component_tree.find_root_decl(), DefsFolderDecl)
+    assert_tree_node_structure_matches(
+        component_tree,
+        {
+            "__init__.py": DagsterDefsDecl,
+            "explicit_file_relative_imports_complex": DagsterDefsDecl,  # because of definitions.py special name
+            # rest not loaded because of definitions.py
+            # "explicit_file_relative_imports_complex/some_other_file.py": DagsterDefsDecl,
+            # "explicit_file_relative_imports_complex/submodule": DefsFolderDecl,
+            # "explicit_file_relative_imports_complex/submodule/__init__.py": DagsterDefsDecl,
+        },
+    )
+    defs = component_tree.build_defs()
     assert {spec.key for spec in defs.resolve_all_asset_specs()} == {
         AssetKey("asset_in_some_file"),
         AssetKey("asset_in_submodule"),
@@ -60,34 +149,60 @@ def test_definitions_component_with_multiple_definitions_objects() -> None:
         sync_load_test_component_defs("definitions/definitions_object_multiple")
 
 
-@pytest.mark.parametrize("defs", ["definitions/single_file"], indirect=True)
-def test_autoload_single_file(defs: Definitions) -> None:
+@pytest.mark.parametrize("component_tree", ["definitions/single_file"], indirect=True)
+def test_autoload_single_file(component_tree: ComponentTree) -> None:
+    defs = component_tree.build_defs()
     assert {spec.key for spec in defs.resolve_all_asset_specs()} == {AssetKey("an_asset")}
 
 
-@pytest.mark.parametrize("defs", ["definitions/multiple_files"], indirect=True)
-def test_autoload_multiple_files(defs: Definitions) -> None:
+@pytest.mark.parametrize("component_tree", ["definitions/multiple_files"], indirect=True)
+def test_autoload_multiple_files(component_tree: ComponentTree) -> None:
+    defs = component_tree.build_defs()
     assert {spec.key for spec in defs.resolve_all_asset_specs()} == {
         AssetKey("asset_in_some_file"),
         AssetKey("asset_in_other_file"),
     }
 
 
-@pytest.mark.parametrize("defs", ["definitions/empty"], indirect=True)
-def test_autoload_empty(defs: Definitions) -> None:
+@pytest.mark.parametrize("component_tree", ["definitions/empty"], indirect=True)
+def test_autoload_empty(component_tree: ComponentTree) -> None:
+    defs = component_tree.build_defs()
     assert len(defs.resolve_all_asset_specs()) == 0
 
 
-@pytest.mark.parametrize("defs", ["definitions/definitions_object_relative_imports"], indirect=True)
-def test_autoload_definitions_object(defs: Definitions) -> None:
+@pytest.mark.parametrize(
+    "component_tree", ["definitions/definitions_object_relative_imports"], indirect=True
+)
+def test_autoload_definitions_object(component_tree: ComponentTree) -> None:
+    defs = component_tree.build_defs()
     assert {spec.key for spec in defs.resolve_all_asset_specs()} == {
         AssetKey("asset_in_some_file"),
         AssetKey("asset_in_other_file"),
     }
 
 
-@pytest.mark.parametrize("defs", ["definitions/definitions_at_levels"], indirect=True)
-def test_autoload_definitions_nested(defs: Definitions) -> None:
+@pytest.mark.parametrize("component_tree", ["definitions/definitions_at_levels"], indirect=True)
+def test_autoload_definitions_nested(component_tree: ComponentTree) -> None:
+    assert isinstance(component_tree.find_root_decl(), DefsFolderDecl)
+    assert_tree_node_structure_matches(
+        component_tree,
+        {
+            "__init__.py": DagsterDefsDecl,
+            "definitions_at_levels": DefsFolderDecl,
+            "definitions_at_levels/top_level.py": DagsterDefsDecl,
+            "definitions_at_levels/defs_object": DagsterDefsDecl,  # definitions.py special name
+            "definitions_at_levels/loose_defs": DefsFolderDecl,
+            "definitions_at_levels/loose_defs/asset.py": DagsterDefsDecl,
+            "definitions_at_levels/loose_defs/inner": DefsFolderDecl,
+            "definitions_at_levels/loose_defs/inner/asset.py": DagsterDefsDecl,
+            "definitions_at_levels/loose_defs/inner/innerer": DefsFolderDecl,
+            "definitions_at_levels/loose_defs/inner/innerer/asset.py": DagsterDefsDecl,
+            "definitions_at_levels/loose_defs/inner/innerer/innerest": DagsterDefsDecl,  # definitions.py special name
+            "definitions_at_levels/loose_defs/inner/innerer/in_init": DefsFolderDecl,
+            "definitions_at_levels/loose_defs/inner/innerer/in_init/__init__.py": DagsterDefsDecl,
+        },
+    )
+    defs = component_tree.build_defs()
     assert {spec.key for spec in defs.resolve_all_asset_specs()} == {
         AssetKey("top_level"),
         AssetKey("defs_obj_inner"),
@@ -163,8 +278,9 @@ def test_ignored_empty_dir():
                         assert child.children
 
 
-@pytest.mark.parametrize("defs", ["definitions/backcompat_components"], indirect=True)
-def test_autoload_backcompat_components(defs: Definitions) -> None:
+@pytest.mark.parametrize("component_tree", ["definitions/backcompat_components"], indirect=True)
+def test_autoload_backcompat_components(component_tree: ComponentTree) -> None:
+    defs = component_tree.build_defs()
     assert {spec.key for spec in defs.resolve_all_asset_specs()} == {AssetKey("foo")}
 
 

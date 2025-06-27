@@ -99,7 +99,7 @@ def _load_defs_at_path(dg_context: DgContext, path: Optional[Path]) -> Repositor
     tree = ComponentTree.load(dg_context.root_path)
 
     try:
-        defs = tree.load_defs_at_path(path) if path else tree.load_defs()
+        defs = tree.build_defs_at_path(path) if path else tree.build_defs()
     except Exception as e:
         path_text = f" at {path}" if path else ""
         raise click.ClickException(f"Unable to load definitions{path_text}: {e}") from e
