@@ -93,12 +93,13 @@ const memoizedAssetKeys = weakMapMemoize((assetKeys: AssetKeyInput[]) => {
 export function useAssetsHealthData(
   assetKeys: AssetKeyInput[],
   thread: LiveDataThreadID = 'AssetHealth', // Use AssetHealth to get 250 batch size
+  skip?: boolean,
 ) {
   const keys = memoizedAssetKeys(featureEnabled(FeatureFlag.flagUseNewObserveUIs) ? assetKeys : []);
-  const result = AssetHealthData.useLiveData(keys, thread);
+  const result = AssetHealthData.useLiveData(keys, thread, skip);
   useBlockTraceUntilTrue(
     'useAssetsHealthData',
-    !!(Object.keys(result.liveDataByNode).length === assetKeys.length),
+    skip || !!(Object.keys(result.liveDataByNode).length === assetKeys.length),
   );
   return result;
 }

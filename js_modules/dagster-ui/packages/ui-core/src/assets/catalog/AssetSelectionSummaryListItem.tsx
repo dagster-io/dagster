@@ -2,7 +2,6 @@ import {
   Box,
   Colors,
   IconWrapper,
-  Menu,
   MiddleTruncate,
   Spinner,
   ifPlural,
@@ -12,12 +11,11 @@ import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
 import styles from './AssetSelectionSummaryTile.module.css';
-import {ViewType, getThreadId, useAssetHealthStatuses} from './util';
-import {useAssetSelectionFiltering} from '../../asset-selection/useAssetSelectionFiltering';
+import {useSelectionHealthData} from './useSelectionHealthData';
+import {ViewType, getHealthStatuses, getThreadId, useAssetHealthStatuses} from './util';
 import {InsightsIcon, InsightsIconType} from '../../insights/InsightsIcon';
 import {numberFormatter} from '../../ui/formatters';
 import {AssetTableFragment} from '../types/AssetTableFragment.types';
-import {useAllAssets} from '../useAllAssets';
 
 export const AssetSelectionSummaryListItemFromSelection = React.memo(
   ({
@@ -27,22 +25,21 @@ export const AssetSelectionSummaryListItemFromSelection = React.memo(
     item: Extract<ViewType, {__typename: 'CatalogView'}>;
     menu: React.ReactNode;
   }) => {
-    const {assets, loading} = useAllAssets();
-    const {filtered, loading: filteredLoading} = useAssetSelectionFiltering({
-      assets,
-      assetSelection: item.selection.querySelection ?? '',
-      loading,
-      useWorker: false,
-      includeExternalAssets: true,
-    });
+    const assetSelection = item.selection.querySelection ?? '';
+
+    const {liveDataByNode, loading, assetCount} = useSelectionHealthData(assetSelection);
+    const {jsx} = useMemo(
+      () => getHealthStatuses({liveDataByNode, loading, assetCount}),
+      [liveDataByNode, loading, assetCount],
+    );
     return (
-      <AssetSelectionSummaryListItem
-        assets={filtered}
+      <AssetSelectionSummaryListItemWithHealthStatus
         icon={<InsightsIcon name={item.icon as InsightsIconType} size={16} />}
         label={item.name}
         link={item.link}
-        menu={<Menu />}
-        loading={loading || filteredLoading}
+        statusJsx={jsx}
+        loading={loading}
+        assetCount={assetCount}
       />
     );
   },
@@ -50,26 +47,54 @@ export const AssetSelectionSummaryListItemFromSelection = React.memo(
 
 export const AssetSelectionSummaryListItem = React.memo(
   ({
-    assets,
     icon,
     label,
+    assets,
     link,
-    loading: assetsLoading,
+    loading: _assetsLoading,
   }: {
-    assets: AssetTableFragment[];
     icon: React.ReactNode;
     label: string;
+    assets: AssetTableFragment[];
     link: string;
-    menu: React.ReactNode;
     loading?: boolean;
     threadId?: string;
   }) => {
     const {jsx, loading} = useAssetHealthStatuses({
       assets,
       threadId: useMemo(() => getThreadId(), []),
-      loading: assetsLoading,
+      loading: _assetsLoading,
     });
 
+    return (
+      <AssetSelectionSummaryListItemWithHealthStatus
+        icon={icon}
+        label={label}
+        statusJsx={jsx}
+        link={link}
+        assetCount={assets.length}
+        loading={loading}
+      />
+    );
+  },
+);
+
+export const AssetSelectionSummaryListItemWithHealthStatus = React.memo(
+  ({
+    icon,
+    label,
+    statusJsx,
+    link,
+    loading,
+    assetCount,
+  }: {
+    icon: React.ReactNode;
+    label: string;
+    link: string;
+    statusJsx: React.ReactNode;
+    loading?: boolean;
+    assetCount: number;
+  }) => {
     return (
       <RowWrapper as={Link} to={link}>
         <Box
@@ -86,12 +111,12 @@ export const AssetSelectionSummaryListItem = React.memo(
               <Spinner purpose="caption-text" />
             ) : (
               <Box className={styles.statusCountListWrapper} border="right" padding={{right: 12}}>
-                {jsx}
+                {statusJsx}
               </Box>
             )}
             <span>
-              {numberFormatter.format(assets.length)} asset
-              {ifPlural(assets.length, '', 's')}
+              {numberFormatter.format(assetCount)} asset
+              {ifPlural(assetCount, '', 's')}
             </span>
           </Box>
         </Box>

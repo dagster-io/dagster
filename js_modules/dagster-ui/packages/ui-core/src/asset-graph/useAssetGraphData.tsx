@@ -40,6 +40,7 @@ export interface AssetGraphFetchScope {
   // This is used by pages where `hideNodesMatching` is only available asynchronously.
   loading?: boolean;
   useWorker?: boolean;
+  skip?: boolean;
 }
 
 export function useFullAssetGraphData(
@@ -179,7 +180,7 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
   }, [spawnComputeGraphDataWorker]);
 
   useLayoutEffect(() => {
-    if (options.loading || supplementaryDataLoading) {
+    if (options.loading || supplementaryDataLoading || options.skip) {
       return;
     }
 
@@ -236,6 +237,7 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
     supplementaryDataLoading,
     spawnComputeGraphDataWorker,
     options.useWorker,
+    options.skip,
   ]);
 
   const loading = assetsLoading || graphDataLoading || supplementaryDataLoading;
