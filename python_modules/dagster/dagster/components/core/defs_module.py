@@ -8,6 +8,7 @@ from typing import Any, Optional, TypeVar, Union
 
 from dagster_shared.record import record
 from dagster_shared.serdes.objects import EnvRegistryKey
+from dagster_shared.seven import load_module_object
 from dagster_shared.yaml_utils import parse_yamls_with_source_position
 from dagster_shared.yaml_utils.source_position import SourcePosition, ValueAndSourcePositionTree
 from pydantic import BaseModel, ConfigDict, TypeAdapter
@@ -33,7 +34,6 @@ from dagster.components.component.component import Component
 from dagster.components.component.component_loader import is_component_loader
 from dagster.components.component.template_vars import find_inline_template_vars_in_module
 from dagster.components.core.context import ComponentLoadContext
-from dagster.components.core.package_entry import load_package_object
 from dagster.components.definitions import LazyDefinitions
 from dagster.components.resolved.base import Resolvable
 from dagster.components.resolved.context import ResolutionContext
@@ -522,7 +522,7 @@ def load_yaml_component_from_path(context: ComponentLoadContext, component_def_p
 
 def get_package_obj_for_type(type_str: str) -> type[Component]:
     key = EnvRegistryKey.from_typename(type_str)
-    obj = load_package_object(key)
+    obj = load_module_object(key.namespace, key.name)
     if not isinstance(obj, type) or not issubclass(obj, Component):
         raise DagsterInvalidDefinitionError(
             f"Component type {type_str} is of type {type(obj)}, but must be a subclass of dagster.Component"

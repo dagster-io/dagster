@@ -28,16 +28,19 @@ from dagster_dg_core.utils import (
     DgClickCommand,
     DgClickGroup,
     exit_with_error,
-    generate_missing_plugin_object_error_message,
+    generate_missing_registry_object_error_message,
     json_schema_property_to_click_option,
     not_none,
     parse_json_option,
     snakecase,
+    validate_dagster_availability,
 )
 from dagster_dg_core.utils.telemetry import cli_telemetry_wrapper
 from dagster_shared import check
+from dagster_shared.error import DagsterUnresolvableSymbolError
 from dagster_shared.plus.config import DagsterPlusCliConfig
 from dagster_shared.serdes.objects import EnvRegistryKey, EnvRegistryObjectSnap
+from dagster_shared.seven import load_module_object
 
 from dagster_dg_cli.cli.plus.constants import DgPlusAgentPlatform, DgPlusAgentType
 from dagster_dg_cli.scaffold import (
@@ -167,6 +170,9 @@ class ScaffoldDefsGroup(DgClickGroup):
 
             It is an error to pass both --json-params and key-value pairs as options.
             """
+            cli_config = get_config_from_cli_context(cli_context)
+            dg_context = DgContext.for_project_environment(Path.cwd(), cli_config)
+
             # json_params will not be present in the key_value_params if no scaffold properties
             # are defined.
             json_scaffolder_params = other_opts.pop("json_params", None)
@@ -183,10 +189,9 @@ class ScaffoldDefsGroup(DgClickGroup):
                 scaffolder_format in ["yaml", "python"],
                 "format must be either 'yaml' or 'python'",
             )
-            cli_config = get_config_from_cli_context(cli_context)
             _core_scaffold(
+                dg_context,
                 cli_context,
-                cli_config,
                 key,
                 defs_path,
                 key_value_scaffolder_params,
@@ -227,8 +232,16 @@ class ScaffoldDefsGroup(DgClickGroup):
         cmd_query = input_cmd.lower()
         matches = sorted([name for name in commands if cmd_query in name.lower()])
 
+        # if input is not a substring match for any registered command, try to interpret it as a
+        # Python reference, load the corresponding registry object, and generate a command on the
+        # fly
         if len(matches) == 0:
-            exit_with_error(generate_missing_plugin_object_error_message(input_cmd))
+            snap = self._try_load_input_as_registry_object(input_cmd)
+            if snap:
+                self._create_subcommand(snap.key, snap, use_typename_alias=False)
+                return check.not_none(super().get_command(ctx, snap.key.to_typename()))
+            else:
+                exit_with_error(generate_missing_registry_object_error_message(input_cmd))
 
         if len(matches) == 1:
             click.echo(f"No exact match found for '{input_cmd}'. Did you mean this one?")
@@ -264,6 +277,20 @@ class ScaffoldDefsGroup(DgClickGroup):
         selected_cmd = matches[index - 1]
         click.echo(f"Using defs scaffolder: {selected_cmd}")
         return check.not_none(super().get_command(ctx, selected_cmd))
+
+    def _try_load_input_as_registry_object(self, input_str: str) -> Optional[EnvRegistryObjectSnap]:
+        validate_dagster_availability()
+
+        from dagster.components.core.snapshot import get_package_entry_snap
+
+        if not EnvRegistryKey.is_valid_typename(input_str):
+            return None
+        key = EnvRegistryKey.from_typename(input_str)
+        try:
+            obj = load_module_object(key.namespace, key.name)
+            return get_package_entry_snap(key, obj)
+        except DagsterUnresolvableSymbolError:
+            return None
 
 
 class ScaffoldDefsSubCommand(DgClickCommand):
@@ -877,19 +904,18 @@ def scaffold_github_actions_command(git_root: Optional[Path], **global_options: 
 
 
 def _core_scaffold(
+    dg_context: DgContext,
     cli_context: click.Context,
-    cli_config: DgRawCliConfig,
     object_key: EnvRegistryKey,
     defs_path: str,
     key_value_params: Mapping[str, Any],
     scaffold_format: ScaffoldFormatOptions,
     json_params: Optional[Mapping[str, Any]] = None,
 ) -> None:
+    from dagster.components.core.package_entry import is_scaffoldable_object_key
     from pydantic import ValidationError
 
-    dg_context = DgContext.for_project_environment(Path.cwd(), cli_config)
-    registry = EnvRegistry.from_dg_context(dg_context)
-    if not registry.has(object_key):
+    if not is_scaffoldable_object_key(object_key):
         exit_with_error(f"Scaffoldable object type `{object_key.to_typename()}` not found.")
     elif dg_context.has_folder_at_defs_path(defs_path):
         exit_with_error(

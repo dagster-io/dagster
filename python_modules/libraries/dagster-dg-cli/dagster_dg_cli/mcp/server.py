@@ -29,21 +29,6 @@ def _subprocess(command: Sequence[str], cwd: str) -> str:
 
 
 @mcp.tool()
-async def scaffold_dagster_project(project_path: str) -> str:
-    """Create a new Dagster project at the provided `project_path`.
-
-    Conventionally, the folder name is the project name.
-
-    Args:
-        project_path: The absolute path to the project to be scaffolded.
-
-    Returns:
-        The output of the project scaffold command.
-    """
-    return _subprocess(["uv", "run", "dg", "scaffold", "project", project_path], cwd=project_path)
-
-
-@mcp.tool()
 async def list_available_components(project_path: str) -> str:
     """List all Dagster components for the project.
 
@@ -58,36 +43,11 @@ async def list_available_components(project_path: str) -> str:
     """
     return _subprocess(
         [
-            "uv",
-            "run",
             "dg",
             "list",
             "components",
             "--json",
         ],
-        cwd=project_path,
-    )
-
-
-@mcp.tool()
-async def install_component(project_path: str, package_name: str) -> str:
-    """Install a component from the marketplace.
-
-    Some available components include:
-        - `dagster-dbt`
-        - `dagster-sling`
-        - `dagster-evidence`
-
-    Args:
-        project_path: The full path to your Dagster project.
-        package_name: The Python package available on pypi for the component.
-
-    Returns:
-        The output of the `uv add` command
-    """
-    # TODO - get list of available components from the registry
-    return _subprocess(
-        ["uv", "add", package_name],
         cwd=project_path,
     )
 
@@ -107,7 +67,14 @@ async def scaffold_dagster_component_help(
         The help for scaffolding a specific component_type.
     """
     return _subprocess(
-        ["uv", "run", "dg", "--verbose", "scaffold", "defs", component_type, "--help"],
+        [
+            "dg",
+            "--verbose",
+            "scaffold",
+            "defs",
+            component_type,
+            "--help",
+        ],
         cwd=project_path,
     )
 
@@ -131,8 +98,6 @@ async def scaffold_dagster_component(
     """
     return _subprocess(
         [
-            "uv",
-            "run",
             "dg",
             "--verbose",
             "scaffold",
@@ -159,7 +124,13 @@ async def inspect_component_type(project_path: str, component_type: str) -> str:
         The output from running the command to inspect the specified component type.
     """
     return _subprocess(
-        ["uv", "run", "dg", "--verbose", "utils", "inspect-component", component_type],
+        [
+            "dg",
+            "--verbose",
+            "utils",
+            "inspect-component",
+            component_type,
+        ],
         cwd=project_path,
     )
 
@@ -177,7 +148,12 @@ async def check_dagster_defs_yaml(project_path: str) -> str:
         Verification that the YAML is formatted properly.
     """
     return _subprocess(
-        ["uv", "run", "dg", "--verbose", "check", "yaml"],
+        [
+            "dg",
+            "--verbose",
+            "check",
+            "yaml",
+        ],
         cwd=project_path,
     )
 
@@ -195,7 +171,12 @@ async def check_dagster_definitions(project_path: str) -> str:
         Verification that the YAML is formatted properly.
     """
     return _subprocess(
-        ["uv", "run", "dg", "--verbose", "check", "defs"],
+        [
+            "dg",
+            "--verbose",
+            "check",
+            "defs",
+        ],
         cwd=project_path,
     )
 
@@ -213,7 +194,13 @@ async def list_dagster_definitions(project_path: str) -> str:
         A list of definitions in this Dagster project.
     """
     return _subprocess(
-        ["uv", "run", "dg", "--verbose", "list", "defs", "--json"],
+        [
+            "dg",
+            "--verbose",
+            "list",
+            "defs",
+            "--json",
+        ],
         cwd=project_path,
     )
 
