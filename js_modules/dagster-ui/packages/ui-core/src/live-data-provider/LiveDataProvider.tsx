@@ -139,7 +139,7 @@ export function useLiveData<T>(
   }, [keys, manager, thread, updateManager]);
 
   return {
-    liveDataByNode: shouldSkipRef.current ? (emptyObject as Record<string, T>) : data,
+    liveDataByNode: data,
 
     refresh: React.useCallback(() => {
       manager.invalidateCache(keys);

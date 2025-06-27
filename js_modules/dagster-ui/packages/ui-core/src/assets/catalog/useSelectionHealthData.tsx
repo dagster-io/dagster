@@ -117,8 +117,20 @@ const SelectionHealthDataObserver = React.memo(
     );
 
     useLayoutEffect(() => {
+      dataListeners.forEach((listener) => {
+        if (newListeners.has(listener)) {
+          // Don't notify listeners that are new because they will be notified by the next effect
+          return;
+        }
+        listener(data);
+      });
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [data]);
+
+    useLayoutEffect(() => {
       newListeners.forEach((listener) => listener(data));
-    }, [newListeners, data]);
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [newListeners]);
 
     return <></>;
   },
