@@ -5,80 +5,44 @@ import {AssetHealthFragment} from '../../asset-data/types/AssetHealthDataProvide
 import {useAssetSelectionFiltering} from '../../asset-selection/useAssetSelectionFiltering';
 import {useAllAssets} from '../useAllAssets';
 
+type SelectionHealthData = {
+  liveDataByNode: Record<string, AssetHealthFragment>;
+  assetCount: number;
+  loading: boolean;
+};
+
 export const SelectionHealthDataContext = React.createContext<{
-  watchSelection: (
-    selection: string,
-    setHealthData: (healthData: Record<string, AssetHealthFragment>) => void,
-    setAssetCount: (assetCount: number) => void,
-    setLoading: (loading: boolean) => void,
-  ) => void;
+  watchSelection: (selection: string, setData: (data: SelectionHealthData) => void) => void;
 }>({
   watchSelection: () => {},
 });
 
-const emptyListeners = new Set<(...params: any[]) => void>();
+const emptyListeners = new Set<(data: SelectionHealthData) => void>();
 
 export const SelectionHealthDataProvider = ({children}: {children: React.ReactNode}) => {
   const [selections, setSelections] = React.useState<Set<string>>(() => new Set());
-  const [liveDataByNodeListeners, setLiveDataByNodeListeners] = React.useState<
-    Record<string, Set<(healthData: Record<string, AssetHealthFragment>) => void>>
-  >({});
-  const [assetCountListeners, setAssetCountListeners] = React.useState<
-    Record<string, Set<(assetCount: number) => void>>
-  >({});
-  const [loadingListeners, setLoadingListeners] = React.useState<
-    Record<string, Set<(loading: boolean) => void>>
+  const [dataListeners, setDataListeners] = React.useState<
+    Record<string, Set<(data: SelectionHealthData) => void>>
   >({});
 
   const watchSelection = React.useCallback(
-    (
-      selection: string,
-      setHealthData: (healthData: Record<string, AssetHealthFragment>) => void,
-      setAssetCount: (assetCount: number) => void,
-      setLoading: (loading: boolean) => void,
-    ) => {
+    (selection: string, setData: (data: SelectionHealthData) => void) => {
       setSelections((selections) => {
         selections.add(selection);
         return selections;
       });
 
-      setLiveDataByNodeListeners((liveDataByNodeListeners) => {
+      setDataListeners((dataListeners) => {
         return {
-          ...liveDataByNodeListeners,
-          [selection]: new Set([...(liveDataByNodeListeners[selection] || []), setHealthData]),
-        };
-      });
-
-      setLoadingListeners((loadingListeners) => {
-        return {
-          ...loadingListeners,
-          [selection]: new Set([...(loadingListeners[selection] || []), setLoading]),
-        };
-      });
-
-      setAssetCountListeners((assetCountListeners) => {
-        return {
-          ...assetCountListeners,
-          [selection]: new Set([...(assetCountListeners[selection] || []), setAssetCount]),
+          ...dataListeners,
+          [selection]: new Set([...(dataListeners[selection] || []), setData]),
         };
       });
 
       return () => {
-        setLiveDataByNodeListeners((liveDataByNodeListeners) => {
-          const newListeners = {...liveDataByNodeListeners};
-          newListeners[selection]?.delete(setHealthData);
-          return newListeners;
-        });
-
-        setAssetCountListeners((assetCountListeners) => {
-          const newListeners = {...assetCountListeners};
-          newListeners[selection]?.delete(setAssetCount);
-          return newListeners;
-        });
-
-        setLoadingListeners((loadingListeners) => {
-          const newListeners = {...loadingListeners};
-          newListeners[selection]?.delete(setLoading);
+        setDataListeners((dataListeners) => {
+          const newListeners = {...dataListeners};
+          newListeners[selection]?.delete(setData);
           return newListeners;
         });
       };
@@ -92,9 +56,7 @@ export const SelectionHealthDataProvider = ({children}: {children: React.ReactNo
         <SelectionHealthDataObserver
           key={selection}
           selection={selection}
-          liveDataByNodeListeners={liveDataByNodeListeners[selection] || emptyListeners}
-          assetCountListeners={assetCountListeners[selection] || emptyListeners}
-          loadingListeners={loadingListeners[selection] || emptyListeners}
+          dataListeners={dataListeners[selection] || emptyListeners}
         />
       ))}
       {children}
@@ -105,16 +67,12 @@ export const SelectionHealthDataProvider = ({children}: {children: React.ReactNo
 const SelectionHealthDataObserver = React.memo(
   ({
     selection,
-    liveDataByNodeListeners,
-    assetCountListeners,
-    loadingListeners,
+    dataListeners,
   }: {
     selection: string;
-    liveDataByNodeListeners: Set<(healthData: Record<string, AssetHealthFragment>) => void>;
-    assetCountListeners: Set<(assetCount: number) => void>;
-    loadingListeners: Set<(loading: boolean) => void>;
+    dataListeners: Set<(data: SelectionHealthData) => void>;
   }) => {
-    const skip = !liveDataByNodeListeners.size;
+    const skip = !dataListeners.size;
     const {assets, loading} = useAllAssets();
     const {filtered} = useAssetSelectionFiltering({
       assets,
@@ -131,23 +89,17 @@ const SelectionHealthDataObserver = React.memo(
       skip,
     );
 
-    useLayoutEffect(() => {
-      if (liveDataByNodeListeners) {
-        liveDataByNodeListeners.forEach((listener) => listener(liveDataByNode));
-      }
-    }, [liveDataByNodeListeners, liveDataByNode]);
-
-    useLayoutEffect(() => {
-      if (assetCountListeners) {
-        assetCountListeners.forEach((listener) => listener(filtered.length));
-      }
-    }, [assetCountListeners, filtered.length]);
-
     const isLoading = loading || filtered.length !== Object.keys(liveDataByNode).length;
 
     useLayoutEffect(() => {
-      loadingListeners.forEach((listener) => listener(isLoading));
-    }, [loadingListeners, isLoading]);
+      const data: SelectionHealthData = {
+        liveDataByNode,
+        assetCount: filtered.length,
+        loading: isLoading,
+      };
+
+      dataListeners.forEach((listener) => listener(data));
+    }, [dataListeners, liveDataByNode, filtered.length, isLoading]);
 
     return <></>;
   },
@@ -156,18 +108,17 @@ const SelectionHealthDataObserver = React.memo(
 export const useSelectionHealthData = (selection: string) => {
   const {watchSelection} = useContext(SelectionHealthDataContext);
 
-  const [liveDataByNode, setLiveDataByNode] = React.useState<Record<string, AssetHealthFragment>>(
-    () => ({}),
-  );
-  const [assetCount, setAssetCount] = React.useState(0);
-  const [loading, setLoading] = React.useState(false);
+  const [data, setData] = React.useState<SelectionHealthData>(() => ({
+    liveDataByNode: {},
+    assetCount: 0,
+    loading: false,
+  }));
 
-  useLayoutEffect(
-    () => watchSelection(selection, setLiveDataByNode, setAssetCount, setLoading),
-    [selection, watchSelection],
-  );
+  useLayoutEffect(() => {
+    return watchSelection(selection, setData);
+  }, [selection, watchSelection]);
 
-  return {liveDataByNode, loading, assetCount};
+  return data;
 };
 
 function getSelectionThreadId(selection: string) {

@@ -122,8 +122,6 @@ export function useLiveData<T>(
     // reset data to empty object
     setData(emptyObject);
 
-    console.log('setting empty data');
-
     const unsubscribeCallbacks = keys.map((key) =>
       manager.subscribe(
         key,
@@ -133,7 +131,6 @@ export function useLiveData<T>(
     );
 
     updateManager.processUpdates();
-    console.log('processed updates');
     return () => {
       unsubscribeCallbacks.forEach((cb) => {
         cb();
