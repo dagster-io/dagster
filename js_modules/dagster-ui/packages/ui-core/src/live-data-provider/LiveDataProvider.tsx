@@ -5,7 +5,6 @@ import {LiveDataThreadID} from './LiveDataThread';
 import {LiveDataThreadManager} from './LiveDataThreadManager';
 import {useDocumentVisibility} from '../hooks/useDocumentVisibility';
 import {useStableReferenceByHash} from '../hooks/useStableReferenceByHash';
-import {useUpdatingRef} from '../hooks/useUpdatingRef';
 
 export const SUBSCRIPTION_IDLE_POLL_RATE = 30 * 1000;
 
@@ -48,7 +47,6 @@ export function useLiveData<T>(
   const keys = useStableReferenceByHash(_keys);
 
   const initialSkipRef = React.useRef(skip);
-  const shouldSkipRef = useUpdatingRef(skip);
   const uuidRef = React.useRef(0);
 
   const updateManager = useMemo(() => {
