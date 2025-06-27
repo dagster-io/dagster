@@ -1,5 +1,4 @@
 import shutil
-import tempfile
 import warnings
 from collections.abc import Iterator, Mapping
 from contextlib import contextmanager
@@ -22,16 +21,9 @@ from dagster._core.definitions.result import MaterializeResult
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster._core.instance_for_test import instance_for_test
 from dagster._core.test_utils import ensure_dagster_tests_import
-from dagster._utils import alter_sys_path
 from dagster._utils.env import environ
-from dagster.components.core.tree import ComponentTree
 from dagster.components.resolved.core_models import AssetAttributesModel, OpSpec
-from dagster.components.testing import (
-    TestOpCustomization,
-    TestTranslation,
-    get_underlying_component,
-    scaffold_defs_sandbox,
-)
+from dagster.components.testing import TestOpCustomization, TestTranslation, scaffold_defs_sandbox
 from dagster_shared import check
 from dagster_sling import SlingReplicationCollectionComponent, SlingResource
 from dagster_sling.components.sling_replication_collection.component import (
@@ -74,7 +66,9 @@ def temp_sling_component_instance(
         environ({"HOME": str(defs_sandbox.defs_folder_path), "SOME_PASSWORD": "password"}),
     ):
         shutil.copytree(
-            STUB_LOCATION_PATH / "defs" / "ingest",
+            (STUB_LOCATION_PATH_LEGACY if legacy_format else STUB_LOCATION_PATH)
+            / "defs"
+            / "ingest",
             defs_sandbox.defs_folder_path,
             dirs_exist_ok=True,
         )
@@ -91,9 +85,14 @@ def temp_sling_component_instance(
                 data["attributes"]["replications"] = replication_specs
 
             # update the defs yaml to add a duckdb instance
-            data["attributes"]["sling"]["connections"][0]["instance"] = (
-                f"{defs_sandbox.defs_folder_path}/duckdb"
-            )
+            if legacy_format:
+                data["attributes"]["sling"]["connections"][0]["instance"] = (
+                    f"{defs_sandbox.defs_folder_path}/duckdb"
+                )
+            else:
+                data["attributes"]["connections"]["DUCKDB"]["instance"] = (
+                    f"{defs_sandbox.defs_folder_path}/duckdb"
+                )
 
         with defs_sandbox.load() as (component, defs):
             assert isinstance(component, SlingReplicationCollectionComponent)
@@ -264,31 +263,39 @@ def test_spec_is_available_in_scope() -> None:
 
 
 def test_asset_post_processors_deprecation_error() -> None:
-    with tempfile.TemporaryDirectory() as temp_dir:
-        with alter_sys_path(to_add=[str(temp_dir)], to_remove=[]):
-            with environ({"HOME": temp_dir, "SOME_PASSWORD": "password"}):
-                shutil.copytree(STUB_LOCATION_PATH, temp_dir, dirs_exist_ok=True)
-                component_path = Path(temp_dir) / COMPONENT_RELPATH
+    with (
+        scaffold_defs_sandbox(component_cls=SlingReplicationCollectionComponent) as defs_sandbox,
+        environ({"HOME": str(defs_sandbox.defs_folder_path), "SOME_PASSWORD": "password"}),
+    ):
+        shutil.copytree(
+            STUB_LOCATION_PATH / "defs" / "ingest",
+            defs_sandbox.defs_folder_path,
+            dirs_exist_ok=True,
+        )
+        shutil.copy(STUB_LOCATION_PATH / "input.csv", defs_sandbox.defs_folder_path / "input.csv")
 
-                with _modify_yaml(component_path / "replication.yaml") as data:
-                    placeholder_data = data["streams"].pop("<PLACEHOLDER>")
-                    data["streams"][f"file://{temp_dir}/input.csv"] = placeholder_data
+        with _modify_yaml(defs_sandbox.defs_folder_path / "replication.yaml") as data:
+            if "<PLACEHOLDER>" in data["streams"]:
+                placeholder_data = data["streams"].pop("<PLACEHOLDER>")
+                data["streams"][f"file://{defs_sandbox.defs_folder_path}/input.csv"] = (
+                    placeholder_data
+                )
 
-                # Modify defs.yaml to include the deprecated asset_post_processors field
-                with _modify_yaml(component_path / "defs.yaml") as data:
-                    data["attributes"]["asset_post_processors"] = [
-                        {"target": "*", "attributes": {"group_name": "test_group"}}
-                    ]
-                    data["attributes"]["connections"]["DUCKDB"]["instance"] = f"{temp_dir}/duckdb"
+        with _modify_yaml(defs_sandbox.defs_folder_path / "defs.yaml") as data:
+            data["attributes"]["connections"]["DUCKDB"]["instance"] = (
+                f"{defs_sandbox.defs_folder_path}/duckdb"
+            )
+            # Modify defs.yaml to include the deprecated asset_post_processors field
+            data["attributes"]["asset_post_processors"] = [
+                {"target": "*", "attributes": {"group_name": "test_group"}}
+            ]
 
-                context = ComponentTree.for_test().load_context.for_path(component_path)
-                component = get_underlying_component(context)
-                assert isinstance(component, SlingReplicationCollectionComponent)
+        with pytest.raises(Exception) as exc_info:
+            with defs_sandbox.load():
+                pass
 
-                with pytest.raises(Exception) as exc_info:
-                    component.build_defs(context)
-                error_message = str(exc_info.value)
-                assert "The asset_post_processors field is deprecated" in error_message
+        error_message = str(exc_info.value)
+        assert "The asset_post_processors field is deprecated" in error_message
 
 
 def map_spec(spec: AssetSpec) -> AssetSpec:
