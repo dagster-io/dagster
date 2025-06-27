@@ -1,5 +1,5 @@
 from collections import Counter
-from collections.abc import Iterable, Mapping, Sequence
+from collections.abc import Generator, Iterable, Iterator, Mapping, Sequence
 from functools import cached_property
 from inspect import Parameter
 from typing import (  # noqa: UP035
@@ -36,6 +36,7 @@ from dagster._core.definitions.assets import (
 from dagster._core.definitions.backfill_policy import BackfillPolicy
 from dagster._core.definitions.decorators.op_decorator import _Op
 from dagster._core.definitions.hook_definition import HookDefinition
+from dagster._core.definitions.inference import get_return_annotation
 from dagster._core.definitions.input import In
 from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.output import Out
@@ -51,6 +52,7 @@ from dagster._core.types.dagster_type import (
     Any as DagsterAny,
     DagsterType,
     Nothing,
+    is_generic_materialize_result_annotation,
 )
 
 
@@ -71,6 +73,29 @@ def get_function_params_without_context_or_config_or_resources(
             new_input_args.append(input_arg)
 
     return new_input_args
+
+
+def parse_dagster_type_from_multi_asset_return_type(fn: Callable[..., Any]) -> Optional[Any]:
+    """If the return type of a multi-asset function is Iterable[MaterializeResult[T]],
+    we can surmise that the individual outputs of the function will be of type T.
+
+    For any other return type, we return None, and allow the default multi_asset behavior to
+    take over.
+
+    Examples:
+    - Iterable[MaterializeResult[T]] -> MaterializeResult[T]
+    - Iterable[MaterializeResult] -> MaterializeResult
+    - Generator[MaterializeResult[T], None, None] -> MaterializeResult[T]
+    - Iterable[Any] -> None
+    """
+    return_annotation = get_return_annotation(fn)
+    if get_origin(return_annotation) in (Iterator, Generator):
+        # Iterator[MaterializeResult[T]] -> MaterializeResult[T]
+        inner_annotation = get_args(return_annotation)[0]
+        if is_generic_materialize_result_annotation(inner_annotation):
+            return inner_annotation
+
+    return None
 
 
 def validate_can_coexist(asset_in: AssetIn, asset_dep: AssetDep) -> None:
@@ -372,7 +397,16 @@ class DecoratorAssetsDefinitionBuilder:
             elif asset_spec.metadata.get(SYSTEM_METADATA_KEY_IO_MANAGER_KEY):
                 dagster_type = DagsterAny
             else:
-                dagster_type = Nothing
+                # NOTE: we do **NOT** offload the return type parsing to the OpDefinition constructor
+                # because ops and multi-assets have explicitly different default behavior when the
+                # return type is missing or otherwise unparseable. multi_assets represent this as
+                # the `Nothing` type, while ops default to `Any`.
+                #
+                # This means that we need to do the parsing work here so that we always provide
+                # Outs with a dagster_type that's already set to the final value.
+                parsed_dagster_type = parse_dagster_type_from_multi_asset_return_type(fn)
+                dagster_type = parsed_dagster_type or Nothing
+
             named_outs_by_asset_key[asset_spec.key] = NamedOut(
                 output_name,
                 Out(
