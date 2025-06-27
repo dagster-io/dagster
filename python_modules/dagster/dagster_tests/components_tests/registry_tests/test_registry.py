@@ -131,6 +131,8 @@ def test_components_from_dagster():
 
     with _temp_venv([*common_deps, "-e", sling_root]) as python_executable:
         python = get_venv_executable(python_executable, "python")
+        # Sling prints when it downloads its executable - this ensures we don't get that
+        # stdout when listing the component types subsequently.
         subprocess.check_call([str(python), "-c", "import dagster_sling"])
         component_types = _get_component_types_in_python_environment(python_executable)
         assert "dagster_dbt.DbtProjectComponent" not in component_types
