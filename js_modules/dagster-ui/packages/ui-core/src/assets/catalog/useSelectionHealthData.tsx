@@ -28,8 +28,9 @@ export const SelectionHealthDataProvider = ({children}: {children: React.ReactNo
   const watchSelection = React.useCallback(
     (selection: string, setData: (data: SelectionHealthData) => void) => {
       setSelections((selections) => {
-        selections.add(selection);
-        return selections;
+        const newSelections = new Set(selections);
+        newSelections.add(selection);
+        return newSelections;
       });
 
       setDataListeners((dataListeners) => {
@@ -41,9 +42,12 @@ export const SelectionHealthDataProvider = ({children}: {children: React.ReactNo
 
       return () => {
         setDataListeners((dataListeners) => {
-          const newListeners = {...dataListeners};
-          newListeners[selection]?.delete(setData);
-          return newListeners;
+          const copy = new Set(dataListeners[selection] || []);
+          copy.delete(setData);
+          return {
+            ...dataListeners,
+            [selection]: copy,
+          };
         });
       };
     },
@@ -99,7 +103,7 @@ const SelectionHealthDataObserver = React.memo(
       });
       return newListeners;
     }, [dataListeners, previousListeners]);
-    previousListeners.current = newListeners;
+    previousListeners.current = dataListeners;
 
     const isLoading = loading || filtered.length !== Object.keys(liveDataByNode).length;
 
