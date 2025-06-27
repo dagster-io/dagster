@@ -18,9 +18,9 @@ Before creating and registering custom components, you will need to [create a co
 
 For this example, we'll create a `ShellCommand` component that executes a shell command.
 
-### 1. Create the new component file
+### 1. Scaffold the new component file
 
-First, use the [`dg scaffold component`](/api/dg) command to scaffold the `ShellCommand` component:
+First, use the [`dg scaffold component`](/api/dg/dg-cli#dg-scaffold) command to scaffold the `ShellCommand` component:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/shell-script-component/1-dg-scaffold-shell-command.txt" />
 
@@ -29,7 +29,7 @@ This will add a new file to the `components` directory of your Dagster project t
 <CodeExample
   path="docs_snippets/docs_snippets/guides/components/shell-script-component/2-shell-command-empty.py"
   language="python"
-  title="components/shell_command.py"
+  title="src/my_project/components/shell_command.py"
 />
 
 :::tip
