@@ -2,6 +2,7 @@ import abc
 import inspect
 from collections.abc import Callable, Iterator, Mapping, Sequence
 from contextlib import nullcontext
+from functools import cached_property
 from pathlib import Path
 from typing import Generic, Optional, TypeVar, Union
 
@@ -118,8 +119,15 @@ class YamlDecl(ComponentDecl):
             return TypeAdapter(model_cls).validate_python(self.component_file_model.attributes)
         return None
 
-    def _load_component(self) -> "Component":
-        # find the component type
+    @cached_property
+    def context_with_component_injected_scope(self) -> ComponentLoadContext:
+        return context_with_injected_scope(
+            self.context, self.component_cls, self.component_file_model.template_vars_module
+        )
+
+    @cached_property
+    def component_cls(self) -> type[Component]:
+        """The class of the component that is being loaded."""
         type_str = self.context.normalize_component_type_str(self.component_file_model.type)
         key = EnvRegistryKey.from_typename(type_str)
         obj = load_module_object(key.namespace, key.name)
@@ -127,20 +135,20 @@ class YamlDecl(ComponentDecl):
             raise DagsterInvalidDefinitionError(
                 f"Component type {type_str} is of type {type(obj)}, but must be a subclass of dagster.Component"
             )
+        return obj
 
-        context = context_with_injected_scope(
-            self.context, obj, self.component_file_model.template_vars_module
-        )
+    def _load_component(self) -> "Component":
+        context = self.context_with_component_injected_scope
 
         context = context.with_source_position_tree(
             self.source_tree.source_position_tree,
         )
 
-        model_cls = obj.get_model_cls()
+        model_cls = self.component_cls.get_model_cls()
 
         attributes = self._get_attributes_model(model_cls)
 
-        return obj.load(attributes, context)
+        return self.component_cls.load(attributes, context)
 
     def get_asset_post_processor_lists(self) -> list[AssetPostProcessor]:
         post_processing_position_tree = self.source_tree.source_position_tree.children.get(
@@ -154,7 +162,8 @@ class YamlDecl(ComponentDecl):
             else nullcontext()
         ):
             return asset_post_processor_list_from_post_processing_dict(
-                self.context.resolution_context, self.component_file_model.post_processing
+                self.context_with_component_injected_scope.resolution_context,
+                self.component_file_model.post_processing,
             )
 
 
