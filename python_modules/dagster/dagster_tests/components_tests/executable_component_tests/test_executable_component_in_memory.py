@@ -25,7 +25,7 @@ from dagster.components.testing import copy_code_to_file, scaffold_defs_sandbox
 def asset_in_component(
     component: ExecutableComponent, key: CoercibleToAssetKey
 ) -> AssetsDefinition:
-    defs = component.build_defs(ComponentTree.for_test().load_context)
+    defs = component.build_defs(ComponentTree.for_test().decl_load_context)
     return defs.get_assets_def(key)
 
 
@@ -61,7 +61,7 @@ def assert_singular_component(
     resources: Optional[Mapping[str, Any]] = None,
     run_config: Optional[Mapping[str, Any]] = None,
 ) -> None:
-    defs = component.build_defs(ComponentTree.for_test().load_context)
+    defs = component.build_defs(ComponentTree.for_test().decl_load_context)
     assets_def = defs.get_assets_def("asset")
 
     assert assets_def.op.name == "op_name"

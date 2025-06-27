@@ -36,7 +36,7 @@ def load_context_and_component_for_test(
     attrs: Union[str, dict[str, Any]],
     template_vars_module: Optional[str] = None,
 ) -> tuple[ComponentLoadContext, T_Component]:
-    context = ComponentTree.for_test().load_context
+    context = ComponentTree.for_test().decl_load_context
     model_cls = check.not_none(
         component_type.get_model_cls(), "Component must have schema for direct test"
     )

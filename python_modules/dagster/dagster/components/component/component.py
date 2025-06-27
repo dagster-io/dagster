@@ -334,7 +334,7 @@ class Component(ABC):
         model_cls = cls.get_model_cls()
         assert model_cls
         model = TypeAdapter(model_cls).validate_python(attributes)
-        return cls.load(model, context if context else ComponentTree.for_test().load_context)
+        return cls.load(model, context if context else ComponentTree.for_test().decl_load_context)
 
     @classmethod
     def from_yaml_path(
@@ -353,5 +353,6 @@ class Component(ABC):
         from dagster.components.core.tree import ComponentTree
 
         return load_yaml_component_from_path(
-            context=context or ComponentTree.for_test().load_context, component_def_path=yaml_path
+            context=context or ComponentTree.for_test().decl_load_context,
+            component_def_path=yaml_path,
         )
