@@ -130,6 +130,8 @@ def test_components_from_dagster():
         assert "dagster_sling.SlingReplicationCollectionComponent" not in component_types
 
     with _temp_venv([*common_deps, "-e", sling_root]) as python_executable:
+        python = get_venv_executable(python_executable, "python")
+        subprocess.check_call([str(python), "-c", "import dagster_sling"])
         component_types = _get_component_types_in_python_environment(python_executable)
         assert "dagster_dbt.DbtProjectComponent" not in component_types
         assert "dagster_sling.SlingReplicationCollectionComponent" in component_types
