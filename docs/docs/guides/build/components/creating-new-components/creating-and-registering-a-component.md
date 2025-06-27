@@ -8,9 +8,11 @@ The components system makes it easy to create new components that you and your t
 
 In most cases, components map to a specific technology. For example, you might create a `DockerScriptComponent` that executes a script in a Docker container, or a `SnowflakeQueryComponent` that runs a query on Snowflake.
 
-## Prerequisites
+:::info Prerequisites
 
 Before creating and registering custom components, you will need to [create a components-ready project](/guides/build/projects/creating-a-new-project).
+
+:::
 
 ## Creating a new component
 
@@ -18,7 +20,7 @@ For this example, we'll create a `ShellCommand` component that executes a shell 
 
 ### 1. Create the new component file
 
-First, use the `dg scaffold component` command to scaffold the `ShellCommand` component:
+First, use the [`dg scaffold component`](/api/dg) command to scaffold the `ShellCommand` component:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/shell-script-component/1-dg-scaffold-shell-command.txt" />
 
