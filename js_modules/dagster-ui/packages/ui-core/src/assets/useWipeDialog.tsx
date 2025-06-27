@@ -7,13 +7,13 @@ import {usePermissionsForLocation} from '../app/Permissions';
 import {AssetKeyInput} from '../graphql/types';
 
 export function useWipeDialog(
-  opts: {assetKey: AssetKeyInput; repository: {location: {name: string}}} | null,
+  opts: {assetKey: AssetKeyInput; repository: {location: {name: string}} | null} | null,
   refresh?: () => void,
 ) {
   const [showing, setShowing] = useState(false);
   const {
     permissions: {canWipeAssets},
-  } = usePermissionsForLocation(opts ? opts.repository.location.name : null);
+  } = usePermissionsForLocation(opts && opts.repository ? opts.repository.location.name : null);
 
   const {
     featureContext: {canSeeWipeMaterializationAction},
