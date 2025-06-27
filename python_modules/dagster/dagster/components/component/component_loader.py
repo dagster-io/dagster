@@ -38,6 +38,18 @@ def component_instance(
 ) -> Callable[["ComponentLoadContext"], T_Component]:
     """Decorator for a function to be used to load an instance of a Component.
     This is used when instantiating components in python instead of via yaml.
+
+    Example:
+        .. code-block:: python
+
+            import dagster as dg
+
+            class MyComponent(dg.Component):
+                ...
+
+            @component_instance
+            def load(context: dg.ComponentLoadContext) -> MyComponent:
+                return MyComponent(...)
     """
     setattr(fn, COMPONENT_LOADER_FN_ATTR, True)
     return fn
