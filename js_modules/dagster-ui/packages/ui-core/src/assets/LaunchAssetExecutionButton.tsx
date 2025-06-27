@@ -13,7 +13,7 @@ import pick from 'lodash/pick';
 import uniq from 'lodash/uniq';
 import React, {useContext, useState} from 'react';
 import {Link} from 'react-router-dom';
-import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
+import {observeEnabled} from 'shared/app/observeEnabled.oss';
 import {MaterializeButton} from 'shared/assets/MaterializeButton.oss';
 import {useLaunchWithTelemetry} from 'shared/launchpad/useLaunchWithTelemetry.oss';
 
@@ -45,7 +45,6 @@ import {CloudOSSContext} from '../app/CloudOSSContext';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {useConfirmation} from '../app/CustomConfirmationProvider';
 import {IExecutionSession} from '../app/ExecutionSessionStorage';
-import {featureEnabled} from '../app/Flags';
 import {DEFAULT_DISABLED_REASON} from '../app/Permissions';
 import {
   displayNameForAssetKey,
@@ -178,11 +177,7 @@ export function optionsForExecuteButton(
     materializeOption: {
       assetKeys: materializable.map((a) => a.assetKey),
       disabledReason: materializationDisabledReason(assets, materializable),
-      icon: (
-        <Icon
-          name={featureEnabled(FeatureFlag.flagUseNewObserveUIs) ? 'execute' : 'materialization'}
-        />
-      ),
+      icon: <Icon name={observeEnabled() ? 'execute' : 'materialization'} />,
       label: isSelection
         ? `Materialize selected${countIfPluralOrNotAll(materializable, assets)}${ellipsis}`
         : materializable.length > 1 && !skipAllTerm
@@ -301,13 +296,7 @@ export const LaunchAssetExecutionButton = ({
                 loading ? (
                   <Spinner purpose="body-text" />
                 ) : (
-                  <Icon
-                    name={
-                      featureEnabled(FeatureFlag.flagUseNewObserveUIs)
-                        ? 'execute'
-                        : 'materialization'
-                    }
-                  />
+                  <Icon name={observeEnabled() ? 'execute' : 'materialization'} />
                 )
               }
             >
