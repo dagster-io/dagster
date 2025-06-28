@@ -36,7 +36,7 @@ setup(
     install_requires=[
         f"dagster{pin}",
         f"dagster_spark{pin}",
-        "pyspark>=3,<4",
+        "pyspark>=3,<5",
     ],
     zip_safe=False,
 )
