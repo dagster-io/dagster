@@ -93,6 +93,7 @@ describe('AssetView', () => {
       await act(() => render(<Test path="/sda_asset" assetKey={{path: ['sda_asset']}} />));
       await waitFor(async () => {
         expect(await screen.findByText('Materialize')).toBeVisible();
+        expect(await screen.findByTestId('materialize-button')).toBeEnabled();
       });
     });
 
@@ -103,10 +104,11 @@ describe('AssetView', () => {
       expect(await screen.findByText('Observe')).toBeVisible();
     });
 
-    it('shows no button for a non-software defined asset', async () => {
+    it('shows a disabled button for a non-software defined asset', async () => {
       render(<Test path="/non_sda_asset" assetKey={{path: ['non_sda_asset']}} />);
       expect(screen.queryByText('Observe')).toBeNull();
-      expect(screen.queryByText('Materialize')).toBeNull();
+      expect(screen.queryByText('Materialize')).toBeVisible();
+      expect(await screen.findByTestId('materialize-button')).toBeDisabled();
     });
   });
 
