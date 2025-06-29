@@ -1,12 +1,7 @@
 import click
-from dagster import (
-    AssetSelection,
-    DagsterInstance,
-    MultiPartitionsDefinition,
-    asset,
-    define_asset_job,
-)
+from dagster import AssetSelection, DagsterInstance, asset, define_asset_job
 from dagster._core.definitions.partitions.definition.dynamic import DynamicPartitionsDefinition
+from dagster._core.definitions.partitions.definition.multi import MultiPartitionsDefinition
 from dagster._core.definitions.partitions.definition.time_window_subclasses import (
     DailyPartitionsDefinition,
 )

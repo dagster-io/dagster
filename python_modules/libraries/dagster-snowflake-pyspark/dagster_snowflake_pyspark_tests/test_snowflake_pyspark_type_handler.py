@@ -14,8 +14,6 @@ from dagster import (
     EnvVar,
     IOManagerDefinition,
     MetadataValue,
-    MultiPartitionKey,
-    MultiPartitionsDefinition,
     Out,
     TableColumn,
     TableSchema,
@@ -30,10 +28,12 @@ from dagster import (
     op,
 )
 from dagster._core.definitions.partitions.definition.dynamic import DynamicPartitionsDefinition
+from dagster._core.definitions.partitions.definition.multi import MultiPartitionsDefinition
 from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
 from dagster._core.definitions.partitions.definition.time_window_subclasses import (
     DailyPartitionsDefinition,
 )
+from dagster._core.definitions.partitions.utils.multi import MultiPartitionKey
 from dagster._core.storage.db_io_manager import TableSlice
 from dagster_snowflake import build_snowflake_io_manager
 from dagster_snowflake.resources import SnowflakeResource

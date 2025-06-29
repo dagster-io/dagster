@@ -10,13 +10,13 @@ from dagster import (
     Definitions,
     DimensionPartitionMapping,
     MultiPartitionMapping,
-    MultiPartitionsDefinition,
     Output,
     TimeWindowPartitionMapping,
     asset,
     asset_check,
     evaluate_automation_conditions,
 )
+from dagster._core.definitions.partitions.definition.multi import MultiPartitionsDefinition
 from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
 from dagster._core.definitions.partitions.definition.time_window_subclasses import (
     DailyPartitionsDefinition,

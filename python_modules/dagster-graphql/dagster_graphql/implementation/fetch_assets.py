@@ -8,11 +8,11 @@ from dagster import (
     AssetKey,
     DagsterEventType,
     DagsterRun,
-    MultiPartitionsDefinition,
     _check as check,
 )
 from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.partitions.definition.base import PartitionsDefinition
+from dagster._core.definitions.partitions.definition.multi import MultiPartitionsDefinition
 from dagster._core.definitions.partitions.definition.time_window import (
     TimeWindowPartitionsDefinition,
 )

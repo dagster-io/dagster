@@ -7,8 +7,6 @@ from dagster import (
     AssetKey,
     DagsterInstance,
     IdentityPartitionMapping,
-    MultiPartitionKey,
-    MultiPartitionsDefinition,
     SpecificPartitionsPartitionMapping,
     StaticPartitionMapping,
     TimeWindowPartitionMapping,
@@ -20,6 +18,7 @@ from dagster._check import CheckError
 from dagster._core.definitions.asset_dep import AssetDep
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.partitions.definition.dynamic import DynamicPartitionsDefinition
+from dagster._core.definitions.partitions.definition.multi import MultiPartitionsDefinition
 from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
 from dagster._core.definitions.partitions.definition.time_window_subclasses import (
     DailyPartitionsDefinition,
@@ -32,6 +31,7 @@ from dagster._core.definitions.partitions.mapping.partition_mapping import (
 )
 from dagster._core.definitions.partitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.partitions.subset.default import DefaultPartitionsSubset
+from dagster._core.definitions.partitions.utils.multi import MultiPartitionKey
 from dagster._core.test_utils import instance_for_test
 
 

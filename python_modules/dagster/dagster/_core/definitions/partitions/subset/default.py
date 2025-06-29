@@ -67,7 +67,7 @@ class DefaultPartitionsSubset(
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> Sequence[PartitionKeyRange]:
-        from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
+        from dagster._core.definitions.partitions.definition.multi import MultiPartitionsDefinition
 
         if isinstance(partitions_def, MultiPartitionsDefinition):
             # For multi-partitions, we construct the ranges by holding one dimension constant

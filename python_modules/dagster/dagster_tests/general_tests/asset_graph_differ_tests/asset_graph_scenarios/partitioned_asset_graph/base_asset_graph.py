@@ -1,11 +1,5 @@
-from dagster import (
-    AssetIn,
-    Definitions,
-    MultiPartitionsDefinition,
-    StaticPartitionMapping,
-    TimeWindowPartitionMapping,
-    asset,
-)
+from dagster import AssetIn, Definitions, StaticPartitionMapping, TimeWindowPartitionMapping, asset
+from dagster._core.definitions.partitions.definition.multi import MultiPartitionsDefinition
 from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
 from dagster._core.definitions.partitions.definition.time_window_subclasses import (
     DailyPartitionsDefinition,

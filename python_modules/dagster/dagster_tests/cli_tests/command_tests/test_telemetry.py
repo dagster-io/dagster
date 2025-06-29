@@ -12,7 +12,6 @@ from dagster import (
     ConfigurableResource,
     Definitions,
     LegacyFreshnessPolicy,
-    MultiPartitionsDefinition,
     PipesSubprocessClient,
     SourceAsset,
     asset,
@@ -25,6 +24,7 @@ from dagster import (
 )
 from dagster._cli.job import job_execute_command
 from dagster._core.definitions.partitions.definition.dynamic import DynamicPartitionsDefinition
+from dagster._core.definitions.partitions.definition.multi import MultiPartitionsDefinition
 from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
 from dagster._core.definitions.partitions.definition.time_window_subclasses import (
     DailyPartitionsDefinition,

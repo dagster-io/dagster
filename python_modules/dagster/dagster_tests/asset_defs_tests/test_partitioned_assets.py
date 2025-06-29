@@ -15,8 +15,6 @@ from dagster import (
     IOManager,
     IOManagerDefinition,
     MaterializeResult,
-    MultiPartitionKey,
-    MultiPartitionsDefinition,
     Output,
     OutputContext,
     PartitionsDefinition,
@@ -33,6 +31,7 @@ from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.materialize import materialize_to_memory
 from dagster._core.definitions.metadata.metadata_value import IntMetadataValue, TextMetadataValue
 from dagster._core.definitions.partitions.definition.dynamic import DynamicPartitionsDefinition
+from dagster._core.definitions.partitions.definition.multi import MultiPartitionsDefinition
 from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
 from dagster._core.definitions.partitions.definition.time_window_subclasses import (
     DailyPartitionsDefinition,
@@ -43,6 +42,7 @@ from dagster._core.definitions.partitions.partitioned_config.time_window import 
     daily_partitioned_config,
     hourly_partitioned_config,
 )
+from dagster._core.definitions.partitions.utils.multi import MultiPartitionKey
 from dagster._core.definitions.partitions.utils.time_window import TimeWindow
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.event_api import EventRecordsFilter

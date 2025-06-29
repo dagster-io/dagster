@@ -21,6 +21,7 @@ from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.metadata import RawMetadataValue
 from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.partitions.definition.base import PartitionsDefinition
+from dagster._core.definitions.partitions.definition.multi import MultiPartitionsDefinition
 from dagster._core.definitions.partitions.mapping.partition_mapping import infer_partition_mapping
 from dagster._core.definitions.partitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.partitions.subset.base import PartitionsSubset
@@ -63,7 +64,6 @@ from dagster._core.types.dagster_type import DagsterType
 if TYPE_CHECKING:
     from dagster._core.definitions.data_version import DataVersion
     from dagster._core.definitions.dependency import NodeHandle
-    from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
     from dagster._core.definitions.partitions.definition.time_window import (
         TimeWindowPartitionsDefinition,
     )
@@ -968,8 +968,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
 
     @property
     def partition_key(self) -> str:
-        from dagster._core.definitions.multi_dimensional_partitions import (
-            MultiPartitionsDefinition,
+        from dagster._core.definitions.partitions.utils.multi import (
             get_multipartition_key_from_tags,
         )
 
@@ -1001,8 +1000,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
 
     @property
     def partition_key_range(self) -> PartitionKeyRange:
-        from dagster._core.definitions.multi_dimensional_partitions import (
-            MultiPartitionsDefinition,
+        from dagster._core.definitions.partitions.utils.multi import (
             get_multipartition_key_from_tags,
         )
 

@@ -13,7 +13,6 @@ from dagster import (
     DimensionPartitionMapping,
     IdentityPartitionMapping,
     MultiPartitionMapping,
-    MultiPartitionsDefinition,
     SourceAsset,
     TimeWindowPartitionMapping,
     asset,
@@ -52,6 +51,7 @@ from dagster._core.definitions.asset_selection import (
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.base_asset_graph import BaseAssetGraph
 from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.partitions.definition.multi import MultiPartitionsDefinition
 from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
 from dagster._core.definitions.partitions.definition.time_window_subclasses import (
     DailyPartitionsDefinition,

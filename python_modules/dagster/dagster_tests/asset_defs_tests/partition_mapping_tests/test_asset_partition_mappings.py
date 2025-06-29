@@ -17,8 +17,6 @@ from dagster import (
     IOManager,
     IOManagerDefinition,
     LastPartitionMapping,
-    MultiPartitionKey,
-    MultiPartitionsDefinition,
     MultiToSingleDimensionPartitionMapping,
     PartitionsDefinition,
     SourceAsset,
@@ -38,6 +36,7 @@ from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.decorators.asset_decorator import multi_asset
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.partitions.definition.dynamic import DynamicPartitionsDefinition
+from dagster._core.definitions.partitions.definition.multi import MultiPartitionsDefinition
 from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
 from dagster._core.definitions.partitions.definition.time_window_subclasses import (
     DailyPartitionsDefinition,
@@ -51,6 +50,7 @@ from dagster._core.definitions.partitions.mapping.partition_mapping import (
 from dagster._core.definitions.partitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.partitions.subset.base import PartitionsSubset
 from dagster._core.definitions.partitions.subset.default import DefaultPartitionsSubset
+from dagster._core.definitions.partitions.utils.multi import MultiPartitionKey
 from dagster._core.instance import DynamicPartitionsStore
 from dagster._core.test_utils import assert_namedtuple_lists_equal
 from dagster._time import create_datetime

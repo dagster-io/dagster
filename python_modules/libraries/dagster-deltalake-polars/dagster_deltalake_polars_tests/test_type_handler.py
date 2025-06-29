@@ -6,8 +6,6 @@ import pytest
 from dagster import (
     AssetExecutionContext,
     AssetIn,
-    MultiPartitionKey,
-    MultiPartitionsDefinition,
     Out,
     asset,
     graph,
@@ -17,10 +15,12 @@ from dagster import (
 )
 from dagster._check import CheckError
 from dagster._core.definitions.partitions.definition.dynamic import DynamicPartitionsDefinition
+from dagster._core.definitions.partitions.definition.multi import MultiPartitionsDefinition
 from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
 from dagster._core.definitions.partitions.definition.time_window_subclasses import (
     DailyPartitionsDefinition,
 )
+from dagster._core.definitions.partitions.utils.multi import MultiPartitionKey
 from dagster_deltalake import DELTA_DATE_FORMAT, LocalConfig
 from dagster_deltalake.io_manager import WriteMode
 from dagster_deltalake_polars import DeltaLakePolarsIOManager
