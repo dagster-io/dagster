@@ -36,6 +36,31 @@ MASK_PLUGIN_CACHE_REBUILD = (r"Registry object cache is invalidated or empty.*\n
 FIX_UV_SYNC_PROMPT = (r"Running `uv sync`\.\.\.", "y\nRunning `uv sync`...")
 
 
+MASK_RUN_TIME = (
+    r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} -0700",
+    "2025-05-22 10:08:53 -0700",
+)
+MASK_RUN_UUID_AND_PID = (
+    r"\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}(?:\s*-\s*\d+)?\b",
+    "123e4567-e89b-12d3-a456-426614174000 - 31984",
+)
+MASK_PID = (
+    r"pid: \d+",
+    "pid: 31984",
+)
+MASK_MS_RUNTIME = (
+    r"(\d+)ms",
+    "...",
+)
+
+DG_LAUNCH_MASKS = [
+    MASK_RUN_TIME,
+    MASK_RUN_UUID_AND_PID,
+    MASK_PID,
+    MASK_MS_RUNTIME,
+]
+
+
 def make_project_src_mask(project_name: str, project_name_underscored: str):
     return (
         rf"\/.*?\/{project_name}/src/{project_name_underscored}",

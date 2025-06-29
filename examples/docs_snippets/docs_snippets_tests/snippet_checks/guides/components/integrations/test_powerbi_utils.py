@@ -17,6 +17,9 @@ from dagster._utils.cached_method import cached_method
 
 
 class MockPowerBIWorkspace(PowerBIWorkspace):
+    def trigger_and_poll_refresh(self, dataset_id: str) -> None:
+        pass
+
     @cached_method
     def _fetch_powerbi_workspace_data(
         self, use_workspace_scan: bool

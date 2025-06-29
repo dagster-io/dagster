@@ -10,6 +10,7 @@ from dagster_dg_core.utils import activate_venv
 from dagster._utils.env import environ
 from docs_snippets_tests.snippet_checks.guides.components.utils import (
     DAGSTER_ROOT,
+    DG_LAUNCH_MASKS,
     EDITABLE_DIR,
 )
 from docs_snippets_tests.snippet_checks.utils import (
@@ -172,6 +173,14 @@ def test_components_docs_powerbi_workspace(
         context.run_command_and_snippet_output(
             cmd="dg list defs --assets 'key:semantic_model*' --columns name,kinds,is_executable",
             snippet_path=f"{context.get_next_snip_number()}-list-defs.txt",
+        )
+
+        context.run_command_and_snippet_output(
+            cmd="dg launch --assets '*'",
+            snippet_path=f"{context.get_next_snip_number()}-launch.txt",
+            snippet_replace_regex=DG_LAUNCH_MASKS,
+            custom_comparison_fn=lambda x, y: sorted(x.split("\n"))
+            == sorted(y.split("\n")),
         )
 
         context.create_file(
