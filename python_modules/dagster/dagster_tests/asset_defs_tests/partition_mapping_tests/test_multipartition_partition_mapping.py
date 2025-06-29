@@ -6,14 +6,12 @@ from dagster import (
     AssetExecutionContext,
     AssetKey,
     DagsterInstance,
-    DailyPartitionsDefinition,
     IdentityPartitionMapping,
     MultiPartitionKey,
     MultiPartitionsDefinition,
     SpecificPartitionsPartitionMapping,
     StaticPartitionMapping,
     TimeWindowPartitionMapping,
-    WeeklyPartitionsDefinition,
     asset,
     materialize,
     multi_asset,
@@ -23,6 +21,10 @@ from dagster._core.definitions.asset_dep import AssetDep
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.partitions.definition.dynamic import DynamicPartitionsDefinition
 from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
+from dagster._core.definitions.partitions.definition.time_window_subclasses import (
+    DailyPartitionsDefinition,
+    WeeklyPartitionsDefinition,
+)
 from dagster._core.definitions.partitions.mapping.partition_mapping import (
     DimensionPartitionMapping,
     MultiPartitionMapping,

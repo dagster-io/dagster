@@ -10,7 +10,6 @@ from click.testing import CliRunner
 from dagster import (
     ConfigurableIOManager,
     ConfigurableResource,
-    DailyPartitionsDefinition,
     Definitions,
     LegacyFreshnessPolicy,
     MultiPartitionsDefinition,
@@ -27,6 +26,9 @@ from dagster import (
 from dagster._cli.job import job_execute_command
 from dagster._core.definitions.partitions.definition.dynamic import DynamicPartitionsDefinition
 from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
+from dagster._core.definitions.partitions.definition.time_window_subclasses import (
+    DailyPartitionsDefinition,
+)
 from dagster._core.definitions.reconstruct import get_ephemeral_repository_name
 from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from dagster._core.execution.context.input import InputContext

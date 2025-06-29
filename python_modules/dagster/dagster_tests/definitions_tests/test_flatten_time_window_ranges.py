@@ -1,7 +1,10 @@
 from typing import TYPE_CHECKING, cast
 
-from dagster import DailyPartitionsDefinition, PartitionKeyRange
-from dagster._core.definitions.partitions.definition.time_window_partitions import (
+from dagster import PartitionKeyRange
+from dagster._core.definitions.partitions.definition.time_window_subclasses import (
+    DailyPartitionsDefinition,
+)
+from dagster._core.definitions.partitions.utils.time_window import (
     PartitionRangeStatus,
     PartitionTimeWindowStatus,
     TimeWindow,

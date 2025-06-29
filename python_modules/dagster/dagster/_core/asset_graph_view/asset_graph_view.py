@@ -23,14 +23,14 @@ from dagster._core.definitions.multi_dimensional_partitions import (
     MultiPartitionsDefinition,
     PartitionDimensionDefinition,
 )
-from dagster._core.definitions.partitions.definition.time_window_partitions import (
-    TimeWindow,
+from dagster._core.definitions.partitions.definition.time_window import (
     TimeWindowPartitionsDefinition,
-    TimeWindowPartitionsSubset,
-    get_time_partitions_def,
 )
 from dagster._core.definitions.partitions.mapping.partition_mapping import UpstreamPartitionsResult
 from dagster._core.definitions.partitions.subset.all import AllPartitionsSubset
+from dagster._core.definitions.partitions.subset.time_window import TimeWindowPartitionsSubset
+from dagster._core.definitions.partitions.utils.multi import get_time_partitions_def
+from dagster._core.definitions.partitions.utils.time_window import TimeWindow
 from dagster._core.definitions.temporal_context import TemporalContext
 from dagster._core.loader import LoadingContext
 from dagster._time import get_current_datetime

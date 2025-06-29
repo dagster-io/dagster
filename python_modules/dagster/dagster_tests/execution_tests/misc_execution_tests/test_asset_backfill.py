@@ -16,8 +16,6 @@ from dagster import (
     BackfillPolicy,
     DagsterInstance,
     DagsterRunStatus,
-    DailyPartitionsDefinition,
-    HourlyPartitionsDefinition,
     LastPartitionMapping,
     MaterializeResult,
     Nothing,
@@ -26,7 +24,6 @@ from dagster import (
     RunRequest,
     StaticPartitionMapping,
     TimeWindowPartitionMapping,
-    WeeklyPartitionsDefinition,
     asset,
     asset_check,
     materialize,
@@ -42,6 +39,11 @@ from dagster._core.definitions.base_asset_graph import BaseAssetGraph
 from dagster._core.definitions.decorators.repository_decorator import repository
 from dagster._core.definitions.events import AssetKeyPartitionKey
 from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
+from dagster._core.definitions.partitions.definition.time_window_subclasses import (
+    DailyPartitionsDefinition,
+    HourlyPartitionsDefinition,
+    WeeklyPartitionsDefinition,
+)
 from dagster._core.definitions.remote_asset_graph import RemoteWorkspaceAssetGraph
 from dagster._core.definitions.selector import (
     PartitionRangeSelector,

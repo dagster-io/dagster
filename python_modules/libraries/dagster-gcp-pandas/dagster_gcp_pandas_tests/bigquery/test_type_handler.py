@@ -11,7 +11,6 @@ from dagster import (
     AssetExecutionContext,
     AssetIn,
     AssetKey,
-    DailyPartitionsDefinition,
     Definitions,
     EnvVar,
     MetadataValue,
@@ -28,6 +27,9 @@ from dagster import (
 )
 from dagster._core.definitions.partitions.definition.dynamic import DynamicPartitionsDefinition
 from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
+from dagster._core.definitions.partitions.definition.time_window_subclasses import (
+    DailyPartitionsDefinition,
+)
 from dagster_gcp_pandas import BigQueryPandasIOManager, bigquery_pandas_io_manager
 from google.cloud import bigquery
 

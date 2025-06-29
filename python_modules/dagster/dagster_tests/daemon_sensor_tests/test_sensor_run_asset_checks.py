@@ -4,12 +4,14 @@ from dagster import (
     AssetCheckKey,
     AssetSelection,
     DagsterInstance,
-    DailyPartitionsDefinition,
     Definitions,
     RunRequest,
     asset,
     asset_check,
     sensor,
+)
+from dagster._core.definitions.partitions.definition.time_window_subclasses import (
+    DailyPartitionsDefinition,
 )
 from dagster._core.definitions.run_request import InstigatorType
 from dagster._core.scheduler.instigation import InstigatorState, InstigatorStatus, TickStatus

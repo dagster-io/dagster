@@ -11,8 +11,10 @@ from dagster._core.definitions.metadata import RawMetadataMapping
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
 from dagster._core.definitions.partitions.definition.base import PartitionsDefinition
 from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
-from dagster._core.definitions.partitions.definition.time_window_partitions import (
+from dagster._core.definitions.partitions.definition.time_window import (
     TimeWindowPartitionsDefinition,
+)
+from dagster._core.definitions.partitions.utils.multi import (
     get_time_partitions_def,
     has_one_dimension_time_window_partitioning,
 )

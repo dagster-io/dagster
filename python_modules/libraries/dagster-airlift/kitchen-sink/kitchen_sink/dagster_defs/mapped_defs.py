@@ -3,7 +3,7 @@ from datetime import timedelta
 from dagster import Definitions, asset, define_asset_job, multi_asset
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.assets import AssetsDefinition
-from dagster._core.definitions.partitions.definition.time_window_partitions import (
+from dagster._core.definitions.partitions.definition.time_window_subclasses import (
     DailyPartitionsDefinition,
 )
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext

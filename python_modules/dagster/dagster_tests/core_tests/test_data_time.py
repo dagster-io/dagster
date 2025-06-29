@@ -24,7 +24,7 @@ from dagster._core.definitions.decorators.source_asset_decorator import observab
 from dagster._core.definitions.events import AssetKeyPartitionKey
 from dagster._core.definitions.materialize import materialize_to_memory
 from dagster._core.definitions.observe import observe
-from dagster._core.definitions.partitions.definition.time_window_partitions import (
+from dagster._core.definitions.partitions.definition.time_window_subclasses import (
     DailyPartitionsDefinition,
 )
 from dagster._core.test_utils import create_test_asset_job, freeze_time

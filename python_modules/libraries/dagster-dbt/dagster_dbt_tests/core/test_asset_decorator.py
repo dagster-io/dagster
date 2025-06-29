@@ -12,7 +12,6 @@ from dagster import (
     AutomationCondition,
     BackfillPolicy,
     DagsterInvalidDefinitionError,
-    DailyPartitionsDefinition,
     Definitions,
     DependencyDefinition,
     DimensionPartitionMapping,
@@ -32,6 +31,9 @@ from dagster import (
 )
 from dagster._core.definitions.dependency import BlockingAssetChecksDependencyDefinition
 from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
+from dagster._core.definitions.partitions.definition.time_window_subclasses import (
+    DailyPartitionsDefinition,
+)
 from dagster._core.definitions.tags import build_kind_tag, has_kind
 from dagster._core.definitions.utils import DEFAULT_IO_MANAGER_KEY
 from dagster._core.execution.context.compute import AssetExecutionContext

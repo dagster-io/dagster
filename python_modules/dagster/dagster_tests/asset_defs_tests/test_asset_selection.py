@@ -9,7 +9,6 @@ from dagster import (
     AssetIn,
     AssetOut,
     AssetSpec,
-    DailyPartitionsDefinition,
     Definitions,
     DimensionPartitionMapping,
     IdentityPartitionMapping,
@@ -54,6 +53,9 @@ from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.base_asset_graph import BaseAssetGraph
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
+from dagster._core.definitions.partitions.definition.time_window_subclasses import (
+    DailyPartitionsDefinition,
+)
 from dagster._core.remote_representation.external import RemoteRepository
 from dagster._core.remote_representation.external_data import RepositorySnap
 from dagster._core.remote_representation.handle import RepositoryHandle

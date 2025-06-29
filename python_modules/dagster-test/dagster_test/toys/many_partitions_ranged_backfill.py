@@ -4,13 +4,9 @@ single-run backfill policy. When backfilled, will generate a large number of `st
 unnecessary writes.
 """
 
-from dagster import (
-    AssetExecutionContext,
-    BackfillPolicy,
-    Definitions,
+from dagster import AssetExecutionContext, BackfillPolicy, Definitions, IOManager, asset
+from dagster._core.definitions.partitions.definition.time_window_subclasses import (
     HourlyPartitionsDefinition,
-    IOManager,
-    asset,
 )
 
 partitions_def = HourlyPartitionsDefinition(

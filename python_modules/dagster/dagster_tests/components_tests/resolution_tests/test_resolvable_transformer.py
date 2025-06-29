@@ -11,10 +11,12 @@ from dagster._core.definitions.declarative_automation.automation_condition impor
     AutomationCondition,
 )
 from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
-from dagster._core.definitions.partitions.definition.time_window_partitions import (
+from dagster._core.definitions.partitions.definition.time_window import (
+    TimeWindowPartitionsDefinition,
+)
+from dagster._core.definitions.partitions.definition.time_window_subclasses import (
     DailyPartitionsDefinition,
     HourlyPartitionsDefinition,
-    TimeWindowPartitionsDefinition,
     WeeklyPartitionsDefinition,
 )
 from dagster.components.resolved.context import ResolutionContext

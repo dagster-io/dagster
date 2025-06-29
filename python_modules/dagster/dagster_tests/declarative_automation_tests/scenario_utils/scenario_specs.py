@@ -9,7 +9,7 @@ from dagster._core.definitions.asset_spec import (
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
 from dagster._core.definitions.partitions.definition.dynamic import DynamicPartitionsDefinition
 from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
-from dagster._core.definitions.partitions.definition.time_window_partitions import (
+from dagster._core.definitions.partitions.definition.time_window_subclasses import (
     DailyPartitionsDefinition,
     HourlyPartitionsDefinition,
 )

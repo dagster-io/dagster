@@ -3,7 +3,6 @@ from typing import Any, Optional
 
 from dagster import (
     AssetIn,
-    DailyPartitionsDefinition,
     OpExecutionContext,
     RepositoryDefinition,
     TimeWindowPartitionMapping,
@@ -19,6 +18,9 @@ from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.events import AssetKey, Output
 from dagster._core.definitions.partitions.definition.dynamic import DynamicPartitionsDefinition
 from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
+from dagster._core.definitions.partitions.definition.time_window_subclasses import (
+    DailyPartitionsDefinition,
+)
 from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
 from dagster._core.test_utils import instance_for_test, wait_for_runs_to_finish
 from dagster._core.workspace.context import WorkspaceRequestContext

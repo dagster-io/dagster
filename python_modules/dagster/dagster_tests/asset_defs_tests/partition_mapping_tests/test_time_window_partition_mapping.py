@@ -3,20 +3,17 @@ from datetime import datetime, timezone
 from typing import Optional
 
 import pytest
-from dagster import (
+from dagster import TimeWindowPartitionMapping, TimeWindowPartitionsDefinition
+from dagster._core.definitions.partitions.definition.time_window_subclasses import (
     DailyPartitionsDefinition,
     HourlyPartitionsDefinition,
     MonthlyPartitionsDefinition,
-    TimeWindowPartitionMapping,
-    TimeWindowPartitionsDefinition,
     WeeklyPartitionsDefinition,
-)
-from dagster._core.definitions.partitions.definition.time_window_partitions import (
-    TimeWindow,
-    TimeWindowPartitionsSubset,
 )
 from dagster._core.definitions.partitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.partitions.subset.all import AllPartitionsSubset
+from dagster._core.definitions.partitions.subset.time_window import TimeWindowPartitionsSubset
+from dagster._core.definitions.partitions.utils.time_window import TimeWindow
 from dagster._time import create_datetime
 
 

@@ -12,7 +12,6 @@ from dagster import (
     DagsterInstance,
     DagsterInvalidDefinitionError,
     DagsterInvariantViolationError,
-    DailyPartitionsDefinition,
     Definitions,
     IdentityPartitionMapping,
     IOManager,
@@ -25,7 +24,6 @@ from dagster import (
     SourceAsset,
     SpecificPartitionsPartitionMapping,
     TimeWindowPartitionMapping,
-    WeeklyPartitionsDefinition,
     asset,
     define_asset_job,
     graph,
@@ -41,6 +39,10 @@ from dagster._core.definitions.decorators.asset_decorator import multi_asset
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.partitions.definition.dynamic import DynamicPartitionsDefinition
 from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
+from dagster._core.definitions.partitions.definition.time_window_subclasses import (
+    DailyPartitionsDefinition,
+    WeeklyPartitionsDefinition,
+)
 from dagster._core.definitions.partitions.mapping.partition_mapping import (
     PartitionMapping,
     UpstreamPartitionsResult,

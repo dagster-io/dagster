@@ -13,13 +13,15 @@ from dagster import (
 )
 from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.partitions.definition.base import PartitionsDefinition
-from dagster._core.definitions.partitions.definition.time_window_partitions import (
-    PartitionRangeStatus,
+from dagster._core.definitions.partitions.definition.time_window import (
     TimeWindowPartitionsDefinition,
-    TimeWindowPartitionsSubset,
-    fetch_flattened_time_window_ranges,
 )
 from dagster._core.definitions.partitions.subset.base import PartitionsSubset
+from dagster._core.definitions.partitions.subset.time_window import TimeWindowPartitionsSubset
+from dagster._core.definitions.partitions.utils import PartitionRangeStatus
+from dagster._core.definitions.partitions.utils.time_window import (
+    fetch_flattened_time_window_ranges,
+)
 from dagster._core.definitions.remote_asset_graph import RemoteAssetNode
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.event_api import AssetRecordsFilter, EventLogRecord

@@ -4,10 +4,7 @@ from dagster import (
     AssetDep,
     AssetKey,
     AssetSpec,
-    DailyPartitionsDefinition,
     Definitions,
-    HourlyPartitionsDefinition,
-    TimeWindow,
     TimeWindowPartitionMapping,
     TimeWindowPartitionsDefinition,
     asset,
@@ -21,7 +18,12 @@ from dagster._core.asset_graph_view.bfs import (
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.events import AssetKeyPartitionKey
 from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
+from dagster._core.definitions.partitions.definition.time_window_subclasses import (
+    DailyPartitionsDefinition,
+    HourlyPartitionsDefinition,
+)
 from dagster._core.definitions.partitions.mapping.partition_mapping import IdentityPartitionMapping
+from dagster._core.definitions.partitions.utils.time_window import TimeWindow
 from dagster._time import create_datetime
 
 

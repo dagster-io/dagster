@@ -23,7 +23,6 @@ from dagster import (
     AssetSpec,
     Config,
     DagsterInstance,
-    DailyPartitionsDefinition,
     Field,
     In,
     MultiPartitionsDefinition,
@@ -33,7 +32,6 @@ from dagster import (
     StaticPartitionMapping,
     TimeWindowPartitionMapping,
     asset,
-    daily_partitioned_config,
     define_asset_job,
     fs_io_manager,
     graph,
@@ -48,7 +46,13 @@ from dagster._core.definitions.backfill_policy import BackfillPolicy
 from dagster._core.definitions.events import AssetKeyPartitionKey
 from dagster._core.definitions.partitions.definition.dynamic import DynamicPartitionsDefinition
 from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
-from dagster._core.definitions.partitions.partitioned_config import PartitionedConfig
+from dagster._core.definitions.partitions.definition.time_window_subclasses import (
+    DailyPartitionsDefinition,
+)
+from dagster._core.definitions.partitions.partitioned_config import (
+    PartitionedConfig,
+    daily_partitioned_config,
+)
 from dagster._core.definitions.selector import (
     JobSubsetSelector,
     PartitionRangeSelector,

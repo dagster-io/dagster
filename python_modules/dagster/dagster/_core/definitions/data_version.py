@@ -715,7 +715,7 @@ class CachingStaleStatusResolver:
     ) -> Sequence["AssetKeyPartitionKey"]:
         from dagster import AllPartitionMapping
         from dagster._core.definitions.events import AssetKeyPartitionKey
-        from dagster._core.definitions.partitions.definition.time_window_partitions import (
+        from dagster._core.definitions.partitions.definition.time_window import (
             TimeWindowPartitionsDefinition,
         )
 

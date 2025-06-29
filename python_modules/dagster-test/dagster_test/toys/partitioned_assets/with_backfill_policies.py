@@ -1,4 +1,7 @@
-from dagster import BackfillPolicy, DailyPartitionsDefinition, MaterializeResult, asset
+from dagster import BackfillPolicy, MaterializeResult, asset
+from dagster._core.definitions.partitions.definition.time_window_subclasses import (
+    DailyPartitionsDefinition,
+)
 
 
 @asset(

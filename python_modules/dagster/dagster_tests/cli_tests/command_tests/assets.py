@@ -1,7 +1,7 @@
 from dagster import AssetExecutionContext, Config, asset
 from dagster._core.definitions.backfill_policy import BackfillPolicy
 from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
-from dagster._core.definitions.partitions.definition.time_window_partitions import (
+from dagster._core.definitions.partitions.definition.time_window_subclasses import (
     DailyPartitionsDefinition,
 )
 

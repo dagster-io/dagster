@@ -5,10 +5,8 @@ from typing import NamedTuple, Optional, cast
 import dagster._check as check
 from dagster._annotations import PublicAttr, beta_param
 from dagster._core.definitions.partitions.definition.base import PartitionsDefinition
-from dagster._core.definitions.partitions.definition.time_window_partitions import (
-    TimeWindow,
+from dagster._core.definitions.partitions.definition.time_window import (
     TimeWindowPartitionsDefinition,
-    TimeWindowPartitionsSubset,
 )
 from dagster._core.definitions.partitions.mapping.partition_mapping import (
     PartitionMapping,
@@ -16,6 +14,8 @@ from dagster._core.definitions.partitions.mapping.partition_mapping import (
 )
 from dagster._core.definitions.partitions.subset.all import AllPartitionsSubset
 from dagster._core.definitions.partitions.subset.base import PartitionsSubset
+from dagster._core.definitions.partitions.subset.time_window import TimeWindowPartitionsSubset
+from dagster._core.definitions.partitions.utils.time_window import TimeWindow
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.instance import DynamicPartitionsStore
 from dagster._serdes import whitelist_for_serdes

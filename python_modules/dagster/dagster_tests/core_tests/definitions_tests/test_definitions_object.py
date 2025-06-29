@@ -2,7 +2,6 @@ import warnings
 
 import pytest
 from dagster import (
-    DailyPartitionsDefinition,
     Definitions,
     asset,
     build_schedule_from_partitioned_job,
@@ -19,6 +18,9 @@ from dagster._core.definitions.decorators.source_asset_decorator import (
     observable_source_asset,
 )
 from dagster._core.definitions.job_definition import JobDefinition
+from dagster._core.definitions.partitions.definition.time_window_subclasses import (
+    DailyPartitionsDefinition,
+)
 from dagster._core.definitions.source_asset import SourceAsset
 from dagster_shared.check.functions import CheckError
 

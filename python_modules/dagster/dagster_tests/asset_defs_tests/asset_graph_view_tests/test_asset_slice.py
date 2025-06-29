@@ -4,9 +4,7 @@ from typing import Optional
 import pytest
 from dagster import (
     DagsterInstance,
-    DailyPartitionsDefinition,
     Definitions,
-    HourlyPartitionsDefinition,
     MultiPartitionsDefinition,
     PartitionsDefinition,
     asset,
@@ -15,6 +13,10 @@ from dagster import (
 )
 from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView, SerializableEntitySubset
 from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
+from dagster._core.definitions.partitions.definition.time_window_subclasses import (
+    DailyPartitionsDefinition,
+    HourlyPartitionsDefinition,
+)
 
 partitions_defs = [
     None,

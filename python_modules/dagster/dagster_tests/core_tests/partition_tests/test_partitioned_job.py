@@ -2,9 +2,10 @@ import json
 from typing import Any
 
 import pytest
-from dagster import DagsterUnknownPartitionError, daily_partitioned_config, job, op
+from dagster import DagsterUnknownPartitionError, job, op
 from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
 from dagster._core.definitions.partitions.partitioned_config import (
+    daily_partitioned_config,
     dynamic_partitioned_config,
     partitioned_config,
     static_partitioned_config,

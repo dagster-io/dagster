@@ -13,7 +13,7 @@ from dagster import (
 )
 from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluation
 from dagster._core.definitions.asset_key import AssetKey
-from dagster._core.definitions.partitions.definition.time_window_partitions import (
+from dagster._core.definitions.partitions.definition.time_window import (
     TimeWindowPartitionsDefinition,
 )
 from dagster._time import datetime_from_timestamp, get_current_timestamp

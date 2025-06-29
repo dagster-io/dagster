@@ -1,11 +1,8 @@
-from dagster import (
-    AutoMaterializePolicy,
-    DailyPartitionsDefinition,
-    MultiPartitionsDefinition,
-    asset,
-    repository,
-)
+from dagster import AutoMaterializePolicy, MultiPartitionsDefinition, asset, repository
 from dagster._core.definitions.partitions.definition.dynamic import DynamicPartitionsDefinition
+from dagster._core.definitions.partitions.definition.time_window_subclasses import (
+    DailyPartitionsDefinition,
+)
 
 ### Non partitioned ##
 

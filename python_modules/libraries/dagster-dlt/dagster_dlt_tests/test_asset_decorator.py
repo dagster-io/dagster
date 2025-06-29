@@ -12,9 +12,7 @@ from dagster import (
     AutoMaterializeRule,
     AutomationCondition,
     BackfillPolicy,
-    DailyPartitionsDefinition,
     Definitions,
-    MonthlyPartitionsDefinition,
     PartitionsDefinition,
 )
 from dagster._core.definitions.materialize import materialize
@@ -26,6 +24,10 @@ from dagster._core.definitions.metadata.metadata_value import (
 )
 from dagster._core.definitions.metadata.table import TableColumn, TableSchema
 from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
+from dagster._core.definitions.partitions.definition.time_window_subclasses import (
+    DailyPartitionsDefinition,
+    MonthlyPartitionsDefinition,
+)
 from dagster._core.definitions.tags import build_kind_tag, has_kind
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster_dlt import DagsterDltResource, DagsterDltTranslator, dlt_assets

@@ -6,9 +6,7 @@ from dagster import (
     AssetKey,
     AssetOut,
     AssetsDefinition,
-    DailyPartitionsDefinition,
     GraphOut,
-    HourlyPartitionsDefinition,
     Out,
     define_asset_job,
     graph,
@@ -26,8 +24,12 @@ from dagster._core.definitions.external_asset import external_assets_from_specs
 from dagster._core.definitions.metadata import MetadataValue, TextMetadataValue, normalize_metadata
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
 from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
-from dagster._core.definitions.partitions.definition.time_window_partitions import (
+from dagster._core.definitions.partitions.definition.time_window import (
     TimeWindowPartitionsDefinition,
+)
+from dagster._core.definitions.partitions.definition.time_window_subclasses import (
+    DailyPartitionsDefinition,
+    HourlyPartitionsDefinition,
 )
 from dagster._core.definitions.partitions.schedule_type import ScheduleType
 from dagster._core.definitions.utils import DEFAULT_GROUP_NAME

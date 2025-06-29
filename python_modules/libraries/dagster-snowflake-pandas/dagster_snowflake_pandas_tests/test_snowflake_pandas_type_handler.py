@@ -11,7 +11,6 @@ from dagster import (
     AssetExecutionContext,
     AssetIn,
     AssetKey,
-    DailyPartitionsDefinition,
     Definitions,
     IOManagerDefinition,
     MetadataValue,
@@ -32,6 +31,9 @@ from dagster import (
 )
 from dagster._core.definitions.partitions.definition.dynamic import DynamicPartitionsDefinition
 from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
+from dagster._core.definitions.partitions.definition.time_window_subclasses import (
+    DailyPartitionsDefinition,
+)
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.storage.db_io_manager import TableSlice
 from dagster_snowflake import build_snowflake_io_manager

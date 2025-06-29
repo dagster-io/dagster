@@ -2,26 +2,21 @@ import datetime
 from typing import Optional
 
 import pytest
-from dagster import (
-    AssetKey,
-    DagsterInstance,
-    DailyPartitionsDefinition,
-    HourlyPartitionsDefinition,
-    MultiPartitionsDefinition,
-    PartitionsDefinition,
-)
+from dagster import AssetKey, DagsterInstance, MultiPartitionsDefinition, PartitionsDefinition
 from dagster._core.asset_graph_view.serializable_entity_subset import SerializableEntitySubset
 from dagster._core.definitions.declarative_automation.legacy.valid_asset_subset import (
     ValidAssetSubset,
 )
 from dagster._core.definitions.events import AssetKeyPartitionKey
 from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
-from dagster._core.definitions.partitions.definition.time_window_partitions import (
-    PersistedTimeWindow,
-    TimeWindowPartitionsSubset,
+from dagster._core.definitions.partitions.definition.time_window_subclasses import (
+    DailyPartitionsDefinition,
+    HourlyPartitionsDefinition,
 )
 from dagster._core.definitions.partitions.subset.all import AllPartitionsSubset
 from dagster._core.definitions.partitions.subset.default import DefaultPartitionsSubset
+from dagster._core.definitions.partitions.subset.time_window import TimeWindowPartitionsSubset
+from dagster._core.definitions.partitions.utils.time_window import PersistedTimeWindow
 from dagster._core.definitions.timestamp import TimestampWithTimezone
 from dagster._serdes import deserialize_value, serialize_value
 from dagster._time import create_datetime
