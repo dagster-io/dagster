@@ -26,6 +26,10 @@ run_launcher:
       volumes: # Make docker client accessible to any launched containers as well
         - /var/run/docker.sock:/var/run/docker.sock
         - /tmp/io_manager_storage:/tmp/io_manager_storage
+        # NEW: Mount your user code into the launched run containers
+        # IMPORTANT: Replace /path/to/your/dagster/project/my_dagster_code
+        # with the absolute path on your host machine where 'my_dagster_code' resides.
+        - /path/to/your/dagster/project/my_dagster_code:/opt/dagster/app
 
 run_storage:
   module: dagster_postgres.run_storage
