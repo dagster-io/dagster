@@ -1,4 +1,4 @@
-import React, {useContext, useLayoutEffect, useMemo, useReducer} from 'react';
+import React, {useContext, useLayoutEffect, useMemo} from 'react';
 
 import {AssetHealthData, useAssetsHealthData} from '../../asset-data/AssetHealthDataProvider';
 import {AssetHealthFragment} from '../../asset-data/types/AssetHealthDataProvider.types';
@@ -30,8 +30,6 @@ export const SelectionHealthDataContext = React.createContext<{
 export const SelectionHealthDataProvider = ({children}: {children: React.ReactNode}) => {
   const [selections, setSelections] = React.useState<Set<string>>(() => new Set());
 
-  const [, rerender] = useReducer((s: number) => s + 1, 0);
-
   const registries: Record<string, SelectionRegistry> = useMemo(() => ({}), []);
 
   const watchSelection = React.useCallback(
@@ -54,7 +52,6 @@ export const SelectionHealthDataProvider = ({children}: {children: React.ReactNo
       }
       const registry = registries[selection]!;
       registry.watchSelection(setHealthData, setFilterData);
-      rerender();
     },
     [registries],
   );
