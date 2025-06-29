@@ -9,6 +9,7 @@ import {tokenForAssetKey, tokenToAssetKey} from '../asset-graph/Utils';
 import {AssetKeyInput} from '../graphql/types';
 import {liveDataFactory} from '../live-data-provider/Factory';
 import {LiveDataThreadID} from '../live-data-provider/LiveDataThread';
+import {THREAD_ID} from '../live-data-provider/util';
 import {useBlockTraceUntilTrue} from '../performance/TraceContext';
 import {
   AssetHealthFragment,
@@ -92,7 +93,7 @@ const memoizedAssetKeys = weakMapMemoize((assetKeys: AssetKeyInput[]) => {
 
 export function useAssetsHealthData(
   assetKeys: AssetKeyInput[],
-  thread: LiveDataThreadID = 'AssetHealth', // Use AssetHealth to get 250 batch size
+  thread: LiveDataThreadID = THREAD_ID.ASSET_HEALTH, // Use AssetHealth to get 250 batch size
 ) {
   const keys = memoizedAssetKeys(featureEnabled(FeatureFlag.flagUseNewObserveUIs) ? assetKeys : []);
   const result = AssetHealthData.useLiveData(keys, thread);

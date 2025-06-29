@@ -9,9 +9,22 @@ export const BATCH_PARALLEL_FETCHES = isNaN(batchThreads) ? 2 : batchThreads;
 export const SUBSCRIPTION_IDLE_POLL_RATE = 30 * 1000;
 export const SUBSCRIPTION_MAX_POLL_RATE = 2 * 1000;
 
+export enum THREAD_ID {
+  ASSET_HEALTH = 'asset-health',
+  ASSET_SELECTION_SUPPLEMENTARY_DATA = 'asset-selection',
+  GROUP_NODE = 'group-node',
+}
+
 export const threadIDToLimits = {
-  ['AssetHealth' as string]: {
+  [THREAD_ID.ASSET_HEALTH as string]: {
     batchSize: 250,
+    parallelThreads: 4,
+  },
+  [THREAD_ID.ASSET_SELECTION_SUPPLEMENTARY_DATA]: {
+    batchSize: 250,
+    parallelThreads: 4,
+  },
+  [THREAD_ID.GROUP_NODE]: {
     parallelThreads: 4,
   },
 };
