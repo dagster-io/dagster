@@ -955,7 +955,7 @@ def graph_asset_no_defaults(
     kinds: Optional[AbstractSet[str]],
 ) -> AssetsDefinition:
     ins = ins or {}
-    named_ins = build_and_validate_named_ins(compose_fn, ins or {}, set())
+    named_ins = build_and_validate_named_ins(compose_fn, set(), ins or {})
     out_asset_key, _asset_name = resolve_asset_key_and_name_for_decorator(
         key=key,
         key_prefix=key_prefix,
@@ -1077,7 +1077,7 @@ def graph_multi_asset(
             if asset_in.partition_mapping
         }
 
-        named_ins = build_and_validate_named_ins(fn, ins or {}, set())
+        named_ins = build_and_validate_named_ins(fn, set(), ins or {})
         keys_by_input_name = {
             input_name: asset_key for asset_key, (input_name, _) in named_ins.items()
         }
