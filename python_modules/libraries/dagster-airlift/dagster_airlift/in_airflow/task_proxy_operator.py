@@ -7,7 +7,12 @@ from typing import Any, Callable
 import requests
 from airflow.models import BaseOperator
 
-from dagster_airlift.constants import DEFER_ASSET_EVENTS_TAG, TASK_MAPPING_METADATA_KEY
+from dagster_airlift.constants import (
+    DEFER_ASSET_EVENTS_TAG,
+    TASK_MAPPING_METADATA_KEY,
+    AirflowVersion,
+    infer_af_version_from_env,
+)
 from dagster_airlift.in_airflow.base_asset_operator import BaseDagsterAssetsOperator, Context
 
 
@@ -76,6 +81,23 @@ def build_dagster_task(
     return instantiate_dagster_operator(original_task, dagster_operator_klass)
 
 
+def get_airflow_base_operator_args() -> tuple[set[str], dict[str, Any]]:
+    af_version = infer_af_version_from_env()
+    if af_version == AirflowVersion.AIRFLOW_2:
+        from airflow.models import BaseOperator
+
+        operator_klass = BaseOperator
+    elif af_version == AirflowVersion.AIRFLOW_3:
+        # In Airflow 3, the BaseOperator class subclasses the sdk model, and has only **kwargs as a parameter.
+        # So we need to go to the sdk model to get the arguments.
+        from airflow.sdk.bases.operator import BaseOperator
+
+        operator_klass = BaseOperator
+    else:
+        raise ValueError(f"Unsupported Airflow version: {af_version}")
+    return get_params(operator_klass.__init__)
+
+
 def instantiate_dagster_operator(
     original_task: BaseOperator,
     dagster_operator_klass: type[BaseProxyTaskToDagsterOperator],
@@ -95,7 +117,7 @@ def instantiate_dagster_operator(
     across airflow versions, it may be necessary to revise this approach to one that explicitly maps airflow
     version to a set of expected arguments and attributes.
     """
-    base_operator_args, base_operator_args_with_defaults = get_params(BaseOperator.__init__)
+    base_operator_args, base_operator_args_with_defaults = get_airflow_base_operator_args()
     init_kwargs = {}
 
     ignore_args = [
@@ -119,9 +141,7 @@ def instantiate_dagster_operator(
         if kwarg in ignore_args or getattr(original_task, kwarg, None) is None:
             continue
         init_kwargs[kwarg] = getattr(original_task, kwarg, default)
-
     # Make sure that the operator overrides take precedence.
-
     return dagster_operator_klass(**init_kwargs)
 
 

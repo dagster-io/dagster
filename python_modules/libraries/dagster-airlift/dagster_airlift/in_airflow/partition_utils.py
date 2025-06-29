@@ -86,7 +86,7 @@ def all_sets_equal(list_of_sets):
 
 
 def translate_logical_date_to_partition_key(
-    logical_date: datetime, partitioning_info: PartitioningInformation
+    logical_date: datetime, partitioning_info: PartitioningInformation, logger
 ) -> str:
     if not partitioning_info.partitioning_type == PartitionDefinitionType.TIME_WINDOW:
         raise Exception(
@@ -97,6 +97,7 @@ def translate_logical_date_to_partition_key(
         (_get_partition_datetime(partition_key, fmt), partition_key)
         for partition_key in partitioning_info.partition_keys
     ]
+    logger.info(f"Partitions and datetimes: {partitions_and_datetimes}")
     matching_partition = next(
         (
             partition_key

@@ -18,7 +18,7 @@ default_args = {
 with DAG(
     "simple_unproxied_dag",
     default_args=default_args,
-    schedule_interval=None,
+    schedule=None,
     is_paused_upon_creation=False,
     tags=["example"],
 ) as the_dag:
