@@ -76,7 +76,7 @@ Defining multiple checks can also be done using a factory pattern. The example b
 
 By default, if a parent's asset check fails during a run, the run will continue and downstream assets will be materialized. To prevent this behavior, set the `blocking` argument to `True` in the `@asset_check` decorator.
 
-In the example bellow, if the `orders_id_has_no_nulls` check fails, the downstream `augmented_orders` asset won't be materialized.
+In the example below, if the `orders_id_has_no_nulls` check fails, the downstream `augmented_orders` asset won't be materialized.
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/data-assets/quality-testing/asset-checks/block-downstream-with-asset-checks.py"
