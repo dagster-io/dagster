@@ -1,9 +1,8 @@
 from datetime import datetime
 from typing import NamedTuple, Optional
 
-from dagster._core.definitions.partitions.definition.partitions_definition import (
-    PartitionsDefinition,
-)
+from dagster._core.definitions.partitions.context import partition_loading_context
+from dagster._core.definitions.partitions.definition import PartitionsDefinition
 from dagster._core.definitions.partitions.mapping.partition_mapping import (
     PartitionMapping,
     UpstreamPartitionsResult,
@@ -36,18 +35,19 @@ class LastPartitionMapping(PartitionMapping, NamedTuple("_LastPartitionMapping",
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> UpstreamPartitionsResult:
-        last = upstream_partitions_def.get_last_partition_key(
-            current_time=current_time, dynamic_partitions_store=dynamic_partitions_store
-        )
+        with partition_loading_context(current_time, dynamic_partitions_store) as ctx:
+            last = upstream_partitions_def.get_last_partition_key(
+                current_time=ctx.effective_dt, dynamic_partitions_store=ctx.dynamic_partitions_store
+            )
 
-        upstream_subset = upstream_partitions_def.empty_subset()
-        if last is not None:
-            upstream_subset = upstream_subset.with_partition_keys([last])
+            upstream_subset = upstream_partitions_def.empty_subset()
+            if last is not None:
+                upstream_subset = upstream_subset.with_partition_keys([last])
 
-        return UpstreamPartitionsResult(
-            partitions_subset=upstream_subset,
-            required_but_nonexistent_subset=upstream_partitions_def.empty_subset(),
-        )
+            return UpstreamPartitionsResult(
+                partitions_subset=upstream_subset,
+                required_but_nonexistent_subset=upstream_partitions_def.empty_subset(),
+            )
 
     def get_downstream_partitions_for_partitions(
         self,
@@ -57,15 +57,17 @@ class LastPartitionMapping(PartitionMapping, NamedTuple("_LastPartitionMapping",
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> PartitionsSubset:
-        last_upstream_partition = upstream_partitions_def.get_last_partition_key(
-            current_time=current_time, dynamic_partitions_store=dynamic_partitions_store
-        )
-        if last_upstream_partition and last_upstream_partition in upstream_partitions_subset:
-            return downstream_partitions_def.subset_with_all_partitions(
-                current_time=current_time, dynamic_partitions_store=dynamic_partitions_store
+        with partition_loading_context(current_time, dynamic_partitions_store) as ctx:
+            last_upstream_partition = upstream_partitions_def.get_last_partition_key(
+                current_time=ctx.effective_dt, dynamic_partitions_store=ctx.dynamic_partitions_store
             )
-        else:
-            return downstream_partitions_def.empty_subset()
+            if last_upstream_partition and last_upstream_partition in upstream_partitions_subset:
+                return downstream_partitions_def.subset_with_all_partitions(
+                    current_time=ctx.effective_dt,
+                    dynamic_partitions_store=ctx.dynamic_partitions_store,
+                )
+            else:
+                return downstream_partitions_def.empty_subset()
 
     @property
     def description(self) -> str:
