@@ -75,8 +75,6 @@ export const SelectionHealthDataProvider = ({children}: {children: React.ReactNo
 
 const SelectionHealthDataObserver = React.memo(
   ({selection, registry}: {selection: string; registry: SelectionRegistry}) => {
-    useLayoutEffect(() => {}, []);
-
     const filterListeners = registry.getFilterListeners();
     const healthListeners = registry.getHealthListeners();
 
