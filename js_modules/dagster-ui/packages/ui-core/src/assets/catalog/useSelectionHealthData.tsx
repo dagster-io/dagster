@@ -1,8 +1,9 @@
-import React, {useContext, useLayoutEffect, useMemo, useRef} from 'react';
+import React, {useContext, useLayoutEffect, useMemo, useReducer} from 'react';
 
 import {AssetHealthData, useAssetsHealthData} from '../../asset-data/AssetHealthDataProvider';
 import {AssetHealthFragment} from '../../asset-data/types/AssetHealthDataProvider.types';
 import {useAssetSelectionFiltering} from '../../asset-selection/useAssetSelectionFiltering';
+import {useUpdatingRef} from '../../hooks/useUpdatingRef';
 import {useAllAssets} from '../useAllAssets';
 
 type SelectionHealthData = {
@@ -26,16 +27,12 @@ export const SelectionHealthDataContext = React.createContext<{
   watchSelection: () => {},
 });
 
-const emptyListeners = new Set<(data: any) => void>();
-
 export const SelectionHealthDataProvider = ({children}: {children: React.ReactNode}) => {
   const [selections, setSelections] = React.useState<Set<string>>(() => new Set());
-  const [filterListeners, setFilterListeners] = React.useState<
-    Record<string, Set<(data: SelectionFilterData) => void>>
-  >({});
-  const [healthListeners, setHealthListeners] = React.useState<
-    Record<string, Set<(data: SelectionHealthData) => void>>
-  >({});
+
+  const [, rerender] = useReducer((s: number) => s + 1, 0);
+
+  const registries: Record<string, SelectionRegistry> = useMemo(() => ({}), []);
 
   const watchSelection = React.useCallback(
     ({
@@ -52,53 +49,14 @@ export const SelectionHealthDataProvider = ({children}: {children: React.ReactNo
         newSelections.add(selection);
         return newSelections;
       });
-
-      if (setFilterData) {
-        setFilterListeners((filterListeners) => {
-          const copy = new Set(filterListeners[selection] || []);
-          copy.add(setFilterData);
-          return {
-            ...filterListeners,
-            [selection]: copy,
-          };
-        });
+      if (!registries[selection]) {
+        registries[selection] = new SelectionRegistry();
       }
-
-      if (setHealthData) {
-        setHealthListeners((healthListeners) => {
-          const copy = new Set(healthListeners[selection] || []);
-          copy.add(setHealthData);
-          return {
-            ...healthListeners,
-            [selection]: copy,
-          };
-        });
-      }
-
-      return () => {
-        if (setFilterData) {
-          setFilterListeners((filterListeners) => {
-            const copy = new Set(filterListeners[selection] || []);
-            copy.delete(setFilterData);
-            return {
-              ...filterListeners,
-              [selection]: copy,
-            };
-          });
-        }
-        if (setHealthData) {
-          setHealthListeners((healthListeners) => {
-            const copy = new Set(healthListeners[selection] || []);
-            copy.delete(setHealthData);
-            return {
-              ...healthListeners,
-              [selection]: copy,
-            };
-          });
-        }
-      };
+      const registry = registries[selection]!;
+      registry.watchSelection(setHealthData, setFilterData);
+      rerender();
     },
-    [],
+    [registries],
   );
 
   return (
@@ -107,8 +65,7 @@ export const SelectionHealthDataProvider = ({children}: {children: React.ReactNo
         <SelectionHealthDataObserver
           key={selection}
           selection={selection}
-          filterListeners={filterListeners[selection] || emptyListeners}
-          healthListeners={healthListeners[selection] || emptyListeners}
+          registry={registries[selection]!}
         />
       ))}
       {children}
@@ -117,18 +74,15 @@ export const SelectionHealthDataProvider = ({children}: {children: React.ReactNo
 };
 
 const SelectionHealthDataObserver = React.memo(
-  ({
-    selection,
-    filterListeners,
-    healthListeners,
-  }: {
-    selection: string;
+  ({selection, registry}: {selection: string; registry: SelectionRegistry}) => {
+    useLayoutEffect(() => {}, []);
 
-    filterListeners: Set<(data: SelectionFilterData) => void>;
-    healthListeners: Set<(data: SelectionHealthData) => void>;
-  }) => {
+    const filterListeners = registry.getFilterListeners();
+    const healthListeners = registry.getHealthListeners();
+
     const skipFilters = !filterListeners.size && !healthListeners.size;
     const skipHealth = !healthListeners.size;
+
     const {assets, loading} = useAllAssets();
     const {filtered, loading: filterLoading} = useAssetSelectionFiltering<(typeof assets)[number]>({
       assets,
@@ -144,25 +98,6 @@ const SelectionHealthDataObserver = React.memo(
       getSelectionThreadId(selection),
       skipHealth,
     );
-
-    const previousFilterListenersRef =
-      useRef<Set<(data: SelectionFilterData) => void>>(filterListeners);
-    const previousHealthListenersRef =
-      useRef<Set<(data: SelectionHealthData) => void>>(healthListeners);
-
-    const previousListeners = previousFilterListenersRef.current;
-    const newFilterListeners = useMemo(
-      () => getNewListeners(filterListeners, previousListeners),
-      [filterListeners, previousListeners],
-    );
-    const previousHealthListeners = previousHealthListenersRef.current;
-    const newHealthListeners = useMemo(
-      () => getNewListeners(healthListeners, previousHealthListeners),
-      [healthListeners, previousHealthListeners],
-    );
-
-    previousFilterListenersRef.current = filterListeners;
-    previousHealthListenersRef.current = healthListeners;
 
     const isLoading = loading || filtered.length !== Object.keys(liveDataByNode).length;
 
@@ -180,29 +115,21 @@ const SelectionHealthDataObserver = React.memo(
       [filtered, filterLoading],
     );
 
-    useLayoutEffect(() => {
-      healthListeners.forEach(
-        (listener) => !newHealthListeners.has(listener) && listener(healthData),
-      );
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [healthData, healthListeners]);
-    useLayoutEffect(() => {
-      filterListeners.forEach(
-        (listener) => !newFilterListeners.has(listener) && listener(filterData),
-      );
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [filterData, filterListeners]);
+    const dataRef = useUpdatingRef({filterData, healthData});
 
     useLayoutEffect(() => {
-      newHealthListeners.forEach((listener) => listener(healthData));
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [newHealthListeners]);
-    useLayoutEffect(() => {
-      newFilterListeners.forEach((listener) => {
-        listener(filterData);
+      registry.registerOnWatchSelection((setHealthData, setFilterData) => {
+        setHealthData?.(dataRef.current.healthData);
+        setFilterData?.(dataRef.current.filterData);
       });
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [newFilterListeners]);
+    }, [registry, dataRef]);
+
+    useLayoutEffect(() => {
+      registry.getFilterListeners().forEach((listener) => listener(filterData));
+    }, [filterData, registry]);
+    useLayoutEffect(() => {
+      registry.getHealthListeners().forEach((listener) => listener(healthData));
+    }, [healthData, registry]);
 
     useLayoutEffect(() => {
       if (!healthListeners.size) {
@@ -250,12 +177,52 @@ function getSelectionThreadId(selection: string) {
   return `selection-${selection}`;
 }
 
-function getNewListeners<T>(listeners: Set<T>, previousListeners: Set<T>) {
-  const newListeners = new Set<T>();
-  listeners.forEach((listener) => {
-    if (!previousListeners.has(listener)) {
-      newListeners.add(listener);
+type OnWatchSelection = (
+  setHealthData?: (data: SelectionHealthData) => void,
+  setFilterData?: (data: SelectionFilterData) => void,
+) => void;
+
+export class SelectionRegistry {
+  private queue: Array<{
+    setHealthData?: (data: SelectionHealthData) => void;
+    setFilterData?: (data: SelectionFilterData) => void;
+  }> = [];
+
+  private filterListeners = new Set<(data: SelectionFilterData) => void>();
+  private healthListeners = new Set<(data: SelectionHealthData) => void>();
+
+  private _onWatchSelection: OnWatchSelection | null = null;
+
+  public registerOnWatchSelection(fn: OnWatchSelection) {
+    this._onWatchSelection = fn;
+    while (this.queue.length) {
+      const {setHealthData, setFilterData} = this.queue.shift()!;
+      fn(setHealthData, setFilterData);
     }
-  });
-  return newListeners;
+  }
+
+  public watchSelection(
+    setHealthData?: (data: SelectionHealthData) => void,
+    setFilterData?: (data: SelectionFilterData) => void,
+  ) {
+    if (setFilterData) {
+      this.filterListeners.add(setFilterData);
+    }
+    if (setHealthData) {
+      this.healthListeners.add(setHealthData);
+    }
+    if (this._onWatchSelection) {
+      this._onWatchSelection(setHealthData, setFilterData);
+    } else {
+      this.queue.push({setHealthData, setFilterData});
+    }
+  }
+
+  public getFilterListeners() {
+    return this.filterListeners;
+  }
+
+  public getHealthListeners() {
+    return this.healthListeners;
+  }
 }
