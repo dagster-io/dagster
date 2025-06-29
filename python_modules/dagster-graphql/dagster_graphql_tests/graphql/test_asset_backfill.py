@@ -3,10 +3,10 @@ from unittest import mock
 
 from dagster import AssetKey, Definitions, asset
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
-from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
-from dagster._core.definitions.partitions.definition.time_window_subclasses import (
+from dagster._core.definitions.partitions.definition import (
     DailyPartitionsDefinition,
     HourlyPartitionsDefinition,
+    StaticPartitionsDefinition,
 )
 from dagster._core.definitions.repository_definition.repository_definition import (
     RepositoryDefinition,

@@ -11,7 +11,7 @@ from dagster import (
     TimeWindowPartitionMapping,
     asset,
 )
-from dagster._core.definitions.partitions.definition.time_window_subclasses import (
+from dagster._core.definitions.partitions.definition import (
     DailyPartitionsDefinition,
     HourlyPartitionsDefinition,
 )

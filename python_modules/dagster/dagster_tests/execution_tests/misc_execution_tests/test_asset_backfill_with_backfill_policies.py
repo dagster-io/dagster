@@ -11,10 +11,10 @@ from dagster import (
     TimeWindowPartitionMapping,
     asset,
 )
-from dagster._core.definitions.partitions.definition.dynamic import DynamicPartitionsDefinition
-from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
-from dagster._core.definitions.partitions.definition.time_window_subclasses import (
+from dagster._core.definitions.partitions.definition import (
     DailyPartitionsDefinition,
+    DynamicPartitionsDefinition,
+    StaticPartitionsDefinition,
     WeeklyPartitionsDefinition,
 )
 from dagster._core.execution.asset_backfill import AssetBackfillData, AssetBackfillStatus

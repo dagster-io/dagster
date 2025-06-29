@@ -1,7 +1,7 @@
 import tempfile
 
 from dagster import DagsterInstance, materialize
-from dagster._core.definitions.partitions.utils.multi import MultiPartitionKey
+from dagster._core.definitions.partitions.utils import MultiPartitionKey
 from dagster_test.toys.partitioned_assets.single_partitions_to_multi import (
     multi_partitions,
     single_partitions,

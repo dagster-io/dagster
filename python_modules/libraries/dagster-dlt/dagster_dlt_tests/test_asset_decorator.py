@@ -23,10 +23,10 @@ from dagster._core.definitions.metadata.metadata_value import (
     TextMetadataValue,
 )
 from dagster._core.definitions.metadata.table import TableColumn, TableSchema
-from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
-from dagster._core.definitions.partitions.definition.time_window_subclasses import (
+from dagster._core.definitions.partitions.definition import (
     DailyPartitionsDefinition,
     MonthlyPartitionsDefinition,
+    StaticPartitionsDefinition,
 )
 from dagster._core.definitions.tags import build_kind_tag, has_kind
 from dagster._core.errors import DagsterInvariantViolationError

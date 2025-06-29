@@ -8,16 +8,18 @@ from dagster._core.definitions.declarative_automation.legacy.valid_asset_subset 
     ValidAssetSubset,
 )
 from dagster._core.definitions.events import AssetKeyPartitionKey
-from dagster._core.definitions.partitions.definition.multi import MultiPartitionsDefinition
-from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
-from dagster._core.definitions.partitions.definition.time_window_subclasses import (
+from dagster._core.definitions.partitions.definition import (
     DailyPartitionsDefinition,
     HourlyPartitionsDefinition,
+    MultiPartitionsDefinition,
+    StaticPartitionsDefinition,
 )
-from dagster._core.definitions.partitions.subset.all import AllPartitionsSubset
-from dagster._core.definitions.partitions.subset.default import DefaultPartitionsSubset
-from dagster._core.definitions.partitions.subset.time_window import TimeWindowPartitionsSubset
-from dagster._core.definitions.partitions.utils.time_window import PersistedTimeWindow
+from dagster._core.definitions.partitions.subset import (
+    AllPartitionsSubset,
+    DefaultPartitionsSubset,
+    TimeWindowPartitionsSubset,
+)
+from dagster._core.definitions.partitions.utils import PersistedTimeWindow
 from dagster._core.definitions.timestamp import TimestampWithTimezone
 from dagster._serdes import deserialize_value, serialize_value
 from dagster._time import create_datetime

@@ -7,7 +7,7 @@ from dagster._core.definitions.decorators.source_asset_decorator import observab
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.metadata import TextMetadataValue
 from dagster._core.definitions.observe import observe
-from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
+from dagster._core.definitions.partitions.definition import StaticPartitionsDefinition
 from dagster._core.definitions.resource_definition import ResourceDefinition, resource
 from dagster._core.definitions.result import ObserveResult
 from dagster._core.errors import (

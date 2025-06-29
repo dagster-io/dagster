@@ -18,19 +18,21 @@ from dagster._core.asset_graph_view.serializable_entity_subset import Serializab
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.asset_key import AssetCheckKey, AssetKey, EntityKey, T_EntityKey
 from dagster._core.definitions.events import AssetKeyPartitionKey
-from dagster._core.definitions.partitions.definition.multi import MultiPartitionsDefinition
-from dagster._core.definitions.partitions.definition.time_window import (
+from dagster._core.definitions.partitions.definition import (
+    MultiPartitionsDefinition,
     TimeWindowPartitionsDefinition,
 )
-from dagster._core.definitions.partitions.mapping.base import UpstreamPartitionsResult
-from dagster._core.definitions.partitions.subset.all import AllPartitionsSubset
-from dagster._core.definitions.partitions.subset.time_window import TimeWindowPartitionsSubset
-from dagster._core.definitions.partitions.utils.multi import (
+from dagster._core.definitions.partitions.mapping import UpstreamPartitionsResult
+from dagster._core.definitions.partitions.subset import (
+    AllPartitionsSubset,
+    TimeWindowPartitionsSubset,
+)
+from dagster._core.definitions.partitions.utils import (
     MultiPartitionKey,
     PartitionDimensionDefinition,
+    TimeWindow,
     get_time_partitions_def,
 )
-from dagster._core.definitions.partitions.utils.time_window import TimeWindow
 from dagster._core.definitions.temporal_context import TemporalContext
 from dagster._core.loader import LoadingContext
 from dagster._time import get_current_datetime
@@ -43,7 +45,7 @@ if TYPE_CHECKING:
         ValidAssetSubset,
     )
     from dagster._core.definitions.definitions_class import Definitions
-    from dagster._core.definitions.partitions.definition.base import PartitionsDefinition
+    from dagster._core.definitions.partitions.definition import PartitionsDefinition
     from dagster._core.definitions.partitions.partition_key_range import PartitionKeyRange
     from dagster._core.instance import DagsterInstance
     from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionResolvedStatus

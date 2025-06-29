@@ -1,5 +1,5 @@
 import graphene
-from dagster._core.definitions.partitions.mapping.base import PartitionMapping
+from dagster._core.definitions.partitions.mapping import PartitionMapping
 
 
 class GraphenePartitionMapping(graphene.ObjectType):

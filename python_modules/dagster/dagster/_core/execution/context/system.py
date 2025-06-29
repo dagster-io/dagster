@@ -20,18 +20,18 @@ from dagster._core.definitions.job_base import IJob
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.metadata import RawMetadataValue
 from dagster._core.definitions.op_definition import OpDefinition
-from dagster._core.definitions.partitions.definition.base import PartitionsDefinition
-from dagster._core.definitions.partitions.definition.multi import MultiPartitionsDefinition
-from dagster._core.definitions.partitions.definition.time_window import (
+from dagster._core.definitions.partitions.definition import (
+    MultiPartitionsDefinition,
+    PartitionsDefinition,
     TimeWindowPartitionsDefinition,
 )
 from dagster._core.definitions.partitions.partition_key_range import PartitionKeyRange
-from dagster._core.definitions.partitions.subset.base import PartitionsSubset
-from dagster._core.definitions.partitions.utils.mapping import infer_partition_mapping
-from dagster._core.definitions.partitions.utils.multi import (
+from dagster._core.definitions.partitions.subset import PartitionsSubset
+from dagster._core.definitions.partitions.utils import (
+    TimeWindow,
     has_one_dimension_time_window_partitioning,
+    infer_partition_mapping,
 )
-from dagster._core.definitions.partitions.utils.time_window import TimeWindow
 from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.definitions.reconstruct import ReconstructableJob
 from dagster._core.definitions.repository_definition.repository_definition import (
@@ -67,9 +67,7 @@ from dagster._core.types.dagster_type import DagsterType
 if TYPE_CHECKING:
     from dagster._core.definitions.data_version import DataVersion
     from dagster._core.definitions.dependency import NodeHandle
-    from dagster._core.definitions.partitions.definition.time_window import (
-        TimeWindowPartitionsDefinition,
-    )
+    from dagster._core.definitions.partitions.definition import TimeWindowPartitionsDefinition
     from dagster._core.definitions.resource_definition import Resources
     from dagster._core.execution.context.hook import HookContext
     from dagster._core.execution.plan.plan import ExecutionPlan
@@ -971,9 +969,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
 
     @property
     def partition_key(self) -> str:
-        from dagster._core.definitions.partitions.utils.multi import (
-            get_multipartition_key_from_tags,
-        )
+        from dagster._core.definitions.partitions.utils import get_multipartition_key_from_tags
 
         if not self.has_partitions:
             raise DagsterInvariantViolationError(
@@ -1003,9 +999,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
 
     @property
     def partition_key_range(self) -> PartitionKeyRange:
-        from dagster._core.definitions.partitions.utils.multi import (
-            get_multipartition_key_from_tags,
-        )
+        from dagster._core.definitions.partitions.utils import get_multipartition_key_from_tags
 
         if not self.has_partitions:
             raise DagsterInvariantViolationError(

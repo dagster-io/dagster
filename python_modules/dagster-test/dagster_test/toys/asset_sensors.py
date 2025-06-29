@@ -11,7 +11,7 @@ from dagster import (
     multi_asset_sensor,
     op,
 )
-from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
+from dagster._core.definitions.partitions.definition import StaticPartitionsDefinition
 
 
 @asset

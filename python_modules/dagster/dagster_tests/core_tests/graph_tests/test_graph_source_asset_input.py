@@ -12,7 +12,7 @@ from dagster import (
     job,
     op,
 )
-from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
+from dagster._core.definitions.partitions.definition import StaticPartitionsDefinition
 
 
 def make_io_manager(asset: Union[SourceAsset, AssetSpec], input_value=5, expected_metadata={}):

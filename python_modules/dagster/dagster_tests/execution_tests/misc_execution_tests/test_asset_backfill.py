@@ -36,14 +36,16 @@ from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.base_asset_graph import BaseAssetGraph
 from dagster._core.definitions.decorators.repository_decorator import repository
 from dagster._core.definitions.events import AssetKeyPartitionKey
-from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
-from dagster._core.definitions.partitions.definition.time_window_subclasses import (
+from dagster._core.definitions.partitions.definition import (
     DailyPartitionsDefinition,
     HourlyPartitionsDefinition,
+    StaticPartitionsDefinition,
     WeeklyPartitionsDefinition,
 )
-from dagster._core.definitions.partitions.mapping.last import LastPartitionMapping
-from dagster._core.definitions.partitions.mapping.static import StaticPartitionMapping
+from dagster._core.definitions.partitions.mapping import (
+    LastPartitionMapping,
+    StaticPartitionMapping,
+)
 from dagster._core.definitions.remote_asset_graph import RemoteWorkspaceAssetGraph
 from dagster._core.definitions.selector import (
     PartitionRangeSelector,

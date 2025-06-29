@@ -3,7 +3,7 @@ from typing import Any
 
 import pytest
 from dagster import DagsterUnknownPartitionError, job, op
-from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
+from dagster._core.definitions.partitions.definition import StaticPartitionsDefinition
 from dagster._core.definitions.partitions.partitioned_config import (
     daily_partitioned_config,
     dynamic_partitioned_config,

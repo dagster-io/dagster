@@ -1,7 +1,7 @@
 from dagster import asset
-from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
-from dagster._core.definitions.partitions.definition.time_window_subclasses import (
+from dagster._core.definitions.partitions.definition import (
     DailyPartitionsDefinition,
+    StaticPartitionsDefinition,
 )
 
 

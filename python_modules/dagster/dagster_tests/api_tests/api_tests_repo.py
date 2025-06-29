@@ -17,8 +17,10 @@ from dagster import (
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.decorators.sensor_decorator import sensor
 from dagster._core.definitions.metadata.metadata_value import MetadataValue
-from dagster._core.definitions.partitions.definition.dynamic import DynamicPartitionsDefinition
-from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
+from dagster._core.definitions.partitions.definition import (
+    DynamicPartitionsDefinition,
+    StaticPartitionsDefinition,
+)
 from dagster._core.definitions.partitions.partitioned_config import PartitionedConfig
 from dagster._core.definitions.sensor_definition import RunRequest
 from dagster._core.storage.tags import EXTERNAL_JOB_SOURCE_TAG_KEY

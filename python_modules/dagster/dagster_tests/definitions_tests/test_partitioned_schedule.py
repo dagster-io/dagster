@@ -15,16 +15,16 @@ from dagster import (
     repository,
     weekly_partitioned_config,
 )
-from dagster._core.definitions.partitions.definition.dynamic import DynamicPartitionsDefinition
-from dagster._core.definitions.partitions.definition.multi import MultiPartitionsDefinition
-from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
-from dagster._core.definitions.partitions.definition.time_window_subclasses import (
+from dagster._core.definitions.partitions.definition import (
     DailyPartitionsDefinition,
+    DynamicPartitionsDefinition,
+    MultiPartitionsDefinition,
+    StaticPartitionsDefinition,
 )
 from dagster._core.definitions.partitions.partitioned_schedule import (
     build_schedule_from_partitioned_job,
 )
-from dagster._core.definitions.partitions.utils.time_window import TimeWindow
+from dagster._core.definitions.partitions.utils import TimeWindow
 from dagster._core.test_utils import freeze_time
 from dagster._time import create_datetime, parse_time_string
 

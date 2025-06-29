@@ -3,7 +3,7 @@ from typing import Union, cast
 
 import pytest
 from dagster import AddDynamicPartitionsRequest, DeleteDynamicPartitionsRequest, RunRequest, job
-from dagster._core.definitions.partitions.definition.dynamic import DynamicPartitionsDefinition
+from dagster._core.definitions.partitions.definition import DynamicPartitionsDefinition
 from dagster._core.errors import DagsterUnknownPartitionError
 from dagster._core.test_utils import instance_for_test
 

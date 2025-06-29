@@ -8,21 +8,21 @@ import pytest
 from dagster import DagsterInvalidDefinitionError, PartitionKeyRange, TimeWindowPartitionsDefinition
 from dagster._check import CheckError
 from dagster._core.definitions.partitions.context import PartitionLoadingContext
-from dagster._core.definitions.partitions.definition.time_window_subclasses import (
+from dagster._core.definitions.partitions.definition import (
     DailyPartitionsDefinition,
     HourlyPartitionsDefinition,
     MonthlyPartitionsDefinition,
     WeeklyPartitionsDefinition,
 )
-from dagster._core.definitions.partitions.partitioned_config.time_window import (
+from dagster._core.definitions.partitions.partitioned_config import (
     daily_partitioned_config,
     hourly_partitioned_config,
     monthly_partitioned_config,
     weekly_partitioned_config,
 )
 from dagster._core.definitions.partitions.schedule_type import ScheduleType
-from dagster._core.definitions.partitions.subset.time_window import TimeWindowPartitionsSubset
-from dagster._core.definitions.partitions.utils.time_window import PersistedTimeWindow, TimeWindow
+from dagster._core.definitions.partitions.subset import TimeWindowPartitionsSubset
+from dagster._core.definitions.partitions.utils import PersistedTimeWindow, TimeWindow
 from dagster._core.definitions.temporal_context import TemporalContext
 from dagster._core.definitions.timestamp import TimestampWithTimezone
 from dagster._core.test_utils import freeze_time, get_paginated_partition_keys

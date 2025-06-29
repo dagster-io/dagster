@@ -10,9 +10,7 @@ from dagster import (
     asset_check,
     sensor,
 )
-from dagster._core.definitions.partitions.definition.time_window_subclasses import (
-    DailyPartitionsDefinition,
-)
+from dagster._core.definitions.partitions.definition import DailyPartitionsDefinition
 from dagster._core.definitions.run_request import InstigatorType
 from dagster._core.scheduler.instigation import InstigatorState, InstigatorStatus, TickStatus
 from dagster._core.test_utils import create_test_daemon_workspace_context, load_remote_repo

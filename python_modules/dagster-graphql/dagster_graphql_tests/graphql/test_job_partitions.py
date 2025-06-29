@@ -1,5 +1,5 @@
 from dagster import AssetKey, ConfigurableResource, Definitions, asset, job, op
-from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
+from dagster._core.definitions.partitions.definition import StaticPartitionsDefinition
 from dagster._core.definitions.partitions.partitioned_config import static_partitioned_config
 from dagster._core.definitions.repository_definition import SINGLETON_REPOSITORY_NAME
 from dagster._core.test_utils import ensure_dagster_tests_import, instance_for_test

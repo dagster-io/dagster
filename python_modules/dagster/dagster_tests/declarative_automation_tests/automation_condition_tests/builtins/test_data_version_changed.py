@@ -12,9 +12,9 @@ from dagster import (
     evaluate_automation_conditions,
 )
 from dagster._core.definitions.data_version import DATA_VERSION_TAG
-from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
-from dagster._core.definitions.partitions.definition.time_window_subclasses import (
+from dagster._core.definitions.partitions.definition import (
     DailyPartitionsDefinition,
+    StaticPartitionsDefinition,
 )
 
 

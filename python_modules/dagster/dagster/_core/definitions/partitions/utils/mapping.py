@@ -1,34 +1,28 @@
 import warnings
 from functools import lru_cache
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 
-from dagster._core.definitions.partitions.definition.base import PartitionsDefinition
-from dagster._core.definitions.partitions.definition.time_window import (
-    TimeWindowPartitionsDefinition,
-)
-from dagster._core.definitions.partitions.mapping.all import AllPartitionMapping
-from dagster._core.definitions.partitions.mapping.base import PartitionMapping
-from dagster._core.definitions.partitions.mapping.identity import IdentityPartitionMapping
-from dagster._core.definitions.partitions.mapping.last import LastPartitionMapping
-from dagster._core.definitions.partitions.mapping.multi.multi_to_multi import MultiPartitionMapping
-from dagster._core.definitions.partitions.mapping.multi.multi_to_single import (
-    MultiToSingleDimensionPartitionMapping,
-    get_infer_single_to_multi_dimension_deps_result,
-)
-from dagster._core.definitions.partitions.mapping.specific_partitions import (
-    SpecificPartitionsPartitionMapping,
-)
-from dagster._core.definitions.partitions.mapping.static import StaticPartitionMapping
 from dagster._utils.warnings import disable_dagster_warnings
+
+if TYPE_CHECKING:
+    from dagster._core.definitions.partitions.definition import PartitionsDefinition
+    from dagster._core.definitions.partitions.mapping import PartitionMapping
 
 
 def infer_partition_mapping(
-    partition_mapping: Optional[PartitionMapping],
-    downstream_partitions_def: Optional[PartitionsDefinition],
-    upstream_partitions_def: Optional[PartitionsDefinition],
-) -> PartitionMapping:
-    from dagster._core.definitions.partitions.mapping.time_window_partition_mapping import (
+    partition_mapping: Optional["PartitionMapping"],
+    downstream_partitions_def: Optional["PartitionsDefinition"],
+    upstream_partitions_def: Optional["PartitionsDefinition"],
+) -> "PartitionMapping":
+    from dagster._core.definitions.partitions.definition import TimeWindowPartitionsDefinition
+    from dagster._core.definitions.partitions.mapping import (
+        AllPartitionMapping,
+        IdentityPartitionMapping,
         TimeWindowPartitionMapping,
+    )
+    from dagster._core.definitions.partitions.mapping.multi.multi_to_single import (
+        MultiToSingleDimensionPartitionMapping,
+        get_infer_single_to_multi_dimension_deps_result,
     )
 
     if partition_mapping is not None:
@@ -50,8 +44,15 @@ def infer_partition_mapping(
 
 
 @lru_cache(maxsize=1)
-def get_builtin_partition_mapping_types() -> tuple[type[PartitionMapping], ...]:
-    from dagster._core.definitions.partitions.mapping.time_window_partition_mapping import (
+def get_builtin_partition_mapping_types() -> tuple[type["PartitionMapping"], ...]:
+    from dagster._core.definitions.partitions.mapping import (
+        AllPartitionMapping,
+        IdentityPartitionMapping,
+        LastPartitionMapping,
+        MultiPartitionMapping,
+        MultiToSingleDimensionPartitionMapping,
+        SpecificPartitionsPartitionMapping,
+        StaticPartitionMapping,
         TimeWindowPartitionMapping,
     )
 
@@ -67,7 +68,7 @@ def get_builtin_partition_mapping_types() -> tuple[type[PartitionMapping], ...]:
     )
 
 
-def warn_if_partition_mapping_not_builtin(partition_mapping: PartitionMapping) -> None:
+def warn_if_partition_mapping_not_builtin(partition_mapping: "PartitionMapping") -> None:
     builtin_partition_mappings = get_builtin_partition_mapping_types()
     if not isinstance(partition_mapping, builtin_partition_mappings):
         warnings.warn(

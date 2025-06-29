@@ -11,7 +11,7 @@ from dagster import (
     OutputContext,
     _check as check,
 )
-from dagster._core.definitions.partitions.utils.multi import MultiPartitionKey
+from dagster._core.definitions.partitions.utils import MultiPartitionKey
 from dagster._core.storage.io_manager import IOManager
 
 if TYPE_CHECKING:

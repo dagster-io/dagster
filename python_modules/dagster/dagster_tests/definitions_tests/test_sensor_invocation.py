@@ -41,10 +41,10 @@ from dagster._config.pythonic_config import ConfigurableResource
 from dagster._core.definitions.asset_check_result import AssetCheckResult
 from dagster._core.definitions.decorators.asset_check_decorator import asset_check
 from dagster._core.definitions.metadata import MetadataValue
-from dagster._core.definitions.partitions.definition.dynamic import DynamicPartitionsDefinition
-from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
-from dagster._core.definitions.partitions.definition.time_window_subclasses import (
+from dagster._core.definitions.partitions.definition import (
     DailyPartitionsDefinition,
+    DynamicPartitionsDefinition,
+    StaticPartitionsDefinition,
 )
 from dagster._core.definitions.partitions.partitioned_config import static_partitioned_config
 from dagster._core.definitions.resource_annotation import ResourceParam

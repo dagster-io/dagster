@@ -24,12 +24,12 @@ from dagster._core.definitions.events import (
     AssetMaterializationFailureType,
     AssetObservation,
 )
-from dagster._core.definitions.partitions.definition.multi import MultiPartitionsDefinition
-from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
-from dagster._core.definitions.partitions.definition.time_window_subclasses import (
+from dagster._core.definitions.partitions.definition import (
     DailyPartitionsDefinition,
+    MultiPartitionsDefinition,
+    StaticPartitionsDefinition,
 )
-from dagster._core.definitions.partitions.utils.multi import MultiPartitionKey
+from dagster._core.definitions.partitions.utils import MultiPartitionKey
 from dagster._core.event_api import EventRecordsFilter
 from dagster._core.events import (
     AssetFailedToMaterializeData,

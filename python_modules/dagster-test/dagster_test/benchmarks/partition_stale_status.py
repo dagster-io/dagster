@@ -13,7 +13,7 @@ from dagster._core.definitions.data_version import (
     CachingStaleStatusResolver,
     StaleStatus,
 )
-from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
+from dagster._core.definitions.partitions.definition import StaticPartitionsDefinition
 from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.instance import DagsterInstance
 from dagster._core.instance_for_test import instance_for_test

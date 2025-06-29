@@ -7,7 +7,7 @@ from dagster._core.definitions.asset_daemon_cursor import (
     backcompat_deserialize_asset_daemon_cursor_str,
 )
 from dagster._core.definitions.asset_graph import AssetGraph
-from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
+from dagster._core.definitions.partitions.definition import StaticPartitionsDefinition
 from dagster_shared.serdes import deserialize_value, serialize_value
 
 partitions = StaticPartitionsDefinition(partition_keys=["a", "b", "c"])

@@ -43,17 +43,17 @@ from dagster._core.definitions.metadata import ArbitraryMetadataMapping
 from dagster._core.definitions.node_definition import NodeDefinition
 from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.op_invocation import direct_invocation_result
-from dagster._core.definitions.partitions.definition.base import PartitionsDefinition
-from dagster._core.definitions.partitions.definition.multi import MultiPartitionsDefinition
-from dagster._core.definitions.partitions.definition.time_window import (
+from dagster._core.definitions.partitions.definition import (
+    MultiPartitionsDefinition,
+    PartitionsDefinition,
     TimeWindowPartitionsDefinition,
 )
-from dagster._core.definitions.partitions.mapping.base import PartitionMapping
-from dagster._core.definitions.partitions.mapping.multi.multi_to_multi import MultiPartitionMapping
-from dagster._core.definitions.partitions.mapping.time_window_partition_mapping import (
+from dagster._core.definitions.partitions.mapping import (
+    MultiPartitionMapping,
+    PartitionMapping,
     TimeWindowPartitionMapping,
 )
-from dagster._core.definitions.partitions.utils.mapping import (
+from dagster._core.definitions.partitions.utils import (
     infer_partition_mapping,
     warn_if_partition_mapping_not_builtin,
 )

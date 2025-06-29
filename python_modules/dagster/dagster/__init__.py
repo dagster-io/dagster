@@ -342,53 +342,27 @@ from dagster._core.definitions.output import (
     Out as Out,
     OutputMapping as OutputMapping,
 )
-from dagster._core.definitions.partitions.definition.base import (
-    PartitionsDefinition as PartitionsDefinition,
-)
-from dagster._core.definitions.partitions.definition.dynamic import (
-    DynamicPartitionsDefinition as DynamicPartitionsDefinition,
-)
-from dagster._core.definitions.partitions.definition.multi import (
-    MultiPartitionsDefinition as MultiPartitionsDefinition,
-)
-from dagster._core.definitions.partitions.definition.static import (
-    StaticPartitionsDefinition as StaticPartitionsDefinition,
-)
-from dagster._core.definitions.partitions.definition.time_window import (
-    TimeWindowPartitionsDefinition as TimeWindowPartitionsDefinition,
-)
-from dagster._core.definitions.partitions.definition.time_window_subclasses import (
+from dagster._core.definitions.partitions.definition import (
     DailyPartitionsDefinition as DailyPartitionsDefinition,
+    DynamicPartitionsDefinition as DynamicPartitionsDefinition,
     HourlyPartitionsDefinition as HourlyPartitionsDefinition,
     MonthlyPartitionsDefinition as MonthlyPartitionsDefinition,
+    MultiPartitionsDefinition as MultiPartitionsDefinition,
+    PartitionsDefinition as PartitionsDefinition,
+    StaticPartitionsDefinition as StaticPartitionsDefinition,
+    TimeWindowPartitionsDefinition as TimeWindowPartitionsDefinition,
     WeeklyPartitionsDefinition as WeeklyPartitionsDefinition,
 )
-from dagster._core.definitions.partitions.mapping.all import (
+from dagster._core.definitions.partitions.mapping import (
     AllPartitionMapping as AllPartitionMapping,
-)
-from dagster._core.definitions.partitions.mapping.base import PartitionMapping as PartitionMapping
-from dagster._core.definitions.partitions.mapping.identity import (
-    IdentityPartitionMapping as IdentityPartitionMapping,
-)
-from dagster._core.definitions.partitions.mapping.last import (
-    LastPartitionMapping as LastPartitionMapping,
-)
-from dagster._core.definitions.partitions.mapping.multi.base import (
     DimensionPartitionMapping as DimensionPartitionMapping,
-)
-from dagster._core.definitions.partitions.mapping.multi.multi_to_multi import (
+    IdentityPartitionMapping as IdentityPartitionMapping,
+    LastPartitionMapping as LastPartitionMapping,
     MultiPartitionMapping as MultiPartitionMapping,
-)
-from dagster._core.definitions.partitions.mapping.multi.multi_to_single import (
     MultiToSingleDimensionPartitionMapping as MultiToSingleDimensionPartitionMapping,
-)
-from dagster._core.definitions.partitions.mapping.specific_partitions import (
+    PartitionMapping as PartitionMapping,
     SpecificPartitionsPartitionMapping as SpecificPartitionsPartitionMapping,
-)
-from dagster._core.definitions.partitions.mapping.static import (
     StaticPartitionMapping as StaticPartitionMapping,
-)
-from dagster._core.definitions.partitions.mapping.time_window_partition_mapping import (
     TimeWindowPartitionMapping as TimeWindowPartitionMapping,
 )
 from dagster._core.definitions.partitions.partition import Partition as Partition
@@ -407,8 +381,10 @@ from dagster._core.definitions.partitions.partitioned_config import (
 from dagster._core.definitions.partitions.partitioned_schedule import (
     build_schedule_from_partitioned_job as build_schedule_from_partitioned_job,
 )
-from dagster._core.definitions.partitions.utils.multi import MultiPartitionKey as MultiPartitionKey
-from dagster._core.definitions.partitions.utils.time_window import TimeWindow as TimeWindow
+from dagster._core.definitions.partitions.utils import (
+    MultiPartitionKey as MultiPartitionKey,
+    TimeWindow as TimeWindow,
+)
 from dagster._core.definitions.policy import (
     Backoff as Backoff,
     Jitter as Jitter,

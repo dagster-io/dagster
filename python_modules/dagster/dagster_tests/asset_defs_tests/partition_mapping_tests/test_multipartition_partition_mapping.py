@@ -13,27 +13,25 @@ from dagster import (
 from dagster._check import CheckError
 from dagster._core.definitions.asset_dep import AssetDep
 from dagster._core.definitions.asset_spec import AssetSpec
-from dagster._core.definitions.partitions.definition.dynamic import DynamicPartitionsDefinition
-from dagster._core.definitions.partitions.definition.multi import MultiPartitionsDefinition
-from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
-from dagster._core.definitions.partitions.definition.time_window_subclasses import (
+from dagster._core.definitions.partitions.definition import (
     DailyPartitionsDefinition,
+    DynamicPartitionsDefinition,
+    MultiPartitionsDefinition,
+    StaticPartitionsDefinition,
     WeeklyPartitionsDefinition,
 )
-from dagster._core.definitions.partitions.mapping.all import AllPartitionMapping
-from dagster._core.definitions.partitions.mapping.identity import IdentityPartitionMapping
-from dagster._core.definitions.partitions.mapping.multi.base import DimensionPartitionMapping
-from dagster._core.definitions.partitions.mapping.multi.multi_to_multi import MultiPartitionMapping
-from dagster._core.definitions.partitions.mapping.multi.multi_to_single import (
+from dagster._core.definitions.partitions.mapping import (
+    AllPartitionMapping,
+    DimensionPartitionMapping,
+    IdentityPartitionMapping,
+    MultiPartitionMapping,
     MultiToSingleDimensionPartitionMapping,
-)
-from dagster._core.definitions.partitions.mapping.specific_partitions import (
     SpecificPartitionsPartitionMapping,
+    StaticPartitionMapping,
 )
-from dagster._core.definitions.partitions.mapping.static import StaticPartitionMapping
 from dagster._core.definitions.partitions.partition_key_range import PartitionKeyRange
-from dagster._core.definitions.partitions.subset.default import DefaultPartitionsSubset
-from dagster._core.definitions.partitions.utils.multi import MultiPartitionKey
+from dagster._core.definitions.partitions.subset import DefaultPartitionsSubset
+from dagster._core.definitions.partitions.utils import MultiPartitionKey
 from dagster._core.test_utils import instance_for_test
 
 

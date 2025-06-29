@@ -29,16 +29,18 @@ from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.base_asset_graph import AssetCheckNode, BaseAssetGraph, BaseAssetNode
 from dagster._core.definitions.decorators.asset_check_decorator import asset_check
 from dagster._core.definitions.events import AssetKeyPartitionKey
-from dagster._core.definitions.partitions.definition.base import PartitionsDefinition
-from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
-from dagster._core.definitions.partitions.definition.time_window_subclasses import (
+from dagster._core.definitions.partitions.definition import (
     DailyPartitionsDefinition,
     HourlyPartitionsDefinition,
+    PartitionsDefinition,
+    StaticPartitionsDefinition,
 )
-from dagster._core.definitions.partitions.mapping.base import UpstreamPartitionsResult
-from dagster._core.definitions.partitions.mapping.last import LastPartitionMapping
+from dagster._core.definitions.partitions.mapping import (
+    LastPartitionMapping,
+    UpstreamPartitionsResult,
+)
 from dagster._core.definitions.partitions.partition_key_range import PartitionKeyRange
-from dagster._core.definitions.partitions.subset.base import PartitionsSubset
+from dagster._core.definitions.partitions.subset import PartitionsSubset
 from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
 from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.errors import DagsterDefinitionChangedDeserializationError
@@ -51,7 +53,7 @@ from dagster._time import create_datetime, get_current_datetime
 from dagster_shared.serdes import deserialize_value, serialize_value
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.partitions.subset.time_window import TimeWindowPartitionsSubset
+    from dagster._core.definitions.partitions.subset import TimeWindowPartitionsSubset
 
 
 def to_remote_asset_graph(assets, asset_checks=None) -> RemoteAssetGraph:

@@ -4,9 +4,7 @@ from dagster import AssetSelection
 from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
 from dagster._core.definitions.auto_materialize_rule_evaluation import TextRuleEvaluationData
 from dagster._core.definitions.freshness_policy import LegacyFreshnessPolicy
-from dagster._core.definitions.partitions.definition.time_window_subclasses import (
-    DailyPartitionsDefinition,
-)
+from dagster._core.definitions.partitions.definition import DailyPartitionsDefinition
 
 from dagster_tests.declarative_automation_tests.scenario_utils.base_scenario import (
     AssetEvaluationSpec,

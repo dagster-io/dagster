@@ -6,7 +6,7 @@ from typing import Optional, cast
 from dagster import IOManagerDefinition, OutputContext, io_manager
 from dagster._annotations import beta
 from dagster._config.pythonic_config import ConfigurableIOManagerFactory
-from dagster._core.definitions.partitions.utils.time_window import TimeWindow
+from dagster._core.definitions.partitions.utils import TimeWindow
 from dagster._core.storage.db_io_manager import (
     DbClient,
     DbIOManager,

@@ -6,16 +6,20 @@ from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView
 from dagster._core.definitions.asset_check_spec import AssetCheckSpec
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.events import AssetKeyPartitionKey
-from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
-from dagster._core.definitions.partitions.definition.time_window_subclasses import (
+from dagster._core.definitions.partitions.definition import (
     DailyPartitionsDefinition,
+    StaticPartitionsDefinition,
 )
-from dagster._core.definitions.partitions.mapping.identity import IdentityPartitionMapping
-from dagster._core.definitions.partitions.mapping.last import LastPartitionMapping
-from dagster._core.definitions.partitions.mapping.static import StaticPartitionMapping
-from dagster._core.definitions.partitions.subset.all import AllPartitionsSubset
-from dagster._core.definitions.partitions.subset.time_window import TimeWindowPartitionsSubset
-from dagster._core.definitions.partitions.utils.time_window import PersistedTimeWindow, TimeWindow
+from dagster._core.definitions.partitions.mapping import (
+    IdentityPartitionMapping,
+    LastPartitionMapping,
+    StaticPartitionMapping,
+)
+from dagster._core.definitions.partitions.subset import (
+    AllPartitionsSubset,
+    TimeWindowPartitionsSubset,
+)
+from dagster._core.definitions.partitions.utils import PersistedTimeWindow, TimeWindow
 from dagster._core.instance import DagsterInstance
 from dagster._time import create_datetime, get_current_datetime
 from dagster._utils.partitions import DEFAULT_DATE_FORMAT

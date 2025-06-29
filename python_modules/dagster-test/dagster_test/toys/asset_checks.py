@@ -24,9 +24,7 @@ from dagster import (
     multi_asset,
     op,
 )
-from dagster._core.definitions.partitions.definition.time_window_subclasses import (
-    DailyPartitionsDefinition,
-)
+from dagster._core.definitions.partitions.definition import DailyPartitionsDefinition
 
 
 @asset(key_prefix="test_prefix", group_name="asset_checks")
