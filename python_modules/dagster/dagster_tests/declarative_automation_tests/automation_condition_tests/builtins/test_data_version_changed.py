@@ -9,11 +9,11 @@ from dagster import (
     DailyPartitionsDefinition,
     Definitions,
     PartitionsDefinition,
-    StaticPartitionsDefinition,
     asset,
     evaluate_automation_conditions,
 )
 from dagster._core.definitions.data_version import DATA_VERSION_TAG
+from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
 
 
 @pytest.mark.parametrize(

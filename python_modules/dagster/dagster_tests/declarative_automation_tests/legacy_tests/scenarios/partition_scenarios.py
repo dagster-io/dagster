@@ -3,12 +3,12 @@ from dagster import (
     DailyPartitionsDefinition,
     MultiPartitionsDefinition,
     PartitionKeyRange,
-    StaticPartitionsDefinition,
 )
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
 from dagster._core.definitions.auto_materialize_rule_evaluation import AutoMaterializeRuleEvaluation
-from dagster._core.definitions.partitions.definition.partition import DynamicPartitionsDefinition
+from dagster._core.definitions.partitions.definition.dynamic import DynamicPartitionsDefinition
+from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
 from dagster._core.definitions.partitions.definition.time_window_partitions import (
     HourlyPartitionsDefinition,
     TimeWindowPartitionsSubset,

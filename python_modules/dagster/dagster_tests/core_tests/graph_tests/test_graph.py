@@ -31,14 +31,12 @@ from dagster import (
 from dagster._check import CheckError
 from dagster._core.definitions.graph_definition import GraphDefinition
 from dagster._core.definitions.job_definition import JobDefinition
-from dagster._core.definitions.partitions.definition.partition import (
-    PartitionedConfig,
-    StaticPartitionsDefinition,
-)
+from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
 from dagster._core.definitions.partitions.definition.time_window_partitions import (
     DailyPartitionsDefinition,
     TimeWindow,
 )
+from dagster._core.definitions.partitions.partitioned_config import PartitionedConfig
 from dagster._core.errors import (
     DagsterConfigMappingFunctionError,
     DagsterInvalidConfigError,

@@ -9,12 +9,12 @@ from dagster import (
     HourlyPartitionsDefinition,
     MultiPartitionsDefinition,
     PartitionsDefinition,
-    StaticPartitionsDefinition,
     asset,
     deserialize_value,
     serialize_value,
 )
 from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView, SerializableEntitySubset
+from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
 
 partitions_defs = [
     None,

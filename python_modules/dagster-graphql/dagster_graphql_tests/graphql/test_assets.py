@@ -15,7 +15,6 @@ from dagster import (
     DailyPartitionsDefinition,
     MultiPartitionsDefinition,
     Output,
-    StaticPartitionsDefinition,
     asset,
     define_asset_job,
     repository,
@@ -28,6 +27,7 @@ from dagster._core.definitions.events import (
     AssetObservation,
 )
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionKey
+from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
 from dagster._core.event_api import EventRecordsFilter
 from dagster._core.events import (
     AssetFailedToMaterializeData,

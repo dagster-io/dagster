@@ -5,15 +5,15 @@ import pytest
 from dagster import (
     DagsterInstance,
     DagsterInvariantViolationError,
-    DynamicPartitionsDefinition,
     RunRequest,
-    StaticPartitionsDefinition,
     build_schedule_context,
     job,
     repository,
     schedule,
 )
 from dagster._config.pythonic_config import ConfigurableResource
+from dagster._core.definitions.partitions.definition.dynamic import DynamicPartitionsDefinition
+from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidInvocationError
 from dagster._core.storage.tags import PARTITION_NAME_TAG
 from dagster._core.test_utils import instance_for_test

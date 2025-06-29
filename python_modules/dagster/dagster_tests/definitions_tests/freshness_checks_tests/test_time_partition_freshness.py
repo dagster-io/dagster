@@ -22,7 +22,7 @@ from dagster._core.definitions.decorators.asset_decorator import multi_asset
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.metadata import JsonMetadataValue, TimestampMetadataValue
-from dagster._core.definitions.partitions.definition.partition import StaticPartitionsDefinition
+from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
 from dagster._core.definitions.partitions.definition.time_window_partitions import (
     DailyPartitionsDefinition,
     HourlyPartitionsDefinition,

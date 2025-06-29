@@ -1,11 +1,7 @@
 from random import random
 
-from dagster import (
-    DailyPartitionsDefinition,
-    MultiPartitionsDefinition,
-    StaticPartitionsDefinition,
-    asset,
-)
+from dagster import DailyPartitionsDefinition, MultiPartitionsDefinition, asset
+from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
 
 from dagster_test.toys.partitioned_assets.dynamic_asset_partitions import (
     multipartition_w_dynamic_partitions_def,

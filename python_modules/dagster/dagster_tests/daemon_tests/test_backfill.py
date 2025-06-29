@@ -42,15 +42,13 @@ from dagster import (
     op,
     repository,
 )
-from dagster._core.definitions import StaticPartitionsDefinition
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.backfill_policy import BackfillPolicy
 from dagster._core.definitions.events import AssetKeyPartitionKey
-from dagster._core.definitions.partitions.definition.partition import (
-    DynamicPartitionsDefinition,
-    PartitionedConfig,
-)
+from dagster._core.definitions.partitions.definition.dynamic import DynamicPartitionsDefinition
+from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
+from dagster._core.definitions.partitions.partitioned_config import PartitionedConfig
 from dagster._core.definitions.selector import (
     JobSubsetSelector,
     PartitionRangeSelector,

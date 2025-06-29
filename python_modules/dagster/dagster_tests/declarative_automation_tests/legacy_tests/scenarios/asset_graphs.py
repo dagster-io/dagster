@@ -7,9 +7,9 @@ from dagster import (
     MultiPartitionMapping,
     MultiPartitionsDefinition,
     StaticPartitionMapping,
-    StaticPartitionsDefinition,
     TimeWindowPartitionMapping,
 )
+from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
 
 from dagster_tests.declarative_automation_tests.scenario_utils.base_scenario import asset_def
 

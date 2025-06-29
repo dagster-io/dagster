@@ -21,7 +21,6 @@ from dagster import (
     Output,
     OutputContext,
     ResourceDefinition,
-    StaticPartitionsDefinition,
     build_reconstructable_job,
     define_asset_job,
     graph,
@@ -44,6 +43,7 @@ from dagster._core.definitions.data_version import DataVersion
 from dagster._core.definitions.decorators.asset_check_decorator import asset_check
 from dagster._core.definitions.dependency import NodeHandle, NodeInvocation
 from dagster._core.definitions.executor_definition import in_process_executor
+from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
 from dagster._core.definitions.result import MaterializeResult
 from dagster._core.errors import DagsterInvalidSubsetError
 from dagster._core.execution.api import execute_run_iterator

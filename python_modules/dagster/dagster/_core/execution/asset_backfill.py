@@ -26,10 +26,7 @@ from dagster._core.definitions.automation_tick_evaluation_context import (
 )
 from dagster._core.definitions.base_asset_graph import BaseAssetGraph, BaseAssetNode
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
-from dagster._core.definitions.partitions.definition.partition import (
-    PartitionsDefinition,
-    PartitionsSubset,
-)
+from dagster._core.definitions.partitions.definition.base import PartitionsDefinition
 from dagster._core.definitions.partitions.definition.time_window_partitions import (
     TimeWindowPartitionsDefinition,
     TimeWindowPartitionsSubset,
@@ -39,6 +36,7 @@ from dagster._core.definitions.partitions.mapping.time_window_partition_mapping 
     TimeWindowPartitionMapping,
 )
 from dagster._core.definitions.partitions.partition_key_range import PartitionKeyRange
+from dagster._core.definitions.partitions.subset.base import PartitionsSubset
 from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph, RemoteWorkspaceAssetGraph
 from dagster._core.definitions.run_request import RunRequest
 from dagster._core.definitions.selector import PartitionsByAssetSelector

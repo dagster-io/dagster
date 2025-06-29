@@ -7,11 +7,9 @@ from dagster import (
     AssetExecutionContext,
     AssetIn,
     DailyPartitionsDefinition,
-    DynamicPartitionsDefinition,
     MultiPartitionKey,
     MultiPartitionsDefinition,
     Out,
-    StaticPartitionsDefinition,
     asset,
     graph,
     instance_for_test,
@@ -19,6 +17,8 @@ from dagster import (
     op,
 )
 from dagster._check import CheckError
+from dagster._core.definitions.partitions.definition.dynamic import DynamicPartitionsDefinition
+from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
 from dagster_deltalake import DELTA_DATE_FORMAT, LocalConfig
 from dagster_deltalake.io_manager import WriteMode
 from dagster_deltalake_polars import DeltaLakePolarsIOManager

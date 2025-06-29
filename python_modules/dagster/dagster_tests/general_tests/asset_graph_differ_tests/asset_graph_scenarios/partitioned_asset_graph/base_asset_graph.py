@@ -4,10 +4,10 @@ from dagster import (
     Definitions,
     MultiPartitionsDefinition,
     StaticPartitionMapping,
-    StaticPartitionsDefinition,
     TimeWindowPartitionMapping,
     asset,
 )
+from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
 
 daily_partitions_def = DailyPartitionsDefinition(start_date="2024-02-01")
 static_partitions_def = StaticPartitionsDefinition(["apple", "orange", "banana"])

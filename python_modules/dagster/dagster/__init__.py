@@ -346,15 +346,14 @@ from dagster._core.definitions.output import (
     Out as Out,
     OutputMapping as OutputMapping,
 )
-from dagster._core.definitions.partitions.definition.partition import (
-    DynamicPartitionsDefinition as DynamicPartitionsDefinition,
-    Partition as Partition,
-    PartitionedConfig as PartitionedConfig,
+from dagster._core.definitions.partitions.definition.base import (
     PartitionsDefinition as PartitionsDefinition,
+)
+from dagster._core.definitions.partitions.definition.dynamic import (
+    DynamicPartitionsDefinition as DynamicPartitionsDefinition,
+)
+from dagster._core.definitions.partitions.definition.static import (
     StaticPartitionsDefinition as StaticPartitionsDefinition,
-    dynamic_partitioned_config as dynamic_partitioned_config,
-    partitioned_config as partitioned_config,
-    static_partitioned_config as static_partitioned_config,
 )
 from dagster._core.definitions.partitions.definition.time_window_partitions import (
     DailyPartitionsDefinition as DailyPartitionsDefinition,
@@ -382,8 +381,15 @@ from dagster._core.definitions.partitions.mapping.partition_mapping import (
 from dagster._core.definitions.partitions.mapping.time_window_partition_mapping import (
     TimeWindowPartitionMapping as TimeWindowPartitionMapping,
 )
+from dagster._core.definitions.partitions.partition import Partition as Partition
 from dagster._core.definitions.partitions.partition_key_range import (
     PartitionKeyRange as PartitionKeyRange,
+)
+from dagster._core.definitions.partitions.partitioned_config import (
+    PartitionedConfig as PartitionedConfig,
+    dynamic_partitioned_config as dynamic_partitioned_config,
+    partitioned_config as partitioned_config,
+    static_partitioned_config as static_partitioned_config,
 )
 from dagster._core.definitions.partitions.partitioned_schedule import (
     build_schedule_from_partitioned_job as build_schedule_from_partitioned_job,

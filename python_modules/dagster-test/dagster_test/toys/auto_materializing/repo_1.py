@@ -1,11 +1,11 @@
 from dagster import (
     AutoMaterializePolicy,
     DailyPartitionsDefinition,
-    DynamicPartitionsDefinition,
     MultiPartitionsDefinition,
     asset,
     repository,
 )
+from dagster._core.definitions.partitions.definition.dynamic import DynamicPartitionsDefinition
 
 ### Non partitioned ##
 

@@ -1,12 +1,9 @@
 import pytest
-from dagster import (
-    AssetKey,
-    DailyPartitionsDefinition,
-    DynamicPartitionsDefinition,
-    StaticPartitionsDefinition,
-)
+from dagster import AssetKey, DailyPartitionsDefinition
 from dagster._check import CheckError
 from dagster._core.asset_graph_view.serializable_entity_subset import SerializableEntitySubset
+from dagster._core.definitions.partitions.definition.dynamic import DynamicPartitionsDefinition
+from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
 from dagster._core.test_utils import instance_for_test
 
 

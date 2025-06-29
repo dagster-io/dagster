@@ -13,13 +13,11 @@ from dagster import (
     AssetKey,
     DailyPartitionsDefinition,
     Definitions,
-    DynamicPartitionsDefinition,
     EnvVar,
     MetadataValue,
     MultiPartitionKey,
     MultiPartitionsDefinition,
     Out,
-    StaticPartitionsDefinition,
     TimeWindowPartitionMapping,
     asset,
     fs_io_manager,
@@ -28,6 +26,8 @@ from dagster import (
     materialize,
     op,
 )
+from dagster._core.definitions.partitions.definition.dynamic import DynamicPartitionsDefinition
+from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
 from dagster_gcp_pandas import BigQueryPandasIOManager, bigquery_pandas_io_manager
 from google.cloud import bigquery
 

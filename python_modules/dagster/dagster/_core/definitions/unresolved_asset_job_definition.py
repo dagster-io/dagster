@@ -16,10 +16,9 @@ from dagster._core.definitions.config import ConfigMapping
 from dagster._core.definitions.executor_definition import ExecutorDefinition
 from dagster._core.definitions.hook_definition import HookDefinition
 from dagster._core.definitions.metadata import RawMetadataValue
-from dagster._core.definitions.partitions.definition.partition import (
-    PartitionedConfig,
-    PartitionsDefinition,
-)
+from dagster._core.definitions.partitions.definition.base import PartitionsDefinition
+from dagster._core.definitions.partitions.definition.dynamic import DynamicPartitionsDefinition
+from dagster._core.definitions.partitions.partitioned_config import PartitionedConfig
 from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.run_request import RunRequest
@@ -121,10 +120,7 @@ class UnresolvedAssetJobDefinition(IHaveNew):
         Returns:
             RunRequest: an object that requests a run to process the given partition.
         """
-        from dagster._core.definitions.partitions.definition.partition import (
-            DynamicPartitionsDefinition,
-            PartitionedConfig,
-        )
+        from dagster._core.definitions.partitions.partitioned_config import PartitionedConfig
 
         if not self.partitions_def:
             check.failed("Called run_request_for_partition on a non-partitioned job")

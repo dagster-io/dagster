@@ -11,8 +11,8 @@ from dagster import (
     job,
     op,
     reconstructable,
-    static_partitioned_config,
 )
+from dagster._core.definitions.partitions.partitioned_config import static_partitioned_config
 from dagster._core.storage.tags import PARTITION_NAME_TAG
 from dagster._core.test_utils import environ, instance_for_test
 

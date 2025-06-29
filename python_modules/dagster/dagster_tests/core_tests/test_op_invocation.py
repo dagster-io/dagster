@@ -21,7 +21,6 @@ from dagster import (
     Output,
     RetryRequested,
     Selector,
-    StaticPartitionsDefinition,
     TimeWindow,
     asset,
     build_op_context,
@@ -30,6 +29,7 @@ from dagster import (
     op,
     resource,
 )
+from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
 from dagster._core.definitions.partitions.definition.time_window_partitions import (
     get_time_partitions_def,
 )
