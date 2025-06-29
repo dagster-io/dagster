@@ -100,6 +100,7 @@ Other relevant parameter renames:
     window_start, window_end = context.partition_time_window
     in_an_hour = window_start.add(hours=1) # will break since add() is only defined in pendulum
   ```
+
   - could be changed to this in order to continue using pendulum datetimes:
 
   ```python
