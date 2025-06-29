@@ -13,7 +13,7 @@ from dagster_shared.serdes import NamedTupleSerializer
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, public
-from dagster._core.definitions.partition import (
+from dagster._core.definitions.partitions.definition.partition import (
     DEFAULT_DATE_FORMAT,
     AllPartitionsSubset,
     PartitionedConfig,
@@ -23,7 +23,7 @@ from dagster._core.definitions.partition import (
     ScheduleType,
     cron_schedule_from_schedule_type_and_offsets,
 )
-from dagster._core.definitions.partition_key_range import PartitionKeyRange
+from dagster._core.definitions.partitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.timestamp import TimestampWithTimezone
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,

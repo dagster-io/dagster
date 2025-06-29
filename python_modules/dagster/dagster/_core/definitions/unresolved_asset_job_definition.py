@@ -16,7 +16,10 @@ from dagster._core.definitions.config import ConfigMapping
 from dagster._core.definitions.executor_definition import ExecutorDefinition
 from dagster._core.definitions.hook_definition import HookDefinition
 from dagster._core.definitions.metadata import RawMetadataValue
-from dagster._core.definitions.partition import PartitionedConfig, PartitionsDefinition
+from dagster._core.definitions.partitions.definition.partition import (
+    PartitionedConfig,
+    PartitionsDefinition,
+)
 from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.run_request import RunRequest
@@ -118,7 +121,7 @@ class UnresolvedAssetJobDefinition(IHaveNew):
         Returns:
             RunRequest: an object that requests a run to process the given partition.
         """
-        from dagster._core.definitions.partition import (
+        from dagster._core.definitions.partitions.definition.partition import (
             DynamicPartitionsDefinition,
             PartitionedConfig,
         )

@@ -40,17 +40,17 @@ from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.decorators.asset_decorator import multi_asset
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
-from dagster._core.definitions.partition import (
+from dagster._core.definitions.partitions.definition.partition import (
     DefaultPartitionsSubset,
     DynamicPartitionsDefinition,
     PartitionsSubset,
 )
-from dagster._core.definitions.partition_key_range import PartitionKeyRange
-from dagster._core.definitions.partition_mapping import (
+from dagster._core.definitions.partitions.mapping.partition_mapping import (
     PartitionMapping,
     UpstreamPartitionsResult,
     get_builtin_partition_mapping_types,
 )
+from dagster._core.definitions.partitions.partition_key_range import PartitionKeyRange
 from dagster._core.instance import DynamicPartitionsStore
 from dagster._core.test_utils import assert_namedtuple_lists_equal
 from dagster._time import create_datetime

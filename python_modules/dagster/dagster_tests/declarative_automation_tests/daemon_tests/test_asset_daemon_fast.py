@@ -1,6 +1,8 @@
 import pytest
 from dagster import AssetMaterialization, AssetSelection, DagsterInstance, job, op
-from dagster._core.definitions.time_window_partitions import HourlyPartitionsDefinition
+from dagster._core.definitions.partitions.definition.time_window_partitions import (
+    HourlyPartitionsDefinition,
+)
 
 from dagster_tests.declarative_automation_tests.legacy_tests.scenarios.scenarios import (
     ASSET_RECONCILIATION_SCENARIOS,

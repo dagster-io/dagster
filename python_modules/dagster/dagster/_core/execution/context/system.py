@@ -20,9 +20,17 @@ from dagster._core.definitions.job_base import IJob
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.metadata import RawMetadataValue
 from dagster._core.definitions.op_definition import OpDefinition
-from dagster._core.definitions.partition import PartitionsDefinition, PartitionsSubset
-from dagster._core.definitions.partition_key_range import PartitionKeyRange
-from dagster._core.definitions.partition_mapping import infer_partition_mapping
+from dagster._core.definitions.partitions.definition.partition import (
+    PartitionsDefinition,
+    PartitionsSubset,
+)
+from dagster._core.definitions.partitions.definition.time_window_partitions import (
+    TimeWindow,
+    TimeWindowPartitionsDefinition,
+    has_one_dimension_time_window_partitioning,
+)
+from dagster._core.definitions.partitions.mapping.partition_mapping import infer_partition_mapping
+from dagster._core.definitions.partitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.definitions.reconstruct import ReconstructableJob
 from dagster._core.definitions.repository_definition.repository_definition import (
@@ -30,11 +38,6 @@ from dagster._core.definitions.repository_definition.repository_definition impor
 )
 from dagster._core.definitions.resource_definition import ScopedResourcesBuilder
 from dagster._core.definitions.step_launcher import StepLauncher
-from dagster._core.definitions.time_window_partitions import (
-    TimeWindow,
-    TimeWindowPartitionsDefinition,
-    has_one_dimension_time_window_partitioning,
-)
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.execution.context.data_version_cache import (
     DataVersionCache,

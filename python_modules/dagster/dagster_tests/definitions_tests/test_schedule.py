@@ -21,7 +21,7 @@ from dagster._core.definitions.metadata.metadata_value import (
     MetadataValue,
     TextMetadataValue,
 )
-from dagster._core.definitions.partitioned_schedule import (
+from dagster._core.definitions.partitions.partitioned_schedule import (
     UnresolvedPartitionedAssetScheduleDefinition,
 )
 from dagster._core.definitions.run_config import RunConfig

@@ -19,8 +19,11 @@ from dagster import (
     weekly_partitioned_config,
 )
 from dagster._check import CheckError
-from dagster._core.definitions.partition import PartitionLoadingContext, TemporalContext
-from dagster._core.definitions.time_window_partitions import (
+from dagster._core.definitions.partitions.definition.partition import (
+    PartitionLoadingContext,
+    TemporalContext,
+)
+from dagster._core.definitions.partitions.definition.time_window_partitions import (
     PersistedTimeWindow,
     ScheduleType,
     TimeWindow,

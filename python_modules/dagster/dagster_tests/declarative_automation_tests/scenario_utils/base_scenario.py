@@ -52,8 +52,10 @@ from dagster._core.definitions.data_version import DataVersionsByPartition
 from dagster._core.definitions.events import CoercibleToAssetKey
 from dagster._core.definitions.freshness_policy import LegacyFreshnessPolicy
 from dagster._core.definitions.observe import observe
-from dagster._core.definitions.partition import PartitionsSubset, ScheduleType
-from dagster._core.definitions.time_window_partitions import get_time_partitions_def
+from dagster._core.definitions.partitions.definition.partition import PartitionsSubset, ScheduleType
+from dagster._core.definitions.partitions.definition.time_window_partitions import (
+    get_time_partitions_def,
+)
 from dagster._core.definitions.timestamp import TimestampWithTimezone
 from dagster._core.events import AssetMaterializationPlannedData, DagsterEvent, DagsterEventType
 from dagster._core.events.log import EventLogEntry

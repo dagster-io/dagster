@@ -19,12 +19,12 @@ from dagster._core.definitions.data_version import (
 from dagster._core.definitions.declarative_automation.serialized_objects import (
     AutomationConditionSnapshot,
 )
-from dagster._core.definitions.partition import (
+from dagster._core.definitions.partitions.definition.partition import (
     PartitionLoadingContext,
     PartitionsDefinition,
     TemporalContext,
 )
-from dagster._core.definitions.partition_mapping import PartitionMapping
+from dagster._core.definitions.partitions.mapping.partition_mapping import PartitionMapping
 from dagster._core.definitions.remote_asset_graph import RemoteAssetNode, RemoteWorkspaceAssetNode
 from dagster._core.definitions.selector import JobSelector
 from dagster._core.definitions.sensor_definition import SensorType

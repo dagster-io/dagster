@@ -20,7 +20,7 @@ from dagster._core.definitions.module_loaders.utils import (
     key_iterator,
     replace_keys_in_asset,
 )
-from dagster._core.definitions.partitioned_schedule import (
+from dagster._core.definitions.partitions.partitioned_schedule import (
     UnresolvedPartitionedAssetScheduleDefinition,
 )
 from dagster._core.definitions.schedule_definition import ScheduleDefinition

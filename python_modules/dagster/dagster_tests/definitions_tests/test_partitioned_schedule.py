@@ -12,18 +12,20 @@ from dagster import (
     repository,
 )
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
-from dagster._core.definitions.partition import (
+from dagster._core.definitions.partitions.definition.partition import (
     DynamicPartitionsDefinition,
     StaticPartitionsDefinition,
 )
-from dagster._core.definitions.partitioned_schedule import build_schedule_from_partitioned_job
-from dagster._core.definitions.time_window_partitions import (
+from dagster._core.definitions.partitions.definition.time_window_partitions import (
     DailyPartitionsDefinition,
     TimeWindow,
     daily_partitioned_config,
     hourly_partitioned_config,
     monthly_partitioned_config,
     weekly_partitioned_config,
+)
+from dagster._core.definitions.partitions.partitioned_schedule import (
+    build_schedule_from_partitioned_job,
 )
 from dagster._core.test_utils import freeze_time
 from dagster._time import create_datetime, parse_time_string

@@ -26,7 +26,7 @@ from dagster._core.definitions.dynamic_partitions_request import (
     AddDynamicPartitionsRequest,
     DeleteDynamicPartitionsRequest,
 )
-from dagster._core.definitions.partition_key_range import PartitionKeyRange
+from dagster._core.definitions.partitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.run_config import RunConfig, convert_config_input
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
@@ -1478,7 +1478,7 @@ class AllPartitionsSubset(
         return other
 
     def __sub__(self, other: "PartitionsSubset") -> "PartitionsSubset":
-        from dagster._core.definitions.time_window_partitions import (
+        from dagster._core.definitions.partitions.definition.time_window_partitions import (
             TimeWindowPartitionsDefinition,
             TimeWindowPartitionsSubset,
         )

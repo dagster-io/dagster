@@ -104,7 +104,7 @@ from dagster._core.definitions.freshness_policy import LegacyFreshnessPolicy
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
-from dagster._core.definitions.partition import PartitionedConfig
+from dagster._core.definitions.partitions.definition.partition import PartitionedConfig
 from dagster._core.definitions.reconstruct import ReconstructableRepository
 from dagster._core.definitions.sensor_definition import (
     RunRequest,

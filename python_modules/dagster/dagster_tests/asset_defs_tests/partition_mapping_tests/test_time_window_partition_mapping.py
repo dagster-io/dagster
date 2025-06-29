@@ -11,9 +11,12 @@ from dagster import (
     TimeWindowPartitionsDefinition,
     WeeklyPartitionsDefinition,
 )
-from dagster._core.definitions.partition import AllPartitionsSubset
-from dagster._core.definitions.partition_key_range import PartitionKeyRange
-from dagster._core.definitions.time_window_partitions import TimeWindow, TimeWindowPartitionsSubset
+from dagster._core.definitions.partitions.definition.partition import AllPartitionsSubset
+from dagster._core.definitions.partitions.definition.time_window_partitions import (
+    TimeWindow,
+    TimeWindowPartitionsSubset,
+)
+from dagster._core.definitions.partitions.partition_key_range import PartitionKeyRange
 from dagster._time import create_datetime
 
 

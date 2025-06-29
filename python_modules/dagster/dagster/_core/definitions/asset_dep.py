@@ -5,7 +5,7 @@ import dagster._check as check
 from dagster._annotations import PublicAttr
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
-from dagster._core.definitions.partition_mapping import (
+from dagster._core.definitions.partitions.mapping.partition_mapping import (
     PartitionMapping,
     warn_if_partition_mapping_not_builtin,
 )

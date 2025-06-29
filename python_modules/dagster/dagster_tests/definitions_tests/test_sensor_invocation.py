@@ -44,7 +44,7 @@ from dagster._config.pythonic_config import ConfigurableResource
 from dagster._core.definitions.asset_check_result import AssetCheckResult
 from dagster._core.definitions.decorators.asset_check_decorator import asset_check
 from dagster._core.definitions.metadata import MetadataValue
-from dagster._core.definitions.partition import DynamicPartitionsDefinition
+from dagster._core.definitions.partitions.definition.partition import DynamicPartitionsDefinition
 from dagster._core.definitions.resource_annotation import ResourceParam
 from dagster._core.definitions.sensor_definition import SensorDefinition
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidInvocationError

@@ -49,7 +49,7 @@ from dagster._core.definitions.metadata.table import (
     TableRecord,
     TableSchema,
 )
-from dagster._core.definitions.partition import DynamicPartitionsDefinition
+from dagster._core.definitions.partitions.definition.partition import DynamicPartitionsDefinition
 from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.definitions.reconstruct import reconstructable
 from dagster._core.errors import DagsterInvariantViolationError, DagsterPipesExecutionError

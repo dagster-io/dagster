@@ -16,7 +16,7 @@ from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
-from dagster._core.definitions.partition import (
+from dagster._core.definitions.partitions.definition.partition import (
     DynamicPartitionsDefinition,
     PartitionedConfig,
     PartitionsDefinition,

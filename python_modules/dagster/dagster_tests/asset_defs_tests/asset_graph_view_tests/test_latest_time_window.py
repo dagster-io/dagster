@@ -4,11 +4,13 @@ from dagster._core.definitions.multi_dimensional_partitions import (
     MultiPartitionKey,
     MultiPartitionsDefinition,
 )
-from dagster._core.definitions.partition import (
+from dagster._core.definitions.partitions.definition.partition import (
     DynamicPartitionsDefinition,
     StaticPartitionsDefinition,
 )
-from dagster._core.definitions.time_window_partitions import DailyPartitionsDefinition
+from dagster._core.definitions.partitions.definition.time_window_partitions import (
+    DailyPartitionsDefinition,
+)
 from dagster._core.execution.context.compute import AssetExecutionContext
 from dagster._core.instance import DagsterInstance
 from dagster._time import create_datetime

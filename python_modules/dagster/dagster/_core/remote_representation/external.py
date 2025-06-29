@@ -19,7 +19,7 @@ from dagster._core.definitions.automation_condition_sensor_definition import (
 from dagster._core.definitions.backfill_policy import BackfillPolicy
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.metadata import MetadataValue
-from dagster._core.definitions.partition import PartitionsDefinition
+from dagster._core.definitions.partitions.definition.partition import PartitionsDefinition
 from dagster._core.definitions.run_request import InstigatorType
 from dagster._core.definitions.schedule_definition import DefaultScheduleStatus
 from dagster._core.definitions.selector import (

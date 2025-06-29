@@ -14,7 +14,7 @@ from dagster_shared.merger import deep_merge_dicts
 
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_spec import AssetSpec
-from dagster._core.definitions.partition import StaticPartitionsDefinition
+from dagster._core.definitions.partitions.definition.partition import StaticPartitionsDefinition
 from dagster.components.core.tree import ComponentTree
 
 """Testing utilities for components."""

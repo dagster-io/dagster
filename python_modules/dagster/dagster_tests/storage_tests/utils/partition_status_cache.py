@@ -17,7 +17,9 @@ from dagster import (
     define_asset_job,
 )
 from dagster._core.definitions.asset_graph import AssetGraph
-from dagster._core.definitions.time_window_partitions import HourlyPartitionsDefinition
+from dagster._core.definitions.partitions.definition.time_window_partitions import (
+    HourlyPartitionsDefinition,
+)
 from dagster._core.events import (
     AssetMaterializationPlannedData,
     DagsterEvent,

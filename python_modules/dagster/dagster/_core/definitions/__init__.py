@@ -159,7 +159,7 @@ from dagster._core.definitions.module_loaders.load_assets_from_modules import (
     load_assets_from_package_name as load_assets_from_package_name,
 )
 from dagster._core.definitions.op_definition import OpDefinition as OpDefinition
-from dagster._core.definitions.partition import (
+from dagster._core.definitions.partitions.definition.partition import (
     DynamicPartitionsDefinition as DynamicPartitionsDefinition,
     Partition as Partition,
     PartitionedConfig as PartitionedConfig,
@@ -168,31 +168,7 @@ from dagster._core.definitions.partition import (
     dynamic_partitioned_config as dynamic_partitioned_config,
     static_partitioned_config as static_partitioned_config,
 )
-from dagster._core.definitions.partition_key_range import PartitionKeyRange as PartitionKeyRange
-from dagster._core.definitions.partition_mapping import (
-    AllPartitionMapping as AllPartitionMapping,
-    DimensionPartitionMapping as DimensionPartitionMapping,
-    IdentityPartitionMapping as IdentityPartitionMapping,
-    LastPartitionMapping as LastPartitionMapping,
-    MultiPartitionMapping as MultiPartitionMapping,
-    MultiToSingleDimensionPartitionMapping as MultiToSingleDimensionPartitionMapping,
-    PartitionMapping as PartitionMapping,
-)
-from dagster._core.definitions.partitioned_schedule import (
-    build_schedule_from_partitioned_job as build_schedule_from_partitioned_job,
-)
-from dagster._core.definitions.run_status_sensor_definition import (
-    RunFailureSensorContext as RunFailureSensorContext,
-    RunStatusSensorContext as RunStatusSensorContext,
-    RunStatusSensorDefinition as RunStatusSensorDefinition,
-    run_failure_sensor as run_failure_sensor,
-    run_status_sensor as run_status_sensor,
-)
-from dagster._core.definitions.source_asset import SourceAsset as SourceAsset
-from dagster._core.definitions.time_window_partition_mapping import (
-    TimeWindowPartitionMapping as TimeWindowPartitionMapping,
-)
-from dagster._core.definitions.time_window_partitions import (
+from dagster._core.definitions.partitions.definition.time_window_partitions import (
     DailyPartitionsDefinition as DailyPartitionsDefinition,
     HourlyPartitionsDefinition as HourlyPartitionsDefinition,
     MonthlyPartitionsDefinition as MonthlyPartitionsDefinition,
@@ -204,3 +180,29 @@ from dagster._core.definitions.time_window_partitions import (
     monthly_partitioned_config as monthly_partitioned_config,
     weekly_partitioned_config as weekly_partitioned_config,
 )
+from dagster._core.definitions.partitions.mapping.partition_mapping import (
+    AllPartitionMapping as AllPartitionMapping,
+    DimensionPartitionMapping as DimensionPartitionMapping,
+    IdentityPartitionMapping as IdentityPartitionMapping,
+    LastPartitionMapping as LastPartitionMapping,
+    MultiPartitionMapping as MultiPartitionMapping,
+    MultiToSingleDimensionPartitionMapping as MultiToSingleDimensionPartitionMapping,
+    PartitionMapping as PartitionMapping,
+)
+from dagster._core.definitions.partitions.mapping.time_window_partition_mapping import (
+    TimeWindowPartitionMapping as TimeWindowPartitionMapping,
+)
+from dagster._core.definitions.partitions.partition_key_range import (
+    PartitionKeyRange as PartitionKeyRange,
+)
+from dagster._core.definitions.partitions.partitioned_schedule import (
+    build_schedule_from_partitioned_job as build_schedule_from_partitioned_job,
+)
+from dagster._core.definitions.run_status_sensor_definition import (
+    RunFailureSensorContext as RunFailureSensorContext,
+    RunStatusSensorContext as RunStatusSensorContext,
+    RunStatusSensorDefinition as RunStatusSensorDefinition,
+    run_failure_sensor as run_failure_sensor,
+    run_status_sensor as run_status_sensor,
+)
+from dagster._core.definitions.source_asset import SourceAsset as SourceAsset

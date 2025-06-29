@@ -14,15 +14,18 @@ from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView
 from dagster._core.definitions.asset_check_spec import AssetCheckSpec
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.events import AssetKeyPartitionKey
-from dagster._core.definitions.partition import (
+from dagster._core.definitions.partitions.definition.partition import (
     DEFAULT_DATE_FORMAT,
     AllPartitionsSubset,
     StaticPartitionsDefinition,
 )
-from dagster._core.definitions.partition_mapping import LastPartitionMapping, StaticPartitionMapping
-from dagster._core.definitions.time_window_partitions import (
+from dagster._core.definitions.partitions.definition.time_window_partitions import (
     PersistedTimeWindow,
     TimeWindowPartitionsSubset,
+)
+from dagster._core.definitions.partitions.mapping.partition_mapping import (
+    LastPartitionMapping,
+    StaticPartitionMapping,
 )
 from dagster._core.instance import DagsterInstance
 from dagster._time import create_datetime, get_current_datetime

@@ -38,8 +38,8 @@ from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.materialize import materialize_to_memory
 from dagster._core.definitions.metadata.metadata_value import IntMetadataValue, TextMetadataValue
-from dagster._core.definitions.partition_key_range import PartitionKeyRange
-from dagster._core.definitions.time_window_partitions import TimeWindow
+from dagster._core.definitions.partitions.definition.time_window_partitions import TimeWindow
+from dagster._core.definitions.partitions.partition_key_range import PartitionKeyRange
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.event_api import EventRecordsFilter
 from dagster._core.events import DagsterEventType
