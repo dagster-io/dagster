@@ -1,4 +1,4 @@
-import React, {useContext, useLayoutEffect, useMemo} from 'react';
+import React, {useContext, useLayoutEffect, useMemo, useReducer} from 'react';
 
 import {AssetHealthData, useAssetsHealthData} from '../../asset-data/AssetHealthDataProvider';
 import {AssetHealthFragment} from '../../asset-data/types/AssetHealthDataProvider.types';
@@ -30,6 +30,13 @@ export const SelectionHealthDataContext = React.createContext<{
 export const SelectionHealthDataProvider = ({children}: {children: React.ReactNode}) => {
   const [selections, setSelections] = React.useState<Set<string>>(() => new Set());
 
+  /**
+   * Whenever new listeners are added to a registry, we need to force a re-render of the SelectionHealthDataObserver
+   * to ensure that it fetches health data or calculates filter data depending on the listeners.
+   * We do this instead of using state to avoid needing to manage references and create new objects.
+   */
+  const [, forceRerender] = useReducer((s: number) => s + 1, 0);
+
   const registries: Record<string, SelectionRegistry> = useMemo(() => ({}), []);
 
   const watchSelection = React.useCallback(
@@ -52,6 +59,7 @@ export const SelectionHealthDataProvider = ({children}: {children: React.ReactNo
       }
       const registry = registries[selection]!;
       registry.watchSelection(setHealthData, setFilterData);
+      forceRerender();
     },
     [registries],
   );
