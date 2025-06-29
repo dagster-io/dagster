@@ -118,10 +118,10 @@ export function useAssetHealthStatuses({
 }) {
   const assetCount = assets.length;
 
-  const {liveDataByNode} = useAssetsHealthData(
-    useMemo(() => assets.map((asset) => asset.key), [assets]),
-    threadId,
-  );
+  const {liveDataByNode} = useAssetsHealthData({
+    assetKeys: useMemo(() => assets.map((asset) => asset.key), [assets]),
+    thread: threadId,
+  });
 
   const loading = assetsLoading || assets.length > Object.keys(liveDataByNode).length;
 

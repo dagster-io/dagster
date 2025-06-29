@@ -1,7 +1,6 @@
 import keyBy from 'lodash/keyBy';
 import reject from 'lodash/reject';
 import {useEffect, useLayoutEffect, useMemo, useRef, useState} from 'react';
-import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
 import {useAssetGraphSupplementaryData} from 'shared/asset-graph/useAssetGraphSupplementaryData.oss';
 import {Worker} from 'shared/workers/Worker.oss';
 
@@ -9,7 +8,6 @@ import {computeGraphData as computeGraphDataImpl} from './ComputeGraphData';
 import {BuildGraphDataMessageType, ComputeGraphDataMessageType} from './ComputeGraphData.types';
 import {GraphData, buildGraphData as buildGraphDataImpl, tokenForAssetKey} from './Utils';
 import {AssetGraphQueryItem, AssetNode} from './types';
-import {featureEnabled} from '../app/Flags';
 import {GraphQueryItem} from '../app/GraphQueryImpl';
 import {AssetKey} from '../assets/types';
 import {useAllAssetsNodes} from '../assets/useAllAssets';
@@ -337,11 +335,7 @@ async function computeGraphDataWrapper(
   spawnComputeGraphDataWorker: () => Worker,
   useWorker: boolean,
 ): Promise<GraphDataState> {
-  if (
-    featureEnabled(FeatureFlag.flagAssetSelectionWorker) &&
-    useWorker &&
-    typeof window.Worker !== 'undefined'
-  ) {
+  if (useWorker && typeof window.Worker !== 'undefined') {
     const worker = spawnComputeGraphDataWorker();
     return new Promise<GraphDataState>((resolve, reject) => {
       const id = ++_id;
@@ -377,11 +371,7 @@ async function buildGraphDataWrapper(
   spawnBuildGraphDataWorker: () => Worker,
   useWorker: boolean,
 ): Promise<GraphData> {
-  if (
-    featureEnabled(FeatureFlag.flagAssetSelectionWorker) &&
-    useWorker &&
-    typeof window.Worker !== 'undefined'
-  ) {
+  if (useWorker && typeof window.Worker !== 'undefined') {
     const worker = spawnBuildGraphDataWorker();
     return new Promise<GraphData>((resolve) => {
       const id = ++_id;

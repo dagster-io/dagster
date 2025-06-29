@@ -90,16 +90,22 @@ const memoizedAssetKeys = weakMapMemoize((assetKeys: AssetKeyInput[]) => {
   return assetKeys.map((key) => tokenForAssetKey(key));
 });
 
-export function useAssetsHealthData(
-  assetKeys: AssetKeyInput[],
-  thread: LiveDataThreadID = 'AssetHealth', // Use AssetHealth to get 250 batch size
-  skip?: boolean,
-) {
+export function useAssetsHealthData({
+  assetKeys,
+  thread = 'AssetHealth', // Use AssetHealth to get 250 batch size
+  blockTrace = true,
+  skip = false,
+}: {
+  assetKeys: AssetKeyInput[];
+  thread?: LiveDataThreadID;
+  blockTrace?: boolean;
+  skip?: boolean;
+}) {
   const keys = memoizedAssetKeys(featureEnabled(FeatureFlag.flagUseNewObserveUIs) ? assetKeys : []);
   const result = AssetHealthData.useLiveData(keys, thread, skip);
   useBlockTraceUntilTrue(
     'useAssetsHealthData',
-    skip || !!(Object.keys(result.liveDataByNode).length === assetKeys.length),
+    skip || !blockTrace || !!(Object.keys(result.liveDataByNode).length === assetKeys.length),
   );
   return result;
 }

@@ -22,9 +22,9 @@ export const SelectionHealthDataContext = React.createContext<{
     selection: string;
     setHealthData?: (data: SelectionHealthData) => void;
     setFilterData?: (data: SelectionFilterData) => void;
-  }) => void;
+  }) => () => void;
 }>({
-  watchSelection: () => {},
+  watchSelection: () => () => {},
 });
 
 export const SelectionHealthDataProvider = ({children}: {children: React.ReactNode}) => {
@@ -32,7 +32,8 @@ export const SelectionHealthDataProvider = ({children}: {children: React.ReactNo
 
   /**
    * Whenever new listeners are added to a registry, we need to force a re-render of the SelectionHealthDataObserver
-   * to ensure that it fetches health data or calculates filter data depending on the listeners.
+   * so that it picks up the listeners from the registry and uses that information to determine whether
+   * to fetch health data or calculate filter data.
    * We do this instead of using state to avoid needing to manage references and create new objects.
    */
   const [, forceRerender] = useReducer((s: number) => s + 1, 0);
@@ -58,8 +59,12 @@ export const SelectionHealthDataProvider = ({children}: {children: React.ReactNo
         registries[selection] = new SelectionRegistry();
       }
       const registry = registries[selection]!;
-      registry.watchSelection(setHealthData, setFilterData);
+      const unwatch = registry.watchSelection(setHealthData, setFilterData);
       forceRerender();
+      return () => {
+        unwatch();
+        forceRerender();
+      };
     },
     [registries],
   );
@@ -71,6 +76,8 @@ export const SelectionHealthDataProvider = ({children}: {children: React.ReactNo
           key={selection}
           selection={selection}
           registry={registries[selection]!}
+          filterListeners={registries[selection]!.getFilterListeners()}
+          healthListeners={registries[selection]!.getHealthListeners()}
         />
       ))}
       {children}
@@ -79,10 +86,17 @@ export const SelectionHealthDataProvider = ({children}: {children: React.ReactNo
 };
 
 const SelectionHealthDataObserver = React.memo(
-  ({selection, registry}: {selection: string; registry: SelectionRegistry}) => {
-    const filterListeners = registry.getFilterListeners();
-    const healthListeners = registry.getHealthListeners();
-
+  ({
+    selection,
+    registry,
+    filterListeners,
+    healthListeners,
+  }: {
+    selection: string;
+    registry: SelectionRegistry;
+    filterListeners: Set<(data: SelectionFilterData) => void>;
+    healthListeners: Set<(data: SelectionHealthData) => void>;
+  }) => {
     const skipFilters = !filterListeners.size && !healthListeners.size;
     const skipHealth = !healthListeners.size;
 
@@ -96,11 +110,11 @@ const SelectionHealthDataObserver = React.memo(
       skip: skipFilters,
     });
 
-    const {liveDataByNode} = useAssetsHealthData(
-      useMemo(() => filtered.map((asset) => asset.key), [filtered]),
-      getSelectionThreadId(selection),
-      skipHealth,
-    );
+    const {liveDataByNode} = useAssetsHealthData({
+      assetKeys: useMemo(() => filtered.map((asset) => asset.key), [filtered]),
+      thread: getSelectionThreadId(selection),
+      skip: skipHealth,
+    });
 
     const isLoading = loading || filtered.length !== Object.keys(liveDataByNode).length;
 
@@ -205,9 +219,21 @@ export class SelectionRegistry {
   }
 
   public watchSelection(
-    setHealthData?: (data: SelectionHealthData) => void,
-    setFilterData?: (data: SelectionFilterData) => void,
+    _setHealthData?: (data: SelectionHealthData) => void,
+    _setFilterData?: (data: SelectionFilterData) => void,
   ) {
+    // Wrap the callbacks to make unique references in case callers are doing
+    // weird shit like using the same callbacks multiple times.
+    const setHealthData = _setHealthData
+      ? (data: SelectionHealthData) => {
+          _setHealthData?.(data);
+        }
+      : undefined;
+    const setFilterData = _setFilterData
+      ? (data: SelectionFilterData) => {
+          _setFilterData?.(data);
+        }
+      : undefined;
     if (setFilterData) {
       this.filterListeners.add(setFilterData);
     }
@@ -219,6 +245,15 @@ export class SelectionRegistry {
     } else {
       this.queue.push({setHealthData, setFilterData});
     }
+
+    return () => {
+      if (setFilterData) {
+        this.filterListeners.delete(setFilterData);
+      }
+      if (setHealthData) {
+        this.healthListeners.delete(setHealthData);
+      }
+    };
   }
 
   public getFilterListeners() {
