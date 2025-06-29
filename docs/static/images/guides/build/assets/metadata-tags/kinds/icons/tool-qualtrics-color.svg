@@ -1,0 +1,17 @@
+<svg version="1.2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1555 841" width="1555" height="841">
+	<title>qualtrics-xm-long-svg</title>
+	<defs>
+		<linearGradient id="g1" x1="206.4" y1="7" x2="1475.2" y2="925.6" gradientUnits="userSpaceOnUse">
+			<stop offset="0" stop-color="#21dbaa"/>
+			<stop offset=".4" stop-color="#00b4ef"/>
+			<stop offset=".4" stop-color="#01a7ec"/>
+			<stop offset=".6" stop-color="#0487e4"/>
+			<stop offset=".7" stop-color="#0768dd"/>
+			<stop offset="1" stop-color="#5f1ae5"/>
+		</linearGradient>
+	</defs>
+	<style>
+		.s0 { fill: url(#g1) } 
+	</style>
+	<path id="Layer" fill-rule="evenodd" class="s0" d="m1554 0.3v840.5h-178.3v-573.1h-2.2q-2 12.3-4.2 24.6-2.3 12.2-4.9 24.4-2.6 12.2-5.5 24.4-3 12.1-6.2 24.1-11.9 43.3-25.8 89.8l-125.7 385.5h-163.3l-124.7-385.5-13-43.8-11.8-42.1q-5.4-22.2-11.4-48.2-6-26.1-12.6-62.6h-2.3v582.5h-317.6l-178.3-293.8-172.2 293.8h-193.8l268.5-444-244.7-396.2h210.4l150.1 252.2 141.8-252.2h414l187.1 617.9h2.2l174.5-617.9zm-857.4 754.1v-720.4l-219.1 363.9z"/>
+</svg>
