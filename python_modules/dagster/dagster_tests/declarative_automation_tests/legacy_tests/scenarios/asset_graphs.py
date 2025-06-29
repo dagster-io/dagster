@@ -1,17 +1,14 @@
-from dagster import (
-    BackfillPolicy,
-    DimensionPartitionMapping,
-    IdentityPartitionMapping,
-    MultiPartitionMapping,
-    StaticPartitionMapping,
-    TimeWindowPartitionMapping,
-)
+from dagster import BackfillPolicy, TimeWindowPartitionMapping
 from dagster._core.definitions.partitions.definition.multi import MultiPartitionsDefinition
 from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
 from dagster._core.definitions.partitions.definition.time_window_subclasses import (
     DailyPartitionsDefinition,
     HourlyPartitionsDefinition,
 )
+from dagster._core.definitions.partitions.mapping.identity import IdentityPartitionMapping
+from dagster._core.definitions.partitions.mapping.multi.base import DimensionPartitionMapping
+from dagster._core.definitions.partitions.mapping.multi.multi_to_multi import MultiPartitionMapping
+from dagster._core.definitions.partitions.mapping.static import StaticPartitionMapping
 
 from dagster_tests.declarative_automation_tests.scenario_utils.base_scenario import asset_def
 

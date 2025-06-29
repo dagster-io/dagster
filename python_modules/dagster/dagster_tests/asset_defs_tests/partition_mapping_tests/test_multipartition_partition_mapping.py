@@ -2,13 +2,9 @@ from datetime import datetime, timedelta
 
 import pytest
 from dagster import (
-    AllPartitionMapping,
     AssetExecutionContext,
     AssetKey,
     DagsterInstance,
-    IdentityPartitionMapping,
-    SpecificPartitionsPartitionMapping,
-    StaticPartitionMapping,
     TimeWindowPartitionMapping,
     asset,
     materialize,
@@ -24,11 +20,17 @@ from dagster._core.definitions.partitions.definition.time_window_subclasses impo
     DailyPartitionsDefinition,
     WeeklyPartitionsDefinition,
 )
-from dagster._core.definitions.partitions.mapping.partition_mapping import (
-    DimensionPartitionMapping,
-    MultiPartitionMapping,
+from dagster._core.definitions.partitions.mapping.all import AllPartitionMapping
+from dagster._core.definitions.partitions.mapping.identity import IdentityPartitionMapping
+from dagster._core.definitions.partitions.mapping.multi.base import DimensionPartitionMapping
+from dagster._core.definitions.partitions.mapping.multi.multi_to_multi import MultiPartitionMapping
+from dagster._core.definitions.partitions.mapping.multi.multi_to_single import (
     MultiToSingleDimensionPartitionMapping,
 )
+from dagster._core.definitions.partitions.mapping.specific_partitions import (
+    SpecificPartitionsPartitionMapping,
+)
+from dagster._core.definitions.partitions.mapping.static import StaticPartitionMapping
 from dagster._core.definitions.partitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.partitions.subset.default import DefaultPartitionsSubset
 from dagster._core.definitions.partitions.utils.multi import MultiPartitionKey

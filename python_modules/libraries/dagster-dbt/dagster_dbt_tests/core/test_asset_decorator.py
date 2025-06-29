@@ -14,17 +14,13 @@ from dagster import (
     DagsterInvalidDefinitionError,
     Definitions,
     DependencyDefinition,
-    DimensionPartitionMapping,
     Jitter,
-    LastPartitionMapping,
     LegacyFreshnessPolicy,
-    MultiPartitionMapping,
     NodeInvocation,
     OpDefinition,
     PartitionMapping,
     PartitionsDefinition,
     RetryPolicy,
-    StaticPartitionMapping,
     TimeWindowPartitionMapping,
     asset,
     materialize,
@@ -34,6 +30,10 @@ from dagster._core.definitions.partitions.definition.static import StaticPartiti
 from dagster._core.definitions.partitions.definition.time_window_subclasses import (
     DailyPartitionsDefinition,
 )
+from dagster._core.definitions.partitions.mapping.last import LastPartitionMapping
+from dagster._core.definitions.partitions.mapping.multi.base import DimensionPartitionMapping
+from dagster._core.definitions.partitions.mapping.multi.multi_to_multi import MultiPartitionMapping
+from dagster._core.definitions.partitions.mapping.static import StaticPartitionMapping
 from dagster._core.definitions.tags import build_kind_tag, has_kind
 from dagster._core.definitions.utils import DEFAULT_IO_MANAGER_KEY
 from dagster._core.execution.context.compute import AssetExecutionContext

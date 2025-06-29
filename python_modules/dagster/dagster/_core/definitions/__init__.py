@@ -100,6 +100,24 @@ from dagster._core.definitions.partitions.definition.time_window_subclasses impo
     MonthlyPartitionsDefinition as MonthlyPartitionsDefinition,
     WeeklyPartitionsDefinition as WeeklyPartitionsDefinition,
 )
+from dagster._core.definitions.partitions.mapping.all import (
+    AllPartitionMapping as AllPartitionMapping,
+)
+from dagster._core.definitions.partitions.mapping.identity import (
+    IdentityPartitionMapping as IdentityPartitionMapping,
+)
+from dagster._core.definitions.partitions.mapping.last import (
+    LastPartitionMapping as LastPartitionMapping,
+)
+from dagster._core.definitions.partitions.mapping.multi.base import (
+    DimensionPartitionMapping as DimensionPartitionMapping,
+)
+from dagster._core.definitions.partitions.mapping.multi.multi_to_multi import (
+    MultiPartitionMapping as MultiPartitionMapping,
+)
+from dagster._core.definitions.partitions.mapping.multi.multi_to_single import (
+    MultiToSingleDimensionPartitionMapping as MultiToSingleDimensionPartitionMapping,
+)
 from dagster._core.definitions.partitions.partition import Partition as Partition
 from dagster._core.definitions.partitions.partitioned_config import (
     PartitionedConfig as PartitionedConfig,
@@ -188,15 +206,7 @@ from dagster._core.definitions.partitions.definition.base import (
 from dagster._core.definitions.partitions.definition.time_window import (
     TimeWindowPartitionsDefinition as TimeWindowPartitionsDefinition,
 )
-from dagster._core.definitions.partitions.mapping.partition_mapping import (
-    AllPartitionMapping as AllPartitionMapping,
-    DimensionPartitionMapping as DimensionPartitionMapping,
-    IdentityPartitionMapping as IdentityPartitionMapping,
-    LastPartitionMapping as LastPartitionMapping,
-    MultiPartitionMapping as MultiPartitionMapping,
-    MultiToSingleDimensionPartitionMapping as MultiToSingleDimensionPartitionMapping,
-    PartitionMapping as PartitionMapping,
-)
+from dagster._core.definitions.partitions.mapping.base import PartitionMapping as PartitionMapping
 from dagster._core.definitions.partitions.mapping.time_window_partition_mapping import (
     TimeWindowPartitionMapping as TimeWindowPartitionMapping,
 )

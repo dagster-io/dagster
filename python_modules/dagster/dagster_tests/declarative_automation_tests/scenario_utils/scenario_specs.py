@@ -13,7 +13,7 @@ from dagster._core.definitions.partitions.definition.time_window_subclasses impo
     DailyPartitionsDefinition,
     HourlyPartitionsDefinition,
 )
-from dagster._core.definitions.partitions.mapping.partition_mapping import StaticPartitionMapping
+from dagster._core.definitions.partitions.mapping.static import StaticPartitionMapping
 from dagster._core.definitions.partitions.mapping.time_window_partition_mapping import (
     TimeWindowPartitionMapping,
 )

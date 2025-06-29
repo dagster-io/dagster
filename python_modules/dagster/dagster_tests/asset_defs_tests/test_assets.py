@@ -15,11 +15,9 @@ from dagster import (
     Definitions,
     GraphOut,
     HookContext,
-    IdentityPartitionMapping,
     In,
     IOManager,
     IOManagerDefinition,
-    LastPartitionMapping,
     LegacyFreshnessPolicy,
     Out,
     Output,
@@ -58,6 +56,8 @@ from dagster._core.definitions.metadata.metadata_value import TextMetadataValue
 from dagster._core.definitions.partitions.definition.time_window_subclasses import (
     DailyPartitionsDefinition,
 )
+from dagster._core.definitions.partitions.mapping.identity import IdentityPartitionMapping
+from dagster._core.definitions.partitions.mapping.last import LastPartitionMapping
 from dagster._core.definitions.result import MaterializeResult
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,

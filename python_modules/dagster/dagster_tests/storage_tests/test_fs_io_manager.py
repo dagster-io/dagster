@@ -33,7 +33,7 @@ from dagster._core.definitions.partitions.definition.static import StaticPartiti
 from dagster._core.definitions.partitions.definition.time_window_subclasses import (
     DailyPartitionsDefinition,
 )
-from dagster._core.definitions.partitions.mapping.partition_mapping import UpstreamPartitionsResult
+from dagster._core.definitions.partitions.mapping.base import UpstreamPartitionsResult
 from dagster._core.definitions.partitions.subset.base import PartitionsSubset
 from dagster._core.definitions.partitions.utils.multi import MultiPartitionKey
 from dagster._core.errors import DagsterInvariantViolationError

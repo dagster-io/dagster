@@ -12,7 +12,7 @@ from dagster._core.errors import DagsterInvariantViolationError
 if TYPE_CHECKING:
     from dagster._core.definitions.asset_graph import AssetGraph, AssetNode
     from dagster._core.definitions.assets import AssetsDefinition
-    from dagster._core.definitions.partitions.mapping.partition_mapping import PartitionMapping
+    from dagster._core.definitions.partitions.mapping.base import PartitionMapping
 
 
 class AssetLayer(NamedTuple):

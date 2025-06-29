@@ -6,8 +6,6 @@ import pytest
 from dagster import (
     AssetExecutionContext,
     AssetIn,
-    DimensionPartitionMapping,
-    IdentityPartitionMapping,
     IOManager,
     asset,
     define_asset_job,
@@ -23,6 +21,9 @@ from dagster._core.definitions.partitions.definition.static import StaticPartiti
 from dagster._core.definitions.partitions.definition.time_window_subclasses import (
     DailyPartitionsDefinition,
 )
+from dagster._core.definitions.partitions.mapping.identity import IdentityPartitionMapping
+from dagster._core.definitions.partitions.mapping.multi.base import DimensionPartitionMapping
+from dagster._core.definitions.partitions.mapping.multi.multi_to_multi import MultiPartitionMapping
 from dagster._core.definitions.partitions.utils.multi import (
     MultiPartitionKey,
     get_time_partitions_def,
@@ -531,7 +532,7 @@ def test_context_invalid_partition_time_window():
 
 
 def test_multipartitions_self_dependency():
-    from dagster import MultiPartitionMapping, PartitionKeyRange, TimeWindowPartitionMapping
+    from dagster import PartitionKeyRange, TimeWindowPartitionMapping
 
     @asset(
         partitions_def=MultiPartitionsDefinition(

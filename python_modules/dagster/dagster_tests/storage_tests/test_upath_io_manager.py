@@ -8,7 +8,6 @@ from typing import Any, Optional, cast
 import fsspec
 import pytest
 from dagster import (
-    AllPartitionMapping,
     AssetExecutionContext,
     AssetIn,
     ConfigurableIOManager,
@@ -34,6 +33,7 @@ from dagster._core.definitions.partitions.definition.time_window_subclasses impo
     DailyPartitionsDefinition,
     HourlyPartitionsDefinition,
 )
+from dagster._core.definitions.partitions.mapping.all import AllPartitionMapping
 from dagster._core.definitions.partitions.utils.multi import MultiPartitionKey
 from dagster._core.events import HandledOutputData
 from dagster._core.storage.io_manager import IOManagerDefinition

@@ -22,7 +22,7 @@ from dagster._core.definitions.partitions.definition.time_window_subclasses impo
     DailyPartitionsDefinition,
     HourlyPartitionsDefinition,
 )
-from dagster._core.definitions.partitions.mapping.partition_mapping import IdentityPartitionMapping
+from dagster._core.definitions.partitions.mapping.identity import IdentityPartitionMapping
 from dagster._core.definitions.partitions.utils.time_window import TimeWindow
 from dagster._time import create_datetime
 

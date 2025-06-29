@@ -77,11 +77,9 @@ from dagster._core.definitions.partitions.definition.static import StaticPartiti
 from dagster._core.definitions.partitions.definition.time_window import (
     TimeWindowPartitionsDefinition,
 )
-from dagster._core.definitions.partitions.mapping.partition_mapping import (
-    PartitionMapping,
-    get_builtin_partition_mapping_types,
-)
+from dagster._core.definitions.partitions.mapping.base import PartitionMapping
 from dagster._core.definitions.partitions.schedule_type import ScheduleType
+from dagster._core.definitions.partitions.utils.mapping import get_builtin_partition_mapping_types
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.resource_requirement import ResourceKeyRequirement
 from dagster._core.definitions.schedule_definition import DefaultScheduleStatus

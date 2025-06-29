@@ -13,7 +13,6 @@ from dagster import (
     AutomationCondition,
     Definitions,
     GraphOut,
-    LastPartitionMapping,
     Out,
     PartitionMapping,
     TimeWindowPartitionMapping,
@@ -36,7 +35,8 @@ from dagster._core.definitions.partitions.definition.time_window_subclasses impo
     DailyPartitionsDefinition,
     HourlyPartitionsDefinition,
 )
-from dagster._core.definitions.partitions.mapping.partition_mapping import UpstreamPartitionsResult
+from dagster._core.definitions.partitions.mapping.base import UpstreamPartitionsResult
+from dagster._core.definitions.partitions.mapping.last import LastPartitionMapping
 from dagster._core.definitions.partitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.partitions.subset.base import PartitionsSubset
 from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph

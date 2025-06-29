@@ -48,14 +48,14 @@ from dagster._core.definitions.partitions.definition.multi import MultiPartition
 from dagster._core.definitions.partitions.definition.time_window import (
     TimeWindowPartitionsDefinition,
 )
-from dagster._core.definitions.partitions.mapping.partition_mapping import (
-    MultiPartitionMapping,
-    PartitionMapping,
-    infer_partition_mapping,
-    warn_if_partition_mapping_not_builtin,
-)
+from dagster._core.definitions.partitions.mapping.base import PartitionMapping
+from dagster._core.definitions.partitions.mapping.multi.multi_to_multi import MultiPartitionMapping
 from dagster._core.definitions.partitions.mapping.time_window_partition_mapping import (
     TimeWindowPartitionMapping,
+)
+from dagster._core.definitions.partitions.utils.mapping import (
+    infer_partition_mapping,
+    warn_if_partition_mapping_not_builtin,
 )
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.resource_requirement import (

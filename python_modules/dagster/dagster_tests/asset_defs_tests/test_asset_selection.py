@@ -10,9 +10,6 @@ from dagster import (
     AssetOut,
     AssetSpec,
     Definitions,
-    DimensionPartitionMapping,
-    IdentityPartitionMapping,
-    MultiPartitionMapping,
     SourceAsset,
     TimeWindowPartitionMapping,
     asset,
@@ -56,6 +53,9 @@ from dagster._core.definitions.partitions.definition.static import StaticPartiti
 from dagster._core.definitions.partitions.definition.time_window_subclasses import (
     DailyPartitionsDefinition,
 )
+from dagster._core.definitions.partitions.mapping.identity import IdentityPartitionMapping
+from dagster._core.definitions.partitions.mapping.multi.base import DimensionPartitionMapping
+from dagster._core.definitions.partitions.mapping.multi.multi_to_multi import MultiPartitionMapping
 from dagster._core.remote_representation.external import RemoteRepository
 from dagster._core.remote_representation.external_data import RepositorySnap
 from dagster._core.remote_representation.handle import RepositoryHandle
