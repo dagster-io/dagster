@@ -36,7 +36,7 @@ from pydantic import UUID4
 
 def event_log(
     error_info: Optional[SerializableErrorInfo] = None,  # No error info by default
-    level: Union[str, int] = 1,  # Default to level `1`
+    level: Union[str, int] = "INFO",  # Default to level `INFO`
     user_message: str = "test rate limit",  # A default user message
     run_id: str = "missing",  # Default to `missing` if no run ID is provided
     timestamp: float = datetime.now().timestamp(),  # Default to the current timestamp
