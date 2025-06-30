@@ -15,6 +15,7 @@ import {
   Tooltip,
 } from '@dagster-io/ui-components';
 import {useCallback, useState} from 'react';
+import {useLocation} from 'react-router-dom';
 
 import {ShortcutHandler} from './ShortcutHandler';
 import {TooltipShortcutInfo, TopNavButton} from './TopNavButton';
@@ -22,7 +23,6 @@ import DagsterUniversityImage from './dagster_university.svg';
 import {useStateWithStorage} from '../hooks/useStateWithStorage';
 import {useVersionNumber} from '../nav/VersionNumber';
 import {CopyIconButton} from '../ui/CopyButton';
-import {useRouteMatch} from 'react-router-dom';
 
 interface Props {
   showContactSales?: boolean;
@@ -34,7 +34,10 @@ const TOUR_BLOCKED_ROUTES = ['/getting-started'];
 export const HelpMenu = ({showContactSales = true, onShareFeedback}: Props) => {
   const [isOpen, setIsOpen] = useState(false);
 
-  const isTourBlocked = useRouteMatch(TOUR_BLOCKED_ROUTES);
+  const location = useLocation();
+  const isTourBlocked = TOUR_BLOCKED_ROUTES.some(
+    (route) => location.pathname === route || location.pathname.startsWith(route),
+  );
 
   const onInteraction = useCallback((open: boolean) => setIsOpen(open), []);
 
