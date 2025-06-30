@@ -125,11 +125,18 @@ class EvalContext(NamedTuple):
                     globalns=self.get_merged_ns(),
                     localns={},
                 )
-            else:
+            elif sys.version_info <= (3, 12):
                 return ref._evaluate(  # noqa
                     globalns=self.get_merged_ns(),
                     localns={},
                     recursive_guard=frozenset(),
+                )
+            else:  # Python 3.13+
+                return ref._evaluate(  # noqa
+                    globalns=self.get_merged_ns(),
+                    localns={},
+                    recursive_guard=frozenset(),
+                    type_params=(),
                 )
         except NameError as e:
             raise CheckError(

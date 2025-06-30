@@ -67,29 +67,41 @@ class NodeSelector(RootModel[dict[str, str]]):
 
 class Affinity(RootModel[dict[str, Any]]):
     model_config = {
-        "json_schema_extra": {"$ref": create_definition_ref("io.k8s.api.core.v1.Affinity")}
+        "json_schema_extra": {
+            "$ref": create_definition_ref("io.k8s.api.core.v1.Affinity"),
+            "additionalProperties": True,
+        }
     }
+
+
+def _tolerations_schema_extra(schema: dict[str, Any], _model: type["Tolerations"]) -> None:
+    schema.setdefault(
+        "$ref",
+        create_definition_ref("io.k8s.api.core.v1.PodSpec/properties/tolerations"),
+    )
+    if "items" in schema:
+        schema["items"]["additionalProperties"] = True
 
 
 class Tolerations(RootModel[list[dict[str, Any]]]):
-    model_config = {
-        "json_schema_extra": {
-            "$ref": create_definition_ref("io.k8s.api.core.v1.PodSpec/properties/tolerations")
-        }
-    }
+    model_config = {"json_schema_extra": _tolerations_schema_extra}
 
 
 class PodSecurityContext(RootModel[dict[str, Any]]):
     model_config = {
         "json_schema_extra": {
-            "$ref": create_definition_ref("io.k8s.api.core.v1.PodSecurityContext")
+            "$ref": create_definition_ref("io.k8s.api.core.v1.PodSecurityContext"),
+            "additionalProperties": True,
         }
     }
 
 
 class SecurityContext(
     RootModel[dict[str, Any]],
-    json_schema_extra={"$ref": create_definition_ref("io.k8s.api.core.v1.SecurityContext")},
+    json_schema_extra={
+        "$ref": create_definition_ref("io.k8s.api.core.v1.SecurityContext"),
+        "additionalProperties": True,
+    },
 ):
     pass
 
@@ -104,7 +116,8 @@ class InitContainer(BaseModel):
 class Resources(RootModel[dict[str, Any]]):
     model_config = {
         "json_schema_extra": {
-            "$ref": create_definition_ref("io.k8s.api.core.v1.ResourceRequirements")
+            "$ref": create_definition_ref("io.k8s.api.core.v1.ResourceRequirements"),
+            "additionalProperties": True,
         }
     }
 
