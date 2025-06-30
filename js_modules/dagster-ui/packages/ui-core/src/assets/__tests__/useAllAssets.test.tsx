@@ -129,7 +129,7 @@ describe('useAllAssets', () => {
     });
   });
 
-  it('grabs assets from WorkspaceContext and dedupes SDAs that are defined in multiple locations', async () => {
+  it('dedupes SDAs that are defined in multiple locations and combines their definitions', async () => {
     const assetNode1 = buildAssetNode({
       assetKey: buildAssetKey({path: ['asset_key']}),
       kinds: ['dbt'],
