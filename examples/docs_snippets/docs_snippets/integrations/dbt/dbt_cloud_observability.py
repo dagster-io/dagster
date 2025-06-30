@@ -9,18 +9,18 @@ from dagster_dbt.cloud_v2.resources import (
 )
 from dagster_dbt.cloud_v2.sensor_builder import build_dbt_cloud_polling_sensor
 
-# Store credentials
+# Define credentials
 creds = DbtCloudCredentials(
-    account_id=os.getenv("KS_DBT_CLOUD_ACCOUNT_ID"),
-    access_url=os.getenv("KS_DBT_CLOUD_ACCESS_URL"),
-    token=os.getenv("KS_DBT_CLOUD_TOKEN"),
+    account_id=os.getenv("DBT_CLOUD_ACCOUNT_ID"),
+    access_url=os.getenv("DBT_CLOUD_ACCESS_URL"),
+    token=os.getenv("DBT_CLOUD_TOKEN"),
 )
 
 # Define the worskpace
 workspace = DbtCloudWorkspace(
     credentials=creds,
-    project_id=os.getenv("KS_DBT_CLOUD_PROJECT_ID"),
-    environment_id=os.getenv("KS_DBT_CLOUD_ENVIRONMENT_ID"),
+    project_id=os.getenv("DBT_CLOUD_PROJECT_ID"),
+    environment_id=os.getenv("DBT_CLOUD_ENVIRONMENT_ID"),
 )
 
 # Use the integration to create asset specs for models in the workspace
