@@ -15,7 +15,7 @@ Each asset check should test only a single asset property to keep tests uncompli
 
 :::note
 
-This article assumes familiarity with [assets](/guides/build/assets/).
+This article assumes familiarity with [assets](/guides/build/assets).
 
 :::
 
@@ -98,5 +98,5 @@ In the example below, two jobs are defined: one for the asset and another for th
 
 ## Next steps
 
-- Learn more about [assets](/guides/build/assets/)
+- Learn more about [assets](/guides/build/assets)
 - Learn how to use [Great Expectations with Dagster](https://dagster.io/blog/ensuring-data-quality-with-dagster-and-great-expectations)

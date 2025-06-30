@@ -10,7 +10,7 @@ This guide demonstrates how to standardize database connections and customize th
 
 :::note
 
-This guide assumes familiarity with [assets](/guides/build/assets/).
+This guide assumes familiarity with [assets](/guides/build/assets).
 
 :::
 
@@ -72,4 +72,4 @@ You can also fetch environment variables using the `os` library. Dagster treats 
 ## Next steps
 
 - Explore how to use resources for [connecting to APIs](/guides/build/external-resources/connecting-to-apis)
-- Go deeper into understanding [resources](/guides/build/external-resources/)
+- Go deeper into understanding [resources](/guides/build/external-resources)

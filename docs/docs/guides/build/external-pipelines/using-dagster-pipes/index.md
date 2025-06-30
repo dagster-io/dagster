@@ -4,7 +4,7 @@ description: "Learn how to use the built-in subprocess implementation of Dagster
 sidebar_position: 10
 ---
 
-In this guide, we’ll show you how to use [Dagster Pipes](/guides/build/external-pipelines/) with Dagster’s built-in subprocess <PyObject section="pipes" module="dagster" object="PipesSubprocessClient" /> to run a local subprocess with a given command and environment. You can then send information such as structured metadata and logging back to Dagster from the subprocess, where it will be visible in the Dagster UI.
+In this guide, we’ll show you how to use [Dagster Pipes](/guides/build/external-pipelines) with Dagster’s built-in subprocess <PyObject section="pipes" module="dagster" object="PipesSubprocessClient" /> to run a local subprocess with a given command and environment. You can then send information such as structured metadata and logging back to Dagster from the subprocess, where it will be visible in the Dagster UI.
 
 To get there, you'll:
 

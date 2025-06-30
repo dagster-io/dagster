@@ -16,7 +16,7 @@ The Modal application is ready, so we can return to Dagster and define the upstr
   title="src/project_dagster_modal_pipes/defs/pipeline_factory.py"
 />
 
-Now that the data is in R2, as Modal expects, we can invoke the Modal application via Dagster. We will do this using [Dagster Pipes](/guides/build/external-pipelines/). Pipes provide a wrapper around a subprocess. This is ideal for executing code in other environments, and also allows us to pass Dagster any necessary context or environment variables to Modal. This is particularly helpful for things like the access keys for the R2 Bucket. Using the Dagster `ModalClient` from the [`dagster-modal`](/integrations/libraries/modal) integration, we can invoke the Modal application:
+Now that the data is in R2, as Modal expects, we can invoke the Modal application via Dagster. We will do this using [Dagster Pipes](/guides/build/external-pipelines). Pipes provide a wrapper around a subprocess. This is ideal for executing code in other environments, and also allows us to pass Dagster any necessary context or environment variables to Modal. This is particularly helpful for things like the access keys for the R2 Bucket. Using the Dagster `ModalClient` from the [`dagster-modal`](/integrations/libraries/modal) integration, we can invoke the Modal application:
 
 <CodeExample
   path="docs_projects/project_dagster_modal_pipes/src/project_dagster_modal_pipes/defs/pipeline_factory.py"
@@ -42,7 +42,7 @@ The final step in our DAG pipeline emails the summary to the user with [yagmail]
 
 ## Sensor
 
-We have defined all the assets needed to transcribe and summarize a podcast. Now we want to make sure we are notified of new podcasts as soon as they are available. We can define a [sensor ](/guides/automate/sensors/) in Dagster to check the podcast URL and determine if any new podcasts have been uploaded. To do this, we want to check the `etag` of the RSS feed. The sensor will be responsible for maintaining a cursor of tags and determining if there have been any podcasts not yet processed. This way, the first time we start our Dagster sensor, it will execute a run for each podcast, but after that initial execution, the sensor will only look for new podcasts that are uploaded:
+We have defined all the assets needed to transcribe and summarize a podcast. Now we want to make sure we are notified of new podcasts as soon as they are available. We can define a [sensor ](/guides/automate/sensors) in Dagster to check the podcast URL and determine if any new podcasts have been uploaded. To do this, we want to check the `etag` of the RSS feed. The sensor will be responsible for maintaining a cursor of tags and determining if there have been any podcasts not yet processed. This way, the first time we start our Dagster sensor, it will execute a run for each podcast, but after that initial execution, the sensor will only look for new podcasts that are uploaded:
 
 <CodeExample
   path="docs_projects/project_dagster_modal_pipes/src/project_dagster_modal_pipes/defs/pipeline_factory.py"

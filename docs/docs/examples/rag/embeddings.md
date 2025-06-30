@@ -40,7 +40,7 @@ This process will be very similar for the GitHub discussions content.
 
 ## Custom IO Manager
 
-Looking at the code, you may have noticed the `document_io_manager`. Because LangChain `Documents` are a special object type, we need to do some work to serialize and deserialize the data. [I/O Managers](/guides/build/io-managers/) are responsible for handling the inputs and outputs of assets and how the data is persisted. This I/O manager will use the local file system to save the output of assets returning `Documents` as JSON files. It will then read those JSON files back into `Documents` in assets that take in those inputs:
+Looking at the code, you may have noticed the `document_io_manager`. Because LangChain `Documents` are a special object type, we need to do some work to serialize and deserialize the data. [I/O Managers](/guides/build/io-managers) are responsible for handling the inputs and outputs of assets and how the data is persisted. This I/O manager will use the local file system to save the output of assets returning `Documents` as JSON files. It will then read those JSON files back into `Documents` in assets that take in those inputs:
 
 <CodeExample
   path="docs_projects/project_ask_ai_dagster/src/project_ask_ai_dagster/defs/io_managers.py"

@@ -37,7 +37,7 @@ A **Pipes session** is the time spanning:
 
 There are separate APIs for interacting with a Pipes session in the orchestration and external processes. The orchestration process API is defined in `dagster`. The external process API is defined by a Pipes integration library that is loaded by user code in the external process. This library knows how to interpret the bootstrap payload and spin up a context loader and message writer.
 
-At present the only official Dagster Pipes integration library is Python's [`dagster-pipes`](/api/libraries/dagster-pipes), available on [PyPI](https://pypi.org/project/dagster-pipes/). The library has no dependencies and fits in a [single file](https://github.com/dagster-io/dagster/blob/master/python_modules/dagster-pipes/dagster_pipes/\__init\_\_.py), so it may also be trivially vendored.
+At present the only official Dagster Pipes integration library is Python's [`dagster-pipes`](/api/libraries/dagster-pipes), available on [PyPI](https://pypi.org/project/dagster-pipes). The library has no dependencies and fits in a [single file](https://github.com/dagster-io/dagster/blob/master/python_modules/dagster-pipes/dagster_pipes/\__init\_\_.py), so it may also be trivially vendored.
 
 ### Session lifecycle (orchestration process)
 

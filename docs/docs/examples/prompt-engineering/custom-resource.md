@@ -6,7 +6,7 @@ last_update:
 sidebar_position: 40
 ---
 
-With an output in our desired schema, we can use the [NREL](https://www.nrel.gov/) API to lookup nearby alternative fuel stations. The NREL API is a standard REST API. In Dagster, we will create a resource with a single method to retrieve fuel stations. This method (`alt_fuel_stations`) will take in the three parameters from our prompt engineering asset (latitude, longitude, and fuel type).
+With an output in our desired schema, we can use the [NREL](https://www.nrel.gov) API to lookup nearby alternative fuel stations. The NREL API is a standard REST API. In Dagster, we will create a resource with a single method to retrieve fuel stations. This method (`alt_fuel_stations`) will take in the three parameters from our prompt engineering asset (latitude, longitude, and fuel type).
 
 <CodeExample
   path="docs_projects/project_prompt_eng/src/project_prompt_eng/defs/resources.py"

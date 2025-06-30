@@ -4,7 +4,7 @@ description: Visualize data with an Evidence dashboard
 sidebar_position: 80
 ---
 
-In this step, we will visualize some of the data we have been modeling in a dashboard using [Evidence](https://evidence.dev/) connected to our model assets.
+In this step, we will visualize some of the data we have been modeling in a dashboard using [Evidence](https://evidence.dev) connected to our model assets.
 
 ## 1. Add the Evidence project
 
@@ -26,7 +26,7 @@ There will now be a directory `dashboard` within the root of the project.
 └── uv.lock
 ```
 
-Change into that directory and install the necessary packages with [`npm`](https://www.npmjs.com/):
+Change into that directory and install the necessary packages with [`npm`](https://www.npmjs.com):
 
 ```bash
 cd dashboard && npm install
@@ -74,7 +74,7 @@ Execute the downstream `dashboard` asset which will build our Evidence dashboard
 cd dashboard/build && python -m http.server
 ```
 
-You should see a dashboard like the following at [http://localhost:8000/](http://localhost:8000/):
+You should see a dashboard like the following at [http://localhost:8000/](http://localhost:8000):
 
 ![2048 resolution](/images/tutorial/etl-tutorial/evidence-dashboard.png)
 
@@ -89,5 +89,5 @@ We have now built a fully functional, end-to-end data platform that handles ever
 ## Recommended next steps
 
 - Join our [Slack community](https://dagster.io/slack).
-- Continue learning with [Dagster University](https://courses.dagster.io/) courses.
+- Continue learning with [Dagster University](https://courses.dagster.io) courses.
 - Start a [free trial of Dagster+](https://dagster.cloud/signup) for your own project.

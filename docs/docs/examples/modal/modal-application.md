@@ -15,7 +15,7 @@ For this example, we will create multiple pipelines that do the following:
 
 Many of these steps can be done in Dagster, but the transcription step is better suited for a different environment.
 
-An advantage of Dagster is that you are not limited to only executing code with Dagster. In this case, we will use [Modal](https://modal.com/). Modal makes it easy to manage and scale the infrastructure needed to perform distributed computation while maintaining a Pythonic workflow. It works especially well with Dagster, since Dagster can help manage and orchestrate the various components in our pipeline, while Modal can be used to spin up auto-scaling infrastructure in a serverless way.
+An advantage of Dagster is that you are not limited to only executing code with Dagster. In this case, we will use [Modal](https://modal.com). Modal makes it easy to manage and scale the infrastructure needed to perform distributed computation while maintaining a Pythonic workflow. It works especially well with Dagster, since Dagster can help manage and orchestrate the various components in our pipeline, while Modal can be used to spin up auto-scaling infrastructure in a serverless way.
 
 We will start by explaining the Modal application of our pipeline and then show how we can use it within Dagster.
 
@@ -31,7 +31,7 @@ Within Modal, we need to define the image that will be used by the Modal infrast
   title="src/modal_project/transcribe.py"
 />
 
-Another benefit of Modal is that it allows us to mount a [Cloudflare R2 Bucket](https://developers.cloudflare.com/r2/buckets/) like a file system. R2 will serve as the staging ground between Dagster and Modal:
+Another benefit of Modal is that it allows us to mount a [Cloudflare R2 Bucket](https://developers.cloudflare.com/r2/buckets) like a file system. R2 will serve as the staging ground between Dagster and Modal:
 
 <CodeExample
   path="docs_projects/project_dagster_modal_pipes/src/modal_project/transcribe.py"

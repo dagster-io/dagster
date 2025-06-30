@@ -8,7 +8,7 @@ import OpsNote from '@site/docs/partials/\_OpsNote.md';
 
 <OpsNote />
 
-A graph is a set of interconnected [ops](/guides/build/ops/) or sub-graphs. While individual ops typically perform simple tasks, ops can be assembled into a graph to accomplish complex tasks.
+A graph is a set of interconnected [ops](/guides/build/ops) or sub-graphs. While individual ops typically perform simple tasks, ops can be assembled into a graph to accomplish complex tasks.
 
 Graphs can be used in three different ways:
 
@@ -125,11 +125,11 @@ In this example, `create_table_2` has an input of type `Nothing` meaning that it
 
 Note that in most cases, it is usually possible to pass some data dependency. In the example above, even though we probably don't want to pass the table data itself between the ops, we could pass table pointers. For example, `create_table_1` could return a `table_pointer` output of type `str` with a value of `table_1`, and this table name can be used in `create_table_2` to more accurately model the data dependency.
 
-Dagster also provides more advanced abstractions to handle dependencies and IO. If you find that you are finding it difficult to model data dependencies when using external storage, check out [IO managers](/guides/build/io-managers/).
+Dagster also provides more advanced abstractions to handle dependencies and IO. If you find that you are finding it difficult to model data dependencies when using external storage, check out [IO managers](/guides/build/io-managers).
 
 ### Loading an asset as an input
 
-You can supply an asset as an input to one of the ops in a graph. Dagster can then use the [I/O manager](/guides/build/io-managers/) on the asset to load the input value for the op.
+You can supply an asset as an input to one of the ops in a graph. Dagster can then use the [I/O manager](/guides/build/io-managers) on the asset to load the input value for the op.
 
 <CodeExample path="docs_snippets/docs_snippets/guides/dagster/assets_ops_graphs/op_graph_asset_input.py" title="src/<project_name>/defs/ops.py"/>
 
@@ -172,7 +172,7 @@ You can programmatically generate a GraphDefinition from this YAML:
 
 ### Inside assets
 
-Op graphs can be used to create [asset definitions](/guides/build/assets/). Graph-backed assets are useful if you have an existing op graph that produces and consumes assets.
+Op graphs can be used to create [asset definitions](/guides/build/assets). Graph-backed assets are useful if you have an existing op graph that produces and consumes assets.
 
 Wrapping your graph inside an asset definition gives you all the benefits of software-defined assets — like cross-job lineage — without requiring you to change the code inside your graph. Refer to the [graph-backed assets documentation](/guides/build/assets/defining-assets#graph-asset) for more info and examples.
 

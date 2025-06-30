@@ -396,7 +396,7 @@ The `azure_blob_to_teradata` method is used to load data from Azure Data Lake St
 
 To successfully transfer data from a Private Blob Storage Container to a Teradata instance, the following prerequisites are necessary.
 
-- An Azure account. You can start with a [free account](https://azure.microsoft.com/free/).
+- An Azure account. You can start with a [free account](https://azure.microsoft.com/free).
 - Create an [Azure storage account](https://docs.microsoft.com/en-us/azure/storage/common/storage-quickstart-create-account?tabs=azure-portal)
 - Create a [blob container](https://learn.microsoft.com/en-us/azure/storage/blobs/blob-containers-portal) under Azure storage account
 - [Upload](https://learn.microsoft.com/en-us/azure/storage/blobs/storage-quickstart-blobs-portal) CSV/JSON/Parquest format files to blob container
@@ -525,9 +525,9 @@ These operations are designed to be fully integrated into **`dagster-teradata`**
 
 ## Further reading
 
-- [dagster-teradata with Teradata Vantage](https://developers.teradata.com/quickstarts/manage-data/use-dagster-with-teradata-vantage/)
-- [Data Transfer from AWS S3 to Teradata Vantage Using dagster-teradata](https://developers.teradata.com/quickstarts/manage-data/dagster-teradata-s3-to-teradata-transfer/)
-- [Data Transfer from Azure Blob to Teradata Vantage Using dagster-teradata](https://developers.teradata.com/quickstarts/manage-data/dagster-teradata-azure-to-teradata-transfer/)
-- [Manage VantageCloud Lake Compute Clusters with dagster-teradata](https://developers.teradata.com/quickstarts/vantagecloud-lake/vantagecloud-lake-compute-cluster-dagster/)
+- [dagster-teradata with Teradata Vantage](https://developers.teradata.com/quickstarts/manage-data/use-dagster-with-teradata-vantage)
+- [Data Transfer from AWS S3 to Teradata Vantage Using dagster-teradata](https://developers.teradata.com/quickstarts/manage-data/dagster-teradata-s3-to-teradata-transfer)
+- [Data Transfer from Azure Blob to Teradata Vantage Using dagster-teradata](https://developers.teradata.com/quickstarts/manage-data/dagster-teradata-azure-to-teradata-transfer)
+- [Manage VantageCloud Lake Compute Clusters with dagster-teradata](https://developers.teradata.com/quickstarts/vantagecloud-lake/vantagecloud-lake-compute-cluster-dagster)
 - [Teradata Authorization](https://docs.teradata.com/r/Enterprise_IntelliFlex_VMware/SQL-Data-Definition-Language-Syntax-and-Examples/Authorization-Statements-for-External-Routines/CREATE-AUTHORIZATION-and-REPLACE-AUTHORIZATION)
 - [Teradata VantageCloud Lake Compute Clusters](https://docs.teradata.com/r/Teradata-VantageCloud-Lake/Managing-Compute-Resources/Compute-Clusters)
