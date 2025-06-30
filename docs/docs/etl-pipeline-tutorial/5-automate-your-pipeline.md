@@ -4,15 +4,15 @@ description: Set schedules and utilize asset based automation
 sidebar_position: 60
 ---
 
-There are several ways to automate assets [in Dagster](/guides/automate). In this step you will:
+There are several ways to automate assets [in Dagster](/guides/automate). Dagster supports both scheduled and event-driven pipelines. Here will add a schedule directly to one of our assets and make another of our assets reactive to any upstream changes. In this step you will:
 
-- Add automation to assets to run when upstream assets are materialized.
+- Add schedules and automation to assets.
 
 ## 1. Scheduled assets
 
-Cron-based schedules are common in data orchestration. For our pipeline, assume that updated CSVs are uploaded to a file location at a specific time every day by an external process.
+Cron-based schedules are common in data orchestration. They use time-based expressions to automatically trigger tasks at specified intervals, making them ideal for ETL pipelines that need to run consistently, such as hourly, daily, or monthly, to process and update data on a regular cadence. For our pipeline, assume that updated CSVs are uploaded at a specific time every day.
 
-With [declarative automation](/guides/automate/declarative-automation), we can include this schedule information within the `dg.asset` decorator. Now our assets will execute every day at midnight:
+You can define a [Schedule documentation](/guides/automate/schedules/) object in Dagster but we can also add a schedule directly to the asset with [declarative automation](/guides/automate/declarative-automation), we can include this schedule information within the <PyObject section="asset-checks" module="dagster" object="asset_check" decorator />. Now our assets will execute every day at midnight:
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/src/etl_tutorial/defs/assets.py"
@@ -36,9 +36,11 @@ We already set this in the `monthly_sales_performance` by setting the `automatio
   title="src/etl_tutorial/defs/assets.py"
 />
 
+This will trigger the asset automatically when its upstream dependencies have completed.
+
 # 3. Enabling automation
 
-With declarative automation set for our assets, we can now enable the automation condition:
+Run `dg dev` (if it is not already running) and go to the Dagster UI [127.0.0.1:3000](127.0.0.1:3000). We can now enable the automation condition:
 
 1. Reload your Definitions.
 2. Click on **Automation**.

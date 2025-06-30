@@ -1,0 +1,3 @@
+dg scaffold defs dagster_evidence.EvidenceProject dashboard
+
+Creating a component at <YOUR PATH>/etl-tutorial/src/etl_tutorial/defs/dashboard.

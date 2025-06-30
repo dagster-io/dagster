@@ -13,10 +13,11 @@ sidebar_position: 50
 
 In this step, you will create a time-based asset partitioned by month.
 
-
 ## 1. Create a time-based partitioned asset
 
-Dagster natively supports partitioning assets by datetime groups. We want to create an asset that calculates the monthly performance for each sales rep. To create the monthly partition copy the following code below the `missing_dimension_check` asset check in the `assets.py`.
+There are many ways to partition an asset. When an asset is partitioned, it is still represented as a single asset in the asset graph but is defined by the number of underlying partitions. We will create a new asset that calculates the monthly performance for each sales rep. But before we define the asset, we must define the partition definition.
+
+Dagster natively supports partitioning assets by datetime groups. To create the monthly partition copy the following code below the `missing_dimension_check` asset check in the `assets.py` file:
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/src/etl_tutorial/defs/assets.py"
@@ -26,8 +27,7 @@ Dagster natively supports partitioning assets by datetime groups. We want to cre
   title="src/etl_tutorial/defs/assets.py"
 />
 
-Partition data are accessed within an asset by context. We want to create an asset that does this calculation for a given month from the partition
-and deletes any previous value for that month. Copy the following asset under the `monthly_partition` we just created.
+This partition definition can now be used in an asset:
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/src/etl_tutorial/defs/assets.py"
@@ -36,6 +36,8 @@ and deletes any previous value for that month. Copy the following asset under th
   endBefore="end_monthly_sales_performance_asset"
   title="src/etl_tutorial/defs/assets.py"
 />
+
+Partitions are accessed through the `context` object, which is passed to each asset during execution and provides runtime information. When running an asset for a specific partition date, we can reference that value using `context.partition_key`. The rest of the asset implementation should resemble the other assets we've defined. In this case, we are creating a new table, `monthly_orders`, using data from the `stg_orders` dbt model. We first delete any existing data for the current partition, then insert new data for that partition. This ensures that our pipeline is idempotent, allowing us to re-execute the same partition without duplicating data.
 
 :::info
 Do not worry about the `automation_condition` in the `dg.asset` decorator for now. This is not necessary but will make more sense when we discuss automation later.

@@ -45,9 +45,7 @@ Sensors include the following elements:
 
 First we will use `dg` to create the sensor file:
 
-```bash
-dg scaffold defs dagster.sensor sensors.py
-```
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/commands/dg-scaffold-sensors.txt" />
 
 Now copy the following sensor code in the `sensors.py` file:
 

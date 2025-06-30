@@ -14,7 +14,7 @@ In this tutorial, you'll build a full ETL pipeline with Dagster that:
 - Transforms data into reports with [dbt](https://www.getdbt.com/)
 - Runs scheduled reports automatically
 - Generates one-time reports on demand
-- Visualizes the data with Evidence
+- Visualizes the data with [Evidence](https://evidence.dev/)
 
 You will learn to:
 
@@ -38,15 +38,11 @@ To follow the steps in this tutorial, you'll need:
 
 1. Open your terminal and scaffold a new project with `uv`:
 
-   ```bash
-   uvx create-dagster project etl-tutorial
-   ```
+   <CliInvocationExample path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/commands/uvx-create.txt" />
 
 2. Change directory into your new project:
 
-   ```bash
-   cd etl-tutorial
-   ```
+   <CliInvocationExample contents="cd etl-tutorial" />
 
 3. Activate the project virtual environment:
 
@@ -62,9 +58,7 @@ To follow the steps in this tutorial, you'll need:
 
 4. To make sure Dagster and its dependencies were installed correctly, start the Dagster webserver:
 
-   ```bash
-   dg dev
-   ```
+   <CliInvocationExample contents="dg dev" />
 
    In your browser, navigate to [http://127.0.0.1:3000](http://127.0.0.1:3000)
 
