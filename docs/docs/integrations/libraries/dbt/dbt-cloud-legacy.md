@@ -11,9 +11,9 @@ partnerlink:
 sidebar_position: 1000
 ---
 
-import Deprecated from '@site/docs/partials/\_Deprecated.md';
+import Superseded from '@site/docs/partials/\_Superseded.md';
 
-<Deprecated />
+<Superseded />
 
 <p>{frontMatter.description}</p>
 

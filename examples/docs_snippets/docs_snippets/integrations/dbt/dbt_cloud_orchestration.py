@@ -6,7 +6,7 @@ from dagster_dbt.cloud_v2.asset_decorator import dbt_cloud_assets
 from dagster_dbt.cloud_v2.resources import DbtCloudCredentials, DbtCloudWorkspace
 from dagster_dbt.cloud_v2.sensor_builder import build_dbt_cloud_polling_sensor
 
-# Store credentials
+# Define credentials
 creds = DbtCloudCredentials(
     account_id=os.getenv("DBT_CLOUD_ACCOUNT_ID"),
     access_url=os.getenv("DBT_CLOUD_ACCESS_URL"),
@@ -40,9 +40,13 @@ automation_sensor = dg.AutomationConditionSensorDefinition(
     minimum_interval_seconds=1,
 )
 
+# Build a sensor which will poll dbt Cloud for updates on runs/materialization history
+# and dbt Cloud Assets
+dbt_cloud_polling_sensor = build_dbt_cloud_polling_sensor(workspace=workspace)
+
 # Adds them all to defs!
 defs = dg.Definitions(
     assets=[my_dbt_cloud_assets],
     resources={"dbt_cloud": workspace},
-    sensors=[build_dbt_cloud_polling_sensor(workspace=workspace), automation_sensor],
+    sensors=[dbt_cloud_polling_sensor, automation_sensor],
 )
