@@ -9,8 +9,6 @@ export class DeferredCallbackRegistry<TCallbacks extends Record<string, (...args
   public register(fn: (callbacks: Partial<TCallbacks>) => void): void {
     this.targetFn = fn;
 
-    console.log(this.queue);
-
     // Execute all queued callbacks
     while (this.queue.length > 0) {
       const callbacks = this.queue.shift()!;
