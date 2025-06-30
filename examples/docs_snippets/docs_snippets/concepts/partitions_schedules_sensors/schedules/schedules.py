@@ -54,9 +54,9 @@ def configurable_job_schedule(context: dg.ScheduleEvaluationContext):
 
 
 # start_timezone
-my_timezone_schedule = dg.ScheduleDefinition(
-    job=my_job, cron_schedule="0 9 * * *", execution_timezone="America/Los_Angeles"
-)
+@dg.schedule(cron_schedule="0 9 * * *", execution_timezone="America/Los_Angeles")
+def my_timezone_schedule(): ...
+
 
 # end_timezone
 

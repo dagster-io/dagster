@@ -18,21 +18,18 @@ To follow the steps in this guide, you'll need:
 
 ## Basic schedule
 
-A basic schedule is defined by a `JobDefinition` and a `cron_schedule` using the `ScheduleDefinition` class. A job can be thought of as a selection of assets or operations executed together.
+A basic schedule is defined by a <PyObject section="schedules" module="dagster" object="schedule" decorator /> decorator. A schedule can be thought of as a selection of assets or operations executed together at a specific time.
 
 <CodeExample path="docs_snippets/docs_snippets/guides/automation/simple-schedule-example.py" language="python" title="src/<project_name>/defs/assets.py" />
 
 ## Run schedules in a different timezone
 
-By default, schedules without a timezone will run in Coordinated Universal Time (UTC). To run a schedule in a different timezone, set the `timezone` parameter:
+By default, schedules without a timezone will run in Coordinated Universal Time (UTC). To run a schedule in a different timezone, set the `execution_timezone` parameter:
 
 ```python
-daily_schedule = ScheduleDefinition(
-    job=daily_refresh_job,
-    cron_schedule="0 0 * * *",
-    # highlight-next-line
-    timezone="America/Los_Angeles",
-)
+@dg.schedule
+def daily_schedule(job=daily_refresh_job, cron_schedule="0 0 * * *", execution_timezone="America/Los_Angeles"):
+    ...
 ```
 
 For more information, see "[Customizing a schedule's execution timezone](/guides/automate/schedules/customizing-execution-timezone)".
