@@ -13,10 +13,11 @@ export const useAssetGraphSupplementaryData = (
   selection: string,
   nodes: WorkspaceAssetFragment[],
 ): {loading: boolean; data: SupplementaryInformation} => {
-  const {liveDataByNode} = useAssetsHealthData(
-    useMemo(() => nodes.map((node) => node.assetKey), [nodes]),
-    'AssetGraphSupplementaryData', // Separate thread to avoid starving UI
-  );
+  const {liveDataByNode} = useAssetsHealthData({
+    assetKeys: useMemo(() => nodes.map((node) => node.assetKey), [nodes]),
+    thread: 'AssetGraphSupplementaryData', // Separate thread to avoid starving UI
+    blockTrace: false,
+  });
 
   const loading = Object.keys(liveDataByNode).length !== nodes.length;
 
