@@ -7,6 +7,7 @@ from dagster import (
     Definitions,
     SensorEvaluationContext,
 )
+from dagster_airlift.constants import infer_af_version_from_env
 from dagster_airlift.core import (
     AirflowDefinitionsData,
     AssetEvent,
@@ -34,7 +35,7 @@ def observations_from_materializations(
 
 def build_mapped_defs() -> Definitions:
     return build_defs_from_airflow_instance(
-        airflow_instance=local_airflow_instance(),
+        airflow_instance=local_airflow_instance(airflow_version=infer_af_version_from_env()),
         defs=Definitions(
             assets=assets_with_task_mappings(
                 dag_id="simple_unproxied_dag",

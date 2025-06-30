@@ -222,9 +222,9 @@ class AirflowInstanceFake(AirflowInstance):
             raise ValueError(f"Dag info not found for dag_id {dag_id}")
         return self._dag_infos_by_dag_id[dag_id]
 
-    def get_dag_source_code(self, file_token: str) -> str:
-        if file_token not in self._dag_infos_by_file_token:
-            raise ValueError(f"Dag info not found for file_token {file_token}")
+    def get_dag_source_code(self, dag_info: DagInfo) -> str:
+        if dag_info.file_token not in self._dag_infos_by_file_token:
+            raise ValueError(f"Dag info not found for file_token {dag_info.file_token}")
         return "indicates found source code"
 
     def get_all_datasets(

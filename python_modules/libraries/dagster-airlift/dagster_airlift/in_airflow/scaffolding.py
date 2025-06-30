@@ -25,6 +25,8 @@ def scaffold_proxied_state(logger: Any) -> None:
     """Scaffolds a proxied state folder for the current Airflow installation.
     Each proxied state is marked as False.
     """
+    from airflow.utils.trigger_rule import TriggerRule
+
     proxied_state_dir = get_airflow_dags_folder() / "proxied_state"
     if proxied_state_dir.exists():
         raise Exception(
@@ -36,10 +38,14 @@ def scaffold_proxied_state(logger: Any) -> None:
         proxied_state_file = proxied_state_dir / f"{dag_id}.yaml"
         proxied_state_file.parent.mkdir(parents=True, exist_ok=True)
         tasks_in_alphabetical_order = sorted(dag.tasks, key=lambda task: task.task_id)
-        proxied_state = {
-            "tasks": [
-                {"id": task.task_id, "proxied": False} for task in tasks_in_alphabetical_order
-            ]
-        }
+        proxied_state = {"tasks": []}
+        for task in tasks_in_alphabetical_order:
+            # TriggerRules currently affect the task id in Airflow, we don't handle this properly yet so we need to skip.
+            if not isinstance(task.task_id, str) or isinstance(task.task_id, TriggerRule):
+                logger.warning(
+                    f"Task {task.task_id} has a non-string task_id: {type(task.task_id)}. Not currently supported for auto-scaffolding. Skipping..."
+                )
+                continue
+            proxied_state["tasks"].append({"id": task.task_id, "proxied": False})
         with open(proxied_state_file, "w") as f:
             yaml.dump(proxied_state, f)

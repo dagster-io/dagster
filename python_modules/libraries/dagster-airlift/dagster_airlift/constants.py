@@ -1,3 +1,5 @@
+from enum import Enum
+
 PEERED_DAG_MAPPING_METADATA_KEY = "dagster-airlift/peered-dag-mapping"
 DAG_MAPPING_METADATA_KEY = "dagster-airlift/dag-mapping"
 AIRFLOW_SOURCE_METADATA_KEY_PREFIX = "dagster-airlift/source"
@@ -20,3 +22,27 @@ DEFER_ASSET_EVENTS_TAG = "dagster/defer_asset_events"
 SOURCE_CODE_METADATA_KEY = "Source Code"
 
 NO_STEP_KEY = "__no_step__"
+
+
+class AirflowVersion(Enum):
+    AIRFLOW_2 = "2"
+    AIRFLOW_3 = "3"
+
+    @property
+    def api_version(self) -> str:
+        return "v1" if self == AirflowVersion.AIRFLOW_2 else "v2"
+
+
+def infer_af_version_from_env() -> "AirflowVersion":
+    try:
+        import airflow
+
+        version = airflow.__version__
+        if version.startswith("2."):
+            return AirflowVersion.AIRFLOW_2
+        elif version.startswith("3."):
+            return AirflowVersion.AIRFLOW_3
+    except ImportError:
+        raise ValueError(
+            "Airflow is not installed - could not infer Airflow version from environment."
+        )

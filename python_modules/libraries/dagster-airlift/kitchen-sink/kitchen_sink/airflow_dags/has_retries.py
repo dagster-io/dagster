@@ -22,7 +22,7 @@ default_args = {
 with DAG(
     "unmapped__dag_with_retries",
     default_args=default_args,
-    schedule_interval=None,
+    schedule=None,
     is_paused_upon_creation=False,
 ) as dag:
     PythonOperator(
