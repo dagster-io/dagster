@@ -11,7 +11,7 @@ import {
   ifPlural,
 } from '@dagster-io/ui-components';
 import React, {useContext} from 'react';
-import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
+import {observeEnabled} from 'shared/app/observeEnabled.oss';
 import styled from 'styled-components';
 
 import {AssetDescription, NameTooltipCSS} from './AssetNode';
@@ -21,7 +21,6 @@ import {GraphNode} from './Utils';
 import {GroupLayout} from './layout';
 import {groupAssetsByStatus} from './util';
 import {CloudOSSContext} from '../app/CloudOSSContext';
-import {featureEnabled} from '../app/Flags';
 import {withMiddleTruncation} from '../app/Util';
 import {useAssetsHealthData} from '../asset-data/AssetHealthDataProvider';
 import {useAssetsLiveData} from '../asset-data/AssetLiveDataProvider';
@@ -129,7 +128,7 @@ const GroupNodeAssetStatusCounts = ({
 }: {
   group: GroupLayout & {assetCount: number; assets: GraphNode[]};
 }) => {
-  if (featureEnabled(FeatureFlag.flagUseNewObserveUIs)) {
+  if (observeEnabled()) {
     return <GroupNodeAssetStatusCountsAssetHealth group={group} />;
   }
   return <GroupNodeAssetStatusCountsNonAssetHealth group={group} />;

@@ -4,7 +4,7 @@ import {Box, Colors, Icon, MiddleTruncate, PageHeader, Subtitle1} from '@dagster
 import * as React from 'react';
 import {useContext} from 'react';
 import {Link, useHistory, useLocation} from 'react-router-dom';
-import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
+import {observeEnabled} from 'shared/app/observeEnabled.oss';
 import {
   getAssetSelectionQueryString,
   useAssetSelectionState,
@@ -13,7 +13,6 @@ import styled from 'styled-components';
 
 import {globalAssetGraphPathToString} from './globalAssetGraphPathToString';
 import {AppContext} from '../app/AppContext';
-import {featureEnabled} from '../app/Flags';
 import {AnchorButton} from '../ui/AnchorButton';
 import {CopyIconButton} from '../ui/CopyButton';
 
@@ -46,7 +45,7 @@ export const AssetPageHeader = ({
     assetKey.path.reduce((accum: string, elem: string) => {
       const nextAccum = `${accum ? `${accum}/` : ''}${encodeURIComponent(elem)}`;
       let href = `/assets/${nextAccum}?view=folder`;
-      if (featureEnabled(FeatureFlag.flagUseNewObserveUIs)) {
+      if (observeEnabled()) {
         href = `/assets?asset-selection=key:"${nextAccum}/*"`;
       }
       keyPathItems.push({text: elem, href});
