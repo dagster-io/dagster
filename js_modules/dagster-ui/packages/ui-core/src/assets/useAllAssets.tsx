@@ -6,6 +6,7 @@ import {PythonErrorFragment} from '../app/types/PythonErrorFragment.types';
 import {tokenForAssetKey} from '../asset-graph/Utils';
 import {AssetGroupSelector, AssetKey} from '../graphql/types';
 import {CacheData} from '../search/useIndexedDBCachedQuery';
+import {hashObject} from '../util/hashObject';
 import {cache} from '../util/idb-lru-cache';
 import {weakMapMemoize} from '../util/weakMapMemoize';
 import {
@@ -41,8 +42,14 @@ export function useAllAssets({
   batchLimit?: number;
 } = {}) {
   const client = useApolloClient();
-  const [materializedAssets, setMaterializedAssets] = useState<AssetRecord[]>([]);
   const manager = getFetchManager(client);
+  const [materializedAssets, setMaterializedAssets] = useState<AssetRecord[]>(() => {
+    const assetsOrError = manager.getAssetsOrError();
+    if (assetsOrError instanceof Array) {
+      return assetsOrError;
+    }
+    return [];
+  });
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<PythonErrorFragment | null>(null);
@@ -158,6 +165,9 @@ class FetchManager {
     try {
       this._fetchPromise = fetchAssets(this.client, this._batchLimit);
       nextAssetsOrError = await this._fetchPromise;
+      if (hashObject(nextAssetsOrError) === hashObject(this._assetsOrError)) {
+        return;
+      }
       this._assetsOrError = nextAssetsOrError;
     } finally {
       this._fetchPromise = null;
@@ -193,6 +203,10 @@ class FetchManager {
 
   setBatchLimit(batchLimit: number) {
     this._batchLimit = batchLimit;
+  }
+
+  getAssetsOrError() {
+    return this._assetsOrError;
   }
 }
 
