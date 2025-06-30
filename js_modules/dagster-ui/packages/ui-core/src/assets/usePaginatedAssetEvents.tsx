@@ -29,6 +29,7 @@ export function usePaginatedAssetEvents(
     before?: number;
     after?: number;
     statuses?: AssetEventHistoryEventTypeSelector[];
+    partitions?: string[];
   },
 ) {
   const initialAsOf = params.asOf ? `${Number(params.asOf) + 1}` : undefined;
@@ -45,7 +46,7 @@ export function usePaginatedAssetEvents(
   useEffect(() => {
     setEvents([]);
     setCursor(undefined);
-  }, [assetKey, params.before, params.after, params.statuses]);
+  }, [assetKey, params.before, params.after, params.statuses, params.partitions]);
 
   const fetch = useCallback(
     async (before = initialAsOf ?? beforeParam, cursor: string | undefined = undefined) => {
@@ -64,6 +65,7 @@ export function usePaginatedAssetEvents(
           cursor,
           before,
           after: afterParam,
+          partitions: params.partitions,
           eventTypeSelectors: params.statuses ?? [
             AssetEventHistoryEventTypeSelector.MATERIALIZATION,
             AssetEventHistoryEventTypeSelector.OBSERVATION,
@@ -85,7 +87,7 @@ export function usePaginatedAssetEvents(
 
       setCursor(asset?.assetEventHistory?.cursor);
     },
-    [initialAsOf, beforeParam, assetKey, client, afterParam, params.statuses],
+    [initialAsOf, beforeParam, assetKey, client, afterParam, params.statuses, params.partitions],
   );
 
   useBlockTraceUntilTrue('AssetEventsQuery', loaded);
