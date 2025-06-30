@@ -22,14 +22,19 @@ import DagsterUniversityImage from './dagster_university.svg';
 import {useStateWithStorage} from '../hooks/useStateWithStorage';
 import {useVersionNumber} from '../nav/VersionNumber';
 import {CopyIconButton} from '../ui/CopyButton';
+import {useRouteMatch} from 'react-router-dom';
 
 interface Props {
   showContactSales?: boolean;
   onShareFeedback?: () => void;
 }
 
+const TOUR_BLOCKED_ROUTES = ['/getting-started'];
+
 export const HelpMenu = ({showContactSales = true, onShareFeedback}: Props) => {
   const [isOpen, setIsOpen] = useState(false);
+
+  const isTourBlocked = useRouteMatch(TOUR_BLOCKED_ROUTES);
 
   const onInteraction = useCallback((open: boolean) => setIsOpen(open), []);
 
@@ -48,7 +53,7 @@ export const HelpMenu = ({showContactSales = true, onShareFeedback}: Props) => {
         title="Master the Dagster basics"
         description="Learn the basics of Dagster with the free Dagster Essentials course from Dagster University"
         position={ProductTourPosition.BOTTOM_LEFT}
-        canShow={!isOpen && !didDismissDaggyU}
+        canShow={!isOpen && !didDismissDaggyU && !isTourBlocked}
         img={DagsterUniversityImage.src}
         actions={{
           custom: (
