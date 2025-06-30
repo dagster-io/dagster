@@ -247,15 +247,7 @@ const AssetViewImpl = ({assetKey, headerBreadcrumbs, writeAssetVisit, currentPat
     setCurrentPage(({specificPath}) => ({specificPath, path: `${path}?view=${selectedTab}`}));
   }, [path, selectedTab, setCurrentPage]);
 
-  const wipe = useWipeDialog(
-    definition && !definition.isObservable
-      ? {
-          assetKey: definition.assetKey,
-          repository: definition.repository,
-        }
-      : null,
-    refresh,
-  );
+  const wipe = useWipeDialog({assetKey, repository: definition?.repository || null}, refresh);
 
   const dynamicPartitionsDelete = useDeleteDynamicPartitionsDialog(
     definition && repoAddress ? {assetKey: definition.assetKey, definition, repoAddress} : null,
@@ -321,17 +313,20 @@ const AssetViewImpl = ({assetKey, headerBreadcrumbs, writeAssetVisit, currentPat
             {reportEvents.element}
             {wipe.element}
             {dynamicPartitionsDelete.element}
-            {cachedOrLiveDefinition && cachedOrLiveDefinition.jobNames.length > 0 ? (
-              <LaunchAssetExecutionButton
-                scope={{all: [cachedOrLiveDefinition]}}
-                showChangedAndMissingOption={false}
-                additionalDropdownOptions={[
-                  ...reportEvents.dropdownOptions,
-                  ...wipe.dropdownOptions,
-                  ...dynamicPartitionsDelete.dropdownOptions,
-                ]}
-              />
-            ) : undefined}
+            <LaunchAssetExecutionButton
+              scope={{
+                single:
+                  cachedOrLiveDefinition && cachedOrLiveDefinition.jobNames.length > 0
+                    ? cachedOrLiveDefinition
+                    : null,
+              }}
+              showChangedAndMissingOption={false}
+              additionalDropdownOptions={[
+                ...reportEvents.dropdownOptions,
+                ...wipe.dropdownOptions,
+                ...dynamicPartitionsDelete.dropdownOptions,
+              ]}
+            />
           </Box>
         }
       />
