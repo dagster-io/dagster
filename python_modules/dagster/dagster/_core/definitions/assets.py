@@ -989,8 +989,8 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
             name: key for name, key in self.node_keys_by_output_name.items() if key in self.keys
         }
 
-    @property
-    def asset_and_check_keys_by_output_name(self) -> Mapping[str, EntityKey]:
+    @cached_property
+    def entity_keys_by_output_name(self) -> Mapping[str, EntityKey]:
         return merge_dicts(
             self.keys_by_output_name,
             {
@@ -999,11 +999,15 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
             },
         )
 
+    @cached_property
+    def output_names_by_entity_key(self) -> Mapping[EntityKey, str]:
+        return reverse_dict(self.entity_keys_by_output_name)
+
     @property
     def asset_and_check_keys(self) -> AbstractSet[EntityKey]:
         return set(self.keys).union(self.check_keys)
 
-    @property
+    @cached_property
     def keys_by_input_name(self) -> Mapping[str, AssetKey]:
         upstream_keys = {
             *(dep.asset_key for key in self.keys for dep in self._specs_by_key[key].deps),

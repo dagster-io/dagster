@@ -104,7 +104,7 @@ class DataVersionCache:
             else:
                 storage_id = event.storage_id
                 # Input name will be none if this is an internal dep
-                input_name = self._context.job_def.asset_layer.input_for_asset_key(
+                input_name = self._context.job_def.asset_layer.get_node_input_name(
                     self._context.node_handle, key
                 )
                 # Exclude AllPartitionMapping for now to avoid huge queries
