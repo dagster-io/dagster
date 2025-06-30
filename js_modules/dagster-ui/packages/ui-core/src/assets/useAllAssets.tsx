@@ -162,11 +162,12 @@ class FetchManager {
       return;
     }
     let nextAssetsOrError: AssetRecord[] | PythonErrorFragment | null = null;
+    let didChange = true;
     try {
       this._fetchPromise = fetchAssets(this.client, this._batchLimit);
       nextAssetsOrError = await this._fetchPromise;
       if (hashObject(nextAssetsOrError) === hashObject(this._assetsOrError)) {
-        return;
+        didChange = false;
       }
       this._assetsOrError = nextAssetsOrError;
     } finally {
@@ -188,7 +189,9 @@ class FetchManager {
       }
     }
 
-    this._subscribers.forEach((callback) => callback(this._assetsOrError!));
+    if (didChange) {
+      this._subscribers.forEach((callback) => callback(this._assetsOrError!));
+    }
     if (this._subscribers.size) {
       if (this._fetchTimeout) {
         return;
