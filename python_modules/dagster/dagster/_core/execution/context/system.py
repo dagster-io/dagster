@@ -20,6 +20,7 @@ from dagster._core.definitions.job_base import IJob
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.metadata import RawMetadataValue
 from dagster._core.definitions.op_definition import OpDefinition
+from dagster._core.definitions.partitions.context import partition_loading_context
 from dagster._core.definitions.partitions.definition import (
     MultiPartitionsDefinition,
     PartitionsDefinition,
@@ -754,9 +755,10 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
                     f"Attempted to add metadata for partition key '{partition_key}' without a partitions definition."
                 )
 
-            targeted_partitions = self.assets_def.partitions_def.get_partition_keys_in_range(
-                partition_key_range=self.partition_key_range
-            )
+            with partition_loading_context(dynamic_partitions_store=self.instance):
+                targeted_partitions = self.assets_def.partitions_def.get_partition_keys_in_range(
+                    partition_key_range=self.partition_key_range
+                )
             if partition_key not in targeted_partitions:
                 raise DagsterInvariantViolationError(
                     f"Attempted to add metadata for partition key '{partition_key}' that is not being targeted."
@@ -1051,10 +1053,10 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             asset_layer.get(upstream_asset_key).partitions_def
         )
 
-        partition_key_ranges = subset.get_partition_key_ranges(
-            partitions_def=cast("PartitionsDefinition", upstream_asset_partitions_def),
-            dynamic_partitions_store=self.instance,
-        )
+        with partition_loading_context(dynamic_partitions_store=self.instance):
+            partition_key_ranges = subset.get_partition_key_ranges(
+                partitions_def=cast("PartitionsDefinition", upstream_asset_partitions_def),
+            )
 
         if len(partition_key_ranges) != 1:
             check.failed(
@@ -1076,30 +1078,28 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
 
             if upstream_asset_partitions_def is not None:
                 partitions_def = self.asset_partitions_def if assets_def else None
-                partitions_subset = (
-                    partitions_def.empty_subset().with_partition_key_range(
-                        partitions_def,
-                        self.partition_key_range,
-                        dynamic_partitions_store=self.instance,
+                with partition_loading_context(dynamic_partitions_store=self.instance) as ctx:
+                    partitions_subset = (
+                        partitions_def.empty_subset().with_partition_key_range(
+                            partitions_def, self.partition_key_range
+                        )
+                        if partitions_def
+                        else None
                     )
-                    if partitions_def
-                    else None
-                )
-                partition_mapping = infer_partition_mapping(
-                    assets_def.get_partition_mapping_for_dep(upstream_asset_key)
-                    if assets_def
-                    else None,
-                    partitions_def,
-                    upstream_asset_partitions_def,
-                )
-                mapped_partitions_result = (
-                    partition_mapping.get_upstream_mapped_partitions_result_for_partitions(
-                        partitions_subset,
+                    partition_mapping = infer_partition_mapping(
+                        assets_def.get_partition_mapping_for_dep(upstream_asset_key)
+                        if assets_def
+                        else None,
                         partitions_def,
                         upstream_asset_partitions_def,
-                        dynamic_partitions_store=self.instance,
                     )
-                )
+                    mapped_partitions_result = (
+                        partition_mapping.get_upstream_mapped_partitions_result_for_partitions(
+                            partitions_subset,
+                            partitions_def,
+                            upstream_asset_partitions_def,
+                        )
+                    )
 
                 if (
                     require_valid_partitions

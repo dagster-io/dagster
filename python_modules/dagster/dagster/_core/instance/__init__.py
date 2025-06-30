@@ -1420,6 +1420,7 @@ class DagsterInstance(DynamicPartitionsStore):
         output: "ExecutionStepOutputSnap",
         asset_graph: Optional["BaseAssetGraph"],
     ) -> None:
+        from dagster._core.definitions.partitions.context import partition_loading_context
         from dagster._core.definitions.partitions.definition import DynamicPartitionsDefinition
         from dagster._core.events import AssetMaterializationPlannedData, DagsterEvent
 
@@ -1461,19 +1462,18 @@ class DagsterInstance(DynamicPartitionsStore):
                 )
 
             if partitions_def is not None:
-                if self.event_log_storage.supports_partition_subset_in_asset_materialization_planned_events:
-                    partitions_subset = partitions_def.subset_with_partition_keys(
-                        partitions_def.get_partition_keys_in_range(
+                with partition_loading_context(dynamic_partitions_store=self):
+                    if self.event_log_storage.supports_partition_subset_in_asset_materialization_planned_events:
+                        partitions_subset = partitions_def.subset_with_partition_keys(
+                            partitions_def.get_partition_keys_in_range(
+                                PartitionKeyRange(partition_range_start, partition_range_end),
+                            )
+                        ).to_serializable_subset()
+                        individual_partitions = []
+                    else:
+                        individual_partitions = partitions_def.get_partition_keys_in_range(
                             PartitionKeyRange(partition_range_start, partition_range_end),
-                            dynamic_partitions_store=self,
                         )
-                    ).to_serializable_subset()
-                    individual_partitions = []
-                else:
-                    individual_partitions = partitions_def.get_partition_keys_in_range(
-                        PartitionKeyRange(partition_range_start, partition_range_end),
-                        dynamic_partitions_store=self,
-                    )
         elif check.not_none(output.properties).is_asset_partitioned and partition_tag:
             individual_partitions = [partition_tag]
 

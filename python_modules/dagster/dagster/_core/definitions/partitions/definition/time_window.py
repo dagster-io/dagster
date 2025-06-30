@@ -729,11 +729,7 @@ class TimeWindowPartitionsDefinition(PartitionsDefinition, IHaveNew):
 
         return PartitionKeyRange(start_partition_key, end_partition_key)
 
-    def get_partition_keys_in_range(
-        self,
-        partition_key_range: PartitionKeyRange,
-        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
-    ) -> Sequence[str]:
+    def get_partition_keys_in_range(self, partition_key_range: PartitionKeyRange) -> Sequence[str]:
         start_time = self.start_time_for_partition_key(partition_key_range.start)
         check.invariant(
             start_time.timestamp() >= self.start_timestamp,

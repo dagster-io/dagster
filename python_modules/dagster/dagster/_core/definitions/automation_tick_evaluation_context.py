@@ -433,9 +433,7 @@ def _build_run_requests_with_backfill_policy(
 ) -> Sequence[RunRequest]:
     run_requests = []
     partition_subset = partitions_def.subset_with_partition_keys(partition_keys)
-    partition_key_ranges = partition_subset.get_partition_key_ranges(
-        partitions_def, dynamic_partitions_store=dynamic_partitions_store
-    )
+    partition_key_ranges = partition_subset.get_partition_key_ranges(partitions_def)
     for partition_key_range in partition_key_ranges:
         # We might resolve more than one partition key range for the given partition keys.
         # We can only apply chunking on individual partition key ranges.
@@ -478,9 +476,7 @@ def _build_run_requests_for_partition_key_range(
     """Builds multiple run requests for the given partition key range. Each run request will have at most
     max_partitions_per_run partitions.
     """
-    partition_keys = partitions_def.get_partition_keys_in_range(
-        partition_key_range, dynamic_partitions_store=dynamic_partitions_store
-    )
+    partition_keys = partitions_def.get_partition_keys_in_range(partition_key_range)
     partition_range_start_index = partition_keys.index(partition_key_range.start)
     partition_range_end_index = partition_keys.index(partition_key_range.end)
 
