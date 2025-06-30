@@ -148,13 +148,14 @@ const SelectionHealthDataObserver = React.memo(
       registry.getHealthListeners().forEach((listener) => listener(healthData));
     }, [healthData, registry]);
 
+    const hasHealthListeners = healthListeners.size;
     useLayoutEffect(() => {
-      if (!healthListeners.size) {
+      if (!hasHealthListeners) {
         AssetHealthData.manager.pauseThread(getSelectionThreadId(selection));
       } else {
         AssetHealthData.manager.unpauseThread(getSelectionThreadId(selection));
       }
-    }, [healthListeners, selection]);
+    }, [hasHealthListeners, selection]);
 
     return <></>;
   },
