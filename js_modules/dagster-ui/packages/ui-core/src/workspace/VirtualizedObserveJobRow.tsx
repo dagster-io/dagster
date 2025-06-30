@@ -11,8 +11,6 @@ import {
   Tooltip,
   useDelayedState,
 } from '@dagster-io/ui-components';
-import dayjs from 'dayjs';
-import relativeTime from 'dayjs/plugin/relativeTime';
 import {forwardRef, useMemo} from 'react';
 import {Link} from 'react-router-dom';
 
@@ -33,7 +31,7 @@ import {ScheduleSwitchFragment} from '../schedules/types/ScheduleSwitchFragment.
 import {SensorSwitch} from '../sensors/SensorSwitch';
 import {SensorSwitchFragment} from '../sensors/types/SensorSwitchFragment.types';
 
-dayjs.extend(relativeTime);
+import '../util/dayjsExtensions';
 
 interface JobRowProps {
   index: number;

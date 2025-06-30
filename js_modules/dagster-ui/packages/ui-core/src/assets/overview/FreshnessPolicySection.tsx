@@ -1,6 +1,5 @@
 import {BodySmall, Box, Caption, Colors, Popover, Skeleton, Tag} from '@dagster-io/ui-components';
 import dayjs from 'dayjs';
-import duration from 'dayjs/plugin/duration';
 
 import {FRESHNESS_EVALUATION_ENABLED_QUERY, FRESHNESS_STATUS_QUERY} from './FreshnessQueries';
 import {
@@ -17,7 +16,7 @@ import {statusToIconAndColor} from '../AssetHealthSummary';
 import {AssetViewDefinitionNodeFragment} from '../types/AssetView.types';
 import {FreshnessPolicyFragment} from '../types/FreshnessPolicyFragment.types';
 
-dayjs.extend(duration);
+import '../../util/dayjsExtensions';
 
 export interface FreshnessPolicySectionProps {
   assetKey: AssetKey;
