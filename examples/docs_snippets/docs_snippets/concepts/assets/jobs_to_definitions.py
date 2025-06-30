@@ -1,3 +1,4 @@
+# start_marker_job
 import dagster as dg
 
 
@@ -10,6 +11,16 @@ def number_asset():
     )
 
 
-number_asset_job = dg.define_asset_job(
-    name="number_asset_job", selection="number_asset"
-)
+# end_marker_job
+
+
+# start_marker_job_definition
+import dagster as dg
+
+
+@dg.job
+def number_asset_job():
+    number_asset()
+
+
+# end_marker_job_definition

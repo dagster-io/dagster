@@ -34,7 +34,7 @@ Op jobs can be created:
 
 ### Using the @job decorator
 
-The simplest way to create an op job is to use the <PyObject section="jobs" module="dagster" object="job" decorator />decorator.
+The simplest way to create an op job is to use the <PyObject section="jobs" module="dagster" object="job" decorator /> decorator.
 
 Within the decorated function body, you can use function calls to indicate the dependency structure between the ops/graphs. This allows you to explicitly define dependencies between ops when you define the job.
 
@@ -70,7 +70,7 @@ Then build op jobs from it using the <PyObject section="graphs" module="dagster"
 
 Ops and resources can accept [configuration](/guides/operate/configuration/run-configuration) that determines how they behave. By default, configuration is supplied at the time an op job is launched.
 
-When constructing an op job, you can customize how that configuration will be satisfied by passing a value to the `config` parameter of the <PyObject section="graphs" module="dagster" object="GraphDefinition.to_job" /> method or the <PyObject section="jobs" module="dagster" object="job" decorator />decorator.
+When constructing an op job, you can customize how that configuration will be satisfied by passing a value to the `config` parameter of the <PyObject section="graphs" module="dagster" object="GraphDefinition.to_job" /> method or the <PyObject section="jobs" module="dagster" object="job" decorator /> decorator.
 
 The options are discussed below:
 
