@@ -7,7 +7,10 @@ import pytest
 from dagster import AssetExecutionContext
 from dagster._check import CheckError
 from dagster._core.definitions.assets.graph.asset_graph import AssetGraph
-from dagster._core.definitions.partitions.context import PartitionLoadingContext
+from dagster._core.definitions.partitions.context import (
+    PartitionLoadingContext,
+    partition_loading_context,
+)
 from dagster._core.definitions.partitions.utils import get_time_partitions_def
 from dagster._core.definitions.temporal_context import TemporalContext
 from dagster._core.storage.tags import get_multidimensional_partition_tag
@@ -261,9 +264,10 @@ def test_multipartitions_subset_addition(initial, added):
 
     assert initial_subset.get_partition_keys() == set(initial_subset_keys)
     assert added_subset.get_partition_keys() == set(added_subset_keys + initial_subset_keys)
-    assert added_subset.get_partition_keys_not_in_subset(
-        multipartitions_def, current_time=current_day
-    ) == set(expected_keys_not_in_updated_subset)
+    with partition_loading_context(effective_dt=current_day):
+        assert added_subset.get_partition_keys_not_in_subset(multipartitions_def) == set(
+            expected_keys_not_in_updated_subset
+        )
 
 
 def test_asset_partition_key_is_multipartition_key():

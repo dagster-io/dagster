@@ -27,22 +27,13 @@ class ValidAssetSubset(SerializableEntitySubset[AssetKey]):
     functionality is subsumed by EntitySubset.
     """
 
-    def inverse(
-        self,
-        partitions_def: Optional[PartitionsDefinition],
-        current_time: Optional[datetime.datetime] = None,
-        dynamic_partitions_store: Optional["DynamicPartitionsStore"] = None,
-    ) -> "ValidAssetSubset":
+    def inverse(self, partitions_def: Optional[PartitionsDefinition]) -> "ValidAssetSubset":
         """Returns the EntitySubset containing all asset partitions which are not in this EntitySubset."""
         if partitions_def is None:
             return replace(self, value=not self.bool_value)
         else:
             value = partitions_def.subset_with_partition_keys(
-                self.subset_value.get_partition_keys_not_in_subset(
-                    partitions_def,
-                    current_time=current_time,
-                    dynamic_partitions_store=dynamic_partitions_store,
-                )
+                self.subset_value.get_partition_keys_not_in_subset(partitions_def)
             )
             return replace(self, value=value)
 
