@@ -2,7 +2,7 @@ import {Box, Colors, FontFamily, Icon, Tooltip} from '@dagster-io/ui-components'
 import isEqual from 'lodash/isEqual';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
-import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
+import {observeEnabled} from 'shared/app/observeEnabled.oss';
 import styled, {CSSObject} from 'styled-components';
 
 import {ASSET_NODE_HOVER_EXPAND_HEIGHT} from './AssetNode2025';
@@ -19,7 +19,6 @@ import {
 } from './layout';
 import {gql} from '../apollo-client';
 import {AssetNodeFragment} from './types/AssetNode.types';
-import {featureEnabled} from '../app/Flags';
 import {withMiddleTruncation} from '../app/Util';
 import {useAssetHealthData} from '../asset-data/AssetHealthDataProvider';
 import {useAssetLiveData} from '../asset-data/AssetLiveDataProvider';
@@ -72,7 +71,7 @@ export const AssetNode = React.memo(({definition, selected, onChangeAssetSelecti
             <PartitionCountTags definition={definition} liveData={liveData} />
           )}
         </Box>
-        {featureEnabled(FeatureFlag.flagUseNewObserveUIs) ? (
+        {observeEnabled() ? (
           <AssetNodeHealthRow definition={definition} liveData={liveData} />
         ) : (
           <AssetNodeStatusRow definition={definition} liveData={liveData} />
@@ -209,7 +208,7 @@ type AssetNodeMinimalProps = {
 };
 
 export const AssetNodeMinimal = (props: AssetNodeMinimalProps) => {
-  return featureEnabled(FeatureFlag.flagUseNewObserveUIs) ? (
+  return observeEnabled() ? (
     <AssetNodeMinimalWithHealth {...props} />
   ) : (
     <AssetNodeMinimalOld {...props} />

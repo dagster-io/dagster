@@ -1,14 +1,12 @@
 import {
   Box,
-  Colors,
-  IconWrapper,
+  HorizontalControls,
+  ListItem,
   MiddleTruncate,
   Spinner,
-  ifPlural,
 } from '@dagster-io/ui-components';
 import React, {useMemo} from 'react';
 import {Link} from 'react-router-dom';
-import styled from 'styled-components';
 
 import styles from './AssetSelectionSummaryTile.module.css';
 import {useSelectionHealthData} from './useSelectionHealthData';
@@ -18,17 +16,9 @@ import {numberFormatter} from '../../ui/formatters';
 import {AssetTableFragment} from '../types/AssetTableFragment.types';
 
 export const AssetSelectionSummaryListItemFromSelection = React.memo(
-  ({
-    item,
-  }: {
-    icon: React.ReactNode;
-    item: Extract<ViewType, {__typename: 'CatalogView'}>;
-    menu: React.ReactNode;
-  }) => {
-    const assetSelection = item.selection.querySelection ?? '';
-
-    const {liveDataByNode, loading, assetCount} = useSelectionHealthData({
-      selection: assetSelection,
+  ({index, item}: {index: number; item: Extract<ViewType, {__typename: 'CatalogView'}>}) => {
+    const {liveDataByNode, assetCount, loading} = useSelectionHealthData({
+      selection: item.selection.querySelection ?? '',
     });
     const {jsx} = useMemo(
       () => getHealthStatuses({liveDataByNode, loading, assetCount}),
@@ -36,6 +26,7 @@ export const AssetSelectionSummaryListItemFromSelection = React.memo(
     );
     return (
       <AssetSelectionSummaryListItemWithHealthStatus
+        index={index}
         icon={<InsightsIcon name={item.icon as InsightsIconType} size={16} />}
         label={item.name}
         link={item.link}
@@ -47,29 +38,33 @@ export const AssetSelectionSummaryListItemFromSelection = React.memo(
   },
 );
 
+interface AssetSelectionSummaryListItemProps {
+  index: number;
+  assets: AssetTableFragment[];
+  icon: React.ReactNode;
+  label: string;
+  link: string;
+  loading?: boolean;
+}
+
 export const AssetSelectionSummaryListItem = React.memo(
   ({
+    index,
+    assets,
     icon,
     label,
-    assets,
     link,
-    loading: _assetsLoading,
-  }: {
-    icon: React.ReactNode;
-    label: string;
-    assets: AssetTableFragment[];
-    link: string;
-    loading?: boolean;
-    threadId?: string;
-  }) => {
+    loading: assetsLoading,
+  }: AssetSelectionSummaryListItemProps) => {
     const {jsx, loading} = useAssetHealthStatuses({
       assets,
       threadId: useMemo(() => getThreadId(), []),
-      loading: _assetsLoading,
+      loading: assetsLoading,
     });
 
     return (
       <AssetSelectionSummaryListItemWithHealthStatus
+        index={index}
         icon={icon}
         label={label}
         statusJsx={jsx}
@@ -89,6 +84,7 @@ export const AssetSelectionSummaryListItemWithHealthStatus = React.memo(
     link,
     loading,
     assetCount,
+    index,
   }: {
     icon: React.ReactNode;
     label: string;
@@ -96,64 +92,48 @@ export const AssetSelectionSummaryListItemWithHealthStatus = React.memo(
     statusJsx: React.ReactNode;
     loading?: boolean;
     assetCount: number;
+    index: number;
   }) => {
     return (
-      <RowWrapper as={Link} to={link}>
-        <Box
-          padding={{horizontal: 24, vertical: 12}}
-          flex={{alignItems: 'center', gap: 8, justifyContent: 'space-between'}}
-          border="bottom"
-        >
+      <ListItem
+        href={link}
+        index={index}
+        renderLink={({href, ...rest}) => <Link to={href || '#'} {...rest} />}
+        left={
           <Box flex={{direction: 'row', alignItems: 'center', gap: 8}} className="row-icon">
             {icon}
             <MiddleTruncate text={label} />
           </Box>
-          <Box flex={{direction: 'row', alignItems: 'center', gap: 12}}>
-            {loading ? (
-              <Spinner purpose="caption-text" />
-            ) : (
-              <Box className={styles.statusCountListWrapper} border="right" padding={{right: 12}}>
-                {statusJsx}
-              </Box>
-            )}
-            <span>
-              {numberFormatter.format(assetCount)} asset
-              {ifPlural(assetCount, '', 's')}
-            </span>
-          </Box>
-        </Box>
-      </RowWrapper>
+        }
+        right={
+          <HorizontalControls
+            controls={[
+              {
+                key: 'status',
+                control: loading ? (
+                  <Spinner purpose="caption-text" />
+                ) : (
+                  <Box
+                    className={styles.statusCountListWrapper}
+                    border="right"
+                    padding={{right: 12}}
+                  >
+                    {statusJsx}
+                  </Box>
+                ),
+              },
+              {
+                key: 'count',
+                control: (
+                  <span>
+                    {assetCount === 1 ? '1 asset' : `${numberFormatter.format(assetCount)} assets`}
+                  </span>
+                ),
+              },
+            ]}
+          />
+        }
+      />
     );
   },
 );
-
-const RowWrapper = styled.div`
-  &,
-  &:hover {
-    text-decoration: none;
-    cursor: pointer;
-  }
-  color: ${Colors.textLight()};
-  .row-icon {
-    ${IconWrapper} {
-      color: ${Colors.textLight()};
-    }
-    ${IconWrapper} {
-      background: ${Colors.textLight()};
-    }
-  }
-  cursor: pointer;
-  &:hover {
-    & {
-      color: ${Colors.textDefault()};
-    }
-    .row-icon {
-      ${IconWrapper} {
-        color: ${Colors.textDefault()};
-      }
-      ${IconWrapper} {
-        background: ${Colors.textDefault()};
-      }
-    }
-  }
-`;

@@ -7,7 +7,6 @@ import {
   Menu,
   MenuItem,
   Popover,
-  Row,
   Tab,
   Tabs,
   UnstyledButton,
@@ -190,7 +189,7 @@ const getListItems = weakMapMemoize(
   ) => {
     return Object.entries(items)
       .sort(([keyA], [keyB]) => COMMON_COLLATOR.compare(keyA, keyB))
-      .map(([key, {label, assets, link}]) => {
+      .map(([key, {label, assets, link}], index) => {
         const icon = (
           <InsightsIcon
             name={
@@ -208,6 +207,7 @@ const getListItems = weakMapMemoize(
             icon={icon}
             link={link}
             assets={assets}
+            index={index}
           />
         ) : (
           <AssetSelectionSummaryTile
@@ -237,16 +237,24 @@ const List = ({rows}: {rows: React.ReactNode[]}) => {
   return (
     <Container ref={scrollWrapperRef} style={{maxHeight: '600px', overflowY: 'auto'}}>
       <Inner $totalHeight={totalHeight}>
-        {rowItems.map(({index, key, size, start}) => {
-          const row = rows[index]!;
-          return (
-            <Row key={key} $height={size} $start={start}>
-              <div ref={rowVirtualizer.measureElement} data-index={index}>
+        <div
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '100%',
+            transform: `translateY(${rowItems[0]?.start ?? 0}px)`,
+          }}
+        >
+          {rowItems.map(({index, key}) => {
+            const row = rows[index]!;
+            return (
+              <div key={key} ref={rowVirtualizer.measureElement} data-index={index}>
                 {row}
               </div>
-            </Row>
-          );
-        })}
+            );
+          })}
+        </div>
       </Inner>
     </Container>
   );
@@ -311,8 +319,13 @@ function createSelectionSection({
         {children}
       </SelectionSectionHeader>
     ),
-    renderItem: (item: ViewType) => (
-      <SelectionListItem item={item} assetsByAssetKey={assetsByAssetKey} key={item.id} />
+    renderItem: (item: ViewType, index: number) => (
+      <SelectionListItem
+        index={index}
+        item={item}
+        assetsByAssetKey={assetsByAssetKey}
+        key={item.id}
+      />
     ),
     renderTile: (item: ViewType) => (
       <SelectionTile item={item} assetsByAssetKey={assetsByAssetKey} key={item.id} />
@@ -322,23 +335,20 @@ function createSelectionSection({
 
 const SelectionListItem = React.memo(
   ({
+    index,
     item,
     assetsByAssetKey,
   }: {
+    index: number;
     item: ViewType;
     assetsByAssetKey: Map<string, AssetTableFragment>;
   }) => {
     if (item.__typename === 'CatalogView') {
-      return (
-        <AssetSelectionSummaryListItemFromSelection
-          item={item}
-          menu={<Menu />}
-          icon={<Icon name={item.icon as IconName} size={16} />}
-        />
-      );
+      return <AssetSelectionSummaryListItemFromSelection index={index} item={item} />;
     }
     return (
       <AssetSelectionSummaryListItem
+        index={index}
         assets={item.assets
           .map((assetKey: string) => assetsByAssetKey.get(assetKey)!)
           .filter(Boolean)}

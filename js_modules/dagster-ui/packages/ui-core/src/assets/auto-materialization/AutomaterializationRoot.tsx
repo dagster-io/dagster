@@ -1,9 +1,8 @@
 import {Box, Page, PageHeader, Subtitle1} from '@dagster-io/ui-components';
 import {Redirect} from 'react-router-dom';
-import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
+import {observeEnabled} from 'shared/app/observeEnabled.oss';
 
 import {GlobalAutomaterializationContent} from './GlobalAutomaterializationContent';
-import {featureEnabled} from '../../app/Flags';
 import {assertUnreachable} from '../../app/Util';
 import {useTrackPageView} from '../../app/analytics';
 import {AutomationTabs} from '../../automation/AutomationTabs';
@@ -31,7 +30,7 @@ export const AutomaterializationRoot = () => {
 const GlobalAutomaterializationRoot = () => {
   useTrackPageView();
   useDocumentTitle('Automations | Auto-materialize');
-  const showTabs = featureEnabled(FeatureFlag.flagUseNewObserveUIs);
+  const showTabs = observeEnabled();
   return (
     <Page>
       {showTabs ? (
