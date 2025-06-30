@@ -76,7 +76,7 @@ Now, your Dagster environment only includes the `load_customers` DAG from the `w
 
 ![Assets from the warehouse Airflow instance in the Dagster UI](/images/integrations/airlift/only_load_customers.png)
 
-Finally, create a [sensor](/guides/automate/sensors/) to poll the `warehouse` Airflow instance for new runs. This sensor ensures that whenever there is a successful run of the `load_customers` DAG, there will be a materialization in the Dagster UI:
+Finally, create a [sensor](/guides/automate/sensors) to poll the `warehouse` Airflow instance for new runs. This sensor ensures that whenever there is a successful run of the `load_customers` DAG, there will be a materialization in the Dagster UI:
 
 <CodeExample path="airlift-federation-tutorial/snippets/observe.py" startAfter="start_sensor" endBefore="end_sensor" />
 

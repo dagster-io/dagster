@@ -79,7 +79,7 @@ In this example:
 
 :::tip
 
-We recommend using [automation conditions](/guides/automate/declarative-automation/) instead of [schedules](/guides/automate/schedules) for code with complex dependency logic, such as the example above. Automation conditions specify when an asset should run, which allows you to define execution criteria without needing to add custom scheduling logic.
+We recommend using [automation conditions](/guides/automate/declarative-automation) instead of [schedules](/guides/automate/schedules) for code with complex dependency logic, such as the example above. Automation conditions specify when an asset should run, which allows you to define execution criteria without needing to add custom scheduling logic.
 
 :::
 

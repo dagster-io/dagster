@@ -49,7 +49,7 @@ Environment variables can be set a variety of ways in Dagster+:
 
 If using the UI, you can also [export locally-scoped variables to a `.env` file](/deployment/dagster-plus/management/environment-variables/dagster-ui#export), which you can then use to develop locally.
 
-Refer to the [Dagster+ environment variables guide](/deployment/dagster-plus/management/environment-variables/) for more info.
+Refer to the [Dagster+ environment variables guide](/deployment/dagster-plus/management/environment-variables) for more info.
 
 </TabItem>
 <TabItem value="Dagster open source">
@@ -167,7 +167,7 @@ The example code in this section follows the structure of a Dagster project crea
 
 :::
 
-Using environment variables to provide secrets ensures sensitive information won't be visible in your code or the launchpad in the UI. In Dagster, we recommend using [configuration](/guides/operate/configuration/run-configuration) and [resources](/guides/build/external-resources/) to manage secrets.
+Using environment variables to provide secrets ensures sensitive information won't be visible in your code or the launchpad in the UI. In Dagster, we recommend using [configuration](/guides/operate/configuration/run-configuration) and [resources](/guides/build/external-resources) to manage secrets.
 
 A resource is typically used to connect to an external service or system, such as a database. Resources can be configured separately from your assets, allowing you to define them once and reuse them as needed.
 
@@ -207,7 +207,7 @@ Using environment variables, you define how your code should execute at runtime.
 
 ### Per-environment configuration
 
-In this example, we'll demonstrate how to use different I/O manager configurations for `local` and `production` environments using [configuration](/guides/operate/configuration/run-configuration) (specifically the configured API) and [resources](/guides/build/external-resources/).
+In this example, we'll demonstrate how to use different I/O manager configurations for `local` and `production` environments using [configuration](/guides/operate/configuration/run-configuration) (specifically the configured API) and [resources](/guides/build/external-resources).
 
 This example is adapted from the [Transitioning data pipelines from development to production guide](/guides/operate/dev-to-prod):
 
@@ -230,7 +230,7 @@ This section is only applicable to Dagster+.
 
 :::
 
-You can determine the current deployment type ([branch deployment](/deployment/dagster-plus/ci-cd/branch-deployments/) or [full deployment](/deployment/dagster-plus/full-deployments/)) at runtime with the `DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT` environment variable. Using this information, you can write code that executes differently when in a branch deployment or a full deployment.
+You can determine the current deployment type ([branch deployment](/deployment/dagster-plus/ci-cd/branch-deployments) or [full deployment](/deployment/dagster-plus/full-deployments)) at runtime with the `DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT` environment variable. Using this information, you can write code that executes differently when in a branch deployment or a full deployment.
 
 ```python
 

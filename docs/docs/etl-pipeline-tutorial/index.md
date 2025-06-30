@@ -10,8 +10,8 @@ sidebar_class_name: hidden
 
 In this tutorial, you'll build a full ETL pipeline with Dagster that:
 
-- Ingests data into [DuckDB](https://duckdb.org/)
-- Transforms data into reports with [dbt](https://www.getdbt.com/)
+- Ingests data into [DuckDB](https://duckdb.org)
+- Transforms data into reports with [dbt](https://www.getdbt.com)
 - Runs scheduled reports automatically
 - Generates one-time reports on demand
 - Visualizes the data with Evidence
@@ -30,7 +30,7 @@ You will learn to:
 
 To follow the steps in this tutorial, you'll need:
 
-* Python 3.9+ and [`uv`](https://docs.astral.sh/uv/) installed. For more information, see the [Installation guide](/getting-started/installation).
+* Python 3.9+ and [`uv`](https://docs.astral.sh/uv) installed. For more information, see the [Installation guide](/getting-started/installation).
 * Familiarity with Python and SQL.
 * A basic understanding of data pipelines and the extract, transform, and load (ETL) process.
 

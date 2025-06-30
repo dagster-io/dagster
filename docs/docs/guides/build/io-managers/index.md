@@ -16,7 +16,7 @@ For assets that follow this pattern, an I/O manager can streamline the code that
 
 :::note
 
-This article assumes familiarity with: [assets](/guides/build/assets/) and [resources](/guides/build/external-resources/)
+This article assumes familiarity with: [assets](/guides/build/assets) and [resources](/guides/build/external-resources)
 
 :::
 

@@ -9,7 +9,7 @@ You often want to control the number of concurrent runs for a Dagster job, a spe
 
 :::note
 
-This article assumes familiarity with [assets](/guides/build/assets/) and [jobs](/guides/build/jobs/).
+This article assumes familiarity with [assets](/guides/build/assets) and [jobs](/guides/build/jobs).
 
 :::
 
@@ -69,7 +69,7 @@ Without this granularity set, the default granularity is set to the `op`. This m
 
 ### Setting a default limit for concurrency pools
 
-- Dagster+: Edit the `concurrency` config in deployment settings via the [Dagster+ UI](/guides/operate/webserver) or the [`dagster-cloud` CLI](/deployment/dagster-plus/management/dagster-cloud-cli/).
+- Dagster+: Edit the `concurrency` config in deployment settings via the [Dagster+ UI](/guides/operate/webserver) or the [`dagster-cloud` CLI](/deployment/dagster-plus/management/dagster-cloud-cli).
 - Dagster Open Source: Use your instance's [dagster.yaml](/deployment/oss/dagster-yaml)
 
 ```yaml
@@ -165,7 +165,7 @@ The possible causes for runs remaining in `QUEUED` status depend on whether you'
   <TabItem value="Dagster+" label="Dagster+">
     If runs aren't being dequeued in Dagster+, the root causes could be:
     * **If using a [hybrid deployment](/deployment/dagster-plus/hybrid)**, the agent serving the deployment may be down. In this situation, runs will be paused.
-    * **Dagster+ is experiencing downtime**. Check the [status page](https://dagstercloud.statuspage.io/) for the latest on potential outages.
+    * **Dagster+ is experiencing downtime**. Check the [status page](https://dagstercloud.statuspage.io) for the latest on potential outages.
 
   </TabItem>
   <TabItem value="Dagster Open Source" label="Dagster Open Source">
