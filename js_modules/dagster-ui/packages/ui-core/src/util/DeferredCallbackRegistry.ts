@@ -37,6 +37,7 @@ export class DeferredCallbackRegistry<TCallbacks extends Record<string, (...args
           this.listeners[key] = new Set();
         }
         this.listeners[key]!.add(wrapped as unknown as TCallbacks[typeof key]);
+        this.listeners[key] = new Set(this.listeners[key]);
         addedCallbacks.push({key, callback: wrapped});
       }
     }
@@ -52,6 +53,7 @@ export class DeferredCallbackRegistry<TCallbacks extends Record<string, (...args
     return () => {
       for (const {key, callback} of addedCallbacks) {
         this.listeners[key]?.delete(callback as TCallbacks[typeof key]);
+        this.listeners[key] = new Set(this.listeners[key]);
       }
     };
   }
