@@ -1,12 +1,12 @@
 import {
   Button,
+  HoverButton,
   Icon,
   Menu,
   MenuItem,
   Popover,
   Spinner,
   Tooltip,
-  UnstyledButton,
 } from '@dagster-io/ui-components';
 import {memo, useContext, useMemo} from 'react';
 import {AddToFavoritesMenuItem} from 'shared/assets/AddToFavoritesMenuItem.oss';
@@ -140,11 +140,11 @@ export const AssetActionMenu = memo((props: Props) => {
         }
       >
         {unstyledButton ? (
-          <UnstyledButton style={{display: 'flex', alignItems: 'center', padding: 8}}>
-            <Icon name="expand_more" />
-          </UnstyledButton>
+          <HoverButton style={{padding: 8}}>
+            <Icon name="more_horiz" />
+          </HoverButton>
         ) : (
-          <Button icon={<Icon name="expand_more" />} />
+          <Button icon={<Icon name="more_horiz" />} />
         )}
       </Popover>
     </>
