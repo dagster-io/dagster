@@ -6,7 +6,7 @@ import React from 'react';
 import {AssetHealthData, useAssetsHealthData} from '../../asset-data/AssetHealthDataProvider';
 import {AssetHealthFragment} from '../../asset-data/types/AssetHealthDataProvider.types';
 import {useAssetSelectionFiltering} from '../../asset-selection/useAssetSelectionFiltering';
-import {AssetKeyInput, buildAssetKey, buildAssetRecord} from '../../graphql/types';
+import {AssetKeyInput, buildAsset, buildAssetKey, buildAssetRecord} from '../../graphql/types';
 import {
   SelectionHealthDataProvider,
   useSelectionFilterData,
@@ -45,7 +45,6 @@ afterEach(() => {
   jest.clearAllMocks();
 });
 
-// Test component that uses the hooks
 function TestComponent({
   selection,
   onHealthData,
@@ -69,7 +68,6 @@ function TestComponent({
   return <div data-testid={`test-${selection}`} />;
 }
 
-// Component that only uses filter data
 function FilterOnlyComponent({
   selection,
   onFilterData,
@@ -86,7 +84,6 @@ function FilterOnlyComponent({
   return <div data-testid={`filter-${selection}`} />;
 }
 
-// Component that only uses health data
 function HealthOnlyComponent({
   selection,
   onHealthData,
@@ -103,25 +100,22 @@ function HealthOnlyComponent({
   return <div data-testid={`health-${selection}`} />;
 }
 
-// Helper to create mock assets (for useAllAssets return type)
-const createMockAsset = (path: string[]) => ({
-  __typename: 'Asset' as const,
-  id: path.join('-'),
-  key: buildAssetKey({path}),
-  definition: null,
-});
+const createMockAsset = (path: string[]) =>
+  buildAsset({
+    id: path.join('-'),
+    key: buildAssetKey({path}),
+    definition: null,
+  });
 
-// Helper to create mock health data
 const createMockHealthData = (assetKeys: AssetKeyInput[]): Record<string, AssetHealthFragment> => {
   const result: Record<string, AssetHealthFragment> = {};
   assetKeys.forEach((key) => {
     const keyString = key.path.join('/');
-    result[keyString] = {
-      __typename: 'Asset',
+    result[keyString] = buildAsset({
       key: buildAssetKey({path: key.path}),
       assetMaterializations: [],
       assetHealth: null,
-    } as AssetHealthFragment;
+    });
   });
   return result;
 };
@@ -236,7 +230,7 @@ describe('useSelectionHealthData', () => {
       expect(onHealthData1).toHaveBeenCalledWith({
         liveDataByNode: {},
         assetCount: 1,
-        loading: true, // Loading because filtered.length !== Object.keys(liveDataByNode).length
+        loading: true,
       });
       expect(onHealthData2).toHaveBeenCalledWith({
         liveDataByNode: {},
@@ -451,6 +445,7 @@ describe('useSelectionHealthData', () => {
   describe('thread management', () => {
     it('pauses health thread when no health listeners', async () => {
       const pauseThreadSpy = jest.spyOn(AssetHealthData.manager, 'pauseThread');
+      const unpauseThreadSpy = jest.spyOn(AssetHealthData.manager, 'unpauseThread');
 
       render(
         <SelectionHealthDataProvider>
@@ -460,6 +455,16 @@ describe('useSelectionHealthData', () => {
 
       await waitFor(() => {
         expect(pauseThreadSpy).toHaveBeenCalledWith('selection-test-selection');
+      });
+
+      render(
+        <SelectionHealthDataProvider>
+          <HealthOnlyComponent selection="test-selection" />
+        </SelectionHealthDataProvider>,
+      );
+
+      await waitFor(() => {
+        expect(unpauseThreadSpy).toHaveBeenCalledWith('selection-test-selection');
       });
     });
 
@@ -621,8 +626,16 @@ describe('useSelectionHealthData', () => {
           <TestComponent selection="test-selection" onHealthData={onHealthData} />
         </SelectionHealthDataProvider>,
       );
-
-      expect(onHealthData).toHaveBeenCalled();
+      expect(onHealthData).toHaveBeenCalledWith({
+        liveDataByNode: {},
+        assetCount: 0,
+        loading: false,
+      });
+      expect(onHealthData).toHaveBeenCalledWith({
+        liveDataByNode: {},
+        assetCount: 0,
+        loading: true,
+      });
     });
   });
 
@@ -636,7 +649,11 @@ describe('useSelectionHealthData', () => {
         </SelectionHealthDataProvider>,
       );
 
-      expect(onHealthData).toHaveBeenCalled();
+      expect(onHealthData).toHaveBeenCalledWith({
+        liveDataByNode: {},
+        assetCount: 0,
+        loading: false,
+      });
     });
   });
 });
