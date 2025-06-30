@@ -4,6 +4,7 @@ import {AssetHealthData, useAssetsHealthData} from '../../asset-data/AssetHealth
 import {AssetHealthFragment} from '../../asset-data/types/AssetHealthDataProvider.types';
 import {useAssetSelectionFiltering} from '../../asset-selection/useAssetSelectionFiltering';
 import {useUpdatingRef} from '../../hooks/useUpdatingRef';
+import {DeferredCallbackRegistry} from '../../util/DeferredCallbackRegistry';
 import {useAllAssets} from '../useAllAssets';
 
 type SelectionHealthData = {
@@ -200,68 +201,32 @@ type OnWatchSelection = (
   setFilterData?: (data: SelectionFilterData) => void,
 ) => void;
 
+type SelectionCallbacks = {
+  setHealthData?: (data: SelectionHealthData) => void;
+  setFilterData?: (data: SelectionFilterData) => void;
+};
+
 export class SelectionRegistry {
-  private queue: Array<{
-    setHealthData?: (data: SelectionHealthData) => void;
-    setFilterData?: (data: SelectionFilterData) => void;
-  }> = [];
-
-  private filterListeners = new Set<(data: SelectionFilterData) => void>();
-  private healthListeners = new Set<(data: SelectionHealthData) => void>();
-
-  private _onWatchSelection: OnWatchSelection | null = null;
+  private registry = new DeferredCallbackRegistry<SelectionCallbacks>();
 
   public registerOnWatchSelection(fn: OnWatchSelection) {
-    this._onWatchSelection = fn;
-    while (this.queue.length) {
-      const {setHealthData, setFilterData} = this.queue.shift()!;
+    this.registry.register(({setHealthData, setFilterData}) => {
       fn(setHealthData, setFilterData);
-    }
+    });
   }
 
   public watchSelection(
-    _setHealthData?: (data: SelectionHealthData) => void,
-    _setFilterData?: (data: SelectionFilterData) => void,
+    setHealthData?: (data: SelectionHealthData) => void,
+    setFilterData?: (data: SelectionFilterData) => void,
   ) {
-    // Wrap the callbacks to make unique references in case callers are doing
-    // weird shit like using the same callbacks multiple times.
-    const setHealthData = _setHealthData
-      ? (data: SelectionHealthData) => {
-          _setHealthData?.(data);
-        }
-      : undefined;
-    const setFilterData = _setFilterData
-      ? (data: SelectionFilterData) => {
-          _setFilterData?.(data);
-        }
-      : undefined;
-    if (setFilterData) {
-      this.filterListeners.add(setFilterData);
-    }
-    if (setHealthData) {
-      this.healthListeners.add(setHealthData);
-    }
-    if (this._onWatchSelection) {
-      this._onWatchSelection(setHealthData, setFilterData);
-    } else {
-      this.queue.push({setHealthData, setFilterData});
-    }
-
-    return () => {
-      if (setFilterData) {
-        this.filterListeners.delete(setFilterData);
-      }
-      if (setHealthData) {
-        this.healthListeners.delete(setHealthData);
-      }
-    };
+    return this.registry.watch({setHealthData, setFilterData});
   }
 
   public getFilterListeners() {
-    return this.filterListeners;
+    return this.registry.getListeners('setFilterData');
   }
 
   public getHealthListeners() {
-    return this.healthListeners;
+    return this.registry.getListeners('setHealthData');
   }
 }
