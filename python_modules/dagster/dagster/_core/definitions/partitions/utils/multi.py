@@ -12,7 +12,9 @@ from dagster._core.storage.tags import (
 from dagster._record import record
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.partitions.definition.base import PartitionsDefinition
+    from dagster._core.definitions.partitions.definition.partitions_definition import (
+        PartitionsDefinition,
+    )
     from dagster._core.definitions.partitions.definition.time_window import (
         TimeWindowPartitionsDefinition,
     )
@@ -208,7 +210,9 @@ class PartitionDimensionDefinition(
         name: str,
         partitions_def: "PartitionsDefinition",
     ):
-        from dagster._core.definitions.partitions.definition.base import PartitionsDefinition
+        from dagster._core.definitions.partitions.definition.partitions_definition import (
+            PartitionsDefinition,
+        )
 
         return super().__new__(
             cls,

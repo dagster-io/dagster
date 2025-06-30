@@ -17,7 +17,7 @@ from dagster._core.storage.tags import PARTITION_NAME_TAG
 from dagster._core.types.pagination import PaginatedResults
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.partitions.subset.base import PartitionsSubset
+    from dagster._core.definitions.partitions.subset.partitions_subset import PartitionsSubset
 
 T_str = TypeVar("T_str", bound=str, default=str, covariant=True)
 

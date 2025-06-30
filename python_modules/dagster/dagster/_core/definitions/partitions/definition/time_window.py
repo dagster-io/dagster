@@ -9,7 +9,9 @@ from typing import TYPE_CHECKING, Optional, Union, cast
 import dagster._check as check
 from dagster._annotations import PublicAttr, public
 from dagster._core.definitions.partitions.context import PartitionLoadingContext
-from dagster._core.definitions.partitions.definition.base import PartitionsDefinition
+from dagster._core.definitions.partitions.definition.partitions_definition import (
+    PartitionsDefinition,
+)
 from dagster._core.definitions.partitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.partitions.schedule_type import (
     ScheduleType,
@@ -37,7 +39,7 @@ from dagster._utils.schedules import (
 )
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.partitions.subset.base import PartitionsSubset
+    from dagster._core.definitions.partitions.subset.partitions_subset import PartitionsSubset
     from dagster._core.definitions.partitions.subset.time_window import TimeWindowPartitionsSubset
 
 

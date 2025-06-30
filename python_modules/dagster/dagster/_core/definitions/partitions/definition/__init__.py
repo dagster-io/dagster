@@ -1,11 +1,11 @@
-from dagster._core.definitions.partitions.definition.base import (
-    PartitionsDefinition as PartitionsDefinition,
-)
 from dagster._core.definitions.partitions.definition.dynamic import (
     DynamicPartitionsDefinition as DynamicPartitionsDefinition,
 )
 from dagster._core.definitions.partitions.definition.multi import (
     MultiPartitionsDefinition as MultiPartitionsDefinition,
+)
+from dagster._core.definitions.partitions.definition.partitions_definition import (
+    PartitionsDefinition as PartitionsDefinition,
 )
 from dagster._core.definitions.partitions.definition.static import (
     StaticPartitionsDefinition as StaticPartitionsDefinition,

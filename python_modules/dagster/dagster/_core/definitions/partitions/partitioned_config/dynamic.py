@@ -5,7 +5,7 @@ from typing import Callable, Optional
 import dagster._check as check
 from dagster._annotations import deprecated_param
 from dagster._core.definitions.partitions.definition.dynamic import DynamicPartitionsDefinition
-from dagster._core.definitions.partitions.partitioned_config import (
+from dagster._core.definitions.partitions.partitioned_config.partitioned_config import (
     PartitionConfigFn,
     PartitionedConfig,
 )

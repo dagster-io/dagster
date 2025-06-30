@@ -3,9 +3,11 @@ from datetime import datetime
 from typing import NamedTuple, Optional
 
 import dagster._check as check
-from dagster._core.definitions.partitions.definition.base import PartitionsDefinition
+from dagster._core.definitions.partitions.definition.partitions_definition import (
+    PartitionsDefinition,
+)
 from dagster._core.definitions.partitions.partition_key_range import PartitionKeyRange
-from dagster._core.definitions.partitions.subset.base import PartitionsSubset
+from dagster._core.definitions.partitions.subset.partitions_subset import PartitionsSubset
 from dagster._core.instance import DynamicPartitionsStore
 
 

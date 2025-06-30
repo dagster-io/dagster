@@ -8,12 +8,14 @@ from dagster_shared.serdes import NamedTupleSerializer
 
 import dagster._check as check
 from dagster._annotations import public
-from dagster._core.definitions.partitions.definition.base import PartitionsDefinition
+from dagster._core.definitions.partitions.definition.partitions_definition import (
+    PartitionsDefinition,
+)
 from dagster._core.definitions.partitions.definition.time_window import (
     TimeWindowPartitionsDefinition,
 )
 from dagster._core.definitions.partitions.partition_key_range import PartitionKeyRange
-from dagster._core.definitions.partitions.subset.base import PartitionsSubset
+from dagster._core.definitions.partitions.subset.partitions_subset import PartitionsSubset
 from dagster._core.definitions.partitions.utils.time_window import PersistedTimeWindow, TimeWindow
 from dagster._core.definitions.timestamp import TimestampWithTimezone
 from dagster._core.errors import DagsterInvalidDeserializationVersionError

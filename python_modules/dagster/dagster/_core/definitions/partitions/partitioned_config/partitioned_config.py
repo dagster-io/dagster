@@ -8,7 +8,9 @@ from typing_extensions import TypeAlias, TypeVar
 import dagster._check as check
 from dagster._annotations import deprecated, deprecated_param, public
 from dagster._core.definitions.config import ConfigMapping
-from dagster._core.definitions.partitions.definition.base import PartitionsDefinition
+from dagster._core.definitions.partitions.definition.partitions_definition import (
+    PartitionsDefinition,
+)
 from dagster._core.definitions.partitions.partition import Partition
 from dagster._core.errors import DagsterInvalidInvocationError
 from dagster._core.storage.tags import PARTITION_SET_TAG

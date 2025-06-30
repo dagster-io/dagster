@@ -5,7 +5,9 @@ from typing import Optional
 import dagster._check as check
 from dagster._annotations import public
 from dagster._core.definitions.partitions.context import PartitionLoadingContext
-from dagster._core.definitions.partitions.definition.base import PartitionsDefinition
+from dagster._core.definitions.partitions.definition.partitions_definition import (
+    PartitionsDefinition,
+)
 from dagster._core.definitions.partitions.utils.base import (
     raise_error_on_duplicate_partition_keys,
     raise_error_on_invalid_partition_key_substring,
