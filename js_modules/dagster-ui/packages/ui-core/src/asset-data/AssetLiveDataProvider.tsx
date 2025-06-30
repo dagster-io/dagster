@@ -13,6 +13,7 @@ import {
 } from './AssetStaleStatusDataProvider';
 import {observeAssetEventsInRuns} from '../asset-graph/AssetRunLogObserver';
 import {LiveDataForNodeWithStaleData, tokenForAssetKey} from '../asset-graph/Utils';
+import {SelectionHealthDataProvider} from '../assets/catalog/useSelectionHealthData';
 import {AssetKeyInput} from '../graphql/types';
 import {useThrottledEffect} from '../hooks/useThrottledEffect';
 import {LiveDataPollRateContext} from '../live-data-provider/LiveDataProvider';
@@ -171,7 +172,9 @@ export const AssetLiveDataProvider = ({children}: {children: React.ReactNode}) =
     <AssetAutomationData.LiveDataProvider>
       <AssetHealthData.LiveDataProvider>
         <AssetBaseData.LiveDataProvider>
-          <AssetStaleStatusData.LiveDataProvider>{children}</AssetStaleStatusData.LiveDataProvider>
+          <AssetStaleStatusData.LiveDataProvider>
+            <SelectionHealthDataProvider>{children}</SelectionHealthDataProvider>
+          </AssetStaleStatusData.LiveDataProvider>
         </AssetBaseData.LiveDataProvider>
       </AssetHealthData.LiveDataProvider>
     </AssetAutomationData.LiveDataProvider>

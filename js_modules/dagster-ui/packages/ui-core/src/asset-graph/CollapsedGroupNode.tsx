@@ -142,7 +142,7 @@ const GroupNodeAssetStatusCountsAssetHealth = ({
 }) => {
   const assetKeys = React.useMemo(() => group.assets.map((node) => node.assetKey), [group.assets]);
 
-  const {liveDataByNode} = useAssetsHealthData(assetKeys, 'group-node');
+  const {liveDataByNode} = useAssetsHealthData({assetKeys, thread: 'group-node'});
   const statuses = React.useMemo(() => {
     return Object.values(liveDataByNode).reduce(
       (acc, liveData) => {

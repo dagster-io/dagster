@@ -208,7 +208,6 @@ const getListItems = weakMapMemoize(
             icon={icon}
             link={link}
             assets={assets}
-            menu={<Menu />}
           />
         ) : (
           <AssetSelectionSummaryTile
@@ -346,7 +345,6 @@ const SelectionListItem = React.memo(
         icon={<Icon name={item.icon as IconName} size={16} />}
         label={item.name}
         link={item.link}
-        menu={<Menu />}
       />
     );
   },

@@ -37,13 +37,14 @@ export const useAssetSelectionFiltering = <
   assets,
   useWorker = true,
   includeExternalAssets = true,
+  skip = false,
 }: {
   loading?: boolean;
   assetSelection: string;
-
   assets: T[] | undefined;
   useWorker?: boolean;
   includeExternalAssets?: boolean;
+  skip?: boolean;
 }) => {
   const assetsByKey = getAssetsByKey(assets ?? EMPTY_ARRAY);
 
@@ -65,9 +66,10 @@ export const useAssetSelectionFiltering = <
         loading: !!assetsLoading,
         useWorker,
         externalAssets,
+        skip,
       }),
       // eslint-disable-next-line react-hooks/exhaustive-deps
-      [assetsByKeyHash, assetsLoading, useWorker, externalAssets],
+      [assetsByKeyHash, assetsLoading, useWorker, externalAssets, skip],
     ),
   );
 

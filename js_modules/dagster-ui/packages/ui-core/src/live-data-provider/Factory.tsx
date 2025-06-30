@@ -48,11 +48,11 @@ export function liveDataFactory<T, R>(
         </LiveDataProvider>
       );
     },
-    useLiveData: (keys: string[], thread: LiveDataThreadID = 'default') => {
-      return useLiveData<T>(keys, manager, thread);
+    useLiveData: (keys: string[], thread: LiveDataThreadID = 'default', skip?: boolean) => {
+      return useLiveData<T>(keys, manager, thread, skip);
     },
-    useLiveDataSingle: (key: string, thread: LiveDataThreadID = 'default') => {
-      return useLiveDataSingle<T>(key, manager, thread);
+    useLiveDataSingle: (key: string, thread: LiveDataThreadID = 'default', skip?: boolean) => {
+      return useLiveDataSingle<T>(key, manager, thread, skip);
     },
     manager,
     LiveDataRefresh: () => <LiveDataRefresh LiveDataRefreshContext={LiveDataRefreshContext} />,
