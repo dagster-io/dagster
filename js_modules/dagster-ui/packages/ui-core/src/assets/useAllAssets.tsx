@@ -286,6 +286,8 @@ const getAssets = weakMapMemoize((allAssetNodes: WorkspaceAssetFragment[]) => {
     id: string;
   }[] = [];
 
+  const addedKeys = new Set();
+
   softwareDefinedAssetsWithDuplicates.forEach((asset) => {
     /**
      * Return a materialization node if it exists, otherwise return an observable node if it
@@ -298,6 +300,11 @@ const getAssets = weakMapMemoize((allAssetNodes: WorkspaceAssetFragment[]) => {
      * materialization nodes shadowing observation nodes that would otherwise be exposed.
      */
     const key = tokenForAssetKey(asset.key);
+    const duplicate = addedKeys.has(key);
+    addedKeys.add(key);
+    if (duplicate) {
+      return;
+    }
     if (!keysWithMultipleDefinitions.has(key)) {
       softwareDefinedAssets.push(asset);
       return;
