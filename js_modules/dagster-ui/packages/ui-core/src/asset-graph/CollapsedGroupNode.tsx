@@ -30,6 +30,7 @@ import {CalculateUnsyncedDialog} from '../assets/CalculateUnsyncedDialog';
 import {useMaterializationAction} from '../assets/LaunchAssetExecutionButton';
 import {AssetKey} from '../assets/types';
 import {AssetHealthStatus} from '../graphql/types';
+import {THREAD_ID} from '../live-data-provider/util';
 import {numberFormatter} from '../ui/formatters';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 
@@ -141,7 +142,7 @@ const GroupNodeAssetStatusCountsAssetHealth = ({
 }) => {
   const assetKeys = React.useMemo(() => group.assets.map((node) => node.assetKey), [group.assets]);
 
-  const {liveDataByNode} = useAssetsHealthData(assetKeys, 'group-node');
+  const {liveDataByNode} = useAssetsHealthData(assetKeys, THREAD_ID.GROUP_NODE);
   const statuses = React.useMemo(() => {
     return Object.values(liveDataByNode).reduce(
       (acc, liveData) => {
