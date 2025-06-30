@@ -1,7 +1,6 @@
 import keyBy from 'lodash/keyBy';
 import reject from 'lodash/reject';
 import {useEffect, useLayoutEffect, useMemo, useRef, useState} from 'react';
-import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
 import {useAssetGraphSupplementaryData} from 'shared/asset-graph/useAssetGraphSupplementaryData.oss';
 import {Worker} from 'shared/workers/Worker.oss';
 
@@ -9,14 +8,11 @@ import {computeGraphData as computeGraphDataImpl} from './ComputeGraphData';
 import {BuildGraphDataMessageType, ComputeGraphDataMessageType} from './ComputeGraphData.types';
 import {GraphData, buildGraphData as buildGraphDataImpl, tokenForAssetKey} from './Utils';
 import {AssetGraphQueryItem, AssetNode} from './types';
-import {featureEnabled} from '../app/Flags';
 import {GraphQueryItem} from '../app/GraphQueryImpl';
-import {indexedDBAsyncMemoize} from '../app/Util';
 import {AssetKey} from '../assets/types';
 import {useAllAssetsNodes} from '../assets/useAllAssets';
 import {AssetGroupSelector, PipelineSelector} from '../graphql/types';
 import {useBlockTraceUntilTrue} from '../performance/TraceContext';
-import {hashObject} from '../util/hashObject';
 import {weakMapMemoize} from '../util/weakMapMemoize';
 import {workerSpawner} from '../workers/workerSpawner';
 import {WorkspaceAssetFragment} from '../workspace/WorkspaceContext/types/WorkspaceQueries.types';
@@ -40,6 +36,7 @@ export interface AssetGraphFetchScope {
   // This is used by pages where `hideNodesMatching` is only available asynchronously.
   loading?: boolean;
   useWorker?: boolean;
+  skip?: boolean;
 }
 
 export function useFullAssetGraphData(
@@ -73,7 +70,7 @@ export function useFullAssetGraphData(
       return;
     }
     const requestId = ++currentRequestRef.current;
-    buildGraphData(
+    buildGraphDataWrapper(
       {
         nodes: allNodes,
       },
@@ -179,7 +176,7 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
   }, [spawnComputeGraphDataWorker]);
 
   useLayoutEffect(() => {
-    if (options.loading || supplementaryDataLoading) {
+    if (options.loading || supplementaryDataLoading || options.skip) {
       return;
     }
 
@@ -193,7 +190,7 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
 
     setGraphDataLoading(true);
 
-    computeGraphData(
+    computeGraphDataWrapper(
       {
         repoFilteredNodes,
         graphQueryItems,
@@ -236,6 +233,7 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
     supplementaryDataLoading,
     spawnComputeGraphDataWorker,
     options.useWorker,
+    options.skip,
   ]);
 
   const loading = assetsLoading || graphDataLoading || supplementaryDataLoading;
@@ -248,12 +246,6 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
     allAssetKeys: state.allAssetKeys,
   };
 }
-
-const computeGraphData = indexedDBAsyncMemoize<GraphDataState, typeof computeGraphDataWrapper>(
-  computeGraphDataWrapper,
-  'computeGraphData',
-  (props) => hashObject({props, version: 3}),
-);
 
 const buildGraphQueryItems = (nodes: AssetNode[]) => {
   const items: {[name: string]: AssetGraphQueryItem} = {};
@@ -343,11 +335,7 @@ async function computeGraphDataWrapper(
   spawnComputeGraphDataWorker: () => Worker,
   useWorker: boolean,
 ): Promise<GraphDataState> {
-  if (
-    featureEnabled(FeatureFlag.flagAssetSelectionWorker) &&
-    useWorker &&
-    typeof window.Worker !== 'undefined'
-  ) {
+  if (useWorker && typeof window.Worker !== 'undefined') {
     const worker = spawnComputeGraphDataWorker();
     return new Promise<GraphDataState>((resolve, reject) => {
       const id = ++_id;
@@ -378,22 +366,12 @@ async function computeGraphDataWrapper(
   return computeGraphDataImpl(props);
 }
 
-const buildGraphData = indexedDBAsyncMemoize<GraphData, typeof buildGraphDataWrapper>(
-  buildGraphDataWrapper,
-  'buildGraphData',
-  (props) => hashObject({props, version: 3}),
-);
-
 async function buildGraphDataWrapper(
   props: Omit<BuildGraphDataMessageType, 'id' | 'type'>,
   spawnBuildGraphDataWorker: () => Worker,
   useWorker: boolean,
 ): Promise<GraphData> {
-  if (
-    featureEnabled(FeatureFlag.flagAssetSelectionWorker) &&
-    useWorker &&
-    typeof window.Worker !== 'undefined'
-  ) {
+  if (useWorker && typeof window.Worker !== 'undefined') {
     const worker = spawnBuildGraphDataWorker();
     return new Promise<GraphData>((resolve) => {
       const id = ++_id;

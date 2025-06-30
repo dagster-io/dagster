@@ -2,7 +2,6 @@ import {
   Box,
   HorizontalControls,
   ListItem,
-  Menu,
   MiddleTruncate,
   Spinner,
 } from '@dagster-io/ui-components';
@@ -10,32 +9,30 @@ import React, {useMemo} from 'react';
 import {Link} from 'react-router-dom';
 
 import styles from './AssetSelectionSummaryTile.module.css';
-import {ViewType, getThreadId, useAssetHealthStatuses} from './util';
-import {useAssetSelectionFiltering} from '../../asset-selection/useAssetSelectionFiltering';
+import {useSelectionHealthData} from './useSelectionHealthData';
+import {ViewType, getHealthStatuses, getThreadId, useAssetHealthStatuses} from './util';
 import {InsightsIcon, InsightsIconType} from '../../insights/InsightsIcon';
 import {numberFormatter} from '../../ui/formatters';
 import {AssetTableFragment} from '../types/AssetTableFragment.types';
-import {useAllAssets} from '../useAllAssets';
 
 export const AssetSelectionSummaryListItemFromSelection = React.memo(
   ({index, item}: {index: number; item: Extract<ViewType, {__typename: 'CatalogView'}>}) => {
-    const {assets, loading} = useAllAssets();
-    const {filtered, loading: filteredLoading} = useAssetSelectionFiltering({
-      assets,
-      assetSelection: item.selection.querySelection ?? '',
-      loading,
-      useWorker: false,
-      includeExternalAssets: true,
+    const {liveDataByNode, assetCount, loading} = useSelectionHealthData({
+      selection: item.selection.querySelection ?? '',
     });
+    const {jsx} = useMemo(
+      () => getHealthStatuses({liveDataByNode, loading, assetCount}),
+      [liveDataByNode, loading, assetCount],
+    );
     return (
-      <AssetSelectionSummaryListItem
+      <AssetSelectionSummaryListItemWithHealthStatus
         index={index}
-        assets={filtered}
         icon={<InsightsIcon name={item.icon as InsightsIconType} size={16} />}
         label={item.name}
         link={item.link}
-        menu={<Menu />}
-        loading={loading || filteredLoading}
+        statusJsx={jsx}
+        loading={loading}
+        assetCount={assetCount}
       />
     );
   },
@@ -47,7 +44,6 @@ interface AssetSelectionSummaryListItemProps {
   icon: React.ReactNode;
   label: string;
   link: string;
-  menu: React.ReactNode;
   loading?: boolean;
 }
 
@@ -66,6 +62,38 @@ export const AssetSelectionSummaryListItem = React.memo(
       loading: assetsLoading,
     });
 
+    return (
+      <AssetSelectionSummaryListItemWithHealthStatus
+        index={index}
+        icon={icon}
+        label={label}
+        statusJsx={jsx}
+        link={link}
+        assetCount={assets.length}
+        loading={loading}
+      />
+    );
+  },
+);
+
+export const AssetSelectionSummaryListItemWithHealthStatus = React.memo(
+  ({
+    icon,
+    label,
+    statusJsx,
+    link,
+    loading,
+    assetCount,
+    index,
+  }: {
+    icon: React.ReactNode;
+    label: string;
+    link: string;
+    statusJsx: React.ReactNode;
+    loading?: boolean;
+    assetCount: number;
+    index: number;
+  }) => {
     return (
       <ListItem
         href={link}
@@ -90,7 +118,7 @@ export const AssetSelectionSummaryListItem = React.memo(
                     border="right"
                     padding={{right: 12}}
                   >
-                    {jsx}
+                    {statusJsx}
                   </Box>
                 ),
               },
@@ -98,9 +126,7 @@ export const AssetSelectionSummaryListItem = React.memo(
                 key: 'count',
                 control: (
                   <span>
-                    {assets.length === 1
-                      ? '1 asset'
-                      : `${numberFormatter.format(assets.length)} assets`}
+                    {assetCount === 1 ? '1 asset' : `${numberFormatter.format(assetCount)} assets`}
                   </span>
                 ),
               },

@@ -16,13 +16,14 @@ import React, {forwardRef, useMemo, useRef, useState} from 'react';
 import {Link} from 'react-router-dom';
 
 import {AssetHealthFragment} from '../../asset-data/types/AssetHealthDataProvider.types';
+import {tokenForAssetKey} from '../../asset-graph/Utils';
 import {numberFormatter} from '../../ui/formatters';
 import {buildRepoAddress} from '../../workspace/buildRepoAddress';
 import {AssetActionMenu} from '../AssetActionMenu';
 import {AssetHealthStatusString, STATUS_INFO} from '../AssetHealthSummary';
 import {AssetRecentUpdatesTrend} from '../AssetRecentUpdatesTrend';
 import {assetDetailsPathForKey} from '../assetDetailsPathForKey';
-import {useAssetDefinition} from '../useAssetDefinition';
+import {useAllAssets} from '../useAllAssets';
 import styles from './css/StatusHeaderContainer.module.css';
 
 const shimmer = {shimmer: true};
@@ -231,8 +232,14 @@ const AssetRow = forwardRef(
   ({asset, index, checked, onToggle}: RowProps, ref: React.ForwardedRef<HTMLDivElement>) => {
     const linkUrl = assetDetailsPathForKey({path: asset.key.path});
 
-    const {definition: _definition, refresh, cachedDefinition} = useAssetDefinition(asset.key);
-    const definition = cachedDefinition || _definition;
+    const {assets} = useAllAssets();
+    const definition = useMemo(
+      () =>
+        assets?.find(
+          (workspaceAsset) => tokenForAssetKey(workspaceAsset.key) === tokenForAssetKey(asset.key),
+        )?.definition,
+      [assets, asset.key],
+    );
 
     const repoAddress = definition?.repository
       ? buildRepoAddress(definition.repository.name, definition.repository.location.name)
@@ -262,9 +269,8 @@ const AssetRow = forwardRef(
                   <AssetActionMenu
                     unstyledButton
                     path={asset.key.path}
-                    definition={definition}
+                    definition={definition || null}
                     repoAddress={repoAddress}
-                    onRefresh={refresh}
                   />
                 ),
               },
