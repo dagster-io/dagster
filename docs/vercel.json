@@ -2,6 +2,14 @@
   "buildCommand": "echo 'Starting build...' && yarn build-api-docs && yarn build-kinds-tags && yarn build",
   "redirects": [
     {
+      "source": "/dagster-cloud/insights",
+      "destination": "/guides/monitor/insights"
+    },
+    {
+      "source": "/dagster-cloud/insights/:path*",
+      "destination": "/guides/monitor/insights/:path*"
+    },
+    {
       "source": "/dagster-cloud/:path*",
       "destination": "/deployment/dagster-plus/:path*"
     },

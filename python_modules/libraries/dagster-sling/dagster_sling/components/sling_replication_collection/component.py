@@ -128,7 +128,9 @@ def resolve_connections(
     return [
         SlingConnectionResource(
             name=name,
-            **context.resolve_value(connection.model_dump()),
+            **context.resolve_value(
+                connection if isinstance(connection, dict) else connection.model_dump()
+            ),
         )
         for name, connection in connections.items()
     ]

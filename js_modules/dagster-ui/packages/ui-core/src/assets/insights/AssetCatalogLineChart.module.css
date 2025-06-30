@@ -16,6 +16,7 @@
 .chartGraph {
   flex-grow: 1;
   min-height: 160px;
+  cursor: pointer;
 }
 
 .chartHeader {
@@ -24,8 +25,8 @@
 }
 
 .chartCount {
-  font-size: 32px;
-  font-weight: 600;
+  font-size: 24px;
+  font-weight: 500;
   margin-bottom: 4px;
   display: flex;
   align-items: center;

@@ -14,7 +14,7 @@ from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.test_utils import ensure_dagster_tests_import
 from dagster._utils import alter_sys_path
 from dagster._utils.env import environ
-from dagster.components import ComponentLoadContext
+from dagster.components.core.tree import ComponentTree
 from dagster.components.testing import TestTranslation, scaffold_defs_sandbox
 from dagster_airbyte.components.workspace_component.component import AirbyteCloudWorkspaceComponent
 from dagster_airbyte.resources import AirbyteCloudWorkspace
@@ -160,7 +160,7 @@ def test_custom_filter_fn_python(
         ),
         connection_selector=filter_fn,
         translation=None,
-    ).build_defs(ComponentLoadContext.for_test())
+    ).build_defs(ComponentTree.for_test().load_context)
     assert len(defs.resolve_asset_graph().get_all_asset_keys()) == num_assets
 
 

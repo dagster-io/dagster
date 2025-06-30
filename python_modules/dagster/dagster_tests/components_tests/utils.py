@@ -20,6 +20,7 @@ from dagster.components.core.defs_module import (
     asset_post_processor_list_from_post_processing_dict,
     context_with_injected_scope,
 )
+from dagster.components.core.tree import ComponentTree
 from dagster.components.resolved.core_models import post_process_defs
 from dagster.components.utils import ensure_loadable_path
 from dagster_shared import check
@@ -35,7 +36,7 @@ def load_context_and_component_for_test(
     attrs: Union[str, dict[str, Any]],
     template_vars_module: Optional[str] = None,
 ) -> tuple[ComponentLoadContext, T_Component]:
-    context = ComponentLoadContext.for_test()
+    context = ComponentTree.for_test().load_context
     model_cls = check.not_none(
         component_type.get_model_cls(), "Component must have schema for direct test"
     )

@@ -8,10 +8,11 @@ from typing import Any, Callable, Optional
 import pytest
 import responses
 import yaml
-from dagster import AssetKey, ComponentLoadContext
+from dagster import AssetKey
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._utils.env import environ
+from dagster.components.core.tree import ComponentTree
 from dagster.components.testing import TestTranslation, scaffold_defs_sandbox
 from dagster_fivetran.components.workspace_component.component import FivetranAccountComponent
 from dagster_fivetran.resources import FivetranWorkspace
@@ -162,7 +163,7 @@ def test_custom_filter_fn_python(
         ),
         connector_selector=filter_fn,
         translation=None,
-    ).build_defs(ComponentLoadContext.for_test())
+    ).build_defs(ComponentTree.for_test().load_context)
     assert len(defs.resolve_asset_graph().get_all_asset_keys()) == num_assets
 
 

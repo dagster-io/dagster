@@ -284,7 +284,7 @@ Some CLI invocations may be brief enough that we don't want to include them in a
 <CliInvocationExample contents="uv add dagster-sling" />
 ```
 
-For more information on testing the CLI commands used in docs, see [the README in docs tests](../../examples/docs_snippets/docs_snippets_tests/snippet_checks/README.md).
+For more information on testing the CLI commands used in docs, see [the README in docs tests](../examples/docs_snippets/docs_snippets_tests/snippet_checks/README.md).
 
 ### Code reference links
 

@@ -13,7 +13,8 @@ from dagster._core.definitions.materialize import materialize
 from dagster._core.definitions.metadata.metadata_value import TextMetadataValue
 from dagster._core.definitions.resource_annotation import ResourceParam
 from dagster._core.definitions.result import MaterializeResult
-from dagster.components.core.context import ComponentLoadContext
+from dagster.components.core.tree import ComponentTree
+from dagster.components.lib.executable_component.component import ExecutableComponent
 from dagster.components.lib.executable_component.function_component import (
     FunctionComponent,
     FunctionSpec,
@@ -21,8 +22,10 @@ from dagster.components.lib.executable_component.function_component import (
 from dagster.components.testing import copy_code_to_file, scaffold_defs_sandbox
 
 
-def asset_in_component(component: FunctionComponent, key: CoercibleToAssetKey) -> AssetsDefinition:
-    defs = component.build_defs(ComponentLoadContext.for_test())
+def asset_in_component(
+    component: ExecutableComponent, key: CoercibleToAssetKey
+) -> AssetsDefinition:
+    defs = component.build_defs(ComponentTree.for_test().load_context)
     return defs.get_assets_def(key)
 
 
@@ -58,7 +61,7 @@ def assert_singular_component(
     resources: Optional[Mapping[str, Any]] = None,
     run_config: Optional[Mapping[str, Any]] = None,
 ) -> None:
-    defs = component.build_defs(ComponentLoadContext.for_test())
+    defs = component.build_defs(ComponentTree.for_test().load_context)
     assets_def = defs.get_assets_def("asset")
 
     assert assets_def.op.name == "op_name"
@@ -240,7 +243,7 @@ def test_asset_with_config() -> None:
         assets=[AssetSpec(key="asset")],
     )
 
-    defs = component.build_defs(ComponentLoadContext.for_test())
+    defs = component.build_defs(ComponentTree.for_test().load_context)
     assert defs.get_assets_def("asset").op.config_schema
 
     assert_singular_component(
@@ -263,7 +266,7 @@ def test_asset_check_with_config() -> None:
         checks=[AssetCheckSpec(name="asset_check", asset="asset")],
     )
 
-    defs = component.build_defs(ComponentLoadContext.for_test())
+    defs = component.build_defs(ComponentTree.for_test().load_context)
     checks_def = defs.get_asset_checks_def(
         AssetCheckKey(asset_key=AssetKey("asset"), name="asset_check")
     )

@@ -42,5 +42,5 @@ export const TooltipCard = styled.div`
   cursor: default;
   overflow: hidden;
   user-select: none;
-  width: 240px;
+  width: 320px;
 `;
