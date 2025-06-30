@@ -34,6 +34,13 @@ from dagster_databricks.resources import (
     DatabricksClientResource as DatabricksClientResource,
     databricks_client as databricks_client,
 )
+from dagster_databricks.unity_assets import (
+    unity_catalog_assets as unity_catalog_assets,
+    databricks_job_asset as databricks_job_asset,
+    databricks_dlt_pipeline_asset as databricks_dlt_pipeline_asset,
+    databricks_job_observable_asset as databricks_job_observable_asset,
+    databricks_dlt_pipeline_observable_asset as databricks_dlt_pipeline_observable_asset,
+)
 from dagster_databricks.version import __version__
 
 DagsterLibraryRegistry.register("dagster-databricks", __version__)
