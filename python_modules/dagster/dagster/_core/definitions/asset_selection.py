@@ -241,7 +241,9 @@ class AssetSelection(ABC):
                 selection.
         """
         check.tuple_param(group_strs, "group_strs", of_type=str)
-        return GroupsAssetSelection(selected_groups=group_strs, include_sources=include_sources)
+        return GroupsAssetSelection(
+            selected_groups=list(group_strs), include_sources=include_sources
+        )
 
     @public
     @staticmethod
