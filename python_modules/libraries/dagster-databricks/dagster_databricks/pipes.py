@@ -9,6 +9,7 @@ from collections.abc import Iterator, Mapping, Sequence
 from contextlib import ExitStack, contextmanager
 from typing import Any, Literal, Optional, TextIO, Union
 
+import dagster as dg
 import dagster._check as check
 from dagster._core.definitions.metadata import RawMetadataMapping
 from dagster._core.definitions.resource_annotation import TreatAsResourceParam
@@ -300,7 +301,7 @@ class PipesDatabricksClient(PipesClient, TreatAsResourceParam):
         metadata["Databricks Job Run ID"] = str(run_id)
 
         if run_page_url := run.run_page_url:
-            metadata["Databricks Job Run URL"] = run_page_url
+            metadata["Databricks Job Run URL"] = dg.MetadataValue.url(run_page_url)
 
         return metadata
 
