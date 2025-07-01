@@ -8,8 +8,6 @@ from dagster import (
     AssetSelection,
     BackfillPolicy,
     DagsterEventType,
-    DailyPartitionsDefinition,
-    HourlyPartitionsDefinition,
     IOManager,
     Out,
     Output,
@@ -27,6 +25,10 @@ from dagster._core.definitions.decorators.hook_decorator import failure_hook, su
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.metadata.metadata_value import TextMetadataValue
 from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
+from dagster._core.definitions.partitions.definition.time_window_subclasses import (
+    DailyPartitionsDefinition,
+    HourlyPartitionsDefinition,
+)
 from dagster._core.definitions.partitions.partitioned_config import static_partitioned_config
 from dagster._core.definitions.partitions.partitioned_schedule import (
     build_schedule_from_partitioned_job,

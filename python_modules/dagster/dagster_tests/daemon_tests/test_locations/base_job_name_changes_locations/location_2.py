@@ -1,4 +1,8 @@
-from dagster import DailyPartitionsDefinition, HourlyPartitionsDefinition, asset
+from dagster import asset
+from dagster._core.definitions.partitions.definition.time_window_subclasses import (
+    DailyPartitionsDefinition,
+    HourlyPartitionsDefinition,
+)
 
 
 @asset(

@@ -7,7 +7,6 @@ from dagster import (
     AssetKey,
     AssetOut,
     DagsterInvalidDefinitionError,
-    DailyPartitionsDefinition,
     DimensionPartitionMapping,
     GraphIn,
     IdentityPartitionMapping,
@@ -41,6 +40,9 @@ from dagster._core.definitions.declarative_automation.automation_condition impor
 )
 from dagster._core.definitions.decorators.config_mapping_decorator import config_mapping
 from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
+from dagster._core.definitions.partitions.definition.time_window_subclasses import (
+    DailyPartitionsDefinition,
+)
 from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.definitions.resource_requirement import ensure_requirements_satisfied
 from dagster._core.definitions.tags import build_kind_tag

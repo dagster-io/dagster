@@ -6,7 +6,6 @@ from dagster import (
     AssetKey,
     AssetsDefinition,
     DagsterInvalidDefinitionError,
-    DailyPartitionsDefinition,
     GraphDefinition,
     IOManager,
     JobDefinition,
@@ -37,6 +36,9 @@ from dagster._core.definitions.decorators.asset_check_decorator import asset_che
 from dagster._core.definitions.executor_definition import multi_or_in_process_executor
 from dagster._core.definitions.metadata.metadata_value import TextMetadataValue
 from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
+from dagster._core.definitions.partitions.definition.time_window_subclasses import (
+    DailyPartitionsDefinition,
+)
 from dagster._core.definitions.partitions.partitioned_config import PartitionedConfig
 from dagster._core.errors import DagsterInvalidSubsetError
 from dagster._loggers import default_loggers

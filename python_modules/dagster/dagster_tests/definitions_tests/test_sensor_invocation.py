@@ -14,7 +14,6 @@ from dagster import (
     DagsterInvariantViolationError,
     DagsterRunStatus,
     DagsterUnknownPartitionError,
-    DailyPartitionsDefinition,
     Definitions,
     Output,
     RunConfig,
@@ -44,6 +43,9 @@ from dagster._core.definitions.decorators.asset_check_decorator import asset_che
 from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.definitions.partitions.definition.dynamic import DynamicPartitionsDefinition
 from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
+from dagster._core.definitions.partitions.definition.time_window_subclasses import (
+    DailyPartitionsDefinition,
+)
 from dagster._core.definitions.partitions.partitioned_config import static_partitioned_config
 from dagster._core.definitions.resource_annotation import ResourceParam
 from dagster._core.definitions.sensor_definition import SensorDefinition

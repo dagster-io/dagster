@@ -10,7 +10,6 @@ from dagster import (
     AssetKey,
     AssetOut,
     AssetSelection,
-    DailyPartitionsDefinition,
     In,
     MaterializeResult,
     MetadataValue,
@@ -24,6 +23,9 @@ from dagster import (
     graph_multi_asset,
     multi_asset,
     op,
+)
+from dagster._core.definitions.partitions.definition.time_window_subclasses import (
+    DailyPartitionsDefinition,
 )
 
 

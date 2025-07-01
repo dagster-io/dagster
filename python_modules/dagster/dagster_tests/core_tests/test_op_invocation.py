@@ -7,7 +7,6 @@ from dagster import (
     AssetKey,
     AssetMaterialization,
     AssetObservation,
-    DailyPartitionsDefinition,
     DynamicOut,
     DynamicOutput,
     ExpectationResult,
@@ -21,7 +20,6 @@ from dagster import (
     Output,
     RetryRequested,
     Selector,
-    TimeWindow,
     asset,
     build_op_context,
     graph,
@@ -30,10 +28,12 @@ from dagster import (
     resource,
 )
 from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
-from dagster._core.definitions.partitions.definition.time_window_partitions import (
-    get_time_partitions_def,
+from dagster._core.definitions.partitions.definition.time_window_subclasses import (
+    DailyPartitionsDefinition,
 )
 from dagster._core.definitions.partitions.partition_key_range import PartitionKeyRange
+from dagster._core.definitions.partitions.utils.multi import get_time_partitions_def
+from dagster._core.definitions.partitions.utils.time_window import TimeWindow
 from dagster._core.errors import (
     DagsterInvalidConfigError,
     DagsterInvalidDefinitionError,

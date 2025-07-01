@@ -19,7 +19,7 @@ from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.events import AssetMaterialization
 from dagster._core.definitions.materialize import materialize
 from dagster._core.definitions.metadata.metadata_value import TimestampMetadataValue
-from dagster._core.definitions.partitions.definition.time_window_partitions import (
+from dagster._core.definitions.partitions.definition.time_window_subclasses import (
     DailyPartitionsDefinition,
 )
 from dagster._core.definitions.sensor_definition import SensorEvaluationContext

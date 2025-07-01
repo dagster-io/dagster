@@ -365,7 +365,7 @@ class DynamicPartitionsStore(Protocol):
     def has_dynamic_partition(self, partitions_def_name: str, partition_key: str) -> bool: ...
 
     def get_dynamic_partitions_definition_id(self, partitions_def_name: str) -> str:
-        from dagster._core.definitions.partitions.utils import (
+        from dagster._core.definitions.partitions.utils.base import (
             generate_partition_key_based_definition_id,
         )
 
@@ -2591,7 +2591,7 @@ class DagsterInstance(DynamicPartitionsStore):
             partitions_def_name (str): The name of the `DynamicPartitionsDefinition`.
             partition_keys (Sequence[str]): Partition keys to add.
         """
-        from dagster._core.definitions.partitions.utils import (
+        from dagster._core.definitions.partitions.utils.base import (
             raise_error_on_invalid_partition_key_substring,
         )
 

@@ -6,7 +6,6 @@ from dagster import (
     AssetMaterialization,
     AutomationCondition,
     DagsterInstance,
-    DailyPartitionsDefinition,
     Definitions,
     PartitionsDefinition,
     asset,
@@ -14,6 +13,9 @@ from dagster import (
 )
 from dagster._core.definitions.data_version import DATA_VERSION_TAG
 from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
+from dagster._core.definitions.partitions.definition.time_window_subclasses import (
+    DailyPartitionsDefinition,
+)
 
 
 @pytest.mark.parametrize(

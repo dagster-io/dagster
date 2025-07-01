@@ -10,7 +10,6 @@ from dagster import (
     AssetKey,
     AssetSpec,
     DagsterInstance,
-    DailyPartitionsDefinition,
     Definitions,
     IdentityPartitionMapping,
     SourceAsset,
@@ -25,6 +24,9 @@ from dagster._core.definitions.backfill_policy import BackfillPolicy
 from dagster._core.definitions.data_version import CachingStaleStatusResolver
 from dagster._core.definitions.decorators.source_asset_decorator import observable_source_asset
 from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
+from dagster._core.definitions.partitions.definition.time_window_subclasses import (
+    DailyPartitionsDefinition,
+)
 from dagster._core.remote_representation import InProcessCodeLocationOrigin
 from dagster._core.test_utils import instance_for_test
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin

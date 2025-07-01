@@ -1,10 +1,11 @@
 import datetime
 
-from dagster import build_schedule_from_partitioned_job, schedule
-from dagster._core.definitions.partitions.definition.time_window_partitions import (
+from dagster import (
+    build_schedule_from_partitioned_job,
     daily_partitioned_config,
     hourly_partitioned_config,
     monthly_partitioned_config,
+    schedule,
     weekly_partitioned_config,
 )
 from dagster._core.definitions.run_request import RunRequest

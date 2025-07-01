@@ -4,17 +4,14 @@ import warnings
 
 import click
 import pytest
-from dagster import (
-    AssetSelection,
-    BetaWarning,
-    DailyPartitionsDefinition,
-    HourlyPartitionsDefinition,
-    PartitionKeyRange,
-    PreviewWarning,
-)
+from dagster import AssetSelection, BetaWarning, PartitionKeyRange, PreviewWarning
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
 from dagster._core.definitions.declarative_automation.automation_condition_evaluator import (
     AutomationConditionEvaluator,
+)
+from dagster._core.definitions.partitions.definition.time_window_subclasses import (
+    DailyPartitionsDefinition,
+    HourlyPartitionsDefinition,
 )
 
 from auto_materialize_perf_tests.partition_mappings_galore_perf_scenario import (

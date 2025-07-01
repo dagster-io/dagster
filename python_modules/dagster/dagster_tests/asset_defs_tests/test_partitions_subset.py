@@ -2,17 +2,20 @@ from typing import cast
 from unittest.mock import Mock
 
 import pytest
-from dagster import DailyPartitionsDefinition, MultiPartitionKey, MultiPartitionsDefinition
+from dagster import MultiPartitionKey, MultiPartitionsDefinition
 from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
-from dagster._core.definitions.partitions.definition.time_window_partitions import (
-    HourlyPartitionsDefinition,
-    PersistedTimeWindow,
+from dagster._core.definitions.partitions.definition.time_window import (
     TimeWindowPartitionsDefinition,
-    TimeWindowPartitionsSubset,
+)
+from dagster._core.definitions.partitions.definition.time_window_subclasses import (
+    DailyPartitionsDefinition,
+    HourlyPartitionsDefinition,
 )
 from dagster._core.definitions.partitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.partitions.subset.all import AllPartitionsSubset
 from dagster._core.definitions.partitions.subset.default import DefaultPartitionsSubset
+from dagster._core.definitions.partitions.subset.time_window import TimeWindowPartitionsSubset
+from dagster._core.definitions.partitions.utils.time_window import PersistedTimeWindow
 from dagster._core.errors import DagsterInvalidDeserializationVersionError
 from dagster._core.test_utils import freeze_time
 from dagster._serdes import deserialize_value, serialize_value

@@ -8,7 +8,7 @@ from typing import Optional, TypedDict, Union, cast
 
 from dagster import OutputContext
 from dagster._config.pythonic_config import ConfigurableIOManagerFactory
-from dagster._core.definitions.partitions.definition.time_window_partitions import TimeWindow
+from dagster._core.definitions.partitions.utils.time_window import TimeWindow
 from dagster._core.storage.db_io_manager import (
     DbClient,
     DbIOManager,

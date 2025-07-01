@@ -6,7 +6,6 @@ import pytest
 from dagster import (
     AssetExecutionContext,
     AssetIn,
-    DailyPartitionsDefinition,
     DimensionPartitionMapping,
     IdentityPartitionMapping,
     IOManager,
@@ -22,10 +21,11 @@ from dagster._core.definitions.multi_dimensional_partitions import MultiPartitio
 from dagster._core.definitions.partitions.context import PartitionLoadingContext
 from dagster._core.definitions.partitions.definition.dynamic import DynamicPartitionsDefinition
 from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
-from dagster._core.definitions.partitions.definition.time_window_partitions import (
-    TimeWindow,
-    get_time_partitions_def,
+from dagster._core.definitions.partitions.definition.time_window_subclasses import (
+    DailyPartitionsDefinition,
 )
+from dagster._core.definitions.partitions.utils.multi import get_time_partitions_def
+from dagster._core.definitions.partitions.utils.time_window import TimeWindow
 from dagster._core.definitions.temporal_context import TemporalContext
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster._core.storage.tags import get_multidimensional_partition_tag

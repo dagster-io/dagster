@@ -94,12 +94,23 @@ from dagster._core.definitions.partitions.definition.dynamic import (
 from dagster._core.definitions.partitions.definition.static import (
     StaticPartitionsDefinition as StaticPartitionsDefinition,
 )
+from dagster._core.definitions.partitions.definition.time_window_subclasses import (
+    DailyPartitionsDefinition as DailyPartitionsDefinition,
+    HourlyPartitionsDefinition as HourlyPartitionsDefinition,
+    MonthlyPartitionsDefinition as MonthlyPartitionsDefinition,
+    WeeklyPartitionsDefinition as WeeklyPartitionsDefinition,
+)
 from dagster._core.definitions.partitions.partition import Partition as Partition
 from dagster._core.definitions.partitions.partitioned_config import (
     PartitionedConfig as PartitionedConfig,
+    daily_partitioned_config as daily_partitioned_config,
     dynamic_partitioned_config as dynamic_partitioned_config,
+    hourly_partitioned_config as hourly_partitioned_config,
+    monthly_partitioned_config as monthly_partitioned_config,
     static_partitioned_config as static_partitioned_config,
+    weekly_partitioned_config as weekly_partitioned_config,
 )
+from dagster._core.definitions.partitions.utils.time_window import TimeWindow as TimeWindow
 from dagster._core.definitions.reconstruct import (
     ReconstructableJob as ReconstructableJob,
     build_reconstructable_job as build_reconstructable_job,
@@ -174,17 +185,8 @@ from dagster._core.definitions.op_definition import OpDefinition as OpDefinition
 from dagster._core.definitions.partitions.definition.base import (
     PartitionsDefinition as PartitionsDefinition,
 )
-from dagster._core.definitions.partitions.definition.time_window_partitions import (
-    DailyPartitionsDefinition as DailyPartitionsDefinition,
-    HourlyPartitionsDefinition as HourlyPartitionsDefinition,
-    MonthlyPartitionsDefinition as MonthlyPartitionsDefinition,
-    TimeWindow as TimeWindow,
+from dagster._core.definitions.partitions.definition.time_window import (
     TimeWindowPartitionsDefinition as TimeWindowPartitionsDefinition,
-    WeeklyPartitionsDefinition as WeeklyPartitionsDefinition,
-    daily_partitioned_config as daily_partitioned_config,
-    hourly_partitioned_config as hourly_partitioned_config,
-    monthly_partitioned_config as monthly_partitioned_config,
-    weekly_partitioned_config as weekly_partitioned_config,
 )
 from dagster._core.definitions.partitions.mapping.partition_mapping import (
     AllPartitionMapping as AllPartitionMapping,

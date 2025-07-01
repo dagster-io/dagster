@@ -7,7 +7,6 @@ from dagster import (
     AssetExecutionContext,
     AssetIn,
     AssetKey,
-    DailyPartitionsDefinition,
     MultiPartitionKey,
     MultiPartitionsDefinition,
     Out,
@@ -21,6 +20,9 @@ from dagster import (
 from dagster._check import CheckError
 from dagster._core.definitions.partitions.definition.dynamic import DynamicPartitionsDefinition
 from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
+from dagster._core.definitions.partitions.definition.time_window_subclasses import (
+    DailyPartitionsDefinition,
+)
 from dagster_duckdb_pyspark import DuckDBPySparkIOManager, duckdb_pyspark_io_manager
 from pyspark.sql import (
     DataFrame as SparkDF,

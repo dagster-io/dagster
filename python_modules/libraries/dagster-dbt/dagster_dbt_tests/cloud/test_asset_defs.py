@@ -8,7 +8,6 @@ from dagster import (
     AssetKey,
     AssetSelection,
     AutoMaterializePolicy,
-    DailyPartitionsDefinition,
     LegacyFreshnessPolicy,
     MetadataValue,
     asset,
@@ -17,6 +16,9 @@ from dagster import (
 )
 from dagster._config.field_utils import EnvVar
 from dagster._core.definitions.asset_graph import AssetGraph
+from dagster._core.definitions.partitions.definition.time_window_subclasses import (
+    DailyPartitionsDefinition,
+)
 from dagster._core.test_utils import environ, instance_for_test
 from dagster_dbt import (
     DagsterDbtCloudJobInvariantViolationError,

@@ -8,7 +8,6 @@ from dagster import (
     AssetExecutionContext,
     AssetIn,
     AssetKey,
-    DailyPartitionsDefinition,
     Definitions,
     MetadataValue,
     MultiPartitionKey,
@@ -24,6 +23,9 @@ from dagster import (
 from dagster._check import CheckError
 from dagster._core.definitions.partitions.definition.dynamic import DynamicPartitionsDefinition
 from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
+from dagster._core.definitions.partitions.definition.time_window_subclasses import (
+    DailyPartitionsDefinition,
+)
 from dagster_duckdb_pandas import DuckDBPandasIOManager, duckdb_pandas_io_manager
 
 if TYPE_CHECKING:

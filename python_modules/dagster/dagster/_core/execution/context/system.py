@@ -21,14 +21,13 @@ from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.metadata import RawMetadataValue
 from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.partitions.definition.base import PartitionsDefinition
-from dagster._core.definitions.partitions.definition.time_window_partitions import (
-    TimeWindow,
-    TimeWindowPartitionsDefinition,
-    has_one_dimension_time_window_partitioning,
-)
 from dagster._core.definitions.partitions.mapping.partition_mapping import infer_partition_mapping
 from dagster._core.definitions.partitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.partitions.subset.base import PartitionsSubset
+from dagster._core.definitions.partitions.utils.multi import (
+    has_one_dimension_time_window_partitioning,
+)
+from dagster._core.definitions.partitions.utils.time_window import TimeWindow
 from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.definitions.reconstruct import ReconstructableJob
 from dagster._core.definitions.repository_definition.repository_definition import (
@@ -65,6 +64,9 @@ if TYPE_CHECKING:
     from dagster._core.definitions.data_version import DataVersion
     from dagster._core.definitions.dependency import NodeHandle
     from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
+    from dagster._core.definitions.partitions.definition.time_window import (
+        TimeWindowPartitionsDefinition,
+    )
     from dagster._core.definitions.resource_definition import Resources
     from dagster._core.execution.context.hook import HookContext
     from dagster._core.execution.plan.plan import ExecutionPlan

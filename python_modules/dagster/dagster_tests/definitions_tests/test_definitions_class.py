@@ -52,7 +52,7 @@ from dagster._core.definitions.metadata.metadata_value import MetadataValue, Tex
 from dagster._core.definitions.partitions.context import PartitionLoadingContext
 from dagster._core.definitions.partitions.definition.base import PartitionsDefinition
 from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
-from dagster._core.definitions.partitions.definition.time_window_partitions import (
+from dagster._core.definitions.partitions.definition.time_window_subclasses import (
     DailyPartitionsDefinition,
     HourlyPartitionsDefinition,
 )

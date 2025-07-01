@@ -1,9 +1,6 @@
-from dagster import (
-    AssetIn,
+from dagster import AssetIn, Definitions, TimeWindowPartitionMapping, asset
+from dagster._core.definitions.partitions.definition.time_window_subclasses import (
     DailyPartitionsDefinition,
-    Definitions,
-    TimeWindowPartitionMapping,
-    asset,
 )
 
 

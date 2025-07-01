@@ -11,10 +11,8 @@ from dagster import (
     AssetsDefinition,
     AssetSpec,
     AutomationCondition,
-    DailyPartitionsDefinition,
     Definitions,
     GraphOut,
-    HourlyPartitionsDefinition,
     LastPartitionMapping,
     Out,
     PartitionMapping,
@@ -34,6 +32,10 @@ from dagster._core.definitions.decorators.asset_check_decorator import asset_che
 from dagster._core.definitions.events import AssetKeyPartitionKey
 from dagster._core.definitions.partitions.definition.base import PartitionsDefinition
 from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
+from dagster._core.definitions.partitions.definition.time_window_subclasses import (
+    DailyPartitionsDefinition,
+    HourlyPartitionsDefinition,
+)
 from dagster._core.definitions.partitions.mapping.partition_mapping import UpstreamPartitionsResult
 from dagster._core.definitions.partitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.partitions.subset.base import PartitionsSubset
@@ -49,9 +51,7 @@ from dagster._time import create_datetime, get_current_datetime
 from dagster_shared.serdes import deserialize_value, serialize_value
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.partitions.definition.time_window_partitions import (
-        TimeWindowPartitionsSubset,
-    )
+    from dagster._core.definitions.partitions.subset.time_window import TimeWindowPartitionsSubset
 
 
 def to_remote_asset_graph(assets, asset_checks=None) -> RemoteAssetGraph:

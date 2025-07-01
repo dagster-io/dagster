@@ -8,7 +8,9 @@ from typing_extensions import TypeVar
 from dagster._annotations import public
 from dagster._core.definitions.partitions.context import PartitionLoadingContext
 from dagster._core.definitions.partitions.partition_key_range import PartitionKeyRange
-from dagster._core.definitions.partitions.utils import generate_partition_key_based_definition_id
+from dagster._core.definitions.partitions.utils.base import (
+    generate_partition_key_based_definition_id,
+)
 from dagster._core.errors import DagsterInvalidInvocationError, DagsterUnknownPartitionError
 from dagster._core.instance import DynamicPartitionsStore
 from dagster._core.storage.tags import PARTITION_NAME_TAG

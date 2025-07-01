@@ -23,8 +23,8 @@ from dagster._core.definitions.events import (
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.partitions.definition.base import PartitionsDefinition
-from dagster._core.definitions.partitions.definition.time_window_partitions import TimeWindow
 from dagster._core.definitions.partitions.partition_key_range import PartitionKeyRange
+from dagster._core.definitions.partitions.utils.time_window import TimeWindow
 from dagster._core.definitions.repository_definition.repository_definition import (
     RepositoryDefinition,
 )

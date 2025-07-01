@@ -1,6 +1,6 @@
 import pytest
 from dagster import AssetMaterialization, AssetSelection, DagsterInstance, job, op
-from dagster._core.definitions.partitions.definition.time_window_partitions import (
+from dagster._core.definitions.partitions.definition.time_window_subclasses import (
     HourlyPartitionsDefinition,
 )
 

@@ -12,7 +12,6 @@ from dagster import (
     AssetsDefinition,
     BackfillPolicy,
     DagsterEventType,
-    DailyPartitionsDefinition,
     Definitions,
     GraphOut,
     HookContext,
@@ -56,6 +55,9 @@ from dagster._core.definitions.auto_materialize_policy import AutoMaterializePol
 from dagster._core.definitions.decorators.hook_decorator import success_hook
 from dagster._core.definitions.events import AssetMaterialization
 from dagster._core.definitions.metadata.metadata_value import TextMetadataValue
+from dagster._core.definitions.partitions.definition.time_window_subclasses import (
+    DailyPartitionsDefinition,
+)
 from dagster._core.definitions.result import MaterializeResult
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,

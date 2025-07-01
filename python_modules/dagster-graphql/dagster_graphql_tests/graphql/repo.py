@@ -29,7 +29,6 @@ from dagster import (
     BackfillPolicy,
     Bool,
     DagsterInstance,
-    DailyPartitionsDefinition,
     DataVersion,
     DefaultScheduleStatus,
     DefaultSensorStatus,
@@ -39,7 +38,6 @@ from dagster import (
     EnumValue,
     ExpectationResult,
     Field,
-    HourlyPartitionsDefinition,
     In,
     Int,
     IOManager,
@@ -61,13 +59,11 @@ from dagster import (
     TableRecord,
     TableSchema,
     TimeWindowPartitionMapping,
-    WeeklyPartitionsDefinition,
     _check as check,
     asset,
     asset_check,
     asset_sensor,
     dagster_type_loader,
-    daily_partitioned_config,
     define_asset_job,
     graph,
     graph_asset,
@@ -103,8 +99,14 @@ from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
 from dagster._core.definitions.partitions.definition.dynamic import DynamicPartitionsDefinition
 from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
+from dagster._core.definitions.partitions.definition.time_window_subclasses import (
+    DailyPartitionsDefinition,
+    HourlyPartitionsDefinition,
+    WeeklyPartitionsDefinition,
+)
 from dagster._core.definitions.partitions.partitioned_config import (
     PartitionedConfig,
+    daily_partitioned_config,
     static_partitioned_config,
 )
 from dagster._core.definitions.reconstruct import ReconstructableRepository
