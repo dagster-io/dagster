@@ -138,7 +138,7 @@ export const PARTIAL_WORKSPACE_LOCATION_NODE_FRAGMENT = gql`
     locationOrLoadError {
       ... on RepositoryLocation {
         id
-        ...WorkspaceLocation
+        ...PartialWorkspaceLocation
       }
       ...PythonErrorFragment
     }
