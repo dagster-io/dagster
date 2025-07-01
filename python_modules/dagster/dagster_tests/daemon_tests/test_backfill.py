@@ -13,7 +13,6 @@ from unittest import mock
 import dagster._check as check
 import pytest
 from dagster import (
-    AllPartitionMapping,
     Any,
     AssetDep,
     AssetExecutionContext,
@@ -28,7 +27,6 @@ from dagster import (
     Nothing,
     Out,
     Output,
-    StaticPartitionMapping,
     TimeWindowPartitionMapping,
     asset,
     define_asset_job,
@@ -49,6 +47,8 @@ from dagster._core.definitions.partitions.definition.static import StaticPartiti
 from dagster._core.definitions.partitions.definition.time_window_subclasses import (
     DailyPartitionsDefinition,
 )
+from dagster._core.definitions.partitions.mapping.all import AllPartitionMapping
+from dagster._core.definitions.partitions.mapping.static import StaticPartitionMapping
 from dagster._core.definitions.partitions.partitioned_config import (
     PartitionedConfig,
     daily_partitioned_config,

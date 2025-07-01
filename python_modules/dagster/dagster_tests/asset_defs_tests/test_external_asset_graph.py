@@ -11,9 +11,7 @@ from dagster import (
     AssetSpec,
     DagsterInstance,
     Definitions,
-    IdentityPartitionMapping,
     SourceAsset,
-    StaticPartitionMapping,
     asset,
     graph_asset,
     multi_asset,
@@ -27,6 +25,8 @@ from dagster._core.definitions.partitions.definition.static import StaticPartiti
 from dagster._core.definitions.partitions.definition.time_window_subclasses import (
     DailyPartitionsDefinition,
 )
+from dagster._core.definitions.partitions.mapping.identity import IdentityPartitionMapping
+from dagster._core.definitions.partitions.mapping.static import StaticPartitionMapping
 from dagster._core.remote_representation import InProcessCodeLocationOrigin
 from dagster._core.test_utils import instance_for_test
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin

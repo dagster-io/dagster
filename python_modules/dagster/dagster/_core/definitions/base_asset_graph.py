@@ -25,13 +25,13 @@ from dagster._core.definitions.freshness import InternalFreshnessPolicy
 from dagster._core.definitions.freshness_policy import LegacyFreshnessPolicy
 from dagster._core.definitions.metadata import ArbitraryMetadataMapping
 from dagster._core.definitions.partitions.definition.base import PartitionsDefinition
-from dagster._core.definitions.partitions.mapping.partition_mapping import (
+from dagster._core.definitions.partitions.mapping.base import (
     PartitionMapping,
     UpstreamPartitionsResult,
-    infer_partition_mapping,
 )
 from dagster._core.definitions.partitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.partitions.subset.base import PartitionsSubset
+from dagster._core.definitions.partitions.utils.mapping import infer_partition_mapping
 from dagster._core.definitions.partitions.utils.multi import (
     get_time_partition_key,
     get_time_partitions_def,

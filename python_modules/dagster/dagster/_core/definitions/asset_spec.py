@@ -30,7 +30,7 @@ from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
 from dagster._core.definitions.freshness import InternalFreshnessPolicy
 from dagster._core.definitions.freshness_policy import LegacyFreshnessPolicy
 from dagster._core.definitions.partitions.definition.base import PartitionsDefinition
-from dagster._core.definitions.partitions.mapping.partition_mapping import PartitionMapping
+from dagster._core.definitions.partitions.mapping.base import PartitionMapping
 from dagster._core.definitions.utils import (
     resolve_automation_condition,
     validate_asset_owner,

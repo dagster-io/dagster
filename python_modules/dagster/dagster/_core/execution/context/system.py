@@ -22,9 +22,12 @@ from dagster._core.definitions.metadata import RawMetadataValue
 from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.partitions.definition.base import PartitionsDefinition
 from dagster._core.definitions.partitions.definition.multi import MultiPartitionsDefinition
-from dagster._core.definitions.partitions.mapping.partition_mapping import infer_partition_mapping
+from dagster._core.definitions.partitions.definition.time_window import (
+    TimeWindowPartitionsDefinition,
+)
 from dagster._core.definitions.partitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.partitions.subset.base import PartitionsSubset
+from dagster._core.definitions.partitions.utils.mapping import infer_partition_mapping
 from dagster._core.definitions.partitions.utils.multi import (
     has_one_dimension_time_window_partitioning,
 )

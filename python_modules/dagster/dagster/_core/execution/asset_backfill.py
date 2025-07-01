@@ -30,7 +30,7 @@ from dagster._core.definitions.partitions.definition.base import PartitionsDefin
 from dagster._core.definitions.partitions.definition.time_window import (
     TimeWindowPartitionsDefinition,
 )
-from dagster._core.definitions.partitions.mapping.partition_mapping import IdentityPartitionMapping
+from dagster._core.definitions.partitions.mapping.identity import IdentityPartitionMapping
 from dagster._core.definitions.partitions.mapping.time_window_partition_mapping import (
     TimeWindowPartitionMapping,
 )

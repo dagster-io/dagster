@@ -22,7 +22,7 @@ from dagster._core.definitions.partitions.definition.multi import MultiPartition
 from dagster._core.definitions.partitions.definition.time_window import (
     TimeWindowPartitionsDefinition,
 )
-from dagster._core.definitions.partitions.mapping.partition_mapping import UpstreamPartitionsResult
+from dagster._core.definitions.partitions.mapping.base import UpstreamPartitionsResult
 from dagster._core.definitions.partitions.subset.all import AllPartitionsSubset
 from dagster._core.definitions.partitions.subset.time_window import TimeWindowPartitionsSubset
 from dagster._core.definitions.partitions.utils.multi import (

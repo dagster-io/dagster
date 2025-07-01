@@ -8,7 +8,7 @@ from dagster._core.definitions.partitions.definition.base import PartitionsDefin
 from dagster._core.definitions.partitions.definition.time_window import (
     TimeWindowPartitionsDefinition,
 )
-from dagster._core.definitions.partitions.mapping.partition_mapping import (
+from dagster._core.definitions.partitions.mapping.base import (
     PartitionMapping,
     UpstreamPartitionsResult,
 )

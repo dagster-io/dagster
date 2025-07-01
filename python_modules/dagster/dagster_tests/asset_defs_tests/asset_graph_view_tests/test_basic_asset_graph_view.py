@@ -1,13 +1,7 @@
 from typing import cast
 
 import pytest
-from dagster import (
-    AssetDep,
-    Definitions,
-    IdentityPartitionMapping,
-    TimeWindowPartitionsDefinition,
-    asset,
-)
+from dagster import AssetDep, Definitions, TimeWindowPartitionsDefinition, asset
 from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView
 from dagster._core.definitions.asset_check_spec import AssetCheckSpec
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
@@ -16,10 +10,9 @@ from dagster._core.definitions.partitions.definition.static import StaticPartiti
 from dagster._core.definitions.partitions.definition.time_window_subclasses import (
     DailyPartitionsDefinition,
 )
-from dagster._core.definitions.partitions.mapping.partition_mapping import (
-    LastPartitionMapping,
-    StaticPartitionMapping,
-)
+from dagster._core.definitions.partitions.mapping.identity import IdentityPartitionMapping
+from dagster._core.definitions.partitions.mapping.last import LastPartitionMapping
+from dagster._core.definitions.partitions.mapping.static import StaticPartitionMapping
 from dagster._core.definitions.partitions.subset.all import AllPartitionsSubset
 from dagster._core.definitions.partitions.subset.time_window import TimeWindowPartitionsSubset
 from dagster._core.definitions.partitions.utils.time_window import PersistedTimeWindow, TimeWindow

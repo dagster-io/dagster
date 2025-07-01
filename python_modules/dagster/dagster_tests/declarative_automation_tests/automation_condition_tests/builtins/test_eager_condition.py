@@ -8,8 +8,6 @@ from dagster import (
     AutomationCondition,
     DagsterInstance,
     Definitions,
-    DimensionPartitionMapping,
-    MultiPartitionMapping,
     Output,
     TimeWindowPartitionMapping,
     asset,
@@ -21,6 +19,8 @@ from dagster._core.definitions.partitions.definition.static import StaticPartiti
 from dagster._core.definitions.partitions.definition.time_window_subclasses import (
     DailyPartitionsDefinition,
 )
+from dagster._core.definitions.partitions.mapping.multi.base import DimensionPartitionMapping
+from dagster._core.definitions.partitions.mapping.multi.multi_to_multi import MultiPartitionMapping
 from dagster._core.instance_for_test import instance_for_test
 
 from dagster_tests.declarative_automation_tests.scenario_utils.automation_condition_scenario import (

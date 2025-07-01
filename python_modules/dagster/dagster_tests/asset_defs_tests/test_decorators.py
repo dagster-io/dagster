@@ -2,17 +2,13 @@ from typing import Any
 
 import pytest
 from dagster import (
-    AllPartitionMapping,
     AssetExecutionContext,
     AssetKey,
     AssetOut,
     DagsterInvalidDefinitionError,
-    DimensionPartitionMapping,
     GraphIn,
-    IdentityPartitionMapping,
     In,
     LegacyFreshnessPolicy,
-    MultiPartitionMapping,
     Nothing,
     Out,
     Output,
@@ -43,6 +39,10 @@ from dagster._core.definitions.partitions.definition.static import StaticPartiti
 from dagster._core.definitions.partitions.definition.time_window_subclasses import (
     DailyPartitionsDefinition,
 )
+from dagster._core.definitions.partitions.mapping.all import AllPartitionMapping
+from dagster._core.definitions.partitions.mapping.identity import IdentityPartitionMapping
+from dagster._core.definitions.partitions.mapping.multi.base import DimensionPartitionMapping
+from dagster._core.definitions.partitions.mapping.multi.multi_to_multi import MultiPartitionMapping
 from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.definitions.resource_requirement import ensure_requirements_satisfied
 from dagster._core.definitions.tags import build_kind_tag

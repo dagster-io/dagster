@@ -37,7 +37,7 @@ from dagster._core.definitions.partitions.definition.static import StaticPartiti
 from dagster._core.definitions.partitions.definition.time_window_subclasses import (
     DailyPartitionsDefinition,
 )
-from dagster._core.definitions.partitions.mapping.partition_mapping import AllPartitionMapping
+from dagster._core.definitions.partitions.mapping.all import AllPartitionMapping
 from dagster._core.definitions.partitions.mapping.time_window_partition_mapping import (
     TimeWindowPartitionMapping,
 )

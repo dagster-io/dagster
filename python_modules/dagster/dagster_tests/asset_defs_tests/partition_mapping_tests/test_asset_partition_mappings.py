@@ -4,7 +4,6 @@ from typing import Optional
 
 import pytest
 from dagster import (
-    AllPartitionMapping,
     AssetExecutionContext,
     AssetIn,
     AssetMaterialization,
@@ -13,14 +12,10 @@ from dagster import (
     DagsterInvalidDefinitionError,
     DagsterInvariantViolationError,
     Definitions,
-    IdentityPartitionMapping,
     IOManager,
     IOManagerDefinition,
-    LastPartitionMapping,
-    MultiToSingleDimensionPartitionMapping,
     PartitionsDefinition,
     SourceAsset,
-    SpecificPartitionsPartitionMapping,
     TimeWindowPartitionMapping,
     asset,
     define_asset_job,
@@ -42,14 +37,23 @@ from dagster._core.definitions.partitions.definition.time_window_subclasses impo
     DailyPartitionsDefinition,
     WeeklyPartitionsDefinition,
 )
-from dagster._core.definitions.partitions.mapping.partition_mapping import (
+from dagster._core.definitions.partitions.mapping.all import AllPartitionMapping
+from dagster._core.definitions.partitions.mapping.base import (
     PartitionMapping,
     UpstreamPartitionsResult,
-    get_builtin_partition_mapping_types,
+)
+from dagster._core.definitions.partitions.mapping.identity import IdentityPartitionMapping
+from dagster._core.definitions.partitions.mapping.last import LastPartitionMapping
+from dagster._core.definitions.partitions.mapping.multi.multi_to_single import (
+    MultiToSingleDimensionPartitionMapping,
+)
+from dagster._core.definitions.partitions.mapping.specific_partitions import (
+    SpecificPartitionsPartitionMapping,
 )
 from dagster._core.definitions.partitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.partitions.subset.base import PartitionsSubset
 from dagster._core.definitions.partitions.subset.default import DefaultPartitionsSubset
+from dagster._core.definitions.partitions.utils.mapping import get_builtin_partition_mapping_types
 from dagster._core.definitions.partitions.utils.multi import MultiPartitionKey
 from dagster._core.instance import DynamicPartitionsStore
 from dagster._core.test_utils import assert_namedtuple_lists_equal

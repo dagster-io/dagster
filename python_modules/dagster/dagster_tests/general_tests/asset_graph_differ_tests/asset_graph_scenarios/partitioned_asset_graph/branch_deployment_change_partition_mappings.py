@@ -1,17 +1,12 @@
-from dagster import (
-    AssetIn,
-    Definitions,
-    DimensionPartitionMapping,
-    MultiPartitionMapping,
-    StaticPartitionMapping,
-    TimeWindowPartitionMapping,
-    asset,
-)
+from dagster import AssetIn, Definitions, TimeWindowPartitionMapping, asset
 from dagster._core.definitions.partitions.definition.multi import MultiPartitionsDefinition
 from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
 from dagster._core.definitions.partitions.definition.time_window_subclasses import (
     DailyPartitionsDefinition,
 )
+from dagster._core.definitions.partitions.mapping.multi.base import DimensionPartitionMapping
+from dagster._core.definitions.partitions.mapping.multi.multi_to_multi import MultiPartitionMapping
+from dagster._core.definitions.partitions.mapping.static import StaticPartitionMapping
 
 daily_partitions_def = DailyPartitionsDefinition(start_date="2024-02-01")
 static_partitions_def = StaticPartitionsDefinition(["apple", "orange", "banana"])
