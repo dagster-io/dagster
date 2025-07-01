@@ -8,14 +8,11 @@ A data platform typically involves people in various roles working together, eac
 
 In this step, we will incorporate a dbt project to model the data we loaded with DuckDB.
 
-
 ## 1. Add the dbt project
 
 First we will need a dbt project to work with. Run the following to add a dbt project to the root of the `etl_tutorial`:
 
-```bash
-git clone --depth=1 https://github.com/dagster-io/jaffle-platform.git transform && rm -rf transform/.git
-```
+<CliInvocationExample contents="git clone --depth=1 https://github.com/dagster-io/jaffle-platform.git transform && rm -rf transform/.git" />
 
 There will now be a directory `transform` within the root of the project containing our dbt project.
 
@@ -28,7 +25,6 @@ There will now be a directory `transform` within the root of the project contain
 └── uv.lock
 ```
 
-
 :::note
 
 This dbt project already contains models that work with the raw data we brought in previously and requires no modifications.
@@ -39,23 +35,21 @@ This dbt project already contains models that work with the raw data we brought 
 
 Now that we have a dbt project to work with, we need to install both the Dagster dbt integration and the dbt adapter for DuckDB:
 
-```bash
-uv pip install dagster-dbt dbt-duckdb
-```
+<CliInvocationExample contents="uv pip install dagster-dbt dbt-duckdb" />
 
-Next, we can scaffold a dbt component definition by providing the path to the dbt project we added earlier:
+We still want our dbt project to be represented as assets in our graph, but we will define them in a slightly different way. In the previous step, we manually defined our assets by writing functions decorated with the <PyObject section="assets" module="dagster" object="asset" decorator />. This time ,we will use [components](/guides/build/components/), which are predefined ways to interact with common integrations or patterns. In this case, we will use the [dbt component](/guides/build/components/integrations/dbt-component-tutorial) to quickly turn our dbt project into assets.
 
-```bash
-dg scaffold defs dagster_dbt.DbtProjectComponent transform --project-path transform/jdbt
-```
+The dbt component was installed when we installed the `dagster-dbt` library. This means we can now scaffold a dbt component definition with `dg scaffold defs` command:
 
-This will add the directory `transform` to the `etl_tutorial` module:
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/commands/dg-scaffold-dbt.txt" />
+
+This will look similar to scaffolding assets, though also include the `--project-path` flag to set the directory of our dbt project. After the `dg` command runs, the directory `transform` is added to the `etl_tutorial` module:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/tree/dbt.txt" />
 
 ## 3. Configure the dbt `defs.yaml`
 
-The dbt component creates a single file, `defs.yaml`, which configures the `dagster_dbt`.`DbtProjectComponent`. Most of the file’s contents were generated when we scaffolded the component and provided the path to the dbt project:
+The dbt component creates a single file, `defs.yaml`, which configures the Dagster dbt component definition. Unlike the assets file, which was in Python, components provide a low-code interface in YAML. Most of the YAML file’s contents were generated when we scaffolded the component definition with `dg` and provided the path to the dbt project which is set in the `project` attribute under `attributes`:
 
 ```yaml title="src/etl_tutorial/defs/transform/defs.yaml"
 type: dagster_dbt.DbtProjectComponent
@@ -64,7 +58,11 @@ attributes:
   project: '{{ project_root }}/transform/jdbt'
 ```
 
-The component is correctly configured for our dbt project, but we need to make one addition:
+To check that Dagster can load the dbt component definition correctly in the top-level `Definitions` object, run `dg check` again:
+
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/commands/dg-check-defs.txt" />
+
+The component is correctly configured for our dbt project, but we need to make one addition to the YAML file:
 
 <CodeExample
     path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/src/etl_tutorial/defs/transform/defs.yaml"
@@ -72,9 +70,23 @@ The component is correctly configured for our dbt project, but we need to make o
     title="src/etl_tutorial/defs/transform/defs.yaml"
 />
 
-Adding in the `translation` attribute aligns the keys of our dbt models with the source tables. Associating them together ensures the proper lineage across our assets.
+Adding in the `translation` attribute aligns the keys of our dbt models with the assets we defined previously. Associating them together ensures the proper lineage across our assets.
 
 ![2048 resolution](/images/tutorial/etl-tutorial/ingest-assets-run.png)
+
+
+## 4. Materialize assets
+
+To materialize the assets:
+
+1. Click **Assets**, then click "View global asset lineage" to see all of your assets.
+2. Click **Materialize all**.
+
+:::tip
+
+You can also materialize your assets from the command line with the `dg launch` command.
+
+:::
 
 ## Summary
 
@@ -82,13 +94,7 @@ We have now layered dbt into the project. The `etl_tutorial` module should look 
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/tree/step-1.txt" />
 
-Once again you can materialize your assets within the UI or using `dg launch` from the command line. You can also use [`dg list`](/api/dg/dg-cli#dg-list) to get a full overview of the definitions in your project by executing:
-
-```bash
-dg list defs
-```
-
-This will return a table of all the definitions within the Dagster project. As we add more objects, you can rerun this command to see how our project grows.
+Regardless of how your assets are added to your project, they will all appear together within the asset graph.
 
 :::info
 
