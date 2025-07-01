@@ -718,6 +718,7 @@ class Definitions(IHaveNew):
         - No jobs, sensors, or schedules have conflicting names.
         - All asset jobs can be resolved.
         - All resource requirements are satisfied.
+        - All partition mappings are valid.
 
         Meant to be used in unit tests.
 
