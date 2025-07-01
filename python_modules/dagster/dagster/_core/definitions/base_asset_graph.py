@@ -35,7 +35,7 @@ from dagster._core.definitions.time_window_partitions import (
     get_time_partition_key,
     get_time_partitions_def,
 )
-from dagster._core.errors import DagsterInvalidInvocationError
+from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidInvocationError
 from dagster._core.instance import DynamicPartitionsStore
 from dagster._core.selector.subset_selector import DependencyGraph, fetch_sources
 from dagster._core.utils import toposort
@@ -652,6 +652,28 @@ class BaseAssetGraph(ABC, Generic[T_AssetNode]):
             and self.get(key).is_materializable
             and not self.has_materializable_parents(key)
         }
+
+    def validate_partition_mappings(self):
+        for node in self.asset_nodes:
+            if node.is_external:
+                continue
+
+            parents = self.get_parents(node)
+            for parent in parents:
+                if parent.partitions_def is None or parent.is_external:
+                    continue
+
+                partition_mapping = self.get_partition_mapping(node.key, parent.key)
+
+                try:
+                    partition_mapping.validate_partition_mapping(
+                        parent.partitions_def,
+                        node.partitions_def,
+                    )
+                except Exception as e:
+                    raise DagsterInvalidDefinitionError(
+                        f"Invalid partition mapping from {node.key.to_user_string()} to {parent.key.to_user_string()}"
+                    ) from e
 
     def upstream_key_iterator(self, asset_key: AssetKey) -> Iterator[AssetKey]:
         """Iterates through all asset keys which are upstream of the given key."""
