@@ -13,7 +13,6 @@ We will start by writing our ingestion assets. Assets serve as the building bloc
 
 
 When building assets, the first step is to scaffold the assets file with the [`dg scaffold` command](/api/dg/dg-cli#dg-scaffold). The `dg` CLI provides a number of commands to help structure and navigate Dagster projects. For more information, see the [`dg` CLI documentation](/api/dg/dg-cli):
-:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/commands/dg-scaffold-assets.txt" />
 
