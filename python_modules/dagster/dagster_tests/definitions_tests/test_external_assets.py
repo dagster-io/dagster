@@ -24,7 +24,9 @@ from dagster._core.definitions.external_asset import (
     external_assets_from_specs,
 )
 from dagster._core.definitions.freshness_policy import LegacyFreshnessPolicy
-from dagster._core.definitions.time_window_partitions import DailyPartitionsDefinition
+from dagster._core.definitions.partitions.definition.time_window_partitions import (
+    DailyPartitionsDefinition,
+)
 
 
 def test_external_asset_basic_creation() -> None:

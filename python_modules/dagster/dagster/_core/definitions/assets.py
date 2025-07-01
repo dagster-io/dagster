@@ -44,12 +44,18 @@ from dagster._core.definitions.multi_dimensional_partitions import MultiPartitio
 from dagster._core.definitions.node_definition import NodeDefinition
 from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.op_invocation import direct_invocation_result
-from dagster._core.definitions.partition import PartitionsDefinition
-from dagster._core.definitions.partition_mapping import (
+from dagster._core.definitions.partitions.definition.partition import PartitionsDefinition
+from dagster._core.definitions.partitions.definition.time_window_partitions import (
+    TimeWindowPartitionsDefinition,
+)
+from dagster._core.definitions.partitions.mapping.partition_mapping import (
     MultiPartitionMapping,
     PartitionMapping,
     infer_partition_mapping,
     warn_if_partition_mapping_not_builtin,
+)
+from dagster._core.definitions.partitions.mapping.time_window_partition_mapping import (
+    TimeWindowPartitionMapping,
 )
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.resource_requirement import (
@@ -60,8 +66,6 @@ from dagster._core.definitions.resource_requirement import (
     merge_resource_defs,
 )
 from dagster._core.definitions.source_asset import SourceAsset
-from dagster._core.definitions.time_window_partition_mapping import TimeWindowPartitionMapping
-from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
 from dagster._core.definitions.utils import (
     DEFAULT_GROUP_NAME,
     DEFAULT_IO_MANAGER_KEY,

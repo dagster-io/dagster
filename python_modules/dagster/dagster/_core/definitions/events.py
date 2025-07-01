@@ -38,7 +38,7 @@ from dagster._core.definitions.metadata import (
     RawMetadataValue,
     normalize_metadata,
 )
-from dagster._core.definitions.partition_key_range import PartitionKeyRange
+from dagster._core.definitions.partitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.utils import DEFAULT_OUTPUT, check_valid_name
 from dagster._core.storage.tags import MULTIDIMENSIONAL_PARTITION_PREFIX, REPORTING_USER_TAG
 from dagster._record import IHaveNew, record_custom

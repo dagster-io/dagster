@@ -45,7 +45,10 @@ from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.graph_definition import GraphDefinition
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.node_definition import NodeDefinition
-from dagster._core.definitions.partition import PartitionLoadingContext, TemporalContext
+from dagster._core.definitions.partitions.definition.partition import (
+    PartitionLoadingContext,
+    TemporalContext,
+)
 from dagster._core.definitions.repository_definition.repository_definition import (
     RepositoryDefinition,
 )

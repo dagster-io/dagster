@@ -11,7 +11,7 @@ from dagster import (
     op,
     static_partitioned_config,
 )
-from dagster._core.definitions.partition import partitioned_config
+from dagster._core.definitions.partitions.definition.partition import partitioned_config
 from dagster._core.definitions.run_config import RunConfig
 from dagster._time import create_datetime
 

@@ -23,14 +23,17 @@ from dagster._core.definitions.multi_dimensional_partitions import (
     MultiPartitionsDefinition,
     PartitionDimensionDefinition,
 )
-from dagster._core.definitions.partition import AllPartitionsSubset, TemporalContext
-from dagster._core.definitions.partition_mapping import UpstreamPartitionsResult
-from dagster._core.definitions.time_window_partitions import (
+from dagster._core.definitions.partitions.definition.partition import (
+    AllPartitionsSubset,
+    TemporalContext,
+)
+from dagster._core.definitions.partitions.definition.time_window_partitions import (
     TimeWindow,
     TimeWindowPartitionsDefinition,
     TimeWindowPartitionsSubset,
     get_time_partitions_def,
 )
+from dagster._core.definitions.partitions.mapping.partition_mapping import UpstreamPartitionsResult
 from dagster._core.loader import LoadingContext
 from dagster._time import get_current_datetime
 from dagster._utils.aiodataloader import DataLoader
@@ -42,8 +45,8 @@ if TYPE_CHECKING:
         ValidAssetSubset,
     )
     from dagster._core.definitions.definitions_class import Definitions
-    from dagster._core.definitions.partition import PartitionsDefinition
-    from dagster._core.definitions.partition_key_range import PartitionKeyRange
+    from dagster._core.definitions.partitions.definition.partition import PartitionsDefinition
+    from dagster._core.definitions.partitions.partition_key_range import PartitionKeyRange
     from dagster._core.instance import DagsterInstance
     from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionResolvedStatus
     from dagster._core.storage.dagster_run import RunRecord

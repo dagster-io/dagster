@@ -30,8 +30,10 @@ from dagster import (
     op,
     resource,
 )
-from dagster._core.definitions.partition_key_range import PartitionKeyRange
-from dagster._core.definitions.time_window_partitions import get_time_partitions_def
+from dagster._core.definitions.partitions.definition.time_window_partitions import (
+    get_time_partitions_def,
+)
+from dagster._core.definitions.partitions.partition_key_range import PartitionKeyRange
 from dagster._core.errors import (
     DagsterInvalidConfigError,
     DagsterInvalidDefinitionError,

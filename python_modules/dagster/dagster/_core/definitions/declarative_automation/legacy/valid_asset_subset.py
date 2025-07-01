@@ -11,8 +11,13 @@ from dagster._core.asset_graph_view.serializable_entity_subset import (
     SerializableEntitySubset,
 )
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
-from dagster._core.definitions.partition import AllPartitionsSubset, PartitionsDefinition
-from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsSubset
+from dagster._core.definitions.partitions.definition.partition import (
+    AllPartitionsSubset,
+    PartitionsDefinition,
+)
+from dagster._core.definitions.partitions.definition.time_window_partitions import (
+    TimeWindowPartitionsSubset,
+)
 
 if TYPE_CHECKING:
     from dagster._core.instance import DynamicPartitionsStore

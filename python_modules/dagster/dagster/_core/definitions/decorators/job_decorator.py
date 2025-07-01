@@ -24,7 +24,10 @@ from dagster._utils.tags import normalize_tags
 
 if TYPE_CHECKING:
     from dagster._core.definitions.executor_definition import ExecutorDefinition
-    from dagster._core.definitions.partition import PartitionedConfig, PartitionsDefinition
+    from dagster._core.definitions.partitions.definition.partition import (
+        PartitionedConfig,
+        PartitionsDefinition,
+    )
     from dagster._core.definitions.run_config import RunConfig
 
 

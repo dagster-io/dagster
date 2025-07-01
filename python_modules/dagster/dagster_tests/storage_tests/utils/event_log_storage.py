@@ -66,12 +66,12 @@ from dagster._core.definitions.events import (
 )
 from dagster._core.definitions.job_base import InMemoryJob
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionKey
-from dagster._core.definitions.partition import (
+from dagster._core.definitions.partitions.definition.partition import (
     AllPartitionsSubset,
     PartitionKeyRange,
     StaticPartitionsDefinition,
 )
-from dagster._core.definitions.time_window_partitions import (
+from dagster._core.definitions.partitions.definition.time_window_partitions import (
     DailyPartitionsDefinition,
     HourlyPartitionsDefinition,
 )

@@ -4,16 +4,19 @@ from typing import NamedTuple, Optional, cast
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, beta_param
-from dagster._core.definitions.partition import (
+from dagster._core.definitions.partitions.definition.partition import (
     AllPartitionsSubset,
     PartitionsDefinition,
     PartitionsSubset,
 )
-from dagster._core.definitions.partition_mapping import PartitionMapping, UpstreamPartitionsResult
-from dagster._core.definitions.time_window_partitions import (
+from dagster._core.definitions.partitions.definition.time_window_partitions import (
     TimeWindow,
     TimeWindowPartitionsDefinition,
     TimeWindowPartitionsSubset,
+)
+from dagster._core.definitions.partitions.mapping.partition_mapping import (
+    PartitionMapping,
+    UpstreamPartitionsResult,
 )
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.instance import DynamicPartitionsStore

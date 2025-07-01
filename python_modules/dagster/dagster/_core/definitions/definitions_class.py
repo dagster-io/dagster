@@ -27,7 +27,7 @@ from dagster._core.definitions.metadata.metadata_value import (
     CodeLocationReconstructionMetadataValue,
     MetadataValue,
 )
-from dagster._core.definitions.partitioned_schedule import (
+from dagster._core.definitions.partitions.partitioned_schedule import (
     UnresolvedPartitionedAssetScheduleDefinition,
 )
 from dagster._core.definitions.repository_definition import (

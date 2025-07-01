@@ -9,13 +9,15 @@ from typing_extensions import Self
 import dagster._check as check
 from dagster._core.definitions.asset_key import T_EntityKey
 from dagster._core.definitions.events import AssetKeyPartitionKey
-from dagster._core.definitions.partition import (
+from dagster._core.definitions.partitions.definition.partition import (
     AllPartitionsSubset,
     DefaultPartitionsSubset,
     PartitionsDefinition,
     PartitionsSubset,
 )
-from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsSubset
+from dagster._core.definitions.partitions.definition.time_window_partitions import (
+    TimeWindowPartitionsSubset,
+)
 
 EntitySubsetValue = Union[bool, PartitionsSubset]
 

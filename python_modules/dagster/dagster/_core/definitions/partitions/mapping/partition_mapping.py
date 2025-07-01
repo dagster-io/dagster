@@ -14,14 +14,16 @@ from dagster._core.definitions.multi_dimensional_partitions import (
     MultiPartitionKey,
     MultiPartitionsDefinition,
 )
-from dagster._core.definitions.partition import (
+from dagster._core.definitions.partitions.definition.partition import (
     AllPartitionsSubset,
     DefaultPartitionsSubset,
     PartitionsDefinition,
     PartitionsSubset,
     StaticPartitionsDefinition,
 )
-from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
+from dagster._core.definitions.partitions.definition.time_window_partitions import (
+    TimeWindowPartitionsDefinition,
+)
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.instance import DynamicPartitionsStore
 from dagster._record import record
@@ -1124,7 +1126,9 @@ def _get_infer_single_to_multi_dimension_deps_result(
     downstream_partitions_def: PartitionsDefinition,
     partition_dimension_name: Optional[str] = None,
 ) -> InferSingleToMultiDimensionDepsResult:
-    from dagster._core.definitions.time_window_partition_mapping import TimeWindowPartitionMapping
+    from dagster._core.definitions.partitions.mapping.time_window_partition_mapping import (
+        TimeWindowPartitionMapping,
+    )
 
     upstream_is_multipartitioned = isinstance(upstream_partitions_def, MultiPartitionsDefinition)
 
@@ -1233,7 +1237,9 @@ def infer_partition_mapping(
     downstream_partitions_def: Optional[PartitionsDefinition],
     upstream_partitions_def: Optional[PartitionsDefinition],
 ) -> PartitionMapping:
-    from dagster._core.definitions.time_window_partition_mapping import TimeWindowPartitionMapping
+    from dagster._core.definitions.partitions.mapping.time_window_partition_mapping import (
+        TimeWindowPartitionMapping,
+    )
 
     if partition_mapping is not None:
         return partition_mapping
@@ -1255,7 +1261,9 @@ def infer_partition_mapping(
 
 @lru_cache(maxsize=1)
 def get_builtin_partition_mapping_types() -> tuple[type[PartitionMapping], ...]:
-    from dagster._core.definitions.time_window_partition_mapping import TimeWindowPartitionMapping
+    from dagster._core.definitions.partitions.mapping.time_window_partition_mapping import (
+        TimeWindowPartitionMapping,
+    )
 
     return (
         AllPartitionMapping,

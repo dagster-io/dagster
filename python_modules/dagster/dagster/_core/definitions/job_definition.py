@@ -37,7 +37,7 @@ from dagster._core.definitions.metadata import MetadataValue, RawMetadataValue, 
 from dagster._core.definitions.node_definition import NodeDefinition
 from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.op_selection import OpSelection, get_graph_subset
-from dagster._core.definitions.partition import (
+from dagster._core.definitions.partitions.definition.partition import (
     DynamicPartitionsDefinition,
     PartitionedConfig,
     PartitionsDefinition,

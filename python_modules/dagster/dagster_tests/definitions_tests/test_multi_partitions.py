@@ -21,8 +21,14 @@ from dagster import (
 from dagster._check import CheckError
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
-from dagster._core.definitions.partition import PartitionLoadingContext, TemporalContext
-from dagster._core.definitions.time_window_partitions import TimeWindow, get_time_partitions_def
+from dagster._core.definitions.partitions.definition.partition import (
+    PartitionLoadingContext,
+    TemporalContext,
+)
+from dagster._core.definitions.partitions.definition.time_window_partitions import (
+    TimeWindow,
+    get_time_partitions_def,
+)
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster._core.storage.tags import get_multidimensional_partition_tag
 from dagster._core.test_utils import instance_for_test

@@ -75,8 +75,14 @@ from dagster._core.definitions.metadata import (
 )
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
 from dagster._core.definitions.op_definition import OpDefinition
-from dagster._core.definitions.partition import DynamicPartitionsDefinition, ScheduleType
-from dagster._core.definitions.partition_mapping import (
+from dagster._core.definitions.partitions.definition.partition import (
+    DynamicPartitionsDefinition,
+    ScheduleType,
+)
+from dagster._core.definitions.partitions.definition.time_window_partitions import (
+    TimeWindowPartitionsDefinition,
+)
+from dagster._core.definitions.partitions.mapping.partition_mapping import (
     PartitionMapping,
     get_builtin_partition_mapping_types,
 )
@@ -88,7 +94,6 @@ from dagster._core.definitions.sensor_definition import (
     SensorDefinition,
     SensorType,
 )
-from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
 from dagster._core.definitions.unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 from dagster._core.definitions.utils import DEFAULT_GROUP_NAME
 from dagster._core.errors import DagsterInvalidDefinitionError

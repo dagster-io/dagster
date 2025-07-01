@@ -7,12 +7,14 @@ from dagster._core.definitions.asset_spec import (
     AssetExecutionType,
 )
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
-from dagster._core.definitions.partition import DynamicPartitionsDefinition
-from dagster._core.definitions.partition_mapping import StaticPartitionMapping
-from dagster._core.definitions.time_window_partition_mapping import TimeWindowPartitionMapping
-from dagster._core.definitions.time_window_partitions import (
+from dagster._core.definitions.partitions.definition.partition import DynamicPartitionsDefinition
+from dagster._core.definitions.partitions.definition.time_window_partitions import (
     DailyPartitionsDefinition,
     HourlyPartitionsDefinition,
+)
+from dagster._core.definitions.partitions.mapping.partition_mapping import StaticPartitionMapping
+from dagster._core.definitions.partitions.mapping.time_window_partition_mapping import (
+    TimeWindowPartitionMapping,
 )
 from dagster._time import parse_time_string
 

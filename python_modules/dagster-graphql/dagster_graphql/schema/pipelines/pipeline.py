@@ -4,7 +4,9 @@ from typing import TYPE_CHECKING, AbstractSet, Optional  # noqa: UP035
 import dagster._check as check
 import graphene
 from dagster._core.definitions.asset_key import AssetKey
-from dagster._core.definitions.time_window_partitions import PartitionRangeStatus
+from dagster._core.definitions.partitions.definition.time_window_partitions import (
+    PartitionRangeStatus,
+)
 from dagster._core.errors import DagsterUserCodeProcessError
 from dagster._core.event_api import EventLogCursor
 from dagster._core.events import DagsterEventType
