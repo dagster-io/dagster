@@ -15,9 +15,6 @@ import {
   UnstyledButton,
   ifPlural,
 } from '@dagster-io/ui-components';
-import dayjs from 'dayjs';
-import relativeTime from 'dayjs/plugin/relativeTime';
-import updateLocale from 'dayjs/plugin/updateLocale';
 import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import {useRouteMatch} from 'react-router-dom';
 import {useSetRecoilState} from 'recoil';
@@ -51,9 +48,6 @@ import {AssetsEmptyState} from '../AssetsEmptyState';
 import {LaunchAssetExecutionButton} from '../LaunchAssetExecutionButton';
 import {asAssetKeyInput} from '../asInput';
 import {AssetTableFragment} from '../types/AssetTableFragment.types';
-
-dayjs.extend(relativeTime);
-dayjs.extend(updateLocale);
 
 export const AssetCatalogTableV2 = React.memo(() => {
   const {assets, loading: assetsLoading, error} = useAllAssets();
