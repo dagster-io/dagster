@@ -233,16 +233,18 @@ export function mergeWorkspaceData(
     const {repositories, ...rest} = locationOrLoadError;
     result.locationOrLoadError = {
       ...rest,
-      repositories: repositories.map((repo) => {
-        const assetsAndGroups = getAssetsAndGroupsByRepo(workspaceLocationAssetsEntry);
-        return {
-          ...repo,
-          ...(assetsAndGroups[repo.id] || {
-            assetNodes: [],
-            assetGroups: [],
-          }),
-        };
-      }),
+      repositories: repositories
+        ? repositories.map((repo) => {
+            const assetsAndGroups = getAssetsAndGroupsByRepo(workspaceLocationAssetsEntry);
+            return {
+              ...repo,
+              ...(assetsAndGroups[repo.id] || {
+                assetNodes: [],
+                assetGroups: [],
+              }),
+            };
+          })
+        : [],
     };
   } else {
     result.locationOrLoadError = locationOrLoadError;

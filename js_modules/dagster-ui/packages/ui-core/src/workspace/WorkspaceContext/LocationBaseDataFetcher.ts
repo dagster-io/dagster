@@ -17,7 +17,6 @@ export abstract class LocationBaseDataFetcher<TData, TVariables extends Operatio
   private readonly key: string;
   private loadedFromCache: {[key: string]: boolean};
   private unsubscribe: () => void;
-
   constructor(args: {
     readonly query: DocumentNode;
     readonly version: string;
