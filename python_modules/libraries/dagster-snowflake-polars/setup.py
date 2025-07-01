@@ -43,7 +43,12 @@ setup(
         "requests",
         "adbc-driver-snowflake>=1.6.0",
     ],
-    # https://status.snowflake.com/incidents/txclg2cyzq32
-    extras_require={"test": ["certifi==2025.1.31"]},
+    extras_require={
+        "test": [
+            # https://status.snowflake.com/incidents/txclg2cyzq32
+            "certifi==2025.1.31",
+            "snowflake-connector-python[pandas]>=3.4.0",
+        ]
+    },
     zip_safe=False,
 )
