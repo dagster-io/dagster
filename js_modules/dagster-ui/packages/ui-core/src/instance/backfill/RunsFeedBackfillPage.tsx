@@ -2,10 +2,10 @@ import {
   Alert,
   Box,
   Colors,
-  Heading,
   NonIdealState,
   PageHeader,
   Spinner,
+  Subtitle1,
   Tab,
   Tabs,
 } from '@dagster-io/ui-components';
@@ -126,13 +126,13 @@ export const RunsFeedBackfillPage = () => {
     <Box flex={{direction: 'column'}} style={{height: '100%', overflow: 'hidden'}}>
       <PageHeader
         title={
-          <Heading>
+          <Subtitle1>
             <Link to="/runs/" style={{color: Colors.textLight()}}>
               Runs
             </Link>
             {' / '}
             {backfillId}
-          </Heading>
+          </Subtitle1>
         }
         right={
           <Box flex={{gap: 12, alignItems: 'center'}}>

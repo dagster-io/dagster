@@ -121,7 +121,7 @@ export const BackfillPartitionSelector = ({
   }, [onLaunch]);
 
   const onSuccess = (backfillId: string) => {
-    showBackfillSuccessToast(backfillId, false);
+    showBackfillSuccessToast(backfillId);
     onLaunch?.(backfillId, query);
   };
 

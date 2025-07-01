@@ -30,7 +30,6 @@ import {RunStatus} from '../graphql/types';
 import {BackfillActionsMenu} from '../instance/backfill/BackfillActionsMenu';
 import {BackfillTarget} from '../instance/backfill/BackfillRow';
 import {HeaderCell, HeaderRow, RowCell} from '../ui/VirtualizedTable';
-import {appendCurrentQueryParams} from '../util/appendCurrentQueryParams';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 
 export const RunsFeedRow = ({
@@ -105,7 +104,7 @@ export const RunsFeedRow = ({
           <Link
             to={
               entry.__typename === 'PartitionBackfill'
-                ? appendCurrentQueryParams(getBackfillPath(entry.id, entry.isAssetBackfill))
+                ? getBackfillPath(entry.id)
                 : `/runs/${entry.id}`
             }
           >
