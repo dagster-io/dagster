@@ -873,7 +873,7 @@ def _schedule_runs_at_time(
 
         if not isinstance(run_request_result.run, DagsterRun):
             raise DagsterInvariantViolationError(
-                "RunRequestResults for a schedule should only return DagsterRuns, not SkippedSensorRun or BackfillSubmission"
+                f"RunRequestResults for a schedule should only return DagsterRuns. Got {type(run_request_result.run)}."
             )
         else:
             run = check.not_none(run_request_result.run)

@@ -48,9 +48,6 @@ def fetch_existing_runs_for_instigator(
     if not run_keys:
         return {}
 
-    # fetch runs from the DB with only the run key tag
-    # note: while possible to filter more at DB level with tags - it is avoided here due to observed
-    # perf problems
     runs_with_run_keys: list[DagsterRun] = []
     for run_key in run_keys:
         # do serial fetching, which has better perf than a single query with an IN clause, due to
@@ -59,7 +56,7 @@ def fetch_existing_runs_for_instigator(
             instance.get_runs(filters=RunsFilter(tags={RUN_KEY_TAG: run_key, **additional_tags}))
         )
 
-    # filter down to runs with run_key that match the sensor name and its namespace (repository)
+    # filter down to runs with run_key that match the instigator code location/repository
     valid_runs: list[DagsterRun] = []
     for run in runs_with_run_keys:
         # if the run doesn't have a set origin, consider it a match, since it matches on the
