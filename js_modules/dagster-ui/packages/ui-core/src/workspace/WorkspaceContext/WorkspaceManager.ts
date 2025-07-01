@@ -1,16 +1,19 @@
+import {WorkspaceLocationAssetsFetcher} from './WorkspaceLocationAssetsFetcher';
 import {WorkspaceLocationDataFetcher} from './WorkspaceLocationDataFetcher';
 import {WorkspaceStatusPoller} from './WorkspaceStatusPoller';
 import {ApolloClient} from '../../apollo-client';
 import {
   CodeLocationStatusQuery,
   LocationStatusEntryFragment,
+  LocationWorkspaceAssetsQuery,
   LocationWorkspaceQuery,
 } from './types/WorkspaceQueries.types';
 import {useGetData} from '../../search/useIndexedDBCachedQuery';
 
 type Data = {
   locationStatuses: Record<string, LocationStatusEntryFragment>;
-  locationEntryData: Record<string, LocationWorkspaceQuery>;
+  locationEntries: Record<string, LocationWorkspaceQuery>;
+  assetEntries: Record<string, LocationWorkspaceAssetsQuery>;
 };
 export class WorkspaceManager {
   private statusPoller: WorkspaceStatusPoller;
@@ -20,6 +23,7 @@ export class WorkspaceManager {
   private readonly setData: (data: Data) => void;
   private dataFetchers: {
     locationEntries: WorkspaceLocationDataFetcher;
+    assetEntries: WorkspaceLocationAssetsFetcher;
   };
   private readonly data: Data;
 
@@ -36,7 +40,8 @@ export class WorkspaceManager {
     this.setData = args.setData;
     this.data = {
       locationStatuses: {},
-      locationEntryData: {},
+      locationEntries: {},
+      assetEntries: {},
     };
     this.statusPoller = new WorkspaceStatusPoller({
       localCacheIdPrefix: this.localCacheIdPrefix,
@@ -50,11 +55,19 @@ export class WorkspaceManager {
         getData: this.getData,
         statusPoller: this.statusPoller,
       }),
+      assetEntries: new WorkspaceLocationAssetsFetcher({
+        client: this.client,
+        localCacheIdPrefix: this.localCacheIdPrefix,
+        getData: this.getData,
+        statusPoller: this.statusPoller,
+      }),
     };
 
-    this.dataFetchers.locationEntries.subscribe((data) => {
-      this.data.locationEntryData = data;
-      this.setData(this.data);
+    Object.entries(this.dataFetchers).forEach(([key, fetcher]) => {
+      fetcher.subscribe((data) => {
+        this.data[key as keyof Data] = data as any;
+        this.setData(this.data);
+      });
     });
 
     this.statusPoller.subscribe(async ({locationStatuses}) => {
@@ -69,6 +82,8 @@ export class WorkspaceManager {
 
   public destroy() {
     this.statusPoller.destroy();
-    this.dataFetchers.locationEntries.destroy();
+    Object.values(this.dataFetchers).forEach((fetcher) => {
+      fetcher.destroy();
+    });
   }
 }

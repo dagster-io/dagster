@@ -4,8 +4,11 @@ import {RecoilRoot, useSetRecoilState} from 'recoil';
 
 import {WorkspaceManager} from './WorkspaceManager';
 import {
+  FullWorkspaceLocationNodeFragment,
   LocationStatusEntryFragment,
+  LocationWorkspaceAssetsQuery,
   LocationWorkspaceQuery,
+  WorkspaceLocationAssetsEntryFragment,
   WorkspaceLocationNodeFragment,
   WorkspaceScheduleFragment,
   WorkspaceSensorFragment,
@@ -13,6 +16,7 @@ import {
 import {
   DagsterRepoOption,
   SetVisibleOrHiddenFn,
+  mergeWorkspaceData,
   repoLocationToRepos,
   useVisibleRepos,
 } from './util';
@@ -62,48 +66,20 @@ export const WorkspaceProvider = ({children}: {children: React.ReactNode}) => {
   );
 };
 
-const UNLOADED_CACHED_DATA = {};
+const EMPTY_DATA = {};
 const WorkspaceProviderImpl = ({children}: {children: React.ReactNode}) => {
   const {localCacheIdPrefix} = useContext(AppContext);
   const client = useApolloClient();
   const getData = useGetData();
 
   const [locationWorkspaceData, setLocationWorkspaceData] =
-    useState<Record<string, LocationWorkspaceQuery>>(UNLOADED_CACHED_DATA);
-
-  const [locationStatuses, setLocationStatuses] = useState<
-    Record<string, LocationStatusEntryFragment>
-  >({});
+    useState<Record<string, LocationWorkspaceQuery>>(EMPTY_DATA);
+  const [assetEntries, setAssetEntries] =
+    useState<Record<string, LocationWorkspaceAssetsQuery>>(EMPTY_DATA);
+  const [locationStatuses, setLocationStatuses] =
+    useState<Record<string, LocationStatusEntryFragment>>(EMPTY_DATA);
 
   const setCodeLocationStatusAtom = useSetRecoilState(codeLocationStatusAtom);
-
-  const loading = useMemo(() => {
-    if (locationWorkspaceData === UNLOADED_CACHED_DATA) {
-      return true;
-    }
-    return Object.keys(locationStatuses).some((key) => {
-      return !locationWorkspaceData[key];
-    });
-  }, [locationWorkspaceData, locationStatuses]);
-
-  const managerRef = useRef<WorkspaceManager | null>(null);
-
-  useLayoutEffect(() => {
-    const manager = new WorkspaceManager({
-      client,
-      localCacheIdPrefix,
-      getData,
-      setCodeLocationStatusAtom,
-      setData: ({locationStatuses, locationEntryData}) => {
-        setLocationWorkspaceData(locationEntryData);
-        setLocationStatuses(locationStatuses);
-      },
-    });
-    managerRef.current = manager;
-    return () => {
-      manager.destroy();
-    };
-  }, [client, localCacheIdPrefix, getData, setCodeLocationStatusAtom]);
 
   const locationEntryData = useMemo(() => {
     return Object.entries(locationWorkspaceData).reduce(
@@ -117,14 +93,74 @@ const WorkspaceProviderImpl = ({children}: {children: React.ReactNode}) => {
     );
   }, [locationWorkspaceData]);
 
+  const assetLocationEntries = useMemo(() => {
+    return Object.entries(assetEntries).reduce(
+      (acc, [key, data]) => {
+        if (data.workspaceLocationEntryOrError) {
+          acc[key] = data.workspaceLocationEntryOrError;
+        }
+        return acc;
+      },
+      {} as Record<string, WorkspaceLocationAssetsEntryFragment | PythonErrorFragment>,
+    );
+  }, [assetEntries]);
+
+  const fullLocationEntryData = useMemo(() => {
+    const result: Record<
+      string,
+      FullWorkspaceLocationNodeFragment | WorkspaceLocationNodeFragment | PythonErrorFragment
+    > = {};
+    Object.entries(locationEntryData).forEach(([key, data]) => {
+      if (
+        assetLocationEntries[key] &&
+        data.__typename === 'WorkspaceLocationEntry' &&
+        assetLocationEntries[key].__typename === 'WorkspaceLocationEntry'
+      ) {
+        result[key] = mergeWorkspaceData(data, assetLocationEntries[key]);
+      } else {
+        result[key] = data;
+      }
+    });
+    return result;
+  }, [locationEntryData, assetLocationEntries]);
+
+  const loading = useMemo(() => {
+    if (locationWorkspaceData === EMPTY_DATA || assetLocationEntries === EMPTY_DATA) {
+      return true;
+    }
+    return Object.keys(locationStatuses).some((key) => {
+      return !locationWorkspaceData[key] || !assetLocationEntries[key];
+    });
+  }, [locationStatuses, locationWorkspaceData, assetLocationEntries]);
+
+  const managerRef = useRef<WorkspaceManager | null>(null);
+
+  useLayoutEffect(() => {
+    const manager = new WorkspaceManager({
+      client,
+      localCacheIdPrefix,
+      getData,
+      setCodeLocationStatusAtom,
+      setData: ({locationStatuses, locationEntries, assetEntries}) => {
+        setLocationWorkspaceData(locationEntries);
+        setAssetEntries(assetEntries);
+        setLocationStatuses(locationStatuses);
+      },
+    });
+    managerRef.current = manager;
+    return () => {
+      manager.destroy();
+    };
+  }, [client, localCacheIdPrefix, getData, setCodeLocationStatusAtom]);
+
   const locationEntries = useMemo(() => {
-    return Object.values(locationWorkspaceData).reduce((acc, data) => {
-      if (data.workspaceLocationEntryOrError?.__typename === 'WorkspaceLocationEntry') {
-        acc.push(data.workspaceLocationEntryOrError);
+    return Object.values(fullLocationEntryData).reduce((acc, data) => {
+      if (data.__typename === 'WorkspaceLocationEntry') {
+        acc.push(ensureAssetsData(data));
       }
       return acc;
-    }, [] as Array<WorkspaceLocationNodeFragment>);
-  }, [locationWorkspaceData]);
+    }, [] as Array<FullWorkspaceLocationNodeFragment>);
+  }, [fullLocationEntryData]);
 
   const allRepos = useAllRepos(locationEntries);
 
@@ -171,4 +207,32 @@ function useAllRepos(locationEntries: WorkspaceRepositoryLocationNode[]) {
 
     return sortBy(repos, (r) => `${r.repositoryLocation.name}:${r.repository.name}`);
   }, [locationEntries]);
+}
+
+function ensureAssetsData(
+  data: WorkspaceLocationNodeFragment | FullWorkspaceLocationNodeFragment,
+): FullWorkspaceLocationNodeFragment {
+  const locationOrLoadError = data.locationOrLoadError;
+  if (locationOrLoadError?.__typename === 'RepositoryLocation') {
+    let needsAssets = false;
+    locationOrLoadError.repositories.some((repo) => {
+      if (!('assetNodes' in repo)) {
+        needsAssets = true;
+      }
+    });
+    if (needsAssets) {
+      return {
+        ...data,
+        locationOrLoadError: {
+          ...locationOrLoadError,
+          repositories: locationOrLoadError.repositories.map((repo) => ({
+            ...repo,
+            assetNodes: [],
+            assetGroups: [],
+          })) as any,
+        },
+      };
+    }
+  }
+  return data as FullWorkspaceLocationNodeFragment;
 }

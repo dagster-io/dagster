@@ -129,13 +129,16 @@ export class WorkspaceStatusPoller {
     }) => Promise<void>,
   ) {
     this.subscribers.add(subscriber);
-    if (this.lastChanged !== EMPTY_CHANGES) {
-      subscriber({
-        ...this.lastChanged,
-        locationStatuses: this.statuses,
-      });
+    try {
+      return () => this.subscribers.delete(subscriber);
+    } finally {
+      if (this.lastChanged !== EMPTY_CHANGES) {
+        subscriber({
+          ...this.lastChanged,
+          locationStatuses: this.statuses,
+        });
+      }
     }
-    return () => this.subscribers.delete(subscriber);
   }
 
   private async notifySubscribers() {
