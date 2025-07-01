@@ -13,15 +13,20 @@ from typing import TYPE_CHECKING, Callable, NamedTuple, Optional, Union, cast
 from typing_extensions import Self
 
 import dagster._check as check
-from dagster._core.definitions.run_request import RunRequest
 from dagster._core.definitions.schedule_definition import DefaultScheduleStatus
-from dagster._core.definitions.selector import JobSubsetSelector
 from dagster._core.definitions.timestamp import TimestampWithTimezone
-from dagster._core.errors import DagsterCodeLocationLoadError, DagsterUserCodeUnreachableError
+from dagster._core.errors import (
+    DagsterCodeLocationLoadError,
+    DagsterInvariantViolationError,
+    DagsterUserCodeUnreachableError,
+)
+from dagster._core.execution.submit_instigator_runs import (
+    fetch_existing_runs_for_instigator,
+    get_code_location_for_instigator,
+    submit_instigator_run_request,
+)
 from dagster._core.instance import DagsterInstance
 from dagster._core.remote_representation import RemoteSchedule
-from dagster._core.remote_representation.code_location import CodeLocation
-from dagster._core.remote_representation.external import RemoteJob
 from dagster._core.scheduler.instigation import (
     InstigatorState,
     InstigatorStatus,
@@ -32,10 +37,9 @@ from dagster._core.scheduler.instigation import (
     TickStatus,
 )
 from dagster._core.scheduler.scheduler import DEFAULT_MAX_CATCHUP_RUNS
-from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus, RunsFilter
-from dagster._core.storage.tags import RUN_KEY_TAG, SCHEDULED_EXECUTION_TIME_TAG
-from dagster._core.telemetry import SCHEDULED_RUN_CREATED, hash_name, log_action
-from dagster._core.utils import InheritContextThreadPoolExecutor
+from dagster._core.storage.dagster_run import DagsterRun
+from dagster._core.storage.tags import SCHEDULED_EXECUTION_TIME_TAG
+from dagster._core.utils import InheritContextThreadPoolExecutor, make_new_run_id
 from dagster._core.workspace.context import IWorkspaceProcessContext
 from dagster._daemon.utils import DaemonErrorCapture
 from dagster._scheduler.stale import resolve_stale_or_missing_assets
@@ -758,101 +762,6 @@ def launch_scheduled_runs_for_schedule_iterator(
     return
 
 
-class SubmitRunRequestResult(NamedTuple):
-    run_key: Optional[str]
-    error_info: Optional[SerializableErrorInfo]
-    existing_run: Optional[DagsterRun]
-    submitted_run: Optional[DagsterRun]
-
-
-def _submit_run_request(
-    run_request: RunRequest,
-    workspace_process_context: IWorkspaceProcessContext,
-    remote_schedule: RemoteSchedule,
-    schedule_time: datetime.datetime,
-    logger,
-    debug_crash_flags,
-) -> SubmitRunRequestResult:
-    instance = workspace_process_context.instance
-    schedule_origin = remote_schedule.get_remote_origin()
-
-    run = _get_existing_run_for_request(instance, remote_schedule, schedule_time, run_request)
-    if run:
-        if run.status != DagsterRunStatus.NOT_STARTED:
-            # A run already exists and was launched for this time period,
-            # but the scheduler must have crashed or errored before the tick could be put
-            # into a SUCCESS state
-            logger.info(
-                f"Run {run.run_id} already completed for this execution of {remote_schedule.name}"
-            )
-            return SubmitRunRequestResult(
-                run_key=run_request.run_key, error_info=None, existing_run=run, submitted_run=None
-            )
-        else:
-            logger.info(
-                f"Run {run.run_id} already created for this execution of {remote_schedule.name}"
-            )
-    else:
-        job_subset_selector = JobSubsetSelector(
-            location_name=schedule_origin.repository_origin.code_location_origin.location_name,
-            repository_name=schedule_origin.repository_origin.repository_name,
-            job_name=remote_schedule.job_name,
-            op_selection=remote_schedule.op_selection,
-            asset_selection=run_request.asset_selection,
-            asset_check_selection=run_request.asset_check_keys,
-        )
-
-        # reload the code_location on each submission, request_context derived data can become out date
-        # * non-threaded: if number of serial submissions is too many
-        # * threaded: if thread sits pending in pool too long
-        code_location = _get_code_location_for_schedule(workspace_process_context, remote_schedule)
-
-        remote_job = code_location.get_job(job_subset_selector)
-
-        run = _create_scheduler_run(
-            instance,
-            schedule_time,
-            code_location,
-            remote_schedule,
-            remote_job,
-            run_request,
-        )
-
-    check_for_debug_crash(debug_crash_flags, "RUN_CREATED")
-
-    error_info = None
-
-    if run.status != DagsterRunStatus.FAILURE:
-        try:
-            instance.submit_run(run.run_id, workspace_process_context.create_request_context())
-            logger.info(
-                f"Completed scheduled launch of run {run.run_id} for {remote_schedule.name}"
-            )
-        except Exception:
-            error_info = DaemonErrorCapture.process_exception(
-                exc_info=sys.exc_info(),
-                logger=logger,
-                log_message=f"Run {run.run_id} created successfully but failed to launch",
-            )
-
-    return SubmitRunRequestResult(
-        run_key=run_request.run_key,
-        error_info=error_info,
-        existing_run=None,
-        submitted_run=run,
-    )
-
-
-def _get_code_location_for_schedule(
-    workspace_process_context: IWorkspaceProcessContext,
-    remote_schedule: RemoteSchedule,
-) -> CodeLocation:
-    schedule_origin = remote_schedule.get_remote_origin()
-    return workspace_process_context.create_request_context().get_code_location(
-        schedule_origin.repository_origin.code_location_origin.location_name
-    )
-
-
 def _schedule_runs_at_time(
     workspace_process_context: IWorkspaceProcessContext,
     logger: logging.Logger,
@@ -866,7 +775,7 @@ def _schedule_runs_at_time(
     instance = workspace_process_context.instance
     repository_handle = remote_schedule.handle.repository_handle
 
-    code_location = _get_code_location_for_schedule(workspace_process_context, remote_schedule)
+    code_location = get_code_location_for_instigator(workspace_process_context, remote_schedule)
 
     schedule_execution_data = code_location.get_schedule_execution_data(
         instance=instance,
@@ -928,13 +837,28 @@ def _schedule_runs_at_time(
 
         run_requests.append(run_request)
 
-    submit_run_request = lambda run_request: _submit_run_request(
-        run_request,
-        workspace_process_context,
-        remote_schedule,
-        schedule_time,
-        logger,
-        debug_crash_flags,
+    additional_schedule_tags = {
+        SCHEDULED_EXECUTION_TIME_TAG: schedule_time.astimezone(datetime.timezone.utc).isoformat(),
+    }
+    existing_runs = fetch_existing_runs_for_instigator(
+        instance=instance,
+        remote_instigator=remote_schedule,
+        run_requests=run_requests,
+        additional_tags=merge_dicts(
+            DagsterRun.tags_for_schedule(remote_schedule),
+            additional_schedule_tags,
+        ),
+    )
+    submit_run_request = lambda run_request: submit_instigator_run_request(
+        run_id=make_new_run_id(),
+        run_request=run_request,
+        workspace_process_context=workspace_process_context,
+        remote_instigator=remote_schedule,
+        target_data=remote_schedule.get_target(),
+        existing_runs_by_key=existing_runs,
+        logger=logger,
+        additional_tags=additional_schedule_tags,
+        debug_crash_flags=debug_crash_flags,
     )
 
     if submit_threadpool_executor:
@@ -945,129 +869,18 @@ def _schedule_runs_at_time(
     for run_request_result in gen_run_request_results:
         yield run_request_result.error_info
 
-        if run_request_result.existing_run:
-            tick_context.add_run_info(
-                run_id=run_request_result.existing_run.run_id, run_key=run_request_result.run_key
+        if not isinstance(run_request_result.run, DagsterRun):
+            raise DagsterInvariantViolationError(
+                "RunRequestResults for a schedule should only return DagsterRuns, not SkippedSensorRun or BackfillSubmission"
             )
         else:
-            run = check.not_none(run_request_result.submitted_run)
+            run = check.not_none(run_request_result.run)
             check_for_debug_crash(debug_crash_flags, "RUN_LAUNCHED")
             tick_context.add_run_info(run_id=run.run_id, run_key=run_request_result.run_key)
             check_for_debug_crash(debug_crash_flags, "RUN_ADDED")
 
     check_for_debug_crash(debug_crash_flags, "TICK_SUCCESS")
     tick_context.update_state(TickStatus.SUCCESS)
-
-
-def _get_existing_run_for_request(
-    instance: DagsterInstance,
-    remote_schedule: RemoteSchedule,
-    schedule_time: datetime.datetime,
-    run_request: RunRequest,
-) -> Optional[DagsterRun]:
-    tags = merge_dicts(
-        DagsterRun.tags_for_schedule(remote_schedule),
-        {
-            SCHEDULED_EXECUTION_TIME_TAG: schedule_time.astimezone(
-                datetime.timezone.utc
-            ).isoformat(),
-        },
-    )
-    if run_request.run_key:
-        tags[RUN_KEY_TAG] = run_request.run_key
-    runs_filter = RunsFilter(tags=tags)
-    existing_runs = instance.get_runs(runs_filter)
-
-    # filter down to match schedule namespace (repository)
-    matching_runs = []
-    for run in existing_runs:
-        # if the run doesn't have an origin consider it a match
-        if run.remote_job_origin is None:
-            matching_runs.append(run)
-        # otherwise prevent the same named schedule (with the same execution time) across repos from effecting each other
-        elif (
-            remote_schedule.get_remote_origin().repository_origin.get_selector_id()
-            == run.remote_job_origin.repository_origin.get_selector_id()
-        ):
-            matching_runs.append(run)
-
-    if not len(matching_runs):
-        return None
-
-    return matching_runs[0]
-
-
-def _create_scheduler_run(
-    instance: DagsterInstance,
-    schedule_time: datetime.datetime,
-    code_location: CodeLocation,
-    remote_schedule: RemoteSchedule,
-    remote_job: RemoteJob,
-    run_request: RunRequest,
-) -> DagsterRun:
-    from dagster._daemon.daemon import get_telemetry_daemon_session_id
-
-    run_config = run_request.run_config
-    schedule_tags = run_request.tags
-
-    remote_execution_plan = code_location.get_execution_plan(
-        remote_job,
-        run_config,
-        step_keys_to_execute=None,
-        known_state=None,
-    )
-    execution_plan_snapshot = remote_execution_plan.execution_plan_snapshot
-
-    tags = {
-        **remote_job.run_tags,
-        **schedule_tags,
-    }
-
-    tags[SCHEDULED_EXECUTION_TIME_TAG] = schedule_time.astimezone(datetime.timezone.utc).isoformat()
-    if run_request.run_key:
-        tags[RUN_KEY_TAG] = run_request.run_key
-
-    log_action(
-        instance,
-        SCHEDULED_RUN_CREATED,
-        metadata={
-            "DAEMON_SESSION_ID": get_telemetry_daemon_session_id(),
-            "SCHEDULE_NAME_HASH": hash_name(remote_schedule.name),
-            "repo_hash": hash_name(code_location.name),
-            "pipeline_name_hash": hash_name(remote_job.name),
-        },
-    )
-
-    return instance.create_run(
-        job_name=remote_schedule.job_name,
-        run_id=None,
-        run_config=run_config,
-        resolved_op_selection=remote_job.resolved_op_selection,
-        step_keys_to_execute=None,
-        op_selection=remote_job.op_selection,
-        status=DagsterRunStatus.NOT_STARTED,
-        root_run_id=None,
-        parent_run_id=None,
-        tags=tags,
-        job_snapshot=remote_job.job_snapshot,
-        execution_plan_snapshot=execution_plan_snapshot,
-        parent_job_snapshot=remote_job.parent_job_snapshot,
-        remote_job_origin=remote_job.get_remote_origin(),
-        job_code_origin=remote_job.get_python_origin(),
-        asset_selection=(
-            frozenset(run_request.asset_selection)
-            if run_request.asset_selection is not None
-            else None
-        ),
-        asset_check_selection=(
-            frozenset(run_request.asset_check_keys)
-            if run_request.asset_check_keys is not None
-            else None
-        ),
-        asset_graph=code_location.get_repository(
-            remote_job.repository_handle.repository_name
-        ).asset_graph,
-    )
 
 
 def _write_and_get_next_checkpoint_timestamp(
