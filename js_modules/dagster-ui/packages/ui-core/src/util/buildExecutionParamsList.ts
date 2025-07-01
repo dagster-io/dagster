@@ -34,8 +34,6 @@ export const buildExecutionParamsListSensor = (
       return;
     }
     const {repositoryLocationName, repositoryName} = sensorSelector;
-    console.log('build sensor params');
-    console.log(request.assetSelection);
 
     const executionParams: ExecutionParams = {
       runConfigData: configYamlOrEmpty,
@@ -79,8 +77,6 @@ export const buildExecutionParamsListSchedule = (
       return;
     }
     const {repositoryLocationName, repositoryName} = scheduleSelector;
-    console.log('build schedule params');
-    console.log(request.assetSelection);
 
     const executionParams: ExecutionParams = {
       runConfigData: configYamlOrEmpty,

@@ -57,8 +57,6 @@ export function useLaunchMultipleRunsWithTelemetry() {
             : paramsWithUIExecutionTags(variables.executionParamsList),
         };
 
-        console.log('finalized', finalized);
-
         const result = (await launchMultipleRuns({variables: finalized})).data?.launchMultipleRuns;
 
         if (result) {
