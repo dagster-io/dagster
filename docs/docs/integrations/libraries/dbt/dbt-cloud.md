@@ -15,24 +15,33 @@ import Beta from '@site/docs/partials/\_Beta.md';
 
 <Beta />
 
-Our new and improved dbt Cloud integration offers two capabilities:
+<p>{frontMatter.description}</p>
 
-1. **Observability** - You can see your dbt Cloud assets in the Dagster Asset Graph and double click into run/materialization history
-2. **Orchestration** - You can use Dagster to schedule runs/materializations of your dbt Cloud assets, either on a cron, or based on upstream dependencies
+Our updated dbt Cloud integration offers two capabilities:
+
+- **Observability** - You can view your dbt Cloud assets in the Dagster Asset Graph and double click into run/materialization history.
+- **Orchestration** - You can use Dagster to schedule runs/materializations of your dbt Cloud assets, either on a cron schedule, or based on upstream dependencies.
 
 ## Installation
 
 <PackageInstallInstructions packageName="dagster-dbt" />
 
-## Observability Example
-Please see the inline comments for an explanation what this code does!
+## Observability example
+To make use of the observability capability, you will need to add code to your Dagster project that does the following:
+1. Defines your dbt Cloud credentials and workspace.
+2. Uses the integration to create asset specs for models in the workspace.
+3. Builds a sensor which will poll dbt Cloud for updates on runs/materialization history and dbt Cloud Assets.
 
-<CodeExample path="docs_snippets/docs_snippets/integrations/dbt/dbt_cloud_observability.py" language="python" />
+<CodeExample path="docs_snippets/docs_snippets/integrations/dbt/dbt_cloud_observability.py" language="python" title="defs/dbt_cloud_observability.py" />
 
-## Orchestration Example
-Please see the inline comments for an explanation what this code does!
+## Orchestration example
+To make use of the orchestration capability, you will need to add code to your Dagster project that does the following:
+1. Defines your dbt Cloud credentials and workspace.
+2. Builds your asset graph in a materializable way.
+3. Adds these assets to the Declarative Automation Sensor.
+4. Builds a sensor to poll dbt Cloud for updates on runs/materialization history and dbt Cloud Assets.
 
-<CodeExample path="docs_snippets/docs_snippets/integrations/dbt/dbt_cloud_orchestration.py" language="python" />
+<CodeExample path="docs_snippets/docs_snippets/integrations/dbt/dbt_cloud_orchestration.py" language="python" title="defs/dbt_cloud_orchestation.py" />
 
 ## About dbt Cloud
 
