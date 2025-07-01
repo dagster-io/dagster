@@ -504,7 +504,7 @@ def _get_scaffolded_container_context_yaml(agent_platform: DgPlusAgentPlatform) 
 @click.option(
     "--python-version",
     "python_version",
-    type=click.Choice(["3.9", "3.10", "3.11", "3.12"]),
+    type=click.Choice(["3.9", "3.10", "3.11", "3.12", "3.13"]),
     help=(
         "Python version used to deploy the project. If not set, defaults to the calling process's Python minor version."
     ),

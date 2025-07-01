@@ -26,7 +26,7 @@ To begin integrating Dagster with Teradata Vantage for building and managing ETL
   If you need a test instance of Vantage, you can provision one for free at [https://clearscape.teradata.com](https://clearscape.teradata.com/sign-in?utm_source=dev_portal&utm_medium=quickstart_tutorial&utm_campaign=quickstarts)
   :::
 
-- Python **3.9** or higher, Python **3.12** is recommended.
+- Python **3.9** or higher, Python **3.13** is recommended.
 - pip
 
 ## Install dagster-teradata
