@@ -258,7 +258,7 @@ export const ReexecutionDialog = (props: ReexecutionDialogProps) => {
                 ) : (
                   <>
                     One or more of these runs is part of backfill{' '}
-                    <Link to={getBackfillPath(selectedRunBackfillIds[0]!, false)}>
+                    <Link to={getBackfillPath(selectedRunBackfillIds[0]!, 'runs')}>
                       {selectedRunBackfillIds[0]}
                     </Link>
                   </>

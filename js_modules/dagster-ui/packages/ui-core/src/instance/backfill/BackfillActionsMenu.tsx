@@ -19,7 +19,6 @@ import {useResumeBackfill} from './useResumeBackfill';
 import {DEFAULT_DISABLED_REASON} from '../../app/Permissions';
 import {BulkActionStatus, ReexecutionStrategy} from '../../graphql/types';
 import {getBackfillPath} from '../../runs/RunsFeedUtils';
-import {runsPathWithFilters} from '../../runs/RunsFilterInput';
 import {testId} from '../../testing/testId';
 import {AnchorButton} from '../../ui/AnchorButton';
 
@@ -47,13 +46,6 @@ export const BackfillActionsMenu = ({
   anchorLabel?: string;
 }) => {
   const history = useHistory();
-
-  const runsUrl = runsPathWithFilters([
-    {
-      token: 'tag',
-      value: `dagster/backfill=${backfill.id}`,
-    },
-  ]);
 
   const [showTerminateDialog, setShowTerminateDialog] = useState(false);
   const [showStepStatus, setShowStepStatus] = useState(false);
@@ -115,7 +107,7 @@ export const BackfillActionsMenu = ({
           <MenuItem
             text="View backfill runs"
             icon="settings_backup_restore"
-            onClick={() => history.push(runsUrl)}
+            onClick={() => history.push(getBackfillPath(backfill.id, 'runs'))}
           />
           <MenuItem
             disabled={!backfillCanShowStepStatus(backfill)}
@@ -202,9 +194,7 @@ export const BackfillActionsMenu = ({
     <>
       {anchorLabel ? (
         <JoinedButtons>
-          <AnchorButton to={getBackfillPath(backfill.id, backfill.isAssetBackfill)}>
-            View
-          </AnchorButton>
+          <AnchorButton to={getBackfillPath(backfill.id)}>View</AnchorButton>
           {popover}
         </JoinedButtons>
       ) : (
