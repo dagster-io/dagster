@@ -6,7 +6,9 @@ import timezone from 'dayjs/plugin/timezone';
 import updateLocale from 'dayjs/plugin/updateLocale';
 import utc from 'dayjs/plugin/utc';
 
-const thresholds = [
+type ThresholdUnit = 'second' | 'minute' | 'hour' | 'day' | 'month' | 'year';
+
+const thresholds: {l: string; r?: number; d?: ThresholdUnit}[] = [
   // Read as: "Format string to use when the diff (in seconds) <= r (44)"
   // Followed by other format strings using the same diff until the next d:.
   {l: 's', r: 44, d: 'second'},
@@ -46,55 +48,52 @@ dayjs.updateLocale('en', {
   },
 });
 
-// Helper: returns ms until the next fromNow breakpoint for a given timestamp
-// This must be kept in sync with the DayJS configuration above.
+// Helper: returns ms until the relative time string will change for a given timestamp.
+// Used for timing the next update when displaying a relative time.
 //
 export function getNextFromNowUpdateMs(unixTimestamp: number): number {
   const now = dayjs();
   const then = dayjs(unixTimestamp * 1000);
-  const diffSec = Math.abs(now.diff(then, 'second'));
-  const diffMin = Math.abs(now.diff(then, 'minute'));
-  const diffHour = Math.abs(now.diff(then, 'hour'));
-  const diffDay = Math.abs(now.diff(then, 'day'));
-  const diffMonth = Math.abs(now.diff(then, 'month'));
-  const diffYear = Math.abs(now.diff(then, 'year'));
 
-  // See: https://day.js.org/docs/en/display/from-now#list-of-breakdown-range
-  if (diffSec <= 44) {
-    // Next change at 45s
-    return (45 - diffSec) * 1000;
-  } else if (diffSec <= 89) {
-    // Next change at 90s
-    return (90 - diffSec) * 1000;
-  } else if (diffMin <= 44) {
-    // Next change at next minute
-    const nextMin = then.add(diffMin + 1, 'minute');
-    return Math.abs(nextMin.diff(now, 'millisecond'));
-  } else if (diffMin <= 89) {
-    // Next change at 90min
-    return (90 * 60 - diffSec) * 1000;
-  } else if (diffHour <= 47) {
-    // Next change at next hour
-    const nextHour = then.add(diffHour + 1, 'hour');
-    return Math.abs(nextHour.diff(now, 'millisecond'));
-  } else if (diffDay <= 25) {
-    // Next change at next day
-    const nextDay = then.add(diffDay + 1, 'day');
-    return Math.abs(nextDay.diff(now, 'millisecond'));
-  } else if (diffDay <= 45) {
-    // Next change at 46d
-    return (46 * 24 * 60 * 60 - diffSec) * 1000;
-  } else if (diffMonth <= 10) {
-    // Next change at next month
-    const nextMonth = then.add(diffMonth + 1, 'month');
-    return Math.abs(nextMonth.diff(now, 'millisecond'));
-  } else if (diffMonth <= 17) {
-    // Next change at 1.5y (18 months)
-    const nextYear = then.add(1.5, 'year');
-    return Math.abs(nextYear.diff(now, 'millisecond'));
-  } else {
-    // Next change at next year
-    const nextYear = then.add(diffYear + 1, 'year');
-    return Math.abs(nextYear.diff(now, 'millisecond'));
+  let currentUnit: ThresholdUnit = 'second';
+  let currentDiff = 0;
+
+  // Iterate through thresholds to find which one we're currently in.
+  // Then increment by one unit of the current threshold's `d`
+  for (let i = 0; i < thresholds.length; i++) {
+    const threshold = thresholds[i];
+    if (!threshold) {
+      break;
+    }
+
+    // Update current unit and diff if this threshold defines a unit
+    if (threshold.d) {
+      currentUnit = threshold.d;
+      currentDiff = Math.abs(now.diff(then, currentUnit));
+    }
+
+    // Check if we're within this threshold's range or if it's the last one
+    if (!threshold.r || currentDiff <= threshold.r) {
+      // Found our current threshold. The time the UI needs to refresh next
+      // is the lower of 1) the next threshold and 2) an adidtional unit in
+      // our current threshold. Looking at both options is necessary for
+      // the "90 seconds => 2 minutes" breakpoint.
+      const nextThreshold = thresholds[i + 1];
+      const nextUnitOfCurrentThreshold = then.add(currentDiff + 1, currentUnit);
+      const firstUnitOfNextThreshold =
+        nextThreshold && nextThreshold.r
+          ? then.add(nextThreshold.r, nextThreshold.d || currentUnit)
+          : then.add(1, 'year');
+
+      return Math.min(
+        Math.abs(nextUnitOfCurrentThreshold.diff(now, 'millisecond')),
+        Math.abs(firstUnitOfNextThreshold.diff(now, 'millisecond')),
+      );
+    }
   }
+
+  // Fallback to next year if no threshold matched, should not reach here
+  const diffYear = Math.abs(now.diff(then, 'year'));
+  const nextYear = then.add(diffYear + 1, 'year');
+  return Math.abs(nextYear.diff(now, 'millisecond'));
 }
