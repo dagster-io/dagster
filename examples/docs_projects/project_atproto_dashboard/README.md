@@ -35,7 +35,6 @@ Generate the dbt project manifest:
     cd dbt_project
     uv run dbt build
 
-
 Install the project dependencies:
 
     uv venv

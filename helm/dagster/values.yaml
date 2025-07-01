@@ -481,7 +481,8 @@ scheduler:
   #   CustomScheduler,
   #  ]
   type: DagsterDaemonScheduler
-  config: {}
+  config:
+    {}
     ## This configuration will only be used if the DagsterDaemonScheduler is selected.
     # daemonScheduler:
     #   maxCatchupRuns: 5
