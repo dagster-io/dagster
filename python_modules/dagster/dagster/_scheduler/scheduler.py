@@ -849,16 +849,18 @@ def _schedule_runs_at_time(
             additional_schedule_tags,
         ),
     )
-    submit_run_request = lambda run_request: submit_instigator_run_request(
-        run_id=make_new_run_id(),
-        run_request=run_request,
-        workspace_process_context=workspace_process_context,
-        remote_instigator=remote_schedule,
-        target_data=remote_schedule.get_target(),
-        existing_runs_by_key=existing_runs,
-        logger=logger,
-        additional_tags=additional_schedule_tags,
-        debug_crash_flags=debug_crash_flags,
+    submit_run_request = (
+        lambda run_request: submit_instigator_run_request(
+            run_id=make_new_run_id(),
+            run_request=run_request,
+            workspace_process_context=workspace_process_context,
+            remote_instigator=remote_schedule,
+            target_data=remote_schedule.get_target(),
+            existing_runs_by_key=existing_runs,
+            logger=logger,
+            additional_tags=additional_schedule_tags,  # double check if  DagsterRun.tags_for_schedule(remote_schedule) needs to be added
+            debug_crash_flags=debug_crash_flags,
+        )
     )
 
     if submit_threadpool_executor:
