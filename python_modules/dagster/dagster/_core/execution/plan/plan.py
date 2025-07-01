@@ -389,6 +389,9 @@ class _PlanBuilder:
         if input_def.dagster_type.is_nothing:
             return None
 
+        if job_def.graph.input_has_default(input_name):
+            return None
+
         # Otherwise we throw an error.
         raise DagsterInvariantViolationError(
             f"In top-level graph of {self.job_def.describe_target()}, input {input_name} "
