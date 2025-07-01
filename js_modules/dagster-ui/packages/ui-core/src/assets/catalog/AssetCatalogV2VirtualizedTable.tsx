@@ -108,7 +108,11 @@ export const AssetCatalogV2VirtualizedTable = React.memo(
               );
 
               if ('shimmer' in item) {
-                return wrapper(<Skeleton $height={21} $width="45%" />);
+                return wrapper(
+                  <Box padding={{top: 12, horizontal: 20}}>
+                    <Skeleton $height={30} $width="100%" />
+                  </Box>,
+                );
               }
 
               if ('header' in item) {
