@@ -5,7 +5,7 @@ description = ""
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = ">=3.10,<3.13"
+python = ">=3.10,<3.14"
 dagster = "^1.7.10"
 dagster-postgres = "^0.23.10"
 celery = {extras = ["redis"], version = "^5.4.0"}

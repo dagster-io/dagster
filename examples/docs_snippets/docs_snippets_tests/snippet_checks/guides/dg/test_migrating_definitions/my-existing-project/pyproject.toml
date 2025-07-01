@@ -3,7 +3,7 @@ name = "my_existing_project"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
-requires-python = ">=3.9,<3.13"
+requires-python = ">=3.9,<3.14"
 dependencies = [
     "dagster",
 ]
