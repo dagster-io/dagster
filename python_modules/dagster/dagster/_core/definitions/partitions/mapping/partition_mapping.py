@@ -14,16 +14,14 @@ from dagster._core.definitions.multi_dimensional_partitions import (
     MultiPartitionKey,
     MultiPartitionsDefinition,
 )
-from dagster._core.definitions.partitions.definition.partition import (
-    AllPartitionsSubset,
-    DefaultPartitionsSubset,
-    PartitionsDefinition,
-    PartitionsSubset,
-    StaticPartitionsDefinition,
-)
+from dagster._core.definitions.partitions.definition.base import PartitionsDefinition
+from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
 from dagster._core.definitions.partitions.definition.time_window_partitions import (
     TimeWindowPartitionsDefinition,
 )
+from dagster._core.definitions.partitions.subset.all import AllPartitionsSubset
+from dagster._core.definitions.partitions.subset.base import PartitionsSubset
+from dagster._core.definitions.partitions.subset.default import DefaultPartitionsSubset
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.instance import DynamicPartitionsStore
 from dagster._record import record

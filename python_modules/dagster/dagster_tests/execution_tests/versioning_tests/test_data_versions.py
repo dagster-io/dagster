@@ -33,7 +33,7 @@ from dagster._core.definitions.data_version import (
 from dagster._core.definitions.decorators.asset_decorator import multi_asset
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey, Output
 from dagster._core.definitions.observe import observe
-from dagster._core.definitions.partitions.definition.partition import StaticPartitionsDefinition
+from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
 from dagster._core.definitions.partitions.definition.time_window_partitions import (
     DailyPartitionsDefinition,
 )

@@ -9,21 +9,19 @@ from dagster import (
     HourlyPartitionsDefinition,
     MultiPartitionsDefinition,
     PartitionsDefinition,
-    StaticPartitionsDefinition,
 )
 from dagster._core.asset_graph_view.serializable_entity_subset import SerializableEntitySubset
 from dagster._core.definitions.declarative_automation.legacy.valid_asset_subset import (
     ValidAssetSubset,
 )
 from dagster._core.definitions.events import AssetKeyPartitionKey
-from dagster._core.definitions.partitions.definition.partition import (
-    AllPartitionsSubset,
-    DefaultPartitionsSubset,
-)
+from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
 from dagster._core.definitions.partitions.definition.time_window_partitions import (
     PersistedTimeWindow,
     TimeWindowPartitionsSubset,
 )
+from dagster._core.definitions.partitions.subset.all import AllPartitionsSubset
+from dagster._core.definitions.partitions.subset.default import DefaultPartitionsSubset
 from dagster._core.definitions.timestamp import TimestampWithTimezone
 from dagster._serdes import deserialize_value, serialize_value
 from dagster._time import create_datetime

@@ -13,12 +13,12 @@ from dagster import (
     MultiPartitionMapping,
     MultiPartitionsDefinition,
     Output,
-    StaticPartitionsDefinition,
     TimeWindowPartitionMapping,
     asset,
     asset_check,
     evaluate_automation_conditions,
 )
+from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
 from dagster._core.instance_for_test import instance_for_test
 
 from dagster_tests.declarative_automation_tests.scenario_utils.automation_condition_scenario import (

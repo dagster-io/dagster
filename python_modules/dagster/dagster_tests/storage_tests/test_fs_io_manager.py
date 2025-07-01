@@ -20,7 +20,6 @@ from dagster import (
     Output,
     PartitionMapping,
     PartitionsDefinition,
-    StaticPartitionsDefinition,
     TimeWindowPartitionMapping,
     define_asset_job,
     graph,
@@ -32,8 +31,9 @@ from dagster import (
 from dagster._core.definitions import AssetIn, asset, multi_asset
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.definitions_class import Definitions
-from dagster._core.definitions.partitions.definition.partition import PartitionsSubset
+from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
 from dagster._core.definitions.partitions.mapping.partition_mapping import UpstreamPartitionsResult
+from dagster._core.definitions.partitions.subset.base import PartitionsSubset
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.instance import DynamicPartitionsStore
 from dagster._core.storage.fs_io_manager import fs_io_manager

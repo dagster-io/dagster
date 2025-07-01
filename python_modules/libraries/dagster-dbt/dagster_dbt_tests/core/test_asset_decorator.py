@@ -26,12 +26,12 @@ from dagster import (
     PartitionsDefinition,
     RetryPolicy,
     StaticPartitionMapping,
-    StaticPartitionsDefinition,
     TimeWindowPartitionMapping,
     asset,
     materialize,
 )
 from dagster._core.definitions.dependency import BlockingAssetChecksDependencyDefinition
+from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
 from dagster._core.definitions.tags import build_kind_tag, has_kind
 from dagster._core.definitions.utils import DEFAULT_IO_MANAGER_KEY
 from dagster._core.execution.context.compute import AssetExecutionContext

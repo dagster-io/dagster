@@ -88,6 +88,18 @@ from dagster._core.definitions.output import (
     OutputDefinition as OutputDefinition,
     OutputMapping as OutputMapping,
 )
+from dagster._core.definitions.partitions.definition.dynamic import (
+    DynamicPartitionsDefinition as DynamicPartitionsDefinition,
+)
+from dagster._core.definitions.partitions.definition.static import (
+    StaticPartitionsDefinition as StaticPartitionsDefinition,
+)
+from dagster._core.definitions.partitions.partition import Partition as Partition
+from dagster._core.definitions.partitions.partitioned_config import (
+    PartitionedConfig as PartitionedConfig,
+    dynamic_partitioned_config as dynamic_partitioned_config,
+    static_partitioned_config as static_partitioned_config,
+)
 from dagster._core.definitions.reconstruct import (
     ReconstructableJob as ReconstructableJob,
     build_reconstructable_job as build_reconstructable_job,
@@ -159,14 +171,8 @@ from dagster._core.definitions.module_loaders.load_assets_from_modules import (
     load_assets_from_package_name as load_assets_from_package_name,
 )
 from dagster._core.definitions.op_definition import OpDefinition as OpDefinition
-from dagster._core.definitions.partitions.definition.partition import (
-    DynamicPartitionsDefinition as DynamicPartitionsDefinition,
-    Partition as Partition,
-    PartitionedConfig as PartitionedConfig,
+from dagster._core.definitions.partitions.definition.base import (
     PartitionsDefinition as PartitionsDefinition,
-    StaticPartitionsDefinition as StaticPartitionsDefinition,
-    dynamic_partitioned_config as dynamic_partitioned_config,
-    static_partitioned_config as static_partitioned_config,
 )
 from dagster._core.definitions.partitions.definition.time_window_partitions import (
     DailyPartitionsDefinition as DailyPartitionsDefinition,

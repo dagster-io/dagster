@@ -15,7 +15,6 @@ from dagster import (
     DefaultScheduleStatus,
     Field,
     ScheduleDefinition,
-    StaticPartitionsDefinition,
     asset,
     build_schedule_from_partitioned_job,
     define_asset_job,
@@ -28,6 +27,7 @@ from dagster import (
 )
 from dagster._core.definitions.data_version import DataVersion
 from dagster._core.definitions.decorators.source_asset_decorator import observable_source_asset
+from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
 from dagster._core.definitions.run_request import RunRequest
 from dagster._core.instance import DagsterInstance
 from dagster._core.remote_representation import (

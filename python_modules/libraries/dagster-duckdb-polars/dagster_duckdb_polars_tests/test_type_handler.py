@@ -8,11 +8,9 @@ from dagster import (
     AssetIn,
     AssetKey,
     DailyPartitionsDefinition,
-    DynamicPartitionsDefinition,
     MultiPartitionKey,
     MultiPartitionsDefinition,
     Out,
-    StaticPartitionsDefinition,
     TimeWindowPartitionMapping,
     asset,
     graph,
@@ -21,6 +19,8 @@ from dagster import (
     op,
 )
 from dagster._check import CheckError
+from dagster._core.definitions.partitions.definition.dynamic import DynamicPartitionsDefinition
+from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
 from dagster_duckdb_polars import DuckDBPolarsIOManager, duckdb_polars_io_manager
 
 

@@ -1,13 +1,14 @@
 import datetime
 
-from dagster import AssetSpec, MultiPartitionKey, StaticPartitionsDefinition
+from dagster import AssetSpec, MultiPartitionKey
 from dagster._core.definitions.asset_dep import AssetDep
 from dagster._core.definitions.asset_spec import (
     SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE,
     AssetExecutionType,
 )
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
-from dagster._core.definitions.partitions.definition.partition import DynamicPartitionsDefinition
+from dagster._core.definitions.partitions.definition.dynamic import DynamicPartitionsDefinition
+from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
 from dagster._core.definitions.partitions.definition.time_window_partitions import (
     DailyPartitionsDefinition,
     HourlyPartitionsDefinition,

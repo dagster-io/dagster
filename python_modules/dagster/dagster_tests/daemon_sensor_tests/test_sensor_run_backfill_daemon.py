@@ -4,15 +4,15 @@ import pytest
 from dagster import (
     DagsterInstance,
     Definitions,
-    DynamicPartitionsDefinition,
     SensorResult,
-    StaticPartitionsDefinition,
     asset,
     load_assets_from_current_module,
     sensor,
 )
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.events import AssetKeyPartitionKey
+from dagster._core.definitions.partitions.definition.dynamic import DynamicPartitionsDefinition
+from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
 from dagster._core.definitions.run_request import InstigatorType, RunRequest
 from dagster._core.scheduler.instigation import InstigatorState, InstigatorStatus, TickStatus
 from dagster._core.test_utils import create_test_daemon_workspace_context, load_remote_repo

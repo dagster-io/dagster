@@ -13,17 +13,16 @@ from dagster_shared.serdes import NamedTupleSerializer
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, public
-from dagster._core.definitions.partitions.definition.partition import (
-    DEFAULT_DATE_FORMAT,
-    AllPartitionsSubset,
-    PartitionedConfig,
-    PartitionLoadingContext,
-    PartitionsDefinition,
-    PartitionsSubset,
+from dagster._core.definitions.partitions.context import PartitionLoadingContext
+from dagster._core.definitions.partitions.definition.base import PartitionsDefinition
+from dagster._core.definitions.partitions.partition_key_range import PartitionKeyRange
+from dagster._core.definitions.partitions.partitioned_config import PartitionedConfig
+from dagster._core.definitions.partitions.schedule_type import (
     ScheduleType,
     cron_schedule_from_schedule_type_and_offsets,
 )
-from dagster._core.definitions.partitions.partition_key_range import PartitionKeyRange
+from dagster._core.definitions.partitions.subset.all import AllPartitionsSubset
+from dagster._core.definitions.partitions.subset.base import PartitionsSubset
 from dagster._core.definitions.timestamp import TimestampWithTimezone
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
@@ -40,7 +39,7 @@ from dagster._time import (
     get_timezone,
 )
 from dagster._utils.cronstring import get_fixed_minute_interval, is_basic_daily, is_basic_hourly
-from dagster._utils.partitions import DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE
+from dagster._utils.partitions import DEFAULT_DATE_FORMAT, DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE
 from dagster._utils.schedules import (
     cron_string_iterator,
     cron_string_repeats_every_hour,

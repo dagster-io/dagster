@@ -13,10 +13,10 @@ from dagster import (
     HourlyPartitionsDefinition,
     MaterializeResult,
     PartitionsDefinition,
-    StaticPartitionsDefinition,
     asset,
     repository,
 )
+from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster._utils.warnings import disable_dagster_warnings
 

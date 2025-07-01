@@ -5,25 +5,22 @@ import json
 from collections.abc import Mapping, Sequence
 from datetime import datetime
 from functools import lru_cache, reduce
-from typing import NamedTuple, Optional, Union, cast
+from typing import TYPE_CHECKING, NamedTuple, Optional, Union, cast
 
 from dagster_shared.check.functions import CheckError
 
 import dagster._check as check
 from dagster._annotations import public
-from dagster._core.definitions.partitions.definition.partition import (
-    DefaultPartitionsSubset,
-    DynamicPartitionsDefinition,
-    PartitionLoadingContext,
-    PartitionsDefinition,
-    PartitionsSubset,
-    StaticPartitionsDefinition,
-)
+from dagster._core.definitions.partitions.context import PartitionLoadingContext
+from dagster._core.definitions.partitions.definition.base import PartitionsDefinition
+from dagster._core.definitions.partitions.definition.dynamic import DynamicPartitionsDefinition
+from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
 from dagster._core.definitions.partitions.definition.time_window_partitions import (
     TimeWindow,
     TimeWindowPartitionsDefinition,
 )
 from dagster._core.definitions.partitions.partition_key_range import PartitionKeyRange
+from dagster._core.definitions.partitions.subset.default import DefaultPartitionsSubset
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
@@ -37,6 +34,9 @@ from dagster._core.storage.tags import (
 from dagster._core.types.pagination import PaginatedResults
 from dagster._record import record
 from dagster._time import get_current_datetime
+
+if TYPE_CHECKING:
+    from dagster._core.definitions.partitions.subset.base import PartitionsSubset
 
 INVALID_STATIC_PARTITIONS_KEY_CHARACTERS = set(["|", ",", "[", "]"])
 

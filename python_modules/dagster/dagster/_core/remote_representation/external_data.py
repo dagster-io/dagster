@@ -19,10 +19,7 @@ from dagster_shared.serdes.serdes import (
 )
 from typing_extensions import Self, TypeAlias
 
-from dagster import (
-    StaticPartitionsDefinition,
-    _check as check,
-)
+from dagster import _check as check
 from dagster._config.pythonic_config import (
     ConfigurableIOManagerFactoryResourceDefinition,
     ConfigurableResourceFactoryResourceDefinition,
@@ -75,10 +72,8 @@ from dagster._core.definitions.metadata import (
 )
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
 from dagster._core.definitions.op_definition import OpDefinition
-from dagster._core.definitions.partitions.definition.partition import (
-    DynamicPartitionsDefinition,
-    ScheduleType,
-)
+from dagster._core.definitions.partitions.definition.dynamic import DynamicPartitionsDefinition
+from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
 from dagster._core.definitions.partitions.definition.time_window_partitions import (
     TimeWindowPartitionsDefinition,
 )
@@ -86,6 +81,7 @@ from dagster._core.definitions.partitions.mapping.partition_mapping import (
     PartitionMapping,
     get_builtin_partition_mapping_types,
 )
+from dagster._core.definitions.partitions.schedule_type import ScheduleType
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.resource_requirement import ResourceKeyRequirement
 from dagster._core.definitions.schedule_definition import DefaultScheduleStatus

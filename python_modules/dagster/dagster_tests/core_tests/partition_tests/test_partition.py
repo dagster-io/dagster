@@ -6,15 +6,15 @@ from dagster import (
     DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
     DailyPartitionsDefinition,
-    DynamicPartitionsDefinition,
     HourlyPartitionsDefinition,
     MultiPartitionsDefinition,
     PartitionKeyRange,
-    StaticPartitionsDefinition,
     define_asset_job,
     job,
 )
 from dagster._check import CheckError
+from dagster._core.definitions.partitions.definition.dynamic import DynamicPartitionsDefinition
+from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
 from dagster._core.test_utils import get_paginated_partition_keys, instance_for_test
 from dagster._serdes import serialize_value
 

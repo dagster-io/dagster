@@ -3,7 +3,7 @@ from unittest.mock import MagicMock
 import pytest
 from dagster import AssetKey, InputContext, OutputContext, asset, build_output_context
 from dagster._check import CheckError
-from dagster._core.definitions.partitions.definition.partition import StaticPartitionsDefinition
+from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
 from dagster._core.definitions.partitions.definition.time_window_partitions import (
     DailyPartitionsDefinition,
     TimeWindow,

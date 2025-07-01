@@ -12,12 +12,10 @@ from dagster import (
     ConfigurableResource,
     DailyPartitionsDefinition,
     Definitions,
-    DynamicPartitionsDefinition,
     LegacyFreshnessPolicy,
     MultiPartitionsDefinition,
     PipesSubprocessClient,
     SourceAsset,
-    StaticPartitionsDefinition,
     asset,
     asset_check,
     define_asset_job,
@@ -27,6 +25,8 @@ from dagster import (
     resource,
 )
 from dagster._cli.job import job_execute_command
+from dagster._core.definitions.partitions.definition.dynamic import DynamicPartitionsDefinition
+from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
 from dagster._core.definitions.reconstruct import get_ephemeral_repository_name
 from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from dagster._core.execution.context.input import InputContext

@@ -49,11 +49,9 @@ from dagster._core.definitions.external_asset import create_external_asset_from_
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.logger_definition import logger
 from dagster._core.definitions.metadata.metadata_value import MetadataValue, TextMetadataValue
-from dagster._core.definitions.partitions.definition.partition import (
-    PartitionLoadingContext,
-    PartitionsDefinition,
-    StaticPartitionsDefinition,
-)
+from dagster._core.definitions.partitions.context import PartitionLoadingContext
+from dagster._core.definitions.partitions.definition.base import PartitionsDefinition
+from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
 from dagster._core.definitions.partitions.definition.time_window_partitions import (
     DailyPartitionsDefinition,
     HourlyPartitionsDefinition,

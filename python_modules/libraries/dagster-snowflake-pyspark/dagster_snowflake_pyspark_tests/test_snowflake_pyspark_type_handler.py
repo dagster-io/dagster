@@ -12,14 +12,12 @@ from dagster import (
     AssetKey,
     DailyPartitionsDefinition,
     Definitions,
-    DynamicPartitionsDefinition,
     EnvVar,
     IOManagerDefinition,
     MetadataValue,
     MultiPartitionKey,
     MultiPartitionsDefinition,
     Out,
-    StaticPartitionsDefinition,
     TableColumn,
     TableSchema,
     TimeWindowPartitionMapping,
@@ -32,6 +30,8 @@ from dagster import (
     materialize,
     op,
 )
+from dagster._core.definitions.partitions.definition.dynamic import DynamicPartitionsDefinition
+from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
 from dagster._core.storage.db_io_manager import TableSlice
 from dagster_snowflake import build_snowflake_io_manager
 from dagster_snowflake.resources import SnowflakeResource

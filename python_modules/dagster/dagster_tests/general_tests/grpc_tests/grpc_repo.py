@@ -13,10 +13,8 @@ from dagster import (
     sensor,
     usable_as_dagster_type,
 )
-from dagster._core.definitions.partitions.definition.partition import (
-    PartitionedConfig,
-    StaticPartitionsDefinition,
-)
+from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
+from dagster._core.definitions.partitions.partitioned_config import PartitionedConfig
 
 
 @op

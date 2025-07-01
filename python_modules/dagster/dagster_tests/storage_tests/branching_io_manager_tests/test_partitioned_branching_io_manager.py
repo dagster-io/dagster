@@ -10,11 +10,11 @@ from dagster import (
     Definitions,
     In,
     StaticPartitionMapping,
-    StaticPartitionsDefinition,
     asset,
     job,
     op,
 )
+from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
 from dagster._core.execution.context.compute import OpExecutionContext
 from dagster._core.storage.branching.branching_io_manager import BranchingIOManager
 

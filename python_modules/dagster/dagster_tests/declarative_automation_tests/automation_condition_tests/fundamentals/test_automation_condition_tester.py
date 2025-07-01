@@ -8,7 +8,6 @@ from dagster import (
     AutomationCondition,
     Definitions,
     HourlyPartitionsDefinition,
-    StaticPartitionsDefinition,
     asset,
     evaluate_automation_conditions,
     op,
@@ -16,6 +15,7 @@ from dagster import (
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_spec import AssetExecutionType
 from dagster._core.definitions.events import AssetMaterialization
+from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
 from dagster._core.instance import DagsterInstance
 
 

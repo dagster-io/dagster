@@ -12,7 +12,6 @@ from dagster import (
     DagsterInstance,
     DagsterInvalidDefinitionError,
     DailyPartitionsDefinition,
-    DynamicPartitionsDefinition,
     HourlyPartitionsDefinition,
     InputContext,
     IOManager,
@@ -24,7 +23,6 @@ from dagster import (
     OutputContext,
     PartitionsDefinition,
     SourceAsset,
-    StaticPartitionsDefinition,
     build_asset_context,
     daily_partitioned_config,
     define_asset_job,
@@ -38,6 +36,8 @@ from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.materialize import materialize_to_memory
 from dagster._core.definitions.metadata.metadata_value import IntMetadataValue, TextMetadataValue
+from dagster._core.definitions.partitions.definition.dynamic import DynamicPartitionsDefinition
+from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
 from dagster._core.definitions.partitions.definition.time_window_partitions import TimeWindow
 from dagster._core.definitions.partitions.partition_key_range import PartitionKeyRange
 from dagster._core.errors import DagsterInvariantViolationError

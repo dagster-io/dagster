@@ -3,11 +3,11 @@ from dagster import (
     AssetSelection,
     DagsterInstance,
     DailyPartitionsDefinition,
-    DynamicPartitionsDefinition,
     MultiPartitionsDefinition,
     asset,
     define_asset_job,
 )
+from dagster._core.definitions.partitions.definition.dynamic import DynamicPartitionsDefinition
 
 customers_partitions_def = DynamicPartitionsDefinition(name="customers")
 

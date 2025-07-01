@@ -949,9 +949,7 @@ class ScheduleDefinition(IHasInternalInit):
             ScheduleExecutionData: Contains list of run requests, or skip message if present.
 
         """
-        from dagster._core.definitions.partitions.definition.partition import (
-            CachingDynamicPartitionsLoader,
-        )
+        from dagster._core.definitions.partitions.utils import CachingDynamicPartitionsLoader
 
         check.inst_param(context, "context", ScheduleEvaluationContext)
         execution_fn: Callable[..., ScheduleEvaluationFunctionReturn]
