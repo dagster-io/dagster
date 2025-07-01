@@ -28,7 +28,10 @@ from dagster._core.definitions.data_version import (
 from dagster._core.definitions.declarative_automation.serialized_objects import (
     AutomationConditionSnapshot,
 )
-from dagster._core.definitions.partitions.context import PartitionLoadingContext
+from dagster._core.definitions.partitions.context import (
+    PartitionLoadingContext,
+    partition_loading_context,
+)
 from dagster._core.definitions.partitions.definition import PartitionsDefinition
 from dagster._core.definitions.partitions.mapping import PartitionMapping
 from dagster._core.definitions.selector import JobSelector
@@ -1123,31 +1126,32 @@ class GrapheneAssetNode(graphene.ObjectType):
     ) -> Optional[GraphenePartitionStats]:
         partitions_snap = self._asset_node_snap.partitions
         if partitions_snap:
-            (
-                materialized_partition_subset,
-                failed_partition_subset,
-                in_progress_subset,
-            ) = regenerate_and_check_partition_subsets(
-                graphene_info.context,
-                self._asset_node_snap,
-                graphene_info.context.dynamic_partitions_loader,
-            )
+            with partition_loading_context(
+                dynamic_partitions_store=graphene_info.context.dynamic_partitions_loader
+            ):
+                (
+                    materialized_partition_subset,
+                    failed_partition_subset,
+                    in_progress_subset,
+                ) = regenerate_and_check_partition_subsets(
+                    graphene_info.context,
+                    self._asset_node_snap,
+                    graphene_info.context.dynamic_partitions_loader,
+                )
 
-            failed_or_in_progress_subset = failed_partition_subset | in_progress_subset
-            failed_and_not_in_progress_subset = failed_partition_subset - in_progress_subset
+                failed_or_in_progress_subset = failed_partition_subset | in_progress_subset
+                failed_and_not_in_progress_subset = failed_partition_subset - in_progress_subset
 
-            materialized_and_not_failed_or_in_progress_subset = (
-                materialized_partition_subset - failed_or_in_progress_subset
-            )
+                materialized_and_not_failed_or_in_progress_subset = (
+                    materialized_partition_subset - failed_or_in_progress_subset
+                )
 
-            return GraphenePartitionStats(
-                numMaterialized=len(materialized_and_not_failed_or_in_progress_subset),
-                numPartitions=partitions_snap.get_partitions_definition().get_num_partitions(
-                    dynamic_partitions_store=graphene_info.context.dynamic_partitions_loader
-                ),
-                numFailed=len(failed_and_not_in_progress_subset),
-                numMaterializing=len(in_progress_subset),
-            )
+                return GraphenePartitionStats(
+                    numMaterialized=len(materialized_and_not_failed_or_in_progress_subset),
+                    numPartitions=partitions_snap.get_partitions_definition().get_num_partitions(),
+                    numFailed=len(failed_and_not_in_progress_subset),
+                    numMaterializing=len(in_progress_subset),
+                )
         else:
             return None
 

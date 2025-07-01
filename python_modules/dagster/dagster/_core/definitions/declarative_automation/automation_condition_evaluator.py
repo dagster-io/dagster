@@ -105,12 +105,17 @@ class AutomationConditionEvaluator:
         self.logger.info("Done prefetching asset records.")
 
     def evaluate(self) -> tuple[Sequence[AutomationResult], Sequence[EntitySubset[EntityKey]]]:
+        return asyncio.run(self.async_evaluate())
+
+    async def async_evaluate(
+        self,
+    ) -> tuple[Sequence[AutomationResult], Sequence[EntitySubset[EntityKey]]]:
         with partition_loading_context(
             effective_dt=self.evaluation_time, dynamic_partitions_store=self.instance_queryer
         ):
-            return asyncio.run(self.async_evaluate())
+            return await self._async_evaluate()
 
-    async def async_evaluate(
+    async def _async_evaluate(
         self,
     ) -> tuple[Sequence[AutomationResult], Sequence[EntitySubset[EntityKey]]]:
         self.prefetch()

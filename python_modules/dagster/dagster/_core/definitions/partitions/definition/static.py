@@ -80,10 +80,8 @@ class StaticPartitionsDefinition(PartitionsDefinition[str]):
         ascending: bool,
         cursor: Optional[str] = None,
     ) -> PaginatedResults[str]:
-        with partition_loading_context(new_ctx=context) as ctx:
-            partition_keys = self.get_partition_keys(
-                current_time=ctx.effective_dt, dynamic_partitions_store=ctx.dynamic_partitions_store
-            )
+        with partition_loading_context(new_ctx=context):
+            partition_keys = self.get_partition_keys()
             return PaginatedResults.create_from_sequence(
                 partition_keys, limit=limit, ascending=ascending, cursor=cursor
             )
@@ -99,13 +97,8 @@ class StaticPartitionsDefinition(PartitionsDefinition[str]):
     def __repr__(self) -> str:
         return f"{type(self).__name__}(partition_keys={self._partition_keys})"
 
-    def get_num_partitions(
-        self,
-        current_time: Optional[datetime] = None,
-        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
-    ) -> int:
-        with partition_loading_context(current_time, dynamic_partitions_store) as ctx:
-            # We don't currently throw an error when a duplicate partition key is defined
-            # in a static partitions definition, though we will at 1.3.0.
-            # This ensures that partition counts are correct in the Dagster UI.
-            return len(set(self.get_partition_keys(ctx.effective_dt, ctx.dynamic_partitions_store)))
+    def get_num_partitions(self) -> int:
+        # We don't currently throw an error when a duplicate partition key is defined
+        # in a static partitions definition, though we will at 1.3.0.
+        # This ensures that partition counts are correct in the Dagster UI.
+        return len(set(self.get_partition_keys()))

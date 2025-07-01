@@ -164,20 +164,15 @@ class MultiPartitionsDefinition(PartitionsDefinition[MultiPartitionKey]):
                 for partition_key_tuple in itertools.product(*partition_key_sequences)
             ]
 
-    def get_serializable_unique_identifier(
-        self, dynamic_partitions_store: Optional[DynamicPartitionsStore] = None
-    ) -> str:
-        with partition_loading_context(dynamic_partitions_store=dynamic_partitions_store) as ctx:
-            return hashlib.sha1(
-                str(
-                    {
-                        dim_def.name: dim_def.partitions_def.get_serializable_unique_identifier(
-                            ctx.dynamic_partitions_store
-                        )
-                        for dim_def in self.partitions_defs
-                    }
-                ).encode("utf-8")
-            ).hexdigest()
+    def get_serializable_unique_identifier(self) -> str:
+        return hashlib.sha1(
+            str(
+                {
+                    dim_def.name: dim_def.partitions_def.get_serializable_unique_identifier()
+                    for dim_def in self.partitions_defs
+                }
+            ).encode("utf-8")
+        ).hexdigest()
 
     @property
     def partition_dimension_names(self) -> list[str]:
@@ -194,57 +189,40 @@ class MultiPartitionsDefinition(PartitionsDefinition[MultiPartitionKey]):
         check.failed(f"Invalid dimension name {dimension_name}")
 
     # We override the default implementation of `has_partition_key` for performance.
-    def has_partition_key(
-        self,
-        partition_key: Union[MultiPartitionKey, str],
-        current_time: Optional[datetime] = None,
-        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
-    ) -> bool:
-        with partition_loading_context(current_time, dynamic_partitions_store) as ctx:
-            if isinstance(partition_key, str):
-                try:
-                    partition_key = self.get_partition_key_from_str(partition_key)
-                except CheckError:
-                    return False
+    def has_partition_key(self, partition_key: Union[MultiPartitionKey, str]) -> bool:
+        if isinstance(partition_key, str):
+            try:
+                partition_key = self.get_partition_key_from_str(partition_key)
+            except CheckError:
+                return False
 
-            if partition_key.keys_by_dimension.keys() != set(self.partition_dimension_names):
-                raise DagsterUnknownPartitionError(
-                    f"Invalid partition key {partition_key}. The dimensions of the partition key are"
-                    " not the dimensions of the partitions definition."
-                )
+        if partition_key.keys_by_dimension.keys() != set(self.partition_dimension_names):
+            raise DagsterUnknownPartitionError(
+                f"Invalid partition key {partition_key}. The dimensions of the partition key are"
+                " not the dimensions of the partitions definition."
+            )
 
-            for dimension in self.partitions_defs:
-                if not dimension.partitions_def.has_partition_key(
-                    partition_key.keys_by_dimension[dimension.name],
-                    current_time=ctx.effective_dt,
-                    dynamic_partitions_store=ctx.dynamic_partitions_store,
-                ):
-                    return False
-            return True
+        for dimension in self.partitions_defs:
+            if not dimension.partitions_def.has_partition_key(
+                partition_key.keys_by_dimension[dimension.name]
+            ):
+                return False
+        return True
 
     # store results for repeated calls with the same current_time
     @lru_cache(maxsize=1)
-    def _get_partition_keys(
-        self, current_time: datetime, dynamic_partitions_store: Optional[DynamicPartitionsStore]
-    ) -> Sequence[MultiPartitionKey]:
-        with partition_loading_context(current_time, dynamic_partitions_store) as ctx:
-            partition_key_sequences = [
-                partition_dim.partitions_def.get_partition_keys(
-                    current_time=ctx.effective_dt,
-                    dynamic_partitions_store=ctx.dynamic_partitions_store,
-                )
-                for partition_dim in self._partitions_defs
-            ]
+    def _get_partition_keys(self, _current_time: datetime) -> Sequence[MultiPartitionKey]:
+        partition_key_sequences = [
+            partition_dim.partitions_def.get_partition_keys()
+            for partition_dim in self._partitions_defs
+        ]
 
-            return [
-                MultiPartitionKey(
-                    {
-                        self._partitions_defs[i].name: key
-                        for i, key in enumerate(partition_key_tuple)
-                    }
-                )
-                for partition_key_tuple in itertools.product(*partition_key_sequences)
-            ]
+        return [
+            MultiPartitionKey(
+                {self._partitions_defs[i].name: key for i, key in enumerate(partition_key_tuple)}
+            )
+            for partition_key_tuple in itertools.product(*partition_key_sequences)
+        ]
 
     @public
     def get_partition_keys(
@@ -267,9 +245,7 @@ class MultiPartitionsDefinition(PartitionsDefinition[MultiPartitionKey]):
             Sequence[MultiPartitionKey]
         """
         with partition_loading_context(current_time, dynamic_partitions_store) as ctx:
-            return self._get_partition_keys(
-                current_time=ctx.effective_dt, dynamic_partitions_store=ctx.dynamic_partitions_store
-            )
+            return self._get_partition_keys(_current_time=ctx.effective_dt)
 
     def get_paginated_partition_keys(
         self,
@@ -314,33 +290,27 @@ class MultiPartitionsDefinition(PartitionsDefinition[MultiPartitionKey]):
                 results=partition_keys, cursor=next_cursor, has_more=iterator.has_next()
             )
 
-    def filter_valid_partition_keys(
-        self, partition_keys: set[str], dynamic_partitions_store: DynamicPartitionsStore
-    ) -> set[MultiPartitionKey]:
-        with partition_loading_context(dynamic_partitions_store=dynamic_partitions_store) as ctx:
-            partition_keys_by_dimension = {
-                dim.name: dim.partitions_def.get_partition_keys(
-                    dynamic_partitions_store=ctx.dynamic_partitions_store
-                )
-                for dim in self.partitions_defs
-            }
-            validated_partitions = set()
-            for partition_key in partition_keys:
-                partition_key_strs = partition_key.split(MULTIPARTITION_KEY_DELIMITER)
-                if len(partition_key_strs) != len(self.partitions_defs):
-                    continue
+    def filter_valid_partition_keys(self, partition_keys: set[str]) -> set[MultiPartitionKey]:
+        partition_keys_by_dimension = {
+            dim.name: dim.partitions_def.get_partition_keys() for dim in self.partitions_defs
+        }
+        validated_partitions = set()
+        for partition_key in partition_keys:
+            partition_key_strs = partition_key.split(MULTIPARTITION_KEY_DELIMITER)
+            if len(partition_key_strs) != len(self.partitions_defs):
+                continue
 
-                multipartition_key = MultiPartitionKey(
-                    {dim.name: partition_key_strs[i] for i, dim in enumerate(self._partitions_defs)}
-                )
+            multipartition_key = MultiPartitionKey(
+                {dim.name: partition_key_strs[i] for i, dim in enumerate(self._partitions_defs)}
+            )
 
-                if all(
-                    key in partition_keys_by_dimension.get(dim, [])
-                    for dim, key in multipartition_key.keys_by_dimension.items()
-                ):
-                    validated_partitions.add(partition_key)
+            if all(
+                key in partition_keys_by_dimension.get(dim, [])
+                for dim, key in multipartition_key.keys_by_dimension.items()
+            ):
+                validated_partitions.add(partition_key)
 
-            return validated_partitions
+        return validated_partitions
 
     def __eq__(self, other):
         return (
@@ -460,64 +430,44 @@ class MultiPartitionsDefinition(PartitionsDefinition[MultiPartitionKey]):
         )
 
     def get_multipartition_keys_with_dimension_value(
-        self,
-        dimension_name: str,
-        dimension_partition_key: str,
-        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
-        current_time: Optional[datetime] = None,
+        self, dimension_name: str, dimension_partition_key: str
     ) -> Sequence[MultiPartitionKey]:
         check.str_param(dimension_name, "dimension_name")
         check.str_param(dimension_partition_key, "dimension_partition_key")
 
-        with partition_loading_context(current_time, dynamic_partitions_store) as ctx:
-            matching_dimensions = [
-                dimension for dimension in self.partitions_defs if dimension.name == dimension_name
-            ]
-            other_dimensions = [
-                dimension for dimension in self.partitions_defs if dimension.name != dimension_name
-            ]
+        matching_dimensions = [
+            dimension for dimension in self.partitions_defs if dimension.name == dimension_name
+        ]
+        other_dimensions = [
+            dimension for dimension in self.partitions_defs if dimension.name != dimension_name
+        ]
 
-            check.invariant(
-                len(matching_dimensions) == 1,
-                f"Dimension {dimension_name} not found in MultiPartitionsDefinition with dimensions"
-                f" {[dim.name for dim in self.partitions_defs]}",
+        check.invariant(
+            len(matching_dimensions) == 1,
+            f"Dimension {dimension_name} not found in MultiPartitionsDefinition with dimensions"
+            f" {[dim.name for dim in self.partitions_defs]}",
+        )
+
+        partition_sequences = [
+            partition_dim.partitions_def.get_partition_keys() for partition_dim in other_dimensions
+        ] + [[dimension_partition_key]]
+
+        # Names of partitions dimensions in the same order as partition_sequences
+        partition_dim_names = [dim.name for dim in other_dimensions] + [dimension_name]
+
+        return [
+            MultiPartitionKey(
+                {
+                    partition_dim_names[i]: partition_key
+                    for i, partition_key in enumerate(partitions_tuple)
+                }
             )
+            for partitions_tuple in itertools.product(*partition_sequences)
+        ]
 
-            partition_sequences = [
-                partition_dim.partitions_def.get_partition_keys(
-                    current_time=ctx.effective_dt,
-                    dynamic_partitions_store=ctx.dynamic_partitions_store,
-                )
-                for partition_dim in other_dimensions
-            ] + [[dimension_partition_key]]
-
-            # Names of partitions dimensions in the same order as partition_sequences
-            partition_dim_names = [dim.name for dim in other_dimensions] + [dimension_name]
-
-            return [
-                MultiPartitionKey(
-                    {
-                        partition_dim_names[i]: partition_key
-                        for i, partition_key in enumerate(partitions_tuple)
-                    }
-                )
-                for partitions_tuple in itertools.product(*partition_sequences)
-            ]
-
-    def get_num_partitions(
-        self,
-        current_time: Optional[datetime] = None,
-        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
-    ) -> int:
-        with partition_loading_context(current_time, dynamic_partitions_store) as ctx:
-            # Static partitions definitions can contain duplicate keys (will throw error in 1.3.0)
-            # In the meantime, relying on get_num_partitions to handle duplicates to display
-            # correct counts in the Dagster UI.
-            dimension_counts = [
-                dim.partitions_def.get_num_partitions(
-                    current_time=ctx.effective_dt,
-                    dynamic_partitions_store=ctx.dynamic_partitions_store,
-                )
-                for dim in self.partitions_defs
-            ]
-            return reduce(lambda x, y: x * y, dimension_counts, 1)
+    def get_num_partitions(self) -> int:
+        # Static partitions definitions can contain duplicate keys (will throw error in 1.3.0)
+        # In the meantime, relying on get_num_partitions to handle duplicates to display
+        # correct counts in the Dagster UI.
+        dimension_counts = [dim.partitions_def.get_num_partitions() for dim in self.partitions_defs]
+        return reduce(lambda x, y: x * y, dimension_counts, 1)

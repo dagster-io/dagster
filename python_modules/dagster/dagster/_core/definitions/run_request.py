@@ -1,6 +1,5 @@
 from collections import defaultdict
 from collections.abc import Mapping, Sequence
-from datetime import datetime
 from enum import Enum
 from typing import TYPE_CHECKING, AbstractSet, Any, NamedTuple, Optional, Union  # noqa: UP035
 
@@ -20,6 +19,7 @@ from dagster._core.definitions.dynamic_partitions_request import (
     DeleteDynamicPartitionsRequest,
 )
 from dagster._core.definitions.events import AssetKey, AssetMaterialization, AssetObservation
+from dagster._core.definitions.partitions.context import partition_loading_context
 from dagster._core.definitions.partitions.partition_key_range import PartitionKeyRange
 from dagster._core.instance import DynamicPartitionsStore
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
@@ -181,8 +181,7 @@ class RunRequest(IHaveNew, LegacyNamedTupleMixin):
         dynamic_partitions_requests: Sequence[
             Union[AddDynamicPartitionsRequest, DeleteDynamicPartitionsRequest]
         ],
-        current_time: Optional[datetime] = None,
-        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
+        dynamic_partitions_store: Optional[DynamicPartitionsStore],
     ) -> "RunRequest":
         if self.partition_key is None:
             check.failed(
@@ -196,10 +195,13 @@ class RunRequest(IHaveNew, LegacyNamedTupleMixin):
             if dynamic_partitions_store
             else None
         )
+        with partition_loading_context(
+            dynamic_partitions_store=dynamic_partitions_store_after_requests
+        ) as ctx:
+            context = ctx
+
         target_definition.validate_partition_key(
-            self.partition_key,
-            dynamic_partitions_store=dynamic_partitions_store_after_requests,
-            selected_asset_keys=self.asset_selection,
+            self.partition_key, selected_asset_keys=self.asset_selection, context=context
         )
 
         tags = {

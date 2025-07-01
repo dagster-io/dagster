@@ -40,7 +40,7 @@ class IdentityPartitionMapping(PartitionMapping, NamedTuple("_IdentityPartitionM
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> UpstreamPartitionsResult:
-        with partition_loading_context(current_time, dynamic_partitions_store) as ctx:
+        with partition_loading_context(current_time, dynamic_partitions_store):
             if downstream_partitions_subset is None:
                 check.failed("downstream asset is not partitioned")
 
@@ -52,12 +52,7 @@ class IdentityPartitionMapping(PartitionMapping, NamedTuple("_IdentityPartitionM
 
             # must list out the keys before combining them since they might be from
             # different asset keys
-            upstream_partition_keys = set(
-                upstream_partitions_def.get_partition_keys(
-                    current_time=ctx.effective_dt,
-                    dynamic_partitions_store=ctx.dynamic_partitions_store,
-                )
-            )
+            upstream_partition_keys = set(upstream_partitions_def.get_partition_keys())
             downstream_partition_keys = set(downstream_partitions_subset.get_partition_keys())
 
             return UpstreamPartitionsResult(
@@ -77,23 +72,19 @@ class IdentityPartitionMapping(PartitionMapping, NamedTuple("_IdentityPartitionM
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> PartitionsSubset:
-        if upstream_partitions_subset is None:
-            check.failed("upstream asset is not partitioned")
+        with partition_loading_context(current_time, dynamic_partitions_store):
+            if upstream_partitions_subset is None:
+                check.failed("upstream asset is not partitioned")
 
-        if upstream_partitions_def == downstream_partitions_def:
-            return upstream_partitions_subset
+            if upstream_partitions_def == downstream_partitions_def:
+                return upstream_partitions_subset
 
-        upstream_partition_keys = set(upstream_partitions_subset.get_partition_keys())
-        downstream_partition_keys = set(
-            downstream_partitions_def.get_partition_keys(
-                current_time=current_time,
-                dynamic_partitions_store=dynamic_partitions_store,
+            upstream_partition_keys = set(upstream_partitions_subset.get_partition_keys())
+            downstream_partition_keys = set(downstream_partitions_def.get_partition_keys())
+
+            return downstream_partitions_def.empty_subset().with_partition_keys(
+                list(downstream_partition_keys & upstream_partition_keys)
             )
-        )
-
-        return downstream_partitions_def.empty_subset().with_partition_keys(
-            list(downstream_partition_keys & upstream_partition_keys)
-        )
 
     @property
     def description(self) -> str:

@@ -92,12 +92,7 @@ class LegacyRuleEvaluationContext:
             )
             if cursor
             else None,
-            candidate_subset=ValidAssetSubset.all(
-                asset_key,
-                partitions_def,
-                instance_queryer,
-                instance_queryer.evaluation_time,
-            ),
+            candidate_subset=ValidAssetSubset.all(asset_key, partitions_def),
             data_time_resolver=evaluator.legacy_data_time_resolver,
             instance_queryer=instance_queryer,
             request_subsets_by_key=evaluator.request_subsets_by_key,
@@ -165,9 +160,7 @@ class LegacyRuleEvaluationContext:
             return self.empty_subset()
         candidate_subset = self.node_cursor.candidate_subset
         if isinstance(candidate_subset, HistoricalAllPartitionsSubsetSentinel):
-            return ValidAssetSubset.all(
-                self.asset_key, self.partitions_def, self.instance_queryer, self.evaluation_time
-            )
+            return ValidAssetSubset.all(self.asset_key, self.partitions_def)
         else:
             return candidate_subset
 
@@ -357,10 +350,7 @@ class LegacyRuleEvaluationContext:
         return {
             parent
             for parent in self.asset_graph.get_parents_partitions(
-                dynamic_partitions_store=self.instance_queryer,
-                current_time=self.instance_queryer.evaluation_time,
-                asset_key=asset_partition.asset_key,
-                partition_key=asset_partition.partition_key,
+                asset_key=asset_partition.asset_key, partition_key=asset_partition.partition_key
             ).parent_partitions
             if not self.will_update_asset_partition(parent)
             or not self.materializable_in_same_run(asset_partition.asset_key, parent.asset_key)

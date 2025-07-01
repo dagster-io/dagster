@@ -2,14 +2,17 @@ import datetime
 from collections.abc import Iterator
 from contextlib import contextmanager
 from contextvars import ContextVar
-from typing import Optional
+from functools import wraps
+from typing import TYPE_CHECKING, Annotated, Any, Callable, Optional
 
-from dagster_shared.record import replace
+from dagster_shared.record import ImportFrom, replace
 
 from dagster._core.definitions.temporal_context import TemporalContext
-from dagster._core.instance import DynamicPartitionsStore
 from dagster._record import record
 from dagster._time import get_current_datetime
+
+if TYPE_CHECKING:
+    from dagster._core.instance import DynamicPartitionsStore
 
 
 @record
@@ -23,25 +26,18 @@ class PartitionLoadingContext:
     """
 
     temporal_context: TemporalContext
-    dynamic_partitions_store: Optional[DynamicPartitionsStore]
+    dynamic_partitions_store: Optional[
+        Annotated["DynamicPartitionsStore", ImportFrom("dagster._core.instance")]
+    ]
 
     @property
     def effective_dt(self) -> datetime.datetime:
         return self.temporal_context.effective_dt
 
-    @staticmethod
-    def default() -> "PartitionLoadingContext":
-        return PartitionLoadingContext(
-            temporal_context=TemporalContext(
-                effective_dt=get_current_datetime(), last_event_id=None
-            ),
-            dynamic_partitions_store=None,
-        )
-
     def updated(
         self,
         effective_dt: Optional[datetime.datetime],
-        dynamic_partitions_store: Optional[DynamicPartitionsStore],
+        dynamic_partitions_store: Optional["DynamicPartitionsStore"],
     ) -> "PartitionLoadingContext":
         """Returns a new PartitionLoadingContext with the updated effective_dt and dynamic_partitions_store.
         If the effective_dt and dynamic_partitions_store are unset, the existing context is returned.
@@ -70,7 +66,7 @@ _current_ctx: ContextVar[Optional[PartitionLoadingContext]] = ContextVar(
 @contextmanager
 def partition_loading_context(
     effective_dt: Optional[datetime.datetime] = None,
-    dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
+    dynamic_partitions_store: Optional["DynamicPartitionsStore"] = None,
     *,
     new_ctx: Optional[PartitionLoadingContext] = None,
 ) -> Iterator[PartitionLoadingContext]:
@@ -82,7 +78,10 @@ def partition_loading_context(
         dynamic_partitions_store: The DynamicPartitionsStore backing the partition loading.
         ctx: The current partition loading context.
     """
-    prev_ctx = _current_ctx.get() or PartitionLoadingContext.default()
+    prev_ctx = _current_ctx.get() or PartitionLoadingContext(
+        temporal_context=TemporalContext(effective_dt=get_current_datetime(), last_event_id=None),
+        dynamic_partitions_store=None,
+    )
     new_ctx = new_ctx or PartitionLoadingContext.updated(
         prev_ctx, effective_dt, dynamic_partitions_store
     )
@@ -93,3 +92,14 @@ def partition_loading_context(
         yield new_ctx
     finally:
         _current_ctx.reset(token)
+
+
+def use_partition_loading_context(func: Callable[..., Any]) -> Callable[..., Any]:
+    """Decorator for methods that will use the partition loading context."""
+
+    @wraps(func)
+    def wrapper(self, *args: Any, **kwargs: Any) -> Any:
+        with partition_loading_context(new_ctx=self._partition_loading_context):
+            return func(self, *args, **kwargs)
+
+    return wrapper

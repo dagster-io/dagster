@@ -16,6 +16,7 @@ from dagster._core.definitions.instigation_logger import InstigationLogger
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.metadata import RawMetadataMapping, normalize_metadata
 from dagster._core.definitions.metadata.metadata_value import MetadataValue
+from dagster._core.definitions.partitions.context import partition_loading_context
 from dagster._core.definitions.resource_annotation import get_resource_args
 from dagster._core.definitions.run_config import CoercibleToRunConfig
 from dagster._core.definitions.run_request import RunRequest, SkipReason
@@ -994,30 +995,33 @@ class ScheduleDefinition(IHasInternalInit):
         )
 
         # clone all the run requests with resolved tags and config
-        resolved_run_requests = []
-        for run_request in run_requests:
-            if run_request.partition_key and not run_request.has_resolved_partition():
-                if context.repository_def is None:
-                    raise DagsterInvariantViolationError(
-                        "Must provide repository def to build_schedule_context when yielding"
-                        " partitioned run requests"
+        with partition_loading_context(
+            context._scheduled_execution_time,  # noqa
+            dynamic_partitions_store,
+        ):
+            resolved_run_requests = []
+            for run_request in run_requests:
+                if run_request.partition_key and not run_request.has_resolved_partition():
+                    if context.repository_def is None:
+                        raise DagsterInvariantViolationError(
+                            "Must provide repository def to build_schedule_context when yielding"
+                            " partitioned run requests"
+                        )
+
+                    scheduled_target = context.repository_def.get_job(self._target.job_name)
+                    resolved_request = run_request.with_resolved_tags_and_config(
+                        target_definition=scheduled_target,
+                        dynamic_partitions_requests=[],
+                        dynamic_partitions_store=dynamic_partitions_store,
                     )
+                else:
+                    resolved_request = run_request
 
-                scheduled_target = context.repository_def.get_job(self._target.job_name)
-                resolved_request = run_request.with_resolved_tags_and_config(
-                    target_definition=scheduled_target,
-                    dynamic_partitions_requests=[],
-                    current_time=context.scheduled_execution_time,
-                    dynamic_partitions_store=dynamic_partitions_store,
+                resolved_run_requests.append(
+                    resolved_request.with_replaced_attrs(
+                        tags=merge_dicts(resolved_request.tags, DagsterRun.tags_for_schedule(self))
+                    )
                 )
-            else:
-                resolved_request = run_request
-
-            resolved_run_requests.append(
-                resolved_request.with_replaced_attrs(
-                    tags=merge_dicts(resolved_request.tags, DagsterRun.tags_for_schedule(self))
-                )
-            )
 
         return ScheduleExecutionData(
             run_requests=resolved_run_requests,
