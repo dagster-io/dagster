@@ -4,11 +4,11 @@ description: Add a resource to your assets
 sidebar_position: 30
 ---
 
-We've now created our own ingest assets and combined them with assets from the dbt component to model the data. In this step, we will revisit the ingest assets, and add another Dagster object to assist with managing our DuckDB connection. Currently, each of our assets handles its own connection separately. Adding in a [resources](/guides/build/external-resources) will allow us to centralize our connection to DuckDB into a single object that can be shared across all our Dagster objects.
+We've now created our own ingest assets and combined them with assets from the dbt component to model the data. In this step, we will revisit the ingest assets, and add another Dagster object to assist with managing our DuckDB connection. Currently, each of our assets handles its own connection separately. Adding a [resource](/guides/build/external-resources) will allow us to centralize our connection to DuckDB in a single object that can be shared across all our Dagster objects.
 
 ## 1. Define the DuckDB resource
 
-In Dagster, resources are reusable objects that provide external context or functionality such as database connections, clients, or configurations. Resources can be used by a number of different Dagster objects.
+In Dagster, resources are reusable objects that provide external context or functionality, such as database connections, clients, or configurations. Resources can be used by a number of different Dagster objects.
 
 First, we will need to install the `dagster-duckdb` library:
 
@@ -22,7 +22,7 @@ This adds a generic resources file to our project. The `resources.py`, is now pa
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/tree/resources.txt" />
 
-Within this file, we will define our the `DuckDBResource` resource from the `dagster-duckdb` library. This consolidates the database connection in one place. Next we will define a `resources` function with the <PyObject section="definitions" module="dagster" object="Definitions" decorator />. This function will map all of resources to specific keys throughout our Dagster project:
+Within this file, we will define our `DuckDBResource` resource from the `dagster-duckdb` library. This consolidates the database connection in one place. Next, we will define a `resources` function with the <PyObject section="definitions" module="dagster" object="Definitions" decorator />. This function will map all of our resources to specific keys throughout our Dagster project:
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/src/etl_tutorial/defs/resources.py"

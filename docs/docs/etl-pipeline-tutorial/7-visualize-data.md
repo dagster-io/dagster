@@ -44,9 +44,9 @@ This will add the directory `dashboard` to the `etl_tutorial` module:
 
 ## 3. Configure the Evidence `defs.yaml`
 
-Unlike our other components which generated individual assets for each model in our project. The Evidence component will register a single asset for the entire Evidence deployment. This asset will build all the sources and dashboards within our Evidence project.
+Unlike the other components we used, which generated individual assets for each model in our project, the Evidence component will register a single asset for the entire Evidence deployment. This asset will build all the sources and dashboards within our Evidence project.
 
-However we can still configure our Evidence component to be dependent on multiple upstream assets by setting the `deps` within the `attributes` of the Evidence component `defs.yaml` file:
+However, we can still configure our Evidence component to be dependent on multiple upstream assets by setting the `deps` value within the `attributes` key of the Evidence component `defs.yaml` file:
 
 <CodeExample
     path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/src/etl_tutorial/defs/dashboard/defs.yaml"
@@ -60,15 +60,15 @@ With the Evidence component configured, our assets graph should look like this:
 
 ![2048 resolution](/images/tutorial/etl-tutorial/assets-evidence.png)
 
-You can now execute the Evidence assets and view the output:
+You can now execute the Evidence asset and view the output:
 
 1. Reload your Definitions.
 2. Execute the `dashboard` asset (assuming the upstream assets have been materialized).
-3. After the `dashboard` asset has successfully materialized, in the command line execute the following to run the Evidence server:
+3. After the `dashboard` asset has successfully materialized, on the command line, execute the following to run the Evidence server:
 
    <CliInvocationExample contents="cd dashboard/build && python -m http.server" />
 
-4. Go to the dashboard [http://localhost:8000/](http://localhost:8000/):
+4. Navigate to the dashboard at [http://localhost:8000/](http://localhost:8000/):
 
    ![2048 resolution](/images/tutorial/etl-tutorial/evidence-dashboard.png)
 
