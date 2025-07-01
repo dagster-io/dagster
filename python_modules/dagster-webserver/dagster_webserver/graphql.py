@@ -17,10 +17,11 @@ from starlette.applications import Starlette
 from starlette.concurrency import run_in_threadpool
 from starlette.middleware import Middleware
 from starlette.requests import HTTPConnection, Request
-from starlette.responses import HTMLResponse, JSONResponse, PlainTextResponse
+from starlette.responses import HTMLResponse, PlainTextResponse
 from starlette.routing import BaseRoute
 from starlette.websockets import WebSocket, WebSocketDisconnect, WebSocketState
 
+from dagster_webserver.json import create_json_response
 from dagster_webserver.templates.graphiql import TEMPLATE
 
 if TYPE_CHECKING:
@@ -160,8 +161,9 @@ class GraphQLServer(ABC, Generic[TRequestContext]):
         if result.errors:
             response_data["errors"] = self.handle_graphql_errors(result.errors)
 
-        return JSONResponse(
+        return create_json_response(
             response_data,
+            request=request,
             status_code=self._determine_status_code(
                 resolver_errors=result.errors,
                 captured_errors=captured_errors,

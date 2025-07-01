@@ -11,7 +11,7 @@ from dagster import (
     op,
 )
 
-N_ASSETS = 1000
+N_ASSETS = 100000
 
 
 def generate_big_honkin_assets() -> list[AssetsDefinition]:
