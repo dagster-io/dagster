@@ -324,7 +324,9 @@ def test_scaffold_defs_component_command_with_non_matching_module_name():
             "scaffold", "defs", "dagster_test.components.AllMetadataEmptyComponent", "qux"
         )
         assert_runner_result(result, exit_0=False)
-        assert "Cannot find module `foo_bar" in result.output
+        assert "Ensure folder `src/foo_bar/defs` exists in the project root." in str(
+            result.exception
+        )
 
 
 @pytest.mark.parametrize("in_workspace", [True, False])
@@ -376,7 +378,9 @@ def test_scaffold_defs_component_fails_defs_module_does_not_exist() -> None:
             "scaffold", "defs", "dagster_test.components.AllMetadataEmptyComponent", "qux"
         )
         assert_runner_result(result, exit_0=False)
-        assert "Cannot find module `foo_bar._defs`" in result.output
+        assert "Ensure folder `src/foo_bar/_defs` exists in the project root." in str(
+            result.exception
+        )
 
 
 def test_scaffold_defs_component_succeeds_scaffolded_component_type() -> None:

@@ -164,6 +164,39 @@ def test_check_yaml_succeeds_unregistered_component() -> None:
         assert_runner_result(result)
 
 
+def test_actionable_error_message_no_defs_check_yaml():
+    with (
+        ProxyRunner.test() as runner,
+        create_project_from_components(
+            runner,
+            BASIC_VALID_VALUE.component_path,
+            local_component_defn_to_inject=BASIC_VALID_VALUE.component_type_filepath,
+            uv_sync=True,
+        ) as tmpdir,
+        pushd(tmpdir),
+        activate_venv(tmpdir / ".venv"),
+    ):
+        shutil.rmtree(Path("src") / "foo_bar" / "defs")
+
+        Path(".env").write_text("FOO=bar")
+        result = runner.invoke("check", "yaml")
+        assert_runner_result(result, exit_0=False)
+        assert "Ensure folder `src/foo_bar/defs` exists in the project root." in str(
+            str(result.exception)
+        )
+
+        with modify_toml_as_dict(Path("pyproject.toml")) as toml_dict:
+            create_toml_node(
+                toml_dict, ("tool", "dg", "project", "defs_module"), "foo_bar.other_defs"
+            )
+
+        result = runner.invoke("check", "yaml")
+        assert_runner_result(result, exit_0=False)
+        assert "Ensure folder `src/foo_bar/other_defs` exists in the project root." in str(
+            str(result.exception)
+        )
+
+
 def test_check_yaml_with_watch() -> None:
     """Tests that the check CLI prints rich error messages when attempting to
     load components with errors.

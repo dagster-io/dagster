@@ -756,6 +756,32 @@ def test_list_envs_aliases(alias: str):
         assert_runner_result(runner.invoke("list", alias, "--help"))
 
 
+def test_list_env_succeeds_with_no_defs(monkeypatch):
+    with (
+        ProxyRunner.test(use_fixed_test_components=True) as runner,
+        isolated_example_project_foo_bar(runner, in_workspace=False, uv_sync=False),
+        tempfile.TemporaryDirectory() as cloud_config_dir,
+    ):
+        shutil.rmtree(Path("src") / "foo_bar" / "defs")
+
+        monkeypatch.setenv("DG_CLI_CONFIG", str(Path(cloud_config_dir) / "dg.toml"))
+        monkeypatch.setenv("DAGSTER_CLOUD_CLI_CONFIG", str(Path(cloud_config_dir) / "config"))
+
+        Path(".env").write_text("FOO=bar")
+        result = runner.invoke("list", "env")
+        assert_runner_result(result)
+        assert (
+            result.output.strip()
+            == textwrap.dedent("""
+               ┏━━━━━━━━━┳━━━━━━━┳━━━━━━━━━━━━┓
+               ┃ Env Var ┃ Value ┃ Components ┃
+               ┡━━━━━━━━━╇━━━━━━━╇━━━━━━━━━━━━┩
+               │ FOO     │ ✓     │            │
+               └─────────┴───────┴────────────┘
+        """).strip()
+        )
+
+
 # ########################
 # ##### HELPERS
 # ########################
