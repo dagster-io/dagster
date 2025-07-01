@@ -715,7 +715,7 @@ def _write_updated_backfill_data(
     return updated_backfill
 
 
-def _submit_runs_and_update_backfill_in_chunks(
+async def _submit_runs_and_update_backfill_in_chunks(
     asset_graph_view: AssetGraphView,
     workspace_process_context: IWorkspaceProcessContext,
     backfill_id: str,
@@ -751,7 +751,7 @@ def _submit_runs_and_update_backfill_in_chunks(
             # create a new request context for each run in case the code location server
             # is swapped out in the middle of the submission process
             workspace = workspace_process_context.create_request_context()
-            submit_asset_run(
+            await submit_asset_run(
                 run_id,
                 run_request._replace(
                     tags={
@@ -981,7 +981,7 @@ def backfill_is_complete(
     return True
 
 
-def execute_asset_backfill_iteration(
+async def execute_asset_backfill_iteration(
     backfill: "PartitionBackfill",
     logger: logging.Logger,
     workspace_process_context: IWorkspaceProcessContext,
@@ -1072,7 +1072,7 @@ def execute_asset_backfill_iteration(
             instance.update_backfill(updated_backfill)
 
         if result.run_requests:
-            _submit_runs_and_update_backfill_in_chunks(
+            await _submit_runs_and_update_backfill_in_chunks(
                 asset_graph_view,
                 workspace_process_context,
                 updated_backfill.backfill_id,

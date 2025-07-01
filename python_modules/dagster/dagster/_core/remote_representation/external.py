@@ -755,7 +755,7 @@ class RemoteExecutionPlan(LoadableBy[JobSubsetSelector, "BaseWorkspaceRequestCon
             results = []
         results_by_key = {unique_key: result for unique_key, result in zip(unique_keys, results)}
 
-        return [results_by_key[key] for key in keys]
+        return [results_by_key.get(key) for key in keys]
 
     @classmethod
     def _blocking_batch_load(

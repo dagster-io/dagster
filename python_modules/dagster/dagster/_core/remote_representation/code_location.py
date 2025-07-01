@@ -130,19 +130,9 @@ class CodeLocation(AbstractContextManager):
         instance: Optional[DagsterInstance] = None,
     ) -> RemoteExecutionPlan: ...
 
-    def get_job(self, selector: JobSubsetSelector) -> RemoteJob:
-        """Return the RemoteJob for a specific pipeline. Subclasses only
-        need to implement get_subset_remote_job_result to handle the case where
-        an op selection is specified, which requires access to the underlying JobDefinition
-        to generate the subsetted pipeline snapshot.
-        """
-        if not selector.is_subset_selection:
-            return self.get_repository(selector.repository_name).get_full_job(selector.job_name)
-
-        repo_handle = self.get_repository(selector.repository_name).handle
-
-        subset_result = self._get_subset_remote_job_result(selector)
-
+    def _get_remote_job_from_subset_result(
+        self, repo_handle: RepositoryHandle, subset_result: RemoteJobSubsetResult
+    ) -> RemoteJob:
         if subset_result.repository_python_origin:
             # Prefer the python origin from the result if it is set, in case the code location
             # just updated and any origin information (most frequently the image) has changed
@@ -164,6 +154,19 @@ class CodeLocation(AbstractContextManager):
                 )
 
         return RemoteJob(job_data_snap, repo_handle)
+
+    def get_job(self, selector: JobSubsetSelector) -> RemoteJob:
+        """Return the RemoteJob for a specific pipeline. Subclasses only
+        need to implement get_subset_remote_job_result to handle the case where
+        an op selection is specified, which requires access to the underlying JobDefinition
+        to generate the subsetted pipeline snapshot.
+        """
+        if not selector.is_subset_selection:
+            return self.get_repository(selector.repository_name).get_full_job(selector.job_name)
+
+        repo_handle = self.get_repository(selector.repository_name).handle
+        subset_result = self._get_subset_remote_job_result(selector)
+        return self._get_remote_job_from_subset_result(repo_handle, subset_result)
 
     async def gen_job(self, selector: JobSubsetSelector) -> RemoteJob:
         """Return the RemoteJob for a specific pipeline. Subclasses only
@@ -178,27 +181,7 @@ class CodeLocation(AbstractContextManager):
 
         subset_result = await self._gen_subset_remote_job_result(selector)
 
-        if subset_result.repository_python_origin:
-            # Prefer the python origin from the result if it is set, in case the code location
-            # just updated and any origin information (most frequently the image) has changed
-            repo_handle = RepositoryHandle(
-                repository_name=repo_handle.repository_name,
-                code_location_origin=repo_handle.code_location_origin,
-                repository_python_origin=subset_result.repository_python_origin,
-                display_metadata=repo_handle.display_metadata,
-            )
-
-        job_data_snap = subset_result.job_data_snap
-        if job_data_snap is None:
-            error = check.not_none(subset_result.error)
-            if error.cls_name == "DagsterInvalidSubsetError":
-                raise DagsterInvalidSubsetError(check.not_none(error.message))
-            else:
-                check.failed(
-                    f"Failed to fetch subset data, success: {subset_result.success} error: {error}"
-                )
-
-        return RemoteJob(job_data_snap, repo_handle)
+        return self._get_remote_job_from_subset_result(repo_handle, subset_result)
 
     @abstractmethod
     def _get_subset_remote_job_result(self, selector: JobSubsetSelector) -> RemoteJobSubsetResult:

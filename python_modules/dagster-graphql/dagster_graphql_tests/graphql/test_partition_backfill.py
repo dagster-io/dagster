@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import os
 import time
@@ -271,8 +272,10 @@ def _execute_backfill_iteration_with_side_effects(graphql_context, backfill_id):
     """Executes an asset backfill iteration with side effects (i.e. updates run status and bulk action status)."""
     with get_workspace_process_context(graphql_context.instance) as context:
         backfill = graphql_context.instance.get_backfill(backfill_id)
-        execute_asset_backfill_iteration(
-            backfill, logging.getLogger("fake_logger"), context, graphql_context.instance
+        asyncio.run(
+            execute_asset_backfill_iteration(
+                backfill, logging.getLogger("fake_logger"), context, graphql_context.instance
+            )
         )
 
 
