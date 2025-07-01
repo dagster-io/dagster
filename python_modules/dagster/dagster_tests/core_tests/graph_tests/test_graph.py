@@ -37,6 +37,7 @@ from dagster._core.errors import (
     DagsterConfigMappingFunctionError,
     DagsterInvalidConfigError,
     DagsterInvalidDefinitionError,
+    DagsterInvariantViolationError,
 )
 from dagster._core.storage.fs_io_manager import FilesystemIOManager
 from dagster._core.test_utils import instance_for_test
@@ -1149,6 +1150,53 @@ def test_input_values_override_default():
     result = my_graph.execute_in_process(input_values={"x": 6})
     assert result.success
     assert result.output_value() == 6
+
+
+def test_uses_default_value():
+    @op
+    def op_with_default_input(x=5):
+        return x
+
+    @graph
+    def graph_one(y):
+        return op_with_default_input(y)
+
+    result = graph_one.execute_in_process()
+    assert result.success
+    assert result.output_value() == 5
+
+    @op
+    def op_with_other_value(x=1):
+        return x
+
+    @graph(out={"a": GraphOut(), "b": GraphOut()})
+    def graph_two(y):
+        a = op_with_default_input(y)
+        b = op_with_other_value(y)
+        return {"a": a, "b": b}
+
+    result = graph_two.execute_in_process()
+    assert result.success
+    assert result.output_value("a") == 5
+    assert result.output_value("b") == 1
+
+    result = graph_two.execute_in_process(input_values={"y": 2})
+    assert result.success
+    assert result.output_value("a") == 2
+    assert result.output_value("b") == 2
+
+    @op
+    def op_without_default(x):
+        return x
+
+    @graph
+    def graph_three(y):
+        op_with_default_input(y)
+        op_without_default(y)
+
+    # but fails if not all destinations have a default
+    with pytest.raises(DagsterInvariantViolationError):
+        graph_three.execute_in_process()
 
 
 def test_unsatisfied_input_nested():
