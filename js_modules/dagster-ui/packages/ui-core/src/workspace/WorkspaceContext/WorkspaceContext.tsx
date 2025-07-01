@@ -219,7 +219,7 @@ function addAssetsData(data: PartialWorkspaceLocationNodeFragment): WorkspaceLoc
           ...repo,
           assetNodes: [],
           assetGroups: [],
-        })) as any,
+        })),
       },
     };
   }

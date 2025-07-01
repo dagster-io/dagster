@@ -226,9 +226,8 @@ export function mergeWorkspaceData(
   workspaceLocationEntry: PartialWorkspaceLocationNodeFragment,
   workspaceLocationAssetsEntry: WorkspaceLocationAssetsEntryFragment,
 ) {
-  const result: Partial<WorkspaceLocationNodeFragment> = {};
   const {locationOrLoadError, ...rest} = workspaceLocationEntry;
-  Object.assign(result, rest);
+  const result: Partial<WorkspaceLocationNodeFragment> = rest;
   if (locationOrLoadError?.__typename === 'RepositoryLocation') {
     const {repositories, ...rest} = locationOrLoadError;
     result.locationOrLoadError = {
