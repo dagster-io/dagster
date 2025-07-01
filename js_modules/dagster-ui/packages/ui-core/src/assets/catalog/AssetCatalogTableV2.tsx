@@ -31,7 +31,7 @@ import {SelectedAssetsPopoverContent} from './SelectedAssetsPopoverContent';
 import {useFullScreen} from '../../app/AppTopNav/AppTopNavContext';
 import {PythonErrorInfo} from '../../app/PythonErrorInfo';
 import {COMMON_COLLATOR, assertUnreachable} from '../../app/Util';
-import {currentPageAtom} from '../../app/analytics';
+import {currentPageAtom, useTrackEvent} from '../../app/analytics';
 import {usePrefixedCacheKey} from '../../app/usePrefixedCacheKey';
 import {useAssetsHealthData} from '../../asset-data/AssetHealthDataProvider';
 import {AssetHealthFragment} from '../../asset-data/types/AssetHealthDataProvider.types';
@@ -58,6 +58,7 @@ dayjs.extend(updateLocale);
 export const AssetCatalogTableV2 = React.memo(() => {
   const {assets, loading: assetsLoading, error} = useAllAssets();
   useBlockTraceUntilTrue('useAllAssets', !!assets?.length && !assetsLoading);
+  const trackEvent = useTrackEvent();
 
   const {favorites, loading: favoritesLoading} = useFavoriteAssets();
 
@@ -184,7 +185,15 @@ export const AssetCatalogTableV2 = React.memo(() => {
       specificPath,
       path: `${path}?view=AssetCatalogTableV2&selected_tab=${selectedTab}`,
     }));
-  }, [path, setCurrentPage, selectedTab]);
+  }, [path, setCurrentPage, selectedTab, trackEvent]);
+
+  const onChangeTab = useCallback(
+    (tab: string) => {
+      setSelectedTab(tab);
+      trackEvent('asset-selection-change-tab', {tab});
+    },
+    [setSelectedTab, trackEvent],
+  );
 
   const {isFullScreen} = useFullScreen();
 
@@ -193,7 +202,7 @@ export const AssetCatalogTableV2 = React.memo(() => {
       <Box border="bottom">
         {isFullScreen ? null : (
           <Tabs
-            onChange={setSelectedTab}
+            onChange={onChangeTab}
             selectedTabId={selectedTab}
             style={{marginLeft: 24, marginRight: 24}}
           >
@@ -204,7 +213,7 @@ export const AssetCatalogTableV2 = React.memo(() => {
         )}
       </Box>
     ),
-    [isFullScreen, selectedTab, setSelectedTab],
+    [isFullScreen, onChangeTab, selectedTab],
   );
 
   const content = () => {
