@@ -298,8 +298,10 @@ const useHistoricalCheckExecutions = (
 
   const executionsLoading = queryResult.loading && !queryResult.data;
   const executions = React.useMemo(
-    // Remove first element since the latest execution info is already shown above
-    () => queryResult.data?.assetCheckExecutions || [],
+    () =>
+      [...(queryResult.data?.assetCheckExecutions || [])].sort((a, b) => {
+        return b.timestamp - a.timestamp;
+      }),
     [queryResult],
   );
   return {executions, executionsLoading, paginationProps};
