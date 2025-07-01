@@ -69,8 +69,8 @@ export const WORKSPACE_SENSOR_FRAGMENT = gql`
   ${SENSOR_SWITCH_FRAGMENT}
 `;
 
-export const WORKSPACE_REPOSITORY_FRAGMENT = gql`
-  fragment WorkspaceRepository on Repository {
+export const PARTIAL_WORKSPACE_REPOSITORY_FRAGMENT = gql`
+  fragment PartialWorkspaceRepository on Repository {
     id
     name
     pipelines {
@@ -103,8 +103,8 @@ export const WORKSPACE_REPOSITORY_FRAGMENT = gql`
   ${RESOURCE_ENTRY_FRAGMENT}
 `;
 
-export const WORKSPACE_LOCATION_FRAGMENT = gql`
-  fragment WorkspaceLocation on RepositoryLocation {
+export const PARTIAL_WORKSPACE_LOCATION_FRAGMENT = gql`
+  fragment PartialWorkspaceLocation on RepositoryLocation {
     id
     isReloadSupported
     serverId
@@ -115,14 +115,14 @@ export const WORKSPACE_LOCATION_FRAGMENT = gql`
     }
     repositories {
       id
-      ...WorkspaceRepository
+      ...PartialWorkspaceRepository
     }
   }
-  ${WORKSPACE_REPOSITORY_FRAGMENT}
+  ${PARTIAL_WORKSPACE_REPOSITORY_FRAGMENT}
 `;
 
-export const WORKSPACE_LOCATION_NODE_FRAGMENT = gql`
-  fragment WorkspaceLocationNode on WorkspaceLocationEntry {
+export const PARTIAL_WORKSPACE_LOCATION_NODE_FRAGMENT = gql`
+  fragment PartialWorkspaceLocationNode on WorkspaceLocationEntry {
     id
     name
     loadStatus
@@ -144,7 +144,7 @@ export const WORKSPACE_LOCATION_NODE_FRAGMENT = gql`
     }
   }
   ${WORKSPACE_DISPLAY_METADATA_FRAGMENT}
-  ${WORKSPACE_LOCATION_FRAGMENT}
+  ${PARTIAL_WORKSPACE_LOCATION_FRAGMENT}
   ${PYTHON_ERROR_FRAGMENT}
 `;
 
@@ -202,6 +202,15 @@ export const WORKSPACE_LOCATION_ASSETS_FRAGMENT = gql`
   ${WORKSPACE_REPOSITORY_ASSETS_FRAGMENT}
 `;
 
+export const WORKSPACE_LOCATION_FRAGMENT = gql`
+  fragment WorkspaceLocation on RepositoryLocation {
+    ...PartialWorkspaceLocation
+    ...WorkspaceLocationAssets
+  }
+  ${PARTIAL_WORKSPACE_LOCATION_FRAGMENT}
+  ${WORKSPACE_LOCATION_ASSETS_FRAGMENT}
+`;
+
 export const WORKSPACE_LOCATION_ASSETS_ENTRY_FRAGMENT = gql`
   fragment WorkspaceLocationAssetsEntry on WorkspaceLocationEntry {
     id
@@ -225,11 +234,11 @@ export const WORKSPACE_LOCATION_ASSETS_ENTRY_FRAGMENT = gql`
 export const LOCATION_WORKSPACE_QUERY = gql`
   query LocationWorkspaceQuery($name: String!) {
     workspaceLocationEntryOrError(name: $name) {
-      ...WorkspaceLocationNode
+      ...PartialWorkspaceLocationNode
       ...PythonErrorFragment
     }
   }
-  ${WORKSPACE_LOCATION_NODE_FRAGMENT}
+  ${PARTIAL_WORKSPACE_LOCATION_NODE_FRAGMENT}
   ${PYTHON_ERROR_FRAGMENT}
 `;
 
@@ -260,10 +269,10 @@ export const LOCATION_WORKSPACE_ASSETS_QUERY = gql`
 
 /*
  * This fragment isn't used to make a query, but the type is used when merging
- * WorkspaceRepository and WorkspaceRepositoryAssets together
+ * PartialWorkspaceRepository and WorkspaceRepositoryAssets together
  */
-export const FULL_WORKSPACE_LOCATION_NODE_FRAGMENT = gql`
-  fragment FullWorkspaceLocationNode on WorkspaceLocationEntry {
+export const WORKSPACE_LOCATION_NODE_FRAGMENT = gql`
+  fragment WorkspaceLocationNode on WorkspaceLocationEntry {
     id
     name
     loadStatus
@@ -277,11 +286,11 @@ export const FULL_WORKSPACE_LOCATION_NODE_FRAGMENT = gql`
       enabled
     }
     locationOrLoadError {
-      ...FullWorkspaceRepositoryLocation
+      ...WorkspaceRepositoryLocation
       ...PythonErrorFragment
     }
   }
-  fragment FullWorkspaceRepositoryLocation on RepositoryLocation {
+  fragment WorkspaceRepositoryLocation on RepositoryLocation {
     id
     ...WorkspaceLocation
     ...WorkspaceLocationAssets
@@ -290,4 +299,13 @@ export const FULL_WORKSPACE_LOCATION_NODE_FRAGMENT = gql`
   ${WORKSPACE_LOCATION_FRAGMENT}
   ${WORKSPACE_LOCATION_ASSETS_FRAGMENT}
   ${PYTHON_ERROR_FRAGMENT}
+`;
+
+export const WORKSPACE_REPOSITORY_FRAGMENT = gql`
+  fragment WorkspaceRepository on Repository {
+    ...PartialWorkspaceRepository
+    ...WorkspaceRepositoryAssets
+  }
+  ${PARTIAL_WORKSPACE_REPOSITORY_FRAGMENT}
+  ${WORKSPACE_REPOSITORY_ASSETS_FRAGMENT}
 `;

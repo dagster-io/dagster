@@ -2,7 +2,7 @@ import React, {useContext} from 'react';
 
 import {HIDDEN_REPO_KEYS, WorkspaceContext} from './WorkspaceContext';
 import {
-  FullWorkspaceLocationNodeFragment,
+  PartialWorkspaceLocationNodeFragment,
   WorkspaceLocationAssetsEntryFragment,
   WorkspaceLocationFragment,
   WorkspaceLocationNodeFragment,
@@ -223,10 +223,10 @@ export function repoLocationToRepos(repositoryLocation: RepositoryLocation) {
 }
 
 export function mergeWorkspaceData(
-  workspaceLocationEntry: WorkspaceLocationNodeFragment,
+  workspaceLocationEntry: PartialWorkspaceLocationNodeFragment,
   workspaceLocationAssetsEntry: WorkspaceLocationAssetsEntryFragment,
 ) {
-  const result: Partial<FullWorkspaceLocationNodeFragment> = {};
+  const result: Partial<WorkspaceLocationNodeFragment> = {};
   const {locationOrLoadError, ...rest} = workspaceLocationEntry;
   Object.assign(result, rest);
   if (locationOrLoadError?.__typename === 'RepositoryLocation') {
@@ -248,7 +248,7 @@ export function mergeWorkspaceData(
     result.locationOrLoadError = locationOrLoadError;
   }
 
-  return result as FullWorkspaceLocationNodeFragment;
+  return result as WorkspaceLocationNodeFragment;
 }
 
 function getAssetsAndGroupsByRepo(

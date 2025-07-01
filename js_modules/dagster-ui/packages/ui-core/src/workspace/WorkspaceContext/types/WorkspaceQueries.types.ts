@@ -58,7 +58,7 @@ export type WorkspaceSensorFragment = {
   };
 };
 
-export type WorkspaceRepositoryFragment = {
+export type PartialWorkspaceRepositoryFragment = {
   __typename: 'Repository';
   id: string;
   name: string;
@@ -131,7 +131,7 @@ export type WorkspaceRepositoryFragment = {
   displayMetadata: Array<{__typename: 'RepositoryMetadata'; key: string; value: string}>;
 };
 
-export type WorkspaceLocationFragment = {
+export type PartialWorkspaceLocationFragment = {
   __typename: 'RepositoryLocation';
   id: string;
   isReloadSupported: boolean;
@@ -216,7 +216,7 @@ export type WorkspaceLocationFragment = {
   }>;
 };
 
-export type WorkspaceLocationNodeFragment = {
+export type PartialWorkspaceLocationNodeFragment = {
   __typename: 'WorkspaceLocationEntry';
   id: string;
   name: string;
@@ -316,6 +316,69 @@ export type WorkspaceLocationNodeFragment = {
             assetKeysUsing: Array<{__typename: 'AssetKey'; path: Array<string>}>;
             jobsOpsUsing: Array<{__typename: 'JobWithOps'; jobName: string}>;
           }>;
+          assetNodes: Array<{
+            __typename: 'AssetNode';
+            id: string;
+            graphName: string | null;
+            opVersion: string | null;
+            changedReasons: Array<Types.ChangeReason>;
+            groupName: string;
+            opNames: Array<string>;
+            isMaterializable: boolean;
+            isObservable: boolean;
+            isExecutable: boolean;
+            isPartitioned: boolean;
+            isAutoCreatedStub: boolean;
+            computeKind: string | null;
+            hasMaterializePermission: boolean;
+            hasReportRunlessAssetEventPermission: boolean;
+            description: string | null;
+            pools: Array<string>;
+            jobNames: Array<string>;
+            kinds: Array<string>;
+            dependencyKeys: Array<{__typename: 'AssetKey'; path: Array<string>}>;
+            dependedByKeys: Array<{__typename: 'AssetKey'; path: Array<string>}>;
+            assetKey: {__typename: 'AssetKey'; path: Array<string>};
+            internalFreshnessPolicy:
+              | {
+                  __typename: 'CronFreshnessPolicy';
+                  deadlineCron: string;
+                  lowerBoundDeltaSeconds: number;
+                  timezone: string;
+                }
+              | {
+                  __typename: 'TimeWindowFreshnessPolicy';
+                  failWindowSeconds: number;
+                  warnWindowSeconds: number | null;
+                }
+              | null;
+            partitionDefinition: {
+              __typename: 'PartitionDefinition';
+              description: string;
+              dimensionTypes: Array<{
+                __typename: 'DimensionDefinitionType';
+                type: Types.PartitionDefinitionType;
+                dynamicPartitionsDefinitionName: string | null;
+              }>;
+            } | null;
+            automationCondition: {
+              __typename: 'AutomationCondition';
+              label: string | null;
+              expandedLabel: Array<string>;
+            } | null;
+            owners: Array<
+              | {__typename: 'TeamAssetOwner'; team: string}
+              | {__typename: 'UserAssetOwner'; email: string}
+            >;
+            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+            repository: {
+              __typename: 'Repository';
+              id: string;
+              name: string;
+              location: {__typename: 'RepositoryLocation'; id: string; name: string};
+            };
+          }>;
+          assetGroups: Array<{__typename: 'AssetGroup'; id: string; groupName: string}>;
           location: {__typename: 'RepositoryLocation'; id: string; name: string};
           displayMetadata: Array<{__typename: 'RepositoryMetadata'; key: string; value: string}>;
         }>;
@@ -535,6 +598,153 @@ export type WorkspaceLocationAssetsFragment = {
   }>;
 };
 
+export type WorkspaceLocationFragment = {
+  __typename: 'RepositoryLocation';
+  id: string;
+  isReloadSupported: boolean;
+  serverId: string | null;
+  name: string;
+  dagsterLibraryVersions: Array<{
+    __typename: 'DagsterLibraryVersion';
+    name: string;
+    version: string;
+  }> | null;
+  repositories: Array<{
+    __typename: 'Repository';
+    id: string;
+    name: string;
+    pipelines: Array<{
+      __typename: 'Pipeline';
+      id: string;
+      name: string;
+      isJob: boolean;
+      isAssetJob: boolean;
+      externalJobSource: string | null;
+      pipelineSnapshotId: string;
+    }>;
+    schedules: Array<{
+      __typename: 'Schedule';
+      id: string;
+      cronSchedule: string;
+      executionTimezone: string | null;
+      mode: string;
+      name: string;
+      pipelineName: string;
+      scheduleState: {
+        __typename: 'InstigationState';
+        id: string;
+        status: Types.InstigationStatus;
+        selectorId: string;
+        hasStartPermission: boolean;
+        hasStopPermission: boolean;
+      };
+      tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+    }>;
+    sensors: Array<{
+      __typename: 'Sensor';
+      id: string;
+      name: string;
+      sensorType: Types.SensorType;
+      tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+      targets: Array<{__typename: 'Target'; mode: string; pipelineName: string}> | null;
+      sensorState: {
+        __typename: 'InstigationState';
+        id: string;
+        status: Types.InstigationStatus;
+        selectorId: string;
+        hasStartPermission: boolean;
+        hasStopPermission: boolean;
+        typeSpecificData:
+          | {__typename: 'ScheduleData'}
+          | {__typename: 'SensorData'; lastCursor: string | null}
+          | null;
+      };
+    }>;
+    partitionSets: Array<{
+      __typename: 'PartitionSet';
+      id: string;
+      mode: string;
+      pipelineName: string;
+    }>;
+    allTopLevelResourceDetails: Array<{
+      __typename: 'ResourceDetails';
+      id: string;
+      name: string;
+      description: string | null;
+      resourceType: string;
+      schedulesUsing: Array<string>;
+      sensorsUsing: Array<string>;
+      parentResources: Array<{__typename: 'NestedResourceEntry'; name: string}>;
+      assetKeysUsing: Array<{__typename: 'AssetKey'; path: Array<string>}>;
+      jobsOpsUsing: Array<{__typename: 'JobWithOps'; jobName: string}>;
+    }>;
+    assetNodes: Array<{
+      __typename: 'AssetNode';
+      id: string;
+      graphName: string | null;
+      opVersion: string | null;
+      changedReasons: Array<Types.ChangeReason>;
+      groupName: string;
+      opNames: Array<string>;
+      isMaterializable: boolean;
+      isObservable: boolean;
+      isExecutable: boolean;
+      isPartitioned: boolean;
+      isAutoCreatedStub: boolean;
+      computeKind: string | null;
+      hasMaterializePermission: boolean;
+      hasReportRunlessAssetEventPermission: boolean;
+      description: string | null;
+      pools: Array<string>;
+      jobNames: Array<string>;
+      kinds: Array<string>;
+      dependencyKeys: Array<{__typename: 'AssetKey'; path: Array<string>}>;
+      dependedByKeys: Array<{__typename: 'AssetKey'; path: Array<string>}>;
+      assetKey: {__typename: 'AssetKey'; path: Array<string>};
+      internalFreshnessPolicy:
+        | {
+            __typename: 'CronFreshnessPolicy';
+            deadlineCron: string;
+            lowerBoundDeltaSeconds: number;
+            timezone: string;
+          }
+        | {
+            __typename: 'TimeWindowFreshnessPolicy';
+            failWindowSeconds: number;
+            warnWindowSeconds: number | null;
+          }
+        | null;
+      partitionDefinition: {
+        __typename: 'PartitionDefinition';
+        description: string;
+        dimensionTypes: Array<{
+          __typename: 'DimensionDefinitionType';
+          type: Types.PartitionDefinitionType;
+          dynamicPartitionsDefinitionName: string | null;
+        }>;
+      } | null;
+      automationCondition: {
+        __typename: 'AutomationCondition';
+        label: string | null;
+        expandedLabel: Array<string>;
+      } | null;
+      owners: Array<
+        {__typename: 'TeamAssetOwner'; team: string} | {__typename: 'UserAssetOwner'; email: string}
+      >;
+      tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+      repository: {
+        __typename: 'Repository';
+        id: string;
+        name: string;
+        location: {__typename: 'RepositoryLocation'; id: string; name: string};
+      };
+    }>;
+    assetGroups: Array<{__typename: 'AssetGroup'; id: string; groupName: string}>;
+    location: {__typename: 'RepositoryLocation'; id: string; name: string};
+    displayMetadata: Array<{__typename: 'RepositoryMetadata'; key: string; value: string}>;
+  }>;
+};
+
 export type WorkspaceLocationAssetsEntryFragment = {
   __typename: 'WorkspaceLocationEntry';
   id: string;
@@ -746,6 +956,69 @@ export type LocationWorkspaceQuery = {
                   assetKeysUsing: Array<{__typename: 'AssetKey'; path: Array<string>}>;
                   jobsOpsUsing: Array<{__typename: 'JobWithOps'; jobName: string}>;
                 }>;
+                assetNodes: Array<{
+                  __typename: 'AssetNode';
+                  id: string;
+                  graphName: string | null;
+                  opVersion: string | null;
+                  changedReasons: Array<Types.ChangeReason>;
+                  groupName: string;
+                  opNames: Array<string>;
+                  isMaterializable: boolean;
+                  isObservable: boolean;
+                  isExecutable: boolean;
+                  isPartitioned: boolean;
+                  isAutoCreatedStub: boolean;
+                  computeKind: string | null;
+                  hasMaterializePermission: boolean;
+                  hasReportRunlessAssetEventPermission: boolean;
+                  description: string | null;
+                  pools: Array<string>;
+                  jobNames: Array<string>;
+                  kinds: Array<string>;
+                  dependencyKeys: Array<{__typename: 'AssetKey'; path: Array<string>}>;
+                  dependedByKeys: Array<{__typename: 'AssetKey'; path: Array<string>}>;
+                  assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                  internalFreshnessPolicy:
+                    | {
+                        __typename: 'CronFreshnessPolicy';
+                        deadlineCron: string;
+                        lowerBoundDeltaSeconds: number;
+                        timezone: string;
+                      }
+                    | {
+                        __typename: 'TimeWindowFreshnessPolicy';
+                        failWindowSeconds: number;
+                        warnWindowSeconds: number | null;
+                      }
+                    | null;
+                  partitionDefinition: {
+                    __typename: 'PartitionDefinition';
+                    description: string;
+                    dimensionTypes: Array<{
+                      __typename: 'DimensionDefinitionType';
+                      type: Types.PartitionDefinitionType;
+                      dynamicPartitionsDefinitionName: string | null;
+                    }>;
+                  } | null;
+                  automationCondition: {
+                    __typename: 'AutomationCondition';
+                    label: string | null;
+                    expandedLabel: Array<string>;
+                  } | null;
+                  owners: Array<
+                    | {__typename: 'TeamAssetOwner'; team: string}
+                    | {__typename: 'UserAssetOwner'; email: string}
+                  >;
+                  tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+                  repository: {
+                    __typename: 'Repository';
+                    id: string;
+                    name: string;
+                    location: {__typename: 'RepositoryLocation'; id: string; name: string};
+                  };
+                }>;
+                assetGroups: Array<{__typename: 'AssetGroup'; id: string; groupName: string}>;
                 location: {__typename: 'RepositoryLocation'; id: string; name: string};
                 displayMetadata: Array<{
                   __typename: 'RepositoryMetadata';
@@ -891,7 +1164,7 @@ export type LocationWorkspaceAssetsQuery = {
     | null;
 };
 
-export type FullWorkspaceLocationNodeFragment = {
+export type WorkspaceLocationNodeFragment = {
   __typename: 'WorkspaceLocationEntry';
   id: string;
   name: string;
@@ -914,14 +1187,9 @@ export type FullWorkspaceLocationNodeFragment = {
     | {
         __typename: 'RepositoryLocation';
         id: string;
+        name: string;
         isReloadSupported: boolean;
         serverId: string | null;
-        name: string;
-        dagsterLibraryVersions: Array<{
-          __typename: 'DagsterLibraryVersion';
-          name: string;
-          version: string;
-        }> | null;
         repositories: Array<{
           __typename: 'Repository';
           id: string;
@@ -1057,11 +1325,298 @@ export type FullWorkspaceLocationNodeFragment = {
           location: {__typename: 'RepositoryLocation'; id: string; name: string};
           displayMetadata: Array<{__typename: 'RepositoryMetadata'; key: string; value: string}>;
         }>;
+        dagsterLibraryVersions: Array<{
+          __typename: 'DagsterLibraryVersion';
+          name: string;
+          version: string;
+        }> | null;
       }
     | null;
 };
 
-export const LocationWorkspaceQueryVersion = '4d14a8fc4e74d65640ad287415995260cc4b7d88eff0f6d1539d21e182162935';
+export type WorkspaceRepositoryLocationFragment = {
+  __typename: 'RepositoryLocation';
+  id: string;
+  name: string;
+  isReloadSupported: boolean;
+  serverId: string | null;
+  repositories: Array<{
+    __typename: 'Repository';
+    id: string;
+    name: string;
+    pipelines: Array<{
+      __typename: 'Pipeline';
+      id: string;
+      name: string;
+      isJob: boolean;
+      isAssetJob: boolean;
+      externalJobSource: string | null;
+      pipelineSnapshotId: string;
+    }>;
+    schedules: Array<{
+      __typename: 'Schedule';
+      id: string;
+      cronSchedule: string;
+      executionTimezone: string | null;
+      mode: string;
+      name: string;
+      pipelineName: string;
+      scheduleState: {
+        __typename: 'InstigationState';
+        id: string;
+        status: Types.InstigationStatus;
+        selectorId: string;
+        hasStartPermission: boolean;
+        hasStopPermission: boolean;
+      };
+      tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+    }>;
+    sensors: Array<{
+      __typename: 'Sensor';
+      id: string;
+      name: string;
+      sensorType: Types.SensorType;
+      tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+      targets: Array<{__typename: 'Target'; mode: string; pipelineName: string}> | null;
+      sensorState: {
+        __typename: 'InstigationState';
+        id: string;
+        status: Types.InstigationStatus;
+        selectorId: string;
+        hasStartPermission: boolean;
+        hasStopPermission: boolean;
+        typeSpecificData:
+          | {__typename: 'ScheduleData'}
+          | {__typename: 'SensorData'; lastCursor: string | null}
+          | null;
+      };
+    }>;
+    partitionSets: Array<{
+      __typename: 'PartitionSet';
+      id: string;
+      mode: string;
+      pipelineName: string;
+    }>;
+    allTopLevelResourceDetails: Array<{
+      __typename: 'ResourceDetails';
+      id: string;
+      name: string;
+      description: string | null;
+      resourceType: string;
+      schedulesUsing: Array<string>;
+      sensorsUsing: Array<string>;
+      parentResources: Array<{__typename: 'NestedResourceEntry'; name: string}>;
+      assetKeysUsing: Array<{__typename: 'AssetKey'; path: Array<string>}>;
+      jobsOpsUsing: Array<{__typename: 'JobWithOps'; jobName: string}>;
+    }>;
+    assetNodes: Array<{
+      __typename: 'AssetNode';
+      id: string;
+      graphName: string | null;
+      opVersion: string | null;
+      changedReasons: Array<Types.ChangeReason>;
+      groupName: string;
+      opNames: Array<string>;
+      isMaterializable: boolean;
+      isObservable: boolean;
+      isExecutable: boolean;
+      isPartitioned: boolean;
+      isAutoCreatedStub: boolean;
+      computeKind: string | null;
+      hasMaterializePermission: boolean;
+      hasReportRunlessAssetEventPermission: boolean;
+      description: string | null;
+      pools: Array<string>;
+      jobNames: Array<string>;
+      kinds: Array<string>;
+      dependencyKeys: Array<{__typename: 'AssetKey'; path: Array<string>}>;
+      dependedByKeys: Array<{__typename: 'AssetKey'; path: Array<string>}>;
+      assetKey: {__typename: 'AssetKey'; path: Array<string>};
+      internalFreshnessPolicy:
+        | {
+            __typename: 'CronFreshnessPolicy';
+            deadlineCron: string;
+            lowerBoundDeltaSeconds: number;
+            timezone: string;
+          }
+        | {
+            __typename: 'TimeWindowFreshnessPolicy';
+            failWindowSeconds: number;
+            warnWindowSeconds: number | null;
+          }
+        | null;
+      partitionDefinition: {
+        __typename: 'PartitionDefinition';
+        description: string;
+        dimensionTypes: Array<{
+          __typename: 'DimensionDefinitionType';
+          type: Types.PartitionDefinitionType;
+          dynamicPartitionsDefinitionName: string | null;
+        }>;
+      } | null;
+      automationCondition: {
+        __typename: 'AutomationCondition';
+        label: string | null;
+        expandedLabel: Array<string>;
+      } | null;
+      owners: Array<
+        {__typename: 'TeamAssetOwner'; team: string} | {__typename: 'UserAssetOwner'; email: string}
+      >;
+      tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+      repository: {
+        __typename: 'Repository';
+        id: string;
+        name: string;
+        location: {__typename: 'RepositoryLocation'; id: string; name: string};
+      };
+    }>;
+    assetGroups: Array<{__typename: 'AssetGroup'; id: string; groupName: string}>;
+    location: {__typename: 'RepositoryLocation'; id: string; name: string};
+    displayMetadata: Array<{__typename: 'RepositoryMetadata'; key: string; value: string}>;
+  }>;
+  dagsterLibraryVersions: Array<{
+    __typename: 'DagsterLibraryVersion';
+    name: string;
+    version: string;
+  }> | null;
+};
+
+export type WorkspaceRepositoryFragment = {
+  __typename: 'Repository';
+  id: string;
+  name: string;
+  pipelines: Array<{
+    __typename: 'Pipeline';
+    id: string;
+    name: string;
+    isJob: boolean;
+    isAssetJob: boolean;
+    externalJobSource: string | null;
+    pipelineSnapshotId: string;
+  }>;
+  schedules: Array<{
+    __typename: 'Schedule';
+    id: string;
+    cronSchedule: string;
+    executionTimezone: string | null;
+    mode: string;
+    name: string;
+    pipelineName: string;
+    scheduleState: {
+      __typename: 'InstigationState';
+      id: string;
+      status: Types.InstigationStatus;
+      selectorId: string;
+      hasStartPermission: boolean;
+      hasStopPermission: boolean;
+    };
+    tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+  }>;
+  sensors: Array<{
+    __typename: 'Sensor';
+    id: string;
+    name: string;
+    sensorType: Types.SensorType;
+    tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+    targets: Array<{__typename: 'Target'; mode: string; pipelineName: string}> | null;
+    sensorState: {
+      __typename: 'InstigationState';
+      id: string;
+      status: Types.InstigationStatus;
+      selectorId: string;
+      hasStartPermission: boolean;
+      hasStopPermission: boolean;
+      typeSpecificData:
+        | {__typename: 'ScheduleData'}
+        | {__typename: 'SensorData'; lastCursor: string | null}
+        | null;
+    };
+  }>;
+  partitionSets: Array<{
+    __typename: 'PartitionSet';
+    id: string;
+    mode: string;
+    pipelineName: string;
+  }>;
+  allTopLevelResourceDetails: Array<{
+    __typename: 'ResourceDetails';
+    id: string;
+    name: string;
+    description: string | null;
+    resourceType: string;
+    schedulesUsing: Array<string>;
+    sensorsUsing: Array<string>;
+    parentResources: Array<{__typename: 'NestedResourceEntry'; name: string}>;
+    assetKeysUsing: Array<{__typename: 'AssetKey'; path: Array<string>}>;
+    jobsOpsUsing: Array<{__typename: 'JobWithOps'; jobName: string}>;
+  }>;
+  assetNodes: Array<{
+    __typename: 'AssetNode';
+    id: string;
+    graphName: string | null;
+    opVersion: string | null;
+    changedReasons: Array<Types.ChangeReason>;
+    groupName: string;
+    opNames: Array<string>;
+    isMaterializable: boolean;
+    isObservable: boolean;
+    isExecutable: boolean;
+    isPartitioned: boolean;
+    isAutoCreatedStub: boolean;
+    computeKind: string | null;
+    hasMaterializePermission: boolean;
+    hasReportRunlessAssetEventPermission: boolean;
+    description: string | null;
+    pools: Array<string>;
+    jobNames: Array<string>;
+    kinds: Array<string>;
+    dependencyKeys: Array<{__typename: 'AssetKey'; path: Array<string>}>;
+    dependedByKeys: Array<{__typename: 'AssetKey'; path: Array<string>}>;
+    assetKey: {__typename: 'AssetKey'; path: Array<string>};
+    internalFreshnessPolicy:
+      | {
+          __typename: 'CronFreshnessPolicy';
+          deadlineCron: string;
+          lowerBoundDeltaSeconds: number;
+          timezone: string;
+        }
+      | {
+          __typename: 'TimeWindowFreshnessPolicy';
+          failWindowSeconds: number;
+          warnWindowSeconds: number | null;
+        }
+      | null;
+    partitionDefinition: {
+      __typename: 'PartitionDefinition';
+      description: string;
+      dimensionTypes: Array<{
+        __typename: 'DimensionDefinitionType';
+        type: Types.PartitionDefinitionType;
+        dynamicPartitionsDefinitionName: string | null;
+      }>;
+    } | null;
+    automationCondition: {
+      __typename: 'AutomationCondition';
+      label: string | null;
+      expandedLabel: Array<string>;
+    } | null;
+    owners: Array<
+      {__typename: 'TeamAssetOwner'; team: string} | {__typename: 'UserAssetOwner'; email: string}
+    >;
+    tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+    repository: {
+      __typename: 'Repository';
+      id: string;
+      name: string;
+      location: {__typename: 'RepositoryLocation'; id: string; name: string};
+    };
+  }>;
+  assetGroups: Array<{__typename: 'AssetGroup'; id: string; groupName: string}>;
+  location: {__typename: 'RepositoryLocation'; id: string; name: string};
+  displayMetadata: Array<{__typename: 'RepositoryMetadata'; key: string; value: string}>;
+};
+
+export const LocationWorkspaceQueryVersion = 'ece7a83393697e4f04e66c0c5ea2143086b3f7723c565257f1a057366c66c0a3';
 
 export const CodeLocationStatusQueryVersion = '5491629a2659feca3a6cf0cc976c6f59c8e78dff1193e07d7850ae4355698b04';
 

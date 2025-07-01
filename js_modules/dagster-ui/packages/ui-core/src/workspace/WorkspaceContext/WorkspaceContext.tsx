@@ -4,10 +4,10 @@ import {RecoilRoot, useSetRecoilState} from 'recoil';
 
 import {WorkspaceManager} from './WorkspaceManager';
 import {
-  FullWorkspaceLocationNodeFragment,
   LocationStatusEntryFragment,
   LocationWorkspaceAssetsQuery,
   LocationWorkspaceQuery,
+  PartialWorkspaceLocationNodeFragment,
   WorkspaceLocationAssetsEntryFragment,
   WorkspaceLocationNodeFragment,
   WorkspaceScheduleFragment,
@@ -34,7 +34,7 @@ export type WorkspaceRepositoryLocationNode = WorkspaceLocationNodeFragment;
 
 interface WorkspaceState {
   loading: boolean;
-  locationEntries: WorkspaceRepositoryLocationNode[];
+  locationEntries: WorkspaceLocationNodeFragment[];
   locationStatuses: Record<string, LocationStatusEntryFragment>;
   allRepos: DagsterRepoOption[];
   visibleRepos: DagsterRepoOption[];
@@ -89,7 +89,7 @@ const WorkspaceProviderImpl = ({children}: {children: React.ReactNode}) => {
         }
         return acc;
       },
-      {} as Record<string, WorkspaceLocationNodeFragment | PythonErrorFragment>,
+      {} as Record<string, PartialWorkspaceLocationNodeFragment | PythonErrorFragment>,
     );
   }, [locationWorkspaceData]);
 
@@ -106,10 +106,7 @@ const WorkspaceProviderImpl = ({children}: {children: React.ReactNode}) => {
   }, [assetEntries]);
 
   const fullLocationEntryData = useMemo(() => {
-    const result: Record<
-      string,
-      FullWorkspaceLocationNodeFragment | WorkspaceLocationNodeFragment | PythonErrorFragment
-    > = {};
+    const result: Record<string, WorkspaceLocationNodeFragment | PythonErrorFragment> = {};
     Object.entries(locationEntryData).forEach(([key, data]) => {
       if (
         assetLocationEntries[key] &&
@@ -117,6 +114,8 @@ const WorkspaceProviderImpl = ({children}: {children: React.ReactNode}) => {
         assetLocationEntries[key].__typename === 'WorkspaceLocationEntry'
       ) {
         result[key] = mergeWorkspaceData(data, assetLocationEntries[key]);
+      } else if (data.__typename === 'WorkspaceLocationEntry') {
+        result[key] = addAssetsData(data);
       } else {
         result[key] = data;
       }
@@ -156,10 +155,10 @@ const WorkspaceProviderImpl = ({children}: {children: React.ReactNode}) => {
   const locationEntries = useMemo(() => {
     return Object.values(fullLocationEntryData).reduce((acc, data) => {
       if (data.__typename === 'WorkspaceLocationEntry') {
-        acc.push(ensureAssetsData(data));
+        acc.push(data);
       }
       return acc;
-    }, [] as Array<FullWorkspaceLocationNodeFragment>);
+    }, [] as Array<WorkspaceLocationNodeFragment>);
   }, [fullLocationEntryData]);
 
   const allRepos = useAllRepos(locationEntries);
@@ -177,7 +176,7 @@ const WorkspaceProviderImpl = ({children}: {children: React.ReactNode}) => {
         toggleVisible,
         setVisible,
         setHidden,
-        data: locationEntryData,
+        data: fullLocationEntryData,
         refetch: useCallback(async () => {
           await managerRef.current?.refetchAll();
         }, []),
@@ -209,30 +208,20 @@ function useAllRepos(locationEntries: WorkspaceRepositoryLocationNode[]) {
   }, [locationEntries]);
 }
 
-function ensureAssetsData(
-  data: WorkspaceLocationNodeFragment | FullWorkspaceLocationNodeFragment,
-): FullWorkspaceLocationNodeFragment {
+function addAssetsData(data: PartialWorkspaceLocationNodeFragment): WorkspaceLocationNodeFragment {
   const locationOrLoadError = data.locationOrLoadError;
   if (locationOrLoadError?.__typename === 'RepositoryLocation') {
-    let needsAssets = false;
-    locationOrLoadError.repositories.some((repo) => {
-      if (!('assetNodes' in repo)) {
-        needsAssets = true;
-      }
-    });
-    if (needsAssets) {
-      return {
-        ...data,
-        locationOrLoadError: {
-          ...locationOrLoadError,
-          repositories: locationOrLoadError.repositories.map((repo) => ({
-            ...repo,
-            assetNodes: [],
-            assetGroups: [],
-          })) as any,
-        },
-      };
-    }
+    return {
+      ...data,
+      locationOrLoadError: {
+        ...locationOrLoadError,
+        repositories: locationOrLoadError.repositories.map((repo) => ({
+          ...repo,
+          assetNodes: [],
+          assetGroups: [],
+        })) as any,
+      },
+    };
   }
-  return data as FullWorkspaceLocationNodeFragment;
+  return data as WorkspaceLocationNodeFragment;
 }
