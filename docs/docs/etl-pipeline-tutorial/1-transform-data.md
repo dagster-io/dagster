@@ -82,7 +82,11 @@ To materialize the assets:
 1. Click **Assets**, then click "View global asset lineage" to see all of your assets.
 2. Click **Materialize all**.
 
-Once again you can materialize your assets within the UI or using `dg launch` from the command line.
+:::tip
+
+You can also materialize your assets from the command line with the `dg launch` command.
+
+:::
 
 ## Summary
 
