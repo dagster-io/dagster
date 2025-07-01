@@ -335,10 +335,6 @@ from dagster._core.definitions.multi_asset_sensor_definition import (
     MultiAssetSensorEvaluationContext as MultiAssetSensorEvaluationContext,
     build_multi_asset_sensor_context as build_multi_asset_sensor_context,
 )
-from dagster._core.definitions.multi_dimensional_partitions import (
-    MultiPartitionKey as MultiPartitionKey,
-    MultiPartitionsDefinition as MultiPartitionsDefinition,
-)
 from dagster._core.definitions.op_definition import OpDefinition as OpDefinition
 from dagster._core.definitions.output import (
     DynamicOut as DynamicOut,
@@ -351,6 +347,9 @@ from dagster._core.definitions.partitions.definition.base import (
 )
 from dagster._core.definitions.partitions.definition.dynamic import (
     DynamicPartitionsDefinition as DynamicPartitionsDefinition,
+)
+from dagster._core.definitions.partitions.definition.multi import (
+    MultiPartitionsDefinition as MultiPartitionsDefinition,
 )
 from dagster._core.definitions.partitions.definition.static import (
     StaticPartitionsDefinition as StaticPartitionsDefinition,
@@ -394,6 +393,7 @@ from dagster._core.definitions.partitions.partitioned_config import (
 from dagster._core.definitions.partitions.partitioned_schedule import (
     build_schedule_from_partitioned_job as build_schedule_from_partitioned_job,
 )
+from dagster._core.definitions.partitions.utils.multi import MultiPartitionKey as MultiPartitionKey
 from dagster._core.definitions.partitions.utils.time_window import TimeWindow as TimeWindow
 from dagster._core.definitions.policy import (
     Backoff as Backoff,

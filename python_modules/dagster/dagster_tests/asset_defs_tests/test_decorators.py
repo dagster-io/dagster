@@ -13,7 +13,6 @@ from dagster import (
     In,
     LegacyFreshnessPolicy,
     MultiPartitionMapping,
-    MultiPartitionsDefinition,
     Nothing,
     Out,
     Output,
@@ -39,6 +38,7 @@ from dagster._core.definitions.declarative_automation.automation_condition impor
     AutomationCondition,
 )
 from dagster._core.definitions.decorators.config_mapping_decorator import config_mapping
+from dagster._core.definitions.partitions.definition.multi import MultiPartitionsDefinition
 from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
 from dagster._core.definitions.partitions.definition.time_window_subclasses import (
     DailyPartitionsDefinition,

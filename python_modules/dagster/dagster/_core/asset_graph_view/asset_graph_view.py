@@ -18,18 +18,18 @@ from dagster._core.asset_graph_view.serializable_entity_subset import Serializab
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.asset_key import AssetCheckKey, AssetKey, EntityKey, T_EntityKey
 from dagster._core.definitions.events import AssetKeyPartitionKey
-from dagster._core.definitions.multi_dimensional_partitions import (
-    MultiPartitionKey,
-    MultiPartitionsDefinition,
-    PartitionDimensionDefinition,
-)
+from dagster._core.definitions.partitions.definition.multi import MultiPartitionsDefinition
 from dagster._core.definitions.partitions.definition.time_window import (
     TimeWindowPartitionsDefinition,
 )
 from dagster._core.definitions.partitions.mapping.partition_mapping import UpstreamPartitionsResult
 from dagster._core.definitions.partitions.subset.all import AllPartitionsSubset
 from dagster._core.definitions.partitions.subset.time_window import TimeWindowPartitionsSubset
-from dagster._core.definitions.partitions.utils.multi import get_time_partitions_def
+from dagster._core.definitions.partitions.utils.multi import (
+    MultiPartitionKey,
+    PartitionDimensionDefinition,
+    get_time_partitions_def,
+)
 from dagster._core.definitions.partitions.utils.time_window import TimeWindow
 from dagster._core.definitions.temporal_context import TemporalContext
 from dagster._core.loader import LoadingContext

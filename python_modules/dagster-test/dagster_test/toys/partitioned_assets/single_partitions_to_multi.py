@@ -1,5 +1,6 @@
-from dagster import MultiPartitionsDefinition, asset
+from dagster import asset
 from dagster._core.definitions.partitions.definition.dynamic import DynamicPartitionsDefinition
+from dagster._core.definitions.partitions.definition.multi import MultiPartitionsDefinition
 from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
 
 abc_def = StaticPartitionsDefinition(["a", "b", "c"])

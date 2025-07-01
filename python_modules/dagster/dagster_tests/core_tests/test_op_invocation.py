@@ -13,7 +13,6 @@ from dagster import (
     Failure,
     Field,
     In,
-    MultiPartitionsDefinition,
     Noneable,
     Nothing,
     Out,
@@ -27,6 +26,7 @@ from dagster import (
     op,
     resource,
 )
+from dagster._core.definitions.partitions.definition.multi import MultiPartitionsDefinition
 from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
 from dagster._core.definitions.partitions.definition.time_window_subclasses import (
     DailyPartitionsDefinition,

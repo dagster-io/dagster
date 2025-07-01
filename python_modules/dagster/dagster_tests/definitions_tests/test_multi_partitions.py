@@ -9,7 +9,6 @@ from dagster import (
     DimensionPartitionMapping,
     IdentityPartitionMapping,
     IOManager,
-    MultiPartitionKey,
     asset,
     define_asset_job,
     materialize,
@@ -17,14 +16,17 @@ from dagster import (
 )
 from dagster._check import CheckError
 from dagster._core.definitions.asset_graph import AssetGraph
-from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
 from dagster._core.definitions.partitions.context import PartitionLoadingContext
 from dagster._core.definitions.partitions.definition.dynamic import DynamicPartitionsDefinition
+from dagster._core.definitions.partitions.definition.multi import MultiPartitionsDefinition
 from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
 from dagster._core.definitions.partitions.definition.time_window_subclasses import (
     DailyPartitionsDefinition,
 )
-from dagster._core.definitions.partitions.utils.multi import get_time_partitions_def
+from dagster._core.definitions.partitions.utils.multi import (
+    MultiPartitionKey,
+    get_time_partitions_def,
+)
 from dagster._core.definitions.partitions.utils.time_window import TimeWindow
 from dagster._core.definitions.temporal_context import TemporalContext
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError

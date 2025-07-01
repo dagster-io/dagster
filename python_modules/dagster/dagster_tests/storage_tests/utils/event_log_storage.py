@@ -65,7 +65,6 @@ from dagster._core.definitions.events import (
     AssetMaterializationFailureType,
 )
 from dagster._core.definitions.job_base import InMemoryJob
-from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionKey
 from dagster._core.definitions.partitions.definition.base import PartitionKeyRange
 from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
 from dagster._core.definitions.partitions.definition.time_window_subclasses import (
@@ -73,6 +72,7 @@ from dagster._core.definitions.partitions.definition.time_window_subclasses impo
     HourlyPartitionsDefinition,
 )
 from dagster._core.definitions.partitions.subset.all import AllPartitionsSubset
+from dagster._core.definitions.partitions.utils.multi import MultiPartitionKey
 from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
 from dagster._core.errors import DagsterInvalidInvocationError, DagsterInvariantViolationError
 from dagster._core.event_api import EventLogCursor, EventRecordsResult, RunStatusChangeRecordsFilter

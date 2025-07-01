@@ -1,9 +1,8 @@
 from collections.abc import Sequence
-from typing import AbstractSet, Optional, cast  # noqa: UP035
+from typing import TYPE_CHECKING, AbstractSet, Optional, cast  # noqa: UP035
 
 import dagster._check as check
 import graphene
-from dagster import MultiPartitionsDefinition
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.errors import DagsterUserCodeProcessError
 from dagster._core.remote_representation import RemoteJob, RemotePartitionSet, RepositoryHandle
@@ -45,6 +44,9 @@ from dagster_graphql.schema.pipelines.status import GrapheneRunStatus
 from dagster_graphql.schema.repository_origin import GrapheneRepositoryOrigin
 from dagster_graphql.schema.tags import GraphenePipelineTag
 from dagster_graphql.schema.util import ResolveInfo, non_null_list
+
+if TYPE_CHECKING:
+    from dagster._core.definitions.partitions.definition.multi import MultiPartitionsDefinition
 
 
 class GrapheneAddDynamicPartitionSuccess(graphene.ObjectType):

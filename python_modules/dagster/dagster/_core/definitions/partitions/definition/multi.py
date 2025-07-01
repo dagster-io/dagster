@@ -1,11 +1,9 @@
-import base64
 import hashlib
 import itertools
-import json
 from collections.abc import Mapping, Sequence
 from datetime import datetime
 from functools import lru_cache, reduce
-from typing import TYPE_CHECKING, NamedTuple, Optional, Union, cast
+from typing import TYPE_CHECKING, Optional, Union, cast
 
 from dagster_shared.check.functions import CheckError
 
@@ -20,6 +18,15 @@ from dagster._core.definitions.partitions.definition.time_window import (
 )
 from dagster._core.definitions.partitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.partitions.subset.default import DefaultPartitionsSubset
+from dagster._core.definitions.partitions.utils.multi import (
+    INVALID_STATIC_PARTITIONS_KEY_CHARACTERS,
+    MULTIPARTITION_KEY_DELIMITER,
+    MultiDimensionalPartitionKeyIterator,
+    MultiPartitionCursor,
+    MultiPartitionKey,
+    PartitionDimensionDefinition,
+    get_tags_from_multi_partition_key,
+)
 from dagster._core.definitions.partitions.utils.time_window import TimeWindow
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
@@ -27,104 +34,11 @@ from dagster._core.errors import (
     DagsterUnknownPartitionError,
 )
 from dagster._core.instance import DynamicPartitionsStore
-from dagster._core.storage.tags import (
-    MULTIDIMENSIONAL_PARTITION_PREFIX,
-    get_multidimensional_partition_tag,
-)
 from dagster._core.types.pagination import PaginatedResults
-from dagster._record import record
 from dagster._time import get_current_datetime
 
 if TYPE_CHECKING:
     from dagster._core.definitions.partitions.subset.base import PartitionsSubset
-
-INVALID_STATIC_PARTITIONS_KEY_CHARACTERS = set(["|", ",", "[", "]"])
-
-MULTIPARTITION_KEY_DELIMITER = "|"
-
-
-class PartitionDimensionKey(
-    NamedTuple("_PartitionDimensionKey", [("dimension_name", str), ("partition_key", str)])
-):
-    """Representation of a single dimension of a multi-dimensional partition key."""
-
-    def __new__(cls, dimension_name: str, partition_key: str):
-        return super().__new__(
-            cls,
-            dimension_name=check.str_param(dimension_name, "dimension_name"),
-            partition_key=check.str_param(partition_key, "partition_key"),
-        )
-
-
-class MultiPartitionKey(str):
-    """A multi-dimensional partition key stores the partition key for each dimension.
-    Subclasses the string class to keep partition key type as a string.
-
-    Contains additional methods to access the partition key for each dimension.
-    Creates a string representation of the partition key for each dimension, separated by a pipe (|).
-    Orders the dimensions by name, to ensure consistent string representation.
-    """
-
-    dimension_keys: list[PartitionDimensionKey] = []
-
-    def __new__(cls, keys_by_dimension: Mapping[str, str]):
-        check.mapping_param(
-            keys_by_dimension, "partitions_by_dimension", key_type=str, value_type=str
-        )
-
-        dimension_keys: list[PartitionDimensionKey] = [
-            PartitionDimensionKey(dimension, keys_by_dimension[dimension])
-            for dimension in sorted(list(keys_by_dimension.keys()))
-        ]
-
-        str_key = super().__new__(
-            cls,
-            MULTIPARTITION_KEY_DELIMITER.join(
-                [dim_key.partition_key for dim_key in dimension_keys]
-            ),
-        )
-
-        str_key.dimension_keys = dimension_keys
-
-        return str_key
-
-    def __getnewargs__(self):  # pyright: ignore[reportIncompatibleMethodOverride]
-        # When this instance is pickled, replace the argument to __new__ with the
-        # dimension key mapping instead of the string representation.
-        return ({dim_key.dimension_name: dim_key.partition_key for dim_key in self.dimension_keys},)
-
-    @property
-    def keys_by_dimension(self) -> Mapping[str, str]:
-        return {dim_key.dimension_name: dim_key.partition_key for dim_key in self.dimension_keys}
-
-
-class PartitionDimensionDefinition(
-    NamedTuple(
-        "_PartitionDimensionDefinition",
-        [
-            ("name", str),
-            ("partitions_def", PartitionsDefinition),
-        ],
-    )
-):
-    def __new__(
-        cls,
-        name: str,
-        partitions_def: PartitionsDefinition,
-    ):
-        return super().__new__(
-            cls,
-            name=check.str_param(name, "name"),
-            partitions_def=check.inst_param(partitions_def, "partitions_def", PartitionsDefinition),
-        )
-
-    def __eq__(self, other: object) -> bool:
-        return (
-            isinstance(other, PartitionDimensionDefinition)
-            and self.name == other.name
-            and self.partitions_def == other.partitions_def
-        )
-
 
 ALLOWED_PARTITION_DIMENSION_TYPES = (
     StaticPartitionsDefinition,
@@ -586,173 +500,3 @@ class MultiPartitionsDefinition(PartitionsDefinition[MultiPartitionKey]):
             for dim in self.partitions_defs
         ]
         return reduce(lambda x, y: x * y, dimension_counts, 1)
-
-
-def get_tags_from_multi_partition_key(multi_partition_key: MultiPartitionKey) -> Mapping[str, str]:
-    check.inst_param(multi_partition_key, "multi_partition_key", MultiPartitionKey)
-
-    return {
-        get_multidimensional_partition_tag(dimension.dimension_name): dimension.partition_key
-        for dimension in multi_partition_key.dimension_keys
-    }
-
-
-def get_multipartition_key_from_tags(tags: Mapping[str, str]) -> str:
-    partitions_by_dimension: dict[str, str] = {}
-    for tag in tags:
-        if tag.startswith(MULTIDIMENSIONAL_PARTITION_PREFIX):
-            dimension = tag[len(MULTIDIMENSIONAL_PARTITION_PREFIX) :]
-            partitions_by_dimension[dimension] = tags[tag]
-
-    return MultiPartitionKey(partitions_by_dimension)
-
-
-@record
-class MultiPartitionCursor:
-    """A cursor for MultiPartitionsDefinition that tracks last seen keys for each dimension."""
-
-    last_seen_key: Optional[MultiPartitionKey]
-
-    def __str__(self) -> str:
-        return self.to_string()
-
-    def to_string(self) -> str:
-        raw = json.dumps(
-            {
-                "last_seen_key": self.last_seen_key.keys_by_dimension if self.last_seen_key else {},
-            }
-        )
-        return base64.b64encode(bytes(raw, encoding="utf-8")).decode("utf-8")
-
-    @classmethod
-    def from_cursor(cls, cursor: Optional[str]):
-        if cursor is None:
-            return MultiPartitionCursor(last_seen_key=None)
-
-        raw = json.loads(base64.b64decode(cursor).decode("utf-8"))
-        if "last_seen_key" not in raw:
-            raise ValueError(f"Invalid cursor: {cursor}")
-        return MultiPartitionCursor(last_seen_key=MultiPartitionKey(raw["last_seen_key"]))
-
-
-class MultiDimensionalPartitionKeyIterator:
-    """Helper class to iterate through all the partition keys in a MultiPartitionsDefinition."""
-
-    def __init__(
-        self,
-        context: PartitionLoadingContext,
-        partition_defs: list[PartitionDimensionDefinition],
-        cursor: MultiPartitionCursor,
-        ascending: bool,
-    ):
-        self._ascending = ascending
-        self._dimension_names = [dim.name for dim in partition_defs]
-        self._dimension_keys = self._initialize_dimension_keys(context, partition_defs)
-        if cursor and cursor.last_seen_key:
-            self._last_seen_state = self._initialize_state_to_last_seen_key(
-                self._dimension_keys, ascending, cursor.last_seen_key
-            )
-        else:
-            self._last_seen_state = None
-
-    def __iter__(self):
-        return self
-
-    def __next__(self):
-        current_state = self.next_state()
-        if self._is_state_invalid(current_state, self._dimension_keys):
-            raise StopIteration
-        self._last_seen_state = current_state
-        return self._partition_key_from_state(current_state, self._dimension_keys)
-
-    def next_state(self):
-        if self._last_seen_state is None:
-            return self._get_initial_state(self._dimension_keys, self._ascending)
-
-        advanced = False
-        next_state = {}
-        # Iterate through dimensions in reverse order to advance the state by dimension, from the
-        # least significant to the most significant dimension.  State is represented by the indices
-        # of the cross-product of the keys for each dimension.
-        for idx, dim_name in enumerate(reversed(self._dimension_names)):
-            if advanced:
-                # we've already advanced in the lower dimension, so copy the current dimension index as is
-                next_state[dim_name] = self._last_seen_state[dim_name]
-                continue
-            is_most_significant_dim = idx == len(self._dimension_names) - 1
-            delta = 1 if self._ascending else -1
-            next_state[dim_name] = self._last_seen_state[dim_name] + delta
-            if (self._ascending and next_state[dim_name] < len(self._dimension_keys[dim_name])) or (
-                not self._ascending and next_state[dim_name] >= 0
-            ):
-                advanced = True
-            elif not is_most_significant_dim:
-                next_state[dim_name] = (
-                    0 if self._ascending else len(self._dimension_keys[dim_name]) - 1
-                )
-
-        return next_state
-
-    def has_next(self):
-        next_state = self.next_state()
-        return not self._is_state_invalid(next_state, self._dimension_keys)
-
-    def cursor(self):
-        last_partition_key = self._partition_key_from_state(
-            self._last_seen_state, self._dimension_keys
-        )
-        return MultiPartitionCursor(last_seen_key=last_partition_key)
-
-    def _initialize_dimension_keys(self, context, partition_defs):
-        dimension_keys = {}
-        for dimension in partition_defs:
-            dimension_keys[dimension.name] = dimension.partitions_def.get_partition_keys(
-                current_time=context.temporal_context.effective_dt,
-                dynamic_partitions_store=context.dynamic_partitions_store,
-            )
-
-        return dimension_keys
-
-    def _get_initial_state(self, dimension_keys, ascending: bool):
-        state = {}
-        for dim_name, results in dimension_keys.items():
-            if ascending:
-                state[dim_name] = 0
-            else:
-                state[dim_name] = len(results) - 1
-        return state
-
-    def _initialize_state_to_last_seen_key(
-        self, dimension_keys, ascending: bool, last_seen_key: MultiPartitionKey
-    ):
-        state = {}
-        for dim_name, results in dimension_keys.items():
-            if dim_name in last_seen_key.keys_by_dimension:
-                dimension_value = last_seen_key.keys_by_dimension[dim_name]
-                if dimension_value in results:
-                    # the cursor dimension value is in the set of valid values for that dimension
-                    state[dim_name] = results.index(dimension_value)
-                elif ascending:
-                    state[dim_name] = 0
-                else:
-                    state[dim_name] = len(results) - 1
-            elif ascending:
-                state[dim_name] = 0
-            else:
-                state[dim_name] = len(results) - 1
-        return state
-
-    def _is_state_invalid(self, state, dimension_keys):
-        return any(state[dim_name] >= len(dimension_keys[dim_name]) for dim_name in state) or any(
-            state[dim_name] < 0 for dim_name in state
-        )
-
-    def _partition_key_from_state(self, state, dimension_keys) -> Optional[MultiPartitionKey]:
-        if self._is_state_invalid(state, dimension_keys):
-            return None
-
-        partition_tuple = {}
-        for dim_name, idx in state.items():
-            partition_tuple[dim_name] = dimension_keys[dim_name][idx]
-
-        return MultiPartitionKey(partition_tuple)
