@@ -1,6 +1,6 @@
 from dagster import AssetIn, asset
-from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
-from dagster._core.definitions.partitions.mapping.static import StaticPartitionMapping
+from dagster._core.definitions.partitions.definition import StaticPartitionsDefinition
+from dagster._core.definitions.partitions.mapping import StaticPartitionMapping
 
 
 @asset(partitions_def=StaticPartitionsDefinition(["a", "b", "c"]))

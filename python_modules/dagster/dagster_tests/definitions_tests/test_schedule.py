@@ -20,9 +20,7 @@ from dagster._core.definitions.metadata.metadata_value import (
     MetadataValue,
     TextMetadataValue,
 )
-from dagster._core.definitions.partitions.definition.time_window_subclasses import (
-    DailyPartitionsDefinition,
-)
+from dagster._core.definitions.partitions.definition import DailyPartitionsDefinition
 from dagster._core.definitions.partitions.partitioned_schedule import (
     UnresolvedPartitionedAssetScheduleDefinition,
 )

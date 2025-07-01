@@ -9,7 +9,7 @@ from dagster._api.snapshot_partition import (
     sync_get_external_partition_tags_grpc,
 )
 from dagster._core.definitions.asset_job import IMPLICIT_ASSET_JOB_NAME
-from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
+from dagster._core.definitions.partitions.definition import StaticPartitionsDefinition
 from dagster._core.definitions.repository_definition import SINGLETON_REPOSITORY_NAME
 from dagster._core.errors import DagsterUserCodeProcessError
 from dagster._core.instance import DagsterInstance

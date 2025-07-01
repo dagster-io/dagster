@@ -34,7 +34,7 @@ from dagster._core.definitions.data_version import (
 from dagster._core.definitions.decorators.op_decorator import DecoratedOpFunction
 from dagster._core.definitions.events import DynamicOutput
 from dagster._core.definitions.metadata import MetadataValue, normalize_metadata
-from dagster._core.definitions.partitions.utils.multi import (
+from dagster._core.definitions.partitions.utils import (
     MultiPartitionKey,
     get_tags_from_multi_partition_key,
 )

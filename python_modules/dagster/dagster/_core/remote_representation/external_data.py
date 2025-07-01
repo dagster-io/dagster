@@ -71,15 +71,15 @@ from dagster._core.definitions.metadata import (
     normalize_metadata,
 )
 from dagster._core.definitions.op_definition import OpDefinition
-from dagster._core.definitions.partitions.definition.dynamic import DynamicPartitionsDefinition
-from dagster._core.definitions.partitions.definition.multi import MultiPartitionsDefinition
-from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
-from dagster._core.definitions.partitions.definition.time_window import (
+from dagster._core.definitions.partitions.definition import (
+    DynamicPartitionsDefinition,
+    MultiPartitionsDefinition,
+    StaticPartitionsDefinition,
     TimeWindowPartitionsDefinition,
 )
-from dagster._core.definitions.partitions.mapping.base import PartitionMapping
+from dagster._core.definitions.partitions.mapping import PartitionMapping
 from dagster._core.definitions.partitions.schedule_type import ScheduleType
-from dagster._core.definitions.partitions.utils.mapping import get_builtin_partition_mapping_types
+from dagster._core.definitions.partitions.utils import get_builtin_partition_mapping_types
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.resource_requirement import ResourceKeyRequirement
 from dagster._core.definitions.schedule_definition import DefaultScheduleStatus

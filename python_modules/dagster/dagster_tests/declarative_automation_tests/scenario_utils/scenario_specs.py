@@ -6,18 +6,18 @@ from dagster._core.definitions.asset_spec import (
     SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE,
     AssetExecutionType,
 )
-from dagster._core.definitions.partitions.definition.dynamic import DynamicPartitionsDefinition
-from dagster._core.definitions.partitions.definition.multi import MultiPartitionsDefinition
-from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
-from dagster._core.definitions.partitions.definition.time_window_subclasses import (
+from dagster._core.definitions.partitions.definition import (
     DailyPartitionsDefinition,
+    DynamicPartitionsDefinition,
     HourlyPartitionsDefinition,
+    MultiPartitionsDefinition,
+    StaticPartitionsDefinition,
 )
-from dagster._core.definitions.partitions.mapping.static import StaticPartitionMapping
-from dagster._core.definitions.partitions.mapping.time_window_partition_mapping import (
+from dagster._core.definitions.partitions.mapping import (
+    StaticPartitionMapping,
     TimeWindowPartitionMapping,
 )
-from dagster._core.definitions.partitions.utils.multi import MultiPartitionKey
+from dagster._core.definitions.partitions.utils import MultiPartitionKey
 from dagster._time import parse_time_string
 
 from dagster_tests.declarative_automation_tests.scenario_utils.scenario_state import (

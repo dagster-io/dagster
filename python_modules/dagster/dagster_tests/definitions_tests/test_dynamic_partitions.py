@@ -13,7 +13,7 @@ from dagster import (
     materialize_to_memory,
 )
 from dagster._check import CheckError
-from dagster._core.definitions.partitions.definition.dynamic import DynamicPartitionsDefinition
+from dagster._core.definitions.partitions.definition import DynamicPartitionsDefinition
 from dagster._core.definitions.partitions.partition import Partition
 from dagster._core.test_utils import get_paginated_partition_keys, instance_for_test
 

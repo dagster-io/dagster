@@ -48,14 +48,16 @@ from dagster._core.definitions.asset_selection import (
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.base_asset_graph import BaseAssetGraph
 from dagster._core.definitions.events import AssetKey
-from dagster._core.definitions.partitions.definition.multi import MultiPartitionsDefinition
-from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
-from dagster._core.definitions.partitions.definition.time_window_subclasses import (
+from dagster._core.definitions.partitions.definition import (
     DailyPartitionsDefinition,
+    MultiPartitionsDefinition,
+    StaticPartitionsDefinition,
 )
-from dagster._core.definitions.partitions.mapping.identity import IdentityPartitionMapping
-from dagster._core.definitions.partitions.mapping.multi.base import DimensionPartitionMapping
-from dagster._core.definitions.partitions.mapping.multi.multi_to_multi import MultiPartitionMapping
+from dagster._core.definitions.partitions.mapping import (
+    DimensionPartitionMapping,
+    IdentityPartitionMapping,
+    MultiPartitionMapping,
+)
 from dagster._core.remote_representation.external import RemoteRepository
 from dagster._core.remote_representation.external_data import RepositorySnap
 from dagster._core.remote_representation.handle import RepositoryHandle

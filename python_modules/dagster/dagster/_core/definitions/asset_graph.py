@@ -25,8 +25,8 @@ from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.freshness import InternalFreshnessPolicy
 from dagster._core.definitions.freshness_policy import LegacyFreshnessPolicy
 from dagster._core.definitions.metadata import ArbitraryMetadataMapping
-from dagster._core.definitions.partitions.definition.base import PartitionsDefinition
-from dagster._core.definitions.partitions.mapping.base import PartitionMapping
+from dagster._core.definitions.partitions.definition import PartitionsDefinition
+from dagster._core.definitions.partitions.mapping import PartitionMapping
 from dagster._core.definitions.resolved_asset_deps import ResolvedAssetDependencies
 from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.definitions.utils import DEFAULT_GROUP_NAME
@@ -379,8 +379,8 @@ def executable_in_same_run(
     asset_graph: BaseAssetGraph, child_key: EntityKey, parent_key: EntityKey
 ):
     """Returns whether a child asset can be materialized in the same run as a parent asset."""
-    from dagster._core.definitions.partitions.mapping.identity import IdentityPartitionMapping
-    from dagster._core.definitions.partitions.mapping.time_window_partition_mapping import (
+    from dagster._core.definitions.partitions.mapping import (
+        IdentityPartitionMapping,
         TimeWindowPartitionMapping,
     )
     from dagster._core.definitions.remote_asset_graph import RemoteWorkspaceAssetGraph

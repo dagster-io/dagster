@@ -505,7 +505,7 @@ class AssetMaterialization(
         partition: Optional[str] = None,
         tags: Optional[Mapping[str, str]] = None,
     ):
-        from dagster._core.definitions.partitions.utils.multi import MultiPartitionKey
+        from dagster._core.definitions.partitions.utils import MultiPartitionKey
 
         if isinstance(asset_key, AssetKey):
             check.inst_param(asset_key, "asset_key", AssetKey)

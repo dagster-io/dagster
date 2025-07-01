@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, AbstractSet, Optional, cast  # noqa: UP035
 import dagster._check as check
 import graphene
 from dagster._core.definitions.asset_key import AssetKey
+from dagster._core.definitions.partitions.definition import MultiPartitionsDefinition
 from dagster._core.errors import DagsterUserCodeProcessError
 from dagster._core.remote_representation import RemoteJob, RemotePartitionSet, RepositoryHandle
 from dagster._core.remote_representation.external_data import (

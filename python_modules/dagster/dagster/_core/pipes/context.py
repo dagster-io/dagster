@@ -37,10 +37,10 @@ from dagster._core.definitions.metadata import (
     metadata_map_from_external,
 )
 from dagster._core.definitions.partitions.partition_key_range import PartitionKeyRange
-from dagster._core.definitions.partitions.utils.multi import (
+from dagster._core.definitions.partitions.utils import (
+    TimeWindow,
     has_one_dimension_time_window_partitioning,
 )
-from dagster._core.definitions.partitions.utils.time_window import TimeWindow
 from dagster._core.definitions.result import MaterializeResult
 from dagster._core.errors import DagsterInvariantViolationError, DagsterPipesExecutionError
 from dagster._core.events import EngineEventData

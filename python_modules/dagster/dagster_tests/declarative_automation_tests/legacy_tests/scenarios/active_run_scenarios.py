@@ -4,7 +4,7 @@ from typing import Optional
 from dagster import PartitionKeyRange
 from dagster._core.definitions.events import AssetKey, AssetMaterialization
 from dagster._core.definitions.freshness_policy import LegacyFreshnessPolicy
-from dagster._core.definitions.partitions.definition.time_window_subclasses import (
+from dagster._core.definitions.partitions.definition import (
     DailyPartitionsDefinition,
     HourlyPartitionsDefinition,
 )

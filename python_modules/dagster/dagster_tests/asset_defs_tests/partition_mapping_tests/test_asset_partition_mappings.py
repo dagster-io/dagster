@@ -30,31 +30,28 @@ from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.decorators.asset_decorator import multi_asset
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
-from dagster._core.definitions.partitions.definition.dynamic import DynamicPartitionsDefinition
-from dagster._core.definitions.partitions.definition.multi import MultiPartitionsDefinition
-from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
-from dagster._core.definitions.partitions.definition.time_window_subclasses import (
+from dagster._core.definitions.partitions.definition import (
     DailyPartitionsDefinition,
+    DynamicPartitionsDefinition,
+    MultiPartitionsDefinition,
+    StaticPartitionsDefinition,
     WeeklyPartitionsDefinition,
 )
-from dagster._core.definitions.partitions.mapping.all import AllPartitionMapping
-from dagster._core.definitions.partitions.mapping.base import (
+from dagster._core.definitions.partitions.mapping import (
+    AllPartitionMapping,
+    IdentityPartitionMapping,
+    LastPartitionMapping,
+    MultiToSingleDimensionPartitionMapping,
     PartitionMapping,
+    SpecificPartitionsPartitionMapping,
     UpstreamPartitionsResult,
 )
-from dagster._core.definitions.partitions.mapping.identity import IdentityPartitionMapping
-from dagster._core.definitions.partitions.mapping.last import LastPartitionMapping
-from dagster._core.definitions.partitions.mapping.multi.multi_to_single import (
-    MultiToSingleDimensionPartitionMapping,
-)
-from dagster._core.definitions.partitions.mapping.specific_partitions import (
-    SpecificPartitionsPartitionMapping,
-)
 from dagster._core.definitions.partitions.partition_key_range import PartitionKeyRange
-from dagster._core.definitions.partitions.subset.base import PartitionsSubset
-from dagster._core.definitions.partitions.subset.default import DefaultPartitionsSubset
-from dagster._core.definitions.partitions.utils.mapping import get_builtin_partition_mapping_types
-from dagster._core.definitions.partitions.utils.multi import MultiPartitionKey
+from dagster._core.definitions.partitions.subset import DefaultPartitionsSubset, PartitionsSubset
+from dagster._core.definitions.partitions.utils import (
+    MultiPartitionKey,
+    get_builtin_partition_mapping_types,
+)
 from dagster._core.instance import DynamicPartitionsStore
 from dagster._core.test_utils import assert_namedtuple_lists_equal
 from dagster._time import create_datetime

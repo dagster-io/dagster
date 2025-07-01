@@ -34,15 +34,17 @@ from dagster._core.definitions.declarative_automation.automation_condition impor
     AutomationCondition,
 )
 from dagster._core.definitions.decorators.config_mapping_decorator import config_mapping
-from dagster._core.definitions.partitions.definition.multi import MultiPartitionsDefinition
-from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
-from dagster._core.definitions.partitions.definition.time_window_subclasses import (
+from dagster._core.definitions.partitions.definition import (
     DailyPartitionsDefinition,
+    MultiPartitionsDefinition,
+    StaticPartitionsDefinition,
 )
-from dagster._core.definitions.partitions.mapping.all import AllPartitionMapping
-from dagster._core.definitions.partitions.mapping.identity import IdentityPartitionMapping
-from dagster._core.definitions.partitions.mapping.multi.base import DimensionPartitionMapping
-from dagster._core.definitions.partitions.mapping.multi.multi_to_multi import MultiPartitionMapping
+from dagster._core.definitions.partitions.mapping import (
+    AllPartitionMapping,
+    DimensionPartitionMapping,
+    IdentityPartitionMapping,
+    MultiPartitionMapping,
+)
 from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.definitions.resource_requirement import ensure_requirements_satisfied
 from dagster._core.definitions.tags import build_kind_tag

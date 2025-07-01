@@ -11,11 +11,11 @@ from dagster import (
     serialize_value,
 )
 from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView, SerializableEntitySubset
-from dagster._core.definitions.partitions.definition.multi import MultiPartitionsDefinition
-from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
-from dagster._core.definitions.partitions.definition.time_window_subclasses import (
+from dagster._core.definitions.partitions.definition import (
     DailyPartitionsDefinition,
     HourlyPartitionsDefinition,
+    MultiPartitionsDefinition,
+    StaticPartitionsDefinition,
 )
 
 partitions_defs = [

@@ -21,9 +21,7 @@ from dagster._core.definitions.asset_check_factories.utils import (
 )
 from dagster._core.definitions.asset_check_spec import AssetCheckSeverity
 from dagster._core.definitions.asset_checks import AssetChecksDefinition
-from dagster._core.definitions.partitions.definition.time_window import (
-    TimeWindowPartitionsDefinition,
-)
+from dagster._core.definitions.partitions.definition import TimeWindowPartitionsDefinition
 from dagster._core.errors import DagsterInvariantViolationError
 
 if TYPE_CHECKING:

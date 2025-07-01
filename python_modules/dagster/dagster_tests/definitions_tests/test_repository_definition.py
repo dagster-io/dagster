@@ -35,9 +35,9 @@ from dagster._core.definitions.automation_condition_sensor_definition import (
 from dagster._core.definitions.decorators.asset_check_decorator import asset_check
 from dagster._core.definitions.executor_definition import multi_or_in_process_executor
 from dagster._core.definitions.metadata.metadata_value import TextMetadataValue
-from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
-from dagster._core.definitions.partitions.definition.time_window_subclasses import (
+from dagster._core.definitions.partitions.definition import (
     DailyPartitionsDefinition,
+    StaticPartitionsDefinition,
 )
 from dagster._core.definitions.partitions.partitioned_config import PartitionedConfig
 from dagster._core.errors import DagsterInvalidSubsetError

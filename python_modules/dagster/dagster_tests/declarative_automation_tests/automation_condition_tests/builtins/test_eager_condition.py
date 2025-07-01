@@ -14,13 +14,15 @@ from dagster import (
     asset_check,
     evaluate_automation_conditions,
 )
-from dagster._core.definitions.partitions.definition.multi import MultiPartitionsDefinition
-from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
-from dagster._core.definitions.partitions.definition.time_window_subclasses import (
+from dagster._core.definitions.partitions.definition import (
     DailyPartitionsDefinition,
+    MultiPartitionsDefinition,
+    StaticPartitionsDefinition,
 )
-from dagster._core.definitions.partitions.mapping.multi.base import DimensionPartitionMapping
-from dagster._core.definitions.partitions.mapping.multi.multi_to_multi import MultiPartitionMapping
+from dagster._core.definitions.partitions.mapping import (
+    DimensionPartitionMapping,
+    MultiPartitionMapping,
+)
 from dagster._core.instance_for_test import instance_for_test
 
 from dagster_tests.declarative_automation_tests.scenario_utils.automation_condition_scenario import (

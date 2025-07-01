@@ -11,15 +11,14 @@ from dagster import (
     _check as check,
 )
 from dagster._core.definitions.data_time import CachingDataTimeResolver
-from dagster._core.definitions.partitions.definition.base import PartitionsDefinition
-from dagster._core.definitions.partitions.definition.multi import MultiPartitionsDefinition
-from dagster._core.definitions.partitions.definition.time_window import (
+from dagster._core.definitions.partitions.definition import (
+    MultiPartitionsDefinition,
+    PartitionsDefinition,
     TimeWindowPartitionsDefinition,
 )
-from dagster._core.definitions.partitions.subset.base import PartitionsSubset
-from dagster._core.definitions.partitions.subset.time_window import TimeWindowPartitionsSubset
-from dagster._core.definitions.partitions.utils import PartitionRangeStatus
+from dagster._core.definitions.partitions.subset import PartitionsSubset, TimeWindowPartitionsSubset
 from dagster._core.definitions.partitions.utils.time_window import (
+    PartitionRangeStatus,
     fetch_flattened_time_window_ranges,
 )
 from dagster._core.definitions.remote_asset_graph import RemoteAssetNode

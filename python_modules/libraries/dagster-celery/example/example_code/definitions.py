@@ -10,7 +10,7 @@ from dagster import (
     job,
     op,
 )
-from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
+from dagster._core.definitions.partitions.definition import StaticPartitionsDefinition
 
 example_partition_def = StaticPartitionsDefinition(
     partition_keys=[str(i) for i in range(1, 32)],

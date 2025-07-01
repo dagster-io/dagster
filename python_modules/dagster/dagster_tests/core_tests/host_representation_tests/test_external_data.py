@@ -22,14 +22,12 @@ from dagster._core.definitions.backfill_policy import BackfillPolicy
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.external_asset import external_assets_from_specs
 from dagster._core.definitions.metadata import MetadataValue, TextMetadataValue, normalize_metadata
-from dagster._core.definitions.partitions.definition.multi import MultiPartitionsDefinition
-from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
-from dagster._core.definitions.partitions.definition.time_window import (
-    TimeWindowPartitionsDefinition,
-)
-from dagster._core.definitions.partitions.definition.time_window_subclasses import (
+from dagster._core.definitions.partitions.definition import (
     DailyPartitionsDefinition,
     HourlyPartitionsDefinition,
+    MultiPartitionsDefinition,
+    StaticPartitionsDefinition,
+    TimeWindowPartitionsDefinition,
 )
 from dagster._core.definitions.partitions.schedule_type import ScheduleType
 from dagster._core.definitions.utils import DEFAULT_GROUP_NAME

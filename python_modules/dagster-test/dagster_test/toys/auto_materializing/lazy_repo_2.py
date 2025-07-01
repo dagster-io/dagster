@@ -1,8 +1,6 @@
 from dagster import AssetKey, AutoMaterializePolicy, SourceAsset, asset, repository
 from dagster._core.definitions.freshness_policy import LegacyFreshnessPolicy
-from dagster._core.definitions.partitions.definition.time_window_subclasses import (
-    DailyPartitionsDefinition,
-)
+from dagster._core.definitions.partitions.definition import DailyPartitionsDefinition
 
 ### Non partitioned ###
 

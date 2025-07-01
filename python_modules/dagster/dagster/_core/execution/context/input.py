@@ -7,8 +7,8 @@ from dagster._annotations import deprecated, deprecated_param, public
 from dagster._core.definitions.events import AssetKey, AssetObservation, CoercibleToAssetKey
 from dagster._core.definitions.metadata import ArbitraryMetadataMapping, MetadataValue
 from dagster._core.definitions.partitions.partition_key_range import PartitionKeyRange
-from dagster._core.definitions.partitions.subset.base import PartitionsSubset
-from dagster._core.definitions.partitions.utils.time_window import TimeWindow
+from dagster._core.definitions.partitions.subset import PartitionsSubset
+from dagster._core.definitions.partitions.utils import TimeWindow
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.instance import DagsterInstance, DynamicPartitionsStore
 from dagster._utils.warnings import normalize_renamed_param

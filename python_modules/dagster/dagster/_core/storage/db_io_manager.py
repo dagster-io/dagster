@@ -7,11 +7,11 @@ import dagster._check as check
 from dagster._check import CheckError
 from dagster._core.definitions.metadata import RawMetadataValue
 from dagster._core.definitions.metadata.metadata_set import TableMetadataSet
-from dagster._core.definitions.partitions.definition.multi import MultiPartitionsDefinition
-from dagster._core.definitions.partitions.definition.time_window import (
+from dagster._core.definitions.partitions.definition import (
+    MultiPartitionsDefinition,
     TimeWindowPartitionsDefinition,
 )
-from dagster._core.definitions.partitions.utils.time_window import TimeWindow
+from dagster._core.definitions.partitions.utils import MultiPartitionKey, TimeWindow
 from dagster._core.errors import DagsterInvalidMetadata, DagsterInvariantViolationError
 from dagster._core.execution.context.input import InputContext
 from dagster._core.execution.context.output import OutputContext

@@ -26,14 +26,16 @@ from dagster import (
     materialize,
 )
 from dagster._core.definitions.dependency import BlockingAssetChecksDependencyDefinition
-from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
-from dagster._core.definitions.partitions.definition.time_window_subclasses import (
+from dagster._core.definitions.partitions.definition import (
     DailyPartitionsDefinition,
+    StaticPartitionsDefinition,
 )
-from dagster._core.definitions.partitions.mapping.last import LastPartitionMapping
-from dagster._core.definitions.partitions.mapping.multi.base import DimensionPartitionMapping
-from dagster._core.definitions.partitions.mapping.multi.multi_to_multi import MultiPartitionMapping
-from dagster._core.definitions.partitions.mapping.static import StaticPartitionMapping
+from dagster._core.definitions.partitions.mapping import (
+    DimensionPartitionMapping,
+    LastPartitionMapping,
+    MultiPartitionMapping,
+    StaticPartitionMapping,
+)
 from dagster._core.definitions.tags import build_kind_tag, has_kind
 from dagster._core.definitions.utils import DEFAULT_IO_MANAGER_KEY
 from dagster._core.execution.context.compute import AssetExecutionContext

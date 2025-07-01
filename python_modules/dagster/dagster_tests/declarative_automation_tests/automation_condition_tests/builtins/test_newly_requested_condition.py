@@ -12,9 +12,7 @@ from dagster import (
 from dagster._core.definitions.declarative_automation.automation_condition import AutomationResult
 from dagster._core.definitions.declarative_automation.operands import NewlyRequestedCondition
 from dagster._core.definitions.events import AssetKeyPartitionKey
-from dagster._core.definitions.partitions.definition.time_window_subclasses import (
-    DailyPartitionsDefinition,
-)
+from dagster._core.definitions.partitions.definition import DailyPartitionsDefinition
 
 from dagster_tests.declarative_automation_tests.automation_condition_tests.builtins.test_dep_condition import (
     get_hardcoded_condition,

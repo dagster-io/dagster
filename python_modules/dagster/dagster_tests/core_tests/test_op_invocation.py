@@ -26,14 +26,13 @@ from dagster import (
     op,
     resource,
 )
-from dagster._core.definitions.partitions.definition.multi import MultiPartitionsDefinition
-from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
-from dagster._core.definitions.partitions.definition.time_window_subclasses import (
+from dagster._core.definitions.partitions.definition import (
     DailyPartitionsDefinition,
+    MultiPartitionsDefinition,
+    StaticPartitionsDefinition,
 )
 from dagster._core.definitions.partitions.partition_key_range import PartitionKeyRange
-from dagster._core.definitions.partitions.utils.multi import get_time_partitions_def
-from dagster._core.definitions.partitions.utils.time_window import TimeWindow
+from dagster._core.definitions.partitions.utils import TimeWindow, get_time_partitions_def
 from dagster._core.errors import (
     DagsterInvalidConfigError,
     DagsterInvalidDefinitionError,

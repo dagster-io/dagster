@@ -8,7 +8,7 @@ from dagster import (
     evaluate_automation_conditions,
 )
 from dagster._core.definitions.automation_tick_evaluation_context import build_run_requests
-from dagster._core.definitions.partitions.definition.time_window_subclasses import (
+from dagster._core.definitions.partitions.definition import (
     DailyPartitionsDefinition,
     HourlyPartitionsDefinition,
 )

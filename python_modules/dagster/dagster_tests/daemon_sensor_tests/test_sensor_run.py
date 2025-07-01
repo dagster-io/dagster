@@ -49,15 +49,15 @@ from dagster._core.definitions.instigation_logger import get_instigation_log_rec
 from dagster._core.definitions.multi_asset_sensor_definition import (
     MultiAssetSensorEvaluationContext,
 )
-from dagster._core.definitions.partitions.definition.dynamic import DynamicPartitionsDefinition
-from dagster._core.definitions.partitions.definition.multi import MultiPartitionsDefinition
-from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
-from dagster._core.definitions.partitions.definition.time_window_subclasses import (
+from dagster._core.definitions.partitions.definition import (
     DailyPartitionsDefinition,
+    DynamicPartitionsDefinition,
     HourlyPartitionsDefinition,
+    MultiPartitionsDefinition,
+    StaticPartitionsDefinition,
     WeeklyPartitionsDefinition,
 )
-from dagster._core.definitions.partitions.utils.multi import MultiPartitionKey
+from dagster._core.definitions.partitions.utils import MultiPartitionKey
 from dagster._core.definitions.run_request import InstigatorType, SensorResult
 from dagster._core.definitions.run_status_sensor_definition import run_status_sensor
 from dagster._core.definitions.sensor_definition import (

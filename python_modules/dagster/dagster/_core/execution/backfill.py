@@ -7,7 +7,7 @@ from dagster import _check as check
 from dagster._core.definitions import AssetKey
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.base_asset_graph import BaseAssetGraph
-from dagster._core.definitions.partitions.subset.base import PartitionsSubset
+from dagster._core.definitions.partitions.subset import PartitionsSubset
 from dagster._core.definitions.run_request import RunRequest
 from dagster._core.definitions.selector import PartitionsByAssetSelector
 from dagster._core.definitions.utils import check_valid_title

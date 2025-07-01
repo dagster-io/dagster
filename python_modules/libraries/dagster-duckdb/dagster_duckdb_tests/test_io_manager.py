@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from dagster._core.definitions.partitions.utils.time_window import TimeWindow
+from dagster._core.definitions.partitions.utils import TimeWindow
 from dagster._core.storage.db_io_manager import TablePartitionDimension, TableSlice
 from dagster_duckdb.io_manager import DuckDbClient, _get_cleanup_statement
 

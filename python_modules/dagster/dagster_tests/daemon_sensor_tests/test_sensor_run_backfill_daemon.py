@@ -11,8 +11,10 @@ from dagster import (
 )
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.events import AssetKeyPartitionKey
-from dagster._core.definitions.partitions.definition.dynamic import DynamicPartitionsDefinition
-from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
+from dagster._core.definitions.partitions.definition import (
+    DynamicPartitionsDefinition,
+    StaticPartitionsDefinition,
+)
 from dagster._core.definitions.run_request import InstigatorType, RunRequest
 from dagster._core.scheduler.instigation import InstigatorState, InstigatorStatus, TickStatus
 from dagster._core.test_utils import create_test_daemon_workspace_context, load_remote_repo

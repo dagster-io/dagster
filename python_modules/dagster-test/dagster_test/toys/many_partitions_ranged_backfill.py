@@ -5,9 +5,7 @@ unnecessary writes.
 """
 
 from dagster import AssetExecutionContext, BackfillPolicy, Definitions, IOManager, asset
-from dagster._core.definitions.partitions.definition.time_window_subclasses import (
-    HourlyPartitionsDefinition,
-)
+from dagster._core.definitions.partitions.definition import HourlyPartitionsDefinition
 
 partitions_def = HourlyPartitionsDefinition(
     start_date="2023-01-01-00:00", end_date="2024-01-01-00:00"

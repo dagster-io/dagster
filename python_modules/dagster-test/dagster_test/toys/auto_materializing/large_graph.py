@@ -14,10 +14,10 @@ from dagster import (
     asset,
     repository,
 )
-from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
-from dagster._core.definitions.partitions.definition.time_window_subclasses import (
+from dagster._core.definitions.partitions.definition import (
     DailyPartitionsDefinition,
     HourlyPartitionsDefinition,
+    StaticPartitionsDefinition,
 )
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster._utils.warnings import disable_dagster_warnings

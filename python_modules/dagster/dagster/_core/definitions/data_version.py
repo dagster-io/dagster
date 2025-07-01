@@ -714,10 +714,8 @@ class CachingStaleStatusResolver:
         self, *, key: "AssetKeyPartitionKey"
     ) -> Sequence["AssetKeyPartitionKey"]:
         from dagster._core.definitions.events import AssetKeyPartitionKey
-        from dagster._core.definitions.partitions.definition.time_window import (
-            TimeWindowPartitionsDefinition,
-        )
-        from dagster._core.definitions.partitions.mapping.all import AllPartitionMapping
+        from dagster._core.definitions.partitions.definition import TimeWindowPartitionsDefinition
+        from dagster._core.definitions.partitions.mapping import AllPartitionMapping
 
         asset_deps = self.asset_graph.get(key.asset_key).parent_keys
 

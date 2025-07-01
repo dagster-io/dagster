@@ -52,9 +52,7 @@ def get_infer_single_to_multi_dimension_deps_result(
     downstream_partitions_def: PartitionsDefinition,
     partition_dimension_name: Optional[str] = None,
 ) -> InferSingleToMultiDimensionDepsResult:
-    from dagster._core.definitions.partitions.mapping.time_window_partition_mapping import (
-        TimeWindowPartitionMapping,
-    )
+    from dagster._core.definitions.partitions.mapping import TimeWindowPartitionMapping
 
     upstream_is_multipartitioned = isinstance(upstream_partitions_def, MultiPartitionsDefinition)
 

@@ -13,11 +13,12 @@ from dagster._core.definitions.declarative_automation.legacy.valid_asset_subset 
     ValidAssetSubset,
 )
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
-from dagster._core.definitions.partitions.definition.time_window import (
+from dagster._core.definitions.partitions.definition import (
+    PartitionsDefinition,
     TimeWindowPartitionsDefinition,
 )
-from dagster._core.definitions.partitions.subset.base import PartitionsSubset
-from dagster._core.definitions.partitions.utils.multi import (
+from dagster._core.definitions.partitions.subset import PartitionsSubset
+from dagster._core.definitions.partitions.utils import (
     get_time_partition_key,
     get_time_partitions_def,
 )

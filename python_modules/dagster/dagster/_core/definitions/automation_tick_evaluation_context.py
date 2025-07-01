@@ -24,7 +24,7 @@ from dagster._core.definitions.declarative_automation.serialized_objects import 
     AutomationConditionEvaluation,
 )
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
-from dagster._core.definitions.partitions.definition.base import PartitionsDefinition
+from dagster._core.definitions.partitions.definition import PartitionsDefinition
 from dagster._core.definitions.run_request import RunRequest
 from dagster._core.instance import DynamicPartitionsStore
 from dagster._core.storage.tags import (

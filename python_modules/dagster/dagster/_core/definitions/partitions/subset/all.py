@@ -6,7 +6,6 @@ import dagster._check as check
 from dagster._core.definitions.partitions.definition.base import PartitionsDefinition
 from dagster._core.definitions.partitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.partitions.subset.base import PartitionsSubset
-from dagster._core.definitions.partitions.subset.time_window import TimeWindowPartitionsSubset
 from dagster._core.instance import DynamicPartitionsStore
 
 
@@ -87,9 +86,8 @@ class AllPartitionsSubset(
         return other
 
     def __sub__(self, other: "PartitionsSubset") -> "PartitionsSubset":
-        from dagster._core.definitions.partitions.definition.time_window import (
-            TimeWindowPartitionsDefinition,
-        )
+        from dagster._core.definitions.partitions.definition import TimeWindowPartitionsDefinition
+        from dagster._core.definitions.partitions.subset import TimeWindowPartitionsSubset
 
         if self == other:
             return self.partitions_def.empty_subset()

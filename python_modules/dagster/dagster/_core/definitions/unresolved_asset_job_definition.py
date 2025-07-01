@@ -16,8 +16,10 @@ from dagster._core.definitions.config import ConfigMapping
 from dagster._core.definitions.executor_definition import ExecutorDefinition
 from dagster._core.definitions.hook_definition import HookDefinition
 from dagster._core.definitions.metadata import RawMetadataValue
-from dagster._core.definitions.partitions.definition.base import PartitionsDefinition
-from dagster._core.definitions.partitions.definition.dynamic import DynamicPartitionsDefinition
+from dagster._core.definitions.partitions.definition import (
+    DynamicPartitionsDefinition,
+    PartitionsDefinition,
+)
 from dagster._core.definitions.partitions.partitioned_config import PartitionedConfig
 from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.definitions.resource_definition import ResourceDefinition

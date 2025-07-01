@@ -16,9 +16,7 @@ from dagster import (
     resource,
     with_resources,
 )
-from dagster._core.definitions.partitions.definition.time_window_subclasses import (
-    DailyPartitionsDefinition,
-)
+from dagster._core.definitions.partitions.definition import DailyPartitionsDefinition
 from dagster._core.test_utils import instance_for_test
 
 

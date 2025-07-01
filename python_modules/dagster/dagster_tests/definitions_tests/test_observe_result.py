@@ -17,7 +17,7 @@ from dagster import (
 )
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.observe import observe
-from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
+from dagster._core.definitions.partitions.definition import StaticPartitionsDefinition
 from dagster._core.definitions.result import ObserveResult
 from dagster._core.errors import DagsterInvariantViolationError, DagsterStepOutputNotFoundError
 from dagster._core.execution.context.invocation import build_asset_context

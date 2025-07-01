@@ -5,9 +5,7 @@ from dagster import (
     AutomationCondition as SC,
 )
 from dagster._core.definitions.asset_selection import AssetSelection
-from dagster._core.definitions.partitions.definition.time_window_subclasses import (
-    DailyPartitionsDefinition,
-)
+from dagster._core.definitions.partitions.definition import DailyPartitionsDefinition
 
 from dagster_tests.declarative_automation_tests.scenario_utils.automation_condition_scenario import (
     AutomationConditionScenarioState,

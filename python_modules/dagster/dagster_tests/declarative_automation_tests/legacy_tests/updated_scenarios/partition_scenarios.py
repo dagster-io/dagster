@@ -4,9 +4,11 @@ from dagster import AssetDep, AutoMaterializePolicy, AutoMaterializeRule, TimeWi
 from dagster._core.definitions.auto_materialize_rule_impls import (
     DiscardOnMaxMaterializationsExceededRule,
 )
-from dagster._core.definitions.partitions.mapping.identity import IdentityPartitionMapping
-from dagster._core.definitions.partitions.mapping.multi.base import DimensionPartitionMapping
-from dagster._core.definitions.partitions.mapping.multi.multi_to_multi import MultiPartitionMapping
+from dagster._core.definitions.partitions.mapping import (
+    DimensionPartitionMapping,
+    IdentityPartitionMapping,
+    MultiPartitionMapping,
+)
 from dagster._core.definitions.timestamp import TimestampWithTimezone
 from dagster._record import copy
 

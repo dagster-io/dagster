@@ -28,9 +28,7 @@ from dagster._core.definitions.metadata import (
     MetadataValue,
     TimestampMetadataValue,
 )
-from dagster._core.definitions.partitions.definition.time_window import (
-    TimeWindowPartitionsDefinition,
-)
+from dagster._core.definitions.partitions.definition import TimeWindowPartitionsDefinition
 from dagster._core.execution.context.compute import AssetCheckExecutionContext
 from dagster._time import datetime_from_timestamp, get_current_timestamp
 from dagster._utils.schedules import (
