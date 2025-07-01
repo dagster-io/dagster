@@ -6,7 +6,9 @@ from typing import Generic, Optional
 from typing_extensions import TypeVar
 
 from dagster._annotations import public
-from dagster._core.definitions.partitions.definition.base import PartitionsDefinition
+from dagster._core.definitions.partitions.definition.partitions_definition import (
+    PartitionsDefinition,
+)
 from dagster._core.definitions.partitions.partition_key_range import PartitionKeyRange
 from dagster._core.instance import DynamicPartitionsStore
 

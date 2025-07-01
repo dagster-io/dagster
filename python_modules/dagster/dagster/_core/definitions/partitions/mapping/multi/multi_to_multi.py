@@ -3,14 +3,16 @@ from typing import NamedTuple, Optional, cast
 
 import dagster._check as check
 from dagster._annotations import beta
-from dagster._core.definitions.partitions.definition.base import PartitionsDefinition
 from dagster._core.definitions.partitions.definition.multi import MultiPartitionsDefinition
-from dagster._core.definitions.partitions.mapping.base import PartitionMapping
+from dagster._core.definitions.partitions.definition.partitions_definition import (
+    PartitionsDefinition,
+)
 from dagster._core.definitions.partitions.mapping.multi.base import (
     BaseMultiPartitionMapping,
     DimensionDependency,
     DimensionPartitionMapping,
 )
+from dagster._core.definitions.partitions.mapping.partition_mapping import PartitionMapping
 from dagster._serdes import whitelist_for_serdes
 
 

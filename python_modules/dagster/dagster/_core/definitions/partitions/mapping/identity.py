@@ -2,13 +2,15 @@ from datetime import datetime
 from typing import NamedTuple, Optional
 
 import dagster._check as check
-from dagster._core.definitions.partitions.definition.base import PartitionsDefinition
-from dagster._core.definitions.partitions.mapping.base import (
+from dagster._core.definitions.partitions.definition.partitions_definition import (
+    PartitionsDefinition,
+)
+from dagster._core.definitions.partitions.mapping.partition_mapping import (
     PartitionMapping,
     UpstreamPartitionsResult,
 )
-from dagster._core.definitions.partitions.subset.base import PartitionsSubset
 from dagster._core.definitions.partitions.subset.default import DefaultPartitionsSubset
+from dagster._core.definitions.partitions.subset.partitions_subset import PartitionsSubset
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.instance import DynamicPartitionsStore
 from dagster._serdes import whitelist_for_serdes

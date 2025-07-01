@@ -10,14 +10,17 @@ from dagster_shared.check.functions import CheckError
 import dagster._check as check
 from dagster._annotations import public
 from dagster._core.definitions.partitions.context import PartitionLoadingContext
-from dagster._core.definitions.partitions.definition.base import PartitionsDefinition
 from dagster._core.definitions.partitions.definition.dynamic import DynamicPartitionsDefinition
+from dagster._core.definitions.partitions.definition.partitions_definition import (
+    PartitionsDefinition,
+)
 from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
 from dagster._core.definitions.partitions.definition.time_window import (
     TimeWindowPartitionsDefinition,
 )
 from dagster._core.definitions.partitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.partitions.subset.default import DefaultPartitionsSubset
+from dagster._core.definitions.partitions.subset.partitions_subset import PartitionsSubset
 from dagster._core.definitions.partitions.utils.multi import (
     INVALID_STATIC_PARTITIONS_KEY_CHARACTERS,
     MULTIPARTITION_KEY_DELIMITER,
@@ -38,7 +41,7 @@ from dagster._core.types.pagination import PaginatedResults
 from dagster._time import get_current_datetime
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.partitions.subset.base import PartitionsSubset
+    from dagster._core.definitions.partitions.subset.partitions_subset import PartitionsSubset
 
 ALLOWED_PARTITION_DIMENSION_TYPES = (
     StaticPartitionsDefinition,

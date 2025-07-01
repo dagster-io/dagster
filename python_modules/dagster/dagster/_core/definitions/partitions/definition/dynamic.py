@@ -9,7 +9,9 @@ from dagster._core.definitions.dynamic_partitions_request import (
     DeleteDynamicPartitionsRequest,
 )
 from dagster._core.definitions.partitions.context import PartitionLoadingContext
-from dagster._core.definitions.partitions.definition.base import PartitionsDefinition
+from dagster._core.definitions.partitions.definition.partitions_definition import (
+    PartitionsDefinition,
+)
 from dagster._core.definitions.partitions.partition import Partition
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.instance import DynamicPartitionsStore
