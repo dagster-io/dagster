@@ -113,21 +113,15 @@ export const AssetSelectionSummaryListItemWithHealthStatus = React.memo(
                 control: loading ? (
                   <Spinner purpose="caption-text" />
                 ) : (
-                  <Box
-                    className={styles.statusCountListWrapper}
-                    border="right"
-                    padding={{right: 12}}
-                  >
-                    {statusJsx}
-                  </Box>
+                  <div className={styles.statusCountListWrapper}>{statusJsx}</div>
                 ),
               },
               {
                 key: 'count',
                 control: (
-                  <span>
+                  <Box padding={{left: 4}}>
                     {assetCount === 1 ? '1 asset' : `${numberFormatter.format(assetCount)} assets`}
-                  </span>
+                  </Box>
                 ),
               },
             ]}
