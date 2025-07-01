@@ -34,34 +34,47 @@ This will add a new file to the `components` directory of your Dagster project t
 
 :::tip
 
-`Model` is used to implement a YAML interface for a component. If your component only needs a Pythonic interface, you can use the `--no-model` flag when creating it:
+<PyObject section="components" module="dagster" object="Model" /> (`dg.Model` in the above example) is used to implement a YAML interface for a component. If your component only needs a Pythonic interface, you can use the `--no-model` flag when creating it:
 
 ```
 dg scaffold component ShellCommand --no-model
 ```
 
-This will allow you to implement an `__init__` method for your class, either manually or by using `@dataclasses.dataclass`.
+This will allow you to implement an `__init__` method for your class, either manually or by using [`@dataclasses.dataclass`](https://docs.python.org/3/library/dataclasses.html#dataclasses.dataclass).
 
 :::
 
 ### 2. Update the component Python class
 
-The next step is to define the information the component needs when it is instantiated.
-
-The `ShellCommand` component will need the following to be defined:
+The next step is to define the information the component will need when it is used. The `ShellCommand` component will need the following information:
 
 - The path to the shell script to be run
 - The assets the shell script is expected to produce
 
-The `ShellCommand` class inherits from <PyObject section="components" module="dagster" object="Resolvable" />, in addition to <PyObject section="components" module="dagster" object="Component" />. `Resolvable` handles deriving a YAML schema for the `ShellCommand` class based on what the class is annotated with. To simplify common use cases, Dagster provides annotations for common bits of configuration, such as `ResolvedAssetSpec`, which will handle exposing a schema for defining <PyObject section="assets" module="dagster" object="AssetSpec" pluralize /> from YAML and resolving them before instantiating the component.
-
-You can define the schema for the `ShellCommand` component and add it to the `ShellCommand` class as follows:
+The `ShellCommand` class inherits from <PyObject section="components" module="dagster" object="Resolvable" />, in addition to <PyObject section="components" module="dagster" object="Component" />. `Resolvable` handles deriving a YAML schema for the class that inherits from it based on what the class is annotated with. In our example, the `ShellCommand` class is annotated with `script_path` and `asset_specs`:
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/components/shell-script-component/with-config-schema.py"
   language="python"
   title="components/shell_command.py"
 />
+
+:::tip
+
+To simplify common use cases, Dagster provides models for common annotations, such as <PyObject section="components" module="dagster" object="ResolvedAssetSpec" />, which handles exposing a schema for defining <PyObject section="assets" module="dagster" object="AssetSpec" pluralize /> from YAML and resolving them before instantiating the component.
+
+The full list of models is:
+
+* <PyObject section="components" module="dagster" object="ResolvedAssetKey" />
+* <PyObject section="components" module="dagster" object="ResolvedAssetSpec" />
+* <PyObject section="components" module="dagster" object="AssetAttributesModel" />
+* <PyObject section="components" module="dagster" object="ResolvedAssetCheckSpec" />
+
+For more information, see the [Components Core Models API documentation](/api/dagster/components#core-models).
+
+:::
+
+#### Including metadata for your component
 
 Additionally, you can include metadata for your component by overriding the `get_spec` method. This allows you to set fields like `owners` and `tags` that will be visible in the generated documentation:
 
@@ -70,6 +83,12 @@ Additionally, you can include metadata for your component by overriding the `get
   language="python"
   title="components/shell_command.py"
 />
+
+:::note
+
+The example above differs slightly from the previous examples -- in order to override the `get_spec` method, we needed to create an `__init__` method.
+
+:::
 
 :::tip
 
