@@ -21,6 +21,7 @@ from dagster._core.errors import (
     DagsterUserCodeUnreachableError,
 )
 from dagster._core.execution.submit_instigator_runs import (
+    SkippedSensorRun,
     fetch_existing_runs_for_instigator,
     get_code_location_for_instigator,
     submit_instigator_run_request,
@@ -39,7 +40,7 @@ from dagster._core.scheduler.instigation import (
 from dagster._core.scheduler.scheduler import DEFAULT_MAX_CATCHUP_RUNS
 from dagster._core.storage.dagster_run import DagsterRun
 from dagster._core.storage.tags import SCHEDULED_EXECUTION_TIME_TAG
-from dagster._core.utils import InheritContextThreadPoolExecutor, make_new_run_id
+from dagster._core.utils import InheritContextThreadPoolExecutor
 from dagster._core.workspace.context import IWorkspaceProcessContext
 from dagster._daemon.utils import DaemonErrorCapture
 from dagster._scheduler.stale import resolve_stale_or_missing_assets
@@ -851,7 +852,7 @@ def _schedule_runs_at_time(
     )
     submit_run_request = (
         lambda run_request: submit_instigator_run_request(
-            run_id=make_new_run_id(),
+            run_id=None,
             run_request=run_request,
             workspace_process_context=workspace_process_context,
             remote_instigator=remote_schedule,
@@ -871,15 +872,20 @@ def _schedule_runs_at_time(
     for run_request_result in gen_run_request_results:
         yield run_request_result.error_info
 
-        if not isinstance(run_request_result.run, DagsterRun):
-            raise DagsterInvariantViolationError(
-                f"RunRequestResults for a schedule should only return DagsterRuns. Got {type(run_request_result.run)}."
+        if isinstance(run_request_result.run, SkippedSensorRun):
+            tick_context.add_run_info(
+                run_id=run_request_result.run.existing_run.run_id,
+                run_key=run_request_result.run_key,
             )
-        else:
+        elif isinstance(run_request_result.run, DagsterRun):
             run = check.not_none(run_request_result.run)
             check_for_debug_crash(debug_crash_flags, "RUN_LAUNCHED")
             tick_context.add_run_info(run_id=run.run_id, run_key=run_request_result.run_key)
             check_for_debug_crash(debug_crash_flags, "RUN_ADDED")
+        else:
+            raise DagsterInvariantViolationError(
+                f"RunRequestResults for a schedule should only return DagsterRuns. Got {type(run_request_result.run)}."
+            )
 
     check_for_debug_crash(debug_crash_flags, "TICK_SUCCESS")
     tick_context.update_state(TickStatus.SUCCESS)

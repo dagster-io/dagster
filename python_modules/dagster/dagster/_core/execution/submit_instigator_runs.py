@@ -45,7 +45,10 @@ def fetch_existing_runs_for_instigator(
 ) -> dict[str, DagsterRun]:
     run_keys = [run_request.run_key for run_request in run_requests if run_request.run_key]
 
-    if not run_keys:
+    if isinstance(remote_instigator, RemoteSensor) and not run_keys:
+        # for schedules, we still want to see if a run was emitted for the schedule evaluation, so only
+        # return early if it's a sensor.
+        # TODO - probably a better way to handle this
         return {}
 
     runs_with_run_keys: list[DagsterRun] = []
@@ -167,7 +170,7 @@ def _create_instigator_run(
 
 
 def submit_instigator_run_request(
-    run_id: str,
+    run_id: Optional[str],
     run_request: RunRequest,
     workspace_process_context: IWorkspaceProcessContext,
     remote_instigator: Union[RemoteSensor, RemoteSchedule],
@@ -181,7 +184,9 @@ def submit_instigator_run_request(
     schedule_origin = remote_instigator.get_remote_origin()
 
     run_key = run_request.run_key
-    run = (run_key and existing_runs_by_key.get(run_key)) or instance.get_run_by_id(run_id)
+    run = (run_key and existing_runs_by_key.get(run_key)) or (
+        instance.get_run_by_id(run_id) if run_id else None
+    )
 
     if run:
         if run.status != DagsterRunStatus.NOT_STARTED:
