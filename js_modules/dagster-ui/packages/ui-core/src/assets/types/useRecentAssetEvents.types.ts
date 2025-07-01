@@ -545,6 +545,9 @@ export type RecentAssetEventsQueryVariables = Types.Exact<{
   before?: Types.InputMaybe<Types.Scalars['String']['input']>;
   after?: Types.InputMaybe<Types.Scalars['String']['input']>;
   cursor?: Types.InputMaybe<Types.Scalars['String']['input']>;
+  partitions?: Types.InputMaybe<
+    Array<Types.Scalars['String']['input']> | Types.Scalars['String']['input']
+  >;
 }>;
 
 export type RecentAssetEventsQuery = {
@@ -1432,7 +1435,7 @@ export type LatestAssetPartitionsQuery = {
     | {__typename: 'AssetNotFoundError'};
 };
 
-export const RecentAssetEventsQueryVersion = '87240002f2ea0a20f6767d8a8de10df1499443d4b1d667f667b8fcb7a56ec735';
+export const RecentAssetEventsQueryVersion = '6459c0177836dfb98ba88222cdf6461c67b74bed82a41827449e6d47cfb35941';
 
 export const AssetPartitionEventsQueryVersion = '859d8d8bf982cc539c932d2fc071b373ca9836cfd083e3fab616d149e1b18646';
 

@@ -90,7 +90,7 @@ export const useAssetEventsFilters = ({assetKey, assetNode}: Config) => {
   );
 
   const partitionsFilter = useStaticSetFilter({
-    name: 'Partitions',
+    name: 'Partition',
     icon: 'partition',
     allValues: partitionValues,
     renderLabel: ({value}) => (
