@@ -6,7 +6,7 @@ last_update:
 sidebar_position: 30
 ---
 
-One of the hurdles in getting data from Bluesky is working within the rate limits. Let's go back and look at the `get_all_feed_items` function that extracts feed information. This function uses [tenacity](https://tenacity.readthedocs.io/en/latest/) to handle retries for the function `_get_feed_with_retries` and will back off requests if we begin to hit our limits.
+One of the hurdles in getting data from Bluesky is working within the rate limits. Let's go back and look at the `get_all_feed_items` function that extracts feed information. This function uses [tenacity](https://tenacity.readthedocs.io/en/latest) to handle retries for the function `_get_feed_with_retries` and will back off requests if we begin to hit our limits.
 
 <CodeExample
   path="docs_projects/project_atproto_dashboard/src/project_atproto_dashboard/defs/atproto.py"

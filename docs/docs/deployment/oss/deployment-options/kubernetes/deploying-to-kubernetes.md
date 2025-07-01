@@ -13,14 +13,14 @@ Dagster provides [Helm charts](https://github.com/dagster-io/dagster/tree/master
 
 To follow the steps in this guide, you'll need:
 
-- **Familiarity with [Docker](https://docs.docker.com/)**, and:
-  - **To have Docker installed**. [Docker installation guide](https://docs.docker.com/engine/install/)
+- **Familiarity with [Docker](https://docs.docker.com)**, and:
+  - **To have Docker installed**. [Docker installation guide](https://docs.docker.com/engine/install)
   - **Access to a Docker image registry**, such as Amazon Web Services ECR or DockerHub. If you're following along on your local machine, this isn't required.
-- **Familiarity with [Kubernetes](https://kubernetes.io/docs/home/)**, and:
-  - **To have `kubectl` installed**. [Kubernetes installation guide](https://kubernetes.io/docs/tasks/tools/)
-  - **An existing Kubernetes cluster**. To follow along on your local machine, [install Docker Desktop](https://docs.docker.com/desktop/kubernetes/) and turn on the included Kubernetes server.
-- **Familiarity with [Helm](https://helm.sh/docs/)**, and:
-  - **To have Helm 3 installed**. [Helm installation guide](https://helm.sh/docs/intro/install/)
+- **Familiarity with [Kubernetes](https://kubernetes.io/docs/home)**, and:
+  - **To have `kubectl` installed**. [Kubernetes installation guide](https://kubernetes.io/docs/tasks/tools)
+  - **An existing Kubernetes cluster**. To follow along on your local machine, [install Docker Desktop](https://docs.docker.com/desktop/kubernetes) and turn on the included Kubernetes server.
+- **Familiarity with [Helm](https://helm.sh/docs)**, and:
+  - **To have Helm 3 installed**. [Helm installation guide](https://helm.sh/docs/intro/install)
 - A Dagster project to deploy. You can also use the example project:
   ```bash
   dagster project from-example --example deploy_k8s --name deploy_k8s

@@ -4,7 +4,7 @@ description: Extract data with assets
 sidebar_position: 10
 ---
 
-In the first step in our pipeline, we will use [software-defined assets](/guides/build/assets) to load files into [DuckDB](https://duckdb.org/), an analytical database. This data will serve as the foundation for the rest of the ETL tutorial.
+In the first step in our pipeline, we will use [software-defined assets](/guides/build/assets) to load files into [DuckDB](https://duckdb.org), an analytical database. This data will serve as the foundation for the rest of the ETL tutorial.
 
 ## 1. Scaffold an asset
 

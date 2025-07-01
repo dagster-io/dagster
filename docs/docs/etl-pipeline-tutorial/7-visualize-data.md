@@ -24,7 +24,7 @@ There will now be a directory `dashboard` within the root of the project.
 └── uv.lock
 ```
 
-Change into that directory and install the necessary packages with [`npm`](https://www.npmjs.com/):
+Change into that directory and install the necessary packages with [`npm`](https://www.npmjs.com):
 
 <CliInvocationExample contents="cd dashboard && npm install" />
 
@@ -83,5 +83,5 @@ Congratulations! You've just built a fully functional, end-to-end data platform�
 ## Recommended next steps
 
 - Join our [Slack community](https://dagster.io/slack).
-- Continue learning with [Dagster University](https://courses.dagster.io/) courses.
+- Continue learning with [Dagster University](https://courses.dagster.io) courses.
 - Start a [free trial of Dagster+](https://dagster.cloud/signup) for your own project.

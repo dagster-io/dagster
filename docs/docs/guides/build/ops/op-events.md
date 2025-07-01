@@ -74,7 +74,7 @@ The following example demonstrates how you might use this functionality:
 
 Generally, you'd want to send this event directly after you persist the asset to your external system. All <PyObject section="ops" module="dagster" object="AssetMaterialization" /> events must define an `asset_key`, which is a unique identifier to describe the asset you are persisting. They can optionally include a `partition` if they're persisting a particular [partition](/guides/build/partitions-and-backfills/partitioning-assets) of an asset.
 
-If you're using [asset definitions](/guides/build/assets/), you don't need to record these events explicitly – the framework handles it for you.
+If you're using [asset definitions](/guides/build/assets), you don't need to record these events explicitly – the framework handles it for you.
 
 <CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/op_events.py" startAfter="start_asset_op" endBefore="end_asset_op" title="src/<project_name>/defs/ops.py"/>
 

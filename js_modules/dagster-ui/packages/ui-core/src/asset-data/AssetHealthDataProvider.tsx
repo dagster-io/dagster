@@ -1,8 +1,7 @@
-import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
+import {observeEnabled} from 'shared/app/observeEnabled.oss';
 
 import {ApolloClient, gql, useApolloClient} from '../apollo-client';
 import {showCustomAlert} from '../app/CustomAlertProvider';
-import {featureEnabled} from '../app/Flags';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {tokenForAssetKey, tokenToAssetKey} from '../asset-graph/Utils';
@@ -29,7 +28,7 @@ function init() {
       const assetKeys = keys.map(tokenToAssetKey);
 
       let healthResponse;
-      if (featureEnabled(FeatureFlag.flagUseNewObserveUIs)) {
+      if (observeEnabled()) {
         healthResponse = await client.query<AssetHealthQuery, AssetHealthQueryVariables>({
           query: ASSETS_HEALTH_INFO_QUERY,
           fetchPolicy: 'no-cache',
@@ -90,15 +89,22 @@ const memoizedAssetKeys = weakMapMemoize((assetKeys: AssetKeyInput[]) => {
   return assetKeys.map((key) => tokenForAssetKey(key));
 });
 
-export function useAssetsHealthData(
-  assetKeys: AssetKeyInput[],
-  thread: LiveDataThreadID = 'AssetHealth', // Use AssetHealth to get 250 batch size
-) {
-  const keys = memoizedAssetKeys(featureEnabled(FeatureFlag.flagUseNewObserveUIs) ? assetKeys : []);
-  const result = AssetHealthData.useLiveData(keys, thread);
+export function useAssetsHealthData({
+  assetKeys,
+  thread = 'AssetHealth', // Use AssetHealth to get 250 batch size
+  blockTrace = true,
+  skip = false,
+}: {
+  assetKeys: AssetKeyInput[];
+  thread?: LiveDataThreadID;
+  blockTrace?: boolean;
+  skip?: boolean;
+}) {
+  const keys = memoizedAssetKeys(observeEnabled() ? assetKeys : []);
+  const result = AssetHealthData.useLiveData(keys, thread, skip);
   useBlockTraceUntilTrue(
     'useAssetsHealthData',
-    !!(Object.keys(result.liveDataByNode).length === assetKeys.length),
+    skip || !blockTrace || !!(Object.keys(result.liveDataByNode).length === assetKeys.length),
   );
   return result;
 }

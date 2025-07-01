@@ -10,7 +10,7 @@ operations within your github repositories and with the tighter permissions scop
 allow for vs using a personal token.
 
 Presently, it provides a thin wrapper on the `github v4 graphql API
-<https://developer.github.com/v4/>`_.
+<https://developer.github.com/v4>`_.
 
 To use this integration, you'll first need to create a GitHub App for it.
 
@@ -18,12 +18,12 @@ To use this integration, you'll first need to create a GitHub App for it.
 #.
    **Create App**\ : Follow the instructions in
    `https://developer.github.com/apps/quickstart-guides/setting-up-your-development-environment/
-   <https://developer.github.com/apps/quickstart-guides/setting-up-your-development-environment/>`_\
+   <https://developer.github.com/apps/quickstart-guides/setting-up-your-development-environment>`_\
    , You will end up with a private key and App ID, which will be used when configuring the
    ``dagster-github`` resource. **Note** you will need to grant your app the relevent permissions
    for the API requests you want to make, for example to post issues it will need read/write access
    for the issues repository permission, more info on GitHub application permissions can be found
-   `here <https://developer.github.com/v3/apps/permissions/>`_
+   `here <https://developer.github.com/v3/apps/permissions>`_
 
 #.
    **Install App**\ : Follow the instructions in

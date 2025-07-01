@@ -248,6 +248,14 @@ export class LiveDataThreadManager<T> {
     return this.cache[key];
   }
 
+  public pauseThread(threadID: LiveDataThreadID) {
+    this.threads[threadID]?.pause();
+  }
+
+  public unpauseThread(threadID: LiveDataThreadID) {
+    this.threads[threadID]?.unpause();
+  }
+
   public _markKeysRequested(keys: string[]) {
     const requestTime = Date.now();
     keys.forEach((key) => {

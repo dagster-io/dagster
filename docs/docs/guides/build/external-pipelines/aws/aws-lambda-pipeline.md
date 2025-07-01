@@ -12,7 +12,7 @@ This article focuses on using an out-of-the-box Amazon Web Services (AWS) Lambda
 
 :::
 
-This article covers how to use [Dagster Pipes](/guides/build/external-pipelines/) with Dagster's AWS Lambda integration to invoke a Lambda function and execute external code.
+This article covers how to use [Dagster Pipes](/guides/build/external-pipelines) with Dagster's AWS Lambda integration to invoke a Lambda function and execute external code.
 
 Dagster Pipes allows your code to interact with Dagster outside of a full Dagster environment. The environment only needs to contain `dagster-pipes`, a single-file Python package with no dependencies that can be installed from PyPI or easily vendored. `dagster-pipes` handles streaming `stdout`/`stderr` and Dagster events back to the orchestration process.
 
@@ -167,7 +167,7 @@ In this step, you'll invoke the AWS Lambda function you defined in [Step 1](#ste
    dg launch --assets lambda_pipes_asset
    ```
 
-2. Navigate to [localhost:3000](http://localhost:3000/), where you should see the UI.
+2. Navigate to [localhost:3000](http://localhost:3000), where you should see the UI.
 
 3. Click **Materialize** near the top right corner of the page, then click **View** on the **Launched Run** popup. Wait for the run to complete, and the event log should look like this:
 

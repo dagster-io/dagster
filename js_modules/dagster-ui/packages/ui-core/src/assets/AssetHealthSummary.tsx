@@ -4,21 +4,20 @@ import {
   Body,
   Box,
   Colors,
+  HoverButton,
   Icon,
   IconName,
   Popover,
   Skeleton,
   SubtitleLarge,
   Tag,
-  UnstyledButton,
   ifPlural,
 } from '@dagster-io/ui-components';
 import React, {useMemo} from 'react';
 import {Link} from 'react-router-dom';
-import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
+import {observeEnabled} from 'shared/app/observeEnabled.oss';
 
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
-import {featureEnabled} from '../app/Flags';
 import {assertUnreachable} from '../app/Util';
 import {useAssetHealthData} from '../asset-data/AssetHealthDataProvider';
 import {
@@ -39,7 +38,7 @@ import {numberFormatter} from '../ui/formatters';
 
 export const AssetHealthSummary = React.memo(
   ({assetKey, iconOnly}: {assetKey: {path: string[]}; iconOnly?: boolean}) => {
-    if (!featureEnabled(FeatureFlag.flagUseNewObserveUIs)) {
+    if (!observeEnabled()) {
       return null;
     }
 
@@ -59,9 +58,9 @@ const AssetHealthSummaryImpl = React.memo(
     function content() {
       if (iconOnly) {
         return (
-          <UnstyledButton style={{display: 'flex', alignItems: 'center', padding: 8}}>
+          <HoverButton style={{padding: 8}}>
             <Icon name={iconName} color={iconColor} />
-          </UnstyledButton>
+          </HoverButton>
         );
       }
       return (

@@ -7,7 +7,7 @@ technologies including dbt and Sling. This allows you to visualize relationships
 and their dependencies.
 
 
-Related documentation pages: `Using Dagster with Sigma <https://docs.dagster.io/integrations/libraries/sigma/>`_.
+Related documentation pages: `Using Dagster with Sigma <https://docs.dagster.io/integrations/libraries/sigma>`_.
 
 .. currentmodule:: dagster_sigma
 

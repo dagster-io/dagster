@@ -16,7 +16,7 @@ By default, Dagster+ Serverless will package your code as PEX files and deploy t
 
 ## Add dependencies
 
-You can add dependencies by including the corresponding Python libraries in your Dagster project's `setup.py` file. These should follow [PEP 508](https://peps.python.org/pep-0508/).
+You can add dependencies by including the corresponding Python libraries in your Dagster project's `setup.py` file. These should follow [PEP 508](https://peps.python.org/pep-0508).
 
 <CodeExample
   path="docs_snippets/docs_snippets/dagster-plus/deployment/serverless/runtime-environment/example_setup.py"

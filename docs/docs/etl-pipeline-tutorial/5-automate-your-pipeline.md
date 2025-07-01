@@ -39,7 +39,7 @@ This will trigger the asset automatically when its upstream dependencies have co
 
 # 3. Enabling automation
 
-Run `dg dev` (if it is not already running) and go to the Dagster UI [127.0.0.1:3000](127.0.0.1:3000). We can now enable the automation condition:
+Run `dg dev` (if it is not already running) and go to the Dagster UI [http://127.0.0.1:3000](http://127.0.0.1:3000). We can now enable the automation condition:
 
 1. Reload your Definitions.
 2. Click on **Automation**.

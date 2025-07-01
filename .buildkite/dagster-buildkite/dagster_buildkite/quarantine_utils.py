@@ -37,7 +37,7 @@ def get_buildkite_quarantined_objects(
 
             for test in response.json():
                 scope = test.get("scope", "")
-                name = test.get("name", "")
+                name = " ".join(test.get("name", "").split())
                 web_url = test.get("web_url", "")
                 quarantined_object = QuarantinedObject(scope, name, web_url)
                 quarantined_objects.add(quarantined_object)

@@ -16,8 +16,8 @@ from dagster._core.definitions.metadata.source_code import (
 )
 from dagster._core.test_utils import ensure_dagster_tests_import
 from dagster._utils.env import environ
-from dagster.components.core.context import ComponentLoadContext
 from dagster.components.core.load_defs import build_component_defs
+from dagster.components.core.tree import ComponentTree
 from dagster.components.resolved.core_models import AssetAttributesModel, OpSpec
 from dagster.components.resolved.errors import ResolutionException
 from dagster.components.testing import TestOpCustomization, TestTranslation
@@ -317,7 +317,7 @@ def test_state_path(
 
 
 def test_python_interface(dbt_path: Path):
-    context = ComponentLoadContext.for_test()
+    context = ComponentTree.for_test().load_context
     assert DbtProjectComponent(
         project=DbtProject(dbt_path),
     ).build_defs(context)

@@ -53,7 +53,7 @@ The asset check is using the same `DuckDBResource` resource we defined for the a
 ```
 :::
 
-Run `dg dev` (if it is not already running) and go to the Dagster UI [127.0.0.1:3000](127.0.0.1:3000). You should now see that an asset check is associated with the `joined_data` asset:
+Run `dg dev` (if it is not already running) and go to the Dagster UI [http://127.0.0.1:3000](http://127.0.0.1:3000). You should now see that an asset check is associated with the `joined_data` asset:
 
 ![2048 resolution](/images/tutorial/etl-tutorial/asset-check.png)
 

@@ -3,7 +3,7 @@ import clsx from 'clsx';
 import isEqual from 'lodash/isEqual';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
-import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
+import {observeEnabled} from 'shared/app/observeEnabled.oss';
 import {UserDisplay} from 'shared/runs/UserDisplay.oss';
 
 import {
@@ -20,7 +20,6 @@ import {assetNodeLatestEventContent, buildAssetNodeStatusContent} from './AssetN
 import {LiveDataForNode, LiveDataForNodeWithStaleData} from './Utils';
 import styles from './css/AssetNode2025.module.css';
 import {ASSET_NODE_TAGS_HEIGHT} from './layout';
-import {featureEnabled} from '../app/Flags';
 import {useAssetAutomationData} from '../asset-data/AssetAutomationDataProvider';
 import {useAssetLiveData} from '../asset-data/AssetLiveDataProvider';
 import {AssetAutomationFragment} from '../asset-data/types/AssetAutomationDataProvider.types';
@@ -118,7 +117,7 @@ export const AssetNodeWithLiveData = ({
           </AssetNodeRow>
         )}
         {facets.has(AssetNodeFacet.Freshness) &&
-          (featureEnabled(FeatureFlag.flagUseNewObserveUIs) ? (
+          (observeEnabled() ? (
             <AssetNodeFreshnessRow definition={definition} liveData={liveData} />
           ) : (
             <AssetNodeFreshnessRowOld liveData={liveData} />
@@ -127,7 +126,7 @@ export const AssetNodeWithLiveData = ({
           <AssetNodeAutomationRow definition={definition} automationData={automationData} />
         )}
         {facets.has(AssetNodeFacet.Status) &&
-          (featureEnabled(FeatureFlag.flagUseNewObserveUIs) ? (
+          (observeEnabled() ? (
             <AssetNodeHealthRow definition={definition} liveData={liveData} />
           ) : (
             <AssetNodeStatusRow definition={definition} liveData={liveData} />

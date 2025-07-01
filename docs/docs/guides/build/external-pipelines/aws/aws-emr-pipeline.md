@@ -6,7 +6,7 @@ sidebar_position: 300
 
 import ScaffoldProject from '@site/docs/partials/\_ScaffoldProject.md';
 
-This article covers how to use [Dagster Pipes](/guides/build/external-pipelines/) with [AWS EMR](https://aws.amazon.com/emr/).
+This article covers how to use [Dagster Pipes](/guides/build/external-pipelines) with [AWS EMR](https://aws.amazon.com/emr).
 
 The [dagster-aws](/api/libraries/dagster-aws) integration library provides the <PyObject section="libraries" object="pipes.PipesEMRClient" module="dagster_aws" /> resource, which can be used to launch AWS EMR jobs from Dagster assets and ops. Dagster can receive regular events such as logs, asset checks, or asset materializations from jobs launched with this client. Using it requires minimal code changes to your EMR jobs.
 
@@ -31,7 +31,7 @@ To run the examples, you'll need to:
 
 Choose one of the [options](https://spark.apache.org/docs/latest/api/python/user_guide/python_packaging.html#python-package-management) to install `dagster-pipes` in the EMR environment.
 
-For example, this `Dockerfile` can be used to package all required dependencies into a single [PEX](https://docs.pex-tool.org/) file (in practice, the most straightforward way to package Python dependencies for EMR jobs):
+For example, this `Dockerfile` can be used to package all required dependencies into a single [PEX](https://docs.pex-tool.org) file (in practice, the most straightforward way to package Python dependencies for EMR jobs):
 
 ```Dockerfile file=/guides/dagster/dagster_pipes/emr/Dockerfile
 # this Dockerfile can be used to create a venv archive for PySpark on AWS EMR

@@ -22,7 +22,7 @@ To retrieve data from GitHub, we are going to borrow code from the [dagster-open
   title="src/project_ask_ai_dagster/defs/github.py"
 />
 
-Because we are working with unstructured data, we need to process it in a specific format. We can use [LangChain](https://www.langchain.com/) and return the data as `Documents`. LangChain is a framework designed for building applications with LLMs. It makes chaining tasks for AI applications, like RAG, easier to build. By converting the Github data into `Documents`, it will be easier to upload to our retrieval system later on.
+Because we are working with unstructured data, we need to process it in a specific format. We can use [LangChain](https://www.langchain.com) and return the data as `Documents`. LangChain is a framework designed for building applications with LLMs. It makes chaining tasks for AI applications, like RAG, easier to build. By converting the Github data into `Documents`, it will be easier to upload to our retrieval system later on.
 
 Documents also allow us to add metadata. Because the metadata is unique to discussions and issues, we will create two separate methods in the resource to process the data: `convert_discussions_to_documents` and `convert_issues_to_documents`.
 
@@ -38,7 +38,7 @@ We now have everything we need for the `GithubResource` so we can initialize it 
 
 ## Web scraping
 
-To scrape the Dagster documentation website, we will create a separate resource. Since the Dagster site does not have an API, we will have to scrape the data from the pages themselves. The `SitemapScraper` resource will have two functions, to parse the site map to get the individual urls and the ability to scrape page content. The Python framework [BeautifulSoup](https://www.crummy.com/software/BeautifulSoup/) can assist in scraping the contents of a page.
+To scrape the Dagster documentation website, we will create a separate resource. Since the Dagster site does not have an API, we will have to scrape the data from the pages themselves. The `SitemapScraper` resource will have two functions, to parse the site map to get the individual urls and the ability to scrape page content. The Python framework [BeautifulSoup](https://www.crummy.com/software/BeautifulSoup) can assist in scraping the contents of a page.
 
 The first step will be taking in the sitemap URL and parsing the XML into a list of all the individual pages:
 

@@ -6,17 +6,17 @@ title: Op jobs
 
 :::note
 
-Looking to materialize [asset definitions](/guides/build/assets/) instead of ops? Check out the [asset jobs](/guides/build/jobs/asset-jobs) documentation.
+Looking to materialize [asset definitions](/guides/build/assets) instead of ops? Check out the [asset jobs](/guides/build/jobs/asset-jobs) documentation.
 
 :::
 
-[Jobs](/guides/build/jobs/) are the main unit of execution and monitoring in Dagster. An op job executes a [graph](/guides/build/ops/graphs) of [ops](/guides/build/ops/).
+[Jobs](/guides/build/jobs) are the main unit of execution and monitoring in Dagster. An op job executes a [graph](/guides/build/ops/graphs) of [ops](/guides/build/ops).
 
 Op jobs can be launched in a few different ways:
 
 - Manually from the Dagster UI
-- At fixed intervals, by [schedules](/guides/automate/schedules/)
-- When external changes occur, using [sensors](/guides/automate/sensors/)
+- At fixed intervals, by [schedules](/guides/automate/schedules)
+- When external changes occur, using [sensors](/guides/automate/sensors)
 
 ## Relevant APIs
 
@@ -44,8 +44,8 @@ In this example, the `add_one` op depends on the `return_five` op's output. Beca
 
 When defining an op job, you can provide any of the following:
 
-- [Resources](/guides/build/external-resources/)
-- [Configuration](/guides/operate/configuration/)
+- [Resources](/guides/build/external-resources)
+- [Configuration](/guides/operate/configuration)
 - [Hooks](/guides/build/ops/op-hooks)
 - [Tags](/guides/build/assets/metadata-and-tags/tags) and other metadata
 - An [executor](/guides/operate/run-executors)
@@ -100,7 +100,7 @@ Instead of needing to configure every op and resource individually when launchin
 
 ## Testing op jobs
 
-Dagster has built-in support for testing, including separating business logic from environments and setting explicit expectations on uncontrollable inputs. Refer to the [testing documentation](/guides/test/) for more info and examples.
+Dagster has built-in support for testing, including separating business logic from environments and setting explicit expectations on uncontrollable inputs. Refer to the [testing documentation](/guides/test) for more info and examples.
 
 ## Executing op jobs
 

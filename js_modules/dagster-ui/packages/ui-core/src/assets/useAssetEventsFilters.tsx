@@ -1,9 +1,8 @@
 import {Box, Icon} from '@dagster-io/ui-components';
 import React, {useCallback, useMemo} from 'react';
-import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
+import {observeEnabled} from 'shared/app/observeEnabled.oss';
 
 import {AssetKey} from './types';
-import {featureEnabled} from '../app/Flags';
 import {AssetEventHistoryEventTypeSelector} from '../graphql/types';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {TruncatedTextWithFullTextOnHover} from '../nav/getLeftNavItemsForOption';
@@ -91,7 +90,7 @@ export const useAssetEventsFilters = ({assetKey, assetNode}: Config) => {
   );
 
   const partitionsFilter = useStaticSetFilter({
-    name: 'Partitions',
+    name: 'Partition',
     icon: 'partition',
     allValues: partitionValues,
     renderLabel: ({value}) => (
@@ -176,7 +175,7 @@ export const useAssetEventsFilters = ({assetKey, assetNode}: Config) => {
 
   const filters = useMemo(() => {
     const filters = [];
-    if (featureEnabled(FeatureFlag.flagUseNewObserveUIs)) {
+    if (observeEnabled()) {
       filters.push(statusFilter);
     }
     filters.push(dateRangeFilter);

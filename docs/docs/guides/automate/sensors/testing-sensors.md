@@ -86,7 +86,7 @@ This sensor uses the `context` argument. To invoke it, we need to provide one:
 
 **Testing sensors with resources**
 
-For sensors which utilize [resources](/guides/build/external-resources/), you can provide the necessary resources when invoking the sensor function.
+For sensors which utilize [resources](/guides/build/external-resources), you can provide the necessary resources when invoking the sensor function.
 
 Below is a test for the `process_new_users_sensor` that we defined in "[Using resources in sensors](/guides/automate/sensors/using-resources-in-sensors)", which uses the `users_api` resource.
 

@@ -17,7 +17,7 @@ You can develop for Dagster using macOS, Linux, or Windows. If using Windows, yo
    cd dagster
    ```
 
-2. [Install uv](https://docs.astral.sh/uv/getting-started/installation/). You can use `curl` to download the script and execute it with `sh`:
+2. [Install uv](https://docs.astral.sh/uv/getting-started/installation). You can use `curl` to download the script and execute it with `sh`:
 
    ```bash
    curl -LsSf https://astral.sh/uv/install.sh | sh
@@ -32,7 +32,7 @@ You can develop for Dagster using macOS, Linux, or Windows. If using Windows, yo
 
    Dagster supports Python 3.9 through 3.12.
 
-4. Ensure that you have a supported version of [node](https://nodejs.org/en/download) (20.X and above) by running `node -v`, and that you have [yarn](https://yarnpkg.com/lang/en/) installed. Once you have node installed, you can use `npm` to install yarn.
+4. Ensure that you have a supported version of [node](https://nodejs.org/en/download) (20.X and above) by running `node -v`, and that you have [yarn](https://yarnpkg.com/lang/en) installed. Once you have node installed, you can use `npm` to install yarn.
 
    ```bash
    npm install --global yarn

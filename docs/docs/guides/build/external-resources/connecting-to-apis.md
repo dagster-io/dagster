@@ -8,7 +8,7 @@ When building a data pipeline, you'll likely need to connect to several external
 
 :::note
 
-This guide assumes familiarity with [assets](/guides/build/assets/) and [resources](/guides/build/external-resources/).
+This guide assumes familiarity with [assets](/guides/build/assets) and [resources](/guides/build/external-resources).
 
 :::
 

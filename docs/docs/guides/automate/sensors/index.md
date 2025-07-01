@@ -22,7 +22,7 @@ Examples of actions include:
 
 :::tip
 
-An alternative to polling with sensors is to push events to Dagster using the [Dagster API](/guides/operate/graphql/).
+An alternative to polling with sensors is to push events to Dagster using the [Dagster API](/guides/operate/graphql).
 
 :::
 
@@ -31,8 +31,8 @@ An alternative to polling with sensors is to push events to Dagster using the [D
 
 To follow the steps in this guide, you'll need:
 
-- Familiarity with [assets](/guides/build/assets/)
-- Familiarity with [jobs](/guides/build/jobs/)
+- Familiarity with [assets](/guides/build/assets)
+- Familiarity with [jobs](/guides/build/jobs)
 
 </details>
 

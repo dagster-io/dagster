@@ -4,7 +4,7 @@ description: Transform data with dbt
 sidebar_position: 20
 ---
 
-A data platform typically involves people in various roles working together, each contributing in different ways. Some individuals will be more involved in certain areas than others. For example, with [dbt](https://www.getdbt.com/), analysts may focus primarily on modeling the data, but still want their models integrated into the overall pipeline.
+A data platform typically involves people in various roles working together, each contributing in different ways. Some individuals will be more involved in certain areas than others. For example, with [dbt](https://www.getdbt.com), analysts may focus primarily on modeling the data, but still want their models integrated into the overall pipeline.
 
 In this step, we will incorporate a dbt project to model the data we loaded with DuckDB.
 

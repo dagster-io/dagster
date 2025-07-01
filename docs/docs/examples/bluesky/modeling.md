@@ -6,7 +6,7 @@ last_update:
 sidebar_position: 40
 ---
 
-After running the ingestion assets, we will have all the data we need in R2 to start modeling. We will use [dbt](https://www.getdbt.com/) to handle our transformation logic and [DuckDB](https://duckdb.org/) as our query engine. We will combine both of these together and add them into our Dagster asset graph.
+After running the ingestion assets, we will have all the data we need in R2 to start modeling. We will use [dbt](https://www.getdbt.com) to handle our transformation logic and [DuckDB](https://duckdb.org) as our query engine. We will combine both of these together and add them into our Dagster asset graph.
 
 The first thing to do is set up our dbt project. We will configure the connection details for the R2 bucket and the DuckDB database in the `profiles.yml` file. We will define two profiles, each with their own schema and path for our dev and production environments.
 

@@ -209,6 +209,7 @@ class DefsColumn(str, Enum):
     TAGS = "tags"
     METADATA = "metadata"
     CRON = "cron"
+    IS_EXECUTABLE = "is_executable"
 
 
 # columns that are potentially truncated
@@ -253,6 +254,8 @@ def _supports_column(column: DefsColumn, defs_type: DefsType) -> bool:
         return defs_type in (DefsType.ASSET,)
     elif column == DefsColumn.CRON:
         return defs_type in (DefsType.SCHEDULE,)
+    elif column == DefsColumn.IS_EXECUTABLE:
+        return defs_type in (DefsType.ASSET,)
     else:
         raise ValueError(f"Invalid column: {column}")
 
@@ -272,6 +275,8 @@ def _get_asset_value(column: DefsColumn, asset: DgAssetMetadata) -> Optional[str
         return "\n".join(k if not v else f"{k}: {v}" for k, v in asset.tags)
     elif column == DefsColumn.METADATA:
         return "\n".join(k if not v else f"{k}: {v}" for k, v in asset.metadata)
+    elif column == DefsColumn.IS_EXECUTABLE:
+        return str(asset.is_executable)
     else:
         raise ValueError(f"Invalid column: {column}")
 
@@ -339,7 +344,9 @@ def _get_value(column: DefsColumn, defs_type: DefsType, defn: Any) -> Optional[T
 
 def _get_table(columns: Sequence[DefsColumn], defs_type: DefsType, defs: Sequence[Any]) -> "Table":
     columns_to_display = [column for column in columns if _supports_column(column, defs_type)]
-    table = DagsterInnerTable([column.value.capitalize() for column in columns_to_display])
+    table = DagsterInnerTable(
+        [column.value.replace("_", " ").capitalize() for column in columns_to_display]
+    )
     table.columns[-1].max_width = 100
 
     for column_type, table_column in zip(columns_to_display, table.columns):

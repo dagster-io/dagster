@@ -2,7 +2,7 @@
 Weights & Biases (dagster-wandb)
 ################################
 
-This library provides a Dagster integration with `Weights & Biases <https://wandb.ai/>`_.
+This library provides a Dagster integration with `Weights & Biases <https://wandb.ai>`_.
 
 Use Dagster and Weights & Biases (W&B) to orchestrate your MLOps pipelines and maintain ML assets.
 

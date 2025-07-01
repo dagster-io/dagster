@@ -8,7 +8,7 @@ import OpsNote from '@site/docs/partials/\_OpsNote.md';
 
 <OpsNote />
 
-To organize the [ops](/guides/build/ops/) inside a [job](/guides/build/jobs/op-jobs), you can nest sets of ops into sub-graphs.
+To organize the [ops](/guides/build/ops) inside a [job](/guides/build/jobs/op-jobs), you can nest sets of ops into sub-graphs.
 
 ## Relevant APIs
 

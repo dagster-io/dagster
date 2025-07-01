@@ -8,7 +8,7 @@ import ScaffoldAsset from '@site/docs/partials/\_ScaffoldAsset.md';
 
 <ScaffoldAsset />
 
-Dagster's [resources](/guides/build/external-resources/) system can be used with sensors to make it easier to call out to external systems and to make components of a sensor easier to plug in for testing purposes.
+Dagster's [resources](/guides/build/external-resources) system can be used with sensors to make it easier to call out to external systems and to make components of a sensor easier to plug in for testing purposes.
 
 To specify resource dependencies, annotate the resource as a parameter to the sensor's function. Resources are provided by attaching them to your <PyObject section="definitions" module="dagster" object="Definitions" /> call.
 

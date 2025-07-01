@@ -53,7 +53,10 @@ export const AssetEvents = ({
   });
 
   const combinedParams = useMemo(() => {
-    const combinedParams: Parameters<typeof usePaginatedAssetEvents>[1] = {...(params as any)};
+    const combinedParams: Parameters<typeof usePaginatedAssetEvents>[1] = {
+      asOf: params.asOf,
+    };
+
     if (filterState.dateRange) {
       if (filterState.dateRange.end) {
         combinedParams.before = filterState.dateRange.end;
@@ -61,6 +64,9 @@ export const AssetEvents = ({
       if (filterState.dateRange.start) {
         combinedParams.after = filterState.dateRange.start;
       }
+    }
+    if (filterState.partitions) {
+      combinedParams.partitions = filterState.partitions;
     }
     if (filterState.status) {
       if (filterState.status.length === 1) {
@@ -70,7 +76,7 @@ export const AssetEvents = ({
       }
     }
     return combinedParams;
-  }, [params, filterState.dateRange, filterState.status]);
+  }, [params.asOf, filterState.dateRange, filterState.status, filterState.partitions]);
 
   const {events, fetchMore, fetchLatest, loading} = usePaginatedAssetEvents(
     assetKey,
@@ -86,6 +92,7 @@ export const AssetEvents = ({
     combinedParams.after,
     combinedParams.before,
     combinedParams.statuses,
+    combinedParams.partitions,
   ]);
 
   const grouped = useGroupedEvents('time', events, []);
@@ -124,8 +131,10 @@ export const AssetEvents = ({
 
   const hasFilter =
     !isEqual(combinedParams.statuses, ALL_EVENT_TYPES) ||
+    combinedParams.partitions !== undefined ||
     combinedParams.before !== undefined ||
     combinedParams.after !== undefined;
+
   if (!loading && !events.length && !hasFilter) {
     return (
       <Box padding={{horizontal: 24, vertical: 64}}>

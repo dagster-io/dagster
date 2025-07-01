@@ -12,7 +12,7 @@ This article focuses on using an out-of-the-box Kubernetes resource. For further
 
 :::
 
-This article covers how to use [Dagster Pipes](/guides/build/external-pipelines/) with Dagster's [Kubernetes integration](/integrations/libraries/kubernetes) to launch Kubernetes pods and execute external code.
+This article covers how to use [Dagster Pipes](/guides/build/external-pipelines) with Dagster's [Kubernetes integration](/integrations/libraries/kubernetes) to launch Kubernetes pods and execute external code.
 
 Pipes allows your code to interact with Dagster outside of a full Dagster environment. Instead, the environment only needs to contain [`dagster-pipes`](https://pypi.org/project/dagster-pipes), a single-file Python package with no dependencies that can be installed from PyPI or easily vendored. `dagster-pipes` handles streaming `stdout`/`stderr` and Dagster events back to the orchestration process.
 
@@ -32,7 +32,7 @@ To run the examples, you'll need to:
   ```bash
   uv pip install dagster-k8s
   ```
-- A Kubernetes cluster. This can be an existing cluster, or, if you're working locally, you can use [kind](https://kind.sigs.k8s.io/) or [Docker Desktop](https://docs.docker.com/desktop/kubernetes/).
+- A Kubernetes cluster. This can be an existing cluster, or, if you're working locally, you can use [kind](https://kind.sigs.k8s.io) or [Docker Desktop](https://docs.docker.com/desktop/kubernetes).
 
 ## Step 1: Define the external Kubernetes code container
 
@@ -220,7 +220,7 @@ In this step, you'll run the Kubernetes container you defined in [Step 1](#step-
    dg dev
    ```
 
-2. Navigate to [localhost:3000](http://localhost:3000/), where you should see the UI.
+2. Navigate to [localhost:3000](http://localhost:3000), where you should see the UI.
 
 3. Click **Materialize** near the top right corner of the page, then click **View** on the **Launched Run** popup. Wait for the run to complete, and the event log should look like this:
 
