@@ -51,9 +51,9 @@ dayjs.updateLocale('en', {
 // Helper: returns ms until the relative time string will change for a given timestamp.
 // Used for timing the next update when displaying a relative time.
 //
-export function getNextFromNowUpdateMs(unixTimestamp: number): number {
+export function getNextFromNowUpdateMs(unixSeconds: number): number {
   const now = dayjs();
-  const then = dayjs(unixTimestamp * 1000);
+  const then = dayjs(unixSeconds * 1000);
 
   let currentUnit: ThresholdUnit = 'second';
   let currentDiff = 0;
@@ -75,7 +75,7 @@ export function getNextFromNowUpdateMs(unixTimestamp: number): number {
     // Check if we're within this threshold's range or if it's the last one
     if (!threshold.r || currentDiff <= threshold.r) {
       // Found our current threshold. The time the UI needs to refresh next
-      // is the lower of 1) the next threshold and 2) an adidtional unit in
+      // is the lower of 1) the next threshold and 2) an additional unit in
       // our current threshold. Looking at both options is necessary for
       // the "90 seconds => 2 minutes" breakpoint.
       const nextThreshold = thresholds[i + 1];

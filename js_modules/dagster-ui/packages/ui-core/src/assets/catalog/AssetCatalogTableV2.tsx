@@ -49,8 +49,6 @@ import {LaunchAssetExecutionButton} from '../LaunchAssetExecutionButton';
 import {asAssetKeyInput} from '../asInput';
 import {AssetTableFragment} from '../types/AssetTableFragment.types';
 
-import '../../util/dayjsExtensions';
-
 export const AssetCatalogTableV2 = React.memo(() => {
   const {assets, loading: assetsLoading, error} = useAllAssets();
   useBlockTraceUntilTrue('useAllAssets', !!assets?.length && !assetsLoading);

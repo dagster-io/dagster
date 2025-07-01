@@ -31,8 +31,6 @@ import {ScheduleSwitchFragment} from '../schedules/types/ScheduleSwitchFragment.
 import {SensorSwitch} from '../sensors/SensorSwitch';
 import {SensorSwitchFragment} from '../sensors/types/SensorSwitchFragment.types';
 
-import '../util/dayjsExtensions';
-
 interface JobRowProps {
   index: number;
   name: string;
