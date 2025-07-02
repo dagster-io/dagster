@@ -124,6 +124,8 @@ export abstract class LocationBaseDataFetcher<TData, TVariables extends Operatio
         nextData[location] = data;
         this.data = nextData;
         this.notifySubscribers();
+      } else {
+        console.error('No data or error returned from fetchLocationData');
       }
     });
   }
