@@ -680,6 +680,11 @@ class SensorDefinition(IHasInternalInit):
         if evaluation_fn is None:
             raise DagsterInvalidDefinitionError("Must provide evaluation_fn to SensorDefinition.")
 
+        if name:
+            self._name = check_valid_name(name)
+        else:
+            self._name = evaluation_fn.__name__
+
         if (
             sum(
                 [
@@ -706,6 +711,8 @@ class SensorDefinition(IHasInternalInit):
                     ),
                 )
             ]
+        elif asset_selection:
+            targets = [AutomationTarget.from_coercible(asset_selection, automation_name=self._name)]
         elif job:
             targets = [AutomationTarget.from_coercible(job)]
         elif job_name:
@@ -716,11 +723,6 @@ class SensorDefinition(IHasInternalInit):
             targets = [AutomationTarget.from_coercible(job) for job in jobs]
         else:
             targets = []
-
-        if name:
-            self._name = check_valid_name(name)
-        else:
-            self._name = evaluation_fn.__name__
 
         self._raw_fn: RawSensorEvaluationFunction = check.callable_param(
             evaluation_fn, "evaluation_fn"
@@ -742,9 +744,7 @@ class SensorDefinition(IHasInternalInit):
         self._default_status = check.inst_param(
             default_status, "default_status", DefaultSensorStatus
         )
-        self._asset_selection = (
-            AssetSelection.from_coercible(asset_selection) if asset_selection is not None else None
-        )
+        self._asset_selection = None
         validate_resource_annotated_function(self._raw_fn)
         resource_arg_names: set[str] = {arg.name for arg in get_resource_args(self._raw_fn)}
 
