@@ -1,6 +1,6 @@
 ---
 title: 'Real-time insights'
-description: Dagster Freshness policies help you understand which of your assets have materialized recently and which ones are running behind - a key component of asset health.
+description: Using real-time insights, you can gain visibility into historical asset health and usage metrics.
 sidebar_position: 100
 ---
 
@@ -23,7 +23,7 @@ To access new insights views, click **Insights** in the top navigation bar in th
 
 Key asset health metrics like materialization and failure count are displayed front and center. To scope the view to a specific set of assets, input an asset selection to the search bar. Or, to understand the specific events in a time slice, click a datapoint in the line chart.
 
-The insights view also features activity charts that bucket events by hour. This is helpful for understanding scheduling and automation behaviors. 
+The insights view also features activity charts that bucket events by hour. This is helpful for understanding scheduling and automation behaviors.
 
 ![Activity charts](/images/guides/operate/insights_v2/activity_charts.png)
 
@@ -31,14 +31,14 @@ The insights view also features activity charts that bucket events by hour. This
 
 The UI will continue to display existing [built-in metrics](https://docs.dagster.io/guides/monitor/insights#built-in-metrics) alongside new asset health metrics:
 
-| Metric               | Description                                                                                                                                                                                                                                      |
-| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Time to resolution      | Duration an asset spent in a failed state before materializing. |
-| Materialization success rate    | Percentage of successful executions.                                                                               |
-| Materialization failure count     | Number of times an asset failed to materialize.                                                                                                                                                                      |
-| Freshness pass rate         | Percentage of time an asset was fresh.                                                                                                             |
-| Freshness warning and failure counts        | Number of times an asset entered a degraded freshness state.                                                                                                              |
-| Check success rate         | Percentage of successful check executions.                                                                                                                                                                               |
+| Metric                               | Description                                                     |
+| ------------------------------------ | --------------------------------------------------------------- |
+| Time to resolution                   | Duration an asset spent in a failed state before materializing. |
+| Materialization success rate         | Percentage of successful executions.                            |
+| Materialization failure count        | Number of times an asset failed to materialize.                 |
+| Freshness pass rate                  | Percentage of time an asset was fresh.                          |
+| Freshness warning and failure counts | Number of times an asset entered a degraded freshness state.    |
+| Check success rate                   | Percentage of successful check executions.                      |
 
 ### KPIs dashboard to understand platform health
 
@@ -47,4 +47,3 @@ To access KPIs, click **Insights** in the top navigation bar in the UI, then nav
 ![KPIs dashboard to understand platform](/images/guides/operate/insights_v2/kpis.png)
 
 KPIs allow you to understand your platform health at a high level, and compare metrics from different saved selections.
-
