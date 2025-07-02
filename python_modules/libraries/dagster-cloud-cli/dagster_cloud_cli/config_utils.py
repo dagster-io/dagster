@@ -42,7 +42,6 @@ DEFAULT_LOCATION_LOAD_TIMEOUT = 3600
 AGENT_HEARTBEAT_TIMEOUT_CLI_ARGUMENT = "agent-heartbeat-timeout"
 AGENT_HEARTBEAT_TIMEOUT_ARGUMENT_VAR = AGENT_HEARTBEAT_TIMEOUT_CLI_ARGUMENT.replace("-", "_")
 AGENT_HEARTBEAT_TIMEOUT_ENV_VAR_NAME = "DAGSTER_CLOUD_AGENT_HEARTBEAT_TIMEOUT"
-DEFAULT_AGENT_HEARTBEAT_TIMEOUT = 60
 
 
 def get_config_path():
@@ -102,15 +101,14 @@ def get_location_load_timeout() -> int:
     return int(cast("str", env_val)) if env_val is not None else default_timeout
 
 
-def get_agent_heartbeat_timeout() -> int:
+def get_agent_heartbeat_timeout() -> Optional[int]:
     """Gets the configured agent timeout to target.
     Highest precedence is an agent-timeout argument, then `DAGTER_CLOUD_AGENT_HEARTBEAT_TIMEOUT`
     env var.
     """
-    default_timeout = DEFAULT_AGENT_HEARTBEAT_TIMEOUT
     env_val = os.getenv(AGENT_HEARTBEAT_TIMEOUT_ENV_VAR_NAME)
 
-    return int(cast("str", env_val)) if env_val is not None else default_timeout
+    return int(cast("str", env_val)) if env_val is not None else None
 
 
 def get_user_token(ctx: Optional[Context] = None) -> Optional[str]:

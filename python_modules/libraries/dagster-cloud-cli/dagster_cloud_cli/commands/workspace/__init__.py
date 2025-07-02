@@ -125,7 +125,7 @@ def wait_for_load(
     client,
     locations,
     location_load_timeout=DEFAULT_LOCATION_LOAD_TIMEOUT,
-    agent_heartbeat_timeout=DEFAULT_LOCATION_LOAD_TIMEOUT,
+    agent_heartbeat_timeout: Optional[int] = DEFAULT_LOCATION_LOAD_TIMEOUT,
     url: Optional[str] = None,
 ):
     start_time = time.time()
@@ -140,7 +140,7 @@ def wait_for_load(
     iterations = 0
     while True:
         if not has_agent_heartbeat:
-            if time.time() - start_time > agent_heartbeat_timeout:
+            if agent_heartbeat_timeout and time.time() - start_time > agent_heartbeat_timeout:
                 raise ui.error(
                     "No Dagster Cloud agent is actively heartbeating. Make sure that you have a"
                     " Dagster Cloud agent running."
