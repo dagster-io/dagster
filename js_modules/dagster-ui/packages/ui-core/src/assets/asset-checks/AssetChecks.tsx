@@ -300,7 +300,7 @@ const useHistoricalCheckExecutions = (
   const executions = React.useMemo(
     () =>
       [...(queryResult.data?.assetCheckExecutions || [])].sort((a, b) => {
-        return b.timestamp - a.timestamp;
+        return (b.evaluation?.timestamp || b.timestamp) - (a.evaluation?.timestamp || a.timestamp);
       }),
     [queryResult],
   );
