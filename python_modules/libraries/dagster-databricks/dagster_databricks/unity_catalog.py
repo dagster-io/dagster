@@ -5,11 +5,12 @@ from typing import Optional, Sequence
 from dagster import AssetKey, AssetsDefinition, TableColumn, TableSchema
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.external_asset import external_asset_from_spec
+from dagster._annotations import preview
 from databricks.sdk import WorkspaceClient
 
 import requests
 
-
+@preview
 def unity_catalog_assets(
     client: WorkspaceClient,
     *,
