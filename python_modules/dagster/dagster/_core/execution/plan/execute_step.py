@@ -229,7 +229,7 @@ def _step_output_error_checked_user_event_sequence(
             asset_layer = step_context.job_def.asset_layer
             node_handle = step_context.node_handle
             asset_key = asset_layer.get_asset_key_for_node_output(node_handle, output_def.name)
-            if asset_key is not None and asset_key in asset_layer.get_asset_keys_for_node(
+            if asset_key is not None and asset_key in asset_layer.get_selected_entity_keys_for_node(
                 node_handle
             ):
                 asset_node = asset_layer.get(asset_key)

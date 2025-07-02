@@ -933,7 +933,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             asset_key = asset_layer.get_asset_key_for_node_output(
                 self.node_handle, step_output.name
             )
-            if asset_key is None or asset_key not in asset_layer.get_asset_keys_for_node(
+            if asset_key is None or asset_key not in asset_layer.get_selected_entity_keys_for_node(
                 self.node_handle
             ):
                 continue

@@ -1652,7 +1652,7 @@ def asset_node_snaps_from_repo(repo: RepositoryDefinition) -> Sequence[AssetNode
     job_defs_by_asset_key: dict[AssetKey, list[JobDefinition]] = defaultdict(list)
     for job_def in repo.get_all_jobs():
         asset_layer = job_def.asset_layer
-        for asset_key in asset_layer.additional_asset_keys:
+        for asset_key in asset_layer.external_job_asset_keys:
             job_defs_by_asset_key[asset_key].append(job_def)
         for asset_key in asset_layer.selected_asset_keys:
             job_defs_by_asset_key[asset_key].append(job_def)

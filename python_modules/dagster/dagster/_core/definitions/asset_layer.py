@@ -8,6 +8,7 @@ import dagster._check as check
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.asset_key import AssetKey, EntityKey
 from dagster._core.definitions.dependency import NodeHandle, NodeInputHandle, NodeOutputHandle
+from dagster._core.definitions.graph_definition import GraphDefinition
 
 if TYPE_CHECKING:
     from dagster._core.definitions.asset_graph import AssetGraph, AssetNode
@@ -30,8 +31,17 @@ class AssetLayer:
 
     data: Sequence[AssetLayerData]
     asset_graph: "AssetGraph"
-    additional_asset_keys: AbstractSet[AssetKey] = set()
-    additional_asset_keys_by_input_handle: Mapping[NodeInputHandle, AssetKey] = {}
+    # these are set when we have knowledge that a job corresponds to a set
+    # of asset keys but don't have any AssetsDefinitions / nodes to map them
+    # to. this can happen when we're representing a job that executes in an
+    # external system but we don't have a good representation of the nodes
+    # contained within it.
+    external_job_asset_keys: AbstractSet[AssetKey] = set()
+    # these are set when there is additional information that adds mapping
+    # information from asset keys to input handles that is not captured by
+    # the set of AssetsDefinitions that we have available to us. this can
+    # happen when a source asset is used as input to a regular graph.
+    mapped_source_asset_keys_by_input_handle: Mapping[NodeInputHandle, AssetKey] = {}
 
     @property
     def executable_asset_keys(self) -> Iterable[AssetKey]:
@@ -49,7 +59,10 @@ class AssetLayer:
     def _data_by_key(self) -> Mapping[EntityKey, AssetLayerData]:
         mapping: dict[EntityKey, AssetLayerData] = {}
         for data in self.data:
-            for key in data.assets_def.asset_and_check_keys:
+            for key in [
+                *data.assets_def.keys,
+                *(spec.key for spec in data.assets_def.node_check_specs_by_output_name.values()),
+            ]:
                 mapping[key] = data
         return mapping
 
@@ -62,44 +75,44 @@ class AssetLayer:
         an inner node handle to the outer graph input handle that it came from, so
         we instead do this as a single bulk operation.
         """
-        # seed the dictionary with any additional node inputs that were provided
-        # this is provided when source assets are used as inputs to a regular graph
-        mapping: dict[NodeInputHandle, AssetKey] = dict(self.additional_asset_keys_by_input_handle)
+        # seed the dictionary with any additional node inputs that were provided.
+        # this is provided when source assets are used as inputs to a regular graph.
+        mapping: dict[NodeInputHandle, AssetKey] = dict(
+            self.mapped_source_asset_keys_by_input_handle
+        )
 
-        # iterate over all node definitions and map their (potentially graph) inputs
-        # to the inner (op) input handles that they are connected to
         for data in self.data:
-            node_def = data.assets_def.node_def
+            assets_def = data.assets_def
+            node_def = check.not_none(assets_def.computation).full_node_def
             outer_node_handle = data.node_handle
-            # we know the mapping of outer input names to the asset keys that they are
-            # connected to, now we map each of those outer inputs to the inner inputs
-            # of their graph, and store that association as well
-            for outer_input_name, key in data.assets_def.node_keys_by_input_name.items():
+
+            # INPUTS: record mapping from outer inputs to inner inputs
+            for outer_input_name, key in assets_def.node_keys_by_input_name.items():
                 outer_input_handle = NodeInputHandle(
                     node_handle=outer_node_handle, input_name=outer_input_name
                 )
                 mapping[outer_input_handle] = key
-                for inner_input_handle in node_def.resolve_input_to_destinations(
-                    outer_input_handle
-                ):
+                inner_input_handles = node_def.resolve_input_to_destinations(outer_input_handle)
+                for inner_input_handle in inner_input_handles:
                     mapping[inner_input_handle] = key
-        # iterate over all asset and check keys, grab their associated output handles,
-        # then map those output handles to the input handles that they are connected to
-        for key in [*self.executable_asset_keys, *self.asset_graph.asset_check_keys]:
-            data = self._get_data(key)
-            outer_output_handle = NodeOutputHandle(
-                node_handle=data.node_handle,
-                output_name=data.assets_def.output_names_by_entity_key[key],
-            )
-            # we know the single inner op output handle that is associated with the asset key,
-            # so now we can resolve that to all the input handles that are connected to it
-            data = self._get_data(key)
-            inner_input_handles = data.assets_def.node_def.resolve_output_to_destinations(
-                output_name=data.assets_def.output_names_by_entity_key[key],
-                handle=outer_output_handle.node_handle,
-            )
-            for inner_input_handle in inner_input_handles:
-                mapping[inner_input_handle] = key
+
+            # OUTPUTS: record mapping from outer outputs to all inputs that consume them
+            for outer_output_name, key in assets_def.node_keys_by_output_name.items():
+                # find inputs that consume this output
+                input_handles = node_def.resolve_output_to_destinations(
+                    output_name=outer_output_name, handle=outer_node_handle
+                )
+                for outer_input_handle in input_handles:
+                    mapping[outer_input_handle] = key
+                    # ensure that we map from connected graph inputs to the inner inputs they connect to
+                    if isinstance(node_def, GraphDefinition):
+                        inner_node = node_def.get_node(outer_input_handle.node_handle.pop())
+                        inner_input_handles = inner_node.definition.resolve_input_to_destinations(
+                            outer_input_handle
+                        )
+                        for inner_input_handle in inner_input_handles:
+                            mapping[inner_input_handle] = key
+
         return mapping
 
     @staticmethod
@@ -120,7 +133,7 @@ class AssetLayer:
         from dagster._core.definitions.asset_graph import AssetGraph
 
         return AssetLayer(
-            data=[], asset_graph=AssetGraph.from_assets([]), additional_asset_keys=set(asset_keys)
+            data=[], asset_graph=AssetGraph.from_assets([]), external_job_asset_keys=set(asset_keys)
         )
 
     def get(self, asset_key: AssetKey) -> "AssetNode":
@@ -144,11 +157,11 @@ class AssetLayer:
 
     def get_op_output_handle(self, key: EntityKey) -> NodeOutputHandle:
         data = self._get_data(key)
-        assets_def = data.assets_def
+        computation = check.not_none(data.assets_def.computation)
         # the outer node handle that we store may refer to a graph definition,
         # so ensure that we resolve the output to the actual op output
-        output_name = assets_def.output_names_by_entity_key[key]
-        inner_output_def, inner_node_handle = assets_def.node_def.resolve_output_to_origin(
+        output_name = computation.output_names_by_entity_key[key]
+        inner_output_def, inner_node_handle = computation.node_def.resolve_output_to_origin(
             output_name, data.node_handle
         )
         return NodeOutputHandle(node_handle=inner_node_handle, output_name=inner_output_def.name)
@@ -157,8 +170,9 @@ class AssetLayer:
         data = self._maybe_get_data(node_handle)
         return data.assets_def if data else None
 
-    def get_asset_keys_for_node(self, node_handle: NodeHandle) -> AbstractSet[AssetKey]:
-        return self._get_data(node_handle).assets_def.keys
+    def get_selected_entity_keys_for_node(self, node_handle: NodeHandle) -> AbstractSet[EntityKey]:
+        data = self._maybe_get_data(node_handle)
+        return data.assets_def.asset_and_check_keys if data else set()
 
     def get_asset_key_for_node(self, node_handle: NodeHandle) -> AssetKey:
         return self._get_data(node_handle).assets_def.key

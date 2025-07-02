@@ -1379,7 +1379,7 @@ def _infer_asset_layer_from_source_asset_deps(job_graph_def: GraphDefinition) ->
         # just markers), so we don't pass them in through the data field and instead
         # pass this mapping information directly
         data=[],
-        additional_asset_keys_by_input_handle=keys_by_input_handle,
+        mapped_source_asset_keys_by_input_handle=keys_by_input_handle,
     )
 
 

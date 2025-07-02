@@ -65,6 +65,9 @@ def create_step_outputs(
     step_outputs: list[StepOutput] = []
     for name, output_def in node.definition.output_dict.items():
         asset_key = asset_layer.get_asset_key_for_node_output(handle, name)
+        asset_check_key = asset_layer.get_asset_check_key_for_node_output(handle, name)
+
+        selected_entity_keys = asset_layer.get_selected_entity_keys_for_node(handle)
         asset_node = asset_layer.asset_graph.get(asset_key) if asset_key else None
 
         step_outputs.append(
@@ -77,11 +80,11 @@ def create_step_outputs(
                     is_dynamic=output_def.is_dynamic,
                     is_asset=asset_key is not None,
                     should_materialize_DEPRECATED=output_def.name in config_output_names,
-                    asset_key=asset_node.key
-                    if asset_node and asset_node.key in asset_layer.get_asset_keys_for_node(handle)
-                    else None,
+                    asset_key=asset_key if asset_key in selected_entity_keys else None,
                     is_asset_partitioned=bool(asset_node.partitions_def) if asset_node else False,
-                    asset_check_key=asset_layer.get_asset_check_key_for_node_output(handle, name),
+                    asset_check_key=asset_check_key
+                    if asset_check_key in selected_entity_keys
+                    else None,
                     asset_execution_type=asset_node.execution_type if asset_node else None,
                 ),
             )
