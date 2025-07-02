@@ -2,6 +2,7 @@ import {Box, PageHeader} from '@dagster-io/ui-components';
 import React from 'react';
 import {observeEnabled} from 'shared/app/observeEnabled.oss';
 
+import {ObserveRolloutBanner} from './ObserveRolloutBanner';
 import {OverviewTabs} from './OverviewTabs';
 
 export const OverviewPageHeader = ({
@@ -17,13 +18,16 @@ export const OverviewPageHeader = ({
   }
 
   return (
-    <PageHeader
-      tabs={
-        <Box flex={{direction: 'column', gap: 8}}>
-          <OverviewTabs tab={tab} queryData={queryData} refreshState={refreshState} />
-        </Box>
-      }
-      {...rest}
-    />
+    <Box flex={{direction: 'column'}}>
+      <ObserveRolloutBanner />
+      <PageHeader
+        tabs={
+          <Box flex={{direction: 'column', gap: 8}}>
+            <OverviewTabs tab={tab} queryData={queryData} refreshState={refreshState} />
+          </Box>
+        }
+        {...rest}
+      />
+    </Box>
   );
 };
