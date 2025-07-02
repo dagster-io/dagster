@@ -16,7 +16,7 @@ setup(
     ],
     packages=find_packages(exclude=["dagster_test_tests*"]),
     include_package_data=True,
-    python_requires=">=3.9,<3.14",
+    python_requires=">=3.9,<=3.13.3",
     install_requires=[
         "dagster",
         "rich",
