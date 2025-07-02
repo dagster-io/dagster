@@ -191,7 +191,8 @@ describe('WorkspaceContext', () => {
 
     expect(result.current.allRepos).toEqual([]);
     expect(result.current.data).toEqual({});
-    expect(result.current.loading).toEqual(true);
+    expect(result.current.loadingNonAssets).toEqual(true);
+    expect(result.current.loadingAssets).toEqual(true);
 
     await act(async () => {
       await jest.runOnlyPendingTimersAsync();
@@ -209,7 +210,8 @@ describe('WorkspaceContext', () => {
 
     expect(result.current.allRepos).toEqual([]);
     expect(result.current.data).toEqual({});
-    expect(result.current.loading).toEqual(true);
+    expect(result.current.loadingNonAssets).toEqual(true);
+    expect(result.current.loadingAssets).toEqual(true);
 
     // Runs the individual location queries
     await act(async () => {
@@ -226,7 +228,8 @@ describe('WorkspaceContext', () => {
     });
 
     await waitFor(() => {
-      expect(result.current.loading).toEqual(false);
+      expect(result.current.loadingNonAssets).toEqual(false);
+      expect(result.current.loadingAssets).toEqual(false);
     });
     expect(result.current.allRepos).toEqual([
       ...repoLocationToRepos(repositoryLocation1),
@@ -293,7 +296,8 @@ describe('WorkspaceContext', () => {
     await waitFor(async () => {
       drainMockLoadFromServerQueue();
       drainMockHandleStatusUpdateQueue();
-      expect(result.current.loading).toEqual(false);
+      expect(result.current.loadingNonAssets).toEqual(false);
+      expect(result.current.loadingAssets).toEqual(false);
     });
     // We queries for code location statuses but saw we were up to date
     // so we didn't call any the location queries
@@ -472,7 +476,8 @@ describe('WorkspaceContext', () => {
 
     await waitFor(async () => {
       drainMockHandleStatusUpdateQueue();
-      expect(result.current.loading).toEqual(false);
+      expect(result.current.loadingNonAssets).toEqual(false);
+      expect(result.current.loadingAssets).toEqual(false);
     });
 
     // We return the cached data
@@ -544,7 +549,10 @@ describe('WorkspaceContext', () => {
 
     const {result} = renderWithMocks(mocks);
 
-    expect(result.current.loading).toEqual(true);
+    await waitFor(() => {
+      expect(result.current.loadingNonAssets).toEqual(true);
+      expect(result.current.loadingAssets).toEqual(true);
+    });
 
     // Run the code location status query
     await act(async () => {
@@ -564,7 +572,8 @@ describe('WorkspaceContext', () => {
     });
 
     await waitFor(() => {
-      expect(result.current.loading).toEqual(false);
+      expect(result.current.loadingNonAssets).toEqual(false);
+      expect(result.current.loadingAssets).toEqual(false);
     });
 
     expect(result.current.data).toEqual({
@@ -585,12 +594,24 @@ describe('WorkspaceContext', () => {
     caches.codeLocationStatusQuery.has.mockResolvedValue(false);
 
     const mocks = buildWorkspaceMocks([], {delay: 10});
+    mocks[0]!.maxUsageCount = 9999;
 
     const {result} = renderWithMocks(mocks);
-    expect(result.current.loading).toEqual(true);
 
     await waitFor(() => {
-      expect(result.current.loading).toEqual(false);
+      expect(result.current.loadingNonAssets).toEqual(true);
+      expect(result.current.loadingAssets).toEqual(true);
+    });
+
+    await act(async () => {
+      await jest.runOnlyPendingTimersAsync();
+    });
+
+    await waitFor(() => {
+      drainMockHandleStatusUpdateQueue();
+      drainMockLoadFromServerQueue();
+      expect(result.current.loadingNonAssets).toEqual(false);
+      expect(result.current.loadingAssets).toEqual(false);
     });
 
     expect(result.current.allRepos).toEqual([]);
@@ -613,12 +634,16 @@ describe('WorkspaceContext', () => {
 
     expect(result.current.allRepos).toEqual([]);
     expect(result.current.data).toEqual({});
-    expect(result.current.loading).toEqual(true);
+    await waitFor(() => {
+      expect(result.current.loadingNonAssets).toEqual(true);
+      expect(result.current.loadingAssets).toEqual(true);
+    });
 
     await waitFor(() => {
       drainMockHandleStatusUpdateQueue();
       drainMockLoadFromServerQueue();
-      expect(result.current.loading).toEqual(false);
+      expect(result.current.loadingNonAssets).toEqual(false);
+      expect(result.current.loadingAssets).toEqual(false);
     });
 
     await waitFor(() => {
@@ -655,7 +680,8 @@ describe('WorkspaceContext', () => {
     await waitFor(() => {
       drainMockHandleStatusUpdateQueue();
       drainMockLoadFromServerQueue();
-      expect(result.current.loading).toEqual(false);
+      expect(result.current.loadingNonAssets).toEqual(false);
+      expect(result.current.loadingAssets).toEqual(false);
     });
 
     expect(mockCbs[0]).toHaveBeenCalledTimes(1);
@@ -710,7 +736,8 @@ describe('WorkspaceContext', () => {
     await waitFor(() => {
       drainMockHandleStatusUpdateQueue();
       drainMockLoadFromServerQueue();
-      expect(result.current.loading).toEqual(false);
+      expect(result.current.loadingNonAssets).toEqual(false);
+      expect(result.current.loadingAssets).toEqual(false);
     });
 
     await waitFor(() => {

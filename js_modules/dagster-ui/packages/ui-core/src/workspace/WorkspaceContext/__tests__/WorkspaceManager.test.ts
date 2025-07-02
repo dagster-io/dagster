@@ -105,8 +105,6 @@ describe('WorkspaceManager', () => {
     expect(mockSetData).toHaveBeenCalledWith(
       expect.objectContaining({
         locationEntries: {foo: 'bar'},
-        locationStatuses: {},
-        assetEntries: {},
       }),
     );
 
@@ -114,8 +112,6 @@ describe('WorkspaceManager', () => {
     assetsFetcherCallback({foo: 'bar'});
     expect(mockSetData).toHaveBeenCalledWith(
       expect.objectContaining({
-        locationEntries: {foo: 'bar'},
-        locationStatuses: {},
         assetEntries: {foo: 'bar'},
       }),
     );
@@ -125,8 +121,6 @@ describe('WorkspaceManager', () => {
     expect(mockSetData).toHaveBeenCalledWith(
       expect.objectContaining({
         locationStatuses: {loc1: {name: 'loc1', versionKey: 'v1'}},
-        locationEntries: {foo: 'bar'},
-        assetEntries: {foo: 'bar'},
       }),
     );
   });
