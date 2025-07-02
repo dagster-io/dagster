@@ -8,7 +8,6 @@ from dagster_pipes import to_assey_key_path
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, public
-from dagster._core.errors import DagsterInvariantViolationError
 from dagster._record import IHaveNew, record_custom
 from dagster._serdes import whitelist_for_serdes
 
@@ -174,21 +173,6 @@ class AssetKey(IHaveNew):
     def with_prefix(self, prefix: "CoercibleToAssetKeyPrefix") -> "AssetKey":
         prefix = key_prefix_from_coercible(prefix)
         return AssetKey(list(prefix) + list(self.path))
-
-    if not TYPE_CHECKING:
-        # hide these from type checker so it doesn't believe AssetKey is iterable/indexable
-        def __iter__(self):
-            raise DagsterInvariantViolationError(
-                "You have attempted to iterate a single AssetKey object. "
-                "As of 1.9, this behavior is disallowed because it is likely unintentional and a bug."
-            )
-
-        def __getitem__(self, _):
-            raise DagsterInvariantViolationError(
-                "You have attempted to index directly in to the AssetKey object. "
-                "As of 1.9, this behavior is disallowed because it is likely unintentional and a bug. "
-                "Use asset_key.path instead to access the list of key components."
-            )
 
 
 CoercibleToAssetKey = Union[AssetKey, str, Sequence[str]]
