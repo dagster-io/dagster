@@ -729,11 +729,8 @@ class SensorDefinition(IHasInternalInit):
         self._default_status = check.inst_param(
             default_status, "default_status", DefaultSensorStatus
         )
-        target_assets_defs = [asset_def for t in self._targets for asset_def in t.assets_defs]
         self._asset_selection = (
-            AssetSelection.from_coercible(target_assets_defs)
-            if len(target_assets_defs) > 0
-            else None
+            self._targets[0].job_def.selection if len(self._targets) > 0 else None
         )
         validate_resource_annotated_function(self._raw_fn)
         resource_arg_names: set[str] = {arg.name for arg in get_resource_args(self._raw_fn)}
