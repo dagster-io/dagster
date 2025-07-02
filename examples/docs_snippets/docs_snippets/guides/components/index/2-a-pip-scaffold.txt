@@ -1,1 +1,0 @@
-mkdir jaffle-platform && cd jaffle-platform

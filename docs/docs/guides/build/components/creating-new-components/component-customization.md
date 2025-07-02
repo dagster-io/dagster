@@ -23,13 +23,13 @@ In the example below, the custom `ShellCommandScaffolder` class scaffolds a temp
 Now, when you run `dg scaffold defs`, you should see a template shell script created along with a populated `defs.yaml` file:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/components/shell-script-component/5-scaffolded-defs.yaml"
+  path="docs_snippets/docs_snippets/guides/components/shell-script-component/generated/5-scaffolded-defs.yaml"
   language="yaml"
   title="my_component_library/components/my_shell_command/defs.yaml"
 />
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/components/shell-script-component/6-scaffolded-component-script.sh"
+  path="docs_snippets/docs_snippets/guides/components/shell-script-component/generated/6-scaffolded-component-script.sh"
   language="bash"
   title="my_component_library/components/my_shell_command/script.sh"
 />
@@ -61,7 +61,7 @@ You can define custom values that will be made available to the templating engin
 When a user scaffolds this component definition, they will be able to use this custom scope in their `defs.yaml` file:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/components/shell-script-component/7-custom-scope-defs.yaml"
+  path="docs_snippets/docs_snippets/guides/components/shell-script-component/generated/7-custom-scope-defs.yaml"
   language="yaml"
   title="my_component_library/components/my_shell_command/defs.yaml"
 />

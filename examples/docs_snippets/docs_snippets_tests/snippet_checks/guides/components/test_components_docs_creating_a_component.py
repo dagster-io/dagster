@@ -27,6 +27,7 @@ COMPONENTS_SNIPPETS_DIR = (
     / "guides"
     / "components"
     / "shell-script-component"
+    / "generated"
 )
 
 
@@ -71,7 +72,9 @@ def test_creating_a_component(
         # Add config schema
         context.create_file(
             Path("src") / "my_project" / "components" / "shell_command.py",
-            contents=(COMPONENTS_SNIPPETS_DIR / "with-config-schema.py").read_text(),
+            contents=(
+                COMPONENTS_SNIPPETS_DIR.parent / "with-config-schema.py"
+            ).read_text(),
         )
         # Sanity check that the component type is registered properly
         if not update_snippets:
@@ -80,7 +83,9 @@ def test_creating_a_component(
         # Add build defs
         context.create_file(
             Path("src") / "my_project" / "components" / "shell_command.py",
-            contents=(COMPONENTS_SNIPPETS_DIR / "with-build-defs.py").read_text(),
+            contents=(
+                COMPONENTS_SNIPPETS_DIR.parent / "with-build-defs.py"
+            ).read_text(),
         )
 
         #########################################################
@@ -134,7 +139,9 @@ def test_creating_a_component(
         # that we can actually run a shell script.
         context.create_file(
             Path("src") / "my_project" / "components" / "shell_command.py",
-            contents=(COMPONENTS_SNIPPETS_DIR / "with-scaffolder.py").read_text(),
+            contents=(
+                COMPONENTS_SNIPPETS_DIR.parent / "with-scaffolder.py"
+            ).read_text(),
         )
         context.run_command_and_snippet_output(
             cmd="dg scaffold defs 'my_project.components.shell_command.ShellCommand' my_shell_command",
@@ -157,7 +164,7 @@ def test_creating_a_component(
         context.create_file(
             Path("src") / "my_project" / "components" / "shell_command.py",
             contents=(
-                COMPONENTS_SNIPPETS_DIR / "custom-schema-resolution.py"
+                COMPONENTS_SNIPPETS_DIR.parent / "custom-schema-resolution.py"
             ).read_text(),
         )
 
@@ -171,7 +178,9 @@ def test_creating_a_component(
         # in docs/docs/guides/labs/components/creating-new-components/component-customization.md
         context.create_file(
             Path("src") / "my_project" / "components" / "shell_command.py",
-            contents=(COMPONENTS_SNIPPETS_DIR / "with-custom-scope.py").read_text(),
+            contents=(
+                COMPONENTS_SNIPPETS_DIR.parent / "with-custom-scope.py"
+            ).read_text(),
         )
 
         yaml_contents = textwrap.dedent("""

@@ -2,6 +2,7 @@ import inspect
 import logging
 import os
 import re
+import shutil
 import string
 import subprocess
 import textwrap
@@ -447,6 +448,9 @@ def isolated_snippet_generation_environment(
             enabled = false
             """
         )
+        if should_update_snippets and snapshot_base_dir.exists():
+            shutil.rmtree(snapshot_base_dir)
+            snapshot_base_dir.mkdir(parents=True, exist_ok=True)
         yield SnippetGenerationContext(
             snapshot_base_dir=snapshot_base_dir,
             should_update_snippets=should_update_snippets,
