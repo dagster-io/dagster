@@ -121,7 +121,7 @@ def test_components_docs_adding_attributes_to_assets(
                 ),
                 snippet_path=SNIPPETS_DIR
                 / component_type
-                / f"{context.get_next_snip_number()}defs.yaml",
+                / f"{context.get_next_snip_number()}-defs.yaml",
             )
             context.get_next_snip_number()
         elif component_type == "global":
