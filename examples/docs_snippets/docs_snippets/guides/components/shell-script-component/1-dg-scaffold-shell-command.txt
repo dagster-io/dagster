@@ -1,4 +1,0 @@
-dg scaffold component ShellCommand
-
-Creating module at: /.../my-project/src/my_project/components
-Scaffolded Dagster component at /.../my-project/src/my_project/components/shell_command.py.
