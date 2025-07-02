@@ -422,11 +422,14 @@ def find_defs_or_component_yaml(path: Path) -> Optional[Path]:
     )
 
 
+T = TypeVar("T", bound=ComponentDeclLoadContext)
+
+
 def context_with_injected_scope(
-    context: ComponentDeclLoadContext,
+    context: T,
     component_cls: type[Component],
     template_vars_module: Optional[str],
-) -> ComponentDeclLoadContext:
+) -> T:
     context = context.with_rendering_scope(
         component_cls.get_additional_scope(),
     )

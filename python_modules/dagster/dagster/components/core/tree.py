@@ -283,7 +283,9 @@ class TestComponentTree(ComponentTree):
 
     @cached_property
     def load_context(self):
-        return ComponentLoadContext.from_decl_load_context(self.decl_load_context, mock.Mock())
+        component_decl = mock.Mock()
+        component_decl.iterate_child_component_decls = mock.Mock(return_value=[])
+        return ComponentLoadContext.from_decl_load_context(self.decl_load_context, component_decl)
 
 
 class LegacyAutoloadingComponentTree(ComponentTree):
