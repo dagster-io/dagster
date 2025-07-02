@@ -115,6 +115,7 @@ const SelectionHealthDataObserver = React.memo(
       assetKeys: useMemo(() => filtered.map((asset) => asset.key), [filtered]),
       thread: getSelectionThreadId(selection),
       skip: skipHealth,
+      loading: filterLoading || skipFilters,
     });
 
     const isLoading = loading || filtered.length !== Object.keys(liveDataByNode).length;

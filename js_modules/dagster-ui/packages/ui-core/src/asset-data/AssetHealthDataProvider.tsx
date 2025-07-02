@@ -94,17 +94,20 @@ export function useAssetsHealthData({
   thread = 'AssetHealth', // Use AssetHealth to get 250 batch size
   blockTrace = true,
   skip = false,
+  loading = false,
 }: {
   assetKeys: AssetKeyInput[];
   thread?: LiveDataThreadID;
   blockTrace?: boolean;
   skip?: boolean;
+  loading?: boolean;
 }) {
   const keys = memoizedAssetKeys(observeEnabled() ? assetKeys : []);
   const result = AssetHealthData.useLiveData(keys, thread, skip);
   useBlockTraceUntilTrue(
     'useAssetsHealthData',
-    skip || !blockTrace || !!(Object.keys(result.liveDataByNode).length === assetKeys.length),
+    !loading &&
+      (skip || !blockTrace || !!(Object.keys(result.liveDataByNode).length === assetKeys.length)),
   );
   return result;
 }
