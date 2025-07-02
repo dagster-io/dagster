@@ -18,15 +18,15 @@ Before following this guide, you will need to [create a project](/guides/build/p
 
 For example, if you have created a new Dagster project with `dg` called `my_project`, you can define the resources at `src/my_project/defs/aresource.py`:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dg/using-resources/2-resources-at-defs-root.py" title="src/my_project/defs/aresource.py" />
+<CodeExample path="docs_snippets/docs_snippets/guides/dg/using-resources/generated/2-resources-at-defs-root.py" title="src/my_project/defs/aresource.py" />
 
 You can then make that resource available anywhere else in your project by defining a <PyObject section="definitions" module="dagster" object="Definitions" decorator /> function:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dg/using-resources/3-resource-defs-at-project-root.py" title="src/my_project/defs/resources.py" />
+<CodeExample path="docs_snippets/docs_snippets/guides/dg/using-resources/generated/3-resource-defs-at-project-root.py" title="src/my_project/defs/resources.py" />
 
 You can now use the resource elsewhere in your project:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dg/using-resources/1-asset-one.py" title="src/my_project/defs/assets.py" />
+<CodeExample path="docs_snippets/docs_snippets/guides/dg/using-resources/generated/1-asset-one.py" title="src/my_project/defs/assets.py" />
 
 ## Scaffolding resources
 
@@ -38,6 +38,6 @@ dg scaffold defs dagster.resources resources.py
 
 which will create:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dg/using-resources/4-scaffolded-resource-defs.py" title="src/<project_name>/defs/resources.py" />
+<CodeExample path="docs_snippets/docs_snippets/guides/dg/using-resources/generated/4-scaffolded-resource-defs.py" title="src/<project_name>/defs/resources.py" />
 
 and you can fill out the resource dictionary as needed.

@@ -27,7 +27,7 @@ tox -e docs_snapshot_update
 Typically, you will want to only regenerate a subset of the snippets, which is faster:
 
 ```bash
-tox -e docs_snapshot_update -- docs_snippets_tests/snippet_checks/guides/components/integrations/test_dbt_component.py
+tox -e docs_snapshot_update -- docs_snippets_tests/snippet_checks/guides/components/integrations/test_dbt_component.py/generated
 ```
 
 ### Running the commands with make

@@ -86,7 +86,7 @@ Each `defs.yaml` file supports a rich templating syntax, powered by `jinja2`.
 
 A common use case for templating is to avoid exposing environment variables (particularly secrets) in your YAML files. The Jinja scope for a `defs.yaml` file contains an `env` function that can be used to insert environment variables into the template:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/components/integrations/fivetran-component/9-customized-component.yaml" title="my_project/defs/fivetran_ingest/defs.yaml" language="yaml" />
+<CodeExample path="docs_snippets/docs_snippets/guides/components/integrations/fivetran-component/generated/9-customized-component.yaml" title="my_project/defs/fivetran_ingest/defs.yaml" language="yaml" />
 
 #### Multiple component instances in the same file
 

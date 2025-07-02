@@ -34,6 +34,7 @@ _SNIPPETS_DIR = (
     / "guides"
     / "dg"
     / "migrating-project"
+    / "generated"
 )
 
 MASK_MY_EXISTING_PROJECT = (r"\/.*?\/my-existing-project", "/.../my-existing-project")

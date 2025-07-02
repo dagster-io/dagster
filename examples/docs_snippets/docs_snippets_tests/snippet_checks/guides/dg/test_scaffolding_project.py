@@ -21,6 +21,7 @@ SNIPPETS_DIR = (
     / "guides"
     / "dg"
     / "scaffolding-project"
+    / "generated"
 )
 
 

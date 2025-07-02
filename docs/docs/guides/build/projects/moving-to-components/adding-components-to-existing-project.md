@@ -20,12 +20,12 @@ Sometimes you want to use Components in your existing Dagster project without fu
 
 Let's walk through an example with an existing project that has the following structure:
 
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/adding-components-to-existing-project/1-tree.txt" />
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/adding-components-to-existing-project/generated/1-tree.txt" />
 
 This project has existing assets and jobs organized in `analytics` and `elt` modules, with a top-level `definitions.py` file that loads everything together:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/dg/adding-components-to-existing-project/2-definitions-before.py"
+  path="docs_snippets/docs_snippets/guides/dg/adding-components-to-existing-project/generated/2-definitions-before.py"
   language="python"
   title="my_existing_project/definitions.py"
 />
@@ -38,10 +38,10 @@ For this example, we'll use the `dagster-sling` component for data replication. 
 
 The Sling component relies on a Sling `replication.yaml` file to define how to replicate data. Create a new `elt/sling` directory to store it:
 
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/adding-components-to-existing-project/4-mkdir.txt" />
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/adding-components-to-existing-project/generated/4-mkdir.txt" />
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/dg/adding-components-to-existing-project/5-replication.yaml"
+  path="docs_snippets/docs_snippets/guides/dg/adding-components-to-existing-project/generated/5-replication.yaml"
   language="yaml"
   title="my_existing_project/elt/sling/replication.yaml"
 />
@@ -51,7 +51,7 @@ The Sling component relies on a Sling `replication.yaml` file to define how to r
 Now, you can configure an instance of the `SlingReplicationCollectionComponent` in our `definitions.py` file, and pass it to the `build_defs_for_component` utility. This function creates a `Definitions` object from a component, which you can then merge with your existing definitions:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/dg/adding-components-to-existing-project/6-definitions.py"
+  path="docs_snippets/docs_snippets/guides/dg/adding-components-to-existing-project/generated/6-definitions.py"
   language="python"
   title="my_existing_project/definitions.py"
 />
