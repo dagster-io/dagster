@@ -23,7 +23,7 @@ const getVisibleJobs = (r: DagsterRepoOption) =>
 
 const FinalRedirectOrLoadingRoot = () => {
   const workspaceContext = useContext(WorkspaceContext);
-  const {allRepos, loading, locationEntries} = workspaceContext;
+  const {allRepos, loadingNonAssets: loading, locationEntries} = workspaceContext;
 
   if (loading) {
     return (

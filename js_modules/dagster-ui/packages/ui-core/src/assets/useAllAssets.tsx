@@ -15,8 +15,10 @@ import {
   AssetRecordsQueryVersion,
 } from './types/useAllAssets.types';
 import {WorkspaceContext} from '../workspace/WorkspaceContext/WorkspaceContext';
-import {WorkspaceAssetFragment} from '../workspace/WorkspaceContext/types/WorkspaceQueries.types';
-import {DagsterRepoOption} from '../workspace/WorkspaceContext/util';
+import {
+  LocationWorkspaceAssetsQuery,
+  WorkspaceAssetFragment,
+} from '../workspace/WorkspaceContext/types/WorkspaceQueries.types';
 
 export type AssetRecord = Extract<
   AssetRecordsQuery['assetRecordsOrError'],
@@ -29,9 +31,9 @@ const RETRY_INTERVAL = 1000; // 1 second
 const DEFAULT_BATCH_LIMIT = 1000;
 
 export function useAllAssetsNodes() {
-  const {allRepos, loading: workspaceLoading} = useContext(WorkspaceContext);
-  const allAssetNodes = useMemo(() => getAllAssetNodes(allRepos), [allRepos]);
-  return {assets: allAssetNodes, loading: workspaceLoading};
+  const {assetEntries, loadingAssets: loading} = useContext(WorkspaceContext);
+  const allAssetNodes = useMemo(() => getAllAssetNodes(assetEntries), [assetEntries]);
+  return {assets: allAssetNodes, loading};
 }
 
 export function useAllAssets({
@@ -240,10 +242,22 @@ async function fetchAssets(client: ApolloClient<any>, batchLimit: number) {
   return assets;
 }
 
-const getAllAssetNodes = weakMapMemoize((allRepos: DagsterRepoOption[]) => {
-  const allAssets = allRepos.flatMap((repo) => repo.repository.assetNodes);
-  return getAssets(allAssets);
-});
+const getAllAssetNodes = weakMapMemoize(
+  (assetEntries: Record<string, LocationWorkspaceAssetsQuery>) => {
+    const allAssets = Object.values(assetEntries).flatMap((repo) => {
+      if (
+        repo.workspaceLocationEntryOrError?.__typename === 'WorkspaceLocationEntry' &&
+        repo.workspaceLocationEntryOrError.locationOrLoadError?.__typename === 'RepositoryLocation'
+      ) {
+        return repo.workspaceLocationEntryOrError.locationOrLoadError.repositories.flatMap(
+          (repo) => repo.assetNodes,
+        );
+      }
+      return [];
+    });
+    return getAssets(allAssets);
+  },
+);
 
 const getAllAssetNodesByKey = weakMapMemoize(
   (allAssetNodes: ReturnType<typeof getAllAssetNodes>) => {

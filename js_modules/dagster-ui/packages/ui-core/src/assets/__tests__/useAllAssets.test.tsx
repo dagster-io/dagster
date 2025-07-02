@@ -84,7 +84,11 @@ describe('useAllAssets', () => {
 
     const {result} = renderHook(() => useAllAssets({batchLimit: 2}), {
       wrapper(props) {
-        return <MockedProvider mocks={[mock, mock2, mock3]}>{props.children}</MockedProvider>;
+        return (
+          <MockedProvider mocks={[mock, mock2, mock3, ...buildWorkspaceMocks([], {delay: 10})]}>
+            <WorkspaceProvider>{props.children}</WorkspaceProvider>
+          </MockedProvider>
+        );
       },
     });
 

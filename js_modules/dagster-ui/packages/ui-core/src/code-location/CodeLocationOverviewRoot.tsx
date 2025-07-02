@@ -177,7 +177,11 @@ export const CodeLocationOverviewRoot = (props: Props) => {
 };
 
 const QueryfulCodeLocationOverviewRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
-  const {locationEntries, locationStatuses, loading} = useContext(WorkspaceContext);
+  const {
+    locationEntries,
+    locationStatuses,
+    loadingNonAssets: loading,
+  } = useContext(WorkspaceContext);
   const locationEntry = locationEntries.find((entry) => entry.name === repoAddress.location);
   const locationStatus = locationStatuses[repoAddress.location];
 
