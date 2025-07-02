@@ -5,9 +5,9 @@ import {BaseButton} from './BaseButton';
 import {Box} from './Box';
 import {Colors} from './Color';
 import {Icon, IconName} from './Icon';
-import {FontFamily} from './styles';
+import styles from './css/Toaster.module.css';
 
-export {Toaster} from 'sonner';
+export {Toaster, toast} from 'sonner';
 
 type Intent = 'success' | 'warning' | 'danger' | 'primary' | 'none';
 
@@ -26,10 +26,19 @@ export type ToastConfig = {
 };
 
 export const showToast = async (config: ToastConfig, sonnerConfig: ExternalToast = {}) => {
-  const {intent, message, timeout, action} = config;
+  const {intent, message, icon, timeout, action} = config;
   return toast.custom(
     (id) => {
-      return <Toast id={id} intent={intent} message={message} timeout={timeout} action={action} />;
+      return (
+        <Toast
+          id={id}
+          intent={intent}
+          message={message}
+          icon={icon}
+          timeout={timeout}
+          action={action}
+        />
+      );
     },
     {duration: timeout, ...sonnerConfig},
   );
@@ -40,8 +49,9 @@ interface ToastProps extends ToastConfig {
 }
 
 const Toast = (props: ToastProps) => {
-  const {id, intent, message, action} = props;
-  const {backgroundColor, textColor, icon, iconColor} = intentToStyles(intent);
+  const {id, intent, message, icon, action} = props;
+  const {backgroundColor, icon: iconFromIntent} = intentToStyles[intent];
+  const iconName = icon ?? iconFromIntent;
 
   const actionElement = () => {
     if (!action) {
@@ -60,7 +70,7 @@ const Toast = (props: ToastProps) => {
         strokeColor={Colors.backgroundGray()}
         strokeColorHover={Colors.backgroundGrayHover()}
         label={action.text}
-        style={{fontSize: 13, fontFamily: FontFamily.default}}
+        className={styles.toastButton}
         onClick={(e) => {
           if (action.onClick) {
             action.onClick(e);
@@ -72,16 +82,18 @@ const Toast = (props: ToastProps) => {
   };
 
   return (
-    <div style={{backgroundColor: Colors.backgroundDefault(), borderRadius: 8}}>
+    <div className={styles.toastContainer}>
       <Box
         padding={16}
         background={backgroundColor}
         border={{side: 'all', width: 1, color: backgroundColor}}
         flex={{direction: 'row', alignItems: 'center', gap: 8}}
-        style={{borderRadius: 8, fontSize: 13, fontFamily: FontFamily.default}}
+        className={styles.toastInner}
       >
-        {icon ? <Icon name={icon} color={iconColor} /> : null}
-        <div style={{color: textColor}}>{message}</div>
+        <Box flex={{direction: 'row', alignItems: 'flex-start', gap: 8}}>
+          {iconName ? <Icon name={iconName} color={Colors.accentPrimary()} /> : null}
+          <div className={styles.toastMessage}>{message}</div>
+        </Box>
         {actionElement()}
       </Box>
     </div>
@@ -90,48 +102,28 @@ const Toast = (props: ToastProps) => {
 
 type ToastStyleForIntent = {
   backgroundColor: string;
-  textColor: string;
   icon: IconName;
-  iconColor: string;
 };
 
-const intentToStyles = (intent: Intent): ToastStyleForIntent => {
-  switch (intent) {
-    case 'success':
-      return {
-        backgroundColor: Colors.backgroundBlue(),
-        textColor: Colors.textBlue(),
-        icon: 'success',
-        iconColor: Colors.accentBlue(),
-      };
-    case 'warning':
-      return {
-        backgroundColor: Colors.backgroundYellow(),
-        textColor: Colors.textYellow(),
-        icon: 'warning',
-        iconColor: Colors.accentYellow(),
-      };
-    case 'danger':
-      return {
-        backgroundColor: Colors.backgroundRed(),
-        textColor: Colors.textRed(),
-        icon: 'error',
-        iconColor: Colors.accentRed(),
-      };
-    case 'primary':
-      return {
-        backgroundColor: Colors.backgroundBlue(),
-        textColor: Colors.textBlue(),
-        icon: 'info',
-        iconColor: Colors.accentBlue(),
-      };
-    case 'none':
-    default:
-      return {
-        backgroundColor: Colors.backgroundGray(),
-        textColor: Colors.textDefault(),
-        icon: 'info',
-        iconColor: Colors.accentPrimary(),
-      };
-  }
+const intentToStyles: Record<Intent, ToastStyleForIntent> = {
+  success: {
+    backgroundColor: Colors.backgroundBlue(),
+    icon: 'success',
+  },
+  warning: {
+    backgroundColor: Colors.backgroundYellow(),
+    icon: 'warning',
+  },
+  danger: {
+    backgroundColor: Colors.backgroundRed(),
+    icon: 'error',
+  },
+  primary: {
+    backgroundColor: Colors.backgroundBlue(),
+    icon: 'info',
+  },
+  none: {
+    backgroundColor: Colors.backgroundGray(),
+    icon: 'info',
+  },
 };
