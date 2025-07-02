@@ -236,7 +236,9 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
     options.skip,
   ]);
 
-  const loading = assetsLoading || graphDataLoading || supplementaryDataLoading;
+  const loading =
+    !options.skip &&
+    (assetsLoading || graphDataLoading || supplementaryDataLoading || options.loading);
   useBlockTraceUntilTrue('useAssetGraphData', !loading);
   return {
     loading,
