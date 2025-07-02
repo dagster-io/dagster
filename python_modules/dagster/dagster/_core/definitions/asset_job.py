@@ -166,11 +166,7 @@ def build_asset_job(
         config=None,
     )
 
-    asset_layer = AssetLayer.from_graph_and_assets_node_mapping(
-        graph_def=graph,
-        assets_defs_by_outer_node_handle=assets_defs_by_node_handle,
-        asset_graph=asset_graph,
-    )
+    asset_layer = AssetLayer.from_mapping(assets_defs_by_node_handle, asset_graph)
 
     all_resource_defs = get_all_resource_defs(asset_graph, wrapped_resource_defs)
 

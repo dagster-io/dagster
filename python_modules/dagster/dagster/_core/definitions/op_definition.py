@@ -348,7 +348,7 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
                 and not input_def.has_default_value
                 and not input_def.input_manager_key
             ):
-                input_asset_key = asset_layer.asset_key_for_input(handle, input_def.name)
+                input_asset_key = asset_layer.get_asset_key_for_node_input(handle, input_def.name)
                 # If input_asset_key is present, this input can be resolved
                 # by a source asset, so input does not need to be resolved
                 # at the top level.
@@ -426,7 +426,7 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
                     root_input=False,
                 )
             elif asset_layer and handle:
-                input_asset_key = asset_layer.asset_key_for_input(handle, input_def.name)
+                input_asset_key = asset_layer.get_asset_key_for_node_input(handle, input_def.name)
                 if input_asset_key:
                     io_manager_key = (
                         asset_layer.get(input_asset_key).io_manager_key

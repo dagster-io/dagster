@@ -225,7 +225,7 @@ def get_inputs_field(
                 asset_layer.asset_graph.executable_asset_keys
                 or asset_layer.asset_graph.asset_check_keys
             )
-            and asset_layer.asset_key_for_input(handle, name)
+            and asset_layer.get_asset_key_for_node_input(handle, name)
             and not has_upstream
         ):
             input_field = None

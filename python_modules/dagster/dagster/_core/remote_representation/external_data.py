@@ -1652,15 +1652,13 @@ def asset_node_snaps_from_repo(repo: RepositoryDefinition) -> Sequence[AssetNode
     job_defs_by_asset_key: dict[AssetKey, list[JobDefinition]] = defaultdict(list)
     for job_def in repo.get_all_jobs():
         asset_layer = job_def.asset_layer
-        for asset_key in asset_layer.additional_asset_keys:
+        for asset_key in asset_layer.external_job_asset_keys:
             job_defs_by_asset_key[asset_key].append(job_def)
-        asset_keys_by_node_output = asset_layer.asset_keys_by_node_output_handle
-        for node_output_handle, asset_key in asset_keys_by_node_output.items():
-            if asset_key not in asset_layer.asset_keys_for_node(node_output_handle.node_handle):
-                continue
+        for asset_key in asset_layer.selected_asset_keys:
+            job_defs_by_asset_key[asset_key].append(job_def)
             if asset_key not in primary_node_pairs_by_asset_key:
-                primary_node_pairs_by_asset_key[asset_key] = (node_output_handle, job_def)
-            job_defs_by_asset_key[asset_key].append(job_def)
+                op_handle = asset_layer.get_op_output_handle(asset_key)
+                primary_node_pairs_by_asset_key[asset_key] = (op_handle, job_def)
     asset_node_snaps: list[AssetNodeSnap] = []
     asset_graph = repo.asset_graph
     for key in sorted(asset_graph.get_all_asset_keys()):
