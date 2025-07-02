@@ -21,5 +21,5 @@ Once you are a member of the early access program, you can enable or disable the
 ## Features
 - Asset health reporting
 - [Freshness monitoring](freshness)
-- Real-time insights
+- [Real-time insights](insights)
 - Customizable catalog
