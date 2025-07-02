@@ -19,6 +19,7 @@ import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import {useRouteMatch} from 'react-router-dom';
 import {useSetRecoilState} from 'recoil';
 import {CreateCatalogViewButton} from 'shared/assets/CreateCatalogViewButton.oss';
+import {useCatalogExtraDropdownOptions} from 'shared/assets/catalog/useCatalogExtraDropdownOptions.oss';
 import {AssetCatalogInsights} from 'shared/assets/insights/AssetCatalogInsights.oss';
 import {useFavoriteAssets} from 'shared/assets/useFavoriteAssets.oss';
 
@@ -103,6 +104,15 @@ export const AssetCatalogTableV2 = React.memo(() => {
   const healthDataLoading = useMemo(() => {
     return Object.values(liveDataByNode).length !== filtered.length;
   }, [liveDataByNode, filtered]);
+
+  console.log({
+    healthDataLoading,
+    loading,
+    filtered,
+    liveDataByNode,
+    assetsLoading,
+    favoritesLoading,
+  });
 
   const groupedByStatus = useMemo(() => {
     const byStatus: Record<AssetHealthStatusString, (typeof liveDataByNode)[string][]> = {
@@ -354,6 +364,8 @@ const Table = React.memo(
       };
     }, [assets, checkedDisplayKeys]);
 
+    const extraDropdownOptions = useCatalogExtraDropdownOptions({scope});
+
     return (
       <>
         <IndeterminateLoadingBar $loading={loading || healthDataLoading} />
@@ -424,7 +436,10 @@ const Table = React.memo(
               {loading ? (
                 <Skeleton $width={300} $height={21} />
               ) : (
-                <LaunchAssetExecutionButton scope={scope} />
+                <LaunchAssetExecutionButton
+                  scope={scope}
+                  additionalDropdownOptions={extraDropdownOptions}
+                />
               )}
             </Box>
           </Box>
