@@ -150,7 +150,7 @@ path="docs_snippets/docs_snippets/guides/dg/migrating-project/9-list-registry-mo
 We can now scaffold a new component in our project and it will be
 available to `dg` commands. First create the component:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dg/migrating-project/10-scaffold-component.txt" />
+<CodeExample path="docs_snippets/docs_snippets/guides/dg/migrating-project/10-scaffold-component-type.txt" />
 
 Then run `dg list components` to confirm that the new component is available:
 

@@ -54,6 +54,9 @@ def test_migrating_project(
                 MASK_MY_EXISTING_PROJECT,
                 MASK_PLUGIN_CACHE_REBUILD,
             ],
+            # For multi-parameter tests which share snippets, we don't want to clear the
+            # snapshot dir before updating the snippets
+            clear_snapshot_dir_before_update=False,
         ) as context:
             project_root = (
                 Path(__file__).parent / f"my-existing-project-{package_manager}"
