@@ -71,7 +71,7 @@ def test_execute_asset_with_check() -> None:
         }
     )
 
-    defs = component.build_defs(ComponentTree.for_test().decl_load_context)
+    defs = component.build_defs(ComponentTree.for_test().load_context)
 
     assets_def = defs.get_assets_def("asset")
     assert assets_def
@@ -119,7 +119,7 @@ def test_standalone_asset_check() -> None:
     assert isinstance(component.execution, FunctionSpec)
     assert isinstance(component.execution.fn(None), dg.AssetCheckResult)
 
-    defs = component.build_defs(ComponentTree.for_test().decl_load_context)
+    defs = component.build_defs(ComponentTree.for_test().load_context)
     assert defs.asset_checks
     asset_checks_def = next(iter(defs.asset_checks))
     assert isinstance(asset_checks_def, dg.AssetChecksDefinition)
@@ -156,7 +156,7 @@ def test_standalone_asset_check_with_resources() -> None:
         }
     )
 
-    defs = component.build_defs(ComponentTree.for_test().decl_load_context)
+    defs = component.build_defs(ComponentTree.for_test().load_context)
 
     asset_checks_def = next(iter(defs.asset_checks or []))
     assert isinstance(asset_checks_def, dg.AssetChecksDefinition)

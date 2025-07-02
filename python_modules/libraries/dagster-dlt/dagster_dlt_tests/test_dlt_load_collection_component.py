@@ -301,7 +301,7 @@ def test_execute_component(dlt_pipeline: Pipeline):
                 pipeline=dlt_pipeline,
             )
         ]
-    ).build_defs(ComponentTree.for_test().decl_load_context)
+    ).build_defs(ComponentTree.for_test().load_context)
 
     asset_def = cast("AssetsDefinition", next(iter(defs.assets or [])))
     result = materialize(
