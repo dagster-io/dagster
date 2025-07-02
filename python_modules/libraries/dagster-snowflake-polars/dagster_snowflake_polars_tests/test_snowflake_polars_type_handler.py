@@ -56,9 +56,9 @@ IS_BUILDKITE = os.getenv("BUILDKITE") is not None
 
 
 SHARED_BUILDKITE_SNOWFLAKE_CONF: Mapping[str, Any] = {
-    "account": os.getenv("SNOWFLAKE_ACCOUNT"),
+    "account": os.getenv("SNOWFLAKE_ACCOUNT", ""),
     "user": "BUILDKITE",
-    "password": os.getenv("SNOWFLAKE_BUILDKITE_PASSWORD"),
+    "password": os.getenv("SNOWFLAKE_BUILDKITE_PASSWORD", ""),
 }
 
 DATABASE = "TEST_SNOWFLAKE_IO_MANAGER"
