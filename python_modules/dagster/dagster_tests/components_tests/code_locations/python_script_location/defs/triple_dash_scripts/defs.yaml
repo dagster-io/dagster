@@ -1,4 +1,4 @@
-type: dagster.components.lib.executable_component.python_script_component.PythonScriptComponent
+type: dagster.lib.executable_component.python_script_component.PythonScriptComponent
 
 attributes:
   execution:
@@ -10,7 +10,7 @@ attributes:
       automation_condition: "{{ automation_condition.on_cron('@daily') }}"
       deps: [up1_dash, up2_dash]
 ---
-type: dagster.components.lib.executable_component.python_script_component.PythonScriptComponent
+type: dagster.lib.executable_component.python_script_component.PythonScriptComponent
 
 attributes:
   execution:
@@ -18,7 +18,7 @@ attributes:
   assets:
     - key: c_dash
 ---
-type: dagster.components.lib.executable_component.python_script_component.PythonScriptComponent
+type: dagster.lib.executable_component.python_script_component.PythonScriptComponent
 
 attributes:
   execution:

@@ -232,7 +232,7 @@ class DefsFolderComponent(Component):
         .. code-block:: yaml
 
             # analytics/defs.yaml
-            type: dagster.components.DefsFolderComponent
+            type: dagster.DefsFolderComponent
             post_processing:
               assets:
                 - target: "*" # add a top level tag to all assets in the folder
