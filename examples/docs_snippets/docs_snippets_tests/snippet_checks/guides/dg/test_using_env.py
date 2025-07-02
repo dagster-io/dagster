@@ -39,6 +39,7 @@ SNIPPETS_DIR = (
     / "guides"
     / "dg"
     / "using-env"
+    / "generated"
 )
 
 # Keep a global list of graphql query/mutation matchers, which are used to mock responses

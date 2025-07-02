@@ -29,6 +29,7 @@ SNIPPETS_DIR = (
     / "guides"
     / "dg"
     / "adding-components-to-existing-project"
+    / "generated"
 )
 
 

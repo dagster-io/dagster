@@ -28,6 +28,7 @@ SNIPPETS_DIR = (
     / "guides"
     / "dg"
     / "migrating-definitions"
+    / "generated"
 )
 
 

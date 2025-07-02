@@ -25,6 +25,7 @@ SNIPPETS_DIR = (
     / "guides"
     / "dg"
     / "dagster-definitions"
+    / "generated"
 )
 
 

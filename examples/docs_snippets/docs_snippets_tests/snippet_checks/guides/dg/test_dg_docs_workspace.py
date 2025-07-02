@@ -23,6 +23,7 @@ DG_SNIPPETS_DIR = (
     / "guides"
     / "dg"
     / "workspace"
+    / "generated"
 )
 MASK_MY_WORKSPACE = (r"\/.*?\/dagster-workspace", "/.../dagster-workspace")
 MASK_USING_LOG_MESSAGE = (r"\nUsing[\s\S]*", "\n...")

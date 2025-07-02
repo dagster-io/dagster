@@ -21,6 +21,7 @@ _SNIPPETS_DIR = (
     / "guides"
     / "dg"
     / "creating-dg-plugin"
+    / "generated"
 )
 
 _MY_LIBRARY = Path(__file__).parent / "my-library"
