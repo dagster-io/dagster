@@ -15,10 +15,10 @@ both a case where we have been using [uv](https://docs.astral.sh/uv) with `pypro
 
 <Tabs groupId="package-manager">
   <TabItem value="uv" label="uv">
-    <CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/migrating-project/1-uv-tree.txt" />
+    <CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/migrating-project/generated/1-uv-tree.txt" />
   </TabItem>
   <TabItem value="pip" label="pip">
-    <CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/migrating-project/1-pip-tree.txt" />
+    <CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/migrating-project/generated/1-pip-tree.txt" />
   </TabItem>
 </Tabs>
 
@@ -29,17 +29,17 @@ project root is recommended (particularly when using `uv`) but not required.
 <Tabs groupId="package-manager">
   <TabItem value="uv" label="uv">
     If you don't have a virtual environment yet, run:
-    <CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/migrating-project/2-a-uv-venv.txt" />
+    <CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/migrating-project/generated/2-a-uv-venv.txt" />
     Then activate it:
-    <CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/migrating-project/2-b-uv-venv.txt" />
+    <CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/migrating-project/generated/2-b-uv-venv.txt" />
   </TabItem>
   <TabItem value="pip" label="pip">
     If you don't have a virtual environment yet, run:
-    <CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/migrating-project/2-a-pip-venv.txt" />
+    <CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/migrating-project/generated/2-a-pip-venv.txt" />
     Now activate it:
-    <CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/migrating-project/2-b-pip-venv.txt" />
+    <CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/migrating-project/generated/2-b-pip-venv.txt" />
     And install the project package as an editable install:
-    <CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/migrating-project/2-c-pip-venv.txt" />
+    <CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/migrating-project/generated/2-c-pip-venv.txt" />
   </TabItem>
 </Tabs>
 
@@ -49,10 +49,10 @@ project root is recommended (particularly when using `uv`) but not required.
 
 <Tabs groupId="package-manager">
   <TabItem value="uv" label="uv">
-    <CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/migrating-project/3-uv-install-dg.txt" />
+    <CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/migrating-project/generated/3-uv-install-dg.txt" />
   </TabItem>
   <TabItem value="pip" label="pip">
-    <CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/migrating-project/3-pip-install-dg.txt" />
+    <CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/migrating-project/generated/3-pip-install-dg.txt" />
   </TabItem>
 </Tabs>
 
@@ -68,12 +68,12 @@ configuration](/api/dg/dg-cli-configuration). This may be either a `pyproject.to
         Since our project already has a `pyproject.toml` file, we can just add
         the requisite `tool.dg` section to the file:
 
-        <CodeExample path="docs_snippets/docs_snippets/guides/dg/migrating-project/4-uv-config.toml" language="toml" title="pyproject.toml" />
+        <CodeExample path="docs_snippets/docs_snippets/guides/dg/migrating-project/generated/4-uv-config.toml" language="toml" title="pyproject.toml" />
     </TabItem>
     <TabItem value="pip" label="pip">
         Since our sample project has a `setup.py` and no `pyproject.toml`,
         we'll create a `dg.toml` file:
-        <CodeExample path="docs_snippets/docs_snippets/guides/dg/migrating-project/4-pip-config.toml" language="toml" title="dg.toml" />
+        <CodeExample path="docs_snippets/docs_snippets/guides/dg/migrating-project/generated/4-pip-config.toml" language="toml" title="dg.toml" />
     </TabItem>
 
 </Tabs>
@@ -86,7 +86,7 @@ There are three settings:
 
 Now that these settings are in place, you can interact with your project using `dg`. If we run `dg list defs` we can see the sole existing asset in our project:
 
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/migrating-project/5-list-defs.txt" />
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/migrating-project/generated/5-list-defs.txt" />
 
 ### Add a `dagster_dg_cli.registry_modules` entry point
 
@@ -98,7 +98,7 @@ where our project exposes registry modules. By convention, this submodule is
 named `<root_module>.lib`. In our case, it will be `my_existing_project.lib`.
 Let's create this submodule now:
 
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/migrating-project/6-create-lib.txt" />
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/migrating-project/generated/6-create-lib.txt" />
 
 {/* :::tip */}
 {/* See the [Registry modules guide](todo) for more on registry modules */}
@@ -117,11 +117,11 @@ Entry points can be declared in either `pyproject.toml` or `setup.py`:
         Since our package metadata is in `pyproject.toml`, we'll add the entry
         point declaration there:
 
-        <CodeExample path="docs_snippets/docs_snippets/guides/dg/migrating-project/7-uv-plugin-config.toml" language="toml" title="pyproject.toml" />
+        <CodeExample path="docs_snippets/docs_snippets/guides/dg/migrating-project/generated/7-uv-plugin-config.toml" language="toml" title="pyproject.toml" />
 
         Then we'll reinstall the package. Note that `uv sync` will _not_
         reinstall our package, so we'll use `uv pip install` instead:
-        <CodeExample path="docs_snippets/docs_snippets/guides/dg/migrating-project/8-uv-reinstall-package.txt" />
+        <CodeExample path="docs_snippets/docs_snippets/guides/dg/migrating-project/generated/8-uv-reinstall-package.txt" />
 
     </TabItem>
     <TabItem value="pip" label="pip">
@@ -133,9 +133,9 @@ Entry points can be declared in either `pyproject.toml` or `setup.py`:
         alongside `setup.py`. Create `setup.cfg` with the following contents
         (if your package has existing entry points declared in `setup.py`, you'll
         want to move their definitions to `setup.cfg` as well):
-        <CodeExample path="docs_snippets/docs_snippets/guides/dg/migrating-project/7-pip-plugin-config.txt" language="ini" title="setup.cfg" />
+        <CodeExample path="docs_snippets/docs_snippets/guides/dg/migrating-project/generated/7-pip-plugin-config.txt" language="ini" title="setup.cfg" />
         Then we'll reinstall the package:
-        <CodeExample path="docs_snippets/docs_snippets/guides/dg/migrating-project/8-pip-reinstall-package.txt" />
+        <CodeExample path="docs_snippets/docs_snippets/guides/dg/migrating-project/generated/8-pip-reinstall-package.txt" />
     </TabItem>
 
 </Tabs>
@@ -144,17 +144,17 @@ If we've done everything correctly, we should now be able to run `dg list
 registry-modules` and see the module `my_existing_project.components`, which we have registered as an entry point, listed in the output.
 
 <CliInvocationExample
-path="docs_snippets/docs_snippets/guides/dg/migrating-project/9-list-registry-modules.txt"
+path="docs_snippets/docs_snippets/guides/dg/migrating-project/generated/9-list-registry-modules.txt"
 />
 
 We can now scaffold a new component in our project and it will be
 available to `dg` commands. First create the component:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dg/migrating-project/10-scaffold-component-type.txt" />
+<CodeExample path="docs_snippets/docs_snippets/guides/dg/migrating-project/generated/10-scaffold-component-type.txt" />
 
 Then run `dg list components` to confirm that the new component is available:
 
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/migrating-project/11-list-components.txt" />
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/migrating-project/generated/11-list-components.txt" />
 
 You should see the `my_project.lib.MyComponentType` listed in the output.
 
@@ -165,7 +165,7 @@ automatically picking up any definitions that exist in a particular module. We
 are going to create a new submodule named `my_existing_project.defs` (`defs` is
 the conventional name of the module for where definitions live in `dg`) from which we will autoload definitions.
 
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/migrating-project/12-mkdir-defs.txt" />
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/migrating-project/generated/12-mkdir-defs.txt" />
 
 ## Modify top-level definitions
 
@@ -178,13 +178,13 @@ You'll autoload definitions using `load_defs`, then merge them with your existin
 <Tabs>
   <TabItem value="before" label="Before">
     <CodeExample
-      path="docs_snippets/docs_snippets/guides/dg/migrating-project/13-initial-definitions.py"
+      path="docs_snippets/docs_snippets/guides/dg/migrating-project/generated/13-initial-definitions.py"
       language="python"
     />
   </TabItem>
   <TabItem value="after" label="After">
     <CodeExample
-      path="docs_snippets/docs_snippets/guides/dg/migrating-project/14-updated-definitions.py"
+      path="docs_snippets/docs_snippets/guides/dg/migrating-project/generated/14-updated-definitions.py"
       language="python"
     />
   </TabItem>
@@ -193,12 +193,12 @@ You'll autoload definitions using `load_defs`, then merge them with your existin
 Now let's add an asset to the new `defs` module. Create
 `my_existing_project/defs/autoloaded_asset.py` with the following contents:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dg/migrating-project/15-autoloaded-asset.py" />
+<CodeExample path="docs_snippets/docs_snippets/guides/dg/migrating-project/generated/15-autoloaded-asset.py" />
 
 Finally, let's confirm the new asset is being autoloaded. Run `dg list defs`
 again and you should see both the new `autoloaded_asset` and old `my_asset`:
 
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/migrating-project/16-list-defs.txt" />
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/migrating-project/generated/16-list-defs.txt" />
 
 Now your project is fully compatible with `dg`!
 
