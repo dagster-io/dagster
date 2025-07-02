@@ -64,7 +64,7 @@ export const WorkspaceContext = React.createContext<WorkspaceState>({
 
 export const WorkspaceProvider = ({children}: {children: React.ReactNode}) => {
   return (
-    <RecoilRoot>
+    <RecoilRoot override={false}>
       <WorkspaceProviderImpl>{children}</WorkspaceProviderImpl>
     </RecoilRoot>
   );
