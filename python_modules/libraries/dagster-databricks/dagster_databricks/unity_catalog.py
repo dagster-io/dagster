@@ -1,0 +1,87 @@
+from __future__ import annotations
+
+from typing import Optional, Sequence
+
+from dagster import AssetKey, AssetsDefinition, TableColumn, TableSchema
+from dagster._core.definitions.asset_spec import AssetSpec
+from dagster._core.definitions.external_asset import external_asset_from_spec
+from databricks.sdk import WorkspaceClient
+
+import requests
+
+
+def unity_catalog_assets(
+    client: WorkspaceClient,
+    *,
+    catalog: str,
+    schema: Optional[str] = None,
+    include_views: bool = True,
+    with_lineage: bool = True,
+    # Need to decide whether or not to keep the asset_key_prefix parameter.
+    asset_key_prefix: Sequence[str] = (),
+    group_name: Optional[str] = None,
+) -> list[AssetsDefinition]:
+    """Return Dagster assets representing Unity Catalog tables and views."""
+
+    assets: list[AssetsDefinition] = []
+    tables = client.tables.list(catalog_name=catalog, schema_name=schema)
+
+    for table in tables:
+        # No API to exclude views, so we do this!
+        if not include_views and table.table_type == catalog.TableType.VIEW:
+            continue
+
+        key = AssetKey([*asset_key_prefix, catalog, table.schema_name, table.name])
+        upstream_keys: list[AssetKey] = []
+
+        if with_lineage:
+            upstream_keys = _get_lineage_for_table(catalog=catalog,
+                                                   schema=schema,
+                                                   table=table.name,
+                                                   client=client)
+        columns = _get_schema_for_table(table)
+        spec = AssetSpec(key=key,
+                         deps=upstream_keys,
+                         owners=[table.owner],
+                         description=table.comment,
+                         kinds=["Databricks"],
+                         group_name=group_name,
+                         metadata ={
+                         "dagster/column_schema": TableSchema(columns)})
+        assets.append(external_asset_from_spec(spec))
+
+    return assets
+
+def _get_lineage_for_table(catalog: str,
+                           schema: str,
+                           table: str,
+                           client: WorkspaceClient) -> List[AssetKey]:
+    try:
+        response = requests.get(
+            f"{client.config.host}/api/2.0/lineage-tracking/table-lineage",
+            headers={
+                "Authorization": f"Bearer {client.config.token}",
+                "Content-Type": "application/json"
+            },
+            params={"table_name": f"{catalog}.{schema}.{table}", "include_entity_lineage": "true"}
+        )
+        response.raise_for_status()
+        upstreams = response.json().get("upstreams", [])
+        return [
+            AssetKey([
+                src["tableInfo"]["catalog_name"],
+                src["tableInfo"]["schema_name"],
+                src["tableInfo"]["name"]
+            ])
+            for src in upstreams if "tableInfo" in src
+        ]
+    except Exception:
+        return []
+
+def _get_schema_for_table(table: "TableInfo") -> list:
+    columns = []
+    for column in table.columns:
+        columns.append(TableColumn(column.name,
+                                      column.type_name.name,
+                                      description=column.comment))
+    return columns
