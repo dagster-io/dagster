@@ -901,18 +901,11 @@ class DownstreamAssetSelection(ChainedAssetSelection):
     ) -> AbstractSet[AssetKey]:
         selection = self.child.resolve_inner(asset_graph, allow_missing=allow_missing)
         return operator.sub(
-            reduce(
-                operator.or_,
-                [
-                    {asset_key}
-                    | fetch_connected(
-                        item=asset_key,
-                        graph=asset_graph.asset_dep_graph,
-                        direction="downstream",
-                        depth=self.depth,
-                    )
-                    for asset_key in selection
-                ],
+            (
+                selection
+                | fetch_connected(
+                    selection, asset_graph.asset_dep_graph, direction="downstream", depth=self.depth
+                )
             ),
             selection if not self.include_self else set(),
         )
@@ -1331,19 +1324,11 @@ def _fetch_all_upstream(
     include_self: bool = True,
 ) -> AbstractSet[AssetKey]:
     return operator.sub(
-        reduce(
-            operator.or_,
-            [
-                {asset_key}
-                | fetch_connected(
-                    item=asset_key,
-                    graph=asset_graph.asset_dep_graph,
-                    direction="upstream",
-                    depth=depth,
-                )
-                for asset_key in selection
-            ],
-            set(),
+        (
+            selection
+            | fetch_connected(
+                selection, asset_graph.asset_dep_graph, direction="upstream", depth=depth
+            )
         ),
         selection if not include_self else set(),
     )
