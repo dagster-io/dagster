@@ -113,7 +113,6 @@ export class WorkspaceStatusPoller {
     this.statuses = nextStatuses;
     this.lastChanged = {added, updated, removed};
     if (added.length > 0 || updated.length > 0 || removed.length > 0 || !this.hasNotifiedOnce) {
-      console.log('notifying subscribers', {added, updated, removed});
       this.hasNotifiedOnce = true;
       await this.notifySubscribers();
     }

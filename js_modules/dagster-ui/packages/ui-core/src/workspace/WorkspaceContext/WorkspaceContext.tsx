@@ -152,7 +152,6 @@ const WorkspaceProviderImpl = ({children}: {children: React.ReactNode}) => {
       getData,
       setCodeLocationStatusAtom,
       setData: ({locationStatuses, locationEntries, assetEntries}) => {
-        console.log('setting data', {locationEntries, assetEntries, locationStatuses});
         if (locationEntries) {
           setLocationWorkspaceData(locationEntries);
         }
