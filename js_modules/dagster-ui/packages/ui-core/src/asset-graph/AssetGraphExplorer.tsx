@@ -18,6 +18,7 @@ import * as React from 'react';
 import {useCallback, useMemo, useRef, useState} from 'react';
 import {AssetSelectionInput} from 'shared/asset-selection/input/AssetSelectionInput.oss';
 import {CreateCatalogViewButton} from 'shared/assets/CreateCatalogViewButton.oss';
+import {useCatalogExtraDropdownOptions} from 'shared/assets/catalog/useCatalogExtraDropdownOptions.oss';
 import styled from 'styled-components';
 
 import {AssetEdges} from './AssetEdges';
@@ -663,6 +664,15 @@ const AssetGraphExplorerWithData = ({
 
   const [errorState, setErrorState] = useState<SyntaxError[]>([]);
 
+  const extraDropdownOptions = useCatalogExtraDropdownOptions(
+    useMemo(
+      () => ({
+        scope: {selected: selectedGraphNodes.map((n) => ({assetKey: n.assetKey}))},
+      }),
+      [selectedGraphNodes],
+    ),
+  );
+
   const explorer = (
     <SplitPanelContainer
       key="explorer"
@@ -781,6 +791,7 @@ const AssetGraphExplorerWithData = ({
                           ? {selected: selectedDefinitions}
                           : {all: allDefinitionsForMaterialize}
                       }
+                      additionalDropdownOptions={extraDropdownOptions}
                     />
                   )}
                 </Box>
