@@ -28,6 +28,7 @@ SNIPPETS_DIR = (
     / "guides"
     / "components"
     / "customizing-existing-component"
+    / "generated"
 )
 
 CUSTOM_SLING_COMPONENT_BODY = '''\

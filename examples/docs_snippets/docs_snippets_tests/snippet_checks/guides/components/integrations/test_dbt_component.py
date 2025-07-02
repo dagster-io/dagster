@@ -31,6 +31,7 @@ SNIPPETS_DIR = (
     / "components"
     / "integrations"
     / "dbt-component"
+    / "generated"
 )
 
 

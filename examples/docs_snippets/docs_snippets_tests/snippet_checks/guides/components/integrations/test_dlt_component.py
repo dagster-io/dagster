@@ -30,6 +30,7 @@ SNIPPETS_DIR = (
     / "components"
     / "integrations"
     / "dlt-component"
+    / "generated"
 )
 
 

@@ -10,7 +10,7 @@ The [dagster-fivetran](/integrations/libraries/fivetran) library provides a `Fiv
 
 To begin, you'll need a Dagster project. You can use an [existing components-ready project](/guides/build/projects/moving-to-components/migrating-project) or create a new one:
 
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/fivetran-component/1-scaffold-project.txt" />
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/fivetran-component/generated/1-scaffold-project.txt" />
 
 Activate the project virtual environment:
 
@@ -20,44 +20,44 @@ source ../.venv/bin/activate
 
 Finally, add the `dagster-fivetran` library to the project:
 
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/fivetran-component/2-add-fivetran.txt" />
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/fivetran-component/generated/2-add-fivetran.txt" />
 
 ## 2. Scaffold a Fivetran component
 
 Now that you have a Dagster project, you can scaffold a Fivetran component. You'll need to provide your Fivetran account ID and API credentials:
 
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/fivetran-component/3-scaffold-fivetran-component.txt" />
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/fivetran-component/generated/3-scaffold-fivetran-component.txt" />
 
 The scaffold call will generate a `defs.yaml` file:
 
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/fivetran-component/4-tree.txt" />
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/fivetran-component/generated/4-tree.txt" />
 
 In its scaffolded form, the `defs.yaml` file contains the configuration for your Fivetran workspace:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/components/integrations/fivetran-component/5-component.yaml" title="my_project/defs/fivetran_ingest/defs.yaml" language="yaml" />
+<CodeExample path="docs_snippets/docs_snippets/guides/components/integrations/fivetran-component/generated/5-component.yaml" title="my_project/defs/fivetran_ingest/defs.yaml" language="yaml" />
 
 You can check the configuration of your component:
 
 <WideContent maxSize={1100}>
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/fivetran-component/6-list-defs.txt" />
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/fivetran-component/generated/6-list-defs.txt" />
 </WideContent>
 
 ## 3. Select specific connectors
 
 You can select specific Fivetran connectors to include in your component using the `connector_selector` key. This allows you to filter which connectors are represented as assets:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/components/integrations/fivetran-component/7-customized-component.yaml" title="my_project/defs/fivetran_ingest/defs.yaml" language="yaml" />
+<CodeExample path="docs_snippets/docs_snippets/guides/components/integrations/fivetran-component/generated/7-customized-component.yaml" title="my_project/defs/fivetran_ingest/defs.yaml" language="yaml" />
 
 <WideContent maxSize={1100}>
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/fivetran-component/8-list-defs.txt" />
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/fivetran-component/generated/8-list-defs.txt" />
 </WideContent>
 
 ## 4. Customize Fivetran assets
 
 Properties of the assets emitted by each connector can be customized in the `defs.yaml` file using the `translation` key:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/components/integrations/fivetran-component/9-customized-component.yaml" title="my_project/defs/fivetran_ingest/defs.yaml" language="yaml" />
+<CodeExample path="docs_snippets/docs_snippets/guides/components/integrations/fivetran-component/generated/9-customized-component.yaml" title="my_project/defs/fivetran_ingest/defs.yaml" language="yaml" />
 
 <WideContent maxSize={1100}>
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/fivetran-component/10-list-defs.txt" />
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/fivetran-component/generated/10-list-defs.txt" />
 </WideContent>

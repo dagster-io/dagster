@@ -30,6 +30,7 @@ SNIPPETS_DIR = (
     / "components"
     / "integrations"
     / "powerbi-component"
+    / "generated"
 )
 
 

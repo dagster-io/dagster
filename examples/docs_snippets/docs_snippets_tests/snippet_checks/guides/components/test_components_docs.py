@@ -37,6 +37,7 @@ COMPONENTS_SNIPPETS_DIR = (
     / "guides"
     / "components"
     / "index"
+    / "generated"
 )
 
 _MASK_USING_ENVIRONMENT_LOG_MESSAGE = (r"\nUsing \S*\n", "\n")
