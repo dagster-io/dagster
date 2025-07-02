@@ -10,11 +10,11 @@ import {
 } from './types/WorkspaceQueries.types';
 import {useGetData} from '../../search/useIndexedDBCachedQuery';
 
-type Data = {
+type Data = Partial<{
   locationStatuses: Record<string, LocationStatusEntryFragment>;
   locationEntries: Record<string, LocationWorkspaceQuery>;
   assetEntries: Record<string, LocationWorkspaceAssetsQuery>;
-};
+}>;
 export class WorkspaceManager {
   private statusPoller: WorkspaceStatusPoller;
   private readonly client: ApolloClient<any>;
@@ -65,14 +65,13 @@ export class WorkspaceManager {
 
     Object.entries(this.dataFetchers).forEach(([key, fetcher]) => {
       fetcher.subscribe((data) => {
-        this.data[key as keyof Data] = data as any;
-        this.setData(this.data);
+        this.setData({[key]: data});
       });
     });
 
     this.statusPoller.subscribe(async ({locationStatuses}) => {
       this.data.locationStatuses = locationStatuses;
-      this.setData(this.data);
+      this.setData({locationStatuses});
     });
   }
 
