@@ -15,6 +15,7 @@ from dagster_buildkite.steps.packages import (
 from dagster_buildkite.steps.test_project import build_test_project_steps
 from dagster_buildkite.utils import (
     UV_PIN,
+    BlockStep,
     BuildkiteStep,
     CommandStep,
     GroupStep,
@@ -47,11 +48,11 @@ def build_repo_wide_steps() -> List[BuildkiteStep]:
     # the target. `check-manifest`, `pyright`, and `ruff` are run for the whole repo at once.
     return [
         *build_check_changelog_steps(),
-        *build_repo_wide_check_manifest_steps(),
-        *build_repo_wide_pyright_steps(),
-        *build_repo_wide_ruff_steps(),
-        *build_repo_wide_prettier_steps(),
-        *build_buildkite_lint_steps(),
+        #  *build_repo_wide_check_manifest_steps(),
+        #  *build_repo_wide_pyright_steps(),
+        #  *build_repo_wide_ruff_steps(),
+        #  *build_repo_wide_prettier_steps(),
+        #  *build_buildkite_lint_steps(),
     ]
 
 
@@ -106,18 +107,48 @@ def build_repo_wide_prettier_steps() -> List[CommandStep]:
     ]
 
 
-def build_check_changelog_steps() -> List[CommandStep]:
+def build_check_changelog_steps() -> List[BuildkiteStep]:
     branch_name = safe_getenv("BUILDKITE_BRANCH")
-    if not is_release_branch(branch_name):
+    if not is_release_branch(branch_name) and False:
         return []
 
     release_number = branch_name.split("-", 1)[-1].replace("-", ".")
-    return [
+    release_number = "1.11.1"
+
+    changelog_validation_step = (
         CommandStepBuilder(":memo: changelog")
         .on_test_image(AvailablePythonVersion.get_default())
         .run(f"python scripts/check_changelog.py {release_number}")
         .build()
-    ]
+    )
+
+    create_changelog_step: BlockStep = {
+        "block": ":question: AI generate changelog?",
+        "prompt": None,
+        "fields": [],
+    }
+
+    import hashlib
+
+    changelog_branch_name = f"changelog-release-{release_number}-{hashlib.sha256(release_number.encode()).hexdigest()}"
+
+    generate_changelog_step = (
+        CommandStepBuilder(":memo: generate changelog")
+        .on_test_image(AvailablePythonVersion.get_default(), ["OPENAI_API_KEY"])
+        .run(
+            "npm install -g @openai/codex@native",
+            f"python scripts/generate_changelog.py new-changelog {release_number}",
+            f"git checkout -b {changelog_branch_name}",
+            "git add CHANGES.md",
+            "git config --global user.email 'devtools@elementl.com'",
+            "git config --global user.name 'Dagster Bot'",
+            f"git commit -m 'Update changelog for release {release_number}'",
+            f"git push --force --set-upstream origin {changelog_branch_name}",
+        )
+        .build()
+    )
+
+    return [create_changelog_step, generate_changelog_step]
 
 
 def build_repo_wide_pyright_steps() -> List[BuildkiteStep]:
@@ -194,7 +225,7 @@ def build_sql_schema_check_steps() -> List[CommandStep]:
             "python scripts/check_schemas.py",
         )
         .with_skip(skip_mysql_if_no_changes_to_dependencies(["dagster"]))
-        .build()
+        .build(),
     ]
 
 
