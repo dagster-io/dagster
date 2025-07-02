@@ -19,10 +19,14 @@ def get_project_specified_env_vars(dg_context: DgContext) -> Mapping[str, Sequen
     """Returns a mapping of environment variables to the components that specify
     requiring them.
     """
+    if not dg_context.has_defs_path:
+        return {}
+
     from dagster_shared.yaml_utils import parse_yamls_with_source_position
     from yaml.scanner import ScannerError
 
     env_vars = defaultdict(list)
+
     for component_dir in dg_context.defs_path.rglob("*"):
         component_path = component_dir / "defs.yaml"
 
