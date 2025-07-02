@@ -19,9 +19,9 @@ To run the examples, you'll need to:
 - Create a new Dagster project:
   <ScaffoldProject />
 - An [AWS S3 bucket](https://docs.aws.amazon.com/AmazonS3/latest/userguide/GetStartedWithS3.html) to be used for communication between Spark and Dagster (and the corresponding `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`).
-- [Docker](https://docs.docker.com/get-started/get-docker/) to emulate a typical Spark setup locally.
+- [Docker](https://docs.docker.com/get-started/get-docker) to emulate a typical Spark setup locally.
   This setup includes Apache Spark and the Java SDK, as well as the required Dagster libraries to run a development orchestration server.
-- In the Spark environment, you'll need a suitable Scala compiler (we are using [Gradle](https://gradle.org/)) and typically also the Java AWS S3 SDK packages. For example:
+- In the Spark environment, you'll need a suitable Scala compiler (we are using [Gradle](https://gradle.org)) and typically also the Java AWS S3 SDK packages. For example:
 
   ```shell
   curl -fSL "https://repo1.maven.org/maven2/org/apache/hadoop/hadoop-aws/3.5.1/hadoop-aws-3.5.1.jar" \

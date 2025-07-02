@@ -11,8 +11,6 @@ import pytest
 import yaml
 from dagster import (
     AssetKey,
-    DailyPartitionsDefinition,
-    StaticPartitionsDefinition,
     _check as check,
     asset,
     execute_job,
@@ -28,6 +26,10 @@ from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluatio
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.events import AssetMaterialization, AssetObservation
+from dagster._core.definitions.partitions.definition import (
+    DailyPartitionsDefinition,
+    StaticPartitionsDefinition,
+)
 from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
 from dagster._core.errors import (
     DagsterHomeNotSetError,

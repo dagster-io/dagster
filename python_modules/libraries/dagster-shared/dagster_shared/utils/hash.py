@@ -22,7 +22,7 @@ def hash_collection(
 
             def __hash__(self):
                 if not hasattr(self, '_hash'):
-                    self._hash = hash_named_tuple(self)
+                    self._hash = hash_collection(self)
                 return self._hash
     """
     assert isinstance(collection, (list, dict, set, tuple)), (

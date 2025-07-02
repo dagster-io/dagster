@@ -4,7 +4,6 @@ from datetime import datetime
 import pytest
 from dagster import (
     DagsterInvalidDefinitionError,
-    DailyPartitionsDefinition,
     Definitions,
     ScheduleDefinition,
     asset,
@@ -21,7 +20,8 @@ from dagster._core.definitions.metadata.metadata_value import (
     MetadataValue,
     TextMetadataValue,
 )
-from dagster._core.definitions.partitioned_schedule import (
+from dagster._core.definitions.partitions.definition import DailyPartitionsDefinition
+from dagster._core.definitions.partitions.partitioned_schedule import (
     UnresolvedPartitionedAssetScheduleDefinition,
 )
 from dagster._core.definitions.run_config import RunConfig

@@ -229,12 +229,16 @@ monthly_partition = dg.MonthlyPartitionsDefinition(start_date="2018-01-01")
 @dg.asset(
     deps=["stg_orders"],
     kinds={"duckdb"},
+    # highlight-start
     partitions_def=monthly_partition,
+    # highlight-end
     automation_condition=dg.AutomationCondition.eager(),
     description="Monthly sales performance",
 )
 def monthly_orders(context: dg.AssetExecutionContext, duckdb: DuckDBResource):
+    # highlight-start
     partition_date_str = context.partition_key
+    # highlight-end
     month_to_fetch = partition_date_str[:-3]
     table_name = "jaffle_platform.main.monthly_orders"
 

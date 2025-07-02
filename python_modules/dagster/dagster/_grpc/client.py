@@ -311,6 +311,16 @@ class DagsterGrpcClient:
         res = self._query("GetServerId", dagster_api_pb2.Empty, timeout=timeout)
         return res.server_id
 
+    async def gen_execution_plan_snapshot(
+        self, execution_plan_snapshot_args: ExecutionPlanSnapshotArgs
+    ) -> str:
+        res = await self._gen_query(
+            "ExecutionPlanSnapshot",
+            dagster_api_pb2.ExecutionPlanSnapshotRequest,
+            serialized_execution_plan_snapshot_args=serialize_value(execution_plan_snapshot_args),
+        )
+        return res.serialized_execution_plan_snapshot
+
     def execution_plan_snapshot(
         self, execution_plan_snapshot_args: ExecutionPlanSnapshotArgs
     ) -> str:
@@ -387,6 +397,16 @@ class DagsterGrpcClient:
         )
 
         return "".join([chunk.serialized_chunk for chunk in chunks])
+
+    async def gen_external_pipeline_subset(
+        self, pipeline_subset_snapshot_args: JobSubsetSnapshotArgs
+    ) -> str:
+        res = await self._gen_query(
+            "ExternalPipelineSubsetSnapshot",
+            dagster_api_pb2.ExternalPipelineSubsetSnapshotRequest,
+            serialized_pipeline_subset_snapshot_args=serialize_value(pipeline_subset_snapshot_args),
+        )
+        return res.serialized_external_pipeline_subset_result
 
     def external_pipeline_subset(self, pipeline_subset_snapshot_args: JobSubsetSnapshotArgs) -> str:
         check.inst_param(

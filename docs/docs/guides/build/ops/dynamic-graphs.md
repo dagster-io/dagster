@@ -19,7 +19,7 @@ The ability for portions of a [graph](/guides/build/ops/graphs) to be duplicated
 
 ## Overview
 
-The basic unit of computation in Dagster is the [op](/guides/build/ops/). In certain cases it is desirable to run the same op multiple times on different pieces of similar data.
+The basic unit of computation in Dagster is the [op](/guides/build/ops). In certain cases it is desirable to run the same op multiple times on different pieces of similar data.
 
 Dynamic outputs are the tool Dagster provides to allow resolving the pieces of data at runtime and having downstream copies of the ops created for each piece.
 

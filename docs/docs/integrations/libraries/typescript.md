@@ -33,4 +33,4 @@ For a usage example, see the [README](https://github.com/dagster-io/community-in
 
 ## About Typescript
 
-[TypeScript](https://www.typescriptlang.org/) is a strongly typed programming language that builds on JavaScript, giving you better tooling at any scale. To get started with TypeScript, see the [TypeScript docs](https://www.typescriptlang.org/docs/).
+[TypeScript](https://www.typescriptlang.org) is a strongly typed programming language that builds on JavaScript, giving you better tooling at any scale. To get started with TypeScript, see the [TypeScript docs](https://www.typescriptlang.org/docs).

@@ -1,4 +1,5 @@
-from dagster import job, op, static_partitioned_config
+from dagster import job, op
+from dagster._core.definitions.partitions.partitioned_config import static_partitioned_config
 
 
 @static_partitioned_config(["a", "b", "c"])

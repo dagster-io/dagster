@@ -8,7 +8,7 @@ sidebar_position: 20
 
 This example showcases a full end-to-end analytics pipeline with Dagster. It starts by ingesting data, transforming the data and presenting it in a BI tool. This is a common order of operations in the data space and having each phase exist in the same framework helps to build more reliable applications. We will start with ingestion.
 
-The data that serves the foundation for our project is [Bluesky](https://bsky.app/). Bluesky is a decentralized social media platform that allows users to post content. For the ingestion layer we want to extract data from Bluesky and load it into a [Cloudflare R2 Bucket](https://developers.cloudflare.com/r2/buckets/) which is a cloud-based object storage service compatible with S3. R2 will serve as our storage layer and where we model the data. But first we need to determine the best way to get data from Bluesky.
+The data that serves the foundation for our project is [Bluesky](https://bsky.app). Bluesky is a decentralized social media platform that allows users to post content. For the ingestion layer we want to extract data from Bluesky and load it into a [Cloudflare R2 Bucket](https://developers.cloudflare.com/r2/buckets) which is a cloud-based object storage service compatible with S3. R2 will serve as our storage layer and where we model the data. But first we need to determine the best way to get data from Bluesky.
 
 Because there is not an out of the box integration for Bluesky in Dagster, we will build our a custom <PyObject section="resources" module="dagster" object="ConfigurableResource"/>. Bluesky uses [atproto](https://docs.bsky.app/docs/advanced-guides/atproto) and provides an [SDK](https://docs.bsky.app/docs/get-started) which will serve as the backbone for our resource.
 

@@ -6,13 +6,7 @@ import pytest
 from dagster import (
     AssetExecutionContext,
     AssetIn,
-    DailyPartitionsDefinition,
-    DimensionPartitionMapping,
-    DynamicPartitionsDefinition,
-    IdentityPartitionMapping,
     IOManager,
-    MultiPartitionKey,
-    StaticPartitionsDefinition,
     asset,
     define_asset_job,
     materialize,
@@ -20,9 +14,24 @@ from dagster import (
 )
 from dagster._check import CheckError
 from dagster._core.definitions.asset_graph import AssetGraph
-from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
-from dagster._core.definitions.partition import PartitionLoadingContext, TemporalContext
-from dagster._core.definitions.time_window_partitions import TimeWindow, get_time_partitions_def
+from dagster._core.definitions.partitions.context import PartitionLoadingContext
+from dagster._core.definitions.partitions.definition import (
+    DailyPartitionsDefinition,
+    DynamicPartitionsDefinition,
+    MultiPartitionsDefinition,
+    StaticPartitionsDefinition,
+)
+from dagster._core.definitions.partitions.mapping import (
+    DimensionPartitionMapping,
+    IdentityPartitionMapping,
+    MultiPartitionMapping,
+)
+from dagster._core.definitions.partitions.utils import (
+    MultiPartitionKey,
+    TimeWindow,
+    get_time_partitions_def,
+)
+from dagster._core.definitions.temporal_context import TemporalContext
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster._core.storage.tags import get_multidimensional_partition_tag
 from dagster._core.test_utils import instance_for_test
@@ -525,7 +534,7 @@ def test_context_invalid_partition_time_window():
 
 
 def test_multipartitions_self_dependency():
-    from dagster import MultiPartitionMapping, PartitionKeyRange, TimeWindowPartitionMapping
+    from dagster import PartitionKeyRange, TimeWindowPartitionMapping
 
     @asset(
         partitions_def=MultiPartitionsDefinition(

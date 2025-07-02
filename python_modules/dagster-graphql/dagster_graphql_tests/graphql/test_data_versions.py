@@ -3,7 +3,6 @@ from typing import Any, Optional
 
 from dagster import (
     AssetIn,
-    DailyPartitionsDefinition,
     OpExecutionContext,
     RepositoryDefinition,
     TimeWindowPartitionMapping,
@@ -17,7 +16,8 @@ from dagster._core.definitions.data_version import DATA_VERSION_TAG, DataVersion
 from dagster._core.definitions.decorators.source_asset_decorator import observable_source_asset
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.events import AssetKey, Output
-from dagster._core.definitions.partition import (
+from dagster._core.definitions.partitions.definition import (
+    DailyPartitionsDefinition,
     DynamicPartitionsDefinition,
     StaticPartitionsDefinition,
 )

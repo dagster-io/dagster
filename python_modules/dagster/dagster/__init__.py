@@ -335,10 +335,6 @@ from dagster._core.definitions.multi_asset_sensor_definition import (
     MultiAssetSensorEvaluationContext as MultiAssetSensorEvaluationContext,
     build_multi_asset_sensor_context as build_multi_asset_sensor_context,
 )
-from dagster._core.definitions.multi_dimensional_partitions import (
-    MultiPartitionKey as MultiPartitionKey,
-    MultiPartitionsDefinition as MultiPartitionsDefinition,
-)
 from dagster._core.definitions.op_definition import OpDefinition as OpDefinition
 from dagster._core.definitions.output import (
     DynamicOut as DynamicOut,
@@ -346,18 +342,18 @@ from dagster._core.definitions.output import (
     Out as Out,
     OutputMapping as OutputMapping,
 )
-from dagster._core.definitions.partition import (
+from dagster._core.definitions.partitions.definition import (
+    DailyPartitionsDefinition as DailyPartitionsDefinition,
     DynamicPartitionsDefinition as DynamicPartitionsDefinition,
-    Partition as Partition,
-    PartitionedConfig as PartitionedConfig,
+    HourlyPartitionsDefinition as HourlyPartitionsDefinition,
+    MonthlyPartitionsDefinition as MonthlyPartitionsDefinition,
+    MultiPartitionsDefinition as MultiPartitionsDefinition,
     PartitionsDefinition as PartitionsDefinition,
     StaticPartitionsDefinition as StaticPartitionsDefinition,
-    dynamic_partitioned_config as dynamic_partitioned_config,
-    partitioned_config as partitioned_config,
-    static_partitioned_config as static_partitioned_config,
+    TimeWindowPartitionsDefinition as TimeWindowPartitionsDefinition,
+    WeeklyPartitionsDefinition as WeeklyPartitionsDefinition,
 )
-from dagster._core.definitions.partition_key_range import PartitionKeyRange as PartitionKeyRange
-from dagster._core.definitions.partition_mapping import (
+from dagster._core.definitions.partitions.mapping import (
     AllPartitionMapping as AllPartitionMapping,
     DimensionPartitionMapping as DimensionPartitionMapping,
     IdentityPartitionMapping as IdentityPartitionMapping,
@@ -367,9 +363,27 @@ from dagster._core.definitions.partition_mapping import (
     PartitionMapping as PartitionMapping,
     SpecificPartitionsPartitionMapping as SpecificPartitionsPartitionMapping,
     StaticPartitionMapping as StaticPartitionMapping,
+    TimeWindowPartitionMapping as TimeWindowPartitionMapping,
 )
-from dagster._core.definitions.partitioned_schedule import (
+from dagster._core.definitions.partitions.partition import Partition as Partition
+from dagster._core.definitions.partitions.partition_key_range import (
+    PartitionKeyRange as PartitionKeyRange,
+)
+from dagster._core.definitions.partitions.partitioned_config import (
+    PartitionedConfig as PartitionedConfig,
+    daily_partitioned_config as daily_partitioned_config,
+    dynamic_partitioned_config as dynamic_partitioned_config,
+    hourly_partitioned_config as hourly_partitioned_config,
+    monthly_partitioned_config as monthly_partitioned_config,
+    static_partitioned_config as static_partitioned_config,
+    weekly_partitioned_config as weekly_partitioned_config,
+)
+from dagster._core.definitions.partitions.partitioned_schedule import (
     build_schedule_from_partitioned_job as build_schedule_from_partitioned_job,
+)
+from dagster._core.definitions.partitions.utils import (
+    MultiPartitionKey as MultiPartitionKey,
+    TimeWindow as TimeWindow,
 )
 from dagster._core.definitions.policy import (
     Backoff as Backoff,
@@ -430,21 +444,6 @@ from dagster._core.definitions.source_asset import SourceAsset as SourceAsset
 from dagster._core.definitions.step_launcher import (
     StepLauncher as StepLauncher,
     StepRunRef as StepRunRef,
-)
-from dagster._core.definitions.time_window_partition_mapping import (
-    TimeWindowPartitionMapping as TimeWindowPartitionMapping,
-)
-from dagster._core.definitions.time_window_partitions import (
-    DailyPartitionsDefinition as DailyPartitionsDefinition,
-    HourlyPartitionsDefinition as HourlyPartitionsDefinition,
-    MonthlyPartitionsDefinition as MonthlyPartitionsDefinition,
-    TimeWindow as TimeWindow,
-    TimeWindowPartitionsDefinition as TimeWindowPartitionsDefinition,
-    WeeklyPartitionsDefinition as WeeklyPartitionsDefinition,
-    daily_partitioned_config as daily_partitioned_config,
-    hourly_partitioned_config as hourly_partitioned_config,
-    monthly_partitioned_config as monthly_partitioned_config,
-    weekly_partitioned_config as weekly_partitioned_config,
 )
 from dagster._core.definitions.unresolved_asset_job_definition import (
     define_asset_job as define_asset_job,

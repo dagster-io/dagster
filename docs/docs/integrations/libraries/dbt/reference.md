@@ -10,7 +10,7 @@ Using dbt Cloud? Check out the [dbt Cloud with Dagster guide](/integrations/libr
 
 :::
 
-This reference provides a high-level look at working with dbt models through Dagster's [software-defined assets](/guides/build/assets/) framework using the [`dagster-dbt` integration library](/api/libraries/dagster-dbt).
+This reference provides a high-level look at working with dbt models through Dagster's [software-defined assets](/guides/build/assets) framework using the [`dagster-dbt` integration library](/api/libraries/dagster-dbt).
 
 For a step-by-step implementation walkthrough, refer to the [Using dbt with Dagster asset definitions tutorial](/integrations/libraries/dbt/creating-a-dbt-project-in-dagster).
 
@@ -34,7 +34,7 @@ For a step-by-step implementation walkthrough, refer to the [Using dbt with Dags
 
 ## dbt models and Dagster asset definitions
 
-Dagster’s [asset definitions](/guides/build/assets/) bear several similarities to dbt models. An asset definition contains an asset key, a set of upstream asset keys, and an operation that is responsible for computing the asset from its upstream dependencies. Models defined in a dbt project can be interpreted as Dagster asset definitions:
+Dagster’s [asset definitions](/guides/build/assets) bear several similarities to dbt models. An asset definition contains an asset key, a set of upstream asset keys, and an operation that is responsible for computing the asset from its upstream dependencies. Models defined in a dbt project can be interpreted as Dagster asset definitions:
 
 - The asset key for a dbt model is (by default) the name of the model.
 - The upstream dependencies of a dbt model are defined with `ref` or `source` calls within the model's definition.
@@ -256,7 +256,7 @@ In many cases, it's useful to be able to schedule dbt assets alongside non-dbt a
   path="docs_snippets/docs_snippets/integrations/dbt/dbt.py"
 />
 
-Refer to the [Schedule documentation](/guides/automate/schedules/) for more info on running jobs on a schedule.
+Refer to the [Schedule documentation](/guides/automate/schedules) for more info on running jobs on a schedule.
 
 ## Understanding asset definition attributes
 
@@ -541,7 +541,7 @@ By default, Dagster does not load dbt source tests as asset checks. To enable th
 
 ## Customizing asset materialization metadata
 
-Dagster supports fetching additional metadata at dbt execution time to attach as [materialization metadata](/guides/build/assets/metadata-and-tags/), which is recorded each time your models are rebuilt and displayed in the Dagster UI.
+Dagster supports fetching additional metadata at dbt execution time to attach as [materialization metadata](/guides/build/assets/metadata-and-tags), which is recorded each time your models are rebuilt and displayed in the Dagster UI.
 
 ### Fetching row count data
 
@@ -551,7 +551,7 @@ To use this feature, you'll need to be on at least `dagster>=0.17.6` and `dagste
 
 :::
 
-Dagster can automatically fetch [row counts](/guides/build/assets/metadata-and-tags/) for dbt-generated tables and emit them as [materialization metadata](/guides/build/assets/metadata-and-tags/) to be displayed in the Dagster UI.
+Dagster can automatically fetch [row counts](/guides/build/assets/metadata-and-tags) for dbt-generated tables and emit them as [materialization metadata](/guides/build/assets/metadata-and-tags) to be displayed in the Dagster UI.
 
 Row counts are fetched in parallel to the execution of your dbt models. To enable this feature, call <PyObject section="libraries" object="core.dbt_cli_invocation.DbtEventIterator.fetch_row_counts" module="dagster_dbt" displayText="fetch_row_counts()" /> on the <PyObject section="libraries" object="core.dbt_cli_invocation.DbtEventIterator" module="dagster_dbt" /> returned by the `stream()` dbt CLI call:
 
@@ -571,7 +571,7 @@ To use this feature, you'll need to be on at least `dagster>=1.8.0` and `dagster
 
 :::
 
-Dagster allows you to emit column-level metadata, like [column schema](/guides/build/assets/metadata-and-tags/) and [column lineage](/guides/build/assets/metadata-and-tags/), as [materialization metadata](/guides/build/assets/metadata-and-tags/).
+Dagster allows you to emit column-level metadata, like [column schema](/guides/build/assets/metadata-and-tags) and [column lineage](/guides/build/assets/metadata-and-tags), as [materialization metadata](/guides/build/assets/metadata-and-tags).
 
 With this metadata, you can view documentation in Dagster for all columns, not just columns described in your dbt project.
 

@@ -4,7 +4,7 @@ description: 'Learn to construct schedules from partitioned Dagster assets and j
 sidebar_position: 400
 ---
 
-In this guide, we'll walk you through how to construct schedules from partitioned [assets](/guides/build/assets/) and jobs. By the end, you'll be able to:
+In this guide, we'll walk you through how to construct schedules from partitioned [assets](/guides/build/assets) and jobs. By the end, you'll be able to:
 
 - Construct a schedule for a time-partitioned job
 - Customize a partitioned job's starting time

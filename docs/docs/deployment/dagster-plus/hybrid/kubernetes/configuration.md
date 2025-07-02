@@ -164,7 +164,7 @@ We plan to make this user the default in a future release.
 
 ## Grant AWS permissions
 
-You can provide your Dagster pods with [permissions to assume an AWS IAM role](https://docs.aws.amazon.com/eks/latest/userguide/iam-roles-for-service-accounts.html) using a [Service Account](https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/). For example, you might do this to [configure an S3 IO Manager](/deployment/oss/deployment-options/aws#using-s3-for-io-management).
+You can provide your Dagster pods with [permissions to assume an AWS IAM role](https://docs.aws.amazon.com/eks/latest/userguide/iam-roles-for-service-accounts.html) using a [Service Account](https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account). For example, you might do this to [configure an S3 IO Manager](/deployment/oss/deployment-options/aws#using-s3-for-io-management).
 
 1. [Create an IAM OIDC provider for your EKS cluster](https://docs.aws.amazon.com/eks/latest/userguide/enable-iam-roles-for-service-accounts.html)
 2. [Create an IAM role and and attach IAM policies](https://docs.aws.amazon.com/eks/latest/userguide/associate-service-account-role.html)

@@ -28,7 +28,8 @@ from dagster._core.definitions.hook_definition import HookDefinition
 from dagster._core.definitions.job_definition import JobDefinition, default_job_io_manager
 from dagster._core.definitions.logger_definition import LoggerDefinition
 from dagster._core.definitions.metadata import RawMetadataValue
-from dagster._core.definitions.partition import PartitionedConfig, PartitionsDefinition
+from dagster._core.definitions.partitions.definition import PartitionsDefinition
+from dagster._core.definitions.partitions.partitioned_config import PartitionedConfig
 from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.resource_requirement import ensure_requirements_satisfied
@@ -165,11 +166,7 @@ def build_asset_job(
         config=None,
     )
 
-    asset_layer = AssetLayer.from_graph_and_assets_node_mapping(
-        graph_def=graph,
-        assets_defs_by_outer_node_handle=assets_defs_by_node_handle,
-        asset_graph=asset_graph,
-    )
+    asset_layer = AssetLayer.from_mapping(assets_defs_by_node_handle, asset_graph)
 
     all_resource_defs = get_all_resource_defs(asset_graph, wrapped_resource_defs)
 

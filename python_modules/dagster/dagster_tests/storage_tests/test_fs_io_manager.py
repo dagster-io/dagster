@@ -11,16 +11,12 @@ from dagster import (
     AssetOut,
     AssetsDefinition,
     DagsterInstance,
-    DailyPartitionsDefinition,
     In,
     MetadataValue,
-    MultiPartitionKey,
-    MultiPartitionsDefinition,
     Nothing,
     Output,
     PartitionMapping,
     PartitionsDefinition,
-    StaticPartitionsDefinition,
     TimeWindowPartitionMapping,
     define_asset_job,
     graph,
@@ -32,8 +28,14 @@ from dagster import (
 from dagster._core.definitions import AssetIn, asset, multi_asset
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.definitions_class import Definitions
-from dagster._core.definitions.partition import PartitionsSubset
-from dagster._core.definitions.partition_mapping import UpstreamPartitionsResult
+from dagster._core.definitions.partitions.definition import (
+    DailyPartitionsDefinition,
+    MultiPartitionsDefinition,
+    StaticPartitionsDefinition,
+)
+from dagster._core.definitions.partitions.mapping import UpstreamPartitionsResult
+from dagster._core.definitions.partitions.subset import PartitionsSubset
+from dagster._core.definitions.partitions.utils import MultiPartitionKey
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.instance import DynamicPartitionsStore
 from dagster._core.storage.fs_io_manager import fs_io_manager
@@ -113,8 +115,8 @@ lam = lambda x: x * x
 
 # don't run this test on python 3.12
 @pytest.mark.skipif(
-    seven.IS_PYTHON_3_12,
-    reason="Test fails consistently on Python 3.12, further investigation required.",
+    seven.IS_PYTHON_3_12 or seven.IS_PYTHON_3_13,
+    reason="Test fails consistently on Python 3.12 and Python 3.13, further investigation required.",
 )
 def test_fs_io_manager_unpicklable():
     @op

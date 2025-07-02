@@ -20,18 +20,11 @@ from dagster import (
     CodeLocationSelector,
     DagsterInstance,
     DagsterRunStatus,
-    DailyPartitionsDefinition,
-    DynamicPartitionsDefinition,
     Field,
-    HourlyPartitionsDefinition,
     JobSelector,
-    MultiPartitionKey,
-    MultiPartitionsDefinition,
     Output,
     RepositorySelector,
     SourceAsset,
-    StaticPartitionsDefinition,
-    WeeklyPartitionsDefinition,
     asset,
     asset_check,
     define_asset_job,
@@ -56,6 +49,15 @@ from dagster._core.definitions.instigation_logger import get_instigation_log_rec
 from dagster._core.definitions.multi_asset_sensor_definition import (
     MultiAssetSensorEvaluationContext,
 )
+from dagster._core.definitions.partitions.definition import (
+    DailyPartitionsDefinition,
+    DynamicPartitionsDefinition,
+    HourlyPartitionsDefinition,
+    MultiPartitionsDefinition,
+    StaticPartitionsDefinition,
+    WeeklyPartitionsDefinition,
+)
+from dagster._core.definitions.partitions.utils import MultiPartitionKey
 from dagster._core.definitions.run_request import InstigatorType, SensorResult
 from dagster._core.definitions.run_status_sensor_definition import run_status_sensor
 from dagster._core.definitions.sensor_definition import (

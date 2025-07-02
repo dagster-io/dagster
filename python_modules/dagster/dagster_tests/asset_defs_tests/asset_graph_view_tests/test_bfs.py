@@ -4,10 +4,7 @@ from dagster import (
     AssetDep,
     AssetKey,
     AssetSpec,
-    DailyPartitionsDefinition,
     Definitions,
-    HourlyPartitionsDefinition,
-    TimeWindow,
     TimeWindowPartitionMapping,
     TimeWindowPartitionsDefinition,
     asset,
@@ -20,7 +17,13 @@ from dagster._core.asset_graph_view.bfs import (
 )
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.events import AssetKeyPartitionKey
-from dagster._core.definitions.partition_mapping import IdentityPartitionMapping
+from dagster._core.definitions.partitions.definition import (
+    DailyPartitionsDefinition,
+    HourlyPartitionsDefinition,
+    StaticPartitionsDefinition,
+)
+from dagster._core.definitions.partitions.mapping import IdentityPartitionMapping
+from dagster._core.definitions.partitions.utils import TimeWindow
 from dagster._time import create_datetime
 
 
@@ -190,7 +193,7 @@ def test_bfs_filter_diamond():
     assert failed == []
 
 
-from dagster import AssetIn, StaticPartitionsDefinition
+from dagster import AssetIn
 
 
 def test_bfs_filter_with_partitions():

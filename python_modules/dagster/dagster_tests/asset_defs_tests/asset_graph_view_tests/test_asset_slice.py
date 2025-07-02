@@ -4,17 +4,19 @@ from typing import Optional
 import pytest
 from dagster import (
     DagsterInstance,
-    DailyPartitionsDefinition,
     Definitions,
-    HourlyPartitionsDefinition,
-    MultiPartitionsDefinition,
     PartitionsDefinition,
-    StaticPartitionsDefinition,
     asset,
     deserialize_value,
     serialize_value,
 )
 from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView, SerializableEntitySubset
+from dagster._core.definitions.partitions.definition import (
+    DailyPartitionsDefinition,
+    HourlyPartitionsDefinition,
+    MultiPartitionsDefinition,
+    StaticPartitionsDefinition,
+)
 
 partitions_defs = [
     None,

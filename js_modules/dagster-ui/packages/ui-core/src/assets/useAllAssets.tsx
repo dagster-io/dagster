@@ -6,6 +6,7 @@ import {PythonErrorFragment} from '../app/types/PythonErrorFragment.types';
 import {tokenForAssetKey} from '../asset-graph/Utils';
 import {AssetGroupSelector, AssetKey} from '../graphql/types';
 import {CacheData} from '../search/useIndexedDBCachedQuery';
+import {hashObject} from '../util/hashObject';
 import {cache} from '../util/idb-lru-cache';
 import {weakMapMemoize} from '../util/weakMapMemoize';
 import {
@@ -14,8 +15,10 @@ import {
   AssetRecordsQueryVersion,
 } from './types/useAllAssets.types';
 import {WorkspaceContext} from '../workspace/WorkspaceContext/WorkspaceContext';
-import {WorkspaceAssetFragment} from '../workspace/WorkspaceContext/types/WorkspaceQueries.types';
-import {DagsterRepoOption} from '../workspace/WorkspaceContext/util';
+import {
+  LocationWorkspaceAssetsQuery,
+  WorkspaceAssetFragment,
+} from '../workspace/WorkspaceContext/types/WorkspaceQueries.types';
 
 export type AssetRecord = Extract<
   AssetRecordsQuery['assetRecordsOrError'],
@@ -28,9 +31,9 @@ const RETRY_INTERVAL = 1000; // 1 second
 const DEFAULT_BATCH_LIMIT = 1000;
 
 export function useAllAssetsNodes() {
-  const {allRepos, loading: workspaceLoading} = useContext(WorkspaceContext);
-  const allAssetNodes = useMemo(() => getAllAssetNodes(allRepos), [allRepos]);
-  return {assets: allAssetNodes, loading: workspaceLoading};
+  const {assetEntries, loadingAssets: loading} = useContext(WorkspaceContext);
+  const allAssetNodes = useMemo(() => getAllAssetNodes(assetEntries), [assetEntries]);
+  return {assets: allAssetNodes, loading};
 }
 
 export function useAllAssets({
@@ -41,8 +44,14 @@ export function useAllAssets({
   batchLimit?: number;
 } = {}) {
   const client = useApolloClient();
-  const [materializedAssets, setMaterializedAssets] = useState<AssetRecord[]>([]);
   const manager = getFetchManager(client);
+  const [materializedAssets, setMaterializedAssets] = useState<AssetRecord[]>(() => {
+    const assetsOrError = manager.getAssetsOrError();
+    if (assetsOrError instanceof Array) {
+      return assetsOrError;
+    }
+    return [];
+  });
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<PythonErrorFragment | null>(null);
@@ -155,9 +164,13 @@ class FetchManager {
       return;
     }
     let nextAssetsOrError: AssetRecord[] | PythonErrorFragment | null = null;
+    let didChange = true;
     try {
       this._fetchPromise = fetchAssets(this.client, this._batchLimit);
       nextAssetsOrError = await this._fetchPromise;
+      if (hashObject(nextAssetsOrError) === hashObject(this._assetsOrError)) {
+        didChange = false;
+      }
       this._assetsOrError = nextAssetsOrError;
     } finally {
       this._fetchPromise = null;
@@ -178,7 +191,9 @@ class FetchManager {
       }
     }
 
-    this._subscribers.forEach((callback) => callback(this._assetsOrError!));
+    if (didChange) {
+      this._subscribers.forEach((callback) => callback(this._assetsOrError!));
+    }
     if (this._subscribers.size) {
       if (this._fetchTimeout) {
         return;
@@ -193,6 +208,10 @@ class FetchManager {
 
   setBatchLimit(batchLimit: number) {
     this._batchLimit = batchLimit;
+  }
+
+  getAssetsOrError() {
+    return this._assetsOrError;
   }
 }
 
@@ -223,10 +242,22 @@ async function fetchAssets(client: ApolloClient<any>, batchLimit: number) {
   return assets;
 }
 
-const getAllAssetNodes = weakMapMemoize((allRepos: DagsterRepoOption[]) => {
-  const allAssets = allRepos.flatMap((repo) => repo.repository.assetNodes);
-  return getAssets(allAssets);
-});
+const getAllAssetNodes = weakMapMemoize(
+  (assetEntries: Record<string, LocationWorkspaceAssetsQuery>) => {
+    const allAssets = Object.values(assetEntries).flatMap((repo) => {
+      if (
+        repo.workspaceLocationEntryOrError?.__typename === 'WorkspaceLocationEntry' &&
+        repo.workspaceLocationEntryOrError.locationOrLoadError?.__typename === 'RepositoryLocation'
+      ) {
+        return repo.workspaceLocationEntryOrError.locationOrLoadError.repositories.flatMap(
+          (repo) => repo.assetNodes,
+        );
+      }
+      return [];
+    });
+    return getAssets(allAssets);
+  },
+);
 
 const getAllAssetNodesByKey = weakMapMemoize(
   (allAssetNodes: ReturnType<typeof getAllAssetNodes>) => {
@@ -269,6 +300,8 @@ const getAssets = weakMapMemoize((allAssetNodes: WorkspaceAssetFragment[]) => {
     id: string;
   }[] = [];
 
+  const addedKeys = new Set();
+
   softwareDefinedAssetsWithDuplicates.forEach((asset) => {
     /**
      * Return a materialization node if it exists, otherwise return an observable node if it
@@ -281,6 +314,11 @@ const getAssets = weakMapMemoize((allAssetNodes: WorkspaceAssetFragment[]) => {
      * materialization nodes shadowing observation nodes that would otherwise be exposed.
      */
     const key = tokenForAssetKey(asset.key);
+    const duplicate = addedKeys.has(key);
+    addedKeys.add(key);
+    if (duplicate) {
+      return;
+    }
     if (!keysWithMultipleDefinitions.has(key)) {
       softwareDefinedAssets.push(asset);
       return;

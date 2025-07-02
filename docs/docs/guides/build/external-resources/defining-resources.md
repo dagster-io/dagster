@@ -30,7 +30,7 @@ To provide resource values to assets, attach them to the <PyObject section="defi
 
 ## With sensors
 
-[Sensors](/guides/automate/sensors/) use resources in the same way as assets, which can be useful for querying external services for data.
+[Sensors](/guides/automate/sensors) use resources in the same way as assets, which can be useful for querying external services for data.
 
 To specify resource dependencies on a sensor, annotate the resource type as a parameter to the sensor's function. For more information and examples, see the [Sensors documentation](/guides/automate/sensors/using-resources-in-sensors).
 

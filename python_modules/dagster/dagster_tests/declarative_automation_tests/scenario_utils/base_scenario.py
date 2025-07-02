@@ -52,8 +52,9 @@ from dagster._core.definitions.data_version import DataVersionsByPartition
 from dagster._core.definitions.events import CoercibleToAssetKey
 from dagster._core.definitions.freshness_policy import LegacyFreshnessPolicy
 from dagster._core.definitions.observe import observe
-from dagster._core.definitions.partition import PartitionsSubset, ScheduleType
-from dagster._core.definitions.time_window_partitions import get_time_partitions_def
+from dagster._core.definitions.partitions.schedule_type import ScheduleType
+from dagster._core.definitions.partitions.subset import PartitionsSubset
+from dagster._core.definitions.partitions.utils import get_time_partitions_def
 from dagster._core.definitions.timestamp import TimestampWithTimezone
 from dagster._core.events import AssetMaterializationPlannedData, DagsterEvent, DagsterEventType
 from dagster._core.events.log import EventLogEntry
@@ -494,17 +495,14 @@ class AssetReconciliationScenario(
                 )
 
                 try:
-                    list(
-                        AssetDaemon(  # noqa: SLF001
-                            settings=instance.get_auto_materialize_settings(),
-                            pre_sensor_interval_seconds=42,
-                        )._run_iteration_impl(
-                            workspace_context,
-                            threadpool_executor=None,
-                            amp_tick_futures={},
-                            debug_crash_flags=(debug_crash_flags or {}),
-                            submit_threadpool_executor=None,
-                        )
+                    AssetDaemon(  # noqa: SLF001
+                        settings=instance.get_auto_materialize_settings(),
+                        pre_sensor_interval_seconds=42,
+                    )._run_iteration_impl(
+                        workspace_context,
+                        threadpool_executor=None,
+                        amp_tick_futures={},
+                        debug_crash_flags=(debug_crash_flags or {}),
                     )
 
                     if self.expected_error_message:

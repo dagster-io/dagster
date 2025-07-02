@@ -32,7 +32,7 @@ from dagster._core.definitions.instigation_logger import InstigationLogger
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.metadata import RawMetadataMapping, normalize_metadata
 from dagster._core.definitions.metadata.metadata_value import MetadataValue
-from dagster._core.definitions.partition import CachingDynamicPartitionsLoader
+from dagster._core.definitions.partitions.utils import CachingDynamicPartitionsLoader
 from dagster._core.definitions.resource_annotation import get_resource_args
 from dagster._core.definitions.resource_definition import Resources
 from dagster._core.definitions.run_request import (

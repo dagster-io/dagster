@@ -2,23 +2,16 @@ from typing import Any
 
 import pytest
 from dagster import (
-    AllPartitionMapping,
     AssetExecutionContext,
     AssetKey,
     AssetOut,
     DagsterInvalidDefinitionError,
-    DailyPartitionsDefinition,
-    DimensionPartitionMapping,
     GraphIn,
-    IdentityPartitionMapping,
     In,
     LegacyFreshnessPolicy,
-    MultiPartitionMapping,
-    MultiPartitionsDefinition,
     Nothing,
     Out,
     Output,
-    StaticPartitionsDefinition,
     String,
     TimeWindowPartitionMapping,
     _check as check,
@@ -41,6 +34,17 @@ from dagster._core.definitions.declarative_automation.automation_condition impor
     AutomationCondition,
 )
 from dagster._core.definitions.decorators.config_mapping_decorator import config_mapping
+from dagster._core.definitions.partitions.definition import (
+    DailyPartitionsDefinition,
+    MultiPartitionsDefinition,
+    StaticPartitionsDefinition,
+)
+from dagster._core.definitions.partitions.mapping import (
+    AllPartitionMapping,
+    DimensionPartitionMapping,
+    IdentityPartitionMapping,
+    MultiPartitionMapping,
+)
 from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.definitions.resource_requirement import ensure_requirements_satisfied
 from dagster._core.definitions.tags import build_kind_tag

@@ -11,7 +11,7 @@ import DgComponentsRc from '@site/docs/partials/\_DgComponentsRc.md';
 Suppose we have an existing Dagster project. Our project defines a Python
 package with a single Dagster asset. The asset is exposed in a top-level
 `Definitions` object in `my_existing_project/definitions.py`. We'll consider
-both a case where we have been using [uv](https://docs.astral.sh/uv/) with `pyproject.toml` and [`pip`](https://pip.pypa.io/en/stable/) with `setup.py`.
+both a case where we have been using [uv](https://docs.astral.sh/uv) with `pyproject.toml` and [`pip`](https://pip.pypa.io/en/stable) with `setup.py`.
 
 <Tabs groupId="package-manager">
   <TabItem value="uv" label="uv">
@@ -91,7 +91,7 @@ Now that these settings are in place, you can interact with your project using `
 ### Add a `dagster_dg_cli.registry_modules` entry point
 
 We're not quite done adding configuration. `dg` uses the Python [entry
-point](https://packaging.python.org/en/latest/specifications/entry-points/) API
+point](https://packaging.python.org/en/latest/specifications/entry-points) API
 to expose custom component types and other scaffoldable objects from user
 projects. Our entry point declaration will specify a submodule as the location
 where our project exposes registry modules. By convention, this submodule is
@@ -150,7 +150,7 @@ path="docs_snippets/docs_snippets/guides/dg/migrating-project/9-list-registry-mo
 We can now scaffold a new component in our project and it will be
 available to `dg` commands. First create the component:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dg/migrating-project/10-scaffold-component.txt" />
+<CodeExample path="docs_snippets/docs_snippets/guides/dg/migrating-project/10-scaffold-component-type.txt" />
 
 Then run `dg list components` to confirm that the new component is available:
 

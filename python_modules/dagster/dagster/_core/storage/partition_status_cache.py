@@ -13,17 +13,15 @@ from dagster import (
 )
 from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView
 from dagster._core.asset_graph_view.entity_subset import EntitySubset, _ValidatedEntitySubsetValue
-from dagster._core.definitions.multi_dimensional_partitions import (
-    MultiPartitionKey,
-    MultiPartitionsDefinition,
-)
-from dagster._core.definitions.partition import (
+from dagster._core.definitions.partitions.definition import (
     DynamicPartitionsDefinition,
+    MultiPartitionsDefinition,
     PartitionsDefinition,
-    PartitionsSubset,
     StaticPartitionsDefinition,
+    TimeWindowPartitionsDefinition,
 )
-from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
+from dagster._core.definitions.partitions.subset import PartitionsSubset
+from dagster._core.definitions.partitions.utils import MultiPartitionKey
 from dagster._core.instance import DynamicPartitionsStore
 from dagster._core.loader import LoadableBy, LoadingContext
 from dagster._core.storage.dagster_run import FINISHED_STATUSES, RunsFilter

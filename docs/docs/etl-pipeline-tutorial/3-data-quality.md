@@ -11,9 +11,11 @@ Data quality is critical in data pipelines. Inspecting individual assets ensures
 
 ## 1. Define an asset check
 
-In Dagster, you define [asset checks](/guides/test/asset-checks) the same way you define assets. Asset checks run when an asset is materialized and ensure that certain criteria are met.
+In Dagster, you can define [asset checks](/guides/test/asset-checks) the same way you define assets. Asset checks run when an asset is materialized and ensure that certain criteria are met based on logic defined within the asset check.
 
-You can place an asset check in the `assets.py` file alongside the asset it validates. In our case, we'll query the `raw_customers` table—created by our asset—and verify that the `id` column contains no null values:
+You can place an asset check in the `assets.py` file alongside the asset it validates. Defining an asset check is similar to creating an asset. We define a function and decorate it with <PyObject section="asset-checks" module="dagster" object="asset_check" decorator />. Within the asset check, we need to set the `asset` parameter, which will determine which asset the asset check runs against.
+
+In our case, we'll create an asset check on the `raw_customers` asset. We want to make sure that the underlying DuckDB table in that asset does not have any nulls in the `id` column:
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/src/etl_tutorial/defs/assets.py"
@@ -22,6 +24,8 @@ You can place an asset check in the `assets.py` file alongside the asset it vali
   endBefore="end_asset_check"
   title="src/etl_tutorial/defs/assets.py"
 />
+
+Our asset check queries the table directly to determine if the data is valid. Based on the result of the query, we either set the <PyObject section="asset-checks" module="dagster" object="AssetCheckResult" /> to pass or fail.
 
 :::info
 The asset check is using the same `DuckDBResource` resource we defined for the asset. Resources can be shared across all objects in Dagster.
@@ -49,7 +53,7 @@ The asset check is using the same `DuckDBResource` resource we defined for the a
 ```
 :::
 
-In the Dagster UI, you can now see that an asset check is associated with the `joined_data` asset:
+Run `dg dev` (if it is not already running) and go to the Dagster UI [http://127.0.0.1:3000](http://127.0.0.1:3000). You should now see that an asset check is associated with the `joined_data` asset:
 
 ![2048 resolution](/images/tutorial/etl-tutorial/asset-check.png)
 

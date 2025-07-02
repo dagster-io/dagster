@@ -13,9 +13,12 @@ from dagster._core.definitions.declarative_automation.legacy.valid_asset_subset 
     ValidAssetSubset,
 )
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
-from dagster._core.definitions.partition import PartitionsDefinition, PartitionsSubset
-from dagster._core.definitions.time_window_partitions import (
+from dagster._core.definitions.partitions.definition import (
+    PartitionsDefinition,
     TimeWindowPartitionsDefinition,
+)
+from dagster._core.definitions.partitions.subset import PartitionsSubset
+from dagster._core.definitions.partitions.utils import (
     get_time_partition_key,
     get_time_partitions_def,
 )
@@ -39,6 +42,9 @@ from dagster._time import get_current_datetime
 from dagster._utils.cached_method import cached_method
 
 if TYPE_CHECKING:
+    from dagster._core.definitions.partitions.definition.partitions_definition import (
+        PartitionsDefinition,
+    )
     from dagster._core.execution.asset_backfill import AssetBackfillData
     from dagster._core.storage.event_log import EventLogRecord
     from dagster._core.storage.event_log.base import AssetRecord
@@ -886,6 +892,31 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         after_cursor: Optional[int],
         respect_materialization_data_versions: bool,
     ) -> AbstractSet[AssetKeyPartitionKey]:
+        unvalidated_asset_partitions = self._get_unvalidated_asset_partitions_updated_after_cursor(
+            asset_key, asset_partitions, after_cursor, respect_materialization_data_versions
+        )
+        partitions_def = self.asset_graph.get(asset_key).partitions_def
+        if partitions_def is None:
+            return {ap for ap in unvalidated_asset_partitions if ap.partition_key is None}
+        else:
+            return {
+                ap
+                for ap in unvalidated_asset_partitions
+                if ap.partition_key is not None
+                and partitions_def.has_partition_key(
+                    partition_key=ap.partition_key,
+                    dynamic_partitions_store=self,
+                    current_time=self.evaluation_time,
+                )
+            }
+
+    def _get_unvalidated_asset_partitions_updated_after_cursor(
+        self,
+        asset_key: AssetKey,
+        asset_partitions: Optional[AbstractSet[AssetKeyPartitionKey]],
+        after_cursor: Optional[int],
+        respect_materialization_data_versions: bool,
+    ) -> AbstractSet[AssetKeyPartitionKey]:
         """Returns the set of asset partitions that have been updated after the given cursor.
 
         Args:
@@ -942,27 +973,12 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
     ) -> SerializableEntitySubset[AssetKey]:
         """Returns the AssetSubset of the given asset that has been updated after the given cursor."""
         partitions_def = self.asset_graph.get(asset_key).partitions_def
-        updated_asset_partitions = self.get_asset_partitions_updated_after_cursor(
+        validated_asset_partitions = self.get_asset_partitions_updated_after_cursor(
             asset_key,
             asset_partitions=None,
             after_cursor=after_cursor,
             respect_materialization_data_versions=require_data_version_update,
         )
-        if partitions_def is None:
-            validated_asset_partitions = {
-                ap for ap in updated_asset_partitions if ap.partition_key is None
-            }
-        else:
-            validated_asset_partitions = {
-                ap
-                for ap in updated_asset_partitions
-                if ap.partition_key is not None
-                and partitions_def.has_partition_key(
-                    partition_key=ap.partition_key,
-                    dynamic_partitions_store=self,
-                    current_time=self.evaluation_time,
-                )
-            }
 
         # TODO: replace this return value with EntitySubset
         return ValidAssetSubset.from_asset_partitions_set(

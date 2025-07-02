@@ -3,7 +3,6 @@ import time
 
 import pytest
 
-from dagster import StaticPartitionsDefinition
 from dagster._core.asset_graph_view.serializable_entity_subset import SerializableEntitySubset
 from dagster._core.definitions.asset_key import AssetCheckKey
 from dagster._core.definitions.declarative_automation.serialized_objects import (
@@ -13,6 +12,7 @@ from dagster._core.definitions.declarative_automation.serialized_objects import 
 )
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.metadata import MetadataValue
+from dagster._core.definitions.partitions.definition import StaticPartitionsDefinition
 from dagster._core.remote_representation import (
     ManagedGrpcPythonEnvCodeLocationOrigin,
     RemoteRepositoryOrigin,

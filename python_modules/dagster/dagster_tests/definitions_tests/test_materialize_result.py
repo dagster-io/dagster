@@ -14,13 +14,13 @@ from dagster import (
     IOManager,
     MaterializeResult,
     OutputContext,
-    StaticPartitionsDefinition,
     asset,
     instance_for_test,
     materialize,
     multi_asset,
 )
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
+from dagster._core.definitions.partitions.definition import StaticPartitionsDefinition
 from dagster._core.errors import (
     DagsterInvariantViolationError,
     DagsterStepOutputNotFoundError,

@@ -10,12 +10,8 @@ from dagster import (
     AssetKey,
     AssetSpec,
     DagsterInstance,
-    DailyPartitionsDefinition,
     Definitions,
-    IdentityPartitionMapping,
     SourceAsset,
-    StaticPartitionMapping,
-    StaticPartitionsDefinition,
     asset,
     graph_asset,
     multi_asset,
@@ -25,6 +21,14 @@ from dagster._core.definitions.auto_materialize_policy import AutoMaterializePol
 from dagster._core.definitions.backfill_policy import BackfillPolicy
 from dagster._core.definitions.data_version import CachingStaleStatusResolver
 from dagster._core.definitions.decorators.source_asset_decorator import observable_source_asset
+from dagster._core.definitions.partitions.definition import (
+    DailyPartitionsDefinition,
+    StaticPartitionsDefinition,
+)
+from dagster._core.definitions.partitions.mapping import (
+    IdentityPartitionMapping,
+    StaticPartitionMapping,
+)
 from dagster._core.remote_representation import InProcessCodeLocationOrigin
 from dagster._core.test_utils import instance_for_test
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin

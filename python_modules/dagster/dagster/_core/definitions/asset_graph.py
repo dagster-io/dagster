@@ -25,12 +25,11 @@ from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.freshness import InternalFreshnessPolicy
 from dagster._core.definitions.freshness_policy import LegacyFreshnessPolicy
 from dagster._core.definitions.metadata import ArbitraryMetadataMapping
-from dagster._core.definitions.partition import PartitionsDefinition
-from dagster._core.definitions.partition_mapping import PartitionMapping
+from dagster._core.definitions.partitions.definition import PartitionsDefinition
+from dagster._core.definitions.partitions.mapping import PartitionMapping
 from dagster._core.definitions.resolved_asset_deps import ResolvedAssetDependencies
 from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.definitions.utils import DEFAULT_GROUP_NAME
-from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.selector.subset_selector import generate_asset_dep_graph
 from dagster._utils.warnings import disable_dagster_warnings
 
@@ -348,28 +347,6 @@ class AssetGraph(BaseAssetGraph[AssetNode]):
             }
         )
 
-    def validate_partition_mappings(self):
-        for node in self.asset_nodes:
-            if node.is_external:
-                continue
-
-            parents = self.get_parents(node)
-            for parent in parents:
-                if parent.partitions_def is None or parent.is_external:
-                    continue
-
-                partition_mapping = self.get_partition_mapping(node.key, parent.key)
-
-                try:
-                    partition_mapping.validate_partition_mapping(
-                        parent.partitions_def,
-                        node.partitions_def,
-                    )
-                except Exception as e:
-                    raise DagsterInvalidDefinitionError(
-                        f"Invalid partition mapping from {node.key.to_user_string()} to {parent.key.to_user_string()}"
-                    ) from e
-
     def assets_defs_for_keys(self, keys: Iterable[EntityKey]) -> Sequence[AssetsDefinition]:
         return list({self.assets_def_for_key(key) for key in keys})
 
@@ -402,9 +379,11 @@ def executable_in_same_run(
     asset_graph: BaseAssetGraph, child_key: EntityKey, parent_key: EntityKey
 ):
     """Returns whether a child asset can be materialized in the same run as a parent asset."""
-    from dagster._core.definitions.partition_mapping import IdentityPartitionMapping
+    from dagster._core.definitions.partitions.mapping import (
+        IdentityPartitionMapping,
+        TimeWindowPartitionMapping,
+    )
     from dagster._core.definitions.remote_asset_graph import RemoteWorkspaceAssetGraph
-    from dagster._core.definitions.time_window_partition_mapping import TimeWindowPartitionMapping
 
     child_node = asset_graph.get(child_key)
     parent_node = asset_graph.get(parent_key)

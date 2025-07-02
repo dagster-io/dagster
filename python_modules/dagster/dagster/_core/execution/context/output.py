@@ -16,8 +16,8 @@ from dagster._core.definitions.metadata import (
     MetadataValue,
     RawMetadataValue,
 )
-from dagster._core.definitions.partition_key_range import PartitionKeyRange
-from dagster._core.definitions.time_window_partitions import TimeWindow
+from dagster._core.definitions.partitions.partition_key_range import PartitionKeyRange
+from dagster._core.definitions.partitions.utils import TimeWindow
 from dagster._core.errors import DagsterInvalidMetadata, DagsterInvariantViolationError
 from dagster._core.execution.plan.utils import build_resources_for_manager
 from dagster._utils.warnings import normalize_renamed_param
@@ -774,7 +774,7 @@ def get_output_context(
     resource_config = resolved_run_config.resources[io_manager_key].config
 
     node_handle = execution_plan.get_step_by_key(step.key).node_handle
-    asset_key = job_def.asset_layer.asset_key_for_output(
+    asset_key = job_def.asset_layer.get_asset_key_for_node_output(
         node_handle=node_handle, output_name=step_output.name
     )
     if asset_key is not None:

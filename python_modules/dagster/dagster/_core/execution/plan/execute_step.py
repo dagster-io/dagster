@@ -34,7 +34,7 @@ from dagster._core.definitions.data_version import (
 from dagster._core.definitions.decorators.op_decorator import DecoratedOpFunction
 from dagster._core.definitions.events import DynamicOutput
 from dagster._core.definitions.metadata import MetadataValue, normalize_metadata
-from dagster._core.definitions.multi_dimensional_partitions import (
+from dagster._core.definitions.partitions.utils import (
     MultiPartitionKey,
     get_tags_from_multi_partition_key,
 )
@@ -123,9 +123,7 @@ def _process_user_event(
         # If the check is explicitly selected, we need to yield an Output event for it.
         if spec.key in assets_def.check_keys:
             output_name = check.not_none(
-                step_context.job_def.asset_layer.get_output_name_for_asset_check(
-                    asset_check_key=spec.key
-                ),
+                step_context.job_def.asset_layer.get_op_output_name(spec.key),
                 f"No output name found for check key {spec.key} in step {step_context.step.key}. This likely indicates that the currently executing AssetsDefinition has no check specified for the key.",
             )
             output = Output(value=None, output_name=output_name)
@@ -143,7 +141,7 @@ def _process_user_event(
 def _get_assets_def_for_step(
     step_context: StepExecutionContext, user_event: OpOutputUnion
 ) -> AssetsDefinition:
-    assets_def = step_context.job_def.asset_layer.assets_def_for_node(step_context.node_handle)
+    assets_def = step_context.job_def.asset_layer.get_assets_def_for_node(step_context.node_handle)
     if not assets_def:
         raise DagsterInvariantViolationError(
             f"{user_event.__class__.__name__} is only valid within asset computations, no backing"
@@ -230,8 +228,10 @@ def _step_output_error_checked_user_event_sequence(
             # contrast, if both A and B are yielded, A should never precede B.
             asset_layer = step_context.job_def.asset_layer
             node_handle = step_context.node_handle
-            asset_key = asset_layer.asset_key_for_output(node_handle, output_def.name)
-            if asset_key is not None and asset_key in asset_layer.asset_keys_for_node(node_handle):
+            asset_key = asset_layer.get_asset_key_for_node_output(node_handle, output_def.name)
+            if asset_key is not None and asset_key in asset_layer.get_selected_entity_keys_for_node(
+                node_handle
+            ):
                 asset_node = asset_layer.get(asset_key)
                 assets_def = asset_node.assets_def
                 all_dependent_keys = asset_node.child_keys
@@ -284,7 +284,7 @@ def _step_output_error_checked_user_event_sequence(
         step_output_def = step_context.op_def.output_def_named(step_output.name)
         if not step_context.has_seen_output(step_output_def.name) and not step_output_def.optional:
             asset_layer = step_context.job_def.asset_layer
-            asset_key = asset_layer.asset_key_for_output(
+            asset_key = asset_layer.get_asset_key_for_node_output(
                 step_context.node_handle, step_output_def.name
             )
             # We require explicitly returned/yielded for asset observations
@@ -905,7 +905,7 @@ def _log_materialization_or_observation_events_for_asset(
 
     if asset_key:
         asset_layer = step_context.job_def.asset_layer
-        assets_def = asset_layer.assets_def_for_node(step_context.node_handle)
+        assets_def = asset_layer.get_assets_def_for_node(step_context.node_handle)
         execution_type = check.not_none(assets_def).execution_type
 
         check.invariant(

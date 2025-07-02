@@ -29,18 +29,15 @@ from dagster import (
     BackfillPolicy,
     Bool,
     DagsterInstance,
-    DailyPartitionsDefinition,
     DataVersion,
     DefaultScheduleStatus,
     DefaultSensorStatus,
     DynamicOut,
     DynamicOutput,
-    DynamicPartitionsDefinition,
     Enum,
     EnumValue,
     ExpectationResult,
     Field,
-    HourlyPartitionsDefinition,
     In,
     Int,
     IOManager,
@@ -55,7 +52,6 @@ from dagster import (
     ScheduleDefinition,
     SensorResult,
     SourceAsset,
-    StaticPartitionsDefinition,
     String,
     TableColumn,
     TableColumnConstraints,
@@ -63,13 +59,11 @@ from dagster import (
     TableRecord,
     TableSchema,
     TimeWindowPartitionMapping,
-    WeeklyPartitionsDefinition,
     _check as check,
     asset,
     asset_check,
     asset_sensor,
     dagster_type_loader,
-    daily_partitioned_config,
     define_asset_job,
     graph,
     graph_asset,
@@ -84,7 +78,6 @@ from dagster import (
     run_failure_sensor,
     run_status_sensor,
     schedule,
-    static_partitioned_config,
     usable_as_dagster_type,
 )
 from dagster._core.definitions.asset_spec import AssetSpec
@@ -103,8 +96,19 @@ from dagster._core.definitions.freshness import InternalFreshnessPolicy
 from dagster._core.definitions.freshness_policy import LegacyFreshnessPolicy
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.metadata import MetadataValue
-from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
-from dagster._core.definitions.partition import PartitionedConfig
+from dagster._core.definitions.partitions.definition import (
+    DailyPartitionsDefinition,
+    DynamicPartitionsDefinition,
+    HourlyPartitionsDefinition,
+    MultiPartitionsDefinition,
+    StaticPartitionsDefinition,
+    WeeklyPartitionsDefinition,
+)
+from dagster._core.definitions.partitions.partitioned_config import (
+    PartitionedConfig,
+    daily_partitioned_config,
+    static_partitioned_config,
+)
 from dagster._core.definitions.reconstruct import ReconstructableRepository
 from dagster._core.definitions.sensor_definition import (
     RunRequest,

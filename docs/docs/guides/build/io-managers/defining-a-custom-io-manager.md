@@ -28,7 +28,7 @@ In this case, we implement a stateful I/O manager which maintains a cache:
 
 ### Defining Pythonic I/O managers
 
-Pythonic I/O managers are defined as subclasses of <PyObject section="io-managers" module="dagster" object="ConfigurableIOManager"/>, and similarly to [Pythonic resources](/guides/build/external-resources/) specify any configuration fields as attributes. Each subclass must implement a `handle_output` and `load_input` method, which are called by Dagster at runtime to handle the storing and loading of data.
+Pythonic I/O managers are defined as subclasses of <PyObject section="io-managers" module="dagster" object="ConfigurableIOManager"/>, and similarly to [Pythonic resources](/guides/build/external-resources) specify any configuration fields as attributes. Each subclass must implement a `handle_output` and `load_input` method, which are called by Dagster at runtime to handle the storing and loading of data.
 
 <CodeExample path="docs_snippets/docs_snippets/concepts/resources/pythonic_resources.py" startAfter="start_new_io_manager" endBefore="end_new_io_manager" dedent="4" title="src/<project_name>/defs/resources.py" />
 

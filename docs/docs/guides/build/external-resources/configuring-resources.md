@@ -30,7 +30,7 @@ For more information on using environment variables with Dagster, refer to the [
 
 ## Configuring resources at launch time
 
-In some cases, you may want to specify configuration for a resource at launch time, in the Launchpad or in a <PyObject section="schedules-sensors" module="dagster" object="RunRequest" /> for a [schedule](/guides/automate/schedules/) or [sensor](/guides/automate/sensors/). For example, you may want a sensor-triggered run to specify a different target table in a database resource for each run.
+In some cases, you may want to specify configuration for a resource at launch time, in the Launchpad or in a <PyObject section="schedules-sensors" module="dagster" object="RunRequest" /> for a [schedule](/guides/automate/schedules) or [sensor](/guides/automate/sensors). For example, you may want a sensor-triggered run to specify a different target table in a database resource for each run.
 
 You can use the `configure_at_launch()` method to defer the construction of a configurable resource until launch time:
 

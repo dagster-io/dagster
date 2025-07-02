@@ -19,10 +19,7 @@ from dagster_shared.serdes.serdes import (
 )
 from typing_extensions import Self, TypeAlias
 
-from dagster import (
-    StaticPartitionsDefinition,
-    _check as check,
-)
+from dagster import _check as check
 from dagster._config.pythonic_config import (
     ConfigurableIOManagerFactoryResourceDefinition,
     ConfigurableResourceFactoryResourceDefinition,
@@ -73,13 +70,16 @@ from dagster._core.definitions.metadata import (
     TextMetadataValue,
     normalize_metadata,
 )
-from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
 from dagster._core.definitions.op_definition import OpDefinition
-from dagster._core.definitions.partition import DynamicPartitionsDefinition, ScheduleType
-from dagster._core.definitions.partition_mapping import (
-    PartitionMapping,
-    get_builtin_partition_mapping_types,
+from dagster._core.definitions.partitions.definition import (
+    DynamicPartitionsDefinition,
+    MultiPartitionsDefinition,
+    StaticPartitionsDefinition,
+    TimeWindowPartitionsDefinition,
 )
+from dagster._core.definitions.partitions.mapping import PartitionMapping
+from dagster._core.definitions.partitions.schedule_type import ScheduleType
+from dagster._core.definitions.partitions.utils import get_builtin_partition_mapping_types
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.resource_requirement import ResourceKeyRequirement
 from dagster._core.definitions.schedule_definition import DefaultScheduleStatus
@@ -88,7 +88,6 @@ from dagster._core.definitions.sensor_definition import (
     SensorDefinition,
     SensorType,
 )
-from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
 from dagster._core.definitions.unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 from dagster._core.definitions.utils import DEFAULT_GROUP_NAME
 from dagster._core.errors import DagsterInvalidDefinitionError
@@ -1653,15 +1652,13 @@ def asset_node_snaps_from_repo(repo: RepositoryDefinition) -> Sequence[AssetNode
     job_defs_by_asset_key: dict[AssetKey, list[JobDefinition]] = defaultdict(list)
     for job_def in repo.get_all_jobs():
         asset_layer = job_def.asset_layer
-        for asset_key in asset_layer.additional_asset_keys:
+        for asset_key in asset_layer.external_job_asset_keys:
             job_defs_by_asset_key[asset_key].append(job_def)
-        asset_keys_by_node_output = asset_layer.asset_keys_by_node_output_handle
-        for node_output_handle, asset_key in asset_keys_by_node_output.items():
-            if asset_key not in asset_layer.asset_keys_for_node(node_output_handle.node_handle):
-                continue
+        for asset_key in asset_layer.selected_asset_keys:
+            job_defs_by_asset_key[asset_key].append(job_def)
             if asset_key not in primary_node_pairs_by_asset_key:
-                primary_node_pairs_by_asset_key[asset_key] = (node_output_handle, job_def)
-            job_defs_by_asset_key[asset_key].append(job_def)
+                op_handle = asset_layer.get_op_output_handle(asset_key)
+                primary_node_pairs_by_asset_key[asset_key] = (op_handle, job_def)
     asset_node_snaps: list[AssetNodeSnap] = []
     asset_graph = repo.asset_graph
     for key in sorted(asset_graph.get_all_asset_keys()):
@@ -1945,7 +1942,9 @@ class ComponentTreeSnap:
     def from_tree(tree: ComponentTree) -> "ComponentTreeSnap":
         leaves = []
 
-        for comp_path, comp_inst in tree.root.iterate_path_component_pairs():
+        for comp_path, comp_inst in check.inst(
+            tree.load_root_component(), DefsFolderComponent
+        ).iterate_path_component_pairs():
             if not isinstance(
                 comp_inst,
                 (
@@ -1958,7 +1957,7 @@ class ComponentTreeSnap:
                 cls = comp_inst.__class__
                 leaves.append(
                     ComponentInstanceSnap(
-                        key=comp_path.get_relative_key(tree.root.path),
+                        key=comp_path.get_relative_key(tree.defs_module_path),
                         full_type_name=f"{cls.__module__}.{cls.__qualname__}",
                     )
                 )

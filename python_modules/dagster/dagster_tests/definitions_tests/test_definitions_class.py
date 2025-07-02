@@ -49,17 +49,15 @@ from dagster._core.definitions.external_asset import create_external_asset_from_
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.logger_definition import logger
 from dagster._core.definitions.metadata.metadata_value import MetadataValue, TextMetadataValue
-from dagster._core.definitions.partition import (
-    PartitionLoadingContext,
+from dagster._core.definitions.partitions.context import PartitionLoadingContext
+from dagster._core.definitions.partitions.definition import (
+    DailyPartitionsDefinition,
+    HourlyPartitionsDefinition,
     PartitionsDefinition,
     StaticPartitionsDefinition,
 )
 from dagster._core.definitions.repository_definition import RepositoryDefinition
 from dagster._core.definitions.sensor_definition import SensorDefinition
-from dagster._core.definitions.time_window_partitions import (
-    DailyPartitionsDefinition,
-    HourlyPartitionsDefinition,
-)
 from dagster._core.errors import DagsterInvalidSubsetError, DagsterInvariantViolationError
 from dagster._core.executor.base import Executor
 from dagster._core.storage.io_manager import IOManagerDefinition
@@ -834,8 +832,11 @@ def test_merge():
     def logger2(_):
         raise Exception("not executed")
 
-    origin = ComponentTree(
-        defs_module=Mock(),
+    mock_module = Mock()
+    mock_module.__file__ = Path()
+    mock_module.__name__ = "mock_module"
+    origin = ComponentTree.from_module(
+        defs_module=mock_module,
         project_root=Path(),
     )
 

@@ -116,4 +116,4 @@ When you add a hook to a job, the hook will be added to every op in the job indi
 
 You may find the need to set up job-level policies. For example, you may want to run some code for every job failure.
 
-Dagster provides a way to create a sensor that reacts to job failure events. You can find detail in the [Sensors docs](/guides/automate/sensors/).
+Dagster provides a way to create a sensor that reacts to job failure events. You can find detail in the [Sensors docs](/guides/automate/sensors).

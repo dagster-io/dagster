@@ -26,7 +26,7 @@ export const codeLocationStatusAtom = atom<CodeLocationStatusQuery | undefined>(
 });
 
 export const useCodeLocationsStatus = (): StatusAndMessage | null => {
-  const {locationEntries, loading, data} = useContext(WorkspaceContext);
+  const {locationEntries, loadingNonAssets: loading, data} = useContext(WorkspaceContext);
   const [previousEntriesById, setPreviousEntriesById] = useState<EntriesById | null>(null);
 
   const history = useHistory();

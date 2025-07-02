@@ -1,7 +1,7 @@
 Fivetran (dagster-fivetran)
 ---------------------------
 
-This library provides a Dagster integration with `Fivetran <https://www.fivetran.com/>`_.
+This library provides a Dagster integration with `Fivetran <https://www.fivetran.com>`_.
 
 .. currentmodule:: dagster_fivetran
 

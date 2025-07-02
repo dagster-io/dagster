@@ -45,11 +45,12 @@ from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.graph_definition import GraphDefinition
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.node_definition import NodeDefinition
-from dagster._core.definitions.partition import PartitionLoadingContext, TemporalContext
+from dagster._core.definitions.partitions.context import PartitionLoadingContext
 from dagster._core.definitions.repository_definition.repository_definition import (
     RepositoryDefinition,
 )
 from dagster._core.definitions.source_asset import SourceAsset
+from dagster._core.definitions.temporal_context import TemporalContext
 from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
 from dagster._core.errors import DagsterUserCodeUnreachableError
 from dagster._core.events import DagsterEvent

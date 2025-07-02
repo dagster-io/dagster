@@ -28,10 +28,8 @@ from dagster._core.definitions.data_version import (
 )
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.freshness_policy import FreshnessMinutes
-from dagster._core.definitions.time_window_partitions import (
-    TimeWindowPartitionsDefinition,
-    TimeWindowPartitionsSubset,
-)
+from dagster._core.definitions.partitions.definition import TimeWindowPartitionsDefinition
+from dagster._core.definitions.partitions.subset import TimeWindowPartitionsSubset
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.event_api import EventLogRecord
 from dagster._core.storage.dagster_run import FINISHED_STATUSES, DagsterRunStatus, RunsFilter

@@ -43,7 +43,7 @@ from dagster._core.definitions.freshness import (
     FreshnessStateEvaluation,
     FreshnessStateRecord,
 )
-from dagster._core.definitions.partition_key_range import PartitionKeyRange
+from dagster._core.definitions.partitions.partition_key_range import PartitionKeyRange
 from dagster._core.errors import (
     DagsterHomeNotSetError,
     DagsterInvalidInvocationError,
@@ -124,7 +124,7 @@ if TYPE_CHECKING:
     from dagster._core.definitions.asset_key import EntityKey
     from dagster._core.definitions.base_asset_graph import BaseAssetGraph
     from dagster._core.definitions.job_definition import JobDefinition
-    from dagster._core.definitions.partition import PartitionsDefinition
+    from dagster._core.definitions.partitions.definition import PartitionsDefinition
     from dagster._core.definitions.repository_definition.repository_definition import (
         RepositoryLoadData,
     )
@@ -365,7 +365,9 @@ class DynamicPartitionsStore(Protocol):
     def has_dynamic_partition(self, partitions_def_name: str, partition_key: str) -> bool: ...
 
     def get_dynamic_partitions_definition_id(self, partitions_def_name: str) -> str:
-        from dagster._core.definitions.partition import generate_partition_key_based_definition_id
+        from dagster._core.definitions.partitions.utils import (
+            generate_partition_key_based_definition_id,
+        )
 
         # matches the base implementation of the get_serializable_unique_identifier on PartitionsDefinition
         partition_keys = self.get_dynamic_partitions(partitions_def_name)
@@ -1418,7 +1420,7 @@ class DagsterInstance(DynamicPartitionsStore):
         output: "ExecutionStepOutputSnap",
         asset_graph: Optional["BaseAssetGraph"],
     ) -> None:
-        from dagster._core.definitions.partition import DynamicPartitionsDefinition
+        from dagster._core.definitions.partitions.definition import DynamicPartitionsDefinition
         from dagster._core.events import AssetMaterializationPlannedData, DagsterEvent
 
         partition_tag = dagster_run.tags.get(PARTITION_NAME_TAG)
@@ -2587,7 +2589,7 @@ class DagsterInstance(DynamicPartitionsStore):
             partitions_def_name (str): The name of the `DynamicPartitionsDefinition`.
             partition_keys (Sequence[str]): Partition keys to add.
         """
-        from dagster._core.definitions.partition import (
+        from dagster._core.definitions.partitions.utils import (
             raise_error_on_invalid_partition_key_substring,
         )
 

@@ -11,7 +11,7 @@ tags: [code-example]
 In this example, you'll build a pipeline with Dagster that:
 
 - Takes an input question
-- Generates prompts to use with [Anthropic](https://www.anthropic.com/)
+- Generates prompts to use with [Anthropic](https://www.anthropic.com)
 - Validates outputs of AI models and passes outputs across assets
 
 <details>

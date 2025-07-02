@@ -6,7 +6,7 @@ sidebar_position: 300
 
 :::note
 
-This guide is applicable to both [ops](/guides/build/ops/) and [jobs](/guides/build/jobs/).
+This guide is applicable to both [ops](/guides/build/ops) and [jobs](/guides/build/jobs).
 
 :::
 
@@ -18,8 +18,8 @@ Dagster provides several methods to execute [op](/guides/build/jobs/op-jobs) and
 
 You can also launch jobs in other ways:
 
-- [Schedules](/guides/automate/schedules/) can be used to launch runs on a fixed interval.
-- [Sensors](/guides/automate/sensors/) allow you to launch runs based on external state changes.
+- [Schedules](/guides/automate/schedules) can be used to launch runs on a fixed interval.
+- [Sensors](/guides/automate/sensors) allow you to launch runs based on external state changes.
 
 ## Relevant APIs
 
@@ -79,7 +79,7 @@ returns an <PyObject section="execution" module="dagster" object="ExecuteInProce
 
 <CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/job_execution.py" startAfter="start_execute" endBefore="end_execute" title="src/<project_name>/defs/assets.py"/>
 
-You can find the full API documentation in [Execution API](/api/dagster/execution) and learn more about the testing use cases in the [testing documentation](/guides/test/).
+You can find the full API documentation in [Execution API](/api/dagster/execution) and learn more about the testing use cases in the [testing documentation](/guides/test).
 
 </TabItem>
 </Tabs>

@@ -25,7 +25,7 @@ from dagster._core.definitions.declarative_automation.serialized_objects import 
     StructuredCursor,
 )
 from dagster._core.definitions.metadata import MetadataMapping
-from dagster._core.definitions.partition import PartitionsDefinition
+from dagster._core.definitions.partitions.definition import PartitionsDefinition
 from dagster._time import get_current_datetime
 
 if TYPE_CHECKING:

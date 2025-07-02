@@ -400,7 +400,7 @@ def log_repo_stats(
     repo: Optional[ReconstructableRepository] = None,
 ) -> None:
     from dagster._core.definitions.assets import AssetsDefinition
-    from dagster._core.definitions.partition import DynamicPartitionsDefinition
+    from dagster._core.definitions.partitions.definition import DynamicPartitionsDefinition
 
     check.inst_param(instance, "instance", DagsterInstance)
     check.str_param(source, "source")

@@ -52,7 +52,7 @@ from dagster._core.definitions.metadata import (
     RawMetadataValue,
     normalize_metadata,
 )
-from dagster._core.definitions.partition import PartitionsSubset
+from dagster._core.definitions.partitions.subset import PartitionsSubset
 from dagster._core.errors import DagsterInvariantViolationError, HookExecutionError
 from dagster._core.execution.context.system import IPlanContext, IStepContext, StepExecutionContext
 from dagster._core.execution.plan.handle import ResolvedFromDynamicStepHandle, StepHandle

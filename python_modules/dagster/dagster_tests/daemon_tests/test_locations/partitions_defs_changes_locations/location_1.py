@@ -1,4 +1,8 @@
-from dagster import DailyPartitionsDefinition, StaticPartitionsDefinition, asset
+from dagster import asset
+from dagster._core.definitions.partitions.definition import (
+    DailyPartitionsDefinition,
+    StaticPartitionsDefinition,
+)
 
 
 @asset(

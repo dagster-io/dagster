@@ -396,10 +396,21 @@ class DgContext:
         )
 
     @cached_property
+    def _defs_path(self) -> Path:
+        defs_module_name = self.defs_module_name
+        return self.get_path_for_local_module(defs_module_name, require_exists=False)
+
+    @cached_property
+    def has_defs_path(self) -> bool:
+        return self._defs_path.exists()
+
+    @property
     def defs_path(self) -> Path:
-        if not self.is_project:
-            raise DgError("`defs_path` is only available in a Dagster project context")
-        return self.get_path_for_local_module(self.defs_module_name)
+        if not self.has_defs_path:
+            raise DgError(
+                f"Defs folder not found. Ensure folder `{self._defs_path.relative_to(self.root_path)}` exists in the project root."
+            )
+        return self._defs_path
 
     def get_component_instance_names(self) -> Iterable[str]:
         return [
@@ -627,7 +638,7 @@ class DgContext:
         elif path.exists() or not require_exists:
             return path
 
-        exit_with_error(f"Cannot find module `{module_name}` in the current project.")
+        raise DgError(f"Cannot find module `{module_name}` in the current project.")
 
 
 # ########################

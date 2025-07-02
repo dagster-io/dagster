@@ -14,7 +14,8 @@ from dagster_shared.merger import deep_merge_dicts
 
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_spec import AssetSpec
-from dagster._core.definitions.partition import StaticPartitionsDefinition
+from dagster._core.definitions.partitions.definition import StaticPartitionsDefinition
+from dagster.components.core.tree import ComponentTree
 
 """Testing utilities for components."""
 
@@ -83,7 +84,7 @@ def component_defs(
             ).get_assets_def("an_asset")
             assert an_asset.key == AssetKey("an_asset")
     """
-    context = context or ComponentLoadContext.for_test()
+    context = context or ComponentTree.for_test().load_context
     return component.build_defs(context).with_resources(resources)
 
 
@@ -93,7 +94,7 @@ def defs_from_component_yaml_path(
     context: Optional[ComponentLoadContext] = None,
     resources: Optional[dict[str, Any]] = None,
 ):
-    context = context or ComponentLoadContext.for_test()
+    context = context or ComponentTree.for_test().load_context
     component = load_yaml_component_from_path(context=context, component_def_path=component_yaml)
     return component_defs(component=component, resources=resources, context=context)
 
@@ -300,11 +301,10 @@ def get_all_components_defs_from_defs_path(
     project_root: Union[str, Path],
 ) -> list[tuple[Component, Definitions]]:
     module = importlib.import_module(module_path)
-    context = ComponentLoadContext.for_module(
+    context = ComponentTree(
         defs_module=module,
         project_root=Path(project_root),
-        terminate_autoloading_on_keyword_files=False,
-    )
+    ).load_context
     components = flatten_components(get_component(context))
     return [(component, component.build_defs(context)) for component in components]
 

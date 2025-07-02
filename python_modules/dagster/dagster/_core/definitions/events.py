@@ -38,7 +38,7 @@ from dagster._core.definitions.metadata import (
     RawMetadataValue,
     normalize_metadata,
 )
-from dagster._core.definitions.partition_key_range import PartitionKeyRange
+from dagster._core.definitions.partitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.utils import DEFAULT_OUTPUT, check_valid_name
 from dagster._core.storage.tags import MULTIDIMENSIONAL_PARTITION_PREFIX, REPORTING_USER_TAG
 from dagster._record import IHaveNew, record_custom
@@ -505,7 +505,7 @@ class AssetMaterialization(
         partition: Optional[str] = None,
         tags: Optional[Mapping[str, str]] = None,
     ):
-        from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionKey
+        from dagster._core.definitions.partitions.utils import MultiPartitionKey
 
         if isinstance(asset_key, AssetKey):
             check.inst_param(asset_key, "asset_key", AssetKey)

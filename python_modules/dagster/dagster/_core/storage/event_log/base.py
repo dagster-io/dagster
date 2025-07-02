@@ -9,7 +9,7 @@ from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.data_version import DATA_VERSION_TAG
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.freshness import FreshnessStateRecord
-from dagster._core.definitions.partition import PartitionsDefinition
+from dagster._core.definitions.partitions.definition import PartitionsDefinition
 from dagster._core.event_api import (
     AssetRecordsFilter,
     EventHandlerFn,

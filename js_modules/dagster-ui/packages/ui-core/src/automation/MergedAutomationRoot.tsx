@@ -67,7 +67,7 @@ export const MergedAutomationRoot = () => {
   const {
     allRepos,
     visibleRepos,
-    loading: workspaceLoading,
+    loadingNonAssets: workspaceLoading,
     data: cachedData,
   } = useContext(WorkspaceContext);
 

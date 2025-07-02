@@ -4,12 +4,14 @@ import time
 from dagster import (
     AutomationCondition,
     DagsterInstance,
-    DailyPartitionsDefinition,
     Definitions,
-    HourlyPartitionsDefinition,
     evaluate_automation_conditions,
 )
 from dagster._core.definitions.automation_tick_evaluation_context import build_run_requests
+from dagster._core.definitions.partitions.definition import (
+    DailyPartitionsDefinition,
+    HourlyPartitionsDefinition,
+)
 from dagster._time import get_current_datetime
 from dagster_test.toys.auto_materializing.large_graph import AssetLayerConfig, build_assets
 

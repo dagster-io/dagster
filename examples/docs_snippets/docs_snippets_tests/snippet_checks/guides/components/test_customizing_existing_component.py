@@ -51,6 +51,9 @@ def test_components_docs_adding_attributes_to_assets(
                 global_snippet_replace_regexes=[
                     MASK_MY_PROJECT,
                 ],
+                # For multi-parameter tests which share snippets, we don't want to clear the
+                # snapshot dir before updating the snippets
+                clear_snapshot_dir_before_update=False,
             )
         )
 
@@ -118,7 +121,7 @@ def test_components_docs_adding_attributes_to_assets(
                 ),
                 snippet_path=SNIPPETS_DIR
                 / component_type
-                / f"{context.get_next_snip_number()}defs.yaml",
+                / f"{context.get_next_snip_number()}-defs.yaml",
             )
             context.get_next_snip_number()
         elif component_type == "global":

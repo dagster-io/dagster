@@ -9,19 +9,7 @@ from typing import TYPE_CHECKING, AbstractSet, Any, Optional, Union, cast  # noq
 from dagster_shared.libraries import DagsterLibraryRegistry
 
 import dagster._check as check
-from dagster._api.get_server_id import sync_get_server_id
-from dagster._api.list_repositories import sync_list_repositories_grpc
-from dagster._api.notebook_data import sync_get_streaming_external_notebook_data_grpc
-from dagster._api.snapshot_execution_plan import sync_get_external_execution_plan_grpc
-from dagster._api.snapshot_job import sync_get_external_job_subset_grpc
-from dagster._api.snapshot_partition import (
-    sync_get_external_partition_config_grpc,
-    sync_get_external_partition_names_grpc,
-    sync_get_external_partition_set_execution_param_data_grpc,
-    sync_get_external_partition_tags_grpc,
-)
-from dagster._api.snapshot_repository import sync_get_streaming_external_repositories_data_grpc
-from dagster._api.snapshot_schedule import sync_get_external_schedule_execution_data_grpc
+from dagster._check import checked
 from dagster._core.code_pointer import CodePointer
 from dagster._core.definitions.asset_job import IMPLICIT_ASSET_JOB_NAME
 from dagster._core.definitions.asset_key import AssetKey
@@ -130,22 +118,21 @@ class CodeLocation(AbstractContextManager):
         step_keys_to_execute: Optional[Sequence[str]],
         known_state: Optional[KnownExecutionState],
         instance: Optional[DagsterInstance] = None,
-    ) -> RemoteExecutionPlan:
-        pass
+    ) -> RemoteExecutionPlan: ...
 
-    def get_job(self, selector: JobSubsetSelector) -> RemoteJob:
-        """Return the RemoteJob for a specific pipeline. Subclasses only
-        need to implement get_subset_remote_job_result to handle the case where
-        an op selection is specified, which requires access to the underlying JobDefinition
-        to generate the subsetted pipeline snapshot.
-        """
-        if not selector.is_subset_selection:
-            return self.get_repository(selector.repository_name).get_full_job(selector.job_name)
+    @abstractmethod
+    async def gen_execution_plan(
+        self,
+        remote_job: RemoteJob,
+        run_config: Mapping[str, object],
+        step_keys_to_execute: Optional[Sequence[str]],
+        known_state: Optional[KnownExecutionState],
+        instance: Optional[DagsterInstance] = None,
+    ) -> RemoteExecutionPlan: ...
 
-        repo_handle = self.get_repository(selector.repository_name).handle
-
-        subset_result = self.get_subset_remote_job_result(selector)
-
+    def _get_remote_job_from_subset_result(
+        self, repo_handle: RepositoryHandle, subset_result: RemoteJobSubsetResult
+    ) -> RemoteJob:
         if subset_result.repository_python_origin:
             # Prefer the python origin from the result if it is set, in case the code location
             # just updated and any origin information (most frequently the image) has changed
@@ -168,11 +155,48 @@ class CodeLocation(AbstractContextManager):
 
         return RemoteJob(job_data_snap, repo_handle)
 
+    def get_job(self, selector: JobSubsetSelector) -> RemoteJob:
+        """Return the RemoteJob for a specific pipeline. Subclasses only
+        need to implement get_subset_remote_job_result to handle the case where
+        an op selection is specified, which requires access to the underlying JobDefinition
+        to generate the subsetted pipeline snapshot.
+        """
+        if not selector.is_subset_selection:
+            return self.get_repository(selector.repository_name).get_full_job(selector.job_name)
+
+        repo_handle = self.get_repository(selector.repository_name).handle
+        subset_result = self._get_subset_remote_job_result(selector)
+        return self._get_remote_job_from_subset_result(repo_handle, subset_result)
+
+    async def gen_job(self, selector: JobSubsetSelector) -> RemoteJob:
+        """Return the RemoteJob for a specific pipeline. Subclasses only
+        need to implement gen_subset_remote_job_result to handle the case where
+        an op selection is specified, which requires access to the underlying JobDefinition
+        to generate the subsetted pipeline snapshot.
+        """
+        if not selector.is_subset_selection:
+            return self.get_repository(selector.repository_name).get_full_job(selector.job_name)
+
+        repo_handle = self.get_repository(selector.repository_name).handle
+
+        subset_result = await self._gen_subset_remote_job_result(selector)
+
+        return self._get_remote_job_from_subset_result(repo_handle, subset_result)
+
     @abstractmethod
-    def get_subset_remote_job_result(self, selector: JobSubsetSelector) -> RemoteJobSubsetResult:
+    def _get_subset_remote_job_result(self, selector: JobSubsetSelector) -> RemoteJobSubsetResult:
         """Returns a snapshot about an RemoteJob with an op selection, which requires
         access to the underlying JobDefinition. Callsites should likely use
-        `get_remote_job` instead.
+        `get_job` instead.
+        """
+
+    @abstractmethod
+    async def _gen_subset_remote_job_result(
+        self, selector: JobSubsetSelector
+    ) -> RemoteJobSubsetResult:
+        """Returns a snapshot about an RemoteJob with an op selection, which requires
+        access to the underlying JobDefinition. Callsites should likely use
+        `gen_job` instead.
         """
 
     @abstractmethod
@@ -449,7 +473,12 @@ class InProcessCodeLocation(CodeLocation):
     def get_repositories(self) -> Mapping[str, RemoteRepository]:
         return self._repositories
 
-    def get_subset_remote_job_result(self, selector: JobSubsetSelector) -> RemoteJobSubsetResult:
+    async def _gen_subset_remote_job_result(
+        self, selector: JobSubsetSelector
+    ) -> RemoteJobSubsetResult:
+        return self._get_subset_remote_job_result(selector)
+
+    def _get_subset_remote_job_result(self, selector: JobSubsetSelector) -> RemoteJobSubsetResult:
         check.inst_param(selector, "selector", JobSubsetSelector)
         check.invariant(
             selector.location_name == self.name,
@@ -467,6 +496,22 @@ class InProcessCodeLocation(CodeLocation):
             selector.asset_selection,
             selector.asset_check_selection,
             include_parent_snapshot=True,
+        )
+
+    async def gen_execution_plan(
+        self,
+        remote_job: RemoteJob,
+        run_config: Mapping[str, object],
+        step_keys_to_execute: Optional[Sequence[str]],
+        known_state: Optional[KnownExecutionState],
+        instance: Optional[DagsterInstance] = None,
+    ) -> RemoteExecutionPlan:
+        return self.get_execution_plan(
+            remote_job,
+            run_config,
+            step_keys_to_execute,
+            known_state,
+            instance,
         )
 
     def get_execution_plan(
@@ -651,6 +696,11 @@ class GrpcServerCodeLocation(CodeLocation):
         grpc_server_registry: Optional[GrpcServerRegistry] = None,
         grpc_metadata: Optional[Sequence[tuple[str, str]]] = None,
     ):
+        from dagster._api.get_server_id import sync_get_server_id
+        from dagster._api.list_repositories import sync_list_repositories_grpc
+        from dagster._api.snapshot_repository import (
+            sync_get_streaming_external_repositories_data_grpc,
+        )
         from dagster._grpc.client import DagsterGrpcClient, client_heartbeat_thread
 
         self._origin = check.inst_param(origin, "origin", CodeLocationOrigin)
@@ -694,6 +744,7 @@ class GrpcServerCodeLocation(CodeLocation):
                 use_ssl=self._use_ssl,
                 metadata=grpc_metadata,
             )
+
             list_repositories_response = sync_list_repositories_grpc(self.client)
 
             self._server_id = sync_get_server_id(self.client)
@@ -832,6 +883,8 @@ class GrpcServerCodeLocation(CodeLocation):
         known_state: Optional[KnownExecutionState],
         instance: Optional[DagsterInstance] = None,
     ) -> RemoteExecutionPlan:
+        from dagster._api.snapshot_execution_plan import sync_get_external_execution_plan_grpc
+
         check.inst_param(remote_job, "remote_job", RemoteJob)
         run_config = check.mapping_param(run_config, "run_config")
         check.opt_nullable_sequence_param(step_keys_to_execute, "step_keys_to_execute", of_type=str)
@@ -866,7 +919,48 @@ class GrpcServerCodeLocation(CodeLocation):
 
         return RemoteExecutionPlan(execution_plan_snapshot=execution_plan_snapshot_or_error)
 
-    def get_subset_remote_job_result(self, selector: JobSubsetSelector) -> "RemoteJobSubsetResult":
+    @checked
+    async def gen_execution_plan(
+        self,
+        remote_job: RemoteJob,
+        run_config: Mapping[str, Any],
+        step_keys_to_execute: Optional[Sequence[str]],
+        known_state: Optional[KnownExecutionState],
+        instance: Optional[DagsterInstance] = None,
+    ) -> RemoteExecutionPlan:
+        from dagster._api.snapshot_execution_plan import gen_external_execution_plan_grpc
+
+        asset_selection = (
+            frozenset(check.opt_set_param(remote_job.asset_selection, "asset_selection"))
+            if remote_job.asset_selection is not None
+            else None
+        )
+        asset_check_selection = (
+            frozenset(
+                check.opt_set_param(remote_job.asset_check_selection, "asset_check_selection")
+            )
+            if remote_job.asset_check_selection is not None
+            else None
+        )
+
+        execution_plan_snapshot_or_error = await gen_external_execution_plan_grpc(
+            api_client=self.client,
+            job_origin=remote_job.get_remote_origin(),
+            run_config=run_config,
+            job_snapshot_id=remote_job.identifying_job_snapshot_id,
+            asset_selection=asset_selection,
+            asset_check_selection=asset_check_selection,
+            op_selection=remote_job.op_selection,
+            step_keys_to_execute=step_keys_to_execute,
+            known_state=known_state,
+            instance=instance,
+        )
+
+        return RemoteExecutionPlan(execution_plan_snapshot=execution_plan_snapshot_or_error)
+
+    def _get_subset_remote_job_result(self, selector: JobSubsetSelector) -> RemoteJobSubsetResult:
+        from dagster._api.snapshot_job import sync_get_external_job_subset_grpc
+
         check.inst_param(selector, "selector", JobSubsetSelector)
         check.invariant(
             selector.location_name == self.name,
@@ -893,6 +987,37 @@ class GrpcServerCodeLocation(CodeLocation):
 
         return subset
 
+    async def _gen_subset_remote_job_result(
+        self, selector: JobSubsetSelector
+    ) -> "RemoteJobSubsetResult":
+        from dagster._api.snapshot_job import gen_external_job_subset_grpc
+
+        check.inst_param(selector, "selector", JobSubsetSelector)
+        check.invariant(
+            selector.location_name == self.name,
+            f"PipelineSelector location_name mismatch, got {selector.location_name} expected"
+            f" {self.name}",
+        )
+
+        remote_repository = self.get_repository(selector.repository_name)
+        job_handle = JobHandle(selector.job_name, remote_repository.handle)
+        subset = await gen_external_job_subset_grpc(
+            self.client,
+            job_handle.get_remote_origin(),
+            include_parent_snapshot=False,
+            op_selection=selector.op_selection,
+            asset_selection=selector.asset_selection,
+            asset_check_selection=selector.asset_check_selection,
+        )
+        if subset.job_data_snap:
+            full_job = self.get_repository(selector.repository_name).get_full_job(selector.job_name)
+            subset = copy(
+                subset,
+                job_data_snap=copy(subset.job_data_snap, parent_job=full_job.job_snapshot),
+            )
+
+        return subset
+
     def get_partition_config(
         self,
         repository_handle: RepositoryHandle,
@@ -900,6 +1025,8 @@ class GrpcServerCodeLocation(CodeLocation):
         partition_name: str,
         instance: DagsterInstance,
     ) -> "PartitionConfigSnap":
+        from dagster._api.snapshot_partition import sync_get_external_partition_config_grpc
+
         check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
         check.str_param(job_name, "job_name")
         check.str_param(partition_name, "partition_name")
@@ -915,6 +1042,8 @@ class GrpcServerCodeLocation(CodeLocation):
         partition_name: str,
         instance: DagsterInstance,
     ) -> "PartitionTagsSnap":
+        from dagster._api.snapshot_partition import sync_get_external_partition_tags_grpc
+
         check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
         check.str_param(job_name, "job_name")
         check.str_param(partition_name, "partition_name")
@@ -926,6 +1055,8 @@ class GrpcServerCodeLocation(CodeLocation):
     def get_partition_names_from_repo(
         self, repository_handle: RepositoryHandle, job_name: str
     ) -> Union[PartitionNamesSnap, "PartitionExecutionErrorSnap"]:
+        from dagster._api.snapshot_partition import sync_get_external_partition_names_grpc
+
         return sync_get_external_partition_names_grpc(self.client, repository_handle, job_name)
 
     def get_schedule_execution_data(
@@ -936,6 +1067,8 @@ class GrpcServerCodeLocation(CodeLocation):
         scheduled_execution_time: Optional[TimestampWithTimezone],
         log_key: Optional[Sequence[str]],
     ) -> "ScheduleExecutionData":
+        from dagster._api.snapshot_schedule import sync_get_external_schedule_execution_data_grpc
+
         check.inst_param(instance, "instance", DagsterInstance)
         check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
         check.str_param(schedule_name, "schedule_name")
@@ -985,6 +1118,10 @@ class GrpcServerCodeLocation(CodeLocation):
         partition_names: Sequence[str],
         instance: DagsterInstance,
     ) -> "PartitionSetExecutionParamSnap":
+        from dagster._api.snapshot_partition import (
+            sync_get_external_partition_set_execution_param_data_grpc,
+        )
+
         check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
         check.str_param(partition_set_name, "partition_set_name")
         check.sequence_param(partition_names, "partition_names", of_type=str)
@@ -998,6 +1135,8 @@ class GrpcServerCodeLocation(CodeLocation):
         )
 
     def get_notebook_data(self, notebook_path: str) -> bytes:
+        from dagster._api.notebook_data import sync_get_streaming_external_notebook_data_grpc
+
         check.str_param(notebook_path, "notebook_path")
         return sync_get_streaming_external_notebook_data_grpc(self.client, notebook_path)
 

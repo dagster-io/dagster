@@ -17,7 +17,7 @@ from dagster._core.definitions.declarative_automation.legacy.valid_asset_subset 
 )
 from dagster._core.definitions.events import AssetKeyPartitionKey
 from dagster._core.definitions.freshness_policy import LegacyFreshnessPolicy
-from dagster._core.definitions.time_window_partitions import TimeWindow
+from dagster._core.definitions.partitions.utils import TimeWindow
 from dagster._utils.schedules import cron_string_iterator
 
 if TYPE_CHECKING:

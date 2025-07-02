@@ -9,16 +9,16 @@ This page is specific to ops. To learn about partitioning assets, see "[Partitio
 
 :::
 
-When defining a job that uses [ops](/guides/build/ops/) you can partition it by supplying <PyObject section="partitions" module="dagster" object="PartitionedConfig" /> object as its config.
+When defining a job that uses [ops](/guides/build/ops) you can partition it by supplying <PyObject section="partitions" module="dagster" object="PartitionedConfig" /> object as its config.
 
-In this guide, we'll demonstrate to use partitions with ops and [jobs](/guides/build/jobs/).
+In this guide, we'll demonstrate to use partitions with ops and [jobs](/guides/build/jobs).
 
 ## Prerequisites
 
 Before continuing, you should be familiar with:
 
-- [Ops](/guides/build/ops/)
-- [Jobs](/guides/build/jobs/)
+- [Ops](/guides/build/ops)
+- [Jobs](/guides/build/jobs)
 - [Run configuration](/guides/operate/configuration/run-configuration)
 
 ## Relevant APIs
@@ -73,7 +73,7 @@ Not all jobs are partitioned by time. For example, the following example shows a
 
 Running a partitioned job on a schedule is a common use case. For example, if your job has a partition for each date, you likely want to run that job every day, on the partition for that day.
 
-Refer to the [Schedule documentation](/guides/automate/schedules/) for more info about constructing both schedules for asset and op-based jobs.
+Refer to the [Schedule documentation](/guides/automate/schedules) for more info about constructing both schedules for asset and op-based jobs.
 
 ## Partitions in the Dagster UI
 

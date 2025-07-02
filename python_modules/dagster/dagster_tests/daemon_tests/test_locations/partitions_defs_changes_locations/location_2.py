@@ -1,4 +1,8 @@
-from dagster import DailyPartitionsDefinition, StaticPartitionsDefinition, asset
+from dagster import asset
+from dagster._core.definitions.partitions.definition import (
+    DailyPartitionsDefinition,
+    StaticPartitionsDefinition,
+)
 
 
 @asset(  # partitions def changed to start in June instead of Jan

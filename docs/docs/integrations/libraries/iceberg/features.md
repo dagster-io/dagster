@@ -21,9 +21,9 @@ Spark configuration can be set directly on the <PyObject section="libraries" obj
 The following engines are implemented using PyIceberg:
 
 - [Apache Arrow](https://arrow.apache.org/docs/python/index.html)
-- [Daft](https://www.getdaft.io/)
-- [pandas](https://pandas.pydata.org/)
-- [Polars](https://pola.rs/)
+- [Daft](https://www.getdaft.io)
+- [pandas](https://pandas.pydata.org)
+- [Polars](https://pola.rs)
 
 ### Supported catalogs
 

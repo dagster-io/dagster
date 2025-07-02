@@ -12,26 +12,30 @@ from dagster import (
     AutomationCondition,
     BackfillPolicy,
     DagsterInvalidDefinitionError,
-    DailyPartitionsDefinition,
     Definitions,
     DependencyDefinition,
-    DimensionPartitionMapping,
     Jitter,
-    LastPartitionMapping,
     LegacyFreshnessPolicy,
-    MultiPartitionMapping,
     NodeInvocation,
     OpDefinition,
     PartitionMapping,
     PartitionsDefinition,
     RetryPolicy,
-    StaticPartitionMapping,
-    StaticPartitionsDefinition,
     TimeWindowPartitionMapping,
     asset,
     materialize,
 )
 from dagster._core.definitions.dependency import BlockingAssetChecksDependencyDefinition
+from dagster._core.definitions.partitions.definition import (
+    DailyPartitionsDefinition,
+    StaticPartitionsDefinition,
+)
+from dagster._core.definitions.partitions.mapping import (
+    DimensionPartitionMapping,
+    LastPartitionMapping,
+    MultiPartitionMapping,
+    StaticPartitionMapping,
+)
 from dagster._core.definitions.tags import build_kind_tag, has_kind
 from dagster._core.definitions.utils import DEFAULT_IO_MANAGER_KEY
 from dagster._core.execution.context.compute import AssetExecutionContext

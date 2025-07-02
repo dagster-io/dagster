@@ -4,22 +4,22 @@ import {
   Body,
   Box,
   Colors,
+  HoverButton,
   Icon,
   IconName,
   Popover,
   Skeleton,
   SubtitleLarge,
   Tag,
-  UnstyledButton,
   ifPlural,
 } from '@dagster-io/ui-components';
-import React, {useMemo} from 'react';
+import React, {useCallback, useMemo} from 'react';
 import {Link} from 'react-router-dom';
-import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
+import {observeEnabled} from 'shared/app/observeEnabled.oss';
 
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
-import {featureEnabled} from '../app/Flags';
 import {assertUnreachable} from '../app/Util';
+import {useTrackEvent} from '../app/analytics';
 import {useAssetHealthData} from '../asset-data/AssetHealthDataProvider';
 import {
   AssetHealthCheckDegradedMetaFragment,
@@ -39,7 +39,7 @@ import {numberFormatter} from '../ui/formatters';
 
 export const AssetHealthSummary = React.memo(
   ({assetKey, iconOnly}: {assetKey: {path: string[]}; iconOnly?: boolean}) => {
-    if (!featureEnabled(FeatureFlag.flagUseNewObserveUIs)) {
+    if (!observeEnabled()) {
       return null;
     }
 
@@ -59,9 +59,9 @@ const AssetHealthSummaryImpl = React.memo(
     function content() {
       if (iconOnly) {
         return (
-          <UnstyledButton style={{display: 'flex', alignItems: 'center', padding: 8}}>
+          <HoverButton style={{padding: 8}}>
             <Icon name={iconName} color={iconColor} />
-          </UnstyledButton>
+          </HoverButton>
         );
       }
       return (
@@ -161,13 +161,24 @@ const Criteria = React.memo(
   }) => {
     const {subStatusIconName, iconColor, textColor} = statusToIconAndColor[status ?? 'undefined'];
 
+    const trackEvent = useTrackEvent();
+    const onClick = useCallback(
+      (name: string) => () => {
+        trackEvent('asset-health-summary-click', {name});
+      },
+      [trackEvent],
+    );
+
     const derivedExplanation = useMemo(() => {
       switch (metadata?.__typename) {
         case 'AssetHealthCheckUnknownMeta':
           if (metadata.numNotExecutedChecks > 0) {
             return (
               <Body>
-                <Link to={assetDetailsPathForKey(assetKey, {view: 'checks'})}>
+                <Link
+                  to={assetDetailsPathForKey(assetKey, {view: 'checks'})}
+                  onClick={onClick('checks-unknown')}
+                >
                   {numberFormatter.format(metadata.numNotExecutedChecks)} /{' '}
                   {numberFormatter.format(metadata.totalNumChecks)} check
                   {ifPlural(metadata.totalNumChecks, '', 's')} not executed
@@ -180,7 +191,10 @@ const Criteria = React.memo(
           if (metadata.numWarningChecks > 0 && metadata.numFailedChecks > 0) {
             return (
               <Body>
-                <Link to={assetDetailsPathForKey(assetKey, {view: 'checks'})}>
+                <Link
+                  to={assetDetailsPathForKey(assetKey, {view: 'checks'})}
+                  onClick={onClick('checks-degraded-all')}
+                >
                   {numberFormatter.format(metadata.numWarningChecks)}/
                   {numberFormatter.format(metadata.totalNumChecks)} check
                   {ifPlural(metadata.totalNumChecks, '', 's')} warning,{' '}
@@ -194,7 +208,10 @@ const Criteria = React.memo(
           if (metadata.numWarningChecks > 0) {
             return (
               <Body>
-                <Link to={assetDetailsPathForKey(assetKey, {view: 'checks'})}>
+                <Link
+                  to={assetDetailsPathForKey(assetKey, {view: 'checks'})}
+                  onClick={onClick('checks-degraded-warning')}
+                >
                   {numberFormatter.format(metadata.numWarningChecks)}/
                   {numberFormatter.format(metadata.totalNumChecks)} check
                   {ifPlural(metadata.totalNumChecks, '', 's')} warning
@@ -204,7 +221,10 @@ const Criteria = React.memo(
           }
           return (
             <Body>
-              <Link to={assetDetailsPathForKey(assetKey, {view: 'checks'})}>
+              <Link
+                to={assetDetailsPathForKey(assetKey, {view: 'checks'})}
+                onClick={onClick('checks-degraded-failed')}
+              >
                 {numberFormatter.format(metadata.numFailedChecks)}/
                 {numberFormatter.format(metadata.totalNumChecks)} check
                 {ifPlural(metadata.totalNumChecks, '', 's')} failed
@@ -214,7 +234,10 @@ const Criteria = React.memo(
         case 'AssetHealthCheckWarningMeta':
           return (
             <Body>
-              <Link to={assetDetailsPathForKey(assetKey, {view: 'checks'})}>
+              <Link
+                to={assetDetailsPathForKey(assetKey, {view: 'checks'})}
+                onClick={onClick('checks-warning')}
+              >
                 {numberFormatter.format(metadata.numWarningChecks)}/
                 {numberFormatter.format(metadata.totalNumChecks)} check
                 {ifPlural(metadata.totalNumChecks, '', 's')} warning
@@ -224,7 +247,10 @@ const Criteria = React.memo(
         case 'AssetHealthMaterializationDegradedNotPartitionedMeta':
           return (
             <Body>
-              <Link to={`/runs/${metadata.failedRunId}`}>
+              <Link
+                to={`/runs/${metadata.failedRunId}`}
+                onClick={onClick('materialization-degraded-not-partitioned')}
+              >
                 Materialization failed in run {metadata.failedRunId.split('-').shift()}
               </Link>
             </Body>
@@ -232,7 +258,10 @@ const Criteria = React.memo(
         case 'AssetHealthMaterializationDegradedPartitionedMeta':
           return (
             <Body>
-              <Link to={assetDetailsPathForKey(assetKey, {view: 'partitions', status: 'FAILED'})}>
+              <Link
+                to={assetDetailsPathForKey(assetKey, {view: 'partitions', status: 'FAILED'})}
+                onClick={onClick('degraded-partitioned')}
+              >
                 Materialization failed in {numberFormatter.format(metadata.numFailedPartitions)} out
                 of {numberFormatter.format(metadata.totalNumPartitions)} partition
                 {ifPlural(metadata.totalNumPartitions, '', 's')}
@@ -242,7 +271,10 @@ const Criteria = React.memo(
         case 'AssetHealthMaterializationHealthyPartitionedMeta':
           return (
             <Body>
-              <Link to={assetDetailsPathForKey(assetKey, {view: 'partitions', status: 'MISSING'})}>
+              <Link
+                to={assetDetailsPathForKey(assetKey, {view: 'partitions', status: 'MISSING'})}
+                onClick={onClick('healthy-missing-partitioned')}
+              >
                 Materialization missing in {numberFormatter.format(metadata.numMissingPartitions)}{' '}
                 out of {numberFormatter.format(metadata.totalNumPartitions)} partition
                 {ifPlural(metadata.totalNumPartitions, '', 's')}
@@ -265,7 +297,7 @@ const Criteria = React.memo(
         default:
           assertUnreachable(metadata);
       }
-    }, [metadata, assetKey]);
+    }, [metadata, assetKey, onClick]);
 
     const {text, shouldDim} = useMemo(() => {
       switch (type) {

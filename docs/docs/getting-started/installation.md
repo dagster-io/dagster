@@ -9,7 +9,7 @@ import InstallUv from '@site/docs/partials/\_InstallUv.md';
 
 :::note
 
-To follow the steps in this guide, you'll need to install [Python 3.9](https://www.python.org/downloads/) or higher. **Python 3.12 is recommended**.
+To follow the steps in this guide, you'll need to install [Python 3.9](https://www.python.org/downloads/) or higher. **Python 3.13 is recommended**.
 
 :::
 
@@ -24,11 +24,11 @@ If you're just getting started with Dagster, we recommend scaffolding a new proj
 <Tabs>
 <TabItem value="uv" label="uv (Recommended)">
 
-Install the Python package manager [`uv`](https://docs.astral.sh/uv/getting-started/installation/):
+Install the Python package manager [`uv`](https://docs.astral.sh/uv/getting-started/installation):
 
 <InstallUv />
 
-Installing `uv` will install the [`uvx` command](https://docs.astral.sh/uv/guides/tools/), which allows you to execute commands without having to install packages directly. You can run the `create-dagster` command using `uvx`:
+Installing `uv` will install the [`uvx` command](https://docs.astral.sh/uv/guides/tools), which allows you to execute commands without having to install packages directly. You can run the `create-dagster` command using `uvx`:
 
 <CliInvocationExample contents="uvx -U create-dagster project my-project" />
 

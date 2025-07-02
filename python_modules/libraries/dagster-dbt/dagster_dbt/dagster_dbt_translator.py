@@ -21,7 +21,7 @@ from dagster._core.definitions.metadata.source_code import (
     CodeReferencesMetadataValue,
     LocalFileCodeReference,
 )
-from dagster._core.definitions.partition import PartitionsDefinition
+from dagster._core.definitions.partitions.definition import PartitionsDefinition
 from dagster._utils.tags import is_valid_tag_key
 from dagster.components.resolved.base import Resolvable
 from dagster_shared import check

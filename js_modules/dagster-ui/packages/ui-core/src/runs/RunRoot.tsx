@@ -243,10 +243,7 @@ const RunHeaderTitle = ({run, runId}: {run: RunPageFragment | null; runId: strin
           Runs
         </Link>
         {' / '}
-        <Link
-          to={getBackfillPath(backfillTag.value, !!run?.assetSelection?.length)}
-          style={{color: Colors.textLight()}}
-        >
+        <Link to={getBackfillPath(backfillTag.value, 'runs')} style={{color: Colors.textLight()}}>
           {backfillTag.value}
         </Link>
         {' / '}

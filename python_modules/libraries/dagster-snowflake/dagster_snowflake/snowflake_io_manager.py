@@ -5,7 +5,7 @@ from typing import Any, Optional, cast
 
 from dagster import IOManagerDefinition, OutputContext, io_manager
 from dagster._config.pythonic_config import ConfigurableIOManagerFactory
-from dagster._core.definitions.time_window_partitions import TimeWindow
+from dagster._core.definitions.partitions.utils import TimeWindow
 from dagster._core.storage.db_io_manager import (
     DbClient,
     DbIOManager,
@@ -15,7 +15,6 @@ from dagster._core.storage.db_io_manager import (
 )
 from dagster._core.storage.io_manager import dagster_maintained_io_manager
 from pydantic import Field
-from snowflake.connector.errors import ProgrammingError
 
 from dagster_snowflake.resources import SnowflakeResource
 
@@ -364,20 +363,22 @@ class SnowflakeDbClient(DbClient):
 
     @staticmethod
     def ensure_schema_exists(context: OutputContext, table_slice: TableSlice, connection) -> None:
-        schemas = (
-            connection.cursor()
-            .execute(f"show schemas like '{table_slice.schema}' in database {table_slice.database}")
-            .fetchall()
-        )
+        with connection.cursor() as cursor:
+            cursor.execute(
+                f"show schemas like '{table_slice.schema}' in database {table_slice.database}"
+            )
+            schemas = cursor.fetchall()
+
         if len(schemas) == 0:
-            connection.cursor().execute(f"create schema {table_slice.schema};")
+            with connection.cursor() as cursor:
+                cursor.execute(f"create schema {table_slice.schema};")
 
     @staticmethod
     def delete_table_slice(context: OutputContext, table_slice: TableSlice, connection) -> None:
         try:
             connection.cursor().execute(_get_cleanup_statement(table_slice))
-        except ProgrammingError as e:
-            if "does not exist" in e.msg:  # type: ignore
+        except Exception as e:
+            if "does not exist or not authorized" in str(e):
                 # table doesn't exist yet, so ignore the error
                 return
             else:

@@ -8,7 +8,7 @@ import dagster._check as check
 from dagster._core.asset_graph_view.serializable_entity_subset import SerializableEntitySubset
 from dagster._core.definitions.asset_health.asset_health import AssetHealthStatus
 from dagster._core.definitions.asset_key import AssetKey
-from dagster._core.definitions.partition import PartitionsDefinition
+from dagster._core.definitions.partitions.definition import PartitionsDefinition
 from dagster._core.loader import LoadableBy, LoadingContext
 from dagster._core.remote_representation.external_data import PartitionsSnap
 from dagster._core.storage.dagster_run import RunRecord

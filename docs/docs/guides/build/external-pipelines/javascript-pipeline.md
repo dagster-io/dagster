@@ -20,7 +20,7 @@ To run the examples, you'll need to:
 
 - Create a new Dagster project:
    <ScaffoldProject />
-- Install [Node.js](https://nodejs.org/en/download/package-manager/)
+- Install [Node.js](https://nodejs.org/en/download/package-manager)
 - Add the following Node packages:
    ```bash
    npm install @tensorflow/tfjs

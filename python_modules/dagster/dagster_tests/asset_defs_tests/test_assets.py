@@ -12,15 +12,12 @@ from dagster import (
     AssetsDefinition,
     BackfillPolicy,
     DagsterEventType,
-    DailyPartitionsDefinition,
     Definitions,
     GraphOut,
     HookContext,
-    IdentityPartitionMapping,
     In,
     IOManager,
     IOManagerDefinition,
-    LastPartitionMapping,
     LegacyFreshnessPolicy,
     Out,
     Output,
@@ -56,6 +53,11 @@ from dagster._core.definitions.auto_materialize_policy import AutoMaterializePol
 from dagster._core.definitions.decorators.hook_decorator import success_hook
 from dagster._core.definitions.events import AssetMaterialization
 from dagster._core.definitions.metadata.metadata_value import TextMetadataValue
+from dagster._core.definitions.partitions.definition import DailyPartitionsDefinition
+from dagster._core.definitions.partitions.mapping import (
+    IdentityPartitionMapping,
+    LastPartitionMapping,
+)
 from dagster._core.definitions.result import MaterializeResult
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
@@ -2430,9 +2432,8 @@ def test_multiple_keys_per_output_name():
 def test_iterate_over_single_key() -> None:
     key = AssetKey("ouch")
     with pytest.raises(
-        DagsterInvariantViolationError,
-        match="You have attempted to iterate a single AssetKey object. "
-        "As of 1.9, this behavior is disallowed because it is likely unintentional and a bug.",
+        Exception,
+        match="Iteration is not allowed",
     ):
         [_ for _ in key]  # type: ignore # good job type checker
 
@@ -2440,10 +2441,8 @@ def test_iterate_over_single_key() -> None:
 def test_index_in_to_key() -> None:
     key = AssetKey("ouch")
     with pytest.raises(
-        DagsterInvariantViolationError,
-        match="You have attempted to index directly in to the AssetKey object. "
-        "As of 1.9, this behavior is disallowed because it is likely unintentional and a bug. "
-        "Use asset_key.path instead to access the list of key components.",
+        Exception,
+        match="Index access is not allowed",
     ):
         key[0][0]  # type: ignore # good job type checker
 

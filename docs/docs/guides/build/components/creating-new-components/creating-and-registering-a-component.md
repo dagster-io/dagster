@@ -172,7 +172,7 @@ The `@multi_asset` decorator is used to provide the flexibility of assigning mul
 
 Following the steps above will automatically register your component in your environment. To see your new component in the list of available components, run `dg list components`:
 
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/shell-script-component/3-dg-list-components.txt" />
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/shell-script-component/generated/3-dg-list-components.txt" />
 
 You can also view automatically generated documentation describing your new component by running `dg dev` to start the webserver and navigating to the `Docs` tab for your project's code location:
 
@@ -184,4 +184,4 @@ You can also view automatically generated documentation describing your new comp
 
 After you create and register your new component, you can use it to add component definitions to your Dagster project with the `dg scaffold defs` command:
 
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/shell-script-component/4-scaffold-instance-of-component.txt" />
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/shell-script-component/generated/4-scaffold-instance-of-component.txt" />

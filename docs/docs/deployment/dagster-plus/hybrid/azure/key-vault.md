@@ -19,8 +19,8 @@ This guide assumes you completed the first step of [Deploy a Dagster+ agent on a
 To complete the steps in this guide, you'll need:
 
 - The Azure CLI installed on your machine. You can download it [here](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli).
-- `kubectl` installed on your machine. You can download it [here](https://kubernetes.io/docs/tasks/tools/).
-- `helm` installed on your machine. You can download it [here](https://helm.sh/docs/intro/install/).
+- `kubectl` installed on your machine. You can download it [here](https://kubernetes.io/docs/tasks/tools).
+- `helm` installed on your machine. You can download it [here](https://helm.sh/docs/intro/install).
 - A functional AKS cluster and Dagster+ agent running on it. If you have not yet set up an AKS agent, you can look up [Deploy an Azure Kubernetes Service (AKS) agent guide](/deployment/dagster-plus/hybrid/azure/aks-agent).
 
 ## Step 1: Enable the Azure Key Vault provider for the AKS cluster

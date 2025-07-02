@@ -40,14 +40,20 @@ from dagster._core.definitions.events import CoercibleToAssetKey, CoercibleToAss
 from dagster._core.definitions.freshness_policy import LegacyFreshnessPolicy
 from dagster._core.definitions.hook_definition import HookDefinition
 from dagster._core.definitions.metadata import ArbitraryMetadataMapping
-from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
 from dagster._core.definitions.node_definition import NodeDefinition
 from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.op_invocation import direct_invocation_result
-from dagster._core.definitions.partition import PartitionsDefinition
-from dagster._core.definitions.partition_mapping import (
+from dagster._core.definitions.partitions.definition import (
+    MultiPartitionsDefinition,
+    PartitionsDefinition,
+    TimeWindowPartitionsDefinition,
+)
+from dagster._core.definitions.partitions.mapping import (
     MultiPartitionMapping,
     PartitionMapping,
+    TimeWindowPartitionMapping,
+)
+from dagster._core.definitions.partitions.utils import (
     infer_partition_mapping,
     warn_if_partition_mapping_not_builtin,
 )
@@ -60,8 +66,6 @@ from dagster._core.definitions.resource_requirement import (
     merge_resource_defs,
 )
 from dagster._core.definitions.source_asset import SourceAsset
-from dagster._core.definitions.time_window_partition_mapping import TimeWindowPartitionMapping
-from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
 from dagster._core.definitions.utils import (
     DEFAULT_GROUP_NAME,
     DEFAULT_IO_MANAGER_KEY,
@@ -985,8 +989,8 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
             name: key for name, key in self.node_keys_by_output_name.items() if key in self.keys
         }
 
-    @property
-    def asset_and_check_keys_by_output_name(self) -> Mapping[str, EntityKey]:
+    @cached_property
+    def entity_keys_by_output_name(self) -> Mapping[str, EntityKey]:
         return merge_dicts(
             self.keys_by_output_name,
             {
@@ -995,11 +999,15 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
             },
         )
 
+    @cached_property
+    def output_names_by_entity_key(self) -> Mapping[EntityKey, str]:
+        return reverse_dict(self.entity_keys_by_output_name)
+
     @property
     def asset_and_check_keys(self) -> AbstractSet[EntityKey]:
         return set(self.keys).union(self.check_keys)
 
-    @property
+    @cached_property
     def keys_by_input_name(self) -> Mapping[str, AssetKey]:
         upstream_keys = {
             *(dep.asset_key for key in self.keys for dep in self._specs_by_key[key].deps),

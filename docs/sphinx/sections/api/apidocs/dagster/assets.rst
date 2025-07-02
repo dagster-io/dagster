@@ -72,7 +72,7 @@ Asset jobs
 Code locations
 --------------
 
-Loading assets and asset jobs into a `code location <https://docs.dagster.io/guides/deploy/code-locations/>`_ makes them available to Dagster tools like the UI, CLI, and GraphQL API.
+Loading assets and asset jobs into a `code location <https://docs.dagster.io/guides/deploy/code-locations>`_ makes them available to Dagster tools like the UI, CLI, and GraphQL API.
 
 .. autofunction:: load_assets_from_modules
 
@@ -92,7 +92,7 @@ Refer to the `Asset observation <https://docs.dagster.io/guides/build/assets/met
 Declarative Automation
 ---------------------------------------
 
-Refer to the `Declarative Automation <https://docs.dagster.io/guides/automate/declarative-automation/>`_ documentation for more information.
+Refer to the `Declarative Automation <https://docs.dagster.io/guides/automate/declarative-automation>`_ documentation for more information.
 
 .. autoclass:: AutomationCondition
 

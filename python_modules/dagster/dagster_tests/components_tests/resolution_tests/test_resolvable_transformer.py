@@ -10,10 +10,10 @@ from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationCondition,
 )
-from dagster._core.definitions.partition import StaticPartitionsDefinition
-from dagster._core.definitions.time_window_partitions import (
+from dagster._core.definitions.partitions.definition import (
     DailyPartitionsDefinition,
     HourlyPartitionsDefinition,
+    StaticPartitionsDefinition,
     TimeWindowPartitionsDefinition,
     WeeklyPartitionsDefinition,
 )

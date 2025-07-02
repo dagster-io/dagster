@@ -20,7 +20,7 @@ This page is focused on using Pipes with specific Spark providers, such as AWS E
 
 ## Using Dagster Pipes to run Spark jobs
 
-[Dagster pipes](/guides/build/external-pipelines/) is our toolkit for orchestrating remote compute from Dagster. It allows you to run code outside of the Dagster process, and stream logs and events back to Dagster. This is the recommended approach for running Spark jobs.
+[Dagster pipes](/guides/build/external-pipelines) is our toolkit for orchestrating remote compute from Dagster. It allows you to run code outside of the Dagster process, and stream logs and events back to Dagster. This is the recommended approach for running Spark jobs.
 
 With Pipes, the code inside the asset or op definition submits a Spark job to an external system like Databricks or AWS EMR, usually pointing to a jar or zip of Python files that contain the actual Spark data transformations and actions.
 

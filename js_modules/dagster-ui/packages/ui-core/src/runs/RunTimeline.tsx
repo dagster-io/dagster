@@ -14,7 +14,6 @@ import {
 } from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import dayjs from 'dayjs';
-import relativeTime from 'dayjs/plugin/relativeTime';
 import * as React from 'react';
 import {useMemo} from 'react';
 import {Link} from 'react-router-dom';
@@ -41,7 +40,7 @@ import {repoAddressAsURLString} from '../workspace/repoAddressAsString';
 import {repoAddressFromPath} from '../workspace/repoAddressFromPath';
 import {RepoAddress} from '../workspace/types';
 
-dayjs.extend(relativeTime);
+import '../util/dayjsExtensions';
 
 const ROW_HEIGHT = 32;
 const TIME_HEADER_HEIGHT = 32;

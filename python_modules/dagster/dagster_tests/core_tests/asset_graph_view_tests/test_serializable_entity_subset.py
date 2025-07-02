@@ -1,12 +1,12 @@
 import pytest
-from dagster import (
-    AssetKey,
+from dagster import AssetKey
+from dagster._check import CheckError
+from dagster._core.asset_graph_view.serializable_entity_subset import SerializableEntitySubset
+from dagster._core.definitions.partitions.definition import (
     DailyPartitionsDefinition,
     DynamicPartitionsDefinition,
     StaticPartitionsDefinition,
 )
-from dagster._check import CheckError
-from dagster._core.asset_graph_view.serializable_entity_subset import SerializableEntitySubset
 from dagster._core.test_utils import instance_for_test
 
 
@@ -278,14 +278,15 @@ def test_from_coercible_time_partitions():
         is None
     )
 
-    assert SerializableEntitySubset.from_coercible_value(
-        key=a,
-        value=["2024-01-01 12:45:45", "2024-01-02"],
-        partitions_def=time_window_partitions_def,
-    ) == SerializableEntitySubset(
-        key=AssetKey("a"),
-        value=time_window_partitions_def.subset_with_partition_keys(["2024-01-02"]),
-    )
+    with pytest.raises(ValueError):
+        assert SerializableEntitySubset.from_coercible_value(
+            key=a,
+            value=["2024-01-01 12:45:45", "2024-01-02"],
+            partitions_def=time_window_partitions_def,
+        ) == SerializableEntitySubset(
+            key=AssetKey("a"),
+            value=time_window_partitions_def.subset_with_partition_keys(["2024-01-02"]),
+        )
 
 
 def test_from_coercible_value_dynamic_partitions():
