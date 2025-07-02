@@ -43,10 +43,3 @@ automation_sensor = dg.AutomationConditionSensorDefinition(
 # Build a sensor which will poll dbt Cloud for updates on runs/materialization history
 # and dbt Cloud Assets
 dbt_cloud_polling_sensor = build_dbt_cloud_polling_sensor(workspace=workspace)
-
-# Adds them all to defs!
-defs = dg.Definitions(
-    assets=[my_dbt_cloud_assets],
-    resources={"dbt_cloud": workspace},
-    sensors=[dbt_cloud_polling_sensor, automation_sensor],
-)

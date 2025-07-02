@@ -29,10 +29,3 @@ dbt_cloud_asset_specs = load_dbt_cloud_asset_specs(workspace=workspace)
 # Build a sensor which will poll dbt Cloud for updates on runs/materialization history
 # and dbt Cloud Assets
 dbt_cloud_polling_sensor = build_dbt_cloud_polling_sensor(workspace=workspace)
-
-# Adds them all the defs!
-defs = dg.Definitions(
-    assets=dbt_cloud_asset_specs,
-    resources={"dbt_cloud": workspace},
-    sensors=[dbt_cloud_polling_sensor],
-)
