@@ -22,90 +22,21 @@ Dagster provides a variety of abstractions for building and orchestrating data p
 }%%
   graph TD
 
-    AssetCheck(AssetCheck)
-    %% click AssetCheck href "#asset-check"
+    subgraph DagsterObjects[Dagster Objects]
+      Asset
+      AssetCheck[Asset Check]
+      Graph
+      IOManager[IO Manager]
+      Job
+      Op
+      Resource
+      Schedule
+      Sensor
+    end
 
-    Asset(Asset)
-    %%click Asset href "#asset"
-
-    Config(Config)
-    %%click Config href "#config"
-
-    CodeLocation(Code Location)
-    %%click CodeLocation href "#code-location"
-
-    Definitions(Definitions)
-    %%click Definitions href "#definitions"
-
-    Graph(Graph)
-    %%click Graph href "#graph"
-
-    IoManager(IO Manager)
-    %%click IoManager href "#io-manager"
-
-    Job(Job)
-    %%click Job href "#job"
-
-    Op(Op)
-    %%click Op href "#op"
-
-    Partition(Partition)
-    %%click Partition href "#partition"
-
-    Resource(Resource)
-    %%click Resource href "#resource"
-
-    Schedule(Schedule)
-    %%click Schedule href "#schedule"
-
-    Sensor(Sensor)
-    %%click Sensor href "#sensor"
-
-    Type(Type)
-    %%click Type href "#type"
-
-    Type ==> Op
-    Op ==> Graph
-    Graph ==> Job
-
-    Job ==> Schedule
-    Job ==> Sensor
-    Job ==> Definitions
-
-    Partition ==> Asset
-    IoManager ==> Asset
-
-    Resource ==> Asset
-    Resource ==> Schedule
-    Resource ==> Sensor
-
-    Component ==> AssetCheck
-    AssetCheck ==> Asset
-    AssetSpec ==> Asset
-
-    Config ==> Schedule
-    Config ==> Sensor
-    Config ==> Job
-    Config ==> Asset
-
-    Asset ==> Job
-    Asset ==> Schedule
-    Asset ==> Sensor
-
-    Component ==> Asset
-    Component ==> Schedule
-    Component ==> Sensor
-    Component ==> IoManager
-    Component ==> Resource
-    Component ==> Job
-
-    Asset ==> Definitions
-    Schedule ==> Definitions
-    Sensor ==> Definitions
-    IoManager ==> Definitions
-    Resource ==> Definitions
-
-    Definitions ==> CodeLocation
+    Component ==> DagsterObjects[Dagster Objects]
+    DagsterObjects ==> Definitions
+    Definitions ==> CodeLocation[Code Location]
 ```
 
 ## Asset
@@ -139,8 +70,8 @@ Dagster provides a variety of abstractions for building and orchestrating data p
     style Definitions fill:#BDBAB7,stroke:#BDBAB7,stroke-width:2px
 
     Component -.-> Asset
-    AssetCheck -.-> Asset
-    AssetSpec -.-> Asset
+    AssetCheck[Asset Check] -.-> Asset
+    AssetSpec[Asset Spec] -.-> Asset
     Config -.-> Asset
     Partition -.-> Asset
     Resource -.-> Asset
@@ -294,7 +225,7 @@ A [code location](/deployment/code-locations) is a collection of Dagster entity 
     Component(Component)
 
     Component -.-> Asset
-    Component -.-> AssetCheck
+    Component -.-> AssetCheck[Asset Check]
     Component -.-> Job
     Component -.-> Resource
     Component -.-> Schedule
@@ -387,8 +318,8 @@ A <PyObject section="config" module="dagster" object="Config" displayText="confi
 
 
     Asset -.-> Definitions
-    AssetCheck -.-> Definitions
-    IOManager -.-> Definitions
+    AssetCheck[Asset Check] -.-> Definitions
+    IOManager[IO Manager] -.-> Definitions
     Job -.-> Definitions
     Resource -.-> Definitions
     Schedule -.-> Definitions
