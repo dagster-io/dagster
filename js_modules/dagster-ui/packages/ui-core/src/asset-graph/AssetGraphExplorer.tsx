@@ -16,6 +16,7 @@ import uniq from 'lodash/uniq';
 import without from 'lodash/without';
 import * as React from 'react';
 import {useCallback, useMemo, useRef, useState} from 'react';
+import {observeEnabled} from 'shared/app/observeEnabled.oss';
 import {AssetSelectionInput} from 'shared/asset-selection/input/AssetSelectionInput.oss';
 import {CreateCatalogViewButton} from 'shared/assets/CreateCatalogViewButton.oss';
 import {useCatalogExtraDropdownOptions} from 'shared/assets/catalog/useCatalogExtraDropdownOptions.oss';
@@ -49,6 +50,7 @@ import {AssetGraphExplorerSidebar} from './sidebar/Sidebar';
 import {AssetGraphQueryItem} from './types';
 import {AssetGraphFetchScope, useAssetGraphData, useFullAssetGraphData} from './useAssetGraphData';
 import {AssetLocation, useFindAssetLocation} from './useFindAssetLocation';
+import {useFullScreen, useFullScreenAllowedView} from '../app/AppTopNav/AppTopNavContext';
 import {useFeatureFlags} from '../app/Flags';
 import {AssetLiveDataRefreshButton} from '../asset-data/AssetLiveDataProvider';
 import {LaunchAssetExecutionButton} from '../assets/LaunchAssetExecutionButton';
@@ -95,9 +97,6 @@ type Props = {
   ) => void;
   viewType: AssetGraphViewType;
   setHideEdgesToNodesOutsideQuery?: (hideEdgesToNodesOutsideQuery: boolean) => void;
-
-  isFullScreen?: boolean;
-  toggleFullScreen?: () => void;
 };
 
 export const MINIMAL_SCALE = 0.6;
@@ -165,8 +164,6 @@ const AssetGraphExplorerWithData = ({
   options,
   setOptions,
   explorerPath,
-  isFullScreen,
-  toggleFullScreen,
   onChangeExplorerPath,
   onNavigateToSourceAssetNode: onNavigateToSourceAssetNode,
   assetGraphData,
@@ -673,6 +670,23 @@ const AssetGraphExplorerWithData = ({
     ),
   );
 
+  useFullScreenAllowedView();
+  const {isFullScreen, toggleFullScreen} = useFullScreen();
+
+  const toggleFullScreenButton = useMemo(() => {
+    if (viewType === AssetGraphViewType.CATALOG) {
+      return null;
+    }
+    return (
+      <Tooltip content={isFullScreen ? 'Collapse' : 'Expand'}>
+        <Button
+          icon={<Icon name={isFullScreen ? 'collapse_fullscreen' : 'expand_fullscreen'} />}
+          onClick={toggleFullScreen}
+        />
+      </Tooltip>
+    );
+  }, [viewType, toggleFullScreen, isFullScreen]);
+
   const explorer = (
     <SplitPanelContainer
       key="explorer"
@@ -732,7 +746,7 @@ const AssetGraphExplorerWithData = ({
               </OptionsOverlay>
             )}
 
-            <TopbarWrapper $isFullScreen={isFullScreen}>
+            <TopbarWrapper $isFullScreen={isFullScreen} $viewType={viewType}>
               <Box flex={{direction: 'column'}} style={{width: '100%'}}>
                 {isFullScreen ? <IndeterminateLoadingBar $loading={nextLayoutLoading} /> : null}
                 <Box
@@ -749,20 +763,12 @@ const AssetGraphExplorerWithData = ({
                       />
                     </Tooltip>
                   )}
+                  {viewType !== AssetGraphViewType.CATALOG && observeEnabled()
+                    ? toggleFullScreenButton
+                    : null}
                   {viewType === AssetGraphViewType.CATALOG ? (
                     <>
-                      {toggleFullScreen ? (
-                        <Tooltip content={isFullScreen ? 'Collapse' : 'Expand'}>
-                          <Button
-                            icon={
-                              <Icon
-                                name={isFullScreen ? 'collapse_fullscreen' : 'expand_fullscreen'}
-                              />
-                            }
-                            onClick={toggleFullScreen}
-                          />
-                        </Tooltip>
-                      ) : null}
+                      {toggleFullScreenButton}
                       <div style={{flex: 1}} />
                     </>
                   ) : (
@@ -795,7 +801,7 @@ const AssetGraphExplorerWithData = ({
                     />
                   )}
                 </Box>
-                {isFullScreen ? null : (
+                {isFullScreen && viewType === AssetGraphViewType.CATALOG ? null : (
                   <IndeterminateLoadingBar
                     $loading={nextLayoutLoading}
                     style={{
@@ -899,14 +905,14 @@ const SVGContainer = styled.svg`
   }
 `;
 
-const TopbarWrapper = styled.div<{$isFullScreen?: boolean}>`
+const TopbarWrapper = styled.div<{$isFullScreen?: boolean; $viewType: AssetGraphViewType}>`
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
   display: flex;
-  ${({$isFullScreen}) => {
-    return $isFullScreen
+  ${({$isFullScreen, $viewType}) => {
+    return $isFullScreen && $viewType === AssetGraphViewType.CATALOG
       ? ''
       : `
         background: ${Colors.backgroundDefault()};
