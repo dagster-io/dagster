@@ -78,9 +78,8 @@ const EmptyState = styled.div`
 `;
 
 export const LeftNavRepositorySection = memo(() => {
-  const {allRepos, loadingNonAssets, loadingAssets, visibleRepos, toggleVisible} =
-    useContext(WorkspaceContext);
-  if (loadingNonAssets || loadingAssets) {
+  const {allRepos, loadingNonAssets, visibleRepos, toggleVisible} = useContext(WorkspaceContext);
+  if (loadingNonAssets) {
     return <div style={{flex: 1}} />;
   }
 
