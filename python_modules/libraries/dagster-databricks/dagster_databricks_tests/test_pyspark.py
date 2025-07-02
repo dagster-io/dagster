@@ -1,4 +1,5 @@
 import os
+from typing import Any
 from unittest import mock
 
 import pytest
@@ -23,7 +24,7 @@ ADLS2_STORAGE_ACCOUNT = "dagsterdatabrickstests"
 ADLS2_CONTAINER = "dagster-databricks-tests"
 
 
-BASE_DATABRICKS_PYSPARK_STEP_LAUNCHER_CONFIG: dict[str, object] = {
+BASE_DATABRICKS_PYSPARK_STEP_LAUNCHER_CONFIG: dict[str, Any] = {
     "databricks_host": os.environ.get("DATABRICKS_HOST") or "https://",
     "databricks_token": os.environ.get("DATABRICKS_TOKEN"),
     "local_job_package_path": os.path.abspath(os.path.dirname(__file__)),
@@ -209,7 +210,8 @@ def test_pyspark_databricks(
             event for event in instance.all_logs(result.run_id) if event.step_key == "do_nothing_op"
         ]
 
-    # Test execution
+    # Test 1 - successful execution
+
     with instance_for_test() as instance:
         config = BASE_DATABRICKS_PYSPARK_STEP_LAUNCHER_CONFIG.copy()
         config.pop("local_job_package_path")
@@ -244,12 +246,33 @@ def test_pyspark_databricks(
         assert mock_read_file.call_count == 2
         assert mock_submit_run.call_count == 1
 
+        assert mock_perform_query.call_args_list[0].kwargs["body"]["access_control_list"] == [
+            {
+                "permission_level": "CAN_MANAGE_RUN",
+                "user_name": "my_user",
+            },
+            {
+                "permission_level": "CAN_MANAGE",
+                "group_name": "my_group",
+            },
+        ]
+        assert mock_perform_query.call_args_list[1].kwargs["body"]["access_control_list"] == [
+            {
+                "permission_level": "CAN_RESTART",
+                "user_name": "my_user",
+            },
+            {
+                "permission_level": "CAN_MANAGE",
+                "group_name": "my_group",
+            },
+        ]
+
     # Test 2 - attempting to update permissions for an existing cluster
 
     with instance_for_test() as instance:
         config = BASE_DATABRICKS_PYSPARK_STEP_LAUNCHER_CONFIG.copy()
         config.pop("local_job_package_path")
-        config["run_config"]["cluster"] = {"existing": "cluster_id"}  # pyright: ignore[reportIndexIssue]
+        config["run_config"]["cluster"] = {"existing": "cluster_id"}
         with pytest.raises(ValueError) as excinfo:
             execute_job(
                 job=reconstructable(define_do_nothing_test_job),
