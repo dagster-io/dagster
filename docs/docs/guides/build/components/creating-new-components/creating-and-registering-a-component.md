@@ -1,5 +1,5 @@
 ---
-description: Create and register a reusable component with a YAML interface with the dg CLI.
+description: Use the dg CLI to create and register a reusable component with a YAML or Pythonic interface.
 sidebar_position: 100
 title: Creating and registering a component
 ---
