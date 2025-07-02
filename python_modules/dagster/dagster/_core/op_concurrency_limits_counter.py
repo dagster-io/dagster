@@ -14,6 +14,7 @@ from dagster._core.storage.dagster_run import (
     RunOpConcurrency,
     RunRecord,
 )
+from dagster._core.storage.event_log.base import PoolLimit
 from dagster._core.storage.tags import GLOBAL_CONCURRENCY_TAG
 from dagster._time import get_current_timestamp
 
@@ -79,6 +80,8 @@ class GlobalOpConcurrencyLimitsCounter:
         instance: DagsterInstance,
         runs: Sequence[DagsterRun],
         in_progress_run_records: Sequence[RunRecord],
+        concurrency_keys: set[str],
+        pool_limits: Sequence[PoolLimit],
         slot_count_offset: int = 0,
         pool_granularity: Optional[PoolGranularity] = None,
     ):
@@ -97,10 +100,10 @@ class GlobalOpConcurrencyLimitsCounter:
 
         queued_pool_names = self._get_queued_pool_names(runs)
         # initialize all the pool limits to the default if necessary
-        self._initialize_pool_limits(instance, queued_pool_names)
+        self._initialize_pool_limits(instance, queued_pool_names, pool_limits)
 
         # fetch all the configured pool keys
-        all_configured_pool_names = instance.event_log_storage.get_concurrency_keys()
+        all_configured_pool_names = concurrency_keys
         configured_queued_pool_names = all_configured_pool_names.intersection(queued_pool_names)
 
         # fetch all the concurrency info for all of the runs at once, so we can claim in the correct
@@ -124,11 +127,11 @@ class GlobalOpConcurrencyLimitsCounter:
                 queued_pool_names.update(run_pools)
         return queued_pool_names
 
-    def _initialize_pool_limits(self, instance: DagsterInstance, pool_names: set[str]):
+    def _initialize_pool_limits(
+        self, instance: DagsterInstance, pool_names: set[str], pool_limits: Sequence[PoolLimit]
+    ):
         default_limit = instance.global_op_concurrency_default_limit
-        pool_limits_by_name = {
-            pool.name: pool for pool in instance.event_log_storage.get_pool_limits()
-        }
+        pool_limits_by_name = {pool.name: pool for pool in pool_limits}
         for pool_name in pool_names:
             if pool_name is None:
                 continue
