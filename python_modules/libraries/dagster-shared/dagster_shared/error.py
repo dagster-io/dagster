@@ -1,4 +1,5 @@
 # mypy does not support recursive types, so "cause" has to be typed `Any`
+import sys
 import traceback
 from collections.abc import Sequence
 from typing import Any, Callable, NamedTuple, Optional
@@ -83,11 +84,16 @@ class SerializableErrorInfo(
 
     @classmethod
     def from_traceback(cls, tb: traceback.TracebackException) -> Self:
+        if sys.version_info >= (3, 13):
+            name = tb.exc_type_str.split(".")[-1]
+        else:
+            name = tb.exc_type.__name__ if tb.exc_type is not None else None
+
         return cls(
             # usually one entry, multiple lines for SyntaxError
             message="".join(list(tb.format_exception_only())),
             stack=tb.stack.format(),
-            cls_name=tb.exc_type.__name__ if tb.exc_type is not None else None,
+            cls_name=name,
             cause=cls.from_traceback(tb.__cause__) if tb.__cause__ else None,
             context=cls.from_traceback(tb.__context__)
             if tb.__context__ and not tb.__suppress_context__
