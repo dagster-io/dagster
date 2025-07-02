@@ -6,8 +6,8 @@ import dagster as dg
 class ShellCommand(dg.Component, dg.Model, dg.Resolvable):
     """Models a shell script as a Dagster asset."""
 
-    script_path: str,
-    asset_specs: Sequence[dg.ResolvedAssetSpec],
+    script_path: str
+    asset_specs: Sequence[dg.ResolvedAssetSpec]
 
     # highlight-start
     @classmethod
