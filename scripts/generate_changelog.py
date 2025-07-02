@@ -10,7 +10,11 @@ import git
 GITHUB_URL = "https://github.com/dagster-io"
 OSS_ROOT = Path(__file__).parent.parent
 OSS_REPO = git.Repo(OSS_ROOT)
+
 CHANGELOG_PATH = OSS_ROOT / "CHANGES.md"
+NEW_CHANGES_PATH = OSS_ROOT / "NEW_CHANGES.md"
+
+
 INTERNAL_REPO = git.Repo(os.environ["DAGSTER_INTERNAL_GIT_REPO_DIR"])
 INTERNAL_DEFAULT_STR = "If a changelog entry is required"
 
@@ -25,7 +29,7 @@ CATEGORIES = {
     "DEPRECATE": "Deprecations",
     "Plus": "Dagster Plus",
     "DG": "dg & Components (Preview)",
-    None: "Invalid",
+    None: "Unsorted",
 }
 
 
@@ -43,15 +47,19 @@ class ParsedCommit(NamedTuple):
         return bool(self.raw_changelog_entry)
 
 
+def _trim_suffix(version: str) -> str:
+    return ".".join(d for d in version.split(".") if d.isdigit())
+
+
 def _get_previous_version(new_version: str) -> str:
-    split = new_version.split(".")
+    split = _trim_suffix(new_version).split(".")
     previous_patch = int(split[-1]) - 1
     assert previous_patch >= 0, "Must explicitly set `previous_version` on major releases."
     return ".".join([*split[:-1], str(previous_patch)])
 
 
 def _get_libraries_version(new_version: str) -> str:
-    split = new_version.split(".")
+    split = _trim_suffix(new_version).split(".")
     new_minor = int(split[1]) + 16
     return ".".join(["0", str(new_minor), split[2]])
 
@@ -95,7 +103,7 @@ def _get_parsed_commit(commit: git.Commit) -> ParsedCommit:
 
     return ParsedCommit(
         issue_link=issue_link,
-        changelog_category=CATEGORIES.get(changelog_category, "Invalid"),
+        changelog_category=CATEGORIES.get(changelog_category, "Unsorted"),
         raw_changelog_entry=" ".join(raw_changelog_entry_lines),
         raw_title=title,
         author=str(commit.author.name),
@@ -113,7 +121,11 @@ def _get_documented_section(documented: Sequence[ParsedCommit]) -> str:
     for category in CATEGORIES.values():
         documented_text += f"\n\n### {category}\n"
         for commit in grouped_commits.get(category, []):
-            documented_text += f"\n- {commit.raw_changelog_entry} {commit.issue_link}"
+            if commit.raw_changelog_entry and commit.raw_changelog_entry.strip().startswith(
+                "> Insert changelog entry or delete this section."
+            ):
+                continue
+            documented_text += f"\n- {commit.raw_changelog_entry}"
     return documented_text
 
 
@@ -155,13 +167,18 @@ def _generate_changelog_text(new_version: str, prev_version: str) -> str:
             undocumented.append(commit)
 
     header = f"# Changelog\n\n## {new_version} (core) / {_get_libraries_version(new_version)} (libraries)"
-    return f"{header}{_get_documented_section(documented)}\n\n{_get_undocumented_section(undocumented)}"
+    return f"{header}{_get_documented_section(documented)}"
 
 
-@click.command()
+@click.group()
+def cli() -> None:
+    pass
+
+
+@cli.command()
 @click.argument("new_version", type=str, required=True)
 @click.argument("prev_version", type=str, required=False)
-def generate_changelog(new_version: str, prev_version: Optional[str] = None) -> None:
+def new_changelog(new_version: str, prev_version: Optional[str] = None) -> None:
     if prev_version is None:
         prev_version = _get_previous_version(new_version)
 
@@ -172,18 +189,51 @@ def generate_changelog(new_version: str, prev_version: Optional[str] = None) -> 
         repo.git.checkout(f"release-{prev_version}")
         repo.git.pull()
         repo.git.checkout(f"release-{new_version}")
-        repo.git.pull()
+        # repo.git.pull()
         repo.git.checkout("master")
 
     new_text = _generate_changelog_text(new_version, prev_version)
+
+    with open(NEW_CHANGES_PATH, "w") as f:
+        f.write(new_text)
+
+
+CODEX_INPUT_COMMAND = """
+Arrange the entries in NEW_CHANGES.md from the Unsorted section into the appropriate sections.
+Fix any minor typos, markdown formatting issues, and ensure entries end with punctuation.
+Remove any co-author statements.
+You may use the existing CHANGES.md file for reference.
+"""
+
+
+@cli.command()
+def ai_fill_out_changelog() -> None:
+    import subprocess
+
+    # call command and stream logs
+    # codex exec --full-auto "Arrange the entries in NEW_CHANGES.md from the Unsorted section into the appropriate sections. Fix any minor typos, markdown formatting issues, and ensure entries end with punctuation. Remove any co-author statements. You may use the existing CHANGES.md file for reference."
+    process = subprocess.Popen(
+        ["codex", "exec", "--full-auto", CODEX_INPUT_COMMAND],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+    if process.stdout:
+        for line in process.stdout:
+            print(line.decode("utf-8"), end="")  # noqa: T201
+    process.wait()
+
+
+@cli.command()
+def merge_changelog() -> None:
+    with open(NEW_CHANGES_PATH) as f:
+        new_changes = f.read()
     with open(CHANGELOG_PATH) as f:
         current_changelog = f.read()
-
-    new_changelog = new_text + current_changelog[1:]
-
     with open(CHANGELOG_PATH, "w") as f:
-        f.write(new_changelog)
+        f.write(new_changes + current_changelog[1:])
+
+    os.remove(NEW_CHANGES_PATH)
 
 
 if __name__ == "__main__":
-    generate_changelog()
+    cli()

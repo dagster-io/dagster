@@ -15,6 +15,7 @@ from dagster_buildkite.steps.packages import (
 from dagster_buildkite.steps.test_project import build_test_project_steps
 from dagster_buildkite.utils import (
     UV_PIN,
+    BlockStep,
     BuildkiteStep,
     CommandStep,
     GroupStep,
@@ -106,18 +107,44 @@ def build_repo_wide_prettier_steps() -> List[CommandStep]:
     ]
 
 
-def build_check_changelog_steps() -> List[CommandStep]:
+def build_check_changelog_steps() -> List[BuildkiteStep]:
     branch_name = safe_getenv("BUILDKITE_BRANCH")
-    if not is_release_branch(branch_name):
+    if not is_release_branch(branch_name) and False:
         return []
 
     release_number = branch_name.split("-", 1)[-1].replace("-", ".")
-    return [
+
+    changelog_validation_step = (
         CommandStepBuilder(":memo: changelog")
         .on_test_image(AvailablePythonVersion.get_default())
         .run(f"python scripts/check_changelog.py {release_number}")
         .build()
-    ]
+    )
+
+    create_changelog_step: BlockStep = {
+        "block": ":question: AI generate changelog?",
+        "prompt": None,
+        "fields": [],
+    }
+
+    changelog_branch_name = f"changelog-release-{release_number}"
+
+    generate_changelog_step = (
+        CommandStepBuilder(":memo: generate changelog")
+        .on_test_image(AvailablePythonVersion.get_default())
+        .run(
+            "python scripts/generate_changelog.py new-changelog",
+            "python scripts/generate_changelog.py ai-fill-out-changelog",
+            "python scripts/generate_changelog.py merge-changelog",
+            f"git checkout -b {changelog_branch_name}",
+            "git add CHANGES.md",
+            f"git commit -m 'Update changelog for release {release_number}'",
+            f"git push origin --set-upstream origin {changelog_branch_name}",
+        )
+        .build()
+    )
+
+    return [changelog_validation_step, create_changelog_step, generate_changelog_step]
 
 
 def build_repo_wide_pyright_steps() -> List[BuildkiteStep]:
@@ -194,7 +221,7 @@ def build_sql_schema_check_steps() -> List[CommandStep]:
             "python scripts/check_schemas.py",
         )
         .with_skip(skip_mysql_if_no_changes_to_dependencies(["dagster"]))
-        .build()
+        .build(),
     ]
 
 
