@@ -89,7 +89,7 @@ export function useFullAssetGraphData(
       });
   }, [allNodes, options.loading, options.useWorker, spawnBuildGraphDataWorker]);
 
-  return {fullAssetGraphData, loading: loading || options.loading};
+  return {fullAssetGraphData, loading: loading || !!options.loading};
 }
 
 export type GraphDataState = {
@@ -238,7 +238,7 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
 
   const loading =
     !options.skip &&
-    (assetsLoading || graphDataLoading || supplementaryDataLoading || options.loading);
+    (assetsLoading || graphDataLoading || !!supplementaryDataLoading || !!options.loading);
   useBlockTraceUntilTrue('useAssetGraphData', !loading);
   return {
     loading,
