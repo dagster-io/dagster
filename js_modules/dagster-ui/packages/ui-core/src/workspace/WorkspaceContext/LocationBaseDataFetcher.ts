@@ -49,11 +49,11 @@ export abstract class LocationBaseDataFetcher<TData, TVariables extends Operatio
               const nextData = {...this.data};
               delete nextData[location];
               this.data = nextData;
-              this.notifySubscribers();
               clearCachedData({
                 key: `${this.key}/${location}`,
               });
             }
+            this.notifySubscribers();
           }
           await Promise.all(promises);
           this.notifySubscribers();
