@@ -255,7 +255,7 @@ def fetch_connected_assets_definitions(
 ) -> frozenset["AssetsDefinition"]:
     depth = MAX_NUM if depth is None else depth
     names = [asset_key.to_user_string() for asset_key in asset.keys]
-    connected_names = [n for n in fetch_connected(names, graph, direction=direction, depth=depth)]
+    connected_names = list(fetch_connected(names, graph, direction=direction, depth=depth))
     return frozenset(name_to_definition_map[n] for n in connected_names)
 
 
