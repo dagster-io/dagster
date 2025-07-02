@@ -111,7 +111,7 @@ export const getRepositoryOptionHash = (a: DagsterRepoOption) =>
   `${a.repository.name}:${a.repositoryLocation.name}`;
 
 export const useRepositoryOptions = () => {
-  const {allRepos: options, loading} = React.useContext(WorkspaceContext);
+  const {allRepos: options, loadingNonAssets: loading} = React.useContext(WorkspaceContext);
   return {options, loading};
 };
 

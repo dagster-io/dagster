@@ -17,7 +17,6 @@ export const CODE_LOCATION_STATUS_QUERY_KEY = '/CodeLocationStatusQuery';
 
 export class WorkspaceStatusPoller {
   private statuses: Record<string, LocationStatusEntryFragment> = {};
-  private readonly localCacheIdPrefix: string | undefined;
   private readonly getData: ReturnType<typeof useGetData>;
   private lastChanged: {added: string[]; updated: string[]; removed: string[]} = EMPTY_CHANGES;
   private hasNotifiedOnce = false;
@@ -38,7 +37,6 @@ export class WorkspaceStatusPoller {
     setCodeLocationStatusAtom: (status: CodeLocationStatusQuery) => void;
   }) {
     this.key = `${args.localCacheIdPrefix}${CODE_LOCATION_STATUS_QUERY_KEY}`;
-    this.localCacheIdPrefix = args.localCacheIdPrefix;
     this.getData = args.getData;
     this.setCodeLocationStatusAtom = args.setCodeLocationStatusAtom;
     this.subscribers = new Set();
@@ -115,6 +113,7 @@ export class WorkspaceStatusPoller {
     this.statuses = nextStatuses;
     this.lastChanged = {added, updated, removed};
     if (added.length > 0 || updated.length > 0 || removed.length > 0 || !this.hasNotifiedOnce) {
+      console.log('notifying subscribers', {added, updated, removed});
       this.hasNotifiedOnce = true;
       await this.notifySubscribers();
     }

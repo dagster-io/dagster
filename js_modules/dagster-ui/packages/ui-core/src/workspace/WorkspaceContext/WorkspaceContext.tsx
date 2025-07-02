@@ -33,9 +33,11 @@ export type WorkspaceRepositorySchedule = WorkspaceScheduleFragment;
 export type WorkspaceRepositoryLocationNode = WorkspaceLocationNodeFragment;
 
 interface WorkspaceState {
-  loading: boolean;
   locationEntries: WorkspaceLocationNodeFragment[];
   locationStatuses: Record<string, LocationStatusEntryFragment>;
+  loadingNonAssets: boolean;
+  loadingAssets: boolean;
+  assetEntries: Record<string, LocationWorkspaceAssetsQuery>;
   allRepos: DagsterRepoOption[];
   visibleRepos: DagsterRepoOption[];
   data: Record<string, WorkspaceLocationNodeFragment | PythonErrorFragment>;
@@ -51,7 +53,9 @@ export const WorkspaceContext = React.createContext<WorkspaceState>({
   data: {},
   refetch: () => Promise.reject<any>(),
   toggleVisible: () => {},
-  loading: false,
+  loadingNonAssets: true,
+  loadingAssets: true,
+  assetEntries: {},
   locationEntries: [],
   locationStatuses: {},
   setVisible: () => {},
@@ -123,14 +127,21 @@ const WorkspaceProviderImpl = ({children}: {children: React.ReactNode}) => {
     return result;
   }, [locationEntryData, assetLocationEntries]);
 
-  const loading = useMemo(() => {
-    if (locationWorkspaceData === EMPTY_DATA || assetLocationEntries === EMPTY_DATA) {
-      return true;
-    }
-    return Object.keys(locationStatuses).some((key) => {
-      return !locationWorkspaceData[key] || !assetLocationEntries[key];
-    });
-  }, [locationStatuses, locationWorkspaceData, assetLocationEntries]);
+  const {loadingNonAssets, loadingAssets} = useMemo(() => {
+    let loadingNonAssets = locationWorkspaceData === EMPTY_DATA;
+    let loadingAssets = assetEntries === EMPTY_DATA;
+    loadingNonAssets =
+      loadingNonAssets ||
+      Object.keys(locationStatuses).some((key) => {
+        return !locationWorkspaceData[key];
+      });
+    loadingAssets =
+      loadingAssets ||
+      Object.keys(locationStatuses).some((key) => {
+        return !assetEntries[key];
+      });
+    return {loading: loadingNonAssets || loadingAssets, loadingNonAssets, loadingAssets};
+  }, [locationStatuses, locationWorkspaceData, assetEntries]);
 
   const managerRef = useRef<WorkspaceManager | null>(null);
 
@@ -141,9 +152,16 @@ const WorkspaceProviderImpl = ({children}: {children: React.ReactNode}) => {
       getData,
       setCodeLocationStatusAtom,
       setData: ({locationStatuses, locationEntries, assetEntries}) => {
-        setLocationWorkspaceData(locationEntries);
-        setAssetEntries(assetEntries);
-        setLocationStatuses(locationStatuses);
+        console.log('setting data', {locationEntries, assetEntries, locationStatuses});
+        if (locationEntries) {
+          setLocationWorkspaceData(locationEntries);
+        }
+        if (assetEntries) {
+          setAssetEntries(assetEntries);
+        }
+        if (locationStatuses) {
+          setLocationStatuses(locationStatuses);
+        }
       },
     });
     managerRef.current = manager;
@@ -168,7 +186,9 @@ const WorkspaceProviderImpl = ({children}: {children: React.ReactNode}) => {
   return (
     <WorkspaceContext.Provider
       value={{
-        loading,
+        loadingNonAssets,
+        loadingAssets,
+        assetEntries,
         locationEntries,
         locationStatuses,
         allRepos,

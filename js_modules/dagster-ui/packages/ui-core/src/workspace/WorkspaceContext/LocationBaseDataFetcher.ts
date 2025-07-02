@@ -53,9 +53,9 @@ export abstract class LocationBaseDataFetcher<TData, TVariables extends Operatio
                 key: `${this.key}/${location}`,
               });
             }
-            this.notifySubscribers();
           }
           await Promise.all(promises);
+          this.notifySubscribers();
         });
       },
     );
@@ -123,8 +123,6 @@ export abstract class LocationBaseDataFetcher<TData, TVariables extends Operatio
         nextData[location] = data;
         this.data = nextData;
         this.notifySubscribers();
-      } else {
-        console.error('No data or error returned from fetchLocationData');
       }
     });
   }
