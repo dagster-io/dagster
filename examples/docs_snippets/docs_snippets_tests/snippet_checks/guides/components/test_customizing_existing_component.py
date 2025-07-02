@@ -51,6 +51,9 @@ def test_components_docs_adding_attributes_to_assets(
                 global_snippet_replace_regexes=[
                     MASK_MY_PROJECT,
                 ],
+                # For multi-parameter tests which share snippets, we don't want to clear the
+                # snapshot dir before updating the snippets
+                clear_snapshot_dir_before_update=False,
             )
         )
 

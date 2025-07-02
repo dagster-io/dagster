@@ -425,6 +425,7 @@ def isolated_snippet_generation_environment(
     should_update_snippets: bool,
     snapshot_base_dir: Path,
     global_snippet_replace_regexes: Optional[Sequence[tuple[str, str]]] = None,
+    clear_snapshot_dir_before_update: bool = True,
 ) -> Iterator[SnippetGenerationContext]:
     with (
         _get_snippet_working_dir() as tempdir,
@@ -448,7 +449,11 @@ def isolated_snippet_generation_environment(
             enabled = false
             """
         )
-        if should_update_snippets and snapshot_base_dir.exists():
+        if (
+            should_update_snippets
+            and snapshot_base_dir.exists()
+            and clear_snapshot_dir_before_update
+        ):
             shutil.rmtree(snapshot_base_dir)
             snapshot_base_dir.mkdir(parents=True, exist_ok=True)
         yield SnippetGenerationContext(
