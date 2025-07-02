@@ -729,8 +729,15 @@ class SensorDefinition(IHasInternalInit):
         self._default_status = check.inst_param(
             default_status, "default_status", DefaultSensorStatus
         )
+        from dagster._core.definitions.unresolved_asset_job_definition import (
+            UnresolvedAssetJobDefinition,
+        )
+
         self._asset_selection = (
-            self._targets[0].job_def.selection if len(self._targets) > 0 else None
+            self._targets[0].job_def.selection
+            if len(self._targets) > 0
+            and isinstance(self._targets[0].job_def, UnresolvedAssetJobDefinition)
+            else None
         )
         validate_resource_annotated_function(self._raw_fn)
         resource_arg_names: set[str] = {arg.name for arg in get_resource_args(self._raw_fn)}
