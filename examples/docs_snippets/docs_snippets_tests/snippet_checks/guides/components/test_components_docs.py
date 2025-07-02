@@ -78,6 +78,9 @@ def test_components_docs_index(
                     _MASK_EMPTY_WARNINGS,
                     MASK_PLUGIN_CACHE_REBUILD,
                 ],
+                # For multi-parameter tests which share snippets, we don't want to clear the
+                # snapshot dir before updating the snippets
+                clear_snapshot_dir_before_update=False,
             )
         )
         # We need to use editable dagster in testing context
