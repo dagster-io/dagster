@@ -658,6 +658,10 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         env_vars=["SNOWFLAKE_ACCOUNT", "SNOWFLAKE_BUILDKITE_PASSWORD"],
     ),
     PackageSpec(
+        "python_modules/libraries/dagster-snowflake-polars",
+        env_vars=["SNOWFLAKE_ACCOUNT", "SNOWFLAKE_BUILDKITE_PASSWORD"],
+    ),
+    PackageSpec(
         "python_modules/libraries/dagster-postgres",
         pytest_tox_factors=[
             "storage_tests",
