@@ -169,7 +169,7 @@ def check_yaml(
             json_schema = component_registry.get(key).component_schema or {}
 
             v = Draft202012Validator(json_schema)
-            for err in v.iter_errors(component_doc_tree.value["attributes"]):
+            for err in v.iter_errors(component_doc_tree.value.get("attributes", {})):
                 validation_errors.append(ErrorInput(key, err, component_doc_tree))
         except KeyError:
             # No matching component type found
