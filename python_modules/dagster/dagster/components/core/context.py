@@ -235,6 +235,16 @@ class ComponentLoadContext(ComponentDeclLoadContext):
         decl_load_context: ComponentDeclLoadContext,
         component_decl: "ComponentDecl",
     ) -> "ComponentLoadContext":
+        """Augments a ComponentDeclLoadContext with the ComponentDecl being loaded.
+
+        Args:
+            decl_load_context: The ComponentDeclLoadContext to augment.
+            component_decl: The ComponentDecl being loaded.
+
+        Returns:
+            ComponentLoadContext: An augmented context which can be used to
+            load and build definitions for the component.
+        """
         return ComponentLoadContext(
             path=decl_load_context.path,
             project_root=decl_load_context.project_root,
