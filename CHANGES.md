@@ -15,9 +15,11 @@
 - `@graph` now correctly allows omitting inputs when the destinations of an input mapping have a default value.
 - `@record` classes no longer create problematic namespace conflicts with the symbol "check."
 - [ui] Filtering by partition on the Asset Events view now works as expected.
+- [ui] Assets without definitions can now be properly wiped in the Asset Catalog.
 
 ### Documentation
 
+- Added clearer setup instructions for Windows and Linux users to the Contributing documentation, thanks [@oohwooh](https://github.com/oohwooh)!
 - Fixed broken links in the Contributing documentation, thanks [@emmanuel-ferdman](https://github.com/emmanuel-ferdman)!
 
 ### Dagster Plus
