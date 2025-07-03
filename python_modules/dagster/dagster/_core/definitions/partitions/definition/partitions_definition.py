@@ -6,7 +6,10 @@ from typing import TYPE_CHECKING, Generic, Optional, cast
 from typing_extensions import TypeVar
 
 from dagster._annotations import public
-from dagster._core.definitions.partitions.context import PartitionLoadingContext
+from dagster._core.definitions.partitions.context import (
+    PartitionLoadingContext,
+    partition_loading_context,
+)
 from dagster._core.definitions.partitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.partitions.utils.base import (
     generate_partition_key_based_definition_id,
@@ -87,60 +90,66 @@ class PartitionsDefinition(ABC, Generic[T_str]):
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> Optional[T_str]:
-        partition_keys = self.get_partition_keys(current_time, dynamic_partitions_store)
-        return partition_keys[-1] if partition_keys else None
+        with partition_loading_context(current_time, dynamic_partitions_store):
+            partition_keys = self.get_partition_keys()
+            return partition_keys[-1] if partition_keys else None
 
     def get_first_partition_key(
         self,
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> Optional[T_str]:
-        partition_keys = self.get_partition_keys(current_time, dynamic_partitions_store)
-        return partition_keys[0] if partition_keys else None
+        with partition_loading_context(current_time, dynamic_partitions_store):
+            partition_keys = self.get_partition_keys()
+            return partition_keys[0] if partition_keys else None
 
     def get_subset_in_range(
         self,
         partition_key_range: PartitionKeyRange,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> "PartitionsSubset":
-        return self.empty_subset().with_partition_key_range(
-            partitions_def=self,
-            partition_key_range=partition_key_range,
-            dynamic_partitions_store=dynamic_partitions_store,
-        )
+        with partition_loading_context(dynamic_partitions_store=dynamic_partitions_store) as ctx:
+            return self.empty_subset().with_partition_key_range(
+                partitions_def=self,
+                partition_key_range=partition_key_range,
+                dynamic_partitions_store=ctx.dynamic_partitions_store,
+            )
 
     def get_partition_keys_in_range(
         self,
         partition_key_range: PartitionKeyRange,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> Sequence[T_str]:
-        keys_exist = {
-            partition_key_range.start: self.has_partition_key(
-                partition_key_range.start, dynamic_partitions_store=dynamic_partitions_store
-            ),
-            partition_key_range.end: self.has_partition_key(
-                partition_key_range.end, dynamic_partitions_store=dynamic_partitions_store
-            ),
-        }
-        if not all(keys_exist.values()):
-            raise DagsterInvalidInvocationError(
-                f"""Partition range {partition_key_range.start} to {partition_key_range.end} is
-                not a valid range. Nonexistent partition keys:
-                {list(key for key in keys_exist if keys_exist[key] is False)}"""
-            )
+        with partition_loading_context(dynamic_partitions_store=dynamic_partitions_store) as ctx:
+            keys_exist = {
+                partition_key_range.start: self.has_partition_key(
+                    partition_key_range.start, dynamic_partitions_store=ctx.dynamic_partitions_store
+                ),
+                partition_key_range.end: self.has_partition_key(
+                    partition_key_range.end, dynamic_partitions_store=ctx.dynamic_partitions_store
+                ),
+            }
+            if not all(keys_exist.values()):
+                raise DagsterInvalidInvocationError(
+                    f"""Partition range {partition_key_range.start} to {partition_key_range.end} is
+                    not a valid range. Nonexistent partition keys:
+                    {list(key for key in keys_exist if keys_exist[key] is False)}"""
+                )
 
-        # in the simple case, simply return the single key in the range
-        if partition_key_range.start == partition_key_range.end:
-            return [cast("T_str", partition_key_range.start)]
+            # in the simple case, simply return the single key in the range
+            if partition_key_range.start == partition_key_range.end:
+                return [cast("T_str", partition_key_range.start)]
 
-        # defer this call as it is potentially expensive
-        partition_keys = self.get_partition_keys(dynamic_partitions_store=dynamic_partitions_store)
-        return partition_keys[
-            partition_keys.index(partition_key_range.start) : partition_keys.index(
-                partition_key_range.end
+            # defer this call as it is potentially expensive
+            partition_keys = self.get_partition_keys(
+                dynamic_partitions_store=ctx.dynamic_partitions_store
             )
-            + 1
-        ]
+            return partition_keys[
+                partition_keys.index(partition_key_range.start) : partition_keys.index(
+                    partition_key_range.end
+                )
+                + 1
+            ]
 
     def empty_subset(self) -> "PartitionsSubset":
         return self.partitions_subset_class.create_empty_subset(self)
@@ -153,11 +162,13 @@ class PartitionsDefinition(ABC, Generic[T_str]):
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> "PartitionsSubset":
-        return self.subset_with_partition_keys(
-            self.get_partition_keys(
-                current_time=current_time, dynamic_partitions_store=dynamic_partitions_store
+        with partition_loading_context(current_time, dynamic_partitions_store) as ctx:
+            return self.subset_with_partition_keys(
+                self.get_partition_keys(
+                    current_time=ctx.effective_dt,
+                    dynamic_partitions_store=ctx.dynamic_partitions_store,
+                )
             )
-        )
 
     def deserialize_subset(self, serialized: str) -> "PartitionsSubset":
         return self.partitions_subset_class.from_serialized(self, serialized)
@@ -178,8 +189,11 @@ class PartitionsDefinition(ABC, Generic[T_str]):
     def get_serializable_unique_identifier(
         self, dynamic_partitions_store: Optional[DynamicPartitionsStore] = None
     ) -> str:
-        partition_keys = self.get_partition_keys(dynamic_partitions_store=dynamic_partitions_store)
-        return generate_partition_key_based_definition_id(partition_keys)
+        with partition_loading_context(dynamic_partitions_store=dynamic_partitions_store) as ctx:
+            partition_keys = self.get_partition_keys(
+                dynamic_partitions_store=ctx.dynamic_partitions_store
+            )
+            return generate_partition_key_based_definition_id(partition_keys)
 
     def get_tags_for_partition_key(self, partition_key: str) -> Mapping[str, str]:
         tags = {PARTITION_NAME_TAG: partition_key}
@@ -190,7 +204,8 @@ class PartitionsDefinition(ABC, Generic[T_str]):
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> int:
-        return len(self.get_partition_keys(current_time, dynamic_partitions_store))
+        with partition_loading_context(current_time, dynamic_partitions_store) as ctx:
+            return len(self.get_partition_keys(ctx.effective_dt, ctx.dynamic_partitions_store))
 
     def has_partition_key(
         self,
@@ -198,10 +213,11 @@ class PartitionsDefinition(ABC, Generic[T_str]):
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> bool:
-        return partition_key in self.get_partition_keys(
-            current_time=current_time,
-            dynamic_partitions_store=dynamic_partitions_store,
-        )
+        with partition_loading_context(current_time, dynamic_partitions_store) as ctx:
+            return partition_key in self.get_partition_keys(
+                current_time=ctx.effective_dt,
+                dynamic_partitions_store=ctx.dynamic_partitions_store,
+            )
 
     def validate_partition_key(
         self,
@@ -209,7 +225,12 @@ class PartitionsDefinition(ABC, Generic[T_str]):
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> None:
-        if not self.has_partition_key(partition_key, current_time, dynamic_partitions_store):
-            raise DagsterUnknownPartitionError(
-                f"Could not find a partition with key `{partition_key}`."
-            )
+        with partition_loading_context(current_time, dynamic_partitions_store) as ctx:
+            if not self.has_partition_key(
+                partition_key,
+                current_time=ctx.effective_dt,
+                dynamic_partitions_store=ctx.dynamic_partitions_store,
+            ):
+                raise DagsterUnknownPartitionError(
+                    f"Could not find a partition with key `{partition_key}`."
+                )
