@@ -141,7 +141,7 @@ def build_check_changelog_steps() -> List[BuildkiteStep]:
             # f"git commit -m 'Update changelog for release {release_number}'",
             "git config --global user.email 'devtools@elementl.com'",
             "git config --global user.name 'Dagster Bot'",
-            f"git push origin --set-upstream origin {changelog_branch_name}",
+            f"git push --set-upstream origin {changelog_branch_name}",
         )
         .build()
     )
