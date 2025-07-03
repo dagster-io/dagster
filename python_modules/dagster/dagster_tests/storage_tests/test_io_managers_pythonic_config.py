@@ -2,25 +2,9 @@ import os
 import tempfile
 from typing import Any
 
-from dagster import (
-    Config,
-    ConfigurableIOManagerFactory,
-    DataVersion,
-    Definitions,
-    FilesystemIOManager,
-    In,
-    IOManagerDefinition,
-    RunConfig,
-    StringSource,
-    asset,
-    io_manager,
-    job,
-    observable_source_asset,
-    op,
-)
-from dagster._config.pythonic_config import ConfigurableIOManager, ConfigurableResource
+import dagster as dg
+from dagster import FilesystemIOManager
 from dagster._config.type_printer import print_config_type_to_string
-from dagster._core.storage.io_manager import IOManager
 
 
 def type_string_from_config_schema(config_schema):
@@ -28,7 +12,7 @@ def type_string_from_config_schema(config_schema):
 
 
 def test_load_input_handle_output():
-    class MyIOManager(ConfigurableIOManager):
+    class MyIOManager(dg.ConfigurableIOManager):
         def handle_output(self, context, obj):
             pass
 
@@ -44,17 +28,17 @@ def test_load_input_handle_output():
 
     did_run = {}
 
-    @op
+    @dg.op
     def first_op():
         did_run["first_op"] = True
         return 1
 
-    @op(ins={"an_input": In(input_manager_key="my_input_manager")})
+    @dg.op(ins={"an_input": dg.In(input_manager_key="my_input_manager")})
     def second_op(an_input):
         assert an_input == 6
         did_run["second_op"] = True
 
-    @job(
+    @dg.job(
         resource_defs={
             "io_manager": MyIOManager(),
             "my_input_manager": MyInputManager(),
@@ -72,7 +56,7 @@ def test_load_input_handle_output():
 def test_runtime_config():
     out_txt = []
 
-    class MyIOManager(ConfigurableIOManager):
+    class MyIOManager(dg.ConfigurableIOManager):
         prefix: str
 
         def handle_output(self, context, obj):
@@ -81,11 +65,11 @@ def test_runtime_config():
         def load_input(self, context):
             assert False, "should not be called"
 
-    @asset
+    @dg.asset
     def hello_world_asset():
         return "hello, world!"
 
-    defs = Definitions(
+    defs = dg.Definitions(
         assets=[hello_world_asset],
         resources={"io_manager": MyIOManager.configure_at_launch()},
     )
@@ -110,10 +94,10 @@ def test_runtime_config():
 def test_nested_resources():
     out_txt = []
 
-    class IOConfigResource(ConfigurableResource):
+    class IOConfigResource(dg.ConfigurableResource):
         prefix: str
 
-    class MyIOManager(ConfigurableIOManager):
+    class MyIOManager(dg.ConfigurableIOManager):
         config: IOConfigResource
 
         def handle_output(self, context, obj):
@@ -122,11 +106,11 @@ def test_nested_resources():
         def load_input(self, context):
             assert False, "should not be called"
 
-    @asset
+    @dg.asset
     def hello_world_asset():
         return "hello, world!"
 
-    defs = Definitions(
+    defs = dg.Definitions(
         assets=[hello_world_asset],
         resources={
             "io_manager": MyIOManager(config=IOConfigResource(prefix="greeting: ")),
@@ -140,10 +124,10 @@ def test_nested_resources():
 def test_nested_resources_runtime_config():
     out_txt = []
 
-    class IOConfigResource(ConfigurableResource):
+    class IOConfigResource(dg.ConfigurableResource):
         prefix: str
 
-    class MyIOManager(ConfigurableIOManager):
+    class MyIOManager(dg.ConfigurableIOManager):
         config: IOConfigResource
 
         def handle_output(self, context, obj):
@@ -152,13 +136,13 @@ def test_nested_resources_runtime_config():
         def load_input(self, context):
             assert False, "should not be called"
 
-    @asset
+    @dg.asset
     def hello_world_asset():
         return "hello, world!"
 
     io_config = IOConfigResource.configure_at_launch()
 
-    defs = Definitions(
+    defs = dg.Definitions(
         assets=[hello_world_asset],
         resources={
             "io_config": io_config,
@@ -186,13 +170,13 @@ def test_nested_resources_runtime_config():
 def test_pythonic_fs_io_manager() -> None:
     with tempfile.TemporaryDirectory() as tmpdir_path:
 
-        @asset
+        @dg.asset
         def hello_world_asset():
             return "hello, world!"
 
-        defs = Definitions(
+        defs = dg.Definitions(
             assets=[hello_world_asset],
-            resources={"io_manager": FilesystemIOManager(base_dir=tmpdir_path)},
+            resources={"io_manager": dg.FilesystemIOManager(base_dir=tmpdir_path)},
         )
 
         assert not os.path.exists(os.path.join(tmpdir_path, "hello_world_asset"))
@@ -203,11 +187,11 @@ def test_pythonic_fs_io_manager() -> None:
 def test_pythonic_fs_io_manager_runtime_config() -> None:
     with tempfile.TemporaryDirectory() as tmpdir_path:
 
-        @asset
+        @dg.asset
         def hello_world_asset():
             return "hello, world!"
 
-        defs = Definitions(
+        defs = dg.Definitions(
             assets=[hello_world_asset],
             resources={"io_manager": FilesystemIOManager.configure_at_launch()},
         )
@@ -216,8 +200,8 @@ def test_pythonic_fs_io_manager_runtime_config() -> None:
         assert (
             defs.resolve_implicit_global_asset_job_def()
             .execute_in_process(
-                run_config=RunConfig(
-                    resources={"io_manager": FilesystemIOManager(base_dir=tmpdir_path)}
+                run_config=dg.RunConfig(
+                    resources={"io_manager": dg.FilesystemIOManager(base_dir=tmpdir_path)}
                 )
             )
             .success
@@ -227,29 +211,29 @@ def test_pythonic_fs_io_manager_runtime_config() -> None:
 
 def test_config_schemas() -> None:
     # Decorator-based IO manager definition
-    @io_manager(  # pyright: ignore[reportArgumentType]
-        config_schema={"base_dir": StringSource},
-        output_config_schema={"path": StringSource},
-        input_config_schema={"format": StringSource},
+    @dg.io_manager(  # pyright: ignore[reportArgumentType]
+        config_schema={"base_dir": dg.StringSource},
+        output_config_schema={"path": dg.StringSource},
+        input_config_schema={"format": dg.StringSource},
     )
     def an_io_manager():
         pass
 
-    class OutputConfigSchema(Config):
+    class OutputConfigSchema(dg.Config):
         path: str
 
-    class InputConfigSchema(Config):
+    class InputConfigSchema(dg.Config):
         format: str
 
-    class MyIOManager(ConfigurableIOManager):
+    class MyIOManager(dg.ConfigurableIOManager):
         base_dir: str
 
         @classmethod
-        def input_config_schema(cls) -> type[Config]:
+        def input_config_schema(cls) -> type[dg.Config]:
             return InputConfigSchema
 
         @classmethod
-        def output_config_schema(cls) -> type[Config]:
+        def output_config_schema(cls) -> type[dg.Config]:
             return OutputConfigSchema
 
         def handle_output(self, context, obj):
@@ -261,7 +245,7 @@ def test_config_schemas() -> None:
     configured_io_manager = MyIOManager(base_dir="/a/b/c").get_resource_definition()
 
     # Check that the config schemas are the same
-    assert isinstance(configured_io_manager, IOManagerDefinition)
+    assert isinstance(configured_io_manager, dg.IOManagerDefinition)
     assert type_string_from_config_schema(
         configured_io_manager.output_config_schema
     ) == type_string_from_config_schema(an_io_manager.output_config_schema)
@@ -269,16 +253,16 @@ def test_config_schemas() -> None:
         configured_io_manager.input_config_schema
     ) == type_string_from_config_schema(an_io_manager.input_config_schema)
 
-    class MyIOManagerNonPythonicSchemas(ConfigurableIOManager):
+    class MyIOManagerNonPythonicSchemas(dg.ConfigurableIOManager):
         base_dir: str
 
         @classmethod
         def input_config_schema(cls):
-            return {"format": StringSource}
+            return {"format": dg.StringSource}
 
         @classmethod
         def output_config_schema(cls):
-            return {"path": StringSource}
+            return {"path": dg.StringSource}
 
         def handle_output(self, context, obj):
             pass
@@ -291,7 +275,7 @@ def test_config_schemas() -> None:
     ).get_resource_definition()
 
     # Check that the config schemas are the same
-    assert isinstance(configured_io_manager_non_pythonic, IOManagerDefinition)
+    assert isinstance(configured_io_manager_non_pythonic, dg.IOManagerDefinition)
     assert type_string_from_config_schema(
         configured_io_manager_non_pythonic.output_config_schema
     ) == type_string_from_config_schema(an_io_manager.output_config_schema)
@@ -301,19 +285,18 @@ def test_config_schemas() -> None:
 
 
 import pytest
-from dagster import InputContext, Out, OutputContext
-from dagster._core.errors import DagsterInvalidConfigError
+from dagster import InputContext, OutputContext
 
 
 def test_load_input_handle_output_input_config() -> None:
-    class MyIOManager(ConfigurableIOManager):
+    class MyIOManager(dg.ConfigurableIOManager):
         def handle_output(self, context, obj):
             pass
 
         def load_input(self, context):
             assert False, "should not be called"
 
-    class InputConfigSchema(Config):
+    class InputConfigSchema(dg.Config):
         config_value: int
 
     class MyInputManager(MyIOManager):
@@ -324,22 +307,22 @@ def test_load_input_handle_output_input_config() -> None:
                 return context.config["config_value"]
 
         @classmethod
-        def input_config_schema(cls) -> type[Config]:
+        def input_config_schema(cls) -> type[dg.Config]:
             return InputConfigSchema
 
     did_run = {}
 
-    @op
+    @dg.op
     def first_op():
         did_run["first_op"] = True
         return 1
 
-    @op(ins={"an_input": In(input_manager_key="my_input_manager")})
+    @dg.op(ins={"an_input": dg.In(input_manager_key="my_input_manager")})
     def second_op(an_input):
         assert an_input == 6
         did_run["second_op"] = True
 
-    @job(
+    @dg.job(
         resource_defs={
             "io_manager": MyIOManager(),
             "my_input_manager": MyInputManager(),
@@ -355,7 +338,7 @@ def test_load_input_handle_output_input_config() -> None:
     assert did_run["first_op"]
     assert did_run["second_op"]
 
-    with pytest.raises(DagsterInvalidConfigError):
+    with pytest.raises(dg.DagsterInvalidConfigError):
         check_input_managers.execute_in_process(
             run_config={
                 "ops": {"second_op": {"inputs": {"an_input": {"config_value": "a_string"}}}}
@@ -366,21 +349,21 @@ def test_load_input_handle_output_input_config() -> None:
 def test_config_param_load_input_handle_output_config() -> None:
     storage = {}
 
-    class InputConfigSchema(Config):
+    class InputConfigSchema(dg.Config):
         prefix_input: str
 
-    class OutputConfigSchema(Config):
+    class OutputConfigSchema(dg.Config):
         postfix_output: str
 
-    class MyIOManager(ConfigurableIOManager):
+    class MyIOManager(dg.ConfigurableIOManager):
         prefix_output: str
 
         @classmethod
-        def input_config_schema(cls) -> type[Config]:
+        def input_config_schema(cls) -> type[dg.Config]:
             return InputConfigSchema
 
         @classmethod
-        def output_config_schema(cls) -> type[Config]:
+        def output_config_schema(cls) -> type[dg.Config]:
             return OutputConfigSchema
 
         def load_input(self, context: InputContext):
@@ -391,21 +374,21 @@ def test_config_param_load_input_handle_output_config() -> None:
 
     did_run = {}
 
-    @op(out={"first_op": Out(io_manager_key="io_manager")})
+    @dg.op(out={"first_op": dg.Out(io_manager_key="io_manager")})
     def first_op():
         did_run["first_op"] = True
         return "foo"
 
-    @op(
-        ins={"first_op": In(input_manager_key="io_manager")},
-        out={"second_op": Out(io_manager_key="io_manager")},
+    @dg.op(
+        ins={"first_op": dg.In(input_manager_key="io_manager")},
+        out={"second_op": dg.Out(io_manager_key="io_manager")},
     )
     def second_op(first_op):
         assert first_op == "barprefoopost"
         did_run["second_op"] = True
         return first_op
 
-    @job(
+    @dg.job(
         resource_defs={
             "io_manager": MyIOManager(
                 prefix_output="pre",
@@ -436,11 +419,11 @@ def test_config_param_load_input_handle_output_config() -> None:
 def test_io_manager_def() -> None:
     with tempfile.TemporaryDirectory() as tmpdir_path:
 
-        @asset(io_manager_def=FilesystemIOManager(base_dir=tmpdir_path))
+        @dg.asset(io_manager_def=dg.FilesystemIOManager(base_dir=tmpdir_path))
         def hello_world_asset():
             return "hello, world!"
 
-        defs = Definitions(
+        defs = dg.Definitions(
             assets=[hello_world_asset],
         )
 
@@ -450,7 +433,7 @@ def test_io_manager_def() -> None:
 
 
 def test_observable_source_asset_io_manager_def() -> None:
-    class FileStringIOManager(ConfigurableIOManager):
+    class FileStringIOManager(dg.ConfigurableIOManager):
         base_path: str
 
         def load_input(self, context: "InputContext") -> object:
@@ -474,15 +457,15 @@ def test_observable_source_asset_io_manager_def() -> None:
 
         # we never actually observe this asset, we just attach the io manager to it
         # to verify that any downstream assets that depend on it will use the right io manager
-        @observable_source_asset(io_manager_def=FileStringIOManager(base_path=tmpdir_path))
-        def my_observable_asset() -> DataVersion:
-            return DataVersion("alpha")
+        @dg.observable_source_asset(io_manager_def=FileStringIOManager(base_path=tmpdir_path))
+        def my_observable_asset() -> dg.DataVersion:
+            return dg.DataVersion("alpha")
 
-        @asset
+        @dg.asset
         def my_downstream_asset(my_observable_asset: str) -> str:
             return my_observable_asset + "bar"
 
-        defs = Definitions(
+        defs = dg.Definitions(
             assets=[my_observable_asset, my_downstream_asset],
         )
 
@@ -492,7 +475,7 @@ def test_observable_source_asset_io_manager_def() -> None:
 
 
 def test_telemetry_custom_io_manager():
-    class MyIOManager(ConfigurableIOManager):
+    class MyIOManager(dg.ConfigurableIOManager):
         def handle_output(self, context, obj):  # pyright: ignore[reportIncompatibleMethodOverride]
             return {}
 
@@ -503,7 +486,7 @@ def test_telemetry_custom_io_manager():
 
 
 def test_telemetry_dagster_io_manager():
-    class MyIOManager(ConfigurableIOManager):
+    class MyIOManager(dg.ConfigurableIOManager):
         @classmethod
         def _is_dagster_maintained(cls) -> bool:
             return True
@@ -518,34 +501,34 @@ def test_telemetry_dagster_io_manager():
 
 
 def test_telemetry_custom_io_manager_factory():
-    class MyIOManager(IOManager):
+    class MyIOManager(dg.IOManager):
         def handle_output(self, context, obj):  # pyright: ignore[reportIncompatibleMethodOverride]
             return {}
 
         def load_input(self, context):
             return 1
 
-    class AnIOManagerFactory(ConfigurableIOManagerFactory):
-        def create_io_manager(self, _) -> IOManager:  # pyright: ignore[reportIncompatibleMethodOverride]
+    class AnIOManagerFactory(dg.ConfigurableIOManagerFactory):
+        def create_io_manager(self, _) -> dg.IOManager:  # pyright: ignore[reportIncompatibleMethodOverride]
             return MyIOManager()
 
     assert not AnIOManagerFactory()._is_dagster_maintained()  # noqa: SLF001
 
 
 def test_telemetry_dagster_io_manager_factory():
-    class MyIOManager(IOManager):
+    class MyIOManager(dg.IOManager):
         def handle_output(self, context, obj):  # pyright: ignore[reportIncompatibleMethodOverride]
             return {}
 
         def load_input(self, context):
             return 1
 
-    class AnIOManagerFactory(ConfigurableIOManagerFactory):
+    class AnIOManagerFactory(dg.ConfigurableIOManagerFactory):
         @classmethod
         def _is_dagster_maintained(cls) -> bool:
             return True
 
-        def create_io_manager(self, _) -> IOManager:  # pyright: ignore[reportIncompatibleMethodOverride]
+        def create_io_manager(self, _) -> dg.IOManager:  # pyright: ignore[reportIncompatibleMethodOverride]
             return MyIOManager()
 
     assert AnIOManagerFactory()._is_dagster_maintained()  # noqa: SLF001
@@ -554,7 +537,7 @@ def test_telemetry_dagster_io_manager_factory():
 def test_inherited_io_config_schemas() -> None:
     files = {}
 
-    class MyIOManager(IOManager):
+    class MyIOManager(dg.IOManager):
         def __init__(self, base_path) -> None:
             self._base_path = base_path
 
@@ -567,33 +550,33 @@ def test_inherited_io_config_schemas() -> None:
                 file_path = self._base_path + context.upstream_output.config["file_name"]
                 return files[file_path]
 
-    class MyIOManagerOutputConfigSchema(Config):
+    class MyIOManagerOutputConfigSchema(dg.Config):
         file_name: str
 
-    class MyConfigurableIOManager(ConfigurableIOManagerFactory):
+    class MyConfigurableIOManager(dg.ConfigurableIOManagerFactory):
         base_path: str
 
-        def create_io_manager(self, context) -> IOManager:
+        def create_io_manager(self, context) -> dg.IOManager:
             return MyIOManager(self.base_path)
 
         @classmethod
         def output_config_schema(cls) -> MyIOManagerOutputConfigSchema:  # pyright: ignore[reportIncompatibleMethodOverride]
             return MyIOManagerOutputConfigSchema
 
-    @op
+    @dg.op
     def op_1() -> str:
         return "output 1"
 
-    @op
+    @dg.op
     def op_2(input_data) -> str:
         assert input_data == "output 1"
         return "output 2"
 
-    @job
+    @dg.job
     def my_job():
         op_2(op_1())
 
-    defs = Definitions(
+    defs = dg.Definitions(
         resources={"io_manager": MyConfigurableIOManager(base_path="my-bucket/")},
         jobs=[my_job],
     )

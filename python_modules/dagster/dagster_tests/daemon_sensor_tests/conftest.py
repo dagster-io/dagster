@@ -4,13 +4,13 @@ from collections.abc import Iterator
 from typing import Optional
 from unittest import mock
 
+import dagster as dg
 import pytest
 from dagster._core.instance import DagsterInstance
 from dagster._core.remote_representation.external import RemoteRepository
 from dagster._core.test_utils import (
     SingleThreadPoolExecutor,
     create_test_daemon_workspace_context,
-    instance_for_test,
     load_remote_repo,
 )
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
@@ -37,12 +37,12 @@ def submit_executor(request):
 
 
 @pytest.fixture(name="instance_module_scoped", scope="module")
-def instance_module_scoped_fixture() -> Iterator[DagsterInstance]:
+def instance_module_scoped_fixture() -> Iterator[dg.DagsterInstance]:
     with mock.patch(
         "dagster._core.instance.DagsterInstance.get_tick_termination_check_interval",
         return_value=1,  # check that the sensor is enabled after every run submission
     ):
-        with instance_for_test(
+        with dg.instance_for_test(
             overrides={
                 "run_launcher": {"module": "dagster._core.test_utils", "class": "MockedRunLauncher"}
             },
@@ -52,7 +52,7 @@ def instance_module_scoped_fixture() -> Iterator[DagsterInstance]:
 
 
 @pytest.fixture(name="instance", scope="function")
-def instance_fixture(instance_module_scoped: DagsterInstance) -> Iterator[DagsterInstance]:
+def instance_fixture(instance_module_scoped: DagsterInstance) -> Iterator[dg.DagsterInstance]:
     instance_module_scoped.wipe()
     instance_module_scoped.wipe_all_schedules()
     yield instance_module_scoped

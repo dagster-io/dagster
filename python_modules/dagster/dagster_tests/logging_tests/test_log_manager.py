@@ -3,16 +3,15 @@ import sys
 import textwrap
 from typing import Optional
 
+import dagster as dg
 import pytest
-from dagster import DagsterEvent
 from dagster._core.definitions.dependency import NodeHandle
-from dagster._core.errors import DagsterUserCodeExecutionError, user_code_error_boundary
+from dagster._core.errors import user_code_error_boundary
 from dagster._core.execution.plan.objects import ErrorSource, StepFailureData
 from dagster._core.execution.plan.outputs import StepOutputData, StepOutputHandle
 from dagster._core.log_manager import (
     DagsterLogHandler,
     DagsterLogHandlerMetadata,
-    DagsterLogManager,
     DagsterLogRecordMetadata,
     construct_log_record_message,
 )
@@ -32,7 +31,7 @@ def _construct_log_record_metadata(**kwargs) -> DagsterLogRecordMetadata:
 
 
 def test_construct_log_message_for_event():
-    step_output_event = DagsterEvent(
+    step_output_event = dg.DagsterEvent(
         event_type_value="STEP_OUTPUT",
         job_name="my_job",
         step_key="op2",
@@ -73,7 +72,7 @@ def test_construct_log_message_for_log():
 def _make_error_log_message(
     error: SerializableErrorInfo, error_source: Optional[ErrorSource] = None
 ):
-    step_failure_event = DagsterEvent(
+    step_failure_event = dg.DagsterEvent(
         event_type_value="STEP_FAILURE",
         job_name="my_job",
         step_key="op2",
@@ -121,10 +120,10 @@ def test_construct_log_message_with_user_code_error():
     error = None
     try:
         with user_code_error_boundary(
-            DagsterUserCodeExecutionError, lambda: "Error occurred while eating a banana"
+            dg.DagsterUserCodeExecutionError, lambda: "Error occurred while eating a banana"
         ):
             raise ValueError("some error")
-    except DagsterUserCodeExecutionError:
+    except dg.DagsterUserCodeExecutionError:
         error = serializable_error_info_from_exc_info(sys.exc_info())
 
     log_string = _make_error_log_message(error, error_source=ErrorSource.USER_CODE_ERROR)
@@ -213,9 +212,9 @@ def test_user_code_error_boundary_python_capture(use_handler):
     test_extra = {"foo": 1, "bar": {2: 3, "baz": 4}}
 
     with user_code_error_boundary(
-        DagsterUserCodeExecutionError,
+        dg.DagsterUserCodeExecutionError,
         lambda: "Some Error Message",
-        log_manager=DagsterLogManager(
+        log_manager=dg.DagsterLogManager(
             dagster_handler=DagsterLogHandler(
                 metadata=_construct_log_handler_metadata(
                     run_id="123456", job_name="job", step_key="some_step"
@@ -257,9 +256,9 @@ def test_log_handler_emit_by_handlers_level():
     test_extra = {"foo": 1, "bar": {2: 3, "baz": 4}}
 
     with user_code_error_boundary(
-        DagsterUserCodeExecutionError,
+        dg.DagsterUserCodeExecutionError,
         lambda: "Some Error Message",
-        log_manager=DagsterLogManager(
+        log_manager=dg.DagsterLogManager(
             dagster_handler=DagsterLogHandler(
                 metadata=_construct_log_handler_metadata(
                     run_id="123456",

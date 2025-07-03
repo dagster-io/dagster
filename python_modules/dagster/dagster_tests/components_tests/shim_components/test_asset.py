@@ -1,4 +1,4 @@
-from dagster._core.definitions.assets import AssetsDefinition
+import dagster as dg
 from dagster.components.lib.shim_components.asset import AssetScaffolder
 
 from dagster_tests.components_tests.shim_components.shim_test_utils import (
@@ -14,7 +14,7 @@ def test_asset_scaffolder():
     asset_fn = execute_scaffolder_and_get_symbol(scaffolder, "my_asset")
 
     # Verify that the function creates a valid asset
-    assert isinstance(asset_fn, AssetsDefinition)
+    assert isinstance(asset_fn, dg.AssetsDefinition)
     assert asset_fn.key.path[0] == "my_asset"
 
 

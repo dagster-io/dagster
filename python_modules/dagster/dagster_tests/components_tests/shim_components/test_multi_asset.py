@@ -1,4 +1,4 @@
-from dagster import AssetsDefinition
+import dagster as dg
 from dagster.components.lib.shim_components.multi_asset import (
     MultiAssetScaffolder,
     MultiAssetScaffoldParams,
@@ -18,7 +18,7 @@ def test_multi_asset_scaffolder():
     multi_asset_fn = execute_scaffolder_and_get_symbol(scaffolder, "my_multi_asset", params)
 
     # Verify that the function creates a valid multi-asset
-    assert isinstance(multi_asset_fn, AssetsDefinition)
+    assert isinstance(multi_asset_fn, dg.AssetsDefinition)
 
 
 def test_multi_asset_scaffolder_ruff_compliance():

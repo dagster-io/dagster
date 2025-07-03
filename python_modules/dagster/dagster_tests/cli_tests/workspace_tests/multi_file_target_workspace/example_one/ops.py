@@ -1,6 +1,6 @@
-from dagster import op
+import dagster as dg
 
 
-@op
+@dg.op
 def example_one_op(_):
     pass

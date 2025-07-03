@@ -2,12 +2,12 @@ import os
 import tempfile
 from contextlib import contextmanager
 
+import dagster as dg
 import pytest
 from dagster import DagsterInstance
 from dagster._core.storage.legacy_storage import LegacyRunStorage
 from dagster._core.storage.runs import InMemoryRunStorage, SqliteRunStorage
 from dagster._core.storage.sqlite_storage import DagsterSqliteStorage
-from dagster._core.test_utils import instance_for_test
 
 from dagster_tests.storage_tests.utils.run_storage import TestRunStorage
 
@@ -61,7 +61,7 @@ class TestSqliteRunStorage(TestRunStorage):
     @pytest.fixture(name="instance", scope="function")
     def instance(self):  # pyright: ignore[reportIncompatibleMethodOverride]
         with tempfile.TemporaryDirectory(dir=os.getcwd()) as tmpdir_path:
-            with instance_for_test(temp_dir=tmpdir_path) as instance:
+            with dg.instance_for_test(temp_dir=tmpdir_path) as instance:
                 yield instance
 
     @pytest.fixture(name="storage", scope="function")
@@ -123,7 +123,7 @@ class TestLegacyRunStorage(TestRunStorage):
     @pytest.fixture(name="instance", scope="function")
     def instance(self):  # pyright: ignore[reportIncompatibleMethodOverride]
         with tempfile.TemporaryDirectory(dir=os.getcwd()) as tmpdir_path:
-            with instance_for_test(temp_dir=tmpdir_path) as instance:
+            with dg.instance_for_test(temp_dir=tmpdir_path) as instance:
                 yield instance
 
     @pytest.fixture(name="storage", scope="function")

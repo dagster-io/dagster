@@ -1,26 +1,29 @@
 from collections import defaultdict
 
-from dagster import DependencyDefinition, GraphDefinition, In, Int, NodeInvocation, op
+import dagster as dg
+from dagster import Int
 
 
 def test_aliased_ops():
-    @op()
+    @dg.op()
     def first():
         return ["first"]
 
-    @op(ins={"prev": In()})
+    @dg.op(ins={"prev": dg.In()})
     def not_first(prev):
         return prev + ["not_first"]
 
-    job_def = GraphDefinition(
+    job_def = dg.GraphDefinition(
         node_defs=[first, not_first],
         name="test",
         dependencies={  # pyright: ignore[reportArgumentType]
-            "not_first": {"prev": DependencyDefinition("first")},
-            NodeInvocation("not_first", alias="second"): {
-                "prev": DependencyDefinition("not_first")
+            "not_first": {"prev": dg.DependencyDefinition("first")},
+            dg.NodeInvocation("not_first", alias="second"): {
+                "prev": dg.DependencyDefinition("not_first")
             },
-            NodeInvocation("not_first", alias="third"): {"prev": DependencyDefinition("second")},
+            dg.NodeInvocation("not_first", alias="third"): {
+                "prev": dg.DependencyDefinition("second")
+            },
         },
     ).to_job()
 
@@ -35,21 +38,21 @@ def test_aliased_ops():
 
 
 def test_only_aliased_ops():
-    @op()
+    @dg.op()
     def first():
         return ["first"]
 
-    @op(ins={"prev": In()})
+    @dg.op(ins={"prev": dg.In()})
     def not_first(prev):
         return prev + ["not_first"]
 
-    job_def = GraphDefinition(
+    job_def = dg.GraphDefinition(
         node_defs=[first, not_first],
         name="test",
         dependencies={
-            NodeInvocation("first", alias="the_root"): {},
-            NodeInvocation("not_first", alias="the_consequence"): {
-                "prev": DependencyDefinition("the_root")
+            dg.NodeInvocation("first", alias="the_root"): {},
+            dg.NodeInvocation("not_first", alias="the_consequence"): {
+                "prev": dg.DependencyDefinition("the_root")
             },
         },
     ).to_job()
@@ -60,16 +63,16 @@ def test_only_aliased_ops():
 
 
 def test_aliased_configs():
-    @op(ins={}, config_schema=Int)
+    @dg.op(ins={}, config_schema=Int)
     def load_constant(context):
         return context.op_config
 
-    job_def = GraphDefinition(
+    job_def = dg.GraphDefinition(
         node_defs=[load_constant],
         name="test",
         dependencies={
-            NodeInvocation(load_constant.name, "load_a"): {},
-            NodeInvocation(load_constant.name, "load_b"): {},
+            dg.NodeInvocation(load_constant.name, "load_a"): {},
+            dg.NodeInvocation(load_constant.name, "load_b"): {},
         },
     ).to_job()
 
@@ -83,18 +86,18 @@ def test_aliased_configs():
 def test_aliased_ops_context():
     record = defaultdict(set)
 
-    @op
+    @dg.op
     def log_things(context):
         op_value = context.op.name
         op_def_value = context.op_def.name
         record[op_def_value].add(op_value)
 
-    job_def = GraphDefinition(
+    job_def = dg.GraphDefinition(
         node_defs=[log_things],
         name="test",
         dependencies={
-            NodeInvocation("log_things", "log_a"): {},
-            NodeInvocation("log_things", "log_b"): {},
+            dg.NodeInvocation("log_things", "log_a"): {},
+            dg.NodeInvocation("log_things", "log_b"): {},
         },
     ).to_job()
 

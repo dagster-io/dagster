@@ -7,15 +7,14 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 from typing import Optional, TextIO
 
-from dagster import AssetExecutionContext, AssetKey, asset, materialize
+import dagster as dg
+from dagster import AssetExecutionContext
 from dagster._core.definitions.data_version import DATA_VERSION_TAG
 from dagster._core.pipes.utils import (
     PipesChunkedLogReader,
-    PipesEnvContextInjector,
     PipesLaunchedData,
     PipesParams,
     PipesThreadedMessageReader,
-    open_pipes_session,
 )
 from dagster_pipes import PipesDefaultMessageWriter, _make_message
 
@@ -141,10 +140,10 @@ def test_file_message_reader(tmp_path_factory, capsys):
         ]
     )
 
-    @asset
+    @dg.asset
     def my_asset(context: AssetExecutionContext):
-        with open_pipes_session(
-            context=context, message_reader=reader, context_injector=PipesEnvContextInjector()
+        with dg.open_pipes_session(
+            context=context, message_reader=reader, context_injector=dg.PipesEnvContextInjector()
         ) as session:
             assert not reader.messages_are_readable({})
 
@@ -210,14 +209,14 @@ def test_file_message_reader(tmp_path_factory, capsys):
 
         return session.get_results()
 
-    result = materialize([my_asset])
+    result = dg.materialize([my_asset])
 
     assert result.success
 
     mats = result.get_asset_materialization_events()
     assert len(mats) == 1
     mat = mats[0]
-    assert mat.asset_key == AssetKey(["my_asset"])
+    assert mat.asset_key == dg.AssetKey(["my_asset"])
     assert mat.materialization.metadata["foo"].value == "bar"
     assert mat.materialization.tags[DATA_VERSION_TAG] == "alpha"  # pyright: ignore[reportOptionalSubscript]
 

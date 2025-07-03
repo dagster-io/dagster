@@ -1,15 +1,15 @@
-from dagster import GraphOut, In, Out, graph, job, op
+import dagster as dg
 from dagster._core.execution.api import create_execution_plan
 from dagster._core.snap import snapshot_from_execution_plan
 from dagster._serdes import serialize_pp
 
 
 def test_create_noop_execution_plan(snapshot):
-    @op
+    @dg.op
     def noop_op(_):
         pass
 
-    @job
+    @dg.job
     def noop_job():
         noop_op()
 
@@ -23,15 +23,15 @@ def test_create_noop_execution_plan(snapshot):
 
 
 def test_create_execution_plan_with_dep(snapshot):
-    @op
+    @dg.op
     def op_one(_):
         return 1
 
-    @op
+    @dg.op
     def op_two(_, num):
         return num + 1
 
-    @job
+    @dg.job
     def noop_job():
         op_two(op_one())
 
@@ -48,30 +48,30 @@ def test_create_execution_plan_with_dep(snapshot):
 
 
 def test_create_with_graph(snapshot):
-    @op(out={"out_num": Out(dagster_type=int)})
+    @dg.op(out={"out_num": dg.Out(dagster_type=int)})
     def return_one(_):
         return 1
 
-    @op(
-        ins={"num": In(dagster_type=int)},
-        out=Out(int),
+    @dg.op(
+        ins={"num": dg.In(dagster_type=int)},
+        out=dg.Out(int),
     )
     def add_one(_, num):
         return num + 1
 
-    @graph(out={"named_output": GraphOut()})
+    @dg.graph(out={"named_output": dg.GraphOut()})
     def comp_1():
         return add_one(return_one())
 
-    @graph(out={"named_output": GraphOut()})
+    @dg.graph(out={"named_output": dg.GraphOut()})
     def comp_2():
         return add_one(return_one())
 
-    @op
+    @dg.op
     def add(_, num_one, num_two):
         return num_one + num_two
 
-    @job
+    @dg.job
     def do_comps():
         add(num_one=comp_1(), num_two=comp_2())
 
@@ -88,11 +88,11 @@ def test_create_with_graph(snapshot):
 
 
 def test_create_noop_execution_plan_with_tags(snapshot):
-    @op(tags={"foo": "bar", "bar": "baaz"})
+    @dg.op(tags={"foo": "bar", "bar": "baaz"})
     def noop_op(_):
         pass
 
-    @job
+    @dg.job
     def noop_job():
         noop_op()
 

@@ -1,8 +1,7 @@
 import itertools
 
+import dagster as dg
 import pytest
-from dagster import Field, In, Map, Nothing, Out, Permissive, Selector, Shape, job, op
-from dagster._config import Array, Bool, Enum, EnumValue, Float, Int, Noneable, String
 from dagster._core.snap import (
     DependencyStructureIndex,
     JobSnap,
@@ -15,20 +14,19 @@ from dagster._core.snap.dep_snapshot import (
     OutputHandleSnap,
     build_dep_structure_snapshot_from_graph_def,
 )
-from dagster._serdes import serialize_pp, serialize_value
-from dagster_shared.serdes import deserialize_value
+from dagster._serdes import serialize_pp
 
 
 def serialize_rt(value: JobSnap) -> JobSnap:
-    return deserialize_value(serialize_value(value), JobSnap)
+    return dg.deserialize_value(dg.serialize_value(value), JobSnap)
 
 
 def get_noop_pipeline():
-    @op
+    @dg.op
     def noop_op(_):
         pass
 
-    @job
+    @dg.job
     def noop_job():
         noop_op()
 
@@ -54,11 +52,11 @@ def test_empty_job_snap_props(snapshot):
 
 
 def test_job_snap_all_props(snapshot):
-    @op
+    @dg.op
     def noop_op(_):
         pass
 
-    @job(description="desc", tags={"key": "value"})
+    @dg.job(description="desc", tags={"key": "value"})
     def noop_job():
         noop_op()
 
@@ -75,11 +73,11 @@ def test_job_snap_all_props(snapshot):
 
 
 def test_noop_deps_snap():
-    @op
+    @dg.op
     def noop_op(_):
         pass
 
-    @job
+    @dg.job
     def noop_job():
         noop_op()
 
@@ -89,11 +87,11 @@ def test_noop_deps_snap():
 
 
 def test_two_invocations_deps_snap(snapshot):
-    @op
+    @dg.op
     def noop_op(_):
         pass
 
-    @job
+    @dg.job
     def two_op_job():
         noop_op.alias("one")()
         noop_op.alias("two")()
@@ -110,15 +108,15 @@ def test_two_invocations_deps_snap(snapshot):
 
 
 def test_basic_dep():
-    @op
+    @dg.op
     def return_one(_):
         return 1
 
-    @op(ins={"value": In(int)})
+    @dg.op(ins={"value": dg.In(int)})
     def passthrough(_, value):
         return value
 
-    @job
+    @dg.job
     def single_dep_job():
         passthrough(return_one())
 
@@ -136,15 +134,15 @@ def test_basic_dep():
 
 
 def test_basic_dep_fan_out(snapshot):
-    @op
+    @dg.op
     def return_one(_):
         return 1
 
-    @op(ins={"value": In(int)})
+    @dg.op(ins={"value": dg.In(int)})
     def passthrough(_, value):
         return value
 
-    @job
+    @dg.job
     def single_dep_job():
         return_one_result = return_one()
         passthrough.alias("passone")(return_one_result)
@@ -168,7 +166,9 @@ def test_basic_dep_fan_out(snapshot):
     )
 
     assert (
-        deserialize_value(serialize_value(dep_structure_snapshot), DependencyStructureSnapshot)
+        dg.deserialize_value(
+            dg.serialize_value(dep_structure_snapshot), DependencyStructureSnapshot
+        )
         == dep_structure_snapshot
     )
 
@@ -180,15 +180,15 @@ def test_basic_dep_fan_out(snapshot):
 
 
 def test_basic_fan_in(snapshot):
-    @op(out=Out(Nothing))
+    @dg.op(out=dg.Out(dg.Nothing))
     def return_nothing(_):
         return None
 
-    @op(ins={"nothing": In(Nothing)})
+    @dg.op(ins={"nothing": dg.In(dg.Nothing)})
     def take_nothings(_):
         return None
 
-    @job
+    @dg.job
     def fan_in_test():
         take_nothings(
             [
@@ -209,7 +209,9 @@ def test_basic_fan_in(snapshot):
     ]
 
     assert (
-        deserialize_value(serialize_value(dep_structure_snapshot), DependencyStructureSnapshot)
+        dg.deserialize_value(
+            dg.serialize_value(dep_structure_snapshot), DependencyStructureSnapshot
+        )
         == dep_structure_snapshot
     )
 
@@ -221,45 +223,45 @@ def test_basic_fan_in(snapshot):
 
 
 def _dict_has_stable_hashes(hydrated_map, snapshot_config_snap_map):
-    assert isinstance(hydrated_map, (Shape, Permissive, Selector))
+    assert isinstance(hydrated_map, (dg.Shape, dg.Permissive, dg.Selector))
     assert hydrated_map.key in snapshot_config_snap_map
     for field in hydrated_map.fields.values():
         assert field.config_type.key in snapshot_config_snap_map
 
 
 def _array_has_stable_hashes(hydrated_array, snapshot_config_snap_map):
-    assert isinstance(hydrated_array, Array)
+    assert isinstance(hydrated_array, dg.Array)
     assert hydrated_array.key in snapshot_config_snap_map
     assert hydrated_array.inner_type.key in snapshot_config_snap_map
 
 
 def _map_has_stable_hashes(hydrated_map, snapshot_config_snap_map):
-    assert isinstance(hydrated_map, Map)
+    assert isinstance(hydrated_map, dg.Map)
     assert hydrated_map.key in snapshot_config_snap_map
     assert hydrated_map.inner_type.key in snapshot_config_snap_map
     assert hydrated_map.key_type.key in snapshot_config_snap_map
 
 
 def test_deserialize_op_def_snaps_default_field():
-    @op(
+    @dg.op(
         config_schema={
-            "foo": Field(str, is_required=False, default_value="hello"),
-            "bar": Field(str),
+            "foo": dg.Field(str, is_required=False, default_value="hello"),
+            "bar": dg.Field(str),
         }
     )
     def noop_op(_):
         pass
 
-    @job
+    @dg.job
     def noop_job():
         noop_op()
 
     job_snapshot = JobSnap.from_job_def(noop_job)
     node_def_snap = job_snapshot.get_node_def_snap("noop_op")
     recevied_config_type = job_snapshot.get_config_type_from_node_def_snap(node_def_snap)
-    assert isinstance(recevied_config_type, Shape)
-    assert isinstance(recevied_config_type.fields["foo"].config_type, String)
-    assert isinstance(recevied_config_type.fields["bar"].config_type, String)
+    assert isinstance(recevied_config_type, dg.Shape)
+    assert isinstance(recevied_config_type.fields["foo"].config_type, dg.String)
+    assert isinstance(recevied_config_type.fields["bar"].config_type, dg.String)
     assert not recevied_config_type.fields["foo"].is_required
     assert recevied_config_type.fields["foo"].default_value == "hello"
     _dict_has_stable_hashes(
@@ -269,22 +271,22 @@ def test_deserialize_op_def_snaps_default_field():
 
 
 def test_deserialize_node_def_snaps_enum():
-    @op(
-        config_schema=Field(
-            Enum("CowboyType", [EnumValue("good"), EnumValue("bad"), EnumValue("ugly")])
+    @dg.op(
+        config_schema=dg.Field(
+            dg.Enum("CowboyType", [dg.EnumValue("good"), dg.EnumValue("bad"), dg.EnumValue("ugly")])
         )
     )
     def noop_op(_):
         pass
 
-    @job
+    @dg.job
     def noop_job():
         noop_op()
 
     job_snapshot = JobSnap.from_job_def(noop_job)
     node_def_snap = job_snapshot.get_node_def_snap("noop_op")
     recevied_config_type = job_snapshot.get_config_type_from_node_def_snap(node_def_snap)
-    assert isinstance(recevied_config_type, Enum)
+    assert isinstance(recevied_config_type, dg.Enum)
     assert recevied_config_type.given_name == "CowboyType"
     assert all(
         enum_value.config_value in ("good", "bad", "ugly")
@@ -293,20 +295,20 @@ def test_deserialize_node_def_snaps_enum():
 
 
 def test_deserialize_node_def_snaps_strict_shape():
-    @op(config_schema={"foo": Field(str, is_required=False), "bar": Field(str)})
+    @dg.op(config_schema={"foo": dg.Field(str, is_required=False), "bar": dg.Field(str)})
     def noop_op(_):
         pass
 
-    @job
+    @dg.job
     def noop_job():
         noop_op()
 
     job_snapshot = JobSnap.from_job_def(noop_job)
     node_def_snap = job_snapshot.get_node_def_snap("noop_op")
     recevied_config_type = job_snapshot.get_config_type_from_node_def_snap(node_def_snap)
-    assert isinstance(recevied_config_type, Shape)
-    assert isinstance(recevied_config_type.fields["foo"].config_type, String)
-    assert isinstance(recevied_config_type.fields["bar"].config_type, String)
+    assert isinstance(recevied_config_type, dg.Shape)
+    assert isinstance(recevied_config_type.fields["foo"].config_type, dg.String)
+    assert isinstance(recevied_config_type.fields["bar"].config_type, dg.String)
     assert not recevied_config_type.fields["foo"].is_required
     _dict_has_stable_hashes(
         recevied_config_type,
@@ -315,20 +317,20 @@ def test_deserialize_node_def_snaps_strict_shape():
 
 
 def test_deserialize_node_def_snaps_selector():
-    @op(config_schema=Selector({"foo": Field(str), "bar": Field(int)}))
+    @dg.op(config_schema=dg.Selector({"foo": dg.Field(str), "bar": dg.Field(int)}))
     def noop_op(_):
         pass
 
-    @job
+    @dg.job
     def noop_job():
         noop_op()
 
     job_snapshot = JobSnap.from_job_def(noop_job)
     node_def_snap = job_snapshot.get_node_def_snap("noop_op")
     recevied_config_type = job_snapshot.get_config_type_from_node_def_snap(node_def_snap)
-    assert isinstance(recevied_config_type, Selector)
-    assert isinstance(recevied_config_type.fields["foo"].config_type, String)
-    assert isinstance(recevied_config_type.fields["bar"].config_type, Int)
+    assert isinstance(recevied_config_type, dg.Selector)
+    assert isinstance(recevied_config_type.fields["foo"].config_type, dg.String)
+    assert isinstance(recevied_config_type.fields["bar"].config_type, dg.Int)
     _dict_has_stable_hashes(
         recevied_config_type,
         job_snapshot.config_schema_snapshot.all_config_snaps_by_key,
@@ -336,19 +338,19 @@ def test_deserialize_node_def_snaps_selector():
 
 
 def test_deserialize_op_def_snaps_permissive():
-    @op(config_schema=Field(Permissive({"foo": Field(str)})))
+    @dg.op(config_schema=dg.Field(dg.Permissive({"foo": dg.Field(str)})))
     def noop_op(_):
         pass
 
-    @job
+    @dg.job
     def noop_job():
         noop_op()
 
     job_snapshot = JobSnap.from_job_def(noop_job)
     node_def_snap = job_snapshot.get_node_def_snap("noop_op")
     recevied_config_type = job_snapshot.get_config_type_from_node_def_snap(node_def_snap)
-    assert isinstance(recevied_config_type, Permissive)
-    assert isinstance(recevied_config_type.fields["foo"].config_type, String)
+    assert isinstance(recevied_config_type, dg.Permissive)
+    assert isinstance(recevied_config_type.fields["foo"].config_type, dg.String)
     _dict_has_stable_hashes(
         recevied_config_type,
         job_snapshot.config_schema_snapshot.all_config_snaps_by_key,
@@ -356,19 +358,19 @@ def test_deserialize_op_def_snaps_permissive():
 
 
 def test_deserialize_node_def_snaps_array():
-    @op(config_schema=Field([str]))
+    @dg.op(config_schema=dg.Field([str]))
     def noop_op(_):
         pass
 
-    @job
+    @dg.job
     def noop_job():
         noop_op()
 
     job_snapshot = JobSnap.from_job_def(noop_job)
     node_def_snap = job_snapshot.get_node_def_snap("noop_op")
     recevied_config_type = job_snapshot.get_config_type_from_node_def_snap(node_def_snap)
-    assert isinstance(recevied_config_type, Array)
-    assert isinstance(recevied_config_type.inner_type, String)
+    assert isinstance(recevied_config_type, dg.Array)
+    assert isinstance(recevied_config_type.inner_type, dg.String)
     _array_has_stable_hashes(
         recevied_config_type,
         job_snapshot.config_schema_snapshot.all_config_snaps_by_key,
@@ -376,20 +378,20 @@ def test_deserialize_node_def_snaps_array():
 
 
 def test_deserialize_node_def_snaps_map():
-    @op(config_schema=Field({str: str}))
+    @dg.op(config_schema=dg.Field({str: str}))
     def noop_op(_):
         pass
 
-    @job
+    @dg.job
     def noop_job():
         noop_op()
 
     job_snapshot = JobSnap.from_job_def(noop_job)
     node_def_snap = job_snapshot.get_node_def_snap("noop_op")
     recevied_config_type = job_snapshot.get_config_type_from_node_def_snap(node_def_snap)
-    assert isinstance(recevied_config_type, Map)
-    assert isinstance(recevied_config_type.key_type, String)
-    assert isinstance(recevied_config_type.inner_type, String)
+    assert isinstance(recevied_config_type, dg.Map)
+    assert isinstance(recevied_config_type.key_type, dg.String)
+    assert isinstance(recevied_config_type.inner_type, dg.String)
     _map_has_stable_hashes(
         recevied_config_type,
         job_snapshot.config_schema_snapshot.all_config_snaps_by_key,
@@ -397,20 +399,20 @@ def test_deserialize_node_def_snaps_map():
 
 
 def test_deserialize_node_def_snaps_map_with_name():
-    @op(config_schema=Field(Map(bool, float, key_label_name="title")))
+    @dg.op(config_schema=dg.Field(dg.Map(bool, float, key_label_name="title")))
     def noop_op(_):
         pass
 
-    @job
+    @dg.job
     def noop_job():
         noop_op()
 
     job_snapshot = JobSnap.from_job_def(noop_job)
     node_def_snap = job_snapshot.get_node_def_snap("noop_op")
     recevied_config_type = job_snapshot.get_config_type_from_node_def_snap(node_def_snap)
-    assert isinstance(recevied_config_type, Map)
-    assert isinstance(recevied_config_type.key_type, Bool)
-    assert isinstance(recevied_config_type.inner_type, Float)
+    assert isinstance(recevied_config_type, dg.Map)
+    assert isinstance(recevied_config_type.key_type, dg.Bool)
+    assert isinstance(recevied_config_type.inner_type, dg.Float)
     assert recevied_config_type.given_name == "title"
     _map_has_stable_hashes(
         recevied_config_type,
@@ -419,39 +421,39 @@ def test_deserialize_node_def_snaps_map_with_name():
 
 
 def test_deserialize_node_def_snaps_noneable():
-    @op(config_schema=Field(Noneable(str)))
+    @dg.op(config_schema=dg.Field(dg.Noneable(str)))
     def noop_op(_):
         pass
 
-    @job
+    @dg.job
     def noop_job():
         noop_op()
 
     job_snapshot = JobSnap.from_job_def(noop_job)
     node_def_snap = job_snapshot.get_node_def_snap("noop_op")
     recevied_config_type = job_snapshot.get_config_type_from_node_def_snap(node_def_snap)
-    assert isinstance(recevied_config_type, Noneable)
-    assert isinstance(recevied_config_type.inner_type, String)
+    assert isinstance(recevied_config_type, dg.Noneable)
+    assert isinstance(recevied_config_type.inner_type, dg.String)
 
 
 def test_deserialize_node_def_snaps_multi_type_config(snapshot):
-    @op(
-        config_schema=Field(
-            Permissive(
+    @dg.op(
+        config_schema=dg.Field(
+            dg.Permissive(
                 {
-                    "foo": Field(Array(float)),
-                    "bar": Selector(
+                    "foo": dg.Field(dg.Array(float)),
+                    "bar": dg.Selector(
                         {
-                            "baz": Field(Noneable(int)),
+                            "baz": dg.Field(dg.Noneable(int)),
                             "qux": {
-                                "quux": Field(str),
-                                "corge": Field(
-                                    Enum(
+                                "quux": dg.Field(str),
+                                "corge": dg.Field(
+                                    dg.Enum(
                                         "RGB",
                                         [
-                                            EnumValue("red"),
-                                            EnumValue("green"),
-                                            EnumValue("blue"),
+                                            dg.EnumValue("red"),
+                                            dg.EnumValue("green"),
+                                            dg.EnumValue("blue"),
                                         ],
                                     )
                                 ),
@@ -465,7 +467,7 @@ def test_deserialize_node_def_snaps_multi_type_config(snapshot):
     def fancy_op(_):
         pass
 
-    @job
+    @dg.job
     def noop_job():
         fancy_op()
 
@@ -479,13 +481,13 @@ def test_deserialize_node_def_snaps_multi_type_config(snapshot):
     )
 
 
-@pytest.mark.parametrize("dict_config_type", [Selector, Permissive, Shape])
+@pytest.mark.parametrize("dict_config_type", [dg.Selector, dg.Permissive, dg.Shape])
 def test_multi_type_config_array_dict_fields(dict_config_type, snapshot):
-    @op(config_schema=Array(dict_config_type({"foo": Field(int), "bar": Field(str)})))
+    @dg.op(config_schema=dg.Array(dict_config_type({"foo": dg.Field(int), "bar": dg.Field(str)})))
     def fancy_op(_):
         pass
 
-    @job
+    @dg.job
     def noop_job():
         fancy_op()
 
@@ -500,11 +502,11 @@ def test_multi_type_config_array_dict_fields(dict_config_type, snapshot):
 
 
 def test_multi_type_config_array_map(snapshot):
-    @op(config_schema=Array(Map(str, int)))
+    @dg.op(config_schema=dg.Array(dg.Map(str, int)))
     def fancy_op(_):
         pass
 
-    @job
+    @dg.job
     def noop_job():
         fancy_op()
 
@@ -520,16 +522,16 @@ def test_multi_type_config_array_map(snapshot):
 
 @pytest.mark.parametrize(
     "nested_dict_types",
-    [combo for combo in itertools.permutations((Selector, Permissive, Shape), 3)],
+    [combo for combo in itertools.permutations((dg.Selector, dg.Permissive, dg.Shape), 3)],
 )
 def test_multi_type_config_nested_dicts(nested_dict_types, snapshot):
     D1, D2, D3 = nested_dict_types
 
-    @op(config_schema=D1({"foo": D2({"bar": D3({"baz": Field(int)})})}))
+    @dg.op(config_schema=D1({"foo": D2({"bar": D3({"baz": dg.Field(int)})})}))
     def fancy_op(_):
         pass
 
-    @job
+    @dg.job
     def noop_job():
         fancy_op()
 

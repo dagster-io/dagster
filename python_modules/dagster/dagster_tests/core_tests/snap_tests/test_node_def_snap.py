@@ -1,27 +1,25 @@
-from dagster import In, Out, graph, op
+import dagster as dg
 from dagster._core.snap import DependencyStructureIndex, GraphDefSnap, build_graph_def_snap
 from dagster._core.snap.node import OpDefSnap, build_op_def_snap
-from dagster._serdes import serialize_value
-from dagster_shared.serdes import deserialize_value
 
 
 def test_basic_op_definition():
-    @op
+    @dg.op
     def noop_op(_):
         pass
 
     op_snap = build_op_def_snap(noop_op)
 
     assert op_snap
-    assert deserialize_value(serialize_value(op_snap), OpDefSnap) == op_snap
+    assert dg.deserialize_value(dg.serialize_value(op_snap), OpDefSnap) == op_snap
 
 
 def test_op_definition_kitchen_sink():
-    @op(
-        ins={"arg_one": In(str, description="desc1"), "arg_two": In(int)},
+    @dg.op(
+        ins={"arg_one": dg.In(str, description="desc1"), "arg_two": dg.In(int)},
         out={
-            "output_one": Out(dagster_type=str),
-            "output_two": Out(
+            "output_one": dg.Out(dagster_type=str),
+            "output_two": dg.Out(
                 dagster_type=int,
                 description="desc2",
                 is_required=False,
@@ -74,42 +72,47 @@ def test_op_definition_kitchen_sink():
     assert kitchen_sink_op.positional_inputs == ["arg_two", "arg_one"]
 
     assert (
-        deserialize_value(serialize_value(kitchen_sink_op_snap), OpDefSnap) == kitchen_sink_op_snap
+        dg.deserialize_value(dg.serialize_value(kitchen_sink_op_snap), OpDefSnap)
+        == kitchen_sink_op_snap
     )
 
 
 def test_noop_graph_definition():
-    @op
+    @dg.op
     def noop_op(_):
         pass
 
-    @graph
+    @dg.graph
     def comp_graph():
         noop_op()
 
     comp_solid_meta = build_graph_def_snap(comp_graph)
 
     assert isinstance(comp_solid_meta, GraphDefSnap)
-    assert deserialize_value(serialize_value(comp_solid_meta), GraphDefSnap) == comp_solid_meta
+    assert (
+        dg.deserialize_value(dg.serialize_value(comp_solid_meta), GraphDefSnap) == comp_solid_meta
+    )
 
 
 def test_basic_graph_definition():
-    @op
+    @dg.op
     def return_one(_):
         return 1
 
-    @op
+    @dg.op
     def take_one(_, one):
         return one
 
-    @graph
+    @dg.graph
     def comp_graph():
         take_one(return_one())
 
     comp_solid_meta = build_graph_def_snap(comp_graph)
 
     assert isinstance(comp_solid_meta, GraphDefSnap)
-    assert deserialize_value(serialize_value(comp_solid_meta), GraphDefSnap) == comp_solid_meta
+    assert (
+        dg.deserialize_value(dg.serialize_value(comp_solid_meta), GraphDefSnap) == comp_solid_meta
+    )
 
     index = DependencyStructureIndex(comp_solid_meta.dep_structure_snapshot)
     assert index.get_invocation("return_one")
@@ -119,22 +122,24 @@ def test_basic_graph_definition():
 
 
 def test_complex_graph_definition():
-    @op
+    @dg.op
     def return_one(_):
         return 1
 
-    @op
+    @dg.op
     def take_many(_, items):
         return items
 
-    @graph
+    @dg.graph
     def comp_graph(this_number):
         take_many([return_one(), this_number, return_one.alias("return_one_also")()])
 
     comp_solid_meta = build_graph_def_snap(comp_graph)
 
     assert isinstance(comp_solid_meta, GraphDefSnap)
-    assert deserialize_value(serialize_value(comp_solid_meta), GraphDefSnap) == comp_solid_meta
+    assert (
+        dg.deserialize_value(dg.serialize_value(comp_solid_meta), GraphDefSnap) == comp_solid_meta
+    )
 
     index = DependencyStructureIndex(comp_solid_meta.dep_structure_snapshot)
     assert index.get_invocation("return_one")

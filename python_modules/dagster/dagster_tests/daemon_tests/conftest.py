@@ -4,8 +4,8 @@ import tempfile
 from collections.abc import Iterator
 from typing import Optional, cast
 
+import dagster as dg
 import pytest
-from dagster import DagsterInstance
 from dagster._core.remote_representation import (
     CodeLocation,
     InProcessCodeLocationOrigin,
@@ -15,16 +15,15 @@ from dagster._core.remote_representation.origin import ManagedGrpcPythonEnvCodeL
 from dagster._core.test_utils import (
     InProcessTestWorkspaceLoadTarget,
     create_test_daemon_workspace_context,
-    instance_for_test,
 )
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.workspace.context import WorkspaceProcessContext
 
 
 @pytest.fixture(name="instance_module_scoped", scope="module")
-def instance_module_scoped_fixture() -> Iterator[DagsterInstance]:
+def instance_module_scoped_fixture() -> Iterator[dg.DagsterInstance]:
     with tempfile.TemporaryDirectory() as temp_dir:
-        with instance_for_test(
+        with dg.instance_for_test(
             overrides={
                 "event_log_storage": {
                     "module": "dagster._core.storage.event_log",
@@ -40,7 +39,7 @@ def instance_module_scoped_fixture() -> Iterator[DagsterInstance]:
 
 
 @pytest.fixture(name="instance", scope="function")
-def instance_fixture(instance_module_scoped) -> Iterator[DagsterInstance]:
+def instance_fixture(instance_module_scoped) -> Iterator[dg.DagsterInstance]:
     instance_module_scoped.wipe()
     instance_module_scoped.wipe_all_schedules()
     yield instance_module_scoped

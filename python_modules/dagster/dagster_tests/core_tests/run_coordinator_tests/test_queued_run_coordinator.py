@@ -1,14 +1,12 @@
 from collections.abc import Iterator
 
+import dagster as dg
 import pytest
-from dagster._core.errors import DagsterInvalidConfigError
 from dagster._core.events import DagsterEventType
 from dagster._core.instance import DagsterInstance
 from dagster._core.remote_representation.external import RemoteJob
-from dagster._core.run_coordinator import SubmitRunContext
-from dagster._core.run_coordinator.queued_run_coordinator import QueuedRunCoordinator
-from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
-from dagster._core.test_utils import create_run_for_test, environ, instance_for_test
+from dagster._core.storage.dagster_run import DagsterRunStatus
+from dagster._core.test_utils import create_run_for_test, environ
 from dagster._core.workspace.context import WorkspaceRequestContext
 from dagster._utils.merger import merge_dicts
 
@@ -33,16 +31,16 @@ class TestQueuedRunCoordinator:
     """
 
     @pytest.fixture
-    def instance(self) -> Iterator[DagsterInstance]:
+    def instance(self) -> Iterator[dg.DagsterInstance]:
         overrides = {
             "run_launcher": {"module": "dagster._core.test_utils", "class": "MockedRunLauncher"}
         }
-        with instance_for_test(overrides=overrides) as inst:
+        with dg.instance_for_test(overrides=overrides) as inst:
             yield inst
 
     @pytest.fixture
-    def coordinator(self, instance: DagsterInstance) -> Iterator[QueuedRunCoordinator]:
-        run_coordinator = QueuedRunCoordinator()
+    def coordinator(self, instance: DagsterInstance) -> Iterator[dg.QueuedRunCoordinator]:
+        run_coordinator = dg.QueuedRunCoordinator()
         run_coordinator.register_instance(instance)
         yield run_coordinator
 
@@ -58,7 +56,7 @@ class TestQueuedRunCoordinator:
 
     def create_run_for_test(
         self, instance: DagsterInstance, remote_job: RemoteJob, **kwargs: object
-    ) -> DagsterRun:
+    ) -> dg.DagsterRun:
         job_args = merge_dicts(
             {
                 "job_name": "foo",
@@ -71,7 +69,7 @@ class TestQueuedRunCoordinator:
 
     def test_config(self):
         with environ({"MAX_RUNS": "10", "DEQUEUE_INTERVAL": "7"}):
-            with instance_for_test(
+            with dg.instance_for_test(
                 overrides={
                     "run_coordinator": {
                         "module": "dagster._core.run_coordinator",
@@ -97,8 +95,8 @@ class TestQueuedRunCoordinator:
             ) as _:
                 pass
 
-        with pytest.raises(DagsterInvalidConfigError):
-            with instance_for_test(
+        with pytest.raises(dg.DagsterInvalidConfigError):
+            with dg.instance_for_test(
                 overrides={
                     "run_coordinator": {
                         "module": "dagster._core.run_coordinator",
@@ -115,7 +113,7 @@ class TestQueuedRunCoordinator:
 
     def test_config_unique_value(self):
         with environ({"MAX_RUNS": "10", "DEQUEUE_INTERVAL": "7"}):
-            with instance_for_test(
+            with dg.instance_for_test(
                 overrides={
                     "run_coordinator": {
                         "module": "dagster._core.run_coordinator",
@@ -143,7 +141,7 @@ class TestQueuedRunCoordinator:
 
     def test_submit_run(self, instance, coordinator, workspace, remote_job):
         run = self.create_run_for_test(instance, remote_job, status=DagsterRunStatus.NOT_STARTED)
-        returned_run = coordinator.submit_run(SubmitRunContext(run, workspace))
+        returned_run = coordinator.submit_run(dg.SubmitRunContext(run, workspace))
         assert returned_run.run_id == run.run_id
         assert returned_run.status == DagsterRunStatus.QUEUED
 
@@ -164,7 +162,7 @@ class TestQueuedRunCoordinator:
 
     def test_submit_run_checks_status(self, instance, coordinator, workspace, remote_job):
         run = self.create_run_for_test(instance, remote_job, status=DagsterRunStatus.QUEUED)
-        coordinator.submit_run(SubmitRunContext(run, workspace))
+        coordinator.submit_run(dg.SubmitRunContext(run, workspace))
 
         # check that no enqueue event is reported (the submit run call is a no-op)
         assert (
@@ -179,7 +177,7 @@ class TestQueuedRunCoordinator:
     def test_cancel_run(self, instance, coordinator, workspace, remote_job):
         run = self.create_run_for_test(instance, remote_job, status=DagsterRunStatus.NOT_STARTED)
 
-        coordinator.submit_run(SubmitRunContext(run, workspace))
+        coordinator.submit_run(dg.SubmitRunContext(run, workspace))
 
         coordinator.cancel_run(run.run_id)
         stored_run = instance.get_run_by_id(run.run_id)
@@ -188,7 +186,7 @@ class TestQueuedRunCoordinator:
 
 def test_thread_config():
     num = 16
-    with instance_for_test(
+    with dg.instance_for_test(
         overrides={
             "run_coordinator": {
                 "module": "dagster._core.run_coordinator",

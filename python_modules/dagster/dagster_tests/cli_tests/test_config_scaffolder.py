@@ -1,12 +1,7 @@
-from dagster import (
-    Int,
-    OpDefinition,
-    ResourceDefinition,
-    _check as check,
-)
+import dagster as dg
+from dagster import _check as check
 from dagster._cli.config_scaffolder import scaffold_job_config, scaffold_type
 from dagster._config import config_type
-from dagster._core.definitions.graph_definition import GraphDefinition
 
 
 def fail_me():
@@ -21,12 +16,12 @@ def test_scalars():
 
 
 def test_basic_ops_config(snapshot):
-    job_def = GraphDefinition(
+    job_def = dg.GraphDefinition(
         name="BasicOpsConfigGraph",
         node_defs=[
-            OpDefinition(
+            dg.OpDefinition(
                 name="required_field_op",
-                config_schema={"required_int": Int},
+                config_schema={"required_int": dg.Int},
                 compute_fn=lambda *_args: fail_me(),
             )
         ],
@@ -58,4 +53,4 @@ def test_basic_ops_config(snapshot):
 
 
 def dummy_resource(config_field):
-    return ResourceDefinition(lambda _: None, config_field)
+    return dg.ResourceDefinition(lambda _: None, config_field)

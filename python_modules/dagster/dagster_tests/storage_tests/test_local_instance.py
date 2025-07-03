@@ -5,24 +5,17 @@ import time
 import types
 from concurrent.futures import ThreadPoolExecutor
 
+import dagster as dg
 import pytest
 import yaml
 from dagster import (
     DagsterEventType,
-    DagsterInvalidConfigError,
-    In,
-    Out,
-    Output,
     _check as check,
-    job,
-    op,
 )
-from dagster._core.definitions.events import RetryRequested
 from dagster._core.execution.stats import StepEventStatus
 from dagster._core.instance import DagsterInstance, InstanceRef, InstanceType
-from dagster._core.launcher import DefaultRunLauncher
 from dagster._core.run_coordinator import DefaultRunCoordinator
-from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
+from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.storage.event_log import SqliteEventLogStorage
 from dagster._core.storage.local_compute_log_manager import LocalComputeLogManager
 from dagster._core.storage.root import LocalArtifactStorage
@@ -33,9 +26,9 @@ from sqlalchemy import __version__ as sqlalchemy_version
 
 
 def test_fs_stores():
-    @job
+    @dg.job
     def simple():
-        @op
+        @dg.op
         def easy(context):
             context.log.info("easy")
             return "easy"
@@ -47,14 +40,14 @@ def test_fs_stores():
             run_store = SqliteRunStorage.from_local(temp_dir)
             event_store = SqliteEventLogStorage(temp_dir)
             compute_log_manager = LocalComputeLogManager(temp_dir)
-            instance = DagsterInstance(
+            instance = dg.DagsterInstance(
                 instance_type=InstanceType.PERSISTENT,
                 local_artifact_storage=LocalArtifactStorage(temp_dir),
                 run_storage=run_store,
                 event_storage=event_store,
                 compute_log_manager=compute_log_manager,
                 run_coordinator=DefaultRunCoordinator(),
-                run_launcher=DefaultRunLauncher(),
+                run_launcher=dg.DefaultRunLauncher(),
                 ref=InstanceRef.from_dir(temp_dir),
                 settings={"telemetry": {"enabled": False}},
             )
@@ -78,7 +71,7 @@ def test_init_compute_log_with_bad_config():
         with open(os.path.join(tmpdir_path, "dagster.yaml"), "w", encoding="utf8") as fd:
             yaml.dump({"compute_logs": {"garbage": "flargh"}}, fd, default_flow_style=False)
         with pytest.raises(
-            DagsterInvalidConfigError,
+            dg.DagsterInvalidConfigError,
             match='Received unexpected config entry "garbage"',
         ):
             DagsterInstance.from_ref(InstanceRef.from_dir(tmpdir_path))
@@ -87,7 +80,7 @@ def test_init_compute_log_with_bad_config():
 def test_init_compute_log_with_bad_config_override():
     with tempfile.TemporaryDirectory() as tmpdir_path:
         with pytest.raises(
-            DagsterInvalidConfigError,
+            dg.DagsterInvalidConfigError,
             match='Received unexpected config entry "garbage"',
         ):
             DagsterInstance.from_ref(
@@ -117,7 +110,7 @@ def test_get_run_by_id():
         instance = DagsterInstance.from_ref(InstanceRef.from_dir(tmpdir_path))
 
         assert instance.get_runs() == []
-        dagster_run = DagsterRun("foo_job", "new_run")
+        dagster_run = dg.DagsterRun("foo_job", "new_run")
         assert instance.get_run_by_id(dagster_run.run_id) is None
 
         instance.add_run(dagster_run)
@@ -129,14 +122,14 @@ def test_get_run_by_id():
     # Run is created after we check whether it exists
     with tempfile.TemporaryDirectory() as tmpdir_path:
         instance = DagsterInstance.from_ref(InstanceRef.from_dir(tmpdir_path))
-        run = DagsterRun(job_name="foo_job", run_id="bar_run")
+        run = dg.DagsterRun(job_name="foo_job", run_id="bar_run")
 
         def _has_run(self, run_id):  # pyright: ignore[reportRedeclaration]
             # This is uglier than we would like because there is no nonlocal keyword in py2
             global MOCK_HAS_RUN_CALLED  # noqa: PLW0602
 
             if not self._run_storage.has_run(run_id) and not MOCK_HAS_RUN_CALLED:
-                self._run_storage.add_run(DagsterRun(job_name="foo_job", run_id=run_id))
+                self._run_storage.add_run(dg.DagsterRun(job_name="foo_job", run_id=run_id))
                 return False
             else:
                 return self._run_storage.has_run(run_id)
@@ -150,12 +143,12 @@ def test_get_run_by_id():
     MOCK_HAS_RUN_CALLED = False
     with tempfile.TemporaryDirectory() as tmpdir_path:
         instance = DagsterInstance.from_ref(InstanceRef.from_dir(tmpdir_path))
-        run = DagsterRun(job_name="foo_job", run_id="bar_run")
+        run = dg.DagsterRun(job_name="foo_job", run_id="bar_run")
 
         def _has_run(self, run_id):
             global MOCK_HAS_RUN_CALLED  # noqa: PLW0603
             if not self._run_storage.has_run(run_id) and not MOCK_HAS_RUN_CALLED:
-                self._run_storage.add_run(DagsterRun(job_name="foo_job", run_id=run_id))
+                self._run_storage.add_run(dg.DagsterRun(job_name="foo_job", run_id=run_id))
                 MOCK_HAS_RUN_CALLED = True
                 return False
             elif self._run_storage.has_run(run_id) and MOCK_HAS_RUN_CALLED:
@@ -171,23 +164,23 @@ def test_get_run_by_id():
 def test_run_step_stats():
     _called = None
 
-    @job
+    @dg.job
     def simple():
-        @op
+        @dg.op
         def should_succeed(context):
             time.sleep(0.001)
             context.log.info("succeed")
             return "yay"
 
-        @op(
-            ins={"_input": In(str)},
-            out=Out(str),
+        @dg.op(
+            ins={"_input": dg.In(str)},
+            out=dg.Out(str),
         )
         def should_fail(context, _input):
             context.log.info("fail")
             raise Exception("booo")
 
-        @op
+        @dg.op
         def should_not_execute(_, x):
             _called = True
             return x
@@ -214,26 +207,26 @@ def test_run_step_stats_with_retries():
     _called = None
     _count = {"total": 0}
 
-    @job
+    @dg.job
     def simple():
-        @op
+        @dg.op
         def should_succeed(_):
             # This is to have at least one other step that retried to properly test
             # the step key filter on `get_run_step_stats`
             if _count["total"] < 2:
                 _count["total"] += 1
-                raise RetryRequested(max_retries=3)
+                raise dg.RetryRequested(max_retries=3)
 
-            yield Output("yay")
+            yield dg.Output("yay")
 
-        @op(
-            ins={"_input": In(str)},
-            out=Out(str),
+        @dg.op(
+            ins={"_input": dg.In(str)},
+            out=dg.Out(str),
         )
         def should_retry(context, _input):
-            raise RetryRequested(max_retries=3)
+            raise dg.RetryRequested(max_retries=3)
 
-        @op
+        @dg.op
         def should_not_execute(_, x):
             _called = True
             return x

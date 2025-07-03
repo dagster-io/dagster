@@ -1,6 +1,6 @@
 import importlib
 
-from dagster import Component
+import dagster as dg
 from dagster.components.core.package_entry import get_package_objects_in_module
 
 _COMPONENT_LIBRARY_MODULES = [
@@ -13,7 +13,7 @@ def test_all_components_have_component_suffix():
     for module_name in _COMPONENT_LIBRARY_MODULES:
         module = importlib.import_module(module_name)
         for name, obj in get_package_objects_in_module(module):
-            if isinstance(obj, type) and issubclass(obj, Component):
+            if isinstance(obj, type) and issubclass(obj, dg.Component):
                 assert name.endswith("Component"), (
                     f"Component {name} in module {module_name} does not have 'Component' suffix"
                 )

@@ -1,7 +1,7 @@
+import dagster as dg
 from dagster._core.definitions.declarative_automation.serialized_objects import (
     AutomationConditionEvaluationWithRunIds,
 )
-from dagster_shared.serdes import deserialize_value
 
 
 def test_backcompat_unpartitioned_skipped() -> None:
@@ -27,7 +27,7 @@ def test_backcompat_unpartitioned_skipped() -> None:
         '"AutoMaterializeDecisionType.MATERIALIZE"}, "description": "not materialized since last '
         'cron schedule tick of \'0 * * * *\' (timezone: UTC)"}], "run_ids": {"__set__": []}}'
     )
-    deserialized_with_run_ids = deserialize_value(
+    deserialized_with_run_ids = dg.deserialize_value(
         serialized_asset_evaluation, as_type=AutomationConditionEvaluationWithRunIds
     )
     deserialized = deserialized_with_run_ids.evaluation
@@ -54,7 +54,7 @@ def test_backcompat_unpartitioned_requested() -> None:
         '"AutoMaterializeDecisionType.MATERIALIZE"}, "description": "not materialized since last '
         'cron schedule tick of \'0 * * * *\' (timezone: UTC)"}], "run_ids": {"__set__": []}}'
     )
-    deserialized_with_run_ids = deserialize_value(
+    deserialized_with_run_ids = dg.deserialize_value(
         serialized_asset_evaluation, as_type=AutomationConditionEvaluationWithRunIds
     )
     deserialized = deserialized_with_run_ids.evaluation

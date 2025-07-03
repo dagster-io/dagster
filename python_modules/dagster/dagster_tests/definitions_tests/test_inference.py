@@ -1,8 +1,8 @@
-from dagster import op
+import dagster as dg
 
 
 def test_single_input():
-    @op
+    @dg.op
     def add_one(_context, num):
         return num + 1
 
@@ -13,7 +13,7 @@ def test_single_input():
 
 
 def test_double_input():
-    @op
+    @dg.op
     def subtract(_context, num_one, num_two):
         return num_one + num_two
 

@@ -2,7 +2,8 @@ import time
 from hashlib import sha256
 from typing import Any, Union
 
-from dagster import DagsterInstance, asset, materialize
+import dagster as dg
+from dagster import DagsterInstance
 from dagster._core.definitions.data_version import (
     CODE_VERSION_TAG,
     DATA_VERSION_TAG,
@@ -10,38 +11,29 @@ from dagster._core.definitions.data_version import (
     INPUT_EVENT_POINTER_TAG_PREFIX,
     UNKNOWN_DATA_VERSION,
     UNKNOWN_VALUE,
-    DataProvenance,
-    DataVersion,
     compute_logical_data_version,
     extract_data_provenance_from_entry,
     extract_data_version_from_entry,
 )
-from dagster._core.definitions.events import AssetKey, AssetMaterialization, AssetObservation
-from dagster._core.events import (
-    AssetObservationData,
-    DagsterEvent,
-    DagsterEventType,
-    StepMaterializationData,
-)
-from dagster._core.events.log import EventLogEntry
+from dagster._core.events import AssetObservationData, DagsterEventType, StepMaterializationData
 
 
-def create_test_event_log_entry(event_type: DagsterEventType, data: Any) -> EventLogEntry:
+def create_test_event_log_entry(event_type: DagsterEventType, data: Any) -> dg.EventLogEntry:
     event_specific_data: Union[StepMaterializationData, AssetObservationData]
-    if isinstance(data, AssetMaterialization):
+    if isinstance(data, dg.AssetMaterialization):
         event_specific_data = StepMaterializationData(data, [])
-    elif isinstance(data, AssetObservation):
+    elif isinstance(data, dg.AssetObservation):
         event_specific_data = AssetObservationData(data)
     else:
         raise Exception("Unsupported event type")
 
-    return EventLogEntry(
+    return dg.EventLogEntry(
         error_info=None,
         user_message="test",
         level="debug",
         run_id="test_run_id",
         timestamp=time.time(),
-        dagster_event=DagsterEvent(
+        dagster_event=dg.DagsterEvent(
             event_type.value,
             "test",
             event_specific_data=event_specific_data,
@@ -50,7 +42,7 @@ def create_test_event_log_entry(event_type: DagsterEventType, data: Any) -> Even
 
 
 def test_extract_data_version_and_provenance_from_materialization_entry():
-    materialization = AssetMaterialization(
+    materialization = dg.AssetMaterialization(
         asset_key="foo",
         tags={
             DATA_VERSION_TAG: "1",
@@ -62,23 +54,23 @@ def test_extract_data_version_and_provenance_from_materialization_entry():
         },
     )
     entry = create_test_event_log_entry(DagsterEventType.ASSET_MATERIALIZATION, materialization)
-    assert extract_data_version_from_entry(entry) == DataVersion("1")
-    assert extract_data_provenance_from_entry(entry) == DataProvenance(
+    assert extract_data_version_from_entry(entry) == dg.DataVersion("1")
+    assert extract_data_provenance_from_entry(entry) == dg.DataProvenance(
         code_version="3",
         input_storage_ids={
-            AssetKey(["assetgroup", "bar"]): 10,
-            AssetKey(["baz"]): 11,
+            dg.AssetKey(["assetgroup", "bar"]): 10,
+            dg.AssetKey(["baz"]): 11,
         },
         input_data_versions={
-            AssetKey(["assetgroup", "bar"]): DataVersion("2"),
-            AssetKey(["baz"]): DataVersion("3"),
+            dg.AssetKey(["assetgroup", "bar"]): dg.DataVersion("2"),
+            dg.AssetKey(["baz"]): dg.DataVersion("3"),
         },
         is_user_provided=False,
     )
 
 
 def test_extract_data_version_from_observation_entry():
-    observation = AssetObservation(
+    observation = dg.AssetObservation(
         asset_key="foo",
         tags={
             DATA_VERSION_TAG: "1",
@@ -88,40 +80,43 @@ def test_extract_data_version_from_observation_entry():
         DagsterEventType.ASSET_OBSERVATION,
         observation,
     )
-    assert extract_data_version_from_entry(entry) == DataVersion("1")
+    assert extract_data_version_from_entry(entry) == dg.DataVersion("1")
 
 
 def test_compute_logical_data_version():
     result = compute_logical_data_version(
-        "foo", {AssetKey(["beta"]): DataVersion("1"), AssetKey(["alpha"]): DataVersion("2")}
+        "foo",
+        {dg.AssetKey(["beta"]): dg.DataVersion("1"), dg.AssetKey(["alpha"]): dg.DataVersion("2")},
     )
     hash_sig = sha256()
     hash_sig.update(bytearray("".join(["foo", "2", "1"]), "utf8"))
-    assert result == DataVersion(hash_sig.hexdigest())
+    assert result == dg.DataVersion(hash_sig.hexdigest())
 
 
 def test_compute_logical_data_version_unknown_code_version():
-    result = compute_logical_data_version(UNKNOWN_VALUE, {AssetKey(["alpha"]): DataVersion("1")})
+    result = compute_logical_data_version(
+        UNKNOWN_VALUE, {dg.AssetKey(["alpha"]): dg.DataVersion("1")}
+    )
     assert result == UNKNOWN_DATA_VERSION
 
 
 def test_compute_logical_data_version_unknown_dep_version():
-    result = compute_logical_data_version("foo", {AssetKey(["alpha"]): UNKNOWN_DATA_VERSION})
+    result = compute_logical_data_version("foo", {dg.AssetKey(["alpha"]): UNKNOWN_DATA_VERSION})
     assert result == UNKNOWN_DATA_VERSION
 
 
 def test_get_latest_materialization_code_versions():
-    @asset(code_version="abc")
+    @dg.asset(code_version="abc")
     def has_code_version(): ...
 
-    @asset
+    @dg.asset
     def has_no_code_version(): ...
 
     instance = DagsterInstance.ephemeral()
-    materialize([has_code_version, has_no_code_version], instance=instance)
+    dg.materialize([has_code_version, has_no_code_version], instance=instance)
 
     latest_materialization_code_versions = instance.get_latest_materialization_code_versions(
-        [has_code_version.key, has_no_code_version.key, AssetKey("something_else")]
+        [has_code_version.key, has_no_code_version.key, dg.AssetKey("something_else")]
     )
     assert len(latest_materialization_code_versions) == 3
 
@@ -129,4 +124,4 @@ def test_get_latest_materialization_code_versions():
     assert (
         latest_materialization_code_versions[has_no_code_version.key] is not None
     )  # auto-generated
-    assert latest_materialization_code_versions[AssetKey("something_else")] is None
+    assert latest_materialization_code_versions[dg.AssetKey("something_else")] is None

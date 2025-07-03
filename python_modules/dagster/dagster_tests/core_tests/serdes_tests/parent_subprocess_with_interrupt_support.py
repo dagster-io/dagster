@@ -1,3 +1,5 @@
+import dagster as dg
+
 """Test a chain of child processes with interrupt support, ensure that interrupts can be
 correctly propagated and handled.
 """
@@ -5,7 +7,6 @@ correctly propagated and handled.
 import sys
 import time
 
-from dagster._utils import file_relative_path
 from dagster._utils.interrupts import setup_interrupt_handlers
 from dagster_shared.ipc import interrupt_ipc_subprocess, open_ipc_subprocess
 
@@ -20,7 +21,7 @@ if __name__ == "__main__":
     child_process = open_ipc_subprocess(
         [
             sys.executable,
-            file_relative_path(__file__, "subprocess_with_interrupt_support.py"),
+            dg.file_relative_path(__file__, "subprocess_with_interrupt_support.py"),
             child_started_sentinel,
             child_interrupt_sentinel,
         ]

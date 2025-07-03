@@ -1,4 +1,4 @@
-from dagster import Any, Bool, Field, Int, Noneable, Selector, Shape, String, StringSource
+import dagster as dg
 from dagster._config import (
     DagsterEvaluationErrorReason,
     EvaluateValueResult,
@@ -21,13 +21,13 @@ def assert_success(result, expected_value):
 
 
 def test_evaluate_scalar_success():
-    assert_success(eval_config_value_from_dagster_type(String, "foobar"), "foobar")
-    assert_success(eval_config_value_from_dagster_type(Int, 34234), 34234)
-    assert_success(eval_config_value_from_dagster_type(Bool, True), True)
+    assert_success(eval_config_value_from_dagster_type(dg.String, "foobar"), "foobar")
+    assert_success(eval_config_value_from_dagster_type(dg.Int, 34234), 34234)
+    assert_success(eval_config_value_from_dagster_type(dg.Bool, True), True)
 
 
 def test_evaluate_scalar_failure():
-    result = eval_config_value_from_dagster_type(String, 2343)
+    result = eval_config_value_from_dagster_type(dg.String, 2343)
     assert not result.success
     assert result.value is None
     assert len(result.errors) == 1  # pyright: ignore[reportArgumentType]
@@ -38,7 +38,7 @@ def test_evaluate_scalar_failure():
     assert error.error_data.value_rep == "2343"  # pyright: ignore[reportAttributeAccessIssue]
 
 
-SingleLevelShape = Shape({"level_one": Field(String)})
+SingleLevelShape = dg.Shape({"level_one": dg.Field(dg.String)})
 
 
 def test_single_error():
@@ -82,14 +82,14 @@ def test_root_missing_field():
     assert error.error_data.field_name == "level_one"  # pyright: ignore[reportAttributeAccessIssue]
 
 
-DoubleLevelShape = Shape(
+DoubleLevelShape = dg.Shape(
     {
-        "level_one": Field(
-            Shape(
+        "level_one": dg.Field(
+            dg.Shape(
                 {
-                    "string_field": Field(String),
-                    "int_field": Field(Int, is_required=False, default_value=989),
-                    "bool_field": Field(Bool),
+                    "string_field": dg.Field(dg.String),
+                    "int_field": dg.Field(dg.Int, is_required=False, default_value=989),
+                    "bool_field": dg.Field(dg.Bool),
                 }
             )
         )
@@ -209,12 +209,12 @@ def test_nested_missing_and_not_defined():
     )
 
 
-MultiLevelShapeType = Shape(
+MultiLevelShapeType = dg.Shape(
     {
-        "level_one_string_field": String,
+        "level_one_string_field": dg.String,
         "level_two_dict": {
-            "level_two_int_field": Int,
-            "level_three_dict": {"level_three_string": String},
+            "level_two_int_field": dg.Int,
+            "level_three_dict": {"level_three_string": dg.String},
         },
     }
 )
@@ -304,7 +304,9 @@ def test_deep_mixed_level_errors():
     assert final_level_error.reason == DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH
 
 
-ExampleSelector = Selector({"option_one": Field(String), "option_two": Field(String)})
+ExampleSelector = dg.Selector(
+    {"option_one": dg.Field(dg.String), "option_two": dg.Field(dg.String)}
+)
 
 
 def test_example_selector_success():
@@ -345,7 +347,7 @@ def test_example_selector_multiple_fields():
 
 def test_selector_within_dict_no_subfields():
     result = eval_config_value_from_dagster_type(
-        Shape({"selector": Field(ExampleSelector)}), {"selector": {}}
+        dg.Shape({"selector": dg.Field(ExampleSelector)}), {"selector": {}}
     )
     assert not result.success
     assert len(result.errors) == 1  # pyright: ignore[reportArgumentType]
@@ -356,7 +358,9 @@ def test_selector_within_dict_no_subfields():
     )
 
 
-SelectorWithDefaults = Selector({"default": Field(String, is_required=False, default_value="foo")})
+SelectorWithDefaults = dg.Selector(
+    {"default": dg.Field(dg.String, is_required=False, default_value="foo")}
+)
 
 
 def test_selector_with_defaults():
@@ -583,13 +587,13 @@ def test_config_double_list_double_error():
 
 
 def test_nullable_int():
-    assert not eval_config_value_from_dagster_type(Int, None).success
-    assert eval_config_value_from_dagster_type(Int, 0).success
-    assert eval_config_value_from_dagster_type(Int, 1).success
+    assert not eval_config_value_from_dagster_type(dg.Int, None).success
+    assert eval_config_value_from_dagster_type(dg.Int, 0).success
+    assert eval_config_value_from_dagster_type(dg.Int, 1).success
 
-    assert eval_config_value_from_dagster_type(Noneable(int), None).success
-    assert eval_config_value_from_dagster_type(Noneable(int), 0).success
-    assert eval_config_value_from_dagster_type(Noneable(int), 1).success
+    assert eval_config_value_from_dagster_type(dg.Noneable(int), None).success
+    assert eval_config_value_from_dagster_type(dg.Noneable(int), 0).success
+    assert eval_config_value_from_dagster_type(dg.Noneable(int), 1).success
 
 
 def test_nullable_list():
@@ -600,21 +604,21 @@ def test_nullable_list():
     assert not eval_config_value_from_dagster_type(list_of_ints, [None]).success
     assert eval_config_value_from_dagster_type(list_of_ints, [1]).success
 
-    nullable_list_of_ints = Noneable([int])
+    nullable_list_of_ints = dg.Noneable([int])
 
     assert eval_config_value_from_dagster_type(nullable_list_of_ints, None).success
     assert eval_config_value_from_dagster_type(nullable_list_of_ints, []).success
     assert not eval_config_value_from_dagster_type(nullable_list_of_ints, [None]).success
     assert eval_config_value_from_dagster_type(nullable_list_of_ints, [1]).success
 
-    list_of_nullable_ints = [Noneable(int)]
+    list_of_nullable_ints = [dg.Noneable(int)]
 
     assert not eval_config_value_from_dagster_type(list_of_nullable_ints, None).success
     assert eval_config_value_from_dagster_type(list_of_nullable_ints, []).success
     assert eval_config_value_from_dagster_type(list_of_nullable_ints, [None]).success
     assert eval_config_value_from_dagster_type(list_of_nullable_ints, [1]).success
 
-    nullable_list_of_nullable_ints = Noneable([Noneable(int)])
+    nullable_list_of_nullable_ints = dg.Noneable([dg.Noneable(int)])
 
     assert eval_config_value_from_dagster_type(nullable_list_of_nullable_ints, None).success
     assert eval_config_value_from_dagster_type(nullable_list_of_nullable_ints, []).success
@@ -623,14 +627,14 @@ def test_nullable_list():
 
 
 def test_nullable_dict():
-    dict_with_int = Shape({"int_field": Int})
+    dict_with_int = dg.Shape({"int_field": dg.Int})
 
     assert not eval_config_value_from_dagster_type(dict_with_int, None).success
     assert not eval_config_value_from_dagster_type(dict_with_int, {}).success
     assert not eval_config_value_from_dagster_type(dict_with_int, {"int_field": None}).success
     assert eval_config_value_from_dagster_type(dict_with_int, {"int_field": 1}).success
 
-    nullable_dict_with_int = Noneable(Shape({"int_field": Int}))
+    nullable_dict_with_int = dg.Noneable(dg.Shape({"int_field": dg.Int}))
 
     assert eval_config_value_from_dagster_type(nullable_dict_with_int, None).success
     assert not eval_config_value_from_dagster_type(nullable_dict_with_int, {}).success
@@ -639,7 +643,7 @@ def test_nullable_dict():
     ).success
     assert eval_config_value_from_dagster_type(nullable_dict_with_int, {"int_field": 1}).success
 
-    dict_with_nullable_int = Shape({"int_field": Field(Noneable(int))})
+    dict_with_nullable_int = dg.Shape({"int_field": dg.Field(dg.Noneable(int))})
 
     assert not eval_config_value_from_dagster_type(dict_with_nullable_int, None).success
     assert eval_config_value_from_dagster_type(dict_with_nullable_int, {}).success
@@ -649,7 +653,9 @@ def test_nullable_dict():
     assert eval_config_value_from_dagster_type(dict_with_nullable_int, {"int_field": None}).success
     assert eval_config_value_from_dagster_type(dict_with_nullable_int, {"int_field": 1}).success
 
-    nullable_dict_with_nullable_int = Noneable(Shape({"int_field": Field(Noneable(int))}))
+    nullable_dict_with_nullable_int = dg.Noneable(
+        dg.Shape({"int_field": dg.Field(dg.Noneable(int))})
+    )
 
     assert eval_config_value_from_dagster_type(nullable_dict_with_nullable_int, None).success
     assert eval_config_value_from_dagster_type(nullable_dict_with_nullable_int, None).value is None
@@ -666,7 +672,9 @@ def test_nullable_dict():
 
 
 def test_any_with_default_value():
-    dict_with_any = Shape({"any_field": Field(Any, default_value="foo", is_required=False)})
+    dict_with_any = dg.Shape(
+        {"any_field": dg.Field(dg.Any, default_value="foo", is_required=False)}
+    )
     result = eval_config_value_from_dagster_type(dict_with_any, {})
     assert result.success
     assert result.value == {"any_field": "foo"}
@@ -674,7 +682,7 @@ def test_any_with_default_value():
 
 def test_post_process_error():
     error_result = eval_config_value_from_dagster_type(
-        Shape({"foo": StringSource}), {"foo": {"env": "THIS_ENV_VAR_DOES_NOT_EXIST"}}
+        dg.Shape({"foo": dg.StringSource}), {"foo": {"env": "THIS_ENV_VAR_DOES_NOT_EXIST"}}
     )
     assert not error_result.success
     assert len(error_result.errors) == 1  # pyright: ignore[reportArgumentType]

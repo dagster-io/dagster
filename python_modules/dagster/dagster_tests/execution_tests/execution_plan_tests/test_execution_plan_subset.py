@@ -1,22 +1,22 @@
-from dagster import DependencyDefinition, GraphDefinition, In, Int, Out, Output, op
+import dagster as dg
 from dagster._core.definitions.job_base import InMemoryJob
 from dagster._core.execution.api import create_execution_plan, execute_plan
 from dagster._core.instance import DagsterInstance
 
 
 def define_two_int_pipeline():
-    @op
+    @dg.op
     def return_one():
         return 1
 
-    @op(ins={"num": In()})
+    @dg.op(ins={"num": dg.In()})
     def add_one(num):
         return num + 1
 
-    return GraphDefinition(
+    return dg.GraphDefinition(
         name="pipeline_ints",
         node_defs=[return_one, add_one],
-        dependencies={"add_one": {"num": DependencyDefinition("return_one")}},
+        dependencies={"add_one": {"num": dg.DependencyDefinition("return_one")}},
     ).to_job()
 
 
@@ -57,21 +57,23 @@ def test_execution_plan_simple_two_steps():
 
 
 def test_execution_plan_two_outputs():
-    @op(
+    @dg.op(
         out={
-            "num_one": Out(
-                Int,
+            "num_one": dg.Out(
+                dg.Int,
             ),
-            "num_two": Out(
-                Int,
+            "num_two": dg.Out(
+                dg.Int,
             ),
         }
     )
     def return_one_two(_context):
-        yield Output(1, "num_one")
-        yield Output(2, "num_two")
+        yield dg.Output(1, "num_one")
+        yield dg.Output(2, "num_two")
 
-    job_def = GraphDefinition(name="return_one_two_pipeline", node_defs=[return_one_two]).to_job()
+    job_def = dg.GraphDefinition(
+        name="return_one_two_pipeline", node_defs=[return_one_two]
+    ).to_job()
 
     execution_plan = create_execution_plan(job_def)
 
@@ -94,13 +96,13 @@ def test_execution_plan_two_outputs():
 def test_reentrant_execute_plan():
     called = {}
 
-    @op
+    @dg.op
     def has_tag(context):
         assert context.has_tag("foo")
         assert context.get_tag("foo") == "bar"
         called["yup"] = True
 
-    job_def = GraphDefinition(name="has_tag_pipeline", node_defs=[has_tag]).to_job()
+    job_def = dg.GraphDefinition(name="has_tag_pipeline", node_defs=[has_tag]).to_job()
     instance = DagsterInstance.ephemeral()
     execution_plan = create_execution_plan(job_def)
     dagster_run = instance.create_run_for_job(

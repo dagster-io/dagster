@@ -1,17 +1,16 @@
+import dagster as dg
 import pytest
-from dagster import ScheduleDefinition, job, op
-from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.storage.tags import RESUME_RETRY_TAG, RETRY_STRATEGY_TAG
 
 
 def test_op_tags():
-    @op(tags={"foo": "bar"})
+    @dg.op(tags={"foo": "bar"})
     def tags_op(_):
         pass
 
     assert tags_op.tags == {"foo": "bar"}
 
-    @op()
+    @dg.op()
     def no_tags_op(_):
         pass
 
@@ -19,13 +18,13 @@ def test_op_tags():
 
 
 def test_job_tags():
-    @job(tags={"foo": "bar"})
+    @dg.job(tags={"foo": "bar"})
     def tags_job():
         pass
 
     assert tags_job.tags == {"foo": "bar"}
 
-    @job
+    @dg.job
     def no_tags_job():
         pass
 
@@ -33,17 +32,17 @@ def test_job_tags():
 
 
 def test_op_subset_tags():
-    @op
+    @dg.op
     def noop_op(_):
         pass
 
-    @job(tags={"foo": "bar"})
+    @dg.job(tags={"foo": "bar"})
     def tags_job():
         noop_op()
 
     assert tags_job.get_subset(op_selection=["noop_op"]).tags == {"foo": "bar"}
 
-    @job
+    @dg.job
     def no_tags_job():
         noop_op()
 
@@ -51,19 +50,21 @@ def test_op_subset_tags():
 
 
 def test_user_editable_system_tags():
-    @op
+    @dg.op
     def noop_op(_):
         pass
 
-    @job
+    @dg.job
     def noop_job():
         noop_op()
 
-    ScheduleDefinition(
+    dg.ScheduleDefinition(
         job=noop_job, cron_schedule="* * * * *", tags={RETRY_STRATEGY_TAG: "ALL_STEPS"}
     )
 
     with pytest.raises(
-        DagsterInvalidDefinitionError, match="Attempted to set tag with reserved system prefix"
+        dg.DagsterInvalidDefinitionError, match="Attempted to set tag with reserved system prefix"
     ):
-        ScheduleDefinition(job=noop_job, cron_schedule="* * * * *", tags={RESUME_RETRY_TAG: "true"})
+        dg.ScheduleDefinition(
+            job=noop_job, cron_schedule="* * * * *", tags={RESUME_RETRY_TAG: "true"}
+        )

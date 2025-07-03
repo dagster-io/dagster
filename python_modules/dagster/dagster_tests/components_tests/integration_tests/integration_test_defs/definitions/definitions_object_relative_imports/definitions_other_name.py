@@ -1,11 +1,11 @@
-from dagster import Definitions, asset
+import dagster as dg
 
 from .other_file import asset_in_other_file  # noqa: TID252
 from .some_file import asset_in_some_file  # noqa: TID252
 
 
-@asset
+@dg.asset
 def an_asset_that_is_not_included() -> None: ...
 
 
-defs = Definitions(assets=[asset_in_some_file, asset_in_other_file])
+defs = dg.Definitions(assets=[asset_in_some_file, asset_in_other_file])
