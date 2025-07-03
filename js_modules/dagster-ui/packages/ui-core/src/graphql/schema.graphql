@@ -869,6 +869,18 @@ type FreshnessStatusInfo {
   freshnessStatusMetadata: AssetHealthFreshnessMeta
 }
 
+enum AssetHealthStatus {
+  HEALTHY
+  WARNING
+  DEGRADED
+  UNKNOWN
+  NOT_APPLICABLE
+}
+
+type AssetHealthFreshnessMeta {
+  lastMaterializedTimestamp: Float
+}
+
 union InternalFreshnessPolicy = TimeWindowFreshnessPolicy | CronFreshnessPolicy
 
 type TimeWindowFreshnessPolicy {
@@ -1112,14 +1124,6 @@ type AssetHealth {
   freshnessStatusMetadata: AssetHealthFreshnessMeta
 }
 
-enum AssetHealthStatus {
-  HEALTHY
-  WARNING
-  DEGRADED
-  UNKNOWN
-  NOT_APPLICABLE
-}
-
 union AssetHealthMaterializationMeta =
   | AssetHealthMaterializationDegradedPartitionedMeta
   | AssetHealthMaterializationHealthyPartitionedMeta
@@ -1159,10 +1163,6 @@ type AssetHealthCheckWarningMeta {
 type AssetHealthCheckUnknownMeta {
   numNotExecutedChecks: Int!
   totalNumChecks: Int!
-}
-
-type AssetHealthFreshnessMeta {
-  lastMaterializedTimestamp: Float
 }
 
 enum EvaluationErrorReason {
