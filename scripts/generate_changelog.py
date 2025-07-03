@@ -15,7 +15,6 @@ CHANGELOG_PATH = OSS_ROOT / "CHANGES.md"
 NEW_CHANGES_PATH = OSS_ROOT / "NEW_CHANGES.md"
 
 
-INTERNAL_REPO = git.Repo(os.environ["DAGSTER_INTERNAL_GIT_REPO_DIR"])
 INTERNAL_DEFAULT_STR = "If a changelog entry is required"
 
 CHANGELOG_HEADER = "## Changelog"
@@ -157,13 +156,12 @@ def _generate_changelog_text(new_version: str, prev_version: str) -> str:
     documented: list[ParsedCommit] = []
     undocumented: list[ParsedCommit] = []
 
-    for commit in _get_commits([OSS_REPO, INTERNAL_REPO], new_version, prev_version):
+    for commit in _get_commits([OSS_REPO], new_version, prev_version):
         if commit.ignore:
             continue
         elif commit.documented:
             documented.append(commit)
-        elif commit.repo_name != str(INTERNAL_REPO.git_dir).split("/")[-2]:
-            # default to ignoring undocumented internal commits
+        else:
             undocumented.append(commit)
 
     header = f"# Changelog\n\n## {new_version} (core) / {_get_libraries_version(new_version)} (libraries)"
@@ -183,7 +181,7 @@ def new_changelog(new_version: str, prev_version: Optional[str] = None) -> None:
         prev_version = _get_previous_version(new_version)
 
     # ensure that the release branches are available locally
-    for repo in [OSS_REPO, INTERNAL_REPO]:
+    for repo in [OSS_REPO]:
         repo.git.checkout("master")
         repo.git.pull()
         repo.git.checkout(f"release-{prev_version}")
