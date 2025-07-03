@@ -29,7 +29,7 @@
 ### dg & Components
 
 - Fixed an issue where `dg scaffold github-actions` would invoke the `dg` CLI with outdated parameters for serverless orgs.
-- [dagster-dlt] Fixed an issue where the default scaffolded dlt load lead to an invalid asset key.
+- [dagster-dlt] Fixed an issue where the default scaffolded dlt load led to an invalid asset key.
 
 ## 1.11.0 (core) / 0.27.0 (libraries)
 
