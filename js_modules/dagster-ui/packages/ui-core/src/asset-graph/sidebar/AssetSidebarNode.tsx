@@ -1,9 +1,9 @@
 import {Box, Colors, Icon, MiddleTruncate, UnstyledButton} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {observeEnabled} from 'shared/app/observeEnabled.oss';
-import styled from 'styled-components';
 
 import {StatusDot, StatusDotNode} from './StatusDot';
+import styles from './css/AssetSidebarNode.module.css';
 import {
   FolderNodeCodeLocationType,
   FolderNodeGroupType,
@@ -46,7 +46,8 @@ export const AssetSidebarNode = (props: AssetSidebarNodeProps) => {
   return (
     <Box ref={elementRef} padding={{left: 8, right: 12}}>
       <BoxWrapper level={level}>
-        <ItemContainer
+        <Box
+          className={styles.itemContainer}
           flex={{direction: 'row', alignItems: 'center'}}
           onClick={selectThisNode}
           onDoubleClick={(e) => !e.metaKey && toggleOpen()}
@@ -88,7 +89,7 @@ export const AssetSidebarNode = (props: AssetSidebarNodeProps) => {
           ) : (
             <AssetSidebarLocationLabel {...props} node={node} />
           )}
-        </ItemContainer>
+        </Box>
       </BoxWrapper>
     </Box>
   );
@@ -137,9 +138,9 @@ const AssetSidebarAssetLabel = ({
         }
         text={getDisplayName(node)}
       />
-      <ExpandMore onClick={triggerContextMenu}>
+      <UnstyledButton className={styles.expandMore} onClick={triggerContextMenu}>
         <Icon name="more_horiz" color={Colors.accentGray()} />
-      </ExpandMore>
+      </UnstyledButton>
       {dialog}
     </ContextMenuWrapper>
   );
@@ -163,9 +164,9 @@ const AssetSidebarGroupLabel = ({
         icon={<Icon name="asset_group" />}
         text={node.groupNode.groupName}
       />
-      <ExpandMore onClick={triggerContextMenu}>
+      <UnstyledButton className={styles.expandMore} onClick={triggerContextMenu}>
         <Icon name="more_horiz" color={Colors.accentGray()} />
-      </ExpandMore>
+      </UnstyledButton>
       {dialog}
     </ContextMenuWrapper>
   );
@@ -211,7 +212,8 @@ const FocusableLabelContainer = ({
   }, [isLastSelected]);
 
   return (
-    <GrayOnHoverBox
+    <UnstyledButton
+      className={styles.grayOnHoverBox}
       ref={ref}
       style={{
         gridTemplateColumns: icon ? 'auto minmax(0, 1fr)' : 'minmax(0, 1fr)',
@@ -221,7 +223,7 @@ const FocusableLabelContainer = ({
     >
       {icon}
       <MiddleTruncate text={text} />
-    </GrayOnHoverBox>
+    </UnstyledButton>
   );
 };
 
@@ -247,46 +249,6 @@ const BoxWrapper = ({level, children}: {level: number; children: React.ReactNode
 
   return <>{wrapper}</>;
 };
-
-const ExpandMore = styled(UnstyledButton)`
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  visibility: hidden;
-`;
-
-const GrayOnHoverBox = styled(UnstyledButton)`
-  border-radius: 8px;
-  user-select: none;
-  width: 100%;
-  display: grid;
-  flex-direction: row;
-  height: 32px;
-  align-items: center;
-  padding: 5px 8px;
-  justify-content: space-between;
-  gap: 6px;
-  flex-grow: 1;
-  flex-shrink: 1;
-  transition: background 100ms linear;
-`;
-
-export const ItemContainer = styled(Box)`
-  height: 32px;
-  position: relative;
-  cursor: pointer;
-
-  &:hover,
-  &:focus-within {
-    ${GrayOnHoverBox} {
-      background: ${Colors.backgroundLightHover()};
-    }
-
-    ${ExpandMore} {
-      visibility: visible;
-    }
-  }
-`;
 
 function isElementInsideSVGViewport(element: Element | null) {
   return !!element?.closest('[data-svg-viewport]');

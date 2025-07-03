@@ -4,7 +4,7 @@ import * as React from 'react';
 import {SubscriptionClient} from 'subscriptions-transport-ws';
 
 import {useFeatureFlags} from './Flags';
-import styles from './WebSocketProvider.module.css';
+import styles from './css/WebSocketProvider.module.css';
 
 type Availability = 'attempting-to-connect' | 'unavailable' | 'available';
 

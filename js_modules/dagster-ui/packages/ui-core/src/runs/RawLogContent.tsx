@@ -4,7 +4,7 @@ import clsx from 'clsx';
 import * as React from 'react';
 import {createGlobalStyle} from 'styled-components';
 
-import styles from './RawLogContent.module.css';
+import styles from './css/RawLogContent.module.css';
 
 const MAX_STREAMING_LOG_BYTES = 5242880; // 5 MB
 const TRUNCATE_PREFIX = '\u001b[33m...logs truncated...\u001b[39m\n';

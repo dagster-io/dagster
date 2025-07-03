@@ -1,8 +1,8 @@
 import clsx from 'clsx';
 import React from 'react';
 
-import styles from './ExecutionStateDot.module.css';
 import {IStepState} from './RunMetadataProvider';
+import styles from './css/ExecutionStateDot.module.css';
 
 // Map IStepState to CSS module classnames
 const stateClassMap: Record<IStepState, string> = {

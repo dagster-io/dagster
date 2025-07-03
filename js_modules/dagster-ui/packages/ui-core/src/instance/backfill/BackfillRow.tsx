@@ -3,8 +3,8 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 
 import {BackfillActionsMenu} from './BackfillActionsMenu';
-import styles from './BackfillRow.module.css';
 import {BackfillStatusTagForPage} from './BackfillStatusTagForPage';
+import styles from './css/BackfillRow.module.css';
 import {SingleBackfillQuery, SingleBackfillQueryVariables} from './types/BackfillRow.types';
 import {BackfillTableFragment} from './types/BackfillTable.types';
 import {QueryResult, gql, useQuery} from '../../apollo-client';

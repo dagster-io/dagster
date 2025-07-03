@@ -1,7 +1,7 @@
 import {Link} from 'react-router-dom';
 
-import styles from './TypeWithTooltip.module.css';
 import {gql} from '../apollo-client';
+import styles from './css/TypeWithTooltip.module.css';
 
 interface ITypeWithTooltipProps {
   type: {

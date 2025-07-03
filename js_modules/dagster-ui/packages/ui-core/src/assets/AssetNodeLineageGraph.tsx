@@ -1,10 +1,10 @@
 import {Box, Spinner} from '@dagster-io/ui-components';
 import React, {useMemo, useRef, useState} from 'react';
 import {useHistory} from 'react-router-dom';
-import styled from 'styled-components';
 
 import {SVGSaveZoomLevel, useLastSavedZoomLevel} from './SavedZoomLevel';
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
+import styles from './css/AssetNodeLineageGraph.module.css';
 import {AssetKey, AssetViewParams} from './types';
 import {useFeatureFlags} from '../app/Flags';
 import {AssetEdges} from '../asset-graph/AssetEdges';
@@ -117,7 +117,7 @@ const AssetNodeLineageGraphInner = ({
         }
       >
         {({scale}, viewportRect) => (
-          <SVGContainer width={layout.width} height={layout.height}>
+          <svg className={styles.svgContainer} width={layout.width} height={layout.height}>
             {viewportEl.current && <SVGSaveZoomLevel scale={scale} />}
 
             {Object.values(layout.groups)
@@ -210,14 +210,9 @@ const AssetNodeLineageGraphInner = ({
                   </foreignObject>
                 );
               })}
-          </SVGContainer>
+          </svg>
         )}
       </SVGViewport>
     </AssetGraphBackgroundContextMenu>
   );
 };
-
-const SVGContainer = styled.svg`
-  overflow: visible;
-  border-radius: 0;
-`;

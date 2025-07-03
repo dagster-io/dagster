@@ -1,0 +1,42 @@
+.contextHeader {
+  font-weight: 400;
+  margin: 0 0 1em;
+}
+
+.causeHeader {
+  font-weight: 400;
+  margin: 1em 0 1em;
+}
+
+.errorHeader {
+  color: var(--color-text-red);
+  font-weight: 400;
+  margin: 0.5em 0 0.25em;
+  white-space: pre-wrap;
+}
+
+.trace {
+  color: var(--color-text-light);
+  font-family: var(--font-family-monospace);
+  font-size: 12px;
+  font-variant-ligatures: none;
+  white-space: pre;
+  padding-bottom: 1em;
+}
+
+.errorWrapper {
+  background-color: var(--color-background-red);
+  border: 1px solid var(--color-accent-red);
+  border-radius: 3px;
+  max-width: 90vw;
+  max-height: calc(100vh - 250px);
+  padding: 1em 2em;
+  overflow: auto;
+}
+
+.errorWrapperCentered {
+  position: absolute;
+  left: 50%;
+  top: 100px;
+  transform: translate(-50%, 0);
+}

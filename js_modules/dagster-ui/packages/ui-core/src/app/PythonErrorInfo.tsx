@@ -1,12 +1,13 @@
-import {Box, Button, Colors, FontFamily, Icon} from '@dagster-io/ui-components';
+import {Box, Button, Icon} from '@dagster-io/ui-components';
+import clsx from 'clsx';
 import {Fragment, useRef} from 'react';
 import {PythonErrorInfoHeader} from 'shared/app/PythonErrorInfoHeader.oss';
 import {SummarizeErrorWithAIButton} from 'shared/runs/SummarizeErrorWithAIButton.oss';
-import styled from 'styled-components';
 
 import {showSharedToaster} from './DomUtils';
 import {useCopyToClipboard} from './browser';
 import {gql} from '../apollo-client';
+import styles from './css/PythonErrorInfo.module.css';
 import {PythonErrorChainFragment, PythonErrorFragment} from './types/PythonErrorFragment.types';
 import {ErrorSource} from '../graphql/types';
 import {MetadataEntries} from '../metadata/MetadataEntry';
@@ -29,7 +30,10 @@ interface IPythonErrorInfoProps {
 export const PythonErrorInfo = (props: IPythonErrorInfoProps) => {
   const {message, stack = [], errorChain = []} = props.error;
 
-  const Wrapper = props.centered ? ErrorWrapperCentered : ErrorWrapper;
+  const wrapperClass = clsx(
+    styles.errorWrapper,
+    props.centered ? styles.errorWrapperCentered : null,
+  );
   const context = props.errorSource ? <ErrorContext errorSource={props.errorSource} /> : null;
   const metadataEntries = props.failureMetadata?.metadataEntries;
   const copy = useCopyToClipboard();
@@ -43,7 +47,7 @@ export const PythonErrorInfo = (props: IPythonErrorInfoProps) => {
       ) : (
         context
       )}
-      <Wrapper ref={wrapperRef}>
+      <div ref={wrapperRef} className={wrapperClass}>
         <Box flex={{direction: 'row', gap: 6, alignItems: 'center', justifyContent: 'flex-end'}}>
           <SummarizeErrorWithAIButton error={props.error} />
           <CopyErrorButton
@@ -53,22 +57,22 @@ export const PythonErrorInfo = (props: IPythonErrorInfoProps) => {
             }}
           />
         </Box>
-        <ErrorHeader>{message}</ErrorHeader>
+        <h3 className={styles.errorHeader}>{message}</h3>
         {metadataEntries ? (
           <div style={{marginTop: 10, marginBottom: 10}}>
             <MetadataEntries entries={metadataEntries} />
           </div>
         ) : null}
-        {stack ? <Trace>{stack.join('')}</Trace> : null}
+        {stack ? <div className={styles.trace}>{stack.join('')}</div> : null}
         {errorChain.map((chainLink, ii) => (
           <Fragment key={ii}>
-            <CauseHeader>
+            <h3 className={styles.causeHeader}>
               {chainLink.isExplicitLink
                 ? 'The above exception was caused by the following exception:'
                 : 'The above exception occurred during handling of the following exception:'}
-            </CauseHeader>
-            <ErrorHeader>{chainLink.error.message}</ErrorHeader>
-            {stack ? <Trace>{chainLink.error.stack.join('')}</Trace> : null}
+            </h3>
+            <h3 className={styles.errorHeader}>{chainLink.error.message}</h3>
+            {stack ? <div className={styles.trace}>{chainLink.error.stack.join('')}</div> : null}
           </Fragment>
         ))}
         {props.showReload && (
@@ -76,7 +80,7 @@ export const PythonErrorInfo = (props: IPythonErrorInfoProps) => {
             Reload
           </Button>
         )}
-      </Wrapper>
+      </div>
     </>
   );
 };
@@ -85,7 +89,9 @@ const ErrorContext = ({errorSource}: {errorSource: ErrorSource}) => {
   switch (errorSource) {
     case ErrorSource.UNEXPECTED_ERROR:
       return (
-        <ContextHeader>An unexpected exception was thrown. Please file an issue.</ContextHeader>
+        <h4 className={styles.contextHeader}>
+          An unexpected exception was thrown. Please file an issue.
+        </h4>
       );
     default:
       return null;
@@ -116,45 +122,6 @@ export const CopyErrorButton = ({copy}: {copy: () => void | string}) => {
   );
 };
 
-const ContextHeader = styled.h4`
-  font-weight: 400;
-  margin: 0 0 1em;
-`;
-
-const CauseHeader = styled.h3`
-  font-weight: 400;
-  margin: 1em 0 1em;
-`;
-
-const ErrorHeader = styled.h3`
-  color: ${Colors.textRed()};
-  font-weight: 400;
-  margin: 0.5em 0 0.25em;
-  white-space: pre-wrap;
-`;
-
-const Trace = styled.div`
-  color: ${Colors.textLight()};
-  font-family: ${FontFamily.monospace};
-  font-size: 12px;
-  font-variant-ligatures: none;
-  white-space: pre;
-  padding-bottom: 1em;
-`;
-
-export const ErrorWrapper = styled.div`
-  background-color: ${Colors.backgroundRed()};
-  border: 1px solid ${Colors.accentRed()};
-  border-radius: 3px;
-  max-width: 90vw;
-  max-height: calc(100vh - 250px);
-  padding: 1em 2em;
-  overflow: auto;
-`;
-
-export const ErrorWrapperCentered = styled(ErrorWrapper)`
-  position: absolute;
-  left: 50%;
-  top: 100px;
-  transform: translate(-50%, 0);
-`;
+export const ErrorWrapper = ({children}: {children: React.ReactNode}) => (
+  <div className={styles.errorWrapper}>{children}</div>
+);

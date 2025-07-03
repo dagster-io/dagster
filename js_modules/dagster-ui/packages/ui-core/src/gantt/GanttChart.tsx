@@ -2,18 +2,15 @@ import {
   Box,
   Checkbox,
   Colors,
-  FontFamily,
   Group,
   Icon,
   Spinner,
-  SpinnerWrapper,
   SplitPanelContainer,
   useViewport,
 } from '@dagster-io/ui-components';
 import isEqual from 'lodash/isEqual';
 import * as React from 'react';
 import {useMemo} from 'react';
-import styled from 'styled-components';
 
 import {
   BOTTOM_INSET,
@@ -24,7 +21,6 @@ import {
   BOX_MARGIN_Y,
   BOX_SHOW_LABEL_WIDTH_CUTOFF,
   BOX_SPACING_X,
-  CSS_DURATION,
   DEFAULT_OPTIONS,
   GanttChartBox,
   GanttChartLayout,
@@ -50,6 +46,7 @@ import {GanttChartTimescale} from './GanttChartTimescale';
 import {GanttStatusPanel} from './GanttStatusPanel';
 import {OptionsContainer, OptionsSpacer} from './VizComponents';
 import {ZoomSlider} from './ZoomSlider';
+import styles from './css/GanttChart.module.css';
 import {RunGraphQueryItem} from './toGraphQueryItems';
 import {useGanttChartMode} from './useGanttChartMode';
 import {AppContext} from '../app/AppContext';
@@ -167,7 +164,7 @@ export const GanttChart = (props: GanttChartProps) => {
   );
 
   return (
-    <GanttChartContainer>
+    <div className={styles.ganttChartContainer}>
       <OptionsContainer>
         <GanttChartModeControl
           value={state.mode}
@@ -207,7 +204,7 @@ export const GanttChart = (props: GanttChartProps) => {
           })
         }
       />
-    </GanttChartContainer>
+    </div>
   );
 };
 
@@ -377,9 +374,9 @@ const GanttChartInner = React.memo((props: GanttChartInnerProps) => {
         </div>
       </div>
 
-      <GraphQueryInputContainer>
+      <div className={styles.graphQueryInputContainer}>
         {lostWebsocket ? (
-          <WebsocketWarning>
+          <div className={styles.websocketWarning}>
             <Box flex={{justifyContent: 'space-around'}} margin={{bottom: 12}}>
               <Group
                 direction="row"
@@ -397,9 +394,12 @@ const GanttChartInner = React.memo((props: GanttChartInnerProps) => {
                 </div>
               </Group>
             </Box>
-          </WebsocketWarning>
+          </div>
         ) : null}
-        <FilterInputsBackgroundBox flex={{direction: 'row', alignItems: 'center', gap: 12}}>
+        <Box
+          className={styles.filterInputsBackgroundBox}
+          flex={{direction: 'row', alignItems: 'center', gap: 12}}
+        >
           <GanttChartSelectionInput
             items={props.graph}
             value={props.selection.query}
@@ -411,8 +411,8 @@ const GanttChartInner = React.memo((props: GanttChartInnerProps) => {
             label="Hide unselected steps"
             onChange={props.onChange}
           />
-        </FilterInputsBackgroundBox>
-      </GraphQueryInputContainer>
+        </Box>
+      </div>
     </>
   );
 
@@ -737,141 +737,12 @@ function truncatedBoxLabel(box: GanttChartBox) {
 // Note: It is much faster to use standard CSS class selectors here than make
 // each box and line a styled-component because all styled components register
 // listeners for the "theme" React context.
-const GanttChartContainer = styled.div`
-  height: 100%;
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  z-index: 2;
-  user-select: none;
-  background: ${Colors.backgroundDefault()};
-
-  .line {
-    position: absolute;
-    user-select: none;
-    pointer-events: none;
-    transition:
-      top ${CSS_DURATION}ms linear,
-      left ${CSS_DURATION}ms linear,
-      width ${CSS_DURATION}ms linear,
-      height ${CSS_DURATION}ms linear;
-  }
-
-  .chart-element {
-    font-size: 12px;
-    transition:
-      top ${CSS_DURATION}ms linear,
-      left ${CSS_DURATION}ms linear;
-    display: inline-block;
-    position: absolute;
-    color: ${Colors.accentReversed()};
-    overflow: hidden;
-    user-select: text;
-    z-index: 2;
-
-    user-select: none;
-    -webkit-user-select: none;
-    -moz-user-select: none;
-    -ms-user-select: none;
-  }
-
-  .dot {
-    width: ${BOX_DOT_SIZE}px;
-    height: ${BOX_DOT_SIZE}px;
-    border: 1px solid transparent;
-    border-radius: ${BOX_DOT_SIZE / 2}px;
-  }
-
-  .box {
-    /* Note: padding + font changes may also impact truncatedBoxLabel */
-
-    height: ${BOX_HEIGHT - BOX_MARGIN_Y * 2}px;
-    padding: 3px;
-    padding-right: 1px;
-    border-radius: 2px;
-    white-space: nowrap;
-    font-family: ${FontFamily.monospace};
-    font-size: 12px;
-    font-weight: 700;
-    line-height: 15px;
-
-    transition:
-      top ${CSS_DURATION}ms linear,
-      left ${CSS_DURATION}ms linear,
-      width ${CSS_DURATION}ms linear,
-      height ${CSS_DURATION}ms linear,
-      box-shadow ${CSS_DURATION}ms linear;
-
-    &.focused {
-      box-shadow: 0 0 0 2px ${Colors.focusRing()};
-    }
-    &.hovered {
-      box-shadow: 0 0 0 2px ${Colors.focusRing()};
-    }
-    &.dynamic {
-      filter: brightness(115%);
-    }
-
-    ${SpinnerWrapper} {
-      display: inline-block;
-      vertical-align: text-bottom;
-      padding-right: 4px;
-    }
-  }
-
-  .marker-dot {
-    width: ${BOX_DOT_SIZE}px;
-    height: ${BOX_DOT_SIZE}px;
-    border: 1px solid ${Colors.accentCyan()};
-    border-radius: ${BOX_DOT_SIZE / 2}px;
-  }
-
-  .marker-whiskers {
-    display: inline-block;
-    position: absolute;
-    height: ${BOX_HEIGHT - BOX_MARGIN_Y * 2}px;
-    background-color: ${Colors.backgroundCyan()};
-    border-left: 1px solid ${Colors.accentCyan()};
-    border-right: 1px solid ${Colors.accentCyan()};
-    transition:
-      top ${CSS_DURATION}ms linear,
-      left ${CSS_DURATION}ms linear,
-      width ${CSS_DURATION}ms linear;
-
-    & > div {
-      border-bottom: 1px dashed ${Colors.accentCyan()};
-      height: ${(BOX_HEIGHT - BOX_MARGIN_Y * 2) / 2}px;
-    }
-  }
-`;
-
-const WebsocketWarning = styled.div`
-  position: absolute;
-  bottom: 100%;
-  color: ${Colors.textYellow()};
-  width: 100%;
-`;
-
-const GraphQueryInputContainer = styled.div`
-  z-index: 2;
-  position: absolute;
-  bottom: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  white-space: nowrap;
-`;
-
-const FilterInputsBackgroundBox = styled(Box)`
-  background-color: ${Colors.backgroundGray()};
-  border-radius: 4px;
-  padding: 8px 12px 8px 8px;
-`;
 
 const EMPTY_GRAPH: GraphQueryItem[] = [];
 const EMPTY_SELECTION = {keys: [], query: '*'};
 
 export const GanttChartLoadingState = ({runId}: {runId: string}) => (
-  <GanttChartContainer>
+  <div className={styles.ganttChartContainer}>
     <OptionsContainer />
     <SplitPanelContainer
       identifier="gantt-split"
@@ -892,5 +763,5 @@ export const GanttChartLoadingState = ({runId}: {runId: string}) => (
         />
       }
     />
-  </GanttChartContainer>
+  </div>
 );

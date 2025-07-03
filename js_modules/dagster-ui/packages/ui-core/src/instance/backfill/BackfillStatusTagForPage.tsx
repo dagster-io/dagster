@@ -1,6 +1,6 @@
 import {Box, ButtonLink, Tag} from '@dagster-io/ui-components';
 
-import styles from './BackfillStatusTagForPage.module.css';
+import styles from './css/BackfillStatusTagForPage.module.css';
 import {showCustomAlert} from '../../app/CustomAlertProvider';
 import {PythonErrorInfo} from '../../app/PythonErrorInfo';
 import {PythonErrorFragment} from '../../app/types/PythonErrorFragment.types';

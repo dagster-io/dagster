@@ -1,6 +1,6 @@
 import * as React from 'react';
 
-import styles from './Page.module.css';
+import styles from './css/Page.module.css';
 
 export const Page = (props: React.HTMLAttributes<HTMLDivElement>) => {
   const {children, className, ...rest} = props;

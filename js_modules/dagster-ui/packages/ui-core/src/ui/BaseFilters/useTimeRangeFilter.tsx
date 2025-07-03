@@ -5,8 +5,8 @@ import isEqual from 'lodash/isEqual';
 import momentTZ from 'moment-timezone';
 import {useContext, useEffect, useMemo, useState} from 'react';
 
+import styles from './css/useTimeRangeFilter.module.css';
 import {FilterObject, FilterTag, FilterTagHighlightedText} from './useFilter';
-import styles from './useTimeRangeFilter.module.css';
 import {TimeContext} from '../../app/time/TimeContext';
 import {browserTimezone} from '../../app/time/browserTimezone';
 import {useUpdatingRef} from '../../hooks/useUpdatingRef';

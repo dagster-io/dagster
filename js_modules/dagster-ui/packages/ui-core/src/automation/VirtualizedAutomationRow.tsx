@@ -1,6 +1,8 @@
 import {Box} from '@dagster-io/ui-components';
+import {BorderSetting, BorderSide} from '@dagster-io/ui-components/src/components/types';
+import React from 'react';
 
-import styles from './VirtualizedAutomationRow.module.css';
+import styles from './css/VirtualizedAutomationRow.module.css';
 import {HeaderCell, HeaderRow} from '../ui/VirtualizedTable';
 
 export const TEMPLATE_COLUMNS = '60px minmax(400px, 1.5fr) 240px 1fr 200px 200px';
@@ -20,7 +22,13 @@ export const VirtualizedAutomationHeader = ({checkbox}: {checkbox: React.ReactNo
   );
 };
 
-export const AutomationRowGrid = ({children, ...rest}) => (
+export const AutomationRowGrid = ({
+  children,
+  ...rest
+}: {
+  children: React.ReactNode;
+  border?: BorderSide | BorderSetting | null;
+}) => (
   <Box
     className={styles.automationRowGrid}
     style={{gridTemplateColumns: TEMPLATE_COLUMNS}}

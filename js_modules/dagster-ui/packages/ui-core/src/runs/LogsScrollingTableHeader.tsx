@@ -1,7 +1,7 @@
 import {Colors} from '@dagster-io/ui-components';
 import * as React from 'react';
 
-import styles from './LogsScrollingTableHeader.module.css';
+import styles from './css/LogsScrollingTableHeader.module.css';
 import {getJSONForKey} from '../hooks/useStateWithStorage';
 
 const ColumnWidthsStorageKey = 'ColumnWidths';

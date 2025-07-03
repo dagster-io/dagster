@@ -1,6 +1,6 @@
 import clsx from 'clsx';
 
-import styles from './KeyboardTag.module.css';
+import styles from './css/KeyboardTag.module.css';
 
 interface KeyboardTagProps {
   $withinTooltip?: boolean;

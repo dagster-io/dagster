@@ -2,7 +2,7 @@ import {Box, Colors, Icon} from '@dagster-io/ui-components';
 import clsx from 'clsx';
 import * as React from 'react';
 
-import styles from './ToggleableSection.module.css';
+import styles from './css/ToggleableSection.module.css';
 
 export const ToggleableSection = ({
   isInitiallyOpen,

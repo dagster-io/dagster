@@ -1,8 +1,7 @@
-import {Colors, FontFamily} from '@dagster-io/ui-components';
 import * as React from 'react';
-import styled from 'styled-components';
 
-import {CSS_DURATION, GanttViewport, LEFT_INSET} from './Constants';
+import {GanttViewport, LEFT_INSET} from './Constants';
+import styles from './css/GanttChartTimescale.module.css';
 import {formatElapsedTimeWithoutMsec} from '../app/Util';
 
 const ONE_MIN = 60 * 1000;
@@ -94,7 +93,6 @@ interface GanttChartTimescaleProps {
   highlightedMs: number[];
 }
 
-const TICKS_ROW_HEIGHT = 32;
 const TICK_LABEL_WIDTH = 56;
 const MIN_PX_BETWEEN_TICKS = 80;
 
@@ -131,8 +129,8 @@ export const GanttChartTimescale = React.memo(
     }
 
     return (
-      <TimescaleContainer>
-        <TimescaleTicksContainer>
+      <div className={styles.timescaleContainer}>
+        <div className={styles.timescaleTicksContainer}>
           {ticks}
           {highlightedMs.length === 2 && (
             <div
@@ -162,8 +160,11 @@ export const GanttChartTimescale = React.memo(
               </div>
             );
           })}
-        </TimescaleTicksContainer>
-        <TimescaleLinesContainer style={{width: viewport.width, height: viewport.height}}>
+        </div>
+        <div
+          className={styles.timescaleLinesContainer}
+          style={{width: viewport.width, height: viewport.height}}
+        >
           {lines}
           {highlightedMs.map((ms, idx) => (
             <div
@@ -183,77 +184,8 @@ export const GanttChartTimescale = React.memo(
               }}
             ></div>
           )}
-        </TimescaleLinesContainer>
-      </TimescaleContainer>
+        </div>
+      </div>
     );
   },
 );
-
-const TimescaleContainer = styled.div`
-  width: 100%;
-
-  & .tick {
-    position: absolute;
-    padding-top: 7px;
-    width: ${TICK_LABEL_WIDTH}px;
-    height: ${TICKS_ROW_HEIGHT}px;
-    box-sizing: border-box;
-    transition:
-      left ${CSS_DURATION}ms linear,
-      width ${CSS_DURATION}ms linear;
-    text-align: center;
-  }
-  & .tick.duration {
-    color: ${Colors.textLight()};
-    background: ${Colors.backgroundLight()};
-    box-shadow: 0 1px 1px ${Colors.shadowDefault()};
-  }
-  & .tick.highlight {
-    color: ${Colors.accentReversed()};
-    height: ${TICKS_ROW_HEIGHT + 2}px;
-    background: ${Colors.accentPrimary()};
-  }
-  & .line {
-    position: absolute;
-    border-left: 1px solid ${Colors.keylineDefault()};
-    transition: left ${CSS_DURATION}ms linear;
-    top: 0px;
-    bottom: 0px;
-  }
-  & .line.highlight {
-    border-left: 2px solid ${Colors.borderDefault()};
-    z-index: 1111;
-    top: -1px;
-  }
-
-  & .fog-of-war {
-    position: absolute;
-    background: ${Colors.backgroundLight()};
-    transition: left ${CSS_DURATION}ms linear;
-    top: 0px;
-    bottom: 0px;
-    width: 100%;
-  }
-`;
-
-const TimescaleTicksContainer = styled.div`
-  height: ${TICKS_ROW_HEIGHT}px;
-  z-index: 4;
-  position: relative;
-  background: ${Colors.backgroundLight()};
-  display: flex;
-  color: ${Colors.textLight()};
-  font-size: 11px;
-  font-family: ${FontFamily.monospace};
-  box-shadow: inset 0 -1px ${Colors.keylineDefault()};
-  overflow: hidden;
-`;
-
-const TimescaleLinesContainer = styled.div`
-  z-index: 0;
-  top: ${TICKS_ROW_HEIGHT}px;
-  left: 0;
-  position: absolute;
-  pointer-events: none;
-  overflow: hidden;
-`;

@@ -1,11 +1,11 @@
-import {Box, Button, ButtonGroup, Colors, Icon} from '@dagster-io/ui-components';
+import {Box, Button, ButtonGroup, Icon} from '@dagster-io/ui-components';
 import React, {useContext, useMemo} from 'react';
-import styled from 'styled-components';
 
 import {AssetFeatureContext} from './AssetFeatureContext';
 import {AssetNodeLineageGraph} from './AssetNodeLineageGraph';
 import {LaunchAssetExecutionButton} from './LaunchAssetExecutionButton';
 import {LineageDepthControl} from './LineageDepthControl';
+import styles from './css/AssetNodeLineage.module.css';
 import {AssetLineageScope, AssetViewParams} from './types';
 import {GraphData} from '../asset-graph/Utils';
 import {AssetGraphQueryItem} from '../asset-graph/types';
@@ -85,25 +85,11 @@ export const AssetNodeLineage = ({
         )}
       </Box>
       {currentDepth < maxDepth && (
-        <DepthHidesAssetsNotice>
+        <div className={styles.depthHidesAssetsNotice}>
           Not all upstream/downstream assets shown. Increase the depth to show more.
-        </DepthHidesAssetsNotice>
+        </div>
       )}
       <LineageGraph params={params} assetKey={assetKey} assetGraphData={assetGraphData} />
     </Box>
   );
 };
-
-const DepthHidesAssetsNotice = styled.div`
-  background: ${Colors.backgroundLight()};
-  border-radius: 8px;
-  color: ${Colors.textLight()};
-  align-items: center;
-  display: flex;
-  padding: 4px 8px;
-  gap: 4px;
-  position: absolute;
-  right: 12px;
-  top: 70px;
-  z-index: 2;
-`;

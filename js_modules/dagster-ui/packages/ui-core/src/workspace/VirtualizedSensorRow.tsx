@@ -17,7 +17,7 @@ import {RepoAddress} from './types';
 import {SingleSensorQuery, SingleSensorQueryVariables} from './types/VirtualizedSensorRow.types';
 import {workspacePathFromAddress} from './workspacePath';
 import {gql, useQuery} from '../apollo-client';
-import styles from './VirtualizedSensorRow.module.css';
+import styles from './css/VirtualizedSensorRow.module.css';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {AutomationTargetList} from '../automation/AutomationTargetList';
 import {InstigationStatus, SensorType} from '../graphql/types';

@@ -1,4 +1,4 @@
-import styles from './Markdown.module.css';
+import styles from './css/Markdown.module.css';
 import {lazy} from '../util/lazy';
 
 const MarkdownWithPlugins = lazy(() => import('./MarkdownWithPlugins'));

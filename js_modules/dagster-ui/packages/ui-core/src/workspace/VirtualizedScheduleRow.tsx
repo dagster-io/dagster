@@ -14,9 +14,9 @@ import {
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
-import styles from './VirtualizedScheduleRow.module.css';
 import {LoadingOrNone} from './VirtualizedWorkspaceTable';
 import {isThisThingAJob, useRepository} from './WorkspaceContext/util';
+import styles from './css/VirtualizedScheduleRow.module.css';
 import {RepoAddress} from './types';
 import {
   SingleScheduleQuery,

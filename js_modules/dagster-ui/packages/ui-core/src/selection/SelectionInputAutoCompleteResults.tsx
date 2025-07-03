@@ -13,7 +13,7 @@ import {useVirtualizer} from '@tanstack/react-virtual';
 import React, {useEffect} from 'react';
 
 import {Suggestion} from './SelectionAutoCompleteProvider';
-import styles from './SelectionInputAutoCompleteResults.module.css';
+import styles from './css/SelectionInputAutoCompleteResults.module.css';
 import {IndeterminateLoadingBar} from '../ui/IndeterminateLoadingBar';
 
 type SelectionInputAutoCompleteResultsProps = {

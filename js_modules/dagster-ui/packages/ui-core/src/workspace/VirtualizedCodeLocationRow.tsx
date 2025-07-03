@@ -7,17 +7,17 @@ import {CodeLocationMenu} from './CodeLocationMenu';
 import {ImageName, LocationStatus, ModuleOrPackageOrFile, ReloadButton} from './CodeLocationRowSet';
 import {CodeLocationRowStatusType} from './CodeLocationRowStatusType';
 import {RepositoryCountTags} from './RepositoryCountTags';
-import styles from './VirtualizedCodeLocationRow.module.css';
 import {WorkspaceRepositoryLocationNode} from './WorkspaceContext/WorkspaceContext';
+import {DUNDER_REPO_NAME, buildRepoAddress} from './buildRepoAddress';
+import {repoAddressAsHumanString} from './repoAddressAsString';
+import {workspacePathFromAddress} from './workspacePath';
+import {featureEnabled} from '../app/Flags';
 import {
   LocationStatusEntryFragment,
   WorkspaceLocationNodeFragment,
   WorkspaceRepositoryFragment,
 } from './WorkspaceContext/types/WorkspaceQueries.types';
-import {DUNDER_REPO_NAME, buildRepoAddress} from './buildRepoAddress';
-import {repoAddressAsHumanString} from './repoAddressAsString';
-import {workspacePathFromAddress} from './workspacePath';
-import {featureEnabled} from '../app/Flags';
+import styles from './css/VirtualizedCodeLocationRow.module.css';
 import {AnchorButton} from '../ui/AnchorButton';
 import {TimeFromNow} from '../ui/TimeFromNow';
 import {HeaderCell, HeaderRow, RowCell} from '../ui/VirtualizedTable';
@@ -58,7 +58,7 @@ export const VirtualizedCodeLocationRow = React.forwardRef(
       <div ref={ref} data-index={index}>
         <Box
           className={styles.rowGrid}
-          style={{'--template-columns': TEMPLATE_COLUMNS}}
+          style={{gridTemplateColumns: TEMPLATE_COLUMNS}}
           border="bottom"
         >
           <RowCell>

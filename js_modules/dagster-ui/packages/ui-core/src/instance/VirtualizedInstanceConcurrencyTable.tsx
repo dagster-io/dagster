@@ -3,8 +3,8 @@ import {useVirtualizer} from '@tanstack/react-virtual';
 import {useRef} from 'react';
 import {Link} from 'react-router-dom';
 
-import styles from './VirtualizedInstanceConcurrencyTable.module.css';
 import {gql, useQuery} from '../apollo-client';
+import styles from './css/VirtualizedInstanceConcurrencyTable.module.css';
 import {
   SingleConcurrencyKeyQuery,
   SingleConcurrencyKeyQueryVariables,

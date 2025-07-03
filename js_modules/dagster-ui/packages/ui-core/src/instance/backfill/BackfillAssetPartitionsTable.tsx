@@ -11,7 +11,7 @@ import {useVirtualizer} from '@tanstack/react-virtual';
 import React, {useRef} from 'react';
 import {Link, useHistory} from 'react-router-dom';
 
-import styles from './BackfillAssetPartitionsTable.module.css';
+import styles from './css/BackfillAssetPartitionsTable.module.css';
 import {
   BackfillPartitionsForAssetKeyQuery,
   BackfillPartitionsForAssetKeyQueryVariables,

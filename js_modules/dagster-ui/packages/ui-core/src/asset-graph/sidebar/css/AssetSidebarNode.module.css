@@ -1,0 +1,38 @@
+.expandMore {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  visibility: hidden;
+}
+
+.grayOnHoverBox {
+  border-radius: 8px;
+  user-select: none;
+  width: 100%;
+  display: grid;
+  flex-direction: row;
+  height: 32px;
+  align-items: center;
+  padding: 5px 8px;
+  justify-content: space-between;
+  gap: 6px;
+  flex-grow: 1;
+  flex-shrink: 1;
+  transition: background 100ms linear;
+}
+
+.itemContainer {
+  height: 32px;
+  position: relative;
+  cursor: pointer;
+}
+
+.itemContainer:hover .grayOnHoverBox,
+.itemContainer:focus-within .grayOnHoverBox {
+  background: var(--color-background-light-hover);
+}
+
+.itemContainer:hover .expandMore,
+.itemContainer:focus-within .expandMore {
+  visibility: visible;
+}

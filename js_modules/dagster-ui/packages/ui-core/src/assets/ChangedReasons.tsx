@@ -8,9 +8,9 @@ import {
   Tag,
   ifPlural,
 } from '@dagster-io/ui-components';
-import styled from 'styled-components';
 
 import {displayNameForAssetKey} from '../asset-graph/Utils';
+import styles from './css/ChangedReasons.module.css';
 import {AssetKeyInput, ChangeReason} from '../graphql/types';
 import {numberFormatter} from '../ui/formatters';
 
@@ -109,28 +109,7 @@ export const MinimalNodeChangedDot = ({
 }) => {
   return (
     <ChangedReasonsPopover changedReasons={changedReasons} assetKey={assetKey}>
-      <MinimalNodeChangedDotContainer />
+      <div className={styles.minimalNodeChangedDotContainer} />
     </ChangedReasonsPopover>
   );
 };
-
-const MinimalNodeChangedDotContainer = styled.div`
-  position: absolute;
-  right: 6px;
-  top: 6px;
-  height: 20px;
-  width: 20px;
-  border-radius: 50%;
-  background-color: ${Colors.backgroundCyan()};
-  &:after {
-    display: block;
-    position: absolute;
-    content: ' ';
-    left: 5px;
-    top: 5px;
-    height: 10px;
-    width: 10px;
-    border-radius: 50%;
-    background-color: ${Colors.accentCyan()};
-  }
-`;

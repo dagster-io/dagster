@@ -1,7 +1,7 @@
 import clsx from 'clsx';
 import React from 'react';
 
-import styles from './InsightsIdentifierDot.module.css';
+import styles from './css/InsightsIdentifierDot.module.css';
 
 interface InsightsIdentifierDotProps {
   color: string;

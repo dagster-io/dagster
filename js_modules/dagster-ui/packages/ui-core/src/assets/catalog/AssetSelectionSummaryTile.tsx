@@ -3,8 +3,8 @@ import clsx from 'clsx';
 import React, {useMemo} from 'react';
 import {Link} from 'react-router-dom';
 
-import styles from './AssetSelectionSummaryTile.module.css';
 import {JOB_TILE_QUERY} from './JobTileQuery';
+import styles from './css/AssetSelectionSummaryTile.module.css';
 import {getHealthStatuses, getThreadId, useAssetHealthStatuses} from './util';
 import {useQuery} from '../../apollo-client';
 import {JobTileQuery, JobTileQueryVariables} from './types/JobTileQuery.types';

@@ -1,11 +1,12 @@
 import {Box, Caption, Colors, Icon, MonoSmall, Spinner, Tag} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
+import clsx from 'clsx';
 import {useEffect, useMemo, useRef} from 'react';
-import styled from 'styled-components';
 
 import {AssetEventGroup} from './groupByPartition';
 import {Timestamp} from '../app/time/Timestamp';
 import {Container, Inner, Row} from '../ui/VirtualizedTable';
+import styles from './css/AssetEventList.module.css';
 
 // This component is on the feature-flagged AssetOverview page and replaces AssetEventTable
 
@@ -51,7 +52,8 @@ export const AssetEventList = ({
       style={{position: 'relative', flex: 1, minHeight: 0}}
       padding={{vertical: 12, horizontal: 16}}
     >
-      <AssetListContainer
+      <Container
+        className={styles.assetListContainer}
         ref={parentRef}
         onScroll={(e) => {
           if (
@@ -67,11 +69,11 @@ export const AssetEventList = ({
           {items.map(({index, key, size, start}) => {
             const group = groups[index]!;
             return (
-              <AssetListRow
+              <Row
+                className={clsx(styles.assetListRow, group === focused ? styles.focused : null)}
                 key={key}
                 $height={size}
                 $start={start}
-                $focused={group === focused}
                 ref={group === focused ? focusedRowRef : undefined}
                 onClick={(e) => {
                   // If you're interacting with something in the row, don't trigger a focus change.
@@ -95,11 +97,11 @@ export const AssetEventList = ({
                     <AssetEventListEventRow group={group} />
                   )}
                 </Box>
-              </AssetListRow>
+              </Row>
             );
           })}
         </Inner>
-      </AssetListContainer>
+      </Container>
 
       {loading ? (
         <Box
@@ -120,34 +122,6 @@ export const AssetEventList = ({
     </Box>
   );
 };
-
-export const AssetListContainer = styled(Container)`
-  outline: none;
-  &:focus {
-    box-shadow: 0 -1px ${Colors.accentBlue()};
-  }
-`;
-
-export const AssetListRow = styled(Row)<{$focused: boolean}>`
-  cursor: pointer;
-  user-select: none;
-  border-radius: 8px;
-
-  :focus,
-  :active,
-  :hover {
-    outline: none;
-    background: ${Colors.backgroundLight()};
-  }
-  ${(p) =>
-    p.$focused &&
-    `background: ${Colors.backgroundBlue()};
-     color: ${Colors.textBlue()};
-     :hover {
-       background: ${Colors.backgroundBlue()};
-     }
-    `}
-`;
 
 const AssetEventListPartitionRow = ({group}: {group: AssetEventGroup}) => {
   const {partition, latest, timestamp} = group;

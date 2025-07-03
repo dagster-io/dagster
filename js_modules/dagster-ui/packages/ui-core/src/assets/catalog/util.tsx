@@ -2,7 +2,7 @@ import {BodySmall, Box, Colors, Icon, Popover, Spinner, ifPlural} from '@dagster
 import {useMemo} from 'react';
 import {useCatalogViews} from 'shared/assets/catalog/useCatalogViews.oss';
 
-import styles from './AssetSelectionSummaryTile.module.css';
+import styles from './css/AssetSelectionSummaryTile.module.css';
 import {assertUnreachable} from '../../app/Util';
 import {useAssetsHealthData} from '../../asset-data/AssetHealthDataProvider';
 import {AssetHealthFragment} from '../../asset-data/types/AssetHealthDataProvider.types';

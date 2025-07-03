@@ -3,7 +3,7 @@ import clsx from 'clsx';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
-import styles from './TagActions.module.css';
+import styles from './css/TagActions.module.css';
 import {TagType} from '../runs/RunTag';
 
 export type TagAction =

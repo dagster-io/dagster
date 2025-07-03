@@ -19,7 +19,7 @@ import {LogsScrollingTable} from './LogsScrollingTable';
 import {LogType, LogsToolbar} from './LogsToolbar';
 import {IRunMetadataDict, RunMetadataProvider} from './RunMetadataProvider';
 import {titleForRun} from './RunUtils';
-import styles from './StepLogsDialog.module.css';
+import styles from './css/StepLogsDialog.module.css';
 import {useComputeLogFileKeyForSelection} from './useComputeLogFileKeyForSelection';
 import {DagsterEventType} from '../graphql/types';
 import {flattenOneLevel} from '../util/flattenOneLevel';

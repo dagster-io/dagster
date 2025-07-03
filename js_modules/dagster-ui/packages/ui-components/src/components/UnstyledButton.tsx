@@ -1,7 +1,7 @@
 import clsx from 'clsx';
 import * as React from 'react';
 
-import styles from './UnstyledButton.module.css';
+import styles from './css/UnstyledButton.module.css';
 
 interface Props extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   $expandedClickPx?: number;

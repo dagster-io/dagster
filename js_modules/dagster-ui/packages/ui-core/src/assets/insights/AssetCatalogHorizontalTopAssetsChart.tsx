@@ -12,7 +12,7 @@ import {
 import React, {useMemo, useState} from 'react';
 import {Link} from 'react-router-dom';
 
-import styles from './AssetCatalogHorizontalTopAssetsChart.module.css';
+import styles from './css/AssetCatalogHorizontalTopAssetsChart.module.css';
 import {tokenToAssetKey} from '../../asset-graph/Utils';
 import {numberFormatter} from '../../ui/formatters';
 import {assetDetailsPathForKey} from '../assetDetailsPathForKey';

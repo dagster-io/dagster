@@ -2,7 +2,7 @@ import {BaseTag, Colors, Icon, IconName} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {useMemo} from 'react';
 
-import styles from './useFilter.module.css';
+import styles from './css/useFilter.module.css';
 import {TruncatedTextWithFullTextOnHover} from '../../nav/getLeftNavItemsForOption';
 import {testId} from '../../testing/testId';
 

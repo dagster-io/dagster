@@ -1,0 +1,13 @@
+.depthHidesAssetsNotice {
+  background: var(--color-background-light);
+  border-radius: 8px;
+  color: var(--color-text-light);
+  align-items: center;
+  display: flex;
+  padding: 4px 8px;
+  gap: 4px;
+  position: absolute;
+  right: 12px;
+  top: 70px;
+  z-index: 2;
+}

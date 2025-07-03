@@ -1,7 +1,7 @@
 import {BodyLarge, Box, Colors, Icon, Spinner} from '@dagster-io/ui-components';
 import React from 'react';
 
-import styles from './AssetCatalogRateCard.module.css';
+import styles from './css/AssetCatalogRateCard.module.css';
 import {percentFormatter} from '../../ui/formatters';
 
 export interface AssetCatalogRateCardProps {

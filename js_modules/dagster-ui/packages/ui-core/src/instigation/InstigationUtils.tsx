@@ -4,7 +4,7 @@ import {Link} from 'react-router-dom';
 
 import {TICK_TAG_FRAGMENT} from './InstigationTick';
 import {gql} from '../apollo-client';
-import styles from './InstigationUtils.module.css';
+import styles from './css/InstigationUtils.module.css';
 import {InstigationStateFragment, RunStatusFragment} from './types/InstigationUtils.types';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {LastRunSummary} from '../instance/LastRunSummary';

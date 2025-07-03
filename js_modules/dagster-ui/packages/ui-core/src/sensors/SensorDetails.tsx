@@ -14,10 +14,10 @@ import {Link} from 'react-router-dom';
 import {SensorAlertDetails} from 'shared/sensors/SensorAlertDetails.oss';
 
 import {EditCursorDialog} from './EditCursorDialog';
-import styles from './SensorDetails.module.css';
 import {SensorMonitoredAssets} from './SensorMonitoredAssets';
 import {SensorResetButton} from './SensorResetButton';
 import {SensorSwitch} from './SensorSwitch';
+import styles from './css/SensorDetails.module.css';
 import {usePermissionsForLocation} from '../app/Permissions';
 import {SensorFragment} from './types/SensorFragment.types';
 import {QueryRefreshCountdown, QueryRefreshState} from '../app/QueryRefresh';

@@ -17,7 +17,7 @@ import {useMemo, useRef, useState} from 'react';
 import {Link} from 'react-router-dom';
 
 import {gql, useQuery} from '../apollo-client';
-import styles from './TickMaterializationsTable.module.css';
+import styles from './css/TickMaterializationsTable.module.css';
 import {
   AssetGroupAndLocationQuery,
   AssetGroupAndLocationQueryVariables,

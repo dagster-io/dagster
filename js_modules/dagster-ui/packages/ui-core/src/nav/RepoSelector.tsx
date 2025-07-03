@@ -17,7 +17,7 @@ import {
   NO_RELOAD_PERMISSION_TEXT,
   ReloadRepositoryLocationButton,
 } from './ReloadRepositoryLocationButton';
-import styles from './RepoSelector.module.css';
+import styles from './css/RepoSelector.module.css';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';

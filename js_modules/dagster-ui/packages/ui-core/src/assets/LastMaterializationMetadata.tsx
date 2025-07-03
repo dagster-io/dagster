@@ -1,10 +1,10 @@
 import {Box, Colors, Group, Icon, Mono, NonIdealState, Table} from '@dagster-io/ui-components';
 import {Link} from 'react-router-dom';
-import styled from 'styled-components';
 
 import {AssetLineageElements} from './AssetLineageElements';
 import {ChangedReasonsTag} from './ChangedReasons';
 import {StaleReasonsTag} from './Stale';
+import styles from './css/LastMaterializationMetadata.module.css';
 import {isRunlessEvent} from './isRunlessEvent';
 import {AssetViewDefinitionNodeFragment} from './types/AssetView.types';
 import {
@@ -59,7 +59,7 @@ export const LatestMaterializationMetadata = ({
     <>
       {stepLogs.dialog}
       {latestEvent ? (
-        <MetadataTable>
+        <Table className={styles.metadataTable}>
           <tbody>
             {!isRunlessEvent(latestEvent) ? (
               <tr>
@@ -177,7 +177,7 @@ export const LatestMaterializationMetadata = ({
                 </tr>
               ))}
           </tbody>
-        </MetadataTable>
+        </Table>
       ) : (
         <Box padding={{top: 16, bottom: 32}}>
           <NonIdealState
@@ -190,14 +190,3 @@ export const LatestMaterializationMetadata = ({
     </>
   );
 };
-
-const MetadataTable = styled(Table)`
-  td:first-child {
-    white-space: nowrap;
-    width: 1px;
-    max-width: 400px;
-    word-break: break-word;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-`;

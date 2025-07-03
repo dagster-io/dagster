@@ -1,6 +1,6 @@
 import {Box, Colors, Icon} from '@dagster-io/ui-components';
 
-import styles from './RepoSectionHeader.module.css';
+import styles from './css/RepoSectionHeader.module.css';
 import {TableSectionHeader, TableSectionHeaderProps} from '../workspace/TableSectionHeader';
 import {DUNDER_REPO_NAME} from '../workspace/buildRepoAddress';
 

@@ -1,6 +1,6 @@
 import {Box, Colors, Icon, IconName, Tooltip} from '@dagster-io/ui-components';
-import styled from 'styled-components';
 
+import styles from './css/AssetNodePartitionCounts.module.css';
 import {LiveDataForNode} from '../asset-graph/Utils';
 import {AssetNodeFragment} from '../asset-graph/types/AssetNode.types';
 import {AssetPartitionStatus} from '../assets/AssetPartitionStatus';
@@ -104,10 +104,10 @@ const PartitionCountTag = ({
       canShow={value !== undefined}
       content={partitionCountString(value, style.adjective)}
     >
-      <PartitionCountContainer style={{color: foreground, background}}>
+      <div className={styles.partitionCountContainer} style={{color: foreground, background}}>
         <Icon name={style.icon} color={foreground} size={12} />
         {value === undefined ? '—' : value === total ? 'All' : value > 1000 ? '999+' : value}
-      </PartitionCountContainer>
+      </div>
     </Tooltip>
   );
 };
@@ -173,15 +173,3 @@ const PartitionCountLabel = ({
     </Tooltip>
   );
 };
-
-// Necessary to remove the outline we get with the tooltip applying a tabIndex
-const PartitionCountContainer = styled.div`
-  width: 100%;
-  border-radius: 6px;
-  font-size: 12px;
-  gap: 4px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 4px;
-`;

@@ -20,7 +20,6 @@ import {RunMetricsDialog} from 'shared/runs/RunMetricsDialog.oss';
 
 import {DeletionDialog} from './DeletionDialog';
 import {ReexecutionDialog} from './ReexecutionDialog';
-import styles from './RunActionsMenu.module.css';
 import {RunConfigDialog} from './RunConfigDialog';
 import {doneStatuses, failedStatuses} from './RunStatuses';
 import {DagsterTag} from './RunTag';
@@ -29,10 +28,12 @@ import {RunsQueryRefetchContext} from './RunUtils';
 import {RunFilterToken} from './RunsFilterInput';
 import {TerminationDialog} from './TerminationDialog';
 import {gql, useLazyQuery} from '../apollo-client';
+import styles from './css/RunActionsMenu.module.css';
 import {
   PipelineEnvironmentQuery,
   PipelineEnvironmentQueryVariables,
 } from './types/RunActionsMenu.types';
+import {RunActionsMenuRunFragment} from './types/RunActionsMenuRunFragment.types';
 import {useJobAvailabilityErrorForRun} from './useJobAvailabilityErrorForRun';
 import {useJobReexecution} from './useJobReExecution';
 import {AppContext} from '../app/AppContext';
@@ -45,7 +46,6 @@ import {MenuLink} from '../ui/MenuLink';
 import {isThisThingAJob} from '../workspace/WorkspaceContext/util';
 import {useRepositoryForRunWithParentSnapshot} from '../workspace/useRepositoryForRun';
 import {workspacePipelineLinkForRun} from '../workspace/workspacePath';
-import {RunActionsMenuRunFragment} from './types/RunActionsMenuRunFragment.types';
 
 interface Props {
   run: RunActionsMenuRunFragment;

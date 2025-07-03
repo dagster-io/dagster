@@ -1,37 +1,13 @@
-import {Colors, CursorControlsContainer} from '@dagster-io/ui-components';
-import styled from 'styled-components';
+import styles from './css/VizComponents.module.css';
 
-export const OptionsContainer = styled.div`
-  min-height: 56px;
-  display: flex;
-  align-items: center;
-  padding: 5px 12px 5px 24px;
-  border-bottom: 1px solid ${Colors.keylineDefault()};
-  background: ${Colors.backgroundDefault()};
-  flex-shrink: 0;
-  flex-wrap: wrap;
-  z-index: 3;
+export const OptionsContainer = (props: React.HTMLAttributes<HTMLDivElement>) => (
+  <div {...props} className={`${styles.optionsContainer} ${props.className || ''}`} />
+);
 
-  ${CursorControlsContainer} {
-    margin-top: 0;
-    gap: 8px;
+export const OptionsDivider = (props: React.HTMLAttributes<HTMLDivElement>) => (
+  <div {...props} className={`${styles.optionsDivider} ${props.className || ''}`} />
+);
 
-    @media (max-width: 1100px) {
-      & .hideable-button-text {
-        display: none;
-      }
-      & div[role='img'] {
-        margin: 0;
-      }
-    }
-  }
-`;
-
-export const OptionsDivider = styled.div`
-  width: 30px;
-  height: 25px;
-`;
-
-export const OptionsSpacer = styled.div`
-  width: 30px;
-`;
+export const OptionsSpacer = (props: React.HTMLAttributes<HTMLDivElement>) => (
+  <div {...props} className={`${styles.optionsSpacer} ${props.className || ''}`} />
+);

@@ -5,19 +5,14 @@ import {useContext, useEffect, useRef} from 'react';
 import {gql} from '../apollo-client';
 import {InstigationEventLogFragment} from './types/InstigationEventLogTable.types';
 import {EventTypeColumn, Row as LogsRow, TimestampColumn} from '../runs/LogsRowComponents';
-import {
-  ColumnWidthsContext,
-  ColumnWidthsProvider,
-  Header,
-  HeaderContainer,
-  HeadersContainer,
-} from '../runs/LogsScrollingTableHeader';
+import {ColumnWidthsContext, ColumnWidthsProvider, Header} from '../runs/LogsScrollingTableHeader';
+import styles from '../runs/css/LogsScrollingTableHeader.module.css';
 import {Container, Inner, Row} from '../ui/VirtualizedTable';
 
 const Headers = () => {
   const widths = useContext(ColumnWidthsContext);
   return (
-    <HeadersContainer>
+    <div className={styles.headersContainer}>
       <Header
         width={widths.eventType}
         onResize={(width) => widths.onChange({...widths, eventType: width})}
@@ -30,8 +25,10 @@ const Headers = () => {
       >
         Timestamp
       </Header>
-      <HeaderContainer style={{flex: 1}}>Event</HeaderContainer>
-    </HeadersContainer>
+      <div className={styles.headerContainer} style={{flex: 1}}>
+        Event
+      </div>
+    </div>
   );
 };
 

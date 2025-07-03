@@ -22,9 +22,9 @@ import {useCallback, useContext, useMemo, useRef, useState} from 'react';
 import styled from 'styled-components';
 
 import {RunRequestTable} from './DryRunRequestTable';
-import styles from './EvaluateScheduleDialog.module.css';
 import {RUN_REQUEST_FRAGMENT} from './RunRequestFragment';
 import {gql, useMutation, useQuery} from '../apollo-client';
+import styles from './css/EvaluateScheduleDialog.module.css';
 import {
   GetScheduleQuery,
   GetScheduleQueryVariables,

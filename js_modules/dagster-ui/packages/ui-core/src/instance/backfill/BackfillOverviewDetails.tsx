@@ -1,9 +1,9 @@
 import {Box} from '@dagster-io/ui-components';
 
-import styles from './BackfillOverviewDetails.module.css';
 import {BackfillStatusTagForPage} from './BackfillStatusTagForPage';
 import {LiveDuration} from './LiveDuration';
 import {TargetPartitionsDisplay} from './TargetPartitionsDisplay';
+import styles from './css/BackfillOverviewDetails.module.css';
 import {Timestamp} from '../../app/time/Timestamp';
 import {testId} from '../../testing/testId';
 

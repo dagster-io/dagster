@@ -8,7 +8,7 @@ import {
 import React, {useMemo} from 'react';
 import {Link} from 'react-router-dom';
 
-import styles from './AssetSelectionSummaryTile.module.css';
+import styles from './css/AssetSelectionSummaryTile.module.css';
 import {useSelectionHealthData} from './useSelectionHealthData';
 import {ViewType, getHealthStatuses, getThreadId, useAssetHealthStatuses} from './util';
 import {InsightsIcon, InsightsIconType} from '../../insights/InsightsIcon';

@@ -7,8 +7,8 @@ import debounce from 'lodash/debounce';
 import * as React from 'react';
 import {useHistory} from 'react-router-dom';
 
-import styles from './SearchDialog.module.css';
 import {SearchResults} from './SearchResults';
+import styles from './css/SearchDialog.module.css';
 import {SearchResult} from './types';
 import {useGlobalSearch} from './useGlobalSearch';
 import {__updateSearchVisibility} from './useSearchVisibility';
@@ -196,8 +196,7 @@ export const useSearchDialog = () => {
             className={clsx(styles.searchBox, !!queryString.length && styles.searchBoxWithQuery)}
           >
             <Icon name="search" color={Colors.accentGray()} size={20} />
-            <input
-              className={styles.searchInput}
+            <SearchInput
               data-search-input="1"
               autoFocus
               spellCheck={false}
@@ -221,3 +220,7 @@ export const useSearchDialog = () => {
     ),
   };
 };
+
+export const SearchInput = ({className, ...rest}: React.HTMLProps<HTMLInputElement>) => (
+  <input className={clsx(styles.searchInput, className)} {...rest} />
+);

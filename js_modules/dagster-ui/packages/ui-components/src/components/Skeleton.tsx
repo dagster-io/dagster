@@ -1,7 +1,7 @@
 import React from 'react';
 
 import {Colors} from './Color';
-import styles from './Skeleton.module.css';
+import styles from './css/Skeleton.module.css';
 
 type Props = {
   $height?: string | number;

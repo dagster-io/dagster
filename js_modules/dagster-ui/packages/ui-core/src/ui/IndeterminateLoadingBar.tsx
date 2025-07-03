@@ -1,6 +1,6 @@
 import clsx from 'clsx';
 
-import styles from './IndeterminateLoadingBar.module.css';
+import styles from './css/IndeterminateLoadingBar.module.css';
 
 export const IndeterminateLoadingBar = ({
   $loading,

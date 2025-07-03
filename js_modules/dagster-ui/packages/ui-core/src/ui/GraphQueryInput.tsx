@@ -22,7 +22,7 @@ import uniq from 'lodash/uniq';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
-import styles from './GraphQueryInput.module.css';
+import styles from './css/GraphQueryInput.module.css';
 import {GraphQueryItem, filterByQuery} from '../app/GraphQueryImpl';
 import {dynamicKeyWithoutIndex, isDynamicStep} from '../gantt/DynamicStepSupport';
 import {GraphExplorerSolidFragment} from '../pipelines/types/GraphExplorer.types';

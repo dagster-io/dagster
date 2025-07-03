@@ -1,12 +1,12 @@
 import {Box, Button, Colors, Dialog, DialogFooter, Spinner} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import {useMemo, useRef} from 'react';
-import styled from 'styled-components';
 
 import {AssetLink} from './AssetLink';
 import {asAssetKeyInput} from './asInput';
 import {AssetKey} from './types';
 import {gql, useQuery} from '../apollo-client';
+import styles from './css/BackfillPreviewDialog.module.css';
 import {
   BackfillPreviewQuery,
   BackfillPreviewQueryVariables,
@@ -86,7 +86,11 @@ export const BackfillPreviewDialog = ({
 
             return (
               <Row key={token} $height={size} $start={start}>
-                <RowGrid border={index < assets.length - 1 ? 'bottom' : undefined}>
+                <Box
+                  className={styles.rowGrid}
+                  style={{gridTemplateColumns: TEMPLATE_COLUMNS}}
+                  border={index < assets.length - 1 ? 'bottom' : undefined}
+                >
                   <RowCell>
                     <AssetLink path={assetKey.path} textStyle="middle-truncate" icon="asset" />
                   </RowCell>
@@ -113,7 +117,7 @@ export const BackfillPreviewDialog = ({
                       'No partitions available to materialize'
                     )}
                   </RowCell>
-                </RowGrid>
+                </Box>
               </Row>
             );
           })}
@@ -127,12 +131,6 @@ export const BackfillPreviewDialog = ({
     </Dialog>
   );
 };
-
-const RowGrid = styled(Box)`
-  display: grid;
-  grid-template-columns: ${TEMPLATE_COLUMNS};
-  height: 100%;
-`;
 
 export const BackfillPreviewTableHeader = () => {
   return (

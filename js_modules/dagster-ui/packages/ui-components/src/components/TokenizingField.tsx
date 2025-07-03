@@ -1,5 +1,5 @@
 // eslint-disable-next-line no-restricted-imports
-import {TagInput} from '@blueprintjs/core';
+import {TagInput, TagInputProps} from '@blueprintjs/core';
 import clsx from 'clsx';
 import * as React from 'react';
 
@@ -7,7 +7,7 @@ import {Box} from './Box';
 import {Menu, MenuItem} from './Menu';
 import {Popover} from './Popover';
 import {Spinner} from './Spinner';
-import styles from './TokenizingField.module.css';
+import styles from './css/TokenizingField.module.css';
 
 const MAX_SUGGESTIONS = 100;
 
@@ -401,12 +401,9 @@ export const TokenizingField = ({
         )
       }
     >
-      <TagInput
-        className={clsx(
-          styles.tagInput,
-          fullwidth ? styles.fullWidth : styles.defaultWidth,
-          className,
-        )}
+      <StyledTagInput
+        $fullWidth={fullwidth}
+        className={className}
         values={values.map((v) => (v.token ? `${v.token}:${v.value}` : v.value))}
         inputValue={typed}
         onRemove={(_, idx) => {
@@ -459,3 +456,21 @@ export const TokenizingField = ({
     </Popover>
   );
 };
+
+export const StyledTagInput = ({
+  $fullWidth,
+  className,
+  ...rest
+}: {
+  $fullWidth?: boolean;
+  className?: string;
+} & TagInputProps) => (
+  <TagInput
+    {...rest}
+    className={clsx(
+      styles.tagInput,
+      $fullWidth ? styles.fullWidth : styles.defaultWidth,
+      className,
+    )}
+  />
+);

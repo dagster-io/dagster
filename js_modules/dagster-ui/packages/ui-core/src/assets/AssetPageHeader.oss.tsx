@@ -9,8 +9,8 @@ import {
   getAssetSelectionQueryString,
   useAssetSelectionState,
 } from 'shared/asset-selection/useAssetSelectionState.oss';
-import styled from 'styled-components';
 
+import styles from './css/AssetPageHeader.module.css';
 import {globalAssetGraphPathToString} from './globalAssetGraphPathToString';
 import {AppContext} from '../app/AppContext';
 import {AnchorButton} from '../ui/AnchorButton';
@@ -90,12 +90,14 @@ export const AssetPageHeader = ({
       title={
         <Box flex={{alignItems: 'center', gap: 4}} style={{maxWidth: '600px'}}>
           <Title>
-            <BreadcrumbsWithSlashes
+            <Breadcrumbs
+              className={styles.breadcrumbsWithSlashes}
+              style={{'--num-header-breadcrumbs': headerBreadcrumbs.length + 1}}
               items={breadcrumbs}
               currentBreadcrumbRenderer={({text, href}) => (
-                <TruncatedHeading key={href}>
+                <Subtitle1 key={href} className={styles.truncatedHeading}>
                   {typeof text === 'string' ? <MiddleTruncate text={text} /> : text}
-                </TruncatedHeading>
+                </Subtitle1>
               )}
               breadcrumbRenderer={({text, href}) => {
                 // Strip the leading basePath. It is prepended in order to make overflow
@@ -104,14 +106,13 @@ export const AssetPageHeader = ({
                 // react-router Link components that don't need the basePath.
                 const pathWithoutBase = href ? href.replace(basePath, '') : '';
                 return (
-                  <TruncatedHeading key={href}>
-                    <BreadcrumbLink to={pathWithoutBase || '#'}>
+                  <Subtitle1 key={href} className={styles.truncatedHeading}>
+                    <Link to={pathWithoutBase || '#'} className={styles.breadcrumbLink}>
                       {typeof text === 'string' ? <MiddleTruncate text={text} /> : text}
-                    </BreadcrumbLink>
-                  </TruncatedHeading>
+                    </Link>
+                  </Subtitle1>
                 );
               }}
-              $numHeaderBreadcrumbs={headerBreadcrumbs.length}
               popoverProps={{
                 minimal: true,
                 modifiers: {offset: {enabled: true, options: {offset: [0, 8]}}},
@@ -126,11 +127,6 @@ export const AssetPageHeader = ({
     />
   );
 };
-
-const TruncatedHeading = styled(Subtitle1)`
-  max-width: 300px;
-  overflow: hidden;
-`;
 
 export const AssetGlobalLineageLink = () => {
   const [assetSelection] = useAssetSelectionState();
@@ -149,33 +145,3 @@ export const AssetGlobalLineageButton = () => (
     View asset lineage
   </AnchorButton>
 );
-
-// Only add slashes within the asset key path
-const BreadcrumbsWithSlashes = styled(Breadcrumbs)<{$numHeaderBreadcrumbs: number}>`
-  & li:nth-child(n + ${(p) => p.$numHeaderBreadcrumbs + 1})::after {
-    background: none;
-    font-size: 20px;
-    font-weight: bold;
-    color: ${Colors.textLighter()};
-    content: '/';
-    width: 8px;
-    line-height: 16px;
-  }
-  /**
-   * Blueprint breadcrumbs annoyingly have a built-in height.
-   */
-  .bp5-breadcrumbs {
-    height: auto;
-    min-height: 30px;
-  }
-`;
-
-const BreadcrumbLink = styled(Link)`
-  color: ${Colors.textLight()};
-  white-space: nowrap;
-
-  :hover,
-  :active {
-    color: ${Colors.textLight()};
-  }
-`;

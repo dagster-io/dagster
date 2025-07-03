@@ -1,0 +1,9 @@
+/* MetadataTable */
+.metadataTable td:first-child {
+  white-space: nowrap;
+  width: 1px;
+  max-width: 400px;
+  word-break: break-word;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

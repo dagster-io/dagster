@@ -16,7 +16,7 @@ import * as React from 'react';
 import styled, {createGlobalStyle} from 'styled-components';
 import {v4 as uuidv4} from 'uuid';
 
-import styles from './FilterDropdown.module.css';
+import styles from './css/FilterDropdown.module.css';
 import {FilterObject} from './useFilter';
 import {ShortcutHandler} from '../../app/ShortcutHandler';
 import {useSetStateUpdateCallback} from '../../hooks/useSetStateUpdateCallback';

@@ -1,0 +1,6 @@
+.rowGrid {
+  display: grid;
+  gap: 8px;
+  height: 100%;
+  align-items: center;
+}

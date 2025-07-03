@@ -1,0 +1,11 @@
+/* Necessary to remove the outline we get with the tooltip applying a tabIndex */
+.partitionCountContainer {
+  width: 100%;
+  border-radius: 6px;
+  font-size: 12px;
+  gap: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+}

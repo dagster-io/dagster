@@ -2,9 +2,9 @@ import {Box, MiddleTruncate, useDelayedState} from '@dagster-io/ui-components';
 import {forwardRef, useMemo} from 'react';
 import {Link} from 'react-router-dom';
 
-import styles from './VirtualizedJobRow.module.css';
 import {CaptionText, LoadingOrNone} from './VirtualizedWorkspaceTable';
 import {buildPipelineSelector} from './WorkspaceContext/util';
+import styles from './css/VirtualizedJobRow.module.css';
 import {RepoAddress} from './types';
 import {SingleJobQuery, SingleJobQueryVariables} from './types/SingleJobQuery.types';
 import {workspacePathFromAddress} from './workspacePath';
