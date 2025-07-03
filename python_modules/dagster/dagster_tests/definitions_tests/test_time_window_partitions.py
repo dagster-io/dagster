@@ -7,7 +7,10 @@ from typing import Optional, cast
 import pytest
 from dagster import DagsterInvalidDefinitionError, PartitionKeyRange, TimeWindowPartitionsDefinition
 from dagster._check import CheckError
-from dagster._core.definitions.partitions.context import PartitionLoadingContext
+from dagster._core.definitions.partitions.context import (
+    PartitionLoadingContext,
+    partition_loading_context,
+)
 from dagster._core.definitions.partitions.definition import (
     DailyPartitionsDefinition,
     HourlyPartitionsDefinition,
@@ -925,13 +928,12 @@ def test_partition_subset_get_partition_keys_not_in_subset(case_str: str):
     )
     for partition_key in subset_keys:
         assert partition_key in subset
-    assert (
-        subset.get_partition_keys_not_in_subset(
-            partitions_def=partitions_def,
-            current_time=partitions_def.end_time_for_partition_key(full_set_keys[-1]),
+    with partition_loading_context(
+        effective_dt=partitions_def.end_time_for_partition_key(full_set_keys[-1])
+    ):
+        assert (
+            subset.get_partition_keys_not_in_subset(partitions_def) == expected_keys_not_in_subset
         )
-        == expected_keys_not_in_subset
-    )
     assert (
         cast(
             "TimeWindowPartitionsSubset", partitions_def.deserialize_subset(subset.serialize())
@@ -1058,13 +1060,13 @@ def test_partition_subset_with_partition_keys(initial: str, added: str):
         "TimeWindowPartitionsSubset", subset.with_partition_keys(added_subset_keys)
     )
     assert all(partition_key in updated_subset for partition_key in added_subset_keys)
-    assert (
-        updated_subset.get_partition_keys_not_in_subset(
-            partitions_def=partitions_def,
-            current_time=partitions_def.end_time_for_partition_key(full_set_keys[-1]),
+    with partition_loading_context(
+        effective_dt=partitions_def.end_time_for_partition_key(full_set_keys[-1])
+    ):
+        assert (
+            updated_subset.get_partition_keys_not_in_subset(partitions_def)
+            == expected_keys_not_in_updated_subset
         )
-        == expected_keys_not_in_updated_subset
-    )
 
     updated_subset_str = "".join(
         ("+" if (a == "+" or b == "+") else "-") for a, b in zip(initial, added)

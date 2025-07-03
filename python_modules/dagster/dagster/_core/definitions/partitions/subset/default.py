@@ -32,18 +32,9 @@ class DefaultPartitionsSubset(
         return super().__new__(cls, subset or set())
 
     def get_partition_keys_not_in_subset(
-        self,
-        partitions_def: PartitionsDefinition,
-        current_time: Optional[datetime] = None,
-        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
+        self, partitions_def: PartitionsDefinition
     ) -> Iterable[str]:
-        with partition_loading_context(current_time, dynamic_partitions_store) as ctx:
-            return set(
-                partitions_def.get_partition_keys(
-                    current_time=ctx.effective_dt,
-                    dynamic_partitions_store=ctx.dynamic_partitions_store,
-                )
-            ) - set(self.subset)
+        return set(partitions_def.get_partition_keys()) - set(self.subset)
 
     def get_partition_keys(self) -> Iterable[str]:
         return self.subset

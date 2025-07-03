@@ -25,10 +25,7 @@ class PartitionsSubset(ABC, Generic[T_str]):
 
     @abstractmethod
     def get_partition_keys_not_in_subset(
-        self,
-        partitions_def: PartitionsDefinition[T_str],
-        current_time: Optional[datetime] = None,
-        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
+        self, partitions_def: PartitionsDefinition[T_str]
     ) -> Iterable[T_str]: ...
 
     @abstractmethod

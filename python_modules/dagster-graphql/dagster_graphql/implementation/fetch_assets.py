@@ -11,6 +11,7 @@ from dagster import (
     _check as check,
 )
 from dagster._core.definitions.data_time import CachingDataTimeResolver
+from dagster._core.definitions.partitions.context import partition_loading_context
 from dagster._core.definitions.partitions.definition import (
     MultiPartitionsDefinition,
     PartitionsDefinition,
@@ -525,21 +526,23 @@ def build_partition_statuses(
             partitions_def,
         )
     elif partitions_def:
-        materialized_keys = materialized_partitions_subset.get_partition_keys()
-        failed_keys = failed_partitions_subset.get_partition_keys()
-        in_progress_keys = in_progress_partitions_subset.get_partition_keys()
+        with partition_loading_context(
+            dynamic_partitions_store=dynamic_partitions_store,
+        ):
+            materialized_keys = materialized_partitions_subset.get_partition_keys()
+            failed_keys = failed_partitions_subset.get_partition_keys()
+            in_progress_keys = in_progress_partitions_subset.get_partition_keys()
 
-        return GrapheneDefaultPartitionStatuses(
-            materializedPartitions=set(materialized_keys)
-            - set(failed_keys)
-            - set(in_progress_keys),
-            failedPartitions=failed_keys,
-            unmaterializedPartitions=materialized_partitions_subset.get_partition_keys_not_in_subset(
-                partitions_def=partitions_def,
-                dynamic_partitions_store=dynamic_partitions_store,
-            ),
-            materializingPartitions=in_progress_keys,
-        )
+            return GrapheneDefaultPartitionStatuses(
+                materializedPartitions=set(materialized_keys)
+                - set(failed_keys)
+                - set(in_progress_keys),
+                failedPartitions=failed_keys,
+                unmaterializedPartitions=materialized_partitions_subset.get_partition_keys_not_in_subset(
+                    partitions_def=partitions_def
+                ),
+                materializingPartitions=in_progress_keys,
+            )
     else:
         check.failed("Should not reach this point")
 
