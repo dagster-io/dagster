@@ -1,6 +1,7 @@
 import * as yaml from 'yaml';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
+import {asAssetKeyInput} from '../assets/asInput';
 import {ExecutionParams, ScheduleSelector, SensorSelector} from '../graphql/types';
 import {sanitizeConfigYamlString} from '../launchpad/yamlUtils';
 import {ScheduleDryRunInstigationTick} from '../ticks/EvaluateScheduleDialog';
@@ -40,7 +41,7 @@ export const buildExecutionParamsListSensor = (
         jobName: request.jobName ?? jobName, // get jobName from runRequest, fallback to jobName
         repositoryLocationName,
         repositoryName,
-        assetSelection: [],
+        assetSelection: request.assetSelection?.map(asAssetKeyInput) || [],
         assetCheckSelection: [],
         solidSelection: undefined,
       },
@@ -83,7 +84,7 @@ export const buildExecutionParamsListSchedule = (
         jobName: request.jobName ?? jobName, // get jobName from runRequest, fallback to jobName
         repositoryLocationName,
         repositoryName,
-        assetSelection: [],
+        assetSelection: request.assetSelection?.map(asAssetKeyInput) || [],
         assetCheckSelection: [],
         solidSelection: undefined,
       },
