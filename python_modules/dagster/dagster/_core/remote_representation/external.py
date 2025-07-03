@@ -921,6 +921,13 @@ class RemoteSchedule:
     def job_name(self) -> str:
         return self._schedule_snap.job_name
 
+    def get_target(self):
+        return TargetSnap(
+            job_name=check.str_param(self.job_name, "job_name"),
+            mode=check.opt_str_param(self.mode, "mode", DEFAULT_MODE_NAME),
+            op_selection=check.opt_nullable_sequence_param(self.op_selection, "op_selection", str),
+        )
+
     @property
     def asset_selection(self) -> Optional[AssetSelection]:
         return self._schedule_snap.asset_selection
