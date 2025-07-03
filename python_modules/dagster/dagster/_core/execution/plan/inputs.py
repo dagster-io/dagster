@@ -112,7 +112,7 @@ class FromLoadableAsset(StepInputSource):
 
         asset_layer = step_context.job_def.asset_layer
 
-        input_asset_key = asset_layer.asset_key_for_input(
+        input_asset_key = asset_layer.get_asset_key_for_node_input(
             step_context.node_handle, input_name=input_def.name
         )
         assert input_asset_key is not None
@@ -165,7 +165,7 @@ class FromLoadableAsset(StepInputSource):
     def required_resource_keys(
         self, job_def: JobDefinition, op_handle: NodeHandle, op_input_name: str
     ) -> set[str]:
-        input_asset_key = job_def.asset_layer.asset_key_for_input(op_handle, op_input_name)
+        input_asset_key = job_def.asset_layer.get_asset_key_for_node_input(op_handle, op_input_name)
         if input_asset_key is None:
             check.failed(
                 f"Must have an asset key associated with input {op_input_name} to load it"

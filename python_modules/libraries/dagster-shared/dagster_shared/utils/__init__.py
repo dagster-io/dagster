@@ -39,7 +39,7 @@ def find_free_port() -> int:
 
 def remove_none_recursively(obj: T) -> T:
     """Remove none values from a dict. This can be used to support comparing provided config vs.
-    config we retrive from kubernetes, which returns all fields, even those which have no value
+    config we retrieve from kubernetes, which returns all fields, even those which have no value
     configured.
     """
     if isinstance(obj, (list, tuple, set)):

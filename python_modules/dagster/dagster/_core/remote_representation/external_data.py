@@ -19,10 +19,7 @@ from dagster_shared.serdes.serdes import (
 )
 from typing_extensions import Self, TypeAlias
 
-from dagster import (
-    StaticPartitionsDefinition,
-    _check as check,
-)
+from dagster import _check as check
 from dagster._config.pythonic_config import (
     ConfigurableIOManagerFactoryResourceDefinition,
     ConfigurableResourceFactoryResourceDefinition,
@@ -65,7 +62,7 @@ from dagster._core.definitions.dependency import (
 )
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.freshness import InternalFreshnessPolicy
-from dagster._core.definitions.freshness_policy import FreshnessPolicy
+from dagster._core.definitions.freshness_policy import LegacyFreshnessPolicy
 from dagster._core.definitions.metadata import (
     MetadataFieldSerializer,
     MetadataMapping,
@@ -73,13 +70,16 @@ from dagster._core.definitions.metadata import (
     TextMetadataValue,
     normalize_metadata,
 )
-from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
 from dagster._core.definitions.op_definition import OpDefinition
-from dagster._core.definitions.partition import DynamicPartitionsDefinition, ScheduleType
-from dagster._core.definitions.partition_mapping import (
-    PartitionMapping,
-    get_builtin_partition_mapping_types,
+from dagster._core.definitions.partitions.definition import (
+    DynamicPartitionsDefinition,
+    MultiPartitionsDefinition,
+    StaticPartitionsDefinition,
+    TimeWindowPartitionsDefinition,
 )
+from dagster._core.definitions.partitions.mapping import PartitionMapping
+from dagster._core.definitions.partitions.schedule_type import ScheduleType
+from dagster._core.definitions.partitions.utils import get_builtin_partition_mapping_types
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.resource_requirement import ResourceKeyRequirement
 from dagster._core.definitions.schedule_definition import DefaultScheduleStatus
@@ -88,7 +88,6 @@ from dagster._core.definitions.sensor_definition import (
     SensorDefinition,
     SensorType,
 )
-from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
 from dagster._core.definitions.unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 from dagster._core.definitions.utils import DEFAULT_GROUP_NAME
 from dagster._core.errors import DagsterInvalidDefinitionError
@@ -1385,6 +1384,8 @@ class BackcompatTeamOwnerFieldDeserializer(FieldSerializer):
         "execution_set_identifier": "atomic_execution_unit_id",
         "description": "op_description",
         "partitions": "partitions_def_data",
+        "legacy_freshness_policy": "freshness_policy",
+        "freshness_policy": "new_freshness_policy",
     },
     field_serializers={
         "metadata": MetadataFieldSerializer,
@@ -1417,7 +1418,8 @@ class AssetNodeSnap(IHaveNew):
     metadata: Mapping[str, MetadataValue]
     tags: Optional[Mapping[str, str]]
     group_name: str
-    freshness_policy: Optional[FreshnessPolicy]
+    legacy_freshness_policy: Optional[LegacyFreshnessPolicy]
+    freshness_policy: Optional[InternalFreshnessPolicy]
     is_source: bool
     is_observable: bool
     # If a set of assets can't be materialized independently from each other, they will all
@@ -1451,7 +1453,8 @@ class AssetNodeSnap(IHaveNew):
         metadata: Optional[Mapping[str, MetadataValue]] = None,
         tags: Optional[Mapping[str, str]] = None,
         group_name: Optional[str] = None,
-        freshness_policy: Optional[FreshnessPolicy] = None,
+        legacy_freshness_policy: Optional[LegacyFreshnessPolicy] = None,
+        freshness_policy: Optional[InternalFreshnessPolicy] = None,
         is_source: Optional[bool] = None,
         is_observable: bool = False,
         execution_set_identifier: Optional[str] = None,
@@ -1528,7 +1531,9 @@ class AssetNodeSnap(IHaveNew):
             # Newer code always passes a string group name when constructing these, but we assign
             # the default here for backcompat.
             group_name=group_name or DEFAULT_GROUP_NAME,
-            freshness_policy=freshness_policy,
+            legacy_freshness_policy=legacy_freshness_policy,
+            freshness_policy=freshness_policy
+            or InternalFreshnessPolicy.from_asset_spec_metadata(metadata),
             is_source=is_source,
             is_observable=is_observable,
             execution_set_identifier=execution_set_identifier,
@@ -1559,10 +1564,6 @@ class AssetNodeSnap(IHaveNew):
             return self.auto_materialize_policy.to_automation_condition()
         else:
             return None
-
-    @property
-    def internal_freshness_policy(self) -> Optional[InternalFreshnessPolicy]:
-        return InternalFreshnessPolicy.from_asset_spec_metadata(self.metadata)
 
 
 ResourceJobUsageMap: TypeAlias = dict[str, list[ResourceJobUsageEntry]]
@@ -1651,15 +1652,13 @@ def asset_node_snaps_from_repo(repo: RepositoryDefinition) -> Sequence[AssetNode
     job_defs_by_asset_key: dict[AssetKey, list[JobDefinition]] = defaultdict(list)
     for job_def in repo.get_all_jobs():
         asset_layer = job_def.asset_layer
-        for asset_key in asset_layer.additional_asset_keys:
+        for asset_key in asset_layer.external_job_asset_keys:
             job_defs_by_asset_key[asset_key].append(job_def)
-        asset_keys_by_node_output = asset_layer.asset_keys_by_node_output_handle
-        for node_output_handle, asset_key in asset_keys_by_node_output.items():
-            if asset_key not in asset_layer.asset_keys_for_node(node_output_handle.node_handle):
-                continue
+        for asset_key in asset_layer.selected_asset_keys:
+            job_defs_by_asset_key[asset_key].append(job_def)
             if asset_key not in primary_node_pairs_by_asset_key:
-                primary_node_pairs_by_asset_key[asset_key] = (node_output_handle, job_def)
-            job_defs_by_asset_key[asset_key].append(job_def)
+                op_handle = asset_layer.get_op_output_handle(asset_key)
+                primary_node_pairs_by_asset_key[asset_key] = (op_handle, job_def)
     asset_node_snaps: list[AssetNodeSnap] = []
     asset_graph = repo.asset_graph
     for key in sorted(asset_graph.get_all_asset_keys()):
@@ -1756,6 +1755,7 @@ def asset_node_snaps_from_repo(repo: RepositoryDefinition) -> Sequence[AssetNode
                 metadata=asset_node.metadata,
                 tags=asset_node.tags,
                 group_name=asset_node.group_name,
+                legacy_freshness_policy=asset_node.legacy_freshness_policy,
                 freshness_policy=asset_node.freshness_policy,
                 is_source=asset_node.is_external,
                 is_observable=asset_node.is_observable,
@@ -1942,7 +1942,9 @@ class ComponentTreeSnap:
     def from_tree(tree: ComponentTree) -> "ComponentTreeSnap":
         leaves = []
 
-        for comp_path, comp_inst in tree.root.iterate_path_component_pairs():
+        for comp_path, comp_inst in check.inst(
+            tree.load_root_component(), DefsFolderComponent
+        ).iterate_path_component_pairs():
             if not isinstance(
                 comp_inst,
                 (
@@ -1955,7 +1957,7 @@ class ComponentTreeSnap:
                 cls = comp_inst.__class__
                 leaves.append(
                     ComponentInstanceSnap(
-                        key=comp_path.get_relative_key(tree.root.path),
+                        key=comp_path.get_relative_key(tree.defs_module_path),
                         full_type_name=f"{cls.__module__}.{cls.__qualname__}",
                     )
                 )

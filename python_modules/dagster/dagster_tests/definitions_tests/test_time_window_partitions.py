@@ -5,33 +5,30 @@ from datetime import datetime, timedelta
 from typing import Optional, cast
 
 import pytest
-from dagster import (
-    DagsterInvalidDefinitionError,
+from dagster import DagsterInvalidDefinitionError, PartitionKeyRange, TimeWindowPartitionsDefinition
+from dagster._check import CheckError
+from dagster._core.definitions.partitions.context import PartitionLoadingContext
+from dagster._core.definitions.partitions.definition import (
     DailyPartitionsDefinition,
     HourlyPartitionsDefinition,
     MonthlyPartitionsDefinition,
-    PartitionKeyRange,
-    TimeWindowPartitionsDefinition,
     WeeklyPartitionsDefinition,
+)
+from dagster._core.definitions.partitions.partitioned_config import (
     daily_partitioned_config,
     hourly_partitioned_config,
     monthly_partitioned_config,
     weekly_partitioned_config,
 )
-from dagster._check import CheckError
-from dagster._core.definitions.partition import PartitionLoadingContext, TemporalContext
-from dagster._core.definitions.time_window_partitions import (
-    PersistedTimeWindow,
-    ScheduleType,
-    TimeWindow,
-    TimeWindowPartitionsSubset,
-    dst_safe_strptime,
-)
+from dagster._core.definitions.partitions.schedule_type import ScheduleType
+from dagster._core.definitions.partitions.subset import TimeWindowPartitionsSubset
+from dagster._core.definitions.partitions.utils import PersistedTimeWindow, TimeWindow
+from dagster._core.definitions.temporal_context import TemporalContext
 from dagster._core.definitions.timestamp import TimestampWithTimezone
 from dagster._core.test_utils import freeze_time, get_paginated_partition_keys
 from dagster._record import copy
 from dagster._serdes import deserialize_value, serialize_value
-from dagster._time import create_datetime, parse_time_string
+from dagster._time import create_datetime, dst_safe_strptime, parse_time_string
 from dagster._utils.partitions import DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE
 
 DATE_FORMAT = "%Y-%m-%d"

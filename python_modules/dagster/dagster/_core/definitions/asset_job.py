@@ -28,7 +28,8 @@ from dagster._core.definitions.hook_definition import HookDefinition
 from dagster._core.definitions.job_definition import JobDefinition, default_job_io_manager
 from dagster._core.definitions.logger_definition import LoggerDefinition
 from dagster._core.definitions.metadata import RawMetadataValue
-from dagster._core.definitions.partition import PartitionedConfig, PartitionsDefinition
+from dagster._core.definitions.partitions.definition import PartitionsDefinition
+from dagster._core.definitions.partitions.partitioned_config import PartitionedConfig
 from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.resource_requirement import ensure_requirements_satisfied
@@ -165,11 +166,7 @@ def build_asset_job(
         config=None,
     )
 
-    asset_layer = AssetLayer.from_graph_and_assets_node_mapping(
-        graph_def=graph,
-        assets_defs_by_outer_node_handle=assets_defs_by_node_handle,
-        asset_graph=asset_graph,
-    )
+    asset_layer = AssetLayer.from_mapping(assets_defs_by_node_handle, asset_graph)
 
     all_resource_defs = get_all_resource_defs(asset_graph, wrapped_resource_defs)
 
@@ -396,7 +393,7 @@ def _infer_and_validate_common_partitions_def(
 
 def _get_blocking_asset_check_output_handles_by_asset_key(
     assets_defs_by_node_handle: Mapping[NodeHandle, AssetsDefinition],
-) -> Mapping[AssetKey, AbstractSet[NodeOutputHandle]]:
+) -> Mapping[AssetKey, Sequence[NodeOutputHandle]]:
     """For each asset key, returns the set of node output handles that correspond to asset check
     specs that should block the execution of downstream assets if they fail.
     """
@@ -417,7 +414,13 @@ def _get_blocking_asset_check_output_handles_by_asset_key(
                 node_output_handle
             )
 
-    return blocking_asset_check_output_handles_by_asset_key
+    return {
+        asset_key: sorted(
+            blocking_asset_check_output_handles_by_asset_key[asset_key],
+            key=lambda node_output_handle: node_output_handle.output_name,
+        )
+        for asset_key in blocking_asset_check_output_handles_by_asset_key
+    }
 
 
 def build_node_deps(
@@ -509,7 +512,7 @@ def build_node_deps(
             # blocked on other checks
             if upstream_asset_key not in {ck.asset_key for ck in assets_def.check_keys}:
                 blocking_asset_check_output_handles = (
-                    blocking_asset_check_output_handles_by_asset_key.get(upstream_asset_key)
+                    blocking_asset_check_output_handles_by_asset_key.get(upstream_asset_key, [])
                 )
                 asset_check_deps = [
                     DependencyDefinition(
@@ -519,7 +522,7 @@ def build_node_deps(
                     for node_output_handle in blocking_asset_check_output_handles or []
                 ]
             else:
-                blocking_asset_check_output_handles = set()
+                blocking_asset_check_output_handles = []
                 asset_check_deps = []
 
             if upstream_asset_key in node_alias_and_output_by_asset_key:

@@ -20,7 +20,7 @@ from dagster._core.asset_graph_view.serializable_entity_subset import (
 )
 from dagster._core.definitions.asset_key import AssetCheckKey, EntityKey, T_EntityKey
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
-from dagster._core.definitions.partition import PartitionsSubset
+from dagster._core.definitions.partitions.subset import PartitionsSubset
 from dagster._utils.cached_method import cached_method
 
 if TYPE_CHECKING:

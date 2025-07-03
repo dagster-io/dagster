@@ -34,6 +34,7 @@ from dagster_shared.check import (
     ParameterCheckError,
     build_check_call_str,
 )
+from dagster_shared.check.builder import INJECTED_CHECK_VAR
 from dagster_shared.record import record
 
 if TYPE_CHECKING:
@@ -1634,7 +1635,7 @@ def build_check_call(ttype, name, eval_ctx: EvalContext):
     lazy_import_str = "\n    ".join(
         f"from {module} import {t}" for t, module in eval_ctx.lazy_imports.items()
     )
-
+    eval_ctx.local_ns[INJECTED_CHECK_VAR] = check
     fn = f"""
 def _check({name}):
     {lazy_import_str}
@@ -1786,3 +1787,22 @@ def test_forward_ref_flow() -> None:
     # now it works
     call = build_check_call(ttype, "ok", eval_ctx)
     call([Late()])
+
+
+def test_never():
+    def _val() -> Union[int, str]:
+        return 4
+
+    v = _val()
+    if isinstance(v, str):
+        ...
+    elif isinstance(v, int):
+        ...
+    else:
+        check.assert_never(v)
+
+    with pytest.raises(check.CheckError, match=r"Unhandled value: 4 \(int\)"):
+        if isinstance(v, str):
+            ...
+        else:
+            check.assert_never(v)  # type: ignore # good job type checker

@@ -351,7 +351,7 @@ const LaunchAssetChoosePartitionsDialogBody = ({
     });
 
     if (launchBackfillData?.launchPartitionBackfill.__typename === 'LaunchBackfillSuccess') {
-      showBackfillSuccessToast(launchBackfillData?.launchPartitionBackfill.backfillId, true);
+      showBackfillSuccessToast(launchBackfillData?.launchPartitionBackfill.backfillId);
       setOpen(false);
     } else {
       showBackfillErrorToast(launchBackfillData);

@@ -9,6 +9,9 @@ from dagster._utils import file_relative_path, pushd
 EMPTY_PROJECT_PATH = file_relative_path(__file__, "definitions_command_projects/empty_project")
 VALID_PROJECT_PATH = file_relative_path(__file__, "definitions_command_projects/valid_project")
 INVALID_PROJECT_PATH = file_relative_path(__file__, "definitions_command_projects/invalid_project")
+INVALID_PARTITION_MAPPINGS_WORKSPACE_PATH = file_relative_path(
+    __file__, "definitions_command_projects/invalid_partition_mappings_workspace"
+)
 INVALID_PROJECT_PATH_WITH_EXCEPTION = file_relative_path(
     __file__, "definitions_command_projects/invalid_project_exc"
 )
@@ -130,6 +133,16 @@ def test_invalid_project_truncated_properly(verbose):
                 == 1
             )
             assert result.output.count("dagster system frames hidden") >= 1
+
+
+def test_invalid_partition_mapping_workspace(monkeypatch):
+    with monkeypatch.context() as m:
+        m.chdir(INVALID_PARTITION_MAPPINGS_WORKSPACE_PATH)
+        result = invoke_validate()
+        assert result.exit_code == 1
+        assert "Asset graph contained an invalid partition mapping" in result.output
+        assert "Invalid partition mapping from downstream_asset to upstream_asset" in result.output
+        assert "Timezones US/Pacific and UTC don't match" in result.output
 
 
 def test_env_var(monkeypatch):

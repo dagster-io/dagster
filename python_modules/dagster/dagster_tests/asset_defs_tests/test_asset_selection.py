@@ -9,14 +9,8 @@ from dagster import (
     AssetIn,
     AssetOut,
     AssetSpec,
-    DailyPartitionsDefinition,
     Definitions,
-    DimensionPartitionMapping,
-    IdentityPartitionMapping,
-    MultiPartitionMapping,
-    MultiPartitionsDefinition,
     SourceAsset,
-    StaticPartitionsDefinition,
     TimeWindowPartitionMapping,
     asset,
     asset_check,
@@ -54,6 +48,16 @@ from dagster._core.definitions.asset_selection import (
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.base_asset_graph import BaseAssetGraph
 from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.partitions.definition import (
+    DailyPartitionsDefinition,
+    MultiPartitionsDefinition,
+    StaticPartitionsDefinition,
+)
+from dagster._core.definitions.partitions.mapping import (
+    DimensionPartitionMapping,
+    IdentityPartitionMapping,
+    MultiPartitionMapping,
+)
 from dagster._core.remote_representation.external import RemoteRepository
 from dagster._core.remote_representation.external_data import RepositorySnap
 from dagster._core.remote_representation.handle import RepositoryHandle
@@ -136,7 +140,19 @@ _AssetList: TypeAlias = Iterable[Union[AssetsDefinition, SourceAsset]]
 
 @pytest.fixture
 def all_assets() -> _AssetList:
-    return [earth, alice, bob, candace, danny, edgar, fiona, george, robots, aliens, zebra]
+    return [
+        earth,
+        alice,
+        bob,
+        candace,
+        danny,
+        edgar,
+        fiona,
+        george,
+        robots,
+        aliens,
+        zebra,
+    ]
 
 
 def _asset_keys_of(assets_defs: _AssetList) -> AbstractSet[AssetKey]:
@@ -434,7 +450,8 @@ def test_sources():
             MultiPartitionMapping(
                 {
                     "time": DimensionPartitionMapping(
-                        "time", TimeWindowPartitionMapping(start_offset=-1, end_offset=-1)
+                        "time",
+                        TimeWindowPartitionMapping(start_offset=-1, end_offset=-1),
                     ),
                     "abc": DimensionPartitionMapping("abc", IdentityPartitionMapping()),
                 }
@@ -726,6 +743,37 @@ def test_to_string_basic():
     assert (
         str(AssetSelection.groups("marketing", "finance")) == 'group:"marketing" or group:"finance"'
     )
+    assert str(AssetSelection.groups()) == "group:<null>"
+    assert str(AssetSelection.groups("")) == 'group:""'
+    assert str(AssetSelection.kind(None)) == "kind:<null>"
+    assert str(AssetSelection.kind("")) == 'kind:""'
+    assert str(AssetSelection.tag("", "")) == 'tag:""'
+    assert str(AssetSelection.owner(None)) == "owner:<null>"
+    assert str(AssetSelection.owner("")) == 'owner:""'
+    assert str(CodeLocationAssetSelection(selected_code_location=None)) == "code_location:<null>"
+    assert str(ColumnAssetSelection(selected_column=None)) == "column:<null>"
+    assert str(ColumnAssetSelection(selected_column="")) == 'column:""'
+    assert str(ColumnTagAssetSelection(key="fake", value="")) == 'column_tag:"fake"'
+    assert str(ColumnTagAssetSelection(key="", value="")) == 'column_tag:""'
+    assert str(TableNameAssetSelection(selected_table_name=None)) == "table_name:<null>"
+    assert str(TableNameAssetSelection(selected_table_name="")) == 'table_name:""'
+    assert (
+        str(ChangedInBranchAssetSelection(selected_changed_in_branch=None))
+        == "changed_in_branch:<null>"
+    )
+    assert (
+        str(ChangedInBranchAssetSelection(selected_changed_in_branch="")) == 'changed_in_branch:""'
+    )
+    assert AssetSelection.from_string("kind:dbt").to_selection_str() == 'kind:"dbt"'
+    assert AssetSelection.from_string("owner:dbt").to_selection_str() == 'owner:"dbt"'
+    assert AssetSelection.from_string("tag:foo=bar").to_selection_str() == 'tag:"foo"="bar"'
+    assert AssetSelection.from_string("tag:foo").to_selection_str() == 'tag:"foo"'
+    assert AssetSelection.from_string("key:prefix/thing").to_selection_str() == 'key:"prefix/thing"'
+    assert (
+        AssetSelection.from_string('key:"prefix/thing*"').to_selection_str()
+        == 'key:"prefix/thing*"'
+    )
+    assert AssetSelection.from_string("column:foo").to_selection_str() == 'column:"foo"'
 
 
 def test_to_string_binary_operators():
@@ -836,6 +884,7 @@ def test_tag():
     assert AssetSelection.tag("foo", "fooval").resolve([assets]) == {
         AssetKey(k) for k in ["asset1", "asset3"]
     }
+    assert AssetSelection.tag("foo", "").resolve([assets]) == set()
 
 
 def test_tag_string():
@@ -908,6 +957,27 @@ def test_owner() -> None:
 
     assert AssetSelection.owner("owner1@owner.com").resolve([assets]) == {
         AssetKey("asset1"),
+        AssetKey("asset3"),
+    }
+
+
+def test_kind() -> None:
+    @multi_asset(
+        specs=[
+            AssetSpec("asset1", kinds={"my_kind"}),
+            AssetSpec("asset2", kinds={""}),
+            AssetSpec("asset3"),
+        ]
+    )
+    def assets(): ...
+
+    assert AssetSelection.kind("my_kind").resolve([assets]) == {
+        AssetKey("asset1"),
+    }
+    assert AssetSelection.kind("").resolve([assets]) == {
+        AssetKey("asset2"),
+    }
+    assert AssetSelection.kind(None).resolve([assets]) == {
         AssetKey("asset3"),
     }
 

@@ -1,8 +1,0 @@
-dg list plugin-modules
-
-┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-┃ Module                         ┃
-┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
-│ dagster                        │
-│ my_existing_project.components │
-└────────────────────────────────┘

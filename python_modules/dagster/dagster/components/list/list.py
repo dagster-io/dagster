@@ -9,7 +9,7 @@ import click
 from dagster_dg_core.context import DgContext
 from dagster_shared.cli import PythonPointerOpts
 from dagster_shared.error import SerializableErrorInfo, remove_system_frames_from_error
-from dagster_shared.serdes.objects import PluginObjectKey
+from dagster_shared.serdes.objects import EnvRegistryKey
 from dagster_shared.serdes.objects.definition_metadata import (
     DgAssetCheckMetadata,
     DgAssetMetadata,
@@ -19,7 +19,7 @@ from dagster_shared.serdes.objects.definition_metadata import (
     DgScheduleMetadata,
     DgSensorMetadata,
 )
-from dagster_shared.serdes.objects.package_entry import PluginManifest
+from dagster_shared.serdes.objects.package_entry import EnvRegistryManifest
 from pydantic import ConfigDict, TypeAdapter, create_model
 
 from dagster._cli.utils import get_possibly_temporary_instance_for_cli
@@ -46,12 +46,12 @@ from dagster.components.core.tree import ComponentTree
 
 def list_plugins(
     entry_points: bool, extra_modules: Sequence[str]
-) -> Union[PluginManifest, SerializableErrorInfo]:
+) -> Union[EnvRegistryManifest, SerializableErrorInfo]:
     modules = [*(ep.value for ep in get_plugin_entry_points()), *extra_modules]
     try:
         plugin_objects = _load_plugin_objects(entry_points, extra_modules)
         object_snaps = [get_package_entry_snap(key, obj) for key, obj in plugin_objects.items()]
-        return PluginManifest(
+        return EnvRegistryManifest(
             modules=modules,
             objects=object_snaps,
         )
@@ -99,7 +99,7 @@ def _load_defs_at_path(dg_context: DgContext, path: Optional[Path]) -> Repositor
     tree = ComponentTree.load(dg_context.root_path)
 
     try:
-        defs = tree.load_defs_at_path(path) if path else tree.load_defs()
+        defs = tree.build_defs_at_path(path) if path else tree.build_defs()
     except Exception as e:
         path_text = f" at {path}" if path else ""
         raise click.ClickException(f"Unable to load definitions{path_text}: {e}") from e
@@ -176,6 +176,7 @@ def list_definitions(
                             if k not in IGNORE_METADATA_KEYS_LIST_DEFINITIONS
                         ]
                     ),
+                    is_executable=node.is_executable,
                 )
             )
         for key in selected_checks if selected_checks is not None else asset_graph.asset_check_keys:
@@ -223,7 +224,7 @@ def list_definitions(
 
 def _load_plugin_objects(
     entry_points: bool, extra_modules: Sequence[str]
-) -> dict[PluginObjectKey, object]:
+) -> dict[EnvRegistryKey, object]:
     objects = {}
     if entry_points:
         objects.update(discover_entry_point_package_objects())
@@ -234,7 +235,7 @@ def _load_plugin_objects(
 
 def _load_component_types(
     entry_points: bool, extra_modules: Sequence[str]
-) -> dict[PluginObjectKey, type[Component]]:
+) -> dict[EnvRegistryKey, type[Component]]:
     return {
         key: obj
         for key, obj in _load_plugin_objects(entry_points, extra_modules).items()

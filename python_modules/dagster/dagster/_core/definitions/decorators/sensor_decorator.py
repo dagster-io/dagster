@@ -8,6 +8,7 @@ import dagster._check as check
 from dagster._core.definitions.asset_selection import AssetSelection, CoercibleToAssetSelection
 from dagster._core.definitions.asset_sensor_definition import AssetSensorDefinition
 from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.metadata import RawMetadataMapping
 from dagster._core.definitions.multi_asset_sensor_definition import (
     AssetMaterializationFunction,
     MultiAssetMaterializationFunction,
@@ -44,7 +45,7 @@ def sensor(
     asset_selection: Optional[CoercibleToAssetSelection] = None,
     required_resource_keys: Optional[set[str]] = None,
     tags: Optional[Mapping[str, str]] = None,
-    metadata: Optional[Mapping[str, object]] = None,
+    metadata: Optional[RawMetadataMapping] = None,
     target: Optional[
         Union[
             "CoercibleToAssetSelection",
@@ -132,7 +133,7 @@ def asset_sensor(
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
     required_resource_keys: Optional[set[str]] = None,
     tags: Optional[Mapping[str, str]] = None,
-    metadata: Optional[Mapping[str, object]] = None,
+    metadata: Optional[RawMetadataMapping] = None,
 ) -> Callable[
     [
         AssetMaterializationFunction,
@@ -261,7 +262,7 @@ def multi_asset_sensor(
     request_assets: Optional[AssetSelection] = None,
     required_resource_keys: Optional[set[str]] = None,
     tags: Optional[Mapping[str, str]] = None,
-    metadata: Optional[Mapping[str, object]] = None,
+    metadata: Optional[RawMetadataMapping] = None,
 ) -> Callable[
     [
         MultiAssetMaterializationFunction,

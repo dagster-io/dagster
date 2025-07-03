@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Optional, Union
 
 import click
 import typer
-from dagster_shared.serdes.objects import PluginObjectKey
+from dagster_shared.serdes.objects import EnvRegistryKey
 from dagster_shared.yaml_utils.source_position import SourcePositionTree
 
 if TYPE_CHECKING:  # defer for import performance
@@ -41,7 +41,7 @@ def augment_error_path(error_details: "ValidationError") -> Sequence[Union[str, 
 
 
 def error_dict_to_formatted_error(
-    key: Optional[PluginObjectKey],
+    key: Optional[EnvRegistryKey],
     error_details: "ValidationError",
     source_position_tree: SourcePositionTree,
     prefix: Sequence[str] = (),

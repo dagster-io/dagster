@@ -27,8 +27,10 @@ from dagster._core.definitions.declarative_automation.serialized_objects import 
     OperatorType,
     get_serializable_candidate_subset,
 )
-from dagster._core.definitions.partition import AllPartitionsSubset
-from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsSubset
+from dagster._core.definitions.partitions.subset import (
+    AllPartitionsSubset,
+    TimeWindowPartitionsSubset,
+)
 from dagster._record import copy, record
 from dagster._time import get_current_timestamp
 from dagster._utils.schedules import is_valid_cron_schedule
@@ -46,6 +48,9 @@ if TYPE_CHECKING:
     )
     from dagster._core.definitions.declarative_automation.operators.dep_operators import (
         DepsAutomationCondition,
+    )
+    from dagster._core.definitions.declarative_automation.operators.since_operator import (
+        SinceCondition,
     )
 
 
@@ -261,7 +266,7 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
 
     def since(
         self, reset_condition: "AutomationCondition[T_EntityKey]"
-    ) -> "BuiltinAutomationCondition[T_EntityKey]":
+    ) -> "SinceCondition[T_EntityKey]":
         """Returns an AutomationCondition that is true if this condition has ever been
         true since the last time the reset condition became true.
         """

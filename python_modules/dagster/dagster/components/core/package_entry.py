@@ -5,9 +5,11 @@ import sys
 from collections.abc import Iterable, Sequence
 from types import ModuleType
 
-from dagster_shared.serdes.objects import PluginObjectKey
+from dagster_shared.error import DagsterError, DagsterUnresolvableSymbolError
+from dagster_shared.serdes.objects import EnvRegistryKey
+from dagster_shared.seven import load_module_object
 
-from dagster._core.errors import DagsterError
+from dagster.components.scaffold.scaffold import has_scaffolder
 from dagster.components.utils import format_error_message
 
 PACKAGE_ENTRY_ATTR = "__dg_package_entry__"
@@ -42,11 +44,11 @@ def get_plugin_entry_points() -> Sequence[importlib.metadata.EntryPoint]:
     return entry_points
 
 
-def discover_entry_point_package_objects() -> dict[PluginObjectKey, object]:
+def discover_entry_point_package_objects() -> dict[EnvRegistryKey, object]:
     """Discover package entries registered in the Python environment via the
     `dagster_dg_cli.registry_modules` entry point group.
     """
-    objects: dict[PluginObjectKey, object] = {}
+    objects: dict[EnvRegistryKey, object] = {}
 
     for entry_point in get_plugin_entry_points():
         try:
@@ -65,16 +67,16 @@ def discover_entry_point_package_objects() -> dict[PluginObjectKey, object]:
                 f"Value expected to be a module, got {root_module}."
             )
         for name, obj in get_package_objects_in_module(root_module):
-            key = PluginObjectKey(name=name, namespace=entry_point.value)
+            key = EnvRegistryKey(name=name, namespace=entry_point.value)
             objects[key] = obj
     return objects
 
 
-def discover_package_objects(modules: Sequence[str]) -> dict[PluginObjectKey, object]:
-    objects: dict[PluginObjectKey, object] = {}
+def discover_package_objects(modules: Sequence[str]) -> dict[EnvRegistryKey, object]:
+    objects: dict[EnvRegistryKey, object] = {}
     for extra_module in modules:
         for name, obj in get_package_objects_in_module(importlib.import_module(extra_module)):
-            key = PluginObjectKey(name=name, namespace=extra_module)
+            key = EnvRegistryKey(name=name, namespace=extra_module)
             objects[key] = obj
     return objects
 
@@ -88,14 +90,9 @@ def get_package_objects_in_module(
             yield attr, value
 
 
-def load_package_object(key: PluginObjectKey) -> object:
-    module_name, attr = key.namespace, key.name
+def is_scaffoldable_object_key(key: EnvRegistryKey) -> bool:
     try:
-        module = importlib.import_module(module_name)
-        if not hasattr(module, attr):
-            raise DagsterError(f"Module `{module_name}` has no attribute `{attr}`.")
-        return getattr(module, attr)
-    except ModuleNotFoundError as e:
-        raise DagsterError(f"Module `{module_name}` not found.") from e
-    except ImportError as e:
-        raise DagsterError(f"Error loading module `{module_name}`.") from e
+        obj = load_module_object(key.namespace, key.name)
+        return has_scaffolder(obj)
+    except DagsterUnresolvableSymbolError:
+        return False

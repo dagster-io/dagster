@@ -1,10 +1,10 @@
 from random import random
 
-from dagster import (
+from dagster import asset
+from dagster._core.definitions.partitions.definition import (
     DailyPartitionsDefinition,
     MultiPartitionsDefinition,
     StaticPartitionsDefinition,
-    asset,
 )
 
 from dagster_test.toys.partitioned_assets.dynamic_asset_partitions import (

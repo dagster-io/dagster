@@ -24,6 +24,7 @@ SNIPPETS_DIR = (
     / "guides"
     / "components"
     / "adding-attributes-to-assets"
+    / "generated"
 )
 
 
@@ -46,7 +47,7 @@ def test_components_docs_adding_attributes_to_assets(
         context.run_command_and_snippet_output(
             cmd=textwrap.dedent(
                 """\
-                create-dagster project my-project --python-environment uv_managed --use-editable-dagster \\
+                create-dagster project my-project --uv-sync --use-editable-dagster \\
                     && source my-project/.venv/bin/activate \\
                     && cd my-project/src \\
                     && dg scaffold defs dagster.asset team_a/subproject/a.py \\
@@ -56,9 +57,9 @@ def test_components_docs_adding_attributes_to_assets(
             ),
             snippet_path=f"{context.get_next_snip_number()}-scaffold-project.txt",
             snippet_replace_regex=[
-                ("--python-environment uv_managed --use-editable-dagster ", ""),
+                ("--uv-sync --use-editable-dagster ", ""),
                 (".*&& source my-project/.venv/bin/activate.*\n", ""),
-                ("create-dagster", "uvx create-dagster"),
+                ("create-dagster", "uvx -U create-dagster"),
             ],
             ignore_output=True,
         )
@@ -84,7 +85,7 @@ def test_components_docs_adding_attributes_to_assets(
         # Add component.yaml
         context.create_file(
             Path("my_project") / "defs" / "team_a" / "defs.yaml",
-            contents=(SNIPPETS_DIR / "defs.yaml").read_text(),
+            contents=(SNIPPETS_DIR.parent / "defs.yaml").read_text(),
         )
 
         # Tree the project

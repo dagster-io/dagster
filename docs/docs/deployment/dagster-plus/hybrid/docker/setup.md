@@ -17,8 +17,8 @@ To complete the steps in this guide, you'll need:
   This can be:
 
   - A self-hosted registry,
-  - A public registry such as [DockerHub](https://hub.docker.com/), or
-  - A managed offering such as [Amazon ECR](https://aws.amazon.com/ecr/), [Azure CR](https://azure.microsoft.com/en-us/services/container-registry/#overview), or [Google CR](https://cloud.google.com/container-registry)
+  - A public registry such as [DockerHub](https://hub.docker.com), or
+  - A managed offering such as [Amazon ECR](https://aws.amazon.com/ecr), [Azure CR](https://azure.microsoft.com/en-us/services/container-registry/#overview), or [Google CR](https://cloud.google.com/container-registry)
 
 ## Step 1: Generate a Dagster+ agent token
 

@@ -1,3 +1,0 @@
-dg scaffold defs 'my_component_library.components.shell_command.ShellCommand' my_shell_command
-
-Creating a component at /.../my-component-library/src/my_component_library/defs/my_shell_command.

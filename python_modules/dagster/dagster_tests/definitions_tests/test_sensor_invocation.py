@@ -14,14 +14,12 @@ from dagster import (
     DagsterInvariantViolationError,
     DagsterRunStatus,
     DagsterUnknownPartitionError,
-    DailyPartitionsDefinition,
     Definitions,
     Output,
     RunConfig,
     RunRequest,
     SkipReason,
     SourceAsset,
-    StaticPartitionsDefinition,
     asset,
     asset_sensor,
     build_multi_asset_sensor_context,
@@ -38,13 +36,17 @@ from dagster import (
     run_failure_sensor,
     run_status_sensor,
     sensor,
-    static_partitioned_config,
 )
 from dagster._config.pythonic_config import ConfigurableResource
 from dagster._core.definitions.asset_check_result import AssetCheckResult
 from dagster._core.definitions.decorators.asset_check_decorator import asset_check
 from dagster._core.definitions.metadata import MetadataValue
-from dagster._core.definitions.partition import DynamicPartitionsDefinition
+from dagster._core.definitions.partitions.definition import (
+    DailyPartitionsDefinition,
+    DynamicPartitionsDefinition,
+    StaticPartitionsDefinition,
+)
+from dagster._core.definitions.partitions.partitioned_config import static_partitioned_config
 from dagster._core.definitions.resource_annotation import ResourceParam
 from dagster._core.definitions.sensor_definition import SensorDefinition
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidInvocationError

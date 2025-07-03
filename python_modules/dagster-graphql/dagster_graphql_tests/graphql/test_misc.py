@@ -1,7 +1,6 @@
 import csv
 from collections import OrderedDict
 
-import pytest
 from dagster import (
     DependencyDefinition,
     In,
@@ -150,9 +149,8 @@ def define_circular_dependency_job():
     )
 
 
-@pytest.mark.skip(reason="this is a repository, not a test")
 @repository  # pyright: ignore[reportArgumentType]
-def test_repository():
+def the_test_repository():
     return {"jobs": {"circular_dependency_job": define_circular_dependency_job}}
 
 

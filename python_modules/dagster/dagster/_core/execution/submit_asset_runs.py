@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import sys
 import time
@@ -54,7 +55,7 @@ def _get_execution_plan_entity_keys(
     return output_entity_keys
 
 
-def _get_job_execution_data_from_run_request(
+async def get_job_execution_data_from_run_request(
     asset_graph: RemoteWorkspaceAssetGraph,
     run_request: RunRequest,
     instance: DagsterInstance,
@@ -90,32 +91,26 @@ def _get_job_execution_data_from_run_request(
     )
 
     if pipeline_selector not in run_request_execution_data_cache:
-        code_location = workspace.get_code_location(handle.location_name)
-        remote_job = code_location.get_job(pipeline_selector)
-
-        remote_execution_plan = code_location.get_execution_plan(
-            remote_job,
-            {},
-            step_keys_to_execute=None,
-            known_state=None,
-            instance=instance,
+        remote_job, remote_execution_plan = await asyncio.gather(
+            RemoteJob.gen(workspace, pipeline_selector),
+            RemoteExecutionPlan.gen(workspace, pipeline_selector),
         )
-
         run_request_execution_data_cache[pipeline_selector] = RunRequestExecutionData(
-            remote_job,
-            remote_execution_plan,
+            check.not_none(remote_job),
+            check.not_none(remote_execution_plan),
         )
 
     return run_request_execution_data_cache[pipeline_selector]
 
 
-def _create_asset_run(
+async def _create_asset_run(
     run_id: Optional[str],
     run_request: RunRequest,
     run_request_index: int,
     instance: DagsterInstance,
     run_request_execution_data_cache: dict[JobSubsetSelector, RunRequestExecutionData],
     workspace_process_context: IWorkspaceProcessContext,
+    workspace: BaseWorkspaceRequestContext,
     debug_crash_flags: SingleInstigatorDebugCrashFlags,
     logger: logging.Logger,
 ) -> DagsterRun:
@@ -134,11 +129,8 @@ def _create_asset_run(
 
         # retry until the execution plan targets the asset selection
         try:
-            # create a new request context for each run in case the code location server
-            # is swapped out in the middle of the submission process
-            workspace = workspace_process_context.create_request_context()
             asset_graph = workspace.asset_graph
-            execution_data = _get_job_execution_data_from_run_request(
+            execution_data = await get_job_execution_data_from_run_request(
                 asset_graph,
                 run_request,
                 instance,
@@ -238,12 +230,13 @@ def _create_asset_run(
     )
 
 
-def submit_asset_run(
+async def submit_asset_run(
     run_id: Optional[str],
     run_request: RunRequest,
     run_request_index: int,
     instance: DagsterInstance,
     workspace_process_context: IWorkspaceProcessContext,
+    workspace: BaseWorkspaceRequestContext,
     run_request_execution_data_cache: dict[JobSubsetSelector, RunRequestExecutionData],
     debug_crash_flags: SingleInstigatorDebugCrashFlags,
     logger: logging.Logger,
@@ -278,13 +271,14 @@ def submit_asset_run(
             )
             run_to_submit = existing_run
     else:
-        run_to_submit = _create_asset_run(
+        run_to_submit = await _create_asset_run(
             run_id,
             run_request,
             run_request_index,
             instance,
             run_request_execution_data_cache,
             workspace_process_context,
+            workspace,
             debug_crash_flags,
             logger,
         )

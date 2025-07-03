@@ -30,7 +30,7 @@ However, this automatic change also means potentially sensitive data could be **
 To prevent this, you can use [another I/O manager](/guides/build/io-managers/#built-in) that stores data in your infrastructure or [adapt your code to avoid using an I/O manager](/guides/build/io-managers/#before-you-begin).
 
 :::note
-You must have [boto3](https://pypi.org/project/boto3/) or `dagster-cloud[serverless]` installed as a project dependency otherwise the Dagster+ managed storage can fail and silently fall back to using the default I/O manager.
+You must have [boto3](https://pypi.org/project/boto3) or `dagster-cloud[serverless]` installed as a project dependency otherwise the Dagster+ managed storage can fail and silently fall back to using the default I/O manager.
 :::
 
 ## Adding environment variables and secrets

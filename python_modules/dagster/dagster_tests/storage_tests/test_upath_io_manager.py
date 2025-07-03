@@ -8,23 +8,17 @@ from typing import Any, Optional, cast
 import fsspec
 import pytest
 from dagster import (
-    AllPartitionMapping,
     AssetExecutionContext,
     AssetIn,
     ConfigurableIOManager,
     DagsterInvariantViolationError,
     DagsterType,
-    DailyPartitionsDefinition,
     Field,
-    HourlyPartitionsDefinition,
     InitResourceContext,
     InputContext,
     MetadataValue,
-    MultiPartitionKey,
-    MultiPartitionsDefinition,
     OpExecutionContext,
     OutputContext,
-    StaticPartitionsDefinition,
     TimeWindowPartitionMapping,
     asset,
     build_init_resource_context,
@@ -33,6 +27,14 @@ from dagster import (
     io_manager,
     materialize,
 )
+from dagster._core.definitions.partitions.definition import (
+    DailyPartitionsDefinition,
+    HourlyPartitionsDefinition,
+    MultiPartitionsDefinition,
+    StaticPartitionsDefinition,
+)
+from dagster._core.definitions.partitions.mapping import AllPartitionMapping
+from dagster._core.definitions.partitions.utils import MultiPartitionKey
 from dagster._core.events import HandledOutputData
 from dagster._core.storage.io_manager import IOManagerDefinition
 from dagster._core.storage.upath_io_manager import UPathIOManager

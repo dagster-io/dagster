@@ -1,16 +1,13 @@
 import datetime
 
-from dagster import (
-    AssetDep,
-    AutoMaterializePolicy,
-    AutoMaterializeRule,
+from dagster import AssetDep, AutoMaterializePolicy, AutoMaterializeRule, TimeWindowPartitionMapping
+from dagster._core.definitions.auto_materialize_rule_impls import (
+    DiscardOnMaxMaterializationsExceededRule,
+)
+from dagster._core.definitions.partitions.mapping import (
     DimensionPartitionMapping,
     IdentityPartitionMapping,
     MultiPartitionMapping,
-    TimeWindowPartitionMapping,
-)
-from dagster._core.definitions.auto_materialize_rule_impls import (
-    DiscardOnMaxMaterializationsExceededRule,
 )
 from dagster._core.definitions.timestamp import TimestampWithTimezone
 from dagster._record import copy

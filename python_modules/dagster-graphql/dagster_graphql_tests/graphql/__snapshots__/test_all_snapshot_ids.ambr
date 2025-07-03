@@ -2931,17 +2931,6 @@
               "description": null,
               "is_dynamic": false,
               "is_required": true,
-              "metadata_entries": [
-                {
-                  "__class__": "EventMetadataEntry",
-                  "description": null,
-                  "entry_data": {
-                    "__class__": "TextMetadataEntryData",
-                    "text": "{\"__class__\": \"TimeWindowFreshnessPolicy\", \"fail_window\": {\"__class__\": \"SerializableTimeDelta\", \"days\": 0, \"microseconds\": 0, \"seconds\": 600}, \"warn_window\": {\"__class__\": \"SerializableTimeDelta\", \"days\": 0, \"microseconds\": 0, \"seconds\": 300}}"
-                  },
-                  "label": "dagster/internal_freshness_policy"
-                }
-              ],
               "name": "result"
             }
           ],
@@ -36554,7 +36543,7 @@
   'd9f6d85793df3d9df94d4aedb21bb659c1202bda'
 # ---
 # name: test_all_snapshot_ids[1]
-  '06194a2bfd72c3683124ac3696e9ea4834bbfd7e'
+  'cb24dc58cd64daf2a29598963c6e4b9e70e992b5'
 # ---
 # name: test_all_snapshot_ids[20]
   '''
@@ -51422,17 +51411,6 @@
               "description": null,
               "is_dynamic": false,
               "is_required": true,
-              "metadata_entries": [
-                {
-                  "__class__": "EventMetadataEntry",
-                  "description": null,
-                  "entry_data": {
-                    "__class__": "TextMetadataEntryData",
-                    "text": "{\"__class__\": \"TimeWindowFreshnessPolicy\", \"fail_window\": {\"__class__\": \"SerializableTimeDelta\", \"days\": 0, \"microseconds\": 0, \"seconds\": 600}, \"warn_window\": {\"__class__\": \"SerializableTimeDelta\", \"days\": 0, \"microseconds\": 0, \"seconds\": 300}}"
-                  },
-                  "label": "dagster/internal_freshness_policy"
-                }
-              ],
               "name": "result"
             }
           ],
@@ -51622,7 +51600,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[45]
-  '27aa1c25caf492245ba26705514d968ddfbb675b'
+  '797927dc38e2e944aa962af5ee2558cd34ff7ed5'
 # ---
 # name: test_all_snapshot_ids[46]
   '''
@@ -66138,17 +66116,6 @@
               "description": null,
               "is_dynamic": false,
               "is_required": true,
-              "metadata_entries": [
-                {
-                  "__class__": "EventMetadataEntry",
-                  "description": null,
-                  "entry_data": {
-                    "__class__": "TextMetadataEntryData",
-                    "text": "{\"__class__\": \"TimeWindowFreshnessPolicy\", \"fail_window\": {\"__class__\": \"SerializableTimeDelta\", \"days\": 0, \"microseconds\": 0, \"seconds\": 600}, \"warn_window\": {\"__class__\": \"SerializableTimeDelta\", \"days\": 0, \"microseconds\": 0, \"seconds\": 300}}"
-                  },
-                  "label": "dagster/internal_freshness_policy"
-                }
-              ],
               "name": "result"
             }
           ],
@@ -70833,7 +70800,7 @@
   '68f90c6bc3483e01ab1317573d90e23d0efe14a9'
 # ---
 # name: test_all_snapshot_ids[7]
-  '9af25dcd5c69c820935d9b67163dfff2f3bd9519'
+  '8023256507d183317343a2f6c4703a5ac3800eaf'
 # ---
 # name: test_all_snapshot_ids[80]
   '''

@@ -4,6 +4,10 @@ sidebar_position: 100
 title: Defining resources
 ---
 
+import ScaffoldResource from '@site/docs/partials/\_ScaffoldResource.md';
+
+<ScaffoldResource />
+
 Typically, resources are defined by subclassing <PyObject section="resources" module="dagster" object="ConfigurableResource"/>. Resources typically have a set of [configuration values](/guides/operate/configuration/run-configuration), which are used to specify information like account identifiers, API keys, or database names when interfacing with an external tool or service. This configuration schema is specified by attributes on the class.
 
 The configuration system has a few advantages over plain Python parameter passing. Configured values can be:
@@ -14,19 +18,19 @@ The configuration system has a few advantages over plain Python parameter passin
 
 ## With asset definitions
 
-The following example demonstrates defining a subclass of <PyObject section="resources" module="dagster" object="ConfigurableResource"/> that represents a connection to an external service. The resource can be configured by constructing it in the <PyObject section="definitions" module="dagster" object="Definitions" /> call.
+The following example demonstrates defining a subclass of <PyObject section="resources" module="dagster" object="ConfigurableResource"/> that represents a connection to an external service. The resource can be configured by constructing a function using the <PyObject section="definitions" module="dagster" object="Definitions" decorator />.
 
 You can define methods on the resource class which depend on config values.
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/resources/pythonic_resources.py" startAfter="start_new_resources_configurable_defs" endBefore="end_new_resources_configurable_defs" dedent="4" />
+<CodeExample path="docs_snippets/docs_snippets/concepts/resources/pythonic_resources.py" startAfter="start_new_resources_configurable_defs" endBefore="end_new_resources_configurable_defs" dedent="4" title="src/<project_name>/defs/assets.py" />
 
 Assets specify resource dependencies by annotating the resource as a parameter to the asset function.
 
-To provide resource values to assets, attach them to the <PyObject section="definitions" module="dagster" object="Definitions" /> objects. These resources are automatically passed to the function at runtime.
+To provide resource values to assets, attach them to the <PyObject section="definitions" module="dagster" object="Definitions" decorator /> function. These resources are automatically passed to the function at runtime.
 
 ## With sensors
 
-[Sensors](/guides/automate/sensors/) use resources in the same way as assets, which can be useful for querying external services for data.
+[Sensors](/guides/automate/sensors) use resources in the same way as assets, which can be useful for querying external services for data.
 
 To specify resource dependencies on a sensor, annotate the resource type as a parameter to the sensor's function. For more information and examples, see the [Sensors documentation](/guides/automate/sensors/using-resources-in-sensors).
 
@@ -38,10 +42,12 @@ To specify resource dependencies on a schedule, annotate the resource type as a 
 
 ## With jobs
 
-The following example defines a subclass of <PyObject section="resources" module="dagster" object="ConfigurableResource"/> that represents a connection to an external service. The resource can be configured by constructing it in the <PyObject section="definitions" module="dagster" object="Definitions" /> call.
+The following example defines a subclass of <PyObject section="resources" module="dagster" object="ConfigurableResource"/> that represents a connection to an external service. The resource can be configured by constructing a function using the <PyObject section="definitions" module="dagster" object="Definitions" decorator />.
 
 You can define methods on the resource class which depend on config values.
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/resources/pythonic_resources.py" startAfter="start_new_resources_configurable_defs_ops" endBefore="end_new_resources_configurable_defs_ops" dedent="4" />
+<CodeExample path="docs_snippets/docs_snippets/concepts/resources/pythonic_resources.py" startAfter="start_new_resources_configurable_defs_ops" endBefore="end_new_resources_configurable_defs_ops" dedent="4" title="src/<project_name>/defs/assets.py" />
+
+<CodeExample path="docs_snippets/docs_snippets/concepts/resources/pythonic_resources.py" startAfter="start_new_resources_configurable_defs_ops_defs" endBefore="end_new_resources_configurable_defs_ops_defs" dedent="4" title="src/<project_name>/defs/resources.py" />
 
 There are many supported config types that can be used when defining resources. Refer to the [advanced config types documentation](/guides/operate/configuration/advanced-config-types) for a more comprehensive overview of the available config types.

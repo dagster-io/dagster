@@ -13,7 +13,7 @@ partnerlink: https://meltano.com/
 
 <p>{frontMatter.description}</p>
 
-**Note** that this integration can also be [managed from the Meltano platform](https://hub.meltano.com/utilities/dagster/) using `meltano add utility dagster` and configured using `meltano config dagster set --interactive`.
+**Note** that this integration can also be [managed from the Meltano platform](https://hub.meltano.com/utilities/dagster) using `meltano add utility dagster` and configured using `meltano config dagster set --interactive`.
 
 ## Installation
 
@@ -25,4 +25,4 @@ partnerlink: https://meltano.com/
 
 ## About Meltano
 
-[Meltano](https://meltano.com/) provides data engineers with a set of tools for easily creating and managing pipelines as code by providing a wide array of composable connectors. Meltano's 'CLI for ELT+' lets you test your changes before they go live.
+[Meltano](https://meltano.com) provides data engineers with a set of tools for easily creating and managing pipelines as code by providing a wide array of composable connectors. Meltano's 'CLI for ELT+' lets you test your changes before they go live.

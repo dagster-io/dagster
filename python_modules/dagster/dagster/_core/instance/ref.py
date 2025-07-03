@@ -460,6 +460,7 @@ class InstanceRef(
             "nux",
             "auto_materialize",
             "concurrency",
+            "freshness",
         }
         settings = {key: config_value.get(key) for key in settings_keys if config_value.get(key)}
 

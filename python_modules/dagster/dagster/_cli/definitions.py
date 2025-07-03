@@ -9,7 +9,7 @@ from dagster_shared.error import remove_system_frames_from_error
 from dagster import __version__ as dagster_version
 from dagster._cli.utils import assert_no_remaining_opts, get_possibly_temporary_instance_for_cli
 from dagster._cli.workspace.cli_target import WorkspaceOpts, get_workspace_from_cli_opts
-from dagster._utils.error import unwrap_user_code_error
+from dagster._utils.error import serializable_error_info_from_exc_info, unwrap_user_code_error
 from dagster._utils.log import configure_loggers
 
 
@@ -132,6 +132,14 @@ def definitions_validate_command_impl(
                     pass
                 else:
                     logger.info(f"Validation successful for code location {code_location}.")
+
+            try:
+                workspace.asset_graph.validate_partition_mappings()
+            except Exception:
+                logger.error(
+                    f"Asset graph contained an invalid partition mapping:\n{serializable_error_info_from_exc_info(sys.exc_info()).to_string()}"
+                )
+                sys.exit(1)
 
     if invalid_locations:
         logger.error(f"Validation for {len(invalid_locations)} code locations failed.")

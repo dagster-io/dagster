@@ -34,12 +34,13 @@ from dagster._core.definitions.events import (
     CoercibleToAssetKey,
     CoercibleToAssetKeyPrefix,
 )
-from dagster._core.definitions.freshness import INTERNAL_FRESHNESS_POLICY_METADATA_KEY
-from dagster._core.definitions.freshness_policy import FreshnessPolicy
+from dagster._core.definitions.freshness import InternalFreshnessPolicy
+from dagster._core.definitions.freshness_policy import LegacyFreshnessPolicy
+from dagster._core.definitions.hook_definition import HookDefinition
 from dagster._core.definitions.input import GraphIn
 from dagster._core.definitions.metadata import ArbitraryMetadataMapping, RawMetadataMapping
 from dagster._core.definitions.output import GraphOut
-from dagster._core.definitions.partition import PartitionsDefinition
+from dagster._core.definitions.partitions.definition import PartitionsDefinition
 from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.utils import (
@@ -51,7 +52,6 @@ from dagster._core.definitions.utils import (
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.storage.tags import KIND_PREFIX
 from dagster._core.types.dagster_type import DagsterType
-from dagster._serdes import serialize_value
 from dagster._utils.tags import normalize_tags
 from dagster._utils.warnings import disable_dagster_warnings
 
@@ -69,6 +69,7 @@ def asset(
     config_schema: Optional[UserConfigSchema] = None,
     required_resource_keys: Optional[AbstractSet[str]] = ...,
     resource_defs: Optional[Mapping[str, object]] = ...,
+    hooks: Optional[AbstractSet[HookDefinition]] = ...,
     io_manager_def: Optional[object] = ...,
     io_manager_key: Optional[str] = ...,
     dagster_type: Optional[DagsterType] = ...,
@@ -131,20 +132,14 @@ def _validate_hidden_non_argument_dep_param(
     additional_warn_text="use `automation_condition` instead.",
 )
 @hidden_param(
-    param="freshness_policy",
-    breaking_version="1.10.0",
+    param="legacy_freshness_policy",
+    breaking_version="1.12.0",
     additional_warn_text="use freshness checks instead.",
 )
 @hidden_param(
     param="compute_kind",
     emit_runtime_warning=False,
     breaking_version="1.10.0",
-)
-@hidden_param(
-    param="internal_freshness_policy",
-    emit_runtime_warning=False,
-    breaking_version="1.10.0",
-    additional_warn_text="experimental, use freshness checks instead.",
 )
 def asset(
     compute_fn: Optional[Callable[..., Any]] = None,
@@ -159,6 +154,7 @@ def asset(
     config_schema: Optional[UserConfigSchema] = None,
     required_resource_keys: Optional[AbstractSet[str]] = None,
     resource_defs: Optional[Mapping[str, object]] = None,
+    hooks: Optional[AbstractSet[HookDefinition]] = None,
     io_manager_def: Optional[object] = None,
     io_manager_key: Optional[str] = None,
     dagster_type: Optional[DagsterType] = None,
@@ -167,6 +163,7 @@ def asset(
     group_name: Optional[str] = None,
     output_required: bool = True,
     automation_condition: Optional[AutomationCondition] = None,
+    freshness_policy: Optional[InternalFreshnessPolicy] = None,
     backfill_policy: Optional[BackfillPolicy] = None,
     retry_policy: Optional[RetryPolicy] = None,
     code_version: Optional[str] = None,
@@ -232,6 +229,8 @@ def asset(
             (Beta) A mapping of resource keys to resources. These resources
             will be initialized during execution, and can be accessed from the
             context within the body of the function.
+        hooks (Optional[AbstractSet[HookDefinition]]): A set of hooks to attach to the asset.
+            These hooks will be executed when the asset is materialized.
         output_required (bool): Whether the decorated function will always materialize an asset.
             Defaults to True. If False, the function can conditionally not `yield` a result. If
             no result is yielded, no output will be materialized to storage and downstream
@@ -290,6 +289,7 @@ def asset(
         non_argument_deps=_validate_hidden_non_argument_dep_param(kwargs.get("non_argument_deps")),
     )
     resource_defs = dict(check.opt_mapping_param(resource_defs, "resource_defs"))
+    hooks = check.opt_set_param(hooks, "hooks", of_type=HookDefinition)
 
     if compute_kind and kinds:
         raise DagsterInvalidDefinitionError(
@@ -300,13 +300,6 @@ def asset(
         **(normalize_tags(tags, strict=True)),
         **{f"{KIND_PREFIX}{kind}": "" for kind in kinds or []},
     }
-
-    internal_freshness_policy = kwargs.get("internal_freshness_policy")
-    if internal_freshness_policy:
-        metadata = {
-            **(metadata or {}),
-            INTERNAL_FRESHNESS_POLICY_METADATA_KEY: serialize_value(internal_freshness_policy),
-        }
 
     only_allow_hidden_params_in_kwargs(asset, kwargs)
 
@@ -321,6 +314,7 @@ def asset(
         config_schema=config_schema,
         required_resource_keys=required_resource_keys,
         resource_defs=resource_defs,
+        hooks=hooks,
         io_manager_key=io_manager_key,
         io_manager_def=io_manager_def,
         compute_kind=compute_kind,
@@ -329,7 +323,8 @@ def asset(
         op_tags=op_tags,
         group_name=group_name,
         output_required=output_required,
-        freshness_policy=kwargs.get("freshness_policy"),
+        legacy_freshness_policy=kwargs.get("legacy_freshness_policy"),
+        freshness_policy=freshness_policy,
         automation_condition=resolve_automation_condition(
             automation_condition, kwargs.get("auto_materialize_policy")
         ),
@@ -396,6 +391,7 @@ class AssetDecoratorArgs(NamedTuple):
     description: Optional[str]
     config_schema: Optional[UserConfigSchema]
     resource_defs: dict[str, object]
+    hooks: Optional[AbstractSet[HookDefinition]]
     io_manager_key: Optional[str]
     io_manager_def: Optional[object]
     compute_kind: Optional[str]
@@ -404,7 +400,8 @@ class AssetDecoratorArgs(NamedTuple):
     op_tags: Optional[Mapping[str, Any]]
     group_name: Optional[str]
     output_required: bool
-    freshness_policy: Optional[FreshnessPolicy]
+    legacy_freshness_policy: Optional[LegacyFreshnessPolicy]
+    freshness_policy: Optional[InternalFreshnessPolicy]
     automation_condition: Optional[AutomationCondition]
     backfill_policy: Optional[BackfillPolicy]
     retry_policy: Optional[RetryPolicy]
@@ -519,6 +516,7 @@ def create_assets_def_from_fn_and_decorator_args(
                     dagster_type=args.dagster_type if args.dagster_type else NoValueSentinel,
                     group_name=args.group_name,
                     code_version=args.code_version,
+                    legacy_freshness_policy=args.legacy_freshness_policy,
                     freshness_policy=args.freshness_policy,
                     automation_condition=args.automation_condition,
                     backfill_policy=args.backfill_policy,
@@ -538,6 +536,7 @@ def create_assets_def_from_fn_and_decorator_args(
             decorator_name="@asset",
             execution_type=AssetExecutionType.MATERIALIZATION,
             pool=args.pool,
+            hooks=args.hooks,
         )
 
         builder = DecoratorAssetsDefinitionBuilder.from_asset_outs_in_asset_centric_decorator(
@@ -581,6 +580,7 @@ def multi_asset(
     required_resource_keys: Optional[AbstractSet[str]] = None,
     internal_asset_deps: Optional[Mapping[str, set[AssetKey]]] = None,
     partitions_def: Optional[PartitionsDefinition] = None,
+    hooks: Optional[AbstractSet[HookDefinition]] = None,
     backfill_policy: Optional[BackfillPolicy] = None,
     op_tags: Optional[Mapping[str, Any]] = None,
     can_subset: bool = False,
@@ -625,6 +625,8 @@ def multi_asset(
             used as input to the asset or produced within the op.
         partitions_def (Optional[PartitionsDefinition]): Defines the set of partition keys that
             compose the assets.
+        hooks (Optional[AbstractSet[HookDefinition]]): A set of hooks to attach to the asset.
+            These hooks will be executed when the asset is materialized.
         backfill_policy (Optional[BackfillPolicy]): The backfill policy for the op that computes the asset.
         op_tags (Optional[Dict[str, Any]]): A dictionary of tags for the op that computes the asset.
             Frameworks may expect and require certain metadata to be attached to a op. Values that
@@ -724,6 +726,7 @@ def multi_asset(
         execution_type=AssetExecutionType.MATERIALIZATION,
         pool=pool,
         allow_arbitrary_check_specs=kwargs.get("allow_arbitrary_check_specs", False),
+        hooks=check.opt_set_param(hooks, "hooks", of_type=HookDefinition),
     )
 
     def inner(fn: Callable[..., Any]) -> AssetsDefinition:
@@ -756,11 +759,12 @@ def graph_asset(
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     group_name: Optional[str] = None,
     partitions_def: Optional[PartitionsDefinition] = None,
+    hooks: Optional[AbstractSet[HookDefinition]] = None,
     metadata: Optional[RawMetadataMapping] = ...,
     tags: Optional[Mapping[str, str]] = ...,
     owners: Optional[Sequence[str]] = None,
     kinds: Optional[AbstractSet[str]] = None,
-    freshness_policy: Optional[FreshnessPolicy] = ...,
+    legacy_freshness_policy: Optional[LegacyFreshnessPolicy] = ...,
     auto_materialize_policy: Optional[AutoMaterializePolicy] = ...,
     automation_condition: Optional[AutomationCondition] = ...,
     backfill_policy: Optional[BackfillPolicy] = ...,
@@ -772,8 +776,8 @@ def graph_asset(
 
 
 @hidden_param(
-    param="freshness_policy",
-    breaking_version="1.10.0",
+    param="legacy_freshness_policy",
+    breaking_version="1.12.0",
     additional_warn_text="use freshness checks instead",
 )
 @hidden_param(
@@ -791,6 +795,7 @@ def graph_asset(
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     group_name: Optional[str] = None,
     partitions_def: Optional[PartitionsDefinition] = None,
+    hooks: Optional[AbstractSet[HookDefinition]] = None,
     metadata: Optional[RawMetadataMapping] = None,
     tags: Optional[Mapping[str, str]] = None,
     owners: Optional[Sequence[str]] = None,
@@ -838,6 +843,8 @@ def graph_asset(
             not provided, the name "default" is used.
         partitions_def (Optional[PartitionsDefinition]): Defines the set of partition keys that
             compose the asset.
+        hooks (Optional[AbstractSet[HookDefinition]]): A set of hooks to attach to the asset.
+            These hooks will be executed when the asset is materialized.
         metadata (Optional[RawMetadataMapping]): Dictionary of metadata to be associated with
             the asset.
         tags (Optional[Mapping[str, str]]): Tags for filtering and organizing. These tags are not
@@ -882,10 +889,11 @@ def graph_asset(
             key_prefix=key_prefix,
             group_name=group_name,
             partitions_def=partitions_def,
+            hooks=hooks,
             metadata=metadata,
             tags=tags,
             owners=owners,
-            freshness_policy=kwargs.get("freshness_policy"),
+            legacy_freshness_policy=kwargs.get("legacy_freshness_policy"),
             automation_condition=resolve_automation_condition(
                 automation_condition, kwargs.get("auto_materialize_policy")
             ),
@@ -906,10 +914,11 @@ def graph_asset(
             key_prefix=key_prefix,
             group_name=group_name,
             partitions_def=partitions_def,
+            hooks=hooks,
             metadata=metadata,
             tags=tags,
             owners=owners,
-            freshness_policy=kwargs.get("freshness_policy"),
+            legacy_freshness_policy=kwargs.get("legacy_freshness_policy"),
             automation_condition=resolve_automation_condition(
                 automation_condition, kwargs.get("auto_materialize_policy")
             ),
@@ -932,10 +941,11 @@ def graph_asset_no_defaults(
     key_prefix: Optional[CoercibleToAssetKeyPrefix],
     group_name: Optional[str],
     partitions_def: Optional[PartitionsDefinition],
+    hooks: Optional[AbstractSet[HookDefinition]],
     metadata: Optional[RawMetadataMapping],
     tags: Optional[Mapping[str, str]],
     owners: Optional[Sequence[str]],
-    freshness_policy: Optional[FreshnessPolicy],
+    legacy_freshness_policy: Optional[LegacyFreshnessPolicy],
     automation_condition: Optional[AutomationCondition],
     backfill_policy: Optional[BackfillPolicy],
     resource_defs: Optional[Mapping[str, ResourceDefinition]],
@@ -991,12 +1001,13 @@ def graph_asset_no_defaults(
         keys_by_input_name=keys_by_input_name,
         keys_by_output_name={"result": out_asset_key},
         partitions_def=partitions_def,
+        hook_defs=hooks,
         partition_mappings=partition_mappings if partition_mappings else None,
         group_name=group_name,
         metadata_by_output_name={"result": metadata} if metadata else None,
         tags_by_output_name={"result": tags_with_kinds} if tags_with_kinds else None,
-        freshness_policies_by_output_name=(
-            {"result": freshness_policy} if freshness_policy else None
+        legacy_freshness_policies_by_output_name=(
+            {"result": legacy_freshness_policy} if legacy_freshness_policy else None
         ),
         automation_conditions_by_output_name=(
             {"result": automation_condition} if automation_condition else None
@@ -1016,6 +1027,7 @@ def graph_multi_asset(
     name: Optional[str] = None,
     ins: Optional[Mapping[str, AssetIn]] = None,
     partitions_def: Optional[PartitionsDefinition] = None,
+    hooks: Optional[AbstractSet[HookDefinition]] = None,
     backfill_policy: Optional[BackfillPolicy] = None,
     group_name: Optional[str] = None,
     can_subset: bool = False,
@@ -1036,6 +1048,7 @@ def graph_multi_asset(
             about the input.
         partitions_def (Optional[PartitionsDefinition]): Defines the set of partition keys that
             compose the assets.
+        hooks (Optional[AbstractSet[HookDefinition]]): A list of hooks to attach to the asset.
         backfill_policy (Optional[BackfillPolicy]): The backfill policy for the asset.
         group_name (Optional[str]): A string name used to organize multiple assets into groups. This
             group name will be applied to all assets produced by this multi_asset.
@@ -1097,10 +1110,10 @@ def graph_multi_asset(
         }
 
         # source freshness policies from the AssetOuts (if any)
-        freshness_policies_by_output_name = {
-            output_name: out.freshness_policy
+        legacy_freshness_policies_by_output_name = {
+            output_name: out.legacy_freshness_policy
             for output_name, out in outs.items()
-            if isinstance(out, AssetOut) and out.freshness_policy is not None
+            if isinstance(out, AssetOut) and out.legacy_freshness_policy is not None
         }
 
         # source auto materialize policies from the AssetOuts (if any)
@@ -1147,7 +1160,7 @@ def graph_multi_asset(
             group_name=group_name,
             can_subset=can_subset,
             metadata_by_output_name=metadata_by_output_name,
-            freshness_policies_by_output_name=freshness_policies_by_output_name,
+            legacy_freshness_policies_by_output_name=legacy_freshness_policies_by_output_name,
             automation_conditions_by_output_name=automation_conditions_by_output_name,
             backfill_policy=backfill_policy,
             descriptions_by_output_name=descriptions_by_output_name,
@@ -1156,6 +1169,7 @@ def graph_multi_asset(
             code_versions_by_output_name=code_versions_by_output_name,
             tags_by_output_name=tags_by_output_name,
             owners_by_output_name=owners_by_output_name,
+            hook_defs=hooks,
         )
 
     return inner

@@ -38,7 +38,7 @@ def test_setup_basic_auth(update_snippets: bool) -> None:
             )
         )
         _run_command(
-            cmd=f"create-dagster project my-project --python-environment uv_managed --use-editable-dagster && cd my-project && uv add --editable {EDITABLE_DIR / 'dagster-airlift[core]'}",
+            cmd=f"create-dagster project my-project --uv-sync --use-editable-dagster && cd my-project && uv add --editable {EDITABLE_DIR / 'dagster-airlift[core]'}",
         )
 
         stack.enter_context(activate_venv(".venv"))
@@ -66,7 +66,8 @@ def test_setup_basic_auth(update_snippets: bool) -> None:
             snippet_path=f"{context.get_next_snip_number()}-cat.txt",
         )
 
-        _run_command("dg check yaml --no-validate-requirements")
+        if not update_snippets:
+            _run_command("dg check yaml --no-validate-requirements")
 
 
 def test_component_files() -> None:
@@ -78,7 +79,7 @@ def test_component_files() -> None:
         snapshot_base_dir=Path("/tmp"),
     ):
         _run_command(
-            cmd=f"create-dagster project my-project --python-environment uv_managed --use-editable-dagster && cd my-project && uv add --editable {EDITABLE_DIR / 'dagster-airlift[core]'}",
+            cmd=f"create-dagster project my-project --uv-sync --use-editable-dagster && cd my-project && uv add --editable {EDITABLE_DIR / 'dagster-airlift[core]'}",
         )
         _run_command(
             cmd="dg scaffold defs dagster_airlift.core.components.AirflowInstanceComponent airflow --name my_airflow --auth-type basic_auth",

@@ -27,18 +27,19 @@ setup(
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: 3.12",
+        "Programming Language :: Python :: 3.13",
         "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",
     ],
     packages=find_packages(exclude=["dagster_gcp_tests*"]),
     include_package_data=True,
-    python_requires=">=3.9,<3.13",
+    python_requires=">=3.9,<=3.13.3",
     install_requires=[
         f"dagster{pin}",
         f"dagster_pandas{pin}",
         "db-dtypes",  # Required as per https://github.com/googleapis/python-bigquery/issues/1188
         "google-api-python-client",
-        "google-cloud-bigquery",
+        "google-cloud-bigquery>=1.28.3",  # earliest version that imports without protobuf errors
         "google-cloud-storage",
         "oauth2client",
     ],

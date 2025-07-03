@@ -39,7 +39,7 @@ const DEBUG = false;
 export class SelectionAutoCompleteVisitor extends BaseSelectionVisitor {
   private getAttributeResultsMatchingQuery: SelectionAutoCompleteProvider['getAttributeResultsMatchingQuery'];
   private getAttributeValueResultsMatchingQuery: SelectionAutoCompleteProvider['getAttributeValueResultsMatchingQuery'];
-  private getAttributeValueIncludeAttributeResultsMatchingQuery: SelectionAutoCompleteProvider['getAttributeValueIncludeAttributeResultsMatchingQuery'];
+  private getAllResults: SelectionAutoCompleteProvider['getAllResults'];
   private getFunctionResultsMatchingQuery: SelectionAutoCompleteProvider['getFunctionResultsMatchingQuery'];
   private getSubstringResultMatchingQuery: SelectionAutoCompleteProvider['getSubstringResultMatchingQuery'];
   private createOperatorSuggestion: SelectionAutoCompleteProvider['createOperatorSuggestion'];
@@ -56,14 +56,14 @@ export class SelectionAutoCompleteVisitor extends BaseSelectionVisitor {
     getAttributeValueResultsMatchingQuery,
     getFunctionResultsMatchingQuery,
     getSubstringResultMatchingQuery,
-    getAttributeValueIncludeAttributeResultsMatchingQuery,
+    getAllResults,
     createOperatorSuggestion,
   }: {
     line: string;
     cursorIndex: number;
     getAttributeResultsMatchingQuery: SelectionAutoCompleteProvider['getAttributeResultsMatchingQuery'];
     getAttributeValueResultsMatchingQuery: SelectionAutoCompleteProvider['getAttributeValueResultsMatchingQuery'];
-    getAttributeValueIncludeAttributeResultsMatchingQuery: SelectionAutoCompleteProvider['getAttributeValueIncludeAttributeResultsMatchingQuery'];
+    getAllResults: SelectionAutoCompleteProvider['getAllResults'];
     getFunctionResultsMatchingQuery: SelectionAutoCompleteProvider['getFunctionResultsMatchingQuery'];
     getSubstringResultMatchingQuery: SelectionAutoCompleteProvider['getSubstringResultMatchingQuery'];
     createOperatorSuggestion: SelectionAutoCompleteProvider['createOperatorSuggestion'];
@@ -73,8 +73,7 @@ export class SelectionAutoCompleteVisitor extends BaseSelectionVisitor {
     this.getAttributeValueResultsMatchingQuery = getAttributeValueResultsMatchingQuery;
     this.getFunctionResultsMatchingQuery = getFunctionResultsMatchingQuery;
     this.getSubstringResultMatchingQuery = getSubstringResultMatchingQuery;
-    this.getAttributeValueIncludeAttributeResultsMatchingQuery =
-      getAttributeValueIncludeAttributeResultsMatchingQuery;
+    this.getAllResults = getAllResults;
     this.createOperatorSuggestion = createOperatorSuggestion;
     this._startReplacementIndex = cursorIndex;
     this._stopReplacementIndex = cursorIndex;
@@ -410,7 +409,7 @@ export class SelectionAutoCompleteVisitor extends BaseSelectionVisitor {
 
     if (value) {
       this.list.push(
-        ...this.getAttributeValueIncludeAttributeResultsMatchingQuery({
+        ...this.getAllResults({
           query: value,
           textCallback,
         }),

@@ -98,4 +98,4 @@ For more Delta Lake features, refer to the [Delta Lake reference](/integrations/
 
 For more information on asset definitions, see the [Assets documentation](/guides/build/assets/defining-assets).
 
-For more information on I/O managers, refer to the [I/O manager documentation](/guides/build/io-managers/).
+For more information on I/O managers, refer to the [I/O manager documentation](/guides/build/io-managers).

@@ -311,7 +311,7 @@ class DbtProject(IHaveNew):
                 my_project = DbtProject(project_dir=Path("path/to/dbt_project"))
                 my_project.prepare_if_dev()
 
-                defs = Definitions(
+                Definitions(
                     resources={
                         "dbt": DbtCliResource(project_dir=my_project),
                     },

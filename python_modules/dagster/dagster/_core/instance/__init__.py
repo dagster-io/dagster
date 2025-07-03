@@ -43,7 +43,7 @@ from dagster._core.definitions.freshness import (
     FreshnessStateEvaluation,
     FreshnessStateRecord,
 )
-from dagster._core.definitions.partition_key_range import PartitionKeyRange
+from dagster._core.definitions.partitions.partition_key_range import PartitionKeyRange
 from dagster._core.errors import (
     DagsterHomeNotSetError,
     DagsterInvalidInvocationError,
@@ -90,8 +90,6 @@ from dagster._core.storage.tags import (
 )
 from dagster._core.types.pagination import PaginatedResults
 from dagster._serdes import ConfigurableClass
-from dagster._streamline.asset_check_health import AssetCheckHealthState
-from dagster._streamline.asset_freshness_health import AssetFreshnessHealthState
 from dagster._time import datetime_from_timestamp, get_current_datetime, get_current_timestamp
 from dagster._utils import PrintFn, is_uuid, traced
 from dagster._utils.error import serializable_error_info_from_exc_info
@@ -116,10 +114,17 @@ RUNLESS_JOB_NAME = ""
 if TYPE_CHECKING:
     from dagster._core.debug import DebugRunPayload
     from dagster._core.definitions.asset_check_spec import AssetCheckKey
+    from dagster._core.definitions.asset_health.asset_check_health import AssetCheckHealthState
+    from dagster._core.definitions.asset_health.asset_freshness_health import (
+        AssetFreshnessHealthState,
+    )
+    from dagster._core.definitions.asset_health.asset_materialization_health import (
+        AssetMaterializationHealthState,
+    )
     from dagster._core.definitions.asset_key import EntityKey
     from dagster._core.definitions.base_asset_graph import BaseAssetGraph
     from dagster._core.definitions.job_definition import JobDefinition
-    from dagster._core.definitions.partition import PartitionsDefinition
+    from dagster._core.definitions.partitions.definition import PartitionsDefinition
     from dagster._core.definitions.repository_definition.repository_definition import (
         RepositoryLoadData,
     )
@@ -196,7 +201,6 @@ if TYPE_CHECKING:
     from dagster._core.storage.sql import AlembicVersion
     from dagster._core.workspace.context import BaseWorkspaceRequestContext
     from dagster._daemon.types import DaemonHeartbeat, DaemonStatus
-    from dagster._streamline.asset_materialization_health import AssetMaterializationHealthState
 
 
 DagsterInstanceOverrides: TypeAlias = Mapping[str, Any]
@@ -361,7 +365,9 @@ class DynamicPartitionsStore(Protocol):
     def has_dynamic_partition(self, partitions_def_name: str, partition_key: str) -> bool: ...
 
     def get_dynamic_partitions_definition_id(self, partitions_def_name: str) -> str:
-        from dagster._core.definitions.partition import generate_partition_key_based_definition_id
+        from dagster._core.definitions.partitions.utils import (
+            generate_partition_key_based_definition_id,
+        )
 
         # matches the base implementation of the get_serializable_unique_identifier on PartitionsDefinition
         partition_keys = self.get_dynamic_partitions(partitions_def_name)
@@ -984,6 +990,10 @@ class DagsterInstance(DynamicPartitionsStore):
         return self.get_settings("auto_materialize").get("enabled", True)
 
     @property
+    def freshness_enabled(self) -> bool:
+        return self.get_settings("freshness").get("enabled", False)
+
+    @property
     def auto_materialize_minimum_interval_seconds(self) -> int:
         return self.get_settings("auto_materialize").get("minimum_interval_seconds")
 
@@ -1410,7 +1420,7 @@ class DagsterInstance(DynamicPartitionsStore):
         output: "ExecutionStepOutputSnap",
         asset_graph: Optional["BaseAssetGraph"],
     ) -> None:
-        from dagster._core.definitions.partition import DynamicPartitionsDefinition
+        from dagster._core.definitions.partitions.definition import DynamicPartitionsDefinition
         from dagster._core.events import AssetMaterializationPlannedData, DagsterEvent
 
         partition_tag = dagster_run.tags.get(PARTITION_NAME_TAG)
@@ -1749,6 +1759,8 @@ class DagsterInstance(DynamicPartitionsStore):
         # find the set of planned assets and checks
         to_reexecute: set[EntityKey] = set()
         for step in execution_plan_snapshot.steps:
+            if step.key not in execution_plan_snapshot.step_keys_to_execute:
+                continue
             to_reexecute_for_step = {
                 key
                 for key in step.entity_keys
@@ -2454,9 +2466,19 @@ class DagsterInstance(DynamicPartitionsStore):
         Args:
             asset_keys (Sequence[AssetKey]): Asset keys to wipe.
         """
+        from dagster._core.events import AssetWipedData, DagsterEvent, DagsterEventType
+
         check.list_param(asset_keys, "asset_keys", of_type=AssetKey)
         for asset_key in asset_keys:
             self._event_storage.wipe_asset(asset_key)
+            self.report_dagster_event(
+                run_id=RUNLESS_RUN_ID,
+                dagster_event=DagsterEvent(
+                    event_type_value=DagsterEventType.ASSET_WIPED.value,
+                    event_specific_data=AssetWipedData(asset_key=asset_key, partition_keys=None),
+                    job_name=RUNLESS_JOB_NAME,
+                ),
+            )
 
     def wipe_asset_partitions(
         self,
@@ -2466,10 +2488,22 @@ class DagsterInstance(DynamicPartitionsStore):
         """Wipes asset event history from the event log for the given asset key and partition keys.
 
         Args:
-            asset_key (Sequence[AssetKey]): Asset key to wipe.
+            asset_key (AssetKey): Asset key to wipe.
             partition_keys (Sequence[str]): Partition keys to wipe.
         """
+        from dagster._core.events import AssetWipedData, DagsterEvent, DagsterEventType
+
         self._event_storage.wipe_asset_partitions(asset_key, partition_keys)
+        self.report_dagster_event(
+            run_id=RUNLESS_RUN_ID,
+            dagster_event=DagsterEvent(
+                event_type_value=DagsterEventType.ASSET_WIPED.value,
+                event_specific_data=AssetWipedData(
+                    asset_key=asset_key, partition_keys=partition_keys
+                ),
+                job_name=RUNLESS_JOB_NAME,
+            ),
+        )
 
     @traced
     def get_materialized_partitions(
@@ -2555,7 +2589,7 @@ class DagsterInstance(DynamicPartitionsStore):
             partitions_def_name (str): The name of the `DynamicPartitionsDefinition`.
             partition_keys (Sequence[str]): Partition keys to add.
         """
-        from dagster._core.definitions.partition import (
+        from dagster._core.definitions.partitions.utils import (
             raise_error_on_invalid_partition_key_substring,
         )
 
@@ -3339,6 +3373,7 @@ class DagsterInstance(DynamicPartitionsStore):
             SchedulerDaemon,
             SensorDaemon,
         )
+        from dagster._daemon.freshness import FreshnessDaemon
         from dagster._daemon.run_coordinator.queued_run_coordinator_daemon import (
             QueuedRunCoordinatorDaemon,
         )
@@ -3357,6 +3392,8 @@ class DagsterInstance(DynamicPartitionsStore):
             daemons.append(EventLogConsumerDaemon.daemon_type())
         if self.auto_materialize_enabled or self.auto_materialize_use_sensors:
             daemons.append(AssetDaemon.daemon_type())
+        if self.freshness_enabled:
+            daemons.append(FreshnessDaemon.daemon_type())
         return daemons
 
     def get_daemon_statuses(
@@ -3586,9 +3623,10 @@ class DagsterInstance(DynamicPartitionsStore):
             ),
         )
 
-    def get_entity_freshness_state(self, entity_key: AssetKey) -> Optional[FreshnessStateRecord]:
-        warnings.warn("`get_entity_freshness_state` is not yet implemented for OSS.")
-        return None
+    def get_freshness_state_records(
+        self, keys: Sequence[AssetKey]
+    ) -> Mapping[AssetKey, FreshnessStateRecord]:
+        return self._event_storage.get_freshness_state_records(keys)
 
     def get_asset_check_support(self) -> "AssetCheckInstanceSupport":
         from dagster._core.storage.asset_check_execution_record import AssetCheckInstanceSupport
@@ -3608,6 +3646,9 @@ class DagsterInstance(DynamicPartitionsStore):
     def dagster_observe_supported(self) -> bool:
         return False
 
+    def dagster_asset_health_queries_supported(self) -> bool:
+        return False
+
     def can_read_failure_events_for_asset(self, asset_record: "AssetRecord") -> bool:
         return False
 
@@ -3620,17 +3661,20 @@ class DagsterInstance(DynamicPartitionsStore):
     def streamline_read_asset_health_supported(self) -> bool:
         return False
 
-    def get_asset_check_health_state_for_asset(
-        self, asset_key: AssetKey
-    ) -> Optional[AssetCheckHealthState]:
+    def streamline_read_asset_health_required(self) -> bool:
+        return False
+
+    def get_asset_check_health_state_for_assets(
+        self, asset_keys: Sequence[AssetKey]
+    ) -> Optional[Mapping[AssetKey, Optional["AssetCheckHealthState"]]]:
         return None
 
-    def get_asset_freshness_health_state_for_asset(
-        self, asset_key: AssetKey
-    ) -> Optional[AssetFreshnessHealthState]:
+    def get_asset_freshness_health_state_for_assets(
+        self, asset_keys: Sequence[AssetKey]
+    ) -> Optional[Mapping[AssetKey, Optional["AssetFreshnessHealthState"]]]:
         return None
 
-    def get_asset_materialization_health_state_for_asset(
-        self, asset_key: AssetKey
-    ) -> Optional["AssetMaterializationHealthState"]:
+    def get_asset_materialization_health_state_for_assets(
+        self, asset_keys: Sequence[AssetKey]
+    ) -> Optional[Mapping[AssetKey, Optional["AssetMaterializationHealthState"]]]:
         return None

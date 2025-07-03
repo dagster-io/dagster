@@ -9,6 +9,7 @@ from dagster._core.test_utils import new_cwd
 from dagster.components.component.component import Component
 from dagster.components.core.context import ComponentLoadContext
 from dagster.components.core.defs_module import CompositeYamlComponent
+from dagster.components.core.tree import ComponentTree
 from dagster_shared.yaml_utils.source_position import LineCol, SourcePosition
 
 
@@ -42,9 +43,10 @@ def test_composite_yaml_component_code_references():
                     filename="test.py", start=LineCol(line=1, col=1), end=LineCol(line=1, col=1)
                 )
             ],
+            asset_post_processor_lists=[[]],
         )
 
-        defs = component.build_defs(ComponentLoadContext.for_test())
+        defs = component.build_defs(ComponentTree.for_test().load_context)
         assets = list(defs.assets or [])
         assert len(assets) == 2
         spec = next(a for a in assets if isinstance(a, AssetSpec))

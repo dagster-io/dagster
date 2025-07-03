@@ -1,6 +1,6 @@
 import time
 from datetime import datetime, timedelta, timezone, tzinfo
-from typing import Union
+from typing import Union, cast
 
 import dagster._check as check
 from dagster._vendored.dateutil import parser
@@ -119,3 +119,88 @@ def parse_time_string(datetime_str) -> datetime:
         dt = dt.replace(tzinfo=timezone.utc)  # pyright: ignore[reportAttributeAccessIssue]
 
     return dt  # pyright: ignore[reportReturnType]
+
+
+def is_second_ambiguous_time(dt: datetime, tz: str):
+    """Returns if a datetime is the second instance of an ambiguous time in the given timezone due
+    to DST transitions. Assumes that dt is alraedy in the specified timezone.
+    """
+    # UTC is never ambiguous
+    if tz.upper() == "UTC":
+        return False
+
+    # Ensure that the datetime is in the correct timezone
+    tzinfo = check.not_none(dt.tzinfo)
+
+    # Only interested in the second instance of an ambiguous time
+    if dt.fold == 0:
+        return False
+
+    offset_before = cast(
+        "timedelta",
+        (tzinfo.utcoffset(dt.replace(fold=0)) if dt.fold else tzinfo.utcoffset(dt)),
+    )
+    offset_after = cast(
+        "timedelta",
+        (tzinfo.utcoffset(dt) if dt.fold else tzinfo.utcoffset(dt.replace(fold=1))),
+    )
+    return offset_before > offset_after
+
+
+def dst_safe_fmt(fmt: str) -> str:
+    """Adds UTC offset information to a datetime format string to disambiguate timestamps around DST
+    transitions.
+    """
+    if "%z" in fmt:
+        return fmt
+    return fmt + "%z"
+
+
+def dst_safe_strftime(dt: datetime, tz: str, fmt: str, cron_schedule: str) -> str:
+    """A method for converting a datetime to a string which will append a suffix in cases where
+    the resulting timestamp would be ambiguous due to DST transitions.
+
+    Assumes that dt is already in the specified timezone.
+    """
+    from dagster._utils.schedules import cron_string_repeats_every_hour
+
+    # if the format already includes a UTC offset, then we don't need to do anything
+    if "%z" in fmt:
+        return dt.strftime(fmt)
+
+    # only need to handle ambiguous times for cron schedules which repeat every hour
+    if not cron_string_repeats_every_hour(cron_schedule):
+        return dt.strftime(fmt)
+
+    # if the datetime is the second instance of an ambiguous time, then we append the UTC offset
+    if is_second_ambiguous_time(dt, tz):
+        return dt.strftime(dst_safe_fmt(fmt))
+    return dt.strftime(fmt)
+
+
+def dst_safe_strptime(date_string: str, tz: str, fmt: str) -> datetime:
+    """A method for parsing a datetime created with the dst_safe_strftime() method."""
+    try:
+        # first, try to parse the datetime in the normal format
+        dt = datetime.strptime(date_string, fmt)
+    except ValueError:
+        # if this fails, try to parse the datetime with a UTC offset added
+        dt = datetime.strptime(date_string, dst_safe_fmt(fmt))
+
+    # the datetime object may have timezone information on it, depending on the format used. If it
+    # does, we simply ensure that this timestamp is in the correct timezone.
+    if dt.tzinfo:
+        return datetime.fromtimestamp(dt.timestamp(), tz=get_timezone(tz))
+    # otherwise, ensure that we assume the pre-transition timezone
+    else:
+        return create_datetime(
+            year=dt.year,
+            month=dt.month,
+            day=dt.day,
+            hour=dt.hour,
+            minute=dt.minute,
+            second=dt.second,
+            microsecond=dt.microsecond,
+            tz=get_timezone(tz),
+            fold=0,
+        )

@@ -9,13 +9,13 @@ from typing_extensions import Self
 import dagster._check as check
 from dagster._core.definitions.asset_key import T_EntityKey
 from dagster._core.definitions.events import AssetKeyPartitionKey
-from dagster._core.definitions.partition import (
+from dagster._core.definitions.partitions.definition import PartitionsDefinition
+from dagster._core.definitions.partitions.subset import (
     AllPartitionsSubset,
     DefaultPartitionsSubset,
-    PartitionsDefinition,
     PartitionsSubset,
+    TimeWindowPartitionsSubset,
 )
-from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsSubset
 
 EntitySubsetValue = Union[bool, PartitionsSubset]
 
@@ -81,14 +81,7 @@ class SerializableEntitySubset(Generic[T_EntityKey]):
         else:
             check.list_param(value, "value", of_type=str)
             partitions_def = check.not_none(partitions_def)
-            if partitions_def.partitions_subset_class is not DefaultPartitionsSubset:
-                # DefaultPartitionsSubset just adds partition keys to a set, but other subsets
-                # may require partition keys be part of the partition, so validate the keys and only
-                # include the valid keys in the subset
-                valid_keys = [key for key in value if partitions_def.has_partition_key(key)]
-            else:
-                valid_keys = value
-            partitions_subset = partitions_def.subset_with_partition_keys(valid_keys)
+            partitions_subset = partitions_def.subset_with_partition_keys(value)
         return cls(key=key, value=partitions_subset)
 
     @classmethod

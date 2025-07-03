@@ -1,4 +1,4 @@
-from dagster._core.definitions.partition import StaticPartitionsDefinition
+from dagster._core.definitions.partitions.definition import StaticPartitionsDefinition
 
 from dagster_tests.declarative_automation_tests.scenario_utils.base_scenario import (
     AssetReconciliationScenario,

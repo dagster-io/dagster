@@ -13,6 +13,8 @@ from typing import (  # noqa: UP035
     overload,
 )
 
+from typing_extensions import Never
+
 from dagster_shared.check.record import is_record
 
 TypeOrTupleOfTypes = Union[type, tuple[type, ...]]
@@ -1699,7 +1701,7 @@ def invariant(condition: Any, desc: Optional[str] = None) -> bool:
     return True
 
 
-def assert_never(value: object) -> NoReturn:
+def assert_never(value: Never) -> Never:
     failed(f"Unhandled value: {value} ({type(value).__name__})")
 
 

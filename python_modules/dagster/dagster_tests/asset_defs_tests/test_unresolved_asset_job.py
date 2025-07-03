@@ -8,8 +8,6 @@ from dagster import (
     AssetSelection,
     BackfillPolicy,
     DagsterEventType,
-    DailyPartitionsDefinition,
-    HourlyPartitionsDefinition,
     IOManager,
     Out,
     Output,
@@ -25,11 +23,16 @@ from dagster import (
 from dagster._core.definitions import asset, multi_asset
 from dagster._core.definitions.decorators.hook_decorator import failure_hook, success_hook
 from dagster._core.definitions.definitions_class import Definitions
-from dagster._core.definitions.partition import (
+from dagster._core.definitions.metadata.metadata_value import TextMetadataValue
+from dagster._core.definitions.partitions.definition import (
+    DailyPartitionsDefinition,
+    HourlyPartitionsDefinition,
     StaticPartitionsDefinition,
-    static_partitioned_config,
 )
-from dagster._core.definitions.partitioned_schedule import build_schedule_from_partitioned_job
+from dagster._core.definitions.partitions.partitioned_config import static_partitioned_config
+from dagster._core.definitions.partitions.partitioned_schedule import (
+    build_schedule_from_partitioned_job,
+)
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidSubsetError
 from dagster._core.execution.with_resources import with_resources
 from dagster._core.storage.tags import PARTITION_NAME_TAG
@@ -864,3 +867,19 @@ def test_backfill_policy():
             return {"ops": {"foo": {"config": {"partition": partition_key}}}}
 
         create_test_asset_job([foo], config=my_partitioned_config)
+
+
+def test_metadata():
+    unresolved = define_asset_job("exmaple", metadata={"foo": "bar", "four": 4})
+    assert unresolved.metadata
+
+    blanked = unresolved.with_metadata({})
+    assert blanked.metadata == {}
+
+    updated = unresolved.with_metadata({**unresolved.metadata, "foo": "baz"})
+    assert updated.metadata
+    assert updated.metadata["foo"] == "baz"
+
+    defs = Definitions()
+    resolved = updated.resolve(defs.resolve_asset_graph())
+    assert resolved.metadata["foo"] == TextMetadataValue("baz")

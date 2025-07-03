@@ -4,7 +4,6 @@ from contextlib import contextmanager
 from dagster import (
     AssetKey,
     DagsterInstance,
-    DailyPartitionsDefinition,
     IOManager,
     PartitionKeyRange,
     ResourceDefinition,
@@ -17,6 +16,7 @@ from dagster import (
     resource,
     with_resources,
 )
+from dagster._core.definitions.partitions.definition import DailyPartitionsDefinition
 from dagster._core.test_utils import instance_for_test
 
 
