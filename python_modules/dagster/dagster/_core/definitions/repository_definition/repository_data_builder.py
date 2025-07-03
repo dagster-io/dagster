@@ -527,7 +527,7 @@ def _validate_auto_materialize_sensors(
     sensor_names_by_asset_key: dict[AssetKey, str] = {}
     for sensor in sensors:
         if isinstance(sensor, AutomationConditionSensorDefinition):
-            asset_keys = sensor.asset_selection.resolve(asset_graph)
+            asset_keys = check.not_none(sensor.targets[0].asset_selection).resolve(asset_graph)
             for asset_key in asset_keys:
                 if asset_key in sensor_names_by_asset_key:
                     raise DagsterInvalidDefinitionError(

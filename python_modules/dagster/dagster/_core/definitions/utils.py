@@ -347,7 +347,7 @@ def get_default_automation_condition_sensor_selection(
     sensors: Sequence[Union["SensorDefinition", "RemoteSensor"]], asset_graph: "BaseAssetGraph"
 ) -> Optional["AssetSelection"]:
     from dagster._core.definitions.asset_selection import AssetSelection
-    from dagster._core.definitions.sensor_definition import SensorType
+    from dagster._core.definitions.sensor_definition import SensorDefinition, SensorType
 
     automation_condition_sensors = sorted(
         (
@@ -376,7 +376,10 @@ def get_default_automation_condition_sensor_selection(
     # get the set of keys that are handled by an existing sensor
     covered_keys: set[EntityKey] = set()
     for sensor in automation_condition_sensors:
-        selection = check.not_none(sensor.asset_selection)
+        if isinstance(sensor, SensorDefinition):
+            selection = check.not_none(sensor.targets[0].asset_selection)
+        else:
+            selection = check.not_none(sensor.asset_selection)
         covered_keys = covered_keys.union(
             selection.resolve(asset_graph) | selection.resolve_checks(asset_graph)
         )
@@ -394,8 +397,12 @@ def get_default_automation_condition_sensor_selection(
 
         # remove any selections that are already covered
         for sensor in automation_condition_sensors:
+            if isinstance(sensor, SensorDefinition):
+                selection = check.not_none(sensor.targets[0].asset_selection)
+            else:
+                selection = check.not_none(sensor.asset_selection)
             default_sensor_asset_selection = default_sensor_asset_selection - check.not_none(
-                sensor.asset_selection
+                selection
             )
         return default_sensor_asset_selection
     # no additional sensor required

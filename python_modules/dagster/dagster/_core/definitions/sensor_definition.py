@@ -2,7 +2,7 @@ import functools
 import inspect
 import logging
 from collections import defaultdict
-from collections.abc import Iterable, Iterator, Mapping, Sequence
+from collections.abc import Iterator, Mapping, Sequence
 from contextlib import ExitStack
 from enum import Enum
 from typing import TYPE_CHECKING, Any, Callable, Optional, TypeVar, Union, cast
@@ -14,12 +14,7 @@ import dagster._check as check
 from dagster._annotations import deprecated, deprecated_param, public
 from dagster._core.decorator_utils import get_function_params
 from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluation
-from dagster._core.definitions.asset_selection import (
-    AssetCheckKeysSelection,
-    AssetSelection,
-    CoercibleToAssetSelection,
-    KeysAssetSelection,
-)
+from dagster._core.definitions.asset_selection import AssetSelection, CoercibleToAssetSelection
 from dagster._core.definitions.declarative_automation.serialized_objects import (
     AutomationConditionEvaluation,
 )
@@ -62,7 +57,7 @@ from dagster._time import get_current_datetime
 from dagster._utils import IHasInternalInit, normalize_to_repository
 from dagster._utils.merger import merge_dicts
 from dagster._utils.tags import normalize_tags
-from dagster._utils.warnings import deprecation_warning, normalize_renamed_param
+from dagster._utils.warnings import normalize_renamed_param
 
 if TYPE_CHECKING:
     from dagster import ResourceDefinition
@@ -611,7 +606,7 @@ class SensorDefinition(IHasInternalInit):
             jobs=new_jobs,
             job=new_job,
             default_status=self.default_status,
-            asset_selection=self.asset_selection,
+            asset_selection=None,
             required_resource_keys=self._raw_required_resource_keys,
             tags=self._tags,
             metadata=metadata if metadata is not None else self._metadata,
@@ -729,16 +724,7 @@ class SensorDefinition(IHasInternalInit):
         self._default_status = check.inst_param(
             default_status, "default_status", DefaultSensorStatus
         )
-        from dagster._core.definitions.unresolved_asset_job_definition import (
-            UnresolvedAssetJobDefinition,
-        )
 
-        self._asset_selection = (
-            self._targets[0].job_def.selection
-            if len(self._targets) > 0
-            and isinstance(self._targets[0].job_def, UnresolvedAssetJobDefinition)
-            else None
-        )
         validate_resource_annotated_function(self._raw_fn)
         resource_arg_names: set[str] = {arg.name for arg in get_resource_args(self._raw_fn)}
 
@@ -991,7 +977,6 @@ class SensorDefinition(IHasInternalInit):
                 *self.resolve_run_requests(
                     run_requests_for_single_runs,
                     context,
-                    self._asset_selection,
                     dynamic_partitions_requests,
                 ),
                 *self.validate_backfill_requests(
@@ -1016,7 +1001,6 @@ class SensorDefinition(IHasInternalInit):
         self,
         run_requests: Sequence[RunRequest],
         context: SensorEvaluationContext,
-        asset_selection: Optional[AssetSelection],
         dynamic_partitions_requests: Sequence[
             Union[AddDynamicPartitionsRequest, DeleteDynamicPartitionsRequest]
         ],
@@ -1032,18 +1016,13 @@ class SensorDefinition(IHasInternalInit):
         has_multiple_targets = len(self._targets) > 1
         target_names = [target.job_name for target in self._targets]
 
-        if run_requests and len(self._targets) == 0 and not self._asset_selection:
+        if run_requests and len(self._targets) == 0:
             raise Exception(
                 f"Error in sensor {self._name}: Sensor evaluation function returned a RunRequest "
                 "for a sensor lacking a specified target (job_name, job, or jobs). Targets "
                 "can be specified by providing job, jobs, or job_name to the @sensor "
                 "decorator."
             )
-
-        if asset_selection is not None:
-            run_requests = [
-                *_run_requests_with_base_asset_jobs(run_requests, context, asset_selection)
-            ]
 
         # Run requests may contain an invalid target, or a partition key that does not exist.
         # We will resolve these run requests, applying the target and partition config/tags.
@@ -1055,11 +1034,7 @@ class SensorDefinition(IHasInternalInit):
                     " specify job_name for the requested run. Expected one of:"
                     f" {target_names}"
                 )
-            elif (
-                run_request.job_name
-                and run_request.job_name not in target_names
-                and not asset_selection
-            ):
+            elif run_request.job_name and run_request.job_name not in target_names:
                 raise Exception(
                     f"Error in sensor {self._name}: Sensor returned a RunRequest with job_name "
                     f"{run_request.job_name}. Expected one of: {target_names}"
@@ -1099,8 +1074,8 @@ class SensorDefinition(IHasInternalInit):
     ) -> Sequence[RunRequest]:
         for run_request in run_requests:
             asset_selection = check.not_none(
-                self._asset_selection,
-                "Can only yield RunRequests with asset_graph_subset for sensors with an asset_selection",
+                self.targets[0].asset_selection,
+                "Can only yield RunRequests with asset_graph_subset for sensors that target an asset_selection",
             )
 
             if run_request.asset_graph_subset:
@@ -1144,10 +1119,6 @@ class SensorDefinition(IHasInternalInit):
         a code location.
         """
         return self._default_status
-
-    @property
-    def asset_selection(self) -> Optional[AssetSelection]:
-        return self._asset_selection
 
     @property
     def has_anonymous_job(self) -> bool:
@@ -1392,58 +1363,3 @@ def get_or_create_sensor_context(
         return context.merge_resources(resource_args_from_kwargs)
 
     return context
-
-
-def _run_requests_with_base_asset_jobs(
-    run_requests: Iterable[RunRequest],
-    context: SensorEvaluationContext,
-    outer_asset_selection: AssetSelection,
-) -> Sequence[RunRequest]:
-    """For sensors that target asset selections instead of jobs, finds the corresponding base asset
-    for a selected set of assets.
-    """
-    asset_graph = context.repository_def.asset_graph  # type: ignore  # (possible none)
-    result = []
-    for run_request in run_requests:
-        if run_request.asset_selection is not None:
-            asset_keys = run_request.asset_selection
-
-            unexpected_asset_keys = (
-                KeysAssetSelection(selected_keys=asset_keys) - outer_asset_selection
-            ).resolve(asset_graph)
-            if unexpected_asset_keys:
-                raise DagsterInvalidSubsetError(
-                    "RunRequest includes asset keys that are not part of sensor's asset_selection:"
-                    f" {unexpected_asset_keys}"
-                )
-        else:
-            asset_keys = outer_asset_selection.resolve(asset_graph)
-
-        if run_request.asset_check_keys is not None:
-            asset_check_keys = run_request.asset_check_keys
-
-            unexpected_asset_check_keys = (
-                AssetCheckKeysSelection(selected_asset_check_keys=asset_check_keys)
-                - outer_asset_selection
-            ).resolve_checks(asset_graph)
-            if unexpected_asset_check_keys:
-                deprecation_warning(
-                    subject="Including asset check keys in a sensor RunRequest that are not a subset of the sensor asset_selection",
-                    breaking_version="1.9.0",
-                    additional_warn_text=f"Unexpected asset check keys: {unexpected_asset_check_keys}.",
-                )
-        else:
-            asset_check_keys = KeysAssetSelection(selected_keys=list(asset_keys)).resolve_checks(
-                asset_graph
-            )
-
-        base_job = context.repository_def.get_implicit_job_def_for_assets(asset_keys)  # type: ignore  # (possible none)
-        result.append(
-            run_request.with_replaced_attrs(
-                job_name=base_job.name,  # type: ignore  # (possible none)
-                asset_selection=list(asset_keys),
-                asset_check_keys=list(asset_check_keys),
-            )
-        )
-
-    return result
