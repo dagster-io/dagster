@@ -569,12 +569,12 @@
       "destination": "/deployment/code-locations/"
     },
     {
-      "source": "/guides/migrate/:path*",
-      "destination": "/migration/:path*"
-    },
-    {
       "source": "/migration/version-migration",
       "destination": "/migration/upgrading"
+    },
+    {
+      "source": "/guides/migrate/:path*",
+      "destination": "/migration/:path*"
     },
     {
       "source": "/dagster-plus/deployment/migration/serverless-to-hybrid",
