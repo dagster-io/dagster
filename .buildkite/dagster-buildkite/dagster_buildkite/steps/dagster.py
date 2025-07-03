@@ -136,8 +136,6 @@ def build_check_changelog_steps() -> List[BuildkiteStep]:
         .run(
             "npm install -g @openai/codex@native",
             f"python scripts/generate_changelog.py new-changelog {release_number}",
-            "python scripts/generate_changelog.py ai-fill-out-changelog",
-            "python scripts/generate_changelog.py merge-changelog",
             f"git checkout -b {changelog_branch_name}",
             "git add CHANGES.md",
             f"git commit -m 'Update changelog for release {release_number}'",

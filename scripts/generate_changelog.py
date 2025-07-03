@@ -173,6 +173,14 @@ def cli() -> None:
     pass
 
 
+CODEX_INPUT_COMMAND = """
+Arrange the entries in NEW_CHANGES.md from the Unsorted section into the appropriate sections.
+Fix any minor typos, markdown formatting issues, and ensure entries end with punctuation.
+Remove any co-author statements.
+You may use the existing CHANGES.md file for reference.
+"""
+
+
 @cli.command()
 @click.argument("new_version", type=str, required=True)
 @click.argument("prev_version", type=str, required=False)
@@ -198,17 +206,6 @@ def new_changelog(new_version: str, prev_version: Optional[str] = None) -> None:
     with open(NEW_CHANGES_PATH, "w") as f:
         f.write(new_text)
 
-
-CODEX_INPUT_COMMAND = """
-Arrange the entries in NEW_CHANGES.md from the Unsorted section into the appropriate sections.
-Fix any minor typos, markdown formatting issues, and ensure entries end with punctuation.
-Remove any co-author statements.
-You may use the existing CHANGES.md file for reference.
-"""
-
-
-@cli.command()
-def ai_fill_out_changelog() -> None:
     import subprocess
 
     # call command and stream logs
@@ -223,9 +220,6 @@ def ai_fill_out_changelog() -> None:
             print(line.decode("utf-8"), end="")  # noqa: T201
     process.wait()
 
-
-@cli.command()
-def merge_changelog() -> None:
     with open(NEW_CHANGES_PATH) as f:
         new_changes = f.read()
     with open(CHANGELOG_PATH) as f:
