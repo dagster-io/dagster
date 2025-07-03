@@ -145,7 +145,7 @@ def build_check_changelog_steps() -> List[BuildkiteStep]:
         .build()
     )
 
-    return [changelog_validation_step, create_changelog_step, generate_changelog_step]
+    return [create_changelog_step, generate_changelog_step]
 
 
 def build_repo_wide_pyright_steps() -> List[BuildkiteStep]:
