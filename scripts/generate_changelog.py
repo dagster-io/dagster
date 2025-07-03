@@ -182,6 +182,8 @@ def new_changelog(new_version: str, prev_version: Optional[str] = None) -> None:
 
     # ensure that the release branches are available locally
     for repo in [OSS_REPO]:
+        # get the current git branch
+        current_branch = repo.git.rev_parse("--abbrev-ref", "HEAD")
         repo.git.checkout("master")
         repo.git.pull()
         repo.git.checkout(f"release-{prev_version}")
@@ -191,6 +193,7 @@ def new_changelog(new_version: str, prev_version: Optional[str] = None) -> None:
         repo.git.checkout("master")
 
     new_text = _generate_changelog_text(new_version, prev_version)
+    OSS_REPO.git.checkout(current_branch)
 
     with open(NEW_CHANGES_PATH, "w") as f:
         f.write(new_text)
