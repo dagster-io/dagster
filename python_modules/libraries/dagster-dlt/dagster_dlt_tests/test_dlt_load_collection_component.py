@@ -235,7 +235,7 @@ class TestDltTranslation(TestTranslationBatched):
 
 
 def test_python_interface(dlt_pipeline: Pipeline):
-    context = ComponentTree.for_test().decl_load_context
+    context = ComponentTree.for_test().load_context
     defs = DltLoadCollectionComponent(
         loads=[
             DltLoadSpecModel(

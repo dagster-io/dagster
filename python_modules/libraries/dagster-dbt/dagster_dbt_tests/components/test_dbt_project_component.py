@@ -317,7 +317,7 @@ def test_state_path(
 
 
 def test_python_interface(dbt_path: Path):
-    context = ComponentTree.for_test().decl_load_context
+    context = ComponentTree.for_test().load_context
     assert DbtProjectComponent(
         project=DbtProject(dbt_path),
     ).build_defs(context)
