@@ -3,7 +3,7 @@
   overflow: hidden;
 }
 
-.breadcrumbsWithSlashes li:nth-child(n + var(--num-header-breadcrumbs))::after {
+.breadcrumbsWithSlashes li:nth-last-child(3)::after {
   background: none;
   font-size: 20px;
   font-weight: bold;

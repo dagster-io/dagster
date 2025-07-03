@@ -92,7 +92,6 @@ export const AssetPageHeader = ({
           <Title>
             <Breadcrumbs
               className={styles.breadcrumbsWithSlashes}
-              style={{'--num-header-breadcrumbs': headerBreadcrumbs.length + 1}}
               items={breadcrumbs}
               currentBreadcrumbRenderer={({text, href}) => (
                 <Subtitle1 key={href} className={styles.truncatedHeading}>
