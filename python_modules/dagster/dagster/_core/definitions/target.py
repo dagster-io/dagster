@@ -141,6 +141,13 @@ class AutomationTarget(
     def has_job_def(self) -> bool:
         return isinstance(self.resolvable_to_job, (JobDefinition, UnresolvedAssetJobDefinition))
 
+    @property
+    def asset_selection(self) -> Optional[AssetSelection]:
+        if isinstance(self.job_def, UnresolvedAssetJobDefinition):
+            return self.job_def.selection
+        else:
+            return None
+
 
 def _make_anonymous_asset_job_name(automation_name: str) -> str:
     return f"{ANONYMOUS_ASSET_JOB_PREFIX}_{automation_name}"

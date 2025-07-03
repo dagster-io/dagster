@@ -121,6 +121,96 @@ def check_a():
     return AssetCheckResult(passed=True)
 
 
+@asset_check(asset="a")
+def check_a2():
+    return AssetCheckResult(passed=True)
+
+
+@asset_check(asset="b")
+def check_b():
+    return AssetCheckResult(passed=True)
+
+
+@sensor(
+    asset_selection=AssetSelection.keys("a", "c"),
+)
+def selection_sensor() -> SensorResult:
+    """Want: run has asset a asset c and both of asset as checks."""
+    return SensorResult(run_requests=[RunRequest()])
+
+
+@sensor(
+    target=AssetSelection.keys("a", "c"),
+)
+def target_sensor() -> SensorResult:
+    """Want: run of asset a and c and both of asset as checks."""
+    return SensorResult(run_requests=[RunRequest()])
+
+
+@sensor(
+    asset_selection=AssetSelection.keys("a", "c"),
+)
+def selection_sensor_with_specific_asset_run_request_selection() -> SensorResult:
+    """Want: run with asset 1 and both of asset as checks."""
+    return SensorResult(run_requests=[RunRequest(asset_selection=[a.key])])
+
+
+@sensor(
+    target=AssetSelection.keys("a", "c"),
+)
+def target_sensor_with_specific_asset_run_request_selection() -> SensorResult:
+    """Want: run with asset 1 and both of asset as checks."""
+    return SensorResult(run_requests=[RunRequest(asset_selection=[a.key])])
+
+
+@sensor(
+    asset_selection=AssetSelection.keys("a", "c"),
+)
+def selection_sensor_with_no_assets_in_run_request_selection() -> SensorResult:
+    """Want: run with no assets, but both of asset as checks."""
+    return SensorResult(run_requests=[RunRequest(asset_selection=[])])
+
+
+@sensor(
+    target=AssetSelection.keys("a", "c"),
+)
+def target_sensor_with_no_assets_in_run_request_selection() -> SensorResult:
+    """Want: run with no assets, but both of asset as checks."""
+    return SensorResult(run_requests=[RunRequest(asset_selection=[])])
+
+
+@sensor(
+    asset_selection=AssetSelection.keys("a", "c"),
+)
+def selection_sensor_with_specific_check() -> SensorResult:
+    """Want: asset a and asset c and only the selected check."""
+    return SensorResult(run_requests=[RunRequest(asset_check_keys=[check_a.check_key])])
+
+
+@sensor(
+    target=AssetSelection.keys("a", "c"),
+)
+def target_sensor_with_specific_check() -> SensorResult:
+    """Want: asset a and asset c and only the selected check."""
+    return SensorResult(run_requests=[RunRequest(asset_check_keys=[check_a.check_key])])
+
+
+@sensor(
+    asset_selection=AssetSelection.keys("a", "c"),
+)
+def selection_sensor_with_no_check() -> SensorResult:
+    """Want: run has asset a and asset c and no checks."""
+    return SensorResult(run_requests=[RunRequest(asset_check_keys=[])])
+
+
+@sensor(
+    target=AssetSelection.keys("a", "c"),
+)
+def target_sensor_with_no_check() -> SensorResult:
+    """Want: run has asset a and asset c and no checks."""
+    return SensorResult(run_requests=[RunRequest(asset_check_keys=[])])
+
+
 asset_job = define_asset_job("abc", selection=AssetSelection.assets("c", "b").upstream())
 
 asset_and_check_job = define_asset_job(
@@ -936,6 +1026,16 @@ def the_repo():
         job_with_tags_no_run_tags_sensor,
         job_no_tags_with_run_tags,
         job_no_tags_with_run_tags_sensor,
+        selection_sensor,
+        target_sensor,
+        selection_sensor_with_specific_asset_run_request_selection,
+        target_sensor_with_specific_asset_run_request_selection,
+        selection_sensor_with_no_assets_in_run_request_selection,
+        target_sensor_with_no_assets_in_run_request_selection,
+        selection_sensor_with_specific_check,
+        target_sensor_with_specific_check,
+        selection_sensor_with_no_check,
+        target_sensor_with_no_check,
     ]
 
 
@@ -3642,3 +3742,47 @@ def test_sensor_run_tags(
         )
         assert "tag_foo" not in no_tags_with_run_tags_run.tags
         assert no_tags_with_run_tags_run.tags["run_tag_foo"] == "bar"
+
+
+# def test_run_request_basic_asset_selection_and_target(
+#     executor, instance: DagsterInstance, workspace_context, remote_repo
+# ) -> None:
+#     def _test_sensor(sensor) -> None:
+#         remote_origin_id = sensor.get_remote_origin_id()
+#         instance.start_sensor(sensor)
+
+#         assert instance.get_runs_count() == 0
+#         ticks = instance.get_ticks(remote_origin_id, sensor.selector_id)
+#         assert len(ticks) == 0
+
+#         evaluate_sensors(workspace_context, executor)
+
+#         assert instance.get_runs_count() == 1
+#         run = instance.get_runs()[0]
+#         assert run.asset_check_selection == {check_a.check_key, check_a2.check_key}
+#         assert run.asset_selection == {a.key, c.key}
+#         ticks = instance.get_ticks(remote_origin_id, sensor.selector_id)
+#         assert len(ticks) == 1
+#         validate_tick(
+#             ticks[0],
+#             sensor,
+#             freeze_datetime,
+#             TickStatus.SUCCESS,
+#             [run.run_id],
+#         )
+#         assert get_planned_asset_keys_for_run(instance, run.run_id) == []
+#         planned_check_keys = {
+#             record.event_log_entry.dagster_event.event_specific_data.asset_check_key  # type: ignore[attr-defined]
+#             for record in instance.get_records_for_run(
+#                 run_id=run.run_id,
+#                 of_type=DagsterEventType.ASSET_CHECK_EVALUATION_PLANNED,
+#             ).records
+#         }
+#         assert planned_check_keys == {AssetCheckKey(AssetKey("a"), "check_a")}
+
+#     freeze_datetime = create_datetime(year=2019, month=2, day=27)
+#     with freeze_time(freeze_datetime):
+#         selection_sensor = remote_repo.get_sensor("selection_sensor")
+#         target_sensor = remote_repo.get_sensor("target_sensor")
+#         _test_sensor(selection_sensor)
+#         _test_sensor(target_sensor)

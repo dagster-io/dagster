@@ -30,7 +30,7 @@ def test_constructor(selection: AssetSelection, user_code: bool) -> None:
     )
     assert automation_sensor.name == "foo"
     assert automation_sensor.run_tags == tags
-    assert automation_sensor.asset_selection == selection
+    assert automation_sensor.targets[0].asset_selection == selection
     assert automation_sensor.description == "fdsjkl"
     assert automation_sensor.default_status == DefaultSensorStatus.RUNNING
     assert automation_sensor.minimum_interval_seconds == 50
