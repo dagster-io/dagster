@@ -6,7 +6,8 @@ FROM python:3.10-slim
 RUN pip install \
     dagster \
     dagster-postgres \
-    dagster-docker
+    dagster-docker && \
+    pip install watchdog
 
 # Add repository code
 
@@ -14,8 +15,17 @@ WORKDIR /opt/dagster/app
 
 COPY definitions.py /opt/dagster/app
 
-# Run dagster gRPC server on port 4000
+# Expose port 4000
 
 EXPOSE 4000
+
+# Set environment variables for auto-reload and DAGSTER_HOME
+
+ENV DAGSTER_WATCHER_POLLING=true
+ENV DAGSTER_WATCHER_POLLING_INTERVAL=1
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV DAGSTER_HOME=/opt/dagster/dagster_home
+
+# Run dagster gRPC server on port 4000
 
 CMD ["dagster", "api", "grpc", "-h", "0.0.0.0", "-p", "4000", "-f", "definitions.py"]
