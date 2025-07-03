@@ -131,9 +131,11 @@ export const useFeatureFlags = (): Readonly<Record<FeatureFlag, boolean>> => {
  * Function to update feature flags.
  * Updates the in-memory cache, persists to localStorage, and broadcasts the change.
  */
-export const setFeatureFlags = (flags: FeatureFlagMap) => {
+export const setFeatureFlags = (flags: FeatureFlagMap, broadcast: boolean = true) => {
   setFeatureFlagsInternal(flags);
-  featureFlagsChannel.postMessage('updated');
+  if (broadcast) {
+    featureFlagsChannel.postMessage('updated');
+  }
 };
 
 export const toggleFeatureFlag = (flag: FeatureFlag) => {
