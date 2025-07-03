@@ -28,6 +28,44 @@ RESOLUTION_CONTEXT_STASH_KEY = "component_load_context"
 @public
 @dataclass
 class ComponentDeclLoadContext:
+    """Context object that provides environment and path information during loading of
+    ComponentDecls. This context is automatically created and passed to ComponentDecl
+    objects when loading a project's defs folder. Each Python module or folder in the
+    defs directory receives a unique context instance that provides access to project
+    structure, paths, and utilities.
+
+    Args:
+        path: The filesystem path of the component decl currently being loaded.
+            For a file: ``/path/to/project/src/project/defs/my_component.py``
+            For a directory: ``/path/to/project/src/project/defs/my_component/``
+        project_root: The root directory of the Dagster project, typically containing
+            ``pyproject.toml`` or ``setup.py``. Example: ``/path/to/project``
+        defs_module_path: The filesystem path to the root defs folder.
+            Example: ``/path/to/project/src/project/defs``
+        defs_module_name: The Python module name for the root defs folder, used for
+            import resolution. Typically follows the pattern ``"project_name.defs"``.
+            Example: ``"my_project.defs"``
+        resolution_context: The resolution context used by the component templating
+            system for parameter resolution and variable substitution.
+        component_tree: The component tree that contains the component decl currently being loaded.
+        terminate_autoloading_on_keyword_files: Controls whether autoloading stops
+            when encountering ``definitions.py`` or ``component.py`` files.
+            **Deprecated**: This parameter will be removed after version 1.11.
+
+                )
+
+    Note:
+        This context is automatically provided by Dagster's autoloading system and
+        should not be instantiated manually in most cases. For testing purposes,
+        use ``ComponentTree.for_test().decl_load_context`` to create a test instance.
+
+    See Also:
+        - :py:func:`dagster.definitions`: Decorator that receives this context
+        - :py:class:`dagster.Definitions`: The object typically returned by context-using functions
+        - :py:class:`dagster.components.resolved.context.ResolutionContext`: Underlying resolution context
+        - :py:class:`dagster.ComponentLoadContext`: Context available when instantiating Components
+    """
+
     path: PublicAttr[Path]
     project_root: PublicAttr[Path]
     defs_module_path: PublicAttr[Path]
@@ -147,7 +185,48 @@ class ComponentDeclLoadContext:
 @public
 @dataclass
 class ComponentLoadContext(ComponentDeclLoadContext):
-    """Context available when instantiating Components."""
+    """Context object that provides environment and path information during component loading.
+    This context is automatically created and passed to component definitions when loading
+    a project's defs folder. Each Python module or folder in the defs directory receives
+    a unique context instance that provides access to the underlying ComponentDecl,
+    project structure, paths, and utilities for dynamic component instantiation.
+
+    The context enables components to:
+    - Access project and module path information
+    - Load other modules and definitions within the project
+    - Resolve relative imports and module names
+    - Access templating and resolution capabilities
+
+    Args:
+        path: The filesystem path of the component currently being loaded.
+            For a file: ``/path/to/project/src/project/defs/my_component.py``
+            For a directory: ``/path/to/project/src/project/defs/my_component/``
+        project_root: The root directory of the Dagster project, typically containing
+            ``pyproject.toml`` or ``setup.py``. Example: ``/path/to/project``
+        defs_module_path: The filesystem path to the root defs folder.
+            Example: ``/path/to/project/src/project/defs``
+        defs_module_name: The Python module name for the root defs folder, used for
+            import resolution. Typically follows the pattern ``"project_name.defs"``.
+            Example: ``"my_project.defs"``
+        resolution_context: The resolution context used by the component templating
+            system for parameter resolution and variable substitution.
+        component_tree: The component tree that contains the component currently being loaded.
+        terminate_autoloading_on_keyword_files: Controls whether autoloading stops
+            when encountering ``definitions.py`` or ``component.py`` files.
+            **Deprecated**: This parameter will be removed after version 1.11.
+        component_decl: The associated ComponentDecl to the component being loaded.
+
+    Note:
+        This context is automatically provided by Dagster's autoloading system and
+        should not be instantiated manually in most cases. For testing purposes,
+        use ``ComponentTree.for_test().load_context`` to create a test instance.
+
+    See Also:
+        - :py:func:`dagster.definitions`: Decorator that receives this context
+        - :py:class:`dagster.Definitions`: The object typically returned by context-using functions
+        - :py:class:`dagster.components.resolved.context.ResolutionContext`: Underlying resolution context
+        - :py:class:`dagster.ComponentDeclLoadContext`: Context available when loading ComponentDecls
+    """
 
     component_decl: "ComponentDecl"
 
