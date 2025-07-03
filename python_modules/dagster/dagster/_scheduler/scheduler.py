@@ -799,6 +799,7 @@ def _submit_run_request(
             job_name=remote_schedule.job_name,
             op_selection=remote_schedule.op_selection,
             asset_selection=run_request.asset_selection,
+            asset_check_selection=run_request.asset_check_keys,
         )
 
         # reload the code_location on each submission, request_context derived data can become out date
@@ -1054,9 +1055,15 @@ def _create_scheduler_run(
         remote_job_origin=remote_job.get_remote_origin(),
         job_code_origin=remote_job.get_python_origin(),
         asset_selection=(
-            frozenset(run_request.asset_selection) if run_request.asset_selection else None
+            frozenset(run_request.asset_selection)
+            if run_request.asset_selection is not None
+            else None
         ),
-        asset_check_selection=None,
+        asset_check_selection=(
+            frozenset(run_request.asset_check_keys)
+            if run_request.asset_check_keys is not None
+            else None
+        ),
         asset_graph=code_location.get_repository(
             remote_job.repository_handle.repository_name
         ).asset_graph,
