@@ -1,152 +1,139 @@
 # type: ignore
-
 # Turn pyright off due to problems with putting Dagster types in type annotations.
 # See: https://github.com/dagster-io/dagster/issues/4209
-
 import os
 import pickle
 import tempfile
 import time
 
+import dagster as dg
 import pytest
 from dagster import (
     Any,
     Bool,
-    DagsterInvalidConfigError,
     Dict,
-    Field,
     Float,
-    In,
     Int,
-    List,
-    Nothing,
-    Optional,
-    Permissive,
-    Selector,
-    Set,
     String,
-    Tuple,
     _check as check,
-    job,
-    op,
 )
 from dagster._utils.test import wrap_op_in_graph_and_execute
 
 
-@op
-def identity(_, x: Any) -> Any:
+@dg.op
+def identity(_, x: Any) -> dg.Any:
     return x
 
 
-@op
+@dg.op
 def identity_imp(_, x):
     return x
 
 
-@op
-def boolean(_, x: Bool) -> String:
+@dg.op
+def boolean(_, x: Bool) -> dg.String:
     return "true" if x else "false"
 
 
-@op
+@dg.op
 def empty_string(_, x: String) -> bool:
     return len(x) == 0
 
 
-@op
+@dg.op
 def add_3(_, x: Int) -> int:
     return x + 3
 
 
-@op
+@dg.op
 def div_2(_, x: Float) -> float:
     return x / 2
 
 
-@op
+@dg.op
 def concat(_, x: String, y: str) -> str:
     return x + y
 
 
-@op
-def wait(_) -> Nothing:
+@dg.op
+def wait(_) -> dg.Nothing:
     time.sleep(0.2)
     return None
 
 
-@op(ins={"ready": In(Nothing)})
+@dg.op(ins={"ready": dg.In(dg.Nothing)})
 def done(_) -> str:
     return "done"
 
 
-@job
+@dg.job
 def nothing_job():
     done(wait())
 
 
-@op
-def wait_int(_) -> Int:
+@dg.op
+def wait_int(_) -> dg.Int:
     time.sleep(0.2)
     return 1
 
 
-@job
+@dg.job
 def nothing_int_job():
     done(wait_int())
 
 
-@op
-def nullable_concat(_, x: String, y: Optional[String]) -> String:
+@dg.op
+def nullable_concat(_, x: String, y: dg.Optional[dg.String]) -> dg.String:
     return x + (y or "")
 
 
-@op
-def concat_list(_, xs: List[String]) -> String:
+@dg.op
+def concat_list(_, xs: dg.List[dg.String]) -> dg.String:
     return "".join(xs)
 
 
-@op
+@dg.op
 def emit_1(_) -> int:
     return 1
 
 
-@op
+@dg.op
 def emit_2(_) -> int:
     return 2
 
 
-@op
+@dg.op
 def emit_3(_) -> int:
     return 3
 
 
-@op
-def sum_op(_, xs: List[int]) -> int:
+@dg.op
+def sum_op(_, xs: dg.List[int]) -> int:
     return sum(xs)
 
 
-@job
+@dg.job
 def sum_job():
     sum_op([emit_1(), emit_2(), emit_3()])
 
 
-@op
+@dg.op
 def repeat(_, spec: Dict) -> str:
     return spec["word"] * spec["times"]
 
 
-@op
-def set_op(_, set_input: Set[String]) -> List[String]:
+@dg.op
+def set_op(_, set_input: dg.Set[dg.String]) -> dg.List[dg.String]:
     return sorted([x for x in set_input])
 
 
-@op
-def tuple_op(_, tuple_input: Tuple[String, Int, Float]) -> List:
+@dg.op
+def tuple_op(_, tuple_input: dg.Tuple[dg.String, dg.Int, dg.Float]) -> dg.List:
     return [x for x in tuple_input]
 
 
-@op
-def dict_return_op(_) -> Dict[str, str]:
+@dg.op
+def dict_return_op(_) -> dg.Dict[str, str]:
     return {"foo": "bar"}
 
 
@@ -251,7 +238,7 @@ def test_set_op_configable_input():
 
 def test_set_op_configable_input_bad():
     with pytest.raises(
-        DagsterInvalidConfigError,
+        dg.DagsterInvalidConfigError,
     ) as exc_info:
         wrap_op_in_graph_and_execute(
             set_op,
@@ -292,58 +279,58 @@ def test_dict_return_op():
 ######
 
 
-@op(config_schema=Field(Any))
+@dg.op(config_schema=dg.Field(dg.Any))
 def any_config(context):
     return context.op_config
 
 
-@op(config_schema=Field(Bool))
+@dg.op(config_schema=dg.Field(dg.Bool))
 def bool_config(context):
     return "true" if context.op_config else "false"
 
 
-@op(config_schema=Int)
+@dg.op(config_schema=Int)
 def add_n(context, x: Int) -> int:
     return x + context.op_config
 
 
-@op(config_schema=Field(Float))
+@dg.op(config_schema=dg.Field(dg.Float))
 def div_y(context, x: Float) -> float:
     return x / context.op_config
 
 
-@op(config_schema=Field(float))
+@dg.op(config_schema=dg.Field(float))
 def div_y_var(context, x: Float) -> float:
     return x / context.op_config
 
 
-@op(config_schema=Field(String))
+@dg.op(config_schema=dg.Field(dg.String))
 def hello(context) -> str:
     return f"Hello, {context.op_config}!"
 
 
-@op(config_schema=Field(String))
-def unpickle(context) -> Any:
+@dg.op(config_schema=dg.Field(dg.String))
+def unpickle(context) -> dg.Any:
     with open(context.op_config, "rb") as fd:
         return pickle.load(fd)
 
 
-@op(config_schema=Field(list))
-def concat_typeless_list_config(context) -> String:
+@dg.op(config_schema=dg.Field(list))
+def concat_typeless_list_config(context) -> dg.String:
     return "".join(context.op_config)
 
 
-@op(config_schema=Field([str]))
-def concat_config(context) -> String:
+@dg.op(config_schema=dg.Field([str]))
+def concat_config(context) -> dg.String:
     return "".join(context.op_config)
 
 
-@op(config_schema={"word": String, "times": Int})
+@dg.op(config_schema={"word": dg.String, "times": dg.Int})
 def repeat_config(context) -> str:
     return context.op_config["word"] * context.op_config["times"]
 
 
-@op(config_schema=Field(Selector({"haw": {}, "cn": {}, "en": {}})))
+@dg.op(config_schema=dg.Field(dg.Selector({"haw": {}, "cn": {}, "en": {}})))
 def hello_world(context) -> str:
     if "haw" in context.op_config:
         return "Aloha honua!"
@@ -352,13 +339,13 @@ def hello_world(context) -> str:
     return "Hello, world!"
 
 
-@op(
-    config_schema=Field(
-        Selector(
+@dg.op(
+    config_schema=dg.Field(
+        dg.Selector(
             {
-                "haw": {"whom": Field(String, default_value="honua", is_required=False)},
-                "cn": {"whom": Field(String, default_value="世界", is_required=False)},
-                "en": {"whom": Field(String, default_value="world", is_required=False)},
+                "haw": {"whom": dg.Field(dg.String, default_value="honua", is_required=False)},
+                "cn": {"whom": dg.Field(dg.String, default_value="世界", is_required=False)},
+                "en": {"whom": dg.Field(dg.String, default_value="world", is_required=False)},
             }
         ),
         is_required=False,
@@ -375,8 +362,8 @@ def hello_world_default(context) -> str:
     assert False, "invalid op_config"
 
 
-@op(config_schema=Field(Permissive({"required": Field(String)})))
-def partially_specified_config(context) -> List:
+@dg.op(config_schema=dg.Field(dg.Permissive({"required": dg.Field(dg.String)})))
+def partially_specified_config(context) -> dg.List:
     return sorted(list(context.op_config.items()))
 
 
@@ -472,7 +459,7 @@ def test_repeat_config():
 def test_tuple_none_config():
     with pytest.raises(check.CheckError, match="Param tuple_types cannot be none"):
 
-        @op(config_schema=Field(Tuple[None]))
+        @dg.op(config_schema=dg.Field(dg.Tuple[None]))
         def _tuple_none_config(context) -> str:
             return ":".join([str(x) for x in context.op_config])
 

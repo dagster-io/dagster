@@ -1,4 +1,4 @@
-from dagster import JobDefinition
+import dagster as dg
 from dagster.components.lib.shim_components.job import JobScaffolder
 
 from dagster_tests.components_tests.shim_components.shim_test_utils import (
@@ -14,7 +14,7 @@ def test_job_scaffolder():
     job_fn = execute_scaffolder_and_get_symbol(scaffolder, "my_job")
 
     # Verify that the function creates a valid job
-    assert isinstance(job_fn, JobDefinition)
+    assert isinstance(job_fn, dg.JobDefinition)
 
 
 def test_job_scaffolder_ruff_compliance():

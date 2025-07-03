@@ -1,9 +1,9 @@
+import dagster as dg
 import pytest
 from dagster import AutoMaterializePolicy
 from dagster._check import CheckError
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicyType
 from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
-from dagster._serdes import deserialize_value, serialize_value
 
 
 def test_type():
@@ -16,7 +16,7 @@ def test_without_rules():
 
     less_eager = eager.without_rules(AutoMaterializeRule.materialize_on_missing())
 
-    assert less_eager == AutoMaterializePolicy(
+    assert less_eager == dg.AutoMaterializePolicy(
         rules={
             AutoMaterializeRule.materialize_on_parent_updated(),
             AutoMaterializeRule.materialize_on_required_for_freshness(),
@@ -32,7 +32,7 @@ def test_without_rules():
         AutoMaterializeRule.materialize_on_parent_updated(),
     )
 
-    assert even_less_eager == AutoMaterializePolicy(
+    assert even_less_eager == dg.AutoMaterializePolicy(
         rules={
             AutoMaterializeRule.skip_on_parent_outdated(),
             AutoMaterializeRule.skip_on_parent_missing(),
@@ -43,7 +43,7 @@ def test_without_rules():
 
 
 def test_without_rules_invalid():
-    simple_policy = AutoMaterializePolicy(
+    simple_policy = dg.AutoMaterializePolicy(
         rules={AutoMaterializeRule.materialize_on_parent_updated()}
     )
 
@@ -62,7 +62,7 @@ def test_without_rules_invalid():
 
 
 def test_with_rules():
-    simple_policy = AutoMaterializePolicy(
+    simple_policy = dg.AutoMaterializePolicy(
         rules={AutoMaterializeRule.materialize_on_parent_updated()}
     )
 
@@ -80,7 +80,7 @@ def test_with_rules():
 
 
 def test_with_rules_override_existing_instance():
-    simple_policy = AutoMaterializePolicy(
+    simple_policy = dg.AutoMaterializePolicy(
         rules={
             AutoMaterializeRule.materialize_on_parent_updated(),
             AutoMaterializeRule.skip_on_backfill_in_progress(),
@@ -131,5 +131,5 @@ def test_with_rules_override_existing_instance():
 def test_serialized_auto_materialize_backcompat(
     serialized_amp: str, expected_amp: AutoMaterializePolicy
 ):
-    assert deserialize_value(serialized_amp) == expected_amp
-    assert deserialize_value(serialize_value(expected_amp)) == expected_amp
+    assert dg.deserialize_value(serialized_amp) == expected_amp
+    assert dg.deserialize_value(dg.serialize_value(expected_amp)) == expected_amp

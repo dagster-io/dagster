@@ -2,11 +2,10 @@ import sys
 import zlib
 from unittest import mock
 
-from dagster import job, op
+import dagster as dg
 from dagster._core.storage.runs.sql_run_storage import (
     defensively_unpack_execution_plan_snapshot_query,
 )
-from dagster._serdes import serialize_value
 
 
 def test_defensive_job_not_a_string():
@@ -79,11 +78,11 @@ def test_defensive_jobs_cannot_parse_json():
 
 
 def test_correctly_fetch_decompress_parse_snapshot():
-    @op
+    @dg.op
     def noop_op(_):
         pass
 
-    @job
+    @dg.job
     def noop_job():
         noop_op()
 
@@ -93,7 +92,7 @@ def test_correctly_fetch_decompress_parse_snapshot():
     assert (
         defensively_unpack_execution_plan_snapshot_query(
             mock_logger,
-            [zlib.compress(serialize_value(noop_job_snapshot).encode("utf-8"))],
+            [zlib.compress(dg.serialize_value(noop_job_snapshot).encode("utf-8"))],
         )
         == noop_job_snapshot
     )

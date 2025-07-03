@@ -1,7 +1,7 @@
 import string
 
+import dagster as dg
 import pytest
-from dagster import AssetKey, ConfigurableResource, Definitions, asset
 from dagster._api.snapshot_partition import (
     sync_get_external_partition_config_grpc,
     sync_get_external_partition_names_grpc,
@@ -9,7 +9,6 @@ from dagster._api.snapshot_partition import (
     sync_get_external_partition_tags_grpc,
 )
 from dagster._core.definitions.asset_job import IMPLICIT_ASSET_JOB_NAME
-from dagster._core.definitions.partitions.definition import StaticPartitionsDefinition
 from dagster._core.definitions.repository_definition import SINGLETON_REPOSITORY_NAME
 from dagster._core.errors import DagsterUserCodeProcessError
 from dagster._core.instance import DagsterInstance
@@ -22,7 +21,6 @@ from dagster._core.remote_representation import (
 )
 from dagster._core.test_utils import ensure_dagster_tests_import
 from dagster._grpc.types import PartitionArgs, PartitionNamesArgs, PartitionSetExecutionParamArgs
-from dagster._serdes import deserialize_value
 
 ensure_dagster_tests_import()
 
@@ -30,21 +28,21 @@ from dagster_tests.api_tests.utils import get_bar_repo_code_location, get_code_l
 
 
 def get_repo_with_differently_partitioned_assets():
-    @asset(partitions_def=StaticPartitionsDefinition(["1", "2"]))
+    @dg.asset(partitions_def=dg.StaticPartitionsDefinition(["1", "2"]))
     def asset1(): ...
 
-    ab_partitions_def = StaticPartitionsDefinition(["a", "b"])
+    ab_partitions_def = dg.StaticPartitionsDefinition(["a", "b"])
 
-    @asset(partitions_def=ab_partitions_def)
+    @dg.asset(partitions_def=ab_partitions_def)
     def asset2(): ...
 
-    class MyResource(ConfigurableResource):
+    class MyResource(dg.ConfigurableResource):
         foo: str
 
-    @asset(partitions_def=ab_partitions_def)
+    @dg.asset(partitions_def=ab_partitions_def)
     def asset3(resource1: MyResource): ...
 
-    return Definitions(
+    return dg.Definitions(
         assets=[asset1, asset2, asset3], resources={"resource1": MyResource(foo="bar")}
     ).get_repository_def()
 
@@ -82,7 +80,7 @@ def test_external_partition_names_asset_selection(instance: DagsterInstance):
             repository_handle=code_location.get_repository(SINGLETON_REPOSITORY_NAME).handle,
             job_name=IMPLICIT_ASSET_JOB_NAME,
             instance=instance,
-            selected_asset_keys={AssetKey("asset2"), AssetKey("asset3")},
+            selected_asset_keys={dg.AssetKey("asset2"), dg.AssetKey("asset3")},
         )
         assert isinstance(data, PartitionNamesSnap)
         assert data.partition_names == ["a", "b"]
@@ -95,7 +93,7 @@ def test_external_partition_names_deserialize_error_grpc(instance: DagsterInstan
         repository_handle = code_location.get_repository("bar_repo").handle
         repository_origin = repository_handle.get_remote_origin()
 
-        result = deserialize_value(
+        result = dg.deserialize_value(
             api_client.external_partition_names(
                 partition_names_args=PartitionNamesArgs(
                     repository_origin=repository_origin, partition_set_name="foo_partition_set"
@@ -164,7 +162,7 @@ def test_external_partition_config_deserialize_error_grpc(instance: DagsterInsta
 
         api_client = code_location.client
 
-        result = deserialize_value(
+        result = dg.deserialize_value(
             api_client.external_partition_config(
                 partition_args=PartitionArgs(
                     repository_origin=repository_handle.get_remote_origin(),
@@ -219,7 +217,7 @@ def test_external_partition_tags_different_partitions_defs(instance: DagsterInst
         data = code_location.get_partition_tags(
             repository_handle=code_location.get_repository(SINGLETON_REPOSITORY_NAME).handle,
             job_name=IMPLICIT_ASSET_JOB_NAME,
-            selected_asset_keys={AssetKey("asset2"), AssetKey("asset3")},
+            selected_asset_keys={dg.AssetKey("asset2"), dg.AssetKey("asset3")},
             partition_name="b",
             instance=instance,
         )
@@ -235,7 +233,7 @@ def test_external_partitions_tags_deserialize_error_grpc(instance: DagsterInstan
 
         api_client = code_location.client
 
-        result = deserialize_value(
+        result = dg.deserialize_value(
             api_client.external_partition_tags(
                 partition_args=PartitionArgs(
                     repository_origin=repository_origin,
@@ -281,7 +279,7 @@ def test_external_partition_set_execution_params_deserialize_error_grpc(instance
 
         api_client = code_location.client
 
-        result = deserialize_value(
+        result = dg.deserialize_value(
             api_client.external_partition_set_execution_params(
                 partition_set_execution_param_args=PartitionSetExecutionParamArgs(
                     repository_origin=repository_origin,
@@ -343,7 +341,7 @@ def test_external_partition_tags_grpc_backcompat_no_job_name(instance: DagsterIn
 
         api_client = code_location.client
 
-        result = deserialize_value(
+        result = dg.deserialize_value(
             api_client.external_partition_tags(
                 partition_args=PartitionArgs(
                     repository_origin=repository_handle.get_remote_origin(),
@@ -365,7 +363,7 @@ def test_external_partition_names_grpc_backcompat_no_job_name(instance: DagsterI
 
         api_client = code_location.client
 
-        result = deserialize_value(
+        result = dg.deserialize_value(
             api_client.external_partition_names(
                 partition_names_args=PartitionNamesArgs(
                     repository_origin=repository_handle.get_remote_origin(),

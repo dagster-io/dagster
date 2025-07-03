@@ -1,7 +1,8 @@
 from collections.abc import Sequence
 from typing import Annotated, Optional
 
-from dagster import ResolutionContext, Resolvable, Resolver
+import dagster as dg
+from dagster import ResolutionContext
 from pydantic import BaseModel
 
 
@@ -9,10 +10,10 @@ def resolve_val1(context: ResolutionContext, val1) -> int:
     return context.resolve_value(val1, as_type=int) + 20
 
 
-class InnerObject(BaseModel, Resolvable):
+class InnerObject(BaseModel, dg.Resolvable):
     val1_renamed: Annotated[
         int,
-        Resolver(
+        dg.Resolver(
             resolve_val1,
             model_field_type=str,
             model_field_name="val1",
@@ -22,14 +23,14 @@ class InnerObject(BaseModel, Resolvable):
     val2: Optional[str]
 
 
-class TargetObject(BaseModel, Resolvable):
+class TargetObject(BaseModel, dg.Resolvable):
     int_val: int
     str_val: str
     inners: Optional[Sequence[InnerObject]]
 
 
 def test_valid_resolution_simple() -> None:
-    context = ResolutionContext(scope={"some_int": 1, "some_str": "a"})
+    context = dg.ResolutionContext(scope={"some_int": 1, "some_str": "a"})
     inner_schema = InnerObject.model()(
         val1="{{ some_int }}",
         val2="{{ some_str }}_b",
@@ -39,7 +40,7 @@ def test_valid_resolution_simple() -> None:
 
 
 def test_valid_resolution_nested() -> None:
-    context = ResolutionContext(scope={"some_int": 1, "some_str": "a"})
+    context = dg.ResolutionContext(scope={"some_int": 1, "some_str": "a"})
     params = TargetObject.model()(
         int_val="{{ some_int }}",
         str_val="{{ some_str }}_x",

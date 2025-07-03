@@ -1,15 +1,14 @@
 from typing import Optional
 
+import dagster as dg
 import pytest
-from dagster import job, op
-from dagster._config.pythonic_config import Config
 from pydantic import ValidationError, validator
 
 
 def test_validators_basic() -> None:
     # showcase that Pydantic validators work as expected
 
-    class UserConfig(Config):
+    class UserConfig(dg.Config):
         name: str
         username: str
 
@@ -26,12 +25,12 @@ def test_validators_basic() -> None:
 
     executed = {}
 
-    @op
+    @dg.op
     def greet_user(config: UserConfig) -> None:
         print(f"Hello {config.name}!")  # noqa: T201
         executed["greet_user"] = True
 
-    @job
+    @dg.job
     def greet_user_job() -> None:
         greet_user()
 
@@ -71,7 +70,7 @@ def test_validator_default_contract() -> None:
     # ensures Pydantic's validator decorator works as expected
     # in particular that it does not validate default values
     # but does validate any explicit inputs matching the default
-    class UserConfig(Config):
+    class UserConfig(dg.Config):
         name: Optional[str] = None
 
         @validator("name")
@@ -87,14 +86,14 @@ def test_validator_default_contract() -> None:
 
 def test_validator_default_contract_nested() -> None:
     # as above, more complex case
-    class InnerConfig(Config):
+    class InnerConfig(dg.Config):
         name: Optional[str] = None
 
         @validator("name")
         def name_must_not_be_provided(cls, name):
             raise ValueError("Inner always errors with a non-default value!")
 
-    class OuterConfig(Config):
+    class OuterConfig(dg.Config):
         inner: InnerConfig
         name: Optional[str] = None
 
@@ -110,11 +109,11 @@ def test_validator_default_contract_nested() -> None:
 
     executed = {}
 
-    @op
+    @dg.op
     def my_op(config: OuterConfig) -> None:
         executed["my_op"] = True
 
-    @job
+    @dg.job
     def my_job() -> None:
         my_op()
 

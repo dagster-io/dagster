@@ -1,36 +1,32 @@
 import sys
 from collections.abc import Callable
 
+import dagster as dg
 import pytest
-from dagster._core.definitions.definitions_class import Definitions
-from dagster.components.component.component import Component
-from dagster.components.component.template_vars import template_var
 from dagster.components.core.context import ComponentLoadContext
-from dagster.components.resolved.base import Resolvable
-from dagster.components.resolved.model import Model
 
 from dagster_tests.components_tests.utils import load_context_and_component_for_test
 
 
-class ComponentWithAdditionalScope(Component, Resolvable, Model):
+class ComponentWithAdditionalScope(dg.Component, dg.Resolvable, dg.Model):
     value: str
 
     @staticmethod
-    @template_var
+    @dg.template_var
     def foo() -> str:
         return "value_for_foo"
 
     @staticmethod
-    @template_var
+    @dg.template_var
     def a_udf() -> Callable:
         return lambda: "a_udf_value"
 
     @staticmethod
-    @template_var
+    @dg.template_var
     def a_udf_with_args() -> Callable:
         return lambda x: f"a_udf_value_{x}"
 
-    def build_defs(self, context: ComponentLoadContext) -> Definitions: ...
+    def build_defs(self, context: ComponentLoadContext) -> dg.Definitions: ...
 
 
 def test_basic_additional_scope_hardcoded_value():
@@ -74,10 +70,10 @@ def test_basic_additional_scope_scope_udf_with_args():
     assert component.value == "a_udf_value_1"
 
 
-class ComponentWithInjectedScope(Component, Resolvable, Model):
+class ComponentWithInjectedScope(dg.Component, dg.Resolvable, dg.Model):
     value: str
 
-    def build_defs(self, context: ComponentLoadContext) -> Definitions: ...
+    def build_defs(self, context: ComponentLoadContext) -> dg.Definitions: ...
 
 
 def test_basic_injected_scope_var():

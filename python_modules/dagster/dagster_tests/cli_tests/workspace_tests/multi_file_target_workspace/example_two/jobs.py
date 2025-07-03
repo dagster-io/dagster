@@ -1,9 +1,9 @@
-# type: ignore
+import dagster as dg
 
-from dagster import job
+# type: ignore
 from ops import example_two_op
 
 
-@job
+@dg.job
 def example_two_job():
     example_two_op()

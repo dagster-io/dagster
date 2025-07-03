@@ -1,20 +1,20 @@
-from dagster import In, List, Optional, job, op
+import dagster as dg
 
 
 def test_from_intermediates_from_multiple_outputs() -> None:
-    @op
+    @dg.op
     def x():
         return "x"
 
-    @op
+    @dg.op
     def y():
         return "y"
 
-    @op(ins={"stuff": In(Optional[List[str]])})
+    @dg.op(ins={"stuff": dg.In(dg.Optional[dg.List[str]])})
     def gather(stuff):
         return "{} and {}".format(*stuff)
 
-    @job
+    @dg.job
     def pipe():
         gather([x(), y()])
 
@@ -35,11 +35,11 @@ def test_from_intermediates_from_multiple_outputs() -> None:
 def test_from_intermediates_from_config() -> None:
     run_config = {"ops": {"x": {"inputs": {"string_input": {"value": "Dagster is great!"}}}}}
 
-    @op
+    @dg.op
     def x(string_input):
         return string_input
 
-    @job
+    @dg.job
     def pipe():
         x()
 

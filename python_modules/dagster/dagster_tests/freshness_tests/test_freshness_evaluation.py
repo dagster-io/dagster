@@ -3,16 +3,9 @@ from collections.abc import Generator, Iterator
 from contextlib import contextmanager
 from typing import Callable, cast
 
+import dagster as dg
 import pytest
-from dagster import (
-    AssetKey,
-    AssetMaterialization,
-    DagsterEvent,
-    DagsterEventType,
-    DagsterInstance,
-    Definitions,
-    asset,
-)
+from dagster import AssetKey, DagsterEventType, DagsterInstance
 from dagster._check import CheckError
 from dagster._core.definitions.freshness import FreshnessState, InternalFreshnessPolicy
 from dagster._core.definitions.freshness_evaluator import (
@@ -20,8 +13,6 @@ from dagster._core.definitions.freshness_evaluator import (
     TimeWindowFreshnessPolicyEvaluator,
 )
 from dagster._core.events import StepMaterializationData
-from dagster._core.events.log import EventLogEntry
-from dagster._core.instance_for_test import instance_for_test
 from dagster._core.storage.dagster_run import make_new_run_id
 from dagster._core.test_utils import create_test_daemon_workspace_context, freeze_time
 from dagster._core.workspace.context import IWorkspaceProcessContext, LoadingContext
@@ -44,24 +35,24 @@ def setup_remote_repo(
 
 
 @pytest.fixture
-def instance() -> Generator[DagsterInstance, None, None]:
-    with instance_for_test() as instance:
+def instance() -> Generator[dg.DagsterInstance, None, None]:
+    with dg.instance_for_test() as instance:
         yield instance
 
 
 def store_mat(instance: DagsterInstance, asset_key: AssetKey, dt: datetime.datetime):
     instance.store_event(
-        EventLogEntry(
+        dg.EventLogEntry(
             error_info=None,
             user_message="",
             level="debug",
             run_id=make_new_run_id(),
             timestamp=dt.timestamp(),
-            dagster_event=DagsterEvent(
+            dagster_event=dg.DagsterEvent(
                 DagsterEventType.ASSET_MATERIALIZATION.value,
                 "nonce",
                 event_specific_data=StepMaterializationData(
-                    materialization=AssetMaterialization(asset_key=asset_key),
+                    materialization=dg.AssetMaterialization(asset_key=asset_key),
                 ),
             ),
         )
@@ -73,8 +64,8 @@ class TestTimeWindowFreshnessPolicyEvaluator:
     async def test_freshness_pass(self, instance: DagsterInstance):
         """Test that an asset with a time window freshness policy is evaluated as fresh if its last materialization was within the fail window."""
 
-        def create_defs() -> Definitions:
-            @asset(
+        def create_defs() -> dg.Definitions:
+            @dg.asset(
                 freshness_policy=InternalFreshnessPolicy.time_window(
                     fail_window=datetime.timedelta(hours=24),
                 )
@@ -82,13 +73,13 @@ class TestTimeWindowFreshnessPolicyEvaluator:
             def asset_with_policy():
                 return 1
 
-            return Definitions(assets=[asset_with_policy])
+            return dg.Definitions(assets=[asset_with_policy])
 
         evaluator = TimeWindowFreshnessPolicyEvaluator()
 
         with setup_remote_repo(instance=instance, fn=create_defs) as workspace_context:
             asset_graph = workspace_context.create_request_context().asset_graph
-            asset_key = AssetKey("asset_with_policy")
+            asset_key = dg.AssetKey("asset_with_policy")
             start_time = datetime.datetime.now(datetime.timezone.utc)
             frozen_time = start_time
 
@@ -111,8 +102,8 @@ class TestTimeWindowFreshnessPolicyEvaluator:
     async def test_freshness_pass_varying_fail_window(self, instance: DagsterInstance):
         """Same as test_freshness_pass, but with different fail windows ranging from minutes to months."""
 
-        def create_defs() -> Definitions:
-            @asset(
+        def create_defs() -> dg.Definitions:
+            @dg.asset(
                 freshness_policy=InternalFreshnessPolicy.time_window(
                     fail_window=datetime.timedelta(minutes=10),
                 )
@@ -120,7 +111,7 @@ class TestTimeWindowFreshnessPolicyEvaluator:
             def asset_10min():
                 return 1
 
-            @asset(
+            @dg.asset(
                 freshness_policy=InternalFreshnessPolicy.time_window(
                     fail_window=datetime.timedelta(days=10),
                 )
@@ -128,7 +119,7 @@ class TestTimeWindowFreshnessPolicyEvaluator:
             def asset_10days():
                 return 2
 
-            @asset(
+            @dg.asset(
                 freshness_policy=InternalFreshnessPolicy.time_window(
                     fail_window=datetime.timedelta(days=30),
                 )
@@ -136,15 +127,15 @@ class TestTimeWindowFreshnessPolicyEvaluator:
             def asset_1month():
                 return 3
 
-            return Definitions(assets=[asset_10min, asset_10days, asset_1month])
+            return dg.Definitions(assets=[asset_10min, asset_10days, asset_1month])
 
         evaluator = TimeWindowFreshnessPolicyEvaluator()
 
         with setup_remote_repo(instance=instance, fn=create_defs) as workspace_context:
             asset_graph = workspace_context.create_request_context().asset_graph
-            asset_10min_key = AssetKey("asset_10min")
-            asset_10days_key = AssetKey("asset_10days")
-            asset_1month_key = AssetKey("asset_1month")
+            asset_10min_key = dg.AssetKey("asset_10min")
+            asset_10days_key = dg.AssetKey("asset_10days")
+            asset_1month_key = dg.AssetKey("asset_1month")
             start_time = datetime.datetime.now(datetime.timezone.utc)
             frozen_time = start_time
 
@@ -204,8 +195,8 @@ class TestTimeWindowFreshnessPolicyEvaluator:
     async def test_freshness_fail(self, instance: DagsterInstance):
         """Test that an asset fails freshness if its last materialization is outside the fail window."""
 
-        def create_defs() -> Definitions:
-            @asset(
+        def create_defs() -> dg.Definitions:
+            @dg.asset(
                 freshness_policy=InternalFreshnessPolicy.time_window(
                     fail_window=datetime.timedelta(hours=24),
                 )
@@ -213,13 +204,13 @@ class TestTimeWindowFreshnessPolicyEvaluator:
             def asset_with_policy():
                 return 1
 
-            return Definitions(assets=[asset_with_policy])
+            return dg.Definitions(assets=[asset_with_policy])
 
         evaluator = TimeWindowFreshnessPolicyEvaluator()
 
         with setup_remote_repo(instance=instance, fn=create_defs) as workspace_context:
             asset_graph = workspace_context.create_request_context().asset_graph
-            asset_key = AssetKey("asset_with_policy")
+            asset_key = dg.AssetKey("asset_with_policy")
             start_time = datetime.datetime.now(datetime.timezone.utc)
             frozen_time = start_time
 
@@ -237,8 +228,8 @@ class TestTimeWindowFreshnessPolicyEvaluator:
     async def test_freshness_warn(self, instance: DagsterInstance):
         """Test that an asset enters freshness warning state if its last materialization is outside the warn window but within the fail window."""
 
-        def create_defs() -> Definitions:
-            @asset(
+        def create_defs() -> dg.Definitions:
+            @dg.asset(
                 freshness_policy=InternalFreshnessPolicy.time_window(
                     fail_window=datetime.timedelta(hours=24),
                     warn_window=datetime.timedelta(hours=12),
@@ -247,13 +238,13 @@ class TestTimeWindowFreshnessPolicyEvaluator:
             def asset_with_policy():
                 return 1
 
-            return Definitions(assets=[asset_with_policy])
+            return dg.Definitions(assets=[asset_with_policy])
 
         evaluator = TimeWindowFreshnessPolicyEvaluator()
 
         with setup_remote_repo(instance=instance, fn=create_defs) as workspace_context:
             asset_graph = workspace_context.create_request_context().asset_graph
-            asset_key = AssetKey("asset_with_policy")
+            asset_key = dg.AssetKey("asset_with_policy")
             start_time = datetime.datetime.now(datetime.timezone.utc)
             frozen_time = start_time
 
@@ -270,8 +261,8 @@ class TestTimeWindowFreshnessPolicyEvaluator:
     async def test_freshness_unknown(self, instance: DagsterInstance):
         """Test that assets with freshness policies but no materializations are evaluated as UNKNOWN."""
 
-        def create_defs() -> Definitions:
-            @asset(
+        def create_defs() -> dg.Definitions:
+            @dg.asset(
                 freshness_policy=InternalFreshnessPolicy.time_window(
                     fail_window=datetime.timedelta(hours=24),
                 )
@@ -279,7 +270,7 @@ class TestTimeWindowFreshnessPolicyEvaluator:
             def asset_with_policy():
                 return 1
 
-            @asset(
+            @dg.asset(
                 freshness_policy=InternalFreshnessPolicy.time_window(
                     fail_window=datetime.timedelta(hours=24),
                     warn_window=datetime.timedelta(hours=12),
@@ -288,7 +279,7 @@ class TestTimeWindowFreshnessPolicyEvaluator:
             def asset_with_policy_2():
                 return 1
 
-            return Definitions(assets=[asset_with_policy, asset_with_policy_2])
+            return dg.Definitions(assets=[asset_with_policy, asset_with_policy_2])
 
         evaluator = TimeWindowFreshnessPolicyEvaluator()
 
@@ -303,12 +294,12 @@ class TestTimeWindowFreshnessPolicyEvaluator:
     async def test_freshness_no_policy(self, instance: DagsterInstance):
         """Raise CheckError if attempting to evaluate freshness for an asset without a freshness policy."""
 
-        def create_defs() -> Definitions:
-            @asset
+        def create_defs() -> dg.Definitions:
+            @dg.asset
             def asset_without_policy():
                 return 1
 
-            return Definitions(assets=[asset_without_policy])
+            return dg.Definitions(assets=[asset_without_policy])
 
         evaluator = TimeWindowFreshnessPolicyEvaluator()
 
@@ -325,8 +316,8 @@ class TestCronFreshnessPolicyEvaluator:
     async def test_cron_freshness_pass(self, instance: DagsterInstance):
         """Test that an asset with a cron freshness policy is evaluated as fresh if its last materialization was within the expected time window."""
 
-        def create_defs() -> Definitions:
-            @asset(
+        def create_defs() -> dg.Definitions:
+            @dg.asset(
                 freshness_policy=InternalFreshnessPolicy.cron(
                     deadline_cron="0 9 * * *",  # Daily at 9 AM
                     lower_bound_delta=datetime.timedelta(hours=1),
@@ -335,13 +326,13 @@ class TestCronFreshnessPolicyEvaluator:
             def asset_with_policy():
                 return 1
 
-            return Definitions(assets=[asset_with_policy])
+            return dg.Definitions(assets=[asset_with_policy])
 
         evaluator = CronFreshnessPolicyEvaluator()
 
         with setup_remote_repo(instance=instance, fn=create_defs) as workspace_context:
             asset_graph = workspace_context.create_request_context().asset_graph
-            asset_key = AssetKey("asset_with_policy")
+            asset_key = dg.AssetKey("asset_with_policy")
             asset_node = asset_graph.remote_asset_nodes_by_key[asset_key]
 
             # Test at 10:00 AM on Jan 1 (last completed cron tick was 9:00 AM on Jan 1, window: 8:00-9:00 AM Jan 1)
@@ -394,8 +385,8 @@ class TestCronFreshnessPolicyEvaluator:
     async def test_cron_freshness_pass_different_schedules(self, instance: DagsterInstance):
         """Test freshness evaluation with different cron schedules and lower bounds."""
 
-        def create_defs() -> Definitions:
-            @asset(
+        def create_defs() -> dg.Definitions:
+            @dg.asset(
                 freshness_policy=InternalFreshnessPolicy.cron(
                     deadline_cron="0 */6 * * *",  # Every 6 hours
                     lower_bound_delta=datetime.timedelta(minutes=30),
@@ -404,7 +395,7 @@ class TestCronFreshnessPolicyEvaluator:
             def asset_every_6h():
                 return 1
 
-            @asset(
+            @dg.asset(
                 freshness_policy=InternalFreshnessPolicy.cron(
                     deadline_cron="0 12 * * 1",  # Every Monday at noon
                     lower_bound_delta=datetime.timedelta(hours=2),
@@ -413,7 +404,7 @@ class TestCronFreshnessPolicyEvaluator:
             def asset_weekly():
                 return 2
 
-            @asset(
+            @dg.asset(
                 freshness_policy=InternalFreshnessPolicy.cron(
                     deadline_cron="*/15 * * * *",  # Every 15 minutes
                     lower_bound_delta=datetime.timedelta(minutes=5),
@@ -422,7 +413,7 @@ class TestCronFreshnessPolicyEvaluator:
             def asset_frequent():
                 return 3
 
-            return Definitions(assets=[asset_every_6h, asset_weekly, asset_frequent])
+            return dg.Definitions(assets=[asset_every_6h, asset_weekly, asset_frequent])
 
         evaluator = CronFreshnessPolicyEvaluator()
 
@@ -436,12 +427,12 @@ class TestCronFreshnessPolicyEvaluator:
             )  # 5:45 PM
 
             with freeze_time(current_time):
-                store_mat(instance, AssetKey("asset_every_6h"), materialization_time)
+                store_mat(instance, dg.AssetKey("asset_every_6h"), materialization_time)
 
             # Advance to just before the deadline (5:59 PM)
             evaluation_time = datetime.datetime(2024, 1, 1, 17, 59, 0, tzinfo=datetime.timezone.utc)
             with freeze_time(evaluation_time):
-                asset_node = asset_graph.remote_asset_nodes_by_key[AssetKey("asset_every_6h")]
+                asset_node = asset_graph.remote_asset_nodes_by_key[dg.AssetKey("asset_every_6h")]
                 ctx = cast("LoadingContext", workspace_context.create_request_context())
                 freshness_state = await evaluator.evaluate_freshness(context=ctx, node=asset_node)
                 assert freshness_state == FreshnessState.PASS
@@ -455,11 +446,11 @@ class TestCronFreshnessPolicyEvaluator:
             )  # 11:30 AM
 
             with freeze_time(current_time):
-                store_mat(instance, AssetKey("asset_weekly"), materialization_time)
+                store_mat(instance, dg.AssetKey("asset_weekly"), materialization_time)
 
             evaluation_time = datetime.datetime(2024, 1, 1, 11, 59, 0, tzinfo=datetime.timezone.utc)
             with freeze_time(evaluation_time):
-                asset_node = asset_graph.remote_asset_nodes_by_key[AssetKey("asset_weekly")]
+                asset_node = asset_graph.remote_asset_nodes_by_key[dg.AssetKey("asset_weekly")]
                 ctx = cast("LoadingContext", workspace_context.create_request_context())
                 freshness_state = await evaluator.evaluate_freshness(context=ctx, node=asset_node)
                 assert freshness_state == FreshnessState.PASS
@@ -471,11 +462,11 @@ class TestCronFreshnessPolicyEvaluator:
             )  # 12:12 PM
 
             with freeze_time(current_time):
-                store_mat(instance, AssetKey("asset_frequent"), materialization_time)
+                store_mat(instance, dg.AssetKey("asset_frequent"), materialization_time)
 
             evaluation_time = datetime.datetime(2024, 1, 1, 12, 14, 0, tzinfo=datetime.timezone.utc)
             with freeze_time(evaluation_time):
-                asset_node = asset_graph.remote_asset_nodes_by_key[AssetKey("asset_frequent")]
+                asset_node = asset_graph.remote_asset_nodes_by_key[dg.AssetKey("asset_frequent")]
                 ctx = cast("LoadingContext", workspace_context.create_request_context())
                 freshness_state = await evaluator.evaluate_freshness(context=ctx, node=asset_node)
                 assert freshness_state == FreshnessState.PASS
@@ -484,8 +475,8 @@ class TestCronFreshnessPolicyEvaluator:
     async def test_cron_freshness_fail(self, instance: DagsterInstance):
         """Test that an asset fails freshness if its last materialization is outside the expected time window."""
 
-        def create_defs() -> Definitions:
-            @asset(
+        def create_defs() -> dg.Definitions:
+            @dg.asset(
                 freshness_policy=InternalFreshnessPolicy.cron(
                     deadline_cron="0 9 * * *",  # Daily at 9 AM
                     lower_bound_delta=datetime.timedelta(hours=1),
@@ -494,13 +485,13 @@ class TestCronFreshnessPolicyEvaluator:
             def asset_with_policy():
                 return 1
 
-            return Definitions(assets=[asset_with_policy])
+            return dg.Definitions(assets=[asset_with_policy])
 
         evaluator = CronFreshnessPolicyEvaluator()
 
         with setup_remote_repo(instance=instance, fn=create_defs) as workspace_context:
             asset_graph = workspace_context.create_request_context().asset_graph
-            asset_key = AssetKey("asset_with_policy")
+            asset_key = dg.AssetKey("asset_with_policy")
 
             # Start at 9:00 AM on a specific day
             start_time = datetime.datetime(2024, 1, 1, 9, 0, 0, tzinfo=datetime.timezone.utc)
@@ -520,8 +511,8 @@ class TestCronFreshnessPolicyEvaluator:
     async def test_cron_freshness_materialization_after_deadline(self, instance: DagsterInstance):
         """Test that an asset fails freshness if it hasn't materialized after the deadline passes, and passes once it materializes."""
 
-        def create_defs() -> Definitions:
-            @asset(
+        def create_defs() -> dg.Definitions:
+            @dg.asset(
                 freshness_policy=InternalFreshnessPolicy.cron(
                     deadline_cron="0 9 * * *",  # Daily at 9 AM
                     lower_bound_delta=datetime.timedelta(hours=1),
@@ -530,13 +521,13 @@ class TestCronFreshnessPolicyEvaluator:
             def asset_with_policy():
                 return 1
 
-            return Definitions(assets=[asset_with_policy])
+            return dg.Definitions(assets=[asset_with_policy])
 
         evaluator = CronFreshnessPolicyEvaluator()
 
         with setup_remote_repo(instance=instance, fn=create_defs) as workspace_context:
             asset_graph = workspace_context.create_request_context().asset_graph
-            asset_key = AssetKey("asset_with_policy")
+            asset_key = dg.AssetKey("asset_with_policy")
 
             # Start at 9:00 AM. Last materialization was AGES ago.
             start_time = datetime.datetime(2024, 1, 1, 9, 0, 0, tzinfo=datetime.timezone.utc)
@@ -583,8 +574,8 @@ class TestCronFreshnessPolicyEvaluator:
     async def test_cron_freshness_unknown(self, instance: DagsterInstance):
         """Test that assets with cron freshness policies but no materializations are evaluated as UNKNOWN."""
 
-        def create_defs() -> Definitions:
-            @asset(
+        def create_defs() -> dg.Definitions:
+            @dg.asset(
                 freshness_policy=InternalFreshnessPolicy.cron(
                     deadline_cron="0 9 * * *",  # Daily at 9 AM
                     lower_bound_delta=datetime.timedelta(hours=1),
@@ -593,7 +584,7 @@ class TestCronFreshnessPolicyEvaluator:
             def asset_with_policy():
                 return 1
 
-            @asset(
+            @dg.asset(
                 freshness_policy=InternalFreshnessPolicy.cron(
                     deadline_cron="0 */12 * * *",  # Every 12 hours
                     lower_bound_delta=datetime.timedelta(hours=2),
@@ -602,7 +593,7 @@ class TestCronFreshnessPolicyEvaluator:
             def asset_with_policy_2():
                 return 1
 
-            return Definitions(assets=[asset_with_policy, asset_with_policy_2])
+            return dg.Definitions(assets=[asset_with_policy, asset_with_policy_2])
 
         evaluator = CronFreshnessPolicyEvaluator()
 
@@ -617,12 +608,12 @@ class TestCronFreshnessPolicyEvaluator:
     async def test_cron_freshness_no_policy(self, instance: DagsterInstance):
         """Raise CheckError if attempting to evaluate freshness for an asset without a freshness policy."""
 
-        def create_defs() -> Definitions:
-            @asset
+        def create_defs() -> dg.Definitions:
+            @dg.asset
             def asset_without_policy():
                 return 1
 
-            return Definitions(assets=[asset_without_policy])
+            return dg.Definitions(assets=[asset_without_policy])
 
         evaluator = CronFreshnessPolicyEvaluator()
 
@@ -637,8 +628,8 @@ class TestCronFreshnessPolicyEvaluator:
     async def test_cron_freshness_with_timezone(self, instance: DagsterInstance):
         """Test cron freshness evaluation with different timezones."""
 
-        def create_defs() -> Definitions:
-            @asset(
+        def create_defs() -> dg.Definitions:
+            @dg.asset(
                 freshness_policy=InternalFreshnessPolicy.cron(
                     deadline_cron="0 9 * * *",  # Daily at 9 AM
                     lower_bound_delta=datetime.timedelta(hours=1),
@@ -648,13 +639,13 @@ class TestCronFreshnessPolicyEvaluator:
             def asset_with_timezone():
                 return 1
 
-            return Definitions(assets=[asset_with_timezone])
+            return dg.Definitions(assets=[asset_with_timezone])
 
         evaluator = CronFreshnessPolicyEvaluator()
 
         with setup_remote_repo(instance=instance, fn=create_defs) as workspace_context:
             asset_graph = workspace_context.create_request_context().asset_graph
-            asset_key = AssetKey("asset_with_timezone")
+            asset_key = dg.AssetKey("asset_with_timezone")
 
             # Test at 9:00 AM EST (14:00 UTC)
             start_time = datetime.datetime(2024, 1, 1, 14, 0, 0, tzinfo=datetime.timezone.utc)
@@ -677,8 +668,8 @@ class TestCronFreshnessPolicyEvaluator:
     ):
         """Test that with multiple materializations in the same cron window, the latest one is used."""
 
-        def create_defs() -> Definitions:
-            @asset(
+        def create_defs() -> dg.Definitions:
+            @dg.asset(
                 freshness_policy=InternalFreshnessPolicy.cron(
                     deadline_cron="0 9 * * *",  # Daily at 9 AM
                     lower_bound_delta=datetime.timedelta(hours=1),  # Window: 8-9 AM
@@ -687,13 +678,13 @@ class TestCronFreshnessPolicyEvaluator:
             def asset_with_policy():
                 return 1
 
-            return Definitions(assets=[asset_with_policy])
+            return dg.Definitions(assets=[asset_with_policy])
 
         evaluator = CronFreshnessPolicyEvaluator()
 
         with setup_remote_repo(instance=instance, fn=create_defs) as workspace_context:
             asset_graph = workspace_context.create_request_context().asset_graph
-            asset_key = AssetKey("asset_with_policy")
+            asset_key = dg.AssetKey("asset_with_policy")
             asset_node = asset_graph.remote_asset_nodes_by_key[asset_key]
 
             # Multiple materializations in the same window
@@ -754,8 +745,8 @@ class TestCronFreshnessPolicyEvaluator:
     async def test_cron_freshness_rapid_evaluation_cycles(self, instance: DagsterInstance):
         """Test freshness evaluation with rapid cycles (every 30 seconds like in production)."""
 
-        def create_defs() -> Definitions:
-            @asset(
+        def create_defs() -> dg.Definitions:
+            @dg.asset(
                 freshness_policy=InternalFreshnessPolicy.cron(
                     deadline_cron="0 9 * * *",  # Daily at 9 AM
                     lower_bound_delta=datetime.timedelta(hours=1),  # Window: 8-9 AM
@@ -764,13 +755,13 @@ class TestCronFreshnessPolicyEvaluator:
             def asset_with_policy():
                 return 1
 
-            return Definitions(assets=[asset_with_policy])
+            return dg.Definitions(assets=[asset_with_policy])
 
         evaluator = CronFreshnessPolicyEvaluator()
 
         with setup_remote_repo(instance=instance, fn=create_defs) as workspace_context:
             asset_graph = workspace_context.create_request_context().asset_graph
-            asset_key = AssetKey("asset_with_policy")
+            asset_key = dg.AssetKey("asset_with_policy")
             asset_node = asset_graph.remote_asset_nodes_by_key[asset_key]
 
             # Asset materialized at 8:30 AM
@@ -833,8 +824,8 @@ class TestCronFreshnessPolicyEvaluator:
     ):
         """Test freshness evaluation at different points in the cron cycle."""
 
-        def create_defs() -> Definitions:
-            @asset(
+        def create_defs() -> dg.Definitions:
+            @dg.asset(
                 freshness_policy=InternalFreshnessPolicy.cron(
                     deadline_cron="0 */6 * * *",  # Every 6 hours (midnight, 6am, noon, 6pm)
                     lower_bound_delta=datetime.timedelta(hours=1),  # Window: 1 hour before deadline
@@ -843,13 +834,13 @@ class TestCronFreshnessPolicyEvaluator:
             def asset_with_policy():
                 return 1
 
-            return Definitions(assets=[asset_with_policy])
+            return dg.Definitions(assets=[asset_with_policy])
 
         evaluator = CronFreshnessPolicyEvaluator()
 
         with setup_remote_repo(instance=instance, fn=create_defs) as workspace_context:
             asset_graph = workspace_context.create_request_context().asset_graph
-            asset_key = AssetKey("asset_with_policy")
+            asset_key = dg.AssetKey("asset_with_policy")
             asset_node = asset_graph.remote_asset_nodes_by_key[asset_key]
 
             # Asset materialized at 5:30 AM (within the 5-6 AM window for 6 AM deadline)

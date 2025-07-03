@@ -1,5 +1,5 @@
+import dagster as dg
 import pytest
-from dagster._core.definitions.resource_annotation import ResourceParam
 from dagster.components.lib.executable_component.function_component import ExecuteFnMetadata
 from dagster_shared.check import CheckError
 
@@ -20,7 +20,7 @@ def test_execute_fn_no_annotations() -> None:
 
 
 def test_execute_fn_with_resource_param() -> None:
-    def execute_fn(context, some_resource: ResourceParam[str]): ...
+    def execute_fn(context, some_resource: dg.ResourceParam[str]): ...
 
     invoker = ExecuteFnMetadata(execute_fn)
     assert invoker.resource_keys == {"some_resource"}

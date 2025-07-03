@@ -1,6 +1,6 @@
+import dagster as dg
 import pytest
 from dagster._core.definitions.utils import MAX_TITLE_LENGTH, check_valid_title, is_valid_title
-from dagster._core.errors import DagsterInvariantViolationError
 from dagster._utils.tags import is_valid_strict_tag_value, is_valid_tag_key
 
 
@@ -53,8 +53,8 @@ def test_is_valid_title():
     assert not is_valid_title('no " quotes')
     assert is_valid_title("other symbols are ok @$#!?&|")
 
-    with pytest.raises(DagsterInvariantViolationError, match="Titles must not contain regex"):
+    with pytest.raises(dg.DagsterInvariantViolationError, match="Titles must not contain regex"):
         check_valid_title("no astricks *")
 
-    with pytest.raises(DagsterInvariantViolationError, match="Titles must not be longer than"):
+    with pytest.raises(dg.DagsterInvariantViolationError, match="Titles must not be longer than"):
         check_valid_title("a" * (MAX_TITLE_LENGTH + 1))

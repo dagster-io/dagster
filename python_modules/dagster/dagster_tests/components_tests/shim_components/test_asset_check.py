@@ -1,6 +1,4 @@
-from dagster._core.definitions.asset_checks import AssetChecksDefinition
-from dagster._core.definitions.asset_key import AssetCheckKey, AssetKey
-from dagster._core.definitions.decorators.asset_check_decorator import asset_check
+import dagster as dg
 from dagster.components.component_scaffolding import parse_params_model
 from dagster.components.lib.shim_components.asset_check import (
     AssetCheckScaffolder,
@@ -33,10 +31,10 @@ def test_asset_check_scaffolder_with_asset_key():
     checks_def = execute_scaffolder_and_get_symbol(scaffolder, "my_check", params)
 
     # Verify that the function creates a valid asset check
-    assert isinstance(checks_def, AssetChecksDefinition)
+    assert isinstance(checks_def, dg.AssetChecksDefinition)
     assert len(checks_def.check_keys) == 1
     check_key = next(iter(checks_def.check_keys))
-    assert check_key == AssetCheckKey(AssetKey("my_asset"), "my_check")
+    assert check_key == dg.AssetCheckKey(dg.AssetKey("my_asset"), "my_check")
 
 
 def test_asset_check_scaffolder_ruff_compliance():
@@ -53,14 +51,14 @@ def test_asset_check_scaffolder_params_flow():
     # Parse params through the CLI function
     json_params = '{"asset_key": "my_asset"}'
 
-    params_model = parse_params_model(asset_check, json_params)
+    params_model = parse_params_model(dg.asset_check, json_params)
 
     # Use the parsed params to generate code and get the symbol
     scaffolder = AssetCheckScaffolder()
     checks_def = execute_scaffolder_and_get_symbol(scaffolder, "my_check", params_model)
 
     # Verify we got a valid asset check definition
-    assert isinstance(checks_def, AssetChecksDefinition)
+    assert isinstance(checks_def, dg.AssetChecksDefinition)
     assert len(checks_def.check_keys) == 1
     check_key = next(iter(checks_def.check_keys))
-    assert check_key == AssetCheckKey(AssetKey("my_asset"), "my_check")
+    assert check_key == dg.AssetCheckKey(dg.AssetKey("my_asset"), "my_check")

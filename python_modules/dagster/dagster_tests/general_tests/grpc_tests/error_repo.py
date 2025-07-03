@@ -1,7 +1,7 @@
-from dagster import repository
+import dagster as dg
 
 
-@repository  # pyright: ignore[reportArgumentType]
+@dg.repository  # pyright: ignore[reportArgumentType]
 def error_repo():
     a = None
     a()  # pyright: ignore[reportOptionalCall]

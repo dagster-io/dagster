@@ -2,23 +2,10 @@ import math
 from contextlib import ExitStack
 from unittest.mock import MagicMock, patch
 
+import dagster as dg
 import pytest
-from dagster import (
-    AssetDep,
-    BackfillPolicy,
-    DagsterInstance,
-    PartitionKeyRange,
-    TimeWindowPartitionMapping,
-    asset,
-)
-from dagster._core.definitions.partitions.definition import (
-    DailyPartitionsDefinition,
-    DynamicPartitionsDefinition,
-    StaticPartitionsDefinition,
-    WeeklyPartitionsDefinition,
-)
+from dagster import BackfillPolicy, DagsterInstance
 from dagster._core.execution.asset_backfill import AssetBackfillData, AssetBackfillStatus
-from dagster._core.instance_for_test import instance_for_test
 from dagster._core.storage.tags import (
     ASSET_PARTITION_RANGE_END_TAG,
     ASSET_PARTITION_RANGE_START_TAG,
@@ -39,12 +26,12 @@ from dagster_tests.execution_tests.misc_execution_tests.test_asset_backfill impo
 
 
 def test_asset_backfill_not_all_asset_have_backfill_policy() -> None:
-    @asset(backfill_policy=None)
+    @dg.asset(backfill_policy=None)
     def unpartitioned_upstream_of_partitioned():
         return 1
 
-    @asset(
-        partitions_def=DailyPartitionsDefinition("2023-01-01"),
+    @dg.asset(
+        partitions_def=dg.DailyPartitionsDefinition("2023-01-01"),
         backfill_policy=BackfillPolicy.single_run(),
         deps=[unpartitioned_upstream_of_partitioned],
     )
@@ -104,13 +91,13 @@ def test_asset_backfill_not_all_asset_have_backfill_policy() -> None:
 
 def test_asset_backfill_parent_and_children_have_different_backfill_policy():
     time_now = get_current_datetime()
-    daily_partitions_def: DailyPartitionsDefinition = DailyPartitionsDefinition("2023-01-01")
+    daily_partitions_def: dg.DailyPartitionsDefinition = dg.DailyPartitionsDefinition("2023-01-01")
 
-    @asset(partitions_def=daily_partitions_def, backfill_policy=BackfillPolicy.single_run())
+    @dg.asset(partitions_def=daily_partitions_def, backfill_policy=BackfillPolicy.single_run())
     def upstream_daily_partitioned_asset():
         return 1
 
-    @asset(partitions_def=daily_partitions_def, backfill_policy=BackfillPolicy.multi_run())
+    @dg.asset(partitions_def=daily_partitions_def, backfill_policy=BackfillPolicy.multi_run())
     def downstream_daily_partitioned_asset(upstream_daily_partitioned_asset):
         return upstream_daily_partitioned_asset + 1
 
@@ -150,17 +137,17 @@ def test_asset_backfill_parent_and_children_have_different_backfill_policy():
 
 def test_asset_backfill_parent_and_children_have_same_backfill_policy():
     time_now = get_current_datetime()
-    daily_partitions_def: DailyPartitionsDefinition = DailyPartitionsDefinition("2023-01-01")
+    daily_partitions_def: dg.DailyPartitionsDefinition = dg.DailyPartitionsDefinition("2023-01-01")
 
-    @asset(backfill_policy=BackfillPolicy.single_run())
+    @dg.asset(backfill_policy=BackfillPolicy.single_run())
     def upstream_non_partitioned_asset():
         return 1
 
-    @asset(partitions_def=daily_partitions_def, backfill_policy=BackfillPolicy.single_run())
+    @dg.asset(partitions_def=daily_partitions_def, backfill_policy=BackfillPolicy.single_run())
     def upstream_daily_partitioned_asset():
         return 1
 
-    @asset(partitions_def=daily_partitions_def, backfill_policy=BackfillPolicy.single_run())
+    @dg.asset(partitions_def=daily_partitions_def, backfill_policy=BackfillPolicy.single_run())
     def downstream_daily_partitioned_asset(upstream_daily_partitioned_asset):
         return upstream_daily_partitioned_asset + 1
 
@@ -219,17 +206,17 @@ def test_asset_backfill_parent_and_children_have_same_backfill_policy_but_third_
     same backfill policy in a single run.
     """
     time_now = get_current_datetime()
-    daily_partitions_def: DailyPartitionsDefinition = DailyPartitionsDefinition("2023-01-01")
+    daily_partitions_def: dg.DailyPartitionsDefinition = dg.DailyPartitionsDefinition("2023-01-01")
 
-    @asset(partitions_def=daily_partitions_def, backfill_policy=BackfillPolicy.multi_run(10))
+    @dg.asset(partitions_def=daily_partitions_def, backfill_policy=BackfillPolicy.multi_run(10))
     def has_different_backfill_policy():
         return 1
 
-    @asset(partitions_def=daily_partitions_def, backfill_policy=BackfillPolicy.multi_run(5))
+    @dg.asset(partitions_def=daily_partitions_def, backfill_policy=BackfillPolicy.multi_run(5))
     def upstream_daily_partitioned_asset():
         return 1
 
-    @asset(partitions_def=daily_partitions_def, backfill_policy=BackfillPolicy.multi_run(5))
+    @dg.asset(partitions_def=daily_partitions_def, backfill_policy=BackfillPolicy.multi_run(5))
     def downstream_daily_partitioned_asset(upstream_daily_partitioned_asset):
         return upstream_daily_partitioned_asset + 1
 
@@ -275,7 +262,7 @@ def test_asset_backfill_parent_and_children_have_same_backfill_policy_but_third_
 
 
 def test_asset_backfill_return_single_run_request_for_non_partitioned():
-    @asset(backfill_policy=BackfillPolicy.single_run())
+    @dg.asset(backfill_policy=BackfillPolicy.single_run())
     def unpartitioned_upstream_of_partitioned():
         return 1
 
@@ -311,9 +298,9 @@ def test_asset_backfill_return_single_run_request_for_non_partitioned():
 
 def test_asset_backfill_return_single_run_request_for_partitioned():
     time_now = get_current_datetime()
-    daily_partitions_def: DailyPartitionsDefinition = DailyPartitionsDefinition("2023-01-01")
+    daily_partitions_def: dg.DailyPartitionsDefinition = dg.DailyPartitionsDefinition("2023-01-01")
 
-    @asset(partitions_def=daily_partitions_def, backfill_policy=BackfillPolicy.single_run())
+    @dg.asset(partitions_def=daily_partitions_def, backfill_policy=BackfillPolicy.single_run())
     def upstream_daily_partitioned_asset():
         return 1
 
@@ -353,12 +340,12 @@ def test_asset_backfill_return_single_run_request_for_partitioned():
 
 def test_asset_backfill_return_multiple_run_request_for_partitioned():
     time_now = get_current_datetime()
-    daily_partitions_def: DailyPartitionsDefinition = DailyPartitionsDefinition(
+    daily_partitions_def: dg.DailyPartitionsDefinition = dg.DailyPartitionsDefinition(
         "2023-01-01", end_date="2023-08-11"
     )
     num_of_daily_partitions = daily_partitions_def.get_num_partitions(time_now)
 
-    @asset(partitions_def=daily_partitions_def, backfill_policy=BackfillPolicy.multi_run(7))
+    @dg.asset(partitions_def=daily_partitions_def, backfill_policy=BackfillPolicy.multi_run(7))
     def upstream_daily_partitioned_asset():
         return 1
 
@@ -397,18 +384,18 @@ def test_asset_backfill_return_multiple_run_request_for_partitioned():
 
 
 def test_asset_backfill_status_count_with_backfill_policies():
-    daily_partitions_def: DailyPartitionsDefinition = DailyPartitionsDefinition("2023-01-01")
-    weekly_partitions_def = WeeklyPartitionsDefinition("2023-01-01")
+    daily_partitions_def: dg.DailyPartitionsDefinition = dg.DailyPartitionsDefinition("2023-01-01")
+    weekly_partitions_def = dg.WeeklyPartitionsDefinition("2023-01-01")
 
     time_now = get_current_datetime()
     num_of_daily_partitions = daily_partitions_def.get_num_partitions(time_now)
     num_of_weekly_partitions = weekly_partitions_def.get_num_partitions(time_now)
 
-    @asset(backfill_policy=BackfillPolicy.single_run())
+    @dg.asset(backfill_policy=BackfillPolicy.single_run())
     def unpartitioned_upstream_of_partitioned():
         return 1
 
-    @asset(
+    @dg.asset(
         partitions_def=daily_partitions_def,
         backfill_policy=BackfillPolicy.single_run(),
         deps={unpartitioned_upstream_of_partitioned},
@@ -416,7 +403,7 @@ def test_asset_backfill_status_count_with_backfill_policies():
     def upstream_daily_partitioned_asset():
         return 2
 
-    @asset(
+    @dg.asset(
         partitions_def=weekly_partitions_def,
         backfill_policy=BackfillPolicy.single_run(),
         deps={upstream_daily_partitioned_asset},
@@ -481,22 +468,26 @@ def test_asset_backfill_status_count_with_backfill_policies():
 
 
 def test_backfill_run_contains_more_than_one_asset():
-    upstream_partitions_def: DailyPartitionsDefinition = DailyPartitionsDefinition("2023-01-01")
-    downstream_partitions_def: DailyPartitionsDefinition = DailyPartitionsDefinition("2023-01-02")
+    upstream_partitions_def: dg.DailyPartitionsDefinition = dg.DailyPartitionsDefinition(
+        "2023-01-01"
+    )
+    downstream_partitions_def: dg.DailyPartitionsDefinition = dg.DailyPartitionsDefinition(
+        "2023-01-02"
+    )
 
     time_now = get_current_datetime()
     upstream_num_of_partitions = upstream_partitions_def.get_num_partitions(time_now)
     downstream_num_of_partitions = downstream_partitions_def.get_num_partitions(time_now)
 
-    @asset(partitions_def=upstream_partitions_def, backfill_policy=BackfillPolicy.single_run())
+    @dg.asset(partitions_def=upstream_partitions_def, backfill_policy=BackfillPolicy.single_run())
     def upstream_a():
         return 1
 
-    @asset(partitions_def=upstream_partitions_def, backfill_policy=BackfillPolicy.single_run())
+    @dg.asset(partitions_def=upstream_partitions_def, backfill_policy=BackfillPolicy.single_run())
     def upstream_b():
         return 2
 
-    @asset(
+    @dg.asset(
         partitions_def=downstream_partitions_def,
         backfill_policy=BackfillPolicy.single_run(),
         deps={"upstream_a"},
@@ -504,7 +495,7 @@ def test_backfill_run_contains_more_than_one_asset():
     def downstream_a():
         return 1
 
-    @asset(
+    @dg.asset(
         partitions_def=downstream_partitions_def,
         backfill_policy=BackfillPolicy.single_run(),
         deps={"upstream_b"},
@@ -582,9 +573,9 @@ def test_backfill_run_contains_more_than_one_asset():
 
 
 def test_dynamic_partitions_multi_run_backfill_policy():
-    @asset(
+    @dg.asset(
         backfill_policy=BackfillPolicy.multi_run(),
-        partitions_def=DynamicPartitionsDefinition(name="apple"),
+        partitions_def=dg.DynamicPartitionsDefinition(name="apple"),
     )
     def asset1() -> None: ...
 
@@ -624,9 +615,9 @@ def test_dynamic_partitions_multi_run_backfill_policy():
 
 
 def test_dynamic_partitions_single_run_backfill_policy():
-    @asset(
+    @dg.asset(
         backfill_policy=BackfillPolicy.single_run(),
-        partitions_def=DynamicPartitionsDefinition(name="apple"),
+        partitions_def=dg.DynamicPartitionsDefinition(name="apple"),
     )
     def asset1() -> None: ...
 
@@ -659,14 +650,14 @@ def test_dynamic_partitions_single_run_backfill_policy():
 
 @pytest.mark.parametrize("same_partitions", [True, False])
 def test_assets_backfill_with_partition_mapping(same_partitions):
-    daily_partitions_def: DailyPartitionsDefinition = DailyPartitionsDefinition("2023-01-01")
+    daily_partitions_def: dg.DailyPartitionsDefinition = dg.DailyPartitionsDefinition("2023-01-01")
     if same_partitions:
         # time at which there will be an identical set of partitions for the downstream asset
         test_time = parse_time_string("2023-03-04T00:00:00")
     else:
         test_time = get_current_datetime()
 
-    @asset(
+    @dg.asset(
         name="upstream_a",
         partitions_def=daily_partitions_def,
         backfill_policy=BackfillPolicy.multi_run(30),
@@ -674,14 +665,14 @@ def test_assets_backfill_with_partition_mapping(same_partitions):
     def upstream_a():
         return 1
 
-    @asset(
+    @dg.asset(
         name="downstream_b",
         partitions_def=daily_partitions_def,
         backfill_policy=BackfillPolicy.multi_run(30),
         deps=[
-            AssetDep(
+            dg.AssetDep(
                 upstream_a,
-                partition_mapping=TimeWindowPartitionMapping(
+                partition_mapping=dg.TimeWindowPartitionMapping(
                     start_offset=-3, end_offset=0, allow_nonexistent_upstream_partitions=True
                 ),
             )
@@ -727,14 +718,14 @@ def test_assets_backfill_with_partition_mapping(same_partitions):
 
 @pytest.mark.parametrize("same_partitions", [True, False])
 def test_assets_backfill_with_partition_mapping_run_to_complete(same_partitions):
-    daily_partitions_def: DailyPartitionsDefinition = DailyPartitionsDefinition("2023-01-01")
+    daily_partitions_def: dg.DailyPartitionsDefinition = dg.DailyPartitionsDefinition("2023-01-01")
     if same_partitions:
         # time at which there will be an identical set of partitions for the downstream asset
         test_time = parse_time_string("2023-03-04T00:00:00")
     else:
         test_time = get_current_datetime()
 
-    @asset(
+    @dg.asset(
         name="upstream_a",
         partitions_def=daily_partitions_def,
         backfill_policy=BackfillPolicy.multi_run(30),
@@ -742,14 +733,14 @@ def test_assets_backfill_with_partition_mapping_run_to_complete(same_partitions)
     def upstream_a():
         return 1
 
-    @asset(
+    @dg.asset(
         name="downstream_b",
         partitions_def=daily_partitions_def,
         backfill_policy=BackfillPolicy.multi_run(30),
         deps=[
-            AssetDep(
+            dg.AssetDep(
                 upstream_a,
-                partition_mapping=TimeWindowPartitionMapping(
+                partition_mapping=dg.TimeWindowPartitionMapping(
                     start_offset=-3, end_offset=0, allow_nonexistent_upstream_partitions=True
                 ),
             )
@@ -804,23 +795,23 @@ def test_assets_backfill_with_partition_mapping_run_to_complete(same_partitions)
 
 
 def test_assets_backfill_with_partition_mapping_without_backfill_policy():
-    daily_partitions_def: DailyPartitionsDefinition = DailyPartitionsDefinition("2023-01-01")
+    daily_partitions_def: dg.DailyPartitionsDefinition = dg.DailyPartitionsDefinition("2023-01-01")
     time_now = get_current_datetime()
 
-    @asset(
+    @dg.asset(
         name="upstream_a",
         partitions_def=daily_partitions_def,
     )
     def upstream_a():
         return 1
 
-    @asset(
+    @dg.asset(
         name="downstream_b",
         partitions_def=daily_partitions_def,
         deps=[
-            AssetDep(
+            dg.AssetDep(
                 upstream_a,
-                partition_mapping=TimeWindowPartitionMapping(
+                partition_mapping=dg.TimeWindowPartitionMapping(
                     start_offset=-1, end_offset=0, allow_nonexistent_upstream_partitions=True
                 ),
             )
@@ -865,10 +856,10 @@ def test_assets_backfill_with_partition_mapping_without_backfill_policy():
 
 
 def test_assets_backfill_with_partition_mapping_with_one_partition_multi_run_backfill_policy():
-    daily_partitions_def: DailyPartitionsDefinition = DailyPartitionsDefinition("2023-01-01")
+    daily_partitions_def: dg.DailyPartitionsDefinition = dg.DailyPartitionsDefinition("2023-01-01")
     time_now = get_current_datetime()
 
-    @asset(
+    @dg.asset(
         name="upstream_a",
         partitions_def=daily_partitions_def,
         backfill_policy=BackfillPolicy.multi_run(1),
@@ -876,14 +867,14 @@ def test_assets_backfill_with_partition_mapping_with_one_partition_multi_run_bac
     def upstream_a():
         return 1
 
-    @asset(
+    @dg.asset(
         name="downstream_b",
         partitions_def=daily_partitions_def,
         backfill_policy=BackfillPolicy.multi_run(1),
         deps=[
-            AssetDep(
+            dg.AssetDep(
                 upstream_a,
-                partition_mapping=TimeWindowPartitionMapping(
+                partition_mapping=dg.TimeWindowPartitionMapping(
                     start_offset=-1, end_offset=0, allow_nonexistent_upstream_partitions=True
                 ),
             )
@@ -918,10 +909,10 @@ def test_assets_backfill_with_partition_mapping_with_one_partition_multi_run_bac
 
 
 def test_assets_backfill_with_partition_mapping_with_multi_partitions_multi_run_backfill_policy():
-    daily_partitions_def: DailyPartitionsDefinition = DailyPartitionsDefinition("2023-01-01")
+    daily_partitions_def: dg.DailyPartitionsDefinition = dg.DailyPartitionsDefinition("2023-01-01")
     time_now = get_current_datetime()
 
-    @asset(
+    @dg.asset(
         name="upstream_a",
         partitions_def=daily_partitions_def,
         backfill_policy=BackfillPolicy.multi_run(2),
@@ -929,14 +920,14 @@ def test_assets_backfill_with_partition_mapping_with_multi_partitions_multi_run_
     def upstream_a():
         return 1
 
-    @asset(
+    @dg.asset(
         name="downstream_b",
         partitions_def=daily_partitions_def,
         backfill_policy=BackfillPolicy.multi_run(2),
         deps=[
-            AssetDep(
+            dg.AssetDep(
                 upstream_a,
-                partition_mapping=TimeWindowPartitionMapping(
+                partition_mapping=dg.TimeWindowPartitionMapping(
                     start_offset=-1, end_offset=0, allow_nonexistent_upstream_partitions=True
                 ),
             )
@@ -981,10 +972,10 @@ def test_assets_backfill_with_partition_mapping_with_multi_partitions_multi_run_
 
 
 def test_assets_backfill_with_partition_mapping_with_single_run_backfill_policy():
-    daily_partitions_def: DailyPartitionsDefinition = DailyPartitionsDefinition("2023-01-01")
+    daily_partitions_def: dg.DailyPartitionsDefinition = dg.DailyPartitionsDefinition("2023-01-01")
     test_time = parse_time_string("2023-03-10T00:00:00")
 
-    @asset(
+    @dg.asset(
         name="upstream_a",
         partitions_def=daily_partitions_def,
         backfill_policy=BackfillPolicy.single_run(),
@@ -992,14 +983,14 @@ def test_assets_backfill_with_partition_mapping_with_single_run_backfill_policy(
     def upstream_a():
         return 1
 
-    @asset(
+    @dg.asset(
         name="downstream_b",
         partitions_def=daily_partitions_def,
         backfill_policy=BackfillPolicy.single_run(),
         deps=[
-            AssetDep(
+            dg.AssetDep(
                 upstream_a,
-                partition_mapping=TimeWindowPartitionMapping(
+                partition_mapping=dg.TimeWindowPartitionMapping(
                     start_offset=-1, end_offset=0, allow_nonexistent_upstream_partitions=True
                 ),
             )
@@ -1045,15 +1036,15 @@ def test_assets_backfill_with_partition_mapping_with_single_run_backfill_policy(
 
 
 def test_run_request_partition_order():
-    @asset(
-        partitions_def=DailyPartitionsDefinition("2023-10-01"),
+    @dg.asset(
+        partitions_def=dg.DailyPartitionsDefinition("2023-10-01"),
         backfill_policy=BackfillPolicy.multi_run(2),
     )
     def foo():
         pass
 
-    @asset(
-        partitions_def=DailyPartitionsDefinition("2023-10-01"),
+    @dg.asset(
+        partitions_def=dg.DailyPartitionsDefinition("2023-10-01"),
         backfill_policy=BackfillPolicy.multi_run(2),
         deps={foo},
     )
@@ -1084,15 +1075,15 @@ def test_run_request_partition_order():
     )
 
     assert [run_request.partition_key_range for run_request in result.run_requests] == [
-        PartitionKeyRange("2023-10-01", "2023-10-02"),
-        PartitionKeyRange("2023-10-03", "2023-10-04"),
-        PartitionKeyRange("2023-10-05", "2023-10-06"),
+        dg.PartitionKeyRange("2023-10-01", "2023-10-02"),
+        dg.PartitionKeyRange("2023-10-03", "2023-10-04"),
+        dg.PartitionKeyRange("2023-10-05", "2023-10-06"),
     ]
 
 
 def test_max_partitions_per_range_1_sets_run_request_partition_key():
-    @asset(
-        partitions_def=DailyPartitionsDefinition("2023-10-01"),
+    @dg.asset(
+        partitions_def=dg.DailyPartitionsDefinition("2023-10-01"),
         backfill_policy=BackfillPolicy.multi_run(1),
     )
     def foo():
@@ -1117,8 +1108,8 @@ def test_max_partitions_per_range_1_sets_run_request_partition_key():
     )
 
     assert [run_request.partition_key_range for run_request in result.run_requests] == [
-        PartitionKeyRange("2023-10-05", "2023-10-05"),
-        PartitionKeyRange("2023-10-06", "2023-10-06"),
+        dg.PartitionKeyRange("2023-10-05", "2023-10-05"),
+        dg.PartitionKeyRange("2023-10-06", "2023-10-06"),
     ]
 
 
@@ -1132,9 +1123,9 @@ def test_single_run_backfill_full_execution(
 ):
     time_now = get_current_datetime()
 
-    partitions_def = StaticPartitionsDefinition(["a", "b", "c", "d"])
+    partitions_def = dg.StaticPartitionsDefinition(["a", "b", "c", "d"])
 
-    @asset(partitions_def=partitions_def, backfill_policy=BackfillPolicy.single_run())
+    @dg.asset(partitions_def=partitions_def, backfill_policy=BackfillPolicy.single_run())
     def partitioned_asset():
         return {"a": 1, "b": 2}
 
@@ -1156,7 +1147,7 @@ def test_single_run_backfill_full_execution(
         backfill_start_timestamp=time_now.timestamp(),
     )
 
-    with instance_for_test() as instance:
+    with dg.instance_for_test() as instance:
         with ExitStack() as stack:
             monkeypatch.setenv("DAGSTER_EVENT_BATCH_SIZE", str(batch_size))
             if throw_store_event_batch_error:

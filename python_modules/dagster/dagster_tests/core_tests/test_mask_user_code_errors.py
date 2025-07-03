@@ -5,17 +5,15 @@ import time
 import traceback
 from typing import Any, Callable
 
+import dagster as dg
 import pytest
-from dagster import Config, RunConfig, config_mapping, job, op
-from dagster._core.definitions.events import Failure
 from dagster._core.definitions.timestamp import TimestampWithTimezone
 from dagster._core.errors import (
-    DagsterExecutionInterruptedError,
     DagsterUserCodeExecutionError,
     DagsterUserCodeProcessError,
     user_code_error_boundary,
 )
-from dagster._core.test_utils import environ, instance_for_test
+from dagster._core.test_utils import environ
 from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster_shared.error import SerializableErrorInfo
 
@@ -24,7 +22,7 @@ from dagster_tests.api_tests.utils import get_bar_repo_handle
 
 @pytest.fixture()
 def instance():
-    with instance_for_test() as instance:
+    with dg.instance_for_test() as instance:
         yield instance
 
 
@@ -123,8 +121,8 @@ ERROR_ID_REGEX = r"[Ee]rror ID ([a-z0-9\-]+)"
         ("UserError", False, lambda: UserError()),
         ("TypeError", False, lambda: TypeError("hunter2")),
         ("KeyboardInterrupt", True, lambda: KeyboardInterrupt()),
-        ("DagsterExecutionInterruptedError", True, lambda: DagsterExecutionInterruptedError()),
-        ("Failure", True, lambda: Failure("asdf")),
+        ("DagsterExecutionInterruptedError", True, lambda: dg.DagsterExecutionInterruptedError()),
+        ("Failure", True, lambda: dg.Failure("asdf")),
     ],
 )
 def test_masking_op_execution(
@@ -134,14 +132,14 @@ def test_masking_op_execution(
     build_exc: Callable[[], BaseException],
     caplog,
 ) -> Any:
-    @op
+    @dg.op
     def throws_user_error(_):
         def hunter2():
             raise build_exc()
 
         hunter2()
 
-    @job
+    @dg.job
     def job_def():
         throws_user_error()
 
@@ -229,26 +227,26 @@ def test_masking_schedule_execution(instance, enable_masking_user_code_errors, c
 
 
 def test_config_mapping_error(enable_masking_user_code_errors, caplog) -> None:
-    class DoSomethingConfig(Config):
+    class DoSomethingConfig(dg.Config):
         config_param: str
 
-    @op
+    @dg.op
     def do_something(config: DoSomethingConfig) -> str:
         return config.config_param
 
-    class ConfigMappingConfig(Config):
+    class ConfigMappingConfig(dg.Config):
         simplified_param: str
 
     # New, fancy config mapping takes in a Pythonic config object and returns a RunConfig
-    @config_mapping
-    def simplified_config(config_in: ConfigMappingConfig) -> RunConfig:
+    @dg.config_mapping
+    def simplified_config(config_in: ConfigMappingConfig) -> dg.RunConfig:
         if config_in.simplified_param != "foo":
             raise Exception("my password is hunter2")
-        return RunConfig(
+        return dg.RunConfig(
             ops={"do_something": DoSomethingConfig(config_param=config_in.simplified_param)}
         )
 
-    @job(config=simplified_config)
+    @dg.job(config=simplified_config)
     def do_it_all_with_simplified_config() -> None:
         do_something()
 

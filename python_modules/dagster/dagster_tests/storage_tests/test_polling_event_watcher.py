@@ -4,9 +4,9 @@ from collections.abc import Mapping
 from contextlib import contextmanager
 from typing import Any, Callable, Optional
 
+import dagster as dg
 import dagster._check as check
-from dagster._core.events import DagsterEvent, DagsterEventType, EngineEventData
-from dagster._core.events.log import EventLogEntry
+from dagster._core.events import DagsterEventType, EngineEventData
 from dagster._core.storage.event_log import SqliteEventLogStorage, SqlPollingEventWatcher
 from dagster._core.storage.event_log.base import EventLogCursor
 from dagster._core.utils import make_new_run_id
@@ -36,7 +36,7 @@ class SqlitePollingEventLogStorage(SqliteEventLogStorage):
         self,
         run_id: str,
         cursor: Optional[str],
-        callback: Callable[[EventLogEntry, str], None],
+        callback: Callable[[dg.EventLogEntry, str], None],
     ):
         check.str_param(run_id, "run_id")
         check.opt_str_param(cursor, "cursor")
@@ -49,7 +49,7 @@ class SqlitePollingEventLogStorage(SqliteEventLogStorage):
     def end_watch(
         self,
         run_id: str,
-        handler: Callable[[EventLogEntry, str], None],
+        handler: Callable[[dg.EventLogEntry, str], None],
     ):
         check.str_param(run_id, "run_id")
         check.callable_param(handler, "handler")
@@ -66,13 +66,13 @@ RUN_ID = make_new_run_id()
 
 
 def create_event(count: int, run_id: str = RUN_ID):
-    return EventLogEntry(
+    return dg.EventLogEntry(
         error_info=None,
         user_message=str(count),
         level="debug",
         run_id=run_id,
         timestamp=time.time(),
-        dagster_event=DagsterEvent(
+        dagster_event=dg.DagsterEvent(
             DagsterEventType.ENGINE_EVENT.value,
             "nonce",
             event_specific_data=EngineEventData.in_process(999),

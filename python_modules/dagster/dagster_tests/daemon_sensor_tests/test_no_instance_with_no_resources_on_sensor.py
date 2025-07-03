@@ -1,7 +1,7 @@
 import tempfile
 
+import dagster as dg
 import pytest
-from dagster import ConfigurableResource, build_sensor_context, sensor
 from dagster._core.instance.ref import InstanceRef
 
 
@@ -9,10 +9,10 @@ from dagster._core.instance.ref import InstanceRef
 # do not load the instance to run sensors that do not require resources
 # Tracking at https://github.com/dagster-io/dagster/issues/14345
 def test_sensor_instance_does_init_with_resource() -> None:
-    class MyResource(ConfigurableResource):
+    class MyResource(dg.ConfigurableResource):
         foo: str
 
-    @sensor(job_name="some_job")
+    @dg.sensor(job_name="some_job")
     def a_sensor(context, my_resource: MyResource):
         raise Exception("should not execute")
 
@@ -29,7 +29,7 @@ def test_sensor_instance_does_init_with_resource() -> None:
         )
         with pytest.raises(NotImplementedError, match="from_config_value was called"):
             a_sensor(
-                build_sensor_context(
+                dg.build_sensor_context(
                     instance_ref=unloadable_instance_ref,
                     resources={"my_resource": MyResource(foo="bar")},
                 )
@@ -39,7 +39,7 @@ def test_sensor_instance_does_init_with_resource() -> None:
 def test_sensor_instance_does_no_init_with_no_resources() -> None:
     executed = {}
 
-    @sensor(job_name="some_job")
+    @dg.sensor(job_name="some_job")
     def a_sensor(context):
         executed["yes"] = True
 
@@ -66,6 +66,6 @@ def test_sensor_instance_does_no_init_with_no_resources() -> None:
                 },
             },
         )
-        a_sensor(build_sensor_context(instance_ref=unloadable_instance_ref))
+        a_sensor(dg.build_sensor_context(instance_ref=unloadable_instance_ref))
 
     assert executed["yes"]

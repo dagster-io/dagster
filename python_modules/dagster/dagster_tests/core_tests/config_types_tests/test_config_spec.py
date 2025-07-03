@@ -1,10 +1,10 @@
+import dagster as dg
 import pytest
-from dagster import DagsterInvalidConfigDefinitionError, Noneable, Permissive, Selector, op
 from dagster._utils.test import wrap_op_in_graph_and_execute
 
 
 def test_kitchen_sink():
-    @op(
+    @dg.op(
         config_schema={
             "str_field": str,
             "int_field": int,
@@ -12,7 +12,7 @@ def test_kitchen_sink():
             "list_list_int": [[int]],
             "dict_field": {"a_string": str},
             "list_dict_field": [{"an_int": int}],
-            "selector_of_things": Selector(
+            "selector_of_things": dg.Selector(
                 {"select_list_dict_field": [{"an_int": int}], "select_int": int}
             ),
             "map_int": {str: int},
@@ -20,7 +20,7 @@ def test_kitchen_sink():
             "map_dict_field": {str: {"an_int": int}},
             # this is a good argument to use () instead of [] for type parameterization in
             # the config system
-            "optional_list_of_optional_string": Noneable([Noneable(str)]),
+            "optional_list_of_optional_string": dg.Noneable([dg.Noneable(str)]),
         }
     )
     def kitchen_sink(context):
@@ -74,12 +74,12 @@ def test_kitchen_sink():
 def test_builtin_dict():
     executed = {}
 
-    @op(config_schema=dict)
+    @dg.op(config_schema=dict)
     def builtin_dict_op(context):
         executed["yup"] = True
         return context.op_config
 
-    assert isinstance(builtin_dict_op.config_schema.config_type, Permissive)
+    assert isinstance(builtin_dict_op.config_schema.config_type, dg.Permissive)
 
     assert wrap_op_in_graph_and_execute(
         builtin_dict_op,
@@ -90,9 +90,9 @@ def test_builtin_dict():
 
 
 def test_bad_op_config_argument():
-    with pytest.raises(DagsterInvalidConfigDefinitionError) as exc_info:
+    with pytest.raises(dg.DagsterInvalidConfigDefinitionError) as exc_info:
 
-        @op(config_schema="dkjfkd")
+        @dg.op(config_schema="dkjfkd")
         def _bad_config(_):
             pass
 
@@ -102,9 +102,9 @@ def test_bad_op_config_argument():
 
 
 def test_bad_op_config_argument_nested():
-    with pytest.raises(DagsterInvalidConfigDefinitionError) as exc_info:
+    with pytest.raises(dg.DagsterInvalidConfigDefinitionError) as exc_info:
 
-        @op(config_schema={"field": "kdjkfjd"})
+        @dg.op(config_schema={"field": "kdjkfjd"})
         def _bad_config(_):
             pass
 
@@ -115,9 +115,9 @@ def test_bad_op_config_argument_nested():
 
 
 def test_bad_op_config_argument_list_wrong_length():
-    with pytest.raises(DagsterInvalidConfigDefinitionError) as exc_info:
+    with pytest.raises(dg.DagsterInvalidConfigDefinitionError) as exc_info:
 
-        @op(config_schema={"bad_list": []})
+        @dg.op(config_schema={"bad_list": []})
         def _bad_list_config(_):
             pass
 
@@ -129,9 +129,9 @@ def test_bad_op_config_argument_list_wrong_length():
 
 
 def test_bad_op_config_argument_map_bad_value():
-    with pytest.raises(DagsterInvalidConfigDefinitionError) as exc_info:
+    with pytest.raises(dg.DagsterInvalidConfigDefinitionError) as exc_info:
 
-        @op(config_schema={"bad_map": {str: "asdf"}})
+        @dg.op(config_schema={"bad_map": {str: "asdf"}})
         def _bad_map(_):
             pass
 
@@ -139,9 +139,9 @@ def test_bad_op_config_argument_map_bad_value():
 
 
 def test_bad_op_config_argument_list_bad_item():
-    with pytest.raises(DagsterInvalidConfigDefinitionError) as exc_info:
+    with pytest.raises(dg.DagsterInvalidConfigDefinitionError) as exc_info:
 
-        @op(config_schema={"bad_list": ["kdjfkd"]})
+        @dg.op(config_schema={"bad_list": ["kdjfkd"]})
         def _bad_list_config(_):
             pass
 
@@ -154,9 +154,9 @@ def test_bad_op_config_argument_list_bad_item():
 
 
 def test_bad_op_config_argument_list_bad_nested_item():
-    with pytest.raises(DagsterInvalidConfigDefinitionError) as exc_info:
+    with pytest.raises(dg.DagsterInvalidConfigDefinitionError) as exc_info:
 
-        @op(config_schema={"bad_nested_list": [{"bad_field": "kjdkfd"}]})
+        @dg.op(config_schema={"bad_nested_list": [{"bad_field": "kjdkfd"}]})
         def _bad_list_config(_):
             pass
 

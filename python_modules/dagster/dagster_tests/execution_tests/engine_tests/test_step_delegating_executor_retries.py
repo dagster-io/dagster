@@ -1,17 +1,14 @@
 import subprocess
 
+import dagster as dg
 import dagster._check as check
-from dagster import OpExecutionContext, RetryRequested, executor, job, op, reconstructable
-from dagster._config import Permissive
-from dagster._core.definitions.executor_definition import multiple_process_executor_requirements
-from dagster._core.execution.api import execute_job
+from dagster import OpExecutionContext
 from dagster._core.execution.retries import RetryMode
 from dagster._core.executor.step_delegating import (
     CheckStepHealthResult,
     StepDelegatingExecutor,
     StepHandler,
 )
-from dagster._core.test_utils import instance_for_test
 from dagster._utils.merger import merge_dicts
 
 
@@ -76,10 +73,10 @@ class TestStepHandler(StepHandler):
             p.wait(timeout=5)
 
 
-@executor(
+@dg.executor(
     name="retry_assertion_executor",
-    requirements=multiple_process_executor_requirements(),
-    config_schema=Permissive(),
+    requirements=dg.multiple_process_executor_requirements(),
+    config_schema=dg.Permissive(),
 )
 def retry_assertion_executor(exc_init):
     return StepDelegatingExecutor(
@@ -89,23 +86,23 @@ def retry_assertion_executor(exc_init):
     )
 
 
-@op(config_schema={"fails_before_pass": int})
+@dg.op(config_schema={"fails_before_pass": int})
 def retry_op(context: OpExecutionContext):
     if context.retry_number < context.op_config["fails_before_pass"]:
         # enough for check_step_health to be called, since we set check_step_health_interval_seconds=0
-        raise RetryRequested(seconds_to_wait=5)
+        raise dg.RetryRequested(seconds_to_wait=5)
 
 
-@job(executor_def=retry_assertion_executor)
+@dg.job(executor_def=retry_assertion_executor)
 def retry_job():
     retry_op()
 
 
 def test_retries_no_check_step_health_during_wait():
     TestStepHandler.reset()
-    with instance_for_test() as instance:
-        with execute_job(
-            reconstructable(retry_job),
+    with dg.instance_for_test() as instance:
+        with dg.execute_job(
+            dg.reconstructable(retry_job),
             instance=instance,
             run_config={
                 "execution": {"config": {}},
@@ -118,9 +115,9 @@ def test_retries_no_check_step_health_during_wait():
 
 def test_retries_exhausted():
     TestStepHandler.reset()
-    with instance_for_test() as instance:
-        with execute_job(
-            reconstructable(retry_job),
+    with dg.instance_for_test() as instance:
+        with dg.execute_job(
+            dg.reconstructable(retry_job),
             instance=instance,
             run_config={
                 "execution": {"config": {}},

@@ -1,15 +1,15 @@
 import sys
 
+import dagster as dg
 from dagster._api.list_repositories import sync_list_repositories_ephemeral_grpc
 from dagster._core.code_pointer import FileCodePointer, ModuleCodePointer, PackageCodePointer
 from dagster._core.definitions.repository_definition.valid_definitions import (
     SINGLETON_REPOSITORY_NAME,
 )
-from dagster._utils import file_relative_path
 
 
 def test_loadable_target_origin_context_python_file_grpc():
-    python_file = file_relative_path(__file__, "loadable_target_origin_test_repo.py")
+    python_file = dg.file_relative_path(__file__, "loadable_target_origin_test_repo.py")
     response = sync_list_repositories_ephemeral_grpc(
         sys.executable,
         python_file=python_file,

@@ -1,3 +1,4 @@
+import dagster as dg
 import pytest
 from dagster._core.definitions.antlr_asset_selection.antlr_asset_selection import (
     AntlrAssetSelectionParser,
@@ -15,7 +16,6 @@ from dagster._core.definitions.asset_selection import (
     StatusAssetSelection,
     TableNameAssetSelection,
 )
-from dagster._core.definitions.decorators.asset_decorator import asset
 
 
 @pytest.mark.parametrize(
@@ -226,13 +226,13 @@ def test_antlr_tree_invalid(selection_str):
 )
 def test_antlr_visit_basic(selection_str, expected_assets) -> None:
     # a -> b -> c
-    @asset(tags={"foo": "bar"}, owners=["team:billing"])
+    @dg.asset(tags={"foo": "bar"}, owners=["team:billing"])
     def a(): ...
 
-    @asset(deps=[a], kinds={"python", "snowflake"})
+    @dg.asset(deps=[a], kinds={"python", "snowflake"})
     def b(): ...
 
-    @asset(
+    @dg.asset(
         deps=[b],
         group_name="my_group",
     )

@@ -3,6 +3,7 @@ import time
 from typing import Optional
 from unittest import mock
 
+import dagster as dg
 import pytest
 from dagster._api.snapshot_schedule import (
     sync_get_external_schedule_execution_data_ephemeral_grpc,
@@ -12,17 +13,15 @@ from dagster._core.definitions.schedule_definition import ScheduleExecutionData
 from dagster._core.definitions.timestamp import TimestampWithTimezone
 from dagster._core.errors import DagsterUserCodeUnreachableError
 from dagster._core.remote_representation.external_data import ScheduleExecutionErrorSnap
-from dagster._core.test_utils import instance_for_test
 from dagster._grpc.client import ephemeral_grpc_api_client
 from dagster._grpc.types import ExternalScheduleExecutionArgs
-from dagster._serdes import deserialize_value
 from dagster._time import get_current_datetime
 
 from dagster_tests.api_tests.utils import get_bar_repo_handle
 
 
 def test_external_schedule_execution_data_api_grpc():
-    with instance_for_test() as instance:
+    with dg.instance_for_test() as instance:
         with get_bar_repo_handle(instance) as repository_handle:
             execution_data = sync_get_external_schedule_execution_data_ephemeral_grpc(
                 instance,
@@ -53,7 +52,7 @@ def test_external_schedule_client_timeout(instance, env_var_default_val: Optiona
 
 
 def test_external_schedule_execution_data_api_grpc_fallback_to_streaming():
-    with instance_for_test() as instance:
+    with dg.instance_for_test() as instance:
         with get_bar_repo_handle(instance) as repository_handle:
             origin = repository_handle.get_remote_origin()
             with ephemeral_grpc_api_client(
@@ -83,7 +82,7 @@ def test_external_schedule_execution_data_api_grpc_fallback_to_streaming():
 
 
 def test_external_schedule_execution_data_api_never_execute_grpc():
-    with instance_for_test() as instance:
+    with dg.instance_for_test() as instance:
         with get_bar_repo_handle(instance) as repository_handle:
             execution_data = sync_get_external_schedule_execution_data_ephemeral_grpc(
                 instance,
@@ -97,13 +96,13 @@ def test_external_schedule_execution_data_api_never_execute_grpc():
 
 
 def test_external_schedule_execution_deserialize_error():
-    with instance_for_test() as instance:
+    with dg.instance_for_test() as instance:
         with get_bar_repo_handle(instance) as repository_handle:
             origin = repository_handle.get_remote_origin()
             with ephemeral_grpc_api_client(
                 origin.code_location_origin.loadable_target_origin
             ) as api_client:
-                result = deserialize_value(
+                result = dg.deserialize_value(
                     api_client.external_schedule_execution(
                         external_schedule_execution_args=ExternalScheduleExecutionArgs(
                             repository_origin=origin,
@@ -117,7 +116,7 @@ def test_external_schedule_execution_deserialize_error():
 
 
 def test_include_execution_time_grpc():
-    with instance_for_test() as instance:
+    with dg.instance_for_test() as instance:
         with get_bar_repo_handle(instance) as repository_handle:
             execution_time = get_current_datetime()
 
@@ -137,7 +136,7 @@ def test_include_execution_time_grpc():
 
 
 def test_run_request_partition_key_schedule_grpc():
-    with instance_for_test() as instance:
+    with dg.instance_for_test() as instance:
         with get_bar_repo_handle(instance) as repository_handle:
             execution_data = sync_get_external_schedule_execution_data_ephemeral_grpc(
                 instance,

@@ -1,12 +1,13 @@
 from typing import Callable
 
-from dagster.components.component.template_vars import is_template_var, template_var
+import dagster as dg
+from dagster.components.component.template_vars import is_template_var
 from dagster.components.core.context import ComponentLoadContext
 from dagster.components.core.tree import ComponentTree
 
 
 def test_template_udf_decorator():
-    @template_var
+    @dg.template_var
     def my_udf(context: ComponentLoadContext) -> Callable[[str], str]:
         return lambda x: f"udf_{x}"
 
@@ -15,7 +16,7 @@ def test_template_udf_decorator():
 
 
 def test_template_udf_decorator_with_parens():
-    @template_var()
+    @dg.template_var()
     def my_udf(context: ComponentLoadContext) -> Callable[[str], str]:
         return lambda x: f"udf_{x}"
 
@@ -24,7 +25,7 @@ def test_template_udf_decorator_with_parens():
 
 
 def test_template_udf_decorator_preserves_function_metadata():
-    @template_var
+    @dg.template_var
     def my_udf(context: ComponentLoadContext) -> Callable[[str], str]:
         """Test docstring."""
         return lambda x: f"udf_{x}"
@@ -37,7 +38,7 @@ def test_is_template_udf():
     def regular_fn() -> Callable[[str], str]:
         return lambda x: f"regular_{x}"
 
-    @template_var
+    @dg.template_var
     def udf_fn(context: ComponentLoadContext) -> Callable[[str], str]:
         return lambda x: f"udf_{x}"
 
@@ -46,7 +47,7 @@ def test_is_template_udf():
 
 
 def test_template_var_decorator():
-    @template_var
+    @dg.template_var
     def my_var(context: ComponentLoadContext) -> str:
         return "var_value"
 
@@ -55,7 +56,7 @@ def test_template_var_decorator():
 
 
 def test_template_var_decorator_with_parens():
-    @template_var()
+    @dg.template_var()
     def my_var(context: ComponentLoadContext) -> str:
         return "var_value"
 
@@ -64,7 +65,7 @@ def test_template_var_decorator_with_parens():
 
 
 def test_template_var_decorator_preserves_function_metadata():
-    @template_var
+    @dg.template_var
     def my_var(context: ComponentLoadContext) -> str:
         """Test docstring."""
         return "var_value"
@@ -77,7 +78,7 @@ def test_is_template_var():
     def regular_fn() -> str:
         return "regular_value"
 
-    @template_var
+    @dg.template_var
     def var_fn(context: ComponentLoadContext) -> str:
         return "var_value"
 
