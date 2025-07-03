@@ -2779,6 +2779,7 @@ type RunRequest {
   tags: [PipelineTag!]!
   runConfigYaml: String!
   assetSelection: [AssetKey!]
+  assetChecks: [AssetCheckhandle!]
   jobName: String
 }
 

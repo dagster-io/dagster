@@ -5001,6 +5001,7 @@ export type RunQueueConfig = {
 
 export type RunRequest = {
   __typename: 'RunRequest';
+  assetChecks: Maybe<Array<AssetCheckhandle>>;
   assetSelection: Maybe<Array<AssetKey>>;
   jobName: Maybe<Scalars['String']['output']>;
   runConfigYaml: Scalars['String']['output'];
@@ -14411,6 +14412,7 @@ export const buildRunRequest = (
   relationshipsToOmit.add('RunRequest');
   return {
     __typename: 'RunRequest',
+    assetChecks: overrides && overrides.hasOwnProperty('assetChecks') ? overrides.assetChecks! : [],
     assetSelection:
       overrides && overrides.hasOwnProperty('assetSelection') ? overrides.assetSelection! : [],
     jobName: overrides && overrides.hasOwnProperty('jobName') ? overrides.jobName! : 'saepe',

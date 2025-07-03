@@ -12,5 +12,11 @@ export const RUN_REQUEST_FRAGMENT = gql`
     assetSelection {
       path
     }
+    assetChecks {
+      name
+      assetKey {
+        path
+      }
+    }
   }
 `;
