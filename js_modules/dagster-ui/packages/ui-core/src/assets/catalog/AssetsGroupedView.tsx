@@ -12,7 +12,7 @@ import {
   UnstyledButton,
 } from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
-import React, {useMemo, useRef} from 'react';
+import React, {useLayoutEffect, useMemo, useRef, useState} from 'react';
 import {CreateCatalogViewButton} from 'shared/assets/CreateCatalogViewButton.oss';
 import {useCatalogViews} from 'shared/assets/catalog/useCatalogViews.oss';
 
@@ -145,6 +145,65 @@ export const AssetsGroupedView = ({assets}: {assets: AssetTableFragment[]}) => {
     return <Grid tiles={tiles} tileGap={TILE_GAP} tileWidth={TILE_WIDTH} />;
   }
 
+  const contentWrapperRef = useRef<HTMLDivElement>(null);
+  const [top, setTop] = useState(0);
+  const [scrollTop, setScrollTop] = useState(0);
+  const [windowHeight, setWindowHeight] = useState(window.innerHeight);
+  useLayoutEffect(() => {
+    const updateTop = () => {
+      if (contentWrapperRef.current) {
+        const rect = contentWrapperRef.current.getBoundingClientRect();
+        setTop(rect.top);
+        setScrollTop(window.scrollY);
+      }
+    };
+    const mutationObserver = new MutationObserver((mutations) => {
+      // Check if any mutation affects layout
+      const hasLayoutChange = mutations.some(
+        (mutation) =>
+          mutation.type === 'childList' ||
+          (mutation.type === 'attributes' &&
+            ['style', 'class'].includes(mutation.attributeName ?? '')),
+      );
+
+      if (hasLayoutChange) {
+        // Use requestAnimationFrame to ensure DOM has updated
+        requestAnimationFrame(updateTop);
+      }
+    });
+
+    mutationObserver.observe(document.body, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['style', 'class'],
+    });
+
+    const resizeObserver = new ResizeObserver(() => {
+      updateTop();
+    });
+    window.addEventListener('scroll', updateTop, {passive: true});
+    window.addEventListener(
+      'resize',
+      () => {
+        setWindowHeight(window.innerHeight);
+        updateTop();
+      },
+      {passive: true},
+    );
+    return () => {
+      mutationObserver.disconnect();
+      resizeObserver.disconnect();
+      window.removeEventListener('scroll', updateTop);
+      window.removeEventListener('resize', () => {
+        setWindowHeight(window.innerHeight);
+        updateTop();
+      });
+    };
+  }, []);
+
+  const height = Math.max(300, windowHeight - top - scrollTop);
+
   return (
     <Box>
       <Box border="bottom">
@@ -176,7 +235,9 @@ export const AssetsGroupedView = ({assets}: {assets: AssetTableFragment[]}) => {
           </Box>
         </Box>
       </Box>
-      {content()}
+      <div ref={contentWrapperRef} style={{'--height': `${height}px`} as React.CSSProperties}>
+        {content()}
+      </div>
     </Box>
   );
 };
@@ -235,7 +296,7 @@ const List = ({rows}: {rows: React.ReactNode[]}) => {
   const totalHeight = rowVirtualizer.getTotalSize();
 
   return (
-    <Container ref={scrollWrapperRef} style={{maxHeight: '600px', overflowY: 'auto'}}>
+    <Container ref={scrollWrapperRef} style={{height: 'var(--height)', overflowY: 'auto'}}>
       <Inner $totalHeight={totalHeight}>
         <div
           style={{

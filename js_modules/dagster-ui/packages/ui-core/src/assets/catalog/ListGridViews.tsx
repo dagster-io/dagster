@@ -190,7 +190,7 @@ export const List = ({rows}: {rows: React.ReactNode[]}) => {
   const totalHeight = rowVirtualizer.getTotalSize();
 
   return (
-    <Container ref={scrollWrapperRef} style={{maxHeight: '600px', overflowY: 'auto'}}>
+    <Container ref={scrollWrapperRef} style={{height: 'var(--height)', overflowY: 'auto'}}>
       <Inner $totalHeight={totalHeight}>
         {rowItems.map(({index, key, size, start}) => {
           const row = rows[index]!;
