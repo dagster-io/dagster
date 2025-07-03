@@ -178,9 +178,8 @@ class AssetGraphView(LoadingContext):
         partitions_def = check.not_none(
             self._get_partitions_def(asset_key), "Must have partitions def"
         )
-        partition_subset_in_range = partitions_def.get_subset_in_range(
-            partition_key_range=partition_key_range,
-            dynamic_partitions_store=self._queryer,
+        partition_subset_in_range = partitions_def.empty_subset().with_partition_key_range(
+            partitions_def=partitions_def, partition_key_range=partition_key_range
         )
         return EntitySubset(
             self, key=asset_key, value=_ValidatedEntitySubsetValue(partition_subset_in_range)

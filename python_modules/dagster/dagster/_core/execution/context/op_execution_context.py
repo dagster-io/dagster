@@ -22,6 +22,7 @@ from dagster._core.definitions.events import (
 )
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.op_definition import OpDefinition
+from dagster._core.definitions.partitions.context import partition_loading_context
 from dagster._core.definitions.partitions.definition import PartitionsDefinition
 from dagster._core.definitions.partitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.partitions.utils import TimeWindow
@@ -306,10 +307,8 @@ class OpExecutionContext(AbstractComputeExecutionContext):
                 "Cannot access partition_keys for a non-partitioned run"
             )
 
-        return partitions_def.get_partition_keys_in_range(
-            key_range,
-            dynamic_partitions_store=self.instance,
-        )
+        with partition_loading_context(dynamic_partitions_store=self.instance):
+            return partitions_def.get_partition_keys_in_range(key_range)
 
     @deprecated(breaking_version="2.0", additional_warn_text="Use `partition_key_range` instead.")
     @public
@@ -1075,10 +1074,10 @@ class OpExecutionContext(AbstractComputeExecutionContext):
                 # running a backfill of the 2023-08-21 through 2023-08-25 partitions of this asset will log:
                 #   ["2023-08-21", "2023-08-22", "2023-08-23", "2023-08-24", "2023-08-25"]
         """
-        return self.asset_partitions_def_for_output(output_name).get_partition_keys_in_range(
-            self._step_execution_context.asset_partition_key_range_for_output(output_name),
-            dynamic_partitions_store=self.instance,
-        )
+        with partition_loading_context(dynamic_partitions_store=self.instance):
+            return self.asset_partitions_def_for_output(output_name).get_partition_keys_in_range(
+                self._step_execution_context.asset_partition_key_range_for_output(output_name),
+            )
 
     @public
     def asset_partition_keys_for_input(self, input_name: str) -> Sequence[str]:

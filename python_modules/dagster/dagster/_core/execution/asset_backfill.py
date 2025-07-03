@@ -491,7 +491,6 @@ class AssetBackfillData(NamedTuple):
                             start=partition_range.start,
                             end=partition_range.end,
                         ),
-                        dynamic_partitions_store=dynamic_partitions_store,
                     )
                     partitions_subsets_by_asset_key[asset_key] = partitions_subset
             elif partitions_def:

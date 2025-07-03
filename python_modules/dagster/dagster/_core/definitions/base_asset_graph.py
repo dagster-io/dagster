@@ -447,14 +447,11 @@ class BaseAssetGraph(ABC, Generic[T_AssetNode]):
         return ancestors
 
     def get_partitions_in_range(
-        self,
-        asset_key: AssetKey,
-        partition_key_range: PartitionKeyRange,
-        dynamic_partitions_store: DynamicPartitionsStore,
+        self, asset_key: AssetKey, partition_key_range: PartitionKeyRange
     ) -> Sequence[AssetKeyPartitionKey]:
         partition_def = self.get(asset_key).partitions_def
         partition_keys_in_range = check.not_none(partition_def).get_partition_keys_in_range(
-            partition_key_range, dynamic_partitions_store
+            partition_key_range
         )
         return [
             AssetKeyPartitionKey(asset_key, partition_key)

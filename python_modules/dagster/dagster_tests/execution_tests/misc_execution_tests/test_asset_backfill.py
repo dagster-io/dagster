@@ -1020,9 +1020,7 @@ def _requested_asset_partitions_in_run_request(
         for asset_key in asset_keys:
             asset_partitions.extend(
                 asset_graph.get_partitions_in_range(
-                    asset_key=asset_key,
-                    partition_key_range=partition_range,
-                    dynamic_partitions_store=MagicMock(),
+                    asset_key=asset_key, partition_key_range=partition_range
                 )
             )
         duplicate_asset_partitions = set(asset_partitions) & requested_asset_partitions
