@@ -17,7 +17,10 @@ from dagster._core.definitions.declarative_automation.automation_condition impor
 )
 from dagster._core.definitions.declarative_automation.automation_context import AutomationContext
 from dagster._core.definitions.events import AssetKey
-from dagster._core.definitions.partitions.context import partition_loading_context
+from dagster._core.definitions.partitions.context import (
+    PartitionLoadingContext,
+    partition_loading_context,
+)
 from dagster._core.instance import DagsterInstance
 from dagster._time import get_current_datetime
 
@@ -68,6 +71,10 @@ class AutomationConditionEvaluator:
         self.legacy_data_time_resolver = CachingDataTimeResolver(self.instance_queryer)
 
         self.request_subsets_by_key: dict[EntityKey, EntitySubset] = {}
+        self._partition_loading_context = PartitionLoadingContext.default().updated(
+            effective_dt=evaluation_time,
+            dynamic_partitions_store=self.asset_graph_view.get_inner_queryer_for_back_compat(),
+        )
 
     @property
     def instance_queryer(self) -> "CachingInstanceQueryer":
@@ -105,12 +112,17 @@ class AutomationConditionEvaluator:
         self.logger.info("Done prefetching asset records.")
 
     def evaluate(self) -> tuple[Sequence[AutomationResult], Sequence[EntitySubset[EntityKey]]]:
+        return asyncio.run(self.async_evaluate())
+
+    async def async_evaluate(
+        self,
+    ) -> tuple[Sequence[AutomationResult], Sequence[EntitySubset[EntityKey]]]:
         with partition_loading_context(
             effective_dt=self.evaluation_time, dynamic_partitions_store=self.instance_queryer
         ):
-            return asyncio.run(self.async_evaluate())
+            return await self._async_evaluate()
 
-    async def async_evaluate(
+    async def _async_evaluate(
         self,
     ) -> tuple[Sequence[AutomationResult], Sequence[EntitySubset[EntityKey]]]:
         self.prefetch()

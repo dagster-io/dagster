@@ -1,7 +1,6 @@
 import time
 from datetime import datetime
 from typing import TYPE_CHECKING, Callable, Optional, cast
-from unittest.mock import MagicMock
 
 import pytest
 from dagster import (
@@ -29,6 +28,7 @@ from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.base_asset_graph import AssetCheckNode, BaseAssetGraph, BaseAssetNode
 from dagster._core.definitions.decorators.asset_check_decorator import asset_check
 from dagster._core.definitions.events import AssetKeyPartitionKey
+from dagster._core.definitions.partitions.context import partition_loading_context
 from dagster._core.definitions.partitions.definition import (
     DailyPartitionsDefinition,
     HourlyPartitionsDefinition,
@@ -49,7 +49,7 @@ from dagster._core.remote_representation.external import RemoteRepository
 from dagster._core.remote_representation.external_data import RepositorySnap
 from dagster._core.remote_representation.handle import RepositoryHandle
 from dagster._core.test_utils import freeze_time, instance_for_test, mock_workspace_from_repos
-from dagster._time import create_datetime, get_current_datetime
+from dagster._time import create_datetime
 from dagster_shared.serdes import deserialize_value, serialize_value
 
 if TYPE_CHECKING:
@@ -118,19 +118,13 @@ def test_get_children_partitions_unpartitioned_parent_partitioned_child(
     @asset(partitions_def=StaticPartitionsDefinition(["a", "b"]))
     def child(parent): ...
 
-    with instance_for_test() as instance:
-        current_time = get_current_datetime()
+    asset_graph = asset_graph_from_assets([parent, child])
 
-        asset_graph = asset_graph_from_assets([parent, child])
-
-        expected_asset_partitions = {
-            AssetKeyPartitionKey(child.key, "a"),
-            AssetKeyPartitionKey(child.key, "b"),
-        }
-        assert (
-            asset_graph.get_children_partitions(instance, current_time, parent.key)
-            == expected_asset_partitions
-        )
+    expected_asset_partitions = {
+        AssetKeyPartitionKey(child.key, "a"),
+        AssetKeyPartitionKey(child.key, "b"),
+    }
+    assert asset_graph.get_children_partitions(parent.key) == expected_asset_partitions
 
 
 def test_get_children_partitions_unpartitioned_parent_time_partitioned_child(
@@ -142,19 +136,14 @@ def test_get_children_partitions_unpartitioned_parent_time_partitioned_child(
     @asset(partitions_def=DailyPartitionsDefinition("2023-01-01"))
     def child(parent): ...
 
-    with instance_for_test() as instance:
-        current_time = create_datetime(2023, 1, 3, 0, 0, 0)
-
+    with partition_loading_context(effective_dt=create_datetime(2023, 1, 3, 0, 0, 0)):
         asset_graph = asset_graph_from_assets([parent, child])
 
         expected_asset_partitions = {
             AssetKeyPartitionKey(asset_key=AssetKey(["child"]), partition_key="2023-01-01"),
             AssetKeyPartitionKey(asset_key=AssetKey(["child"]), partition_key="2023-01-02"),
         }
-        assert (
-            asset_graph.get_children_partitions(instance, current_time, parent.key)
-            == expected_asset_partitions
-        )
+        assert asset_graph.get_children_partitions(parent.key) == expected_asset_partitions
 
 
 def test_get_parent_partitions_unpartitioned_child_partitioned_parent(
@@ -166,16 +155,17 @@ def test_get_parent_partitions_unpartitioned_child_partitioned_parent(
     @asset
     def child(parent): ...
 
-    with instance_for_test() as instance:
-        current_time = get_current_datetime()
-
+    with (
+        instance_for_test() as instance,
+        partition_loading_context(dynamic_partitions_store=instance),
+    ):
         asset_graph = asset_graph_from_assets([parent, child])
         expected_asset_partitions = {
             AssetKeyPartitionKey(parent.key, "a"),
             AssetKeyPartitionKey(parent.key, "b"),
         }
         assert (
-            asset_graph.get_parents_partitions(instance, current_time, child.key).parent_partitions
+            asset_graph.get_parents_partitions(child.key).parent_partitions
             == expected_asset_partitions
         )
 
@@ -188,16 +178,17 @@ def test_get_children_partitions_fan_out(asset_graph_from_assets: Callable[..., 
     def child(parent): ...
 
     asset_graph = asset_graph_from_assets([parent, child])
-    with instance_for_test() as instance:
-        current_time = get_current_datetime()
-
+    with (
+        instance_for_test() as instance,
+        partition_loading_context(dynamic_partitions_store=instance),
+    ):
         expected_asset_partitions = {
             AssetKeyPartitionKey(child.key, f"2022-01-03-{str(hour).zfill(2)}:00")
             for hour in range(24)
         }
 
         assert (
-            asset_graph.get_children_partitions(instance, current_time, parent.key, "2022-01-03")
+            asset_graph.get_children_partitions(parent.key, "2022-01-03")
             == expected_asset_partitions
         )
 
@@ -213,9 +204,10 @@ def test_get_parent_partitions_fan_in(
 
     asset_graph = asset_graph_from_assets([parent, child])
 
-    with instance_for_test() as instance:
-        current_time = get_current_datetime()
-
+    with (
+        instance_for_test() as instance,
+        partition_loading_context(dynamic_partitions_store=instance),
+    ):
         expected_asset_partitions = {
             AssetKeyPartitionKey(parent.key, f"2022-01-03-{str(hour).zfill(2)}:00")
             for hour in range(24)
@@ -224,7 +216,7 @@ def test_get_parent_partitions_fan_in(
 
         assert (
             asset_graph.get_parents_partitions(
-                instance, current_time, child.key, child_asset_partition.partition_key
+                child.key, child_asset_partition.partition_key
             ).parent_partitions
             == expected_asset_partitions
         )
@@ -242,13 +234,12 @@ def test_get_parent_partitions_non_default_partition_mapping(
     asset_graph = asset_graph_from_assets([parent, child])
 
     with freeze_time(create_datetime(year=2022, month=1, day=3, hour=4)):
-        with instance_for_test() as instance:
-            current_time = get_current_datetime()
-
+        with (
+            instance_for_test() as instance,
+            partition_loading_context(dynamic_partitions_store=instance),
+        ):
             expected_asset_partitions = {AssetKeyPartitionKey(parent.key, "2022-01-02")}
-            mapped_partitions_result = asset_graph.get_parents_partitions(
-                instance, current_time, child.key
-            )
+            mapped_partitions_result = asset_graph.get_parents_partitions(child.key)
             assert mapped_partitions_result.parent_partitions == expected_asset_partitions
             assert mapped_partitions_result.required_but_nonexistent_parents_partitions == set()
 
@@ -317,20 +308,19 @@ def test_custom_unsupported_partition_mapping():
     internal_asset_graph = AssetGraph.from_assets([parent, child])
     external_asset_graph = to_remote_asset_graph([parent, child])
 
-    with instance_for_test() as instance:
-        current_time = get_current_datetime()
-
-        assert internal_asset_graph.get_parents_partitions(
-            instance, current_time, child.key, "2"
-        ).parent_partitions == {
+    with (
+        instance_for_test() as instance,
+        partition_loading_context(dynamic_partitions_store=instance),
+    ):
+        assert internal_asset_graph.get_parents_partitions(child.key, "2").parent_partitions == {
             AssetKeyPartitionKey(parent.key, "1"),
             AssetKeyPartitionKey(parent.key, "2"),
         }
 
         # external falls back to default PartitionMapping
-        assert external_asset_graph.get_parents_partitions(
-            instance, current_time, child.key, "2"
-        ).parent_partitions == {AssetKeyPartitionKey(parent.key, "2")}
+        assert external_asset_graph.get_parents_partitions(child.key, "2").parent_partitions == {
+            AssetKeyPartitionKey(parent.key, "2")
+        }
 
 
 def test_required_multi_asset_sets_non_subsettable_multi_asset(
@@ -457,10 +447,8 @@ def test_bfs_filter_asset_subsets(asset_graph_from_assets: Callable[..., BaseAss
 
     assert (
         asset_graph.bfs_filter_subsets(
-            dynamic_partitions_store=MagicMock(),
             initial_subset=initial_asset1_subset,
             condition_fn=include_all,
-            current_time=get_current_datetime(),
         )
         == initial_asset1_subset | corresponding_asset3_subset
     )
@@ -470,10 +458,7 @@ def test_bfs_filter_asset_subsets(asset_graph_from_assets: Callable[..., BaseAss
 
     assert (
         asset_graph.bfs_filter_subsets(
-            dynamic_partitions_store=MagicMock(),
-            initial_subset=initial_asset1_subset,
-            condition_fn=include_none,
-            current_time=get_current_datetime(),
+            initial_subset=initial_asset1_subset, condition_fn=include_none
         )
         == AssetGraphSubset()
     )
@@ -483,10 +468,7 @@ def test_bfs_filter_asset_subsets(asset_graph_from_assets: Callable[..., BaseAss
 
     assert (
         asset_graph.bfs_filter_subsets(
-            dynamic_partitions_store=MagicMock(),
-            initial_subset=initial_asset1_subset,
-            condition_fn=exclude_asset3,
-            current_time=get_current_datetime(),
+            initial_subset=initial_asset1_subset, condition_fn=exclude_asset3
         )
         == initial_asset1_subset
     )
@@ -499,10 +481,7 @@ def test_bfs_filter_asset_subsets(asset_graph_from_assets: Callable[..., BaseAss
     )
     assert (
         asset_graph.bfs_filter_subsets(
-            dynamic_partitions_store=MagicMock(),
-            initial_subset=initial_asset0_subset,
-            condition_fn=exclude_asset2,
-            current_time=get_current_datetime(),
+            initial_subset=initial_asset0_subset, condition_fn=exclude_asset2
         )
         == initial_asset0_subset | initial_asset1_subset | corresponding_asset3_subset
     )
@@ -592,12 +571,10 @@ def test_bfs_filter_asset_subsets_different_mappings(
 
     assert (
         asset_graph.bfs_filter_subsets(
-            dynamic_partitions_store=MagicMock(),
             initial_subset=AssetGraphSubset(
                 partitions_subsets_by_asset_key={asset0.key: initial_subset},
             ),
             condition_fn=include_all,
-            current_time=get_current_datetime(),
         )
         == expected_asset_graph_subset
     )
@@ -754,7 +731,7 @@ def test_asset_graph_partial_deserialization(
             AssetKey("unpartitioned1"),
             AssetKey("unpartitioned2"),
         },
-    ).to_storage_dict(dynamic_partitions_store=None, asset_graph=get_ag1())  # type: ignore
+    ).to_storage_dict(asset_graph=get_ag1())
 
     asset_graph2 = get_ag2()
     assert not AssetGraphSubset.can_deserialize(ag1_storage_dict, asset_graph2)

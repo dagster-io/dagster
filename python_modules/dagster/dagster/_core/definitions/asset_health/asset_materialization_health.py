@@ -8,6 +8,7 @@ import dagster._check as check
 from dagster._core.asset_graph_view.serializable_entity_subset import SerializableEntitySubset
 from dagster._core.definitions.asset_health.asset_health import AssetHealthStatus
 from dagster._core.definitions.asset_key import AssetKey
+from dagster._core.definitions.partitions.context import partition_loading_context
 from dagster._core.definitions.partitions.definition import PartitionsDefinition
 from dagster._core.loader import LoadableBy, LoadingContext
 from dagster._core.remote_representation.external_data import PartitionsSnap
@@ -308,11 +309,10 @@ async def get_materialization_status_and_metadata(
         num_missing = 0
         total_num_partitions = 0
         if asset_materialization_health_state.partitions_def is not None:
-            total_num_partitions = (
-                asset_materialization_health_state.partitions_def.get_num_partitions(
-                    dynamic_partitions_store=context.instance
+            with partition_loading_context(dynamic_partitions_store=context.instance):
+                total_num_partitions = (
+                    asset_materialization_health_state.partitions_def.get_num_partitions()
                 )
-            )
             # asset is health, so no partitions are failed
             num_materialized = len(
                 asset_materialization_health_state.materialized_subset.subset_value
@@ -329,11 +329,10 @@ async def get_materialization_status_and_metadata(
         return AssetHealthStatus.HEALTHY, meta
     elif asset_materialization_health_state.health_status == AssetHealthStatus.DEGRADED:
         if asset_materialization_health_state.partitions_def is not None:
-            total_num_partitions = (
-                asset_materialization_health_state.partitions_def.get_num_partitions(
-                    dynamic_partitions_store=context.instance
+            with partition_loading_context(dynamic_partitions_store=context.instance):
+                total_num_partitions = (
+                    asset_materialization_health_state.partitions_def.get_num_partitions()
                 )
-            )
             num_failed = len(asset_materialization_health_state.failed_subset.subset_value)
             num_materialized = len(
                 asset_materialization_health_state.currently_materialized_subset.subset_value

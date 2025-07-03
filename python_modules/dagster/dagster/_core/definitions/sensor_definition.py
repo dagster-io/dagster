@@ -1073,7 +1073,6 @@ class SensorDefinition(IHasInternalInit):
                 resolved_run_requests.append(
                     run_request.with_resolved_tags_and_config(
                         target_definition=selected_job,
-                        current_time=None,
                         dynamic_partitions_store=context.caching_dynamic_partitions_loader,
                         dynamic_partitions_requests=dynamic_partitions_requests,
                     )

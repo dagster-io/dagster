@@ -36,6 +36,7 @@ from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.base_asset_graph import BaseAssetGraph
 from dagster._core.definitions.decorators.repository_decorator import repository
 from dagster._core.definitions.events import AssetKeyPartitionKey
+from dagster._core.definitions.partitions.context import partition_loading_context
 from dagster._core.definitions.partitions.definition import (
     DailyPartitionsDefinition,
     HourlyPartitionsDefinition,
@@ -226,17 +227,17 @@ scenarios = {
         ),
         (
             "non_partitioned_after_partitioned",
-            ["2022-01-01", "2022-01-02"],
-            [("asset1", "2022-01-01"), ("asset1", "2022-01-02"), ("asset2", None)],
+            ["2020-01-01", "2020-01-02"],
+            [("asset1", "2020-01-01"), ("asset1", "2020-01-02"), ("asset2", None)],
         ),
         (
             "partitioned_after_non_partitioned",
-            ["2022-01-01", "2022-01-02"],
+            ["2020-01-01", "2020-01-02"],
             [
                 ("asset1", None),
                 ("asset2", None),
-                ("asset3", "2022-01-01"),
-                ("asset3", "2022-01-02"),
+                ("asset3", "2020-01-01"),
+                ("asset3", "2020-01-02"),
             ],
         ),
     ],
@@ -361,16 +362,15 @@ def test_scenario_to_completion(scenario: AssetBackfillScenario, failures: str, 
     ):
         instance.add_dynamic_partitions("foo", ["a", "b"])
 
-        with freeze_time(scenario.evaluation_time):
+        with (
+            freeze_time(scenario.evaluation_time),
+            partition_loading_context(scenario.evaluation_time, instance),
+        ):
             assets_by_repo_name = scenario.assets_by_repo_name
 
             asset_graph = get_asset_graph(assets_by_repo_name)
             if some_or_all == "all":
-                target_subset = AssetGraphSubset.all(
-                    asset_graph,
-                    dynamic_partitions_store=instance,
-                    current_time=scenario.evaluation_time,
-                )
+                target_subset = AssetGraphSubset.all(asset_graph)
             elif some_or_all == "some":
                 if scenario.target_root_partition_keys is None:
                     target_subset = make_random_subset(
@@ -722,11 +722,8 @@ def make_backfill_data(
     current_time: datetime.datetime,
 ) -> AssetBackfillData:
     if some_or_all == "all":
-        target_subset = AssetGraphSubset.all(
-            asset_graph,
-            dynamic_partitions_store=instance,
-            current_time=current_time,
-        )
+        with partition_loading_context(current_time, instance):
+            target_subset = AssetGraphSubset.all(asset_graph)
     elif some_or_all == "some":
         target_subset = make_random_subset(asset_graph, instance, current_time)
     else:
@@ -934,11 +931,8 @@ def run_backfill_to_completion(
         backfill_data = result1.backfill_data
 
         for asset_partition in backfill_data.materialized_subset.iterate_asset_partitions():
-            parent_partitions_result = asset_graph.get_parents_partitions(
-                instance,
-                backfill_data.backfill_start_datetime,
-                *asset_partition,
-            )
+            with partition_loading_context(backfill_data.backfill_start_datetime, instance):
+                parent_partitions_result = asset_graph.get_parents_partitions(*asset_partition)
 
             for parent_asset_partition in parent_partitions_result.parent_partitions:
                 if (
@@ -1349,7 +1343,7 @@ def test_asset_backfill_selects_only_existent_partitions():
         ],
         dynamic_partitions_store=MagicMock(),
         all_partitions=False,
-        backfill_start_timestamp=create_datetime(2023, 1, 9, 0, 0, 0).timestamp(),
+        backfill_start_timestamp=create_datetime(2023, 1, 9, 1, 1, 0).timestamp(),
     )
 
     target_subset = backfill_data.target_subset
@@ -1998,13 +1992,12 @@ def test_multi_asset_internal_deps_different_partitions_asset_backfill() -> None
     repo_dict = {"repo": [my_multi_asset]}
     asset_graph = get_asset_graph(repo_dict)
     current_time = create_datetime(2024, 1, 9, 0, 0, 0)
-    asset_backfill_data = AssetBackfillData.from_asset_graph_subset(
-        asset_graph_subset=AssetGraphSubset.all(
-            asset_graph, dynamic_partitions_store=MagicMock(), current_time=current_time
-        ),
-        backfill_start_timestamp=current_time.timestamp(),
-        dynamic_partitions_store=MagicMock(),
-    )
+    with partition_loading_context(current_time, instance):
+        asset_backfill_data = AssetBackfillData.from_asset_graph_subset(
+            asset_graph_subset=AssetGraphSubset.all(asset_graph),
+            backfill_start_timestamp=current_time.timestamp(),
+            dynamic_partitions_store=MagicMock(),
+        )
     backfill_data_after_iter1 = _single_backfill_iteration(
         "fake_id", asset_backfill_data, asset_graph, instance, repo_dict
     )

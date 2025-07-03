@@ -35,10 +35,8 @@ class LastPartitionMapping(PartitionMapping, NamedTuple("_LastPartitionMapping",
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> UpstreamPartitionsResult:
-        with partition_loading_context(current_time, dynamic_partitions_store) as ctx:
-            last = upstream_partitions_def.get_last_partition_key(
-                current_time=ctx.effective_dt, dynamic_partitions_store=ctx.dynamic_partitions_store
-            )
+        with partition_loading_context(current_time, dynamic_partitions_store):
+            last = upstream_partitions_def.get_last_partition_key()
 
             upstream_subset = upstream_partitions_def.empty_subset()
             if last is not None:
@@ -57,15 +55,10 @@ class LastPartitionMapping(PartitionMapping, NamedTuple("_LastPartitionMapping",
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> PartitionsSubset:
-        with partition_loading_context(current_time, dynamic_partitions_store) as ctx:
-            last_upstream_partition = upstream_partitions_def.get_last_partition_key(
-                current_time=ctx.effective_dt, dynamic_partitions_store=ctx.dynamic_partitions_store
-            )
+        with partition_loading_context(current_time, dynamic_partitions_store):
+            last_upstream_partition = upstream_partitions_def.get_last_partition_key()
             if last_upstream_partition and last_upstream_partition in upstream_partitions_subset:
-                return downstream_partitions_def.subset_with_all_partitions(
-                    current_time=ctx.effective_dt,
-                    dynamic_partitions_store=ctx.dynamic_partitions_store,
-                )
+                return downstream_partitions_def.subset_with_all_partitions()
             else:
                 return downstream_partitions_def.empty_subset()
 

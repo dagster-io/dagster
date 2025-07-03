@@ -18,6 +18,10 @@ from dagster._core.asset_graph_view.serializable_entity_subset import Serializab
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.asset_key import AssetCheckKey, AssetKey, EntityKey, T_EntityKey
 from dagster._core.definitions.events import AssetKeyPartitionKey
+from dagster._core.definitions.partitions.context import (
+    PartitionLoadingContext,
+    use_partition_loading_context,
+)
 from dagster._core.definitions.partitions.definition import (
     MultiPartitionsDefinition,
     TimeWindowPartitionsDefinition,
@@ -118,6 +122,9 @@ class AssetGraphView(LoadingContext):
             loading_context=self,
             evaluation_time=temporal_context.effective_dt,
         )
+        self._partition_loading_context = PartitionLoadingContext(
+            dynamic_partitions_store=self._queryer, temporal_context=temporal_context
+        )
 
     @property
     def instance(self) -> "DagsterInstance":
@@ -153,25 +160,25 @@ class AssetGraphView(LoadingContext):
             return None
 
     @cached_method
+    @use_partition_loading_context
     def get_full_subset(self, *, key: T_EntityKey) -> EntitySubset[T_EntityKey]:
         partitions_def = self._get_partitions_def(key)
+        context = self._partition_loading_context
         value = (
-            AllPartitionsSubset(
-                partitions_def=partitions_def,
-                dynamic_partitions_store=self._queryer,
-                current_time=self.effective_dt,
-            )
+            AllPartitionsSubset(partitions_def=partitions_def, context=context)
             if partitions_def
             else True
         )
         return EntitySubset(self, key=key, value=_ValidatedEntitySubsetValue(value))
 
     @cached_method
+    @use_partition_loading_context
     def get_empty_subset(self, *, key: T_EntityKey) -> EntitySubset[T_EntityKey]:
         partitions_def = self._get_partitions_def(key)
         value = partitions_def.empty_subset() if partitions_def else False
         return EntitySubset(self, key=key, value=_ValidatedEntitySubsetValue(value))
 
+    @use_partition_loading_context
     def get_entity_subset_in_range(
         self, asset_key: AssetKey, partition_key_range: "PartitionKeyRange"
     ) -> EntitySubset[AssetKey]:
@@ -185,6 +192,7 @@ class AssetGraphView(LoadingContext):
             self, key=asset_key, value=_ValidatedEntitySubsetValue(partition_subset_in_range)
         )
 
+    @use_partition_loading_context
     def get_entity_subset_from_asset_graph_subset(
         self, asset_graph_subset: AssetGraphSubset, key: AssetKey
     ) -> EntitySubset[AssetKey]:
@@ -238,10 +246,7 @@ class AssetGraphView(LoadingContext):
                     raise CheckError(
                         f"Stored partitions definition for {key.to_user_string()} is no longer compatible with the latest partitions definition",
                     )
-                missing_subset = value - current_partitions_def.subset_with_all_partitions(
-                    self._temporal_context.effective_dt,
-                    self._instance,
-                )
+                missing_subset = value - current_partitions_def.subset_with_all_partitions()
                 if not missing_subset.is_empty:
                     raise CheckError(
                         f"Stored partitions definition for {key.to_user_string()} includes partitions {missing_subset} that are no longer present",
@@ -259,6 +264,7 @@ class AssetGraphView(LoadingContext):
             )
             return serializable_subset
 
+    @use_partition_loading_context
     def iterate_asset_subsets(
         self, asset_graph_subset: AssetGraphSubset
     ) -> Iterable[EntitySubset[AssetKey]]:
@@ -268,6 +274,7 @@ class AssetGraphView(LoadingContext):
         for asset_key in asset_graph_subset.asset_keys:
             yield self.get_entity_subset_from_asset_graph_subset(asset_graph_subset, asset_key)
 
+    @use_partition_loading_context
     def get_subset_from_serializable_subset(
         self, serializable_subset: SerializableEntitySubset[T_EntityKey]
     ) -> Optional[EntitySubset[T_EntityKey]]:
@@ -281,11 +288,13 @@ class AssetGraphView(LoadingContext):
         else:
             return None
 
+    @use_partition_loading_context
     def legacy_get_asset_subset_from_valid_subset(
         self, subset: "ValidAssetSubset"
     ) -> EntitySubset[AssetKey]:
         return EntitySubset(self, key=subset.key, value=_ValidatedEntitySubsetValue(subset.value))
 
+    @use_partition_loading_context
     def get_asset_subset_from_asset_partitions(
         self, key: AssetKey, asset_partitions: AbstractSet[AssetKeyPartitionKey]
     ) -> EntitySubset[AssetKey]:
@@ -304,6 +313,7 @@ class AssetGraphView(LoadingContext):
         )
         return EntitySubset(self, key=key, value=_ValidatedEntitySubsetValue(value))
 
+    @use_partition_loading_context
     def compute_parent_subset_and_required_but_nonexistent_subset(
         self, parent_key, subset: EntitySubset[T_EntityKey]
     ) -> tuple[EntitySubset[AssetKey], EntitySubset[AssetKey]]:
@@ -336,6 +346,7 @@ class AssetGraphView(LoadingContext):
 
         return parent_subset, required_but_nonexistent_subset
 
+    @use_partition_loading_context
     def compute_parent_subset(
         self, parent_key: AssetKey, subset: EntitySubset[T_EntityKey]
     ) -> EntitySubset[AssetKey]:
@@ -344,6 +355,7 @@ class AssetGraphView(LoadingContext):
         )
         return self.compute_mapped_subset(parent_key, subset, direction="up")
 
+    @use_partition_loading_context
     def compute_child_subset(
         self, child_key: T_EntityKey, subset: EntitySubset[U_EntityKey]
     ) -> EntitySubset[T_EntityKey]:
@@ -367,10 +379,9 @@ class AssetGraphView(LoadingContext):
             else None,
             downstream_partitions_def=from_partitions_def,
             upstream_partitions_def=check.not_none(to_partitions_def),
-            dynamic_partitions_store=self._queryer,
-            current_time=self.effective_dt,
         )
 
+    @use_partition_loading_context
     def compute_mapped_subset(
         self, to_key: T_EntityKey, from_subset: EntitySubset, direction: Literal["up", "down"]
     ) -> EntitySubset[T_EntityKey]:
@@ -392,8 +403,6 @@ class AssetGraphView(LoadingContext):
                 upstream_partitions_subset=from_subset.get_internal_subset_value(),
                 upstream_partitions_def=from_partitions_def,
                 downstream_partitions_def=to_partitions_def,
-                dynamic_partitions_store=self._queryer,
-                current_time=self.effective_dt,
             )
         else:
             if to_partitions_def is None or from_subset.is_empty:
@@ -413,6 +422,7 @@ class AssetGraphView(LoadingContext):
             value=_ValidatedEntitySubsetValue(to_partitions_subset),
         )
 
+    @use_partition_loading_context
     def compute_intersection_with_partition_keys(
         self, partition_keys: AbstractSet[str], asset_subset: EntitySubset[AssetKey]
     ) -> EntitySubset[AssetKey]:
@@ -424,11 +434,7 @@ class AssetGraphView(LoadingContext):
             self._get_partitions_def(asset_subset.key), "Must have partitions def"
         )
         for partition_key in partition_keys:
-            if not partitions_def.has_partition_key(
-                partition_key,
-                current_time=self.effective_dt,
-                dynamic_partitions_store=self._queryer,
-            ):
+            if not partitions_def.has_partition_key(partition_key):
                 check.failed(
                     f"Partition key {partition_key} not in partitions def {partitions_def}"
                 )
@@ -438,6 +444,7 @@ class AssetGraphView(LoadingContext):
         )
         return asset_subset.compute_intersection(keys_subset)
 
+    @use_partition_loading_context
     def compute_latest_time_window_subset(
         self, asset_key: AssetKey, lookback_delta: Optional[timedelta] = None
     ) -> EntitySubset[AssetKey]:
@@ -452,7 +459,7 @@ class AssetGraphView(LoadingContext):
             # if the asset has no time dimension, then return a full subset
             return self.get_full_subset(key=asset_key)
 
-        latest_time_window = time_partitions_def.get_last_partition_window(self.effective_dt)
+        latest_time_window = time_partitions_def.get_last_partition_window()
         if latest_time_window is None:
             return self.get_empty_subset(key=asset_key)
 
@@ -830,10 +837,7 @@ class AssetGraphView(LoadingContext):
                 for tw_pk in multi_dim_info.tw_partition_def.get_partition_keys_in_time_window(
                     time_window
                 )
-                for secondary_pk in multi_dim_info.secondary_partition_def.get_partition_keys(
-                    current_time=self.effective_dt,
-                    dynamic_partitions_store=self._queryer,
-                )
+                for secondary_pk in multi_dim_info.secondary_partition_def.get_partition_keys()
             },
         )
 

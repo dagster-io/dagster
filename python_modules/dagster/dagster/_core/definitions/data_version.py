@@ -6,6 +6,10 @@ from typing import TYPE_CHECKING, Callable, Final, NamedTuple, Optional, Union
 
 from dagster import _check as check
 from dagster._annotations import beta, deprecated
+from dagster._core.definitions.partitions.context import (
+    PartitionLoadingContext,
+    use_partition_loading_context,
+)
 from dagster._core.loader import LoadingContext
 from dagster._utils.cached_method import cached_method
 
@@ -379,6 +383,10 @@ class CachingStaleStatusResolver:
         self._instance = instance
         self._instance_queryer = instance_queryer
         self._loading_context = loading_context
+        self._partition_loading_context = PartitionLoadingContext.default().updated(
+            effective_dt=self._instance_queryer.evaluation_time if self._instance_queryer else None,
+            dynamic_partitions_store=self._instance_queryer or self._instance,
+        )
         if isinstance(asset_graph, BaseAssetGraph):
             self._asset_graph = asset_graph
             self._asset_graph_load_fn = None
@@ -386,11 +394,13 @@ class CachingStaleStatusResolver:
             self._asset_graph = None
             self._asset_graph_load_fn = asset_graph
 
+    @use_partition_loading_context
     def get_status(self, key: "AssetKey", partition_key: Optional[str] = None) -> StaleStatus:
         from dagster._core.definitions.events import AssetKeyPartitionKey
 
         return self._get_status(key=AssetKeyPartitionKey(key, partition_key))
 
+    @use_partition_loading_context
     def get_stale_causes(
         self, key: "AssetKey", partition_key: Optional[str] = None
     ) -> Sequence[StaleCause]:
@@ -398,6 +408,7 @@ class CachingStaleStatusResolver:
 
         return self._get_stale_causes(key=AssetKeyPartitionKey(key, partition_key))
 
+    @use_partition_loading_context
     def get_stale_root_causes(
         self, key: "AssetKey", partition_key: Optional[str] = None
     ) -> Sequence[StaleCause]:
@@ -405,6 +416,7 @@ class CachingStaleStatusResolver:
 
         return self._get_stale_root_causes(key=AssetKeyPartitionKey(key, partition_key))
 
+    @use_partition_loading_context
     def get_current_data_version(
         self, key: "AssetKey", partition_key: Optional[str] = None
     ) -> DataVersion:
@@ -738,11 +750,7 @@ class CachingStaleStatusResolver:
             else:
                 upstream_partition_keys = list(
                     self.asset_graph.get_parent_partition_keys_for_child(
-                        key.partition_key,
-                        dep_asset_key,
-                        key.asset_key,
-                        dynamic_partitions_store=self._instance,
-                        current_time=self.instance_queryer.evaluation_time,
+                        key.partition_key, dep_asset_key, key.asset_key
                     ).partitions_subset.get_partition_keys()
                 )
                 if len(upstream_partition_keys) < SKIP_PARTITION_DATA_VERSION_DEPENDENCY_THRESHOLD:
@@ -756,8 +764,6 @@ class CachingStaleStatusResolver:
 
     def _exceeds_self_partition_limit(self, asset_key: "AssetKey") -> bool:
         return (
-            check.not_none(self.asset_graph.get(asset_key).partitions_def).get_num_partitions(
-                dynamic_partitions_store=self._instance
-            )
+            check.not_none(self.asset_graph.get(asset_key).partitions_def).get_num_partitions()
             >= SKIP_PARTITION_DATA_VERSION_SELF_DEPENDENCY_THRESHOLD
         )

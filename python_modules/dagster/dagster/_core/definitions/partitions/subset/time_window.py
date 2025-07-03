@@ -123,8 +123,8 @@ class TimeWindowPartitionsSubset(
             TimeWindowPartitionsDefinition,
             "Provided subset must reference a TimeWindowPartitionsDefinition",
         )
-        first_window = partitions_def.get_first_partition_window(subset.current_time)
-        last_window = partitions_def.get_last_partition_window(subset.current_time)
+        first_window = partitions_def.get_first_partition_window()
+        last_window = partitions_def.get_last_partition_window()
         return TimeWindowPartitionsSubset(
             partitions_def=partitions_def,
             included_time_windows=[

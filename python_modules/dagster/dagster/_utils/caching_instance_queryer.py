@@ -714,11 +714,9 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
                 )
                 for child_partition_key in (
                     self.asset_graph.get_child_partition_keys_of_parent(
-                        dynamic_partitions_store=self,
                         parent_partition_key=None,
                         parent_asset_key=parent_asset_key,
                         child_asset_key=child_asset_key,
-                        current_time=self.evaluation_time,
                     )
                     if child_asset.partitions_def
                     else [None]
@@ -729,9 +727,7 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
                         not map_old_time_partitions
                         and child_time_partitions_def is not None
                         and get_time_partition_key(child_asset.partitions_def, child_partition_key)
-                        != child_time_partitions_def.get_last_partition_key(
-                            current_time=self.evaluation_time
-                        )
+                        != child_time_partitions_def.get_last_partition_key()
                     ) and not self.is_asset_planned_for_run(
                         latest_parent_record.run_id, child_asset_key
                     ):
@@ -765,8 +761,6 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
                             parent_partitions_subset,
                             upstream_partitions_def=parent_partitions_def,
                             downstream_partitions_def=child_asset.partitions_def,
-                            dynamic_partitions_store=self,
-                            current_time=self.evaluation_time,
                         )
                     )
                 except DagsterInvalidDefinitionError as e:
@@ -903,11 +897,7 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
                 ap
                 for ap in unvalidated_asset_partitions
                 if ap.partition_key is not None
-                and partitions_def.has_partition_key(
-                    partition_key=ap.partition_key,
-                    dynamic_partitions_store=self,
-                    current_time=self.evaluation_time,
-                )
+                and partitions_def.has_partition_key(partition_key=ap.partition_key)
             }
 
     def _get_unvalidated_asset_partitions_updated_after_cursor(
@@ -1049,10 +1039,7 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
             if (
                 isinstance(partitions_def, TimeWindowPartitionsDefinition)
                 and not self.asset_graph.get(parent_key).is_partitioned
-                and asset_partition.partition_key
-                != partitions_def.get_last_partition_key(
-                    current_time=self.evaluation_time, dynamic_partitions_store=self
-                )
+                and asset_partition.partition_key != partitions_def.get_last_partition_key()
             ):
                 continue
 
@@ -1093,10 +1080,7 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
             return set()
 
         parent_asset_partitions = self.asset_graph.get_parents_partitions(
-            dynamic_partitions_store=self,
-            current_time=self._evaluation_time,
-            asset_key=asset_key,
-            partition_key=partition_key,
+            asset_key=asset_key, partition_key=partition_key
         ).parent_partitions
 
         # the set of parent keys which we don't need to check

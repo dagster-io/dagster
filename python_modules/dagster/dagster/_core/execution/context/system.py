@@ -1078,7 +1078,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
 
             if upstream_asset_partitions_def is not None:
                 partitions_def = self.asset_partitions_def if assets_def else None
-                with partition_loading_context(dynamic_partitions_store=self.instance) as ctx:
+                with partition_loading_context(dynamic_partitions_store=self.instance):
                     partitions_subset = (
                         partitions_def.empty_subset().with_partition_key_range(
                             partitions_def, self.partition_key_range

@@ -31,7 +31,6 @@ from dagster._time import (
     datetime_from_timestamp,
     dst_safe_strftime,
     dst_safe_strptime,
-    get_current_timestamp,
     get_timezone,
 )
 from dagster._utils.cronstring import get_fixed_minute_interval, is_basic_daily, is_basic_hourly
@@ -191,15 +190,14 @@ class TimeWindowPartitionsDefinition(PartitionsDefinition, IHaveNew):
             get_timezone(end_timestamp_with_timezone.timezone),
         )
 
-    def _get_current_timestamp(self, current_time: Optional[datetime]) -> float:
-        if not current_time:
-            return get_current_timestamp()
+    def _get_current_timestamp(self) -> float:
+        with partition_loading_context() as ctx:
+            current_time = ctx.effective_dt
+            # if a naive current time was passed in, assume it was the same timezone as the partition set
+            if not current_time.tzinfo:
+                current_time = current_time.replace(tzinfo=get_timezone(self.timezone))
 
-        # if a naive current time was passed in, assume it was the same timezone as the partition set
-        if not current_time.tzinfo:
-            current_time = current_time.replace(tzinfo=get_timezone(self.timezone))
-
-        return current_time.timestamp()
+            return current_time.timestamp()
 
     def get_num_partitions_in_window(self, time_window: TimeWindow) -> int:
         if time_window.start.timestamp() >= time_window.end.timestamp():
@@ -225,73 +223,62 @@ class TimeWindowPartitionsDefinition(PartitionsDefinition, IHaveNew):
 
         return len(self.get_partition_keys_in_time_window(time_window))
 
-    def get_num_partitions(
-        self,
-        current_time: Optional[datetime] = None,
-        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
-    ) -> int:
-        with partition_loading_context(current_time, dynamic_partitions_store) as ctx:
-            last_partition_window = self.get_last_partition_window(ctx.effective_dt)
-            first_partition_window = self.get_first_partition_window(ctx.effective_dt)
+    def get_num_partitions(self) -> int:
+        last_partition_window = self.get_last_partition_window()
+        first_partition_window = self.get_first_partition_window()
 
-            if not last_partition_window or not first_partition_window:
-                return 0
+        if not last_partition_window or not first_partition_window:
+            return 0
 
-            return self.get_num_partitions_in_window(
-                TimeWindow(start=first_partition_window.start, end=last_partition_window.end)
-            )
+        return self.get_num_partitions_in_window(
+            TimeWindow(start=first_partition_window.start, end=last_partition_window.end)
+        )
 
-    def get_partition_keys_between_indexes(
-        self, start_idx: int, end_idx: int, current_time: Optional[datetime] = None
-    ) -> list[str]:
+    def get_partition_keys_between_indexes(self, start_idx: int, end_idx: int) -> list[str]:
         # Fetches the partition keys between the given start and end indices.
         # Start index is inclusive, end index is exclusive.
         # Method added for performance reasons, to only string format
         # partition keys included within the indices.
-        with partition_loading_context(current_time) as ctx:
-            current_timestamp = self._get_current_timestamp(current_time=ctx.effective_dt)
+        current_timestamp = self._get_current_timestamp()
 
-            partitions_past_current_time = 0
-            partition_keys = []
-            reached_end = False
+        partitions_past_current_time = 0
+        partition_keys = []
+        reached_end = False
 
-            for idx, time_window in enumerate(self._iterate_time_windows(self.start_timestamp)):
-                if time_window.end.timestamp() >= current_timestamp:
-                    reached_end = True
-                if (
-                    self.end_timestamp is not None
-                    and time_window.end.timestamp() > self.end_timestamp
-                ):
-                    reached_end = True
-                if (
-                    time_window.end.timestamp() <= current_timestamp
-                    or partitions_past_current_time < self.end_offset
-                ):
-                    if idx >= start_idx and idx < end_idx:
-                        partition_keys.append(
-                            dst_safe_strftime(
-                                time_window.start, self.timezone, self.fmt, self.cron_schedule
-                            )
+        for idx, time_window in enumerate(self._iterate_time_windows(self.start_timestamp)):
+            if time_window.end.timestamp() >= current_timestamp:
+                reached_end = True
+            if self.end_timestamp is not None and time_window.end.timestamp() > self.end_timestamp:
+                reached_end = True
+            if (
+                time_window.end.timestamp() <= current_timestamp
+                or partitions_past_current_time < self.end_offset
+            ):
+                if idx >= start_idx and idx < end_idx:
+                    partition_keys.append(
+                        dst_safe_strftime(
+                            time_window.start, self.timezone, self.fmt, self.cron_schedule
                         )
-                    if time_window.end.timestamp() > current_timestamp:
-                        partitions_past_current_time += 1
-                else:
-                    break
-                if len(partition_keys) >= end_idx - start_idx:
-                    break
+                    )
+                if time_window.end.timestamp() > current_timestamp:
+                    partitions_past_current_time += 1
+            else:
+                break
+            if len(partition_keys) >= end_idx - start_idx:
+                break
 
-            if reached_end and self.end_offset < 0:
-                partition_keys = partition_keys[: self.end_offset]
+        if reached_end and self.end_offset < 0:
+            partition_keys = partition_keys[: self.end_offset]
 
-            return partition_keys
+        return partition_keys
 
     def get_partition_keys(
         self,
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> Sequence[str]:
-        with partition_loading_context(current_time, dynamic_partitions_store) as ctx:
-            current_timestamp = self._get_current_timestamp(current_time=ctx.effective_dt)
+        with partition_loading_context(current_time, dynamic_partitions_store):
+            current_timestamp = self._get_current_timestamp()
 
             partitions_past_current_time = 0
             partition_keys: list[str] = []
@@ -328,8 +315,8 @@ class TimeWindowPartitionsDefinition(PartitionsDefinition, IHaveNew):
         ascending: bool,
         cursor: Optional[str] = None,
     ) -> PaginatedResults[str]:
-        with partition_loading_context(new_ctx=context) as ctx:
-            current_timestamp = self._get_current_timestamp(current_time=ctx.effective_dt)
+        with partition_loading_context(new_ctx=context):
+            current_timestamp = self._get_current_timestamp()
 
             if cursor:
                 time_window_cursor = TimeWindowCursor.from_cursor(cursor)
@@ -488,59 +475,52 @@ class TimeWindowPartitionsDefinition(PartitionsDefinition, IHaveNew):
 
     @functools.lru_cache(maxsize=5)
     def time_windows_for_partition_keys(
-        self,
-        partition_keys: frozenset[str],
-        validate: bool = True,
-        current_time: Optional[datetime] = None,
+        self, partition_keys: frozenset[str], validate: bool = True
     ) -> Sequence[TimeWindow]:
-        with partition_loading_context(current_time) as ctx:
-            if len(partition_keys) == 0:
-                return []
+        if len(partition_keys) == 0:
+            return []
 
-            sorted_pks = sorted(
-                partition_keys,
-                key=lambda pk: dst_safe_strptime(pk, self.timezone, self.fmt).timestamp(),
+        sorted_pks = sorted(
+            partition_keys,
+            key=lambda pk: dst_safe_strptime(pk, self.timezone, self.fmt).timestamp(),
+        )
+        cur_windows_iterator = iter(
+            self._iterate_time_windows(
+                dst_safe_strptime(sorted_pks[0], self.timezone, self.fmt).timestamp()
             )
-            cur_windows_iterator = iter(
-                self._iterate_time_windows(
-                    dst_safe_strptime(sorted_pks[0], self.timezone, self.fmt).timestamp()
+        )
+        partition_key_time_windows: list[TimeWindow] = []
+        for partition_key in sorted_pks:
+            next_window = next(cur_windows_iterator)
+            if (
+                dst_safe_strftime(next_window.start, self.timezone, self.fmt, self.cron_schedule)
+                == partition_key
+            ):
+                partition_key_time_windows.append(next_window)
+            else:
+                cur_windows_iterator = iter(
+                    self._iterate_time_windows(
+                        dst_safe_strptime(partition_key, self.timezone, self.fmt).timestamp()
+                    )
                 )
-            )
-            partition_key_time_windows: list[TimeWindow] = []
-            for partition_key in sorted_pks:
-                next_window = next(cur_windows_iterator)
-                if (
-                    dst_safe_strftime(
-                        next_window.start, self.timezone, self.fmt, self.cron_schedule
-                    )
-                    == partition_key
-                ):
-                    partition_key_time_windows.append(next_window)
-                else:
-                    cur_windows_iterator = iter(
-                        self._iterate_time_windows(
-                            dst_safe_strptime(partition_key, self.timezone, self.fmt).timestamp()
-                        )
-                    )
-                    partition_key_time_windows.append(next(cur_windows_iterator))
+                partition_key_time_windows.append(next(cur_windows_iterator))
 
-            if validate:
-                start_time_window = self.get_first_partition_window(current_time=ctx.effective_dt)
-                end_time_window = self.get_last_partition_window(current_time=ctx.effective_dt)
+        if validate:
+            start_time_window = self.get_first_partition_window()
+            end_time_window = self.get_last_partition_window()
 
-                if start_time_window is None or end_time_window is None:
-                    check.failed("No partitions in the PartitionsDefinition")
+            if start_time_window is None or end_time_window is None:
+                check.failed("No partitions in the PartitionsDefinition")
 
-                start_timestamp = start_time_window.start.timestamp()
-                end_timestamp = end_time_window.end.timestamp()
+            start_timestamp = start_time_window.start.timestamp()
+            end_timestamp = end_time_window.end.timestamp()
 
-                partition_key_time_windows = [
-                    tw
-                    for tw in partition_key_time_windows
-                    if tw.start.timestamp() >= start_timestamp
-                    and tw.end.timestamp() <= end_timestamp
-                ]
-            return partition_key_time_windows
+            partition_key_time_windows = [
+                tw
+                for tw in partition_key_time_windows
+                if tw.start.timestamp() >= start_timestamp and tw.end.timestamp() <= end_timestamp
+            ]
+        return partition_key_time_windows
 
     def start_time_for_partition_key(self, partition_key: str) -> datetime:
         partition_key_dt = dst_safe_strptime(partition_key, self.timezone, self.fmt)
@@ -551,39 +531,35 @@ class TimeWindowPartitionsDefinition(PartitionsDefinition, IHaveNew):
         # we make the assumption that the parsed partition key is <= the start datetime.
         return next(iter(self._iterate_time_windows(partition_key_dt.timestamp()))).start
 
-    def get_next_partition_key(
-        self, partition_key: str, current_time: Optional[datetime] = None
-    ) -> Optional[str]:
-        with partition_loading_context(current_time) as ctx:
-            last_partition_window = self.get_last_partition_window(ctx.effective_dt)
+    def get_next_partition_key(self, partition_key: str) -> Optional[str]:
+        last_partition_window = self.get_last_partition_window()
+        if last_partition_window is None:
+            return None
+
+        partition_key_dt = dst_safe_strptime(partition_key, self.timezone, self.fmt)
+        windows_iter = iter(self._iterate_time_windows(partition_key_dt.timestamp()))
+        next(windows_iter)
+        start_time = next(windows_iter).start
+        if start_time.timestamp() >= last_partition_window.end.timestamp():
+            return None
+        else:
+            return dst_safe_strftime(start_time, self.timezone, self.fmt, self.cron_schedule)
+
+    def get_next_partition_window(
+        self, end_dt: datetime, respect_bounds: bool = True
+    ) -> Optional[TimeWindow]:
+        windows_iter = iter(self._iterate_time_windows(end_dt.timestamp()))
+        next_window = next(windows_iter)
+
+        if respect_bounds:
+            last_partition_window = self.get_last_partition_window()
             if last_partition_window is None:
                 return None
 
-            partition_key_dt = dst_safe_strptime(partition_key, self.timezone, self.fmt)
-            windows_iter = iter(self._iterate_time_windows(partition_key_dt.timestamp()))
-            next(windows_iter)
-            start_time = next(windows_iter).start
-            if start_time.timestamp() >= last_partition_window.end.timestamp():
+            if next_window.start.timestamp() >= last_partition_window.end.timestamp():
                 return None
-            else:
-                return dst_safe_strftime(start_time, self.timezone, self.fmt, self.cron_schedule)
 
-    def get_next_partition_window(
-        self, end_dt: datetime, current_time: Optional[datetime] = None, respect_bounds: bool = True
-    ) -> Optional[TimeWindow]:
-        with partition_loading_context(current_time) as ctx:
-            windows_iter = iter(self._iterate_time_windows(end_dt.timestamp()))
-            next_window = next(windows_iter)
-
-            if respect_bounds:
-                last_partition_window = self.get_last_partition_window(ctx.effective_dt)
-                if last_partition_window is None:
-                    return None
-
-                if next_window.start.timestamp() >= last_partition_window.end.timestamp():
-                    return None
-
-            return next_window
+        return next_window
 
     def get_prev_partition_window(
         self, start_dt: datetime, respect_bounds: bool = True
@@ -601,7 +577,7 @@ class TimeWindowPartitionsDefinition(PartitionsDefinition, IHaveNew):
         return prev_window
 
     @functools.lru_cache(maxsize=256)
-    def _get_first_partition_window(self, *, current_timestamp: float) -> Optional[TimeWindow]:
+    def _get_first_partition_window(self, current_timestamp: float) -> Optional[TimeWindow]:
         time_window = next(iter(self._iterate_time_windows(self.start_timestamp)))
 
         if self.end_offset == 0:
@@ -631,16 +607,12 @@ class TimeWindowPartitionsDefinition(PartitionsDefinition, IHaveNew):
                 time_window if time_window.end.timestamp() <= end_window.start.timestamp() else None
             )
 
-    def get_first_partition_window(
-        self, current_time: Optional[datetime] = None
-    ) -> Optional[TimeWindow]:
-        with partition_loading_context(current_time) as ctx:
-            current_timestamp = self._get_current_timestamp(current_time=ctx.effective_dt)
-            return self._get_first_partition_window(current_timestamp=current_timestamp)
+    def get_first_partition_window(self) -> Optional[TimeWindow]:
+        return self._get_first_partition_window(self._get_current_timestamp())
 
     @functools.lru_cache(maxsize=256)
-    def _get_last_partition_window(self, *, current_timestamp: float) -> Optional[TimeWindow]:
-        if self._get_first_partition_window(current_timestamp=current_timestamp) is None:
+    def _get_last_partition_window(self, current_timestamp: float) -> Optional[TimeWindow]:
+        if self.get_first_partition_window() is None:
             return None
 
         if self.end_timestamp is not None and self.end_timestamp < current_timestamp:
@@ -650,45 +622,27 @@ class TimeWindowPartitionsDefinition(PartitionsDefinition, IHaveNew):
             return next(iter(self._reverse_iterate_time_windows(current_timestamp)))
         else:
             # TODO: make this efficient
-            last_partition_key = super().get_last_partition_key(
-                datetime.fromtimestamp(current_timestamp, tz=get_timezone(self.timezone))
-            )
+            last_partition_key = super().get_last_partition_key()
             return (
                 self.time_window_for_partition_key(last_partition_key)
                 if last_partition_key
                 else None
             )
 
-    def get_last_partition_window(
-        self, current_time: Optional[datetime] = None
-    ) -> Optional[TimeWindow]:
-        with partition_loading_context(current_time) as ctx:
-            current_timestamp = self._get_current_timestamp(current_time=ctx.effective_dt)
-            return self._get_last_partition_window(current_timestamp=current_timestamp)
+    def get_last_partition_window(self) -> Optional[TimeWindow]:
+        return self._get_last_partition_window(self._get_current_timestamp())
 
-    def get_first_partition_key(
-        self,
-        current_time: Optional[datetime] = None,
-        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
-    ) -> Optional[str]:
-        with partition_loading_context(current_time, dynamic_partitions_store) as ctx:
-            first_window = self.get_first_partition_window(current_time=ctx.effective_dt)
-            if first_window is None:
-                return None
+    def get_first_partition_key(self) -> Optional[str]:
+        first_window = self.get_first_partition_window()
+        if first_window is None:
+            return None
 
-            return dst_safe_strftime(
-                first_window.start, self.timezone, self.fmt, self.cron_schedule
-            )
+        return dst_safe_strftime(first_window.start, self.timezone, self.fmt, self.cron_schedule)
 
-    def get_last_partition_key(
-        self,
-        current_time: Optional[datetime] = None,
-        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
-    ) -> Optional[str]:
-        with partition_loading_context(current_time, dynamic_partitions_store) as ctx:
-            last_window = self.get_last_partition_window(current_time=ctx.effective_dt)
-            if last_window is None:
-                return None
+    def get_last_partition_key(self) -> Optional[str]:
+        last_window = self.get_last_partition_window()
+        if last_window is None:
+            return None
 
         return dst_safe_strftime(last_window.start, self.timezone, self.fmt, self.cron_schedule)
 
@@ -953,59 +907,46 @@ class TimeWindowPartitionsDefinition(PartitionsDefinition, IHaveNew):
 
         return TimeWindowPartitionsSubset
 
-    def subset_with_all_partitions(
-        self,
-        current_time: Optional[datetime] = None,
-        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
-    ) -> "PartitionsSubset":
-        with partition_loading_context(current_time, dynamic_partitions_store) as ctx:
-            first_window = self.get_first_partition_window(current_time=ctx.effective_dt)
-            last_window = self.get_last_partition_window(current_time=ctx.effective_dt)
-            windows = (
-                []
-                if first_window is None or last_window is None
-                else [TimeWindow(first_window.start, last_window.end)]
-            )
-            return self.partitions_subset_class(
-                partitions_def=self, num_partitions=None, included_time_windows=windows
-            )
+    def subset_with_all_partitions(self) -> "PartitionsSubset":
+        first_window = self.get_first_partition_window()
+        last_window = self.get_last_partition_window()
+        windows = (
+            []
+            if first_window is None or last_window is None
+            else [TimeWindow(first_window.start, last_window.end)]
+        )
+        return self.partitions_subset_class(
+            partitions_def=self, num_partitions=None, included_time_windows=windows
+        )
 
     def get_serializable_unique_identifier(
         self, dynamic_partitions_store: Optional[DynamicPartitionsStore] = None
     ) -> str:
         return hashlib.sha1(self.__repr__().encode("utf-8")).hexdigest()
 
-    def has_partition_key(
-        self,
-        partition_key: str,
-        current_time: Optional[datetime] = None,
-        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
-    ) -> bool:
+    def has_partition_key(self, partition_key: str) -> bool:
         """Returns a boolean representing if the given partition key is valid."""
-        with partition_loading_context(current_time, dynamic_partitions_store) as ctx:
-            try:
-                partition_start_time = self.start_time_for_partition_key(partition_key)
-                partition_start_timestamp = partition_start_time.timestamp()
-            except ValueError:
-                # unparseable partition key
-                return False
+        try:
+            partition_start_time = self.start_time_for_partition_key(partition_key)
+            partition_start_timestamp = partition_start_time.timestamp()
+        except ValueError:
+            # unparseable partition key
+            return False
 
-            first_partition_window = self.get_first_partition_window(current_time=ctx.effective_dt)
-            last_partition_window = self.get_last_partition_window(current_time=ctx.effective_dt)
-            return not (
-                # no partitions at all
-                first_partition_window is None
-                or last_partition_window is None
-                # partition starts before the first valid partition
-                or partition_start_timestamp < first_partition_window.start.timestamp()
-                # partition starts after the last valid partition
-                or partition_start_timestamp > last_partition_window.start.timestamp()
-                # partition key string does not represent the start of an actual partition
-                or dst_safe_strftime(
-                    partition_start_time, self.timezone, self.fmt, self.cron_schedule
-                )
-                != partition_key
-            )
+        first_partition_window = self.get_first_partition_window()
+        last_partition_window = self.get_last_partition_window()
+        return not (
+            # no partitions at all
+            first_partition_window is None
+            or last_partition_window is None
+            # partition starts before the first valid partition
+            or partition_start_timestamp < first_partition_window.start.timestamp()
+            # partition starts after the last valid partition
+            or partition_start_timestamp > last_partition_window.start.timestamp()
+            # partition key string does not represent the start of an actual partition
+            or dst_safe_strftime(partition_start_time, self.timezone, self.fmt, self.cron_schedule)
+            != partition_key
+        )
 
     def equal_except_for_start_or_end(self, other: "TimeWindowPartitionsDefinition") -> bool:
         """Returns True iff this is identical to other, except they're allowed to have different

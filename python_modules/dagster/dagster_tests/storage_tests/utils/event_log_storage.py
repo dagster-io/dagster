@@ -65,6 +65,7 @@ from dagster._core.definitions.events import (
     AssetMaterializationFailureType,
 )
 from dagster._core.definitions.job_base import InMemoryJob
+from dagster._core.definitions.partitions.context import partition_loading_context
 from dagster._core.definitions.partitions.definition import (
     DailyPartitionsDefinition,
     HourlyPartitionsDefinition,
@@ -3848,11 +3849,8 @@ class TestEventLogStorage:
         run_id_1 = make_new_run_id()
 
         partitions_def = DailyPartitionsDefinition("2023-01-01")
-        partitions_subset = AllPartitionsSubset(
-            partitions_def=partitions_def,
-            dynamic_partitions_store=instance,
-            current_time=get_current_datetime(),
-        )
+        with partition_loading_context(dynamic_partitions_store=instance) as ctx:
+            partitions_subset = AllPartitionsSubset(partitions_def=partitions_def, context=ctx)
 
         with create_and_delete_test_runs(instance, [run_id_1]):
             with pytest.raises(

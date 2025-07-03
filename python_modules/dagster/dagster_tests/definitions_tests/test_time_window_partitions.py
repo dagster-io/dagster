@@ -61,19 +61,13 @@ def test_daily_partitions():
     assert copy(partitions_def) == DailyPartitionsDefinition(start_date="2021-05-05")
 
     assert partitions_def.get_next_partition_key("2021-05-05") == "2021-05-06"
-    assert partitions_def.get_last_partition_key(parse_time_string("2021-05-06")) == "2021-05-05"
-    assert (
-        partitions_def.get_last_partition_key(
-            parse_time_string("2021-05-06") + timedelta(minutes=1)
-        )
-        == "2021-05-05"
-    )
-    assert (
-        partitions_def.get_last_partition_key(
-            parse_time_string("2021-05-07") - timedelta(minutes=1)
-        )
-        == "2021-05-05"
-    )
+    with partition_loading_context(parse_time_string("2021-05-06")):
+        assert partitions_def.get_last_partition_key() == "2021-05-05"
+    with partition_loading_context(parse_time_string("2021-05-06") + timedelta(minutes=1)):
+        assert partitions_def.get_last_partition_key() == "2021-05-05"
+    with partition_loading_context(parse_time_string("2021-05-07") - timedelta(minutes=1)):
+        assert partitions_def.get_last_partition_key() == "2021-05-05"
+
     assert partitions_def.schedule_type == ScheduleType.DAILY
 
     current_time = datetime.strptime("2021-05-07", DATE_FORMAT)
@@ -1291,10 +1285,11 @@ def test_time_window_partition_len():
         == partitions_def.get_partition_keys()[50:51]
     )
     current_time = datetime.strptime("2021-05-07-03:15", "%Y-%m-%d-%H:%M")
-    assert (
-        partitions_def.get_partition_keys_between_indexes(50, 51, current_time=current_time)
-        == partitions_def.get_partition_keys(current_time)[50:51]
-    )
+    with partition_loading_context(current_time):
+        assert (
+            partitions_def.get_partition_keys_between_indexes(50, 51)
+            == partitions_def.get_partition_keys()[50:51]
+        )
 
     @daily_partitioned_config(start_date="2021-05-01", end_offset=-2)
     def my_partitioned_config(_start, _end):
@@ -1307,20 +1302,22 @@ def test_time_window_partition_len():
         == partitions_def.get_partition_keys()[50:53]
     )
     current_time = datetime.strptime("2021-06-23", "%Y-%m-%d")
-    assert (
-        partitions_def.get_partition_keys_between_indexes(50, 53, current_time=current_time)
-        == partitions_def.get_partition_keys(current_time)[50:53]
-    )
+    with partition_loading_context(current_time):
+        assert (
+            partitions_def.get_partition_keys_between_indexes(50, 53)
+            == partitions_def.get_partition_keys()[50:53]
+        )
 
     weekly_partitions_def = WeeklyPartitionsDefinition(start_date="2022-01-01")
     assert weekly_partitions_def.get_num_partitions() == len(
         weekly_partitions_def.get_partition_keys()
     )
     current_time = datetime.strptime("2023-01-21", "%Y-%m-%d")
-    assert (
-        weekly_partitions_def.get_partition_keys_between_indexes(50, 53, current_time=current_time)
-        == weekly_partitions_def.get_partition_keys(current_time)[50:53]
-    )
+    with partition_loading_context(current_time):
+        assert (
+            weekly_partitions_def.get_partition_keys_between_indexes(50, 53)
+            == weekly_partitions_def.get_partition_keys()[50:53]
+        )
 
     @daily_partitioned_config(start_date="2021-05-01", end_offset=2)
     def my_partitioned_config_2(_start, _end):
@@ -1328,10 +1325,11 @@ def test_time_window_partition_len():
 
     partitions_def = cast("TimeWindowPartitionsDefinition", my_partitioned_config_2.partitions_def)
     current_time = datetime.strptime("2021-06-20", "%Y-%m-%d")
-    assert (
-        partitions_def.get_partition_keys_between_indexes(50, 53, current_time=current_time)
-        == partitions_def.get_partition_keys(current_time=current_time)[50:53]
-    )
+    with partition_loading_context(current_time):
+        assert (
+            partitions_def.get_partition_keys_between_indexes(50, 53)
+            == partitions_def.get_partition_keys()[50:53]
+        )
 
     partitions_def = TimeWindowPartitionsDefinition(
         cron_schedule="*/15 * * * *",
@@ -1341,9 +1339,8 @@ def test_time_window_partition_len():
     )
     current_time = datetime.strptime("2021-06-20", "%Y-%m-%d")
 
-    assert partitions_def.get_num_partitions(current_time) == len(
-        partitions_def.get_partition_keys(current_time)
-    )
+    with partition_loading_context(current_time):
+        assert partitions_def.get_num_partitions() == len(partitions_def.get_partition_keys())
 
     @daily_partitioned_config(start_date="2020-01-01", timezone="US/Pacific")
     def my_daily_dst_transition_partitioned_config(_start, _end):
@@ -1355,15 +1352,13 @@ def test_time_window_partition_len():
 
     current_time_post_transition = datetime.strptime("2024-05-22", "%Y-%m-%d")
 
-    assert partitions_def.get_num_partitions(current_time_post_transition) == len(
-        partitions_def.get_partition_keys(current_time_post_transition)
-    )
+    with partition_loading_context(current_time_post_transition):
+        assert partitions_def.get_num_partitions() == len(partitions_def.get_partition_keys())
 
     current_time_pre_transition = datetime.strptime("2024-02-01", "%Y-%m-%d")
 
-    assert partitions_def.get_num_partitions(current_time_pre_transition) == len(
-        partitions_def.get_partition_keys(current_time_pre_transition)
-    )
+    with partition_loading_context(current_time_pre_transition):
+        assert partitions_def.get_num_partitions() == len(partitions_def.get_partition_keys())
 
 
 def test_get_first_partition_window():
@@ -1371,109 +1366,111 @@ def test_get_first_partition_window():
         start_date="2023-01-01"
     ).get_first_partition_window() == time_window("2023-01-01", "2023-01-02")
 
-    assert DailyPartitionsDefinition(
-        start_date="2023-01-01", end_offset=1
-    ).get_first_partition_window(
-        current_time=datetime.strptime("2023-01-01", "%Y-%m-%d")
-    ) == time_window("2023-01-01", "2023-01-02")
+    with partition_loading_context(datetime.strptime("2023-01-01", "%Y-%m-%d")):
+        assert DailyPartitionsDefinition(
+            start_date="2023-01-01", end_offset=1
+        ).get_first_partition_window() == time_window("2023-01-01", "2023-01-02")
 
-    assert (
-        DailyPartitionsDefinition(start_date="2023-02-15", end_offset=1).get_first_partition_window(
-            current_time=datetime.strptime("2023-02-14", "%Y-%m-%d")
+    with partition_loading_context(datetime.strptime("2023-02-14", "%Y-%m-%d")):
+        assert (
+            DailyPartitionsDefinition(
+                start_date="2023-02-15", end_offset=1
+            ).get_first_partition_window()
+            is None
         )
-        is None
-    )
 
-    assert DailyPartitionsDefinition(
-        start_date="2023-01-01", end_offset=2
-    ).get_first_partition_window(
-        current_time=datetime.strptime("2023-01-02", "%Y-%m-%d")
-    ) == time_window("2023-01-01", "2023-01-02")
+    with partition_loading_context(datetime.strptime("2023-01-02", "%Y-%m-%d")):
+        assert DailyPartitionsDefinition(
+            start_date="2023-01-01", end_offset=2
+        ).get_first_partition_window() == time_window("2023-01-01", "2023-01-02")
 
-    assert MonthlyPartitionsDefinition(
-        start_date="2023-01-01", end_offset=1
-    ).get_first_partition_window(
-        current_time=datetime.strptime("2023-01-15", "%Y-%m-%d")
-    ) == time_window("2023-01-01", "2023-02-01")
+    with partition_loading_context(datetime.strptime("2023-01-15", "%Y-%m-%d")):
+        assert MonthlyPartitionsDefinition(
+            start_date="2023-01-01", end_offset=1
+        ).get_first_partition_window() == time_window("2023-01-01", "2023-02-01")
 
-    assert (
-        DailyPartitionsDefinition(
+    with partition_loading_context(datetime.strptime("2023-01-16", "%Y-%m-%d")):
+        assert (
+            DailyPartitionsDefinition(
+                start_date="2023-01-15", end_offset=-1
+            ).get_first_partition_window()
+            is None
+        )
+
+    with partition_loading_context(datetime.strptime("2023-01-17", "%Y-%m-%d")):
+        assert DailyPartitionsDefinition(
             start_date="2023-01-15", end_offset=-1
-        ).get_first_partition_window(current_time=datetime.strptime("2023-01-16", "%Y-%m-%d"))
-        is None
-    )
+        ).get_first_partition_window() == time_window("2023-01-15", "2023-01-16")
 
-    assert DailyPartitionsDefinition(
-        start_date="2023-01-15", end_offset=-1
-    ).get_first_partition_window(
-        current_time=datetime.strptime("2023-01-17", "%Y-%m-%d")
-    ) == time_window("2023-01-15", "2023-01-16")
+    with partition_loading_context(datetime.strptime("2023-01-17", "%Y-%m-%d")):
+        assert (
+            DailyPartitionsDefinition(
+                start_date="2023-01-15", end_offset=-2
+            ).get_first_partition_window()
+            is None
+        )
 
-    assert (
-        DailyPartitionsDefinition(
+    with partition_loading_context(datetime.strptime("2023-01-18", "%Y-%m-%d")):
+        assert DailyPartitionsDefinition(
             start_date="2023-01-15", end_offset=-2
-        ).get_first_partition_window(current_time=datetime.strptime("2023-01-17", "%Y-%m-%d"))
-        is None
-    )
+        ).get_first_partition_window() == time_window("2023-01-15", "2023-01-16")
 
-    assert DailyPartitionsDefinition(
-        start_date="2023-01-15", end_offset=-2
-    ).get_first_partition_window(
-        current_time=datetime.strptime("2023-01-18", "%Y-%m-%d")
-    ) == time_window("2023-01-15", "2023-01-16")
-
-    assert (
-        MonthlyPartitionsDefinition(
-            start_date="2023-01-01", end_offset=-1
-        ).get_first_partition_window(current_time=datetime.strptime("2023-01-15", "%Y-%m-%d"))
-        is None
-    )
-
-    assert (
-        DailyPartitionsDefinition(start_date="2023-01-15", end_offset=1).get_first_partition_window(
-            current_time=datetime.strptime("2023-01-14", "%Y-%m-%d")
+    with partition_loading_context(datetime.strptime("2023-01-15", "%Y-%m-%d")):
+        assert (
+            MonthlyPartitionsDefinition(
+                start_date="2023-01-01", end_offset=-1
+            ).get_first_partition_window()
+            is None
         )
-        is None
-    )
 
-    assert DailyPartitionsDefinition(
-        start_date="2023-01-15", end_offset=1
-    ).get_first_partition_window(
-        current_time=datetime(year=2023, month=1, day=15, hour=12, minute=0, second=0)
-    ) == time_window("2023-01-15", "2023-01-16")
-
-    assert DailyPartitionsDefinition(
-        start_date="2023-01-15", end_offset=1
-    ).get_first_partition_window(
-        current_time=datetime(year=2023, month=1, day=14, hour=12, minute=0, second=0)
-    ) == time_window("2023-01-15", "2023-01-16")
-
-    assert (
-        DailyPartitionsDefinition(start_date="2023-01-15", end_offset=1).get_first_partition_window(
-            current_time=datetime(year=2023, month=1, day=13, hour=12, minute=0, second=0)
+    with partition_loading_context(datetime.strptime("2023-01-14", "%Y-%m-%d")):
+        assert (
+            DailyPartitionsDefinition(
+                start_date="2023-01-15", end_offset=1
+            ).get_first_partition_window()
+            is None
         )
-        is None
-    )
 
-    assert (
-        MonthlyPartitionsDefinition(
+    with partition_loading_context(datetime.strptime("2023-01-15", "%Y-%m-%d")):
+        assert DailyPartitionsDefinition(
+            start_date="2023-01-15", end_offset=1
+        ).get_first_partition_window() == time_window("2023-01-15", "2023-01-16")
+
+    with partition_loading_context(datetime.strptime("2023-01-15", "%Y-%m-%d")):
+        assert DailyPartitionsDefinition(
+            start_date="2023-01-15", end_offset=1
+        ).get_first_partition_window() == time_window("2023-01-15", "2023-01-16")
+
+    with partition_loading_context(
+        effective_dt=datetime(year=2023, month=1, day=13, hour=12, minute=0, second=0)
+    ):
+        assert (
+            DailyPartitionsDefinition(
+                start_date="2023-01-15", end_offset=1
+            ).get_first_partition_window()
+            is None
+        )
+
+    with partition_loading_context(datetime.strptime("2023-01-15", "%Y-%m-%d")):
+        assert (
+            MonthlyPartitionsDefinition(
+                start_date="2023-01-01", end_offset=-1
+            ).get_first_partition_window()
+            is None
+        )
+
+    with partition_loading_context(datetime.strptime("2023-02-01", "%Y-%m-%d")):
+        assert (
+            MonthlyPartitionsDefinition(
+                start_date="2023-01-01", end_offset=-1
+            ).get_first_partition_window()
+            is None
+        )
+
+    with partition_loading_context(datetime.strptime("2023-03-01", "%Y-%m-%d")):
+        assert MonthlyPartitionsDefinition(
             start_date="2023-01-01", end_offset=-1
-        ).get_first_partition_window(current_time=datetime.strptime("2023-01-15", "%Y-%m-%d"))
-        is None
-    )
-
-    assert (
-        MonthlyPartitionsDefinition(
-            start_date="2023-01-01", end_offset=-1
-        ).get_first_partition_window(current_time=datetime.strptime("2023-02-01", "%Y-%m-%d"))
-        is None
-    )
-
-    assert MonthlyPartitionsDefinition(
-        start_date="2023-01-01", end_offset=-1
-    ).get_first_partition_window(
-        current_time=datetime.strptime("2023-03-01", "%Y-%m-%d")
-    ) == time_window("2023-01-01", "2023-02-01")
+        ).get_first_partition_window() == time_window("2023-01-01", "2023-02-01")
 
 
 def test_invalid_cron_schedule():
@@ -1504,12 +1501,10 @@ def test_has_partition_key():
     assert not partitions_def.has_partition_key("2020-01-01-00:00")
     assert not partitions_def.has_partition_key("2020/01/01")
     assert not partitions_def.has_partition_key("2019-12-31")
-    assert not partitions_def.has_partition_key(
-        "2020-03-15", current_time=datetime.strptime("2020-03-14", "%Y-%m-%d")
-    )
-    assert not partitions_def.has_partition_key(
-        "2020-03-15", current_time=datetime.strptime("2020-03-15", "%Y-%m-%d")
-    )
+    with partition_loading_context(datetime.strptime("2020-03-14", "%Y-%m-%d")):
+        assert not partitions_def.has_partition_key("2020-03-15")
+    with partition_loading_context(datetime.strptime("2020-03-15", "%Y-%m-%d")):
+        assert not partitions_def.has_partition_key("2020-03-15")
     assert partitions_def.has_partition_key("2020-01-01")
     assert partitions_def.has_partition_key("2020-03-15")
 

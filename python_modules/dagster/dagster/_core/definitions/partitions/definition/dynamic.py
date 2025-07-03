@@ -181,10 +181,8 @@ class DynamicPartitionsDefinition(
         ascending: bool,
         cursor: Optional[str] = None,
     ) -> PaginatedResults[str]:
-        with partition_loading_context(new_ctx=context) as ctx:
-            partition_keys = self.get_partition_keys(
-                current_time=ctx.effective_dt, dynamic_partitions_store=ctx.dynamic_partitions_store
-            )
+        with partition_loading_context(new_ctx=context):
+            partition_keys = self.get_partition_keys()
             return PaginatedResults.create_from_sequence(
                 partition_keys, limit=limit, ascending=ascending, cursor=cursor
             )
@@ -197,7 +195,7 @@ class DynamicPartitionsDefinition(
     ) -> bool:
         with partition_loading_context(current_time, dynamic_partitions_store) as ctx:
             if self.partition_fn:
-                return partition_key in self.get_partition_keys(ctx.effective_dt)
+                return partition_key in self.get_partition_keys()
             else:
                 if ctx.dynamic_partitions_store is None:
                     check.failed(

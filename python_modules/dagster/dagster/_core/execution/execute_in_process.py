@@ -5,6 +5,7 @@ from dagster import _check as check
 from dagster._core.definitions import GraphDefinition, JobDefinition, Node, NodeHandle, OpDefinition
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.job_base import IJob
+from dagster._core.definitions.partitions.context import partition_loading_context
 from dagster._core.errors import DagsterInvalidInvocationError
 from dagster._core.execution.api import (
     ExecuteRunWithPlanIterable,
@@ -38,11 +39,12 @@ def merge_run_tags(
 ) -> Mapping[str, str]:
     merged_run_tags = merge_dicts(job_def.run_tags, tags or {})
     if partition_key:
-        job_def.validate_partition_key(
-            partition_key,
-            selected_asset_keys=asset_selection,
-            dynamic_partitions_store=instance,
-        )
+        with partition_loading_context(dynamic_partitions_store=instance) as ctx:
+            job_def.validate_partition_key(
+                partition_key,
+                selected_asset_keys=asset_selection,
+                context=ctx,
+            )
         tags_for_partition_key = job_def.get_tags_for_partition_key(
             partition_key,
             selected_asset_keys=asset_selection,

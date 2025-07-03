@@ -11,6 +11,7 @@ from dagster import (
     TimeWindowPartitionMapping,
     asset,
 )
+from dagster._core.definitions.partitions.context import partition_loading_context
 from dagster._core.definitions.partitions.definition import (
     DailyPartitionsDefinition,
     DynamicPartitionsDefinition,
@@ -356,7 +357,8 @@ def test_asset_backfill_return_multiple_run_request_for_partitioned():
     daily_partitions_def: DailyPartitionsDefinition = DailyPartitionsDefinition(
         "2023-01-01", end_date="2023-08-11"
     )
-    num_of_daily_partitions = daily_partitions_def.get_num_partitions(time_now)
+    with partition_loading_context(time_now):
+        num_of_daily_partitions = daily_partitions_def.get_num_partitions()
 
     @asset(partitions_def=daily_partitions_def, backfill_policy=BackfillPolicy.multi_run(7))
     def upstream_daily_partitioned_asset():
@@ -401,8 +403,9 @@ def test_asset_backfill_status_count_with_backfill_policies():
     weekly_partitions_def = WeeklyPartitionsDefinition("2023-01-01")
 
     time_now = get_current_datetime()
-    num_of_daily_partitions = daily_partitions_def.get_num_partitions(time_now)
-    num_of_weekly_partitions = weekly_partitions_def.get_num_partitions(time_now)
+    with partition_loading_context(time_now):
+        num_of_daily_partitions = daily_partitions_def.get_num_partitions()
+        num_of_weekly_partitions = weekly_partitions_def.get_num_partitions()
 
     @asset(backfill_policy=BackfillPolicy.single_run())
     def unpartitioned_upstream_of_partitioned():
@@ -485,8 +488,9 @@ def test_backfill_run_contains_more_than_one_asset():
     downstream_partitions_def: DailyPartitionsDefinition = DailyPartitionsDefinition("2023-01-02")
 
     time_now = get_current_datetime()
-    upstream_num_of_partitions = upstream_partitions_def.get_num_partitions(time_now)
-    downstream_num_of_partitions = downstream_partitions_def.get_num_partitions(time_now)
+    with partition_loading_context(time_now):
+        upstream_num_of_partitions = upstream_partitions_def.get_num_partitions()
+        downstream_num_of_partitions = downstream_partitions_def.get_num_partitions()
 
     @asset(partitions_def=upstream_partitions_def, backfill_policy=BackfillPolicy.single_run())
     def upstream_a():

@@ -1,24 +1,20 @@
-import datetime
 import operator
 from dataclasses import replace
-from typing import TYPE_CHECKING, AbstractSet, Any, Callable, Optional  # noqa: UP035
+from typing import AbstractSet, Any, Callable, Optional  # noqa: UP035
 
 from dagster_shared.serdes import whitelist_for_serdes
 
-import dagster._check as check
 from dagster._core.asset_graph_view.serializable_entity_subset import (
     EntitySubsetSerializer,
     SerializableEntitySubset,
 )
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
+from dagster._core.definitions.partitions.context import partition_loading_context
 from dagster._core.definitions.partitions.definition import PartitionsDefinition
 from dagster._core.definitions.partitions.subset import (
     AllPartitionsSubset,
     TimeWindowPartitionsSubset,
 )
-
-if TYPE_CHECKING:
-    from dagster._core.instance import DynamicPartitionsStore
 
 
 @whitelist_for_serdes(serializer=EntitySubsetSerializer, storage_field_names={"key": "asset_key"})
@@ -92,22 +88,15 @@ class ValidAssetSubset(SerializableEntitySubset[AssetKey]):
 
     @staticmethod
     def all(
-        asset_key: AssetKey,
-        partitions_def: Optional[PartitionsDefinition],
-        dynamic_partitions_store: Optional["DynamicPartitionsStore"] = None,
-        current_time: Optional[datetime.datetime] = None,
+        asset_key: AssetKey, partitions_def: Optional[PartitionsDefinition]
     ) -> "ValidAssetSubset":
         if partitions_def is None:
             return ValidAssetSubset(key=asset_key, value=True)
         else:
-            if dynamic_partitions_store is None or current_time is None:
-                check.failed(
-                    "Must provide dynamic_partitions_store and current_time for partitioned assets."
+            with partition_loading_context() as ctx:
+                return ValidAssetSubset(
+                    key=asset_key, value=AllPartitionsSubset(partitions_def, ctx)
                 )
-            return ValidAssetSubset(
-                key=asset_key,
-                value=AllPartitionsSubset(partitions_def, dynamic_partitions_store, current_time),
-            )
 
     @staticmethod
     def empty(
