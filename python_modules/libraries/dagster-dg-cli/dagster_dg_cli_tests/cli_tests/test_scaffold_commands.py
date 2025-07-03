@@ -970,7 +970,7 @@ def test_scaffold_component_succeeds_scaffolded_no_model() -> None:
 
                 def __init__(
                     self,
-                    # added arguments here will define yaml schema via Resolvable
+                    # added arguments here will define yaml schema via Resolvable, and params when instantiated in Python
                 ):
                     pass
 
