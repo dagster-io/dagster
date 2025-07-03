@@ -1,5 +1,36 @@
 # Changelog
 
+## 1.11.1 (core) / 0.27.1 (libraries)
+
+### New
+
+- `dagster definitions validate` will now raise an exception if there are invalid partition mappings between any assets in your asset graph (for example, an upstream and downstream asset with time-based partitions definitions using different timezones).
+- Performance improvements for run dequeuing when there are many queued runs using pools.
+- [ui] For times in the last two days, Dagster UI now shows e.g. "47 hours ago" instead of "2 days ago."
+- [ui] Asset checks now show whether they are `blocking`.
+- [dagster-tableau] Tableau workbooks fetched in Dagster can now be filtered and selected using the WorkbookSelectorFn.
+
+### Bugfixes
+
+- `@graph` now correctly allows omitting inputs when the destinations of an input mapping have a default value.
+- `@record` classes no longer create problematic namespace conflicts with the symbol "check."
+- [ui] Filtering by partition on the Asset Events view now works as expected.
+- [ui] Assets without definitions can now be properly wiped in the Asset Catalog.
+
+### Documentation
+
+- Added clearer setup instructions for Windows and Linux users to the Contributing documentation, thanks [@oohwooh](https://github.com/oohwooh)!
+- Fixed broken links in the Contributing documentation, thanks [@emmanuel-ferdman](https://github.com/emmanuel-ferdman)!
+
+### Dagster Plus
+
+- [ui] Fixed an issue that prevented status filtering from working within the selection syntax.
+
+### dg & Components
+
+- Fixed an issue where `dg scaffold github-actions` would invoke the `dg` CLI with outdated parameters for serverless orgs.
+- [dagster-dlt] Fixed an issue where the default scaffolded dlt load led to an invalid asset key.
+
 ## 1.11.0 (core) / 0.27.0 (libraries)
 
 ## Major changes since 1.10.0 (core) / 0.26.0 (libraries)
