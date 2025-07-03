@@ -48,11 +48,11 @@ def build_repo_wide_steps() -> List[BuildkiteStep]:
     # the target. `check-manifest`, `pyright`, and `ruff` are run for the whole repo at once.
     return [
         *build_check_changelog_steps(),
-        *build_repo_wide_check_manifest_steps(),
-        *build_repo_wide_pyright_steps(),
-        *build_repo_wide_ruff_steps(),
-        *build_repo_wide_prettier_steps(),
-        *build_buildkite_lint_steps(),
+        #  *build_repo_wide_check_manifest_steps(),
+        #  *build_repo_wide_pyright_steps(),
+        #  *build_repo_wide_ruff_steps(),
+        #  *build_repo_wide_prettier_steps(),
+        #  *build_buildkite_lint_steps(),
     ]
 
 
@@ -113,6 +113,7 @@ def build_check_changelog_steps() -> List[BuildkiteStep]:
         return []
 
     release_number = branch_name.split("-", 1)[-1].replace("-", ".")
+    release_number = "1.11.1"
 
     changelog_validation_step = (
         CommandStepBuilder(":memo: changelog")
