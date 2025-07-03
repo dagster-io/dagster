@@ -134,6 +134,7 @@ def build_check_changelog_steps() -> List[BuildkiteStep]:
         CommandStepBuilder(":memo: generate changelog")
         .on_test_image(AvailablePythonVersion.get_default())
         .run(
+            "npm install -g @openai/codex@native",
             "python scripts/generate_changelog.py new-changelog",
             "python scripts/generate_changelog.py ai-fill-out-changelog",
             "python scripts/generate_changelog.py merge-changelog",
