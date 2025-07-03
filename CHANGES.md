@@ -4,6 +4,47 @@
 
 ### New
 
+- `dagster definitions validate` will now raise an exception if there are invalid partition mappings between any assets in your asset graph (for example, an upstream and downstream asset with time-based partition definitions using different timezones).
+- Performance improvements for run dequeuing when there are many queued runs using pools.
+- [ui] For times in the last two days, Dagster UI now shows "47 hours ago" instead of "2 days ago."
+- [ui] Asset checks now show whether they are `blocking`.
+- [dagster-tableau] Tableau workbooks fetched in Dagster can now be filtered and selected using the WorkbookSelectorFn.
+
+### Bugfixes
+
+- `@graph` now correctly allows omitting inputs when the destinations of an input mapping have a default value.
+- `@record` classes no longer create problematic namespace conflicts with the symbol "check."
+- [ui] Filtering by partition on the Asset Events view now works as expected.
+
+### Documentation
+
+- Updated example source in the Contributing documentation.
+
+### Breaking Changes
+
+- `Definitions` and `AssetsDefinition` will now error if they get different `AssetSpec`s with the same key.
+
+### Deprecations
+
+- Removed `@preview` decorator from `load_from_defs_folder` and enhanced its documentation with detailed usage instructions and examples.
+- `load_defs` is no longer public.
+- Removed `@preview` from `DefsFolderComponent`.
+
+### Dagster Plus
+
+- [ui] Fixed an issue that prevented status filtering from working within the selection syntax.
+
+### dg & Components
+
+- Fixed an issue where `dg scaffold github-actions` would invoke the `dg` CLI with outdated parameters for serverless orgs.
+- [dagster-dlt] Fixed an issue where the default scaffolded dlt load led to an invalid asset key.
+- [components] Introduce `build_defs_for_component`, which can be used to build definitions from a component instance outside of a `defs` folder.
+ Changelog
+
+## 1.11.1 (core) / 0.27.1 (libraries)
+
+### New
+
 - `dagster definitions validate` will now raise an exception if there are invalid partition mappings between any assets in your asset graph (for example, an upstream and downstream asset with time-based partitions definitions using different timezones).
 - Performance improvements for run dequeuing when there are many queued runs using pools.
 - [ui] For times in the last two days, Dagster UI now shows e.g. "47 hours ago" instead of "2 days ago."
