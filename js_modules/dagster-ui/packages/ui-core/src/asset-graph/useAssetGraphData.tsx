@@ -332,74 +332,78 @@ const EMPTY_GRAPH_DATA_STATE: GraphDataState = {
 };
 
 let _id = 0;
-async function computeGraphDataWrapper(
-  props: Omit<ComputeGraphDataMessageType, 'id' | 'type'>,
-  spawnComputeGraphDataWorker: () => Worker,
-  useWorker: boolean,
-): Promise<GraphDataState> {
-  if (useWorker && typeof window.Worker !== 'undefined') {
-    const worker = spawnComputeGraphDataWorker();
-    return new Promise<GraphDataState>((resolve, reject) => {
-      const id = ++_id;
-      const removeMessageListener = worker.onMessage((event: MessageEvent) => {
-        const data = event.data as GraphDataState & {id: number};
-        if (data.id === id) {
-          resolve(data);
-          removeMessageListener();
+const computeGraphDataWrapper = weakMapMemoize(
+  (
+    props: Omit<ComputeGraphDataMessageType, 'id' | 'type'>,
+    spawnComputeGraphDataWorker: () => Worker,
+    useWorker: boolean,
+  ) => {
+    if (useWorker && typeof window.Worker !== 'undefined') {
+      const worker = spawnComputeGraphDataWorker();
+      return new Promise<GraphDataState>((resolve, reject) => {
+        const id = ++_id;
+        const removeMessageListener = worker.onMessage((event: MessageEvent) => {
+          const data = event.data as GraphDataState & {id: number};
+          if (data.id === id) {
+            resolve(data);
+            removeMessageListener();
+            worker.terminate();
+          }
+        });
+        const message: ComputeGraphDataMessageType = {
+          type: 'computeGraphData',
+          id,
+          ...props,
+        };
+        worker.onError((error) => {
+          console.error(error);
+          resolve(EMPTY_GRAPH_DATA_STATE);
           worker.terminate();
-        }
+        });
+        worker.onTerminate(() => {
+          reject(new Error('Worker terminated'));
+        });
+        worker.postMessage(message);
       });
-      const message: ComputeGraphDataMessageType = {
-        type: 'computeGraphData',
-        id,
-        ...props,
-      };
-      worker.onError((error) => {
-        console.error(error);
-        resolve(EMPTY_GRAPH_DATA_STATE);
-        worker.terminate();
-      });
-      worker.onTerminate(() => {
-        reject(new Error('Worker terminated'));
-      });
-      worker.postMessage(message);
-    });
-  }
-  return computeGraphDataImpl(props);
-}
+    }
+    return Promise.resolve(computeGraphDataImpl(props));
+  },
+);
 
-async function buildGraphDataWrapper(
-  props: Omit<BuildGraphDataMessageType, 'id' | 'type'>,
-  spawnBuildGraphDataWorker: () => Worker,
-  useWorker: boolean,
-): Promise<GraphData> {
-  if (useWorker && typeof window.Worker !== 'undefined') {
-    const worker = spawnBuildGraphDataWorker();
-    return new Promise<GraphData>((resolve) => {
-      const id = ++_id;
-      const removeMessageListener = worker.onMessage((event: MessageEvent) => {
-        const data = event.data as GraphData & {id: number};
-        if (data.id === id) {
-          resolve(data);
-          removeMessageListener();
+const buildGraphDataWrapper = weakMapMemoize(
+  (
+    props: Omit<BuildGraphDataMessageType, 'id' | 'type'>,
+    spawnBuildGraphDataWorker: () => Worker,
+    useWorker: boolean,
+  ) => {
+    if (useWorker && typeof window.Worker !== 'undefined') {
+      const worker = spawnBuildGraphDataWorker();
+      return new Promise<GraphData>((resolve) => {
+        const id = ++_id;
+        const removeMessageListener = worker.onMessage((event: MessageEvent) => {
+          const data = event.data as GraphData & {id: number};
+          if (data.id === id) {
+            resolve(data);
+            removeMessageListener();
+            worker.terminate();
+          }
+        });
+        worker.onError((error) => {
+          console.error(error);
+          resolve(EMPTY_GRAPH_DATA);
           worker.terminate();
-        }
+        });
+        const message: BuildGraphDataMessageType = {
+          type: 'buildGraphData',
+          id,
+          ...props,
+        };
+        worker.postMessage(message);
       });
-      worker.onError((error) => {
-        console.error(error);
-        resolve(EMPTY_GRAPH_DATA);
-        worker.terminate();
-      });
-      const message: BuildGraphDataMessageType = {
-        type: 'buildGraphData',
-        id,
-        ...props,
-      };
-      worker.postMessage(message);
-    });
-  }
-  return buildGraphDataImpl(props.nodes);
-}
+    }
+    return Promise.resolve(buildGraphDataImpl(props.nodes));
+  },
+);
 
 const buildExternalAssetQueryItem = (asset: {
   id: string;

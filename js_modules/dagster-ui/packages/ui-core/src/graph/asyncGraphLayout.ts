@@ -3,7 +3,6 @@ import {useEffect, useLayoutEffect, useMemo, useReducer, useRef} from 'react';
 import {Worker} from 'shared/workers/Worker.oss';
 
 import {ILayoutOp, LayoutOpGraphOptions, OpGraphLayout, layoutOpGraph} from './layout';
-import {useFeatureFlags} from '../app/Flags';
 import {asyncMemoize, indexedDBAsyncMemoize} from '../app/Util';
 import {GraphData} from '../asset-graph/Utils';
 import {AssetGraphLayout, LayoutAssetGraphOptions, layoutAssetGraph} from '../asset-graph/layout';
@@ -196,7 +195,6 @@ export function useAssetLayout(
   dataLoading?: boolean,
 ) {
   const [state, dispatch] = useReducer(reducer, initialState);
-  const flags = useFeatureFlags();
 
   const graphData = useMemo(() => ({..._graphData, expandedGroups}), [expandedGroups, _graphData]);
 
@@ -207,23 +205,30 @@ export function useAssetLayout(
   const nodeCount = Object.keys(graphData.nodes).length;
   const runAsync = nodeCount >= ASYNC_LAYOUT_SOLID_COUNT;
 
+  const uid = useRef(0);
+  useDangerousRenderEffect(() => {
+    uid.current++;
+  }, [cacheKey, graphData, runAsync, opts]);
+
+  const lastRenderedUidRef = useRef(-1);
+
   useLayoutEffect(() => {
     if (dataLoading) {
       return;
     }
-    let canceled = false;
     async function runAsyncLayout() {
       dispatch({type: 'loading'});
       let layout;
+      const layoutUid = uid.current;
       if (CACHING_ENABLED) {
         layout = await asyncGetFullAssetLayoutIndexDB(graphData, opts);
       } else {
         layout = await asyncGetFullAssetLayout(graphData, opts);
       }
-      if (canceled && cacheKey !== nextCacheKeyRef.current) {
-        // Only throw away layout data if the cache key changes.
+      if (lastRenderedUidRef.current >= layoutUid) {
         return;
       }
+      lastRenderedUidRef.current = uid.current;
       dispatch({type: 'layout', payload: {layout, cacheKey}});
     }
 
@@ -233,16 +238,7 @@ export function useAssetLayout(
     } else {
       void runAsyncLayout();
     }
-
-    return () => {
-      canceled = true;
-    };
-  }, [cacheKey, graphData, runAsync, flags, opts, dataLoading, nextCacheKeyRef]);
-
-  const uid = useRef(0);
-  useDangerousRenderEffect(() => {
-    uid.current++;
-  }, [cacheKey, graphData, runAsync, flags, opts]);
+  }, [cacheKey, graphData, runAsync, opts, dataLoading, nextCacheKeyRef]);
 
   const loading = state.loading || !state.layout || state.cacheKey !== cacheKey;
 
