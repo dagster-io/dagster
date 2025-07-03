@@ -1416,7 +1416,9 @@ def _create_sensor_run(
         remote_job_origin=remote_job.get_remote_origin(),
         job_code_origin=remote_job.get_python_origin(),
         asset_selection=(
-            frozenset(run_request.asset_selection) if run_request.asset_selection else None
+            frozenset(run_request.asset_selection)
+            if run_request.asset_selection is not None
+            else None
         ),
         asset_check_selection=(
             frozenset(run_request.asset_check_keys)
