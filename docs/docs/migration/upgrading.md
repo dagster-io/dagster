@@ -1,8 +1,8 @@
 ---
-description: Migrating Dagster versions.
+description: Upgrading Dagster.
 hide_title: true
 sidebar_position: 10
-title: Version migration
+title: Upgrading Dagster
 ---
 
 import VersionMigration, {toc as VersionMigrationTOC} from '@site/../MIGRATION.md';
