@@ -1,4 +1,5 @@
 import json
+import os
 import sys
 import threading
 import time
@@ -33,7 +34,7 @@ from dagster._daemon.daemon import DaemonIterator, IntervalDaemon
 from dagster._daemon.utils import DaemonErrorCapture
 from dagster._utils.tags import TagConcurrencyLimitsCounter
 
-PAGE_SIZE = 100
+PAGE_SIZE = int(os.getenv("DAGSTER_RUN_QUEUE_PAGE_SIZE", "100"))
 
 
 class QueuedRunCoordinatorDaemon(IntervalDaemon):

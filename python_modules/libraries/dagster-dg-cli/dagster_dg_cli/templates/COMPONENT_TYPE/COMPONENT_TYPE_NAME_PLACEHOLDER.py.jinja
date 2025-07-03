@@ -14,11 +14,11 @@ class {{ name }}(dg.Component, dg.Resolvable):
     """
 {% endif -%}
 {% if model %}
-    # added fields here will define yaml schema via Model
+    # added fields here will define params when instantiated in Python, and yaml schema via Resolvable
 {% else %}
     def __init__(
         self,
-        # added arguments here will define yaml schema via Resolvable
+        # added params here define needed arguments when instantiated in Python, and yaml schema via Resolvable
     ):
         pass
 {% endif %}

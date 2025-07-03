@@ -12,13 +12,13 @@ Within a dg-driven `defs` project layout, you can apply attribute transformation
 
 First, we'll look at a project with assets defined in a subdirectory. You can quickly replicate this example by running the following commands:
 
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/adding-attributes-to-assets/1-scaffold-project.txt" />
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/adding-attributes-to-assets/generated/1-scaffold-project.txt" />
 
 There are three assets defined in various subdirectories:
 
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/adding-attributes-to-assets/3-list-defs.txt" />
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/adding-attributes-to-assets/generated/3-list-defs.txt" />
 
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/adding-attributes-to-assets/2-tree.txt" />
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/adding-attributes-to-assets/generated/2-tree.txt" />
 
 Let's say we want to add a `team_a` asset group to all assets in the `team_a` folder. We can add a `defs.yaml` file to the `my_project/defs/team_a` directory with the following contents:
 
@@ -27,11 +27,11 @@ Let's say we want to add a `team_a` asset group to all assets in the `team_a` fo
   language="yaml"
 />
 
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/adding-attributes-to-assets/4-tree.txt" />
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/adding-attributes-to-assets/generated/4-tree.txt" />
 
 Finally, we can run `dg list defs` again to see the new group applied to the assets in the `team_a` subdirectory:
 
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/adding-attributes-to-assets/5-list-defs.txt" />
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/adding-attributes-to-assets/generated/5-list-defs.txt" />
 
 ### Advanced usage
 
