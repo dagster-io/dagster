@@ -26,6 +26,7 @@ from dagster._core.definitions.automation_tick_evaluation_context import (
 )
 from dagster._core.definitions.base_asset_graph import BaseAssetGraph, BaseAssetNode
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
+from dagster._core.definitions.partitions.context import partition_loading_context
 from dagster._core.definitions.partitions.definition import (
     PartitionsDefinition,
     TimeWindowPartitionsDefinition,
@@ -1434,6 +1435,23 @@ def execute_asset_backfill_iteration_inner(
     This is a generator so that we can return control to the daemon and let it heartbeat during
     expensive operations.
     """
+    # ensures that all partition operations use the same effective_dt and share a dynamic partition cache
+    with partition_loading_context(
+        effective_dt=asset_graph_view.effective_dt,
+        dynamic_partitions_store=asset_graph_view.get_inner_queryer_for_back_compat(),
+    ):
+        return _execute_asset_backfill_iteration_inner(
+            backfill_id, asset_backfill_data, asset_graph_view, backfill_start_timestamp, logger
+        )
+
+
+def _execute_asset_backfill_iteration_inner(
+    backfill_id: str,
+    asset_backfill_data: AssetBackfillData,
+    asset_graph_view: AssetGraphView,
+    backfill_start_timestamp: float,
+    logger: logging.Logger,
+) -> AssetBackfillIterationResult:
     instance_queryer = asset_graph_view.get_inner_queryer_for_back_compat()
     asset_graph: RemoteWorkspaceAssetGraph = cast(
         "RemoteWorkspaceAssetGraph", asset_graph_view.asset_graph
