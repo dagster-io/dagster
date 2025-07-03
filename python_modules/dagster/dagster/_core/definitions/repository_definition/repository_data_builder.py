@@ -24,13 +24,14 @@ from dagster._core.definitions.executor_definition import ExecutorDefinition
 from dagster._core.definitions.graph_definition import GraphDefinition
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.logger_definition import LoggerDefinition
-from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
-from dagster._core.definitions.partition import (
+from dagster._core.definitions.partitions.definition import (
     DynamicPartitionsDefinition,
+    MultiPartitionsDefinition,
     PartitionsDefinition,
     StaticPartitionsDefinition,
+    TimeWindowPartitionsDefinition,
 )
-from dagster._core.definitions.partitioned_schedule import (
+from dagster._core.definitions.partitions.partitioned_schedule import (
     UnresolvedPartitionedAssetScheduleDefinition,
 )
 from dagster._core.definitions.repository_definition.repository_data import CachingRepositoryData
@@ -42,7 +43,6 @@ from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.schedule_definition import ScheduleDefinition
 from dagster._core.definitions.sensor_definition import SensorDefinition
 from dagster._core.definitions.source_asset import SourceAsset
-from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
 from dagster._core.definitions.unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 from dagster._core.definitions.utils import get_default_automation_condition_sensor
 from dagster._core.errors import DagsterInvalidDefinitionError
@@ -158,7 +158,7 @@ def build_caching_repository_data_from_list(
     component_tree: Optional["ComponentTree"] = None,
 ) -> CachingRepositoryData:
     from dagster._core.definitions import AssetsDefinition
-    from dagster._core.definitions.partitioned_schedule import (
+    from dagster._core.definitions.partitions.partitioned_schedule import (
         UnresolvedPartitionedAssetScheduleDefinition,
     )
 

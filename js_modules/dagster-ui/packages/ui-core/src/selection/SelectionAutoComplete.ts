@@ -7,7 +7,7 @@ export function createSelectionAutoComplete({
   getAttributeValueResultsMatchingQuery,
   getFunctionResultsMatchingQuery,
   getSubstringResultMatchingQuery,
-  getAttributeValueIncludeAttributeResultsMatchingQuery,
+  getAllResults,
   createOperatorSuggestion,
 }: Omit<SelectionAutoCompleteProvider, 'renderResult' | 'useAutoComplete'>) {
   return function (line: string, actualCursorIndex: number) {
@@ -23,7 +23,7 @@ export function createSelectionAutoComplete({
         cursorIndex: actualCursorIndex,
         getAttributeResultsMatchingQuery,
         getAttributeValueResultsMatchingQuery,
-        getAttributeValueIncludeAttributeResultsMatchingQuery,
+        getAllResults,
         getFunctionResultsMatchingQuery,
         getSubstringResultMatchingQuery,
         createOperatorSuggestion,
@@ -39,7 +39,7 @@ export function createSelectionAutoComplete({
             cursorIndex,
             getAttributeResultsMatchingQuery,
             getAttributeValueResultsMatchingQuery,
-            getAttributeValueIncludeAttributeResultsMatchingQuery,
+            getAllResults,
             getFunctionResultsMatchingQuery,
             getSubstringResultMatchingQuery,
             createOperatorSuggestion,

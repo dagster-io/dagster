@@ -12,21 +12,24 @@ from dagster import (
     AssetSelection,
     DagsterEvent,
     DagsterEventType,
-    DailyPartitionsDefinition,
-    MultiPartitionsDefinition,
     Output,
-    StaticPartitionsDefinition,
     asset,
     define_asset_job,
     repository,
 )
+from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.events import (
     AssetMaterializationFailure,
     AssetMaterializationFailureReason,
     AssetMaterializationFailureType,
     AssetObservation,
 )
-from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionKey
+from dagster._core.definitions.partitions.definition import (
+    DailyPartitionsDefinition,
+    MultiPartitionsDefinition,
+    StaticPartitionsDefinition,
+)
+from dagster._core.definitions.partitions.utils import MultiPartitionKey
 from dagster._core.event_api import EventRecordsFilter
 from dagster._core.events import (
     AssetFailedToMaterializeData,
@@ -63,6 +66,7 @@ from dagster_graphql_tests.graphql.graphql_context_test_suite import (
     ExecutingGraphQLContextTestMatrix,
     ReadonlyGraphQLContextTestMatrix,
 )
+from dagster_graphql_tests.graphql.repo import integers_asset
 
 GET_ASSETS_QUERY = """
     query AssetKeyQuery($cursor: String, $limit: Int) {
@@ -86,6 +90,27 @@ GET_ASSET_MATERIALIZATION = """
         assetOrError(assetKey: $assetKey) {
             ... on Asset {
                 assetMaterializations(limit: 1) {
+                    label
+                    assetLineage {
+                        assetKey {
+                            path
+                        }
+                        partitions
+                    }
+                }
+            }
+            ... on AssetNotFoundError {
+                __typename
+            }
+        }
+    }
+"""
+
+GET_MULTIPLE_ASSET_MATERIALIZATION = """
+    query AssetQuery($assetKey: AssetKeyInput!) {
+        assetOrError(assetKey: $assetKey) {
+            ... on Asset {
+                assetMaterializations(limit: 2) {
                     label
                     assetLineage {
                         assetKey {
@@ -177,6 +202,13 @@ WIPE_ASSETS = """
                         end
                     }
                 }
+            }
+            ... on PythonError {
+                message
+                stack
+            }
+            ... on UnauthorizedError {
+                message
             }
         }
     }
@@ -1124,6 +1156,20 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         result = execute_dagster_graphql(
             graphql_context,
             GET_ASSET_MATERIALIZATION,
+            variables={"assetKey": {"path": ["a"]}},
+        )
+        assert result.data
+        snapshot.assert_match(result.data)
+
+    def test_get_multiple_asset_key_materializations(
+        self, graphql_context: WorkspaceRequestContext, snapshot
+    ):
+        for i in range(3):
+            _create_run(graphql_context, "single_asset_job")
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_MULTIPLE_ASSET_MATERIALIZATION,
             variables={"assetKey": {"path": ["a"]}},
         )
         assert result.data
@@ -3248,6 +3294,88 @@ class TestAssetWipe(ExecutingGraphQLContextTestMatrix):
         assert 'Asset key ["does_not_exist"] not found' in result.data["wipeAssets"]["message"]
 
 
+class TestAssetWipeReadOnly(ReadonlyGraphQLContextTestMatrix):
+    def test_asset_wipe_read_only(self, graphql_context: WorkspaceRequestContext):
+        """Test that asset wipe fails in read-only context."""
+        # First create a materialization
+        define_asset_job("integers_asset_job", [integers_asset]).resolve(
+            asset_graph=AssetGraph.from_assets([integers_asset])
+        ).execute_in_process(
+            partition_key="0",
+            instance=graphql_context.instance,
+        )
+
+        asset_keys = graphql_context.instance.all_asset_keys()
+        assert AssetKey("integers_asset") in asset_keys
+
+        # Attempt to wipe should fail
+        result = execute_dagster_graphql(
+            graphql_context,
+            WIPE_ASSETS,
+            variables={"assetPartitionRanges": [{"assetKey": {"path": ["integers_asset"]}}]},
+        )
+
+        assert result.data
+        assert result.data["wipeAssets"]
+        assert result.data["wipeAssets"]["__typename"] == "UnauthorizedError"
+
+    def test_asset_wipe_per_code_location_permissions(
+        self, graphql_context: WorkspaceRequestContext
+    ):
+        """Test that asset wipe works when there are permissions in one code location but not others."""
+        location_name = main_repo_location_name()
+
+        # Create a context with permissions in one location
+        with define_out_of_process_context(
+            os.path.join(os.path.dirname(__file__), "repo.py"),
+            "test_repo",
+            graphql_context.instance,
+            read_only=True,
+            read_only_locations={location_name: False},  # not read-only in this specific location
+        ) as read_only_context:
+            assert read_only_context.read_only
+
+            # Should succeed for assets in the location with permissions
+            result = execute_dagster_graphql(
+                read_only_context,
+                WIPE_ASSETS,
+                variables={"assetPartitionRanges": [{"assetKey": {"path": ["integers_asset"]}}]},
+            )
+
+            assert result.data
+            assert result.data["wipeAssets"]
+            assert result.data["wipeAssets"]["__typename"] == "AssetWipeSuccess"
+
+            # Should fail for assets not in any location
+            result = execute_dagster_graphql(
+                read_only_context,
+                WIPE_ASSETS,
+                variables={"assetPartitionRanges": [{"assetKey": {"path": ["doesnotexist"]}}]},
+            )
+
+            assert result.data
+            assert result.data["wipeAssets"]
+            assert result.data["wipeAssets"]["__typename"] == "UnauthorizedError"
+
+        # unauthorized for assets in a different location
+        with define_out_of_process_context(
+            os.path.join(os.path.dirname(__file__), "repo.py"),
+            "test_repo",
+            graphql_context.instance,
+            read_only=True,
+            read_only_locations={"other_location_name": False},
+        ) as read_only_context:
+            assert read_only_context.read_only
+            result = execute_dagster_graphql(
+                read_only_context,
+                WIPE_ASSETS,
+                variables={"assetPartitionRanges": [{"assetKey": {"path": ["integers_asset"]}}]},
+            )
+            assert result.data
+            assert result.data["wipeAssets"]
+            assert result.data["wipeAssets"]["__typename"] == "UnauthorizedError"
+
+
 class TestAssetEventsReadOnly(ReadonlyGraphQLContextTestMatrix):
     def test_report_runless_asset_events_permissions(
         self,
@@ -3274,6 +3402,105 @@ class TestAssetEventsReadOnly(ReadonlyGraphQLContextTestMatrix):
             AssetKey("asset_one"), limit=1
         ).records
         assert len(event_records) == 0
+
+    def test_report_runless_asset_events_per_code_location_permissions(
+        self,
+        graphql_context: WorkspaceRequestContext,
+    ):
+        """Test that asset events can be reported when there are permissions in one code location but not others."""
+        location_name = main_repo_location_name()
+
+        # First verify that with no permissions, the operation fails
+        assert graphql_context.instance.all_asset_keys() == []
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            REPORT_RUNLESS_ASSET_EVENTS,
+            variables={
+                "eventParams": {
+                    "eventType": DagsterEventType.ASSET_MATERIALIZATION,
+                    "assetKey": {"path": ["asset_one"]},
+                }
+            },
+        )
+
+        assert result.data
+        assert result.data["reportRunlessAssetEvents"]
+        assert result.data["reportRunlessAssetEvents"]["__typename"] == "UnauthorizedError"
+
+        # Now test with permissions in one location
+        with define_out_of_process_context(
+            os.path.join(os.path.dirname(__file__), "repo.py"),
+            "test_repo",
+            graphql_context.instance,
+            read_only=True,
+            read_only_locations={location_name: False},  # not read-only in this specific location
+        ) as read_only_context:
+            assert read_only_context.read_only
+
+            # Should succeed for assets in the location with permissions
+            result = execute_dagster_graphql(
+                read_only_context,
+                REPORT_RUNLESS_ASSET_EVENTS,
+                variables={
+                    "eventParams": {
+                        "eventType": DagsterEventType.ASSET_MATERIALIZATION,
+                        "assetKey": {"path": ["asset_one"]},
+                    }
+                },
+            )
+
+            assert result.data
+            assert result.data["reportRunlessAssetEvents"]
+            assert (
+                result.data["reportRunlessAssetEvents"]["__typename"]
+                == "ReportRunlessAssetEventsSuccess"
+            )
+
+            # Should fail for assets not in any location
+            result = execute_dagster_graphql(
+                read_only_context,
+                REPORT_RUNLESS_ASSET_EVENTS,
+                variables={
+                    "eventParams": {
+                        "eventType": DagsterEventType.ASSET_MATERIALIZATION,
+                        "assetKey": {"path": ["doesnot", "exist"]},
+                    }
+                },
+            )
+
+            assert result.data
+            assert result.data["reportRunlessAssetEvents"]
+            assert result.data["reportRunlessAssetEvents"]["__typename"] == "UnauthorizedError"
+
+            # Verify the materialization was created for the allowed asset
+            event_records = read_only_context.instance.fetch_materializations(
+                AssetKey("asset_one"), limit=1
+            ).records
+            assert len(event_records) == 1
+
+        # unauthorized for assets in a different location
+        with define_out_of_process_context(
+            os.path.join(os.path.dirname(__file__), "repo.py"),
+            "test_repo",
+            graphql_context.instance,
+            read_only=True,
+            read_only_locations={"other_location_name": False},
+        ) as read_only_context:
+            assert read_only_context.read_only
+            result = execute_dagster_graphql(
+                read_only_context,
+                REPORT_RUNLESS_ASSET_EVENTS,
+                variables={
+                    "eventParams": {
+                        "eventType": DagsterEventType.ASSET_MATERIALIZATION,
+                        "assetKey": {"path": ["asset_one"]},
+                    }
+                },
+            )
+            assert result.data
+            assert result.data["reportRunlessAssetEvents"]
+            assert result.data["reportRunlessAssetEvents"]["__typename"] == "UnauthorizedError"
 
 
 class TestPersistentInstanceAssetInProgress(ExecutingGraphQLContextTestMatrix):

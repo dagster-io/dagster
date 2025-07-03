@@ -48,18 +48,16 @@ from dagster._core.definitions.executor_definition import executor
 from dagster._core.definitions.external_asset import create_external_asset_from_source_asset
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.logger_definition import logger
-from dagster._core.definitions.metadata.metadata_value import MetadataValue
-from dagster._core.definitions.partition import (
-    PartitionLoadingContext,
+from dagster._core.definitions.metadata.metadata_value import MetadataValue, TextMetadataValue
+from dagster._core.definitions.partitions.context import PartitionLoadingContext
+from dagster._core.definitions.partitions.definition import (
+    DailyPartitionsDefinition,
+    HourlyPartitionsDefinition,
     PartitionsDefinition,
     StaticPartitionsDefinition,
 )
 from dagster._core.definitions.repository_definition import RepositoryDefinition
 from dagster._core.definitions.sensor_definition import SensorDefinition
-from dagster._core.definitions.time_window_partitions import (
-    DailyPartitionsDefinition,
-    HourlyPartitionsDefinition,
-)
 from dagster._core.errors import DagsterInvalidSubsetError, DagsterInvariantViolationError
 from dagster._core.executor.base import Executor
 from dagster._core.storage.io_manager import IOManagerDefinition
@@ -348,6 +346,10 @@ def test_kitchen_sink_on_create_helper_and_definitions():
     def another_asset():
         pass
 
+    @asset_check(asset=an_asset)
+    def a_check():
+        return AssetCheckResult(passed=True)
+
     another_asset_job = define_asset_job(name="another_asset_job", selection="another_asset")
 
     @op
@@ -389,6 +391,7 @@ def test_kitchen_sink_on_create_helper_and_definitions():
         resources={"a_resource_key": "the resource"},
         executor=an_executor,
         loggers={"logger_key": a_logger},
+        asset_checks=[a_check],
     )
 
     assert isinstance(repo, RepositoryDefinition)
@@ -422,6 +425,7 @@ def test_kitchen_sink_on_create_helper_and_definitions():
         resources={"a_resource_key": "the resource"},
         executor=an_executor,
         loggers={"logger_key": a_logger},
+        asset_checks=[a_check],
     )
 
     assert isinstance(defs.resolve_job_def("a_job"), JobDefinition)
@@ -442,6 +446,23 @@ def test_kitchen_sink_on_create_helper_and_definitions():
 
     assert isinstance(defs.resolve_schedule_def("a_schedule"), ScheduleDefinition)
     assert isinstance(defs.resolve_sensor_def("a_sensor"), SensorDefinition)
+
+    def _update(metadata):
+        return {**metadata, "new": "value"}
+
+    updated_defs = defs.with_definition_metadata_update(_update)
+    assert updated_defs.resolve_schedule_def("a_schedule").metadata["new"] == TextMetadataValue(
+        "value"
+    )
+    assert updated_defs.resolve_sensor_def("a_sensor").metadata["new"] == TextMetadataValue("value")
+    assert updated_defs.resolve_job_def("a_job").metadata["new"] == TextMetadataValue("value")
+
+    updated_graph = updated_defs.resolve_asset_graph()
+    for assets_def in updated_graph.assets_defs:
+        for metadata in assets_def.metadata_by_key.values():
+            assert metadata["new"] == "value"
+
+    assert updated_graph.get_check_spec(a_check.check_key).metadata["new"] == "value"
 
 
 def test_with_resources_override():
@@ -811,8 +832,11 @@ def test_merge():
     def logger2(_):
         raise Exception("not executed")
 
-    origin = ComponentTree(
-        defs_module=Mock(),
+    mock_module = Mock()
+    mock_module.__file__ = Path()
+    mock_module.__name__ = "mock_module"
+    origin = ComponentTree.from_module(
+        defs_module=mock_module,
         project_root=Path(),
     )
 

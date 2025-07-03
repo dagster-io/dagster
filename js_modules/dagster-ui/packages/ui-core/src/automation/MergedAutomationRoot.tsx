@@ -13,8 +13,10 @@ import {
 import {useCallback, useContext, useMemo} from 'react';
 
 import {AutomationBulkActionMenu} from './AutomationBulkActionMenu';
+import {AutomationTabs} from './AutomationTabs';
 import {AutomationsTable} from './AutomationsTable';
 import {useTrackPageView} from '../app/analytics';
+import {useAutoMaterializeSensorFlag} from '../assets/AutoMaterializeSensorFlag';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {useSelectionReducer} from '../hooks/useSelectionReducer';
@@ -65,9 +67,11 @@ export const MergedAutomationRoot = () => {
   const {
     allRepos,
     visibleRepos,
-    loading: workspaceLoading,
+    loadingNonAssets: workspaceLoading,
     data: cachedData,
   } = useContext(WorkspaceContext);
+
+  const automaterializeSensorsFlagState = useAutoMaterializeSensorFlag();
 
   const [searchValue, setSearchValue] = useQueryPersistedState<string>({
     queryKey: 'search',
@@ -349,6 +353,11 @@ export const MergedAutomationRoot = () => {
   return (
     <Box flex={{direction: 'column'}} style={{height: '100%', overflow: 'hidden'}}>
       <PageHeader title={<Subtitle1>Automation</Subtitle1>} />
+      {automaterializeSensorsFlagState === 'has-global-amp' ? (
+        <Box padding={{horizontal: 24}} border="bottom">
+          <AutomationTabs tab="schedules-and-sensors" />
+        </Box>
+      ) : null}
       <Box
         padding={{horizontal: 24, vertical: 12}}
         flex={{

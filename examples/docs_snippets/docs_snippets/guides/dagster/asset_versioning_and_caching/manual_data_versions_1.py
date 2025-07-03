@@ -1,12 +1,12 @@
-from dagster import DataVersion, Output, asset
+import dagster as dg
 
 
-@asset(code_version="v4")
+@dg.asset(code_version="v4")
 def versioned_number():
     value = 20
-    return Output(value, data_version=DataVersion(str(value)))
+    return dg.Output(value, data_version=dg.DataVersion(str(value)))
 
 
-@asset(code_version="v1")
+@dg.asset(code_version="v1")
 def multiplied_number(versioned_number):
     return versioned_number * 2

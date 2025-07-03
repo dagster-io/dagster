@@ -1,8 +1,6 @@
-from dagster import (
-    AutomationCondition,
-    AutomationConditionSensorDefinition,
+from dagster import AutomationCondition, AutomationConditionSensorDefinition, Definitions
+from dagster._core.definitions.partitions.definition import (
     DailyPartitionsDefinition,
-    Definitions,
     HourlyPartitionsDefinition,
 )
 from dagster_test.toys.auto_materializing.large_graph import AssetLayerConfig, build_assets

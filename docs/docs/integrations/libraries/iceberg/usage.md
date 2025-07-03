@@ -131,7 +131,7 @@ In this example, we attach the resource to the `small_petals` asset. In the body
 
 ## Configuring table behavior using table properties
 
-PyIceberg tables support table properties to configure table behavior. You can find a [full list of properties in the PyIceberg documentation](https://py.iceberg.apache.org/configuration/).
+PyIceberg tables support table properties to configure table behavior. You can find a [full list of properties in the PyIceberg documentation](https://py.iceberg.apache.org/configuration).
 
 Use asset metadata to set table properties:
 

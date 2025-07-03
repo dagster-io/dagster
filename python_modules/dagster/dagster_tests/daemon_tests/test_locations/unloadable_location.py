@@ -1,10 +1,5 @@
-from dagster import (
-    AssetIn,
-    DailyPartitionsDefinition,
-    Definitions,
-    TimeWindowPartitionMapping,
-    asset,
-)
+from dagster import AssetIn, Definitions, TimeWindowPartitionMapping, asset
+from dagster._core.definitions.partitions.definition import DailyPartitionsDefinition
 
 
 @asset(

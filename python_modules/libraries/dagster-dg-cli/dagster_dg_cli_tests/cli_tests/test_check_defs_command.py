@@ -25,20 +25,18 @@ def test_check_defs_workspace_context_success():
     with ProxyRunner.test() as runner, isolated_example_workspace(runner, create_venv=True):
         result = runner.invoke_create_dagster(
             "project",
-            "--python-environment",
-            "uv_managed",
             "--use-editable-dagster",
             dagster_git_repo_dir,
             "projects/project-1",
+            "--uv-sync",
         )
         assert_runner_result(result)
         result = runner.invoke_create_dagster(
             "project",
-            "--python-environment",
-            "uv_managed",
             "--use-editable-dagster",
             dagster_git_repo_dir,
             "projects/project-2",
+            "--uv-sync",
         )
         assert_runner_result(result)
 

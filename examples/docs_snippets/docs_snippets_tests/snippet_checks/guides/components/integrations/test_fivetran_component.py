@@ -64,10 +64,10 @@ def test_components_docs_fivetran_workspace(
         )
         # Scaffold code location
         context.run_command_and_snippet_output(
-            cmd="create-dagster project my-project --python-environment uv_managed --use-editable-dagster && cd my-project/src",
+            cmd="create-dagster project my-project --uv-sync --use-editable-dagster && cd my-project/src",
             snippet_path=f"{context.get_next_snip_number()}-scaffold-project.txt",
             snippet_replace_regex=[
-                ("--python-environment uv_managed --use-editable-dagster ", ""),
+                ("--uv-sync --use-editable-dagster ", ""),
                 ("--editable.*dagster-fivetran", "dagster-fivetran"),
                 ("create-dagster", "uvx create-dagster"),
             ],
@@ -85,7 +85,7 @@ def test_components_docs_fivetran_workspace(
 
         # scaffold fivetran component
         context.run_command_and_snippet_output(
-            cmd="dg scaffold defs dagster_fivetran.FivetranAccountComponent fivetran_ingest \\\n  --account-id test_account --api-key \"{{ env('FIVETRAN_API_KEY') }}\" --api-secret \"{{ env('FIVETRAN_API_SECRET') }}\"",
+            cmd='dg scaffold defs dagster_fivetran.FivetranAccountComponent fivetran_ingest \\\n  --account-id test_account --api-key "{{ env.FIVETRAN_API_KEY }}" --api-secret "{{ env.FIVETRAN_API_SECRET }}"',
             snippet_path=SNIPPETS_DIR
             / f"{context.get_next_snip_number()}-scaffold-fivetran-component.txt",
         )
@@ -126,8 +126,8 @@ def test_components_docs_fivetran_workspace(
                 attributes:
                   workspace:
                     account_id: test_account
-                    api_key: "{{ env('FIVETRAN_API_KEY') }}"
-                    api_secret: "{{ env('FIVETRAN_API_SECRET') }}"
+                    api_key: "{{ env.FIVETRAN_API_KEY }}"
+                    api_secret: "{{ env.FIVETRAN_API_SECRET }}"
                   connector_selector:
                     by_name:
                       - salesforce_warehouse_sync
@@ -154,8 +154,8 @@ def test_components_docs_fivetran_workspace(
                 attributes:
                   workspace:
                     account_id: test_account
-                    api_key: "{{ env('FIVETRAN_API_KEY') }}"
-                    api_secret: "{{ env('FIVETRAN_API_SECRET') }}"
+                    api_key: "{{ env.FIVETRAN_API_KEY }}"
+                    api_secret: "{{ env.FIVETRAN_API_SECRET }}"
                   connector_selector:
                     by_name:
                       - salesforce_warehouse_sync

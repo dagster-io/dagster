@@ -1,6 +1,6 @@
 ---
 description: Dagster resources are objects used by Dagster assets and ops that provide access to external systems, databases, or services.
-sidebar_position: 40
+sidebar_position: 50
 title: External resources
 ---
 
@@ -11,7 +11,7 @@ Dagster resources are objects used by Dagster assets and ops that provide access
 - The Snowflake/Databricks/BigQuery account the data is ingested into
 - The BI tool the dashboard was made in
 
-Using Dagster resources, you can standardize connections and integrations to these tools across Dagster definitions like [asset definitions](/guides/build/assets), [schedules](/guides/automate/schedules), [sensors](/guides/automate/sensors), and [jobs](/guides/build/jobs/).
+Using Dagster resources, you can standardize connections and integrations to these tools across Dagster definitions like [asset definitions](/guides/build/assets), [schedules](/guides/automate/schedules), [sensors](/guides/automate/sensors), and [jobs](/guides/build/jobs).
 
 Resources allow you to:
 

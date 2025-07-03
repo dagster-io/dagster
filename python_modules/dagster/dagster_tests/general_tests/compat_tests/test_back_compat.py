@@ -26,7 +26,7 @@ from dagster._core.definitions.data_version import DATA_VERSION_TAG
 from dagster._core.definitions.dependency import NodeHandle
 from dagster._core.definitions.events import UNDEFINED_ASSET_KEY_PATH, AssetLineageInfo
 from dagster._core.definitions.metadata import MetadataValue
-from dagster._core.definitions.partition import StaticPartitionsDefinition
+from dagster._core.definitions.partitions.definition import StaticPartitionsDefinition
 from dagster._core.errors import DagsterInvalidInvocationError
 from dagster._core.events import DagsterEvent, DagsterEventType, StepMaterializationData
 from dagster._core.events.log import EventLogEntry

@@ -4,7 +4,7 @@ from typing import Optional, Union
 import dagster._check as check
 import graphene
 from dagster._core.definitions.events import AssetKey, AssetPartitionWipeRange
-from dagster._core.definitions.partition_key_range import PartitionKeyRange
+from dagster._core.definitions.partitions.partition_key_range import PartitionKeyRange
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.nux import get_has_seen_nux, set_nux_seen
 from dagster._core.workspace.permissions import Permissions
@@ -783,7 +783,7 @@ class GrapheneAssetWipeMutation(graphene.Mutation):
         name = "AssetWipeMutation"
 
     @capture_error
-    @check_permission(Permissions.WIPE_ASSETS)
+    @require_permission_check(Permissions.WIPE_ASSETS)
     def mutate(
         self,
         graphene_info: ResolveInfo,
@@ -798,6 +798,15 @@ class GrapheneAssetWipeMutation(graphene.Mutation):
             )
             for ap in assetPartitionRanges
         ]
+
+        asset_keys = {normalized_range.asset_key for normalized_range in normalized_ranges}
+
+        assert_permission_for_asset_graph(
+            graphene_info,
+            graphene_info.context.asset_graph,
+            list(asset_keys),
+            Permissions.WIPE_ASSETS,
+        )
 
         return wipe_assets(graphene_info, normalized_ranges)
 

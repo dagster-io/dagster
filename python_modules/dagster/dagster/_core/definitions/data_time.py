@@ -28,10 +28,8 @@ from dagster._core.definitions.data_version import (
 )
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.freshness_policy import FreshnessMinutes
-from dagster._core.definitions.time_window_partitions import (
-    TimeWindowPartitionsDefinition,
-    TimeWindowPartitionsSubset,
-)
+from dagster._core.definitions.partitions.definition import TimeWindowPartitionsDefinition
+from dagster._core.definitions.partitions.subset import TimeWindowPartitionsSubset
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.event_api import EventLogRecord
 from dagster._core.storage.dagster_run import FINISHED_STATUSES, DagsterRunStatus, RunsFilter
@@ -539,7 +537,7 @@ class CachingDataTimeResolver:
         evaluation_time: datetime.datetime,
     ) -> Optional[FreshnessMinutes]:
         asset = self.asset_graph.get(asset_key)
-        if asset.freshness_policy is None:
+        if asset.legacy_freshness_policy is None:
             raise DagsterInvariantViolationError(
                 "Cannot calculate minutes late for asset without a FreshnessPolicy"
             )
@@ -549,7 +547,7 @@ class CachingDataTimeResolver:
         else:
             current_data_time = self.get_current_data_time(asset_key, current_time=evaluation_time)
 
-        return asset.freshness_policy.minutes_overdue(
+        return asset.legacy_freshness_policy.minutes_overdue(
             data_time=current_data_time,
             evaluation_time=evaluation_time,
         )

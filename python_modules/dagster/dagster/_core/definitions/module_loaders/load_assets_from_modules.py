@@ -18,7 +18,7 @@ from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationCondition,
 )
-from dagster._core.definitions.freshness_policy import FreshnessPolicy
+from dagster._core.definitions.freshness_policy import LegacyFreshnessPolicy
 from dagster._core.definitions.module_loaders.object_list import ModuleScopedDagsterDefs
 from dagster._core.definitions.module_loaders.utils import find_modules_in_package
 from dagster._core.definitions.source_asset import SourceAsset
@@ -57,7 +57,7 @@ def load_assets_from_modules(
     group_name: Optional[str] = None,
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     *,
-    freshness_policy: Optional[FreshnessPolicy] = None,
+    legacy_freshness_policy: Optional[LegacyFreshnessPolicy] = None,
     auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
     automation_condition: Optional[AutomationCondition] = None,
     backfill_policy: Optional[BackfillPolicy] = None,
@@ -74,8 +74,8 @@ def load_assets_from_modules(
         key_prefix (Optional[Union[str, Sequence[str]]]):
             Prefix to prepend to the keys of the loaded assets. The returned assets will be copies
             of the loaded objects, with the prefix prepended.
-        freshness_policy (Optional[FreshnessPolicy]): FreshnessPolicy to apply to all the loaded
-            assets.
+        legacy_freshness_policy (Optional[LegacyFreshnessPolicy]): LegacyFreshnessPolicy to apply to
+            all the loaded assets.
         automation_condition (Optional[AutomationCondition]): AutomationCondition to apply
             to all the loaded assets.
         backfill_policy (Optional[AutoMaterializePolicy]): BackfillPolicy to apply to all the loaded assets.
@@ -108,8 +108,8 @@ def load_assets_from_modules(
                 source_key_prefix, "source_key_prefix"
             ),
             group_name=check.opt_str_param(group_name, "group_name"),
-            freshness_policy=check.opt_inst_param(
-                freshness_policy, "freshness_policy", FreshnessPolicy
+            legacy_freshness_policy=check.opt_inst_param(
+                legacy_freshness_policy, "legacy_freshness_policy", LegacyFreshnessPolicy
             ),
             automation_condition=resolve_automation_condition(
                 automation_condition, auto_materialize_policy
@@ -126,7 +126,7 @@ def load_assets_from_current_module(
     group_name: Optional[str] = None,
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     *,
-    freshness_policy: Optional[FreshnessPolicy] = None,
+    legacy_freshness_policy: Optional[LegacyFreshnessPolicy] = None,
     auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
     automation_condition: Optional[AutomationCondition] = None,
     backfill_policy: Optional[BackfillPolicy] = None,
@@ -143,7 +143,7 @@ def load_assets_from_current_module(
         key_prefix (Optional[Union[str, Sequence[str]]]):
             Prefix to prepend to the keys of the loaded assets. The returned assets will be copies
             of the loaded objects, with the prefix prepended.
-        freshness_policy (Optional[FreshnessPolicy]): FreshnessPolicy to apply to all the loaded
+        legacy_freshness_policy (Optional[LegacyFreshnessPolicy]): LegacyFreshnessPolicy to apply to
             assets.
         automation_condition (Optional[AutomationCondition]): AutomationCondition to apply
             to all the loaded assets.
@@ -164,7 +164,7 @@ def load_assets_from_current_module(
         [module],
         group_name=group_name,
         key_prefix=key_prefix,
-        freshness_policy=freshness_policy,
+        legacy_freshness_policy=legacy_freshness_policy,
         automation_condition=resolve_automation_condition(
             automation_condition, auto_materialize_policy
         ),
@@ -179,7 +179,7 @@ def load_assets_from_package_module(
     group_name: Optional[str] = None,
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     *,
-    freshness_policy: Optional[FreshnessPolicy] = None,
+    legacy_freshness_policy: Optional[LegacyFreshnessPolicy] = None,
     auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
     automation_condition: Optional[AutomationCondition] = None,
     backfill_policy: Optional[BackfillPolicy] = None,
@@ -199,7 +199,7 @@ def load_assets_from_package_module(
         key_prefix (Optional[Union[str, Sequence[str]]]):
             Prefix to prepend to the keys of the loaded assets. The returned assets will be copies
             of the loaded objects, with the prefix prepended.
-        freshness_policy (Optional[FreshnessPolicy]): FreshnessPolicy to apply to all the loaded
+        legacy_freshness_policy (Optional[LegacyFreshnessPolicy]): LegacyFreshnessPolicy to apply to all the loaded
             assets.
         automation_condition (Optional[AutomationCondition]): AutomationCondition to apply
             to all the loaded assets.
@@ -214,8 +214,8 @@ def load_assets_from_package_module(
     return load_assets_from_modules(
         [*find_modules_in_package(package_module)],
         group_name,
-        key_prefix,
-        freshness_policy=freshness_policy,
+        key_prefix=key_prefix,
+        legacy_freshness_policy=legacy_freshness_policy,
         auto_materialize_policy=auto_materialize_policy,
         automation_condition=automation_condition,
         backfill_policy=backfill_policy,
@@ -229,7 +229,7 @@ def load_assets_from_package_name(
     group_name: Optional[str] = None,
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     *,
-    freshness_policy: Optional[FreshnessPolicy] = None,
+    legacy_freshness_policy: Optional[LegacyFreshnessPolicy] = None,
     auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
     backfill_policy: Optional[BackfillPolicy] = None,
     source_key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
@@ -246,7 +246,7 @@ def load_assets_from_package_name(
         key_prefix (Optional[Union[str, Sequence[str]]]):
             Prefix to prepend to the keys of the loaded assets. The returned assets will be copies
             of the loaded objects, with the prefix prepended.
-        freshness_policy (Optional[FreshnessPolicy]): FreshnessPolicy to apply to all the loaded
+        legacy_freshness_policy (Optional[LegacyFreshnessPolicy]): LegacyFreshnessPolicy to apply to all the loaded
             assets.
         auto_materialize_policy (Optional[AutoMaterializePolicy]): AutoMaterializePolicy to apply
             to all the loaded assets.
@@ -263,7 +263,7 @@ def load_assets_from_package_name(
         package_module,
         group_name=group_name,
         key_prefix=key_prefix,
-        freshness_policy=freshness_policy,
+        legacy_freshness_policy=legacy_freshness_policy,
         auto_materialize_policy=auto_materialize_policy,
         backfill_policy=backfill_policy,
         source_key_prefix=source_key_prefix,

@@ -2,18 +2,36 @@
   position: relative;
   width: 100%;
   height: 100%;
+  border-radius: 2px;
+  cursor: pointer;
 }
 
-.Tile {
+.placeholderTile {
   position: absolute;
   width: 100%;
   height: 100%;
   border-radius: 2px;
+  background-color: var(--color-background-light);
+}
 
-  background-color: var(--tile-color, var(--color-background-light));
-  &:hover {
-    background-color: var(--tile-hover-color, var(--color-background-light-hover));
-  }
+.TileContainer:hover .placeholderTile {
+  box-shadow: inset 0 0 0 1px var(--tile-hover-color);
+}
+
+.tileButton {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border-radius: 2px;
+  border: 0;
+  transition: background-color 150ms;
+  background-color: var(--tile-color);
+  cursor: pointer;
+  padding: 0;
+}
+
+.tileButton:hover {
+  background-color: var(--tile-hover-color);
 }
 
 .Tooltip {

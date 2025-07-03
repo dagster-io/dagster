@@ -19,6 +19,7 @@ from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.result import AssetResult, ObserveResult
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.execution.context.compute import ExecutionContextTypes
+from dagster._core.execution.context.op_execution_context import OpExecutionContext
 from dagster._core.types.dagster_type import DagsterTypeKind, is_generic_output_annotation
 from dagster._utils import is_named_tuple_instance
 from dagster._utils.warnings import disable_dagster_warnings
@@ -104,10 +105,9 @@ def invoke_compute_fn(
     if config_arg_cls:
         # config_arg_cls is either a Config class or a primitive type
         if issubclass(config_arg_cls, Config):
-            to_pass = config_arg_cls._get_non_default_public_field_values_cls(  # noqa: SLF001
-                context.op_execution_context.op_config
+            args_to_pass["config"] = construct_config_from_context(
+                config_arg_cls, context.op_execution_context
             )
-            args_to_pass["config"] = config_arg_cls(**to_pass)
         else:
             args_to_pass["config"] = context.op_execution_context.op_config
     if resource_args:
@@ -115,6 +115,14 @@ def invoke_compute_fn(
             args_to_pass[arg_name] = context.resources.original_resource_dict[resource_name]
 
     return fn(context, **args_to_pass) if context_arg_provided else fn(**args_to_pass)
+
+
+def construct_config_from_context(
+    config_arg_cls: type[Config], op_execution_context: OpExecutionContext
+) -> Config:
+    return config_arg_cls(
+        **config_arg_cls._get_non_default_public_field_values_cls(op_execution_context.op_config)  # noqa: SLF001
+    )
 
 
 def _coerce_op_compute_fn_to_iterator(

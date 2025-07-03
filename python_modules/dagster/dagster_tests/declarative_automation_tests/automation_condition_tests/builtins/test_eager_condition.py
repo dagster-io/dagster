@@ -7,17 +7,21 @@ from dagster import (
     AssetMaterialization,
     AutomationCondition,
     DagsterInstance,
-    DailyPartitionsDefinition,
     Definitions,
-    DimensionPartitionMapping,
-    MultiPartitionMapping,
-    MultiPartitionsDefinition,
     Output,
-    StaticPartitionsDefinition,
     TimeWindowPartitionMapping,
     asset,
     asset_check,
     evaluate_automation_conditions,
+)
+from dagster._core.definitions.partitions.definition import (
+    DailyPartitionsDefinition,
+    MultiPartitionsDefinition,
+    StaticPartitionsDefinition,
+)
+from dagster._core.definitions.partitions.mapping import (
+    DimensionPartitionMapping,
+    MultiPartitionMapping,
 )
 from dagster._core.instance_for_test import instance_for_test
 

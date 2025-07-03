@@ -8,7 +8,7 @@ from typing import Any, Optional, TypeVar, Union, overload
 from dagster_shared.yaml_utils.source_position import SourcePositionTree
 from pydantic import BaseModel
 
-from dagster._annotations import preview, public
+from dagster._annotations import public
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationCondition,
 )
@@ -18,8 +18,28 @@ from dagster.components.resolved.errors import ResolutionException
 T = TypeVar("T")
 
 
-def env_scope(key: str) -> Optional[str]:
-    return os.environ.get(key)
+class EnvScope:
+    def __call__(self, key: str, default: Optional[Union[str, Any]] = ...) -> Optional[str]:
+        value = os.environ.get(key, default=default)
+        if value is ...:
+            raise ResolutionException(
+                f"Environment variable {key} is not set and no default value was provided."
+                f" To provide a default value, use e.g. `env('{key}', 'default_value')`."
+            )
+        return value
+
+    def __getattr__(self, key: str) -> Optional[str]:
+        # jinja2 applies a hasattr check to any scope fn - we avoid raising our own exception
+        # for this access
+        if key.startswith("jinja"):
+            raise AttributeError(f"{key} not found")
+
+        return os.environ.get(key)
+
+    def __getitem__(self, key: str) -> Optional[str]:
+        raise ResolutionException(
+            f"To access environment variables, use dot access or the `env` function, e.g. `env.{key}` or `env('{key}')`"
+        )
 
 
 def automation_condition_scope() -> Mapping[str, Any]:
@@ -33,10 +53,32 @@ T = TypeVar("T")
 
 
 @public
-@preview(emit_runtime_warning=False)
 @record
 class ResolutionContext:
-    """The context available to Resolver functions when "resolving" from yaml in to a Resolvable object."""
+    """The context available to Resolver functions when "resolving" from yaml in to a Resolvable object.
+    This class should not be instantiated directly.
+
+    Provides a `resolve_value` method that can be used to resolve templated values in a nested object before
+    being transformed into the final Resolvable object. This is typically invoked inside a
+    :py:class:`~dagster.Resolver`'s `resolve_fn` to ensure that jinja-templated values are turned into their
+    respective python types using the available template variables.
+
+    Example:
+
+        .. code-block:: python
+
+            import datetime
+            import dagster as dg
+
+            def resolve_timestamp(
+                context: dg.ResolutionContext,
+                raw_timestamp: str,
+            ) -> datetime.datetime:
+                return datetime.datetime.fromisoformat(
+                    context.resolve_value(raw_timestamp, as_type=str),
+                )
+
+    """
 
     scope: Mapping[str, Any]
     path: list[Union[str, int]] = []
@@ -52,7 +94,7 @@ class ResolutionContext:
     @staticmethod
     def default(source_position_tree: Optional[SourcePositionTree] = None) -> "ResolutionContext":
         return ResolutionContext(
-            scope={"env": env_scope, "automation_condition": automation_condition_scope()},
+            scope={"env": EnvScope(), "automation_condition": automation_condition_scope()},
             source_position_tree=source_position_tree,
         )
 
@@ -163,8 +205,20 @@ class ResolutionContext:
     @overload
     def resolve_value(self, val: Sequence) -> Sequence: ...
 
+    @public
     def resolve_value(self, val: Any, as_type: Optional[type] = None) -> Any:
-        """Recursively resolves templated values in a nested object."""
+        """Recursively resolves templated values in a nested object. This is typically
+        invoked inside a :py:class:`~dagster.Resolver`'s `resolve_fn` to resolve all
+        nested template values in the input object.
+
+        Args:
+            val (Any): The value to resolve.
+            as_type (Optional[type]): If provided, the type to cast the resolved value to.
+                Used purely for type hinting and does not impact runtime behavior.
+
+        Returns:
+            The input value after all nested template values have been resolved.
+        """
         if isinstance(val, dict):
             return {k: self.at_path(k).resolve_value(v) for k, v in val.items()}
         elif isinstance(val, tuple):

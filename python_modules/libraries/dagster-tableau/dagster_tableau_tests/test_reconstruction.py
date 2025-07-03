@@ -1,6 +1,6 @@
 from unittest.mock import MagicMock
 
-import pytest
+from dagster import AssetExecutionContext
 from dagster._core.code_pointer import CodePointer
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.definitions_class import Definitions
@@ -15,6 +15,7 @@ from dagster._core.events import DagsterEventType
 from dagster._core.execution.api import create_execution_plan, execute_plan
 from dagster._core.instance_for_test import instance_for_test
 from dagster._utils.test.definitions import definitions
+from dagster_tableau.asset_decorator import tableau_assets
 from dagster_tableau.asset_utils import parse_tableau_external_and_materializable_asset_specs
 from dagster_tableau.assets import build_tableau_materializable_assets_definition
 from dagster_tableau.resources import TableauCloudWorkspace, load_tableau_asset_specs
@@ -29,18 +30,18 @@ from dagster_tableau_tests.conftest import (
     FAKE_USERNAME,
 )
 
-resource = TableauCloudWorkspace(
-    connected_app_client_id=FAKE_CONNECTED_APP_CLIENT_ID,
-    connected_app_secret_id=FAKE_CONNECTED_APP_SECRET_ID,
-    connected_app_secret_value=FAKE_CONNECTED_APP_SECRET_VALUE,
-    username=FAKE_USERNAME,
-    site_name=FAKE_SITE_NAME,
-    pod_name=FAKE_POD_NAME,
-)
-
 
 @definitions
 def cacheable_asset_defs():
+    resource = TableauCloudWorkspace(
+        connected_app_client_id=FAKE_CONNECTED_APP_CLIENT_ID,
+        connected_app_secret_id=FAKE_CONNECTED_APP_SECRET_ID,
+        connected_app_secret_value=FAKE_CONNECTED_APP_SECRET_VALUE,
+        username=FAKE_USERNAME,
+        site_name=FAKE_SITE_NAME,
+        pod_name=FAKE_POD_NAME,
+    )
+
     tableau_specs = load_tableau_asset_specs(
         workspace=resource,
     )
@@ -67,6 +68,14 @@ def cacheable_asset_defs():
 
 @definitions
 def cacheable_asset_defs_refreshable_workbooks():
+    resource = TableauCloudWorkspace(
+        connected_app_client_id=FAKE_CONNECTED_APP_CLIENT_ID,
+        connected_app_secret_id=FAKE_CONNECTED_APP_SECRET_ID,
+        connected_app_secret_value=FAKE_CONNECTED_APP_SECRET_VALUE,
+        username=FAKE_USERNAME,
+        site_name=FAKE_SITE_NAME,
+        pod_name=FAKE_POD_NAME,
+    )
     tableau_specs = load_tableau_asset_specs(
         workspace=resource,
     )
@@ -93,6 +102,15 @@ def cacheable_asset_defs_refreshable_workbooks():
 
 @definitions
 def cacheable_asset_defs_refreshable_data_sources():
+    resource = TableauCloudWorkspace(
+        connected_app_client_id=FAKE_CONNECTED_APP_CLIENT_ID,
+        connected_app_secret_id=FAKE_CONNECTED_APP_SECRET_ID,
+        connected_app_secret_value=FAKE_CONNECTED_APP_SECRET_VALUE,
+        username=FAKE_USERNAME,
+        site_name=FAKE_SITE_NAME,
+        pod_name=FAKE_POD_NAME,
+    )
+
     tableau_specs = load_tableau_asset_specs(
         workspace=resource,
     )
@@ -120,7 +138,38 @@ def cacheable_asset_defs_refreshable_data_sources():
 
 
 @definitions
+def cacheable_asset_defs_asset_decorator_with_context():
+    resource = TableauCloudWorkspace(
+        connected_app_client_id=FAKE_CONNECTED_APP_CLIENT_ID,
+        connected_app_secret_id=FAKE_CONNECTED_APP_SECRET_ID,
+        connected_app_secret_value=FAKE_CONNECTED_APP_SECRET_VALUE,
+        username=FAKE_USERNAME,
+        site_name=FAKE_SITE_NAME,
+        pod_name=FAKE_POD_NAME,
+    )
+
+    @tableau_assets(workspace=resource)
+    def my_tableau_assets(context: AssetExecutionContext, tableau: TableauCloudWorkspace):
+        yield from tableau.refresh_and_poll(context=context)
+
+    return Definitions(
+        assets=[my_tableau_assets],
+        jobs=[define_asset_job("all_asset_job")],
+        resources={"tableau": resource},
+    )
+
+
+@definitions
 def cacheable_asset_defs_custom_translator():
+    resource = TableauCloudWorkspace(
+        connected_app_client_id=FAKE_CONNECTED_APP_CLIENT_ID,
+        connected_app_secret_id=FAKE_CONNECTED_APP_SECRET_ID,
+        connected_app_secret_value=FAKE_CONNECTED_APP_SECRET_VALUE,
+        username=FAKE_USERNAME,
+        site_name=FAKE_SITE_NAME,
+        pod_name=FAKE_POD_NAME,
+    )
+
     class MyCoolTranslator(DagsterTableauTranslator):
         def get_asset_spec(self, data: TableauTranslatorData) -> AssetSpec:
             default_spec = super().get_asset_spec(data)
@@ -129,25 +178,6 @@ def cacheable_asset_defs_custom_translator():
     tableau_specs = load_tableau_asset_specs(
         workspace=resource, dagster_tableau_translator=MyCoolTranslator()
     )
-
-    return Definitions(assets=[*tableau_specs], jobs=[define_asset_job("all_asset_job")])
-
-
-@definitions
-def cacheable_asset_defs_custom_translator_legacy():
-    class MyCoolTranslator(DagsterTableauTranslator):
-        def get_asset_spec(self, data: TableauTranslatorData) -> AssetSpec:
-            default_spec = super().get_asset_spec(data)
-            return default_spec.replace_attributes(key=default_spec.key.with_prefix("my_prefix"))
-
-    # Pass the translator type
-    with pytest.warns(
-        DeprecationWarning,
-        match=r"Support of `dagster_tableau_translator` as a Type\[DagsterTableauTranslator\]",
-    ):
-        tableau_specs = load_tableau_asset_specs(
-            workspace=resource, dagster_tableau_translator=MyCoolTranslator
-        )
 
     return Definitions(assets=[*tableau_specs], jobs=[define_asset_job("all_asset_job")])
 
@@ -481,25 +511,55 @@ def test_load_assets_workspace_data_translator(
         ), repository_def.assets_defs_by_key
 
 
-def test_load_assets_workspace_data_translator_legacy(
+def test_load_assets_workspace_asset_decorator_with_context(
     sign_in: MagicMock,
     get_workbooks: MagicMock,
     get_workbook: MagicMock,
     get_view: MagicMock,
+    get_data_source: MagicMock,
     get_job: MagicMock,
-    refresh_workbook: MagicMock,
+    refresh_data_source: MagicMock,
     cancel_job: MagicMock,
 ) -> None:
-    with instance_for_test() as _instance:
+    with instance_for_test() as instance:
+        pointer = CodePointer.from_python_file(
+            __file__,
+            "cacheable_asset_defs_asset_decorator_with_context",
+            None,
+        )
         repository_def = initialize_repository_def_from_pointer(
-            pointer=CodePointer.from_python_file(
-                __file__,
-                "cacheable_asset_defs_custom_translator_legacy",
-                None,
-            )
+            pointer,
         )
 
-        assert len(repository_def.assets_defs_by_key) == 5
-        assert all(
-            key.path[0] == "my_prefix" for key in repository_def.assets_defs_by_key.keys()
-        ), repository_def.assets_defs_by_key
+        # 4 Tableau materializable assets
+        assert len(repository_def.assets_defs_by_key) == 4
+
+        repository_load_data = repository_def.repository_load_data
+
+        # testing the job that materializes the tableau assets
+        job_def = repository_def.get_job("all_asset_job")
+        recon_job = ReconstructableJob(
+            repository=ReconstructableRepository(pointer),
+            job_name="all_asset_job",
+        )
+
+        execution_plan = create_execution_plan(recon_job, repository_load_data=repository_load_data)
+        run = instance.create_run_for_job(job_def=job_def, execution_plan=execution_plan)
+
+        events = execute_plan(
+            execution_plan=execution_plan,
+            job=recon_job,
+            dagster_run=run,
+            instance=instance,
+        )
+
+        # the materialization of the multi-asset for the 4 materializable assets should be successful
+        assert (
+            len([event for event in events if event.event_type == DagsterEventType.STEP_SUCCESS])
+            == 1
+        ), "Expected one successful step"
+
+        asset_materializations = [
+            event for event in events if event.event_type == DagsterEventType.ASSET_MATERIALIZATION
+        ]
+        assert len(asset_materializations) == 4

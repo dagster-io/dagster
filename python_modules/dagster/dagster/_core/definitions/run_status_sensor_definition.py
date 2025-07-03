@@ -15,6 +15,7 @@ from dagster._annotations import beta_param, deprecated_param, public
 from dagster._core.definitions.graph_definition import GraphDefinition
 from dagster._core.definitions.instigation_logger import InstigationLogger
 from dagster._core.definitions.job_definition import JobDefinition
+from dagster._core.definitions.metadata import RawMetadataMapping
 from dagster._core.definitions.repository_definition import RepositoryDefinition
 from dagster._core.definitions.resource_annotation import get_resource_args
 from dagster._core.definitions.scoped_resources_builder import Resources, ScopedResourcesBuilder
@@ -431,7 +432,7 @@ def run_failure_sensor(
     request_jobs: Optional[Sequence[ExecutableDefinition]] = None,
     monitor_all_repositories: bool = False,
     tags: Optional[Mapping[str, str]] = None,
-    metadata: Optional[Mapping[str, object]] = None,
+    metadata: Optional[RawMetadataMapping] = None,
 ) -> Callable[
     [RunFailureSensorEvaluationFn],
     SensorDefinition,
@@ -482,7 +483,7 @@ def run_failure_sensor(
     request_jobs: Optional[Sequence[ExecutableDefinition]] = None,
     monitor_all_repositories: Optional[bool] = None,
     tags: Optional[Mapping[str, str]] = None,
-    metadata: Optional[Mapping[str, object]] = None,
+    metadata: Optional[RawMetadataMapping] = None,
 ) -> Union[
     SensorDefinition,
     Callable[
@@ -633,7 +634,7 @@ class RunStatusSensorDefinition(SensorDefinition):
         request_job: Optional[ExecutableDefinition] = None,
         request_jobs: Optional[Sequence[ExecutableDefinition]] = None,
         tags: Optional[Mapping[str, str]] = None,
-        metadata: Optional[Mapping[str, object]] = None,
+        metadata: Optional[RawMetadataMapping] = None,
         required_resource_keys: Optional[set[str]] = None,
     ):
         from dagster._core.definitions.selector import (
@@ -1065,7 +1066,7 @@ def run_status_sensor(
     request_jobs: Optional[Sequence[ExecutableDefinition]] = None,
     monitor_all_repositories: Optional[bool] = None,
     tags: Optional[Mapping[str, str]] = None,
-    metadata: Optional[Mapping[str, object]] = None,
+    metadata: Optional[RawMetadataMapping] = None,
 ) -> Callable[
     [RunStatusSensorEvaluationFunction],
     RunStatusSensorDefinition,

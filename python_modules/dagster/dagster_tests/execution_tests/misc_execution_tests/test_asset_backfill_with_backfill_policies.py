@@ -7,14 +7,16 @@ from dagster import (
     AssetDep,
     BackfillPolicy,
     DagsterInstance,
-    DailyPartitionsDefinition,
-    DynamicPartitionsDefinition,
     PartitionKeyRange,
     TimeWindowPartitionMapping,
-    WeeklyPartitionsDefinition,
     asset,
 )
-from dagster._core.definitions.partition import StaticPartitionsDefinition
+from dagster._core.definitions.partitions.definition import (
+    DailyPartitionsDefinition,
+    DynamicPartitionsDefinition,
+    StaticPartitionsDefinition,
+    WeeklyPartitionsDefinition,
+)
 from dagster._core.execution.asset_backfill import AssetBackfillData, AssetBackfillStatus
 from dagster._core.instance_for_test import instance_for_test
 from dagster._core.storage.tags import (

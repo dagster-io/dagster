@@ -18,7 +18,7 @@ from dagster import (
     DagsterInvalidDefinitionError,
     DagsterInvariantViolationError,
     DefaultScheduleStatus,
-    FreshnessPolicy,
+    LegacyFreshnessPolicy,
     OpExecutionContext,
     RunConfig,
     ScheduleDefinition,
@@ -587,12 +587,14 @@ def default_owners_from_dbt_resource_props(
     return [owner]
 
 
-def default_freshness_policy_fn(dbt_resource_props: Mapping[str, Any]) -> Optional[FreshnessPolicy]:
+def default_freshness_policy_fn(
+    dbt_resource_props: Mapping[str, Any],
+) -> Optional[LegacyFreshnessPolicy]:
     dagster_metadata = dbt_resource_props.get("meta", {}).get("dagster", {})
     freshness_policy_config = dagster_metadata.get("freshness_policy", {})
 
     freshness_policy = (
-        FreshnessPolicy(
+        LegacyFreshnessPolicy(
             maximum_lag_minutes=float(freshness_policy_config["maximum_lag_minutes"]),
             cron_schedule=freshness_policy_config.get("cron_schedule"),
             cron_schedule_timezone=freshness_policy_config.get("cron_schedule_timezone"),
@@ -658,12 +660,17 @@ def default_asset_check_fn(
         for parent_id in parent_unique_ids
     }
     additional_deps.discard(asset_key)
+
+    severity = test_resource_props.get("config", {}).get("severity", "error")
+    blocking = severity.lower() == "error"
+
     return AssetCheckSpec(
         name=test_resource_props["name"],
         asset=asset_key,
         description=test_resource_props.get("meta", {}).get("description"),
         additional_deps=additional_deps,
         metadata={DAGSTER_DBT_UNIQUE_ID_METADATA_KEY: test_unique_id},
+        blocking=blocking,
     )
 
 
@@ -780,14 +787,13 @@ def build_dbt_specs(
         for child_unique_id in manifest["child_map"][unique_id]:
             if not child_unique_id.startswith("test"):
                 continue
-
-            check_spec = default_asset_check_fn(
-                manifest,
-                translator,
-                spec.key,
-                child_unique_id,
-                project,
+            check_spec = translator.get_asset_check_spec(
+                asset_spec=spec,
+                manifest=manifest,
+                unique_id=child_unique_id,
+                project=project,
             )
+
             if check_spec:
                 check_specs[check_spec.get_python_identifier()] = check_spec
 
@@ -795,11 +801,8 @@ def build_dbt_specs(
         # assets. note that this step may need to change once the translator is updated
         # to no longer rely on `get_asset_key` as a standalone method
         for upstream_id in get_upstream_unique_ids(manifest, resource_props):
-            key_by_unique_id[upstream_id] = translator.get_asset_spec(
-                manifest,
-                upstream_id,
-                project,
-            ).key
+            spec = translator.get_asset_spec(manifest, upstream_id, project)
+            key_by_unique_id[upstream_id] = spec.key
             if (
                 upstream_id.startswith("source")
                 and translator.settings.enable_source_tests_as_checks
@@ -807,11 +810,10 @@ def build_dbt_specs(
                 for child_unique_id in manifest["child_map"][upstream_id]:
                     if not child_unique_id.startswith("test"):
                         continue
-                    check_spec = default_asset_check_fn(
+                    check_spec = translator.get_asset_check_spec(
+                        asset_spec=spec,
                         manifest=manifest,
-                        dagster_dbt_translator=translator,
-                        asset_key=key_by_unique_id[upstream_id],
-                        test_unique_id=child_unique_id,
+                        unique_id=child_unique_id,
                         project=project,
                     )
                     if check_spec:

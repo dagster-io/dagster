@@ -1,0 +1,12 @@
+tree my_project/defs
+
+my_project/defs
+├── __init__.py
+├── team_a
+│   ├── b.py
+│   └── subproject
+│       └── a.py
+└── team_b
+    └── c.py
+
+4 directories, 4 files

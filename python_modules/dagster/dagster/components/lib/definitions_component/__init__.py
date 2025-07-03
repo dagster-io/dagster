@@ -14,7 +14,7 @@ from dagster.components.resolved.model import Model
 
 
 class DefinitionsComponent(Component, Model, Resolvable):
-    """An arbitrary set of dagster definitions."""
+    """An arbitrary set of Dagster definitions."""
 
     path: Optional[str]
 

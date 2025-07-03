@@ -22,13 +22,13 @@ from dagster._core.definitions.events import (
 )
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.op_definition import OpDefinition
-from dagster._core.definitions.partition import PartitionsDefinition
-from dagster._core.definitions.partition_key_range import PartitionKeyRange
+from dagster._core.definitions.partitions.definition import PartitionsDefinition
+from dagster._core.definitions.partitions.partition_key_range import PartitionKeyRange
+from dagster._core.definitions.partitions.utils import TimeWindow
 from dagster._core.definitions.repository_definition.repository_definition import (
     RepositoryDefinition,
 )
 from dagster._core.definitions.step_launcher import StepLauncher
-from dagster._core.definitions.time_window_partitions import TimeWindow
 from dagster._core.errors import DagsterInvalidPropertyError, DagsterInvariantViolationError
 from dagster._core.events import DagsterEvent
 from dagster._core.execution.context.system import StepExecutionContext
@@ -550,14 +550,14 @@ class OpExecutionContext(AbstractComputeExecutionContext):
     @property
     def has_assets_def(self) -> bool:
         """If there is a backing AssetsDefinition for what is currently executing."""
-        assets_def = self.job_def.asset_layer.assets_def_for_node(self.node_handle)
+        assets_def = self.job_def.asset_layer.get_assets_def_for_node(self.node_handle)
         return assets_def is not None
 
     @public
     @property
     def assets_def(self) -> AssetsDefinition:
         """The backing AssetsDefinition for what is currently executing, errors if not available."""
-        assets_def = self.job_def.asset_layer.assets_def_for_node(self.node_handle)
+        assets_def = self.job_def.asset_layer.get_assets_def_for_node(self.node_handle)
         if assets_def is None:
             raise DagsterInvalidPropertyError(
                 f"Op '{self.op.name}' does not have an assets definition."
@@ -596,7 +596,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
     @public
     def asset_key_for_output(self, output_name: str = "result") -> AssetKey:
         """Return the AssetKey for the corresponding output."""
-        asset_key = self.job_def.asset_layer.asset_key_for_output(
+        asset_key = self.job_def.asset_layer.get_asset_key_for_node_output(
             node_handle=self.op_handle, output_name=output_name
         )
         if asset_key is None:
@@ -607,7 +607,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
     @public
     def output_for_asset_key(self, asset_key: AssetKey) -> str:
         """Return the output name for the corresponding asset key."""
-        node_output_handle = self.job_def.asset_layer.node_output_handle_for_asset(asset_key)
+        node_output_handle = self.job_def.asset_layer.get_op_output_handle(asset_key)
         if node_output_handle is None:
             check.failed(f"Asset key '{asset_key}' has no output")
         else:
@@ -616,8 +616,8 @@ class OpExecutionContext(AbstractComputeExecutionContext):
     @public
     def asset_key_for_input(self, input_name: str) -> AssetKey:
         """Return the AssetKey for the corresponding input."""
-        key = self.job_def.asset_layer.asset_key_for_input(
-            node_handle=self.op_handle, input_name=input_name
+        key = self.job_def.asset_layer.get_asset_key_for_node_input(
+            inner_node_handle=self.op_handle, input_name=input_name
         )
         if key is None:
             check.failed(f"Input '{input_name}' has no asset")

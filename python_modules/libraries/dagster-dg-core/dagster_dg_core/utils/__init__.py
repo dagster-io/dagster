@@ -289,11 +289,11 @@ def format_multiline_str(message: str) -> str:
     return "\n\n".join(paragraphs)
 
 
-def generate_missing_plugin_object_error_message(plugin_object_key: str) -> str:
+def generate_missing_registry_object_error_message(registry_object_key: str) -> str:
     return f"""
-        No plugin object `{plugin_object_key}` is registered. Use `dg list plugins`
-        to see the registered plugin objects in your environment. You may need to install a package
-        that provides `{plugin_object_key}` into your environment.
+        No registry object `{registry_object_key}` is registered. Use `dg list components`
+        to see the registered objects in your environment. You may need to install a package
+        that provides `{registry_object_key}` into your environment.
     """
 
 
@@ -302,9 +302,8 @@ def generate_project_and_activated_venv_mismatch_warning(
     active_venv_path: Optional[Path],
 ) -> str:
     return f"""
-        Your project is configured with `project.python_environment.active = true`, but the active
-        virtual environment does not match the virtual environment found in the project root
-        directory. This may lead to unexpected behavior when running `dg` commands.
+        The active virtual environment does not match the virtual environment found in the project
+        root directory. This may lead to unexpected behavior when running `dg` commands.
 
             active virtual environment: {active_venv_path}
             project virtual environment: {project_venv_path}
@@ -426,13 +425,13 @@ def json_schema_property_to_click_option(
     # Handle object type fields as JSON strings
     if field_type == "object":
         option_type = str  # JSON string input
-        help_text = f"{key} (JSON string)"
+        help_text = f"[scaffolder parameter] {key} (JSON string)"
         callback = parse_json_option
 
     # Handle other basic types
     else:
         option_type = _JSON_SCHEMA_TYPE_TO_CLICK_TYPE[field_type]
-        help_text = key
+        help_text = f"(scaffolder param) {key}"
         callback = None
 
     return click.Option(

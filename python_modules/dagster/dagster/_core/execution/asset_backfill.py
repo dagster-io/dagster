@@ -26,17 +26,19 @@ from dagster._core.definitions.automation_tick_evaluation_context import (
 )
 from dagster._core.definitions.base_asset_graph import BaseAssetGraph, BaseAssetNode
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
-from dagster._core.definitions.partition import PartitionsDefinition, PartitionsSubset
-from dagster._core.definitions.partition_key_range import PartitionKeyRange
-from dagster._core.definitions.partition_mapping import IdentityPartitionMapping
+from dagster._core.definitions.partitions.definition import (
+    PartitionsDefinition,
+    TimeWindowPartitionsDefinition,
+)
+from dagster._core.definitions.partitions.mapping import (
+    IdentityPartitionMapping,
+    TimeWindowPartitionMapping,
+)
+from dagster._core.definitions.partitions.partition_key_range import PartitionKeyRange
+from dagster._core.definitions.partitions.subset import PartitionsSubset, TimeWindowPartitionsSubset
 from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph, RemoteWorkspaceAssetGraph
 from dagster._core.definitions.run_request import RunRequest
 from dagster._core.definitions.selector import PartitionsByAssetSelector
-from dagster._core.definitions.time_window_partition_mapping import TimeWindowPartitionMapping
-from dagster._core.definitions.time_window_partitions import (
-    TimeWindowPartitionsDefinition,
-    TimeWindowPartitionsSubset,
-)
 from dagster._core.definitions.timestamp import TimestampWithTimezone
 from dagster._core.errors import (
     DagsterAssetBackfillDataLoadError,
@@ -69,7 +71,9 @@ def get_asset_backfill_run_chunk_size():
     return int(os.getenv("DAGSTER_ASSET_BACKFILL_RUN_CHUNK_SIZE", "25"))
 
 
-MATERIALIZATION_CHUNK_SIZE = 1000
+MATERIALIZATION_CHUNK_SIZE = int(
+    os.getenv("DAGSTER_ASSET_BACKFILL_MATERIALIZATION_CHUNK_SIZE", "1000")
+)
 
 
 class AssetBackfillStatus(Enum):
@@ -684,6 +688,9 @@ def _get_requested_asset_graph_subset_from_run_requests(
                     for asset_key in cast("Sequence[AssetKey]", run_request.asset_selection)
                 },
                 asset_graph,
+                # don't need expensive checks for whether the partition keys are still in the subset
+                # when just determining what was previously requested in this backfill
+                validate_time_range=False,
             )
 
     return requested_subset
@@ -710,14 +717,14 @@ def _write_updated_backfill_data(
     return updated_backfill
 
 
-def _submit_runs_and_update_backfill_in_chunks(
+async def _submit_runs_and_update_backfill_in_chunks(
     asset_graph_view: AssetGraphView,
     workspace_process_context: IWorkspaceProcessContext,
     backfill_id: str,
     asset_backfill_iteration_result: AssetBackfillIterationResult,
     logger: logging.Logger,
     run_tags: Mapping[str, str],
-) -> Iterable[None]:
+) -> None:
     from dagster._core.execution.backfill import BulkActionStatus
     from dagster._daemon.utils import DaemonErrorCapture
 
@@ -743,7 +750,10 @@ def _submit_runs_and_update_backfill_in_chunks(
     for run_request_idx, run_request in enumerate(run_requests):
         run_id = reserved_run_ids[run_request_idx] if reserved_run_ids else None
         try:
-            submit_asset_run(
+            # create a new request context for each run in case the code location server
+            # is swapped out in the middle of the submission process
+            workspace = workspace_process_context.create_request_context()
+            await submit_asset_run(
                 run_id,
                 run_request._replace(
                     tags={
@@ -755,6 +765,7 @@ def _submit_runs_and_update_backfill_in_chunks(
                 run_request_idx,
                 instance,
                 workspace_process_context,
+                workspace,
                 run_request_execution_data_cache,
                 {},
                 logger,
@@ -775,7 +786,6 @@ def _submit_runs_and_update_backfill_in_chunks(
                 asset_backfill_iteration_result.reserved_run_ids[num_submitted:],
             )
             raise
-        yield None
 
         num_submitted += 1
 
@@ -801,9 +811,6 @@ def _submit_runs_and_update_backfill_in_chunks(
             if backfill.status != BulkActionStatus.REQUESTED:
                 break
 
-        yield None
-
-    yield None
     return
 
 
@@ -976,12 +983,12 @@ def backfill_is_complete(
     return True
 
 
-def execute_asset_backfill_iteration(
+async def execute_asset_backfill_iteration(
     backfill: "PartitionBackfill",
     logger: logging.Logger,
     workspace_process_context: IWorkspaceProcessContext,
     instance: DagsterInstance,
-) -> Iterable[None]:
+) -> None:
     """Runs an iteration of the backfill, including submitting runs and updating the backfill object
     in the DB.
 
@@ -1037,22 +1044,13 @@ def execute_asset_backfill_iteration(
         else:
             # Generate a new set of run requests to launch, and update the materialized and failed
             # subsets
-            result = None
-
-            for result in execute_asset_backfill_iteration_inner(
+            result = execute_asset_backfill_iteration_inner(
                 backfill_id=backfill.backfill_id,
                 asset_backfill_data=previous_asset_backfill_data,
                 asset_graph_view=asset_graph_view,
                 backfill_start_timestamp=backfill.backfill_timestamp,
                 logger=logger,
-            ):
-                yield None
-
-            if not isinstance(result, AssetBackfillIterationResult):
-                check.failed(
-                    "Expected execute_asset_backfill_iteration_inner to return an"
-                    " AssetBackfillIterationResult"
-                )
+            )
 
             # Write the updated asset backfill data with in progress run requests before we launch anything, for idempotency
             # Make sure we didn't get canceled in the interim
@@ -1076,7 +1074,7 @@ def execute_asset_backfill_iteration(
             instance.update_backfill(updated_backfill)
 
         if result.run_requests:
-            yield from _submit_runs_and_update_backfill_in_chunks(
+            await _submit_runs_and_update_backfill_in_chunks(
                 asset_graph_view,
                 workspace_process_context,
                 updated_backfill.backfill_id,
@@ -1154,30 +1152,17 @@ def execute_asset_backfill_iteration(
     elif backfill.status == BulkActionStatus.CANCELING:
         from dagster._core.execution.backfill import cancel_backfill_runs_and_cancellation_complete
 
-        for all_runs_canceled in cancel_backfill_runs_and_cancellation_complete(
+        all_runs_canceled = cancel_backfill_runs_and_cancellation_complete(
             instance=instance, backfill_id=backfill.backfill_id
-        ):
-            yield None
-
-        if not isinstance(all_runs_canceled, bool):  # pyright: ignore[reportPossiblyUnboundVariable]
-            check.failed(
-                "Expected cancel_backfill_runs_and_cancellation_complete to return a boolean"
-            )
+        )
 
         # Update the asset backfill data to contain the newly materialized/failed partitions.
-        updated_asset_backfill_data = None
-        for updated_asset_backfill_data in get_canceling_asset_backfill_iteration_data(
+        updated_asset_backfill_data = get_canceling_asset_backfill_iteration_data(
             backfill.backfill_id,
             previous_asset_backfill_data,
             asset_graph_view,
             backfill.backfill_timestamp,
-        ):
-            yield None
-
-        if not isinstance(updated_asset_backfill_data, AssetBackfillData):
-            check.failed(
-                "Expected get_canceling_asset_backfill_iteration_data to return an AssetBackfillData"
-            )
+        )
 
         # Refetch, in case the backfill was forcibly marked as canceled in the meantime
         backfill = cast("PartitionBackfill", instance.get_backfill(backfill.backfill_id))
@@ -1227,23 +1212,16 @@ def get_canceling_asset_backfill_iteration_data(
     asset_backfill_data: AssetBackfillData,
     asset_graph_view: AssetGraphView,
     backfill_start_timestamp: float,
-) -> Iterable[Optional[AssetBackfillData]]:
+) -> AssetBackfillData:
     """For asset backfills in the "canceling" state, fetch the asset backfill data with the updated
     materialized and failed subsets.
     """
     asset_graph = cast("RemoteWorkspaceAssetGraph", asset_graph_view.asset_graph)
     instance_queryer = asset_graph_view.get_inner_queryer_for_back_compat()
     updated_materialized_subset = None
-    for updated_materialized_subset in get_asset_backfill_iteration_materialized_subset(
+    updated_materialized_subset = get_asset_backfill_iteration_materialized_subset(
         backfill_id, asset_backfill_data, asset_graph, instance_queryer
-    ):
-        yield None
-
-    if not isinstance(updated_materialized_subset, AssetGraphSubset):
-        check.failed(
-            "Expected get_asset_backfill_iteration_materialized_subset to return an"
-            " AssetGraphSubset object"
-        )
+    )
 
     failed_subset = _get_failed_asset_graph_subset(
         asset_graph_view,
@@ -1258,7 +1236,7 @@ def get_canceling_asset_backfill_iteration_data(
     updated_failed_subset = (
         asset_backfill_data.failed_and_downstream_subset | failed_subset
     ) - updated_materialized_subset
-    updated_backfill_data = AssetBackfillData(
+    return AssetBackfillData(
         target_subset=asset_backfill_data.target_subset,
         latest_storage_id=asset_backfill_data.latest_storage_id,
         requested_runs_for_target_roots=asset_backfill_data.requested_runs_for_target_roots,
@@ -1268,15 +1246,13 @@ def get_canceling_asset_backfill_iteration_data(
         backfill_start_time=TimestampWithTimezone(backfill_start_timestamp, "UTC"),
     )
 
-    yield updated_backfill_data
-
 
 def get_asset_backfill_iteration_materialized_subset(
     backfill_id: str,
     asset_backfill_data: AssetBackfillData,
     asset_graph: RemoteWorkspaceAssetGraph,
     instance_queryer: CachingInstanceQueryer,
-) -> Iterable[Optional[AssetGraphSubset]]:
+) -> AssetGraphSubset:
     """Returns the partitions that have been materialized by the backfill.
 
     This function is a generator so we can return control to the daemon and let it heartbeat
@@ -1287,7 +1263,7 @@ def get_asset_backfill_iteration_materialized_subset(
         cursor = None
         has_more = True
         while has_more:
-            result = instance_queryer.instance.fetch_materializations(
+            materializations_result = instance_queryer.instance.fetch_materializations(
                 AssetRecordsFilter(
                     asset_key=asset_key,
                     after_storage_id=asset_backfill_data.latest_storage_id,
@@ -1295,29 +1271,39 @@ def get_asset_backfill_iteration_materialized_subset(
                 cursor=cursor,
                 limit=MATERIALIZATION_CHUNK_SIZE,
             )
-            records_in_backfill = [
-                record
-                for record in result.records
-                if instance_queryer.run_has_tag(
-                    run_id=record.run_id, tag_key=BACKFILL_ID_TAG, tag_value=backfill_id
+
+            cursor = materializations_result.cursor
+            has_more = materializations_result.has_more
+
+            run_ids = [record.run_id for record in materializations_result.records if record.run_id]
+            if run_ids:
+                run_records = instance_queryer.instance.get_run_records(
+                    filters=RunsFilter(run_ids=run_ids),
                 )
-            ]
-            recently_materialized_asset_partitions |= AssetGraphSubset.from_asset_partition_set(
-                {
-                    AssetKeyPartitionKey(asset_key, record.partition_key)
-                    for record in records_in_backfill
-                },
-                asset_graph,
-            )
-            cursor = result.cursor
-            has_more = result.has_more
-            yield None
+                run_ids_in_backfill = {
+                    run_record.dagster_run.run_id
+                    for run_record in run_records
+                    if run_record.dagster_run.tags.get(BACKFILL_ID_TAG) == backfill_id
+                }
+
+                materialization_records_in_backfill = [
+                    record
+                    for record in materializations_result.records
+                    if record.run_id in run_ids_in_backfill
+                ]
+                recently_materialized_asset_partitions |= AssetGraphSubset.from_asset_partition_set(
+                    {
+                        AssetKeyPartitionKey(asset_key, record.partition_key)
+                        for record in materialization_records_in_backfill
+                    },
+                    asset_graph,
+                )
 
     updated_materialized_subset = (
         asset_backfill_data.materialized_subset | recently_materialized_asset_partitions
     )
 
-    yield updated_materialized_subset
+    return updated_materialized_subset
 
 
 def _get_subset_in_target_subset(
@@ -1439,7 +1425,7 @@ def execute_asset_backfill_iteration_inner(
     asset_graph_view: AssetGraphView,
     backfill_start_timestamp: float,
     logger: logging.Logger,
-) -> Iterable[Optional[AssetBackfillIterationResult]]:
+) -> AssetBackfillIterationResult:
     """Core logic of a backfill iteration. Has no side effects.
 
     Computes which runs should be requested, if any, as well as updated bookkeeping about the status
@@ -1464,8 +1450,6 @@ def execute_asset_backfill_iteration_inner(
             f"Root assets that have not yet been requested:\n{_asset_graph_subset_to_str(target_roots, asset_graph)}"
         )
 
-        yield None
-
         updated_materialized_subset = AssetGraphSubset()
         failed_and_downstream_subset = AssetGraphSubset()
         next_latest_storage_id = _get_next_latest_storage_id(instance_queryer)
@@ -1478,17 +1462,9 @@ def execute_asset_backfill_iteration_inner(
         if cursor_delay_time:
             time.sleep(cursor_delay_time)
 
-        updated_materialized_subset = None
-        for updated_materialized_subset in get_asset_backfill_iteration_materialized_subset(
+        updated_materialized_subset = get_asset_backfill_iteration_materialized_subset(
             backfill_id, asset_backfill_data, asset_graph, instance_queryer
-        ):
-            yield None
-
-        if not isinstance(updated_materialized_subset, AssetGraphSubset):
-            check.failed(
-                "Expected get_asset_backfill_iteration_materialized_subset to return an"
-                " AssetGraphSubset"
-            )
+        )
 
         materialized_since_last_tick = (
             updated_materialized_subset - asset_backfill_data.materialized_subset
@@ -1512,16 +1488,12 @@ def execute_asset_backfill_iteration_inner(
             parent_materialized_asset_partitions, asset_graph
         )
 
-        yield None
-
         failed_and_downstream_subset = _get_failed_and_downstream_asset_graph_subset(
             backfill_id,
             asset_backfill_data,
             asset_graph_view,
             updated_materialized_subset,
         )
-
-        yield None
 
     asset_subset_to_request, not_requested_and_reasons = bfs_filter_asset_graph_view(
         asset_graph_view,
@@ -1580,7 +1552,7 @@ def execute_asset_backfill_iteration_inner(
         requested_subset=asset_backfill_data.requested_subset,
         backfill_start_time=TimestampWithTimezone(backfill_start_timestamp, "UTC"),
     )
-    yield AssetBackfillIterationResult(
+    return AssetBackfillIterationResult(
         run_requests,
         updated_asset_backfill_data,
         reserved_run_ids=[make_new_run_id() for _ in range(len(run_requests))],
@@ -1826,8 +1798,8 @@ def get_can_run_with_parent_subsets(
             ],
         )
     if (
-        parent_node.resolve_to_singular_repo_scoped_node().repository_handle  # type: ignore
-        != candidate_node.resolve_to_singular_repo_scoped_node().repository_handle  # type: ignore
+        parent_node.resolve_to_singular_repo_scoped_node().repository_handle
+        != candidate_node.resolve_to_singular_repo_scoped_node().repository_handle
     ):
         return (
             asset_graph_view.get_empty_subset(key=candidate_asset_key),

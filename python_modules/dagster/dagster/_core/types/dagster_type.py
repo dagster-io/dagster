@@ -41,6 +41,8 @@ from dagster._core.definitions.resource_requirement import (
     ResourceRequirement,
     TypeResourceRequirement,
 )
+from dagster._core.definitions.result import MaterializeResult
+from dagster._core.definitions.utils import NoValueSentinel
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
     DagsterInvariantViolationError,
@@ -274,6 +276,10 @@ class DagsterType:
         return self.kind == DagsterTypeKind.NOTHING
 
     @property
+    def is_any(self) -> bool:
+        return self.kind == DagsterTypeKind.ANY
+
+    @property
     def supports_fan_in(self) -> bool:
         return False
 
@@ -485,10 +491,10 @@ class _Nothing(DagsterType):
     def type_check_method(
         self, _context: "TypeCheckContext", value: object
     ) -> TypeCheck:
-        if value is not None:
+        if value is not None and value != NoValueSentinel:
             return TypeCheck(
                 success=False,
-                description=f"Value must be None, got a {type(value)}",
+                description=f"Value must be None or unset, got a {type(value)}",
             )
 
         return TypeCheck(success=True)
@@ -902,7 +908,9 @@ def resolve_dagster_type(dagster_type: object) -> DagsterType:
     )
 
     # First, check to see if we're using Dagster's generic output type to do the type catching.
-    if is_generic_output_annotation(dagster_type):
+    if is_generic_output_annotation(
+        dagster_type
+    ) or is_generic_materialize_result_annotation(dagster_type):
         type_args = get_args(dagster_type)
         # If no inner type was provided, forward Any type.
         dagster_type = type_args[0] if len(type_args) == 1 else Any
@@ -911,10 +919,7 @@ def resolve_dagster_type(dagster_type: object) -> DagsterType:
         type_args = get_args(dynamic_out_annotation)
         dagster_type = type_args[0] if len(type_args) == 1 else Any
     elif dagster_type == MaterializeResult:
-        # convert MaterializeResult type annotation to Nothing until returning
-        # scalar values via MaterializeResult is supported
-        # https://github.com/dagster-io/dagster/issues/16887
-        dagster_type = Nothing
+        dagster_type = Any
     elif dagster_type == ObserveResult:
         # ObserveResult does not include a value
         dagster_type = Nothing
@@ -996,6 +1001,13 @@ def is_dynamic_output_annotation(dagster_type: object) -> bool:
 
 def is_generic_output_annotation(dagster_type: object) -> bool:
     return dagster_type == Output or get_origin(dagster_type) == Output
+
+
+def is_generic_materialize_result_annotation(dagster_type: object) -> bool:
+    return (
+        dagster_type == MaterializeResult
+        or get_origin(dagster_type) == MaterializeResult
+    )
 
 
 def resolve_python_type_to_dagster_type(python_type: t.Type) -> DagsterType:

@@ -9,7 +9,7 @@ import DagsterPlus from '@site/docs/partials/\_DagsterPlus.md';
 
 <DagsterPlus />
 
-Using a GraphQL API endpoint, you can export [Dagster+ Insights](/guides/monitor/insights/) metrics from your Dagster+ instance.
+Using a GraphQL API endpoint, you can export [Dagster+ Insights](/guides/monitor/insights) metrics from your Dagster+ instance.
 
 Refer to the [Built-in Insights metrics](/guides/monitor/insights/index.md#built-in-metrics) for a list of available metrics.
 

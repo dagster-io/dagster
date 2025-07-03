@@ -90,7 +90,7 @@ def test_render_vars_root(dbt_path: Path) -> None:
             DbtProjectComponent,
             {
                 "project": str(dbt_path),
-                "translation": {"group_name": "{{ env('GROUP_AS_ENV') }}"},
+                "translation": {"group_name": "{{ env.GROUP_AS_ENV }}"},
             },
         )
         assert defs.resolve_asset_graph().get_all_asset_keys() == JAFFLE_SHOP_KEYS
@@ -105,7 +105,7 @@ def test_render_vars_asset_key(dbt_path: Path) -> None:
             {
                 "project": str(dbt_path),
                 "translation": {
-                    "key": "{{ env('ASSET_KEY_PREFIX') }}/{{ node.name }}",
+                    "key": "{{ env.ASSET_KEY_PREFIX }}/{{ node.name }}",
                 },
             },
         )

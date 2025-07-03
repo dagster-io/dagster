@@ -34,24 +34,24 @@ continent_job = dg.define_asset_job(
 # end_job
 
 # start_schedule_all_partitions
-from dagster import RunRequest, schedule
+import dagster as dg
 
 
-@schedule(cron_schedule="0 0 * * *", job=continent_job)
+@dg.schedule(cron_schedule="0 0 * * *", job=continent_job)
 def continent_schedule():
     for c in CONTINENTS:
-        yield RunRequest(run_key=c, partition_key=c)
+        yield dg.RunRequest(run_key=c, partition_key=c)
 
 
 # end_schedule_all_partitions
 
 # start_single_partition
-from dagster import RunRequest, schedule
+import dagster as dg
 
 
-@schedule(cron_schedule="0 0 * * *", job=continent_job)
+@dg.schedule(cron_schedule="0 0 * * *", job=continent_job)
 def antarctica_schedule():
-    return RunRequest(partition_key="Antarctica")
+    return dg.RunRequest(partition_key="Antarctica")
 
 
 # end_single_partition

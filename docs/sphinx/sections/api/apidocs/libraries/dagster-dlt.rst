@@ -3,7 +3,7 @@ dlt (dagster-dlt)
 
 This library provides a Dagster integration with `dlt <https://dlthub.com>`_.
 
-For more information on getting started, see the `Dagster & dlt <https://docs.dagster.io/integrations/libraries/dlt/>`_ documentation.
+For more information on getting started, see the `Dagster & dlt <https://docs.dagster.io/integrations/libraries/dlt>`_ documentation.
 
 
 .. currentmodule:: dagster_dlt

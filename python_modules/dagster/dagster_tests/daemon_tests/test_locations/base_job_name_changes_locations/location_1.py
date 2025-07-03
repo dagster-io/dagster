@@ -1,4 +1,8 @@
-from dagster import HourlyPartitionsDefinition, WeeklyPartitionsDefinition, asset
+from dagster import asset
+from dagster._core.definitions.partitions.definition import (
+    HourlyPartitionsDefinition,
+    WeeklyPartitionsDefinition,
+)
 
 
 @asset(

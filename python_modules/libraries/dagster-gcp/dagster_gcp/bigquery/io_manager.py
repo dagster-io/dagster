@@ -6,13 +6,13 @@ from typing import Optional, cast
 from dagster import IOManagerDefinition, OutputContext, io_manager
 from dagster._annotations import beta
 from dagster._config.pythonic_config import ConfigurableIOManagerFactory
+from dagster._core.definitions.partitions.utils import TimeWindow
 from dagster._core.storage.db_io_manager import (
     DbClient,
     DbIOManager,
     DbTypeHandler,
     TablePartitionDimension,
     TableSlice,
-    TimeWindow,
 )
 from dagster._core.storage.io_manager import dagster_maintained_io_manager
 from google.api_core.exceptions import NotFound
@@ -61,7 +61,7 @@ def build_bigquery_io_manager(
 
             bigquery_io_manager = build_bigquery_io_manager([BigQueryPandasTypeHandler()])
 
-            defs = Definitions(
+            Definitions(
                 assets=[my_table, my_second_table],
                 resources={
                     "io_manager": bigquery_io_manager.configured({
@@ -75,7 +75,7 @@ def build_bigquery_io_manager(
 
         .. code-block:: python
 
-            defs = Definitions(
+            Definitions(
                 assets=[my_table],
                 resources={
                         "io_manager": bigquery_io_manager.configured({

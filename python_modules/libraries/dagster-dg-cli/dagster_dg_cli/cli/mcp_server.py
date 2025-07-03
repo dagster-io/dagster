@@ -26,6 +26,6 @@ def serve_command():
             "dagster-dg-cli must be installed with the mcp extra to use `dg mcp` commands."
         )
 
-    from dagster_dg_core.mcp.server import mcp
+    from dagster_dg_cli.mcp.server import mcp
 
     mcp.run(transport="stdio")

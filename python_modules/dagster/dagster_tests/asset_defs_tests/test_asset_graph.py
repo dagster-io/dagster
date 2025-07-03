@@ -1,6 +1,6 @@
 import time
 from datetime import datetime
-from typing import Callable, Optional
+from typing import TYPE_CHECKING, Callable, Optional, cast
 from unittest.mock import MagicMock
 
 import pytest
@@ -11,14 +11,10 @@ from dagster import (
     AssetsDefinition,
     AssetSpec,
     AutomationCondition,
-    DailyPartitionsDefinition,
     Definitions,
     GraphOut,
-    HourlyPartitionsDefinition,
-    LastPartitionMapping,
     Out,
     PartitionMapping,
-    StaticPartitionsDefinition,
     TimeWindowPartitionMapping,
     asset,
     graph,
@@ -33,9 +29,18 @@ from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.base_asset_graph import AssetCheckNode, BaseAssetGraph, BaseAssetNode
 from dagster._core.definitions.decorators.asset_check_decorator import asset_check
 from dagster._core.definitions.events import AssetKeyPartitionKey
-from dagster._core.definitions.partition import PartitionsDefinition, PartitionsSubset
-from dagster._core.definitions.partition_key_range import PartitionKeyRange
-from dagster._core.definitions.partition_mapping import UpstreamPartitionsResult
+from dagster._core.definitions.partitions.definition import (
+    DailyPartitionsDefinition,
+    HourlyPartitionsDefinition,
+    PartitionsDefinition,
+    StaticPartitionsDefinition,
+)
+from dagster._core.definitions.partitions.mapping import (
+    LastPartitionMapping,
+    UpstreamPartitionsResult,
+)
+from dagster._core.definitions.partitions.partition_key_range import PartitionKeyRange
+from dagster._core.definitions.partitions.subset import PartitionsSubset
 from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
 from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.errors import DagsterDefinitionChangedDeserializationError
@@ -46,6 +51,9 @@ from dagster._core.remote_representation.handle import RepositoryHandle
 from dagster._core.test_utils import freeze_time, instance_for_test, mock_workspace_from_repos
 from dagster._time import create_datetime, get_current_datetime
 from dagster_shared.serdes import deserialize_value, serialize_value
+
+if TYPE_CHECKING:
+    from dagster._core.definitions.partitions.subset import TimeWindowPartitionsSubset
 
 
 def to_remote_asset_graph(assets, asset_checks=None) -> RemoteAssetGraph:
@@ -497,6 +505,43 @@ def test_bfs_filter_asset_subsets(asset_graph_from_assets: Callable[..., BaseAss
             current_time=get_current_datetime(),
         )
         == initial_asset0_subset | initial_asset1_subset | corresponding_asset3_subset
+    )
+
+
+def test_subset_from_asset_partitions(
+    asset_graph_from_assets: Callable[..., BaseAssetGraph],
+):
+    daily_partitions_def = DailyPartitionsDefinition(start_date="2022-01-01")
+
+    @asset(partitions_def=daily_partitions_def)
+    def asset0(): ...
+
+    keys = {
+        AssetKeyPartitionKey(asset0.key, "2021-12-31"),
+        AssetKeyPartitionKey(asset0.key, "2022-01-01"),
+        AssetKeyPartitionKey(asset0.key, "2022-02-02"),
+    }
+
+    subset = AssetGraphSubset.from_asset_partition_set(keys, asset_graph_from_assets([asset0]))
+
+    assert subset == AssetGraphSubset(
+        partitions_subsets_by_asset_key={
+            asset0.key: daily_partitions_def.subset_with_partition_keys(
+                ["2022-01-01", "2022-02-02"]
+            )
+        },
+    )
+
+    subset_without_validation = AssetGraphSubset.from_asset_partition_set(
+        keys, asset_graph_from_assets([asset0]), validate_time_range=False
+    )
+
+    assert subset_without_validation == AssetGraphSubset(
+        partitions_subsets_by_asset_key={
+            asset0.key: cast(
+                "TimeWindowPartitionsSubset", daily_partitions_def.empty_subset()
+            ).with_partition_keys(["2021-12-31", "2022-01-01", "2022-02-02"], validate=False)
+        },
     )
 
 

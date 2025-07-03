@@ -2,8 +2,8 @@ import importlib
 from pathlib import Path
 
 from dagster import AssetSpec, AutomationCondition
-from dagster.components.core.context import ComponentLoadContext
 from dagster.components.core.load_defs import load_defs
+from dagster.components.core.tree import ComponentTree
 
 
 def test_custom_scope() -> None:
@@ -37,5 +37,5 @@ asset_attributes:
     foo: ''
 """)
 
-    defs = c.build_defs(ComponentLoadContext.for_test())
+    defs = c.build_defs(ComponentTree.for_test().load_context)
     assert defs.assets

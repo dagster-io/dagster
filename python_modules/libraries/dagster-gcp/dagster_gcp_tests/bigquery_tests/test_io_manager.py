@@ -3,7 +3,8 @@ import os
 from datetime import datetime
 
 import pytest
-from dagster import InputContext, OutputContext, TimeWindow, asset, materialize
+from dagster import InputContext, OutputContext, asset, materialize
+from dagster._core.definitions.partitions.utils import TimeWindow
 from dagster._core.storage.db_io_manager import DbTypeHandler, TablePartitionDimension, TableSlice
 from dagster_gcp.bigquery.io_manager import (
     BigQueryClient,

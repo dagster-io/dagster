@@ -117,6 +117,12 @@ module.exports = {
             message: 'Please use native Intl APIs for date/time, or dayjs if necessary.',
           },
         ],
+        patterns: [
+          {
+            group: ['dayjs/plugin/*'],
+            message: 'Please load and configure dayjs plugins in dayjsExtensions.ts',
+          },
+        ],
       },
     ],
     'object-shorthand': ['error', 'always'],

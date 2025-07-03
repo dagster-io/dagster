@@ -1,11 +1,5 @@
-from dagster import (
-    AssetKey,
-    AutoMaterializePolicy,
-    DailyPartitionsDefinition,
-    SourceAsset,
-    asset,
-    repository,
-)
+from dagster import AssetKey, AutoMaterializePolicy, SourceAsset, asset, repository
+from dagster._core.definitions.partitions.definition import DailyPartitionsDefinition
 
 eager_downstream_1_source = SourceAsset(AssetKey(["eager_downstream_1"]))
 

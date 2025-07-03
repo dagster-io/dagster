@@ -11,8 +11,11 @@ from dagster._core.definitions.metadata.metadata_value import TextMetadataValue
 from dagster._core.definitions.resource_annotation import ResourceParam
 from dagster._core.definitions.result import MaterializeResult
 from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
-from dagster.components.core.context import ComponentLoadContext
-from dagster.components.lib.executable_component.component import ExecutableComponent
+from dagster.components.core.tree import ComponentTree
+from dagster.components.lib.executable_component.function_component import (
+    FunctionComponent,
+    FunctionSpec,
+)
 from dagster_shared import check
 
 
@@ -25,10 +28,12 @@ def only_asset_check_execute_fn(context):
 
 
 def test_parse_asset_check_attributes() -> None:
-    component = ExecutableComponent.from_attributes_dict(
+    component = FunctionComponent.from_attributes_dict(
         attributes={
-            "name": "op_name",
-            "execute_fn": "dagster_tests.components_tests.executable_component_tests.test_asset_check_only.only_asset_check_execute_fn",
+            "execution": {
+                "name": "op_name",
+                "fn": "dagster_tests.components_tests.executable_component_tests.test_asset_check_only.only_asset_check_execute_fn",
+            },
             "checks": [
                 {
                     "asset": "asset",
@@ -42,7 +47,8 @@ def test_parse_asset_check_attributes() -> None:
     assert component.checks[0].name == "check_name"
     assert component.checks[0].asset_key.to_user_string() == "asset"
 
-    assert component.execute_fn(None).passed is True
+    assert isinstance(component.execution, FunctionSpec)
+    assert component.execution.fn(None).passed is True
 
 
 def asset_and_check_execute_fn(context):
@@ -52,10 +58,12 @@ def asset_and_check_execute_fn(context):
 
 
 def test_execute_asset_with_check() -> None:
-    component = ExecutableComponent.from_attributes_dict(
+    component = FunctionComponent.from_attributes_dict(
         attributes={
-            "name": "op_name",
-            "execute_fn": "dagster_tests.components_tests.executable_component_tests.test_asset_check_only.asset_and_check_execute_fn",
+            "execution": {
+                "name": "op_name",
+                "fn": "dagster_tests.components_tests.executable_component_tests.test_asset_check_only.asset_and_check_execute_fn",
+            },
             "assets": [
                 {
                     "key": "asset",
@@ -70,7 +78,7 @@ def test_execute_asset_with_check() -> None:
         }
     )
 
-    defs = component.build_defs(ComponentLoadContext.for_test())
+    defs = component.build_defs(ComponentTree.for_test().load_context)
 
     assets_def = defs.get_assets_def("asset")
     assert assets_def
@@ -98,10 +106,12 @@ def asset_check_job(
 
 
 def test_standalone_asset_check() -> None:
-    component = ExecutableComponent.from_attributes_dict(
+    component = FunctionComponent.from_attributes_dict(
         attributes={
-            "name": "op_name",
-            "execute_fn": "dagster_tests.components_tests.executable_component_tests.test_asset_check_only.only_asset_check_execute_fn",
+            "execution": {
+                "name": "op_name",
+                "fn": "dagster_tests.components_tests.executable_component_tests.test_asset_check_only.only_asset_check_execute_fn",
+            },
             "checks": [
                 {
                     "asset": "asset",
@@ -113,9 +123,10 @@ def test_standalone_asset_check() -> None:
     assert len(component.checks or []) == 1
     assert component.checks
     assert component.checks[0].name == "check_name"
-    assert isinstance(component.execute_fn(None), AssetCheckResult)
+    assert isinstance(component.execution, FunctionSpec)
+    assert isinstance(component.execution.fn(None), AssetCheckResult)
 
-    defs = component.build_defs(ComponentLoadContext.for_test())
+    defs = component.build_defs(ComponentTree.for_test().load_context)
     assert defs.asset_checks
     asset_checks_def = next(iter(defs.asset_checks))
     assert isinstance(asset_checks_def, AssetChecksDefinition)
@@ -137,10 +148,12 @@ def asset_check_execute_fn_with_resources(context, resource_one: ResourceParam[s
 
 
 def test_standalone_asset_check_with_resources() -> None:
-    component = ExecutableComponent.from_attributes_dict(
+    component = FunctionComponent.from_attributes_dict(
         attributes={
-            "name": "op_name",
-            "execute_fn": "dagster_tests.components_tests.executable_component_tests.test_asset_check_only.asset_check_execute_fn_with_resources",
+            "execution": {
+                "name": "op_name",
+                "fn": "dagster_tests.components_tests.executable_component_tests.test_asset_check_only.asset_check_execute_fn_with_resources",
+            },
             "checks": [
                 {
                     "asset": "asset",
@@ -150,7 +163,7 @@ def test_standalone_asset_check_with_resources() -> None:
         }
     )
 
-    defs = component.build_defs(ComponentLoadContext.for_test())
+    defs = component.build_defs(ComponentTree.for_test().load_context)
 
     asset_checks_def = next(iter(defs.asset_checks or []))
     assert isinstance(asset_checks_def, AssetChecksDefinition)
@@ -172,13 +185,15 @@ def test_standalone_asset_check_with_resources() -> None:
 
 
 def test_trivial_properties() -> None:
-    component_only_assets = ExecutableComponent.from_attributes_dict(
+    component_only_assets = FunctionComponent.from_attributes_dict(
         attributes={
-            "name": "op_name",
-            "execute_fn": "dagster_tests.components_tests.executable_component_tests.test_asset_check_only.only_asset_execute_fn",
-            "description": "op_description",
-            "tags": {"op_tag": "op_tag_value"},
-            "pool": "op_pool",
+            "execution": {
+                "name": "op_name",
+                "description": "op_description",
+                "tags": {"op_tag": "op_tag_value"},
+                "fn": "dagster_tests.components_tests.executable_component_tests.test_asset_check_only.only_asset_execute_fn",
+                "pool": "op_pool",
+            },
             "assets": [
                 {
                     "key": "asset",
@@ -187,15 +202,19 @@ def test_trivial_properties() -> None:
         }
     )
 
-    assert component_only_assets.build_underlying_assets_def().op.tags == {"op_tag": "op_tag_value"}
+    assert component_only_assets.build_underlying_assets_def(
+        ComponentTree.for_test().load_context
+    ).op.tags == {"op_tag": "op_tag_value"}
 
-    component_only_asset_checks = ExecutableComponent.from_attributes_dict(
+    component_only_asset_checks = FunctionComponent.from_attributes_dict(
         attributes={
-            "name": "op_name",
-            "description": "op_description",
-            "execute_fn": "dagster_tests.components_tests.executable_component_tests.test_asset_check_only.only_asset_check_execute_fn",
-            "tags": {"op_tag": "op_tag_value"},
-            "pool": "op_pool",
+            "execution": {
+                "name": "op_name",
+                "description": "op_description",
+                "tags": {"op_tag": "op_tag_value"},
+                "fn": "dagster_tests.components_tests.executable_component_tests.test_asset_check_only.only_asset_check_execute_fn",
+                "pool": "op_pool",
+            },
             "checks": [
                 {
                     "asset": "asset",
@@ -206,6 +225,16 @@ def test_trivial_properties() -> None:
     )
 
     for component in [component_only_assets, component_only_asset_checks]:
-        assert component.build_underlying_assets_def().op.tags == {"op_tag": "op_tag_value"}
-        assert component.build_underlying_assets_def().op.description == "op_description"
-        assert component.build_underlying_assets_def().op.pool == "op_pool"
+        assert component.build_underlying_assets_def(
+            ComponentTree.for_test().load_context
+        ).op.tags == {"op_tag": "op_tag_value"}
+        assert (
+            component.build_underlying_assets_def(
+                ComponentTree.for_test().load_context
+            ).op.description
+            == "op_description"
+        )
+        assert (
+            component.build_underlying_assets_def(ComponentTree.for_test().load_context).op.pool
+            == "op_pool"
+        )

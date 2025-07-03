@@ -2,9 +2,9 @@
 
 An end-to-end demonstration of ingestion data from the ATProto API, modeling it with dbt, and presenting it with Power BI.
 
-![Architecture Diagram](./architecture-diagram.png)
+![Architecture Diagram](_static/architecture-diagram.png)
 
-![Project asset lineage](./lineage.svg)
+![Project asset lineage](_static/lineage.svg)
 
 ## Features used
 
@@ -30,19 +30,22 @@ And then populate the fields.
 
 ### Development
 
+Generate the dbt project manifest:
+
+    cd dbt_project
+    uv run dbt build
+
 Install the project dependencies:
 
-    pip install -e ".[dev]"
+    uv venv
+
+    source .venv/bin/activate
+
+    uv pip install -e ".[dev]"
 
 Start Dagster:
 
-    DAGSTER_HOME=$(pwd) dagster dev
-
-### Unit testing
-
-Tests are in the `project_atproto_dashboard_tests` directory and you can run tests using `pytest`:
-
-    pytest project_atproto_dashboard_tests
+    dg dev
 
 ## Resources
 

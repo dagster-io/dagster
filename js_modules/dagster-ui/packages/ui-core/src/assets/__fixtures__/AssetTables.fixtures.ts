@@ -14,6 +14,7 @@ import {
   buildAssetKey,
   buildAssetLatestInfo,
   buildAssetNode,
+  buildAssetRecord,
   buildAssetRecordConnection,
   buildFreshnessPolicy,
   buildMaterializationEvent,
@@ -318,10 +319,12 @@ export const AssetCatalogTableMock = buildQueryMock<AssetRecordsQuery, AssetReco
   variableMatcher: () => true,
   data: {
     assetRecordsOrError: buildAssetRecordConnection({
-      assets: AssetCatalogTableMockAssets.map((asset) => ({
-        ...asset,
-        __typename: 'AssetRecord',
-      })),
+      assets: AssetCatalogTableMockAssets.map((asset) =>
+        buildAssetRecord({
+          id: asset.id,
+          key: asset.key,
+        }),
+      ),
     }),
   },
 });

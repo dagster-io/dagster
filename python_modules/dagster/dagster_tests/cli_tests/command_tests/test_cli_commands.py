@@ -29,7 +29,8 @@ from dagster._cli.run import (
 )
 from dagster._cli.workspace.cli_target import PythonPointerOpts, WorkspaceOpts
 from dagster._core.definitions.decorators.sensor_decorator import sensor
-from dagster._core.definitions.partition import PartitionedConfig, StaticPartitionsDefinition
+from dagster._core.definitions.partitions.definition import StaticPartitionsDefinition
+from dagster._core.definitions.partitions.partitioned_config import PartitionedConfig
 from dagster._core.definitions.sensor_definition import RunRequest
 from dagster._core.instance import DagsterInstance
 from dagster._core.test_utils import instance_for_test

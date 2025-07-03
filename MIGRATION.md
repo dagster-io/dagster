@@ -2,6 +2,38 @@
 
 When new releases include breaking changes or deprecations, this document describes how to migrate.
 
+## Migrating to 1.11.0
+
+### Breaking changes
+
+The `FreshnessPolicy` class (which has been marked as deprecated as of Dagster version 1.6), has been renamed to `LegacyFreshnessPolicy`. The deprecated freshness policies will henceforth be referred to in docs and code as "legacy freshness policies". There are no immediate changes in functionality.
+
+Existing imports of `FreshnessPolicy` will fail with an `ImportError`:
+
+```python
+from dagster import FreshnessPolicy
+```
+
+You can still import and use the legacy freshness policies from the `deprecated` module:
+
+```python
+from dagster.deprecated import FreshnessPolicy  # imports LegacyFreshnessPolicy
+```
+
+Accordingly, the `freshness_policy` parameter has been renamed to `legacy_freshness_policy` in these public APIs:
+
+- `AssetsDefinition.from_graph()`
+- `AssetsDefinition.from_op()`
+- `@asset`
+- `@asset_check`
+- `AssetSpec.replace_attributes()`
+- `AssetSpec.merge_attributes()`
+
+Other relevant parameter renames:
+
+- In `AssetsDefinition.from_op()`, parameter `freshness_policies_by_output_name` is renamed to `legacy_freshness_policies_by_output_name`
+- In `AssetsDefinition.from_graph()`, parameter `freshness_policies_by_output_name` is renamed to `legacy_freshness_policies_by_output_name`
+
 ## Migrating to 1.10.0
 
 ### Deprecations
@@ -58,7 +90,6 @@ When new releases include breaking changes or deprecations, this document descri
     use_sensors: true
   ```
 - The `datetime` objects that are exposed in Dagster public APIs are now standard Python `datetime.datetime` objects with timezones, instead of [Pendulum](https://pendulum.eustace.io/docs/) `datetime` objects. Technically, this is not a breaking change since Dagster’s public API uses `datetime.datetime` in our APIs, but Pendulum datetimes expose some methods (like `add` and `subtract`) that are not available on standard `datetime.datetime` objects. If your code was using methods that are only available on `Pendulum` datetimes, you can transform your `datetimes` back to Pendulum datetimes before using them.
-
   - For example, an asset like this:
 
   ```python
@@ -517,7 +548,6 @@ RENAME COLUMN time_copy TO time
 - [dagster-snowflake] The `execute_queries` command now returns a list of DataFrames when `use_pandas_result` is True, rather than appending the results of each query to a single DataFrame.
 - [dagster-shell] The default behavior of the `execute` and `execute_shell_command` functions is now to include any environment variables in the calling op. To restore the previous behavior, you can pass in `env={}` to these functions.
 - [dagster-k8s] Several Dagster features that were previously disabled by default in the Dagster Helm chart are now enabled by default. These features are:
-
   - The [run queue](https://docs.dagster.io/deployment/run-coordinator#limiting-run-concurrency) (by default, without a limit). Runs will now always be launched from the Daemon.
   - Run queue parallelism - by default, up to 4 runs can now be pulled off of the queue at a time (as long as the global run limit or tag-based concurrency limits are not exceeded).
   - [Run retries](https://docs.dagster.io/deployment/run-retries#run-retries) - runs will now retry if they have the `dagster/max_retries` tag set. You can configure a global number of retries in the Helm chart by setting `run_retries.max_retries` to a value greater than the default of 0.

@@ -1,4 +1,5 @@
 import sys
+from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import TYPE_CHECKING, cast
 
@@ -7,9 +8,6 @@ from dagster_dg_core.utils import ensure_dagster_dg_tests_import
 
 ensure_dagster_dg_tests_import()
 
-from contextlib import asynccontextmanager
-
-from dagster_dg_core.utils import ensure_dagster_dg_tests_import
 from dagster_dg_core_tests.utils import ProxyRunner, isolated_example_project_foo_bar
 
 
@@ -43,8 +41,7 @@ async def test_is_valid_mcp_server():
 async def test_list_dagster_components():
     if TYPE_CHECKING:
         from mcp.types import TextContent
-
-    with ProxyRunner.test() as runner, isolated_example_project_foo_bar(runner):
+    with ProxyRunner.test() as runner, isolated_example_project_foo_bar(runner, in_workspace=False):
         async with mcp_server() as session:
             response = await session.call_tool("list_available_components", {"project_path": "."})
             assert not response.isError
@@ -56,7 +53,7 @@ async def test_list_dagster_components():
 @pytest.mark.skipif(sys.version_info < (3, 10), reason="no mcp support on 3.9")
 @pytest.mark.asyncio
 async def test_scaffold_dagster_component_and_check_yaml():
-    with ProxyRunner.test() as runner, isolated_example_project_foo_bar(runner):
+    with ProxyRunner.test() as runner, isolated_example_project_foo_bar(runner, in_workspace=False):
         async with mcp_server() as session:
             response = await session.call_tool(
                 "scaffold_dagster_component",

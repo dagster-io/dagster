@@ -12,6 +12,7 @@ from dagster import (
 from dagster._core.definitions.metadata import RawMetadataMapping
 from dagster._core.definitions.metadata.metadata_set import TableMetadataSet
 from dagster._core.definitions.metadata.table import TableColumn, TableSchema
+from dagster._utils.names import clean_name_lower
 
 from dagster_fivetran.types import FivetranOutput
 
@@ -19,6 +20,9 @@ if TYPE_CHECKING:
     from dagster_fivetran import DagsterFivetranTranslator
 
 DAGSTER_FIVETRAN_TRANSLATOR_METADATA_KEY = "dagster-fivetran/dagster_fivetran_translator"
+
+
+clean_name = clean_name_lower
 
 
 def get_fivetran_connector_url(connector_details: Mapping[str, Any]) -> str:

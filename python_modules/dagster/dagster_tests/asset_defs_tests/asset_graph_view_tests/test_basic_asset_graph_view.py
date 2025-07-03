@@ -1,31 +1,28 @@
 from typing import cast
 
 import pytest
-from dagster import (
-    AssetDep,
-    DailyPartitionsDefinition,
-    Definitions,
-    IdentityPartitionMapping,
-    TimeWindow,
-    TimeWindowPartitionsDefinition,
-    asset,
-)
+from dagster import AssetDep, Definitions, TimeWindowPartitionsDefinition, asset
 from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView
 from dagster._core.definitions.asset_check_spec import AssetCheckSpec
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.events import AssetKeyPartitionKey
-from dagster._core.definitions.partition import (
-    DEFAULT_DATE_FORMAT,
-    AllPartitionsSubset,
+from dagster._core.definitions.partitions.definition import (
+    DailyPartitionsDefinition,
     StaticPartitionsDefinition,
 )
-from dagster._core.definitions.partition_mapping import LastPartitionMapping, StaticPartitionMapping
-from dagster._core.definitions.time_window_partitions import (
-    PersistedTimeWindow,
+from dagster._core.definitions.partitions.mapping import (
+    IdentityPartitionMapping,
+    LastPartitionMapping,
+    StaticPartitionMapping,
+)
+from dagster._core.definitions.partitions.subset import (
+    AllPartitionsSubset,
     TimeWindowPartitionsSubset,
 )
+from dagster._core.definitions.partitions.utils import PersistedTimeWindow, TimeWindow
 from dagster._core.instance import DagsterInstance
 from dagster._time import create_datetime, get_current_datetime
+from dagster._utils.partitions import DEFAULT_DATE_FORMAT
 from dagster_shared.check import CheckError
 
 

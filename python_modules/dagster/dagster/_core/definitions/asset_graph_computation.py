@@ -15,6 +15,7 @@ from dagster._core.definitions.op_selection import get_graph_subset
 from dagster._core.errors import DagsterInvalidInvocationError
 from dagster._core.utils import toposort_flatten
 from dagster._record import IHaveNew, copy, record, record_custom
+from dagster._utils.merger import reverse_dict
 
 
 @record_custom
@@ -77,6 +78,10 @@ class AssetGraphComputation(IHaveNew):
             output_names_by_key[key] = output_name
 
         return output_names_by_key
+
+    @cached_property
+    def output_names_by_entity_key(self) -> Mapping[EntityKey, str]:
+        return {**self.output_names_by_key, **reverse_dict(self.check_keys_by_output_name)}
 
     @cached_property
     def entity_keys_by_op_output_handle(

@@ -138,7 +138,7 @@ class AssetCheckResult(
         self, step_context: "StepExecutionContext"
     ) -> AssetCheckEvaluation:
         assets_def_for_check = check.not_none(
-            step_context.job_def.asset_layer.assets_def_for_node(
+            step_context.job_def.asset_layer.get_assets_def_for_node(
                 node_handle=step_context.node_handle
             ),
             f"While resolving asset check result {self}, expected to find an AssetsDefinition object that could be associated back to the currently executing NodeHandle {step_context.node_handle}.",

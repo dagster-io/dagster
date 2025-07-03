@@ -216,7 +216,9 @@ You can optionally include [additional properties](https://github.com/dagster-io
 The `path` is relative to the `./examples/` directory for maximum flexibility; it is sometimes useful to be able to reference the fully-featured projects in `/examples/`. However, if you're writing new example code for docs that consists of one or a few short scripts to demonstrate the use of a single feature, you should put that code in the `/examples/docs_snippets/docs_snippets/` directory.
 
 At minimum, all `.py` files in the `docs_snippets` directory are tested by attempting to load the Python files.
-You can write additional tests for them in the `docs_snippets_test` folder. See the folder for more information.
+You can write additional tests for them in the `docs_snippets_test` folder. See that folder for more information.
+
+You can also write tests to regenerate and test CLI snippets in the `docs_snippets_test/snippet_checks` folder. See that folder for more information.
 
 To type-check the code snippets during development, run the following command from the Dagster root folder.
 This will run `pyright` on all new/changed files relative to the master branch.
@@ -282,7 +284,7 @@ Some CLI invocations may be brief enough that we don't want to include them in a
 <CliInvocationExample contents="uv add dagster-sling" />
 ```
 
-For more information on testing the CLI commands used in docs, see [the README in docs tests](../../examples/docs_snippets/docs_snippets_tests/snippet_checks/README.md).
+For more information on testing the CLI commands used in docs, see [the README in docs tests](../examples/docs_snippets/docs_snippets_tests/snippet_checks/README.md).
 
 ### Code reference links
 

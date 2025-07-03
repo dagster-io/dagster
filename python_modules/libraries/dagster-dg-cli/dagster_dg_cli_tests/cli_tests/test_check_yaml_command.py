@@ -1,3 +1,5 @@
+import importlib
+import json
 import shutil
 import subprocess
 import time
@@ -37,7 +39,7 @@ ENV_VAR_TEST_CASES = [
         should_error=True,
         check_error_msg=msg_includes_all_of(
             "defs.yaml:1",
-            "Component uses environment variables that are not specified in the component file: A_STRING",
+            "Component uses environment variables that are not specified in the component file: AN_INT, A_STRING",
         ),
     ),
 ]
@@ -136,6 +138,65 @@ def test_check_yaml_succeeds_non_default_defs_module() -> None:
         assert_runner_result(result, exit_0=True)
 
 
+def test_check_yaml_succeeds_unregistered_component() -> None:
+    """Ensure that a valid python symbol reference to a component type still works even if it is not registered."""
+    with ProxyRunner.test() as runner, create_project_from_components(runner):
+        result = runner.invoke("scaffold", "component", "Baz")
+        assert_runner_result(result, exit_0=True)
+        importlib.invalidate_caches()  # Ensure component discovery not blocked by python import cache
+
+        # Create component instance
+        result = runner.invoke("scaffold", "defs", "foo_bar.components.baz.Baz", "qux")
+        assert_runner_result(result, exit_0=True)
+
+        # Remove registry module entry that would make the newly scaffolded component discoverable
+        with modify_toml_as_dict(Path("pyproject.toml")) as toml_dict:
+            create_toml_node(toml_dict, ("tool", "dg", "project", "registry_modules"), [])
+
+        # Make sure the new component is not registered
+        result = runner.invoke("list", "components", "--json")
+        assert_runner_result(result)
+        component_keys = [c["key"] for c in json.loads(result.stdout)]
+        assert "foo_bar.components.baz.Baz" not in component_keys
+
+        # Check YAML should pass anyway, since we support unregistered components
+        result = runner.invoke("check", "yaml")
+        assert_runner_result(result)
+
+
+def test_actionable_error_message_no_defs_check_yaml():
+    with (
+        ProxyRunner.test() as runner,
+        create_project_from_components(
+            runner,
+            BASIC_VALID_VALUE.component_path,
+            local_component_defn_to_inject=BASIC_VALID_VALUE.component_type_filepath,
+            uv_sync=True,
+        ) as tmpdir,
+        pushd(tmpdir),
+        activate_venv(tmpdir / ".venv"),
+    ):
+        shutil.rmtree(Path("src") / "foo_bar" / "defs")
+
+        Path(".env").write_text("FOO=bar")
+        result = runner.invoke("check", "yaml")
+        assert_runner_result(result, exit_0=False)
+        assert "Ensure folder `src/foo_bar/defs` exists in the project root." in str(
+            str(result.exception)
+        )
+
+        with modify_toml_as_dict(Path("pyproject.toml")) as toml_dict:
+            create_toml_node(
+                toml_dict, ("tool", "dg", "project", "defs_module"), "foo_bar.other_defs"
+            )
+
+        result = runner.invoke("check", "yaml")
+        assert_runner_result(result, exit_0=False)
+        assert "Ensure folder `src/foo_bar/other_defs` exists in the project root." in str(
+            str(result.exception)
+        )
+
+
 def test_check_yaml_with_watch() -> None:
     """Tests that the check CLI prints rich error messages when attempting to
     load components with errors.
@@ -146,13 +207,13 @@ def test_check_yaml_with_watch() -> None:
             runner,
             BASIC_VALID_VALUE.component_path,
             local_component_defn_to_inject=BASIC_VALID_VALUE.component_type_filepath,
-            python_environment="uv_managed",
+            uv_sync=True,
         ) as tmpdir_valid,
         create_project_from_components(
             runner,
             BASIC_INVALID_VALUE.component_path,
             local_component_defn_to_inject=BASIC_INVALID_VALUE.component_type_filepath,
-            python_environment="uv_managed",
+            uv_sync=True,
         ) as tmpdir,
     ):
         with pushd(tmpdir), activate_venv(tmpdir / ".venv"):

@@ -2,7 +2,6 @@ import string
 import time
 
 from dagster import (
-    DynamicPartitionsDefinition,
     In,
     Int,
     Out,
@@ -18,10 +17,14 @@ from dagster import (
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.decorators.sensor_decorator import sensor
 from dagster._core.definitions.metadata.metadata_value import MetadataValue
-from dagster._core.definitions.partition import PartitionedConfig, StaticPartitionsDefinition
+from dagster._core.definitions.partitions.definition import (
+    DynamicPartitionsDefinition,
+    StaticPartitionsDefinition,
+)
+from dagster._core.definitions.partitions.partitioned_config import PartitionedConfig
 from dagster._core.definitions.sensor_definition import RunRequest
-from dagster._core.errors import DagsterError
 from dagster._core.storage.tags import EXTERNAL_JOB_SOURCE_TAG_KEY
+from dagster_shared.error import DagsterError
 
 
 @op

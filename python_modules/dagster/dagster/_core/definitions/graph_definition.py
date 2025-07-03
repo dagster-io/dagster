@@ -64,7 +64,8 @@ if TYPE_CHECKING:
     from dagster._core.definitions.executor_definition import ExecutorDefinition
     from dagster._core.definitions.job_definition import JobDefinition
     from dagster._core.definitions.op_definition import OpDefinition
-    from dagster._core.definitions.partition import PartitionedConfig, PartitionsDefinition
+    from dagster._core.definitions.partitions.definition import PartitionsDefinition
+    from dagster._core.definitions.partitions.partitioned_config import PartitionedConfig
     from dagster._core.definitions.run_config import RunConfig
     from dagster._core.definitions.source_asset import SourceAsset
     from dagster._core.execution.execute_in_process_result import ExecuteInProcessResult

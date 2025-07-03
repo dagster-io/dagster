@@ -50,6 +50,8 @@ enum DagsterEventType {
   STEP_EXPECTATION_RESULT
   ASSET_CHECK_EVALUATION_PLANNED
   ASSET_CHECK_EVALUATION
+  ASSET_HEALTH_CHANGED
+  ASSET_WIPED
   RUN_ENQUEUED
   RUN_DEQUEUED
   RUN_STARTING
@@ -606,21 +608,18 @@ type Asset {
   key: AssetKey!
   assetMaterializations(
     partitions: [String!]
-    partitionInLast: Int
     beforeTimestampMillis: String
     afterTimestampMillis: String
     limit: Int
   ): [MaterializationEvent!]!
   assetObservations(
     partitions: [String!]
-    partitionInLast: Int
     beforeTimestampMillis: String
     afterTimestampMillis: String
     limit: Int
   ): [ObservationEvent!]!
   assetEventHistory(
     partitions: [String!]
-    partitionInLast: Int
     beforeTimestampMillis: String
     afterTimestampMillis: String
     limit: Int!
@@ -707,6 +706,7 @@ type AssetNode {
   description: String
   freshnessInfo: AssetFreshnessInfo
   freshnessPolicy: FreshnessPolicy
+  freshnessStatusInfo: FreshnessStatusInfo
   internalFreshnessPolicy: InternalFreshnessPolicy
   autoMaterializePolicy: AutoMaterializePolicy
   automationCondition: AutomationCondition
@@ -926,6 +926,11 @@ type FreshnessPolicy {
   cronSchedule: String
   cronScheduleTimezone: String
   lastEvaluationTimestamp: String
+}
+
+type FreshnessStatusInfo {
+  freshnessStatus: AssetHealthStatus!
+  freshnessStatusMetadata: AssetHealthFreshnessMeta
 }
 
 union InternalFreshnessPolicy = TimeWindowFreshnessPolicy | CronFreshnessPolicy
@@ -2698,6 +2703,7 @@ type Instance {
   concurrencyLimit(concurrencyKey: String): ConcurrencyKeyInfo!
   useAutoMaterializeSensors: Boolean!
   poolConfig: PoolConfig
+  freshnessEvaluationEnabled: Boolean!
 }
 
 type RunQueueConfig {

@@ -8,6 +8,7 @@ import time
 import pytest
 from dagster._api.list_repositories import sync_list_repositories_grpc
 from dagster._core.errors import DagsterUserCodeUnreachableError
+from dagster._core.remote_representation.external_data import SensorExecutionErrorSnap
 from dagster._core.remote_representation.origin import (
     GrpcServerCodeLocationOrigin,
     RegisteredCodeLocationOrigin,
@@ -395,10 +396,10 @@ def test_load_with_error(capfd):
     process = subprocess.Popen(subprocess_args)
 
     try:
+        client = DagsterGrpcClient(port=port, host="localhost")
         with pytest.raises(Exception):
-            wait_for_grpc_server(
-                process, DagsterGrpcClient(port=port, host="localhost"), subprocess_args
-            )
+            wait_for_grpc_server(process, client, subprocess_args)
+
         process.wait()
 
         _, err = capfd.readouterr()
@@ -653,13 +654,36 @@ def test_lazy_load_with_error():
     process = subprocess.Popen(subprocess_args)
 
     try:
-        wait_for_grpc_server(
-            process, DagsterGrpcClient(port=port, host="localhost"), subprocess_args
-        )
+        client = DagsterGrpcClient(port=port, host="localhost")
+        wait_for_grpc_server(process, client, subprocess_args)
         list_repositories_response = deserialize_value(
             DagsterGrpcClient(port=port).list_repositories(), SerializableErrorInfo
         )
         assert "Dagster recognizes standard cron expressions" in list_repositories_response.message
+
+        repo_origin = RemoteRepositoryOrigin(
+            code_location_origin=GrpcServerCodeLocationOrigin(port=port, host="localhost"),
+            repository_name="bar_repo",
+        )
+
+        sensor_execution_response = deserialize_value(
+            client.external_sensor_execution(
+                sensor_execution_args=SensorExecutionArgs(
+                    repository_origin=repo_origin,
+                    instance_ref=None,
+                    sensor_name="nonexistant_sensor",
+                    last_tick_completion_time=None,
+                    last_run_key=None,
+                    cursor=None,
+                    last_sensor_start_time=None,
+                )
+            ),
+            SensorExecutionErrorSnap,
+        )
+        assert "Dagster recognizes standard cron expressions" in str(
+            sensor_execution_response.error
+        )
+
     finally:
         process.terminate()
         process.wait()

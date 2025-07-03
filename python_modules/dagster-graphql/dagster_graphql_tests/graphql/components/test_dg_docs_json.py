@@ -7,7 +7,7 @@ from dagster._core.definitions.repository_definition.repository_definition impor
 )
 from dagster._core.test_utils import ensure_dagster_tests_import, instance_for_test
 from dagster_graphql.test.utils import define_out_of_process_context, execute_dagster_graphql
-from dagster_shared.serdes.objects.package_entry import PluginObjectKey
+from dagster_shared.serdes.objects.package_entry import EnvRegistryKey
 
 ensure_dagster_tests_import()
 
@@ -86,7 +86,7 @@ def get_components_repo() -> RepositoryDefinition:
 
         objects = {}
         for name, obj in get_package_objects_in_module(dagster_test.components):
-            key = PluginObjectKey(name=name, namespace="dagster_test")
+            key = EnvRegistryKey(name=name, namespace="dagster_test")
             objects[key] = obj
 
         mock_discover_entry_point_package_objects.return_value = objects

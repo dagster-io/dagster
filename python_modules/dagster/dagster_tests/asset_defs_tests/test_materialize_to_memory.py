@@ -7,7 +7,6 @@ from dagster import (
     DagsterInvalidConfigError,
     DagsterInvalidDefinitionError,
     DagsterInvariantViolationError,
-    DailyPartitionsDefinition,
     GraphOut,
     IOManager,
     Out,
@@ -22,6 +21,7 @@ from dagster import (
     op,
     with_resources,
 )
+from dagster._core.definitions.partitions.definition import DailyPartitionsDefinition
 from dagster._core.errors import DagsterInvalidInvocationError
 
 

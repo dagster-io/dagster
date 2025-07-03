@@ -25,6 +25,9 @@ locations:
           module_name: c
       image: docker/c
       working_directory: c
+    - location_name: d
+      code_source:
+          autoload_defs_module_name: autoload_me
 """
 
 
@@ -96,7 +99,7 @@ def test_ci_init_local_branch_deployment(monkeypatch, mocker, empty_config) -> N
             result = runner.invoke(app, ["ci", "status"])
             assert not result.exit_code
             locations = [json.loads(line) for line in result.output.splitlines()]
-            assert ["a", "b", "c"] == [loc["location_name"] for loc in locations]
+            assert ["a", "b", "c", "d"] == sorted([loc["location_name"] for loc in locations])
             location_a = locations[0]
             # overwrite test timestamp
             location_a["history"][0]["timestamp"] = "-"
@@ -151,7 +154,7 @@ def test_ci_init(monkeypatch, mocker, empty_config) -> None:
             result = runner.invoke(app, ["ci", "status"])
             assert not result.exit_code
             locations = [json.loads(line) for line in result.output.splitlines()]
-            assert ["a", "b", "c"] == [loc["location_name"] for loc in locations]
+            assert ["a", "b", "c", "d"] == sorted([loc["location_name"] for loc in locations])
             location_a = locations[0]
             # overwrite test timestamp
             location_a["history"][0]["timestamp"] = "-"
@@ -171,6 +174,9 @@ def test_ci_init(monkeypatch, mocker, empty_config) -> None:
                 "history": [{"log": "initialized", "status": "pending", "timestamp": "-"}],
                 "status_url": "http://github/run-url",
             }
+
+            location_auto = locations[3]
+            location_auto["history"][0]["timestamp"] = "-"
 
         with with_dagster_yaml(DAGSTER_CLOUD_YAML) as project_dir:
             runner = CliRunner()
@@ -250,7 +256,7 @@ def get_locations(runner):
 
 
 def test_ci_selection(initialized_runner: CliRunner) -> None:
-    assert len(get_locations(initialized_runner)) == 3
+    assert len(get_locations(initialized_runner)) == 4
 
     initialized_runner.invoke(app, ["ci", "locations-deselect", "a", "c"])
     selected = [
@@ -258,7 +264,7 @@ def test_ci_selection(initialized_runner: CliRunner) -> None:
         for location in get_locations(initialized_runner)
         if location["selected"]
     ]
-    assert ["b"] == selected
+    assert ["b", "d"] == sorted(selected)
 
     initialized_runner.invoke(app, ["ci", "locations-select", "c"])
     selected = [
@@ -266,13 +272,13 @@ def test_ci_selection(initialized_runner: CliRunner) -> None:
         for location in get_locations(initialized_runner)
         if location["selected"]
     ]
-    assert ["b", "c"] == selected
+    assert ["b", "c", "d"] == sorted(selected)
 
 
 def test_ci_build_docker(
     mocker, monkeypatch, deployment_name: str, initialized_runner: CliRunner
 ) -> None:
-    assert len(get_locations(initialized_runner)) == 3
+    assert len(get_locations(initialized_runner)) == 4
 
     monkeypatch.setenv("DAGSTER_CLOUD_API_TOKEN", "fake-token")
     mocker.patch(
@@ -283,7 +289,7 @@ def test_ci_build_docker(
     upload_image = mocker.patch("dagster_cloud_cli.docker_utils.upload_image", return_value=0)
     mark_cli_event = mocker.patch("dagster_cloud_cli.gql.mark_cli_event", return_value=True)
 
-    initialized_runner.invoke(app, ["ci", "locations-deselect", "a"])
+    initialized_runner.invoke(app, ["ci", "locations-deselect", "a", "d"])
     result = initialized_runner.invoke(app, ["ci", "build"])
     assert not result.exit_code, result.output
 
@@ -364,7 +370,7 @@ def test_ci_deploy_docker(
     wait_for_load = mocker.patch("dagster_cloud_cli.commands.ci.wait_for_load")
     mark_cli_event = mocker.patch("dagster_cloud_cli.gql.mark_cli_event", return_value=True)
 
-    initialized_runner.invoke(app, ["ci", "locations-deselect", "a"])
+    initialized_runner.invoke(app, ["ci", "locations-deselect", "a", "d"])
     result = initialized_runner.invoke(app, ["ci", "build"])
     assert not result.exit_code, result.output
     result = initialized_runner.invoke(app, ["ci", "deploy"])
@@ -407,9 +413,10 @@ def test_ci_deploy_docker(
         assert "subcommand:dagster-cloud-ci" in call_kwarg["tags"]
 
     # first location (a) is deselected
-    assert [
-        location["history"][-1]["status"] for location in get_locations(initialized_runner)
-    ] == ["pending", "success", "success"]
+    assert {
+        location["location_name"]: location["history"][-1]["status"]
+        for location in get_locations(initialized_runner)
+    } == {"a": "pending", "d": "pending", "b": "success", "c": "success"}
 
 
 def test_ci_deploy_missing_build(
@@ -421,7 +428,7 @@ def test_ci_deploy_missing_build(
         return_value={"registry_url": "example.com/image-registry"},
     )
 
-    initialized_runner.invoke(app, ["ci", "locations-deselect", "a"])
+    initialized_runner.invoke(app, ["ci", "locations-deselect", "a", "d"])
     result = initialized_runner.invoke(app, ["ci", "deploy"])
     assert result.exit_code, result.output
 
@@ -446,7 +453,7 @@ def test_ci_set_build_output(initialized_runner: CliRunner):
     assert result.exit_code
     assert "Error: No build:registry:" in result.output
 
-    initialized_runner.invoke(app, ["ci", "locations-deselect", "a", "b"])
+    initialized_runner.invoke(app, ["ci", "locations-deselect", "a", "b", "d"])
     result = initialized_runner.invoke(app, ["ci", "set-build-output", "--image-tag=1234"])
     assert not result.exit_code, result.output
     c_location = next(
@@ -491,35 +498,43 @@ def test_ci_deploy_pex(
     assert len(wait_for_load.call_args_list) == 1
 
     (gql_shim, locations_document), _ = deploy_code_locations.call_args_list[0]
-    assert locations_document == {
-        "locations": [
-            {
-                "location_name": "b",
-                "code_source": {"module_name": "b"},
-                "git": {"commit_hash": "hash-4354"},
-                "image": "pex-base-image",
-                "pex_metadata": {
-                    "pex_tag": "deps-123.pex:source-456.pex",
-                    "python_version": DEFAULT_PYTHON_VERSION,
-                },
+    assert sorted(locations_document["locations"], key=lambda x: x["location_name"]) == [
+        {
+            "location_name": "b",
+            "code_source": {"module_name": "b"},
+            "git": {"commit_hash": "hash-4354"},
+            "image": "pex-base-image",
+            "pex_metadata": {
+                "pex_tag": "deps-123.pex:source-456.pex",
+                "python_version": DEFAULT_PYTHON_VERSION,
             },
-            {
-                "location_name": "c",
-                "code_source": {"module_name": "c"},
-                "git": {"commit_hash": "hash-4354"},
-                "image": "pex-base-image",
-                "pex_metadata": {
-                    "pex_tag": "deps-123.pex:source-456.pex",
-                    "python_version": DEFAULT_PYTHON_VERSION,
-                },
-                "working_directory": "c",
+        },
+        {
+            "location_name": "c",
+            "code_source": {"module_name": "c"},
+            "git": {"commit_hash": "hash-4354"},
+            "image": "pex-base-image",
+            "pex_metadata": {
+                "pex_tag": "deps-123.pex:source-456.pex",
+                "python_version": DEFAULT_PYTHON_VERSION,
             },
-        ]
-    }
+            "working_directory": "c",
+        },
+        {
+            "location_name": "d",
+            "code_source": {"autoload_defs_module_name": "autoload_me"},
+            "git": {"commit_hash": "hash-4354"},
+            "image": "pex-base-image",
+            "pex_metadata": {
+                "pex_tag": "deps-123.pex:source-456.pex",
+                "python_version": DEFAULT_PYTHON_VERSION,
+            },
+        },
+    ]
     assert gql_shim.url == f"https://some-org.dagster.cloud/{deployment_name}/graphql"
 
     (_, wait_location_args), wait_kwargs = wait_for_load.call_args_list[0]
-    assert wait_location_args == ["b", "c"]
+    assert sorted(wait_location_args) == ["b", "c", "d"]
     assert wait_kwargs["url"] == f"https://some-org.dagster.cloud/{deployment_name}"
 
 

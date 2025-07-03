@@ -1,4 +1,6 @@
 acryl-datahub==1.0.0.2
+adbc-driver-manager==1.6.0
+adbc-driver-snowflake==1.6.0
 agate==1.9.1
 aiofile==3.9.0
 aiohappyeyeballs==2.6.1
@@ -177,6 +179,7 @@ dagster-qdrant==0.0.2
 -e python_modules/libraries/dagster-snowflake
 -e python_modules/libraries/dagster-snowflake-pandas
 -e python_modules/libraries/dagster-snowflake-pyspark
+-e python_modules/libraries/dagster-snowflake-polars
 -e python_modules/libraries/dagster-spark
 -e docs/sphinx/_ext/dagster-sphinx
 -e python_modules/libraries/dagster-ssh
@@ -456,7 +459,7 @@ packaging==24.2
 pandas==2.2.3
 pandas-gbq==0.28.0
 pandas-stubs==2.2.3.250308
-pandera==0.23.1
+pandera==0.24.0
 pandocfilters==1.5.1
 papermill==2.6.0
 paramiko==3.5.1
@@ -483,10 +486,10 @@ posthog==4.0.1
 premailer==3.10.0
 prison==0.2.1
 progressbar2==4.5.0
--e examples/docs_projects/project_atproto_dashboard
--e examples/docs_projects/project_components_pdf_extraction
--e examples/docs_projects/project_dagster_modal_pipes
--e examples/docs_projects/project_prompt_eng
+# -e examples/docs_projects/project_atproto_dashboard
+# -e examples/docs_projects/project_components_pdf_extraction
+# -e examples/docs_projects/project_dagster_modal_pipes
+# -e examples/docs_projects/project_prompt_eng
 prometheus-client==0.21.1
 prometheus-flask-exporter==0.23.2
 prompt-toolkit==3.0.51

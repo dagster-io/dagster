@@ -8,6 +8,7 @@ import {asyncMemoize, indexedDBAsyncMemoize} from '../app/Util';
 import {GraphData} from '../asset-graph/Utils';
 import {AssetGraphLayout, LayoutAssetGraphOptions, layoutAssetGraph} from '../asset-graph/layout';
 import {useDangerousRenderEffect} from '../hooks/useDangerousRenderEffect';
+import {useUpdatingRef} from '../hooks/useUpdatingRef';
 import {useBlockTraceUntilTrue} from '../performance/TraceContext';
 import {hashObject} from '../util/hashObject';
 import {weakMapMemoize} from '../util/weakMapMemoize';
@@ -44,7 +45,7 @@ const _assetLayoutCacheKey = weakMapMemoize(
     return hashObject({
       opts,
       graphData,
-      version: 4,
+      version: 5,
     });
   },
 );
@@ -200,6 +201,9 @@ export function useAssetLayout(
   const graphData = useMemo(() => ({..._graphData, expandedGroups}), [expandedGroups, _graphData]);
 
   const cacheKey = useMemo(() => _assetLayoutCacheKey(graphData, opts), [graphData, opts]);
+
+  const nextCacheKeyRef = useUpdatingRef(cacheKey);
+
   const nodeCount = Object.keys(graphData.nodes).length;
   const runAsync = nodeCount >= ASYNC_LAYOUT_SOLID_COUNT;
 
@@ -216,7 +220,8 @@ export function useAssetLayout(
       } else {
         layout = await asyncGetFullAssetLayout(graphData, opts);
       }
-      if (canceled) {
+      if (canceled && cacheKey !== nextCacheKeyRef.current) {
+        // Only throw away layout data if the cache key changes.
         return;
       }
       dispatch({type: 'layout', payload: {layout, cacheKey}});
@@ -232,7 +237,7 @@ export function useAssetLayout(
     return () => {
       canceled = true;
     };
-  }, [cacheKey, graphData, runAsync, flags, opts, dataLoading]);
+  }, [cacheKey, graphData, runAsync, flags, opts, dataLoading, nextCacheKeyRef]);
 
   const uid = useRef(0);
   useDangerousRenderEffect(() => {
