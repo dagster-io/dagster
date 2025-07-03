@@ -23,6 +23,17 @@ PLUGIN_COMPONENT_TYPES_JSON_METADATA_KEY = "plugin_component_types_json"
 
 TComponent = TypeVar("TComponent", bound=Component)
 
+ResolvableToComponentPath = Union[Path, ComponentPath, str]
+
+
+def resolve_to_component_path(path: ResolvableToComponentPath) -> ComponentPath:
+    if isinstance(path, str):
+        return ComponentPath(file_path=Path(path), instance_key=None)
+    elif isinstance(path, Path):
+        return ComponentPath(file_path=path, instance_key=None)
+    else:
+        return path
+
 
 def _get_canonical_path_string(root_path: Path, path: Path) -> str:
     """Returns a canonical string representation of the given path (the absolute, POSIX path)
@@ -32,11 +43,12 @@ def _get_canonical_path_string(root_path: Path, path: Path) -> str:
 
 
 def _get_canonical_component_path(
-    root_path: Path, path: Union[Path, ComponentPath]
+    root_path: Path, path: ResolvableToComponentPath
 ) -> tuple[str, Optional[Union[int, str]]]:
-    if isinstance(path, ComponentPath):
-        return _get_canonical_path_string(root_path, path.file_path), path.instance_key
-    return _get_canonical_path_string(root_path, path), None
+    resolved_path = resolve_to_component_path(path)
+    return _get_canonical_path_string(
+        root_path, resolved_path.file_path
+    ), resolved_path.instance_key
 
 
 @record(
@@ -50,6 +62,7 @@ class ComponentTree:
 
     defs_module: ModuleType
     project_root: Path
+    terminate_autoloading_on_keyword_files: Optional[bool] = None
 
     @property
     def defs_module_name(self) -> str:
@@ -183,7 +196,7 @@ class ComponentTree:
         )
         return component.build_defs(clc)
 
-    def find_decl_at_path(self, defs_path: Union[Path, ComponentPath]) -> ComponentDecl:
+    def find_decl_at_path(self, defs_path: Union[Path, ComponentPath, str]) -> ComponentDecl:
         """Loads a component declaration from the given path.
 
         Args:
@@ -199,7 +212,7 @@ class ComponentTree:
             raise Exception(f"No component decl found for path {defs_path}")
         return component_decl_and_path[1]
 
-    def load_component_at_path(self, defs_path: Union[Path, ComponentPath]) -> Component:
+    def load_component_at_path(self, defs_path: Union[Path, ComponentPath, str]) -> Component:
         """Loads a component from the given path.
 
         Args:
@@ -216,7 +229,7 @@ class ComponentTree:
         path, component = component
         return component
 
-    def build_defs_at_path(self, defs_path: Union[Path, ComponentPath]) -> Definitions:
+    def build_defs_at_path(self, defs_path: Union[Path, ComponentPath, str]) -> Definitions:
         """Builds definitions from the given defs subdirectory. Currently
         does not incorporate postprocessing from parent defs modules.
 

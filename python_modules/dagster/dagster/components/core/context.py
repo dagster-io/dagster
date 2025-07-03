@@ -133,18 +133,6 @@ class ComponentDeclLoadContext:
             else type_str
         )
 
-    def load_defs(self, module: ModuleType) -> Definitions:
-        """Builds the set of Dagster definitions for a component module.
-
-        This is useful for resolving dependencies on other components.
-        """
-        # FIXME: This should go through the component loader system
-        # to allow for this value to be cached and more selectively
-        # loaded. This is just a temporary hack to keep tests passing.
-        from dagster.components.core.load_defs import load_defs
-
-        return load_defs(module, self.project_root)
-
     def load_defs_relative_python_module(self, path: Path) -> ModuleType:
         """Load a python module relative to the defs's context path. This is useful for loading code
         the resides within the defs directory.
