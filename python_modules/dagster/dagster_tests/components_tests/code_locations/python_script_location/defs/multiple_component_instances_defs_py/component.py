@@ -1,19 +1,17 @@
-from dagster import AssetSpec, AutomationCondition
-from dagster.components import ComponentLoadContext, component_instance
-from dagster.components.lib.executable_component.python_script_component import (
-    PythonScriptComponent,
-)
+import dagster as dg
+from dagster import AutomationCondition
+from dagster.components import ComponentLoadContext
 from dagster.components.lib.executable_component.script_utils import ScriptSpec
 
 
-@component_instance
-def foo(context: ComponentLoadContext) -> PythonScriptComponent:
-    return PythonScriptComponent(
+@dg.component_instance
+def foo(context: ComponentLoadContext) -> dg.PythonScriptComponent:
+    return dg.PythonScriptComponent(
         execution=ScriptSpec(
             path="cool_script.py",
         ),
         assets=[
-            AssetSpec(
+            dg.AssetSpec(
                 key="foo_def_py",
                 automation_condition=AutomationCondition.eager(),
             )
@@ -21,14 +19,14 @@ def foo(context: ComponentLoadContext) -> PythonScriptComponent:
     )
 
 
-@component_instance
-def bar(context: ComponentLoadContext) -> PythonScriptComponent:
-    return PythonScriptComponent(
+@dg.component_instance
+def bar(context: ComponentLoadContext) -> dg.PythonScriptComponent:
+    return dg.PythonScriptComponent(
         execution=ScriptSpec(
             path="cool_script.py",
         ),
         assets=[
-            AssetSpec(
+            dg.AssetSpec(
                 key="bar_def_py",
                 automation_condition=AutomationCondition.eager(),
             )

@@ -1,10 +1,11 @@
 from pathlib import Path
 from typing import Optional
 
+import dagster as dg
 import pytest
 from dagster._core.test_utils import ensure_dagster_tests_import
 from dagster.components.component_scaffolding import parse_params_model, scaffold_object
-from dagster.components.scaffold.scaffold import NoParams, Scaffolder, scaffold_with
+from dagster.components.scaffold.scaffold import NoParams
 from pydantic import BaseModel, ValidationError
 
 ensure_dagster_tests_import()
@@ -23,33 +24,33 @@ class TestParamsModelWithoutDefaults(BaseModel):
     is_active: bool
 
 
-class TestScaffolderWithDefaults(Scaffolder[TestParamsModelWithDefaults]):
+class TestScaffolderWithDefaults(dg.Scaffolder[TestParamsModelWithDefaults]):
     @classmethod
     def get_scaffold_params(cls) -> type[TestParamsModelWithDefaults]:
         return TestParamsModelWithDefaults
 
 
-class TestScaffolderWithoutDefaults(Scaffolder[TestParamsModelWithoutDefaults]):
+class TestScaffolderWithoutDefaults(dg.Scaffolder[TestParamsModelWithoutDefaults]):
     @classmethod
     def get_scaffold_params(cls) -> type[TestParamsModelWithoutDefaults]:
         return TestParamsModelWithoutDefaults
 
 
-class NoParamsScaffolder(Scaffolder[BaseModel]):
+class NoParamsScaffolder(dg.Scaffolder[BaseModel]):
     @classmethod
     def get_scaffold_params(cls) -> type[BaseModel]:
         return NoParams
 
 
-@scaffold_with(TestScaffolderWithDefaults)
+@dg.scaffold_with(TestScaffolderWithDefaults)
 def fn_with_scaffolder_with_defaults() -> None: ...
 
 
-@scaffold_with(TestScaffolderWithoutDefaults)
+@dg.scaffold_with(TestScaffolderWithoutDefaults)
 def fn_with_scaffolder_without_defaults() -> None: ...
 
 
-@scaffold_with(NoParamsScaffolder)
+@dg.scaffold_with(NoParamsScaffolder)
 def fn_with_no_params_scaffolder() -> None: ...
 
 

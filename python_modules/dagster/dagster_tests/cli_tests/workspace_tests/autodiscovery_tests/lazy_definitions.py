@@ -1,10 +1,9 @@
-from dagster import Definitions, asset
-from dagster._utils.test.definitions import definitions
+import dagster as dg
 
 
-@definitions
-def defs() -> Definitions:
-    @asset
+@dg.definitions
+def defs() -> dg.Definitions:
+    @dg.asset
     def asset1(): ...
 
-    return Definitions(assets=[asset1])
+    return dg.Definitions(assets=[asset1])

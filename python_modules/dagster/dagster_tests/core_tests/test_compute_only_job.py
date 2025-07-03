@@ -1,6 +1,6 @@
 from typing import TypeVar
 
-from dagster import job, op
+import dagster as dg
 
 T = TypeVar("T")
 
@@ -13,15 +13,15 @@ def _set_key_value(ddict: dict[str, object], key: str, value: T) -> T:
 def test_execute_op_with_dep_only_inputs_no_api():
     did_run_dict = {}
 
-    @op
+    @dg.op
     def step_one_op(_):
         _set_key_value(did_run_dict, "step_one", True)
 
-    @op
+    @dg.op
     def step_two_op(_, _in):
         _set_key_value(did_run_dict, "step_two", True)
 
-    @job
+    @dg.job
     def foo_job():
         step_two_op(step_one_op())
 
@@ -36,15 +36,15 @@ def test_execute_op_with_dep_only_inputs_no_api():
 def test_execute_op_with_dep_only_inputs_with_api():
     did_run_dict = {}
 
-    @op
+    @dg.op
     def step_one_op(_):
         _set_key_value(did_run_dict, "step_one", True)
 
-    @op
+    @dg.op
     def step_two_op(_, _in):
         _set_key_value(did_run_dict, "step_two", True)
 
-    @job
+    @dg.job
     def foo_job():
         step_two_op(step_one_op())
 

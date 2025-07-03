@@ -1,12 +1,6 @@
+import dagster as dg
 import pytest
-from dagster import (
-    AssetKey,
-    AutomationCondition,
-    DagsterInstance,
-    Definitions,
-    asset,
-    evaluate_automation_conditions,
-)
+from dagster import AutomationCondition, DagsterInstance
 from dagster._core.definitions.events import AssetKeyPartitionKey
 from dagster._core.events import DagsterEventType
 from dagster._core.execution.api import create_execution_plan
@@ -59,7 +53,7 @@ async def test_in_progress_static_partitioned() -> None:
     state, result = await state.evaluate("A")
     assert result.true_subset.size == 1
     assert result.true_subset.expensively_compute_asset_partitions() == {
-        AssetKeyPartitionKey(AssetKey("A"), "1")
+        AssetKeyPartitionKey(dg.AssetKey("A"), "1")
     }
 
     # run completes
@@ -87,18 +81,18 @@ async def test_in_progress_static_partitioned() -> None:
 def test_unpartitioned() -> None:
     RUN_ID = make_new_run_id()
 
-    @asset(automation_condition=AutomationCondition.in_progress())
+    @dg.asset(automation_condition=AutomationCondition.in_progress())
     def A() -> None: ...
 
-    @asset
+    @dg.asset
     def B() -> None: ...
 
-    defs = Definitions(assets=[A, B])
+    defs = dg.Definitions(assets=[A, B])
     instance = DagsterInstance.ephemeral()
     job = defs.resolve_implicit_job_def_def_for_assets([A.key, B.key])
     assert job is not None
 
-    result = evaluate_automation_conditions(defs=defs, instance=instance)
+    result = dg.evaluate_automation_conditions(defs=defs, instance=instance)
     assert result.total_requested == 0
 
     # create an execution plan targeted at both A and B
@@ -112,7 +106,7 @@ def test_unpartitioned() -> None:
     )
 
     # now A is in progress, as there's a run targeting it
-    result = evaluate_automation_conditions(defs=defs, instance=instance, cursor=result.cursor)
+    result = dg.evaluate_automation_conditions(defs=defs, instance=instance, cursor=result.cursor)
     assert result.total_requested == 1
 
     events = job.execute_in_process(run_id=RUN_ID).all_events
@@ -124,5 +118,5 @@ def test_unpartitioned() -> None:
             break
 
     # now A is no longer in progress, as it got materialized within that run
-    result = evaluate_automation_conditions(defs=defs, instance=instance, cursor=result.cursor)
+    result = dg.evaluate_automation_conditions(defs=defs, instance=instance, cursor=result.cursor)
     assert result.total_requested == 0

@@ -1,17 +1,16 @@
 from collections.abc import Mapping
 from typing import Any, Optional
 
+import dagster as dg
 import pytest
-from dagster._core.launcher.default_run_launcher import DefaultRunLauncher
 from dagster._core.run_coordinator.default_run_coordinator import DefaultRunCoordinator
 from dagster._core.storage.noop_compute_log_manager import NoOpComputeLogManager
-from dagster._core.test_utils import instance_for_test
 from dagster._serdes import ConfigurableClass
 from dagster._serdes.config_class import ConfigurableClassData
 from typing_extensions import Self
 
 
-class InitFailRunLauncher(DefaultRunLauncher, ConfigurableClass):
+class InitFailRunLauncher(dg.DefaultRunLauncher, ConfigurableClass):
     def __init__(self, inst_data: Optional[ConfigurableClassData] = None):
         super().__init__()
         self._inst_data = inst_data
@@ -33,7 +32,7 @@ class InitFailRunLauncher(DefaultRunLauncher, ConfigurableClass):
 
 
 def test_lazy_run_launcher():
-    with instance_for_test(
+    with dg.instance_for_test(
         overrides={
             "run_launcher": {
                 "module": "dagster_tests.core_tests.instance_tests.test_instance_lazy_load",
@@ -59,7 +58,7 @@ class InitFailComputeLogManager(NoOpComputeLogManager, ConfigurableClass):
 
 
 def test_lazy_compute_log_manager():
-    with instance_for_test(
+    with dg.instance_for_test(
         overrides={
             "compute_logs": {
                 "module": "dagster_tests.core_tests.instance_tests.test_instance_lazy_load",
@@ -85,7 +84,7 @@ class InitFailRunCoordinator(DefaultRunCoordinator, ConfigurableClass):
 
 
 def test_lazy_run_coordinator():
-    with instance_for_test(
+    with dg.instance_for_test(
         overrides={
             "run_coordinator": {
                 "module": "dagster_tests.core_tests.instance_tests.test_instance_lazy_load",

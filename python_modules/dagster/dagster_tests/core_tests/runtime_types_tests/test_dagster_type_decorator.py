@@ -1,19 +1,19 @@
 import collections
 
-from dagster import PythonObjectDagsterType, usable_as_dagster_type
+import dagster as dg
 from dagster._core.types.dagster_type import resolve_dagster_type
 
 
 def test_dagster_type_decorator():
-    @usable_as_dagster_type(name=None)
+    @dg.usable_as_dagster_type(name=None)
     class Foo:
         pass
 
-    @usable_as_dagster_type()
+    @dg.usable_as_dagster_type()
     class Bar:
         pass
 
-    @usable_as_dagster_type
+    @dg.usable_as_dagster_type
     class Baaz:
         pass
 
@@ -23,7 +23,7 @@ def test_dagster_type_decorator():
 
 
 def test_dagster_type_decorator_name_desc():
-    @usable_as_dagster_type(name="DifferentName", description="desc")
+    @dg.usable_as_dagster_type(name="DifferentName", description="desc")
     class Something:
         pass
 
@@ -34,11 +34,11 @@ def test_dagster_type_decorator_name_desc():
 
 def test_make_dagster_type():
     SomeNamedTuple = collections.namedtuple("SomeNamedTuple", "prop")
-    DagsterSomeNamedTuple = PythonObjectDagsterType(SomeNamedTuple)
+    DagsterSomeNamedTuple = dg.PythonObjectDagsterType(SomeNamedTuple)
     dagster_type = resolve_dagster_type(DagsterSomeNamedTuple)
     assert dagster_type.unique_name == "SomeNamedTuple"
     assert SomeNamedTuple(prop="foo").prop == "foo"
 
-    DagsterNewNameNamedTuple = PythonObjectDagsterType(SomeNamedTuple, name="OverwriteName")
+    DagsterNewNameNamedTuple = dg.PythonObjectDagsterType(SomeNamedTuple, name="OverwriteName")
     dagster_type = resolve_dagster_type(DagsterNewNameNamedTuple)
     assert dagster_type.unique_name == "OverwriteName"

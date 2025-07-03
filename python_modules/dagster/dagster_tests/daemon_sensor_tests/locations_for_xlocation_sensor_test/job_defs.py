@@ -1,29 +1,29 @@
-from dagster import Definitions, job, op
+import dagster as dg
 
 
-@op
+@dg.op
 def an_op():
     pass
 
 
-@job
+@dg.job
 def success_job():
     an_op()
 
 
-@job
+@dg.job
 def another_success_job():
     an_op()
 
 
-@op
+@dg.op
 def failure_op():
     raise Exception("womp womp")
 
 
-@job
+@dg.job
 def another_failure_job():
     failure_op()
 
 
-defs = Definitions(jobs=[success_job, another_success_job, another_failure_job])
+defs = dg.Definitions(jobs=[success_job, another_success_job, another_failure_job])

@@ -1,6 +1,7 @@
 import sys
 
-from dagster._core.errors import DagsterUserCodeExecutionError, user_code_error_boundary
+import dagster as dg
+from dagster._core.errors import user_code_error_boundary
 from dagster._core.execution.plan.objects import ErrorSource, StepFailureData
 from dagster._utils.error import serializable_error_info_from_exc_info
 
@@ -8,10 +9,10 @@ from dagster._utils.error import serializable_error_info_from_exc_info
 def test_failure_error_display_string():
     try:
         with user_code_error_boundary(
-            DagsterUserCodeExecutionError, lambda: "Error occurred while doing the thing"
+            dg.DagsterUserCodeExecutionError, lambda: "Error occurred while doing the thing"
         ):
             raise ValueError("some error")
-    except DagsterUserCodeExecutionError:
+    except dg.DagsterUserCodeExecutionError:
         step_failure_data = StepFailureData(
             error=serializable_error_info_from_exc_info(sys.exc_info()),
             user_failure_data=None,

@@ -2,9 +2,8 @@ import importlib
 import sys
 from pathlib import Path
 
+import dagster as dg
 import pytest
-from dagster._core.definitions.definitions_class import Definitions
-from dagster.components.component.component import Component
 from dagster.components.core.context import ComponentLoadContext
 from dagster.components.core.decl import (
     ComponentDecl,
@@ -12,11 +11,7 @@ from dagster.components.core.decl import (
     CompositePythonDecl,
     DefsFolderDecl,
 )
-from dagster.components.core.defs_module import (
-    ComponentPath,
-    CompositeComponent,
-    DefsFolderComponent,
-)
+from dagster.components.core.defs_module import ComponentPath, CompositeComponent
 from dagster.components.core.tree import ComponentTree
 from dagster_shared.record import record
 
@@ -42,8 +37,8 @@ def component_tree() -> MockComponentTree:
     )
 
 
-class MyComponent(Component):
-    def build_defs(self, context: ComponentLoadContext) -> Definitions:
+class MyComponent(dg.Component):
+    def build_defs(self, context: ComponentLoadContext) -> dg.Definitions:
         raise NotImplementedError("Not implemented")
 
 
@@ -109,7 +104,7 @@ def test_defs_folder_decl(component_tree: MockComponentTree):
 
     component_tree.set_root_decl(decl)
     loaded_component = component_tree.load_root_component()
-    assert isinstance(loaded_component, DefsFolderComponent)
+    assert isinstance(loaded_component, dg.DefsFolderComponent)
     assert loaded_component.children[defs_path / "my_component"] == my_component
 
     assert component_tree.find_decl_at_path(defs_path) == decl
