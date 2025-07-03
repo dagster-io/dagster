@@ -132,7 +132,7 @@ def build_check_changelog_steps() -> List[BuildkiteStep]:
 
     generate_changelog_step = (
         CommandStepBuilder(":memo: generate changelog")
-        .on_test_image(AvailablePythonVersion.get_default())
+        .on_test_image(AvailablePythonVersion.get_default(), ["OPENAI_API_KEY"])
         .run(
             "npm install -g @openai/codex@native",
             f"python scripts/generate_changelog.py new-changelog {release_number}",
