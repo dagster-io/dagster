@@ -215,7 +215,7 @@ When storing a Pandas DataFrame with the Snowflake I/O manager, the I/O manager 
 
 :::note
 
-Prior to `dagster-snowflake` version `0.19.0` the Snowflake I/O manager converted all timestamp data to strings before loading the data in Snowflake, and did the opposite conversion when fetching a DataFrame from Snowflake. If you have used a version of `dagster-snowflake` prior to version `0.19.0`, see the [Migration Guide](/migration/version-migration#extension-libraries) for information about migrating database tables.
+Prior to `dagster-snowflake` version `0.19.0` the Snowflake I/O manager converted all timestamp data to strings before loading the data in Snowflake, and did the opposite conversion when fetching a DataFrame from Snowflake. If you have used a version of `dagster-snowflake` prior to version `0.19.0`, see the [Dagster version upgrade guide](/migration/upgrading#extension-libraries) for information about migrating database tables.
 
 :::
 

@@ -29,7 +29,7 @@ To use freshness policies in Dagster+, sign up for the [Observability update ear
 
 ### Relationship to existing `FreshnessPolicy`
 
-There is an existing `FreshnessPolicy` API that has been deprecated since version 1.6. We're opting to reuse the name for the new freshness APIs, and have renamed the deprecated functionality to `LegacyFreshnessPolicy`. To continue using the deprecated functionality, follow the instructions in the [1.11 migration guide](/migration/version-migration#migrating-to-1110).
+There is an existing `FreshnessPolicy` API that has been deprecated since version 1.6. We're opting to reuse the name for the new freshness APIs, and have renamed the deprecated functionality to `LegacyFreshnessPolicy`. To continue using the deprecated functionality, follow the instructions in the [1.11 migration guide](/migration/upgrading#upgrading-to-1110).
 
 ### Relationship to freshness checks
 
