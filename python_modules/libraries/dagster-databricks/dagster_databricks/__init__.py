@@ -34,6 +34,10 @@ from dagster_databricks.resources import (
     DatabricksClientResource as DatabricksClientResource,
     databricks_client as databricks_client,
 )
+from dagster_databricks.unity_catalog import (
+    unity_catalog_assets as unity_catalog_assets,
+)
+
 from dagster_databricks.version import __version__
 
 DagsterLibraryRegistry.register("dagster-databricks", __version__)
