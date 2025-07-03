@@ -21,8 +21,8 @@ import {
 import React, {useCallback, useMemo, useRef} from 'react';
 import {Line} from 'react-chartjs-2';
 
-import styles from './AssetCatalogLineChart.module.css';
 import {AssetCatalogMetricNames} from './AssetCatalogMetricUtils';
+import styles from './css/AssetCatalogLineChart.module.css';
 import {Context, useRenderChartTooltip} from './renderChartTooltip';
 import {useRGBColorsForTheme} from '../../app/useRGBColorsForTheme';
 import {TooltipCard} from '../../insights/InsightsChartShared';

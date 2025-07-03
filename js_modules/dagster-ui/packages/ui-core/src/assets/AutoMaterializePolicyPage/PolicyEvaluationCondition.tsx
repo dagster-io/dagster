@@ -1,6 +1,8 @@
-import {Box, Colors, Icon} from '@dagster-io/ui-components';
+import {Box, Icon} from '@dagster-io/ui-components';
+import clsx from 'clsx';
 import * as React from 'react';
-import styled from 'styled-components';
+
+import styles from './css/PolicyEvaluationCondition.module.css';
 
 export type ConditionType = 'group' | 'leaf';
 
@@ -27,7 +29,9 @@ export const PolicyEvaluationCondition = (props: Props) => {
     evaluationLink,
   } = props;
   const depthLines = React.useMemo(() => {
-    return new Array(depth).fill(null).map((_, ii) => <DepthLine key={ii} />);
+    return new Array(depth)
+      .fill(null)
+      .map((_, ii) => <div key={ii} className={styles.depthLine} />);
   }, [depth]);
 
   return (
@@ -44,27 +48,16 @@ export const PolicyEvaluationCondition = (props: Props) => {
         />
       ) : null}
       {hasChildren ? icon : <div style={{marginLeft: 28}}>{icon}</div>}
-      <ConditionLabel $type={type} $skipped={skipped}>
+      <div
+        className={clsx(
+          styles.conditionLabel,
+          type === 'group' ? styles.group : null,
+          skipped ? styles.skipped : null,
+        )}
+      >
         {label}
-      </ConditionLabel>
+      </div>
       {evaluationLink ? <>[{evaluationLink}]</> : null}
     </Box>
   );
 };
-
-const DepthLine = styled.div`
-  background-color: ${Colors.keylineDefault()};
-  align-self: stretch;
-  margin: 0 4px 0 7px; /* 7px to align with center of icon in row above */
-  width: 2px;
-`;
-
-interface ConditionLabelProps {
-  $type: ConditionType;
-  $skipped: boolean;
-}
-
-const ConditionLabel = styled.div<ConditionLabelProps>`
-  font-weight: ${({$type}) => ($type === 'group' ? '600' : '400')};
-  color: ${({$skipped}) => ($skipped ? Colors.textDisabled() : Colors.textDefault())};
-`;

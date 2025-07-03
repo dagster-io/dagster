@@ -1,9 +1,7 @@
-import {FontFamily} from '@dagster-io/ui-components';
-import styled from 'styled-components';
+import styles from './css/Version.module.css';
 
-export const Version = styled.div`
-  font-family: ${FontFamily.monospace};
-  font-size: 14px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-`;
+export const Version = ({children, className, ...props}: React.HTMLAttributes<HTMLDivElement>) => (
+  <div className={`${styles.version} ${className || ''}`} {...props}>
+    {children}
+  </div>
+);

@@ -1,0 +1,72 @@
+.timescaleContainer {
+  width: 100%;
+}
+
+.timescaleContainer .tick {
+  position: absolute;
+  padding-top: 7px;
+  width: 56px;
+  height: 32px;
+  box-sizing: border-box;
+  transition:
+    left 150ms linear,
+    width 150ms linear;
+  text-align: center;
+}
+
+.timescaleContainer .tick.duration {
+  color: var(--color-text-light);
+  background: var(--color-background-light);
+  box-shadow: 0 1px 1px var(--color-shadow-default);
+}
+
+.timescaleContainer .tick.highlight {
+  color: var(--color-accent-reversed);
+  height: 34px;
+  background: var(--color-accent-primary);
+}
+
+.timescaleContainer .line {
+  position: absolute;
+  border-left: 1px solid var(--color-keyline-default);
+  transition: left 150ms linear;
+  top: 0px;
+  bottom: 0px;
+}
+
+.timescaleContainer .line.highlight {
+  border-left: 2px solid var(--color-border-default);
+  z-index: 1111;
+  top: -1px;
+}
+
+.timescaleContainer .fog-of-war {
+  position: absolute;
+  background: var(--color-background-light);
+  transition: left 150ms linear;
+  top: 0px;
+  bottom: 0px;
+  width: 100%;
+}
+
+.timescaleTicksContainer {
+  height: 32px;
+  z-index: 4;
+  position: relative;
+  background: var(--color-background-light);
+  display: flex;
+  color: var(--color-text-light);
+  font-size: 11px;
+  font-family: var(--font-family-monospace);
+  box-shadow: inset 0 -1px var(--color-keyline-default);
+  overflow: hidden;
+}
+
+.timescaleLinesContainer {
+  z-index: 0;
+  top: 32px;
+  left: 0;
+  position: absolute;
+  pointer-events: none;
+  overflow: hidden;
+}

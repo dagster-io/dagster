@@ -1,0 +1,4 @@
+.tableWrapper th,
+.tableWrapper td {
+  vertical-align: middle !important;
+}

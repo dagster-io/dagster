@@ -42,7 +42,7 @@ export const InsightsBarChartTooltip = (props: Props) => {
         border="bottom"
         flex={{direction: 'row', alignItems: 'center', gap: 8}}
       >
-        <InsightsIdentifierDot $color={color} key={label} />
+        <InsightsIdentifierDot color={color} key={label} />
         <Icon name={iconForDatapointType(type)} />
         <div style={{whiteSpace: 'nowrap', overflow: 'hidden', fontWeight: 600, fontSize: '14px'}}>
           <MiddleTruncate text={label} />

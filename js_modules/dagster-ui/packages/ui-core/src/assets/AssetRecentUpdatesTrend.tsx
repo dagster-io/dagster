@@ -9,9 +9,9 @@ import {
 } from '@dagster-io/ui-components';
 import React, {useMemo} from 'react';
 import {Link} from 'react-router-dom';
-import styled from 'styled-components';
 
 import {AssetHealthSummary} from './AssetHealthSummary';
+import styles from './css/AssetRecentUpdatesTrend.module.css';
 import {
   AssetFailedToMaterializeFragment,
   AssetObservationFragment,
@@ -59,25 +59,52 @@ export const AssetRecentUpdatesTrend = React.memo(({asset}: {asset: AssetHealthF
       const index = 4 - _index;
       const event = events[index];
       if (!event) {
-        return <Pill key={index} $index={index} $color={Colors.backgroundDisabled()} />;
+        return (
+          <div
+            key={index}
+            className={styles.pill}
+            style={{
+              background: Colors.backgroundDisabled(),
+              opacity: OPACITIES[index] ?? 1,
+            }}
+          />
+        );
       }
       if (event.__typename === 'AssetLatestInfo') {
         return (
           <EventPopover key={index} event={event}>
-            <Pill $index={index} $color={Colors.accentBlue()} />
+            <div
+              className={styles.pill}
+              style={{
+                background: Colors.accentBlue(),
+                opacity: OPACITIES[index] ?? 1,
+              }}
+            />
           </EventPopover>
         );
       }
       if (event.__typename === 'FailedToMaterializeEvent') {
         return (
           <EventPopover key={index} event={event}>
-            <Pill $index={index} $color={Colors.accentRed()} />
+            <div
+              className={styles.pill}
+              style={{
+                background: Colors.accentRed(),
+                opacity: OPACITIES[index] ?? 1,
+              }}
+            />
           </EventPopover>
         );
       }
       return (
         <EventPopover key={index} event={event}>
-          <Pill $index={index} $color={Colors.accentGreen()} />
+          <div
+            className={styles.pill}
+            style={{
+              background: Colors.accentGreen(),
+              opacity: OPACITIES[index] ?? 1,
+            }}
+          />
         </EventPopover>
       );
     });
@@ -111,17 +138,6 @@ export const AssetRecentUpdatesTrend = React.memo(({asset}: {asset: AssetHealthF
     </Box>
   );
 });
-
-const Pill = styled.div<{$index: number; $color: string}>`
-  border-radius: 2px;
-  height: 16px;
-  width: 6px;
-  background: ${({$color}) => $color};
-  opacity: ${({$index}) => OPACITIES[$index] ?? 1};
-  &:hover {
-    box-shadow: 0 0 0 1px ${Colors.accentGrayHover()};
-  }
-`;
 
 const OPACITIES: Record<number, number> = {
   0: 1,

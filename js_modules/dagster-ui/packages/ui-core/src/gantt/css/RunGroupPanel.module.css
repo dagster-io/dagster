@@ -1,0 +1,48 @@
+.runGroupRun {
+  align-items: flex-start;
+  padding: 4px 6px 4px 24px;
+  font-family: var(--font-family-monospace);
+  font-size: 12px;
+  line-height: 20px;
+  display: flex;
+  position: relative;
+  text-decoration: none;
+}
+
+.runGroupRun.selected {
+  background: var(--color-background-light);
+}
+
+.runGroupRun:not(.selected) {
+  background: var(--color-background-default);
+}
+
+.runGroupRun:hover {
+  text-decoration: none;
+}
+
+.runGroupRun.selected:hover {
+  background: var(--color-background-light-hover);
+}
+
+.runGroupRun:not(.selected):hover {
+  background: var(--color-background-default-hover);
+}
+
+.thinLine {
+  position: absolute;
+  top: 20px;
+  width: 1px;
+  background: var(--color-border-default);
+  left: 29px;
+  z-index: 2;
+}
+
+.runTitle {
+  color: var(--color-text-default);
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  user-select: text;
+  flex: 1;
+}

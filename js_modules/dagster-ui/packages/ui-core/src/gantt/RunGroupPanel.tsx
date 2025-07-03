@@ -1,9 +1,10 @@
-import {Box, ButtonLink, Colors, FontFamily, Group, Icon} from '@dagster-io/ui-components';
+import {Box, ButtonLink, Colors, Group, Icon} from '@dagster-io/ui-components';
+import clsx from 'clsx';
 import {useEffect} from 'react';
 import {Link} from 'react-router-dom';
-import styled from 'styled-components';
 
 import {gql, useQuery} from '../apollo-client';
+import styles from './css/RunGroupPanel.module.css';
 import {
   RunGroupPanelQuery,
   RunGroupPanelQueryVariables,
@@ -100,8 +101,12 @@ export const RunGroupPanel = ({
       <>
         {runs.map((g, idx) =>
           g ? (
-            <RunGroupRun key={g.id} to={`/runs/${g.id}`} selected={g.id === runId}>
-              {idx < runs.length - 1 && <ThinLine style={{height: 36}} />}
+            <Link
+              key={g.id}
+              to={`/runs/${g.id}`}
+              className={clsx(styles.runGroupRun, g.id === runId && styles.selected)}
+            >
+              {idx < runs.length - 1 && <div className={styles.thinLine} style={{height: 36}} />}
               <Box padding={{top: 4}}>
                 <RunStatusIndicator status={g.status} />
               </Box>
@@ -114,10 +119,10 @@ export const RunGroupPanel = ({
                 }}
               >
                 <div style={{display: 'flex', justifyContent: 'space-between'}}>
-                  <RunTitle>
+                  <span className={styles.runTitle}>
                     {g.id.split('-')[0]}
                     {idx === 0 && RootTag}
-                  </RunTitle>
+                  </span>
                   <RunTime run={g} />
                 </div>
                 <div
@@ -131,7 +136,7 @@ export const RunGroupPanel = ({
                   <RunStateSummary run={g} />
                 </div>
               </div>
-            </RunGroupRun>
+            </Link>
           ) : null,
         )}
       </>
@@ -168,40 +173,6 @@ export const RUN_GROUP_PANEL_QUERY = gql`
 
   ${PYTHON_ERROR_FRAGMENT}
   ${RUN_TIME_FRAGMENT}
-`;
-
-const RunGroupRun = styled(Link)<{selected: boolean}>`
-  align-items: flex-start;
-  background: ${({selected}) => (selected ? Colors.backgroundLight() : Colors.backgroundDefault())};
-  padding: 4px 6px 4px 24px;
-  font-family: ${FontFamily.monospace};
-  font-size: 12px;
-  line-height: 20px;
-  display: flex;
-  position: relative;
-  &:hover {
-    text-decoration: none;
-    background: ${({selected}) =>
-      selected ? Colors.backgroundLightHover() : Colors.backgroundDefaultHover()};
-  }
-`;
-
-const ThinLine = styled.div`
-  position: absolute;
-  top: 20px;
-  width: 1px;
-  background: ${Colors.borderDefault()};
-  left: 29px;
-  z-index: 2;
-`;
-
-const RunTitle = styled.span`
-  color: ${Colors.textDefault()};
-  font-weight: 500;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  user-select: text;
-  flex: 1;
 `;
 
 const RootTag = (

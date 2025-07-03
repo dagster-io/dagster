@@ -1,0 +1,9 @@
+.repoName {
+  font-weight: 600;
+  color: var(--color-text-default);
+}
+
+.repoLocation {
+  color: var(--color-text-lighter);
+  margin-left: 4px;
+}

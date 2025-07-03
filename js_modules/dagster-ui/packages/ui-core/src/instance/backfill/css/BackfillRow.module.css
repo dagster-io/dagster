@@ -1,0 +1,12 @@
+/* Button with no styling, used for interactive tags */
+.tagButton {
+  border: none;
+  background: none;
+  cursor: pointer;
+  padding: 0;
+  margin: 0;
+}
+
+.tagButton:focus {
+  outline: none;
+}

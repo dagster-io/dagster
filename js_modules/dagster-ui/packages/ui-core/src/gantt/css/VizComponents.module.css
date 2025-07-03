@@ -1,0 +1,35 @@
+.optionsContainer {
+  min-height: 56px;
+  display: flex;
+  align-items: center;
+  padding: 5px 12px 5px 24px;
+  border-bottom: 1px solid var(--color-keyline-default);
+  background: var(--color-background-default);
+  flex-shrink: 0;
+  flex-wrap: wrap;
+  z-index: 3;
+}
+
+.optionsContainer :global(.bp4-control-group) {
+  margin-top: 0;
+  gap: 8px;
+}
+
+@media (max-width: 1100px) {
+  .optionsContainer :global(.bp4-control-group) .hideable-button-text {
+    display: none;
+  }
+  
+  .optionsContainer :global(.bp4-control-group) div[role='img'] {
+    margin: 0;
+  }
+}
+
+.optionsDivider {
+  width: 30px;
+  height: 25px;
+}
+
+.optionsSpacer {
+  width: 30px;
+}

@@ -1,0 +1,8 @@
+.rowGrid {
+  display: grid;
+  height: 100%;
+}
+
+.rowGrid > * {
+  justify-content: center;
+}

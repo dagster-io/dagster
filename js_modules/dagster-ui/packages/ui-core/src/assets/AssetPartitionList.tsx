@@ -1,10 +1,11 @@
-import {Box, Colors, MiddleTruncate} from '@dagster-io/ui-components';
+import {Box, Colors, MiddleTruncate, Row} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
+import clsx from 'clsx';
 import {useEffect, useRef} from 'react';
 
-import {AssetListContainer, AssetListRow} from './AssetEventList';
 import {AssetPartitionStatus, assetPartitionStatusesToStyle} from './AssetPartitionStatus';
 import {Inner} from '../ui/VirtualizedTable';
+import styles from './css/AssetPartitionList.module.css';
 
 export interface AssetPartitionListProps {
   partitions: string[];
@@ -40,7 +41,8 @@ export const AssetPartitionList = ({
   }, [focusedDimensionKey, rowVirtualizer, partitions]);
 
   return (
-    <AssetListContainer
+    <div
+      className={styles.assetListContainer}
       ref={parentRef}
       tabIndex={-1}
       onKeyDown={(e) => {
@@ -61,11 +63,14 @@ export const AssetPartitionList = ({
           const dimensionKey = partitions[index]!;
           const state = statusForPartition(dimensionKey);
           return (
-            <AssetListRow
+            <Row
+              className={clsx(
+                styles.assetListRow,
+                dimensionKey === focusedDimensionKey ? styles.focused : null,
+              )}
               key={key}
               $height={size}
               $start={start}
-              $focused={dimensionKey === focusedDimensionKey}
               onClick={(e) => {
                 // If you're interacting with something in the row, don't trigger a focus change.
                 // Since focus is stored in the URL bar this overwrites any link click navigation.
@@ -107,11 +112,11 @@ export const AssetPartitionList = ({
                   )}
                 </Box>
               </Box>
-            </AssetListRow>
+            </Row>
           );
         })}
       </Inner>
-    </AssetListContainer>
+    </div>
   );
 };
 

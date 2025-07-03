@@ -9,12 +9,13 @@ import {
   Tag,
   useViewport,
 } from '@dagster-io/ui-components';
+import clsx from 'clsx';
 import {memo, useMemo} from 'react';
 import {Link} from 'react-router-dom';
-import styled from 'styled-components';
 
 import {RunlessEventTag} from './RunlessEventTag';
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
+import styles from './css/RecentUpdatesTimeline.module.css';
 import {isRunlessEvent} from './isRunlessEvent';
 import {AssetKey} from './types';
 import {useRecentAssetEvents} from './useRecentAssetEvents';
@@ -175,8 +176,9 @@ export const RecentUpdatesTimeline = ({assetKey, events, loading}: Props) => {
             const bucketEndTimestamp = startTimestamp + bucket.end * bucketTimeRange;
             const bucketRange = bucketEndTimestamp - bucketStartTime;
             return (
-              <TickWrapper
+              <div
                 key={bucket.start}
+                className={styles.tickWrapper}
                 style={{
                   left: (100 * bucket.start) / buckets + '%',
                   width: (100 * width) / buckets + '%',
@@ -186,13 +188,19 @@ export const RecentUpdatesTimeline = ({assetKey, events, loading}: Props) => {
                   const percent = (100 * (parseInt(timestamp) - bucketStartTime)) / bucketRange;
 
                   return (
-                    <InnerTick
+                    <div
                       key={timestamp}
-                      style={{
-                        // Make sure there's enough room to see the last tick.
-                        left: `min(calc(100% - ${INNER_TICK_WIDTH}px), ${percent}%`,
-                      }}
-                      $isSuccess={__typename !== 'FailedToMaterializeEvent'}
+                      className={clsx(
+                        styles.innerTick,
+                        __typename !== 'FailedToMaterializeEvent' ? styles.success : styles.error,
+                      )}
+                      style={
+                        {
+                          // Make sure there's enough room to see the last tick.
+                          left: `min(calc(100% - ${INNER_TICK_WIDTH}px), ${percent}%`,
+                          '--inner-tick-width': `${INNER_TICK_WIDTH}px`,
+                        } as React.CSSProperties
+                      }
                     />
                   );
                 })}
@@ -215,18 +223,24 @@ export const RecentUpdatesTimeline = ({assetKey, events, loading}: Props) => {
                   }
                 >
                   <>
-                    <Tick
-                      $hasError={bucket.hasFailedMaterializations}
-                      $hasSuccess={bucket.hasMaterializations}
+                    <div
+                      className={clsx(
+                        styles.tick,
+                        bucket.hasFailedMaterializations &&
+                          bucket.hasMaterializations &&
+                          styles.hasErrorAndSuccess,
+                        bucket.hasFailedMaterializations && styles.hasError,
+                        bucket.hasMaterializations && styles.hasSuccess,
+                      )}
                     >
-                      <TickText>{bucket.events.length}</TickText>
-                    </Tick>
+                      <div className={styles.tickText}>{bucket.events.length}</div>
+                    </div>
                   </>
                 </Popover>
-              </TickWrapper>
+              </div>
             );
           })}
-          <TickLines />
+          <div className={styles.tickLines} />
         </div>
       </Box>
       <Box padding={{top: 4}} flex={{justifyContent: 'space-between'}}>
@@ -287,90 +301,6 @@ const AssetUpdate = ({assetKey, event}: {assetKey: AssetKey; event: AssetEventTy
     </Box>
   );
 };
-
-const Tick = styled.div<{
-  $hasError: boolean;
-  $hasSuccess: boolean;
-}>`
-  position: absolute;
-  width: 100%;
-  top: 0;
-  bottom: 0;
-  overflow: hidden;
-  background-color: transparent;
-  cursor: pointer;
-  border-radius: 2px;
-  &:hover {
-    background: ${({$hasError, $hasSuccess}) => {
-      if ($hasError && $hasSuccess) {
-        return `linear-gradient(90deg, ${Colors.accentRedHover()} 50%, ${Colors.accentGreenHover()} 50%)`;
-      }
-      if ($hasError) {
-        return Colors.accentRedHover();
-      }
-      return Colors.accentGreenHover();
-    }};
-  }
-`;
-
-const TickText = styled.div`
-  position: absolute;
-  top: 0;
-  right: 0;
-  left: 0;
-  bottom: 0;
-  display: grid;
-  place-content: center;
-  color: transparent;
-  background: none;
-  user-select: none;
-  &:hover {
-    user-select: initial;
-    color: ${Colors.textLight()};
-  }
-`;
-
-const TickWrapper = styled.div`
-  position: absolute;
-  height: 20px;
-  * {
-    height: 20px;
-  }
-`;
-
-const InnerTick = styled.div<{
-  $isSuccess: boolean;
-}>`
-  width: ${INNER_TICK_WIDTH}px;
-  top: 0;
-  bottom: 0;
-  position: absolute;
-  pointer-events: none;
-  border-radius: 1px;
-  opacity: 0.5;
-  background: ${({$isSuccess}) => {
-    if ($isSuccess) {
-      return Colors.accentGreen();
-    }
-    return Colors.accentRed();
-  }};
-`;
-
-const TickLines = styled.div`
-  pointer-events: none;
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: -6px;
-  top: -6px;
-  background: repeating-linear-gradient(
-    to right,
-    ${Colors.keylineDefault} 0,
-    ${Colors.keylineDefault} 2px,
-    /* color and width of the line */ transparent 2px,
-    transparent 5% /* spacing between lines */
-  );
-`;
 
 const ONE_DAY = 24 * 60 * 60 * 1000;
 

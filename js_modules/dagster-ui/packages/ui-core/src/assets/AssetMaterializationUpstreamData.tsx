@@ -2,10 +2,10 @@ import {Box, Caption, Colors, Icon, MiddleTruncate} from '@dagster-io/ui-compone
 import dayjs from 'dayjs';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
-import styled from 'styled-components';
 
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
 import {gql, useQuery} from '../apollo-client';
+import styles from './css/AssetMaterializationUpstreamData.module.css';
 import {
   AssetMaterializationUpstreamQuery,
   AssetMaterializationUpstreamQueryVariables,
@@ -34,24 +34,24 @@ export const AssetMaterializationUpstreamTable = ({
 
   if (!data) {
     return (
-      <TableContainer>
+      <table className={styles.tableContainer}>
         <tbody>
           <tr>
             <td>Loading…</td>
           </tr>
         </tbody>
-      </TableContainer>
+      </table>
     );
   }
   if (!data.assetMaterializationUsedData.length) {
     return (
-      <TableContainer>
+      <table className={styles.tableContainer}>
         <tbody>
           <tr>
             <td>No upstream materializations to display.</td>
           </tr>
         </tbody>
-      </TableContainer>
+      </table>
     );
   }
 
@@ -111,13 +111,13 @@ export const AssetMaterializationUpstreamTable = ({
   };
 
   return (
-    <TableContainer>
+    <table className={styles.tableContainer}>
       <tbody>
         {data.assetMaterializationUsedData
           .filter((e) => displayNameForAssetKey(e.downstreamAssetKey) === displayName)
           .map((e) => renderEntryAndParents(e, 0, false))}
       </tbody>
-    </TableContainer>
+    </table>
   );
 };
 
@@ -206,17 +206,4 @@ export const ASSET_MATERIALIZATION_UPSTREAM_QUERY = gql`
     }
   }
   ${ASSET_MATERIALIZATION_UPSTREAM_TABLE_FRAGMENT}
-`;
-
-const TableContainer = styled.table`
-  width: 100%;
-  border-spacing: 0;
-  border-collapse: collapse;
-
-  tr td {
-    border: 1px solid ${Colors.keylineDefault()};
-    padding: 8px 12px;
-    font-size: 14px;
-    vertical-align: top;
-  }
 `;

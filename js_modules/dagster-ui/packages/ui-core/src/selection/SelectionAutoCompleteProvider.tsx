@@ -9,7 +9,7 @@ import {
 } from '@dagster-io/ui-components';
 import React from 'react';
 
-import styles from './SelectionAutoComplete.module.css';
+import styles from './css/SelectionAutoComplete.module.css';
 import {assertUnreachable} from '../app/Util';
 
 export interface SelectionAutoCompleteProvider {

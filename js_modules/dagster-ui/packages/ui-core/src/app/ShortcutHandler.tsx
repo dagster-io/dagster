@@ -1,9 +1,8 @@
-import {Colors} from '@dagster-io/ui-components';
 import * as React from 'react';
 import ReactDOM from 'react-dom';
-import styled from 'styled-components';
 
 import {getJSONForKey} from '../hooks/useStateWithStorage';
+import styles from './css/ShortcutHandler.module.css';
 
 export const SHORTCUTS_STORAGE_KEY = 'keyboard-shortcuts-enabled';
 
@@ -185,29 +184,15 @@ export class ShortcutHandler extends React.Component<ShortcutHandlerProps, Short
       return (
         <>
           {children}
-          <ShortcutAnnotation style={{top: previewPosition.top, left: previewPosition.left}}>
+          <div
+            className={styles.shortcutAnnotation}
+            style={{top: previewPosition.top, left: previewPosition.left}}
+          >
             {shortcutLabel}
-          </ShortcutAnnotation>
+          </div>
         </>
       );
     }
     return <>{children}</>;
   }
 }
-
-const ShortcutAnnotation = styled.div`
-  position: fixed;
-  min-width: 32px;
-  font-size: 12px;
-  font-weight: 600;
-  line-height: 14px;
-  text-align: center;
-  padding: 2px;
-  z-index: 20;
-  transform: translate(-90%, -10px);
-  color: ${Colors.tooltipText()};
-  background: ${Colors.tooltipBackground()};
-  border: 1px solid ${Colors.borderHover()};
-  border-radius: 3px;
-  box-shadow: 0 1px 3px ${Colors.shadowDefault()};
-`;

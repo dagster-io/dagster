@@ -12,11 +12,11 @@ import {
 import clsx from 'clsx';
 import React from 'react';
 
-import styles from './AssetCatalogInsights.module.css';
 import {AssetCatalogMetricNames} from './AssetCatalogMetricUtils';
 import {TooltipCard} from '../../insights/InsightsChartShared';
 import {numberFormatter} from '../../ui/formatters';
 import {useFormatDateTime} from '../../ui/useFormatDateTime';
+import styles from '../catalog/css/AssetCatalogInsights.module.css';
 
 type MetricsDialogData = {
   after: number;

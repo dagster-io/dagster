@@ -1,0 +1,12 @@
+.tableContainer {
+  width: 100%;
+  border-spacing: 0;
+  border-collapse: collapse;
+}
+
+.tableContainer tr td {
+  border: 1px solid var(--color-keyline-default);
+  padding: 8px 12px;
+  font-size: 14px;
+  vertical-align: top;
+}

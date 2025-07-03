@@ -1,0 +1,22 @@
+/* MinimalNodeChangedDotContainer */
+.minimalNodeChangedDotContainer {
+  position: absolute;
+  right: 6px;
+  top: 6px;
+  height: 20px;
+  width: 20px;
+  border-radius: 50%;
+  background-color: var(--color-background-cyan);
+}
+
+.minimalNodeChangedDotContainer::after {
+  display: block;
+  position: absolute;
+  content: ' ';
+  left: 5px;
+  top: 5px;
+  height: 10px;
+  width: 10px;
+  border-radius: 50%;
+  background-color: var(--color-accent-cyan);
+}

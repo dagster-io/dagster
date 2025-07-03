@@ -146,8 +146,20 @@ export const TruncatedTextWithFullTextOnHover = React.forwardRef(
       tooltipText,
       ...rest
     }:
-      | {text: string; tooltipStyle?: string; tooltipText?: null}
-      | {text: React.ReactNode; tooltipStyle?: string; tooltipText: string},
+      | {
+          text: string;
+          tooltipStyle?: string;
+          tooltipText?: null;
+          className?: string;
+          style?: React.CSSProperties;
+        }
+      | {
+          text: React.ReactNode;
+          tooltipStyle?: string;
+          tooltipText: string;
+          className?: string;
+          style?: React.CSSProperties;
+        },
     ref: React.ForwardedRef<HTMLDivElement>,
   ) => (
     <TruncatingName

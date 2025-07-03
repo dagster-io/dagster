@@ -1,0 +1,88 @@
+/* Tick */
+.tick {
+  position: absolute;
+  width: 100%;
+  top: 0;
+  bottom: 0;
+  overflow: hidden;
+  background-color: transparent;
+  cursor: pointer;
+  border-radius: 2px;
+}
+
+.tick.hasErrorAndSuccess:hover {
+  background: linear-gradient(90deg, var(--color-accent-red-hover) 50%, var(--color-accent-green-hover) 50%);
+}
+
+.tick.hasError:hover {
+  background: var(--color-accent-red-hover);
+}
+
+.tick.hasSuccess:hover {
+  background: var(--color-accent-green-hover);
+}
+
+/* TickText */
+.tickText {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  bottom: 0;
+  display: grid;
+  place-content: center;
+  color: transparent;
+  background: none;
+  user-select: none;
+}
+
+.tickText:hover {
+  user-select: initial;
+  color: var(--color-text-light);
+}
+
+/* TickWrapper */
+.tickWrapper {
+  position: absolute;
+  height: 20px;
+}
+
+.tickWrapper * {
+  height: 20px;
+}
+
+/* InnerTick */
+.innerTick {
+  width: var(--inner-tick-width);
+  top: 0;
+  bottom: 0;
+  position: absolute;
+  pointer-events: none;
+  border-radius: 1px;
+  opacity: 0.5;
+}
+
+.innerTick.success {
+  background: var(--color-accent-green);
+}
+
+.innerTick.error {
+  background: var(--color-accent-red);
+}
+
+/* TickLines */
+.tickLines {
+  pointer-events: none;
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -6px;
+  top: -6px;
+  background: repeating-linear-gradient(
+    to right,
+    var(--color-keyline-default) 0,
+    var(--color-keyline-default) 2px,
+    /* color and width of the line */ transparent 2px,
+    transparent 5% /* spacing between lines */
+  );
+}

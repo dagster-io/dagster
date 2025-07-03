@@ -1,0 +1,14 @@
+/* HoverableRow */
+.hoverableRow:hover {
+  background: var(--color-background-light-hover);
+}
+
+/* DetailsTable */
+.detailsTable {
+  width: 100%;
+  margin: -2px -2px -3px;
+}
+
+.detailsTable tr td {
+  font-size: 14px;
+}

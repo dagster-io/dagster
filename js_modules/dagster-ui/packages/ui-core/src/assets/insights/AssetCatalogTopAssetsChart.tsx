@@ -25,7 +25,7 @@ import {
 import React, {useCallback, useMemo, useState} from 'react';
 import {Bar} from 'react-chartjs-2';
 
-import styles from './AssetCatalogTopAssetsChart.module.css';
+import styles from './css/AssetCatalogTopAssetsChart.module.css';
 import {Context, useRenderChartTooltip} from './renderChartTooltip';
 import {useRGBColorsForTheme} from '../../app/useRGBColorsForTheme';
 import {TooltipCard} from '../../insights/InsightsChartShared';

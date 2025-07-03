@@ -24,6 +24,7 @@ import styled from 'styled-components';
 import {RunRequestTable} from './DryRunRequestTable';
 import {RUN_REQUEST_FRAGMENT} from './RunRequestFragment';
 import {gql, useMutation, useQuery} from '../apollo-client';
+import styles from './css/EvaluateScheduleDialog.module.css';
 import {
   GetScheduleQuery,
   GetScheduleQueryVariables,
@@ -273,7 +274,7 @@ const EvaluateSchedule = ({repoAddress, name, onClose, jobName}: Props) => {
       selectedTimestampRef.current = selectedTimestamp || timestamps[0] || null;
       return (
         <Box flex={{direction: 'column', gap: 8}}>
-          <ScheduleDescriptor>Select an evaluation time to simulate</ScheduleDescriptor>
+          <div className={styles.scheduleDescriptor}>Select an evaluation time to simulate</div>
           <Popover
             isOpen={isTickSelectionOpen}
             position="bottom-left"
@@ -645,10 +646,6 @@ const Grid = styled.div`
   button {
     margin-top: 4px;
   }
-`;
-
-const ScheduleDescriptor = styled.div`
-  padding-bottom: 2px;
 `;
 
 const SkipReasonNonIdealStateWrapper = styled.div`

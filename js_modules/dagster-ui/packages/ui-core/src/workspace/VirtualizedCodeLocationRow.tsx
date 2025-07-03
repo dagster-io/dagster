@@ -2,22 +2,22 @@ import {Box, Colors, JoinedButtons, MiddleTruncate} from '@dagster-io/ui-compone
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
-import styled from 'styled-components';
 
 import {CodeLocationMenu} from './CodeLocationMenu';
 import {ImageName, LocationStatus, ModuleOrPackageOrFile, ReloadButton} from './CodeLocationRowSet';
 import {CodeLocationRowStatusType} from './CodeLocationRowStatusType';
 import {RepositoryCountTags} from './RepositoryCountTags';
 import {WorkspaceRepositoryLocationNode} from './WorkspaceContext/WorkspaceContext';
+import {DUNDER_REPO_NAME, buildRepoAddress} from './buildRepoAddress';
+import {repoAddressAsHumanString} from './repoAddressAsString';
+import {workspacePathFromAddress} from './workspacePath';
+import {featureEnabled} from '../app/Flags';
 import {
   LocationStatusEntryFragment,
   WorkspaceLocationNodeFragment,
   WorkspaceRepositoryFragment,
 } from './WorkspaceContext/types/WorkspaceQueries.types';
-import {DUNDER_REPO_NAME, buildRepoAddress} from './buildRepoAddress';
-import {repoAddressAsHumanString} from './repoAddressAsString';
-import {workspacePathFromAddress} from './workspacePath';
-import {featureEnabled} from '../app/Flags';
+import styles from './css/VirtualizedCodeLocationRow.module.css';
 import {AnchorButton} from '../ui/AnchorButton';
 import {TimeFromNow} from '../ui/TimeFromNow';
 import {HeaderCell, HeaderRow, RowCell} from '../ui/VirtualizedTable';
@@ -56,7 +56,11 @@ export const VirtualizedCodeLocationRow = React.forwardRef(
 
     return (
       <div ref={ref} data-index={index}>
-        <RowGrid border="bottom">
+        <Box
+          className={styles.rowGrid}
+          style={{gridTemplateColumns: TEMPLATE_COLUMNS}}
+          border="bottom"
+        >
           <RowCell>
             <Box flex={{direction: 'column', gap: 4}}>
               <div style={{fontWeight: 500}}>
@@ -95,7 +99,7 @@ export const VirtualizedCodeLocationRow = React.forwardRef(
               {locationEntry ? <CodeLocationMenu locationNode={locationEntry} /> : null}
             </JoinedButtons>
           </RowCell>
-        </RowGrid>
+        </Box>
       </div>
     );
   },
@@ -119,7 +123,11 @@ export const VirtualizedCodeLocationRepositoryRow = React.forwardRef(
 
     return (
       <div ref={ref} data-index={index}>
-        <RowGrid border="bottom">
+        <Box
+          className={styles.rowGrid}
+          style={{gridTemplateColumns: TEMPLATE_COLUMNS}}
+          border="bottom"
+        >
           <RowCell>
             <Box flex={{direction: 'column', gap: 4}}>
               <div style={{fontWeight: 500}}>
@@ -161,7 +169,7 @@ export const VirtualizedCodeLocationRepositoryRow = React.forwardRef(
               <CodeLocationMenu locationNode={locationEntry} />
             </JoinedButtons>
           </RowCell>
-        </RowGrid>
+        </Box>
       </div>
     );
   },
@@ -178,8 +186,3 @@ export const VirtualizedCodeLocationHeader = () => {
     </HeaderRow>
   );
 };
-
-const RowGrid = styled(Box)`
-  display: grid;
-  grid-template-columns: ${TEMPLATE_COLUMNS};
-`;

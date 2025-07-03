@@ -1,11 +1,12 @@
-import {Colors, Spinner, Tooltip} from '@dagster-io/ui-components';
+import {Spinner, Tooltip} from '@dagster-io/ui-components';
+import clsx from 'clsx';
 import * as React from 'react';
-import styled from 'styled-components';
 
 import {GanttChartMode} from './Constants';
 import {isPlannedDynamicStep} from './DynamicStepSupport';
 import {boxStyleFor} from './GanttChartLayout';
 import {RunGroupPanel} from './RunGroupPanel';
+import styles from './css/GanttStatusPanel.module.css';
 import {GraphQueryItem} from '../app/GraphQueryImpl';
 import {formatElapsedTimeWithoutMsec} from '../app/Util';
 import {SidebarSection} from '../pipelines/SidebarComponents';
@@ -96,7 +97,7 @@ export const GanttStatusPanel = React.memo(
         <SidebarSection title={`Preparing (${preparing.length})`}>
           <div>
             {preparing.length === 0 ? (
-              <EmptyNotice>No steps are waiting to execute</EmptyNotice>
+              <div className={styles.emptyNotice}>No steps are waiting to execute</div>
             ) : (
               preparing.map(renderStepItem)
             )}
@@ -105,7 +106,7 @@ export const GanttStatusPanel = React.memo(
         <SidebarSection title={`Executing (${executing.length})`}>
           <div>
             {executing.length === 0 ? (
-              <EmptyNotice>No steps are executing</EmptyNotice>
+              <div className={styles.emptyNotice}>No steps are executing</div>
             ) : (
               executing.map(renderStepItem)
             )}
@@ -114,7 +115,7 @@ export const GanttStatusPanel = React.memo(
         <SidebarSection title={`Errored (${errored.length})`}>
           <div>
             {errored.length === 0 ? (
-              <EmptyNotice>No steps have errored</EmptyNotice>
+              <div className={styles.emptyNotice}>No steps have errored</div>
             ) : (
               errored.map(renderStepItem)
             )}
@@ -123,7 +124,7 @@ export const GanttStatusPanel = React.memo(
         <SidebarSection collapsedByDefault title={`Succeeded (${succeeded.length})`}>
           <div>
             {succeeded.length === 0 ? (
-              <EmptyNotice>No steps have succeeded</EmptyNotice>
+              <div className={styles.emptyNotice}>No steps have succeeded</div>
             ) : (
               succeeded.map(renderStepItem)
             )}
@@ -159,9 +160,9 @@ const StepItem = ({
   const step = metadata.steps[name];
   const end = (step && step.end) ?? nowMs;
   return (
-    <StepItemContainer
+    <div
       key={name}
-      selected={selected}
+      className={clsx(styles.stepItemContainer, selected && styles.selected)}
       onClick={(evt: React.MouseEvent<any>) => onClick?.(name, evt)}
       onDoubleClick={() => onDoubleClick?.(name)}
       onMouseEnter={() => onHover?.(name)}
@@ -191,51 +192,21 @@ const StepItem = ({
           }}
         />
       )}
-      <StepLabel>{name}</StepLabel>
-      {step?.start && <Elapsed>{formatElapsedTimeWithoutMsec(end - step.start)}</Elapsed>}
-    </StepItemContainer>
+      <div className={styles.stepLabel}>{name}</div>
+      {step?.start && (
+        <div className={styles.elapsed}>{formatElapsedTimeWithoutMsec(end - step.start)}</div>
+      )}
+    </div>
   );
 };
 
-const StepLabel = styled.div`
-  overflow: hidden;
-  text-overflow: ellipsis;
-  flex: 1;
-`;
-
-const StepItemContainer = styled.div<{selected: boolean}>`
-  display: flex;
-  line-height: 32px;
-  height: 32px;
-  padding: 0 14px 0 6px;
-  gap: 6px;
-  align-items: center;
-  border-bottom: 1px solid ${Colors.keylineDefault()};
-  font-size: 12px;
-  ${({selected}) => selected && `background: ${Colors.backgroundLight()};`}
-
-  &:hover {
-    background: ${Colors.backgroundLightHover()};
-  }
-`;
-
-export const StepStatusDot = styled.div`
-  width: 12px;
-  height: 12px;
-  flex-shrink: 0;
-  border-radius: 50%;
-  text-align: center;
-  line-height: 12px;
-`;
-
-const Elapsed = styled.div`
-  color: ${Colors.textLight()};
-  font-variant-numeric: tabular-nums;
-`;
-
-const EmptyNotice = styled.div`
-  min-height: 32px;
-  font-size: 12px;
-  padding: 8px 24px;
-  color: ${Colors.textLight()};
-`;
+export const StepStatusDot = ({
+  children,
+  ...rest
+}: {
+  children?: React.ReactNode;
+} & React.HTMLProps<HTMLDivElement>) => (
+  <div className={styles.stepStatusDot} {...rest}>
+    {children}
+  </div>
+);
