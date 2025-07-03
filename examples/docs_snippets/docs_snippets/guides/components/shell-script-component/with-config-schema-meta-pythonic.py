@@ -13,7 +13,7 @@ class ShellCommand(dg.Component, dg.Resolvable):
     ):
         self.script_path = script_path
         self.asset_specs = asset_specs
-    
+
     # highlight-start
     @classmethod
     def get_spec(cls) -> dg.ComponentTypeSpec:

@@ -8,11 +8,7 @@ import dagster as dg
 class ShellCommand(dg.Component, dg.Resolvable):
     """Models a shell script as a Dagster asset."""
 
-    def __init__(
-        self,
-        script_path: str,
-        asset_specs: Sequence[dg.ResolvedAssetSpec]
-    ):
+    def __init__(self, script_path: str, asset_specs: Sequence[dg.ResolvedAssetSpec]):
         self.script_path = script_path
         self.asset_specs = asset_specs
 
@@ -25,6 +21,7 @@ class ShellCommand(dg.Component, dg.Resolvable):
             self.execute(resolved_script_path, context)
 
         return dg.Definitions(assets=[_asset])
+
     # highlight-end
 
     def execute(self, resolved_script_path: Path, context: dg.AssetExecutionContext):

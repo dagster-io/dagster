@@ -20,6 +20,7 @@ class ShellCommand(dg.Component, dg.Model, dg.Resolvable):
             self.execute(resolved_script_path, context)
 
         return dg.Definitions(assets=[_asset])
+
     # highlight-end
 
     def execute(self, resolved_script_path: Path, context: dg.AssetExecutionContext):

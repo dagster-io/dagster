@@ -1,5 +1,6 @@
 import dagster as dg
 
+
 class ShellCommand(dg.Component, dg.Resolvable):
     """COMPONENT SUMMARY HERE.
 
