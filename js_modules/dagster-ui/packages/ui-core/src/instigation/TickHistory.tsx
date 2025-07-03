@@ -22,16 +22,16 @@ import {Chart} from 'chart.js';
 import zoomPlugin from 'chartjs-plugin-zoom';
 import * as React from 'react';
 import {useState} from 'react';
-import styled from 'styled-components';
 
 import {TICK_TAG_FRAGMENT} from './InstigationTick';
 import {HISTORY_TICK_FRAGMENT, RUN_STATUS_FRAGMENT, RunStatusLink} from './InstigationUtils';
 import {LiveTickTimeline} from './LiveTickTimeline2';
 import {TickDetailsDialog} from './TickDetailsDialog';
+import styles from './TickHistory.module.css';
+import {gql, useQuery} from '../apollo-client';
 import {HistoryTickFragment} from './types/InstigationUtils.types';
 import {TickHistoryQuery, TickHistoryQueryVariables} from './types/TickHistory.types';
 import {countPartitionsAddedOrDeleted, isStuckStartedTick} from './util';
-import {gql, useQuery} from '../apollo-client';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
@@ -205,7 +205,7 @@ export const TicksTable = ({
         </Box>
       </Box>
       {ticks.length ? (
-        <TableWrapper>
+        <Table className={styles.tableWrapper}>
           <thead>
             <tr>
               <th style={{width: 120}}>Timestamp</th>
@@ -231,7 +231,7 @@ export const TicksTable = ({
               />
             ))}
           </tbody>
-        </TableWrapper>
+        </Table>
       ) : (
         <Box padding={{vertical: 32}} flex={{justifyContent: 'center'}}>
           <NonIdealState icon="no-results" title="No ticks to display" />
@@ -577,11 +577,4 @@ const TICK_HISTORY_QUERY = gql`
   ${PYTHON_ERROR_FRAGMENT}
   ${TICK_TAG_FRAGMENT}
   ${HISTORY_TICK_FRAGMENT}
-`;
-
-const TableWrapper = styled(Table)`
-  th,
-  td {
-    vertical-align: middle !important;
-  }
 `;

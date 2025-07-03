@@ -1,0 +1,7 @@
+.rotateable {
+  /* Base styling for the rotateable element */
+}
+
+.rotated {
+  transform: rotate(-90deg);
+}

@@ -1,0 +1,7 @@
+.insightsIdentifierDot {
+  border-radius: 50%;
+  height: 12px;
+  width: 12px;
+  flex-shrink: 0;
+  cursor: pointer;
+}

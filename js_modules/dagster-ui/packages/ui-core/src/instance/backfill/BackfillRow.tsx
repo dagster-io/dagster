@@ -1,9 +1,9 @@
 import {Box, Colors, Icon, Mono, Tag, useDelayedState} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
-import styled from 'styled-components';
 
 import {BackfillActionsMenu} from './BackfillActionsMenu';
+import styles from './BackfillRow.module.css';
 import {BackfillStatusTagForPage} from './BackfillStatusTagForPage';
 import {SingleBackfillQuery, SingleBackfillQueryVariables} from './types/BackfillRow.types';
 import {BackfillTableFragment} from './types/BackfillTable.types';
@@ -283,11 +283,11 @@ const BackfillRequestedRange = ({
     <Box flex={{direction: 'column', gap: 8}}>
       <div>
         {partitionNames ? (
-          <TagButton onClick={onExpand}>
+          <button className={styles.tagButton} onClick={onExpand}>
             <Tag intent="primary" interactive>
               {numPartitionsLabel}
             </Tag>
-          </TagButton>
+          </button>
         ) : (
           <Tag intent="primary">{numPartitionsLabel}</Tag>
         )}
@@ -309,18 +309,6 @@ const RequestedPartitionStatusBar = ({all, requested}: {all: string[]; requested
   }, [requested]);
   return <PartitionStatus small hideStatusTooltip partitionNames={all} health={health} />;
 };
-
-const TagButton = styled.button`
-  border: none;
-  background: none;
-  cursor: pointer;
-  padding: 0;
-  margin: 0;
-
-  :focus {
-    outline: none;
-  }
-`;
 
 export const SINGLE_BACKFILL_CANCELABLE_RUNS_QUERY = gql`
   query SingleBackfillQuery($backfillId: String!) {

@@ -11,7 +11,6 @@ import {
 import {useMemo, useState} from 'react';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
-import styled from 'styled-components';
 
 import {CapturedOrExternalLogPanel} from './CapturedLogPanel';
 import {DefaultLogLevels} from './LogLevel';
@@ -20,6 +19,7 @@ import {LogsScrollingTable} from './LogsScrollingTable';
 import {LogType, LogsToolbar} from './LogsToolbar';
 import {IRunMetadataDict, RunMetadataProvider} from './RunMetadataProvider';
 import {titleForRun} from './RunUtils';
+import styles from './StepLogsDialog.module.css';
 import {useComputeLogFileKeyForSelection} from './useComputeLogFileKeyForSelection';
 import {DagsterEventType} from '../graphql/types';
 import {flattenOneLevel} from '../util/flattenOneLevel';
@@ -140,7 +140,7 @@ export const StepLogsDialogContent = ({
     });
 
   return (
-    <LogsContainer>
+    <div className={styles.logsContainer}>
       <LogsToolbar
         metadata={metadata}
         logType={logType}
@@ -180,13 +180,6 @@ export const StepLogsDialogContent = ({
           metadata={metadata}
         />
       )}
-    </LogsContainer>
+    </div>
   );
 };
-
-const LogsContainer = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  height: 65vh;
-`;

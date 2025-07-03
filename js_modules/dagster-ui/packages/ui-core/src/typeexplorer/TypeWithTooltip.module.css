@@ -1,0 +1,16 @@
+.typeLink:hover {
+  text-decoration: none;
+}
+
+.typeName {
+  background: var(--color-background-blue);
+  border: none;
+  padding: 2px 4px;
+  border-bottom: 1px solid var(--color-accent-blue);
+  border-radius: 0.25em;
+  font-size: 12px;
+  font-weight: 500;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

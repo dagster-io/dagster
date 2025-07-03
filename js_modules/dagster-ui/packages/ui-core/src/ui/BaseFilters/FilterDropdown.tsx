@@ -16,6 +16,7 @@ import * as React from 'react';
 import styled, {createGlobalStyle} from 'styled-components';
 import {v4 as uuidv4} from 'uuid';
 
+import styles from './FilterDropdown.module.css';
 import {FilterObject} from './useFilter';
 import {ShortcutHandler} from '../../app/ShortcutHandler';
 import {useSetStateUpdateCallback} from '../../hooks/useSetStateUpdateCallback';
@@ -222,7 +223,7 @@ export const FilterDropdown = ({filters, setIsOpen, setPortaledElements}: Filter
 
   return (
     <div>
-      <TextInputWrapper>
+      <div className={styles.textInputWrapper}>
         <TextInput
           type="text"
           value={search}
@@ -245,9 +246,9 @@ export const FilterDropdown = ({filters, setIsOpen, setPortaledElements}: Filter
           flex={{justifyContent: 'center', alignItems: 'center'}}
           padding={{vertical: 12, horizontal: 16}}
         >
-          <SlashShortcut>f</SlashShortcut>
+          <div className={styles.slashShortcut}>f</div>
         </Box>
-      </TextInputWrapper>
+      </div>
       <Menu>
         <DropdownMenuContainer id={menuKey} ref={dropdownRef} onKeyDown={handleKeyDown}>
           {selectedFilter && selectedFilter.isLoadingFilters ? (
@@ -386,29 +387,6 @@ const DropdownMenuContainer = styled.div`
   }
 `;
 
-const TextInputWrapper = styled.div`
-  display: flex;
-  flex-direction: row;
-  flex-gap: 12px;
-
-  > *:first-child {
-    flex-grow: 1;
-  }
-
-  input {
-    background-color: ${Colors.popoverBackground()};
-    padding: 12px 16px;
-
-    &,
-    :focus,
-    :active,
-    :hover {
-      box-shadow: none;
-      background-color: ${Colors.popoverBackground()};
-    }
-  }
-`;
-
 type FilterDropdownMenuItemProps = React.ComponentProps<typeof MenuItem> & {
   menuKey: string;
   index: number;
@@ -440,13 +418,6 @@ const StyledMenuItem = styled(MenuItem)`
   &.bp5-active:focus {
     box-shadow: initial;
   }
-`;
-
-const SlashShortcut = styled.div`
-  border-radius: 4px;
-  padding: 0px 6px;
-  background: ${Colors.backgroundLight()};
-  color: ${Colors.textLight()};
 `;
 
 const PopoverStyle = createGlobalStyle`

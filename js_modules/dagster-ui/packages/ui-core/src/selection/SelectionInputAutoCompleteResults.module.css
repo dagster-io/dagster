@@ -1,0 +1,5 @@
+.keyHintWrapper {
+  border-radius: 8px;
+  padding: 4px;
+  background-color: var(--color-background-gray-hover);
+}

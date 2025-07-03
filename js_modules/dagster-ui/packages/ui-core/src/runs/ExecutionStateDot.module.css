@@ -1,0 +1,43 @@
+/*
+ExecutionStateDot styles for each IStepState value.
+Colors reference Dagster CSS variables.
+*/
+.dot {
+  display: inline-block;
+  width: 11px;
+  height: 11px;
+  border-radius: 5.5px;
+  transition: background 200ms linear;
+}
+
+.running {
+  background: var(--color-accent-gray);
+}
+.succeeded {
+  background: var(--color-accent-green);
+}
+.skipped {
+  background: var(--color-accent-yellow);
+}
+.failed,
+.preparing,
+.retryRequested,
+.unknown {
+  background: var(--color-accent-red);
+}
+
+.running:hover {
+  background: var(--color-accent-gray-hover);
+}
+.succeeded:hover {
+  background: var(--color-accent-green-hover);
+}
+.skipped:hover {
+  background: var(--color-accent-yellow-hover);
+}
+.failed:hover,
+.preparing:hover,
+.retryRequested:hover,
+.unknown:hover {
+  background: var(--color-accent-red-hover);
+}

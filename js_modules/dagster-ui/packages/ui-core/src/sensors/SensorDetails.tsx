@@ -12,14 +12,13 @@ import {
 import {useState} from 'react';
 import {Link} from 'react-router-dom';
 import {SensorAlertDetails} from 'shared/sensors/SensorAlertDetails.oss';
-import styled from 'styled-components';
 
 import {EditCursorDialog} from './EditCursorDialog';
+import styles from './SensorDetails.module.css';
 import {SensorMonitoredAssets} from './SensorMonitoredAssets';
 import {SensorResetButton} from './SensorResetButton';
 import {SensorSwitch} from './SensorSwitch';
 import {usePermissionsForLocation} from '../app/Permissions';
-import {EvaluateTickButtonSensor} from '../ticks/EvaluateTickButtonSensor';
 import {SensorFragment} from './types/SensorFragment.types';
 import {QueryRefreshCountdown, QueryRefreshState} from '../app/QueryRefresh';
 import {AutomationTargetList} from '../automation/AutomationTargetList';
@@ -27,6 +26,7 @@ import {AutomationAssetSelectionFragment} from '../automation/types/AutomationAs
 import {InstigationStatus, SensorType} from '../graphql/types';
 import {RepositoryLink} from '../nav/RepositoryLink';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
+import {EvaluateTickButtonSensor} from '../ticks/EvaluateTickButtonSensor';
 import {TickStatusTag} from '../ticks/TickStatusTag';
 import {RepoAddress} from '../workspace/types';
 
@@ -182,14 +182,14 @@ export const SensorDetails = ({
           {(sensor.targets && sensor.targets.length) || assetSelection ? (
             <tr>
               <td>Target</td>
-              <TargetCell>
+              <td className={styles.targetCell}>
                 <AutomationTargetList
                   targets={sensor.targets}
                   repoAddress={repoAddress}
                   assetSelection={assetSelection || null}
                   automationType={sensor.sensorType}
                 />
-              </TargetCell>
+              </td>
             </tr>
           ) : null}
           <tr>
@@ -261,9 +261,3 @@ export const SensorDetails = ({
     </>
   );
 };
-
-const TargetCell = styled.td`
-  button {
-    line-height: 20px;
-  }
-`;

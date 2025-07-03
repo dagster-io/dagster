@@ -15,9 +15,9 @@ import {
 import {useVirtualizer} from '@tanstack/react-virtual';
 import {useMemo, useRef, useState} from 'react';
 import {Link} from 'react-router-dom';
-import styled from 'styled-components';
 
 import {gql, useQuery} from '../apollo-client';
+import styles from './TickMaterializationsTable.module.css';
 import {
   AssetGroupAndLocationQuery,
   AssetGroupAndLocationQueryVariables,
@@ -173,7 +173,11 @@ const AssetDetailRow = ({
 
   return (
     <Row $start={$start} $height={$height}>
-      <RowGrid border="bottom">
+      <Box
+        className={styles.rowGrid}
+        style={{gridTemplateColumns: TEMPLATE_COLUMNS}}
+        border="bottom"
+      >
         <RowCell>
           <AssetLink path={assetKey.path} icon="asset" textStyle="middle-truncate" />
         </RowCell>
@@ -211,19 +215,10 @@ const AssetDetailRow = ({
             </>
           ) : null}
         </RowCell>
-      </RowGrid>
+      </Box>
     </Row>
   );
 };
-
-const RowGrid = styled(Box)`
-  display: grid;
-  grid-template-columns: ${TEMPLATE_COLUMNS};
-  height: 100%;
-  > * {
-    justify-content: center;
-  }
-`;
 
 const ASSET_GROUP_QUERY = gql`
   query AssetGroupAndLocationQuery($assetKey: AssetKeyInput!) {

@@ -1,10 +1,26 @@
-import styled from 'styled-components';
+import clsx from 'clsx';
+import React from 'react';
 
-export const InsightsIdentifierDot = styled.div<{$color: string}>`
-  background-color: ${({$color}) => $color};
-  border-radius: 50%;
-  height: 12px;
-  width: 12px;
-  flex-shrink: 0;
-  cursor: pointer;
-`;
+import styles from './InsightsIdentifierDot.module.css';
+
+interface InsightsIdentifierDotProps {
+  color: string;
+  className?: string;
+  onClick?: React.MouseEventHandler<HTMLDivElement>;
+}
+
+export const InsightsIdentifierDot = ({
+  color,
+  className,
+  onClick,
+  ...rest
+}: InsightsIdentifierDotProps) => {
+  return (
+    <div
+      className={clsx(styles.insightsIdentifierDot, className)}
+      style={{backgroundColor: color}}
+      onClick={onClick}
+      {...rest}
+    />
+  );
+};

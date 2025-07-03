@@ -1,8 +1,12 @@
-import styled from 'styled-components';
+import * as React from 'react';
 
-export const Page = styled.div`
-  height: 100%;
-  overflow-y: auto;
-  padding-bottom: 64px;
-  width: 100%;
-`;
+import styles from './Page.module.css';
+
+export const Page = (props: React.HTMLAttributes<HTMLDivElement>) => {
+  const {children, className, ...rest} = props;
+  return (
+    <div className={className ? `${styles.page} ${className}` : styles.page} {...rest}>
+      {children}
+    </div>
+  );
+};

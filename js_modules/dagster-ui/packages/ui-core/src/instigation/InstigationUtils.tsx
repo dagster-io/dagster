@@ -1,9 +1,10 @@
 import {Colors, Group, Mono} from '@dagster-io/ui-components';
+import clsx from 'clsx';
 import {Link} from 'react-router-dom';
-import styled from 'styled-components';
 
 import {TICK_TAG_FRAGMENT} from './InstigationTick';
 import {gql} from '../apollo-client';
+import styles from './InstigationUtils.module.css';
 import {InstigationStateFragment, RunStatusFragment} from './types/InstigationUtils.types';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {LastRunSummary} from '../instance/LastRunSummary';
@@ -77,24 +78,9 @@ export const INSTIGATION_STATE_FRAGMENT = gql`
   ${TICK_TAG_FRAGMENT}
 `;
 
-export const StatusTable = styled.table`
-  font-size: 13px;
-  border-spacing: 0;
-
-  &&&&& tr {
-    box-shadow: none;
-  }
-
-  &&&&& tbody > tr > td {
-    background: transparent;
-    box-shadow: none !important;
-    padding: 1px 0;
-  }
-
-  &&&&& tbody > tr > td:first-child {
-    color: ${Colors.textLight()};
-  }
-`;
+export const StatusTable = (props: React.TableHTMLAttributes<HTMLTableElement>) => (
+  <table {...props} className={clsx(styles.statusTable, props.className)} />
+);
 
 export const DYNAMIC_PARTITIONS_REQUEST_RESULT_FRAGMENT = gql`
   fragment DynamicPartitionsRequestResultFragment on DynamicPartitionsRequestResult {

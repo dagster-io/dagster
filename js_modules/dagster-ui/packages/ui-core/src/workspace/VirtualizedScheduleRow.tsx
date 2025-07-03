@@ -13,8 +13,8 @@ import {
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
-import styled from 'styled-components';
 
+import styles from './VirtualizedScheduleRow.module.css';
 import {LoadingOrNone} from './VirtualizedWorkspaceTable';
 import {isThisThingAJob, useRepository} from './WorkspaceContext/util';
 import {RepoAddress} from './types';
@@ -149,7 +149,15 @@ export const VirtualizedScheduleRow = (props: ScheduleRowProps) => {
 
   return (
     <Row $height={height} $start={start}>
-      <RowGrid border="bottom" $showCheckboxColumn={showCheckboxColumn}>
+      <Box
+        className={styles.rowGrid}
+        border="bottom"
+        style={{
+          gridTemplateColumns: showCheckboxColumn
+            ? TEMPLATE_COLUMNS_WITH_CHECKBOX
+            : TEMPLATE_COLUMNS,
+        }}
+      >
         {showCheckboxColumn ? (
           <RowCell>
             <Tooltip
@@ -277,7 +285,7 @@ export const VirtualizedScheduleRow = (props: ScheduleRowProps) => {
             <span style={{color: Colors.textLight()}}>{'\u2013'}</span>
           )}
         </RowCell>
-      </RowGrid>
+      </Box>
     </Row>
   );
 };
@@ -304,13 +312,6 @@ export const VirtualizedScheduleHeader = (props: {checkbox: React.ReactNode}) =>
     </HeaderRow>
   );
 };
-
-const RowGrid = styled(Box)<{$showCheckboxColumn: boolean}>`
-  display: grid;
-  grid-template-columns: ${({$showCheckboxColumn}) =>
-    $showCheckboxColumn ? TEMPLATE_COLUMNS_WITH_CHECKBOX : TEMPLATE_COLUMNS};
-  height: 100%;
-`;
 
 export const SINGLE_SCHEDULE_QUERY = gql`
   query SingleScheduleQuery($selector: ScheduleSelector!) {

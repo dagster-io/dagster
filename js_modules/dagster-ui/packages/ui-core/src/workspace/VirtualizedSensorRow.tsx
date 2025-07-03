@@ -11,13 +11,13 @@ import {
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
-import styled from 'styled-components';
 
 import {LoadingOrNone} from './VirtualizedWorkspaceTable';
 import {RepoAddress} from './types';
 import {SingleSensorQuery, SingleSensorQueryVariables} from './types/VirtualizedSensorRow.types';
 import {workspacePathFromAddress} from './workspacePath';
 import {gql, useQuery} from '../apollo-client';
+import styles from './VirtualizedSensorRow.module.css';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {AutomationTargetList} from '../automation/AutomationTargetList';
 import {InstigationStatus, SensorType} from '../graphql/types';
@@ -138,7 +138,15 @@ export const VirtualizedSensorRow = (props: SensorRowProps) => {
 
   return (
     <Row $height={height} $start={start}>
-      <RowGrid border="bottom" $showCheckboxColumn={showCheckboxColumn}>
+      <Box
+        className={styles.rowGrid}
+        style={{
+          gridTemplateColumns: showCheckboxColumn
+            ? TEMPLATE_COLUMNS_WITH_CHECKBOX
+            : TEMPLATE_COLUMNS,
+        }}
+        border="bottom"
+      >
         {showCheckboxColumn ? (
           <RowCell>
             <Tooltip
@@ -239,7 +247,7 @@ export const VirtualizedSensorRow = (props: SensorRowProps) => {
             <LoadingOrNone queryResult={sensorQueryResult} />
           )}
         </RowCell>
-      </RowGrid>
+      </Box>
     </Row>
   );
 };
@@ -265,13 +273,6 @@ export const VirtualizedSensorHeader = ({checkbox}: {checkbox: React.ReactNode})
     </HeaderRow>
   );
 };
-
-const RowGrid = styled(Box)<{$showCheckboxColumn: boolean}>`
-  display: grid;
-  grid-template-columns: ${({$showCheckboxColumn}) =>
-    $showCheckboxColumn ? TEMPLATE_COLUMNS_WITH_CHECKBOX : TEMPLATE_COLUMNS};
-  height: 100%;
-`;
 
 export const SENSOR_TYPE_META: Record<
   SensorType,

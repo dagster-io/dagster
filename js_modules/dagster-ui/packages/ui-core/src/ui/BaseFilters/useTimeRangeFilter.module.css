@@ -1,0 +1,42 @@
+.container {
+  height: 430px;
+}
+
+/* Hide the default date picker for Chrome, Edge, and Safari */
+.container input[type='date']::-webkit-calendar-picker-indicator {
+  display: none;
+}
+
+/* Hide the default date picker for Firefox */
+.container input[type='date']::-moz-calendar-picker-indicator {
+  display: none;
+}
+
+/* Hide the default date picker for Internet Explorer */
+.container input[type='date']::-ms-calendar-picker-indicator {
+  display: none;
+}
+
+.container :global(.DayPickerKeyboardShortcuts_show) {
+  display: none;
+}
+
+.container :global(.CalendarDay__hovered_span),
+.container :global(.CalendarDay__hovered_span:hover),
+.container :global(.CalendarDay__selected_span),
+.container :global(.CalendarDay__selected_span:hover) {
+  background: var(--color-background-blue);
+  color: var(--color-text-blue);
+  border: 1px solid #e4e7e7;
+}
+
+.container :global(.CalendarDay__selected),
+.container :global(.CalendarDay__selected:active),
+.container :global(.CalendarDay__selected:hover) {
+  background: var(--color-background-blue-hover);
+  border: 1px solid #e4e7e7;
+}
+
+.container :global(.DateInput_input__focused) {
+  border-color: var(--color-border-default);
+}

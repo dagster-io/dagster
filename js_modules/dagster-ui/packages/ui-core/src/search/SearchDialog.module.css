@@ -1,0 +1,55 @@
+.container {
+  background-color: var(--color-background-default);
+  border-radius: 8px;
+  box-shadow:
+    2px 2px 8px var(--color-shadow-default),
+    var(--color-keyline-default) inset 0px 0px 0px 1px;
+  max-height: 60vh;
+  left: calc(50% - 300px);
+  overflow: hidden;
+  width: 600px;
+  top: 20vh;
+}
+
+.searchBox {
+  background: var(--color-background-default);
+  border-radius: 8px;
+  border: none;
+  align-items: center;
+  box-shadow: var(--color-border-default) inset 0px 0px 0px 1px;
+  display: flex;
+  padding: 12px 20px 12px 12px;
+  transition: all 100ms linear;
+}
+
+.searchBox:hover {
+  box-shadow: var(--color-border-hover) 0 0 0 1px inset;
+}
+
+.searchBoxWithQuery {
+  border-radius: 8px 8px 0 0;
+  box-shadow: var(--color-keyline-default) inset 0px 0px 0px 1px;
+}
+
+.searchBoxWithQuery:hover {
+  box-shadow: var(--color-keyline-default) 0 0 0 1px inset;
+}
+
+.searchInput {
+  background-color: transparent;
+  border: none;
+  color: var(--color-text-default);
+  font-family: var(--font-family-default);
+  font-size: 18px;
+  margin-left: 4px;
+  outline: none;
+  width: 100%;
+}
+
+.searchInput::placeholder {
+  color: var(--color-text-disabled);
+}
+
+.searchInput:focus {
+  outline: none;
+}

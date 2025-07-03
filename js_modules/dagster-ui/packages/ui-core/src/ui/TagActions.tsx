@@ -1,8 +1,9 @@
 import {Box, Caption, Colors, Popover} from '@dagster-io/ui-components';
+import clsx from 'clsx';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
-import styled, {css} from 'styled-components';
 
+import styles from './TagActions.module.css';
 import {TagType} from '../runs/RunTag';
 
 export type TagAction =
@@ -16,19 +17,27 @@ export type TagAction =
     };
 
 export const TagActions = ({data, actions}: {data: TagType; actions: TagAction[]}) => (
-  <ActionContainer background={Colors.tooltipBackground()} flex={{direction: 'row'}}>
+  <Box
+    className={styles.actionContainer}
+    background={Colors.tooltipBackground()}
+    flex={{direction: 'row'}}
+  >
     {actions.map((action, ii) =>
       'to' in action ? (
-        <TagButtonLink to={action.to} key={ii}>
+        <Link className={clsx(styles.tagButtonBase, styles.tagButtonLink)} to={action.to} key={ii}>
           <Caption>{action.label}</Caption>
-        </TagButtonLink>
+        </Link>
       ) : (
-        <TagButton key={ii} onClick={() => action.onClick(data)}>
+        <button
+          className={clsx(styles.tagButtonBase, styles.tagButton)}
+          key={ii}
+          onClick={() => action.onClick(data)}
+        >
           <Caption>{action.label}</Caption>
-        </TagButton>
+        </button>
       ),
     )}
-  </ActionContainer>
+  </Box>
 );
 
 export const TagActionsPopover = ({
@@ -55,45 +64,3 @@ export const TagActionsPopover = ({
     </Popover>
   );
 };
-
-const ActionContainer = styled(Box)`
-  border-radius: 8px;
-  overflow: hidden;
-`;
-
-const TagButtonSharedStyles = css`
-  border: none;
-  background: ${Colors.tooltipBackground()};
-  color: ${Colors.tooltipText()};
-  cursor: pointer;
-  padding: 8px 12px;
-  text-align: left;
-  opacity: 0.85;
-  transition: opacity 50ms linear;
-
-  :not(:last-child) {
-    box-shadow: -1px 0 0 inset ${Colors.borderHover()};
-  }
-
-  :focus {
-    outline: none;
-  }
-`;
-
-const TagButton = styled.button`
-  ${TagButtonSharedStyles}
-
-  :hover {
-    opacity: 1;
-  }
-`;
-
-const TagButtonLink = styled(Link)`
-  ${TagButtonSharedStyles}
-
-  :hover {
-    color: ${Colors.tooltipText()};
-    text-decoration: none;
-    opacity: 1;
-  }
-`;

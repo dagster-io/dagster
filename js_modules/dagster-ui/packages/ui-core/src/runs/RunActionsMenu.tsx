@@ -1,7 +1,6 @@
 import {
   Box,
   Button,
-  Colors,
   Dialog,
   DialogBody,
   DialogFooter,
@@ -18,24 +17,24 @@ import uniq from 'lodash/uniq';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import {RunMetricsDialog} from 'shared/runs/RunMetricsDialog.oss';
-import styled from 'styled-components';
 
 import {DeletionDialog} from './DeletionDialog';
 import {ReexecutionDialog} from './ReexecutionDialog';
+import styles from './RunActionsMenu.module.css';
 import {RunConfigDialog} from './RunConfigDialog';
 import {doneStatuses, failedStatuses} from './RunStatuses';
+import {DagsterTag} from './RunTag';
 import {RunTags, tagsAsYamlString} from './RunTags';
 import {RunsQueryRefetchContext} from './RunUtils';
 import {RunFilterToken} from './RunsFilterInput';
 import {TerminationDialog} from './TerminationDialog';
+import {gql, useLazyQuery} from '../apollo-client';
 import {
   PipelineEnvironmentQuery,
   PipelineEnvironmentQueryVariables,
 } from './types/RunActionsMenu.types';
 import {useJobAvailabilityErrorForRun} from './useJobAvailabilityErrorForRun';
 import {useJobReexecution} from './useJobReExecution';
-import {gql, useLazyQuery} from '../apollo-client';
-import {DagsterTag} from './RunTag';
 import {AppContext} from '../app/AppContext';
 import {DEFAULT_DISABLED_REASON} from '../app/Permissions';
 import {ReexecutionStrategy} from '../graphql/types';
@@ -143,7 +142,7 @@ export const RunActionsMenu = React.memo(({run, onAddTag, anchorLabel}: Props) =
                       }}
                       padding={{horizontal: 8}}
                     >
-                      <SlashShortcut>t</SlashShortcut>
+                      <div className={styles.slashShortcut}>t</div>
                     </Box>
                   </div>
                 }
@@ -152,8 +151,9 @@ export const RunActionsMenu = React.memo(({run, onAddTag, anchorLabel}: Props) =
               />
 
               {run.pipelineSnapshotId ? (
-                <LinkNoUnderline
+                <Link
                   to={getPipelineSnapshotLink(run.pipelineName, run.pipelineSnapshotId)}
+                  className={styles.linkNoUnderline}
                 >
                   <MenuItem
                     tagName="button"
@@ -161,7 +161,7 @@ export const RunActionsMenu = React.memo(({run, onAddTag, anchorLabel}: Props) =
                     text="View snapshot"
                     onClick={() => setVisibleDialog('tags')}
                   />
-                </LinkNoUnderline>
+                </Link>
               ) : null}
               <MenuDivider />
               <>
@@ -482,15 +482,4 @@ export const PIPELINE_ENVIRONMENT_QUERY = gql`
       }
     }
   }
-`;
-
-const SlashShortcut = styled.div`
-  border-radius: 4px;
-  padding: 0px 6px;
-  background: ${Colors.backgroundLight()};
-  color: ${Colors.textLight()};
-`;
-
-const LinkNoUnderline = styled(Link)`
-  text-decoration: none !important;
 `;
