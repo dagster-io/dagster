@@ -42,7 +42,7 @@ The UI will continue to display existing [built-in metrics](https://docs.dagster
 
 ## KPI dashboard to help you understand platform health \{#kpi-dashboard}
 
-To access the KPI dasbhoard, click **Insights** in the top navigation bar in the UI, then navigate to the trends tab:
+To access the KPI dashboard, click **Insights** in the top navigation bar in the UI, then navigate to the trends tab:
 
 ![KPIs dashboard to understand platform](/images/guides/operate/insights_v2/kpis.png)
 
