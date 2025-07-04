@@ -8,13 +8,13 @@ sidebar_position: 50
 You often want to control the number of concurrent runs for a Dagster job, a specific asset, or for a type of asset or job. Limiting concurrency in your data pipelines can help prevent performance problems and downtime.
 
 :::note
-This article assumes familiarity with assets and jobs.
+This article assumes familiarity with [assets](/guides/build/assets/) and [jobs](/guides/build/jobs/).
 :::
 
 ## Limit the number of total runs that can be in progress at the same time
 
-- Dagster Core, add the following to your `dagster.yaml`
-- In Dagster+, add the following to your deployment settings
+- Dagster Core, add the following to your [dagster.yaml](/deployment/oss/dagster-yaml)
+- In Dagster+, add the following to your [deployment settings](/deployment/dagster-plus/full-deployments/deployment-settings-reference)
 
 ```yaml
 concurrency:
@@ -34,9 +34,13 @@ You can assign assets and ops to concurrency pools which allow you to limit the 
 
 You should be able to verify that you have set the pool correctly by viewing the details pane for the asset or op in the Dagster UI.
 
+![Viewing the pool tag](/images/guides/operate/managing-concurrency/asset-pool-tag.png)
+
 Once you have assigned your assets and ops to a concurrency pool, you can configure a pool limit for that pool in your deployment by using the Dagster UI or the Dagster CLI.
 
 To specify a limit for the pool "database" using the UI, navigate to the `Deployments` &rarr; `Concurrency` settings page and click the `Add pool limit` button.
+
+![Setting the pool limit](/images/guides/operate/managing-concurrency/add-pool-ui.png)
 
 To specify a limit for the pool "database" using the CLI, use:
 
@@ -46,12 +50,12 @@ dagster instance concurrency set database 1
 
 ## Limit the number of runs that can be in progress for a set of ops
 
-You can also use concurrency pools to limit the number of in progress runs containing those assets or ops. You can follow the steps in the "Limit the number of assets or ops actively executing across all runs" section to assign your assets and ops to pools and to configure the desired limit.
+You can also use concurrency pools to limit the number of in progress runs containing those assets or ops. You can follow the steps in the [Limit the number of assets or ops actively executing across all runs](#limit-the-number-of-assets-or-ops-actively-executing-across-all-runs) section to assign your assets and ops to pools and to configure the desired limit.
 
 Once you have assigned your assets and ops to your pool, you can change your deployment settings to set the pool enforcement granularity. To limit the total number of runs containing a specific op at any given time (instead of the total number of ops actively executing), we need to set the pool granularity to `run`.       
 
-- Dagster Core, add the following to your `dagster.yaml`
-- In Dagster+, add the following to your deployment settings
+- Dagster Core, add the following to your [dagster.yaml](/deployment/oss/dagster-yaml)
+- In Dagster+, add the following to your [deployment settings](/deployment/dagster-plus/full-deployments/deployment-settings-reference)
 
 ```yaml
 concurrency:
@@ -63,8 +67,8 @@ Without this granularity set, the default granularity is set to the `op`. This m
 
 ### Setting a default limit for concurrency pools
 
-- Dagster+: Edit the `concurrency` config in deployment settings via the Dagster+ UI or the `dagster-cloud` CLI.
-- Dagster Open Source: Use your instance's `dagster.yaml`
+- Dagster+: Edit the `concurrency` config in deployment settings via the [Dagster+ UI](/guides/operate/webserver) or the [`dagster-cloud` CLI](/deployment/dagster-plus/management/dagster-cloud-cli/).
+- Dagster Open Source: Use your instance's [dagster.yaml](/deployment/oss/dagster-yaml)
 
 ```yaml
 concurrency:
@@ -101,13 +105,13 @@ concurrency:
         limit: 10
 ```
 
-## Job-Level Concurrency Configuration
+## Job-level concurrency configuration
 
-### Configuring Executors for Concurrency Control
+### Configuring executors for concurrency control
 
 You can control concurrency at the job level by configuring executors. This is essential for controlling how many ops run simultaneously within a single job execution.
 
-#### Using the Multiprocess Executor
+#### Using the multiprocess executor
 
 The multiprocess executor allows you to control concurrency within a job run:
 
@@ -141,7 +145,7 @@ my_job = define_asset_job(
 )
 ```
 
-#### Alternative: Using Job Configuration
+#### Alternative: Using job configuration
 
 You can also configure concurrency through job configuration:
 
@@ -168,7 +172,7 @@ my_job = define_asset_job(
 )
 ```
 
-### Asset-Level Concurrency with Tags
+### Asset-level concurrency with tags
 
 Control concurrency for specific assets using tags:
 
@@ -186,9 +190,9 @@ def compute_intensive_asset():
     pass
 ```
 
-## Complete Configuration Examples
+## Complete configuration examples
 
-### Example 1: Complete dagster.yaml for Production
+### Example 1: Complete dagster.yaml for production
 
 Here's a complete `dagster.yaml` configuration for a production deployment:
 
@@ -255,7 +259,7 @@ run_monitoring:
   cancel_timeout_seconds: 180
 ```
 
-### Example 2: Kubernetes Deployment with Helm
+### Example 2: Kubernetes deployment with Helm
 
 For Kubernetes deployments using the Dagster Helm chart, configure concurrency in `values.yaml`:
 
@@ -309,7 +313,7 @@ dagsterUserDeployments:
         DAGSTER_POSTGRES_DB: ${POSTGRES_DB}
 ```
 
-### Example 3: Docker Compose Deployment
+### Example 3: Docker compose deployment
 
 For Docker Compose deployments, configure concurrency in the shared `dagster.yaml`:
 
@@ -372,9 +376,9 @@ concurrency:
     default_limit: 3
 ```
 
-## Advanced Concurrency Patterns
+## Advanced concurrency patterns
 
-### Pattern 1: Environment-Based Concurrency
+### Environment-based concurrency
 
 Configure different concurrency limits based on environment:
 
@@ -413,7 +417,7 @@ env_aware_job = define_asset_job(
 )
 ```
 
-### Pattern 2: Resource-Based Concurrency Control
+### Resource-based concurrency control
 
 Limit concurrency based on resource usage:
 
@@ -461,7 +465,7 @@ resource_controlled_job = define_asset_job(
 )
 ```
 
-### Pattern 3: Dynamic Concurrency Based on System Load
+### Dynamic concurrency based on system load
 
 Implement dynamic concurrency adjustment:
 
@@ -522,11 +526,11 @@ You can use Dagster's rich metadata to use a schedule or a sensor to only start 
   title="No more than 1 running job from a schedule"
 />
 
-## Troubleshooting Common Concurrency Issues
+## Troubleshooting
 
-### Configuration Errors
+### Configuration errors
 
-#### Issue: `tag_concurrency_limits` not working in job configuration
+#### `tag_concurrency_limits` not working in job configuration
 
 **Problem**: Users report that tag concurrency limits defined in job configuration don't work.
 
@@ -560,7 +564,7 @@ my_job = define_asset_job(
 )
 ```
 
-#### Issue: Executor configuration not taking effect
+#### Executor configuration not taking effect
 
 **Problem**: Configured executor limits are ignored.
 
@@ -590,9 +594,9 @@ def my_database_asset():
     pass
 ```
 
-### Deployment-Specific Issues
+### Deployment-specific issues
 
-#### Issue: Concurrency limits not working in Kubernetes
+#### Concurrency limits not working in Kubernetes
 
 **Problem**: Configuration works locally but not in Kubernetes deployment.
 
@@ -621,7 +625,7 @@ kubectl exec -it dagster-daemon-pod -- env | grep DAGSTER
 kubectl logs dagster-daemon-pod -f
 ```
 
-#### Issue: Docker run launcher not respecting limits
+#### Docker run launcher not respecting limits
 
 **Problem**: Concurrency limits ignored when using DockerRunLauncher.
 
@@ -648,9 +652,9 @@ run_launcher:
     network: "dagster_network"  # Ensure network connectivity
 ```
 
-### Performance Issues
+### Performance issues
 
-#### Issue: High memory usage with concurrent runs
+#### High memory usage with concurrent runs
 
 **Problem**: Memory consumption increases dramatically with concurrent execution.
 
@@ -692,7 +696,7 @@ job_config = {
 }
 ```
 
-#### Issue: Database connection pool exhaustion
+#### Database connection pool exhaustion
 
 **Problem**: Too many concurrent database operations exhaust connection pool.
 
@@ -719,7 +723,7 @@ def read_heavy_asset():
     pass
 ```
 
-### Monitoring and Debugging
+### Monitoring and debugging
 
 #### Debug concurrency configuration
 
@@ -816,9 +820,9 @@ def monitor_during_execution():
         time.sleep(5)
 ```
 
-## Best Practices
+## Best practices
 
-### 1. Start Conservative
+### Start conservative
 
 Begin with low concurrency limits and gradually increase:
 
@@ -831,7 +835,7 @@ concurrency:
         limit: 1  # Very conservative for shared resources
 ```
 
-### 2. Monitor Resource Usage
+### Monitor resource usage
 
 Implement monitoring to understand your system's capacity:
 
@@ -848,7 +852,7 @@ def system_resource_monitor():
     }
 ```
 
-### 3. Use Hierarchical Tagging
+### Use hierarchical tagging
 
 Organize assets with hierarchical tags for flexible concurrency control:
 
@@ -863,7 +867,7 @@ def user_analytics_asset():
     pass
 ```
 
-### 4. Document Configuration Decisions
+### Document configuration decisions
 
 Always document why specific limits were chosen:
 
