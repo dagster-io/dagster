@@ -176,7 +176,7 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
   }, [spawnComputeGraphDataWorker]);
 
   useLayoutEffect(() => {
-    if (options.loading || supplementaryDataLoading || options.skip) {
+    if (options.loading || supplementaryDataLoading || assetsLoading || options.skip) {
       return;
     }
 
@@ -234,6 +234,7 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
     spawnComputeGraphDataWorker,
     options.useWorker,
     options.skip,
+    assetsLoading,
   ]);
 
   const loading =
