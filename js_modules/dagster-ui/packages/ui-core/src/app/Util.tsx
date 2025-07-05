@@ -213,10 +213,10 @@ export const indexedDBAsyncMemoize = <R, U extends (...args: any[]) => Promise<R
     return await lru.has(hashKey);
   };
   ret.clearEntry = async (...args: Parameters<U>) => {
-    const hashKey = await genHashKey(...args);
     if (!lru) {
       return;
     }
+    const hashKey = await genHashKey(...args);
     delete hashToPromise[hashKey];
     await lru.delete(hashKey);
   };
