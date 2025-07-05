@@ -30,9 +30,8 @@ export const useQueryAndLocalStoragePersistedState = <T extends QueryPersistedDa
           value = parsed;
           if (decode) {
             value = decode(parsed);
-            return value;
           }
-          return parsed;
+          return value;
         }
       } catch (error) {
         console.error('Error reading from localStorage:', error);
