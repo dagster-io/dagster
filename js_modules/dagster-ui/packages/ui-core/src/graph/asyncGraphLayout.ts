@@ -6,7 +6,6 @@ import {ILayoutOp, LayoutOpGraphOptions, OpGraphLayout, layoutOpGraph} from './l
 import {asyncMemoize, indexedDBAsyncMemoize} from '../app/Util';
 import {GraphData} from '../asset-graph/Utils';
 import {AssetGraphLayout, LayoutAssetGraphOptions, layoutAssetGraph} from '../asset-graph/layout';
-import {useUpdatingRef} from '../hooks/useUpdatingRef';
 import {useBlockTraceUntilTrue} from '../performance/TraceContext';
 import {hashObject} from '../util/hashObject';
 import {weakMapMemoize} from '../util/weakMapMemoize';
@@ -239,8 +238,6 @@ export function useAssetLayout(
 
   const cacheKey = useMemo(() => _assetLayoutCacheKey(graphData, opts), [graphData, opts]);
 
-  const nextCacheKeyRef = useUpdatingRef(cacheKey);
-
   const nodeCount = Object.keys(graphData.nodes).length;
   const runAsync = nodeCount >= ASYNC_LAYOUT_SOLID_COUNT;
 
@@ -283,17 +280,7 @@ export function useAssetLayout(
     } else {
       void runAsyncLayout();
     }
-  }, [
-    cacheKey,
-    graphData,
-    runAsync,
-    opts,
-    dataLoading,
-    nextCacheKeyRef,
-    state.cacheKey,
-    state.layout,
-    state.loadingCacheKey,
-  ]);
+  }, [cacheKey, graphData, runAsync, opts, dataLoading, state.cacheKey, state.loadingCacheKey]);
 
   const loading = state.loading || !state.layout || state.cacheKey !== cacheKey;
 
