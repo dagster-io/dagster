@@ -6,7 +6,6 @@ import {ILayoutOp, LayoutOpGraphOptions, OpGraphLayout, layoutOpGraph} from './l
 import {asyncMemoize, indexedDBAsyncMemoize} from '../app/Util';
 import {GraphData} from '../asset-graph/Utils';
 import {AssetGraphLayout, LayoutAssetGraphOptions, layoutAssetGraph} from '../asset-graph/layout';
-import {useDangerousRenderEffect} from '../hooks/useDangerousRenderEffect';
 import {useUpdatingRef} from '../hooks/useUpdatingRef';
 import {useBlockTraceUntilTrue} from '../performance/TraceContext';
 import {hashObject} from '../util/hashObject';
@@ -63,13 +62,26 @@ export const asyncGetFullAssetLayoutIndexDB = indexedDBAsyncMemoize(
   (graphData: GraphData, opts: LayoutAssetGraphOptions) => {
     return new Promise<AssetGraphLayout>((resolve) => {
       const worker = spawnLayoutWorker();
+      let didResolveSuccessfully = false;
       worker.onMessage((event) => {
+        didResolveSuccessfully = true;
         resolve(event.data);
         worker.terminate();
       });
       worker.onError((error) => {
         console.error(error);
         resolve(EMPTY_LAYOUT);
+      });
+      worker.onTerminate(() => {
+        setTimeout(() => {
+          if (!didResolveSuccessfully) {
+            // Clear the cache entry if the worker is terminated without resolving
+            // because the cache entry points to this terminated worker which will never resolve.
+            // This makes it so that if we request this layout again, we'll create a new worker
+            // and run the layout again.
+            asyncGetFullAssetLayoutIndexDB.clearEntry(graphData, opts);
+          }
+        }, 0);
       });
       worker.postMessage({type: 'layoutAssetGraph', opts, graphData});
     });
@@ -107,10 +119,11 @@ type State = {
   loading: boolean;
   layout: OpGraphLayout | AssetGraphLayout | null;
   cacheKey: string;
+  loadingCacheKey: string | undefined;
 };
 
 type Action =
-  | {type: 'loading'}
+  | {type: 'loading'; payload: {cacheKey: string}}
   | {
       type: 'layout';
       payload: {
@@ -122,12 +135,19 @@ type Action =
 const reducer = (state: State, action: Action): State => {
   switch (action.type) {
     case 'loading':
-      return {loading: true, layout: state.layout, cacheKey: state.cacheKey};
+      return {
+        loading: true,
+        layout: state.layout,
+        cacheKey: state.cacheKey,
+        loadingCacheKey: action.payload.cacheKey,
+      };
     case 'layout':
       return {
         loading: false,
         layout: action.payload.layout,
         cacheKey: action.payload.cacheKey,
+        loadingCacheKey:
+          state.loadingCacheKey === action.payload.cacheKey ? undefined : state.loadingCacheKey,
       };
     default:
       return state;
@@ -151,10 +171,29 @@ export function useOpLayout(ops: ILayoutOp[], parentOp?: ILayoutOp) {
   const cacheKey = _opLayoutCacheKey(ops, {parentOp});
   const runAsync = ops.length >= ASYNC_LAYOUT_SOLID_COUNT;
 
+  const requestId = useRef(0);
+  const lastRenderedRequestIdRef = useRef(-1);
+
   useEffect(() => {
+    if (state.cacheKey === cacheKey) {
+      // Already have a layout for this cache key, so we can skip re-running the layout.
+      return;
+    }
+    if (state.loadingCacheKey === cacheKey) {
+      // Already loading a layout for this cache key, so we can skip re-running the layout.
+      return;
+    }
     async function runAsyncLayout() {
-      dispatch({type: 'loading'});
+      const layoutRequestId = requestId.current++;
+      dispatch({type: 'loading', payload: {cacheKey}});
       const layout = await asyncGetFullOpLayout(ops, {parentOp});
+      if (lastRenderedRequestIdRef.current >= layoutRequestId) {
+        // Make sure:
+        // 1) We're not rendering a stale layout
+        // 2) We render a layout that was requested earlier while a later one is still loading
+        return;
+      }
+      lastRenderedRequestIdRef.current = layoutRequestId;
       dispatch({
         type: 'layout',
         payload: {layout, cacheKey},
@@ -167,18 +206,13 @@ export function useOpLayout(ops: ILayoutOp[], parentOp?: ILayoutOp) {
     } else {
       void runAsyncLayout();
     }
-  }, [cacheKey, ops, parentOp, runAsync]);
-
-  const uid = useRef(0);
-  useDangerousRenderEffect(() => {
-    uid.current++;
-  }, [cacheKey, ops, parentOp, runAsync]);
+  }, [cacheKey, ops, parentOp, runAsync, state.cacheKey, state.loadingCacheKey]);
 
   const loading = state.loading || !state.layout || state.cacheKey !== cacheKey;
 
   // Add a UID to create a new dependency whenever the layout inputs change
   useBlockTraceUntilTrue('useAssetLayout', !loading && !!state.layout, {
-    uid: uid.current.toString(),
+    uid: cacheKey,
   });
 
   return {
@@ -205,30 +239,36 @@ export function useAssetLayout(
   const nodeCount = Object.keys(graphData.nodes).length;
   const runAsync = nodeCount >= ASYNC_LAYOUT_SOLID_COUNT;
 
-  const uid = useRef(0);
-  useDangerousRenderEffect(() => {
-    uid.current++;
-  }, [cacheKey, graphData, runAsync, opts]);
+  const requestId = useRef(0);
 
-  const lastRenderedUidRef = useRef(-1);
+  const lastRenderedRequestIdRef = useRef(-1);
 
   useLayoutEffect(() => {
     if (dataLoading) {
+      // Data is still loading, so we can't run the layout.
+      return;
+    }
+    if (state.cacheKey === cacheKey) {
+      // Already have a layout for this cache key, so we can skip re-running the layout.
+      return;
+    }
+    if (state.loadingCacheKey === cacheKey) {
+      // Already loading a layout for this cache key, so we can skip re-running the layout.
       return;
     }
     async function runAsyncLayout() {
-      dispatch({type: 'loading'});
+      const layoutRequestId = requestId.current++;
+      dispatch({type: 'loading', payload: {cacheKey}});
       let layout;
-      const layoutUid = uid.current;
       if (CACHING_ENABLED) {
         layout = await asyncGetFullAssetLayoutIndexDB(graphData, opts);
       } else {
         layout = await asyncGetFullAssetLayout(graphData, opts);
       }
-      if (lastRenderedUidRef.current >= layoutUid) {
+      if (lastRenderedRequestIdRef.current >= layoutRequestId) {
         return;
       }
-      lastRenderedUidRef.current = uid.current;
+      lastRenderedRequestIdRef.current = layoutRequestId;
       dispatch({type: 'layout', payload: {layout, cacheKey}});
     }
 
@@ -238,13 +278,23 @@ export function useAssetLayout(
     } else {
       void runAsyncLayout();
     }
-  }, [cacheKey, graphData, runAsync, opts, dataLoading, nextCacheKeyRef]);
+  }, [
+    cacheKey,
+    graphData,
+    runAsync,
+    opts,
+    dataLoading,
+    nextCacheKeyRef,
+    state.cacheKey,
+    state.layout,
+    state.loadingCacheKey,
+  ]);
 
   const loading = state.loading || !state.layout || state.cacheKey !== cacheKey;
 
   // Add a UID to create a new dependency whenever the layout inputs change
   useBlockTraceUntilTrue('useAssetLayout', !loading && !!state.layout, {
-    uid: uid.current.toString(),
+    uid: cacheKey,
   });
 
   return {
