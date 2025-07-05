@@ -47,7 +47,7 @@ def component_instance(
             class MyComponent(dg.Component):
                 ...
 
-            @component_instance
+            @dg.component_instance
             def load(context: dg.ComponentLoadContext) -> MyComponent:
                 return MyComponent(...)
     """
