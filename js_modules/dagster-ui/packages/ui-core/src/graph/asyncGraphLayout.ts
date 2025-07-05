@@ -74,6 +74,11 @@ export const asyncGetFullAssetLayoutIndexDB = indexedDBAsyncMemoize(
       });
       worker.onTerminate(() => {
         setTimeout(() => {
+          // This timeout is because these workers are used as part of React and end up going through synchronous render loops.
+          // This means that the worker can't return any messages until that synchronous loop ends.
+          // To ensure at least one synchronous loop ends, we add a timeout 0.
+          // This helps us avoid throwing away useful results that were returned faster than the synchronous
+          // task we're in.
           if (!didResolveSuccessfully) {
             // Clear the cache entry if the worker is terminated without resolving
             // because the cache entry points to this terminated worker which will never resolve.
