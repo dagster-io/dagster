@@ -37,10 +37,9 @@ export const parseExpression = (expression: string) => {
     tree.accept(visitor);
     return visitor.filters;
   } catch (e) {
-    if (e instanceof RecognitionException) {
-      return [];
+    if (!(e instanceof RecognitionException)) {
+      console.error(e);
     }
-    console.error(e);
     return [];
   }
 };
