@@ -13,6 +13,7 @@ import groupBy from 'lodash/groupBy';
 import * as React from 'react';
 import {useContext, useMemo} from 'react';
 import {AssetWipeDialog} from 'shared/assets/AssetWipeDialog.oss';
+import {useCatalogExtraDropdownOptions} from 'shared/assets/catalog/useCatalogExtraDropdownOptions.oss';
 
 import {LaunchAssetExecutionButton} from './LaunchAssetExecutionButton';
 import {AssetTableFragment} from './types/AssetTableFragment.types';
@@ -79,6 +80,15 @@ export const AssetTable = ({
     });
     return assets;
   }, [checkedDisplayKeys, displayKeys, groupedByDisplayKey]);
+
+  const extraDropdownOptions = useCatalogExtraDropdownOptions(
+    useMemo(
+      () => ({
+        scope: {selected: checkedAssets.map((a) => ({assetKey: a.key}))},
+      }),
+      [checkedAssets],
+    ),
+  );
 
   const content = () => {
     if (!assets.length && !isLoading) {
@@ -169,6 +179,7 @@ export const AssetTable = ({
                     .filter((a): a is AssetWithDefinition => !!a.definition)
                     .map((a) => ({...a.definition, assetKey: a.key})),
                 }}
+                additionalDropdownOptions={extraDropdownOptions}
               />
               <MoreActionsDropdown
                 selected={checkedAssets}
