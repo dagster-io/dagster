@@ -162,6 +162,7 @@ const initialState: State = {
   loading: false,
   layout: null,
   cacheKey: '',
+  loadingCacheKey: undefined,
 };
 
 /**
