@@ -17,20 +17,27 @@ export const useQueryAndLocalStoragePersistedState = <T extends QueryPersistedDa
 ): [T, (setterOrState: React.SetStateAction<T>) => void] => {
   const {localStorageKey, isEmptyState, decode} = props;
 
-  const getInitialValueFromLocalStorage = React.useCallback((): T | undefined => {
-    try {
-      const item = window.localStorage.getItem(localStorageKey);
-      if (item) {
-        const parsed = JSON.parse(item);
-        if (decode) {
-          return decode(parsed);
-        }
-        return parsed;
+  const getInitialValueFromLocalStorage = React.useMemo(() => {
+    let value: T | undefined;
+    return () => {
+      if (value !== undefined) {
+        return value;
       }
-    } catch (error) {
-      console.error('Error reading from localStorage:', error);
-    }
-    return undefined;
+      try {
+        const item = window.localStorage.getItem(localStorageKey);
+        if (item) {
+          const parsed = JSON.parse(item);
+          if (decode) {
+            value = decode(parsed);
+            return value;
+          }
+          return value;
+        }
+      } catch (error) {
+        console.error('Error reading from localStorage:', error);
+      }
+      return undefined;
+    };
   }, [localStorageKey, decode]);
 
   const [state, setter] = useQueryPersistedState(props);
