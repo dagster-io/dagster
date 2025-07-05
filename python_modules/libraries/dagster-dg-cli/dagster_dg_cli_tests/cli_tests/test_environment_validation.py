@@ -19,7 +19,7 @@ from dagster_dg_core_tests.utils import (
 
 # The tests in this file are designed to check error messages for basic precondition checks for
 # command execution across all CLI commands. Many commands require execution with
-# `dagster-components` available in some environment. Other commands additionally require execution
+# the `dagster` package available in some environment. Other commands additionally require execution
 # in the context of a project, workspace, or component library package. As a rule, checks for
 # these preconditions should run before any command logic. These tests ensure such checks are done.
 #
@@ -54,10 +54,9 @@ COMPONENT_LIBRARY_CONTEXT_COMMANDS = [
 ]
 
 REGISTRY_CONTEXT_COMMANDS = [
-    CommandSpec(tuple(), "--rebuild-plugin-cache"),
     CommandSpec(("docs", "serve")),
     CommandSpec(("list", "component")),
-    CommandSpec(("list", "plugin-modules")),
+    CommandSpec(("list", "registry-modules")),
     CommandSpec(("utils", "inspect-component"), DEFAULT_COMPONENT_TYPE),
 ]
 

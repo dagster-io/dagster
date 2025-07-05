@@ -1,6 +1,5 @@
 import {Caption, Colors, Tooltip, ifPlural, useViewport} from '@dagster-io/ui-components';
 import dayjs from 'dayjs';
-import relativeTime from 'dayjs/plugin/relativeTime';
 import {memo, useEffect, useMemo, useState} from 'react';
 import styled from 'styled-components';
 
@@ -11,7 +10,7 @@ import {isStuckStartedTick} from './util';
 import {AssetDaemonTickFragment} from '../assets/auto-materialization/types/AssetDaemonTicksQuery.types';
 import {InstigationTickStatus} from '../graphql/types';
 
-dayjs.extend(relativeTime);
+import '../util/dayjsExtensions';
 
 const COLOR_MAP = {
   [InstigationTickStatus.SUCCESS]: Colors.accentGreen(),

@@ -1,18 +1,15 @@
-from dagster import (
-    AssetKey,
-    DailyPartitionsDefinition,
-    MultiPartitionsDefinition,
-    PartitionKeyRange,
-    StaticPartitionsDefinition,
-)
+from dagster import AssetKey, PartitionKeyRange
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
 from dagster._core.definitions.auto_materialize_rule_evaluation import AutoMaterializeRuleEvaluation
-from dagster._core.definitions.partition import DynamicPartitionsDefinition
-from dagster._core.definitions.time_window_partitions import (
+from dagster._core.definitions.partitions.definition import (
+    DailyPartitionsDefinition,
+    DynamicPartitionsDefinition,
     HourlyPartitionsDefinition,
-    TimeWindowPartitionsSubset,
+    MultiPartitionsDefinition,
+    StaticPartitionsDefinition,
 )
+from dagster._core.definitions.partitions.subset import TimeWindowPartitionsSubset
 from dagster._time import create_datetime
 
 from dagster_tests.declarative_automation_tests.scenario_utils.base_scenario import (

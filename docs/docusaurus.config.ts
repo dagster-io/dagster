@@ -39,7 +39,7 @@ const config: Config = {
           keywords: {boost: 75},
           content: {boost: 2},
         },
-        excludeRoutes: ['/api/python-api/**/*', '/about/changelog', '/guides/migrate/version-migration'],
+        excludeRoutes: ['/api/python-api/**/*', '/about/changelog', '/migration/upgrading'],
       },
     ],
   ],
@@ -110,7 +110,7 @@ const config: Config = {
           label: 'Migration',
           type: 'doc',
           docId: 'migration/index',
-          position: 'left'
+          position: 'left',
         },
         {
           label: 'Integrations',
@@ -207,7 +207,7 @@ const config: Config = {
           lastVersion: 'current',
           versions: {
             current: {
-              label: 'Latest (1.10.18)',
+              label: 'Latest (1.11.1)',
               path: '/',
             },
           },

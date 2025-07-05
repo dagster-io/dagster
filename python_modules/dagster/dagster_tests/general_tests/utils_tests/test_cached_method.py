@@ -6,7 +6,11 @@ import random
 from typing import NamedTuple
 
 import objgraph
-from dagster_shared.utils.cached_method import CACHED_METHOD_CACHE_FIELD, cached_method
+from dagster_shared.utils.cached_method import (
+    CACHED_METHOD_CACHE_FIELD,
+    cached_method,
+    get_cached_method_cache,
+)
 
 
 def test_cached_method() -> None:
@@ -181,3 +185,18 @@ def test_cached_property():
 
     f = Foo()
     assert f.bomp is f.bomp
+
+
+def test_explicit_test() -> None:
+    class EnclosingClass:
+        @cached_method
+        def boop(self) -> int:
+            return 1
+
+    inst = EnclosingClass()
+
+    assert get_cached_method_cache(inst, "boop") == {}
+
+    assert inst.boop() == 1
+
+    assert next(iter(get_cached_method_cache(inst, "boop").values())) == 1

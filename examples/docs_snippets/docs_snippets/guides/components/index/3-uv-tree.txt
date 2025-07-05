@@ -5,8 +5,6 @@ tree
 ├── src
 │   └── jaffle_platform
 │       ├── __init__.py
-│       ├── components
-│       │   └── __init__.py
 │       ├── definitions.py
 │       └── defs
 │           └── __init__.py
@@ -14,4 +12,4 @@ tree
 │   └── __init__.py
 └── uv.lock
 
-6 directories, 7 files
+5 directories, 6 files

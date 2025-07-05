@@ -21,11 +21,19 @@ export type RepoAssetTableFragment = {
   jobNames: Array<string>;
   kinds: Array<string>;
   assetKey: {__typename: 'AssetKey'; path: Array<string>};
-  internalFreshnessPolicy: {
-    __typename: 'TimeWindowFreshnessPolicy';
-    failWindowSeconds: number;
-    warnWindowSeconds: number | null;
-  } | null;
+  internalFreshnessPolicy:
+    | {
+        __typename: 'CronFreshnessPolicy';
+        deadlineCron: string;
+        lowerBoundDeltaSeconds: number;
+        timezone: string;
+      }
+    | {
+        __typename: 'TimeWindowFreshnessPolicy';
+        failWindowSeconds: number;
+        warnWindowSeconds: number | null;
+      }
+    | null;
   partitionDefinition: {
     __typename: 'PartitionDefinition';
     description: string;
@@ -92,11 +100,19 @@ export type WorkspaceAssetsQuery = {
           jobNames: Array<string>;
           kinds: Array<string>;
           assetKey: {__typename: 'AssetKey'; path: Array<string>};
-          internalFreshnessPolicy: {
-            __typename: 'TimeWindowFreshnessPolicy';
-            failWindowSeconds: number;
-            warnWindowSeconds: number | null;
-          } | null;
+          internalFreshnessPolicy:
+            | {
+                __typename: 'CronFreshnessPolicy';
+                deadlineCron: string;
+                lowerBoundDeltaSeconds: number;
+                timezone: string;
+              }
+            | {
+                __typename: 'TimeWindowFreshnessPolicy';
+                failWindowSeconds: number;
+                warnWindowSeconds: number | null;
+              }
+            | null;
           partitionDefinition: {
             __typename: 'PartitionDefinition';
             description: string;
@@ -127,4 +143,4 @@ export type WorkspaceAssetsQuery = {
     | {__typename: 'RepositoryNotFoundError'};
 };
 
-export const WorkspaceAssetsQueryVersion = '908c14a37f5b6e18787dc75b91df4ea06a7aa452a342809a85f099336bc91705';
+export const WorkspaceAssetsQueryVersion = 'f8cccee3286a595fc68a04372394aefed44d5ac880b73956a2e95330f3b65ae5';

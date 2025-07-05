@@ -19,7 +19,7 @@ The ability for portions of a [graph](/guides/build/ops/graphs) to be duplicated
 
 ## Overview
 
-The basic unit of computation in Dagster is the [op](/guides/build/ops/). In certain cases it is desirable to run the same op multiple times on different pieces of similar data.
+The basic unit of computation in Dagster is the [op](/guides/build/ops). In certain cases it is desirable to run the same op multiple times on different pieces of similar data.
 
 Dynamic outputs are the tool Dagster provides to allow resolving the pieces of data at runtime and having downstream copies of the ops created for each piece.
 
@@ -29,7 +29,7 @@ Dynamic outputs are the tool Dagster provides to allow resolving the pieces of d
 
 Here we start with a contrived example of a job containing a single expensive op:
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/dynamic.py" startAfter="non_dyn_start" endBefore="non_dyn_end" />
+<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/dynamic.py" startAfter="non_dyn_start" endBefore="non_dyn_end" title="src/<project_name>/defs/ops.py"/>
 
 While, the implementation of `expensive_processing` can internally do something to parallelize the compute, if anything goes wrong with any part we have to restart the whole computation.
 
@@ -37,11 +37,11 @@ While, the implementation of `expensive_processing` can internally do something 
 
 With this motivation we will break up the computation using Dynamic Outputs. First we will define our new op that will use dynamic outputs. First we use <PyObject section="dynamic" module="dagster" object="DynamicOut" /> to declare that this op will return dynamic outputs. Then in the function we `yield` a number of <PyObject section="dynamic" module="dagster" object="DynamicOutput" /> objects that each contain a value and a unique `mapping_key`.
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/dynamic.py" startAfter="dyn_out_start" endBefore="dyn_out_end" />
+<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/dynamic.py" startAfter="dyn_out_start" endBefore="dyn_out_end" title="src/<project_name>/defs/ops.py"/>
 
 Then after creating ops for our downstream operations, we can put them all together in a job.
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/dynamic.py" startAfter="dyn_job_start" endBefore="dyn_job_end" />
+<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/dynamic.py" startAfter="dyn_job_start" endBefore="dyn_job_end" title="src/<project_name>/defs/ops.py"/>
 
 Within our `@job` decorated composition function, the object representing the dynamic output can not be passed directly to another op. Either `map` or `collect` must be invoked on it.
 
@@ -51,7 +51,7 @@ Within our `@job` decorated composition function, the object representing the dy
 
 Below is a full example that extends the above concepts and uses a mocked large dataset for simulating chunked processing:
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/dynamic.py" startAfter="dyn_job_full_example_start" endBefore="dyn_job_full_example_end" />
+<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/dynamic.py" startAfter="dyn_job_full_example_start" endBefore="dyn_job_full_example_end" title="src/<project_name>/defs/ops.py"/>
 
 ## Advanced mapping examples
 
@@ -59,7 +59,7 @@ Below is a full example that extends the above concepts and uses a mocked large 
 
 In addition to yielding, <PyObject section="dynamic" module="dagster" object="DynamicOutput" /> objects can also be returned as part of a list.
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/dynamic.py" startAfter="dyn_out_return_start" endBefore="dyn_out_return_end" />
+<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/dynamic.py" startAfter="dyn_out_return_start" endBefore="dyn_out_return_end" title="src/<project_name>/defs/ops.py"/>
 
 <PyObject section="dynamic" module="dagster" object="DynamicOutput" /> can be used as a generic type annotation describing the expected type of the output.
 
@@ -67,16 +67,16 @@ In addition to yielding, <PyObject section="dynamic" module="dagster" object="Dy
 
 The following two examples are equivalent ways to establish a sequence of ops that occur for each dynamic output.
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/dynamic.py" startAfter="dyn_chain_start" endBefore="dyn_chain_end" />
+<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/dynamic.py" startAfter="dyn_chain_start" endBefore="dyn_chain_end" title="src/<project_name>/defs/ops.py"/>
 
 ### Additional arguments
 
 A lambda or scoped function can be used to pass non-dynamic outputs along side dynamic ones in `map` downstream.
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/dynamic.py" startAfter="dyn_add_start" endBefore="dyn_add_end" />
+<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/dynamic.py" startAfter="dyn_add_start" endBefore="dyn_add_end" title="src/<project_name>/defs/ops.py"/>
 
 ### Multiple outputs
 
 Multiple outputs are returned via a `namedtuple`, where each entry can be used via `map` or `collect`.
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/dynamic.py" startAfter="dyn_mult_start" endBefore="dyn_mult_end" />
+<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/dynamic.py" startAfter="dyn_mult_start" endBefore="dyn_mult_end" title="src/<project_name>/defs/ops.py"/>

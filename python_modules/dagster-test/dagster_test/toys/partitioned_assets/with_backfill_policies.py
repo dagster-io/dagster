@@ -1,4 +1,5 @@
-from dagster import BackfillPolicy, DailyPartitionsDefinition, MaterializeResult, asset
+from dagster import BackfillPolicy, MaterializeResult, asset
+from dagster._core.definitions.partitions.definition import DailyPartitionsDefinition
 
 
 @asset(

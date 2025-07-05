@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import os
 import sys
@@ -7,15 +8,18 @@ from concurrent.futures import Future, ThreadPoolExecutor
 from contextlib import contextmanager
 from typing import TYPE_CHECKING, Optional, cast
 
+from dagster_shared.error import DagsterError
+
 import dagster._check as check
 from dagster._core.definitions.instigation_logger import InstigationLogger
-from dagster._core.errors import (
-    DagsterCodeLocationLoadError,
-    DagsterError,
-    DagsterUserCodeUnreachableError,
-)
+from dagster._core.errors import DagsterCodeLocationLoadError, DagsterUserCodeUnreachableError
 from dagster._core.execution.asset_backfill import execute_asset_backfill_iteration
-from dagster._core.execution.backfill import BulkActionsFilter, BulkActionStatus, PartitionBackfill
+from dagster._core.execution.backfill import (
+    BULK_ACTION_TERMINAL_STATUSES,
+    BulkActionsFilter,
+    BulkActionStatus,
+    PartitionBackfill,
+)
 from dagster._core.execution.job_backfill import execute_job_backfill_iteration
 from dagster._core.workspace.context import IWorkspaceProcessContext
 from dagster._daemon.utils import DaemonErrorCapture
@@ -123,6 +127,7 @@ def execute_backfill_iteration(
         return
 
     backfill_jobs = [*in_progress_backfills, *canceling_backfills]
+    backfill_jobs = sorted(backfill_jobs, key=lambda x: x.backfill_timestamp)
 
     yield from execute_backfill_jobs(
         workspace_process_context,
@@ -152,7 +157,7 @@ def execute_backfill_iteration_with_instigation_logger(
     instance: "DagsterInstance",
     submit_threadpool_executor: Optional[ThreadPoolExecutor] = None,
     debug_crash_flags: Optional[Mapping[str, int]] = None,
-) -> Iterable:
+) -> Iterable[Optional[SerializableErrorInfo]]:
     with _get_instigation_logger_if_log_storage_enabled(instance, backfill, logger) as _logger:
         # create a logger that will always include the backfill_id as an `extra`
         backfill_logger = cast(
@@ -161,14 +166,16 @@ def execute_backfill_iteration_with_instigation_logger(
         )
         try:
             if backfill.is_asset_backfill:
-                yield from execute_asset_backfill_iteration(
-                    backfill,
-                    backfill_logger,
-                    workspace_process_context,
-                    instance,
+                asyncio.run(
+                    execute_asset_backfill_iteration(
+                        backfill,
+                        backfill_logger,
+                        workspace_process_context,
+                        instance,
+                    )
                 )
             else:
-                yield from execute_job_backfill_iteration(
+                execute_job_backfill_iteration(
                     backfill,
                     backfill_logger,
                     workspace_process_context,
@@ -236,9 +243,6 @@ def execute_backfill_jobs(
     for backfill_job in backfill_jobs:
         backfill_id = backfill_job.backfill_id
 
-        # refetch, in case the backfill was updated in the meantime
-        backfill = cast("PartitionBackfill", instance.get_backfill(backfill_id))
-
         try:
             if threadpool_executor:
                 if backfill_futures is None:
@@ -246,6 +250,12 @@ def execute_backfill_jobs(
 
                 # only allow one backfill per backfill job to be in flight
                 if backfill_id in backfill_futures and not backfill_futures[backfill_id].done():
+                    continue
+
+                # refetch, in case the backfill was updated in the meantime
+                backfill = cast("PartitionBackfill", instance.get_backfill(backfill_id))
+                if backfill.status in BULK_ACTION_TERMINAL_STATUSES:
+                    # The backfill is now in a terminal state, skip iteration
                     continue
 
                 future = threadpool_executor.submit(
@@ -262,6 +272,12 @@ def execute_backfill_jobs(
                 yield
 
             else:
+                # refetch, in case the backfill was updated in the meantime
+                backfill = cast("PartitionBackfill", instance.get_backfill(backfill_id))
+                if backfill.status in BULK_ACTION_TERMINAL_STATUSES:
+                    # The backfill is now in a terminal state, skip iteration
+                    continue
+
                 yield from execute_backfill_iteration_with_instigation_logger(
                     backfill,
                     logger,

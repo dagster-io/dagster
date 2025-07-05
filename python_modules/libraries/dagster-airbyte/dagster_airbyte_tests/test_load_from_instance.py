@@ -6,9 +6,9 @@ import responses
 from dagster import (
     AssetKey,
     EnvVar,
-    FreshnessPolicy,
     InputContext,
     IOManager,
+    LegacyFreshnessPolicy,
     OutputContext,
     asset,
     io_manager,
@@ -34,7 +34,7 @@ from dagster_airbyte_tests.utils import (
     get_project_job_json,
 )
 
-TEST_FRESHNESS_POLICY = FreshnessPolicy(maximum_lag_minutes=60)
+TEST_FRESHNESS_POLICY = LegacyFreshnessPolicy(maximum_lag_minutes=60)
 
 
 @pytest.fixture(name="airbyte_instance", params=[True, False], scope="module")
@@ -296,7 +296,7 @@ def test_load_from_instance(
     assert len(assets_def.op.output_defs) == len(tables)
 
     expected_freshness_policy = TEST_FRESHNESS_POLICY if connection_to_freshness_policy_fn else None
-    freshness_policies = {spec.key: spec.freshness_policy for spec in assets_def.specs}
+    freshness_policies = {spec.key: spec.legacy_freshness_policy for spec in assets_def.specs}
     assert all(freshness_policies[key] == expected_freshness_policy for key in freshness_policies)
 
     expected_auto_materialize_policy = (

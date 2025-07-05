@@ -1,18 +1,20 @@
 ---
 description: Configure and run a local Dagster+ agent for testing before scaling with your preferred cloud service provider.
 sidebar_label: Local agent
-sidebar_position: 60
+sidebar_position: 6000
 title: Running a local agent
 ---
 
-Local agents are a good way to experiment with Dagster+ before deploying a more scalable Hybrid agent like [Kubernetes](/deployment/dagster-plus/hybrid/kubernetes) or [Amazon ECS](/deployment/dagster-plus/hybrid/amazon-ecs/).
+Local agents are a good way to experiment with Dagster+ before deploying a more scalable Hybrid agent like [Kubernetes](/deployment/dagster-plus/hybrid/kubernetes) or [Amazon ECS](/deployment/dagster-plus/hybrid/amazon-ecs).
 
 :::note
+
 Local agents aren't well suited for most production use cases. If you're running the local agent in production, make sure that:
 
 - You've set up a supervisor to automatically restart the agent process if it crashes
 - You're alerted if the VM or container dies, or to automatically restart it
-  :::
+
+:::
 
 <details>
   <summary>Prerequisites</summary>
@@ -77,4 +79,4 @@ To view the agent in Dagster+, click the Dagster icon in the top left to navigat
 
 ## Next steps
 
-- Add a [code location](/deployment/code-locations/) to your Dagster+ deployment.
+- Add a [code location](/deployment/code-locations) to your Dagster+ deployment.

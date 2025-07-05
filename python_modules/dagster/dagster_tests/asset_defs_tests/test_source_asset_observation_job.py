@@ -7,7 +7,7 @@ from dagster._core.definitions.decorators.asset_decorator import asset
 from dagster._core.definitions.decorators.source_asset_decorator import observable_source_asset
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.events import AssetKey
-from dagster._core.definitions.partition import StaticPartitionsDefinition
+from dagster._core.definitions.partitions.definition import StaticPartitionsDefinition
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
 from dagster._core.errors import DagsterInvalidDefinitionError
@@ -41,7 +41,7 @@ def test_execute_source_asset_observation_job():
             assets=[foo, bar],
             jobs=[define_asset_job("source_asset_job", [foo, bar])],
         )
-        .get_job_def("source_asset_job")
+        .resolve_job_def("source_asset_job")
         .execute_in_process(instance=instance)
     )
 
@@ -74,7 +74,9 @@ def test_partitioned_observable_source_asset():
         return 1
 
     with instance_for_test() as instance:
-        job_def = Definitions(assets=[foo, bar, baz]).get_implicit_job_def_for_assets([foo.key])
+        job_def = Definitions(assets=[foo, bar, baz]).resolve_implicit_job_def_def_for_assets(
+            [foo.key]
+        )
 
         # If the asset selection contains any materializable assets, source assets observations will not run
         job_def.execute_in_process(partition_key="A", instance=instance)  # pyright: ignore[reportOptionalMemberAccess]
@@ -112,7 +114,7 @@ def test_source_asset_observation_job_with_resource(is_valid, resource_defs):
                 jobs=[define_asset_job("source_asset_job", [foo])],
                 resources=resource_defs,
             )
-            .get_job_def("source_asset_job")
+            .resolve_job_def("source_asset_job")
             .execute_in_process(instance=instance)
         )
 
@@ -130,7 +132,7 @@ def test_source_asset_observation_job_with_resource(is_valid, resource_defs):
                     jobs=[define_asset_job("source_asset_job", [foo])],
                     resources=resource_defs,
                 )
-                .get_job_def("source_asset_job")
+                .resolve_job_def("source_asset_job")
                 .execute_in_process(instance=instance)
             )
 
@@ -160,7 +162,7 @@ def test_source_asset_observation_job_with_pythonic_resource(is_valid, resource_
                 jobs=[define_asset_job("source_asset_job", [foo])],
                 resources=resource_defs,
             )
-            .get_job_def("source_asset_job")
+            .resolve_job_def("source_asset_job")
             .execute_in_process(instance=instance)
         )
 

@@ -13,7 +13,6 @@ For local development:
 import datetime
 import hashlib
 import inspect
-import logging
 import os
 import uuid
 from collections.abc import Mapping, Sequence
@@ -201,18 +200,6 @@ def _check_telemetry_instance_param(
         )
 
 
-# For use in test teardown
-def cleanup_telemetry_logger() -> None:
-    logger = logging.getLogger("dagster_telemetry_logger")
-    if len(logger.handlers) == 0:
-        return
-
-    check.invariant(len(logger.handlers) == 1)
-    handler = next(iter(logger.handlers))
-    handler.close()
-    logger.removeHandler(handler)
-
-
 def _get_instance_telemetry_info(
     instance: DagsterInstance,
 ) -> TelemetrySettings:
@@ -283,7 +270,7 @@ def get_stats_from_remote_repo(remote_repo: "RemoteRepository") -> Mapping[str, 
             if isinstance(asset.partitions, MultiPartitionsSnap):
                 num_multi_partitioned_assets_in_repo += 1
 
-        if asset.freshness_policy is not None:
+        if asset.legacy_freshness_policy is not None:
             num_assets_with_freshness_policies_in_repo += 1
 
         if asset.auto_materialize_policy is not None:
@@ -413,7 +400,7 @@ def log_repo_stats(
     repo: Optional[ReconstructableRepository] = None,
 ) -> None:
     from dagster._core.definitions.assets import AssetsDefinition
-    from dagster._core.definitions.partition import DynamicPartitionsDefinition
+    from dagster._core.definitions.partitions.definition import DynamicPartitionsDefinition
 
     check.inst_param(instance, "instance", DagsterInstance)
     check.str_param(source, "source")

@@ -36,11 +36,19 @@ export type AssetCatalogTableQuery = {
             jobNames: Array<string>;
             kinds: Array<string>;
             assetKey: {__typename: 'AssetKey'; path: Array<string>};
-            internalFreshnessPolicy: {
-              __typename: 'TimeWindowFreshnessPolicy';
-              failWindowSeconds: number;
-              warnWindowSeconds: number | null;
-            } | null;
+            internalFreshnessPolicy:
+              | {
+                  __typename: 'CronFreshnessPolicy';
+                  deadlineCron: string;
+                  lowerBoundDeltaSeconds: number;
+                  timezone: string;
+                }
+              | {
+                  __typename: 'TimeWindowFreshnessPolicy';
+                  failWindowSeconds: number;
+                  warnWindowSeconds: number | null;
+                }
+              | null;
             partitionDefinition: {
               __typename: 'PartitionDefinition';
               description: string;
@@ -106,11 +114,19 @@ export type AssetCatalogGroupTableQuery = {
     jobNames: Array<string>;
     kinds: Array<string>;
     assetKey: {__typename: 'AssetKey'; path: Array<string>};
-    internalFreshnessPolicy: {
-      __typename: 'TimeWindowFreshnessPolicy';
-      failWindowSeconds: number;
-      warnWindowSeconds: number | null;
-    } | null;
+    internalFreshnessPolicy:
+      | {
+          __typename: 'CronFreshnessPolicy';
+          deadlineCron: string;
+          lowerBoundDeltaSeconds: number;
+          timezone: string;
+        }
+      | {
+          __typename: 'TimeWindowFreshnessPolicy';
+          failWindowSeconds: number;
+          warnWindowSeconds: number | null;
+        }
+      | null;
     partitionDefinition: {
       __typename: 'PartitionDefinition';
       description: string;
@@ -157,11 +173,19 @@ export type AssetCatalogGroupTableNodeFragment = {
   jobNames: Array<string>;
   kinds: Array<string>;
   assetKey: {__typename: 'AssetKey'; path: Array<string>};
-  internalFreshnessPolicy: {
-    __typename: 'TimeWindowFreshnessPolicy';
-    failWindowSeconds: number;
-    warnWindowSeconds: number | null;
-  } | null;
+  internalFreshnessPolicy:
+    | {
+        __typename: 'CronFreshnessPolicy';
+        deadlineCron: string;
+        lowerBoundDeltaSeconds: number;
+        timezone: string;
+      }
+    | {
+        __typename: 'TimeWindowFreshnessPolicy';
+        failWindowSeconds: number;
+        warnWindowSeconds: number | null;
+      }
+    | null;
   partitionDefinition: {
     __typename: 'PartitionDefinition';
     description: string;
@@ -188,6 +212,6 @@ export type AssetCatalogGroupTableNodeFragment = {
   };
 };
 
-export const AssetCatalogTableQueryVersion = '231aae66f6663ee5a67e3305fd8c8564d0b8f5a48613b8e36683a08094724ee6';
+export const AssetCatalogTableQueryVersion = '3bb8c7c4fe72f073b4f40aac177ca73327e5ae94cc2912a9aa9bc910cc4bd937';
 
-export const AssetCatalogGroupTableQueryVersion = '3fa824256df35a3dc9f89c09dd785f4688c20f29619c667a71731fb0ebe62896';
+export const AssetCatalogGroupTableQueryVersion = '0167045d0b604069d2df634e7e3e2e85f9e544f824c9ff858402c2814497ffa5';

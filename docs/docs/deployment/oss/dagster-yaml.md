@@ -1,10 +1,10 @@
 ---
 description: The dagster.yaml file defines various settings for storage, run execution, logging, and other aspects of a Dagster deployment.
-sidebar_position: 40
+sidebar_position: 400
 title: dagster.yaml reference
 ---
 
-The `dagster.yaml` file is used to configure the Dagster instance. It defines various settings for storage, run execution, logging, and other aspects of a Dagster deployment.
+The `dagster.yaml` file is used to configure the [Dagster OSS instance](/deployment/oss/oss-instance-configuration) and [Dagster+ agent](/deployment/dagster-plus/management/customizing-agent-settings). It defines various settings for storage, run execution, logging, and other aspects of a Dagster deployment.
 
 ## File location
 
@@ -148,6 +148,10 @@ sensors:
   num_workers: 8
 
 schedules:
+  use_threads: true
+  num_workers: 8
+
+backfills:
   use_threads: true
   num_workers: 8
 
@@ -295,6 +299,16 @@ Configures how schedules are evaluated.
 
 ```yaml
 schedules:
+  use_threads: true
+  num_workers: 8
+```
+
+### `backfills`
+
+Configures how backfills are submitted.
+
+```yaml
+backfills:
   use_threads: true
   num_workers: 8
 ```

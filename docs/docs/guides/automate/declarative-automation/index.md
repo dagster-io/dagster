@@ -32,11 +32,11 @@ The <PyObject section="assets" module="dagster" object="AutomationCondition.on_c
 
 In the example below, the asset will start waiting for each of its dependencies to be updated at the start of each hour. Once all dependencies have updated since the start of the hour, this asset will be immediately requested.
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/declarative_automation/on_cron/basic.py" />
+<CodeExample path="docs_snippets/docs_snippets/concepts/declarative_automation/on_cron/basic.py" title="src/<project_name>/defs/assets.py" />
 
 **Behavior**
 
-If you would like to customize aspects of this behavior, refer to the [customizing on_cron](customizing-automation-conditions/customizing-on-cron-condition) guide.
+If you would like to customize aspects of this behavior, refer to the [customizing on_cron](/guides/automate/declarative-automation/customizing-automation-conditions/customizing-on-cron-condition) guide.
 
 - If at least one upstream partition of _all_ upstream assets has been updated since the previous cron schedule tick, and the downstream asset has not yet been requested or updated, the downstream asset will be requested.
 - If all upstream assets **do not** update within the given cron tick, the downstream asset will not be requested.
@@ -51,7 +51,7 @@ The <PyObject section="assets" module="dagster" object="AutomationCondition.eage
 
 In the example below, the following asset will be automatically updated whenever any of its upstream dependencies are updated:
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/declarative_automation/eager/basic.py" />
+<CodeExample path="docs_snippets/docs_snippets/concepts/declarative_automation/eager/basic.py" title="src/<project_name>/defs/assets.py" />
 
 **Behavior**
 
@@ -63,7 +63,7 @@ In the example below, the following asset will be automatically updated whenever
 - If an upstream asset is _observed_, this will only be treated as an update to the upstream asset if the data version has changed since the previous observation.
 - If an upstream asset is _materialized_, this will be treated as an update to the upstream asset regardless of the data version of that materialization.
 
-To customize this behavior, see the [customizing eager](customizing-automation-conditions/customizing-eager-condition) guide.
+To customize this behavior, see the [customizing eager](/guides/automate/declarative-automation/customizing-automation-conditions/customizing-eager-condition) guide.
 
 </TabItem>
 
@@ -73,7 +73,7 @@ The <PyObject section="assets" module="dagster" object="AutomationCondition.on_m
 
 In the example below, as soon as all hourly partitions of the upstream asset are filled in, the downstream asset will be immediately requested:
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/declarative_automation/on_missing/basic.py" />
+<CodeExample path="docs_snippets/docs_snippets/concepts/declarative_automation/on_missing/basic.py" title="src/<project_name>/defs/assets.py" />
 
 **Behavior**
 

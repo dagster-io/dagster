@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Optional
 
 import click
-from dagster_dg_core.component import PluginObjectKey, RemotePluginRegistry
+from dagster_dg_core.component import EnvRegistry, EnvRegistryKey
 from dagster_dg_core.config import normalize_cli_config
 from dagster_dg_core.context import DgContext
 from dagster_dg_core.shared_options import dg_global_options, dg_path_options
@@ -51,17 +51,17 @@ LOCALHOST_URL_REGEX = re.compile(b".*(http://localhost.*)\n")
 def serve_docs_command(
     component_type: Optional[str],
     port: int,
-    path: Path,
+    target_path: Path,
     **global_options: object,
 ) -> None:
     """Serve the Dagster components docs, to be viewed in a browser."""
     cli_config = normalize_cli_config(global_options, click.get_current_context())
-    dg_context = DgContext.for_defined_registry_environment(path, cli_config)
-    registry = RemotePluginRegistry.from_dg_context(dg_context)
+    dg_context = DgContext.for_defined_registry_environment(target_path, cli_config)
+    registry = EnvRegistry.from_dg_context(dg_context)
 
     component_key = None
     if component_type:
-        component_key = PluginObjectKey.from_typename(component_type)
+        component_key = EnvRegistryKey.from_typename(component_type)
         if not component_key or not registry.has(component_key):
             exit_with_error(f"Component type `{component_type}` not found.")
 
@@ -118,13 +118,13 @@ def serve_docs_command(
 @cli_telemetry_wrapper
 def build_docs_command(
     output_dir: str,
-    path: Path,
+    target_path: Path,
     **global_options: object,
 ) -> None:
     """Build a static version of the Dagster components docs, to be served by a static file server."""
     cli_config = normalize_cli_config(global_options, click.get_current_context())
-    dg_context = DgContext.for_defined_registry_environment(path, cli_config)
-    registry = RemotePluginRegistry.from_dg_context(dg_context)
+    dg_context = DgContext.for_defined_registry_environment(target_path, cli_config)
+    registry = EnvRegistry.from_dg_context(dg_context)
 
     with pushd(ACTIVE_DOCS_DIR):
         DOCS_JSON_PATH.parent.mkdir(parents=True, exist_ok=True)

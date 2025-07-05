@@ -1,5 +1,6 @@
 import functools
 import textwrap
+import warnings
 from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from dataclasses import dataclass, field
@@ -7,7 +8,6 @@ from pathlib import Path
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
     Literal,
     Optional,
     TypedDict,
@@ -23,20 +23,19 @@ from click.core import ParameterSource
 from dagster_shared.match import match_type
 from dagster_shared.merger import deep_merge_dicts
 from dagster_shared.plus.config import load_config
+from dagster_shared.seven import is_valid_module_pattern
 from dagster_shared.utils import remove_none_recursively
-from dagster_shared.utils.config import does_dg_config_file_exist, get_dg_config_path
+from dagster_shared.utils.config import (
+    DgConfigFileFormat,
+    detect_dg_config_file_format,
+    discover_config_file,
+    does_dg_config_file_exist,
+    get_dg_config_path,
+)
 from typing_extensions import Never, NotRequired, Required, Self, TypeAlias, TypeGuard
 
 from dagster_dg_core.error import DgError, DgValidationError
-from dagster_dg_core.utils import (
-    exit_with_error,
-    get_toml_node,
-    has_toml_node,
-    is_macos,
-    is_windows,
-    load_toml_as_dict,
-    modify_toml,
-)
+from dagster_dg_core.utils import exit_with_error, get_toml_node, has_toml_node, modify_toml
 from dagster_dg_core.utils.warnings import DgWarningIdentifier, emit_warning
 
 if TYPE_CHECKING:
@@ -44,22 +43,6 @@ if TYPE_CHECKING:
     import tomlkit.items
 
 T = TypeVar("T")
-
-# The format determines whether settings are nested under the `tool.dg` section
-# (`pyproject.toml`) or not (`dg.toml`).
-DgConfigFileFormat: TypeAlias = Literal["root", "nested"]
-
-
-def _get_default_cache_dir() -> Path:
-    if is_windows():
-        return Path.home() / "AppData" / "dg" / "cache"
-    elif is_macos():
-        return Path.home() / "Library" / "Caches" / "dg"
-    else:
-        return Path.home() / ".cache" / "dg"
-
-
-DEFAULT_CACHE_DIR = _get_default_cache_dir()
 
 
 def discover_workspace_root(path: Path) -> Optional[Path]:
@@ -70,25 +53,6 @@ def discover_workspace_root(path: Path) -> Optional[Path]:
 
 
 # NOTE: The presence of dg.toml will cause pyproject.toml to be ignored for purposes of dg config.
-def discover_config_file(
-    path: Path,
-    predicate: Optional[Callable[[Mapping[str, Any]], bool]] = None,
-) -> Optional[Path]:
-    current_path = path.absolute()
-    while True:
-        dg_toml_path = current_path / "dg.toml"
-        pyproject_toml_path = current_path / "pyproject.toml"
-        if dg_toml_path.exists() and has_dg_file_config(dg_toml_path, predicate):
-            return dg_toml_path
-        elif pyproject_toml_path.exists() and has_dg_file_config(pyproject_toml_path, predicate):
-            return pyproject_toml_path
-        if current_path == current_path.parent:  # root
-            return
-        current_path = current_path.parent
-
-
-# NOTE: The set/has/get_config_from_cli_context is only used for the dynamically generated scaffold
-# component commands. Hopefully we can get rid of it in the future.
 
 _CLI_CONTEXT_CONFIG_KEY = "config"
 
@@ -110,8 +74,6 @@ def get_config_from_cli_context(cli_context: click.Context) -> "DgRawCliConfig":
 # ########################
 # ##### MAIN
 # ########################
-
-_ConfigCacheKey: TypeAlias = tuple[Any, ...]
 
 
 @dataclass
@@ -183,9 +145,6 @@ class DgCliConfig:
     """CLI configuration for Dg.
 
     Args:
-        disable_cache (bool): If True, disable caching. Defaults to False.
-        cache_dir (Optional[str]): The directory to use for caching. If None, the default cache will
-            be used.
         verbose (bool): If True, log debug information.
         use_component_modules (list[str]): Specify a list of modules containing components.
             Any components retrieved from the remote environment will be filtered to only include those
@@ -193,8 +152,6 @@ class DgCliConfig:
             set of test components.
     """
 
-    disable_cache: bool = False
-    cache_dir: Path = DEFAULT_CACHE_DIR
     verbose: bool = False
     use_component_modules: list[str] = field(default_factory=list)
     suppress_warnings: list["DgWarningIdentifier"] = field(default_factory=list)
@@ -208,8 +165,6 @@ class DgCliConfig:
     def from_raw(cls, *partials: "DgRawCliConfig") -> Self:
         merged = cast("DgRawCliConfig", functools.reduce(lambda acc, x: {**acc, **x}, partials))  # type: ignore
         return cls(
-            disable_cache=merged.get("disable_cache", DgCliConfig.disable_cache),
-            cache_dir=Path(merged["cache_dir"]) if "cache_dir" in merged else DgCliConfig.cache_dir,
             verbose=merged.get("verbose", DgCliConfig.verbose),
             use_component_modules=merged.get(
                 "use_component_modules",
@@ -231,8 +186,6 @@ class RawDgTelemetryConfig(TypedDict, total=False):
 
 # All fields are optional
 class DgRawCliConfig(TypedDict, total=False):
-    disable_cache: bool
-    cache_dir: str
     verbose: bool
     use_component_modules: Sequence[str]
     suppress_warnings: Sequence[DgWarningIdentifier]
@@ -242,36 +195,6 @@ class DgRawCliConfig(TypedDict, total=False):
 # ########################
 # ##### PROJECT
 # ########################
-
-DgProjectPythonEnvironmentFlag = Literal["active", "uv_managed"]
-
-
-@dataclass
-class DgProjectPythonEnvironment:
-    active: bool = False
-    path: Optional[str] = None
-    uv_managed: bool = False
-
-    @classmethod
-    def from_flag(cls, flag: DgProjectPythonEnvironmentFlag) -> Self:
-        if flag == "active":
-            return cls(active=True)
-        else:
-            return cls(uv_managed=True)
-
-    @classmethod
-    def from_raw(cls, raw: "DgRawProjectPythonEnvironment") -> Self:
-        return cls(
-            active=raw.get("active", DgProjectPythonEnvironment.active),
-            path=raw.get("path", DgProjectPythonEnvironment.path),
-            uv_managed=raw.get("uv_managed", DgProjectPythonEnvironment.uv_managed),
-        )
-
-
-class DgRawProjectPythonEnvironment(TypedDict, total=False):
-    active: bool
-    path: str
-    uv_managed: bool
 
 
 class DgRawBuildConfig(TypedDict):
@@ -309,36 +232,52 @@ def merge_container_context_configs(
 class DgProjectConfig:
     root_module: str
     defs_module: Optional[str] = None
+    autoload_defs: bool = False
     code_location_target_module: Optional[str] = None
     code_location_name: Optional[str] = None
-    python_environment: DgProjectPythonEnvironment = field(
-        default_factory=lambda: DgProjectPythonEnvironment(active=True)
-    )
+    registry_modules: list[str] = field(default_factory=list)
 
     @classmethod
     def from_raw(cls, raw: "DgRawProjectConfig") -> Self:
+        if raw.get("autoload_defs"):
+            warnings.warn(
+                "Using autoload_defs in pyproject.toml is deprecated, and will be removed in dagster 1.11.0."
+                " Use a definitions.py file with @definitions and load_project_defs instead:\n"
+                + textwrap.dedent(
+                    """
+                    from pathlib import Path
+
+                    from dagster import definitions, load_from_defs_folder
+
+
+                    @definitions
+                    def defs():
+                        return load_from_defs_folder(project_root=Path(__file__).parent.parent.parent)
+                    """
+                )
+            )
         return cls(
             root_module=raw["root_module"],
+            autoload_defs=raw.get("autoload_defs", DgProjectConfig.autoload_defs),
             defs_module=raw.get("defs_module", DgProjectConfig.defs_module),
             code_location_name=raw.get("code_location_name", DgProjectConfig.code_location_name),
             code_location_target_module=raw.get(
                 "code_location_target_module",
                 DgProjectConfig.code_location_target_module,
             ),
-            python_environment=(
-                DgProjectPythonEnvironment.from_raw(raw["python_environment"])
-                if "python_environment" in raw
-                else cls.__dataclass_fields__["python_environment"].default_factory()
+            registry_modules=raw.get(
+                "registry_modules", cls.__dataclass_fields__["registry_modules"].default_factory()
             ),
         )
 
 
 class DgRawProjectConfig(TypedDict):
     root_module: Required[str]
+    autoload_defs: NotRequired[bool]
     defs_module: NotRequired[str]
     code_location_target_module: NotRequired[str]
     code_location_name: NotRequired[str]
-    python_environment: NotRequired[DgRawProjectPythonEnvironment]
+    registry_modules: NotRequired[list[str]]
 
 
 # ########################
@@ -489,11 +428,6 @@ def is_project_file_config(config: "DgFileConfig") -> TypeGuard[DgProjectFileCon
 DgFileConfig: TypeAlias = Union[DgWorkspaceFileConfig, DgProjectFileConfig]
 
 
-def detect_dg_config_file_format(path: Path) -> DgConfigFileFormat:
-    """Check if the file is a dg-specific toml file."""
-    return "root" if path.name == "dg.toml" or path.name == ".dg.toml" else "nested"
-
-
 @contextmanager
 def modify_dg_toml_config(
     path: Path,
@@ -511,20 +445,6 @@ def modify_dg_toml_config(
             )
         else:
             yield get_toml_node(toml, ("tool", "dg"), tomlkit.items.Table)
-
-
-def has_dg_file_config(
-    path: Path, predicate: Optional[Callable[[Mapping[str, Any]], bool]] = None
-) -> bool:
-    toml = load_toml_as_dict(path)
-    # `dg.toml` is a special case where settings are defined at the top level
-    if detect_dg_config_file_format(path) == "root":
-        node = toml
-    else:
-        if "dg" not in toml.get("tool", {}):
-            return False
-        node = toml["tool"]["dg"]
-    return predicate(node) if predicate else True
 
 
 def load_dg_user_file_config(path: Optional[Path] = None) -> DgRawCliConfig:
@@ -605,25 +525,11 @@ class _DgConfigValidator:
 
         if has_toml_node(raw_dict, ("project", "python_environment")):
             full_key = self._get_full_key("project.python_environment")
-            python_environment = get_toml_node(raw_dict, ("project", "python_environment"), object)
-            if python_environment == "active":
-                msg = textwrap.dedent(f"""
-                    Setting `{full_key} = "active"` is deprecated. Please update to:
-
-                        [{full_key}]
-                        active = true
-                """).strip()
-                emit_warning("deprecated_python_environment", msg, suppress_warnings)
-                raw_dict["project"]["python_environment"] = {"active": True}
-            elif python_environment == "persistent_uv":
-                msg = textwrap.dedent(f"""
-                    Setting `{full_key} = "persistent_uv"` is deprecated. Please update to:
-
-                        [{full_key}]
-                        uv_managed = true
-                """).strip()
-                emit_warning("deprecated_python_environment", msg, suppress_warnings)
-                raw_dict["project"]["python_environment"] = {"uv_managed": True}
+            msg = textwrap.dedent(f"""
+                Setting `{full_key}` is deprecated. This key can be removed.
+            """).strip()
+            emit_warning("deprecated_python_environment", msg, suppress_warnings)
+            del raw_dict["project"]["python_environment"]
 
     def validate(self, raw_dict: dict[str, Any]) -> DgFileConfig:
         self.normalize_deprecated_settings(raw_dict)
@@ -663,33 +569,27 @@ class _DgConfigValidator:
         if not isinstance(section, dict):
             self._raise_mistyped_key_error("project", get_type_str(dict), section)
         for key, type_ in DgRawProjectConfig.__annotations__.items():
-            if key == "python_environment" and "python_environment" in section:
-                self._validate_file_config_project_python_environment(section["python_environment"])
-            else:
-                self._validate_file_config_setting(section, key, type_, "project")
+            self._validate_file_config_setting(section, key, type_, "project")
         self._validate_file_config_no_extraneous_keys(
             set(DgRawProjectConfig.__annotations__.keys()), section, "project"
         )
-
-    def _validate_file_config_project_python_environment(self, section: object) -> None:
-        if not isinstance(section, dict):
-            self._raise_mistyped_key_error(
-                "project.python_environment", get_type_str(dict), section
+        if "registry_modules" in section:
+            for pattern in section["registry_modules"]:
+                if not is_valid_module_pattern(pattern):
+                    full_key = self._get_full_key("project.registry_modules")
+                    raise DgValidationError(
+                        f"Invalid module pattern `{pattern}` at `{full_key}`. "
+                        "Module patterns must consist of '.'-separated segments that are either "
+                        "valid Python identifiers or wildcards ('*')."
+                    )
+        if "code_location_target_module" in section and section.get("autoload_defs"):
+            autoload_defs_key = self._get_full_key("project.autoload_defs")
+            code_location_target_module_key = self._get_full_key(
+                "project.code_location_target_module"
             )
-        for key, type_ in DgRawProjectPythonEnvironment.__annotations__.items():
-            self._validate_file_config_setting(section, key, type_, "project.python_environment")
-        self._validate_file_config_no_extraneous_keys(
-            set(DgRawProjectPythonEnvironment.__annotations__.keys()),
-            section,
-            "project.python_environment",
-        )
-        if not sum(1 for value in section.values() if value) == 1:
-            full_key = self._get_full_key("project.python_environment")
             raise DgValidationError(
-                textwrap.dedent(f"""
-                Found conflicting settings in `{full_key}`. If this section is defined, exactly one of the following keys must be set:
-                    {DgRawProjectPythonEnvironment.__annotations__.keys()}
-            """).strip()
+                f"Cannot specify `{code_location_target_module_key}` when `{autoload_defs_key}` is True. These options are mutually exclusive."
+                " Please set `autoload_defs` to False or remove the `code_location_target_module`."
             )
 
     def _validate_file_config_workspace_section(self, section: object) -> None:

@@ -1,10 +1,8 @@
 import {Box, Icon} from '@dagster-io/ui-components';
 import React, {useCallback, useMemo} from 'react';
-import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
+import {observeEnabled} from 'shared/app/observeEnabled.oss';
 
 import {AssetKey} from './types';
-import {featureEnabled} from '../app/Flags';
-import {AssetEventHistoryEventTypeSelector} from '../graphql/types';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {TruncatedTextWithFullTextOnHover} from '../nav/getLeftNavItemsForOption';
 import {useFilters} from '../ui/BaseFilters';
@@ -13,14 +11,17 @@ import {AssetViewDefinitionNodeFragment} from './types/AssetView.types';
 import {useStaticSetFilter} from '../ui/BaseFilters/useStaticSetFilter';
 import {useTimeRangeFilter} from '../ui/BaseFilters/useTimeRangeFilter';
 
+type StatusFilterOption = 'Success' | 'Failure';
+type TypeFilterOption = 'Materialization' | 'Observation';
+
 type FilterState = {
   partitions?: string[];
   dateRange?: {
     start: number | null;
     end: number | null;
   };
-  status?: string[];
-  type?: string[];
+  status?: StatusFilterOption[];
+  type?: TypeFilterOption[];
 };
 
 type Config = {
@@ -38,8 +39,8 @@ export const useAssetEventsFilters = ({assetKey, assetNode}: Config) => {
       if (!raw?.partitions && !raw?.status && !raw?.type && !raw?.dateRange) {
         return {
           partitions: [],
-          status: statusValues.map((s) => s.key),
-          type: typeValues.map((t) => t.key),
+          status: statusValues.map((s) => s.value),
+          type: typeValues.map((t) => t.value),
         };
       }
 
@@ -54,8 +55,8 @@ export const useAssetEventsFilters = ({assetKey, assetNode}: Config) => {
       return {
         partitions: Array.isArray(raw?.partitions) ? raw.partitions.map(String) : [],
         dateRange,
-        status: Array.isArray(raw?.status) ? raw.status.map(String) : [],
-        type: Array.isArray(raw?.type) ? raw.type.map(String) : [],
+        status: Array.isArray(raw?.status) ? (raw.status.map(String) as StatusFilterOption[]) : [],
+        type: Array.isArray(raw?.type) ? (raw.type.map(String) as TypeFilterOption[]) : [],
       };
     },
     encode: (raw) => ({
@@ -91,12 +92,12 @@ export const useAssetEventsFilters = ({assetKey, assetNode}: Config) => {
   );
 
   const partitionsFilter = useStaticSetFilter({
-    name: 'Partitions',
+    name: 'Partition',
     icon: 'partition',
     allValues: partitionValues,
     renderLabel: ({value}) => (
       <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
-        <Icon name="job" />
+        <Icon name="partition" />
         <TruncatedTextWithFullTextOnHover text={value} />
       </Box>
     ),
@@ -113,19 +114,14 @@ export const useAssetEventsFilters = ({assetKey, assetNode}: Config) => {
     allValues: statusValues,
     renderLabel: ({value}) => (
       <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
-        <Icon name="job" />
         <TruncatedTextWithFullTextOnHover text={value} />
       </Box>
     ),
-    getStringValue: (x) => {
-      if (x === AssetEventHistoryEventTypeSelector.MATERIALIZATION) {
-        return 'Success';
-      } else if (x === AssetEventHistoryEventTypeSelector.FAILED_TO_MATERIALIZE) {
-        return 'Failure';
-      }
-      return x;
-    },
-    state: React.useMemo(() => new Set(filterState.status ?? emptyArray), [filterState.status]),
+    getStringValue: (x) => x,
+    state: React.useMemo(
+      () => new Set((filterState.status ?? emptyArray) as StatusFilterOption[]),
+      [filterState.status],
+    ),
     onStateChanged: (values) => {
       setFilterState({status: Array.from(values)});
     },
@@ -139,12 +135,19 @@ export const useAssetEventsFilters = ({assetKey, assetNode}: Config) => {
     allValues: typeValues,
     renderLabel: ({value}) => (
       <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
-        <Icon name="job" />
+        {value === 'Materialization' ? (
+          <Icon name="materialization" />
+        ) : (
+          <Icon name="observation" />
+        )}
         <TruncatedTextWithFullTextOnHover text={value} />
       </Box>
     ),
     getStringValue: (x) => x,
-    state: React.useMemo(() => new Set(filterState.type ?? emptyArray), [filterState.type]),
+    state: React.useMemo(
+      () => new Set((filterState.type ?? emptyArray) as TypeFilterOption[]),
+      [filterState.type],
+    ),
     onStateChanged: (values) => {
       setFilterState({type: Array.from(values)});
     },
@@ -176,16 +179,17 @@ export const useAssetEventsFilters = ({assetKey, assetNode}: Config) => {
 
   const filters = useMemo(() => {
     const filters = [];
-    if (featureEnabled(FeatureFlag.flagUseNewObserveUIs)) {
-      filters.push(statusFilter);
-    }
     filters.push(dateRangeFilter);
     if (assetNode?.partitionDefinition) {
       filters.push(partitionsFilter);
     }
     if (assetNode?.isMaterializable) {
-      // No need to show the type filter for assets without materializations
+      // No need to show the type filter for assets with only observations
+      // No need to show the status filter, only failed materializations count as Failure
       filters.push(typeFilter);
+      if (observeEnabled()) {
+        filters.push(statusFilter);
+      }
     }
     return filters;
   }, [
@@ -204,18 +208,26 @@ export const useAssetEventsFilters = ({assetKey, assetNode}: Config) => {
 
 const statusValues = [
   {
-    key: AssetEventHistoryEventTypeSelector.MATERIALIZATION,
-    value: AssetEventHistoryEventTypeSelector.MATERIALIZATION,
+    key: 'Success',
+    value: 'Success' as StatusFilterOption,
     match: ['Success'],
   },
   {
-    key: AssetEventHistoryEventTypeSelector.FAILED_TO_MATERIALIZE,
-    value: AssetEventHistoryEventTypeSelector.FAILED_TO_MATERIALIZE,
+    key: 'Failure',
+    value: 'Failure' as StatusFilterOption,
     match: ['Failure'],
   },
 ];
 
 const typeValues = [
-  {key: 'Materialization', value: 'Materialization', match: ['Materialization']},
-  {key: 'Observation', value: 'Observation', match: ['Observation']},
+  {
+    key: 'Materialization',
+    value: 'Materialization' as TypeFilterOption,
+    match: ['Materialization'],
+  },
+  {
+    key: 'Observation',
+    value: 'Observation' as TypeFilterOption,
+    match: ['Observation'],
+  },
 ];

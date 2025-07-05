@@ -1,14 +1,10 @@
 ---
 title: Instance configuration
 description: Define configuration options for your OSS Dagster instance.
-sidebar_position: 30
+sidebar_position: 300
 ---
 
-import DagsterOSS from '@site/docs/partials/\_DagsterOSS.md';
-
-<DagsterOSS />
-
-The Dagster instance defines the configuration that Dagster needs for a single deployment - for example, where to store the history of past runs and their associated logs, where to stream the raw logs from op compute functions, and how to launch new runs.
+The Dagster instance defines the configuration that Dagster OSS needs for a single deployment - for example, where to store the history of past runs and their associated logs, where to stream the raw logs from op compute functions, and how to launch new runs.
 
 All of the processes and services that make up your Dagster deployment should share a single instance config file, named `dagster.yaml`, so that they can effectively share information.
 
@@ -302,7 +298,7 @@ The <PyObject section="libraries" module="dagster_aws" object="s3.S3ComputeLogMa
 The `local_artifact_storage` key allows you to configure local artifact storage. Local artifact storage is used to:
 
 - Configure storage for artifacts that require a local disk, or
-- Store inputs and outputs when using the filesystem I/O manager (<PyObject section="io-managers" module="dagster" object="FilesystemIOManager" />). For more information on how other I/O managers store artifacts, see the [I/O managers documentation](/guides/build/io-managers/).
+- Store inputs and outputs when using the filesystem I/O manager (<PyObject section="io-managers" module="dagster" object="FilesystemIOManager" />). For more information on how other I/O managers store artifacts, see the [I/O managers documentation](/guides/build/io-managers).
 
 :::note
 

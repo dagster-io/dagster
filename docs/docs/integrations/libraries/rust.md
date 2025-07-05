@@ -24,4 +24,4 @@ For a usage example, see the [community integrations GitHub repository](https://
 
 ## About Rust
 
-[Rust](https://www.rust-lang.org/) is a language empowering everyone to build reliable and efficient software. To get started with Rust, see the [Rust docs](https://www.rust-lang.org/learn).
+[Rust](https://www.rust-lang.org) is a language empowering everyone to build reliable and efficient software. To get started with Rust, see the [Rust docs](https://www.rust-lang.org/learn).

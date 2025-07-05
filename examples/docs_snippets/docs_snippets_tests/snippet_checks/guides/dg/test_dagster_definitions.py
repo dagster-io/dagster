@@ -39,7 +39,7 @@ def test_dagster_definitions(update_snippets: bool) -> None:
         ],
     ) as context:
         _run_command(
-            cmd="dg scaffold project my-project --python-environment uv_managed --use-editable-dagster && cd my-project",
+            cmd="create-dagster project my-project --uv-sync --use-editable-dagster && cd my-project",
         )
 
         with activate_venv(".venv") as venv_path:
@@ -84,6 +84,5 @@ def test_dagster_definitions(update_snippets: bool) -> None:
             )
 
             # validate loads
-            _run_command(
-                "uv pip freeze && uv run dagster asset materialize --select '*' -m 'my_project.definitions'"
-            )
+            if not update_snippets:
+                _run_command("uv pip freeze && uv run dg launch --assets '*'")

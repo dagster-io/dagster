@@ -132,8 +132,13 @@ export class LiveDataThreadManager<T> {
    * so that the keys are re-eligible for fetching again despite the pollRate.
    */
   public invalidateCache(keys?: string[]) {
-    (keys ?? Object.keys(this.lastFetchedOrRequested)).forEach((key) => {
+    const keysToReset = keys ?? Object.keys(this.lastFetchedOrRequested);
+    keysToReset.forEach((key) => {
       delete this.lastFetchedOrRequested[key];
+
+      // After removing a key from the cache, we need to mark it as "unfetched" again
+      // to ensure that it will be included by `determineKeysToFetch`.
+      this.unfetchedKeys.add(key);
     });
   }
 
@@ -241,6 +246,14 @@ export class LiveDataThreadManager<T> {
 
   public getCacheEntry(key: string) {
     return this.cache[key];
+  }
+
+  public pauseThread(threadID: LiveDataThreadID) {
+    this.threads[threadID]?.pause();
+  }
+
+  public unpauseThread(threadID: LiveDataThreadID) {
+    this.threads[threadID]?.unpause();
   }
 
   public _markKeysRequested(keys: string[]) {

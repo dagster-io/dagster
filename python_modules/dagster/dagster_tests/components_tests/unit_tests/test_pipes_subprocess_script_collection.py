@@ -12,7 +12,7 @@ def test_load_from_path() -> None:
     )
     defs = load_defs(module, project_root=Path(__file__).parent)
 
-    assert defs.get_asset_graph().get_all_asset_keys() == {
+    assert defs.resolve_asset_graph().get_all_asset_keys() == {
         AssetKey("a"),
         AssetKey("b"),
         AssetKey("c"),
@@ -33,6 +33,7 @@ def test_load_from_path() -> None:
         AssetKey("from_defs_one"),
         AssetKey("from_defs_two"),
     }
+    assert defs.component_tree
 
 
 def test_load_from_location_path() -> None:
@@ -41,7 +42,7 @@ def test_load_from_location_path() -> None:
     )
     defs = load_defs(module, project_root=Path(__file__).parent)
 
-    assert defs.get_asset_graph().get_all_asset_keys() == {
+    assert defs.resolve_asset_graph().get_all_asset_keys() == {
         AssetKey("a"),
         AssetKey("b"),
         AssetKey("c"),

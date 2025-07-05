@@ -1,6 +1,6 @@
 ---
 description: Deploy open source Dagster on Kubernetes.
-sidebar_position: 30
+sidebar_position: 3000
 title: Kubernetes
 ---
 

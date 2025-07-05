@@ -8,20 +8,15 @@ from pathlib import Path
 from typing import Any, Union
 
 import pytest
-from dagster_dg_core.component import RemotePluginRegistry
-from dagster_dg_core.config import (
-    DgFileConfigDirectoryType,
-    DgProjectPythonEnvironmentFlag,
-    get_type_str,
-)
-from dagster_dg_core.context import DgContext
+from dagster_dg_core.component import EnvRegistry
+from dagster_dg_core.config import DgFileConfigDirectoryType, get_type_str
+from dagster_dg_core.context import OLD_DG_PLUGIN_ENTRY_POINT_GROUPS, DgContext
 from dagster_dg_core.utils import (
     TomlPath,
     activate_venv,
     create_toml_node,
     delete_toml_node,
     get_toml_node,
-    get_venv_executable,
     is_windows,
     modify_toml_as_dict,
     pushd,
@@ -31,7 +26,6 @@ from dagster_dg_core.utils import (
 )
 from dagster_dg_core.utils.warnings import DgWarningIdentifier
 from dagster_shared.utils.config import get_default_dg_user_config_path
-from packaging.version import Version
 
 from dagster_dg_core_tests.utils import (
     ConfigFileType,
@@ -42,6 +36,7 @@ from dagster_dg_core_tests.utils import (
     dg_warns,
     install_editable_dagster_packages_to_venv,
     isolated_components_venv,
+    isolated_example_component_library_foo_bar,
     isolated_example_project_foo_bar,
     isolated_example_workspace,
     modify_dg_toml_config_as_dict,
@@ -62,6 +57,7 @@ def test_context_in_workspace(config_file: ConfigFileType):
         context = DgContext.for_workspace_environment(path_arg, {})
         assert context.root_path == Path.cwd()
         assert context.workspace_root_path == Path.cwd()
+        assert context.is_in_workspace is True
 
         # Test config properly set
         with modify_dg_toml_config_as_dict(Path(config_file)) as toml_dict:
@@ -92,6 +88,7 @@ def test_context_in_project_in_workspace(
         assert context.root_path == project_path
         assert context.workspace_root_path == Path.cwd()
         assert context.config.cli.verbose is False  # default
+        assert context.is_in_workspace is True
 
         # Test config inheritance from workspace
         with modify_dg_toml_config_as_dict(Path(workspace_config_file)) as toml_dict:
@@ -122,7 +119,7 @@ def test_context_in_project_outside_workspace(config_file: ConfigFileType):
 
         context = DgContext.for_project_environment(path_arg, {})
         assert context.root_path == project_path
-        assert context.is_workspace is False
+        assert context.is_in_workspace is False
         assert context.config.cli.verbose is False
 
         # Test CLI setting is used in project outside of workspace
@@ -136,7 +133,7 @@ def test_context_outside_project_or_workspace():
     with ProxyRunner.test() as runner, isolated_components_venv(runner):
         context = DgContext.from_file_discovery_and_command_line_config(Path.cwd(), {})
         assert context.root_path == Path.cwd()
-        assert context.is_workspace is False
+        assert context.is_in_workspace is False
         assert context.config.cli.verbose is False
 
 
@@ -209,39 +206,44 @@ def test_warning_suppression():
 def test_setup_cfg_entry_point():
     with (
         ProxyRunner.test() as runner,
-        isolated_example_project_foo_bar(runner, in_workspace=False),
+        isolated_example_component_library_foo_bar(runner),
     ):
         # Delete the entry point section from pyproject.toml
         with modify_toml_as_dict(Path("pyproject.toml")) as toml:
-            delete_toml_node(toml, ("project", "entry-points", "dagster_dg.plugin"))
+            delete_toml_node(toml, ("project", "entry-points", "dagster_dg_cli.registry_modules"))
         # Create a setup.cfg file with the entry point
         with open("setup.cfg", "w") as f:
             f.write(
                 textwrap.dedent("""
                 [options.entry_points]
-                dagster_dg.plugin =
+                dagster_dg_cli.registry_modules =
                     foo_bar = foo_bar.lib
                 """)
             )
-        context = DgContext.for_project_environment(Path.cwd(), {})
-        assert context.is_plugin
+        context = DgContext.for_component_library_environment(Path.cwd(), {})
+        assert context.has_registry_module_entry_point
 
 
-def test_deprecated_entry_point_group_warning():
+@pytest.mark.parametrize("deprecated_group", OLD_DG_PLUGIN_ENTRY_POINT_GROUPS)
+def test_deprecated_entry_point_group_warning(deprecated_group: str):
     with (
         ProxyRunner.test() as runner,
-        isolated_example_project_foo_bar(runner),
+        isolated_example_project_foo_bar(
+            runner, include_entry_point=True, in_workspace=False, uv_sync=True
+        ),
     ):
         with modify_toml_as_dict(Path("pyproject.toml")) as toml_dict:
             plugin_entry_points = get_toml_node(
-                toml_dict, ("project", "entry-points", "dagster_dg.plugin"), dict
+                toml_dict, ("project", "entry-points", "dagster_dg_cli.registry_modules"), dict
             )
             set_toml_node(
-                toml_dict, ("project", "entry-points", "dagster_dg.library"), plugin_entry_points
+                toml_dict, ("project", "entry-points", deprecated_group), plugin_entry_points
             )
-            delete_toml_node(toml_dict, ("project", "entry-points", "dagster_dg.plugin"))
+            delete_toml_node(
+                toml_dict, ("project", "entry-points", "dagster_dg_cli.registry_modules")
+            )
 
-        expected_match = "deprecated `dagster_dg.library` entry point group"
+        expected_match = f"deprecated `{deprecated_group}` entry point group"
         with dg_warns(expected_match):
             DgContext.for_project_environment(Path("foo-bar"), {})
         with dg_warns(expected_match):
@@ -259,12 +261,15 @@ def test_deprecated_dg_toml_location_warning(tmp_path, monkeypatch):
         DgContext.from_file_discovery_and_command_line_config(Path.cwd(), {})
 
 
-def test_missing_dg_plugin_module_in_manifest_warning():
+def test_missing_dg_registry_module_in_manifest_warning():
     # Create a project with a venv that does not have the project installed into it.
     with (
         ProxyRunner.test() as runner,
         isolated_example_project_foo_bar(
-            runner, in_workspace=False, python_environment="active", uv_sync=False
+            runner,
+            in_workspace=False,
+            uv_sync=False,
+            include_entry_point=True,
         ),
     ):
         subprocess.check_output(["uv", "venv"])
@@ -273,43 +278,20 @@ def test_missing_dg_plugin_module_in_manifest_warning():
         )
         with activate_venv(Path(".venv")):
             context = DgContext.for_project_environment(Path.cwd(), {})
-            with dg_warns("Your package defines a `dagster_dg.plugin` entry point"):
-                RemotePluginRegistry.from_dg_context(context)
+            with dg_warns("Your package defines a `dagster_dg_cli.registry_modules` entry point"):
+                EnvRegistry.from_dg_context(context)
 
 
-@pytest.mark.parametrize("python_environment", ["active", "uv_managed"])
-def test_dagster_version(python_environment: DgProjectPythonEnvironmentFlag):
+def test_context_with_autoload_defs_and_definitions_py():
     with (
         ProxyRunner.test() as runner,
-        isolated_example_project_foo_bar(
-            runner,
-            in_workspace=False,
-            python_environment=python_environment,
-            uv_sync=True,
-        ),
+        isolated_example_project_foo_bar(runner, in_workspace=False, uv_sync=True),
     ):
-        assert Path(".venv").exists()
-        external_venv_path = Path.cwd().parent / ".venv"
-        subprocess.check_output(["uv", "venv", str(external_venv_path)])
-        subprocess.check_output(
-            [
-                "uv",
-                "pip",
-                "install",
-                "dagster==1.10.10",
-                "--python",
-                str(get_venv_executable(external_venv_path)),
-            ]
-        )
-
-        with activate_venv(external_venv_path):
-            context = DgContext.for_project_environment(Path.cwd(), {})
-            # uses activated venv even though we have a different venv in the current directory
-            if python_environment == "active":
-                assert context.dagster_version == Version("1.10.10")
-            # ignore active enviroment, use project venv
-            elif python_environment == "uv_managed":
-                assert context.dagster_version == Version("1!0+dev")
+        # Set autoload_defs to true in pyproject.toml
+        with modify_dg_toml_config_as_dict(Path("pyproject.toml")) as toml:
+            create_toml_node(toml, ("project", "autoload_defs"), True)
+        with dg_warns("`project.autoload_defs` is enabled, but a code location load target"):
+            DgContext.for_project_environment(Path.cwd(), {})
 
 
 # ########################
@@ -360,8 +342,6 @@ def test_invalid_config_workspace(config_file: ConfigFileType):
                 _set_and_detect_invalid_key(config_file, path)
 
         cases = [
-            ["cli.disable_cache", bool, 1],
-            ["cli.cache_dir", str, 1],
             ["cli.verbose", bool, 1],
             ["cli.use_component_modules", Sequence[str], 1],
             ["cli.suppress_warnings", list[DgWarningIdentifier], 1],
@@ -387,8 +367,7 @@ def test_invalid_config_workspace(config_file: ConfigFileType):
                 _set_and_detect_missing_required_key(config_file, path, expected_type)
 
 
-# @pytest.mark.parametrize("config_file", ["dg.toml", "pyproject.toml"])
-@pytest.mark.parametrize("config_file", ["dg.toml"])
+@pytest.mark.parametrize("config_file", ["dg.toml", "pyproject.toml"])
 def test_invalid_config_project(config_file: ConfigFileType):
     with (
         ProxyRunner.test() as runner,
@@ -397,7 +376,6 @@ def test_invalid_config_project(config_file: ConfigFileType):
         paths = [
             "invalid_key",
             "project.invalid_key",
-            "project.python_environment.invalid_key",
             "cli.invalid_key",
         ]
         for case in paths:
@@ -410,10 +388,6 @@ def test_invalid_config_project(config_file: ConfigFileType):
             ["project.defs_module", str, 1],
             ["project.code_location_name", str, 1],
             ["project.code_location_target_module", str, 1],
-            ["project.python_environment", dict, 1],
-            ["project.python_environment.path", str, 1],
-            ["project.python_environment.active", bool, 1],
-            ["project.python_environment.uv_managed", bool, 1],
         ]
         for path, expected_type, val in cases:
             with _reset_config_file(config_file):
@@ -426,14 +400,36 @@ def test_invalid_config_project(config_file: ConfigFileType):
             with _reset_config_file(config_file):
                 _set_and_detect_missing_required_key(config_file, path, expected_type)
 
-        # Multiple conflicting settings
         with _reset_config_file(config_file):
-            python_env_full_key = _get_full_str_path(config_file, "project.python_environment")
+            full_registry_modules_key = _get_full_str_path(config_file, "project.registry_modules")
+            err_msg = f"Invalid module pattern `foo.*bar` at `{full_registry_modules_key}`"
+            _set_and_detect_error(
+                config_file,
+                ("project", "registry_modules"),
+                ["foo.*bar"],
+                err_msg,
+            )
+
+        # Test specifying autoload_defs and code_location_target_module
+        # errors.
+        with _reset_config_file(config_file):
             with modify_dg_toml_config_as_dict(Path(config_file)) as toml:
-                toml["project"]["python_environment"]["active"] = True
-                toml["project"]["python_environment"]["uv_managed"] = True
-            with dg_exits(f"Found conflicting settings in `{python_env_full_key}`"):
-                DgContext.from_file_discovery_and_command_line_config(Path.cwd(), {})
+                create_toml_node(
+                    toml,
+                    ("project", "autoload_defs"),
+                    True,
+                )
+
+            full_code_location_key = _get_full_str_path(
+                config_file, "project.code_location_target_module"
+            )
+            err_msg = f"Cannot specify `{full_code_location_key}`"
+            _set_and_detect_error(
+                config_file,
+                ("project", "code_location_target_module"),
+                "foo_bar._definitions",
+                err_msg,
+            )
 
 
 @pytest.mark.parametrize("config_file", ["dg.toml", "pyproject.toml"])
@@ -447,12 +443,8 @@ def test_deprecated_config_project(config_file: ConfigFileType):
             with _reset_config_file(config_file):
                 with modify_dg_toml_config_as_dict(Path(config_file)) as toml:
                     create_toml_node(toml, ("project", "python_environment"), value)
-                with dg_warns(f'`{full_key} = "{value}"` is deprecated'):
-                    context = DgContext.from_file_discovery_and_command_line_config(Path.cwd(), {})
-                if value == "persistent_uv":
-                    assert context.config.project.python_environment.uv_managed is True  # type: ignore
-                elif value == "active":
-                    assert context.config.project.python_environment.active is True  # type: ignore
+                with dg_warns(f"Setting `{full_key}` is deprecated. This key can be removed."):
+                    DgContext.from_file_discovery_and_command_line_config(Path.cwd(), {})
 
 
 @pytest.mark.parametrize("config_file", ["dg.toml", "pyproject.toml"])
@@ -461,6 +453,13 @@ def test_code_location_config(config_file: ConfigFileType):
         ProxyRunner.test() as runner,
         isolated_example_project_foo_bar(runner, config_file_type=config_file),
     ):
+        with modify_dg_toml_config_as_dict(Path(config_file)) as toml:
+            create_toml_node(
+                toml,
+                ("project", "autoload_defs"),
+                False,
+            )
+
         context = DgContext.for_project_environment(Path.cwd(), {})
         assert context.code_location_target_module_name == "foo_bar.definitions"
         assert context.code_location_name == "foo-bar"
@@ -471,6 +470,7 @@ def test_code_location_config(config_file: ConfigFileType):
                 ("project", "code_location_target_module"),
                 "foo_bar._definitions",
             )
+
             create_toml_node(toml, ("project", "code_location_name"), "my-code_location")
 
         context = DgContext.for_project_environment(Path.cwd(), {})
@@ -484,7 +484,6 @@ def test_virtual_env_mismatch_warning():
         isolated_example_project_foo_bar(
             runner,
             in_workspace=False,
-            python_environment="active",
             uv_sync=True,
         ),
     ):

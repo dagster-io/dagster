@@ -1,23 +1,26 @@
 ---
 description: Retrieve secrets and credentials from Azure Key Vault in an Azure Kubernetes Service (AKS) cluster.
-sidebar_position: 400
+sidebar_position: 5400
 title: Retrieve secrets and credentials from Azure Key Vault in AKS
 ---
 
 :::note
-This guide is applicable to Dagster+ on AKS only and requires version 1.10.2 or later of the Helm chart.
+
+This guide requires version 1.10.2 or later of the Helm chart.
+
 :::
 
 In this guide, we'll walk through how to retrieve secrets and credentials from Azure Key Vault in an Azure Kubernetes Service (AKS) cluster.
-This guide assumes you completed the first step of [Deploying Dagster+ hybrid on Azure](/deployment/dagster-plus/hybrid/azure/aks-agent).
+
+This guide assumes you completed the first step of [Deploy a Dagster+ agent on an Azure Kubernetes Service cluster](/deployment/dagster-plus/hybrid/azure/aks-agent).
 
 ## Prerequisites
 
 To complete the steps in this guide, you'll need:
 
 - The Azure CLI installed on your machine. You can download it [here](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli).
-- `kubectl` installed on your machine. You can download it [here](https://kubernetes.io/docs/tasks/tools/install-kubectl/).
-- `helm` installed on your machine. You can download it [here](https://helm.sh/docs/intro/install/).
+- `kubectl` installed on your machine. You can download it [here](https://kubernetes.io/docs/tasks/tools).
+- `helm` installed on your machine. You can download it [here](https://helm.sh/docs/intro/install).
 - A functional AKS cluster and Dagster+ agent running on it. If you have not yet set up an AKS agent, you can look up [Deploy an Azure Kubernetes Service (AKS) agent guide](/deployment/dagster-plus/hybrid/azure/aks-agent).
 
 ## Step 1: Enable the Azure Key Vault provider for the AKS cluster

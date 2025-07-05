@@ -100,7 +100,7 @@ export const BackfillRowContent = ({
     <tr>
       <td style={{width: 120}}>
         <Mono>
-          <Link to={getBackfillPath(backfill.id, backfill.isAssetBackfill)}>{backfill.id}</Link>
+          <Link to={getBackfillPath(backfill.id)}>{backfill.id}</Link>
         </Mono>
       </td>
       <td style={{width: 220}}>

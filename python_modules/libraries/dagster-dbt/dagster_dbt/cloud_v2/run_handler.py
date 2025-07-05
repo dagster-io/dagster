@@ -10,7 +10,7 @@ from dagster import (
     MetadataValue,
     Output,
 )
-from dagster._annotations import preview
+from dagster._annotations import beta
 from dagster._record import record
 from dateutil import parser
 from dbt.contracts.results import NodeStatus, TestStatus
@@ -32,7 +32,7 @@ else:
 COMPLETED_AT_TIMESTAMP_METADATA_KEY = "dagster_dbt/completed_at_timestamp"
 
 
-@preview
+@beta
 @record
 class DbtCloudJobRunHandler:
     """Handles the process of a dbt Cloud job run."""
@@ -79,7 +79,7 @@ def get_completed_at_timestamp(result: Mapping[str, Any]) -> float:
     return parser.parse(result["timing"][-1]["completed_at"]).timestamp()
 
 
-@preview
+@beta
 @record
 class DbtCloudJobRunResults:
     """Represents the run results of a dbt Cloud job run."""
@@ -154,7 +154,7 @@ class DbtCloudJobRunResults:
                 translator=dagster_dbt_translator,
                 select=select,
                 exclude="",
-                selector=None,
+                selector="",
                 io_manager_key=None,
                 project=None,
             )

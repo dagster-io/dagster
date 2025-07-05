@@ -6,11 +6,8 @@ from dagster import (
     AssetKey,
     AssetOut,
     AssetsDefinition,
-    DailyPartitionsDefinition,
     GraphOut,
-    HourlyPartitionsDefinition,
     Out,
-    StaticPartitionsDefinition,
     define_asset_job,
     graph,
     graph_asset,
@@ -25,9 +22,14 @@ from dagster._core.definitions.backfill_policy import BackfillPolicy
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.external_asset import external_assets_from_specs
 from dagster._core.definitions.metadata import MetadataValue, TextMetadataValue, normalize_metadata
-from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
-from dagster._core.definitions.partition import ScheduleType
-from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
+from dagster._core.definitions.partitions.definition import (
+    DailyPartitionsDefinition,
+    HourlyPartitionsDefinition,
+    MultiPartitionsDefinition,
+    StaticPartitionsDefinition,
+    TimeWindowPartitionsDefinition,
+)
+from dagster._core.definitions.partitions.schedule_type import ScheduleType
 from dagster._core.definitions.utils import DEFAULT_GROUP_NAME
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.remote_representation.external_data import (

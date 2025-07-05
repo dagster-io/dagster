@@ -281,6 +281,7 @@ class GrapheneInstance(graphene.ObjectType):
         description="Whether or not the deployment is using automation policy sensors to materialize assets",
     )
     poolConfig = graphene.Field(GraphenePoolConfig)
+    freshnessEvaluationEnabled = graphene.NonNull(graphene.Boolean)
 
     class Meta:
         name = "Instance"
@@ -354,3 +355,11 @@ class GrapheneInstance(graphene.ObjectType):
     def resolve_poolConfig(self, _graphene_info: ResolveInfo):
         concurrency_config = self._instance.get_concurrency_config()
         return GraphenePoolConfig(concurrency_config.pool_config)
+
+    def resolve_freshnessEvaluationEnabled(self, graphene_info: ResolveInfo):
+        return (
+            # freshness daemon turned on
+            graphene_info.context.instance.freshness_enabled
+            # override
+            or graphene_info.context.instance.internal_asset_freshness_enabled()
+        )

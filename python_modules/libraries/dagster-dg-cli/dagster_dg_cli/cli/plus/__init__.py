@@ -115,21 +115,22 @@ def _get_local_secrets_for_locations(
 @dg_global_options
 @dg_path_options
 @cli_telemetry_wrapper
-def pull_env_command(path: Path, **global_options: object) -> None:
+def pull_env_command(target_path: Path, **global_options: object) -> None:
     """Pull environment variables from Dagster Plus and save to a .env file for local use."""
     cli_config = normalize_cli_config(global_options, click.get_current_context())
 
-    dg_context = DgContext.for_workspace_or_project_environment(path, cli_config)
+    dg_context = DgContext.for_workspace_or_project_environment(target_path, cli_config)
     config = _get_config_or_error()
 
     project_ctxs = []
-    if dg_context.is_workspace:
+
+    if dg_context.is_project:
+        project_ctxs = [dg_context]
+    else:
         project_ctxs = [
             dg_context.for_project_environment(project_spec.path, cli_config)
             for project_spec in dg_context.project_specs
         ]
-    else:
-        project_ctxs = [dg_context]
 
     gql_client = DagsterPlusGraphQLClient.from_config(config)
     secrets_by_location = _get_local_secrets_for_locations(
@@ -226,7 +227,7 @@ def create_env_command(
     global_: bool,
     from_local_env: bool,
     skip_confirmation_prompt: bool,
-    path: Path,
+    target_path: Path,
     **global_options: object,
 ) -> None:
     """Create or update an environment variable in Dagster Plus."""
@@ -241,8 +242,8 @@ def create_env_command(
 
     cli_config = normalize_cli_config(global_options, click.get_current_context())
 
-    dg_context = DgContext.for_workspace_or_project_environment(path, cli_config)
-    if dg_context.is_workspace:
+    dg_context = DgContext.for_workspace_or_project_environment(target_path, cli_config)
+    if not dg_context.is_project:
         global_ = True
 
     if from_local_env:

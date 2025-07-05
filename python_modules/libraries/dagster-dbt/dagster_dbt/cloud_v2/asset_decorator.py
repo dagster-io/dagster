@@ -1,30 +1,28 @@
 from typing import Any, Callable, Optional
 
 from dagster import AssetsDefinition, multi_asset
-from dagster._annotations import preview
+from dagster._annotations import beta
 from dagster._core.errors import DagsterInvariantViolationError
 
 from dagster_dbt.asset_utils import (
     DAGSTER_DBT_EXCLUDE_METADATA_KEY,
     DAGSTER_DBT_SELECT_METADATA_KEY,
     DAGSTER_DBT_SELECTOR_METADATA_KEY,
+    DBT_DEFAULT_EXCLUDE,
+    DBT_DEFAULT_SELECT,
+    DBT_DEFAULT_SELECTOR,
 )
-from dagster_dbt.cloud_v2.resources import (
-    DBT_CLOUD_DEFAULT_EXCLUDE,
-    DBT_CLOUD_DEFAULT_SELECT,
-    DBT_CLOUD_DEFAULT_SELECTOR,
-    DbtCloudWorkspace,
-)
+from dagster_dbt.cloud_v2.resources import DbtCloudWorkspace
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator
 
 
-@preview
+@beta
 def dbt_cloud_assets(
     *,
     workspace: DbtCloudWorkspace,
-    select: str = DBT_CLOUD_DEFAULT_SELECT,
-    exclude: str = DBT_CLOUD_DEFAULT_EXCLUDE,
-    selector: str = DBT_CLOUD_DEFAULT_SELECTOR,
+    select: str = DBT_DEFAULT_SELECT,
+    exclude: str = DBT_DEFAULT_EXCLUDE,
+    selector: str = DBT_DEFAULT_SELECTOR,
     name: Optional[str] = None,
     group_name: Optional[str] = None,
     dagster_dbt_translator: Optional[DagsterDbtTranslator] = None,

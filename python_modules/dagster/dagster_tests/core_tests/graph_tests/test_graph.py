@@ -9,6 +9,7 @@ from dagster import (
     ConfigMapping,
     DagsterInstance,
     DagsterTypeCheckDidNotPass,
+    Definitions,
     DynamicOut,
     DynamicOutput,
     Enum,
@@ -30,13 +31,19 @@ from dagster import (
 from dagster._check import CheckError
 from dagster._core.definitions.graph_definition import GraphDefinition
 from dagster._core.definitions.job_definition import JobDefinition
-from dagster._core.definitions.partition import PartitionedConfig, StaticPartitionsDefinition
-from dagster._core.definitions.time_window_partitions import DailyPartitionsDefinition, TimeWindow
+from dagster._core.definitions.partitions.definition import (
+    DailyPartitionsDefinition,
+    StaticPartitionsDefinition,
+)
+from dagster._core.definitions.partitions.partitioned_config import PartitionedConfig
+from dagster._core.definitions.partitions.utils import TimeWindow
 from dagster._core.errors import (
     DagsterConfigMappingFunctionError,
     DagsterInvalidConfigError,
     DagsterInvalidDefinitionError,
+    DagsterInvariantViolationError,
 )
+from dagster._core.storage.fs_io_manager import FilesystemIOManager
 from dagster._core.test_utils import instance_for_test
 from dagster._loggers import json_console_logger
 from dagster._time import parse_time_string
@@ -496,7 +503,7 @@ def test_to_job_incomplete_default_config():
             DagsterInvalidConfigError,
             match=error_msg,
         ):
-            my_graph.to_job(name="my_job", config=invalid_config)
+            my_graph.to_job(name="my_job", config=invalid_config).execute_in_process()
 
 
 class TestEnum(enum.Enum):
@@ -849,7 +856,7 @@ def test_top_level_graph_outer_config_failure():
         my_graph.to_job().execute_in_process(run_config={"ops": {"config": {"bad_type": "foo"}}})
 
     with pytest.raises(DagsterInvalidConfigError, match="Invalid scalar at path root:config"):
-        my_graph.to_job(config={"ops": {"config": {"bad_type": "foo"}}})
+        my_graph.to_job(config={"ops": {"config": {"bad_type": "foo"}}}).execute_in_process()
 
 
 def test_graph_dict_config():
@@ -865,6 +872,22 @@ def test_graph_dict_config():
     assert result.success
 
     assert result.output_value() == "foo"
+
+
+def test_graph_dict_config_resource_defs():
+    @op(out=Out(io_manager_key="dummy"))
+    def my_op(x: int) -> int:
+        return x
+
+    @graph
+    def my_graph(x: int) -> int:
+        return my_op(x)
+
+    my_job = my_graph.to_job(name="my_job", config={"inputs": {"x": 1}})
+
+    defs = Definitions(jobs=[my_job], resources={"dummy": FilesystemIOManager(base_dir=".")})
+    result = defs.resolve_job_def("my_job").execute_in_process()
+    assert result.success
 
 
 def test_graph_with_configured():
@@ -1131,6 +1154,53 @@ def test_input_values_override_default():
     result = my_graph.execute_in_process(input_values={"x": 6})
     assert result.success
     assert result.output_value() == 6
+
+
+def test_uses_default_value():
+    @op
+    def op_with_default_input(x=5):
+        return x
+
+    @graph
+    def graph_one(y):
+        return op_with_default_input(y)
+
+    result = graph_one.execute_in_process()
+    assert result.success
+    assert result.output_value() == 5
+
+    @op
+    def op_with_other_value(x=1):
+        return x
+
+    @graph(out={"a": GraphOut(), "b": GraphOut()})
+    def graph_two(y):
+        a = op_with_default_input(y)
+        b = op_with_other_value(y)
+        return {"a": a, "b": b}
+
+    result = graph_two.execute_in_process()
+    assert result.success
+    assert result.output_value("a") == 5
+    assert result.output_value("b") == 1
+
+    result = graph_two.execute_in_process(input_values={"y": 2})
+    assert result.success
+    assert result.output_value("a") == 2
+    assert result.output_value("b") == 2
+
+    @op
+    def op_without_default(x):
+        return x
+
+    @graph
+    def graph_three(y):
+        op_with_default_input(y)
+        op_without_default(y)
+
+    # but fails if not all destinations have a default
+    with pytest.raises(DagsterInvariantViolationError):
+        graph_three.execute_in_process()
 
 
 def test_unsatisfied_input_nested():

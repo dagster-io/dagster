@@ -118,7 +118,7 @@ def with_usage_metadata(
             )
 
 
-            defs = Definitions(
+            Definitions(
                 assets=[openai_asset, openai_multi_asset],
                 jobs=[openai_asset_job, openai_multi_asset_job],
                 resources={
@@ -185,7 +185,7 @@ class OpenAIResource(ConfigurableResource):
 
             openai_asset_job = define_asset_job(name="openai_asset_job", selection="openai_asset")
 
-            defs = Definitions(
+            Definitions(
                 assets=[openai_asset],
                 jobs=[openai_asset_job],
                 resources={
@@ -290,7 +290,7 @@ class OpenAIResource(ConfigurableResource):
 
                 openai_asset_job = define_asset_job(name="openai_asset_job", selection="openai_asset")
 
-                defs = Definitions(
+                Definitions(
                     assets=[openai_asset],
                     jobs=[openai_asset_job, openai_op_job],
                     resources={
@@ -364,7 +364,7 @@ class OpenAIResource(ConfigurableResource):
                     name="openai_multi_asset_job", selection="openai_multi_asset"
                 )
 
-                defs = Definitions(
+                Definitions(
                     assets=[openai_asset, openai_multi_asset],
                     jobs=[openai_asset_job, openai_multi_asset_job],
                     resources={

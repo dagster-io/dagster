@@ -2,7 +2,9 @@ import warnings
 from collections.abc import Mapping, Sequence
 from datetime import datetime
 from itertools import groupby
-from typing import TYPE_CHECKING, AbstractSet, Any, NamedTuple, Optional, Union  # noqa: UP035
+from typing import TYPE_CHECKING, AbstractSet, Any, Optional, Union  # noqa: UP035
+
+from dagster_shared.record import IHaveNew, record_custom, replace
 
 import dagster._check as check
 from dagster._annotations import deprecated, deprecated_param
@@ -14,7 +16,11 @@ from dagster._core.definitions.config import ConfigMapping
 from dagster._core.definitions.executor_definition import ExecutorDefinition
 from dagster._core.definitions.hook_definition import HookDefinition
 from dagster._core.definitions.metadata import RawMetadataValue
-from dagster._core.definitions.partition import PartitionedConfig, PartitionsDefinition
+from dagster._core.definitions.partitions.definition import (
+    DynamicPartitionsDefinition,
+    PartitionsDefinition,
+)
+from dagster._core.definitions.partitions.partitioned_config import PartitionedConfig
 from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.run_request import RunRequest
@@ -29,27 +35,20 @@ if TYPE_CHECKING:
     from dagster._core.definitions.run_config import RunConfig
 
 
-class UnresolvedAssetJobDefinition(
-    NamedTuple(
-        "_UnresolvedAssetJobDefinition",
-        [
-            ("name", str),
-            ("selection", AssetSelection),
-            (
-                "config",
-                Optional[Union[ConfigMapping, Mapping[str, Any], "PartitionedConfig"]],
-            ),
-            ("description", Optional[str]),
-            ("tags", Optional[Mapping[str, str]]),
-            ("run_tags", Optional[Mapping[str, str]]),
-            ("metadata", Optional[Mapping[str, RawMetadataValue]]),
-            ("partitions_def", Optional[PartitionsDefinition]),
-            ("executor_def", Optional[ExecutorDefinition]),
-            ("hooks", Optional[AbstractSet[HookDefinition]]),
-            ("op_retry_policy", Optional["RetryPolicy"]),
-        ],
-    )
-):
+@record_custom
+class UnresolvedAssetJobDefinition(IHaveNew):
+    name: str
+    selection: AssetSelection
+    config: Optional[Union[ConfigMapping, Mapping[str, Any], "PartitionedConfig"]]
+    description: Optional[str]
+    tags: Optional[Mapping[str, str]]
+    run_tags: Optional[Mapping[str, str]]
+    metadata: Optional[Mapping[str, Any]]
+    partitions_def: Optional[PartitionsDefinition]
+    executor_def: Optional[ExecutorDefinition]
+    hooks: Optional[AbstractSet[HookDefinition]]
+    op_retry_policy: Optional[RetryPolicy]
+
     def __new__(
         cls,
         name: str,
@@ -64,31 +63,26 @@ class UnresolvedAssetJobDefinition(
         partitions_def: Optional[PartitionsDefinition] = None,
         executor_def: Optional[ExecutorDefinition] = None,
         hooks: Optional[AbstractSet[HookDefinition]] = None,
-        op_retry_policy: Optional["RetryPolicy"] = None,
+        op_retry_policy: Optional[RetryPolicy] = None,
     ):
-        from dagster._core.definitions import ExecutorDefinition
         from dagster._core.definitions.run_config import convert_config_input
 
-        tags = check.opt_mapping_param(tags, "tags")
-        # If `run_tags` is set, then we use it, otherwise `tags` acts as both definition tags and
-        # run tags. This is for backcompat with old behavior prior to the introduction of
-        # `run_tags`.
-        run_tags = check.mapping_param(run_tags, "run_tags") if run_tags else tags
         return super().__new__(
             cls,
-            name=check.str_param(name, "name"),
-            selection=check.inst_param(selection, "selection", AssetSelection),
+            name=name,
+            selection=selection,
             config=convert_config_input(config),
-            description=check.opt_str_param(description, "description"),
+            description=description,
             tags=tags,
-            run_tags=run_tags,
-            metadata=check.opt_mapping_param(metadata, "metadata"),
-            partitions_def=check.opt_inst_param(
-                partitions_def, "partitions_def", PartitionsDefinition
-            ),
-            executor_def=check.opt_inst_param(executor_def, "executor_def", ExecutorDefinition),
-            hooks=check.opt_nullable_set_param(hooks, "hooks", of_type=HookDefinition),
-            op_retry_policy=check.opt_inst_param(op_retry_policy, "op_retry_policy", RetryPolicy),
+            # If `run_tags` is set, then we use it, otherwise `tags` acts as both definition tags and
+            # run tags. This is for backcompat with old behavior prior to the introduction of
+            # `run_tags`.
+            run_tags=run_tags if run_tags else tags,
+            metadata=metadata,
+            partitions_def=partitions_def,
+            executor_def=executor_def,
+            hooks=hooks,
+            op_retry_policy=op_retry_policy,
         )
 
     @deprecated(
@@ -128,10 +122,7 @@ class UnresolvedAssetJobDefinition(
         Returns:
             RunRequest: an object that requests a run to process the given partition.
         """
-        from dagster._core.definitions.partition import (
-            DynamicPartitionsDefinition,
-            PartitionedConfig,
-        )
+        from dagster._core.definitions.partitions.partitioned_config import PartitionedConfig
 
         if not self.partitions_def:
             check.failed("Called run_request_for_partition on a non-partitioned job")
@@ -238,6 +229,11 @@ class UnresolvedAssetJobDefinition(
             allow_different_partitions_defs=False,
         )
 
+    def with_metadata(
+        self, metadata: Mapping[str, "RawMetadataValue"]
+    ) -> "UnresolvedAssetJobDefinition":
+        return replace(self, metadata=metadata)
+
 
 @deprecated_param(
     param="partitions_def",
@@ -261,7 +257,7 @@ def define_asset_job(
 ) -> UnresolvedAssetJobDefinition:
     """Creates a definition of a job which will either materialize a selection of assets or observe
     a selection of source assets. This will only be resolved to a JobDefinition once placed in a
-    code location.
+    project.
 
     Args:
         name (str):
@@ -315,6 +311,9 @@ def define_asset_job(
             How this Job will be executed. Defaults to :py:class:`multi_or_in_process_executor`,
             which can be switched between multi-process and in-process modes of execution. The
             default mode of execution is multi-process.
+        hooks (Optional[AbstractSet[HookDefinition]]): A set of hooks to be attached to each asset in the job.
+            These hooks define logic that runs in response to events such as success or failure
+            during the execution of individual assets.
         op_retry_policy (Optional[RetryPolicy]): The default retry policy for all ops that compute assets in this job.
             Only used if retry policy is not defined on the asset definition.
         partitions_def (Optional[PartitionsDefinition]): (Deprecated)
@@ -323,17 +322,17 @@ def define_asset_job(
 
 
     Returns:
-        UnresolvedAssetJobDefinition: The job, which can be placed inside a code location.
+        UnresolvedAssetJobDefinition: The job, which can be placed inside a project.
 
     Examples:
         .. code-block:: python
 
-            # A job that targets all assets in the code location:
+            # A job that targets all assets in the project:
             @asset
             def asset1():
                 ...
 
-            defs = Definitions(
+            Definitions(
                 assets=[asset1],
                 jobs=[define_asset_job("all_assets")],
             )
@@ -343,13 +342,13 @@ def define_asset_job(
             def asset1():
                 ...
 
-            defs = Definitions(
+            Definitions(
                 assets=[asset1],
                 jobs=[define_asset_job("all_assets", selection=[asset1])],
             )
 
             # A job that targets all the assets in a group:
-            defs = Definitions(
+            Definitions(
                 assets=assets,
                 jobs=[define_asset_job("marketing_job", selection=AssetSelection.groups("marketing"))],
             )
@@ -359,7 +358,7 @@ def define_asset_job(
                 ...
 
             # A job that observes a source asset:
-            defs = Definitions(
+            Definitions(
                 assets=assets,
                 jobs=[define_asset_job("observation_job", selection=[source_asset])],
             )
@@ -369,7 +368,7 @@ def define_asset_job(
             def asset1():
                 ...
 
-            defs = Definitions(
+            Definitions(
                 assets=[asset1],
                 jobs=[define_asset_job("all_assets")],
                 resources={"slack_client": prod_slack_client},

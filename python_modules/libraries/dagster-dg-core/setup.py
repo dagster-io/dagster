@@ -29,13 +29,14 @@ setup(
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: 3.12",
+        "Programming Language :: Python :: 3.13",
         "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",
     ],
     packages=find_packages(exclude=["dagster_dg_core_tests*"]),
     install_requires=[
         "Jinja2",
-        "tomlkit",
+        "tomlkit<0.13.3",  # bug in this version
         "click>=8,<8.2",
         "click-aliases",
         "typing_extensions>=4.4.0,<5",

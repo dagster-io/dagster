@@ -1,10 +1,10 @@
 ---
 description: Automatically sync user information from your identity provider to Dagster+ and back with SCIM provisioning.
-sidebar_position: 30
+sidebar_position: 8300
 title: SCIM provisioning
 ---
 
-The [System for Cross-domain Identity Management specification](https://scim.cloud/) (SCIM) is a standard designed to manage user identity information. SCIM provisioning eases the burden of manually provisioning users across your cloud applications. When enabled in Dagster+, SCIM allows you to automatically sync user and team information from your identity provider (IdP) to Dagster+ and back again, ensuring user and team data is always up to date.
+The [System for Cross-domain Identity Management specification](https://scim.cloud) (SCIM) is a standard designed to manage user identity information. SCIM provisioning eases the burden of manually provisioning users across your cloud applications. When enabled in Dagster+, SCIM allows you to automatically sync user and team information from your identity provider (IdP) to Dagster+ and back again, ensuring user and team data is always up to date.
 
 With SCIM, you can:
 

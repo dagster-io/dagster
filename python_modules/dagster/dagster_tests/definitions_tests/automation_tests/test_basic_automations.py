@@ -46,9 +46,9 @@ def test_basic_schedule_single_asset() -> None:
     assert isinstance(defs, Definitions)
 
     assert isinstance(
-        defs.get_job_def(_make_anonymous_asset_job_name(schedule.name)), JobDefinition
+        defs.resolve_job_def(_make_anonymous_asset_job_name(schedule.name)), JobDefinition
     )
-    assert isinstance(defs.get_assets_def("my_asset"), AssetsDefinition)
+    assert isinstance(defs.resolve_assets_def("my_asset"), AssetsDefinition)
 
 
 def test_basic_schedule_multiple_assets() -> None:
@@ -67,11 +67,11 @@ def test_basic_schedule_multiple_assets() -> None:
     assert isinstance(defs, Definitions)
 
     assert isinstance(
-        defs.get_job_def(_make_anonymous_asset_job_name(schedule.name)), JobDefinition
+        defs.resolve_job_def(_make_anonymous_asset_job_name(schedule.name)), JobDefinition
     )
-    assert isinstance(defs.get_assets_def("asset_one"), AssetsDefinition)
-    assert isinstance(defs.get_assets_def("asset_two"), AssetsDefinition)
-    assert not defs.get_asset_graph().has(AssetKey.from_coercible("slkjdfklsjdfl"))
+    assert isinstance(defs.resolve_assets_def("asset_one"), AssetsDefinition)
+    assert isinstance(defs.resolve_assets_def("asset_two"), AssetsDefinition)
+    assert not defs.resolve_asset_graph().has(AssetKey.from_coercible("slkjdfklsjdfl"))
 
 
 def test_decorator_schedule() -> None:
@@ -83,7 +83,7 @@ def test_decorator_schedule() -> None:
         return {}
 
     defs = make_automations_aware_definitions(schedules=[a_schedule])
-    assert isinstance(defs.get_schedule_def("a_schedule"), ScheduleDefinition)
+    assert isinstance(defs.resolve_schedule_def("a_schedule"), ScheduleDefinition)
 
 
 def test_legacy_job() -> None:
@@ -99,7 +99,7 @@ def test_legacy_job() -> None:
 
     assert isinstance(defs, Definitions)
 
-    assert isinstance(defs.get_job_def("a_job"), JobDefinition)
+    assert isinstance(defs.resolve_job_def("a_job"), JobDefinition)
 
 
 def test_basic_sensor_definition() -> None:
@@ -116,7 +116,7 @@ def test_basic_sensor_definition() -> None:
         ]
     )
     assert isinstance(defs, Definitions)
-    assert isinstance(defs.get_sensor_def("a_sensor"), SensorDefinition)
+    assert isinstance(defs.resolve_sensor_def("a_sensor"), SensorDefinition)
 
 
 def test_sensor_decorator() -> None:
@@ -127,4 +127,4 @@ def test_sensor_decorator() -> None:
     def a_sensor() -> None: ...
 
     defs = make_automations_aware_definitions(sensors=[a_sensor])
-    assert isinstance(defs.get_sensor_def("a_sensor"), SensorDefinition)
+    assert isinstance(defs.resolve_sensor_def("a_sensor"), SensorDefinition)

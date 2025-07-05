@@ -1,6 +1,6 @@
 ---
 description: Dagster can be used to automate and streamline machine learning workflows.
-sidebar_position: 70
+sidebar_position: 80
 title: ML pipelines
 ---
 

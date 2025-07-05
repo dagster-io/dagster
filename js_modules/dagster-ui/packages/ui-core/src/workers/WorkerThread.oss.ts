@@ -7,7 +7,9 @@ export const createWorkerThread = (
   self.addEventListener('message', async (event) => {
     try {
       if (event.data[WEB_WORKER_FEATURE_FLAGS_KEY]) {
-        setFeatureFlags(event.data[WEB_WORKER_FEATURE_FLAGS_KEY]);
+        // Don't broadcast the feature flags update to the main thread.
+        // or we will end up in an infinite loop.
+        setFeatureFlags(event.data[WEB_WORKER_FEATURE_FLAGS_KEY], false);
       } else {
         await onMessage(self.postMessage, event.data);
       }

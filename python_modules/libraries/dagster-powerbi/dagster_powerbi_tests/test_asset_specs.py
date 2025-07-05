@@ -248,7 +248,7 @@ def test_refreshable_semantic_model_legacy(
 
     semantic_model_asset = next(
         asset
-        for asset in defs.get_asset_graph().assets_defs
+        for asset in defs.resolve_asset_graph().assets_defs
         if asset.is_executable and asset.key.path[0] == "semantic_model"
     )
 

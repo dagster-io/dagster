@@ -26,8 +26,8 @@ class FreshnessMinutes(NamedTuple):
     additional_warn_text="For monitoring freshness, use freshness checks instead. If using lazy "
     "auto-materialize, use AutomationCondition.cron() and AutomationCondition.any_downstream_conditions().",
 )
-@whitelist_for_serdes
-class FreshnessPolicy(
+@whitelist_for_serdes(storage_name="FreshnessPolicy")
+class LegacyFreshnessPolicy(
     NamedTuple(
         "_FreshnessPolicy",
         [
@@ -37,9 +37,9 @@ class FreshnessPolicy(
         ],
     )
 ):
-    """A FreshnessPolicy specifies how up-to-date you want a given asset to be.
+    """A LegacyFreshnessPolicy specifies how up-to-date you want a given asset to be.
 
-    Attaching a FreshnessPolicy to an asset definition encodes an expectation on the upstream data
+    Attaching a LegacyFreshnessPolicy to an asset definition encodes an expectation on the upstream data
     that you expect to be incorporated into the current state of that asset at certain points in time.
     How this is calculated differs depending on if the asset is unpartitioned or time-partitioned
     (other partitioning schemes are not supported).
@@ -51,7 +51,7 @@ class FreshnessPolicy(
 
     For unpartitioned assets, the current data time is based on the upstream materialization records
     that were read to generate the current state of the asset. More specifically,
-    imagine you have two assets, where A depends on B. If `B` has a FreshnessPolicy defined, this
+    imagine you have two assets, where A depends on B. If `B` has a LegacyFreshnessPolicy defined, this
     means that at time T, the most recent materialization of `B` should have come after a
     materialization of `A` which was no more than `maximum_lag_minutes` ago. This calculation is
     recursive: any given asset is expected to incorporate up-to-date data from all of its upstream
@@ -71,7 +71,7 @@ class FreshnessPolicy(
 
     The freshness status of assets with policies defined will be visible in the UI. If you are using
     an asset reconciliation sensor, this sensor will kick off runs to help keep your assets up to
-    date with respect to their FreshnessPolicy.
+    date with respect to their LegacyFreshnessPolicy.
 
     Args:
         maximum_lag_minutes (float): An upper bound for how old the data contained within this
@@ -87,12 +87,12 @@ class FreshnessPolicy(
     .. code-block:: python
 
         # At any point in time, this asset must incorporate all upstream data from at least 30 minutes ago.
-        @asset(freshness_policy=FreshnessPolicy(maximum_lag_minutes=30))
+        @asset(legacy_freshness_policy=LegacyFreshnessPolicy(maximum_lag_minutes=30))
         def fresh_asset():
             ...
 
         # At any point in time, this asset must incorporate all upstream data from at least 30 minutes ago.
-        @asset(freshness_policy=FreshnessPolicy(maximum_lag_minutes=30))
+        @asset(legacy_freshness_policy=LegacyFreshnessPolicy(maximum_lag_minutes=30))
         def cron_up_to_date_asset():
             ...
 

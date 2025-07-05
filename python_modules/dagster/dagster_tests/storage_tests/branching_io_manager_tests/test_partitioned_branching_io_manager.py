@@ -9,12 +9,12 @@ from dagster import (
     DagsterInstance,
     Definitions,
     In,
-    StaticPartitionMapping,
-    StaticPartitionsDefinition,
     asset,
     job,
     op,
 )
+from dagster._core.definitions.partitions.definition import StaticPartitionsDefinition
+from dagster._core.definitions.partitions.mapping import StaticPartitionMapping
 from dagster._core.execution.context.compute import OpExecutionContext
 from dagster._core.storage.branching.branching_io_manager import BranchingIOManager
 
@@ -451,7 +451,7 @@ def test_job_op_usecase_partitioned() -> Any:
     ) as runner:
         result = (
             cast("DefinitionsRunner", runner)
-            .defs.get_job_def("my_math_job")
+            .defs.resolve_job_def("my_math_job")
             .execute_in_process(instance=runner.instance, partition_key="A")
         )
         assert result.success
@@ -459,7 +459,7 @@ def test_job_op_usecase_partitioned() -> Any:
 
         result = (
             cast("DefinitionsRunner", runner)
-            .defs.get_job_def("my_math_job")
+            .defs.resolve_job_def("my_math_job")
             .execute_in_process(instance=runner.instance, partition_key="B")
         )
         assert result.success

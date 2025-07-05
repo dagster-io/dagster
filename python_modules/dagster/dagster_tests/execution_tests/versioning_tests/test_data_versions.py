@@ -33,10 +33,14 @@ from dagster._core.definitions.data_version import (
 from dagster._core.definitions.decorators.asset_decorator import multi_asset
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey, Output
 from dagster._core.definitions.observe import observe
-from dagster._core.definitions.partition import StaticPartitionsDefinition
-from dagster._core.definitions.partition_mapping import AllPartitionMapping
-from dagster._core.definitions.time_window_partition_mapping import TimeWindowPartitionMapping
-from dagster._core.definitions.time_window_partitions import DailyPartitionsDefinition
+from dagster._core.definitions.partitions.definition import (
+    DailyPartitionsDefinition,
+    StaticPartitionsDefinition,
+)
+from dagster._core.definitions.partitions.mapping import (
+    AllPartitionMapping,
+    TimeWindowPartitionMapping,
+)
 from dagster._core.events import DagsterEventType
 from dagster._core.execution.context.compute import AssetExecutionContext
 from dagster._core.instance_for_test import instance_for_test

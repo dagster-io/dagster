@@ -612,7 +612,7 @@ def test_bare_resource_on_with_resources():
 
     bound_assets = with_resources([blah], {"bare_resource": BareObjectResource()})
     defs = Definitions(assets=bound_assets)
-    defs.get_implicit_global_asset_job_def().execute_in_process()
+    defs.resolve_implicit_global_asset_job_def().execute_in_process()
     assert executed["yes"]
 
 
@@ -635,7 +635,7 @@ def create_asset_job():
 
     return Definitions(
         assets=[my_derived_asset], jobs=[define_asset_job("the_job", [my_derived_asset])]
-    ).get_job_def("the_job")
+    ).resolve_job_def("the_job")
 
 
 def test_source_asset_default_io_manager(instance):

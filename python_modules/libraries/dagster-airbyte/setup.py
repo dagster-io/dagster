@@ -29,12 +29,13 @@ setup(
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: 3.12",
+        "Programming Language :: Python :: 3.13",
         "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",
     ],
     packages=find_packages(exclude=["dagster_airbyte_tests*"]),
     include_package_data=True,
-    python_requires=">=3.9,<3.13",
+    python_requires=">=3.9,<=3.13.3",
     install_requires=[
         f"dagster{pin}",
         "requests",
@@ -43,7 +44,10 @@ setup(
     entry_points={
         "console_scripts": [
             "dagster-airbyte = dagster_airbyte.cli:main",
-        ]
+        ],
+        "dagster_dg_cli.plugin": [
+            "dagster_airbyte = dagster_airbyte",
+        ],
     },
     extras_require={
         "test": [

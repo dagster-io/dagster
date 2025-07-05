@@ -2,11 +2,12 @@ import json
 from collections import defaultdict
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
+from enum import Enum
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional
 
 import click
-from dagster_dg_core.component import RemotePluginRegistry
+from dagster_dg_core.component import EnvRegistry
 from dagster_dg_core.config import normalize_cli_config
 from dagster_dg_core.context import DgContext
 from dagster_dg_core.env import ProjectEnvVars, get_project_specified_env_vars
@@ -20,19 +21,17 @@ from dagster_dg_core.utils import (
 from dagster_dg_core.utils.telemetry import cli_telemetry_wrapper
 from dagster_shared.plus.config import DagsterPlusCliConfig
 from dagster_shared.record import as_dict
-from dagster_shared.serdes import deserialize_value
-from dagster_shared.serdes.errors import DeserializationError
 from dagster_shared.serdes.objects.definition_metadata import (
     DgAssetCheckMetadata,
     DgAssetMetadata,
-    DgDefinitionMetadata,
     DgJobMetadata,
     DgResourceMetadata,
     DgScheduleMetadata,
     DgSensorMetadata,
 )
-from packaging.version import Version
+from dagster_shared.utils.warnings import disable_dagster_warnings
 from rich.console import Console
+from rich.text import Text
 
 from dagster_dg_cli.utils.plus import gql
 from dagster_dg_cli.utils.plus.gql_client import DagsterPlusGraphQLClient
@@ -79,10 +78,10 @@ def DagsterOuterTable(columns: Sequence[str]) -> "Table":
 @dg_global_options
 @dg_path_options
 @cli_telemetry_wrapper
-def list_project_command(path: Path, **global_options: object) -> None:
+def list_project_command(target_path: Path, **global_options: object) -> None:
     """List projects in the current workspace."""
     cli_config = normalize_cli_config(global_options, click.get_current_context())
-    dg_context = DgContext.for_workspace_environment(path, cli_config)
+    dg_context = DgContext.for_workspace_environment(target_path, cli_config)
 
     for project in dg_context.project_specs:
         click.echo(project.path)
@@ -110,12 +109,12 @@ def list_project_command(path: Path, **global_options: object) -> None:
 @dg_global_options
 @cli_telemetry_wrapper
 def list_components_command(
-    path: Path, package: Optional[str], output_json: bool, **global_options: object
+    target_path: Path, package: Optional[str], output_json: bool, **global_options: object
 ) -> None:
     """List all available Dagster component types in the current Python environment."""
     cli_config = normalize_cli_config(global_options, click.get_current_context())
-    dg_context = DgContext.for_defined_registry_environment(path, cli_config)
-    registry = RemotePluginRegistry.from_dg_context(dg_context)
+    dg_context = DgContext.for_defined_registry_environment(target_path, cli_config)
+    registry = EnvRegistry.from_dg_context(dg_context)
 
     # Get all components (objects that have the 'component' feature)
     component_objects = sorted(
@@ -150,7 +149,7 @@ def list_components_command(
 FEATURE_COLOR_MAP = {"component": "deep_sky_blue3", "scaffold-target": "khaki1"}
 
 
-@list_group.command(name="plugin-modules", aliases=["plugin-module"], cls=DgClickCommand)
+@list_group.command(name="registry-modules", aliases=["registry-module"], cls=DgClickCommand)
 @click.option(
     "--json",
     "output_json",
@@ -161,17 +160,17 @@ FEATURE_COLOR_MAP = {"component": "deep_sky_blue3", "scaffold-target": "khaki1"}
 @dg_path_options
 @dg_global_options
 @cli_telemetry_wrapper
-def list_plugin_modules_command(
+def list_registry_modules_command(
     output_json: bool,
-    path: Path,
+    target_path: Path,
     **global_options: object,
 ) -> None:
     """List dg plugins and their corresponding objects in the current Python environment."""
     from rich.console import Console
 
     cli_config = normalize_cli_config(global_options, click.get_current_context())
-    dg_context = DgContext.for_defined_registry_environment(path, cli_config)
-    registry = RemotePluginRegistry.from_dg_context(dg_context)
+    dg_context = DgContext.for_defined_registry_environment(target_path, cli_config)
+    registry = EnvRegistry.from_dg_context(dg_context)
 
     if output_json:
         json_output = [{"module": module} for module in sorted(registry.modules)]
@@ -188,96 +187,177 @@ def list_plugin_modules_command(
 # ########################
 
 
-def _get_assets_table(assets: Sequence[DgAssetMetadata]) -> "Table":
-    from rich.text import Text
-
-    table = DagsterInnerTable(["Key", "Group", "Deps", "Kinds", "Description"])
-    table.columns[-1].max_width = 100
-
-    for asset in sorted(assets, key=lambda x: x.key):
-        description = Text(asset.description or "")
-        description.truncate(max_width=100, overflow="ellipsis")
-        table.add_row(
-            asset.key,
-            asset.group,
-            "\n".join(asset.deps),
-            "\n".join(asset.kinds),
-            description,
-        )
-    return table
-
-
-def _get_asset_checks_table(asset_checks: Sequence[DgAssetCheckMetadata]) -> "Table":
-    from rich.text import Text
-
-    table = DagsterInnerTable(["Key", "Additional Deps", "Description"])
-    table.columns[-1].max_width = 100
-
-    for asset_check in sorted(asset_checks, key=lambda x: x.key):
-        description = Text(asset_check.description or "")
-        description.truncate(max_width=100, overflow="ellipsis")
-        table.add_row(
-            asset_check.key,
-            "\n".join(asset_check.additional_deps),
-            description,
-        )
-    return table
-
-
-def _get_jobs_table(jobs: Sequence[DgJobMetadata]) -> "Table":
-    table = DagsterInnerTable(["Name"])
-
-    for job in sorted(jobs, key=lambda x: x.name):
-        table.add_row(job.name)
-    return table
-
-
-def _get_resources_table(resources: Sequence[DgResourceMetadata]) -> "Table":
-    table = DagsterInnerTable(["Name", "Type"])
-
-    for resource in sorted(resources, key=lambda x: x.name):
-        table.add_row(resource.name, resource.type)
-    return table
-
-
-def _get_schedules_table(schedules: Sequence[DgScheduleMetadata]) -> "Table":
-    table = DagsterInnerTable(["Name", "Cron schedule"])
-
-    for schedule in sorted(schedules, key=lambda x: x.name):
-        table.add_row(schedule.name, schedule.cron_schedule)
-    return table
-
-
-def _get_sensors_table(sensors: Sequence[DgSensorMetadata]) -> "Table":
-    table = DagsterInnerTable(["Name"])
-
-    for sensor in sorted(sensors, key=lambda x: x.name):
-        table.add_row(sensor.name)
-    return table
-
-
-# On older versions of `dagster`, `dagster-components list defs` output was written directly to
-# stdout, where it was possibly polluted by other output from user code. This scans raw stdout for
-# the line containing the output.
-def _extract_list_defs_output_from_raw_output(raw_output: str) -> list[Any]:
-    last_decode_error = None
-    for line in raw_output.splitlines():
+def _defs_column_from_str(column: str) -> "DefsColumn":
+    if column == "name":
+        return DefsColumn.KEY
+    try:
+        return DefsColumn(column.lower())
+    except ValueError as e:
         try:
-            defs_list = deserialize_value(line, as_type=list[DgDefinitionMetadata])
-            return defs_list
-        except (json.JSONDecodeError, DeserializationError) as e:
-            last_decode_error = e
+            # Attempt to pluralize singular inputs
+            return DefsColumn(column.lower() + "s")
+        except ValueError:
+            raise e
 
-    if last_decode_error:
-        raise last_decode_error
 
-    raise Exception(
-        "Did not successfully parse definitions list. Full stdout of subprocess:\n" + raw_output
+class DefsColumn(str, Enum):
+    KEY = "key"
+    GROUP = "group"
+    DEPS = "deps"
+    KINDS = "kinds"
+    DESCRIPTION = "description"
+    TAGS = "tags"
+    METADATA = "metadata"
+    CRON = "cron"
+    IS_EXECUTABLE = "is_executable"
+
+
+# columns that are potentially truncated
+_TRUNCATED_COLUMN_WIDTHS = {
+    DefsColumn.DESCRIPTION: 100,
+}
+
+
+class DefsType(str, Enum):
+    ASSET = "asset"
+    ASSET_CHECK = "asset_check"
+    JOB = "job"
+    RESOURCE = "resource"
+    SCHEDULE = "schedule"
+    SENSOR = "sensor"
+
+
+DEFAULT_COLUMNS = [
+    DefsColumn.KEY,
+    DefsColumn.GROUP,
+    DefsColumn.DEPS,
+    DefsColumn.KINDS,
+    DefsColumn.DESCRIPTION,
+    DefsColumn.CRON,
+]
+
+
+def _supports_column(column: DefsColumn, defs_type: DefsType) -> bool:
+    if column == DefsColumn.KEY:
+        return True
+    elif column == DefsColumn.GROUP:
+        return defs_type in (DefsType.ASSET,)
+    elif column == DefsColumn.DEPS:
+        return defs_type in (DefsType.ASSET, DefsType.ASSET_CHECK)
+    elif column == DefsColumn.KINDS:
+        return defs_type in (DefsType.ASSET,)
+    elif column == DefsColumn.DESCRIPTION:
+        return defs_type in (DefsType.ASSET, DefsType.ASSET_CHECK, DefsType.JOB)
+    elif column == DefsColumn.TAGS:
+        return defs_type in (DefsType.ASSET,)
+    elif column == DefsColumn.METADATA:
+        return defs_type in (DefsType.ASSET,)
+    elif column == DefsColumn.CRON:
+        return defs_type in (DefsType.SCHEDULE,)
+    elif column == DefsColumn.IS_EXECUTABLE:
+        return defs_type in (DefsType.ASSET,)
+    else:
+        raise ValueError(f"Invalid column: {column}")
+
+
+def _get_asset_value(column: DefsColumn, asset: DgAssetMetadata) -> Optional[str]:
+    if column == DefsColumn.KEY:
+        return asset.key
+    elif column == DefsColumn.GROUP:
+        return asset.group
+    elif column == DefsColumn.DEPS:
+        return "\n".join(asset.deps)
+    elif column == DefsColumn.KINDS:
+        return "\n".join(asset.kinds)
+    elif column == DefsColumn.DESCRIPTION:
+        return asset.description
+    elif column == DefsColumn.TAGS:
+        return "\n".join(k if not v else f"{k}: {v}" for k, v in asset.tags)
+    elif column == DefsColumn.METADATA:
+        return "\n".join(k if not v else f"{k}: {v}" for k, v in asset.metadata)
+    elif column == DefsColumn.IS_EXECUTABLE:
+        return str(asset.is_executable)
+    else:
+        raise ValueError(f"Invalid column: {column}")
+
+
+def _get_asset_check_value(column: DefsColumn, asset_check: DgAssetCheckMetadata) -> Optional[str]:
+    if column == DefsColumn.KEY:
+        return asset_check.key
+    elif column == DefsColumn.DEPS:
+        return "\n".join(asset_check.additional_deps)
+    elif column == DefsColumn.DESCRIPTION:
+        return asset_check.description
+    else:
+        raise ValueError(f"Invalid column: {column}")
+
+
+def _get_job_value(column: DefsColumn, job: DgJobMetadata) -> Optional[str]:
+    if column == DefsColumn.KEY:
+        return job.name
+    elif column == DefsColumn.DESCRIPTION:
+        return job.description
+    else:
+        raise ValueError(f"Invalid column: {column}")
+
+
+def _get_resource_value(column: DefsColumn, resource: DgResourceMetadata) -> Optional[str]:
+    if column == DefsColumn.KEY:
+        return resource.name
+    else:
+        raise ValueError(f"Invalid column: {column}")
+
+
+def _get_schedule_value(column: DefsColumn, schedule: DgScheduleMetadata) -> Optional[str]:
+    if column == DefsColumn.KEY:
+        return schedule.name
+    elif column == DefsColumn.CRON:
+        return schedule.cron_schedule
+    else:
+        raise ValueError(f"Invalid column: {column}")
+
+
+def _get_sensor_value(column: DefsColumn, sensor: DgSensorMetadata) -> Optional[str]:
+    if column == DefsColumn.KEY:
+        return sensor.name
+    else:
+        raise ValueError(f"Invalid column: {column}")
+
+
+GET_VALUE_BY_DEFS_TYPE = {
+    DefsType.ASSET: _get_asset_value,
+    DefsType.ASSET_CHECK: _get_asset_check_value,
+    DefsType.JOB: _get_job_value,
+    DefsType.RESOURCE: _get_resource_value,
+    DefsType.SCHEDULE: _get_schedule_value,
+    DefsType.SENSOR: _get_sensor_value,
+}
+
+
+def _get_value(column: DefsColumn, defs_type: DefsType, defn: Any) -> Optional[Text]:
+    raw_value = GET_VALUE_BY_DEFS_TYPE[defs_type](column, defn)
+    value = Text(raw_value) if raw_value else None
+    if value and column in _TRUNCATED_COLUMN_WIDTHS:
+        value.truncate(max_width=_TRUNCATED_COLUMN_WIDTHS[column], overflow="ellipsis")
+    return value
+
+
+def _get_table(columns: Sequence[DefsColumn], defs_type: DefsType, defs: Sequence[Any]) -> "Table":
+    columns_to_display = [column for column in columns if _supports_column(column, defs_type)]
+    table = DagsterInnerTable(
+        [column.value.replace("_", " ").capitalize() for column in columns_to_display]
     )
+    table.columns[-1].max_width = 100
 
+    for column_type, table_column in zip(columns_to_display, table.columns):
+        if column_type in _TRUNCATED_COLUMN_WIDTHS:
+            table_column.max_width = _TRUNCATED_COLUMN_WIDTHS[column_type]
 
-MIN_DAGSTER_COMPONENTS_LIST_DEFINITIONS_LOCATION_OPTION_VERSION = Version("1.10.8")
-MIN_DAGSTER_COMPONENTS_LIST_DEFINITIONS_OUTPUT_FILE_OPTION_VERSION = Version("1.10.12")
+    for defn in sorted(defs, key=lambda x: str(_get_value(DefsColumn.KEY, defs_type, x))):
+        table.add_row(
+            *(_get_value(column, defs_type, defn) for column in columns_to_display),
+        )
+    return table
 
 
 @list_group.command(name="defs", aliases=["def"], cls=DgClickCommand)
@@ -288,36 +368,77 @@ MIN_DAGSTER_COMPONENTS_LIST_DEFINITIONS_OUTPUT_FILE_OPTION_VERSION = Version("1.
     default=False,
     help="Output as JSON instead of a table.",
 )
-@dg_path_options
+@click.option(
+    "--path",
+    "-p",
+    type=click.Path(
+        resolve_path=True,
+        path_type=Path,
+    ),
+    help="Path to the definitions to list.",
+)
+@click.option(
+    "--assets",
+    "-a",
+    help="Asset selection to list.",
+)
+@click.option(
+    "--columns",
+    "-c",
+    multiple=True,
+    help="Columns to display. Either a comma-separated list of column names, or multiple "
+    "invocations of the flag. Available columns: "
+    + ", ".join(column.value for column in DefsColumn),
+)
 @dg_global_options
+@dg_path_options
 @cli_telemetry_wrapper
-def list_defs_command(output_json: bool, path: Path, **global_options: object) -> None:
+def list_defs_command(
+    output_json: bool,
+    target_path: Path,
+    path: Optional[Path],
+    assets: Optional[str],
+    columns: Optional[Sequence[str]],
+    **global_options: object,
+) -> None:
     """List registered Dagster definitions in the current project environment."""
     from rich.console import Console
     from rich.table import Table
 
     cli_config = normalize_cli_config(global_options, click.get_current_context())
-    dg_context = DgContext.for_project_environment(path, cli_config)
+    dg_context = DgContext.for_project_environment(target_path, cli_config)
 
     validate_dagster_availability()
 
-    from dagster.components.cli.list import list_definitions_impl
+    from dagster.components.list import list_definitions
+
+    if columns:
+        if len(columns) == 1 and "," in columns[0]:
+            columns = columns[0].split(",")
+        defs_columns = [_defs_column_from_str(column.lower()) for column in columns]
+        if DefsColumn.KEY not in defs_columns:
+            defs_columns = [DefsColumn.KEY] + defs_columns
+    else:
+        defs_columns = DEFAULT_COLUMNS
 
     # capture stdout during the definitions load so it doesn't pollute the structured output
-    with capture_stdout():
-        definitions = list_definitions_impl(
-            location=dg_context.code_location_name,
-            module_name=dg_context.code_location_target_module_name,
+    with capture_stdout(), disable_dagster_warnings():
+        definitions = list_definitions(
+            dg_context=dg_context,
+            path=path,
+            asset_selection=assets,
         )
 
     # JSON
     if output_json:  # pass it straight through
+        if columns:
+            raise click.UsageError("Cannot use --columns with --json")
         json_output = [as_dict(defn) for defn in definitions]
         click.echo(json.dumps(json_output, indent=4))
 
     # TABLE
     else:
-        assets = [item for item in definitions if isinstance(item, DgAssetMetadata)]
+        _assets = [item for item in definitions if isinstance(item, DgAssetMetadata)]
         asset_checks = [item for item in definitions if isinstance(item, DgAssetCheckMetadata)]
         jobs = [item for item in definitions if isinstance(item, DgJobMetadata)]
         resources = [item for item in definitions if isinstance(item, DgResourceMetadata)]
@@ -334,18 +455,20 @@ def list_defs_command(output_json: bool, path: Path, **global_options: object) -
         table.add_column("Section", style="bold")
         table.add_column("Definitions")
 
-        if assets:
-            table.add_row("Assets", _get_assets_table(assets))
+        if _assets:
+            table.add_row("Assets", _get_table(defs_columns, DefsType.ASSET, _assets))
         if asset_checks:
-            table.add_row("Asset Checks", _get_asset_checks_table(asset_checks))
+            table.add_row(
+                "Asset Checks", _get_table(defs_columns, DefsType.ASSET_CHECK, asset_checks)
+            )
         if jobs:
-            table.add_row("Jobs", _get_jobs_table(jobs))
+            table.add_row("Jobs", _get_table(defs_columns, DefsType.JOB, jobs))
         if schedules:
-            table.add_row("Schedules", _get_schedules_table(schedules))
+            table.add_row("Schedules", _get_table(defs_columns, DefsType.SCHEDULE, schedules))
         if sensors:
-            table.add_row("Sensors", _get_sensors_table(sensors))
+            table.add_row("Sensors", _get_table(defs_columns, DefsType.SENSOR, sensors))
         if resources:
-            table.add_row("Resources", _get_resources_table(resources))
+            table.add_row("Resources", _get_table(defs_columns, DefsType.RESOURCE, resources))
 
         console.print(table)
 
@@ -403,12 +526,12 @@ def _get_dagster_plus_keys(
 @dg_path_options
 @dg_global_options
 @cli_telemetry_wrapper
-def list_env_command(path: Path, **global_options: object) -> None:
+def list_env_command(target_path: Path, **global_options: object) -> None:
     """List environment variables from the .env file of the current project."""
     from rich.console import Console
 
     cli_config = normalize_cli_config(global_options, click.get_current_context())
-    dg_context = DgContext.for_project_environment(path, cli_config)
+    dg_context = DgContext.for_project_environment(target_path, cli_config)
 
     env = ProjectEnvVars.from_ctx(dg_context)
     used_env_vars = get_project_specified_env_vars(dg_context)

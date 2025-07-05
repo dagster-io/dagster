@@ -6,6 +6,8 @@ from typing import Any, Optional, cast
 import click
 import yaml
 from dagster_shared import check
+from dagster_shared.serdes.objects import EnvRegistryKey
+from dagster_shared.seven import load_module_object
 from pydantic import BaseModel, TypeAdapter
 
 from dagster.components.scaffold.scaffold import (
@@ -65,7 +67,6 @@ def scaffold_component(
 
 def scaffold_object(
     path: Path,
-    obj: object,
     typename: str,
     json_params: Optional[str],
     scaffold_format: str,
@@ -73,9 +74,8 @@ def scaffold_object(
 ) -> None:
     from dagster.components.component.component import Component
 
-    click.echo(f"Creating a component at {path}.")
-    if not path.exists():
-        path.mkdir(parents=True)
+    key = EnvRegistryKey.from_typename(typename)
+    obj = load_module_object(key.namespace, key.name)
 
     scaffolder = get_scaffolder(obj)
 
@@ -90,6 +90,10 @@ def scaffold_object(
     )
 
     params_model = parse_params_model(obj=obj, json_params=json_params)
+
+    click.echo(f"Creating defs at {path}.")
+    if not path.exists():
+        path.mkdir(parents=True)
 
     scaffolder.scaffold(
         ScaffoldRequest(

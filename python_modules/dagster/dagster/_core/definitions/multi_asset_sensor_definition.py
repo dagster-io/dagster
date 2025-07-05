@@ -9,7 +9,8 @@ from dagster._annotations import deprecated_param, public, superseded
 from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.events import AssetKey
-from dagster._core.definitions.partition import PartitionsDefinition
+from dagster._core.definitions.metadata import RawMetadataMapping
+from dagster._core.definitions.partitions.definition import PartitionsDefinition
 from dagster._core.definitions.resource_annotation import get_resource_args
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.run_request import RunRequest, SensorResult, SkipReason
@@ -802,7 +803,7 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
     def assets_defs_by_key(self) -> Mapping[AssetKey, Optional[AssetsDefinition]]:
         """Mapping[AssetKey, Optional[AssetsDefinition]]: A mapping from AssetKey to the
         AssetsDefinition object which produces it. If a given asset is monitored by this sensor, but
-        is not produced within the same code location as this sensor, then the value will be None.
+        is not produced within the same project as this sensor, then the value will be None.
         """
         return self._assets_by_key
 
@@ -1150,7 +1151,7 @@ class MultiAssetSensorDefinition(SensorDefinition):
         request_assets: Optional[AssetSelection] = None,
         required_resource_keys: Optional[set[str]] = None,
         tags: Optional[Mapping[str, str]] = None,
-        metadata: Optional[Mapping[str, object]] = None,
+        metadata: Optional[RawMetadataMapping] = None,
     ):
         resource_arg_names: set[str] = {
             arg.name for arg in get_resource_args(asset_materialization_fn)

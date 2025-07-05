@@ -1,7 +1,7 @@
 ---
 description: Customizing the Dagster+ Serverless runtime environment.
 sidebar_label: Runtime environment
-sidebar_position: 100
+sidebar_position: 1000
 title: Serverless runtime environment
 ---
 
@@ -16,7 +16,7 @@ By default, Dagster+ Serverless will package your code as PEX files and deploy t
 
 ## Add dependencies
 
-You can add dependencies by including the corresponding Python libraries in your Dagster project's `setup.py` file. These should follow [PEP 508](https://peps.python.org/pep-0508/).
+You can add dependencies by including the corresponding Python libraries in your Dagster project's `setup.py` file. These should follow [PEP 508](https://peps.python.org/pep-0508).
 
 <CodeExample
   path="docs_snippets/docs_snippets/dagster-plus/deployment/serverless/runtime-environment/example_setup.py"
@@ -48,7 +48,7 @@ To add a package from a private GitHub repository, see [Use private Python packa
 
 ## Use a different Python version
 
-Python versions 3.9 through 3.12 are all supported for Serverless deployments. You can specify the Python version you want to use in your GitHub or GitLab workflow, or by using the `dagster-cloud` CLI.
+Python versions 3.9 through 3.13 are all supported for Serverless deployments. You can specify the Python version you want to use in your GitHub or GitLab workflow, or by using the `dagster-cloud` CLI.
 
 <Tabs groupId="method">
 <TabItem value="GitHub" label="GitHub">

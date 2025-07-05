@@ -18,7 +18,7 @@ from dagster import (
     DagsterInvalidDefinitionError,
     DagsterInvariantViolationError,
     DefaultScheduleStatus,
-    FreshnessPolicy,
+    LegacyFreshnessPolicy,
     OpExecutionContext,
     RunConfig,
     ScheduleDefinition,
@@ -47,6 +47,10 @@ DAGSTER_DBT_SELECT_METADATA_KEY = "dagster_dbt/select"
 DAGSTER_DBT_EXCLUDE_METADATA_KEY = "dagster_dbt/exclude"
 DAGSTER_DBT_SELECTOR_METADATA_KEY = "dagster_dbt/selector"
 DAGSTER_DBT_UNIQUE_ID_METADATA_KEY = "dagster_dbt/unique_id"
+
+DBT_DEFAULT_SELECT = "fqn:*"
+DBT_DEFAULT_EXCLUDE = ""
+DBT_DEFAULT_SELECTOR = ""
 
 DBT_INDIRECT_SELECTION_ENV: Final[str] = "DBT_INDIRECT_SELECTION"
 DBT_EMPTY_INDIRECT_SELECTION: Final[str] = "empty"
@@ -205,9 +209,9 @@ def get_asset_key_for_source(dbt_assets: Sequence[AssetsDefinition], source_name
 
 def build_dbt_asset_selection(
     dbt_assets: Sequence[AssetsDefinition],
-    dbt_select: str = "fqn:*",
-    dbt_exclude: Optional[str] = None,
-    dbt_selector: Optional[str] = None,
+    dbt_select: str = DBT_DEFAULT_SELECT,
+    dbt_exclude: Optional[str] = DBT_DEFAULT_EXCLUDE,
+    dbt_selector: Optional[str] = DBT_DEFAULT_SELECTOR,
 ) -> AssetSelection:
     """Build an asset selection for a dbt selection string.
 
@@ -265,8 +269,12 @@ def build_dbt_asset_selection(
     [dbt_assets_definition] = dbt_assets
 
     dbt_assets_select = dbt_assets_definition.op.tags[DAGSTER_DBT_SELECT_METADATA_KEY]
-    dbt_assets_exclude = dbt_assets_definition.op.tags.get(DAGSTER_DBT_EXCLUDE_METADATA_KEY)
-    dbt_assets_selector = dbt_assets_definition.op.tags.get(DAGSTER_DBT_SELECTOR_METADATA_KEY)
+    dbt_assets_exclude = dbt_assets_definition.op.tags.get(
+        DAGSTER_DBT_EXCLUDE_METADATA_KEY, DBT_DEFAULT_EXCLUDE
+    )
+    dbt_assets_selector = dbt_assets_definition.op.tags.get(
+        DAGSTER_DBT_SELECTOR_METADATA_KEY, DBT_DEFAULT_SELECTOR
+    )
 
     from dagster_dbt.dbt_manifest_asset_selection import DbtManifestAssetSelection
 
@@ -280,8 +288,8 @@ def build_dbt_asset_selection(
         manifest=manifest,
         dagster_dbt_translator=dagster_dbt_translator,
         select=dbt_select,
-        exclude=dbt_exclude,
-        selector=dbt_selector,
+        exclude=dbt_exclude or DBT_DEFAULT_EXCLUDE,
+        selector=dbt_selector or DBT_DEFAULT_SELECTOR,
     )
 
 
@@ -289,8 +297,9 @@ def build_schedule_from_dbt_selection(
     dbt_assets: Sequence[AssetsDefinition],
     job_name: str,
     cron_schedule: str,
-    dbt_select: str = "fqn:*",
-    dbt_exclude: Optional[str] = None,
+    dbt_select: str = DBT_DEFAULT_SELECT,
+    dbt_exclude: Optional[str] = DBT_DEFAULT_EXCLUDE,
+    dbt_selector: str = DBT_DEFAULT_SELECTOR,
     schedule_name: Optional[str] = None,
     tags: Optional[Mapping[str, str]] = None,
     config: Optional[RunConfig] = None,
@@ -307,6 +316,7 @@ def build_schedule_from_dbt_selection(
         cron_schedule (str): The cron schedule to define the schedule.
         dbt_select (str): A dbt selection string to specify a set of dbt resources.
         dbt_exclude (Optional[str]): A dbt selection string to exclude a set of dbt resources.
+        dbt_selector (str): A dbt selector to select resources to materialize.
         schedule_name (Optional[str]): The name of the dbt schedule to create.
         tags (Optional[Mapping[str, str]]): A dictionary of tags (string key-value pairs) to attach
             to the scheduled runs.
@@ -342,7 +352,8 @@ def build_schedule_from_dbt_selection(
             selection=build_dbt_asset_selection(
                 dbt_assets,
                 dbt_select=dbt_select,
-                dbt_exclude=dbt_exclude,
+                dbt_exclude=dbt_exclude or DBT_DEFAULT_EXCLUDE,
+                dbt_selector=dbt_selector,
             ),
             config=config,
             tags=tags,
@@ -576,12 +587,14 @@ def default_owners_from_dbt_resource_props(
     return [owner]
 
 
-def default_freshness_policy_fn(dbt_resource_props: Mapping[str, Any]) -> Optional[FreshnessPolicy]:
+def default_freshness_policy_fn(
+    dbt_resource_props: Mapping[str, Any],
+) -> Optional[LegacyFreshnessPolicy]:
     dagster_metadata = dbt_resource_props.get("meta", {}).get("dagster", {})
     freshness_policy_config = dagster_metadata.get("freshness_policy", {})
 
     freshness_policy = (
-        FreshnessPolicy(
+        LegacyFreshnessPolicy(
             maximum_lag_minutes=float(freshness_policy_config["maximum_lag_minutes"]),
             cron_schedule=freshness_policy_config.get("cron_schedule"),
             cron_schedule_timezone=freshness_policy_config.get("cron_schedule_timezone"),
@@ -647,12 +660,17 @@ def default_asset_check_fn(
         for parent_id in parent_unique_ids
     }
     additional_deps.discard(asset_key)
+
+    severity = test_resource_props.get("config", {}).get("severity", "error")
+    blocking = severity.lower() == "error"
+
     return AssetCheckSpec(
         name=test_resource_props["name"],
         asset=asset_key,
         description=test_resource_props.get("meta", {}).get("description"),
         additional_deps=additional_deps,
         metadata={DAGSTER_DBT_UNIQUE_ID_METADATA_KEY: test_unique_id},
+        blocking=blocking,
     )
 
 
@@ -728,7 +746,7 @@ def build_dbt_specs(
     manifest: Mapping[str, Any],
     select: str,
     exclude: str,
-    selector: Optional[str],
+    selector: str,
     io_manager_key: Optional[str],
     project: Optional[DbtProject],
 ) -> tuple[Sequence[AssetSpec], Sequence[AssetCheckSpec]]:
@@ -769,14 +787,13 @@ def build_dbt_specs(
         for child_unique_id in manifest["child_map"][unique_id]:
             if not child_unique_id.startswith("test"):
                 continue
-
-            check_spec = default_asset_check_fn(
-                manifest,
-                translator,
-                spec.key,
-                child_unique_id,
-                project,
+            check_spec = translator.get_asset_check_spec(
+                asset_spec=spec,
+                manifest=manifest,
+                unique_id=child_unique_id,
+                project=project,
             )
+
             if check_spec:
                 check_specs[check_spec.get_python_identifier()] = check_spec
 
@@ -784,11 +801,8 @@ def build_dbt_specs(
         # assets. note that this step may need to change once the translator is updated
         # to no longer rely on `get_asset_key` as a standalone method
         for upstream_id in get_upstream_unique_ids(manifest, resource_props):
-            key_by_unique_id[upstream_id] = translator.get_asset_spec(
-                manifest,
-                upstream_id,
-                project,
-            ).key
+            spec = translator.get_asset_spec(manifest, upstream_id, project)
+            key_by_unique_id[upstream_id] = spec.key
             if (
                 upstream_id.startswith("source")
                 and translator.settings.enable_source_tests_as_checks
@@ -796,11 +810,10 @@ def build_dbt_specs(
                 for child_unique_id in manifest["child_map"][upstream_id]:
                     if not child_unique_id.startswith("test"):
                         continue
-                    check_spec = default_asset_check_fn(
+                    check_spec = translator.get_asset_check_spec(
+                        asset_spec=spec,
                         manifest=manifest,
-                        dagster_dbt_translator=translator,
-                        asset_key=key_by_unique_id[upstream_id],
-                        test_unique_id=child_unique_id,
+                        unique_id=child_unique_id,
                         project=project,
                     )
                     if check_spec:

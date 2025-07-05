@@ -10,7 +10,7 @@ dependencies = [
 ]
 
 [project.entry-points]
-"dagster_dg.library" = { components_yaml_checks_dsl = "components_yaml_checks_dsl.lib"}
+"dagster_dg_cli.registry_modules" = { components_yaml_checks_dsl = "components_yaml_checks_dsl.lib"}
 
 [dependency-groups]
 dev = [
@@ -27,7 +27,6 @@ directory_type = "project"
 
 [tool.dg.project]
 root_module = "components_yaml_checks_dsl"
-python_environment = "persistent_uv"
 
 [tool.setuptools.packages.find]
 exclude=["components_yaml_checks_dsl_tests"]
@@ -64,7 +63,6 @@ dagster-managed-elements = { path = '/Users/schrockn/code/dagster/python_modules
 dagster-snowflake-pandas = { path = '/Users/schrockn/code/dagster/python_modules/libraries/dagster-snowflake-pandas', editable = true }
 dagster-embedded-elt = { path = '/Users/schrockn/code/dagster/python_modules/libraries/dagster-embedded-elt', editable = true }
 dagster-powerbi = { path = '/Users/schrockn/code/dagster/python_modules/libraries/dagster-powerbi', editable = true }
-dagster-components = { path = '/Users/schrockn/code/dagster/python_modules/libraries/dagster-components', editable = true }
 dagster-pandera = { path = '/Users/schrockn/code/dagster/python_modules/libraries/dagster-pandera', editable = true }
 dagster-datadog = { path = '/Users/schrockn/code/dagster/python_modules/libraries/dagster-datadog', editable = true }
 dagster-celery-k8s = { path = '/Users/schrockn/code/dagster/python_modules/libraries/dagster-celery-k8s', editable = true }

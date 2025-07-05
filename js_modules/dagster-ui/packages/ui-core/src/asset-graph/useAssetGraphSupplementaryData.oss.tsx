@@ -2,25 +2,29 @@ import {useMemo} from 'react';
 
 import {useAssetsHealthData} from '../asset-data/AssetHealthDataProvider';
 import {parseExpression} from '../asset-selection/AssetSelectionSupplementaryDataVisitor';
+import {SupplementaryInformation} from '../asset-selection/types';
 import {getSupplementaryDataKey} from '../asset-selection/util';
 import {AssetKey} from '../assets/types';
-import {AssetNodeForGraphQueryFragment} from './types/useAssetGraphData.types';
-import {SupplementaryInformation} from '../asset-selection/types';
-import {weakMapMemoize} from '../util/weakMapMemoize';
+import {useStableReferenceByHash} from '../hooks/useStableReferenceByHash';
+import {WorkspaceAssetFragment} from '../workspace/WorkspaceContext/types/WorkspaceQueries.types';
 
 const emptyObject = {} as SupplementaryInformation;
 export const useAssetGraphSupplementaryData = (
   selection: string,
-  nodes: AssetNodeForGraphQueryFragment[],
+  nodes: WorkspaceAssetFragment[],
 ): {loading: boolean; data: SupplementaryInformation} => {
-  const {liveDataByNode} = useAssetsHealthData(
-    useMemo(() => nodes.map((node) => node.assetKey), [nodes]),
-    'AssetGraphSupplementaryData', // Separate thread to avoid starving UI
-  );
+  const {liveDataByNode} = useAssetsHealthData({
+    assetKeys: useMemo(() => nodes.map((node) => node.assetKey), [nodes]),
+    thread: 'AssetGraphSupplementaryData', // Separate thread to avoid starving UI
+    blockTrace: false,
+  });
 
   const loading = Object.keys(liveDataByNode).length !== nodes.length;
 
   const assetsByStatus = useMemo(() => {
+    if (loading) {
+      return emptyObject;
+    }
     return Object.values(liveDataByNode).reduce(
       (acc, liveData) => {
         const status = liveData.assetHealth?.assetHealth ?? 'UNKNOWN';
@@ -34,23 +38,17 @@ export const useAssetGraphSupplementaryData = (
       },
       {} as Record<string, AssetKey[]>,
     );
-  }, [liveDataByNode]);
+  }, [liveDataByNode, loading]);
 
   const needsAssetHealthData = useMemo(() => {
     const filters = parseExpression(selection);
     return filters.some((filter) => filter.field === 'status');
   }, [selection]);
 
+  const data = useStableReferenceByHash(assetsByStatus, true);
+
   return {
     loading: needsAssetHealthData && loading,
-    data: useMemo(
-      () => (loading ? emptyObject : memoizedData(JSON.stringify(assetsByStatus))),
-      [loading, assetsByStatus],
-    ),
+    data: loading ? emptyObject : data,
   };
 };
-
-const memoizedData = weakMapMemoize((data: string) => JSON.parse(data), {
-  ttl: 60,
-  maxEntries: 10,
-});

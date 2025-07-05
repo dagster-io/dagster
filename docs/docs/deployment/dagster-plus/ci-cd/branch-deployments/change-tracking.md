@@ -1,22 +1,28 @@
 ---
-description: Dagster+ Branch Deployments compare asset definitions in the branch deployment against the asset definitions in the main deployment, helping your team identify how changes in a pull request will impact data assets.
-sidebar_position: 200
+description: Dagster+ Branch Deployments compare asset definitions in the branch deployment against the asset definitions in the base deployment, helping your team identify how changes in a pull request will impact data assets.
+sidebar_position: 7320
 title: Change tracking in branch deployments
 ---
 
-:::note
-This guide is applicable to Dagster+.
-:::
+import DagsterPlus from '@site/docs/partials/\_DagsterPlus.md';
+
+<DagsterPlus />
 
 Branch Deployments Change Tracking makes it easier for you and your team to identify how changes in a pull request will impact data assets. By the end of this guide, you'll understand how Change Tracking works and what types of asset changes can be detected.
 
 ## How it works
 
-Branch Deployments compare asset definitions in the branch deployment against the asset definitions in the main deployment. The UI will then mark changed assets accordingly. For example, if the pull request associated with the branch deployment adds a new asset, the UI will display a label indicating the addition.
+Branch Deployments compare asset definitions in the branch deployment against the asset definitions in the branch's base deployment. The UI will then mark changed assets accordingly. For example, if the pull request associated with the branch deployment adds a new asset, the UI will display a label indicating the addition.
 
 You can also apply filters to show only new and changed assets in the UI. This makes it easy to understand which assets will be impacted by the changes in the pull request associated with the branch deployment.
 
-**Note:** The default main deployment is `prod`. To configure a different deployment as the main deployment, [create a branch deployment using the dagster-cloud CLI](/deployment/dagster-plus/ci-cd/branch-deployments/using-branch-deployments-with-the-cli) and specify it using the optional `--base-deployment-name` parameter.
+::: note
+
+The default base for branch deployments is `prod`. To configure a different deployment as the base, [create a branch deployment using the dagster-cloud CLI](/deployment/dagster-plus/ci-cd/branch-deployments/using-branch-deployments-with-the-cli) and specify it using the optional `--base-deployment-name` parameter.
+
+The default behavior is to compare the branch deployment against the **current** state of the base deployment. Depending on deployment and development cadence, the code deployed in the base deployment can get ahead of the branch causing changes to appear that are from the base getting ahead of the branch. To address this, the CLI option `--snapshot-base-condition` can be set to either `on-create` to snapshot the base only when the branch is first created or `on-update` to refresh the base snapshot anytime the branch is updated.
+
+:::
 
 ## Supported change types
 
@@ -163,7 +169,7 @@ def fruits_in_stock(): ...
 ### Metadata
 
 {/* Change Tracking can detect when an [asset's definition metadata](/concepts/metadata-tags/asset-metadata#attaching-definition-metadata) has changed, whether it's been added, modified, or removed. */}
-Change Tracking can detect when an [asset's definition metadata](/guides/build/assets/metadata-and-tags/) has changed, whether it's been added, modified, or removed.
+Change Tracking can detect when an [asset's definition metadata](/guides/build/assets/metadata-and-tags) has changed, whether it's been added, modified, or removed.
 
 <Tabs>
 <TabItem value="Asset in the Dagster UI">

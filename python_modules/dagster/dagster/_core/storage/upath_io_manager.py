@@ -8,10 +8,10 @@ from typing import TYPE_CHECKING, Any, Optional, Union
 from dagster import (
     InputContext,
     MetadataValue,
-    MultiPartitionKey,
     OutputContext,
     _check as check,
 )
+from dagster._core.definitions.partitions.utils import MultiPartitionKey
 from dagster._core.storage.io_manager import IOManager
 
 if TYPE_CHECKING:

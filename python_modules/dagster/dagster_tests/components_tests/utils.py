@@ -9,14 +9,19 @@ from contextlib import contextmanager
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from types import TracebackType
-from typing import Any, Iterable, Optional, TypeVar, Union  # noqa: UP035
+from typing import Any, Iterable, Mapping, Optional, TypeVar, Union  # noqa: UP035
 
 import tomlkit
 from click.testing import Result
 from dagster import Component, ComponentLoadContext, Definitions
 from dagster._utils import alter_sys_path, pushd
 from dagster._utils.pydantic_yaml import enrich_validation_errors_with_source_position
-from dagster.components.core.defs_module import CompositeYamlComponent, get_component
+from dagster.components.core.defs_module import (
+    asset_post_processor_list_from_post_processing_dict,
+    context_with_injected_scope,
+)
+from dagster.components.core.tree import ComponentTree
+from dagster.components.resolved.core_models import post_process_defs
 from dagster.components.utils import ensure_loadable_path
 from dagster_shared import check
 from dagster_shared.yaml_utils import parse_yaml_with_source_position
@@ -27,13 +32,17 @@ T_Component = TypeVar("T_Component", bound=Component)
 
 
 def load_context_and_component_for_test(
-    component_type: type[T_Component], attrs: Union[str, dict[str, Any]]
+    component_type: type[T_Component],
+    attrs: Union[str, dict[str, Any]],
+    template_vars_module: Optional[str] = None,
 ) -> tuple[ComponentLoadContext, T_Component]:
-    context = ComponentLoadContext.for_test()
-    context = context.with_rendering_scope(component_type.get_additional_scope())
+    context = ComponentTree.for_test().load_context
     model_cls = check.not_none(
         component_type.get_model_cls(), "Component must have schema for direct test"
     )
+
+    context = context_with_injected_scope(context, component_type, template_vars_module)
+
     if isinstance(attrs, str):
         source_positions = parse_yaml_with_source_position(attrs)
         with enrich_validation_errors_with_source_position(
@@ -54,10 +63,17 @@ def load_component_for_test(
 
 
 def build_component_defs_for_test(
-    component_type: type[Component], attrs: dict[str, Any]
+    component_type: type[Component],
+    attrs: dict[str, Any],
+    post_processing: Optional[Mapping[str, Any]] = None,
 ) -> Definitions:
     context, component = load_context_and_component_for_test(component_type, attrs)
-    return component.build_defs(context)
+    return post_process_defs(
+        component.build_defs(context),
+        asset_post_processor_list_from_post_processing_dict(
+            context.resolution_context, post_processing
+        ),
+    )
 
 
 def generate_component_lib_pyproject_toml(name: str, is_project: bool = False) -> str:
@@ -75,7 +91,7 @@ def generate_component_lib_pyproject_toml(name: str, is_project: bool = False) -
         ]
 
         [project.entry-points]
-        "dagster_dg.plugin" = {{ {pkg_name} = "{pkg_name}.lib" }}
+        "dagster_dg_cli.registry_modules" = {{ {pkg_name} = "{pkg_name}.lib" }}
     """)
     if is_project:
         return base + textwrap.dedent(f"""
@@ -95,6 +111,7 @@ def temp_code_location_bar() -> Iterator[None]:
     with TemporaryDirectory() as tmpdir, pushd(tmpdir):
         Path("bar/bar/lib").mkdir(parents=True)
         Path("bar/bar/components").mkdir(parents=True)
+        Path("bar/bar/defs").mkdir(parents=True)
         with open("bar/pyproject.toml", "w") as f:
             f.write(generate_component_lib_pyproject_toml("bar", is_project=True))
         Path("bar/bar/__init__.py").touch()
@@ -240,14 +257,3 @@ def set_toml_value(doc: tomlkit.TOMLDocument, path: Iterable[str], value: object
     path_list = list(path)
     inner_dict = get_toml_value(doc, path_list[:-1], dict)
     inner_dict[path_list[-1]] = value
-
-
-def get_underlying_component(context: ComponentLoadContext) -> Optional[Component]:
-    """Loads a component from the given context, resolving the underlying component if
-    it is a CompositeYamlComponent.
-    """
-    component = get_component(context)
-    if isinstance(component, CompositeYamlComponent):
-        assert len(component.components) == 1
-        return component.components[0]
-    return component

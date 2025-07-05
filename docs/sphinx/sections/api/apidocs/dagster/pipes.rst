@@ -3,7 +3,7 @@ Dagster Pipes
 
 .. currentmodule:: dagster
 
-`Dagster Pipes <https://docs.dagster.io/guides/build/external-pipelines/>`_  is a toolkit for building integrations between Dagster and external execution environments. This reference outlines the APIs included with the ``dagster`` library, which should be used in the orchestration environment.
+`Dagster Pipes <https://docs.dagster.io/guides/build/external-pipelines>`_  is a toolkit for building integrations between Dagster and external execution environments. This reference outlines the APIs included with the ``dagster`` library, which should be used in the orchestration environment.
 
 For a detailed look at the Pipes process, including how to customize it, refer to the `Dagster Pipes details and customization guide <https://docs.dagster.io/guides/build/external-pipelines/dagster-pipes-details-and-customization>`__.
 

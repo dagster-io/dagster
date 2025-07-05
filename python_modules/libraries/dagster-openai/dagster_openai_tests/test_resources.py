@@ -8,7 +8,6 @@ from dagster import (
     AssetSpec,
     Definitions,
     OpExecutionContext,
-    StaticPartitionsDefinition,
     asset,
     define_asset_job,
     graph_asset,
@@ -16,6 +15,7 @@ from dagster import (
     multi_asset,
     op,
 )
+from dagster._core.definitions.partitions.definition import StaticPartitionsDefinition
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.execution.context.init import build_init_resource_context
 from dagster._utils.test import wrap_op_in_graph_and_execute
@@ -259,7 +259,7 @@ def test_openai_resource_with_partitioned_asset(mock_client, mock_context, mock_
     )
 
     for partition_key in openai_partitions_def.get_partition_keys():
-        result = defs.get_job_def("openai_partitioned_asset_job").execute_in_process(
+        result = defs.resolve_job_def("openai_partitioned_asset_job").execute_in_process(
             partition_key=partition_key
         )
         assert result.success
@@ -573,7 +573,7 @@ def test_openai_wrapper_with_partitioned_asset(mock_client, mock_wrapper):
     )
 
     for partition_key in openai_partitions_def.get_partition_keys():
-        result = defs.get_job_def("openai_partitioned_asset_job").execute_in_process(
+        result = defs.resolve_job_def("openai_partitioned_asset_job").execute_in_process(
             partition_key=partition_key
         )
         assert result.success

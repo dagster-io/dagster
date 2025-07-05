@@ -13,6 +13,7 @@ import {
   useViewport,
 } from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
+import dayjs from 'dayjs';
 import * as React from 'react';
 import {useMemo} from 'react';
 import {Link} from 'react-router-dom';
@@ -38,6 +39,8 @@ import {RepoRow} from '../workspace/VirtualizedWorkspaceTable';
 import {repoAddressAsURLString} from '../workspace/repoAddressAsString';
 import {repoAddressFromPath} from '../workspace/repoAddressFromPath';
 import {RepoAddress} from '../workspace/types';
+
+import '../util/dayjsExtensions';
 
 const ROW_HEIGHT = 32;
 const TIME_HEADER_HEIGHT = 32;
@@ -809,7 +812,7 @@ interface RunHoverContentProps {
   batch: RunBatch<TimelineRun>;
 }
 
-const RunHoverContent = (props: RunHoverContentProps) => {
+export const RunHoverContent = (props: RunHoverContentProps) => {
   const {row, batch} = props;
   const count = batch.runs.length;
   const parentRef = React.useRef<HTMLDivElement | null>(null);
@@ -826,7 +829,7 @@ const RunHoverContent = (props: RunHoverContentProps) => {
   const height = Math.min(count * ROW_HEIGHT, 240);
 
   return (
-    <Box style={{width: '260px'}}>
+    <Box style={{width: '300px'}}>
       <Box padding={12} border="bottom" flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
         <RunTimelineRowIcon type={row.runs[0]?.externalJobSource ? 'airflow' : row.type} />
         <HoverContentRowName>{row.name}</HoverContentRowName>
@@ -849,21 +852,21 @@ const RunHoverContent = (props: RunHoverContentProps) => {
                       {run.status === 'SCHEDULED' ? (
                         'Scheduled'
                       ) : (
-                        <Link to={`/runs/${run.id}`}>
-                          <Mono>{run.id.slice(0, 8)}</Mono>
-                        </Link>
+                        <Link to={`/runs/${run.id}`}>{dayjs(run.startTime).fromNow()}</Link>
                       )}
                     </Box>
-                    <Mono>
+                    <div>
                       {run.status === 'SCHEDULED' ? (
                         <TimestampDisplay timestamp={run.startTime / 1000} />
                       ) : (
-                        <TimeElapsed
-                          startUnix={run.startTime / 1000}
-                          endUnix={run.endTime / 1000}
-                        />
+                        <Mono>
+                          <TimeElapsed
+                            startUnix={run.startTime / 1000}
+                            endUnix={run.endTime / 1000}
+                          />
+                        </Mono>
                       )}
-                    </Mono>
+                    </div>
                   </Box>
                 </Row>
               );

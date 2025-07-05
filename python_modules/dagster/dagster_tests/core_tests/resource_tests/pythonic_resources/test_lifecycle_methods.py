@@ -410,7 +410,7 @@ def test_multiple_yield_ordering() -> None:
         jobs=[hello_world_job], resources={"first": MyResource(), "second": MySecondResource()}
     )
 
-    assert defs.get_job_def("hello_world_job").execute_in_process().success
+    assert defs.resolve_job_def("hello_world_job").execute_in_process().success
 
     # order is not deterministic
     assert log == [
@@ -588,7 +588,7 @@ def test_nested_resources_init_with_privateattr_runtime_config() -> None:
         resources={"credentials": credentials, "s3": S3Resource(credentials=credentials)},
     )
 
-    result = defs.get_job_def("load_from_s3_job").execute_in_process(
+    result = defs.resolve_job_def("load_from_s3_job").execute_in_process(
         run_config=RunConfig(
             resources={
                 "credentials": AWSCredentialsResource(access_key="my_key", secret_key="my_secret")

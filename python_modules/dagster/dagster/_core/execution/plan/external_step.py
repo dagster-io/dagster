@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Callable, Optional, cast
 import dagster._check as check
 from dagster._config import Field, StringSource
 from dagster._core.code_pointer import FileCodePointer, ModuleCodePointer
-from dagster._core.definitions.partition import DynamicPartitionsDefinition
+from dagster._core.definitions.partitions.definition import DynamicPartitionsDefinition
 from dagster._core.definitions.reconstruct import ReconstructableJob, ReconstructableRepository
 from dagster._core.definitions.resource_definition import dagster_maintained_resource, resource
 from dagster._core.definitions.step_launcher import StepLauncher, StepRunRef

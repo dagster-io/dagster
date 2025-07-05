@@ -1,3 +1,4 @@
+import json
 import os
 import re
 import subprocess
@@ -12,13 +13,14 @@ import pytest
 from dagster import Component
 from dagster._core.test_utils import ensure_dagster_tests_import
 from dagster._utils import pushd
-from dagster.components.core.package_entry import discover_entry_point_package_objects
+from dagster.components.core.package_entry import (
+    DG_PLUGIN_ENTRY_POINT_GROUP,
+    OLD_DG_PLUGIN_ENTRY_POINT_GROUPS,
+    discover_entry_point_package_objects,
+)
 from dagster.components.core.snapshot import get_package_entry_snap
 from dagster_dg_core.utils import get_venv_executable
-from dagster_shared.error import SerializableErrorInfo
-from dagster_shared.serdes.objects import PluginObjectKey
-from dagster_shared.serdes.objects.package_entry import PluginManifest
-from dagster_shared.serdes.serdes import deserialize_value
+from dagster_shared.serdes.objects import EnvRegistryKey
 
 ensure_dagster_tests_import()
 
@@ -46,10 +48,10 @@ def _temp_venv(install_args: Sequence[str]) -> Iterator[Path]:
 
 def _get_component_print_script_result(venv_root: Path) -> subprocess.CompletedProcess:
     assert venv_root.exists()
-    dagster_components_path = get_venv_executable(venv_root, "dagster-components")
+    dagster_components_path = get_venv_executable(venv_root, "dg")
     assert dagster_components_path.exists()
     result = subprocess.run(
-        [str(dagster_components_path), "list", "plugins"],
+        [str(dagster_components_path), "list", "components", "--json"],
         capture_output=True,
         text=True,
         check=False,
@@ -59,9 +61,9 @@ def _get_component_print_script_result(venv_root: Path) -> subprocess.CompletedP
 
 def _get_component_types_in_python_environment(venv_root: Path) -> Sequence[str]:
     result = _get_component_print_script_result(venv_root)
-    return [
-        obj.key.to_typename() for obj in deserialize_value(result.stdout, PluginManifest).objects
-    ]
+
+    component_type_list = json.loads(result.stdout)
+    return [component_type["key"] for component_type in component_type_list]
 
 
 def _find_repo_root():
@@ -101,32 +103,38 @@ def _get_editable_package_root(pkg_name: str) -> str:
 
 def test_components_from_dagster():
     common_deps: list[str] = []
-    for pkg_name in ["dagster", "dagster-pipes", "dagster-shared"]:
+    for pkg_name in [
+        "dagster-shared",
+        "dagster-cloud-cli",
+        "dagster-dg-core",
+        "dagster-pipes",
+        "dagster",
+        "dagster-dg-cli",
+    ]:
         common_deps.extend(["-e", _get_editable_package_root(pkg_name)])
 
     dbt_root = _get_editable_package_root("dagster-dbt")
     sling_root = _get_editable_package_root("dagster-sling")
 
     # No extras
-    with _temp_venv(
-        [
-            *common_deps,
-        ]
-    ) as python_executable:
+    with _temp_venv([*common_deps]) as python_executable:
         component_types = _get_component_types_in_python_environment(python_executable)
-        assert "dagster.PipesSubprocessScriptCollectionComponent" in component_types
         assert "dagster_dbt.DbtProjectComponent" not in component_types
         assert "dagster_sling.SlingReplicationCollectionComponent" not in component_types
+        for t in ["FunctionComponent", "PythonScriptComponent", "UvRunComponent"]:
+            assert f"dagster.{t}" in component_types
 
     with _temp_venv([*common_deps, "-e", dbt_root]) as python_executable:
         component_types = _get_component_types_in_python_environment(python_executable)
-        assert "dagster.PipesSubprocessScriptCollectionComponent" in component_types
         assert "dagster_dbt.DbtProjectComponent" in component_types
         assert "dagster_sling.SlingReplicationCollectionComponent" not in component_types
 
     with _temp_venv([*common_deps, "-e", sling_root]) as python_executable:
+        python = get_venv_executable(python_executable, "python")
+        # Sling prints when it downloads its executable - this ensures we don't get that
+        # stdout when listing the component types subsequently.
+        subprocess.check_call([str(python), "-c", "import dagster_sling"])
         component_types = _get_component_types_in_python_environment(python_executable)
-        assert "dagster.PipesSubprocessScriptCollectionComponent" in component_types
         assert "dagster_dbt.DbtProjectComponent" not in component_types
         assert "dagster_sling.SlingReplicationCollectionComponent" in component_types
 
@@ -135,7 +143,7 @@ def test_all_components_have_defined_summary():
     registry = discover_entry_point_package_objects()
     for component_name, component_type in registry.items():
         if isinstance(component_type, type) and issubclass(component_type, Component):
-            assert get_package_entry_snap(PluginObjectKey("a", "a"), component_type).summary, (
+            assert get_package_entry_snap(EnvRegistryKey("a", "a"), component_type).summary, (
                 f"Component {component_name} has no summary defined"
             )
 
@@ -205,6 +213,12 @@ def isolated_venv_with_component_lib_dagster_foo(
                 "-e",
                 _get_editable_package_root("dagster-shared"),
                 "-e",
+                _get_editable_package_root("dagster-cloud-cli"),
+                "-e",
+                _get_editable_package_root("dagster-dg-core"),
+                "-e",
+                _get_editable_package_root("dagster-dg-cli"),
+                "-e",
                 "dagster-foo",
             ]
 
@@ -212,7 +226,9 @@ def isolated_venv_with_component_lib_dagster_foo(
                 yield venv_root
 
 
-@pytest.mark.parametrize("entry_point_group", ["dagster_dg.plugin", "dagster_dg.library"])
+@pytest.mark.parametrize(
+    "entry_point_group", [DG_PLUGIN_ENTRY_POINT_GROUP, *OLD_DG_PLUGIN_ENTRY_POINT_GROUPS]
+)
 def test_components_from_third_party_lib(entry_point_group: str):
     with isolated_venv_with_component_lib_dagster_foo(entry_point_group) as venv_root:
         component_types = _get_component_types_in_python_environment(venv_root)
@@ -220,7 +236,9 @@ def test_components_from_third_party_lib(entry_point_group: str):
         assert "dagster_foo.lib.TestComponent2" in component_types
 
 
-@pytest.mark.parametrize("entry_point_group", ["dagster_dg.plugin", "dagster_dg.library"])
+@pytest.mark.parametrize(
+    "entry_point_group", [DG_PLUGIN_ENTRY_POINT_GROUP, *OLD_DG_PLUGIN_ENTRY_POINT_GROUPS]
+)
 def test_bad_entry_point_error_message(entry_point_group: str):
     # Modify the entry point to point to a non-existent module. This has to be done before the
     # package is installed, which is why we use a pre-install hook.
@@ -236,9 +254,6 @@ def test_bad_entry_point_error_message(entry_point_group: str):
         entry_point_group, pre_install_hook=pre_install_hook
     ) as venv_root:
         result = _get_component_print_script_result(venv_root)
-        error = deserialize_value(result.stdout, SerializableErrorInfo)
-        assert (
-            f"Error loading entry point `fake.module` in group `{entry_point_group}`"
-            in error.message
-        )
-        assert result.returncode == 0
+        assert "Error loading entry point `fake.module`" in result.stdout
+        assert entry_point_group in result.stdout
+        assert result.returncode == 1

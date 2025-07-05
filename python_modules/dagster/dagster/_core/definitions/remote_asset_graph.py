@@ -36,10 +36,10 @@ from dagster._core.definitions.declarative_automation.automation_condition impor
     AutomationCondition,
 )
 from dagster._core.definitions.freshness import InternalFreshnessPolicy
-from dagster._core.definitions.freshness_policy import FreshnessPolicy
+from dagster._core.definitions.freshness_policy import LegacyFreshnessPolicy
 from dagster._core.definitions.metadata import ArbitraryMetadataMapping
-from dagster._core.definitions.partition import PartitionsDefinition
-from dagster._core.definitions.partition_mapping import PartitionMapping
+from dagster._core.definitions.partitions.definition import PartitionsDefinition
+from dagster._core.definitions.partitions.mapping import PartitionMapping
 from dagster._core.definitions.utils import DEFAULT_GROUP_NAME
 from dagster._core.remote_representation.external import RemoteRepository
 from dagster._core.remote_representation.handle import InstigatorHandle, RepositoryHandle
@@ -107,9 +107,13 @@ class RemoteAssetNode(BaseAssetNode, ABC):
         return partitions_snap.get_partitions_definition() if partitions_snap else None
 
     @property
-    def freshness_policy(self) -> Optional[FreshnessPolicy]:
+    def legacy_freshness_policy(self) -> Optional[LegacyFreshnessPolicy]:
         # It is currently not possible to access the freshness policy for an observation definition
         # if a materialization definition also exists. This needs to be fixed.
+        return self.resolve_to_singular_repo_scoped_node().asset_node_snap.legacy_freshness_policy
+
+    @property
+    def freshness_policy(self) -> Optional[InternalFreshnessPolicy]:
         return self.resolve_to_singular_repo_scoped_node().asset_node_snap.freshness_policy
 
     @property
@@ -235,6 +239,7 @@ class RemoteWorkspaceAssetNode(RemoteAssetNode):
     def key(self) -> AssetKey:  # pyright: ignore[reportIncompatibleVariableOverride]
         return self.repo_scoped_asset_infos[0].asset_node.asset_node_snap.asset_key
 
+    ### KEEP THIS IN SYNC WITH THE JS CODE THAT MERGES THE SDA DEFINITIONS: https://github.com/dagster-io/dagster/blob/22e79ea7024bd13b197e3a2f66401197badceb75/js_modules/dagster-ui/packages/ui-core/src/assets/useAllAssets.tsx#L239-L256
     @property
     def parent_keys(self) -> AbstractSet[AssetKey]:  # pyright: ignore[reportIncompatibleVariableOverride]
         # combine deps from all nodes
@@ -325,10 +330,6 @@ class RemoteWorkspaceAssetNode(RemoteAssetNode):
     @property
     def backfill_policy(self) -> Optional[BackfillPolicy]:
         return self._materializable_node_snap.backfill_policy if self.is_materializable else None
-
-    @property
-    def internal_freshness_policy(self) -> Optional[InternalFreshnessPolicy]:
-        return InternalFreshnessPolicy.from_asset_spec_metadata(self.metadata)
 
     ##### REMOTE-SPECIFIC INTERFACE
     @cached_method

@@ -1,6 +1,8 @@
 import inspect
 from typing import Any, NamedTuple, Optional, TypeVar, Union
 
+from dagster_shared.error import DagsterError
+
 import dagster._check as check
 from dagster._annotations import PublicAttr, deprecated_param
 from dagster._core.definitions.inference import InferredOutputProps
@@ -11,7 +13,7 @@ from dagster._core.definitions.metadata import (
     normalize_metadata,
 )
 from dagster._core.definitions.utils import DEFAULT_IO_MANAGER_KEY, DEFAULT_OUTPUT, check_valid_name
-from dagster._core.errors import DagsterError, DagsterInvalidDefinitionError
+from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.types.dagster_type import (
     DagsterType,
     is_dynamic_output_annotation,

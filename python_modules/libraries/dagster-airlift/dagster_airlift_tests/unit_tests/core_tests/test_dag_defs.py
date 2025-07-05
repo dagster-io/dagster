@@ -10,7 +10,7 @@ def from_specs(*specs: AssetSpec) -> Definitions:
 
 def asset_spec(defs: Definitions, key: CoercibleToAssetKey) -> AssetSpec:
     ak = AssetKey.from_coercible(key)
-    return defs.get_assets_def(ak).get_asset_spec(ak)
+    return defs.resolve_assets_def(ak).get_asset_spec(ak)
 
 
 def has_single_task_handle(spec: AssetSpec, dag_id: str, task_id: str) -> bool:

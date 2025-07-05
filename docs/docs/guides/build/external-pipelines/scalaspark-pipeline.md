@@ -4,6 +4,8 @@ description: "Learn to integrate Dagster Pipes with Scala and Spark to orchestra
 sidebar_position: 71
 ---
 
+import ScaffoldProject from '@site/docs/partials/\_ScaffoldProject.md';
+
 This tutorial is focused on using Dagster Pipes to launch & monitor Apache Spark jobs implemented in Scala. The [Spark integration page](/integrations/libraries/spark) provides more information on using Pipes with specific Spark providers, such as AWS EMR or Databricks.
 
 Spark is often used with object stores such as Amazon S3. In our example, Dagster will use an S3
@@ -12,38 +14,27 @@ from Spark).
 
 ## Prerequisites
 
+To run the examples, you'll need to:
+
+- Create a new Dagster project:
+  <ScaffoldProject />
 - An [AWS S3 bucket](https://docs.aws.amazon.com/AmazonS3/latest/userguide/GetStartedWithS3.html) to be used for communication between Spark and Dagster (and the corresponding `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`).
-- [Docker](https://docs.docker.com/get-started/get-docker/) to emulate a typical Spark setup locally.
+- [Docker](https://docs.docker.com/get-started/get-docker) to emulate a typical Spark setup locally.
   This setup includes Apache Spark and the Java SDK, as well as the required Dagster libraries to run a development orchestration server.
+- In the Spark environment, you'll need a suitable Scala compiler (we are using [Gradle](https://gradle.org)) and typically also the Java AWS S3 SDK packages. For example:
 
-## Production considerations
+  ```shell
+  curl -fSL "https://repo1.maven.org/maven2/org/apache/hadoop/hadoop-aws/3.5.1/hadoop-aws-3.5.1.jar" \
+    -o /opt/bitnami/spark/jars/hadoop-aws-3.5.1.jar
 
-For demonstration purposes, this tutorial makes a few simplifications that you should consider when deploying in production:
+  curl -fSL "https://repo1.maven.org/maven2/com/amazonaws/aws-java-sdk-bundle/1.12.780/aws-java-sdk-bundle-1.12.780.jar" \
+    -o /opt/bitnami/spark/jars/aws-java-sdk-bundle-1.12.780.jar
+  ```
 
-- We are going to be running Spark in local mode, sharing the same container with Dagster. In production, consider having two separate environments:
-
-  - **In the Dagster environment**, you'll need to have the following Python packages:
-
-    - `dagster`
-    - `dagster-webserver` --- to run the Dagster UI
-    - `dagster-aws` --- when using S3
-
-    You will also need to make the orchestration code available to Dagster (typically via a [code location](/deployment/code-locations)).
-
-  - **In the Spark environment**, you'll need a suitable Scala compiler (we are using [Gradle](https://gradle.org/)) and typically also the Java AWS S3 SDK packages. For example:
-
-    ```shell
-    curl -fSL "https://repo1.maven.org/maven2/org/apache/hadoop/hadoop-aws/3.5.1/hadoop-aws-3.5.1.jar" \
-      -o /opt/bitnami/spark/jars/hadoop-aws-3.5.1.jar
-
-    curl -fSL "https://repo1.maven.org/maven2/com/amazonaws/aws-java-sdk-bundle/1.12.780/aws-java-sdk-bundle-1.12.780.jar" \
-      -o /opt/bitnami/spark/jars/aws-java-sdk-bundle-1.12.780.jar
-    ```
-
-    Make sure `hadoop-aws` JAR and AWS Java SDK versions are compatible with your Spark/Hadoop build.
+  Make sure `hadoop-aws` JAR and AWS Java SDK versions are compatible with your Spark/Hadoop build.
 
 - In our example, the Scala JAR will be built by Docker before Spark starts running. In production,
-  consider building and uploading the JAR to Spark via CI/CD.
+consider building and uploading the JAR to Spark via CI/CD.
 
 ## Project outline
 
@@ -70,11 +61,15 @@ For demonstration purposes, this tutorial makes a few simplifications that you s
 - `build/libs/external_scala-all.jar` is the output of this build process (created automatically by `docker build`).
 - `Dockerfile` and `docker-compose.yml` allow for running this example in a reproducible environment using `docker compose`.
 
-## Step 1: Write the Dagster orchestration code (dagster_code.py)
+## Step 1: Write the Dagster code
+
+import ScaffoldAsset from '@site/docs/partials/\_ScaffoldAsset.md';
+
+<ScaffoldAsset />
 
 We will set up a few non-default Pipes components to streamline the otherwise challenging problem of orchestrating Spark jobs.
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/scalaspark/dagster_code.py" />
+<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/scalaspark/dagster_code.py" title="src/<project_name>/defs/assets.py" />
 
 * Notice that we are using S3 to pass Pipes messages from the Spark job to Dagster, so we create `PipesS3MessageReader` and `PipesS3ContextInjector` objects. (Technically, it's not strictly required to use S3 for passing the Dagster context, but storing it there will decrease the CLI arguments size.)
 

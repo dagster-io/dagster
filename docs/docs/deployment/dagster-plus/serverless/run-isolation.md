@@ -1,7 +1,7 @@
 ---
 description: Dagster+ Serverless run isolation offers isolated runs for production with dedicated resources, and non-isolated runs in a standing, shared container for faster development.
 sidebar_label: Run isolation
-sidebar_position: 200
+sidebar_position: 2000
 title: Serverless run isolation
 ---
 

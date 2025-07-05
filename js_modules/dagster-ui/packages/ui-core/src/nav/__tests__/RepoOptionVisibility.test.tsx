@@ -20,7 +20,7 @@ describe('Repo option visibility', () => {
   });
 
   const Test = () => {
-    const {visibleRepos, loading} = useContext(WorkspaceContext);
+    const {visibleRepos, loadingNonAssets: loading} = useContext(WorkspaceContext);
     return (
       <div data-testid={testId('target')}>
         {loading

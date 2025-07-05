@@ -1,13 +1,10 @@
-from dagster import (
-    AssetIn,
+from dagster import AssetIn, Definitions, TimeWindowPartitionMapping, asset
+from dagster._core.definitions.partitions.definition import (
     DailyPartitionsDefinition,
-    Definitions,
     MultiPartitionsDefinition,
-    StaticPartitionMapping,
     StaticPartitionsDefinition,
-    TimeWindowPartitionMapping,
-    asset,
 )
+from dagster._core.definitions.partitions.mapping import StaticPartitionMapping
 
 daily_partitions_def = DailyPartitionsDefinition(
     start_date="2024-01-01"

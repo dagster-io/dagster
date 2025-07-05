@@ -1,5 +1,7 @@
+from collections.abc import Sequence
 from dataclasses import dataclass, field
-from typing import Annotated, Literal, Optional, Union
+from enum import Enum
+from typing import Annotated, Literal, NamedTuple, Optional, Union
 
 import dagster as dg
 import pytest
@@ -9,7 +11,9 @@ from dagster._core.definitions.definitions_class import Definitions
 from dagster.components.resolved.core_models import AssetPostProcessor, AssetSpecKwargs
 from dagster.components.resolved.errors import ResolutionException
 from dagster.components.resolved.model import Resolver
+from dagster_shared.record import record
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
+from typing_extensions import TypeAlias
 
 
 def test_basic():
@@ -123,7 +127,7 @@ foo: "{{ template_var }}"
 
 
 def test_passthru_does_not_process_nested_resolvers():
-    class Foo(BaseModel):
+    class Foo(BaseModel, Resolvable):
         name: Annotated[str, Resolver(lambda context, name: name.upper())]
 
     @dataclass
@@ -434,3 +438,168 @@ specs:
     """,
             scope=scope,
         )
+
+
+def test_dict():
+    class Target(Resolvable, Model):
+        thing: dict
+        stuff: list
+
+    obj = Target.resolve_from_yaml("""
+thing:
+    a: a
+    2: 2
+stuff:
+    - a
+    - 2
+    - wow: wah
+""")
+    assert obj.thing == {"a": "a", 2: 2}
+    assert obj.stuff == ["a", 2, {"wow": "wah"}]
+
+
+def test_empty_str():
+    class Thing(Resolvable, Model):
+        name: str
+
+    t = Thing.resolve_from_dict({"name": ""})
+    assert t.name == ""
+
+
+def test_plain_named_tuple():
+    # plain namedtuple is not one of the types that Resolved can handle
+    # so ensure errors are thrown when used
+
+    class MyNamedTuple(NamedTuple("_", [("foo", str)])): ...
+
+    class MyModel(Resolvable, Model):
+        nt: MyNamedTuple
+
+    # directly
+    with pytest.raises(
+        ResolutionException, match="Could not derive resolver for annotation\n  nt:"
+    ):
+        MyModel.model()
+
+    class Wrapper(Model):
+        nt: MyNamedTuple
+
+    class OuterWrapper(Model):
+        wrapper: Wrapper
+
+    class Outer(Resolvable, Model):
+        thing: OuterWrapper
+
+    # or indirectly
+    with pytest.raises(ResolutionException, match="Wrapper includes incompatible field\n  nt:"):
+        Outer.model()
+
+
+def test_resolvable_named_tuple():
+    # Resolvable supports @record and dataclass, but not plain namedtuple so this is invalid.
+    # We won't catch this til its used either
+
+    class MyNamedTuple(NamedTuple("_", [("foo", str)]), Resolvable): ...
+
+    class MyModel(Resolvable, Model):
+        nt: MyNamedTuple
+
+    # directly
+    with pytest.raises(ResolutionException, match="Invalid Resolvable type"):
+        MyModel.model()
+
+    class Wrapper(Model):
+        nt: MyNamedTuple
+
+    class OuterWrapper(Model):
+        wrapper: Wrapper
+
+    class Outer(Resolvable, Model):
+        thing: OuterWrapper
+
+    # or indirectly
+    with pytest.raises(ResolutionException, match="Invalid Resolvable type"):
+        Outer.model()
+
+
+@record
+class Foo:
+    name: str
+
+
+ResolvedFoo: TypeAlias = Annotated[Foo, Resolver(lambda _, v: Foo(name=v), model_field_type=str)]
+
+
+def test_containers():
+    class Target(Resolvable, Model):
+        li: list[ResolvedFoo]
+        t: tuple[ResolvedFoo, ...]
+        s: Sequence[ResolvedFoo]
+        mli: Optional[list[ResolvedFoo]]
+        uli: Union[list[ResolvedFoo], str]
+
+    t = Target.resolve_from_yaml("""
+li:
+  - a
+  - b
+t:
+  - c
+  - d
+s:
+  - e
+  - f
+mli:
+  - g
+  - h
+uli:
+  - g
+  - h
+    """)
+
+    # ensure we don't end up with a container type mismatch from resolution
+    assert isinstance(t.li, list)
+    assert isinstance(t.t, tuple)
+    assert isinstance(t.s, Sequence)
+    # or nested resolution
+    assert isinstance(t.mli, list)
+    assert isinstance(t.uli, list)
+
+
+def test_non_resolvable_resolver():
+    class Plain(Model):
+        num: Annotated[int, Field(description="cool")]
+
+    class Target(Model, Resolvable):
+        plain: Plain
+
+    # ensure annotations on plain models are fine
+    assert Target.model()
+
+    class Mistake(Model):
+        num: Annotated[int, Resolver(lambda _, v: v + 2)]
+
+    class Bad(Model, Resolvable):
+        mistake: Mistake
+
+    # but if Resolver is used on a class that does not subclass Resolvable, we throw
+    with pytest.raises(ResolutionException, match="Subclass Resolvable"):
+        Bad.model()
+
+
+def test_enums():
+    class Thing(Enum):
+        FOO = "FOO"
+        BAR = "BAR"
+
+    class Direct(Resolvable, Model):
+        thing: Thing
+
+    assert Direct.resolve_from_dict({"thing": "FOO"})
+
+    class Wrapper(Model):
+        thing: Thing
+
+    class Indirect(Resolvable, Model):
+        wrapper: Wrapper
+
+    assert Indirect.resolve_from_dict({"wrapper": {"thing": "BAR"}})

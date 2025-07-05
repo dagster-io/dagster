@@ -15,14 +15,14 @@ The <PyObject section="assets" module="dagster" object="AutomationCondition.on_c
 
 In the following example, at the start of each hour, the above check will start waiting for its associated asset to be updated. Once this happens, the check will immediately be requested. The check will not be requested again until the next hour.
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/declarative_automation/on_cron/basic_check.py" />
+<CodeExample path="docs_snippets/docs_snippets/concepts/declarative_automation/on_cron/basic_check.py" title="src/<project_name>/defs/asset_checks.py" />
 
 **Behavior**
 
 - If at least one upstream partition of _all_ upstream assets has been updated since the previous cron schedule tick, and the downstream check has not yet been requested or executed, it will be requested.
 - If all upstream assets **do not** update within the given cron tick, the check will not be requested.
 
-If you would like to customize aspects of this behavior, refer to the [customizing on_cron](customizing-automation-conditions/customizing-on-cron-condition) guide.
+If you would like to customize aspects of this behavior, refer to the [customizing on_cron](/guides/automate/declarative-automation/customizing-automation-conditions/customizing-on-cron-condition) guide.
 
 </TabItem>
 
@@ -32,7 +32,7 @@ The <PyObject section="assets" module="dagster" object="AutomationCondition.eage
 
 In the following example, the asset check will be automatically requested whenever any of its upstream dependencies are updated.
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/declarative_automation/eager/basic_check.py" />
+<CodeExample path="docs_snippets/docs_snippets/concepts/declarative_automation/eager/basic_check.py" title="src/<project_name>/defs/asset_checks.py" />
 
 **Behavior**
 

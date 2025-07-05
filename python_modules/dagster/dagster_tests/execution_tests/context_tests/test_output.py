@@ -1,14 +1,7 @@
 from typing import Any
 
-from dagster import (
-    AssetKey,
-    AssetSpec,
-    IOManager,
-    OutputContext,
-    StaticPartitionsDefinition,
-    build_output_context,
-    materialize,
-)
+from dagster import AssetKey, AssetSpec, IOManager, OutputContext, build_output_context, materialize
+from dagster._core.definitions.partitions.definition import StaticPartitionsDefinition
 from dagster._core.execution.context.input import InputContext
 
 

@@ -90,7 +90,14 @@ class TelemetrySettings(NamedTuple):
     run_storage_id: Optional[str]
 
 
-def _get_telemetry_logger() -> logging.Logger:
+def _get_rotating_file_handler(logger: logging.Logger) -> Optional[RotatingFileHandler]:
+    return next(
+        iter(handler for handler in logger.handlers if isinstance(handler, RotatingFileHandler)),
+        None,
+    )
+
+
+def get_telemetry_logger() -> logging.Logger:
     # If a concurrently running process deleted the logging directory since the
     # last action, we need to make sure to re-create the directory
     # (the logger does not do this itself.)
@@ -99,13 +106,17 @@ def _get_telemetry_logger() -> logging.Logger:
     logging_file_path = os.path.join(dagster_home_path, "event.log")
     logger = logging.getLogger("dagster_telemetry_logger")
 
-    # If the file we were writing to has been overwritten, dump the existing logger and re-open the stream.
-    if not os.path.exists(logging_file_path) and len(logger.handlers) > 0:
-        handler = next(iter(logger.handlers))
-        handler.close()
-        logger.removeHandler(handler)
+    # Don't propagate to the root logger
+    logger.propagate = False
 
-    if len(logger.handlers) == 0:
+    # If the file we were writing to has been overwritten, dump the existing handler and re-open the stream.
+    if not os.path.exists(logging_file_path):
+        handler = _get_rotating_file_handler(logger)
+        if handler:
+            handler.close()
+            logger.removeHandler(handler)
+
+    if not _get_rotating_file_handler(logger):
         handler = RotatingFileHandler(
             logging_file_path,
             maxBytes=MAX_BYTES,
@@ -118,8 +129,20 @@ def _get_telemetry_logger() -> logging.Logger:
 
 
 def write_telemetry_log_line(log_line: object) -> None:
-    logger = _get_telemetry_logger()
+    logger = get_telemetry_logger()
     logger.info(json.dumps(log_line))
+
+
+# For use in test teardown
+def cleanup_telemetry_logger() -> None:
+    logger = logging.getLogger("dagster_telemetry_logger")
+
+    handler = _get_rotating_file_handler(logger)
+    if not handler:
+        return
+
+    handler.close()
+    logger.removeHandler(handler)
 
 
 class TelemetryEntry(

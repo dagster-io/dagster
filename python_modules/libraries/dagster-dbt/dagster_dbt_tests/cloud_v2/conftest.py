@@ -725,12 +725,14 @@ def credentials_fixture() -> DbtCloudCredentials:
 
 
 @pytest.fixture(name="workspace", scope="function")
-def workspace_fixture(credentials: DbtCloudCredentials) -> DbtCloudWorkspace:
-    return DbtCloudWorkspace(
+def workspace_fixture(credentials: DbtCloudCredentials) -> Generator[DbtCloudWorkspace, None, None]:
+    workspace = DbtCloudWorkspace(
         credentials=credentials,
         project_id=TEST_PROJECT_ID,
         environment_id=TEST_ENVIRONMENT_ID,
     )
+    yield workspace
+    del workspace
 
 
 @pytest.fixture(
@@ -964,24 +966,20 @@ def load_context_fixture() -> Generator[None, None, None]:
 
 
 def load_dbt_cloud_definitions() -> Definitions:
-    try:
-        workspace = DbtCloudWorkspace(
-            credentials=DbtCloudCredentials(
-                account_id=TEST_ACCOUNT_ID,
-                access_url=TEST_ACCESS_URL,
-                token=TEST_TOKEN,
-            ),
-            project_id=TEST_PROJECT_ID,
-            environment_id=TEST_ENVIRONMENT_ID,
-        )
+    workspace = DbtCloudWorkspace(
+        credentials=DbtCloudCredentials(
+            account_id=TEST_ACCOUNT_ID,
+            access_url=TEST_ACCESS_URL,
+            token=TEST_TOKEN,
+        ),
+        project_id=TEST_PROJECT_ID,
+        environment_id=TEST_ENVIRONMENT_ID,
+    )
 
-        return Definitions(
-            assets=load_dbt_cloud_asset_specs(workspace=workspace),
-            sensors=[build_dbt_cloud_polling_sensor(workspace=workspace)],
-        )
-    finally:
-        # Clearing cache for other tests
-        workspace.load_specs.cache_clear()  # pyright: ignore[reportPossiblyUnboundVariable]
+    return Definitions(
+        assets=load_dbt_cloud_asset_specs(workspace=workspace),
+        sensors=[build_dbt_cloud_polling_sensor(workspace=workspace)],
+    )
 
 
 def fully_loaded_repo_from_dbt_cloud_workspace() -> RepositoryDefinition:

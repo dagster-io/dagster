@@ -4,7 +4,7 @@ import {Alert, Box, ErrorBoundary, Spinner, Tag} from '@dagster-io/ui-components
 import React, {useContext, useEffect, useMemo} from 'react';
 import {Link, Redirect, useLocation, useRouteMatch} from 'react-router-dom';
 import {useSetRecoilState} from 'recoil';
-import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
+import {observeEnabled} from 'shared/app/observeEnabled.oss';
 import {getAssetSelectionQueryString} from 'shared/asset-selection/useAssetSelectionState.oss';
 import {AssetPageHeader} from 'shared/assets/AssetPageHeader.oss';
 
@@ -34,7 +34,6 @@ import {useDeleteDynamicPartitionsDialog} from './useDeleteDynamicPartitionsDial
 import {healthRefreshHintFromLiveData} from './usePartitionHealthData';
 import {useReportEventsDialog} from './useReportEventsDialog';
 import {useWipeDialog} from './useWipeDialog';
-import {featureEnabled} from '../app/Flags';
 import {currentPageAtom} from '../app/analytics';
 import {Timestamp} from '../app/time/Timestamp';
 import {AssetLiveDataRefreshButton, useAssetLiveData} from '../asset-data/AssetLiveDataProvider';
@@ -248,15 +247,7 @@ const AssetViewImpl = ({assetKey, headerBreadcrumbs, writeAssetVisit, currentPat
     setCurrentPage(({specificPath}) => ({specificPath, path: `${path}?view=${selectedTab}`}));
   }, [path, selectedTab, setCurrentPage]);
 
-  const wipe = useWipeDialog(
-    definition && !definition.isObservable
-      ? {
-          assetKey: definition.assetKey,
-          repository: definition.repository,
-        }
-      : null,
-    refresh,
-  );
+  const wipe = useWipeDialog({assetKey, repository: definition?.repository || null}, refresh);
 
   const dynamicPartitionsDelete = useDeleteDynamicPartitionsDialog(
     definition && repoAddress ? {assetKey: definition.assetKey, definition, repoAddress} : null,
@@ -281,7 +272,7 @@ const AssetViewImpl = ({assetKey, headerBreadcrumbs, writeAssetVisit, currentPat
   if (definitionQueryResult.data?.assetOrError.__typename === 'AssetNotFoundError') {
     const assetSelection = getAssetSelectionQueryString();
     let nextPath = `/assets/${currentPath.join('/')}?view=folder${assetSelection ? `&asset-selection=${assetSelection}` : ''}`;
-    if (featureEnabled(FeatureFlag.flagUseNewObserveUIs)) {
+    if (observeEnabled()) {
       // The new UI doesn't have folders. So instead set the asset selection to filter to assets prefixed with the current path.
       nextPath = `/assets?asset-selection=key:"${currentPath.join('/')}/*"`;
     }
@@ -300,6 +291,7 @@ const AssetViewImpl = ({assetKey, headerBreadcrumbs, writeAssetVisit, currentPat
         headerBreadcrumbs={headerBreadcrumbs}
         tags={
           <AssetViewPageHeaderTags
+            assetKey={assetKey}
             definition={cachedOrLiveDefinition}
             liveData={liveData}
             onShowUpstream={() => setParams({...params, view: 'lineage', lineageScope: 'upstream'})}
@@ -321,17 +313,20 @@ const AssetViewImpl = ({assetKey, headerBreadcrumbs, writeAssetVisit, currentPat
             {reportEvents.element}
             {wipe.element}
             {dynamicPartitionsDelete.element}
-            {cachedOrLiveDefinition && cachedOrLiveDefinition.jobNames.length > 0 ? (
-              <LaunchAssetExecutionButton
-                scope={{all: [cachedOrLiveDefinition]}}
-                showChangedAndMissingOption={false}
-                additionalDropdownOptions={[
-                  ...reportEvents.dropdownOptions,
-                  ...wipe.dropdownOptions,
-                  ...dynamicPartitionsDelete.dropdownOptions,
-                ]}
-              />
-            ) : undefined}
+            <LaunchAssetExecutionButton
+              scope={{
+                single:
+                  cachedOrLiveDefinition && cachedOrLiveDefinition.jobNames.length > 0
+                    ? cachedOrLiveDefinition
+                    : null,
+              }}
+              showChangedAndMissingOption={false}
+              additionalDropdownOptions={[
+                ...reportEvents.dropdownOptions,
+                ...wipe.dropdownOptions,
+                ...dynamicPartitionsDelete.dropdownOptions,
+              ]}
+            />
           </Box>
         }
       />
@@ -478,6 +473,11 @@ export const ASSET_VIEW_DEFINITION_QUERY = gql`
         failWindowSeconds
         warnWindowSeconds
       }
+      ... on CronFreshnessPolicy {
+        deadlineCron
+        lowerBoundDeltaSeconds
+        timezone
+      }
     }
     backfillPolicy {
       description
@@ -544,10 +544,12 @@ const HistoricalViewAlert = ({asOf, hasDefinition}: {asOf: string; hasDefinition
 };
 
 const AssetViewPageHeaderTags = ({
+  assetKey,
   definition,
   liveData,
   onShowUpstream,
 }: {
+  assetKey: AssetKey;
   definition: AssetViewDefinitionNodeFragment | AssetTableDefinitionFragment | null | undefined;
   liveData?: LiveDataForNodeWithStaleData;
   onShowUpstream: () => void;
@@ -556,20 +558,22 @@ const AssetViewPageHeaderTags = ({
   // When the old code below is removed, some of these components may no longer be used.
   return (
     <>
-      {definition ? (
-        <Box flex={{direction: 'row', gap: 6, alignItems: 'center'}}>
-          <AssetHealthSummary assetKey={definition.assetKey} />
-          <StaleReasonsTag
-            liveData={liveData}
-            assetKey={definition.assetKey}
-            onClick={onShowUpstream}
-          />
-          <ChangedReasonsTag
-            changedReasons={definition.changedReasons}
-            assetKey={definition.assetKey}
-          />
-        </Box>
-      ) : null}
+      <Box flex={{direction: 'row', gap: 6, alignItems: 'center'}}>
+        <AssetHealthSummary assetKey={assetKey} />
+        {definition ? (
+          <Box>
+            <StaleReasonsTag
+              liveData={liveData}
+              assetKey={definition.assetKey}
+              onClick={onShowUpstream}
+            />
+            <ChangedReasonsTag
+              changedReasons={definition.changedReasons}
+              assetKey={definition.assetKey}
+            />
+          </Box>
+        ) : null}
+      </Box>
       {!definition?.isMaterializable ? <Tag>External Asset</Tag> : undefined}
     </>
   );

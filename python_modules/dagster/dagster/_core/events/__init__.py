@@ -38,6 +38,7 @@ from dagster._core.definitions.asset_check_evaluation import (
     AssetCheckEvaluation,
     AssetCheckEvaluationPlanned,
 )
+from dagster._core.definitions.asset_health.asset_health import AssetHealthStatus
 from dagster._core.definitions.events import (
     AssetLineageInfo,
     AssetMaterializationFailure,
@@ -51,7 +52,7 @@ from dagster._core.definitions.metadata import (
     RawMetadataValue,
     normalize_metadata,
 )
-from dagster._core.definitions.partition import PartitionsSubset
+from dagster._core.definitions.partitions.subset import PartitionsSubset
 from dagster._core.errors import DagsterInvariantViolationError, HookExecutionError
 from dagster._core.execution.context.system import IPlanContext, IStepContext, StepExecutionContext
 from dagster._core.execution.plan.handle import ResolvedFromDynamicStepHandle, StepHandle
@@ -61,6 +62,8 @@ from dagster._core.execution.plan.outputs import StepOutputData
 from dagster._core.log_manager import DagsterLogManager
 from dagster._core.storage.compute_log_manager import CapturedLogContext, LogRetrievalShellCommand
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
+from dagster._core.storage.tags import PARTITION_NAME_TAG
+from dagster._record import record
 from dagster._serdes import NamedTupleSerializer, whitelist_for_serdes
 from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 from dagster._utils.timing import format_duration
@@ -96,6 +99,8 @@ EventSpecificData = Union[
     "RunEnqueuedData",
     "FreshnessStateEvaluation",
     "FreshnessStateChange",
+    "AssetHealthChangedData",
+    "AssetWipedData",
 ]
 
 
@@ -130,6 +135,8 @@ class DagsterEventType(str, Enum):
     STEP_EXPECTATION_RESULT = "STEP_EXPECTATION_RESULT"
     ASSET_CHECK_EVALUATION_PLANNED = "ASSET_CHECK_EVALUATION_PLANNED"
     ASSET_CHECK_EVALUATION = "ASSET_CHECK_EVALUATION"
+    ASSET_HEALTH_CHANGED = "ASSET_HEALTH_CHANGED"
+    ASSET_WIPED = "ASSET_WIPED"
 
     # We want to display RUN_* events in the Dagster UI and in our LogManager output, but in order to
     # support backcompat for our storage layer, we need to keep the persisted value to be strings
@@ -268,6 +275,7 @@ ASSET_EVENTS = {
     DagsterEventType.ASSET_OBSERVATION,
     DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
     DagsterEventType.ASSET_FAILED_TO_MATERIALIZE,
+    DagsterEventType.FRESHNESS_STATE_CHANGE,
 }
 
 ASSET_CHECK_EVENTS = {
@@ -750,6 +758,10 @@ class DagsterEvent(
             return self.asset_failed_to_materialize_data.asset_key
         elif self.event_type == DagsterEventType.FRESHNESS_STATE_CHANGE:
             return self.asset_freshness_state_change_data.key
+        elif self.event_type == DagsterEventType.ASSET_HEALTH_CHANGED:
+            return self.asset_health_changed_data.asset_key
+        elif self.event_type == DagsterEventType.ASSET_WIPED:
+            return self.asset_wiped_data.asset_key
         else:
             return None
 
@@ -858,6 +870,28 @@ class DagsterEvent(
             self.event_type,
         )
         return cast("FreshnessStateChange", self.event_specific_data)
+
+    @property
+    def asset_health_changed_data(
+        self,
+    ) -> "AssetHealthChangedData":
+        _assert_type(
+            "asset_health_changed_data",
+            DagsterEventType.ASSET_HEALTH_CHANGED,
+            self.event_type,
+        )
+        return cast("AssetHealthChangedData", self.event_specific_data)
+
+    @property
+    def asset_wiped_data(
+        self,
+    ) -> "AssetWipedData":
+        _assert_type(
+            "asset_wiped_data",
+            DagsterEventType.ASSET_WIPED,
+            self.event_type,
+        )
+        return cast("AssetWipedData", self.event_specific_data)
 
     @property
     def step_expectation_result_data(self) -> "StepExpectationResultData":
@@ -1097,6 +1131,13 @@ class DagsterEvent(
             event_type=DagsterEventType.ASSET_CHECK_EVALUATION,
             step_context=step_context,
             event_specific_data=asset_check_evaluation,
+            message=f"Asset check '{asset_check_evaluation.check_name}' on '{asset_check_evaluation.asset_key.to_user_string()}' "
+            + ("passed." if asset_check_evaluation.passed else "did not pass.")
+            + (
+                ""
+                if asset_check_evaluation.description is None
+                else f" Description: '{asset_check_evaluation.description}'"
+            ),
         )
 
     @staticmethod
@@ -1146,6 +1187,7 @@ class DagsterEvent(
             event_data = RunEnqueuedData(
                 code_location_name=loc_name,
                 repository_name=repo_name,
+                partition_key=run.tags.get(PARTITION_NAME_TAG),
             )
         else:
             event_data = None
@@ -1753,6 +1795,21 @@ class AssetMaterializationPlannedData(
 
 
 @whitelist_for_serdes
+@record
+class AssetHealthChangedData:
+    asset_key: AssetKey
+    previous_health_state: AssetHealthStatus
+    new_health_state: AssetHealthStatus
+
+
+@whitelist_for_serdes
+@record
+class AssetWipedData:
+    asset_key: AssetKey
+    partition_keys: Optional[Sequence[str]]
+
+
+@whitelist_for_serdes
 class StepExpectationResultData(
     NamedTuple(
         "_StepExpectationResultData",
@@ -1813,13 +1870,21 @@ class ObjectStoreOperationResultData(
 class RunEnqueuedData(
     NamedTuple(
         "_RunEnqueuedData",
-        [
-            ("code_location_name", str),
-            ("repository_name", str),
-        ],
+        [("code_location_name", str), ("repository_name", str), ("partition_key", Optional[str])],
     )
 ):
-    pass
+    def __new__(
+        cls,
+        code_location_name: str,
+        repository_name: str,
+        partition_key: Optional[str] = None,
+    ):
+        return super().__new__(
+            cls,
+            code_location_name=check.str_param(code_location_name, "code_location_name"),
+            repository_name=check.str_param(repository_name, "repository_name"),
+            partition_key=check.opt_str_param(partition_key, "partition_key"),
+        )
 
 
 @whitelist_for_serdes(

@@ -1,0 +1,18 @@
+tree
+
+.
+├── my_existing_project
+│   ├── __init__.py
+│   ├── analytics
+│   │   ├── __init__.py
+│   │   ├── assets.py
+│   │   └── jobs.py
+│   ├── definitions.py
+│   └── elt
+│       ├── __init__.py
+│       ├── assets.py
+│       └── jobs.py
+├── pyproject.toml
+└── README.md
+
+4 directories, 10 files

@@ -1,4 +1,5 @@
 # mypy does not support recursive types, so "cause" has to be typed `Any`
+import sys
 import traceback
 from collections.abc import Sequence
 from typing import Any, Callable, NamedTuple, Optional
@@ -6,6 +7,22 @@ from typing import Any, Callable, NamedTuple, Optional
 from typing_extensions import Self
 
 from dagster_shared.serdes.serdes import whitelist_for_serdes
+
+
+class DagsterError(Exception):
+    """Base class for all errors thrown by the Dagster framework.
+
+    Users should not subclass this base class for their own exceptions.
+    """
+
+    @property
+    def is_user_code_error(self):
+        """Returns true if this error is attributable to user code."""
+        return False
+
+
+class DagsterUnresolvableSymbolError(DagsterError):
+    """Exception raised when a Python symbol reference can't be resolved."""
 
 
 # TODO: Eventually we need to move the rest of the code in dagster._utils.error into dagster_shared,
@@ -67,11 +84,16 @@ class SerializableErrorInfo(
 
     @classmethod
     def from_traceback(cls, tb: traceback.TracebackException) -> Self:
+        if sys.version_info >= (3, 13):
+            name = tb.exc_type_str.split(".")[-1]
+        else:
+            name = tb.exc_type.__name__ if tb.exc_type is not None else None
+
         return cls(
             # usually one entry, multiple lines for SyntaxError
             message="".join(list(tb.format_exception_only())),
             stack=tb.stack.format(),
-            cls_name=tb.exc_type.__name__ if tb.exc_type is not None else None,
+            cls_name=name,
             cause=cls.from_traceback(tb.__cause__) if tb.__cause__ else None,
             context=cls.from_traceback(tb.__context__)
             if tb.__context__ and not tb.__suppress_context__

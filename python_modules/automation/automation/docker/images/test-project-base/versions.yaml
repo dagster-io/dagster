@@ -10,3 +10,6 @@
 "3.12":
   docker_args:
     BASE_IMAGE: python:3.12-slim
+"3.13":
+  docker_args:
+    BASE_IMAGE: python:3.13.3-slim

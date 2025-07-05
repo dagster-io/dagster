@@ -2,7 +2,7 @@
 title: 'Deploying Dagster to Amazon Web Services'
 sidebar_label: Amazon Web Services
 description: To deploy open source Dagster to AWS, EC2 or ECS can host the Dagster webserver, RDS can store runs and events, and S3 can act as an IO manager.
-sidebar_position: 50
+sidebar_position: 5000
 ---
 
 This guide provides instructions for deploying Dagster on Amazon Web Services (AWS). You can use EC2 or ECS to host the Dagster webserver and the Dagster daemon, RDS to store runs and events, and S3 as an I/O manager to store op inputs and outputs.
@@ -34,7 +34,7 @@ Using RDS for run and event log storage doesn't require that the webserver be ru
 
 <CodeReferenceLink filePath="examples/deploy_ecs" />
 
-The Deploying on ECS example on GitHub demonstrates how to configure the [Docker Compose CLI integration with ECS](https://docs.docker.com/cloud/ecs-integration/) to manage all of the required AWS resources that Dagster needs to run on ECS. The example includes:
+The Deploying on ECS example on GitHub demonstrates how to configure the [Docker Compose CLI integration with ECS](https://docs.docker.com/cloud/ecs-integration) to manage all of the required AWS resources that Dagster needs to run on ECS. The example includes:
 
 - A webserver container for loading and launching jobs
 - A `dagster-daemon` container for managing a run queue and submitting runs from schedules and sensors
@@ -195,9 +195,9 @@ In this example, any secret tagged with `dagster` will be included in the enviro
 
 ## Using S3 for I/O management
 
-To enable parallel computation (e.g., with the multiprocessing or Dagster celery executors), you'll need to configure persistent [I/O managers](/guides/build/io-managers/). For example, using an S3 bucket to store data passed between ops.
+To enable parallel computation (e.g., with the multiprocessing or Dagster celery executors), you'll need to configure persistent [I/O managers](/guides/build/io-managers). For example, using an S3 bucket to store data passed between ops.
 
-You'll need to use <PyObject section="libraries" module="dagster_aws" object="s3.s3_pickle_io_manager"/> as your I/O Manager or customize your own persistent I/O managers. Refer to the [I/O managers documentation](/guides/build/io-managers/) for an example.
+You'll need to use <PyObject section="libraries" module="dagster_aws" object="s3.s3_pickle_io_manager"/> as your I/O Manager or customize your own persistent I/O managers. Refer to the [I/O managers documentation](/guides/build/io-managers) for an example.
 
 <CodeExample path="docs_snippets/docs_snippets/deploying/aws/io_manager.py" />
 

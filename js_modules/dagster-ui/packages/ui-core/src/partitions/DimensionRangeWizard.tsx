@@ -58,7 +58,6 @@ export const DimensionRangeWizard = ({
         </Box>
         {isTimeseries && (
           <Button
-            small={true}
             onClick={() => setSelected(partitionKeys.slice(-1))}
             data-testid={testId('latest-partition-button')}
           >
@@ -66,7 +65,6 @@ export const DimensionRangeWizard = ({
           </Button>
         )}
         <Button
-          small={true}
           onClick={() => setSelected(partitionKeys)}
           data-testid={testId('all-partition-button')}
         >

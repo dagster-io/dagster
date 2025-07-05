@@ -51,6 +51,9 @@ def test_components_docs_adding_attributes_to_assets(
                 global_snippet_replace_regexes=[
                     MASK_MY_PROJECT,
                 ],
+                # For multi-parameter tests which share snippets, we don't want to clear the
+                # snapshot dir before updating the snippets
+                clear_snapshot_dir_before_update=False,
             )
         )
 
@@ -58,7 +61,7 @@ def test_components_docs_adding_attributes_to_assets(
         context.run_command_and_snippet_output(
             cmd=textwrap.dedent(
                 f"""\
-                dg scaffold project my-project --python-environment uv_managed --use-editable-dagster \\
+                create-dagster project my-project --uv-sync --use-editable-dagster \\
                     && source my-project/.venv/bin/activate \\
                     && cd my-project/src \\
                     && uv add --editable {EDITABLE_DIR / "dagster-sling"} \\
@@ -68,9 +71,10 @@ def test_components_docs_adding_attributes_to_assets(
             snippet_path=SNIPPETS_DIR
             / f"{context.get_next_snip_number()}-scaffold-project.txt",
             snippet_replace_regex=[
-                ("--python-environment uv_managed --use-editable-dagster ", ""),
+                ("--uv-sync --use-editable-dagster ", ""),
                 ("--editable.*dagster-sling", "dagster-sling"),
                 (".*&& source my-project/.venv/bin/activate.*\n", ""),
+                ("create-dagster", "uvx-U create-dagster"),
             ],
             ignore_output=True,
         )
@@ -117,7 +121,7 @@ def test_components_docs_adding_attributes_to_assets(
                 ),
                 snippet_path=SNIPPETS_DIR
                 / component_type
-                / f"{context.get_next_snip_number()}defs.yaml",
+                / f"{context.get_next_snip_number()}-defs.yaml",
             )
             context.get_next_snip_number()
         elif component_type == "global":
@@ -154,14 +158,15 @@ def test_components_docs_adding_attributes_to_assets(
                 .read_text()
                 .replace(
                     "dagster_sling.SlingReplicationCollectionComponent",
-                    "my_project.components.CustomSlingReplicationComponent",
+                    "my_project.components.custom_sling_replication_component.CustomSlingReplicationComponent",
                 ),
                 snippet_path=SNIPPETS_DIR
                 / component_type
                 / f"{context.get_next_snip_number()}-defs.yaml",
             )
 
-        _run_command("dg check yaml")
+        if not update_snippets:
+            _run_command("dg check yaml")
 
         # Set up DuckDB to run, verify everything works ok
         _run_command(
@@ -206,16 +211,16 @@ def test_components_docs_adding_attributes_to_assets(
                 {type_str}
 
                 attributes:
-                  sling:
-                    connections:
-                      - name: DUCKDB
-                        type: duckdb
-                        instance: /tmp/jaffle_platform.duckdb
+                  connections:
+                    DUCKDB:
+                      type: duckdb
+                      instance: /tmp/jaffle_platform.duckdb
                   replications:
                     - path: replication.yaml
                 """),
         )
-        _run_command("dagster asset materialize --select '*' -m my_project.definitions")
+        if not update_snippets:
+            _run_command("dg launch --assets '*'")
 
         # Add debug logic
         context.create_file(
@@ -250,7 +255,8 @@ def test_components_docs_adding_attributes_to_assets(
         )
 
         # Validate works properly
-        _run_command("dagster asset materialize --select '*' -m my_project.definitions")
+        if not update_snippets:
+            _run_command("dg launch --assets '*'")
 
         # Add custom scope
         context.create_file(
@@ -288,14 +294,14 @@ def test_components_docs_adding_attributes_to_assets(
                 {type_str}
 
                 attributes:
-                  sling:
-                    connections:
-                      - name: DUCKDB
-                        type: duckdb
-                        instance: /tmp/jaffle_platform.duckdb
+                  connections:
+                    DUCKDB:
+                      type: duckdb
+                      instance: /tmp/jaffle_platform.duckdb
                   replications:
                     - path: replication.yaml
-                  asset_post_processors:
+                post_processing:
+                  assets:
                     - attributes:
                         automation_condition: "{{{{ custom_cron('@daily') }}}}"
                 """),
@@ -307,4 +313,5 @@ def test_components_docs_adding_attributes_to_assets(
             ],
         )
         # Validate works properly
-        _run_command("dagster asset materialize --select '*' -m my_project.definitions")
+        if not update_snippets:
+            _run_command("dg launch --assets '*'")

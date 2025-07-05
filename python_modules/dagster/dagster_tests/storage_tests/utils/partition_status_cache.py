@@ -6,18 +6,20 @@ from dagster import (
     AssetMaterialization,
     BackfillPolicy,
     DagsterEventType,
-    DailyPartitionsDefinition,
-    DynamicPartitionsDefinition,
     EventLogEntry,
-    MultiPartitionKey,
-    MultiPartitionsDefinition,
     PartitionsDefinition,
-    StaticPartitionsDefinition,
     asset,
     define_asset_job,
 )
 from dagster._core.definitions.asset_graph import AssetGraph
-from dagster._core.definitions.time_window_partitions import HourlyPartitionsDefinition
+from dagster._core.definitions.partitions.definition import (
+    DailyPartitionsDefinition,
+    DynamicPartitionsDefinition,
+    HourlyPartitionsDefinition,
+    MultiPartitionsDefinition,
+    StaticPartitionsDefinition,
+)
+from dagster._core.definitions.partitions.utils import MultiPartitionKey
 from dagster._core.events import (
     AssetMaterializationPlannedData,
     DagsterEvent,

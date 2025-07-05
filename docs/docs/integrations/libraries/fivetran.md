@@ -10,6 +10,12 @@ sidebar_custom_props:
 partnerlink: https://www.fivetran.com/
 ---
 
+:::note
+
+If you are just getting started with the Fivetran integration, we recommend using the new [Fivetran component](/guides/build/components/integrations/fivetran-component-tutorial).
+
+:::
+
 This guide provides instructions for using Dagster with Fivetran using the `dagster-fivetran` library. Your Fivetran connector tables can be represented as assets in the Dagster asset graph, allowing you to track lineage and dependencies between Fivetran assets and data assets you are already modeling in Dagster. You can also use Dagster to orchestrate Fivetran connectors, allowing you to trigger syncs for these on a cadence or based on upstream data changes.
 
 :::note
@@ -57,6 +63,12 @@ Dagster can automatically load all connector tables from your Fivetran workspace
 ### Sync and materialize Fivetran assets
 
 You can use Dagster to sync Fivetran connectors and materialize Fivetran connector tables. You can use the <PyObject section="libraries" module="dagster_fivetran" object="build_fivetran_assets_definitions" /> factory to create all assets definitions for your Fivetran workspace.
+
+:::note
+
+When syncing a Fivetran connector via Dagster, all Fivetran assets for this connector are materialized in Dagster.
+
+:::
 
 <CodeExample
   path="docs_snippets/docs_snippets/integrations/fivetran/sync_and_materialize_fivetran_assets.py"

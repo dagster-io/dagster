@@ -289,23 +289,11 @@ def format_multiline_str(message: str) -> str:
     return "\n\n".join(paragraphs)
 
 
-def generate_missing_plugin_object_error_message(plugin_object_key: str) -> str:
+def generate_missing_registry_object_error_message(registry_object_key: str) -> str:
     return f"""
-        No plugin object `{plugin_object_key}` is registered. Use `dg list plugins`
-        to see the registered plugin objects in your environment. You may need to install a package
-        that provides `{plugin_object_key}` into your environment.
-    """
-
-
-def generate_missing_dagster_components_error_message(
-    venv_path: Optional[str] = None,
-) -> str:
-    env_qualifier = f" for the virtual environment at {venv_path}" if venv_path else ""
-    return f"""
-        Could not resolve the `dagster-components` executable{env_qualifier}.
-        The `dagster-components` executable is included with `dagster>=1.10.8`. It is necessary for `dg` to
-        interface with Python environments. Ensure that your Python environment has
-        `dagster>=1.10.8` installed.
+        No registry object `{registry_object_key}` is registered. Use `dg list components`
+        to see the registered objects in your environment. You may need to install a package
+        that provides `{registry_object_key}` into your environment.
     """
 
 
@@ -314,21 +302,13 @@ def generate_project_and_activated_venv_mismatch_warning(
     active_venv_path: Optional[Path],
 ) -> str:
     return f"""
-        Your project is configured with `project.python_environment.active = true`, but the active
-        virtual environment does not match the virtual environment found in the project root
-        directory. This may lead to unexpected behavior when running `dg` commands.
+        The active virtual environment does not match the virtual environment found in the project
+        root directory. This may lead to unexpected behavior when running `dg` commands.
 
             active virtual environment: {active_venv_path}
             project virtual environment: {project_venv_path}
     """
 
-
-NO_LOCAL_VENV_ERROR_MESSAGE = """
-This command resolves the `dagster-components` executable from a virtual environment in the project root
-directory, but no virtual environment (`.venv` dir) could be found. Please create a virtual
-environment in the project root directory or set tool.dg.project.python_environment = "active"
-in pyproject.toml to allow use of `dagster-components` from the active Python environment.
-"""
 
 NOT_WORKSPACE_ERROR_MESSAGE = """
 This command must be run inside a Dagster workspace directory. Ensure that there is a
@@ -360,7 +340,7 @@ You may have wanted to run this command in the following directory:
 
 NOT_COMPONENT_LIBRARY_ERROR_MESSAGE = """
 This command must be run inside a Dagster component library directory. Ensure that the nearest
-pyproject.toml has an entry point defined under the `dagster_dg.plugin` group.
+pyproject.toml has an entry point defined under the `dagster_dg_cli.registry_modules` group.
 """
 
 
@@ -445,13 +425,13 @@ def json_schema_property_to_click_option(
     # Handle object type fields as JSON strings
     if field_type == "object":
         option_type = str  # JSON string input
-        help_text = f"{key} (JSON string)"
+        help_text = f"[scaffolder parameter] {key} (JSON string)"
         callback = parse_json_option
 
     # Handle other basic types
     else:
         option_type = _JSON_SCHEMA_TYPE_TO_CLICK_TYPE[field_type]
-        help_text = key
+        help_text = f"(scaffolder param) {key}"
         callback = None
 
     return click.Option(

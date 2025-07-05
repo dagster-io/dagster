@@ -5,17 +5,16 @@ import {
   Icon,
   MenuItem,
   NonIdealState,
+  Popover,
   Select,
   Skeleton,
   Subtitle1,
   Tab,
   Tabs,
+  Tag,
   UnstyledButton,
   ifPlural,
 } from '@dagster-io/ui-components';
-import dayjs from 'dayjs';
-import relativeTime from 'dayjs/plugin/relativeTime';
-import updateLocale from 'dayjs/plugin/updateLocale';
 import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import {useRouteMatch} from 'react-router-dom';
 import {useSetRecoilState} from 'recoil';
@@ -25,10 +24,11 @@ import {useFavoriteAssets} from 'shared/assets/useFavoriteAssets.oss';
 
 import {AssetCatalogAssetGraph} from './AssetCatalogAssetGraph';
 import {AssetCatalogV2VirtualizedTable} from './AssetCatalogV2VirtualizedTable';
+import {SelectedAssetsPopoverContent} from './SelectedAssetsPopoverContent';
 import {useFullScreen} from '../../app/AppTopNav/AppTopNavContext';
 import {PythonErrorInfo} from '../../app/PythonErrorInfo';
 import {COMMON_COLLATOR, assertUnreachable} from '../../app/Util';
-import {currentPageAtom} from '../../app/analytics';
+import {currentPageAtom, useTrackEvent} from '../../app/analytics';
 import {usePrefixedCacheKey} from '../../app/usePrefixedCacheKey';
 import {useAssetsHealthData} from '../../asset-data/AssetHealthDataProvider';
 import {AssetHealthFragment} from '../../asset-data/types/AssetHealthDataProvider.types';
@@ -37,6 +37,7 @@ import {useAssetSelectionInput} from '../../asset-selection/input/useAssetSelect
 import {useAllAssets} from '../../assets/AssetsCatalogTable';
 import {AssetHealthStatus} from '../../graphql/types';
 import {useQueryPersistedState} from '../../hooks/useQueryPersistedState';
+import {useSelectionReducer} from '../../hooks/useSelectionReducer';
 import {useStateWithStorage} from '../../hooks/useStateWithStorage';
 import {useBlockTraceUntilTrue} from '../../performance/TraceContext';
 import {SyntaxError} from '../../selection/CustomErrorListener';
@@ -48,12 +49,10 @@ import {LaunchAssetExecutionButton} from '../LaunchAssetExecutionButton';
 import {asAssetKeyInput} from '../asInput';
 import {AssetTableFragment} from '../types/AssetTableFragment.types';
 
-dayjs.extend(relativeTime);
-dayjs.extend(updateLocale);
-
 export const AssetCatalogTableV2 = React.memo(() => {
   const {assets, loading: assetsLoading, error} = useAllAssets();
   useBlockTraceUntilTrue('useAllAssets', !!assets?.length && !assetsLoading);
+  const trackEvent = useTrackEvent();
 
   const {favorites, loading: favoritesLoading} = useFavoriteAssets();
 
@@ -61,9 +60,7 @@ export const AssetCatalogTableV2 = React.memo(() => {
     if (!favorites) {
       return assets ?? [];
     }
-    return (assets ?? []).filter((asset: AssetTableFragment) =>
-      favorites.has(tokenForAssetKey(asset.key)),
-    );
+    return (assets ?? []).filter((asset) => favorites.has(tokenForAssetKey(asset.key)));
   }, [favorites, assets]);
 
   const [errorState, setErrorState] = useState<SyntaxError[]>([]);
@@ -99,9 +96,10 @@ export const AssetCatalogTableV2 = React.memo(() => {
     },
   );
 
-  const {liveDataByNode} = useAssetsHealthData(
-    useMemo(() => filtered.map((asset) => asAssetKeyInput(asset.key)), [filtered]),
-  );
+  const {liveDataByNode} = useAssetsHealthData({
+    assetKeys: useMemo(() => filtered.map((asset) => asAssetKeyInput(asset.key)), [filtered]),
+    loading,
+  });
 
   const healthDataLoading = useMemo(() => {
     return Object.values(liveDataByNode).length !== filtered.length;
@@ -154,6 +152,27 @@ export const AssetCatalogTableV2 = React.memo(() => {
     encode: (b) => ({selectedTab: b || 'assets'}),
   });
 
+  const displayKeys = useMemo(() => {
+    return Object.values(groupedByStatus).flatMap((assets) =>
+      assets.map((asset) => JSON.stringify(asset.key.path)),
+    );
+  }, [groupedByStatus]);
+
+  const [{checkedIds: checkedDisplayKeys}, {onToggleFactory}] = useSelectionReducer(displayKeys);
+
+  const onToggleGroup = useCallback(
+    (status: AssetHealthStatusString) => {
+      return (checked: boolean) => {
+        const assetsInGroup = groupedByStatus[status];
+        assetsInGroup.forEach((asset) => {
+          const toggle = onToggleFactory(JSON.stringify(asset.key.path));
+          toggle({checked, shiftKey: false});
+        });
+      };
+    },
+    [groupedByStatus, onToggleFactory],
+  );
+
   const setCurrentPage = useSetRecoilState(currentPageAtom);
   const {path} = useRouteMatch();
   useEffect(() => {
@@ -161,7 +180,15 @@ export const AssetCatalogTableV2 = React.memo(() => {
       specificPath,
       path: `${path}?view=AssetCatalogTableV2&selected_tab=${selectedTab}`,
     }));
-  }, [path, setCurrentPage, selectedTab]);
+  }, [path, setCurrentPage, selectedTab, trackEvent]);
+
+  const onChangeTab = useCallback(
+    (tab: string) => {
+      setSelectedTab(tab);
+      trackEvent('asset-selection-change-tab', {tab});
+    },
+    [setSelectedTab, trackEvent],
+  );
 
   const {isFullScreen} = useFullScreen();
 
@@ -170,7 +197,7 @@ export const AssetCatalogTableV2 = React.memo(() => {
       <Box border="bottom">
         {isFullScreen ? null : (
           <Tabs
-            onChange={setSelectedTab}
+            onChange={onChangeTab}
             selectedTabId={selectedTab}
             style={{marginLeft: 24, marginRight: 24}}
           >
@@ -181,10 +208,10 @@ export const AssetCatalogTableV2 = React.memo(() => {
         )}
       </Box>
     ),
-    [isFullScreen, selectedTab, setSelectedTab],
+    [isFullScreen, onChangeTab, selectedTab],
   );
 
-  const content = useMemo(() => {
+  const content = () => {
     if (error) {
       return <PythonErrorInfo error={error} />;
     }
@@ -228,24 +255,13 @@ export const AssetCatalogTableV2 = React.memo(() => {
             tabs={tabs}
             sortBy={sortBy}
             setSortBy={setSortBy}
+            checkedDisplayKeys={checkedDisplayKeys}
+            onToggleFactory={onToggleFactory}
+            onToggleGroup={onToggleGroup}
           />
         );
     }
-  }, [
-    error,
-    assets?.length,
-    loading,
-    selectedTab,
-    assetSelection,
-    setAssetSelection,
-    filtered,
-    groupedByStatus,
-    favorites,
-    healthDataLoading,
-    tabs,
-    sortBy,
-    setSortBy,
-  ]);
+  };
 
   const extraStyles =
     selectedTab === 'lineage'
@@ -266,7 +282,7 @@ export const AssetCatalogTableV2 = React.memo(() => {
         <CreateCatalogViewButton />
       </Box>
       {/* Lineage and Insights render their own loading bars */}
-      {content}
+      {content()}
     </Box>
   );
 });
@@ -299,6 +315,19 @@ const ITEMS_BY_KEY = SORT_ITEMS.reduce(
   {} as Record<(typeof SORT_ITEMS)[number]['key'], (typeof SORT_ITEMS)[number]>,
 );
 
+interface TableProps {
+  assets: AssetTableFragment[] | undefined;
+  groupedByStatus: Record<AssetHealthStatusString, AssetHealthFragment[]>;
+  loading: boolean;
+  healthDataLoading: boolean;
+  tabs: React.ReactNode;
+  sortBy: (typeof SORT_ITEMS)[number]['key'];
+  setSortBy: (sortBy: (typeof SORT_ITEMS)[number]['key']) => void;
+  checkedDisplayKeys: Set<string>;
+  onToggleFactory: (id: string) => (values: {checked: boolean; shiftKey: boolean}) => void;
+  onToggleGroup: (group: AssetHealthStatusString) => (checked: boolean) => void;
+}
+
 const Table = React.memo(
   ({
     assets,
@@ -308,108 +337,109 @@ const Table = React.memo(
     tabs,
     sortBy,
     setSortBy,
-  }: {
-    assets: AssetTableFragment[] | undefined;
-    groupedByStatus: Record<AssetHealthStatusString, AssetHealthFragment[]>;
-    loading: boolean;
-    healthDataLoading: boolean;
-    tabs: React.ReactNode;
-    sortBy: (typeof SORT_ITEMS)[number]['key'];
-    setSortBy: (sortBy: (typeof SORT_ITEMS)[number]['key']) => void;
-  }) => {
-    const scope = useMemo(
-      () => ({
-        all: (assets ?? [])
-          .filter((a): a is AssetWithDefinition => !!a.definition)
-          .map((a) => ({...a.definition, assetKey: a.key})),
-      }),
-      [assets],
-    );
+    checkedDisplayKeys,
+    onToggleFactory,
+    onToggleGroup,
+  }: TableProps) => {
+    const scope = useMemo(() => {
+      const list = (assets ?? []).filter((a): a is AssetWithDefinition => !!a.definition);
+      if (checkedDisplayKeys.size === 0 || !assets) {
+        return {
+          all: list.map((a) => ({...a.definition, assetKey: a.key})),
+        };
+      }
+
+      const selected = list.filter((a) => checkedDisplayKeys.has(JSON.stringify(a.key.path)));
+      return {
+        selected: selected.map((a) => ({...a.definition, assetKey: a.key})),
+      };
+    }, [assets, checkedDisplayKeys]);
+
     return (
       <>
         <IndeterminateLoadingBar $loading={loading || healthDataLoading} />
         {tabs}
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateRows: 'minmax(0, 1fr)',
-            height: 'calc(100% - 108px)', // TODO: temporary hack to account for top section. Will redo this rendering logic
-          }}
-        >
-          <div
-          // style={{
-          //   display: 'grid',
-          //   gridTemplateColumns: 'minmax(0, 1fr) 374px',
-          //   height: '100%',
-          // }}
+        <Box flex={{direction: 'column'}} style={{height: '100%', overflow: 'hidden'}}>
+          <Box
+            flex={{direction: 'row', alignItems: 'center', justifyContent: 'space-between'}}
+            padding={{horizontal: 24, vertical: 12}}
+            border="bottom"
           >
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateRows: 'auto minmax(500px, 1fr)',
-                height: '100%',
-                gridTemplateColumns: 'minmax(500px, 1fr)',
-              }}
-            >
-              <Box
-                flex={{direction: 'row', alignItems: 'center', justifyContent: 'space-between'}}
-                padding={{horizontal: 24, vertical: 12}}
-                border="bottom"
-              >
-                <Subtitle1>
-                  {loading ? (
-                    <Skeleton $width={200} $height={21} />
-                  ) : (
-                    <>
-                      {numberFormatter.format(assets?.length ?? 0)} asset
-                      {ifPlural(assets?.length ?? 0, '', 's')}
-                    </>
-                  )}
-                </Subtitle1>
-                <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
-                  <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
-                    <Body color={Colors.textLight()}>Sort by</Body>
-                    <Select<(typeof SORT_ITEMS)[number]>
-                      popoverProps={{
-                        position: 'bottom-right',
-                      }}
-                      filterable={false}
-                      activeItem={ITEMS_BY_KEY[sortBy]}
-                      items={SORT_ITEMS}
-                      itemRenderer={(item, props) => {
-                        return (
-                          <MenuItem
-                            active={props.modifiers.active}
-                            onClick={props.handleClick}
-                            key={item.key}
-                            text={item.text}
-                            style={{width: '300px'}}
-                          />
-                        );
-                      }}
-                      onItemSelect={(item) => setSortBy(item.key)}
-                    >
-                      <UnstyledButton $outlineOnHover style={{display: 'flex', padding: '6px 4px'}}>
-                        {ITEMS_BY_KEY[sortBy].text}
-                        <Icon name="arrow_drop_down" />
-                      </UnstyledButton>
-                    </Select>
-                  </Box>
-                  {loading ? (
-                    <Skeleton $width={300} $height={21} />
-                  ) : (
-                    <LaunchAssetExecutionButton scope={scope} />
-                  )}
-                </Box>
+            <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
+              <Subtitle1>
+                {loading ? (
+                  <Skeleton $width={200} $height={21} />
+                ) : (
+                  <>
+                    {numberFormatter.format(assets?.length ?? 0)} asset
+                    {ifPlural(assets?.length ?? 0, '', 's')}
+                  </>
+                )}
+              </Subtitle1>
+              {checkedDisplayKeys.size > 0 ? (
+                <Popover
+                  interactionKind="hover"
+                  placement="bottom-start"
+                  content={
+                    <SelectedAssetsPopoverContent
+                      checkedDisplayKeys={checkedDisplayKeys}
+                      groupedByStatus={groupedByStatus}
+                    />
+                  }
+                >
+                  <Tag intent="primary">
+                    {numberFormatter.format(checkedDisplayKeys.size)} selected
+                  </Tag>
+                </Popover>
+              ) : null}
+            </Box>
+            <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
+              <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
+                <Body color={Colors.textLight()}>Sort by</Body>
+                <Select<(typeof SORT_ITEMS)[number]>
+                  popoverProps={{
+                    position: 'bottom-right',
+                  }}
+                  filterable={false}
+                  activeItem={ITEMS_BY_KEY[sortBy]}
+                  items={SORT_ITEMS}
+                  itemRenderer={(item, props) => {
+                    return (
+                      <MenuItem
+                        active={props.modifiers.active}
+                        onClick={props.handleClick}
+                        key={item.key}
+                        text={item.text}
+                        style={{width: '300px'}}
+                      />
+                    );
+                  }}
+                  onItemSelect={(item) => setSortBy(item.key)}
+                >
+                  <UnstyledButton $outlineOnHover style={{display: 'flex', padding: '6px 4px'}}>
+                    {ITEMS_BY_KEY[sortBy].text}
+                    <Icon name="arrow_drop_down" />
+                  </UnstyledButton>
+                </Select>
               </Box>
-              <AssetCatalogV2VirtualizedTable
-                groupedByStatus={groupedByStatus}
-                loading={loading}
-                healthDataLoading={healthDataLoading}
-              />
-            </div>
+              {loading ? (
+                <Skeleton $width={300} $height={21} />
+              ) : (
+                <LaunchAssetExecutionButton scope={scope} />
+              )}
+            </Box>
+          </Box>
+          <div style={{flex: 1, overflow: 'hidden'}}>
+            <AssetCatalogV2VirtualizedTable
+              groupedByStatus={groupedByStatus}
+              loading={loading}
+              healthDataLoading={healthDataLoading}
+              checkedDisplayKeys={checkedDisplayKeys}
+              onToggleFactory={onToggleFactory}
+              onToggleGroup={onToggleGroup}
+            />
           </div>
-        </div>
+        </Box>
       </>
     );
   },

@@ -78,10 +78,14 @@ def test_components_docs_index(
                     _MASK_EMPTY_WARNINGS,
                     MASK_PLUGIN_CACHE_REBUILD,
                 ],
+                # For multi-parameter tests which share snippets, we don't want to clear the
+                # snapshot dir before updating the snippets
+                clear_snapshot_dir_before_update=False,
             )
         )
         # We need to use editable dagster in testing context
         stack.enter_context(environ({"DG_USE_EDITABLE_DAGSTER": "1"}))
+
         context.run_command_and_snippet_output(
             cmd="dg --help",
             snippet_path=f"{next_snip_no()}-help.txt",
@@ -95,7 +99,7 @@ def test_components_docs_index(
         )
         if package_manager == "uv":
             context.run_command_and_snippet_output(
-                cmd="dg scaffold project jaffle-platform",
+                cmd="create-dagster project jaffle-platform",
                 snippet_path=get_scaffold_project_snip_name(),
                 snippet_replace_regex=[
                     (r"Using CPython.*?(?:\n(?!\n).*)*\n\n", "...venv creation...\n"),
@@ -106,6 +110,7 @@ def test_components_docs_index(
                 ],
                 input_str="y\n",
                 ignore_output=True,
+                print_cmd="uvx -U create-dagster project jaffle-platform",
             )
             context.run_command_and_snippet_output(
                 cmd="cd jaffle-platform && source .venv/bin/activate",
@@ -138,7 +143,7 @@ def test_components_docs_index(
                     stack.enter_context(activate_venv(".venv"))
 
             context.run_command_and_snippet_output(
-                cmd="dg scaffold project .",
+                cmd="create-dagster project .",
                 snippet_path=get_scaffold_project_snip_name(),
                 ignore_output=True,
             )
@@ -155,28 +160,6 @@ def test_components_docs_index(
             cmd="tree",
             snippet_path=f"{next_snip_no()}-{package_manager}-tree.txt",
             custom_comparison_fn=compare_tree_output,
-        )
-        context.check_file(
-            "pyproject.toml",
-            f"{next_snip_no()}-pyproject.toml",
-            snippet_replace_regex=[
-                re_ignore_before("[tool.dg]"),
-                re_ignore_after('root_module = "jaffle_platform"'),
-            ],
-        )
-        context.check_file(
-            Path("src") / "jaffle_platform" / "definitions.py",
-            f"{next_snip_no()}-definitions.py",
-        )
-        context.check_file(
-            "pyproject.toml",
-            f"{next_snip_no()}-pyproject.toml",
-            snippet_replace_regex=[
-                re_ignore_before("[project.entry-points]"),
-                re_ignore_after(
-                    '"dagster_dg.plugin" = { jaffle_platform = "jaffle_platform.components"}'
-                ),
-            ],
         )
 
         context.run_command_and_snippet_output(
@@ -242,6 +225,13 @@ def test_components_docs_index(
                 ignore_output=True,
             )
 
+            context.run_command_and_snippet_output(
+                cmd=f"{install_cmd} duckdb",
+                snippet_path=f"{next_snip_no()}-{package_manager}-add-duckdb.txt",
+                print_cmd=f"{install_cmd} duckdb",
+                ignore_output=True,
+            )
+
             context.create_file(
                 file_path=Path("src")
                 / "jaffle_platform"
@@ -289,9 +279,8 @@ def test_components_docs_index(
 
             # Test sling sync
 
-            _run_command(
-                "dagster asset materialize --select '*' -m jaffle_platform.definitions"
-            )
+            if not update_snippets:
+                _run_command("dg launch --assets '*'")
             context.run_command_and_snippet_output(
                 cmd='duckdb /tmp/jaffle_platform.duckdb -c "SELECT * FROM raw_customers LIMIT 5;"',
                 snippet_path=f"{next_snip_no()}-duckdb-select.txt",
@@ -368,9 +357,8 @@ def test_components_docs_index(
             )
 
             # Run dbt, check works
-            _run_command(
-                "DAGSTER_IS_DEV_CLI=1 dagster asset materialize --select '*' -m jaffle_platform.definitions"
-            )
+            if not update_snippets:
+                _run_command("dg launch --assets '*'")
             context.run_command_and_snippet_output(
                 cmd='duckdb /tmp/jaffle_platform.duckdb -c "SELECT * FROM orders LIMIT 5;"',
                 snippet_path=f"{next_snip_no()}-duckdb-select-orders.txt",
@@ -471,6 +459,5 @@ def test_components_docs_index(
                 """),
             )
 
-            _run_command(
-                "DAGSTER_IS_DEV_CLI=1 dagster asset materialize --select '* and not key:jaffle_dashboard' -m jaffle_platform.definitions"
-            )
+            if not update_snippets:
+                _run_command("dg launch --assets '* and not key:jaffle_dashboard'")

@@ -1,3 +1,4 @@
+import textwrap
 from collections.abc import Iterator, Sequence
 from dataclasses import dataclass
 from typing import Annotated, Any, Literal, Optional, Union
@@ -196,6 +197,7 @@ class AirflowInstanceComponent(Component, Resolvable):
     filter: Optional[ResolvedAirflowFilter] = None
     mappings: Optional[Sequence[AirflowDagMapping]] = None
     source_code_retrieval_enabled: Optional[bool] = None
+    # TODO: deprecate and then delete -- schrockn 2025-06-10
     asset_post_processors: Optional[Sequence[AssetPostProcessor]] = None
 
     def _get_instance(self) -> dg_airlift_core.AirflowInstance:
@@ -205,15 +207,30 @@ class AirflowInstanceComponent(Component, Resolvable):
         )
 
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
-        defs = build_job_based_airflow_defs(
+        if self.asset_post_processors:
+            raise Exception(
+                "The asset_post_processors field is deprecated, place your post-processors in the assets"
+                " field in the top-level post_processing field instead, as in this example:\n"
+                + textwrap.dedent(
+                    """
+                    type: dagster_airlift.core.components.AirflowInstanceComponent
+
+                    attributes: ~
+
+                    post_processing:
+                      assets:
+                        - target: "*"
+                          attributes:
+                            group_name: "my_group"
+                    """
+                )
+            )
+        return build_job_based_airflow_defs(
             airflow_instance=self._get_instance(),
             mapped_defs=apply_mappings(defs_from_subdirs(context), self.mappings or []),
             source_code_retrieval_enabled=self.source_code_retrieval_enabled,
             retrieval_filter=self.filter or AirflowFilter(),
         )
-        for post_processor in self.asset_post_processors or []:
-            defs = post_processor(defs)
-        return defs
 
 
 def defs_from_subdirs(context: ComponentLoadContext) -> Definitions:
@@ -221,7 +238,6 @@ def defs_from_subdirs(context: ComponentLoadContext) -> Definitions:
     return DefsFolderComponent(
         path=context.path,
         children=find_components_from_context(context),
-        asset_post_processors=None,
     ).build_defs(context)
 
 
@@ -240,7 +256,7 @@ def handle_iterator(
 
 
 def apply_mappings(defs: Definitions, mappings: Sequence[AirflowDagMapping]) -> Definitions:
-    specs = {spec.key: spec for spec in defs.get_all_asset_specs()}
+    specs = {spec.key: spec for spec in defs.resolve_all_asset_specs()}
     key_to_handle_mapping = {}
     additional_assets = []
 
@@ -266,7 +282,7 @@ def apply_mappings(defs: Definitions, mappings: Sequence[AirflowDagMapping]) -> 
         return spec
 
     return Definitions.merge(
-        defs.map_asset_specs(func=spec_mapper), Definitions(assets=additional_assets)
+        defs.map_resolved_asset_specs(func=spec_mapper), Definitions(assets=additional_assets)
     )
 
 

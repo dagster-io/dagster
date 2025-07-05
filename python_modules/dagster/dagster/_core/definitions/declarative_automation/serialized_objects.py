@@ -19,7 +19,7 @@ from dagster._core.asset_graph_view.serializable_entity_subset import Serializab
 from dagster._core.definitions.asset_key import T_EntityKey
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.metadata import MetadataMapping, MetadataValue
-from dagster._core.definitions.partition import AllPartitionsSubset
+from dagster._core.definitions.partitions.subset import AllPartitionsSubset
 from dagster._record import record
 from dagster._time import datetime_from_timestamp
 

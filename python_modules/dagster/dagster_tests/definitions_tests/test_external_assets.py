@@ -23,8 +23,8 @@ from dagster._core.definitions.external_asset import (
     create_external_asset_from_source_asset,
     external_assets_from_specs,
 )
-from dagster._core.definitions.freshness_policy import FreshnessPolicy
-from dagster._core.definitions.time_window_partitions import DailyPartitionsDefinition
+from dagster._core.definitions.freshness_policy import LegacyFreshnessPolicy
+from dagster._core.definitions.partitions.definition import DailyPartitionsDefinition
 
 
 def test_external_asset_basic_creation() -> None:
@@ -173,7 +173,7 @@ def test_how_source_assets_are_backwards_compatible() -> None:
 
     instance = DagsterInstance.ephemeral()
 
-    result_one = defs_with_source.get_implicit_global_asset_job_def().execute_in_process(
+    result_one = defs_with_source.resolve_implicit_global_asset_job_def().execute_in_process(
         instance=instance
     )
 
@@ -184,9 +184,9 @@ def test_how_source_assets_are_backwards_compatible() -> None:
         assets=[create_external_asset_from_source_asset(source_asset), an_asset]
     )
 
-    assert isinstance(defs_with_shim.get_assets_def("source_asset"), AssetsDefinition)
+    assert isinstance(defs_with_shim.resolve_assets_def("source_asset"), AssetsDefinition)
 
-    result_two = defs_with_shim.get_implicit_global_asset_job_def().execute_in_process(
+    result_two = defs_with_shim.resolve_implicit_global_asset_job_def().execute_in_process(
         instance=instance,
         # currently we have to explicitly select the asset to exclude the source from execution
         asset_selection=[AssetKey("an_asset")],
@@ -197,7 +197,9 @@ def test_how_source_assets_are_backwards_compatible() -> None:
 
 
 def get_job_for_assets(defs: Definitions, *coercibles_or_defs) -> JobDefinition:
-    job_def = defs.get_implicit_job_def_for_assets(set_from_coercibles_or_defs(coercibles_or_defs))
+    job_def = defs.resolve_implicit_job_def_def_for_assets(
+        set_from_coercibles_or_defs(coercibles_or_defs)
+    )
     assert job_def, "Expected to find a job def"
     return job_def
 
@@ -247,7 +249,7 @@ def test_how_partitioned_source_assets_are_backwards_compatible() -> None:
     shimmed_source_asset = create_external_asset_from_source_asset(source_asset)
     defs_with_shim = Definitions(assets=[shimmed_source_asset, an_asset])
 
-    assert isinstance(defs_with_shim.get_assets_def("source_asset"), AssetsDefinition)
+    assert isinstance(defs_with_shim.resolve_assets_def("source_asset"), AssetsDefinition)
 
     job_def_with_shim = get_job_for_assets(defs_with_shim, an_asset)
 
@@ -263,20 +265,23 @@ def test_how_partitioned_source_assets_are_backwards_compatible() -> None:
 
 
 def test_observable_source_asset_decorator() -> None:
-    freshness_policy = FreshnessPolicy(maximum_lag_minutes=30)
+    freshness_policy = LegacyFreshnessPolicy(maximum_lag_minutes=30)
 
-    @observable_source_asset(freshness_policy=freshness_policy)
+    @observable_source_asset(legacy_freshness_policy=freshness_policy)
     def an_observable_source_asset() -> DataVersion:
         return DataVersion("foo")
 
     assets_def = create_external_asset_from_source_asset(an_observable_source_asset)
     assert assets_def.is_executable
     assert assets_def.is_observable
-    assert assets_def.freshness_policies_by_key[an_observable_source_asset.key] == freshness_policy
+    assert (
+        assets_def.legacy_freshness_policies_by_key[an_observable_source_asset.key]
+        == freshness_policy
+    )
     defs = Definitions(assets=[assets_def])
 
     instance = DagsterInstance.ephemeral()
-    result = defs.get_implicit_global_asset_job_def().execute_in_process(instance=instance)
+    result = defs.resolve_implicit_global_asset_job_def().execute_in_process(instance=instance)
 
     assert result.success
     assert result.output_for_node("an_observable_source_asset") is None
@@ -305,7 +310,7 @@ def test_external_assets_with_dependencies_manual_construction() -> None:
     defs = Definitions(assets=[_upstream_def, _downstream_asset])
     assert defs
 
-    assert defs.get_implicit_global_asset_job_def().asset_layer.asset_graph.get(
+    assert defs.resolve_implicit_global_asset_job_def().asset_layer.asset_graph.get(
         AssetKey("downstream_asset")
     ).parent_keys == {AssetKey("upstream_asset")}
 
@@ -321,7 +326,7 @@ def test_external_asset_multi_asset() -> None:
     defs = Definitions(assets=[_generated_asset_def])
     assert defs
 
-    assert defs.get_asset_graph().asset_dep_graph["upstream"][downstream_asset.key] == {
+    assert defs.resolve_asset_graph().asset_dep_graph["upstream"][downstream_asset.key] == {
         upstream_asset.key
     }
 
@@ -333,6 +338,6 @@ def test_external_assets_with_dependencies() -> None:
     defs = Definitions(assets=external_assets_from_specs([upstream_asset, downstream_asset]))
     assert defs
 
-    assert defs.get_asset_graph().asset_dep_graph["upstream"][downstream_asset.key] == {
+    assert defs.resolve_asset_graph().asset_dep_graph["upstream"][downstream_asset.key] == {
         upstream_asset.key
     }

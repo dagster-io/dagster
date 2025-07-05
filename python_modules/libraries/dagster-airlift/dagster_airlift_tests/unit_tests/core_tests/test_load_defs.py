@@ -450,7 +450,7 @@ def test_multiple_tasks_to_single_asset_metadata() -> None:
     assert defs.assets
     assert len(list(defs.assets)) == 3  # two dags and one asset
 
-    assert defs.get_asset_graph().assets_def_for_key(AssetKey("an_asset")).specs_by_key[
+    assert defs.resolve_asset_graph().assets_def_for_key(AssetKey("an_asset")).specs_by_key[
         AssetKey("an_asset")
     ].metadata[TASK_MAPPING_METADATA_KEY] == [
         {"dag_id": "dag1", "task_id": "task1"},
@@ -661,7 +661,7 @@ def test_double_instance() -> None:
 
     defs = Definitions.merge(defs_one, defs_two)
 
-    all_specs = {spec.key: spec for spec in defs.get_all_asset_specs()}
+    all_specs = {spec.key: spec for spec in defs.resolve_all_asset_specs()}
 
     assert set(all_specs.keys()) == {
         make_default_dag_asset_key("instance_one", "dag1"),

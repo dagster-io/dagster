@@ -14,6 +14,7 @@ from dagster import (
     usable_as_dagster_type,
     validate_run_config,
 )
+from dagster._core.definitions.metadata.metadata_value import IntMetadataValue, TextMetadataValue
 
 
 def builder(graph):
@@ -329,3 +330,18 @@ def test_job_recreation_works() -> None:
         "resources": {"io_manager": {"config": None}},
         "loggers": {},
     }
+
+
+def test_metadata():
+    @job(metadata={"foo": "bar", "four": 4})
+    def original(): ...
+
+    assert original.metadata["foo"] == TextMetadataValue("bar")
+    assert original.metadata["four"] == IntMetadataValue(4)
+
+    blanked = original.with_metadata({})
+    assert blanked.metadata == {}
+
+    updated = original.with_metadata({**original.metadata, "foo": "baz"})
+    assert updated.metadata["foo"] == TextMetadataValue("baz")
+    assert updated.metadata["four"] == IntMetadataValue(4)

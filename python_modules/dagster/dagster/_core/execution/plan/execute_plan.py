@@ -3,10 +3,11 @@ from collections.abc import Iterator, Sequence
 from contextlib import ExitStack
 from typing import Optional, cast
 
+from dagster_shared.error import DagsterError
+
 import dagster._check as check
 from dagster._core.definitions import Failure, HookExecutionResult, RetryRequested
 from dagster._core.errors import (
-    DagsterError,
     DagsterExecutionInterruptedError,
     DagsterMaxRetriesExceededError,
     DagsterUserCodeExecutionError,

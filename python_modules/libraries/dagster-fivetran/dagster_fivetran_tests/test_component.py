@@ -1,24 +1,19 @@
 # ruff: noqa: F841 TID252
 
 import copy
-import importlib
-import json
 from collections.abc import Iterator, Mapping
-from contextlib import contextmanager, nullcontext
-from pathlib import Path
+from contextlib import contextmanager
 from typing import Any, Callable, Optional
 
 import pytest
 import responses
 import yaml
-from dagster import AssetKey, ComponentLoadContext
+from dagster import AssetKey
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.definitions_class import Definitions
-from dagster._core.test_utils import ensure_dagster_tests_import
-from dagster._utils import alter_sys_path
 from dagster._utils.env import environ
-from dagster.components.cli import cli
-from dagster.components.core.context import use_component_load_context
+from dagster.components.core.tree import ComponentTree
+from dagster.components.testing import TestTranslation, scaffold_defs_sandbox
 from dagster_fivetran.components.workspace_component.component import FivetranAccountComponent
 from dagster_fivetran.resources import FivetranWorkspace
 from dagster_fivetran.translator import FivetranConnector
@@ -35,55 +30,27 @@ from dagster_fivetran_tests.conftest import (
     TEST_GROUP_ID,
 )
 
-ensure_dagster_tests_import()
-from click.testing import CliRunner
-from dagster_dg_core.utils import ensure_dagster_dg_tests_import
-from dagster_tests.components_tests.utils import get_underlying_component
-
-ensure_dagster_dg_tests_import()
-
-from dagster_dg_core_tests.utils import ProxyRunner, isolated_example_project_foo_bar
-
-
-@contextmanager
-def setup_fivetran_ready_project() -> Iterator[None]:
-    with (
-        ProxyRunner.test(use_fixed_test_components=True) as runner,
-        isolated_example_project_foo_bar(runner, in_workspace=False),
-        alter_sys_path(to_add=[str(Path.cwd() / "src")], to_remove=[]),
-    ):
-        yield
-
 
 @contextmanager
 def setup_fivetran_component(
     component_body: dict[str, Any],
 ) -> Iterator[tuple[FivetranAccountComponent, Definitions]]:
     """Sets up a components project with a fivetran component based on provided params."""
-    with setup_fivetran_ready_project():
-        defs_path = Path.cwd() / "src" / "foo_bar" / "defs"
-        component_path = defs_path / "ingest"
-        component_path.mkdir(parents=True, exist_ok=True)
-
-        (component_path / "defs.yaml").write_text(yaml.safe_dump(component_body))
-
-        defs_root = importlib.import_module("foo_bar.defs.ingest")
-        project_root = Path.cwd()
-
-        context = ComponentLoadContext.for_module(defs_root, project_root)
-        with use_component_load_context(context):
-            component = get_underlying_component(context)
+    with scaffold_defs_sandbox(
+        component_cls=FivetranAccountComponent,
+    ) as defs_sandbox:
+        with defs_sandbox.load(component_body=component_body) as (component, defs):
             assert isinstance(component, FivetranAccountComponent)
-            yield component, component.build_defs(context)
+            yield component, defs
 
 
 BASIC_FIVETRAN_COMPONENT_BODY = {
     "type": "dagster_fivetran.FivetranAccountComponent",
     "attributes": {
         "workspace": {
-            "api_key": "{{ env('FIVETRAN_API_KEY') }}",
-            "api_secret": "{{ env('FIVETRAN_API_SECRET') }}",
-            "account_id": "{{ env('FIVETRAN_ACCOUNT_ID') }}",
+            "api_key": "{{ env.FIVETRAN_API_KEY }}",
+            "api_secret": "{{ env.FIVETRAN_API_SECRET }}",
+            "account_id": "{{ env.FIVETRAN_ACCOUNT_ID }}",
         },
     },
 }
@@ -107,7 +74,7 @@ def test_basic_component_load(
             defs,
         ),
     ):
-        assert defs.get_asset_graph().get_all_asset_keys() == {
+        assert defs.resolve_asset_graph().get_all_asset_keys() == {
             AssetKey(["schema_name_in_destination_1", "table_name_in_destination_1"]),
             AssetKey(["schema_name_in_destination_1", "table_name_in_destination_2"]),
             AssetKey(["schema_name_in_destination_2", "table_name_in_destination_1"]),
@@ -165,7 +132,7 @@ def test_basic_component_filter(
             defs,
         ),
     ):
-        assert len(defs.get_asset_graph().get_all_asset_keys()) == num_assets
+        assert len(defs.resolve_asset_graph().get_all_asset_keys()) == num_assets
 
 
 @pytest.mark.parametrize(
@@ -196,89 +163,18 @@ def test_custom_filter_fn_python(
         ),
         connector_selector=filter_fn,
         translation=None,
-    ).build_defs(ComponentLoadContext.for_test())
-    assert len(defs.get_asset_graph().get_all_asset_keys()) == num_assets
+    ).build_defs(ComponentTree.for_test().load_context)
+    assert len(defs.resolve_asset_graph().get_all_asset_keys()) == num_assets
 
 
-@pytest.mark.parametrize(
-    "attributes, assertion, should_error",
-    [
-        ({"group_name": "group"}, lambda asset_spec: asset_spec.group_name == "group", False),
-        (
-            {"owners": ["team:analytics"]},
-            lambda asset_spec: asset_spec.owners == ["team:analytics"],
-            False,
-        ),
-        ({"tags": {"foo": "bar"}}, lambda asset_spec: asset_spec.tags.get("foo") == "bar", False),
-        (
-            {"kinds": ["snowflake", "dbt"]},
-            lambda asset_spec: "snowflake" in asset_spec.kinds and "dbt" in asset_spec.kinds,
-            False,
-        ),
-        (
-            {"tags": {"foo": "bar"}, "kinds": ["snowflake", "dbt"]},
-            lambda asset_spec: "snowflake" in asset_spec.kinds
-            and "dbt" in asset_spec.kinds
-            and asset_spec.tags.get("foo") == "bar",
-            False,
-        ),
-        ({"code_version": "1"}, lambda asset_spec: asset_spec.code_version == "1", False),
-        (
-            {"description": "some description"},
-            lambda asset_spec: asset_spec.description == "some description",
-            False,
-        ),
-        (
-            {"metadata": {"foo": "bar"}},
-            lambda asset_spec: asset_spec.metadata.get("foo") == "bar",
-            False,
-        ),
-        (
-            {"deps": ["customers"]},
-            lambda asset_spec: len(asset_spec.deps) == 1
-            and asset_spec.deps[0].asset_key == AssetKey("customers"),
-            False,
-        ),
-        (
-            {"automation_condition": "{{ automation_condition.eager() }}"},
-            lambda asset_spec: asset_spec.automation_condition is not None,
-            False,
-        ),
-        (
-            {"key": "{{ spec.key.to_user_string() + '_suffix' }}"},
-            lambda asset_spec: asset_spec.key
-            == AssetKey(["schema_name_in_destination_1", "table_name_in_destination_1_suffix"]),
-            False,
-        ),
-        (
-            {"key_prefix": "cool_prefix"},
-            lambda asset_spec: asset_spec.key.has_prefix(["cool_prefix"]),
-            False,
-        ),
-    ],
-    ids=[
-        "group_name",
-        "owners",
-        "tags",
-        "kinds",
-        "tags-and-kinds",
-        "code-version",
-        "description",
-        "metadata",
-        "deps",
-        "automation_condition",
-        "key",
-        "key_prefix",
-    ],
-)
-def test_translation(
-    fetch_workspace_data_multiple_connectors_mocks,
-    attributes: Mapping[str, Any],
-    assertion: Optional[Callable[[AssetSpec], bool]],
-    should_error: bool,
-) -> None:
-    wrapper = pytest.raises(Exception) if should_error else nullcontext()
-    with wrapper:
+class TestFivetranTranslation(TestTranslation):
+    def test_translation(
+        self,
+        fetch_workspace_data_multiple_connectors_mocks,
+        attributes: Mapping[str, Any],
+        assertion: Callable[[AssetSpec], bool],
+        key_modifier: Optional[Callable[[AssetKey], AssetKey]],
+    ) -> None:
         body = copy.deepcopy(BASIC_FIVETRAN_COMPONENT_BODY)
         body["attributes"]["translation"] = attributes
         with (
@@ -296,24 +192,16 @@ def test_translation(
                 defs,
             ),
         ):
-            if "key" in attributes:
-                key = AssetKey(
-                    ["schema_name_in_destination_1", "table_name_in_destination_1_suffix"]
-                )
-            elif "key_prefix" in attributes:
-                key = AssetKey(
-                    ["cool_prefix", "schema_name_in_destination_1", "table_name_in_destination_1"]
-                )
-            else:
-                key = AssetKey(["schema_name_in_destination_1", "table_name_in_destination_1"])
+            key = AssetKey(["schema_name_in_destination_1", "table_name_in_destination_1"])
+            if key_modifier:
+                key = key_modifier(key)
 
-            assets_def = defs.get_assets_def(key)
-            if assertion:
-                assert assertion(assets_def.get_asset_spec(key))
+            assets_def = defs.resolve_assets_def(key)
+            assert assertion(assets_def.get_asset_spec(key))
 
 
 @pytest.mark.parametrize(
-    "json_params",
+    "scaffold_params",
     [
         {},
         {"account_id": "test_account", "api_key": "test_key", "api_secret": "test_secret"},
@@ -322,29 +210,17 @@ def test_translation(
     ],
     ids=["no_params", "all_params", "just_account_id", "just_credentials"],
 )
-def test_scaffold_component_with_params(json_params: dict):
-    runner = CliRunner()
-
-    with setup_fivetran_ready_project():
-        result = runner.invoke(
-            cli,
-            [
-                "scaffold",
-                "object",
-                "dagster_fivetran.FivetranAccountComponent",
-                "src/foo_bar/defs/my_fivetran_component",
-                "--scaffold-format",
-                "yaml",
-                "--json-params",
-                json.dumps(json_params),
-            ],
-        )
-        assert result.exit_code == 0
-        assert Path("src/foo_bar/defs/my_fivetran_component/defs.yaml").exists()
+def test_scaffold_component_with_params(scaffold_params: dict):
+    with scaffold_defs_sandbox(
+        component_cls=FivetranAccountComponent,
+        scaffold_params=scaffold_params,
+    ) as instance_folder:
+        defs_yaml_path = instance_folder.defs_folder_path / "defs.yaml"
+        assert defs_yaml_path.exists()
         assert {
             k: v
-            for k, v in yaml.safe_load(
-                Path("src/foo_bar/defs/my_fivetran_component/defs.yaml").read_text()
-            )["attributes"]["workspace"].items()
+            for k, v in yaml.safe_load(defs_yaml_path.read_text())["attributes"][
+                "workspace"
+            ].items()
             if v is not None
-        } == json_params
+        } == scaffold_params

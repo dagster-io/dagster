@@ -2,8 +2,6 @@ tree my_project
 
 my_project
 ├── __init__.py
-├── components
-│   └── __init__.py
 ├── definitions.py
 └── defs
     ├── __init__.py
@@ -12,4 +10,4 @@ my_project
         ├── defs.yaml
         └── replication.yaml
 
-4 directories, 7 files
+3 directories, 6 files

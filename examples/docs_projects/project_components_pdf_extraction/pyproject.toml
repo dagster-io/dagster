@@ -15,7 +15,7 @@ dependencies = [
 ]
 
 [project.entry-points]
-"dagster_dg.plugin" = { project_components_pdf_extraction = "project_components_pdf_extraction.lib"}
+"dagster_dg_cli.registry_modules" = { project_components_pdf_extraction = "project_components_pdf_extraction.lib"}
 
 [dependency-groups]
 dev = [
@@ -31,7 +31,6 @@ directory_type = "project"
 
 [tool.dg.project]
 root_module = "project_components_pdf_extraction"
-python_environment = "persistent_uv"
 defs_module = "project_components_pdf_extraction.defs"
 
 [tool.setuptools.packages.find]

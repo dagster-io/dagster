@@ -17,7 +17,11 @@ from dagster._core.definitions.events import (
 from dagster._core.definitions.hook_definition import HookDefinition
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.op_definition import OpDefinition
-from dagster._core.definitions.partition_key_range import PartitionKeyRange
+from dagster._core.definitions.partitions.partition_key_range import PartitionKeyRange
+from dagster._core.definitions.partitions.utils import (
+    TimeWindow,
+    has_one_dimension_time_window_partitioning,
+)
 from dagster._core.definitions.repository_definition import RepositoryDefinition
 from dagster._core.definitions.resource_definition import (
     IContainsGenerator,
@@ -27,11 +31,6 @@ from dagster._core.definitions.resource_definition import (
 )
 from dagster._core.definitions.resource_requirement import ensure_requirements_satisfied
 from dagster._core.definitions.step_launcher import StepLauncher
-from dagster._core.definitions.time_window_partitions import (
-    TimeWindow,
-    TimeWindowPartitionsDefinition,
-    has_one_dimension_time_window_partitioning,
-)
 from dagster._core.errors import (
     DagsterInvalidInvocationError,
     DagsterInvalidPropertyError,
@@ -50,7 +49,10 @@ from dagster._utils.merger import merge_dicts
 
 if TYPE_CHECKING:
     from dagster._core.definitions.decorators.op_decorator import DecoratedOpFunction
-    from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
+    from dagster._core.definitions.partitions.definition import (
+        MultiPartitionsDefinition,
+        TimeWindowPartitionsDefinition,
+    )
 
 
 def _property_msg(prop_name: str, method_name: str) -> str:

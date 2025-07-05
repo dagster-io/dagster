@@ -229,7 +229,7 @@ def test_component_docs_using_env(
     ) as context:
         with ExitStack() as stack:
             context.run_command_and_snippet_output(
-                cmd="dg scaffold project ingestion --use-editable-dagster",
+                cmd="create-dagster project ingestion --use-editable-dagster",
                 snippet_path=SNIPPETS_DIR
                 / f"{context.get_next_snip_number()}-dg-init.txt",
                 snippet_replace_regex=[
@@ -238,6 +238,7 @@ def test_component_docs_using_env(
                     # we simulate the input we don't get the newline we get in terminal so we
                     # slide it in here.
                     (r"Running `uv sync`\.\.\.", "\nRunning `uv sync`..."),
+                    ("create-dagster", "uvx -U create-dagster"),
                 ],
                 input_str="y\n",
                 ignore_output=True,
@@ -319,16 +320,15 @@ def test_component_docs_using_env(
                     type: dagster_sling.SlingReplicationCollectionComponent
 
                     attributes:
-                      sling:
-                        connections:
-                          - name: SNOWFLAKE
-                            type: snowflake
-                            account: "{{ env('SNOWFLAKE_ACCOUNT') }}"
-                            user: "{{ env('SNOWFLAKE_USER') }}"
-                            password: "{{ env('SNOWFLAKE_PASSWORD') }}"
-                            database: "{{ env('SNOWFLAKE_DATABASE') }}"
-                        replications:
-                          - path: replication.yaml
+                      connections:
+                        SNOWFLAKE:
+                          type: snowflake
+                          account: "{{ env.SNOWFLAKE_ACCOUNT }}"
+                          user: "{{ env.SNOWFLAKE_USER }}"
+                          password: "{{ env.SNOWFLAKE_PASSWORD }}"
+                          database: "{{ env.SNOWFLAKE_DATABASE }}"
+                      replications:
+                        - path: replication.yaml
                     """),
             )
 
@@ -355,16 +355,15 @@ def test_component_docs_using_env(
                     type: dagster_sling.SlingReplicationCollectionComponent
 
                     attributes:
-                      sling:
-                        connections:
-                          - name: SNOWFLAKE
-                            type: snowflake
-                            account: "{{ env('SNOWFLAKE_ACCOUNT') }}"
-                            user: "{{ env('SNOWFLAKE_USER') }}"
-                            password: "{{ env('SNOWFLAKE_PASSWORD') }}"
-                            database: "{{ env('SNOWFLAKE_DATABASE') }}"
-                        replications:
-                          - path: replication.yaml
+                      connections:
+                        SNOWFLAKE:
+                          type: snowflake
+                          account: "{{ env.SNOWFLAKE_ACCOUNT }}"
+                          user: "{{ env.SNOWFLAKE_USER }}"
+                          password: "{{ env.SNOWFLAKE_PASSWORD }}"
+                          database: "{{ env.SNOWFLAKE_DATABASE }}"
+                      replications:
+                        - path: replication.yaml
 
                     requirements:
                       env:

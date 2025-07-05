@@ -1,17 +1,9 @@
 from datetime import timedelta
 
-from dagster._core.definitions.freshness import (
-    InternalFreshnessPolicy,
-    TimeWindowFreshnessPolicy,
-)
+from dagster.preview.freshness import FreshnessPolicy
 
-# Create a policy that requires updates every 24 hours
-policy = TimeWindowFreshnessPolicy.from_timedeltas(
-    fail_window=timedelta(hours=24),
-    warn_window=timedelta(hours=12),  # optional, must be less than fail_window
-)
-
-# Or, equivalently, from the base class
-policy = InternalFreshnessPolicy.time_window(
+# Create a freshness policy that requires a materialization at least once every 24 hours,
+# and warns if the latest materialization is older than 12 hours.
+policy = FreshnessPolicy.time_window(
     fail_window=timedelta(hours=24), warn_window=timedelta(hours=12)
 )

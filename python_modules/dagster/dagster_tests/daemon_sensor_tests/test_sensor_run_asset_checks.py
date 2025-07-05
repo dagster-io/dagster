@@ -4,13 +4,13 @@ from dagster import (
     AssetCheckKey,
     AssetSelection,
     DagsterInstance,
-    DailyPartitionsDefinition,
     Definitions,
     RunRequest,
     asset,
     asset_check,
     sensor,
 )
+from dagster._core.definitions.partitions.definition import DailyPartitionsDefinition
 from dagster._core.definitions.run_request import InstigatorType
 from dagster._core.scheduler.instigation import InstigatorState, InstigatorStatus, TickStatus
 from dagster._core.test_utils import create_test_daemon_workspace_context, load_remote_repo

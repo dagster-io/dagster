@@ -2,12 +2,10 @@ import datetime
 from typing import Any
 
 import pytest
-from dagster import (
-    DagsterTypeCheckDidNotPass,
+from dagster import DagsterTypeCheckDidNotPass, asset, materialize
+from dagster._core.definitions.partitions.definition import (
     DailyPartitionsDefinition,
     HourlyPartitionsDefinition,
-    asset,
-    materialize,
 )
 from dagster._core.instance_for_test import instance_for_test
 from pytest import fixture

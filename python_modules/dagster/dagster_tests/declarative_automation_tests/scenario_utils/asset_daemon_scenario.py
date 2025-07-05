@@ -169,7 +169,9 @@ class AssetDaemonScenarioState(ScenarioState):
         # make sure these run requests are available on the instance
         for request in new_run_requests:
             asset_selection = check.not_none(request.asset_selection)
-            job_def = self.scenario_spec.defs.get_implicit_job_def_for_assets(asset_selection)
+            job_def = self.scenario_spec.defs.resolve_implicit_job_def_def_for_assets(
+                asset_selection
+            )
             self.instance.create_run_for_job(
                 job_def=check.not_none(job_def),
                 asset_selection=set(asset_selection),
@@ -205,17 +207,14 @@ class AssetDaemonScenarioState(ScenarioState):
             def _run_daemon():
                 amp_tick_futures = {}
 
-                list(
-                    AssetDaemon(  # noqa: SLF001
-                        settings=self.instance.get_auto_materialize_settings(),
-                        pre_sensor_interval_seconds=42,
-                    )._run_iteration_impl(
-                        workspace_context,
-                        threadpool_executor=self.threadpool_executor,
-                        amp_tick_futures=amp_tick_futures,
-                        debug_crash_flags={},
-                        submit_threadpool_executor=None,
-                    )
+                AssetDaemon(  # noqa: SLF001
+                    settings=self.instance.get_auto_materialize_settings(),
+                    pre_sensor_interval_seconds=42,
+                )._run_iteration_impl(
+                    workspace_context,
+                    threadpool_executor=self.threadpool_executor,
+                    amp_tick_futures=amp_tick_futures,
+                    debug_crash_flags={},
                 )
 
                 wait_for_futures(amp_tick_futures)

@@ -132,7 +132,7 @@ def observable_source_asset_random_execution_error(context):
 
 
 @dg.asset(
-    internal_freshness_policy=InternalFreshnessPolicy.time_window(
+    freshness_policy=InternalFreshnessPolicy.time_window(
         fail_window=timedelta(minutes=5), warn_window=timedelta(minutes=1)
     )
 )
@@ -158,6 +158,63 @@ def insert_source_asset_materializations_job() -> None:
     insert_source_asset_materializations()
 
 
+# jobs for reporting observations and materializations for assets that do not have definitions in dagster
+@dg.op
+def observe_no_def_observable(context):
+    context.log_event(dg.AssetObservation(asset_key="no_def_observable", metadata={"foo": "bar"}))
+
+
+@dg.job
+def observe_no_def_observable_job():
+    observe_no_def_observable()
+
+
+@dg.op
+def materialize_no_def_materializable(context):
+    context.log_event(
+        dg.AssetMaterialization(
+            asset_key="no_def_materializable", metadata={"foo": "bar"}, partition="1"
+        )
+    )
+    context.log_event(
+        dg.AssetMaterialization(
+            asset_key="no_def_materializable", metadata={"foo": "bar"}, partition="2"
+        )
+    )
+    context.log_event(
+        dg.AssetMaterialization(
+            asset_key="no_def_materializable", metadata={"foo": "bar"}, partition="4"
+        )
+    )
+
+
+@dg.op
+def checks_no_def_materializable(context):
+    context.log_event(
+        dg.AssetCheckEvaluation(
+            passed=True,
+            asset_key=dg.AssetKey("no_def_materializable"),
+            check_name="check_for_no_def_materializable",
+        )
+    )
+
+
+@dg.job
+def materialize_no_def_materializable_job():
+    materialize_no_def_materializable()
+    checks_no_def_materializable()
+
+
+random_assets_job = dg.define_asset_job(
+    "random_assets_job", selection=dg.AssetSelection.assets(random_1, random_2, random_3)
+)
+
+random_assets_every_15m_schedule = dg.ScheduleDefinition(
+    job=random_assets_job,
+    cron_schedule="*/15 * * * *",
+)
+
+
 def get_assets_and_checks():
     return [
         random_1,
@@ -181,4 +238,8 @@ def get_assets_and_checks():
         source_asset,
         source_asset_check,
         insert_source_asset_materializations_job,
+        materialize_no_def_materializable_job,
+        observe_no_def_observable_job,
+        random_assets_job,
+        random_assets_every_15m_schedule,
     ]

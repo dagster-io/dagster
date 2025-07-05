@@ -1,4 +1,5 @@
 import json
+import os
 import sys
 import threading
 import time
@@ -33,7 +34,7 @@ from dagster._daemon.daemon import DaemonIterator, IntervalDaemon
 from dagster._daemon.utils import DaemonErrorCapture
 from dagster._utils.tags import TagConcurrencyLimitsCounter
 
-PAGE_SIZE = 100
+PAGE_SIZE = int(os.getenv("DAGSTER_RUN_QUEUE_PAGE_SIZE", "100"))
 
 
 class QueuedRunCoordinatorDaemon(IntervalDaemon):
@@ -240,6 +241,10 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
         # Paginate through our runs list so we don't need to hold every run
         # in memory at once. The maximum number of runs we'll hold in memory is
         # max_runs_to_launch + page_size.
+
+        concurrency_keys = None
+        pool_limits = None
+
         while has_more:
             queued_runs = instance.get_runs(
                 RunsFilter(statuses=[DagsterRunStatus.QUEUED]),
@@ -270,12 +275,21 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
 
             if run_queue_config.should_block_op_concurrency_limited_runs:
                 try:
+                    # fetch global concurrency information at most once per iteration
+                    if concurrency_keys is None:
+                        concurrency_keys = instance.event_log_storage.get_concurrency_keys()
+
+                    if pool_limits is None:
+                        pool_limits = instance.event_log_storage.get_pool_limits()
+
                     global_concurrency_limits_counter = GlobalOpConcurrencyLimitsCounter(
                         instance,
                         batch,
                         in_progress_run_records,
-                        run_queue_config.op_concurrency_slot_buffer,
-                        concurrency_config.pool_config.pool_granularity,
+                        concurrency_keys=concurrency_keys,
+                        pool_limits=pool_limits,
+                        slot_count_offset=run_queue_config.op_concurrency_slot_buffer,
+                        pool_granularity=concurrency_config.pool_config.pool_granularity,
                     )
                 except:
                     self._logger.exception("Failed to initialize op concurrency counter")

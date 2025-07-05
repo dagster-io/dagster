@@ -1,5 +1,6 @@
 import inspect
 import os
+import sys
 from abc import ABC
 from collections import namedtuple
 from collections.abc import Iterator, Mapping
@@ -10,6 +11,7 @@ from typing_extensions import Self, dataclass_transform
 
 import dagster_shared.check as check
 from dagster_shared.check.builder import (
+    INJECTED_CHECK_VAR,
     INJECTED_DEFAULT_VALS_LOCAL_VAR,
     EvalContext,
     build_args_and_assignment_strs,
@@ -63,6 +65,15 @@ def _get_field_set_and_defaults(
                     "If you are trying to set a function as a default value "
                     "you will have to override __new__.",
                 )
+                if "pydantic" in sys.modules:
+                    from pydantic.fields import FieldInfo
+
+                    check.invariant(
+                        not isinstance(attr_val, FieldInfo),
+                        "pydantic.Field is not supported as a default value for @record fields."
+                        " For Resolved subclasses, you may provide additional field metadata"
+                        " through the Resolver: Annotated[..., Resolver.default(description=...)].",
+                    )
                 defaults[name] = attr_val
                 last_defaulted_field = name
                 continue
@@ -112,8 +123,12 @@ def _namedtuple_record_transform(
     if checked:
         eval_ctx = EvalContext.capture_from_frame(
             1 + decorator_frames,
-            # inject default values in to the local namespace for reference in generated __new__
-            add_to_local_ns={INJECTED_DEFAULT_VALS_LOCAL_VAR: defaults},
+            add_to_local_ns={
+                # inject default values in to the local namespace for reference in generated __new__
+                INJECTED_DEFAULT_VALS_LOCAL_VAR: defaults,
+                # as well as a ref to the check module
+                INJECTED_CHECK_VAR: check,
+            },
         )
         generated_new = JitCheckedNew(
             field_set,
@@ -479,10 +494,6 @@ class JitCheckedNew:
         # update the context with callsite locals/globals to resolve
         # ForwardRefs that were unavailable at definition time.
         self._eval_ctx.update_from_frame(1 + self._new_frames)
-
-        # ensure check is in scope
-        if "check" not in self._eval_ctx.global_ns:
-            self._eval_ctx.global_ns["check"] = check
 
         # we are double-memoizing this to handle some confusing mro issues
         # in which the _nt_base's __new__ method is not on the critical

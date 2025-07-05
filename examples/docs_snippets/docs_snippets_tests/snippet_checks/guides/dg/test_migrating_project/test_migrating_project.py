@@ -54,6 +54,9 @@ def test_migrating_project(
                 MASK_MY_EXISTING_PROJECT,
                 MASK_PLUGIN_CACHE_REBUILD,
             ],
+            # For multi-parameter tests which share snippets, we don't want to clear the
+            # snapshot dir before updating the snippets
+            clear_snapshot_dir_before_update=False,
         ) as context:
             project_root = (
                 Path(__file__).parent / f"my-existing-project-{package_manager}"
@@ -112,9 +115,10 @@ def test_migrating_project(
                 )
 
             # Test to make sure everything is working
-            _run_command(
-                "dagster asset materialize --select '*' -m 'my_existing_project.definitions'"
-            )
+            if not update_snippets:
+                _run_command(
+                    "dagster asset materialize --select '*' -m 'my_existing_project.definitions'"
+                )
 
             if package_manager == "uv":
                 # We're using a local `dg` install in reality to avoid polluting global env but we'll fake the global one
@@ -122,7 +126,7 @@ def test_migrating_project(
                     cmd=get_editable_install_cmd_for_dg(package_manager),
                     snippet_path=f"{context.get_next_snip_number()}-{package_manager}-install-dg.txt",
                     ignore_output=True,
-                    print_cmd="uv tool install dagster-dg-cli",
+                    print_cmd="uv add dagster-dg-cli",
                 )
             elif package_manager == "pip":
                 context.run_command_and_snippet_output(
@@ -185,7 +189,7 @@ def test_migrating_project(
                 snippet_path=f"{context.get_next_snip_number()}-create-lib.txt",
             )
 
-            # Add dagster_dg.plugin to pyproject.toml
+            # Add dagster_dg_cli.registry_modules to pyproject.toml
             if package_manager == "uv":
                 pyproject_toml_content = Path("pyproject.toml").read_text()
                 pyproject_toml_content = insert_before_matching_line(
@@ -193,7 +197,7 @@ def test_migrating_project(
                     "\n"
                     + format_multiline("""
                         [project.entry-points]
-                        "dagster_dg.plugin" = { my_existing_project = "my_existing_project.components"}
+                        "dagster_dg_cli.registry_modules" = { my_existing_project = "my_existing_project.components"}
                     """),
                     r"\[build-system\]",
                 )
@@ -215,7 +219,7 @@ def test_migrating_project(
             elif package_manager == "pip":
                 setup_cfg_content = format_multiline("""
                     [options.entry_points]
-                    dagster_dg.plugin =
+                    dagster_dg_cli.registry_modules =
                         my_existing_project = my_existing_project.components
                 """)
                 Path("setup.cfg").write_text(setup_cfg_content)
@@ -230,8 +234,8 @@ def test_migrating_project(
                 )
 
             context.run_command_and_snippet_output(
-                cmd="dg list plugin-modules",
-                snippet_path=f"{context.get_next_snip_number()}-list-plugin-modules.txt",
+                cmd="dg list registry-modules",
+                snippet_path=f"{context.get_next_snip_number()}-list-registry-modules.txt",
             )
 
             context.run_command_and_snippet_output(
@@ -261,14 +265,15 @@ def test_migrating_project(
             context.create_file(
                 Path("my_existing_project") / "definitions.py",
                 contents=format_multiline("""
-                    import my_existing_project.defs
+                    from pathlib import Path
+
                     from my_existing_project.assets import my_asset
 
                     import dagster as dg
 
                     defs = dg.Definitions.merge(
                         dg.Definitions(assets=[my_asset]),
-                        dg.components.load_defs(my_existing_project.defs),
+                        dg.load_from_defs_folder(project_root=Path(__file__).parent.parent),
                     )
                 """),
                 snippet_path=f"{context.get_next_snip_number()}-updated-definitions.py",

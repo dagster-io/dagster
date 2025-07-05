@@ -1,7 +1,7 @@
 ---
 title: 'Managing code locations with Definitions'
 description: "A code location is a collection of Dagster definitions loadable and accessible by Dagster's tools. Learn to create, load, and deploy code locations."
-sidebar_position: 10
+sidebar_position: 100
 ---
 
 A code location is a collection of Dagster definitions loadable and accessible by Dagster's tools, such as the CLI, UI, and Dagster+. A code location comprises:
@@ -130,7 +130,7 @@ Fore more information about local development, including how to configure your l
 
 ### Dagster+ deployment
 
-See the [Dagster+ code locations documentation](/deployment/code-locations/).
+See the [Dagster+ code locations documentation](/deployment/code-locations).
 
 ### Open source deployment
 

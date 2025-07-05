@@ -27,19 +27,20 @@ setup(
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: 3.12",
+        "Programming Language :: Python :: 3.13",
         "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",
     ],
     packages=find_packages(exclude=["dagster_fivetran_tests*"]),
     include_package_data=True,
-    python_requires=">=3.9,<3.13",
+    python_requires=">=3.9,<=3.13.3",
     install_requires=[f"dagster{pin}"],
     zip_safe=False,
     entry_points={
         "console_scripts": [
             "dagster-fivetran = dagster_fivetran.cli:main",
         ],
-        "dagster_dg.plugin": [
+        "dagster_dg_cli.registry_modules": [
             "dagster_fivetran = dagster_fivetran",
         ],
     },

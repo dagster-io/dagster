@@ -10,13 +10,13 @@ from dagster._core.definitions.dependency import Node, NodeHandle
 from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey, UserEvent
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.op_definition import OpDefinition
-from dagster._core.definitions.partition import PartitionsDefinition
-from dagster._core.definitions.partition_key_range import PartitionKeyRange
+from dagster._core.definitions.partitions.definition import PartitionsDefinition
+from dagster._core.definitions.partitions.partition_key_range import PartitionKeyRange
+from dagster._core.definitions.partitions.utils import TimeWindow
 from dagster._core.definitions.repository_definition.repository_definition import (
     RepositoryDefinition,
 )
 from dagster._core.definitions.step_launcher import StepLauncher
-from dagster._core.definitions.time_window_partitions import TimeWindow
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.events import DagsterEvent
 from dagster._core.execution.context.op_execution_context import OpExecutionContext

@@ -3,7 +3,7 @@ from pathlib import Path
 import pytest
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.utils import make_new_run_id
-from dagster.components.core.context import ComponentLoadContext
+from dagster.components.core.tree import ComponentTree
 from dagster_k8s.component import PipesK8sComponent
 from dagster_k8s.pipes import (
     _DEV_NULL_MESSAGE_WRITER,
@@ -481,9 +481,9 @@ assets:
   - key: foo
 image: my_foo_image:latest
 """)
-    defs = c.build_defs(ComponentLoadContext.for_test())
+    defs = c.build_defs(ComponentTree.for_test().load_context)
     assert defs
-    assert len(defs.get_all_asset_specs()) == 1
+    assert len(defs.resolve_all_asset_specs()) == 1
 
     c = PipesK8sComponent.resolve_from_yaml("""
 name: multi
@@ -503,6 +503,6 @@ base_pod_spec:
           memory: "128Mi"
           cpu: "500m"
 """)
-    defs = c.build_defs(ComponentLoadContext.for_test())
+    defs = c.build_defs(ComponentTree.for_test().load_context)
     assert defs
-    assert len(defs.get_all_asset_specs()) == 2
+    assert len(defs.resolve_all_asset_specs()) == 2

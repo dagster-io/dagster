@@ -4,7 +4,7 @@ description: 'Learn to construct schedules from partitioned Dagster assets and j
 sidebar_position: 400
 ---
 
-In this guide, we'll walk you through how to construct schedules from partitioned [assets](/guides/build/assets/) and jobs. By the end, you'll be able to:
+In this guide, we'll walk you through how to construct schedules from partitioned [assets](/guides/build/assets) and jobs. By the end, you'll be able to:
 
 - Construct a schedule for a time-partitioned job
 - Customize a partitioned job's starting time
@@ -39,6 +39,7 @@ Asset jobs are defined using <PyObject section="assets" module="dagster" object=
   path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/schedule_from_partitions.py"
   startAfter="start_partitioned_asset_schedule"
   endBefore="end_partitioned_asset_schedule"
+  title="src/<project_name>/defs/assets.py"
 />
 
 </TabItem>
@@ -52,6 +53,7 @@ Op jobs are defined using the <PyObject section="jobs" module="dagster" object="
   path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/schedule_from_partitions.py"
   startAfter="start_marker"
   endBefore="end_marker"
+  title="src/<project_name>/defs/assets.py"
 />
 
 </TabItem>
@@ -102,6 +104,7 @@ If you need to customize the ending, or most recent partition in a set, use the 
   path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/schedule_from_partitions.py"
   startAfter="start_offset_partition"
   endBefore="end_offset_partition"
+  title="src/<project_name>/defs/schedules.py"
 />
 
 Setting this parameter changes the partition that will be filled in at each schedule tick. Positive and negative integers are accepted, which will have the following effects:
@@ -133,6 +136,7 @@ In this example, the job is partitioned by continent:
   path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/static_partitioned_asset_job.py"
   startAfter="start_job"
   endBefore="end_job"
+  title="src/<project_name>/defs/assets.py"
 />
 
 Using the <PyObject section="schedules-sensors" module="dagster" object="schedule" decorator /> decorator, we'll write a schedule that targets each partition, or `continent`:
@@ -141,6 +145,7 @@ Using the <PyObject section="schedules-sensors" module="dagster" object="schedul
   path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/static_partitioned_asset_job.py"
   startAfter="start_schedule_all_partitions"
   endBefore="end_schedule_all_partitions"
+  title="src/<project_name>/defs/schedules.py"
 />
 
 If we only want to target the `Antarctica` partition, we can create a schedule like the following:
@@ -149,6 +154,7 @@ If we only want to target the `Antarctica` partition, we can create a schedule l
   path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/static_partitioned_asset_job.py"
   startAfter="start_single_partition"
   endBefore="end_single_partition"
+  title="src/<project_name>/defs/schedules.py"
 />
 
 ## APIs in this guide

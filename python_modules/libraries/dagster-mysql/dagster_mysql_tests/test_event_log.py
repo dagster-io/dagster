@@ -40,6 +40,9 @@ class TestMySQLEventLogStorage(TestEventLogStorage):
         ) as instance:
             yield instance
 
+    def can_wipe_asset_partitions(self) -> bool:
+        return False
+
     @pytest.fixture(scope="function", name="storage")
     def event_log_storage(self, instance):  # pyright: ignore[reportIncompatibleMethodOverride]
         event_log_storage = instance.event_log_storage

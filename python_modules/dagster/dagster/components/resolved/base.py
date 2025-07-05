@@ -14,7 +14,7 @@ from pydantic.fields import Field, FieldInfo
 from typing_extensions import TypeGuard
 
 from dagster import _check as check
-from dagster._annotations import preview, public
+from dagster._annotations import public
 from dagster._utils.pydantic_yaml import _parse_and_populate_model_with_annotated_errors
 from dagster.components.resolved.context import ResolutionContext
 from dagster.components.resolved.errors import ResolutionException
@@ -36,18 +36,81 @@ _DERIVED_MODEL_REGISTRY = {}
 
 
 @public
-@preview(emit_runtime_warning=False)
 class Resolvable:
-    """This base class makes something able to "resolve" from yaml.
+    """Base class for making a class resolvable from yaml.
 
-    This is done by:
-    1) Deriving a pydantic model to provide as schema for the yaml.
-    2) Resolving an instance of the class by recursing over an instance
-    of the derived model loaded from schema compliant yaml and
-    evaluating any template strings.
+    This framework is designed to allow complex nested objects to be resolved
+    from yaml documents. This allows for a single class to be instantiated from
+    either yaml or python without limiting the types of fields that can exist on
+    the python class.
 
-    The fields/__init__ arguments of the class can be Annotated with
-    Resolver to customize the resolution or model derivation.
+    Key Features:
+    - **Automatic yaml schema derivation**: A pydantic model is automatically generated from the class definition using its fields or `__init__` arguments and their annotations.
+    - **Jinja template resolution**: Fields in the yaml document may be templated strings, which are rendered from the available scope and may be arbitrary python objects.
+    - **Customizable resolution behavior**: Each field can customize how it is resolved from the yaml document using a `:py:class:~dagster.Resolver`.
+
+    Resolvable subclasses must be one of the following:
+    * pydantic model
+    * @dataclass
+    * plain class with an annotated `__init__`
+    * @record
+
+    Example:
+
+    .. code-block:: python
+
+        import datetime
+        from typing import Annotated
+
+        import dagster as dg
+
+
+        def resolve_timestamp(
+            context: dg.ResolutionContext,
+            raw_timestamp: str,
+        ) -> datetime.datetime:
+            return datetime.datetime.fromisoformat(
+                context.resolve_value(raw_timestamp, as_type=str),
+            )
+
+
+        # the yaml field will be a string, which is then parsed into a datetime object
+        ResolvedTimestamp = Annotated[
+            datetime.datetime,
+            dg.Resolver(resolve_timestamp, model_field_type=str),
+        ]
+
+
+        class MyClass(dg.Resolvable, dg.Model):
+            event: str
+            start_timestamp: ResolvedTimestamp
+            end_timestamp: ResolvedTimestamp
+
+
+        # python instantiation
+        in_python = MyClass(
+            event="test",
+            start_timestamp=datetime.datetime(2021, 1, 1, 0, 0, 0, tzinfo=datetime.timezone.utc),
+            end_timestamp=datetime.datetime(2021, 1, 2, 0, 0, 0, tzinfo=datetime.timezone.utc),
+        )
+
+        # yaml instantiation
+        in_yaml = MyClass.resolve_from_yaml(
+            '''
+        event: test
+        start_timestamp: '{{ start_year }}-01-01T00:00:00Z'
+        end_timestamp: '{{ end_timestamp }}'
+        ''',
+            scope={
+                # string templating
+                "start_year": "2021",
+                # object templating
+                "end_timestamp": in_python.end_timestamp,
+            },
+        )
+
+        assert in_python == in_yaml
+
     """
 
     @classmethod
@@ -170,13 +233,19 @@ def derive_model_type(
 
 
 def _is_implicitly_resolved_type(annotation):
-    if annotation in (int, float, str, bool, Any, type(None)):
+    if annotation in (int, float, str, bool, Any, type(None), list, dict):
+        return True
+
+    if _safe_is_subclass(annotation, Enum):
         return True
 
     if _safe_is_subclass(annotation, Resolvable):
+        # ensure valid Resolvable subclass
+        annotation.model()
         return False
 
     if _safe_is_subclass(annotation, BaseModel):
+        _ensure_non_resolvable_model_compliance(annotation)
         return True
 
     origin = get_origin(annotation)
@@ -191,6 +260,10 @@ def _is_implicitly_resolved_type(annotation):
         return True
 
     return False
+
+
+def _is_resolvable_type(annotation):
+    return _is_implicitly_resolved_type(annotation) or _safe_is_subclass(annotation, Resolvable)
 
 
 @record
@@ -303,10 +376,10 @@ def resolve_fields(
     }
 
 
-TType = TypeVar("TType", bound=type)
+T = TypeVar("T")
 
 
-def _safe_is_subclass(obj, cls: TType) -> TypeGuard[type[TType]]:
+def _safe_is_subclass(obj, cls: type[T]) -> TypeGuard[type[T]]:
     return (
         isinstance(obj, type)
         and not isinstance(obj, GenericAlias)  # prevent exceptions on 3.9
@@ -329,13 +402,10 @@ def _get_resolver(annotation: Any, field_name: str) -> "Resolver":
                     return nested.with_outer_resolver(resolver)
 
             check.invariant(
-                _is_implicitly_resolved_type(args[0]) or resolver.model_field_type,
+                _is_resolvable_type(args[0]) or resolver.model_field_type,
                 f"Resolver for {field_name} must define model_field_type, {args[0]} is not model compliant.",
             )
             return resolver
-
-    if _is_implicitly_resolved_type(annotation):
-        return Resolver.default()
 
     # nested or implicit
     res = _dig_for_resolver(annotation, [])
@@ -352,7 +422,7 @@ def _get_resolver(annotation: Any, field_name: str) -> "Resolver":
         "Could not derive resolver for annotation\n"
         f"  {field_name}: {annotation}\n"
         "Field types are expected to be:\n"
-        "* serializable types such as str, float, int, bool, list, etc\n"
+        "* serializable types such as str, float, int, bool, list, Enum, etc\n"
         "* Resolvable subclasses\n"
         "* pydantic Models\n"
         "* Annotated with an appropriate dagster.components.Resolver\n"
@@ -362,6 +432,9 @@ def _get_resolver(annotation: Any, field_name: str) -> "Resolver":
 
 
 def _dig_for_resolver(annotation, path: Sequence[_TypeContainer]) -> Optional[Resolver]:
+    if _is_implicitly_resolved_type(annotation):
+        return Resolver.default()
+
     origin = get_origin(annotation)
     args = get_args(annotation)
     if _safe_is_subclass(annotation, Resolvable):
@@ -378,7 +451,7 @@ def _dig_for_resolver(annotation, path: Sequence[_TypeContainer]) -> Optional[Re
         resolver = next((arg for arg in args if isinstance(arg, Resolver)), None)
         if resolver:
             check.invariant(
-                _is_implicitly_resolved_type(args[0]) or resolver.model_field_type,
+                _is_resolvable_type(args[0]) or resolver.model_field_type,
                 f"Nested resolver must define model_field_type {args[0]} is not model compliant.",
             )
             # need to ensure nested resolvers set their model type
@@ -405,19 +478,17 @@ def _dig_for_resolver(annotation, path: Sequence[_TypeContainer]) -> Optional[Re
 
         return _dig_for_resolver(annotated_type, path)
 
-    if origin in (Union, UnionType) and len(args) == 2:
-        left_t, right_t = args
-        if right_t is type(None):
-            res = _dig_for_resolver(left_t, [*path, _TypeContainer.OPTIONAL])
+    if origin in (Union, UnionType):
+        if len(args) == 2 and args[1] is type(None):
+            res = _dig_for_resolver(args[0], [*path, _TypeContainer.OPTIONAL])
             if res:
                 return res
-
-    if origin in (Union, UnionType):
-        resolvers = [_dig_for_resolver(arg, path) for arg in args]
-        if all(r is not None for r in resolvers):
-            return Resolver.union(
-                *check.is_list(resolvers, of_type=Resolver),
-            )
+        else:
+            arg_resolver_pairs = [(arg, _dig_for_resolver(arg, path)) for arg in args]
+            if all(r is not None for _, r in arg_resolver_pairs):
+                return Resolver.union(
+                    arg_resolver_pairs,  # type: ignore # doesn't understand all check
+                )
 
     elif origin in (
         Sequence,
@@ -462,3 +533,14 @@ def _resolve_at_path(
         ]
 
     check.assert_never(container)
+
+
+def _ensure_non_resolvable_model_compliance(mtype: type[BaseModel]):
+    for name, field_info in mtype.model_fields.items():
+        field_type = field_info.rebuild_annotation()
+        if not _is_implicitly_resolved_type(field_type):
+            raise ResolutionException(
+                f"pydantic model class {mtype.__name__} includes incompatible field\n"
+                f"  {name}: {field_type}\n"
+                "Subclass Resolvable to support Resolvers on fields."
+            )

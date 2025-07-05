@@ -34,7 +34,7 @@ def execute_check_for_asset(
     )
 
     defs = Definitions(assets=assets, asset_checks=asset_checks, jobs=[the_job])
-    job_def = defs.get_job_def("test_asset_job")
+    job_def = defs.resolve_job_def("test_asset_job")
     return job_def.execute_in_process(instance=instance)
 
 

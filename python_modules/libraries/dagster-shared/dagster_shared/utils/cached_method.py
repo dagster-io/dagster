@@ -182,3 +182,7 @@ def _make_key(
             return f"{k}.{v}"
 
     return _HashedSeq(tuple(sorted(canonical_kwargs.items())))
+
+
+def get_cached_method_cache(obj: Any, method_name: str) -> dict[str, Any]:
+    return getattr(obj, CACHED_METHOD_CACHE_FIELD, {}).get(method_name, {})

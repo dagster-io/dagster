@@ -32,12 +32,13 @@ setup(
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: 3.12",
+        "Programming Language :: Python :: 3.13",
         "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",
     ],
     packages=find_packages(exclude=["dagster_dbt_tests*"]),
     include_package_data=True,
-    python_requires=">=3.9,<3.13",
+    python_requires=">=3.9,<=3.13.3",
     install_requires=[
         f"dagster{pin}",
         # Follow the version support constraints for dbt Core: https://docs.getdbt.com/docs/dbt-versions/core
@@ -65,7 +66,7 @@ setup(
             "dagster-dbt-cloud = dagster_dbt.cloud.cli:app",
             "dagster-dbt = dagster_dbt.cli.app:app",
         ],
-        "dagster_dg.plugin": [
+        "dagster_dg_cli.registry_modules": [
             "dagster_dbt = dagster_dbt",
         ],
     },

@@ -1,5 +1,5 @@
 load_from:
   - python_file:
       relative_path: test_cli_repo.py
-      attribute: test
+      attribute: the_test_repo
       location_name: test_cli_location
