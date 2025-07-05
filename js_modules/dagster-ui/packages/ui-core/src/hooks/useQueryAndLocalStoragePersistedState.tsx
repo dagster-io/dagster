@@ -27,11 +27,7 @@ export const useQueryAndLocalStoragePersistedState = <T extends QueryPersistedDa
         const item = window.localStorage.getItem(localStorageKey);
         if (item) {
           const parsed = JSON.parse(item);
-          value = parsed;
-          if (decode) {
-            value = decode(parsed);
-          }
-          return value;
+          return decode ? decode(parsed) : parsed;
         }
       } catch (error) {
         console.error('Error reading from localStorage:', error);
