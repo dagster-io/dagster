@@ -22,9 +22,9 @@ export class AntlrInputErrorListener implements ANTLRErrorListener<any> {
     _e: RecognitionException | undefined,
   ): void {
     if (offendingSymbol) {
-      throw new Error(`Syntax error caused by "${offendingSymbol.text}": ${msg}`);
+      console.warn(`Syntax error caused by "${offendingSymbol.text}": ${msg}`);
     }
-    throw new Error(`Syntax error at char ${charPositionInLine}: ${msg}`);
+    console.warn(`Syntax error at char ${charPositionInLine}: ${msg}`);
   }
 }
 
