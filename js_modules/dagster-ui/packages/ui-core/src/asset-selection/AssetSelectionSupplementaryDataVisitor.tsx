@@ -1,4 +1,4 @@
-import {CharStreams, CommonTokenStream, RecognitionException} from 'antlr4ts';
+import {CharStreams, CommonTokenStream} from 'antlr4ts';
 import {AbstractParseTreeVisitor} from 'antlr4ts/tree/AbstractParseTreeVisitor';
 
 import {AssetSelectionLexer} from './generated/AssetSelectionLexer';
@@ -32,25 +32,18 @@ export const parseExpression = (expression: string) => {
     return [];
   }
 
-  try {
-    const inputStream = CharStreams.fromString(expression);
-    const lexer = new AssetSelectionLexer(inputStream);
-    lexer.removeErrorListeners();
-    lexer.addErrorListener(new AntlrInputErrorListener());
+  const inputStream = CharStreams.fromString(expression);
+  const lexer = new AssetSelectionLexer(inputStream);
+  lexer.removeErrorListeners();
+  lexer.addErrorListener(new AntlrInputErrorListener());
 
-    const tokenStream = new CommonTokenStream(lexer);
-    const parser = new AssetSelectionParser(tokenStream);
-    parser.removeErrorListeners();
-    parser.addErrorListener(new AntlrInputErrorListener());
+  const tokenStream = new CommonTokenStream(lexer);
+  const parser = new AssetSelectionParser(tokenStream);
+  parser.removeErrorListeners();
+  parser.addErrorListener(new AntlrInputErrorListener());
 
-    const tree = parser.start();
-    const visitor = new AssetSelectionSupplementaryDataVisitor();
-    tree.accept(visitor);
-    return visitor.filters;
-  } catch (e) {
-    if (!(e instanceof RecognitionException)) {
-      console.error(e);
-    }
-    return [];
-  }
+  const tree = parser.start();
+  const visitor = new AssetSelectionSupplementaryDataVisitor();
+  tree.accept(visitor);
+  return visitor.filters;
 };
