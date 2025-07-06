@@ -296,7 +296,7 @@ export const useGlobalSearch = ({searchContext}: {searchContext: 'global' | 'cat
   );
 
   useEffect(() => {
-    if (!locationEntries) {
+    if (loadingNonAssets) {
       return;
     }
     const results = primaryDataToSearchResults(locationEntries);
@@ -306,10 +306,10 @@ export const useGlobalSearch = ({searchContext}: {searchContext: 'global' | 'cat
     }
     primarySearch.current.update(augmentedResults);
     consumeBufferEffect(primarySearchBuffer, primarySearch.current);
-  }, [consumeBufferEffect, locationEntries, augmentSearchResults]);
+  }, [consumeBufferEffect, locationEntries, augmentSearchResults, loadingNonAssets]);
 
   useEffect(() => {
-    if (!assets) {
+    if (assetsLoading) {
       return;
     }
 
@@ -320,7 +320,7 @@ export const useGlobalSearch = ({searchContext}: {searchContext: 'global' | 'cat
     }
     secondarySearch.current.update(augmentedResults);
     consumeBufferEffect(secondarySearchBuffer, secondarySearch.current);
-  }, [consumeBufferEffect, assets, searchContext, augmentSearchResults]);
+  }, [consumeBufferEffect, assets, searchContext, augmentSearchResults, assetsLoading]);
 
   const primarySearchBuffer = useRef<IndexBuffer | null>(null);
   const secondarySearchBuffer = useRef<IndexBuffer | null>(null);
