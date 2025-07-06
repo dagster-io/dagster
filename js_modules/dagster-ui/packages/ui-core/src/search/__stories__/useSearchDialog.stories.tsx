@@ -3,8 +3,8 @@ import {Button} from '@dagster-io/ui-components';
 import {Meta} from '@storybook/react';
 
 import {AnalyticsContext, dummyAnalytics} from '../../app/analytics';
+import {buildWorkspaceMocks} from '../../workspace/WorkspaceContext/__fixtures__/Workspace.fixtures';
 import {useSearchDialog} from '../SearchDialog';
-import {buildPrimarySearch, buildPrimarySearchStatic} from '../__fixtures__/Search.fixtures';
 
 // eslint-disable-next-line import/no-default-export
 export default {
@@ -23,7 +23,7 @@ const SearchDialog = () => {
 
 export const BasicSearch = () => (
   <AnalyticsContext.Provider value={dummyAnalytics()}>
-    <MockedProvider mocks={[buildPrimarySearchStatic()]}>
+    <MockedProvider mocks={buildWorkspaceMocks([])}>
       <SearchDialog />
     </MockedProvider>
   </AnalyticsContext.Provider>
@@ -31,7 +31,7 @@ export const BasicSearch = () => (
 
 export const SlowSecondaryQuerySearch = () => (
   <AnalyticsContext.Provider value={dummyAnalytics()}>
-    <MockedProvider mocks={[buildPrimarySearchStatic()]}>
+    <MockedProvider mocks={buildWorkspaceMocks([])}>
       <SearchDialog />
     </MockedProvider>
   </AnalyticsContext.Provider>
@@ -39,7 +39,7 @@ export const SlowSecondaryQuerySearch = () => (
 
 export const LotsOfAssetsSearch = () => (
   <AnalyticsContext.Provider value={dummyAnalytics()}>
-    <MockedProvider mocks={[buildPrimarySearch()]}>
+    <MockedProvider mocks={buildWorkspaceMocks([])}>
       <SearchDialog />
     </MockedProvider>
   </AnalyticsContext.Provider>
