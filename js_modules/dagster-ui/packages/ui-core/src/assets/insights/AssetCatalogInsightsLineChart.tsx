@@ -1,7 +1,6 @@
 import {
   Body,
   BodyLarge,
-  BodySmall,
   Box,
   Colors,
   FontFamily,
@@ -316,7 +315,7 @@ export const AssetCatalogInsightsLineChart = React.memo(
             {metrics.currentPeriod.aggregateValue
               ? numberFormatter.format(Math.round(metrics.currentPeriod.aggregateValue))
               : 0}
-            <BodySmall color={Colors.textLight()}>{unitTypeToLabel[unitType]}</BodySmall>
+            <Body color={Colors.textDefault()}>{unitTypeToLabel[unitType]}</Body>
           </div>
           <Box
             className={styles.chartChange}
