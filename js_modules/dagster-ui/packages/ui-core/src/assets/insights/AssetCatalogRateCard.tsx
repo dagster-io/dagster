@@ -79,9 +79,7 @@ export function AssetCatalogRateCard({
   );
 
   const noDataAvailableCard = (
-    <div className={styles.rateCardNoDataContainer}>
-      No data available
-    </div>
+    <div className={styles.rateCardNoDataContainer}>No data available</div>
   );
 
   if (loading) {
