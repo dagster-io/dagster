@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 import requests
 from dagster import AssetKey, AssetsDefinition, TableColumn, TableSchema
@@ -18,26 +18,38 @@ def unity_catalog_assets(
     client: "WorkspaceClient",
     *,
     catalog: str,
-    schema: str | None = None,
+    schema: Optional[str] = None,
     include_views: bool = True,
     with_lineage: bool = True,
     # Need to decide whether or not to keep the asset_key_prefix parameter.
     asset_key_prefix: "Sequence[str]" = (),
-    group_name: str | None = None,
+    group_name: Optional[str] = None,
 ) -> list[AssetsDefinition]:
     """Return Dagster assets representing Unity Catalog tables and views."""
     assets: list[AssetsDefinition] = []
+
+    if schema is None:
+        raise ValueError("schema parameter is required when listing Unity Catalog tables")
+
     tables = client.tables.list(catalog_name=catalog, schema_name=schema)
 
     for table in tables:
         # No API to exclude views, so we do this!
-        if not include_views and table.table_type == catalog.TableType.VIEW:
+        # Import TableType locally to avoid circular import
+        from databricks.sdk.service.catalog import TableType
+
+        if not include_views and table.table_type == TableType.VIEW:
             continue
 
-        key = AssetKey([*asset_key_prefix, catalog, table.schema_name, table.name])
+        key_parts = [*asset_key_prefix, catalog]
+        if table.schema_name:
+            key_parts.append(table.schema_name)
+        if table.name:
+            key_parts.append(table.name)
+        key = AssetKey(key_parts)
         upstream_keys: list[AssetKey] = []
 
-        if with_lineage:
+        if with_lineage and schema and table.name:
             upstream_keys = _get_lineage_for_table(
                 catalog=catalog, schema=schema, table=table.name, client=client
             )
@@ -45,9 +57,9 @@ def unity_catalog_assets(
         spec = AssetSpec(
             key=key,
             deps=upstream_keys,
-            owners=[table.owner],
+            owners=[table.owner] if table.owner else None,
             description=table.comment,
-            kinds=["Databricks"],
+            kinds={"Databricks"},
             group_name=group_name,
             metadata={"dagster/column_schema": TableSchema(columns)},
         )
@@ -87,6 +99,10 @@ def _get_lineage_for_table(
 
 def _get_schema_for_table(table: "TableInfo") -> list:
     columns = []
-    for column in table.columns:
-        columns.append(TableColumn(column.name, column.type_name.name, description=column.comment))
+    if table.columns:
+        for column in table.columns:
+            if column.name and column.type_name:
+                columns.append(
+                    TableColumn(column.name, column.type_name.name, description=column.comment)
+                )
     return columns
