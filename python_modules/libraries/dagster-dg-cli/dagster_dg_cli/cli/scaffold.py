@@ -388,7 +388,7 @@ def scaffold_defs_inline_component(
     cli_config = get_config_from_cli_context(context)
     dg_context = DgContext.for_project_environment(Path.cwd(), cli_config)
 
-    if dg_context.has_folder_at_defs_path(path):
+    if dg_context.has_object_at_defs_path(path):
         exit_with_error(f"A component instance at `{path}` already exists.")
 
     scaffold_inline_component(
@@ -917,10 +917,8 @@ def _core_scaffold(
 
     if not is_scaffoldable_object_key(object_key):
         exit_with_error(f"Scaffoldable object type `{object_key.to_typename()}` not found.")
-    elif dg_context.has_folder_at_defs_path(defs_path):
-        exit_with_error(
-            f"Folder at `{(dg_context.defs_path / defs_path).absolute()}` already exists."
-        )
+    elif dg_context.has_object_at_defs_path(defs_path):
+        exit_with_error(f"Path `{(dg_context.defs_path / defs_path).absolute()}` already exists.")
 
     # Specified key-value params will be passed to this function with their default value of
     # `None` even if the user did not set them. Filter down to just the ones that were set by
