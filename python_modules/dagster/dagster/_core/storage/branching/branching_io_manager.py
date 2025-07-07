@@ -79,7 +79,9 @@ class BranchingIOManager(ConfigurableIOManager):
                 latest_materialization_log_entry(
                     instance=context.instance,
                     asset_key=context.asset_key,
-                    partition_key=partition_key,
+                    partition_key=context.upstream_output.partition_key
+                    if context.upstream_output and context.upstream_output.has_asset_partitions
+                    else None,
                 )
                 for partition_key in partition_keys
             ]
