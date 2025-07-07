@@ -80,7 +80,6 @@ export function AssetCatalogRateCard({
 
   const noDataAvailableCard = (
     <div className={styles.rateCardNoDataContainer}>
-      <div className={styles.rateCardNoDataPercentContainer}>%</div>
       No data available
     </div>
   );
@@ -100,7 +99,7 @@ export function AssetCatalogRateCard({
 
   return (
     <div className={styles.rateCardContainer}>
-      <BodyLarge>{title}</BodyLarge>
+      <BodyLarge style={{marginBottom: 12}}>{title}</BodyLarge>
       {value !== null ? (
         <div className={styles.rateCardValue}>{currValueString}</div>
       ) : (
@@ -112,7 +111,6 @@ export function AssetCatalogRateCard({
             className={styles.rateCardDeltaRow}
             flex={{direction: 'row', alignItems: 'center', gap: 4}}
           >
-            <Icon name="trending_up" color={Colors.textLight()} size={16} />
             <span className={styles.rateCardDelta}>
               <>New this period</>
             </span>
@@ -121,14 +119,14 @@ export function AssetCatalogRateCard({
           prevValue !== null &&
           value !== null && (
             <>
-              <div className={styles.rateCardPrev}>{prevValueString + ' last period'}</div>
+              <div className={styles.rateCardPrev}>{prevValueString + ' previous period'}</div>
               <Box
                 className={styles.rateCardDeltaRow}
                 flex={{direction: 'row', alignItems: 'center', gap: 4}}
               >
                 <Icon
                   name={hasNegativeDelta ? 'trending_down' : 'trending_up'}
-                  color={Colors.textLight()}
+                  color={Colors.textLighter()}
                   size={16}
                 />
                 <span className={styles.rateCardDelta}>
