@@ -1,14 +1,6 @@
+import dagster as dg
 import pytest
-from dagster import (
-    AssetCheckResult,
-    AssetMaterialization,
-    AutomationCondition,
-    DagsterInstance,
-    Definitions,
-    asset,
-    asset_check,
-    evaluate_automation_conditions,
-)
+from dagster import AutomationCondition, DagsterInstance
 
 from dagster_tests.declarative_automation_tests.scenario_utils.automation_condition_scenario import (
     AutomationConditionScenarioState,
@@ -99,38 +91,38 @@ async def test_newly_updated_condition_data_version() -> None:
 
 
 def test_newly_updated_on_asset_check() -> None:
-    @asset
+    @dg.asset
     def A() -> None: ...
 
-    @asset_check(asset=A, automation_condition=AutomationCondition.newly_updated())
-    def foo_check() -> AssetCheckResult:
-        return AssetCheckResult(passed=True)
+    @dg.asset_check(asset=A, automation_condition=AutomationCondition.newly_updated())
+    def foo_check() -> dg.AssetCheckResult:
+        return dg.AssetCheckResult(passed=True)
 
-    defs = Definitions(assets=[A], asset_checks=[foo_check])
+    defs = dg.Definitions(assets=[A], asset_checks=[foo_check])
     instance = DagsterInstance.ephemeral()
     check_job = defs.resolve_implicit_global_asset_job_def().get_subset(
         asset_check_selection={foo_check.check_key}
     )
 
     # hasn't newly updated
-    result = evaluate_automation_conditions(defs=defs, instance=instance)
+    result = dg.evaluate_automation_conditions(defs=defs, instance=instance)
     assert result.total_requested == 0
 
     # now updates
     check_job.execute_in_process(instance=instance)
-    result = evaluate_automation_conditions(defs=defs, instance=instance, cursor=result.cursor)
+    result = dg.evaluate_automation_conditions(defs=defs, instance=instance, cursor=result.cursor)
     assert result.total_requested == 1
 
     # no longer "newly updated"
-    result = evaluate_automation_conditions(defs=defs, instance=instance, cursor=result.cursor)
+    result = dg.evaluate_automation_conditions(defs=defs, instance=instance, cursor=result.cursor)
     assert result.total_requested == 0
 
     # now updates again
     check_job.execute_in_process(instance=instance)
-    result = evaluate_automation_conditions(defs=defs, instance=instance, cursor=result.cursor)
+    result = dg.evaluate_automation_conditions(defs=defs, instance=instance, cursor=result.cursor)
     assert result.total_requested == 1
 
     # parent updated, doesn't matter
-    instance.report_runless_asset_event(AssetMaterialization("A"))
-    result = evaluate_automation_conditions(defs=defs, instance=instance, cursor=result.cursor)
+    instance.report_runless_asset_event(dg.AssetMaterialization("A"))
+    result = dg.evaluate_automation_conditions(defs=defs, instance=instance, cursor=result.cursor)
     assert result.total_requested == 0

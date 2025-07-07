@@ -1,21 +1,20 @@
+import dagster as dg
 import pytest
-from dagster import ConfigMapping, DagsterInvalidConfigError, Field, In, String, graph, job, op
-from dagster._core.storage.input_manager import input_manager
 
 
 def test_basic_op_with_config():
     did_get = {}
 
-    @op(
+    @dg.op(
         name="op_with_context",
         ins={},
         out={},
-        config_schema={"some_config": Field(String)},
+        config_schema={"some_config": dg.Field(dg.String)},
     )
     def op_with_context(context):
         did_get["yep"] = context.op_config
 
-    @job
+    @dg.job
     def job_def():
         op_with_context()
 
@@ -31,48 +30,48 @@ def test_config_arg_mismatch():
     def _t_fn(*_args):
         raise Exception("should not reach")
 
-    @op(
+    @dg.op(
         name="op_with_context",
         ins={},
         out={},
-        config_schema={"some_config": Field(String)},
+        config_schema={"some_config": dg.Field(dg.String)},
     )
     def op_with_context(context):
         raise Exception("should not reach")
 
-    @job
+    @dg.job
     def job_def():
         op_with_context()
 
-    with pytest.raises(DagsterInvalidConfigError):
+    with pytest.raises(dg.DagsterInvalidConfigError):
         job_def.execute_in_process(
             {"ops": {"op_with_context": {"config": {"some_config": 1}}}},
         )
 
 
 def test_op_not_found():
-    @op(name="find_me_op", ins={}, out={})
+    @dg.op(name="find_me_op", ins={}, out={})
     def find_me_op(_):
         raise Exception("should not reach")
 
-    @job
+    @dg.job
     def job_def():
         find_me_op()
 
-    with pytest.raises(DagsterInvalidConfigError):
+    with pytest.raises(dg.DagsterInvalidConfigError):
         job_def.execute_in_process({"ops": {"not_found": {"config": {"some_config": 1}}}})
 
 
 def test_extra_config_ignored_default_input():
-    @op(config_schema={"some_config": str})
+    @dg.op(config_schema={"some_config": str})
     def op1(_):
         return "public.table_1"
 
-    @op
+    @dg.op
     def op2(_, input_table="public.table_1"):
         return input_table
 
-    @job
+    @dg.job
     def my_job():
         op2(op1())
 
@@ -82,7 +81,7 @@ def test_extra_config_ignored_default_input():
     # same run config is valid even though solid1 not in subset
     assert my_job.execute_in_process(run_config=run_config, op_selection=["op2"]).success
 
-    with pytest.raises(DagsterInvalidConfigError):
+    with pytest.raises(dg.DagsterInvalidConfigError):
         # typos still raise, solid_1 instead of solid1
         my_job.execute_in_process(
             {"ops": {"solid_1": {"config": {"some_config": "a"}}}},
@@ -91,15 +90,15 @@ def test_extra_config_ignored_default_input():
 
 
 def test_extra_config_ignored_no_default_input():
-    @op(config_schema={"some_config": str})
+    @dg.op(config_schema={"some_config": str})
     def op1(_):
         return "public.table_1"
 
-    @op
+    @dg.op
     def op2(_, input_table):
         return input_table
 
-    @job
+    @dg.job
     def my_job():
         op2(op1())
 
@@ -107,7 +106,7 @@ def test_extra_config_ignored_no_default_input():
     assert my_job.execute_in_process(run_config=run_config).success
 
     # run config is invalid since there is no input for solid2
-    with pytest.raises(DagsterInvalidConfigError):
+    with pytest.raises(dg.DagsterInvalidConfigError):
         my_job.execute_in_process(
             run_config=run_config,
             op_selection=["op2"],
@@ -128,12 +127,12 @@ def test_extra_config_ignored_no_default_input():
 
 
 def test_extra_config_ignored_composites():
-    @op(config_schema={"some_config": str})
+    @dg.op(config_schema={"some_config": str})
     def op1(_):
         return "public.table_1"
 
-    @graph(
-        config=ConfigMapping(
+    @dg.graph(
+        config=dg.ConfigMapping(
             config_schema={"wrapped_config": str},
             config_fn=lambda cfg: {"op1": {"config": {"some_config": cfg["wrapped_config"]}}},
         )
@@ -141,15 +140,15 @@ def test_extra_config_ignored_composites():
     def graph1():
         return op1()
 
-    @op
+    @dg.op
     def op2(_, input_table="public.table"):
         return input_table
 
-    @graph
+    @dg.graph
     def graph2(input_table):
         return op2(input_table)
 
-    @job
+    @dg.job
     def my_job():
         graph2(graph1())
 
@@ -162,15 +161,15 @@ def test_extra_config_ignored_composites():
 
 
 def test_extra_config_input_bug():
-    @op
+    @dg.op
     def root(_):
         return "public.table_1"
 
-    @op(config_schema={"some_config": str})
+    @dg.op(config_schema={"some_config": str})
     def takes_input(_, input_table):
         return input_table
 
-    @job
+    @dg.job
     def my_job():
         takes_input(root())
 
@@ -194,15 +193,15 @@ def test_extra_config_input_bug():
 
 
 def test_extra_config_unsatisfied_input():
-    @op
+    @dg.op
     def start(_, x):
         return x
 
-    @op
+    @dg.op
     def end(_, x=1):
         return x
 
-    @job
+    @dg.job
     def testing():
         end(start())
 
@@ -219,19 +218,19 @@ def test_extra_config_unsatisfied_input():
 
 
 def test_extra_config_unsatisfied_input_io_man():
-    @input_manager(input_config_schema=int)
+    @dg.input_manager(input_config_schema=int)
     def config_io_man(context):
         return context.config
 
-    @op(ins={"x": In(input_manager_key="my_loader")})
+    @dg.op(ins={"x": dg.In(input_manager_key="my_loader")})
     def start(_, x):
         return x
 
-    @op
+    @dg.op
     def end(_, x=1):
         return x
 
-    @job(resource_defs={"my_loader": config_io_man})
+    @dg.job(resource_defs={"my_loader": config_io_man})
     def testing_io():
         end(start())
 
@@ -252,11 +251,11 @@ def test_extra_config_unsatisfied_input_io_man():
 
 
 def test_config_with_no_schema():
-    @op
+    @dg.op
     def my_op(context):
         assert context.op_config == 5
 
-    @job
+    @dg.job
     def my_job():
         my_op()
 

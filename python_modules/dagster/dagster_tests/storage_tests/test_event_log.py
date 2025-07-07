@@ -6,13 +6,12 @@ import time
 import traceback
 from concurrent.futures import ThreadPoolExecutor
 
+import dagster as dg
 import pytest
 import sqlalchemy
 import sqlalchemy as db
-from dagster import AssetKey, AssetMaterialization, DagsterInstance, Out, Output, RetryRequested, op
-from dagster._core.errors import DagsterEventLogInvalidForRun
-from dagster._core.events import DagsterEvent, EngineEventData, SerializableErrorInfo, StepRetryData
-from dagster._core.events.log import EventLogEntry
+from dagster import DagsterInstance
+from dagster._core.events import EngineEventData, SerializableErrorInfo, StepRetryData
 from dagster._core.execution.stats import (
     StepEventStatus,
     build_run_stats_from_events,
@@ -30,7 +29,6 @@ from dagster._core.storage.legacy_storage import LegacyEventLogStorage
 from dagster._core.storage.sql import create_engine
 from dagster._core.storage.sqlalchemy_compat import db_select
 from dagster._core.storage.sqlite_storage import DagsterSqliteStorage
-from dagster._core.test_utils import instance_for_test
 from dagster._core.utils import make_new_run_id
 from dagster._utils.test import ConcurrencyEnabledSqliteTestEventLogStorage
 from sqlalchemy import __version__ as sqlalchemy_version
@@ -73,7 +71,7 @@ class TestSqliteEventLogStorage(TestEventLogStorage):
     @pytest.fixture(name="instance", scope="function")
     def instance(self):  # pyright: ignore[reportIncompatibleMethodOverride]
         with tempfile.TemporaryDirectory(dir=os.getcwd()) as tmpdir_path:
-            with instance_for_test(temp_dir=tmpdir_path) as instance:
+            with dg.instance_for_test(temp_dir=tmpdir_path) as instance:
                 yield instance
 
     @pytest.fixture(scope="function", name="storage")
@@ -109,7 +107,7 @@ class TestSqliteEventLogStorage(TestEventLogStorage):
             )
             conn.execute(event_insert)
 
-        with pytest.raises(DagsterEventLogInvalidForRun):
+        with pytest.raises(dg.DagsterEventLogInvalidForRun):
             storage.get_logs_for_run(run_id_1)
 
         SqlEventLogStorageMetadata.create_all(
@@ -121,7 +119,7 @@ class TestSqliteEventLogStorage(TestEventLogStorage):
                 run_id=run_id_2, event="3", dagster_event_type=None, timestamp=None
             )
             conn.execute(event_insert)
-        with pytest.raises(DagsterEventLogInvalidForRun):
+        with pytest.raises(dg.DagsterEventLogInvalidForRun):
             storage.get_logs_for_run(run_id_2)
 
     def cmd(self, exceptions, tmpdir_path):
@@ -162,7 +160,7 @@ class TestConsolidatedSqliteEventLogStorage(TestEventLogStorage):
     @pytest.fixture(name="instance", scope="function")
     def instance(self):  # pyright: ignore[reportIncompatibleMethodOverride]
         with tempfile.TemporaryDirectory(dir=os.getcwd()) as tmpdir_path:
-            with instance_for_test(
+            with dg.instance_for_test(
                 temp_dir=tmpdir_path,
                 overrides={
                     "event_log_storage": {
@@ -193,7 +191,7 @@ class TestLegacyStorage(TestEventLogStorage):
     @pytest.fixture(name="instance", scope="function")
     def instance(self):  # pyright: ignore[reportIncompatibleMethodOverride]
         with tempfile.TemporaryDirectory(dir=os.getcwd()) as tmpdir_path:
-            with instance_for_test(temp_dir=tmpdir_path) as instance:
+            with dg.instance_for_test(temp_dir=tmpdir_path) as instance:
                 yield instance
 
     @pytest.fixture(scope="function", name="storage")
@@ -316,16 +314,16 @@ def test_concurrency_reconcile():
 
 
 def test_run_stats():
-    @op
+    @dg.op
     def op_success(_):
         return 1
 
-    @op
+    @dg.op
     def asset_op(_):
-        yield AssetMaterialization(asset_key=AssetKey("asset_1"))
-        yield Output(1)
+        yield dg.AssetMaterialization(asset_key=dg.AssetKey("asset_1"))
+        yield dg.Output(1)
 
-    @op
+    @dg.op
     def op_failure(_):
         raise ValueError("failing")
 
@@ -359,19 +357,19 @@ def test_run_stats():
 
 
 def test_step_stats():
-    @op
+    @dg.op
     def op_success(_):
         return 1
 
-    @op
+    @dg.op
     def asset_op(_):
-        yield AssetMaterialization(asset_key=AssetKey("asset_1"))
-        yield Output(1)
+        yield dg.AssetMaterialization(asset_key=dg.AssetKey("asset_1"))
+        yield dg.Output(1)
 
-    @op(out=Out(str))
+    @dg.op(out=dg.Out(str))
     def op_failure(_):
         time.sleep(0.001)
-        raise RetryRequested(max_retries=3)
+        raise dg.RetryRequested(max_retries=3)
 
     def _ops():
         op_success()
@@ -410,7 +408,7 @@ def test_step_worker_failure_attempts():
     job_name = "job_name"
 
     STEP_EVENT_LOGS = [
-        EventLogEntry(
+        dg.EventLogEntry(
             error_info=None,
             level=10,
             user_message="",
@@ -418,14 +416,14 @@ def test_step_worker_failure_attempts():
             timestamp=1738790993.7522137,
             step_key=step_key,
             job_name=job_name,
-            dagster_event=DagsterEvent(
+            dagster_event=dg.DagsterEvent(
                 event_type_value="STEP_WORKER_STARTING",
                 job_name=job_name,
                 event_specific_data=EngineEventData(marker_start="step_process_start"),
                 step_key=step_key,
             ),
         ),
-        EventLogEntry(
+        dg.EventLogEntry(
             error_info=None,
             level=10,
             user_message="",
@@ -433,7 +431,7 @@ def test_step_worker_failure_attempts():
             timestamp=1738791010.1940305,
             step_key=step_key,
             job_name=job_name,
-            dagster_event=DagsterEvent(
+            dagster_event=dg.DagsterEvent(
                 event_type_value="STEP_UP_FOR_RETRY",
                 job_name=job_name,
                 event_specific_data=StepRetryData(
@@ -442,7 +440,7 @@ def test_step_worker_failure_attempts():
                 step_key=step_key,
             ),
         ),
-        EventLogEntry(
+        dg.EventLogEntry(
             error_info=None,
             level=10,
             user_message="",
@@ -450,7 +448,7 @@ def test_step_worker_failure_attempts():
             timestamp=1738791036.962399,
             step_key=step_key,
             job_name=job_name,
-            dagster_event=DagsterEvent(
+            dagster_event=dg.DagsterEvent(
                 event_type_value="STEP_WORKER_STARTING",
                 job_name=job_name,
                 event_specific_data=EngineEventData(marker_start="step_process_start"),

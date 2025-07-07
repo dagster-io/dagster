@@ -1,28 +1,29 @@
-from dagster import DagsterRunStatus, Definitions, RunRequest, job, op, run_status_sensor
+import dagster as dg
+from dagster import DagsterRunStatus
 
 
-@op
+@dg.op
 def an_op():
     pass
 
 
-@job
+@dg.job
 def success_job():
     an_op()
 
 
-@job
+@dg.job
 def target_job():
     an_op()
 
 
-@run_status_sensor(
+@dg.run_status_sensor(
     run_status=DagsterRunStatus.SUCCESS,
     monitored_jobs=[success_job],
     request_job=target_job,
 )
 def success_sensor(_):
-    return RunRequest(job_name="target_job")
+    return dg.RunRequest(job_name="target_job")
 
 
-defs = Definitions(jobs=[success_job, target_job], sensors=[success_sensor])
+defs = dg.Definitions(jobs=[success_job, target_job], sensors=[success_sensor])

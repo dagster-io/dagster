@@ -1,4 +1,5 @@
-from dagster import AssetSpec, AutoMaterializePolicy, AutoMaterializeRule
+import dagster as dg
+from dagster import AutoMaterializePolicy, AutoMaterializeRule
 from dagster._core.definitions.auto_materialize_rule_evaluation import (
     ParentUpdatedRuleEvaluationData,
 )
@@ -117,7 +118,7 @@ basic_scenarios = [
     AssetDaemonScenario(
         id="parent_materialized_with_source_asset_launch_child",
         initial_spec=ScenarioSpec(
-            asset_specs=[AssetSpec("A"), AssetSpec("B", deps=["A", "source"])]
+            asset_specs=[dg.AssetSpec("A"), dg.AssetSpec("B", deps=["A", "source"])]
         ).with_all_eager(),
         execution_fn=lambda state: state.with_runs(run_request(["A"]))
         .evaluate_tick()
