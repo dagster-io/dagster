@@ -27,21 +27,33 @@ Our updated dbt Cloud integration offers two capabilities:
 <PackageInstallInstructions packageName="dagster-dbt" />
 
 ## Observability example
+
 To make use of the observability capability, you will need to add code to your Dagster project that does the following:
+
 1. Defines your dbt Cloud credentials and workspace.
 2. Uses the integration to create asset specs for models in the workspace.
 3. Builds a sensor which will poll dbt Cloud for updates on runs/materialization history and dbt Cloud Assets.
 
-<CodeExample path="docs_snippets/docs_snippets/integrations/dbt/dbt_cloud_observability.py" language="python" title="defs/dbt_cloud_observability.py" />
+<CodeExample
+  path="docs_snippets/docs_snippets/integrations/dbt/dbt_cloud_observability.py"
+  language="python"
+  title="defs/dbt_cloud_observability.py"
+/>
 
 ## Orchestration example
+
 To make use of the orchestration capability, you will need to add code to your Dagster project that does the following:
+
 1. Defines your dbt Cloud credentials and workspace.
 2. Builds your asset graph in a materializable way.
 3. Adds these assets to the Declarative Automation Sensor.
 4. Builds a sensor to poll dbt Cloud for updates on runs/materialization history and dbt Cloud Assets.
 
-<CodeExample path="docs_snippets/docs_snippets/integrations/dbt/dbt_cloud_orchestration.py" language="python" title="defs/dbt_cloud_orchestation.py" />
+<CodeExample
+  path="docs_snippets/docs_snippets/integrations/dbt/dbt_cloud_orchestration.py"
+  language="python"
+  title="defs/dbt_cloud_orchestration.py"
+/>
 
 ## About dbt Cloud
 

@@ -16,7 +16,7 @@ creds = DbtCloudCredentials(
     token=os.getenv("DBT_CLOUD_TOKEN"),
 )
 
-# Define the worskpace
+# Define the workspace
 workspace = DbtCloudWorkspace(
     credentials=creds,
     project_id=os.getenv("DBT_CLOUD_PROJECT_ID"),
