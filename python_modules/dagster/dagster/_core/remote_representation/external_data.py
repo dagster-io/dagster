@@ -711,40 +711,26 @@ class SensorSnap(IHaveNew):
         if isinstance(sensor_def, AssetSensorDefinition):
             asset_keys = [sensor_def.asset_key]
 
-        if sensor_def.asset_selection is not None:
-            target_dict = {
-                base_asset_job_name: TargetSnap(
-                    job_name=base_asset_job_name, mode=DEFAULT_MODE_NAME, op_selection=None
-                )
-                for base_asset_job_name in repository_def.get_implicit_asset_job_names()
-            }
+        target_dict = {
+            target.job_name: TargetSnap(
+                job_name=target.job_name,
+                mode=DEFAULT_MODE_NAME,
+                op_selection=target.op_selection,
+            )
+            for target in sensor_def.targets
+        }
 
-            serializable_asset_selection = (
-                sensor_def.asset_selection.to_serializable_asset_selection(
-                    repository_def.asset_graph
-                )
+        if sensor_def.has_anonymous_job:
+            job_def = check.inst(
+                sensor_def.job,
+                UnresolvedAssetJobDefinition,
+                "Anonymous job should be UnresolvedAssetJobDefinition",
+            )
+            serializable_asset_selection = job_def.selection.to_serializable_asset_selection(
+                repository_def.asset_graph
             )
         else:
-            target_dict = {
-                target.job_name: TargetSnap(
-                    job_name=target.job_name,
-                    mode=DEFAULT_MODE_NAME,
-                    op_selection=target.op_selection,
-                )
-                for target in sensor_def.targets
-            }
-
-            if sensor_def.has_anonymous_job:
-                job_def = check.inst(
-                    sensor_def.job,
-                    UnresolvedAssetJobDefinition,
-                    "Anonymous job should be UnresolvedAssetJobDefinition",
-                )
-                serializable_asset_selection = job_def.selection.to_serializable_asset_selection(
-                    repository_def.asset_graph
-                )
-            else:
-                serializable_asset_selection = None
+            serializable_asset_selection = None
 
         return cls(
             name=sensor_def.name,

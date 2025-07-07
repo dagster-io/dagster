@@ -415,7 +415,7 @@ class RemoteRepository:
             for target in sensor.get_targets():
                 job_name_mapping[target.job_name].append(sensor)
 
-            if sensor and sensor.asset_selection:
+            if sensor and sensor.asset_selection is not None:
                 try:
                     keys = sensor.asset_selection.resolve(self.asset_graph)
                     for key in keys:
