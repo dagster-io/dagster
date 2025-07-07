@@ -20,10 +20,14 @@ workspace = DbtCloudWorkspace(
     environment_id=os.getenv("DBT_CLOUD_ENVIRONMENT_ID"),
 )
 
+
 # Builds your asset graph in a materializable way
 @dbt_cloud_assets(workspace=workspace)
-def my_dbt_cloud_assets(context: dg.AssetExecutionContext, dbt_cloud: DbtCloudWorkspace):
+def my_dbt_cloud_assets(
+    context: dg.AssetExecutionContext, dbt_cloud: DbtCloudWorkspace
+):
     yield from dbt_cloud.cli(args=["build"], context=context).wait()
+
 
 # Automates your assets using Declarative Automation
 # https://docs.dagster.io/guides/automate/declarative-automation
