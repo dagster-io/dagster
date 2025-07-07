@@ -3229,7 +3229,7 @@ class SqlEventLogStorage(EventLogStorage):
     def _get_partition_data_versions(
         self,
         asset_key: AssetKey,
-        partitions: Sequence[str],
+        partitions: Optional[Sequence[str]],
         before_storage_id: Optional[int] = None,
         after_storage_id: Optional[int] = None,
     ) -> dict[str, str]:
@@ -3244,7 +3244,7 @@ class SqlEventLogStorage(EventLogStorage):
                     == DagsterEventType.ASSET_OBSERVATION.value,
                 ),
                 SqlEventLogStorageTable.c.asset_key == asset_key.to_string(),
-                SqlEventLogStorageTable.c.partition.in_(partitions),
+                SqlEventLogStorageTable.c.partition.in_(partitions) if partitions else True,
             )
         )
         data_version_subquery = db_select(
@@ -3313,16 +3313,16 @@ class SqlEventLogStorage(EventLogStorage):
         return {cast("str", row[0]): cast("str", row[1]) for row in rows}
 
     def get_updated_data_version_partitions(
-        self, asset_key: AssetKey, partitions: Iterable[str], since_storage_id: int
+        self, asset_key: AssetKey, partitions: Optional[Iterable[str]], since_storage_id: int
     ) -> set[str]:
         previous_data_versions = self._get_partition_data_versions(
             asset_key=asset_key,
-            partitions=list(partitions),
+            partitions=list(partitions) if partitions else None,
             before_storage_id=since_storage_id + 1,
         )
         current_data_versions = self._get_partition_data_versions(
             asset_key=asset_key,
-            partitions=list(partitions),
+            partitions=list(partitions) if partitions else None,
             after_storage_id=since_storage_id,
         )
 
