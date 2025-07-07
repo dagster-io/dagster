@@ -1,6 +1,7 @@
 import {Colors} from '@dagster-io/ui-components';
 import {
   ActiveElement,
+  CategoryScale,
   ChartEvent,
   Chart as ChartJS,
   ChartOptions,
@@ -18,7 +19,7 @@ import {TimeContext} from '../app/time/TimeContext';
 import {timestampToString} from '../app/time/timestampToString';
 import {useRGBColorsForTheme} from '../app/useRGBColorsForTheme';
 
-ChartJS.register(LinearScale, LineElement, PointElement, TimeScale);
+ChartJS.register(CategoryScale, LinearScale, LineElement, PointElement, TimeScale);
 
 export interface AssetValueGraphData {
   minY: number;
