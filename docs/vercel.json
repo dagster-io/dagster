@@ -569,6 +569,10 @@
       "destination": "/deployment/code-locations/"
     },
     {
+      "source": "/migration/version-migration",
+      "destination": "/migration/upgrading"
+    },
+    {
       "source": "/guides/migrate/:path*",
       "destination": "/migration/:path*"
     },
