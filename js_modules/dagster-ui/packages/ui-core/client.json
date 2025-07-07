@@ -158,7 +158,6 @@
   "ScheduleRootQuery": "b54dfb64f816baa5c52c4676dcbd3808477130cab5237a5b96b988ec002adafc",
   "ScheduleStateQuery": "75bc752d4f1df0fc2829736c14a4c2f707981571eb83a9139fa7048d202b3491",
   "ScheduleTickConfigQuery": "acdec3206ff12d652fe6657c8c51202a65b652b9575625d1f024014bbb828788",
-  "SearchPrimaryQuery": "5d98265169496aabdee190894e504f0dd6205c3a8be462c5eac2a6c9c0c75f4a",
   "AssetSensorTicksQuery": "ee952c7c0076a23f9d5940ad472a6b580989c0d241dc598dbefa5bf3734673d0",
   "SetSensorCursorMutation": "a2982d2698c645a5d39b60415792c233abd90f85d2a2ac7cd626d88c3d3362a2",
   "StartSensor": "d091651f745822f99d00968a3d5bd8bc68c11061bdcb2391d06f5ef6f5775ed9",
@@ -180,8 +179,8 @@
   "SingleScheduleQuery": "508a47e32ce04ba5be52c66cd592b74147bf98ec85b9f5d0e4db45172bd9a897",
   "SingleSensorQuery": "dbda5ba47d4ba10f8c527c9a7cd45fba0811276441a17a8ac6f173ed588f025b",
   "WorkspaceAssetsQuery": "f8cccee3286a595fc68a04372394aefed44d5ac880b73956a2e95330f3b65ae5",
-  "LocationWorkspaceQuery": "29ccbcf54f008238364fa8d1e9476dd5de2492098403a67e893de7c082d0009f",
+  "LocationWorkspaceQuery": "dc3c765d258d59c8c265f45109e72281af380ac95cb06b3e8faf799e7edba7ef",
   "CodeLocationStatusQuery": "5491629a2659feca3a6cf0cc976c6f59c8e78dff1193e07d7850ae4355698b04",
-  "LocationWorkspaceAssetsQuery": "05624e8a7d1522362cab7503a61408521b1296fda909dbfd4ef4d5567f87c19e",
+  "LocationWorkspaceAssetsQuery": "3e053c920a3fd3448cf3cb0ee19ab1b643c66ecde751bb81d464b6e75e046d3f",
   "WorkspaceGraphsQuery": "ccbef870f327b56beb0d781a476c8afbbc22ff2621181c8576861daaf7667ecf"
 }

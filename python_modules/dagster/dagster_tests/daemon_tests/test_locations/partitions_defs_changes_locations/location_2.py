@@ -1,24 +1,20 @@
-from dagster import asset
-from dagster._core.definitions.partitions.definition import (
-    DailyPartitionsDefinition,
-    StaticPartitionsDefinition,
-)
+import dagster as dg
 
 
-@asset(  # partitions def changed to start in June instead of Jan
-    partitions_def=DailyPartitionsDefinition("2023-06-01"),
+@dg.asset(  # partitions def changed to start in June instead of Jan
+    partitions_def=dg.DailyPartitionsDefinition("2023-06-01"),
 )
 def time_partitions_def_changes():
     pass
 
 
-@asset  # partitions def removed
+@dg.asset  # partitions def removed
 def partitions_def_removed():
     pass
 
 
-@asset(  # partition "c" removed
-    partitions_def=StaticPartitionsDefinition(["a", "b"]),
+@dg.asset(  # partition "c" removed
+    partitions_def=dg.StaticPartitionsDefinition(["a", "b"]),
 )
 def static_partition_removed():
     pass

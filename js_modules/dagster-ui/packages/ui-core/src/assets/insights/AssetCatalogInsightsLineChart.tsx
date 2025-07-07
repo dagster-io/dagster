@@ -1,9 +1,10 @@
 import {
   Body,
-  BodySmall,
+  BodyLarge,
   Box,
   Colors,
   FontFamily,
+  Icon,
   Mono,
   Spinner,
   Subheading,
@@ -47,6 +48,7 @@ export type LineChartMetrics = {
   prevPeriod: {
     label: string;
     data: (number | null)[];
+    aggregateValue: number | null;
     color: string;
   };
 };
@@ -91,7 +93,7 @@ const getDataset = (
         borderColor: metrics.prevPeriod.color,
         backgroundColor: 'transparent',
         pointRadius: 0,
-        borderWidth: 1,
+        borderWidth: 2,
         pointHoverRadius: 6,
         pointHoverBorderColor: metrics.prevPeriod.color,
       },
@@ -304,20 +306,36 @@ export const AssetCatalogInsightsLineChart = React.memo(
       <div className={styles.chartContainer}>
         <div className={styles.chartHeader}>
           <Box flex={{direction: 'row', gap: 4, justifyContent: 'space-between'}}>
-            <Subheading>{metrics.title}</Subheading>
+            <BodyLarge>{metrics.title}</BodyLarge>
             {loading ? <Spinner purpose="body-text" /> : null}
           </Box>
         </div>
-        <Box flex={{direction: 'row', justifyContent: 'space-between'}}>
+        <Box flex={{direction: 'column', justifyContent: 'space-between'}}>
           <div className={styles.chartCount}>
             {metrics.currentPeriod.aggregateValue
               ? numberFormatter.format(Math.round(metrics.currentPeriod.aggregateValue))
               : 0}
-            <BodySmall color={Colors.textLight()}>{unitTypeToLabel[unitType]}</BodySmall>
+            <Body color={Colors.textDefault()}>{unitTypeToLabel[unitType]}</Body>
           </div>
-          <div className={styles.chartChange}>
-            {percentFormatter.format(metrics.pctChange ?? 0)}
-          </div>
+          <Box
+            className={styles.chartChange}
+            flex={{direction: 'row', gap: 4, justifyContent: 'space-between'}}
+          >
+            <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+              {metrics.prevPeriod.aggregateValue
+                ? numberFormatter.format(Math.round(metrics.prevPeriod.aggregateValue))
+                : 0}
+              <span> previous period</span>
+            </Box>
+            <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+              {metrics.pctChange && metrics.pctChange > 0 ? (
+                <Icon name="trending_up" size={16} color={Colors.textLighter()} />
+              ) : metrics.pctChange && metrics.pctChange < 0 ? (
+                <Icon name="trending_down" size={16} color={Colors.textLighter()} />
+              ) : null}
+              {percentFormatter.format(Math.abs(metrics.pctChange ?? 0))}
+            </Box>
+          </Box>
         </Box>
         <div className={styles.chartWrapper}>
           <div className={styles.chartGraph}>

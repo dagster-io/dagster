@@ -1,10 +1,9 @@
-from dagster import Component, ComponentLoadContext
-from dagster._core.definitions.definitions_class import Definitions
+import dagster as dg
 
 
-class MyComponent(Component):
+class MyComponent(dg.Component):
     a_string: str
     an_int: int
 
-    def build_defs(self, context: ComponentLoadContext) -> Definitions:
-        return Definitions()
+    def build_defs(self, context: dg.ComponentLoadContext) -> dg.Definitions:
+        return dg.Definitions()

@@ -1,15 +1,14 @@
 # curl -O https://raw.githubusercontent.com/dbt-labs/jaffle-shop-classic/refs/heads/main/seeds/raw_customers.csv
-
 from dataclasses import dataclass
 from pathlib import Path
 
 import dagster as dg
 import duckdb
-from dagster import Component, ComponentLoadContext
+from dagster import ComponentLoadContext
 
 
 @dataclass
-class DuckDbComponent(Component):
+class DuckDbComponent(dg.Component):
     """A component that allows you to write SQL without learning dbt or Dagster's concepts."""
 
     def build_defs(self, context: ComponentLoadContext) -> dg.Definitions:

@@ -2,22 +2,12 @@ import os
 import sys
 from typing import TYPE_CHECKING, Optional
 
+import dagster as dg
 import pytest
-from dagster import (
-    DagsterInstance,
-    IAttachDifferentObjectToOpContext,
-    ScheduleEvaluationContext,
-    job,
-    op,
-    resource,
-    schedule,
-)
-from dagster._config.pythonic_config import ConfigurableResource
-from dagster._core.definitions.definitions_class import Definitions
+from dagster import DagsterInstance, ScheduleEvaluationContext, schedule
 from dagster._core.definitions.repository_definition.valid_definitions import (
     SINGLETON_REPOSITORY_NAME,
 )
-from dagster._core.definitions.schedule_definition import RunRequest
 from dagster._core.scheduler.instigation import InstigatorTick, TickStatus
 from dagster._core.test_utils import create_test_daemon_workspace_context, freeze_time
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
@@ -36,21 +26,23 @@ if TYPE_CHECKING:
     from collections.abc import Sequence
 
 
-@op
+@dg.op
 def the_op(_):
     return 1
 
 
-@job
+@dg.job
 def the_job():
     the_op()
 
 
-class MyResource(ConfigurableResource):
+class MyResource(dg.ConfigurableResource):
     a_str: str
 
 
-class MyResourceAttachDifferentObject(ConfigurableResource, IAttachDifferentObjectToOpContext):
+class MyResourceAttachDifferentObject(
+    dg.ConfigurableResource, dg.IAttachDifferentObjectToOpContext
+):
     a_str: str
 
     def get_object_to_set_on_execution_context(self) -> str:
@@ -59,12 +51,12 @@ class MyResourceAttachDifferentObject(ConfigurableResource, IAttachDifferentObje
 
 @schedule(job_name="the_job", cron_schedule="* * * * *", required_resource_keys={"my_resource"})
 def schedule_from_context(context: ScheduleEvaluationContext):
-    return RunRequest(context.resources.my_resource.a_str, run_config={}, tags={})
+    return dg.RunRequest(context.resources.my_resource.a_str, run_config={}, tags={})
 
 
 @schedule(job_name="the_job", cron_schedule="* * * * *")
 def schedule_from_arg(my_resource: MyResource):
-    return RunRequest(my_resource.a_str, run_config={}, tags={})
+    return dg.RunRequest(my_resource.a_str, run_config={}, tags={})
 
 
 @schedule(job_name="the_job", cron_schedule="* * * * *")
@@ -73,7 +65,7 @@ def schedule_from_weird_name(
 ):
     assert not_called_context.resources.my_resource.a_str == my_resource.a_str
 
-    return RunRequest(my_resource.a_str, run_config={}, tags={})
+    return dg.RunRequest(my_resource.a_str, run_config={}, tags={})
 
 
 @schedule(job_name="the_job", cron_schedule="* * * * *")
@@ -82,15 +74,15 @@ def schedule_with_resource_from_context(
 ):
     assert context.resources.my_resource_attach == my_resource_attach.a_str
 
-    return RunRequest(my_resource_attach.a_str, run_config={}, tags={})
+    return dg.RunRequest(my_resource_attach.a_str, run_config={}, tags={})
 
 
-@resource
+@dg.resource
 def the_inner() -> str:
     return "oo"
 
 
-@resource(required_resource_keys={"the_inner"})
+@dg.resource(required_resource_keys={"the_inner"})
 def the_outer(init_context) -> str:
     return "f" + init_context.resources.the_inner
 
@@ -101,10 +93,10 @@ def the_outer(init_context) -> str:
     cron_schedule="* * * * *",
 )
 def schedule_resource_deps(context):
-    return RunRequest("foo", run_config={}, tags={})
+    return dg.RunRequest("foo", run_config={}, tags={})
 
 
-the_repo = Definitions(
+the_repo = dg.Definitions(
     jobs=[the_job],
     schedules=[
         schedule_from_context,

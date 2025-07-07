@@ -2,30 +2,13 @@ import os
 import sys
 import time
 
+import dagster as dg
 import pytest
-from dagster import (
-    Failure,
-    Field,
-    In,
-    JobDefinition,
-    Nothing,
-    Out,
-    Output,
-    String,
-    job,
-    multiprocess_executor,
-    op,
-    reconstructable,
-)
 from dagster._check import CheckError
 from dagster._core.definitions.metadata import MetadataValue
-from dagster._core.errors import DagsterUnmetExecutorRequirementsError
-from dagster._core.events import DagsterEvent, DagsterEventType
+from dagster._core.events import DagsterEventType
 from dagster._core.execution import execution_result
-from dagster._core.execution.api import execute_job
 from dagster._core.instance import DagsterInstance
-from dagster._core.storage.mem_io_manager import mem_io_manager
-from dagster._core.test_utils import instance_for_test
 from dagster._utils import safe_tempfile_path, segfault
 
 from dagster_tests.execution_tests.engine_tests.retry_jobs import (
@@ -41,7 +24,7 @@ def test_diamond_simple_execution():
     assert result.output_for_node("adder") == 11
 
 
-def compute_event(result: execution_result.ExecutionResult, op_name: str) -> DagsterEvent:
+def compute_event(result: execution_result.ExecutionResult, op_name: str) -> dg.DagsterEvent:
     for event in result.events_for_node(op_name):
         if event.step_kind_value == "COMPUTE":
             return event
@@ -49,9 +32,9 @@ def compute_event(result: execution_result.ExecutionResult, op_name: str) -> Dag
 
 
 def test_diamond_multi_execution():
-    with instance_for_test() as instance:
-        recon_job = reconstructable(define_diamond_job)
-        with execute_job(
+    with dg.instance_for_test() as instance:
+        recon_job = dg.reconstructable(define_diamond_job)
+        with dg.execute_job(
             recon_job,
             instance=instance,
         ) as result:
@@ -60,9 +43,9 @@ def test_diamond_multi_execution():
 
 
 def test_explicit_spawn():
-    with instance_for_test() as instance:
-        recon_job = reconstructable(define_diamond_job)
-        with execute_job(
+    with dg.instance_for_test() as instance:
+        recon_job = dg.reconstructable(define_diamond_job)
+        with dg.execute_job(
             recon_job,
             run_config={
                 "execution": {"config": {"multiprocess": {"start_method": {"spawn": {}}}}},
@@ -75,9 +58,9 @@ def test_explicit_spawn():
 
 @pytest.mark.skipif(os.name == "nt", reason="No forkserver on windows")
 def test_forkserver_execution():
-    with instance_for_test() as instance:
-        recon_job = reconstructable(define_diamond_job)
-        with execute_job(
+    with dg.instance_for_test() as instance:
+        recon_job = dg.reconstructable(define_diamond_job)
+        with dg.execute_job(
             recon_job,
             run_config={
                 "execution": {"config": {"multiprocess": {"start_method": {"forkserver": {}}}}},
@@ -90,9 +73,9 @@ def test_forkserver_execution():
 
 @pytest.mark.skipif(os.name == "nt", reason="No forkserver on windows")
 def test_forkserver_preload():
-    with instance_for_test() as instance:
-        recon_job = reconstructable(define_diamond_job)
-        with execute_job(
+    with dg.instance_for_test() as instance:
+        recon_job = dg.reconstructable(define_diamond_job)
+        with dg.execute_job(
             recon_job,
             run_config={
                 "execution": {
@@ -112,24 +95,24 @@ JUST_ADDER_CONFIG = {
 }
 
 
-def define_diamond_job() -> JobDefinition:
-    @op
+def define_diamond_job() -> dg.JobDefinition:
+    @dg.op
     def return_two():
         return 2
 
-    @op(ins={"num": In()})
+    @dg.op(ins={"num": dg.In()})
     def add_three(num):
         return num + 3
 
-    @op(ins={"num": In()})
+    @dg.op(ins={"num": dg.In()})
     def mult_three(num):
         return num * 3
 
-    @op(ins={"left": In(), "right": In()})
+    @dg.op(ins={"left": dg.In(), "right": dg.In()})
     def adder(left, right):
         return left + right
 
-    @job
+    @dg.job
     def diamond_job():
         two = return_two()
         adder(left=add_three(two), right=mult_three(two))
@@ -138,15 +121,15 @@ def define_diamond_job() -> JobDefinition:
 
 
 def define_in_mem_job():
-    @op
+    @dg.op
     def return_two():
         return 2
 
-    @op(ins={"num": In()})
+    @dg.op(ins={"num": dg.In()})
     def add_three(num):
         return num + 3
 
-    @job(resource_defs={"io_manager": mem_io_manager})
+    @dg.job(resource_defs={"io_manager": dg.mem_io_manager})
     def in_mem_job():
         add_three(return_two())
 
@@ -154,15 +137,15 @@ def define_in_mem_job():
 
 
 def define_error_job():
-    @op
+    @dg.op
     def should_never_execute(_x):
         assert False  # this should never execute
 
-    @op
+    @dg.op
     def throw_error():
         raise Exception("bad programmer")
 
-    @job
+    @dg.job
     def error_job():
         should_never_execute(throw_error())
 
@@ -176,33 +159,33 @@ def test_error_job():
 
 
 def test_error_job_multiprocess():
-    with instance_for_test() as instance:
-        with execute_job(
-            reconstructable(define_error_job),
+    with dg.instance_for_test() as instance:
+        with dg.execute_job(
+            dg.reconstructable(define_error_job),
             instance=instance,
         ) as result:
             assert not result.success
 
 
 def test_mem_storage_error_job_multiprocess():
-    with instance_for_test() as instance:
+    with dg.instance_for_test() as instance:
         with pytest.raises(
-            DagsterUnmetExecutorRequirementsError,
+            dg.DagsterUnmetExecutorRequirementsError,
             match=(
                 "your job includes op outputs that will not be stored somewhere where other"
                 " processes can retrieve them."
             ),
         ):
-            execute_job(
-                reconstructable(define_in_mem_job),
+            dg.execute_job(
+                dg.reconstructable(define_in_mem_job),
                 instance=instance,
                 raise_on_error=False,
             )
 
 
 def test_invalid_instance():
-    with execute_job(
-        reconstructable(define_diamond_job),
+    with dg.execute_job(
+        dg.reconstructable(define_diamond_job),
         instance=DagsterInstance.ephemeral(),
         raise_on_error=False,
     ) as result:
@@ -218,7 +201,7 @@ def test_invalid_instance():
 
 def test_no_handle():
     with pytest.raises(CheckError, match='Param "job" is not a ReconstructableJob.'):
-        execute_job(
+        dg.execute_job(
             define_diamond_job(),  # pyright: ignore[reportArgumentType]
             instance=DagsterInstance.ephemeral(),
             raise_on_error=False,
@@ -226,10 +209,10 @@ def test_no_handle():
 
 
 def test_op_selection():
-    with instance_for_test() as instance:
-        recon_job = reconstructable(define_diamond_job)
+    with dg.instance_for_test() as instance:
+        recon_job = dg.reconstructable(define_diamond_job)
 
-        with execute_job(
+        with dg.execute_job(
             recon_job, instance=instance, run_config=JUST_ADDER_CONFIG, op_selection=["adder"]
         ) as result:
             assert result.success
@@ -237,7 +220,7 @@ def test_op_selection():
 
 
 def define_subdag_job():
-    @op(config_schema=Field(String))
+    @dg.op(config_schema=dg.Field(dg.String))
     def waiter(context):
         done = False
         while not done:
@@ -245,23 +228,23 @@ def define_subdag_job():
             if os.path.isfile(context.op_config):
                 return
 
-    @op(
-        ins={"after": In(Nothing)},
-        config_schema=Field(String),
+    @dg.op(
+        ins={"after": dg.In(dg.Nothing)},
+        config_schema=dg.Field(dg.String),
     )
     def writer(context):
         with open(context.op_config, "w", encoding="utf8") as fd:
             fd.write("1")
         return
 
-    @op(
-        ins={"after": In(Nothing)},
-        out=Out(Nothing),
+    @dg.op(
+        ins={"after": dg.In(dg.Nothing)},
+        out=dg.Out(dg.Nothing),
     )
     def noop():
         pass
 
-    @job
+    @dg.job
     def separate():
         waiter()
         a = noop.alias("noop_1")()
@@ -273,11 +256,11 @@ def define_subdag_job():
 
 
 def test_separate_sub_dags():
-    with instance_for_test() as instance:
-        pipe = reconstructable(define_subdag_job)
+    with dg.instance_for_test() as instance:
+        pipe = dg.reconstructable(define_subdag_job)
 
         with safe_tempfile_path() as filename:
-            with execute_job(
+            with dg.execute_job(
                 pipe,
                 run_config={
                     "execution": {"config": {"multiprocess": {"max_concurrent": 2}}},
@@ -300,7 +283,7 @@ def test_separate_sub_dags():
 
 
 def test_ephemeral_event_log():
-    with instance_for_test(
+    with dg.instance_for_test(
         overrides={
             "event_log_storage": {
                 "module": "dagster._core.storage.event_log",
@@ -308,10 +291,10 @@ def test_ephemeral_event_log():
             }
         }
     ) as instance:
-        pipe = reconstructable(define_diamond_job)
+        pipe = dg.reconstructable(define_diamond_job)
         # override event log to in memory
 
-        with execute_job(
+        with dg.execute_job(
             pipe,
             instance=instance,
         ) as result:
@@ -319,22 +302,22 @@ def test_ephemeral_event_log():
             assert result.output_for_node("adder") == 11
 
 
-@op(
+@dg.op(
     out={
-        "option_1": Out(is_required=False),
-        "option_2": Out(is_required=False),
+        "option_1": dg.Out(is_required=False),
+        "option_2": dg.Out(is_required=False),
     }
 )
 def either_or(_context):
-    yield Output(1, "option_1")
+    yield dg.Output(1, "option_1")
 
 
-@op
+@dg.op
 def echo(x):
     return x
 
 
-@job
+@dg.job
 def optional_stuff():
     option_1, option_2 = either_or()
     echo(echo(option_1))
@@ -342,14 +325,14 @@ def optional_stuff():
 
 
 def test_optional_outputs():
-    with instance_for_test() as instance:
+    with dg.instance_for_test() as instance:
         single_result = optional_stuff.execute_in_process()
         assert single_result.success
         assert not [event for event in single_result.all_events if event.is_step_failure]
         assert len([event for event in single_result.all_events if event.is_step_skipped]) == 2
 
-        with execute_job(
-            reconstructable(optional_stuff),
+        with dg.execute_job(
+            dg.reconstructable(optional_stuff),
             instance=instance,
         ) as multi_result:
             assert multi_result.success
@@ -357,23 +340,23 @@ def test_optional_outputs():
             assert len([event for event in multi_result.all_events if event.is_step_skipped]) == 2
 
 
-@op
+@dg.op
 def throw():
-    raise Failure(
+    raise dg.Failure(
         description="it Failure",
         metadata={"label": "text"},
     )
 
 
-@job
+@dg.job
 def failure():
     throw()
 
 
 def test_failure_multiprocessing():
-    with instance_for_test() as instance:
-        with execute_job(
-            reconstructable(failure),
+    with dg.instance_for_test() as instance:
+        with dg.execute_job(
+            dg.reconstructable(failure),
             instance=instance,
             raise_on_error=False,
         ) as result:
@@ -389,7 +372,7 @@ def test_failure_multiprocessing():
             assert failure_data.user_failure_data.metadata["label"] == MetadataValue.text("text")  # pyright: ignore[reportOptionalMemberAccess]
 
 
-@op
+@dg.op
 def sys_exit(context):
     context.log.info("Informational message")
     print("Crashy output to stdout")  # noqa: T201
@@ -397,16 +380,16 @@ def sys_exit(context):
     os._exit(1)
 
 
-@job
+@dg.job
 def sys_exit_job():
     sys_exit()
 
 
 @pytest.mark.skipif(os.name == "nt", reason="Different crash output on Windows: See issue #2791")
 def test_crash_multiprocessing():
-    with instance_for_test() as instance:
-        with execute_job(
-            reconstructable(sys_exit_job),
+    with dg.instance_for_test() as instance:
+        with dg.execute_job(
+            dg.reconstructable(sys_exit_job),
             instance=instance,
             raise_on_error=False,
         ) as result:
@@ -440,23 +423,23 @@ def test_crash_multiprocessing():
 
 
 # segfault test
-@op
+@dg.op
 def segfault_op(context):
     context.log.info("Informational message")
     print("Crashy output to stdout")  # noqa: T201
     segfault()
 
 
-@job
+@dg.job
 def segfault_job():
     segfault_op()
 
 
 @pytest.mark.skipif(os.name == "nt", reason="Different exception on Windows: See issue #2791")
 def test_crash_hard_multiprocessing():
-    with instance_for_test() as instance:
-        with execute_job(
-            reconstructable(segfault_job),
+    with dg.instance_for_test() as instance:
+        with dg.execute_job(
+            dg.reconstructable(segfault_job),
             instance=instance,
             raise_on_error=False,
         ) as result:
@@ -472,11 +455,11 @@ def test_crash_hard_multiprocessing():
 
 
 def get_dynamic_resource_init_failure_job():
-    return get_dynamic_job_resource_init_failure(multiprocess_executor)[0]
+    return get_dynamic_job_resource_init_failure(dg.multiprocess_executor)[0]
 
 
 def get_dynamic_op_failure_job():
-    return get_dynamic_job_op_failure(multiprocess_executor)[0]
+    return get_dynamic_job_op_failure(dg.multiprocess_executor)[0]
 
 
 # Tests identical retry behavior when a job fails because of resource
@@ -487,11 +470,11 @@ def get_dynamic_op_failure_job():
     [
         (
             get_dynamic_resource_init_failure_job,
-            get_dynamic_job_resource_init_failure(multiprocess_executor)[1],
+            get_dynamic_job_resource_init_failure(dg.multiprocess_executor)[1],
         ),
         (
             get_dynamic_op_failure_job,
-            get_dynamic_job_op_failure(multiprocess_executor)[1],
+            get_dynamic_job_op_failure(dg.multiprocess_executor)[1],
         ),
     ],
 )

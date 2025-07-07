@@ -2,14 +2,8 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Any
 
-from dagster import (
-    AssetSpec,
-    AutomationCondition,
-    Component,
-    ComponentLoadContext,
-    Definitions,
-    Resolvable,
-)
+import dagster as dg
+from dagster import AutomationCondition, ComponentLoadContext
 from dagster.components.resolved.core_models import ResolvedAssetAttributes
 
 
@@ -17,12 +11,12 @@ def my_custom_fn(a: str, b: str) -> str:
     return a + "|" + b
 
 
-def my_custom_automation_condition(cron_schedule: str) -> AutomationCondition:
+def my_custom_automation_condition(cron_schedule: str) -> dg.AutomationCondition:
     return AutomationCondition.cron_tick_passed(cron_schedule) & ~AutomationCondition.in_progress()
 
 
 @dataclass
-class HasCustomScope(Component, Resolvable):
+class HasCustomScope(dg.Component, dg.Resolvable):
     asset_attributes: ResolvedAssetAttributes
 
     @classmethod
@@ -35,4 +29,4 @@ class HasCustomScope(Component, Resolvable):
         }
 
     def build_defs(self, context: ComponentLoadContext):
-        return Definitions(assets=[AssetSpec(key="key", **self.asset_attributes)])
+        return dg.Definitions(assets=[dg.AssetSpec(key="key", **self.asset_attributes)])

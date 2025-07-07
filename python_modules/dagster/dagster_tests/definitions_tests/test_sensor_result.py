@@ -1,42 +1,26 @@
+import dagster as dg
 import pytest
-from dagster import (
-    AssetKey,
-    AssetMaterialization,
-    DagsterInvariantViolationError,
-    Output,
-    RunRequest,
-    SkipReason,
-    asset_sensor,
-    build_sensor_context,
-    job,
-    op,
-    sensor,
-)
 from dagster._check import CheckError
-from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluation
-from dagster._core.definitions.events import AssetObservation
-from dagster._core.definitions.run_request import SensorResult
 from dagster._core.instance import DagsterInstance
-from dagster._core.test_utils import instance_for_test
 
 
-@op
+@dg.op
 def do_something():
     pass
 
 
-@job
+@dg.job
 def do_something_job():
     do_something()
 
 
 def test_sensor_result_one_run_request():
-    @sensor(job=do_something_job)
+    @dg.sensor(job=do_something_job)
     def test_sensor(_):
-        return SensorResult(run_requests=[RunRequest(run_key="foo")])
+        return dg.SensorResult(run_requests=[dg.RunRequest(run_key="foo")])
 
-    with instance_for_test() as instance:
-        ctx = build_sensor_context(
+    with dg.instance_for_test() as instance:
+        ctx = dg.build_sensor_context(
             instance=instance,
         )
         sensor_data = test_sensor.evaluate_tick(ctx)
@@ -48,16 +32,16 @@ def test_sensor_result_one_run_request():
 
 
 def test_sensor_result_skip_reason():
-    skip_reason = SkipReason("I'm skipping")
+    skip_reason = dg.SkipReason("I'm skipping")
 
-    @sensor(job=do_something_job)  # pyright: ignore[reportArgumentType]
+    @dg.sensor(job=do_something_job)  # pyright: ignore[reportArgumentType]
     def test_sensor(_):
         return [
-            SensorResult(skip_reason=skip_reason),
+            dg.SensorResult(skip_reason=skip_reason),
         ]
 
-    with instance_for_test() as instance:
-        ctx = build_sensor_context(
+    with dg.instance_for_test() as instance:
+        ctx = dg.build_sensor_context(
             instance=instance,
         )
         sensor_data = test_sensor.evaluate_tick(ctx)
@@ -70,14 +54,14 @@ def test_sensor_result_skip_reason():
 def test_sensor_result_string_skip_reason():
     skip_reason = "I'm skipping"
 
-    @sensor(job=do_something_job)  # pyright: ignore[reportArgumentType]
+    @dg.sensor(job=do_something_job)  # pyright: ignore[reportArgumentType]
     def test_sensor(_):
         return [
-            SensorResult(skip_reason=skip_reason),
+            dg.SensorResult(skip_reason=skip_reason),
         ]
 
-    with instance_for_test() as instance:
-        ctx = build_sensor_context(
+    with dg.instance_for_test() as instance:
+        ctx = dg.build_sensor_context(
             instance=instance,
         )
         sensor_data = test_sensor.evaluate_tick(ctx)
@@ -88,30 +72,30 @@ def test_sensor_result_string_skip_reason():
 
 
 def test_invalid_skip_reason_invocations():
-    @sensor(job=do_something_job)  # pyright: ignore[reportArgumentType]
+    @dg.sensor(job=do_something_job)  # pyright: ignore[reportArgumentType]
     def multiple_sensor_results(_):
         return [
-            SensorResult(skip_reason=SkipReason("I'm skipping")),
-            SensorResult(skip_reason=SkipReason("I'm skipping")),
+            dg.SensorResult(skip_reason=dg.SkipReason("I'm skipping")),
+            dg.SensorResult(skip_reason=dg.SkipReason("I'm skipping")),
         ]
 
-    @sensor(job=do_something_job)
+    @dg.sensor(job=do_something_job)
     def sensor_result_w_other_objects(_):
         return [
-            SensorResult(run_requests=[RunRequest(run_key="foo")]),
-            RunRequest(run_key="foo"),
+            dg.SensorResult(run_requests=[dg.RunRequest(run_key="foo")]),
+            dg.RunRequest(run_key="foo"),
         ]
 
-    @sensor(job=do_something_job)  # pyright: ignore[reportArgumentType]
+    @dg.sensor(job=do_something_job)  # pyright: ignore[reportArgumentType]
     def invalid_sensor_result(_):
         return [
-            SensorResult(
-                run_requests=[RunRequest(run_key="foo")], skip_reason=SkipReason("aklsdj")
+            dg.SensorResult(
+                run_requests=[dg.RunRequest(run_key="foo")], skip_reason=dg.SkipReason("aklsdj")
             ),
         ]
 
-    with instance_for_test() as instance:
-        ctx = build_sensor_context(
+    with dg.instance_for_test() as instance:
+        ctx = dg.build_sensor_context(
             instance=instance,
         )
 
@@ -141,14 +125,14 @@ def test_invalid_skip_reason_invocations():
 
 
 def test_update_cursor():
-    @sensor(job=do_something_job)  # pyright: ignore[reportArgumentType]
+    @dg.sensor(job=do_something_job)  # pyright: ignore[reportArgumentType]
     def test_sensor(_):
         return [
-            SensorResult([RunRequest("foo")], cursor="foo"),
+            dg.SensorResult([dg.RunRequest("foo")], cursor="foo"),
         ]
 
-    with instance_for_test() as instance:
-        ctx = build_sensor_context(
+    with dg.instance_for_test() as instance:
+        ctx = dg.build_sensor_context(
             instance=instance,
         )
         result = test_sensor.evaluate_tick(ctx)
@@ -156,19 +140,19 @@ def test_update_cursor():
 
 
 def test_update_cursor_and_sensor_result_cursor():
-    @sensor(job=do_something_job)  # pyright: ignore[reportArgumentType]
+    @dg.sensor(job=do_something_job)  # pyright: ignore[reportArgumentType]
     def test_sensor(context):
         context.update_cursor("bar")
         return [
-            SensorResult([RunRequest("foo")], cursor="foo"),
+            dg.SensorResult([dg.RunRequest("foo")], cursor="foo"),
         ]
 
-    with instance_for_test() as instance:
-        ctx = build_sensor_context(
+    with dg.instance_for_test() as instance:
+        ctx = dg.build_sensor_context(
             instance=instance,
         )
         with pytest.raises(
-            DagsterInvariantViolationError,
+            dg.DagsterInvariantViolationError,
             match=r"cannot be set if context.update_cursor()",
         ):
             test_sensor.evaluate_tick(ctx)
@@ -177,27 +161,27 @@ def test_update_cursor_and_sensor_result_cursor():
 def test_sensor_result_asset_sensor():
     observed = {}
 
-    @op
+    @dg.op
     def my_table_materialization():
-        yield AssetMaterialization("my_table")
-        yield Output(1)
+        yield dg.AssetMaterialization("my_table")
+        yield dg.Output(1)
 
-    @job
+    @dg.job
     def my_table_job():
         my_table_materialization()
 
-    @asset_sensor(asset_key=AssetKey("my_table"), job=do_something_job)
+    @dg.asset_sensor(asset_key=dg.AssetKey("my_table"), job=do_something_job)
     def my_asset_sensor(context, asset_event):
         observed["cursor"] = context.cursor
-        return SensorResult([RunRequest("foo")])
+        return dg.SensorResult([dg.RunRequest("foo")])
 
-    @asset_sensor(asset_key=AssetKey("my_table"), job=do_something_job)
+    @dg.asset_sensor(asset_key=dg.AssetKey("my_table"), job=do_something_job)
     def asset_sensor_set_cursor(context, asset_event):
-        return SensorResult([RunRequest("foo")], cursor="foo")
+        return dg.SensorResult([dg.RunRequest("foo")], cursor="foo")
 
-    with instance_for_test() as instance:
+    with dg.instance_for_test() as instance:
         my_table_job.execute_in_process(instance=instance)
-        with build_sensor_context(
+        with dg.build_sensor_context(
             instance=instance,
         ) as ctx:
             result = my_asset_sensor.evaluate_tick(ctx)
@@ -205,83 +189,83 @@ def test_sensor_result_asset_sensor():
             assert result.run_requests[0].run_key == "foo"  # pyright: ignore[reportOptionalSubscript]
             assert result.cursor != observed["cursor"]  # ensure cursor progresses
 
-        with build_sensor_context(
+        with dg.build_sensor_context(
             instance=instance,
         ) as ctx:
             with pytest.raises(
-                DagsterInvariantViolationError, match="The cursor is managed by the asset sensor"
+                dg.DagsterInvariantViolationError, match="The cursor is managed by the asset sensor"
             ):
                 asset_sensor_set_cursor.evaluate_tick(ctx)
 
 
 def test_yield_and_return():
-    @job
+    @dg.job
     def job1():
         pass
 
-    @sensor(job=job1)
+    @dg.sensor(job=job1)
     def sensor_with_yield_run_request_and_return_skip_reason(context):
         if context.cursor == "skip":
-            return SkipReason("This is a skip reason")
+            return dg.SkipReason("This is a skip reason")
         else:
-            yield RunRequest()
+            yield dg.RunRequest()
 
     result_with_skip = sensor_with_yield_run_request_and_return_skip_reason.evaluate_tick(
-        build_sensor_context(cursor="skip")
+        dg.build_sensor_context(cursor="skip")
     )
     assert result_with_skip.skip_message == "This is a skip reason"
     assert result_with_skip.run_requests == []
 
     result_without_skip = sensor_with_yield_run_request_and_return_skip_reason.evaluate_tick(
-        build_sensor_context(cursor="go")
+        dg.build_sensor_context(cursor="go")
     )
     assert result_without_skip.skip_message is None
     assert len(result_without_skip.run_requests) == 1  # pyright: ignore[reportArgumentType]
 
-    @sensor(job=job1)
+    @dg.sensor(job=job1)
     def sensor_with_yield_and_return_run_request(context):
-        yield RunRequest()
-        return RunRequest()
+        yield dg.RunRequest()
+        return dg.RunRequest()
 
     result_yield_and_return_run_request = sensor_with_yield_and_return_run_request.evaluate_tick(
-        build_sensor_context()
+        dg.build_sensor_context()
     )
     assert len(result_yield_and_return_run_request.run_requests) == 2  # pyright: ignore[reportArgumentType]
 
 
 def test_asset_materialization_in_sensor() -> None:
-    @sensor()
-    def a_sensor() -> SensorResult:
-        return SensorResult(asset_events=[AssetMaterialization("asset_one")])
+    @dg.sensor()
+    def a_sensor() -> dg.SensorResult:
+        return dg.SensorResult(asset_events=[dg.AssetMaterialization("asset_one")])
 
     instance = DagsterInstance.ephemeral()
-    sensor_execution_data = a_sensor.evaluate_tick(build_sensor_context(instance=instance))
+    sensor_execution_data = a_sensor.evaluate_tick(dg.build_sensor_context(instance=instance))
     assert len(sensor_execution_data.asset_events) == 1
     output_mat = sensor_execution_data.asset_events[0]
-    assert isinstance(output_mat, AssetMaterialization)
-    assert output_mat.asset_key == AssetKey("asset_one")
+    assert isinstance(output_mat, dg.AssetMaterialization)
+    assert output_mat.asset_key == dg.AssetKey("asset_one")
 
 
 def test_asset_observation_in_sensor() -> None:
-    @sensor()
-    def a_sensor() -> SensorResult:
-        return SensorResult(asset_events=[AssetObservation("asset_one")])
+    @dg.sensor()
+    def a_sensor() -> dg.SensorResult:
+        return dg.SensorResult(asset_events=[dg.AssetObservation("asset_one")])
 
     instance = DagsterInstance.ephemeral()
-    sensor_execution_data = a_sensor.evaluate_tick(build_sensor_context(instance=instance))
+    sensor_execution_data = a_sensor.evaluate_tick(dg.build_sensor_context(instance=instance))
     assert len(sensor_execution_data.asset_events) == 1
     output_mat = sensor_execution_data.asset_events[0]
-    assert isinstance(output_mat, AssetObservation)
-    assert output_mat.asset_key == AssetKey("asset_one")
+    assert isinstance(output_mat, dg.AssetObservation)
+    assert output_mat.asset_key == dg.AssetKey("asset_one")
 
 
 def test_asset_check_evaluation() -> None:
-    @sensor()
-    def a_sensor() -> SensorResult:
-        return SensorResult(
+    @dg.sensor()
+    def a_sensor() -> dg.SensorResult:
+        return dg.SensorResult(
             asset_events=[
-                AssetCheckEvaluation(
-                    asset_key=AssetKey("asset_one"),
+                dg.AssetCheckEvaluation(
+                    asset_key=dg.AssetKey("asset_one"),
                     check_name="check_one",
                     passed=True,
                     metadata={},
@@ -290,27 +274,27 @@ def test_asset_check_evaluation() -> None:
         )
 
     instance = DagsterInstance.ephemeral()
-    sensor_execution_data = a_sensor.evaluate_tick(build_sensor_context(instance=instance))
+    sensor_execution_data = a_sensor.evaluate_tick(dg.build_sensor_context(instance=instance))
     assert len(sensor_execution_data.asset_events) == 1
     output_ace = sensor_execution_data.asset_events[0]
-    assert isinstance(output_ace, AssetCheckEvaluation)
-    assert output_ace.asset_key == AssetKey("asset_one")
+    assert isinstance(output_ace, dg.AssetCheckEvaluation)
+    assert output_ace.asset_key == dg.AssetKey("asset_one")
 
 
 def test_asset_materialization_in_sensor_direct_invocation() -> None:
-    @sensor()
-    def a_sensor() -> SensorResult:
-        return SensorResult(asset_events=[AssetMaterialization("asset_one")])
+    @dg.sensor()
+    def a_sensor() -> dg.SensorResult:
+        return dg.SensorResult(asset_events=[dg.AssetMaterialization("asset_one")])
 
     instance = DagsterInstance.ephemeral()
-    a_sensor(build_sensor_context(instance=instance))
+    a_sensor(dg.build_sensor_context(instance=instance))
 
 
 def test_sensor_tags_not_on_run_request():
-    @sensor(target="foo", tags={"foo": "bar"})
+    @dg.sensor(target="foo", tags={"foo": "bar"})
     def my_sensor():
-        return RunRequest()
+        return dg.RunRequest()
 
-    with instance_for_test() as instance:
-        result = my_sensor.evaluate_tick(build_sensor_context(instance))
+    with dg.instance_for_test() as instance:
+        result = my_sensor.evaluate_tick(dg.build_sensor_context(instance))
         assert "foo" not in result.run_requests[0].tags  # pyright: ignore[reportOptionalSubscript]

@@ -1,12 +1,10 @@
-from dagster import job
-from dagster._core.definitions.reconstruct import reconstructable
+import dagster as dg
 from dagster._core.execution.api import create_execution_plan
 from dagster._core.execution.context.system import PlanData, PlanOrchestrationContext
 from dagster._core.execution.context_creation_job import create_context_free_log_manager
 from dagster._core.execution.retries import RetryMode
-from dagster._core.executor.init import InitExecutorContext
 from dagster._core.executor.step_delegating import StepHandlerContext
-from dagster._core.test_utils import create_run_for_test, instance_for_test
+from dagster._core.test_utils import create_run_for_test
 from dagster._grpc.types import ExecuteStepArgs
 
 from dagster_tests.execution_tests.engine_tests.test_step_delegating_executor import (
@@ -14,14 +12,14 @@ from dagster_tests.execution_tests.engine_tests.test_step_delegating_executor im
 )
 
 
-@job
+@dg.job
 def foo_pipline():
     pass
 
 
 def _get_executor(instance, pipeline, executor_config=None):
     return test_step_delegating_executor.executor_creation_fn(  # pyright: ignore[reportOptionalCall]
-        InitExecutorContext(
+        dg.InitExecutorContext(
             job=pipeline,
             executor_def=test_step_delegating_executor,
             executor_config=executor_config or {"retries": {}},
@@ -31,8 +29,8 @@ def _get_executor(instance, pipeline, executor_config=None):
 
 
 def test_step_handler_context():
-    recon_job = reconstructable(foo_pipline)
-    with instance_for_test() as instance:
+    recon_job = dg.reconstructable(foo_pipline)
+    with dg.instance_for_test() as instance:
         run = create_run_for_test(instance, job_code_origin=recon_job.get_python_origin())
 
         execution_plan = create_execution_plan(recon_job)
