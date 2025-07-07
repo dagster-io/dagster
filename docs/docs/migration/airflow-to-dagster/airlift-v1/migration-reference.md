@@ -1,5 +1,5 @@
 ---
-description: How to handle custom authorization or Dagster+ authorization, changing Airflow, code location changes, multiple Airflow instances, and the need for a custom DAG proxying operator when using Dagster Airlift.
+description: How to handle custom authorization or Dagster+ authorization, changing Airflow, project changes, multiple Airflow instances, and the need for a custom DAG proxying operator when using Dagster Airlift.
 sidebar_position: 50
 title: Airflow to Dagster migration reference
 ---
@@ -13,7 +13,7 @@ import UseAirliftComponent from '@site/docs/partials/\_UseAirliftComponent.md';
 - [Supporting custom authorization](#supporting-custom-authorization)
 - [Dagster Plus Authorization](#dagster-authorization)
 - [Dealing with changing Airflow](#dealing-with-changing-airflow)
-- [Automating changes to code locations](#automating-changes-to-code-locations)
+- [Automating changes to projects](#automating-changes-to-projects)
 - [Peering to multiple Airflow instances](#peering-to-multiple-airflow-instances)
 - [Customizing DAG proxying operator](#customizing-dag-proxying-operator)
 
@@ -31,15 +31,15 @@ You can use a custom proxy operator to establish a connection to a Dagster plus 
 
 ## Dealing with changing Airflow
 
-In order to make spin-up more efficient, `dagster-airlift` caches the state of the Airflow instance in the dagster database, so that repeat fetches of the code location don't require additional calls to Airflow's rest API. However, this means that the Dagster definitions can potentially fall out of sync with Airflow. Here are a few different ways this can manifest:
+In order to make spin-up more efficient, `dagster-airlift` caches the state of the Airflow instance in the dagster database, so that repeat fetches of the project don't require additional calls to Airflow's rest API. However, this means that the Dagster definitions can potentially fall out of sync with Airflow. Here are a few different ways this can manifest:
 
 - A new Airflow DAG is added. The lineage information does not show up for this dag, and materializations are not recorded.
 - A DAG is removed. The polling sensor begins failing, because there exist assets which expect that DAG to exist.
-- The task dependency structure within a DAG changes. This may result in `unsynced` statuses in Dagster, or missing materializations. This is not an exhaustive list of problems, but most of the time the tell is that materializations are missing, or assets are missing. When you find yourself in this state, you can force `dagster-airlift` to reload Airflow state by reloading the code location. To do this, go to the `Deployment` tab on the top nav, and click `Redeploy` on the code location relevant to your asset. After some time, the code location should be reloaded with refreshed state from Airflow.
+- The task dependency structure within a DAG changes. This may result in `unsynced` statuses in Dagster, or missing materializations. This is not an exhaustive list of problems, but most of the time the tell is that materializations are missing, or assets are missing. When you find yourself in this state, you can force `dagster-airlift` to reload Airflow state by reloading the project. To do this, go to the `Deployment` tab on the top nav, and click `Redeploy` on the project relevant to your asset. After some time, the project should be reloaded with refreshed state from Airflow.
 
-## Automating changes to code locations
+## Automating changes to projects
 
-If changes to your Airflow instance are controlled by a CI/CD process, you can use the Dagster GraphQL client to add a step to automatically trigger a redeploy of the relevant code location. To learn more, see the [Dagster GraphQL client docs](/guides/operate/graphql/graphql-client).
+If changes to your Airflow instance are controlled by a CI/CD process, you can use the Dagster GraphQL client to add a step to automatically trigger a redeploy of the relevant project. To learn more, see the [Dagster GraphQL client docs](/guides/operate/graphql/graphql-client).
 
 ## Peering to multiple Airflow instances
 

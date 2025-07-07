@@ -10,7 +10,7 @@ Using a dbt project in Dagster+ allows you to automatically load your dbt models
 
 ## Serverless deployments
 
-If you have a Serverless deployment, you can directly import an existing dbt project in Dagster+ when adding a new code location. This can be done with:
+If you have a Serverless deployment, you can directly import an existing dbt project in Dagster+ when adding a new project. This can be done with:
 
 - An existing dbt project that is not already using Dagster, or
 - A Dagster project in which your dbt project is included

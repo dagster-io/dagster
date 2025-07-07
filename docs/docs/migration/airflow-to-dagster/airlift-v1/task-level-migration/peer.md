@@ -1,7 +1,7 @@
 ---
 description: Peer Airflow with Dagster to create asset representations of Airflow DAGs using dagster-airlift.
 sidebar_position: 200
-title: Peer the Airflow instance with a Dagster code location
+title: Peer the Airflow instance with a Dagster project
 ---
 
 import UseAirliftComponent from '@site/docs/partials/\_UseAirliftComponent.md';
@@ -10,7 +10,7 @@ import UseAirliftComponent from '@site/docs/partials/\_UseAirliftComponent.md';
 
 In the [setup step](/migration/airflow-to-dagster/airlift-v1/task-level-migration/setup), we created a virtual environment, installed Dagster and the tutorial example code, and set up a local Airflow instance. Now we can start writing Dagster code.
 
-We call the first stage of migration from Airflow to Dagster the "peering" stage, since we will "peer" the Airflow instance with a Dagster code location, which will create an asset representation of each Airflow DAG that you can view in Dagster. This step does not require any changes to your Airflow instance.
+We call the first stage of migration from Airflow to Dagster the "peering" stage, since we will "peer" the Airflow instance with a Dagster project, which will create an asset representation of each Airflow DAG that you can view in Dagster. This step does not require any changes to your Airflow instance.
 
 ## Install `dagster-airlift`
 
@@ -66,7 +66,7 @@ make clean
 
 :::note
 
-When the code location loads, Dagster will query the Airflow REST API to build a representation of your DAGs. For Dagster to reflect changes to your DAGs, you will need to reload your code location.
+When the project loads, Dagster will query the Airflow REST API to build a representation of your DAGs. For Dagster to reflect changes to your DAGs, you will need to reload your project.
 
 :::
 
@@ -83,7 +83,7 @@ In this example, we're going to add an asset check to ensure that the final `cus
   language="python"
 />
 
-Once you reload the code location, you should see a `checks` tab indicating the presence of an asset check on the `rebuild_customers_list` asset:
+Once you reload the project, you should see a `checks` tab indicating the presence of an asset check on the `rebuild_customers_list` asset:
 
 ![Asset check on peer DAG](/images/integrations/airlift/asset_check_peered_dag.png)
 

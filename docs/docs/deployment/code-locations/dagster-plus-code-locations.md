@@ -1,20 +1,20 @@
 ---
-description: Separate code locations allow you to deploy different Dagster projects that still roll up into a single Dagster+ deployment with one global lineage graph.
+description: Separate projects allow you to deploy different Dagster projects that still roll up into a single Dagster+ deployment with one global lineage graph.
 sidebar_position: 300
-title: Dagster+ code locations
+title: Dagster+ projects
 ---
 
 import DagsterPlus from '@site/docs/partials/\_DagsterPlus.md';
 
 <DagsterPlus />
 
-Separate code locations allow you to deploy different projects that still roll up into a single Dagster+ deployment with one global lineage graph.
+Separate projects allow you to deploy different projects that still roll up into a single Dagster+ deployment with one global lineage graph.
 
-This guide will cover three options for adding a new code location:
+This guide will cover three options for adding a new project:
 
-- Adding a code location manually
-- Adding a code location in a new Git repository
-- Adding a new code location to an existing Git monorepo
+- Adding a project manually
+- Adding a project in a new Git repository
+- Adding a new project to an existing Git monorepo
 
 <details>
 <summary>Prerequisites</summary>
@@ -27,14 +27,14 @@ This guide will cover three options for adding a new code location:
 
 </details>
 
-Adding a code location follows two steps:
+Adding a project follows two steps:
 
 - For Dagster+ Hybrid, ensuring the Dagster code is in a place accessible by your agent, usually by building a Docker image with your code that's pushed to a registry. For Dagster+ Serverless you can skip this step.
-- Notifying Dagster+ of the new or updated code location. This will be done by using the Dagster+ Python client.
+- Notifying Dagster+ of the new or updated project. This will be done by using the Dagster+ Python client.
 
 Often these two steps are handled by CI/CD connected to your Git repository.
 
-## Add a new code location manually
+## Add a new project manually
 
 Start by installing the `dagster-cloud` Python client:
 
@@ -55,7 +55,7 @@ Next you will want need to authenticate this Python client:
    export  DAGSTER_CLOUD_API_TOKEN="your-token"
    ```
 
-Now add the code location. The following example assumes you are running the command from the top-level working directory of your Dagster project with a project named "quickstart" structured as a Python module named "quickstart".
+Now add the project. The following example assumes you are running the command from the top-level working directory of your Dagster project with a project named "quickstart" structured as a Python module named "quickstart".
 
 ```bash
 /quickstart
@@ -70,18 +70,18 @@ Now add the code location. The following example assumes you are running the com
 The commands below take two main arguments:
 
 - `module_name` is determined by your code structure
-- `location_name` is the unique label for this code location used in Dagster+
+- `location_name` is the unique label for this project used in Dagster+
 
 <Tabs>
 <TabItem value="serverless" label="Dagster+ Serverless">
 
-If you are using Dagster+ Serverless, run the following command to add a code location:
+If you are using Dagster+ Serverless, run the following command to add a project:
 
 ```bash
 dagster-cloud serverless deploy-python-executable --deployment prod --location-name quickstart --module-name quickstart
 ```
 
-Running the command multiple times with the same location name will _update_ the code location. Running the command with a new location name will _add_ a code location.
+Running the command multiple times with the same location name will _update_ the project. Running the command with a new location name will _add_ a project.
 
 </TabItem>
 <TabItem value="hybrid" label="Dagster+ Hybrid">
@@ -95,11 +95,11 @@ dagster-cloud deployment add-location --deployment prod --location-name quicksta
 </TabItem>
 </Tabs>
 
-After running the command you can verify the code location was deployed by navigating to the _Deployments_ tab on Dagster+.
+After running the command you can verify the project was deployed by navigating to the _Deployments_ tab on Dagster+.
 
-## Adding a code location in a new Git repository
+## Adding a project in a new Git repository
 
-Adding a code location to a Git repository follows the same steps as adding a code location manually, but automates those steps by running them through CI/CD.
+Adding a project to a Git repository follows the same steps as adding a project manually, but automates those steps by running them through CI/CD.
 
 To get started, review the appropriate example repository and then create your Git repository with the same structure.
 
@@ -130,7 +130,7 @@ Overall, the Git repository should contain:
            ...
    ```
 
-2. A [`dagster_cloud.yaml` file](/deployment/code-locations/dagster-cloud-yaml) with the settings for your code location. Here is an example:
+2. A [`dagster_cloud.yaml` file](/deployment/code-locations/dagster-cloud-yaml) with the settings for your project. Here is an example:
 
    ```yaml title="dagster_cloud.yaml
    locations:
@@ -139,7 +139,7 @@ Overall, the Git repository should contain:
        package_name: quickstart
    ```
 
-3. A CI/CD workflow file that contains the steps for adding your code location. These are the same steps outlined in the preceding section. Here is a minimal example workflow file for a Dagster+ Hybrid organization based on [this GitLab template](https://github.com/dagster-io/dagster-cloud-action/blob/main/gitlab/hybrid-ci.yml).
+3. A CI/CD workflow file that contains the steps for adding your project. These are the same steps outlined in the preceding section. Here is a minimal example workflow file for a Dagster+ Hybrid organization based on [this GitLab template](https://github.com/dagster-io/dagster-cloud-action/blob/main/gitlab/hybrid-ci.yml).
 
    ```yaml
    variables:
@@ -182,13 +182,13 @@ Overall, the Git repository should contain:
        $IMAGE_REGISTRY:$IMAGE_TAG --location-name quickstart --package-name quickstart
    ```
 
-Once your Git repository has this structure, you will want to run your CI/CD process. The CI/CD process will add the code location to Dagster+ which can be verified by viewing the _Deployments_ tab.
+Once your Git repository has this structure, you will want to run your CI/CD process. The CI/CD process will add the project to Dagster+ which can be verified by viewing the _Deployments_ tab.
 
-## Adding a new code location to a Git monorepo
+## Adding a new project to a Git monorepo
 
 Many organizations use a Git monorepo to contain multiple Dagster projects. Here is an example of DagsterLab's own [internal data engineering Git repository](https://github.com/dagster-io/dagster-open-platform).
 
-To add a new code location to a monorepo, create a new directory that contains your Dagster project. The final repository structure might look like this:
+To add a new project to a monorepo, create a new directory that contains your Dagster project. The final repository structure might look like this:
 
 ```
 README.md
@@ -237,9 +237,9 @@ locations:
       registry: your-registry/image # eg 764506304434.dkr.ecr.us-west-2.amazonaws.com/new
 ```
 
-The monorepo should have CI/CD configured to deploy your changes and add or update your new code location. After adding your code and updating the `dagster_cloud.yaml` file, trigger the CI/CD process to add your code location to Dagster+. Navigate to the _Deployments_ tab in Dagster+ to confirm your code location was added.
+The monorepo should have CI/CD configured to deploy your changes and add or update your new project. After adding your code and updating the `dagster_cloud.yaml` file, trigger the CI/CD process to add your project to Dagster+. Navigate to the _Deployments_ tab in Dagster+ to confirm your project was added.
 
 ## Next steps
 
-- After adding a code location, you may want to setup access controls
-- You may want to add additional configuration to your code location. This configuration will vary by agent type, but see examples for [setting default resource limits for Kubernetes](/deployment/dagster-plus/hybrid/kubernetes) or [changing the IAM role for ECS](/deployment/dagster-plus/hybrid/amazon-ecs/configuration-reference).
+- After adding a project, you may want to setup access controls
+- You may want to add additional configuration to your project. This configuration will vary by agent type, but see examples for [setting default resource limits for Kubernetes](/deployment/dagster-plus/hybrid/kubernetes) or [changing the IAM role for ECS](/deployment/dagster-plus/hybrid/amazon-ecs/configuration-reference).

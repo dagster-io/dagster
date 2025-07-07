@@ -32,7 +32,7 @@ When running PySpark jobs, the following changes to Python dependencies should b
 
 You can learn more about packaging Python dependencies for PySpark in [PySpark documentation](https://spark.apache.org/docs/latest/api/python/user_guide/python_packaging.html#python-package-management) or in the [AWS EMR Pipes](/guides/build/external-pipelines/aws/aws-emr-pipeline) guide.
 
-The process of packaging the Python dependencies and scripts should be automated with a CI/CD pipeline and run before deploying the Dagster code location.
+The process of packaging the Python dependencies and scripts should be automated with a CI/CD pipeline and run before deploying the Dagster project.
 
 It's also possible to run Java or Scala Spark jobs with Dagster Pipes, but currently there is no official Pipes implementation for these languages. Therefore, forwarding Dagster events from these jobs is not yet supported officially (although it can be done with some custom code).
 

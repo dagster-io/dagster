@@ -121,7 +121,7 @@ There are a set of pre-built conditions that make it easier to construct common 
 
 ## Evaluations
 
-Evaluation of each automation condition is handled by an <PyObject section="assets" module="dagster" object="AutomationConditionSensorDefinition" />. By default, a sensor with the name `default_automation_condition_sensor` will be available in all code locations that have at least one asset with an `AutomationCondition`. This sensor will evaluate all available conditions every 30 seconds, and launch runs for any conditions that evaluate to true at that time.
+Evaluation of each automation condition is handled by an <PyObject section="assets" module="dagster" object="AutomationConditionSensorDefinition" />. By default, a sensor with the name `default_automation_condition_sensor` will be available in all projects that have at least one asset with an `AutomationCondition`. This sensor will evaluate all available conditions every 30 seconds, and launch runs for any conditions that evaluate to true at that time.
 
 Because evaluations happen at discrete times, and not continuously, this means that many of the above conditions are defined in relation to these evaluation ticks. For example, `AutomationCondition.cron_tick_passed()` becomes true on the first evaluation after a cron schedule tick is passed.
 

@@ -42,7 +42,7 @@ To enable this behavior, replace usage of `SnowflakeResource` with `InsightsSnow
 These additional definitions are required because Snowflake usage information is only available after a delay. These definitions automatically handle running a computation on a schedule to ingest Snowflake usage information from the previous hour.
 
 :::note
-Only use `create_snowflake_insights_asset_and_schedule` in a single code location per deployment, as this will handle ingesting usage data from your entire deployment.
+Only use `create_snowflake_insights_asset_and_schedule` in a single project per deployment, as this will handle ingesting usage data from your entire deployment.
 :::
 
 <Tabs>
@@ -69,7 +69,7 @@ First, add a `.with_insights()` call to your `dbt.cli()` command(s), and add Sno
 These additional definitions are required because Snowflake usage information is only available after a delay. These definitions automatically handle running a computation on a schedule to ingest Snowflake usage information from the previous hour.
 
 :::note
-Only use `create_snowflake_insights_asset_and_schedule` in a single code location per deployment, as this will handle ingesting usage data from your entire deployment.
+Only use `create_snowflake_insights_asset_and_schedule` in a single project per deployment, as this will handle ingesting usage data from your entire deployment.
 :::
 
 <Tabs>

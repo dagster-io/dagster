@@ -21,7 +21,7 @@ Dagster requires three long-running services, which are outlined in the table be
 | --------------------------------------------------------- | ------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
 | [Dagster webserver](/guides/operate/webserver)            | `dagster-webserver` serves the user interface and responds to GraphQL queries.        | The Dagster webserver can have one or more replicas.                                                      |
 | [Dagster daemon](/deployment/execution/dagster-daemon) | The Dagster daemon operates schedules, sensors, and run queuing.                      | Not supported.                                                                                            |
-| [Code location](/deployment/code-locations) server    | Code location servers serve metadata about the collection of its Dagster definitions. | You can have many code location servers, but each code location can only have one replica for its server. |
+| [Project](/deployment/code-locations) server    | Project servers serve metadata about the collection of its Dagster definitions. | You can have many project servers, but each project can only have one replica for its server. |
 
 ## Deployment configuration
 

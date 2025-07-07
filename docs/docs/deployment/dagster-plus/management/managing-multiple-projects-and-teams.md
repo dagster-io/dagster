@@ -6,7 +6,7 @@ sidebar_position: 8000
 
 In this guide, we'll cover some strategies for managing multiple projects/code bases and teams in a Dagster+ account.
 
-You can see a working example of a Dagster project that has multiple code locations in our [cloud-examples/multi-location-project repo](https://github.com/dagster-io/cloud-examples/tree/main/multi-location-project).
+You can see a working example of a Dagster project that has multiple projects in our [cloud-examples/multi-location-project repo](https://github.com/dagster-io/cloud-examples/tree/main/multi-location-project).
 
 ## Separating code bases
 
@@ -30,13 +30,13 @@ Refer to the following table for more information, including the pros and cons o
 
 ### Deployment configuration
 
-Whether you use a single repository or multiple, you can use a [`dagster_cloud.yaml` file](/deployment/code-locations/dagster-cloud-yaml) to define the code locations to deploy. For each repository, follow the [steps appropriate to your CI/CD provider](/deployment/dagster-plus/ci-cd/ci-cd-in-hybrid) and include only the code locations that are relevant to the repository in your CI/CD workflow.
+Whether you use a single repository or multiple, you can use a [`dagster_cloud.yaml` file](/deployment/code-locations/dagster-cloud-yaml) to define the projects to deploy. For each repository, follow the [steps appropriate to your CI/CD provider](/deployment/dagster-plus/ci-cd/ci-cd-in-hybrid) and include only the projects that are relevant to the repository in your CI/CD workflow.
 
 #### Example with GitHub CI/CD on Hybrid deployment
 
 1. **For each repository**, use the CI/CD workflow provided in [Dagster+ Hybrid quickstart repository](https://github.com/dagster-io/dagster-cloud-hybrid-quickstart/blob/main/.github/workflows/dagster-cloud-deploy.yml).
 
-2. **For each project in the repository**, configure a code location in the [`dagster_cloud.yaml` file](/deployment/code-locations/dagster-cloud-yaml):
+2. **For each project in the repository**, configure a project in the [`dagster_cloud.yaml` file](/deployment/code-locations/dagster-cloud-yaml):
 
    ```yaml
    # dagster_cloud.yml
@@ -54,7 +54,7 @@ Whether you use a single repository or multiple, you can use a [`dagster_cloud.y
          # ...
    ```
 
-3. In the repository's `dagster-cloud-deploy.yml` file, modify the CI/CD workflow to deploy all code locations for the repository:
+3. In the repository's `dagster-cloud-deploy.yml` file, modify the CI/CD workflow to deploy all projects for the repository:
 
    ```yaml
    # .github/workflows/dagster-cloud-deploy.yml
@@ -63,14 +63,14 @@ Whether you use a single repository or multiple, you can use a [`dagster_cloud.y
      dagster-cloud-deploy:
        # ...
        steps:
-         - name: Update build session with image tag for "project_a" code location
+         - name: Update build session with image tag for "project_a" project
            id: ci-set-build-output-project-a
            if: steps.prerun.outputs.result != 'skip'
            uses: dagster-io/dagster-cloud-action/actions/utils/dagster-cloud-cli@v0.1
            with:
              command: 'ci set-build-output --location-name=project_a --image-tag=$IMAGE_TAG'
 
-         - name: Update build session with image tag for "project_b" code location
+         - name: Update build session with image tag for "project_b" project
            id: ci-set-build-output-project-b
            if: steps.prerun.outputs.result != 'skip'
            uses: dagster-io/dagster-cloud-action/actions/utils/dagster-cloud-cli@v0.1
@@ -89,15 +89,15 @@ Separating execution context between projects can have several motivations:
 
 In order from least to most isolated, there are three levels of isolation:
 
-- [Code location](#code-location-isolation)
+- [Project](#project-isolation)
 - [Agent](#agent-isolation)
 - [Deployment](#deployment-isolation)
 
-### Code location isolation
+### Project isolation
 
-If you have no specific requirements for isolation beyond the ability to deploy and run multiple projects, you can use a single agent and deployment to manage all your projects as individual code locations.
+If you have no specific requirements for isolation beyond the ability to deploy and run multiple projects, you can use a single agent and deployment to manage all your projects as individual projects.
 
-![Diagram of isolation at the code location level](/images/dagster-plus/deployment/management/managing-deployments/isolation-level-code-locations.png)
+![Diagram of isolation at the project level](/images/dagster-plus/deployment/management/managing-deployments/isolation-level-code-locations.png)
 
 <table
   className="table"
@@ -128,7 +128,7 @@ If you have no specific requirements for isolation beyond the ability to deploy 
             }}>
             Simplest and most cost-effective solution
           </li>
-          <li>User access control can be set at the code location level</li>
+          <li>User access control can be set at the project level</li>
           <li>Single glass pane to view all assets</li>
         </ul>
       </td>
@@ -195,7 +195,7 @@ Motivations for utilizing this approach could include:
             }}>
             Isolation between execution environments
           </li>
-          <li>User access control can be set at the code location level</li>
+          <li>User access control can be set at the project level</li>
           <li>Single glass pane to view all assets</li>
         </ul>
       </td>
@@ -245,7 +245,7 @@ Of the approaches outlined in this guide, multiple deployments are the most isol
             }}>
             Isolation between assets and execution environments
           </li>
-          <li>User access control can be set at the code location and deployment level</li>
+          <li>User access control can be set at the project and deployment level</li>
         </ul>
       </td>
       <td>No single glass pane to view all assets (requires switching between multiple deployments in the UI)</td>

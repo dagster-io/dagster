@@ -24,9 +24,9 @@ In this example, the asset `sugary_cereals` creates a new table (`sugary_cereals
     title="src/<project_name>/defs/assets.py"
 />
 
-## Defining asset dependencies across code locations
+## Defining asset dependencies across projects
 
-Assets can depend on assets in different [code locations](/deployment/code-locations). In the following example, the `code_location_1_asset` asset produces a JSON string from a file in `code_location_1`:
+Assets can depend on assets in different [projects](/deployment/code-locations). In the following example, the `code_location_1_asset` asset produces a JSON string from a file in `code_location_1`:
 
 <CodeExample
     path="docs_snippets/docs_snippets/guides/data-modeling/asset-dependencies/asset-dependencies.py"

@@ -5,13 +5,13 @@ description: A guide to deploying open source Dagster with Docker Compose.
 sidebar_position: 4000
 ---
 
-This guide provides instructions for deploying Dagster using Docker Compose. This is useful when you want to, for example, deploy Dagster on an AWS EC2 host. A typical Dagster Docker deployment includes a several long-running containers: one for the webserver, one for the daemon, and one for each code location. It also typically executes each run in its own container.
+This guide provides instructions for deploying Dagster using Docker Compose. This is useful when you want to, for example, deploy Dagster on an AWS EC2 host. A typical Dagster Docker deployment includes a several long-running containers: one for the webserver, one for the daemon, and one for each project. It also typically executes each run in its own container.
 
 The [full example is available on GitHub](https://github.com/dagster-io/dagster/blob/master/examples/deploy_docker).
 
 <details>
   <summary>Prerequisites</summary>- Familiarity with Docker and Docker Compose - Familiarity with `dagster.yaml`
-  instance configuration - Familiarity with `workspace.yaml` code location configuration
+  instance configuration - Familiarity with `workspace.yaml` project configuration
 </details>
 
 ## Define a Docker image for the Dagster webserver and daemon
@@ -45,11 +45,11 @@ Additionally, the following files should be in the same directory as the Docker 
 - A `workspace.yaml` to tell the webserver and daemon the location of the code servers
 - A `dagster.yaml` to configure the Dagster instance
 
-## Define a Docker image for each code location
+## Define a Docker image for each project
 
-Each code location typically has its own Docker image, and that image is also used for runs launched for that code location.
+Each project typically has its own Docker image, and that image is also used for runs launched for that project.
 
-To build a Docker image for a code location, use a Dockerfile like the following, with a name like `Dockerfile_code_location_1`:
+To build a Docker image for a project, use a Dockerfile like the following, with a name like `Dockerfile_code_location_1`:
 
 ```dockerfile
 FROM python:3.10-slim
@@ -59,7 +59,7 @@ RUN pip install \
     dagster-postgres \
     dagster-docker
 
-# Add code location code
+# Add project code
 WORKDIR /opt/dagster/app
 COPY directory/with/your/code/ /opt/dagster/app
 
@@ -72,7 +72,7 @@ CMD ["dagster", "code-server", "start", "-h", "0.0.0.0", "-p", "4000", "-f", "de
 
 ## Write a Docker Compose file
 
-The following `docker-compose.yaml` defines how to run the webserver container, daemon container, code location containers, and database container:
+The following `docker-compose.yaml` defines how to run the webserver container, daemon container, project containers, and database container:
 
 ```yaml title="docker-compose.yaml"
 version: '3.7'

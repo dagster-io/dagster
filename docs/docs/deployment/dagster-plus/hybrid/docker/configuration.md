@@ -8,7 +8,7 @@ This reference describes the various configuration options Dagster+ currently su
 
 ## Environment variables and secrets
 
-Using the `container_context.docker.env_vars` property, you can include environment variables and secrets in the Docker container associated with a specific code location. For example:
+Using the `container_context.docker.env_vars` property, you can include environment variables and secrets in the Docker container associated with a specific project. For example:
 
 ```yaml
 # dagster_cloud.yaml

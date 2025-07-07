@@ -131,15 +131,15 @@ The `isolated_agents` option can be set as per-deployment configuration on the `
 Agent queues are a Dagster+ Pro feature and require agents to use version 1.6.0 or greater.
 :::
 
-Every Dagster+ agent serves requests from one or more queues. By default, requests for each code location are placed on a default queue and your agent will read requests only from that default queue.
+Every Dagster+ agent serves requests from one or more queues. By default, requests for each project are placed on a default queue and your agent will read requests only from that default queue.
 
-In some cases, you might want to route requests for certain code locations to specific agents. For example, routing requests for one code location to an agent running in an on-premise data center, but then routing requests for all other code locations to an agent running in AWS.
+In some cases, you might want to route requests for certain projects to specific agents. For example, routing requests for one project to an agent running in an on-premise data center, but then routing requests for all other projects to an agent running in AWS.
 
-To route requests for a code location to a specific agent, annotate the code locations with the name of a custom queue and configure an agent to serve only requests for that queue.
+To route requests for a project to a specific agent, annotate the projects with the name of a custom queue and configure an agent to serve only requests for that queue.
 
-### Step 1: Define an agent queue for the code location
+### Step 1: Define an agent queue for the project
 
-First, set an agent queue for the code location in your [`dagster_cloud.yaml`](/deployment/code-locations/dagster-cloud-yaml):
+First, set an agent queue for the project in your [`dagster_cloud.yaml`](/deployment/code-locations/dagster-cloud-yaml):
 
 ```yaml
 # dagster_cloud.yaml
@@ -165,7 +165,7 @@ Add the following to your project's [`dagster.yaml`](/deployment/oss/dagster-yam
 
 ```yaml
 agent_queues:
-  include_default_queue: True # Continue to handle requests for code locations that aren't annotated with a specific queue
+  include_default_queue: True # Continue to handle requests for projects that aren't annotated with a specific queue
   additional_queues:
     - special-queue
 ```
@@ -188,7 +188,7 @@ Or if you're using a `values.yaml` file:
 ```yaml
 dagsterCloud:
   agentQueues:
-    # Continue to handle requests for code locations that aren't
+    # Continue to handle requests for projects that aren't
     # assigned to a specific agent queue
     includeDefaultQueue: true
     additionalQueues:
@@ -204,7 +204,7 @@ Modify your ECS Cloud Formation template to add the following configuration to t
 
 ```yaml
 agent_queues:
-  # Continue to handle requests for code locations that aren't
+  # Continue to handle requests for projects that aren't
   # assigned to a specific agent queue
   include_default_queue: true
   additional_queues:

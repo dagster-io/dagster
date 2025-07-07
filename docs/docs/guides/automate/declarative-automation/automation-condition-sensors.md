@@ -4,13 +4,13 @@ sidebar_position: 200
 title: Automation condition sensors
 ---
 
-All automation conditions must be evaluated by a [sensor](/guides/automate/sensors). If you have any assets with an automation condition in your code location, a sensor with the name `default_automation_condition_sensor` will be created for you automatically. You'll need to toggle this sensor on in the UI for your code location under the **Automation** tab.
+All automation conditions must be evaluated by a [sensor](/guides/automate/sensors). If you have any assets with an automation condition in your project, a sensor with the name `default_automation_condition_sensor` will be created for you automatically. You'll need to toggle this sensor on in the UI for your project under the **Automation** tab.
 
-By default, this sensor will evaluate all automation conditions in your code location, and execute the asset or asset check if the condition is met.
+By default, this sensor will evaluate all automation conditions in your project, and execute the asset or asset check if the condition is met.
 
 ### Adding additional sensors
 
-If you have a code location with a large number of assets using automation conditions, you may want to create additional sensors to evaluate only a subset of the conditions. This has a few benefits:
+If you have a project with a large number of assets using automation conditions, you may want to create additional sensors to evaluate only a subset of the conditions. This has a few benefits:
 
 - Individual evaluations will execute more quickly
 - Operational issues with a single sensor will not impact unrelated assets managed by a different sensor
@@ -24,7 +24,7 @@ When you create new sensors, the `default_automation_condition_sensor` will only
 
 ### Default to running
 
-As with other sensor types, all `AutomationConditionSensorDefinitions` will default to the `STOPPED` state when they are first added to a code location. To modify this behavior, create an `AutomationConditionSensorDefinition` with the `default_status` argument set to `RUNNING`:
+As with other sensor types, all `AutomationConditionSensorDefinitions` will default to the `STOPPED` state when they are first added to a project. To modify this behavior, create an `AutomationConditionSensorDefinition` with the `default_status` argument set to `RUNNING`:
 
 <CodeExample path="docs_snippets/docs_snippets/concepts/declarative_automation/sensors/default_running.py" title="src/<project_name>/defs/sensors.py" />
 

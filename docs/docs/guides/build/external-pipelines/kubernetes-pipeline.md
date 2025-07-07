@@ -164,7 +164,7 @@ import ScaffoldResource from '@site/docs/partials/\_ScaffoldResource.md';
 
 <ScaffoldResource />
 
-Next, you'll add the asset and Kubernetes resource to your project's code location via the <PyObject section="definitions" module="dagster" object="Definitions" /> object. This makes the resource available to [other Dagster definitions in the project](/deployment/code-locations).
+Next, you'll add the asset and Kubernetes resource to your project's project via the <PyObject section="definitions" module="dagster" object="Definitions" /> object. This makes the resource available to [other Dagster definitions in the project](/deployment/code-locations).
 
 Copy and paste the following to the bottom of `resources.py`:
 

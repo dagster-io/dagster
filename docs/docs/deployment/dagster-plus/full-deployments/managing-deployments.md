@@ -8,7 +8,7 @@ Full deployments are standalone environments, allowing you to operate independen
 
 When a Dagster+ organization is created, a single deployment named `prod` will also be created. To create additional full deployments, you must sign up for a [Pro plan](https://dagster.io/pricing).
 
-Each full deployment can have one or multiple [code locations](/deployment/code-locations).
+Each full deployment can have one or multiple [projects](/deployment/code-locations).
 
 :::note Full deployments vs branch deployments
 
@@ -55,7 +55,7 @@ To create a deployment:
 
 :::note
 
-[Organization Admin permissions](/deployment/dagster-plus/authentication-and-access-control/rbac/user-roles-permissions) are required to delete deployments. Additionally, note that deleting a deployment also deletes all its associated data, including code locations, jobs, schedules, and sensors.
+[Organization Admin permissions](/deployment/dagster-plus/authentication-and-access-control/rbac/user-roles-permissions) are required to delete deployments. Additionally, note that deleting a deployment also deletes all its associated data, including projects, jobs, schedules, and sensors.
 
 :::
 

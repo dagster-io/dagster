@@ -197,7 +197,7 @@ run_launcher:
 
 Options:
 
-- `DefaultRunLauncher`: Spawns a new process on the same node as the job's code location
+- `DefaultRunLauncher`: Spawns a new process on the same node as the job's project
 - `DockerRunLauncher`: Allocates a Docker container per run
 - `K8sRunLauncher`: Allocates a Kubernetes job per run
 
@@ -261,7 +261,7 @@ telemetry:
 
 ### `code_servers`
 
-Configures how Dagster loads code in a code location.
+Configures how Dagster loads code in a project.
 
 ```yaml
 code_servers:

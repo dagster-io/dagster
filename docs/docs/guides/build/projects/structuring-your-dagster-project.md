@@ -1,5 +1,5 @@
 ---
-description: Structuring a Dagster project by technology or concept, merging definitions, and configuring multiple code locations.
+description: Structuring a Dagster project by technology or concept, merging definitions, and configuring multiple projects.
 sidebar_position: 300
 title: Structuring your Dagster project
 ---
@@ -183,7 +183,7 @@ You can also organize your project by data processing concept, for example, data
 
 ## Configuring multiple projects in a workspace
 
-This guide has outlined how to structure a single project that defines a single code location. Most people will only need one project and code location. However, Dagster also allows you to create a workspace with multiple projects that define multiple code locations.
+This guide has outlined how to structure a single project that defines a single project. Most people will only need one project and project. However, Dagster also allows you to create a workspace with multiple projects that define multiple projects.
 
 A helpful pattern uses multiple projects to separate conflicting dependencies, where each definition has its own package requirements and deployment specs.
 

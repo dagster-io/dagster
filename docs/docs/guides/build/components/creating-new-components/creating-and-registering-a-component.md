@@ -101,7 +101,7 @@ Following the steps above will automatically register your component in your env
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/shell-script-component/generated/3-dg-list-components.txt" />
 
-You can also view automatically generated documentation describing your new component by running `dg dev` to start the webserver and navigating to the `Docs` tab for your project's code location:
+You can also view automatically generated documentation describing your new component by running `dg dev` to start the webserver and navigating to the `Docs` tab for your project's project:
 
 <CliInvocationExample contents="dg dev" />
 

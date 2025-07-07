@@ -79,4 +79,4 @@ To view the agent in Dagster+, click the Dagster icon in the top left to navigat
 
 ## Next steps
 
-- Add a [code location](/deployment/code-locations) to your Dagster+ deployment.
+- Add a [project](/deployment/code-locations) to your Dagster+ deployment.

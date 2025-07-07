@@ -14,7 +14,7 @@ Branch deployments are only available in Dagster+.
 
 ## Relevant configuration options
 
-We will be leveraging the following configuration options across agent configuration, code locations, and CI/CD.
+We will be leveraging the following configuration options across agent configuration, projects, and CI/CD.
 
 ### `dagster.yaml` (for Docker, local, and ECS agents)
 
@@ -34,11 +34,11 @@ dagster_cloud_api:
 
   # Branch deployments: whether this agent will serve branch deployments or not.
   # If enabled, this agent will attempt to serve all branch deployments in the organization and will
-  # deploy code locations matching the agent queues that it is serving.
+  # deploy projects matching the agent queues that it is serving.
   branch_deployments: <true|false>
 
 agent_queues:
-  # If true, this agent will request for code locations that aren't annotated with a specific queue
+  # If true, this agent will request for projects that aren't annotated with a specific queue
   include_default_queue: True
 
   # The additional queues that this agent will serve.
@@ -75,20 +75,20 @@ For more information about the Helm chart and its values, refer to:
 - [Dagster+ Kubernetes agent setup](/deployment/dagster-plus/hybrid/kubernetes/setup)
 - [Dagster+ Helm chart values](https://artifacthub.io/packages/helm/dagster-cloud/dagster-cloud-agent?modal=values)
 
-### Code location optional queue routing configuration (`dagster_cloud.yaml`)
+### Project optional queue routing configuration (`dagster_cloud.yaml`)
 
-Whether in the context of a full deployment or a branch deployment, you can configure the code location to be served on a specific agent queue:
+Whether in the context of a full deployment or a branch deployment, you can configure the project to be served on a specific agent queue:
 
 ```yaml
 locations:
   - location_name: <location name>
-    # The named queue that this code location will be served on. If not set, the default queue is used.
+    # The named queue that this project will be served on. If not set, the default queue is used.
     agent_queue: <queue name>
 ```
 
-For more information about agent queue routing or code location configuration, refer to:
+For more information about agent queue routing or project configuration, refer to:
 
-- [Code location configuration reference](/deployment/code-locations/dagster-cloud-yaml)
+- [Project configuration reference](/deployment/code-locations/dagster-cloud-yaml)
 - [Agent queue routing](/deployment/dagster-plus/hybrid/multiple#routing-requests-to-specific-agents)
 
 ### A note about base deployment in CI/CD
@@ -112,21 +112,21 @@ Ensure that one and only one agent is configured to serve branch deployments. Se
 
 Given a 'development' and a 'production' deployment, and the intention to only run branch deployments in development, the development deployment's agent(s) should be configured to `branch_deployments = true` and the production deployment agent(s) should be configured to `branch_deployments = false`.
 
-### Serving specific code location branch deployments on specific agents when you have multiple agents in distinct environments
+### Serving specific project branch deployments on specific agents when you have multiple agents in distinct environments
 
-This requires using the [agent queue routing](/deployment/dagster-plus/hybrid/multiple#routing-requests-to-specific-agents) configuration. Each environment would need its specific queues to route the code location to the right agent.
+This requires using the [agent queue routing](/deployment/dagster-plus/hybrid/multiple#routing-requests-to-specific-agents) configuration. Each environment would need its specific queues to route the project to the right agent.
 
-For example, given two deployments, 'east' and 'west', you could configure those agents respectively with the queues `east-queue` and `west-queue`. Then, for a code location intended to work only in the `east` deployment, you would set the `agent_queue` to `east-queue` in the code location configuration.
+For example, given two deployments, 'east' and 'west', you could configure those agents respectively with the queues `east-queue` and `west-queue`. Then, for a project intended to work only in the `east` deployment, you would set the `agent_queue` to `east-queue` in the project configuration.
 
 See `dagster_cloud_api.agent_queues.additional_queues` (or `dagsterCloud.agentQueues.additionalQueues` in the Helm chart's values).
 
-### Ensuring branch deployments are served on the correct agent when you have a Serverless deployment and one or more Hybrid deployments with incompatible code locations
+### Ensuring branch deployments are served on the correct agent when you have a Serverless deployment and one or more Hybrid deployments with incompatible projects
 
 In addition to the previous answer about using multiple agents in distinct environments, since the Serverless agent always serves the default queue only, the Hybrid agent(s) would need to also exclude the default queue.
 
 See `dagster_cloud_api.agent_queues` (or `dagsterCloud.agentQueues` for Helm users) for both the `include_default_queue` and `additional_queues` options.
 
-### How can I provide specific configuration values to a given code location on a branch deployment?
+### How can I provide specific configuration values to a given project on a branch deployment?
 
 You can use Dagster+ environment variables to pass the appropriate environment variables with the branch deployment scope. See [Setting environment variables with the Dagster+ UI](/deployment/dagster-plus/management/environment-variables/dagster-ui).
 On Hybrid, you can also use [Setting environment variables using agent config](/deployment/dagster-plus/management/environment-variables/agent-config), or leverage the underlying platform features (such as Kubernetes ConfigMaps or Secrets) to pass these values.

@@ -20,7 +20,7 @@ Filters allow you to narrow your asset selection using specific criteria.
 | **Owner** | `owner:"alice"` | Selects assets owned by `alice`. | OSS, Dagster+, Dagster+ branch deployments |
 | **Group** | `group:"team1"` | Selects assets in the group `team1`. | OSS, Dagster+, Dagster+ branch deployments |
 | **Kind** |  `kind:"table"` |  Selects assets of kind `table`. | OSS, Dagster+, Dagster+ branch deployments |
-| **Code location** | `code_location:"repo1"` | Selects assets located in code location `repo1`. | OSS, Dagster+, Dagster+ branch deployments |
+| **Project** | `code_location:"repo1"` | Selects assets located in project `repo1`. | OSS, Dagster+, Dagster+ branch deployments |
 | **Column tag** | `column_tag: "my_tag"` | Selects assets tagged with `my_tag`. | Dagster+ only |
 | **Columns** | `columns: "my_column"` | Selects assets with a column named `my_column`. | Dagster+ only |
 | **Table name** | `table_name: "my_table"` | Selects assets with a table named `my_table`. | Dagster+ only |

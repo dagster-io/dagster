@@ -62,12 +62,12 @@ When determining a user's level of access, Dagster+ will use the **most permissi
 In the **Roles** section, you can assign a [user role](/deployment/dagster-plus/authentication-and-access-control/rbac/user-roles-permissions) for each deployment, granting them a set of permissions that controls their access to various features and functionalities within the platform.
 
 1. Next to a deployment, click **Edit user role**.
-2. Select the user role for the deployment. This [user role](/deployment/dagster-plus/authentication-and-access-control/rbac/user-roles-permissions) will be used as the default for all code locations in the deployment.
+2. Select the user role for the deployment. This [user role](/deployment/dagster-plus/authentication-and-access-control/rbac/user-roles-permissions) will be used as the default for all projects in the deployment.
 3. Click **Save**.
-4. **Pro only**: To set permissions for individual [code locations](/deployment/code-locations) in a deployment:
-   1. Click the toggle to the left of the deployment to open a list of code locations.
-   2. Next to a code location, click **Edit user role**.
-   3. Select the user role for the code location.
+4. **Pro only**: To set permissions for individual [projects](/deployment/code-locations) in a deployment:
+   1. Click the toggle to the left of the deployment to open a list of projects.
+   2. Next to a project, click **Edit user role**.
+   3. Select the user role for the project.
    4. Click **Save**.
 5. Repeat the previous steps for each deployment.
 6. **Optional**: To change the user's permissions for branch deployments:

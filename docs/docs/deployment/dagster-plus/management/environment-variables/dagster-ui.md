@@ -29,11 +29,11 @@ To securely store environment variables defined using the Dagster+ UI, Dagster+ 
 
 ### Scope
 
-By default, new environment variables set in the Dagster+ UI default to all deployments and all code locations. When creating or modifying an environment variable, you'll be prompted to select the deployment(s) to which you want to scope the variable:
+By default, new environment variables set in the Dagster+ UI default to all deployments and all projects. When creating or modifying an environment variable, you'll be prompted to select the deployment(s) to which you want to scope the variable:
 
 - **Local:** - Variables with this scope will be included when downloading variables to a local `.env` file.
-- **Full deployment:** - Variables with this scope will be available to selected code locations in the full deployment.
-- **Branch deployments:** - Variables with this scope will be available to selected code locations in branch deployments.
+- **Full deployment:** - Variables with this scope will be available to selected projects in the full deployment.
+- **Branch deployments:** - Variables with this scope will be available to selected projects in branch deployments.
 
 :::note
 
@@ -54,10 +54,10 @@ Before you begin, use the deployment switcher to select the right deployment.
    - **Name** - Enter a name for the environment variable. This is how the variable will be referenced in your code.
    - **Value** - Enter a value for the environment variable.
    - **Deployment Scope** - select the deployment(s) where the variable should be accessible:
-     - **Full deployment** - The variable will be available to selected code locations in the full deployment.
-     - **Branch deployments** - The variable will be available to selected code locations in Branch Deployments.
+     - **Full deployment** - The variable will be available to selected projects in the full deployment.
+     - **Branch deployments** - The variable will be available to selected projects in Branch Deployments.
      - **Local** - If selected, the variable will be included when [exporting environment variables to a local `.env` file](#export).
-   - **Code Location Scope** - select the code location(s) where the variable should be accessible. At least one code location is required.
+   - **Code Location Scope** - select the project(s) where the variable should be accessible. At least one project is required.
 
 ![Create new environment variable dialog window in Dagster+](/images/dagster-plus/deployment/environment-variables/create-new-variable-in-ui.png)
 
@@ -97,7 +97,7 @@ If the environment variables were loaded successfully, you'll see a log message 
 
 You can create multiple instances of the same environment variable key with different values, allowing you to provide different values to different deployment environments. For example, you may want to use different Snowflake credentials for your production deployment than in branch deployments.
 
-When you [add an environment variable](#add), you can select the deployment scope and code location scope for the environment variable. You can create multiple environment variables with different values and different scopes to customize the values in different deployment environments.
+When you [add an environment variable](#add), you can select the deployment scope and project scope for the environment variable. You can create multiple environment variables with different values and different scopes to customize the values in different deployment environments.
 
 For example, if you wanted to provide different Snowflake passwords for your production and branch deployments, you would make two environment variables with the same key:
 

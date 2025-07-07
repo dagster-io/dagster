@@ -167,7 +167,7 @@ Specs are standalone objects that describe the identity and metadata of Dagster 
 | ---------------- | ----------------------------------------------------------------- |
 | [asset](#asset) | `asset spec` may describe the identity and metadata of an `asset` |
 
-## Code location
+## Project
 
 ```mermaid
 %%{
@@ -191,11 +191,11 @@ Specs are standalone objects that describe the identity and metadata of Dagster 
     Definitions ==> CodeLocation
 ```
 
-A [code location](/deployment/code-locations) is a collection of Dagster entity [definitions](#definitions) deployed in a specific environment. A code location determines the Python environment (including the version of Dagster being used as well as any other Python dependencies). A Dagster project can have multiple code locations, helping isolate dependencies.
+A [project](/deployment/code-locations) is a collection of Dagster entity [definitions](#definitions) deployed in a specific environment. A project determines the Python environment (including the version of Dagster being used as well as any other Python dependencies). A Dagster project can have multiple projects, helping isolate dependencies.
 
 | Concept                     | Relationship                                                             |
 | --------------------------- | ------------------------------------------------------------------------ |
-| [definitions](#definitions) | `code location` must contain at least one top-level `Definitions` object |
+| [definitions](#definitions) | `project` must contain at least one top-level `Definitions` object |
 
 ## Component
 
@@ -344,7 +344,7 @@ In Dagster, "definitions" means two things:
 | [schedule](#schedule)           | Top-level `Definitions` object may contain one or more `schedule` definitions    |
 | [sensor](#sensor)               | Top-level `Definitions` object may contain one or more `sensor` definitions      |
 | [component](#component)         | `definition` may be the output of a `component`                                  |
-| [code location](#code-location) | `definitions` must be deployed in a `code location`                              |
+| [project](#project)             | `definitions` must be deployed in a `project`                                    |
 
 ## Graph
 

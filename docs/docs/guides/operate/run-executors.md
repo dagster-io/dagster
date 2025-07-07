@@ -18,7 +18,7 @@ Executors can range from single-process serial executors to managing per-step co
 ## Specifying executors
 
 - [Directly on jobs](#directly-on-jobs)
-- [For a code location](#for-a-code-location)
+- [For a project](#for-a-project)
 
 ### Directly on jobs
 
@@ -33,11 +33,11 @@ An executor can be specified directly on a job by supplying an <PyObject section
   endBefore="end_executor_on_job"
 />
 
-### For a code location
+### For a project
 
-To specify a default executor for all jobs and assets provided to a code location, create a file in your `/defs` folder that contains an `@definitions`-decorated function that returns a `Definitions` object with the executor specified.
+To specify a default executor for all jobs and assets provided to a project, create a file in your `/defs` folder that contains an `@definitions`-decorated function that returns a `Definitions` object with the executor specified.
 
-If a job explicitly specifies an executor, then that executor will be used. Otherwise, jobs that don't specify an executor will use the default provided to the code location:
+If a job explicitly specifies an executor, then that executor will be used. Otherwise, jobs that don't specify an executor will use the default provided to the project:
 
 <CodeExample
   path="docs_snippets/docs_snippets/deploying/executors/code_location_executor.py"

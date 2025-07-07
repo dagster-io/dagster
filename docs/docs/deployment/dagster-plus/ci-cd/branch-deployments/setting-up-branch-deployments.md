@@ -1,5 +1,5 @@
 ---
-description: Configure branch deployments for a code location in Dagster+ using GitHub, GitLab, or the dagster-cloud CLI.
+description: Configure branch deployments for a project in Dagster+ using GitHub, GitLab, or the dagster-cloud CLI.
 sidebar_position: 7310
 title: Setting up branch deployments
 ---
@@ -8,7 +8,7 @@ import DagsterPlus from '@site/docs/partials/\_DagsterPlus.md';
 
 <DagsterPlus />
 
-In this guide, we'll walk you through setting up Branch Deployments for a code location. Once you're finished, any time a PR is created or updated in your repository, it will automatically create or update an associated branch deployment in Dagster+.
+In this guide, we'll walk you through setting up Branch Deployments for a project. Once you're finished, any time a PR is created or updated in your repository, it will automatically create or update an associated branch deployment in Dagster+.
 
 <details>
   <summary>Prerequisites</summary>
@@ -371,7 +371,7 @@ The last step is to verify that the GitLab pipeline runs successfully.
 
 Whenever the state of your branch is updated, Dagster+ expects the following steps to occur:
 
-1. A new image containing your code and requirements is built on the branch. Refer to [Managing code locations](/deployment/code-locations) to learn more.
+1. A new image containing your code and requirements is built on the branch. Refer to [Managing projects](/deployment/code-locations) to learn more.
 
 2. The new image is pushed to a Docker registry accessible to your agent.
 
@@ -474,7 +474,7 @@ Clicking the link will open a branch deployment - or a preview of the changes - 
 
 :::note
 
-To access a Branch Deployment in Dagster+, you need permissions that grant you [access to branch deployments](/deployment/dagster-plus/authentication-and-access-control/rbac/user-roles-permissions#user-permissions-reference) and the code location associated with the branch deployment.
+To access a Branch Deployment in Dagster+, you need permissions that grant you [access to branch deployments](/deployment/dagster-plus/authentication-and-access-control/rbac/user-roles-permissions#user-permissions-reference) and the project associated with the branch deployment.
 
 :::
 

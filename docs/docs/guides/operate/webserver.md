@@ -20,7 +20,7 @@ This command launches both the Dagster webserver and the [Dagster daemon](/deplo
 
 The command will print out the URL you can access the UI from in the browser, usually on port 3000.
 
-When invoked, the webserver will fetch definitions - such as assets, jobs, schedules, sensors, and resources - from a <PyObject section="definitions" module="dagster" object="Definitions" /> object in a Python module or package or the code locations configured in an open source deployment's [workspace files](/deployment/code-locations/workspace-yaml). For more information, see the [code locations documentation](/deployment/code-locations).
+When invoked, the webserver will fetch definitions - such as assets, jobs, schedules, sensors, and resources - from a <PyObject section="definitions" module="dagster" object="Definitions" /> object in a Python module or package or the projects configured in an open source deployment's [workspace files](/deployment/code-locations/workspace-yaml). For more information, see the [projects documentation](/deployment/code-locations).
 
 Note that several Dagster features, like schedules and sensors, require the Dagster daemon to be running in order to function.
 
@@ -28,7 +28,7 @@ Note that several Dagster features, like schedules and sensors, require the Dags
 
 ### Overview page
 
-- **Description**: This page, also known as the "factory floor", provides a high-level look at the activity in your Dagster deployment, across all code locations. This includes information about runs, jobs, schedules, sensors, resources, and backfills, all of which can be accessed using the tabs on this page.
+- **Description**: This page, also known as the "factory floor", provides a high-level look at the activity in your Dagster deployment, across all projects. This includes information about runs, jobs, schedules, sensors, resources, and backfills, all of which can be accessed using the tabs on this page.
 
 - **Accessed by**: Clicking **Overview** in the top navigation bar
 
@@ -41,7 +41,7 @@ Note that several Dagster features, like schedules and sensors, require the Dags
 
 **Asset catalog (OSS)**
 
-- **Description**: The **Asset catalog** page lists all [assets](/guides/build/assets) in your Dagster deployment, which can be filtered by asset key, compute kind, asset group, [code location](/deployment/code-locations), and [tags](/guides/build/assets/metadata-and-tags/index.md#tags). Clicking an asset opens the **Asset details** page for that asset. You can also navigate to the **Global asset lineage** page, reload definitions, and materialize assets.
+- **Description**: The **Asset catalog** page lists all [assets](/guides/build/assets) in your Dagster deployment, which can be filtered by asset key, compute kind, asset group, [project](/deployment/code-locations), and [tags](/guides/build/assets/metadata-and-tags/index.md#tags). Clicking an asset opens the **Asset details** page for that asset. You can also navigate to the **Global asset lineage** page, reload definitions, and materialize assets.
 
 - **Accessed by:** Clicking **Assets** in the top navigation bar
 
@@ -58,11 +58,11 @@ This feature is only available in Dagster+ Pro.
 
 :::
 
-- **Description**: This version of the **Asset catalog** page includes all the information and functionality of the original page, broken out by compute kind, asset group, [code location](/deployment/code-locations), [tags](/guides/build/assets/metadata-and-tags/index.md#tags), and [owners](/guides/build/assets/metadata-and-tags/index.md#owners), etc. On this page, you can:
+- **Description**: This version of the **Asset catalog** page includes all the information and functionality of the original page, broken out by compute kind, asset group, [project](/deployment/code-locations), [tags](/guides/build/assets/metadata-and-tags/index.md#tags), and [owners](/guides/build/assets/metadata-and-tags/index.md#owners), etc. On this page, you can:
 
   - View all [assets](/guides/build/assets) in your Dagster deployment
   - View details about a specific asset by clicking on it
-  - Search assets by asset key, compute kind, asset group, code location, tags, owners, etc.
+  - Search assets by asset key, compute kind, asset group, project, tags, owners, etc.
   - Access the global asset lineage
   - Reload definitions
 
@@ -92,7 +92,7 @@ This feature is only available in Dagster+ Pro.
 
 **Global asset lineage**
 
-- **Description**: The **Global asset lineage** page displays dependencies between all of the assets in your Dagster deployment, across all code locations. On this page, you can:
+- **Description**: The **Global asset lineage** page displays dependencies between all of the assets in your Dagster deployment, across all projects. On this page, you can:
 
   - Filter assets by group
   - Filter a subset of assets by using [asset selection syntax](/guides/build/assets/asset-selection-syntax)
@@ -250,7 +250,7 @@ This feature is only available in Dagster+ Pro.
 
 **All resources**
 
-- **Description**: The **Resources** page lists all [resources](/guides/build/external-resources) defined in your Dagster deployment, across all code locations. Clicking a resource will open the **Resource details** page.
+- **Description**: The **Resources** page lists all [resources](/guides/build/external-resources) defined in your Dagster deployment, across all projects. Clicking a resource will open the **Resource details** page.
 
 - **Accessed by**: Clicking **Overview (top nav) > Resources tab**
 
@@ -294,7 +294,7 @@ This feature is only available in Dagster+ Pro.
 
 ### Backfills
 
-- **Description**: The **Backfills** tab contains information about the backfills in your Dagster deployment, across all code locations. It includes information about when the partition was created, its target, status, run status, and more.
+- **Description**: The **Backfills** tab contains information about the backfills in your Dagster deployment, across all projects. It includes information about when the partition was created, its target, status, run status, and more.
 
 - **Accessed by**: Clicking **Overview (top nav) > Backfills tab**
 
@@ -307,7 +307,7 @@ This feature is only available in Dagster+ Pro.
 
 **All jobs**
 
-- **Description**: The **Jobs** page lists all [jobs](/guides/build/jobs) defined in your Dagster deployment across all code locations. It includes information about the job's schedule or sensor, its latest run time, and its history. Click a job to open the **Job details** page.
+- **Description**: The **Jobs** page lists all [jobs](/guides/build/jobs) defined in your Dagster deployment across all projects. It includes information about the job's schedule or sensor, its latest run time, and its history. Click a job to open the **Job details** page.
 
 - **Accessed by**: Clicking **Overview (top nav) > Jobs tab**
 
@@ -374,21 +374,21 @@ This feature is only available in Dagster+ Pro.
 
 ### Deployment
 
-The **Deployment** page includes information about the status of the code locations in your Dagster deployment, daemon (Open Source) or agent (Cloud) health, schedules, sensors, and configuration details.
+The **Deployment** page includes information about the status of the projects in your Dagster deployment, daemon (Open Source) or agent (Cloud) health, schedules, sensors, and configuration details.
 
 <Tabs>
-<TabItem value="Code locations tab">
+<TabItem value="Projects tab">
 
-**Code locations tab**
+**Projects tab**
 
-- **Description**: The **Code locations** tab contains information about the code locations in your Dagster deployment, including their current status, when they were last updated, and high-level details about the definitions they contain. You can reload Dagster definitions by:
+- **Description**: The **Projects** tab contains information about the projects in your Dagster deployment, including their current status, when they were last updated, and high-level details about the definitions they contain. You can reload Dagster definitions by:
 
-  - Clicking **Reload all** to reload all definitions in all code locations
-  - Clicking **Reload** next to a specific code location to reload only that code location's definitions
+  - Clicking **Reload all** to reload all definitions in all projects
+  - Clicking **Reload** next to a specific project to reload only that project's definitions
 
 - **Accessed by**:
   - Clicking **Deployment** in the top navigation bar
-  - On the **Deployment overview** page, clicking the **Code locations** tab
+  - On the **Deployment overview** page, clicking the **Projects** tab
 
 ![UI Deployment overview page](/images/guides/operate/webserver/deployment-code-locations.png)
 
@@ -397,7 +397,7 @@ The **Deployment** page includes information about the status of the code locati
 
 **Open Source (OSS)**
 
-In addition to the **Code locations** tab, Dagster OSS deployments contain a few additional tabs. Click the tabs below for more information.
+In addition to the **Projects** tab, Dagster OSS deployments contain a few additional tabs. Click the tabs below for more information.
 
 <Tabs>
 <TabItem value="Daemons tab">
@@ -427,7 +427,7 @@ In addition to the **Code locations** tab, Dagster OSS deployments contain a few
 
 **Dagster+**
 
-In addition to the **Code locations** tab, Dagster+ deployments contain a few additional tabs. Click the tabs below for more information.
+In addition to the **Projects** tab, Dagster+ deployments contain a few additional tabs. Click the tabs below for more information.
 
 <Tabs>
 <TabItem value="Agents tab">
