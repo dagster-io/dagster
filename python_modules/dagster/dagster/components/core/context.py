@@ -26,7 +26,7 @@ RESOLUTION_CONTEXT_STASH_KEY = "component_load_context"
 
 
 @public
-@dataclass
+@dataclass(frozen=True)
 class ComponentDeclLoadContext:
     """Context object that provides environment and path information during loading of
     ComponentDecls. This context is automatically created and passed to ComponentDecl
@@ -183,7 +183,7 @@ class ComponentDeclLoadContext:
 
 
 @public
-@dataclass
+@dataclass(frozen=True)
 class ComponentLoadContext(ComponentDeclLoadContext):
     """Context object that provides environment and path information during component loading.
     This context is automatically created and passed to component definitions when loading
