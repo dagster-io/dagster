@@ -1171,6 +1171,7 @@ export type DagsterRunEvent =
   | ExecutionStepUpForRetryEvent
   | FailedToMaterializeEvent
   | HandledOutputEvent
+  | HealthChangedEvent
   | HookCompletedEvent
   | HookErroredEvent
   | HookSkippedEvent
@@ -1954,6 +1955,48 @@ export type HandledOutputEvent = DisplayableEvent &
     runId: Scalars['String']['output'];
     solidHandleID: Maybe<Scalars['String']['output']>;
     stepKey: Maybe<Scalars['String']['output']>;
+    timestamp: Scalars['String']['output'];
+  };
+
+export type HealthChangedEvent = DisplayableEvent &
+  MessageEvent &
+  StepEvent & {
+    __typename: 'HealthChangedEvent';
+    assetKey: Maybe<AssetKey>;
+    description: Maybe<Scalars['String']['output']>;
+    eventType: Maybe<DagsterEventType>;
+    label: Maybe<Scalars['String']['output']>;
+    level: LogLevel;
+    message: Scalars['String']['output'];
+    metadataEntries: Array<
+      | AssetMetadataEntry
+      | BoolMetadataEntry
+      | CodeReferencesMetadataEntry
+      | FloatMetadataEntry
+      | IntMetadataEntry
+      | JobMetadataEntry
+      | JsonMetadataEntry
+      | MarkdownMetadataEntry
+      | NotebookMetadataEntry
+      | NullMetadataEntry
+      | PathMetadataEntry
+      | PipelineRunMetadataEntry
+      | PoolMetadataEntry
+      | PythonArtifactMetadataEntry
+      | TableColumnLineageMetadataEntry
+      | TableMetadataEntry
+      | TableSchemaMetadataEntry
+      | TextMetadataEntry
+      | TimestampMetadataEntry
+      | UrlMetadataEntry
+    >;
+    partition: Maybe<Scalars['String']['output']>;
+    runId: Scalars['String']['output'];
+    runOrError: RunOrError;
+    solidHandleID: Maybe<Scalars['String']['output']>;
+    stepKey: Maybe<Scalars['String']['output']>;
+    stepStats: RunStepStats;
+    tags: Array<EventTag>;
     timestamp: Scalars['String']['output'];
   };
 
@@ -9373,6 +9416,55 @@ export const buildHandledOutputEvent = (
       overrides && overrides.hasOwnProperty('solidHandleID') ? overrides.solidHandleID! : 'dolor',
     stepKey: overrides && overrides.hasOwnProperty('stepKey') ? overrides.stepKey! : 'dolorum',
     timestamp: overrides && overrides.hasOwnProperty('timestamp') ? overrides.timestamp! : 'nisi',
+  };
+};
+
+export const buildHealthChangedEvent = (
+  overrides?: Partial<HealthChangedEvent>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'HealthChangedEvent'} & HealthChangedEvent => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('HealthChangedEvent');
+  return {
+    __typename: 'HealthChangedEvent',
+    assetKey:
+      overrides && overrides.hasOwnProperty('assetKey')
+        ? overrides.assetKey!
+        : relationshipsToOmit.has('AssetKey')
+          ? ({} as AssetKey)
+          : buildAssetKey({}, relationshipsToOmit),
+    description:
+      overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'quam',
+    eventType:
+      overrides && overrides.hasOwnProperty('eventType')
+        ? overrides.eventType!
+        : DagsterEventType.ALERT_FAILURE,
+    label: overrides && overrides.hasOwnProperty('label') ? overrides.label! : 'consequuntur',
+    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.CRITICAL,
+    message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'tempora',
+    metadataEntries:
+      overrides && overrides.hasOwnProperty('metadataEntries') ? overrides.metadataEntries! : [],
+    partition: overrides && overrides.hasOwnProperty('partition') ? overrides.partition! : 'qui',
+    runId: overrides && overrides.hasOwnProperty('runId') ? overrides.runId! : 'et',
+    runOrError:
+      overrides && overrides.hasOwnProperty('runOrError')
+        ? overrides.runOrError!
+        : relationshipsToOmit.has('PythonError')
+          ? ({} as PythonError)
+          : buildPythonError({}, relationshipsToOmit),
+    solidHandleID:
+      overrides && overrides.hasOwnProperty('solidHandleID')
+        ? overrides.solidHandleID!
+        : 'repellendus',
+    stepKey: overrides && overrides.hasOwnProperty('stepKey') ? overrides.stepKey! : 'mollitia',
+    stepStats:
+      overrides && overrides.hasOwnProperty('stepStats')
+        ? overrides.stepStats!
+        : relationshipsToOmit.has('RunStepStats')
+          ? ({} as RunStepStats)
+          : buildRunStepStats({}, relationshipsToOmit),
+    tags: overrides && overrides.hasOwnProperty('tags') ? overrides.tags! : [],
+    timestamp: overrides && overrides.hasOwnProperty('timestamp') ? overrides.timestamp! : 'neque',
   };
 };
 

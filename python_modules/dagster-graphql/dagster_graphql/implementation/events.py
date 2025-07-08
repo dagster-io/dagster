@@ -243,6 +243,7 @@ def from_dagster_event_record(event_record: EventLogEntry, pipeline_name: str) -
         GrapheneExpectationResult,
         GrapheneFailedToMaterializeEvent,
         GrapheneHandledOutputEvent,
+        GrapheneHealthChangedEvent,
         GrapheneHookCompletedEvent,
         GrapheneHookErroredEvent,
         GrapheneHookSkippedEvent,
@@ -313,12 +314,15 @@ def from_dagster_event_record(event_record: EventLogEntry, pipeline_name: str) -
         )
     elif dagster_event.event_type == DagsterEventType.ASSET_FAILED_TO_MATERIALIZE:
         return GrapheneFailedToMaterializeEvent(event=event_record)
+    elif dagster_event.event_type == DagsterEventType.ASSET_HEALTH_CHANGED:
+        return GrapheneHealthChangedEvent(event=event_record)
     elif dagster_event.event_type == DagsterEventType.ASSET_MATERIALIZATION_PLANNED:
         return GrapheneAssetMaterializationPlannedEvent(event=event_record)
     elif dagster_event.event_type == DagsterEventType.STEP_EXPECTATION_RESULT:
         data = cast("StepExpectationResultData", dagster_event.event_specific_data)
         return GrapheneStepExpectationResultEvent(
-            expectation_result=GrapheneExpectationResult(data.expectation_result), **basic_params
+            expectation_result=GrapheneExpectationResult(data.expectation_result),
+            **basic_params,
         )
     elif dagster_event.event_type == DagsterEventType.STEP_FAILURE:
         data = dagster_event.step_failure_data
