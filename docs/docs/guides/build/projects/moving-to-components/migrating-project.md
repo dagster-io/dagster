@@ -95,7 +95,7 @@ point](https://packaging.python.org/en/latest/specifications/entry-points) API
 to expose custom component types and other scaffoldable objects from user
 projects. Our entry point declaration will specify a submodule as the location
 where our project exposes registry modules. By convention, this submodule is
-named `<root_module>.lib`. In our case, it will be `my_existing_project.lib`.
+named `<root_module>.components`. In our case, it will be `my_existing_project.components`.
 Let's create this submodule now:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/migrating-project/6-create-lib.txt" />
@@ -156,7 +156,7 @@ Then run `dg list components` to confirm that the new component is available:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/migrating-project/11-list-components.txt" />
 
-You should see the `my_project.lib.MyComponentType` listed in the output.
+You should see the `my_existing_project.components.Foo` listed in the output.
 
 ### Create a `defs` directory
 
