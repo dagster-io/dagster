@@ -341,7 +341,7 @@ def _define_gcp_attributes_conf() -> Field:
                     is_required=False,
                 ),
                 "google_service_account": Field(
-                    Int,
+                    String,
                     description=(
                         "If provided, the cluster will impersonate the google service account when "
                         "accessing gcloud services (like GCS). The google service account must have "
