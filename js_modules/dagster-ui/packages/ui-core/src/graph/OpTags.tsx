@@ -140,6 +140,7 @@ import pydantic from './kindtag-images/tool-pydantic-color.svg';
 import python from './kindtag-images/tool-python-color.svg';
 import pytorch from './kindtag-images/tool-pytorch-color.svg';
 import pytorchlightning from './kindtag-images/tool-pytorchlightning-color.svg';
+import qualtrics from './kindtag-images/tool-qualtrics-color.svg';
 import qwen from './kindtag-images/tool-qwen-color.svg';
 import r from './kindtag-images/tool-r-color.svg';
 import r2 from './kindtag-images/tool-r2-color.svg';
@@ -370,6 +371,7 @@ export type KnownTagType =
   | 'plural'
   | 'prefect'
   | 'pydantic'
+  | 'qualtrics'
   | 'qwen'
   | 'r2'
   | 'react'
@@ -1373,6 +1375,10 @@ export const KNOWN_TAGS: Record<KnownTagType, KnownTag> = {
   spanner: {
     icon: spanner,
     content: 'Spanner',
+  },
+  qualtrics: {
+    icon: qualtrics,
+    content: 'Qualtrics',
   },
   expand: {color: '#D7A540', content: 'Expand'},
 };
