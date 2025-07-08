@@ -686,6 +686,7 @@ class BaseTableauWorkspace(ConfigurableResource):
                 if check.inst(TableauTagSet.extract(spec.tags).asset_type, str) == "dashboard"
             ]
 
+            # Order of materialization matters - first we materialize data sources, then sheets, and finally dashboards.
             for spec in data_source_specs:
                 yield from create_data_source_asset_event(
                     data_source=client.get_data_source(
