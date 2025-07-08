@@ -1,6 +1,6 @@
 from unittest.mock import MagicMock
-import pytest
 
+import pytest
 from dagster import AssetExecutionContext
 from dagster._core.code_pointer import CodePointer
 from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
@@ -155,7 +155,10 @@ def cacheable_asset_defs_asset_decorator_with_context():
 
     return Definitions(
         assets=[my_tableau_assets],
-        jobs=[define_asset_job("all_asset_job"), define_asset_job("subset_asset_job", selection="embedded_superstore_datasource")],
+        jobs=[
+            define_asset_job("all_asset_job"),
+            define_asset_job("subset_asset_job", selection="embedded_superstore_datasource"),
+        ],
         resources={"tableau": resource},
     )
 
