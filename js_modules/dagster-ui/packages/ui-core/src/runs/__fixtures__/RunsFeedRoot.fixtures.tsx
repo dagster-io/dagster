@@ -1,16 +1,11 @@
-import {
-  BulkActionStatus,
-  RunsFeedView,
-  buildPartitionBackfill,
-  buildPipelineTag,
-  buildRun,
-} from '../../graphql/types';
+import {RunStatus, RunsFeedView, buildPipelineTag, buildRun} from '../../graphql/types';
+import {BackfillTableFragmentCompletedAssetJob} from '../../instance/backfill/__fixtures__/BackfillTable.fixtures';
 import {buildQueryMock} from '../../testing/mocking';
 import {DagsterTag} from '../RunTag';
 import {RunsFeedRootQuery, RunsFeedRootQueryVariables} from '../types/useRunsFeedEntries.types';
 import {RUNS_FEED_ROOT_QUERY} from '../useRunsFeedEntries';
 
-export const RunsFeedRootMock = buildQueryMock<RunsFeedRootQuery, RunsFeedRootQueryVariables>({
+export const RunsFeedRootMockRuns = buildQueryMock<RunsFeedRootQuery, RunsFeedRootQueryVariables>({
   query: RUNS_FEED_ROOT_QUERY,
   variables: {filter: {}, limit: 30, view: RunsFeedView.ROOTS},
   data: {
@@ -19,16 +14,48 @@ export const RunsFeedRootMock = buildQueryMock<RunsFeedRootQuery, RunsFeedRootQu
       cursor: 'iure',
       hasMore: false,
       results: [
+        // No backfill, non-partitioned
         buildRun({
-          id: 'a0',
-          tags: [
-            buildPipelineTag({key: DagsterTag.Partition, value: '5'}),
-            buildPipelineTag({key: DagsterTag.Backfill, value: 'abc123'}),
-            buildPipelineTag({key: DagsterTag.SensorName, value: 's3_sensor'}),
-          ],
+          jobName: 'simple',
+          tags: [buildPipelineTag({key: DagsterTag.FromUI, value: 'true'})],
+          runStatus: RunStatus.SUCCESS,
         }),
-        {...buildPartitionBackfill({id: 'b1'}), backfillStatus: BulkActionStatus.REQUESTED},
+        // No backfill, partitioned
+        buildRun({
+          jobName: 'partitioned',
+          tags: [
+            buildPipelineTag({key: DagsterTag.Partition, value: '2020-01-01'}),
+            buildPipelineTag({key: DagsterTag.FromUI, value: 'true'}),
+          ],
+          runStatus: RunStatus.SUCCESS,
+        }),
+        // Backfill, partitioned
+        buildRun({
+          jobName: 'backfill_partitioned',
+          tags: [
+            buildPipelineTag({key: DagsterTag.Backfill, value: 'abcd'}),
+            buildPipelineTag({key: DagsterTag.Partition, value: '2020-01-01'}),
+            buildPipelineTag({key: DagsterTag.FromUI, value: 'true'}),
+          ],
+          runStatus: RunStatus.SUCCESS,
+        }),
       ],
+    },
+  },
+});
+
+export const RunsFeedRootMockBackfill = buildQueryMock<
+  RunsFeedRootQuery,
+  RunsFeedRootQueryVariables
+>({
+  query: RUNS_FEED_ROOT_QUERY,
+  variables: {filter: {}, limit: 30, view: RunsFeedView.ROOTS},
+  data: {
+    runsFeedOrError: {
+      __typename: 'RunsFeedConnection',
+      cursor: '',
+      hasMore: false,
+      results: [BackfillTableFragmentCompletedAssetJob],
     },
   },
 });

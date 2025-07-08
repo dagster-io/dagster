@@ -4,7 +4,10 @@ import {Meta} from '@storybook/react';
 import {InMemoryCache} from '../../apollo-client';
 import {WorkspaceProvider} from '../../workspace/WorkspaceContext/WorkspaceContext';
 import RunsFeedRoot from '../RunsFeedRoot';
-import {RunsFeedRootMock} from '../__fixtures__/RunsFeedRoot.fixtures';
+import {
+  RunsFeedRootMockBackfill,
+  RunsFeedRootMockRuns,
+} from '../__fixtures__/RunsFeedRoot.fixtures';
 
 // eslint-disable-next-line import/no-default-export
 export default {
@@ -29,9 +32,19 @@ const createFixingRunsCache = () => {
   });
 };
 
-export const Example = () => {
+export const Runs = () => {
   return (
-    <MockedProvider mocks={[RunsFeedRootMock]} cache={createFixingRunsCache()}>
+    <MockedProvider mocks={[RunsFeedRootMockRuns]} cache={createFixingRunsCache()}>
+      <WorkspaceProvider>
+        <RunsFeedRoot />
+      </WorkspaceProvider>
+    </MockedProvider>
+  );
+};
+
+export const Backfill = () => {
+  return (
+    <MockedProvider mocks={[RunsFeedRootMockBackfill]} cache={createFixingRunsCache()}>
       <WorkspaceProvider>
         <RunsFeedRoot />
       </WorkspaceProvider>
