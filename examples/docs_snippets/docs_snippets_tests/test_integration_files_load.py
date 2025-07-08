@@ -67,6 +67,8 @@ EXCLUDED_FILES = {
     f"{snippets_folder}/dbt/tutorial/upstream_assets/assets.py",
     f"{snippets_folder}/dbt/tutorial/upstream_assets/definitions.py",
     f"{snippets_folder}/dbt/tutorial/upstream_assets/project.py",
+    f"{snippets_folder}/dbt/dbt_cloud_observability.py",
+    f"{snippets_folder}/dbt/dbt_cloud_orchestration.py",
     f"{snippets_folder}/deltalake/multi_partition.py",
     f"{snippets_folder}/dlt/customize_upstream_dependencies.py",
     f"{snippets_folder}/dlt/define_downstream_dependencies.py",
