@@ -1396,7 +1396,6 @@ union DagsterRunEvent =
   | ExecutionStepSuccessEvent
   | ExecutionStepUpForRetryEvent
   | ExecutionStepRestartEvent
-  | HealthChangedEvent
   | LogMessageEvent
   | ResourceInitFailureEvent
   | ResourceInitStartedEvent
@@ -1429,24 +1428,6 @@ union DagsterRunEvent =
   | AssetMaterializationPlannedEvent
   | AssetCheckEvaluationPlannedEvent
   | AssetCheckEvaluationEvent
-
-type HealthChangedEvent implements MessageEvent & StepEvent & DisplayableEvent {
-  runId: String!
-  message: String!
-  timestamp: String!
-  level: LogLevel!
-  stepKey: String
-  solidHandleID: String
-  eventType: DagsterEventType
-  label: String
-  description: String
-  metadataEntries: [MetadataEntry!]!
-  assetKey: AssetKey
-  runOrError: RunOrError!
-  stepStats: RunStepStats!
-  partition: String
-  tags: [EventTag!]!
-}
 
 type LogsCapturedEvent implements MessageEvent {
   runId: String!

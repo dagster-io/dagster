@@ -169,13 +169,6 @@ export type RunMetadataProviderMessageFragment_HandledOutputEvent = {
   stepKey: string | null;
 };
 
-export type RunMetadataProviderMessageFragment_HealthChangedEvent = {
-  __typename: 'HealthChangedEvent';
-  message: string;
-  timestamp: string;
-  stepKey: string | null;
-};
-
 export type RunMetadataProviderMessageFragment_HookCompletedEvent = {
   __typename: 'HookCompletedEvent';
   message: string;
@@ -532,7 +525,6 @@ export type RunMetadataProviderMessageFragment =
   | RunMetadataProviderMessageFragment_ExecutionStepUpForRetryEvent
   | RunMetadataProviderMessageFragment_FailedToMaterializeEvent
   | RunMetadataProviderMessageFragment_HandledOutputEvent
-  | RunMetadataProviderMessageFragment_HealthChangedEvent
   | RunMetadataProviderMessageFragment_HookCompletedEvent
   | RunMetadataProviderMessageFragment_HookErroredEvent
   | RunMetadataProviderMessageFragment_HookSkippedEvent

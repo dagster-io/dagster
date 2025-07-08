@@ -42,7 +42,6 @@ export type AssetLiveRunLogsSubscription = {
               assetKey: {__typename: 'AssetKey'; path: Array<string>} | null;
             }
           | {__typename: 'HandledOutputEvent'}
-          | {__typename: 'HealthChangedEvent'}
           | {__typename: 'HookCompletedEvent'}
           | {__typename: 'HookErroredEvent'}
           | {__typename: 'HookSkippedEvent'}
