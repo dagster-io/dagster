@@ -36,6 +36,7 @@ from dagster_dg_cli.utils.plus import gql
 from dagster_dg_cli.utils.plus.gql_client import DagsterPlusGraphQLClient
 
 if TYPE_CHECKING:
+    from dagster.components.core.decl import ComponentDecl
     from rich.table import Table
 
 
@@ -563,3 +564,67 @@ def list_env_command(target_path: Path, **global_options: object) -> None:
 
     console = Console()
     console.print(table)
+
+
+@list_group.command(name="component-tree", aliases=["tree"], cls=DgClickCommand)
+@click.option(
+    "--output-file",
+    help="Write to file instead of stdout. If not specified, will write to stdout.",
+)
+@dg_path_options
+@dg_global_options
+@cli_telemetry_wrapper
+def list_component_tree_command(
+    target_path: Path,
+    output_file: Optional[str],
+    **other_opts: object,
+) -> None:
+    cli_config = normalize_cli_config(other_opts, click.get_current_context())
+    dg_context = DgContext.for_project_environment(target_path, cli_config)
+
+    validate_dagster_availability()
+
+    from dagster.components.core.tree import ComponentTree
+
+    tree = ComponentTree.load(dg_context.root_path)
+    root_decl = tree.find_root_decl()
+
+    lines = [dg_context.defs_path.relative_to(dg_context.root_path).as_posix()]
+    _tree(lines, dg_context.defs_path, root_decl)
+    output = "\n".join(lines)
+
+    if output_file:
+        click.echo("[dagster-components] Writing to file " + output_file)
+        Path(output_file).write_text(output)
+    else:
+        click.echo(output)
+
+
+def _tree(
+    lines: list[str],
+    parent_path: Path,
+    decl: "ComponentDecl",
+    prefix: str = "",
+):
+    from dagster.components.core.decl import DagsterDefsDecl, DefsFolderDecl, YamlFileDecl
+
+    if isinstance(decl, DefsFolderDecl):
+        # all python files become defs decl, even if they dont have defs so
+        # filter them for now to focus on components
+        visible = {k: v for k, v in decl.children.items() if not isinstance(v, DagsterDefsDecl)}
+        total = len(visible)
+        for idx, (p, c) in enumerate(visible.items()):
+            connector = "└── " if idx == total - 1 else "├── "
+            rel = p.relative_to(parent_path)
+            lines.append(f"{prefix}{connector}{rel}")
+            extension = "    " if idx == total - 1 else "│   "
+            _tree(lines, p, c, prefix + extension)
+    elif isinstance(decl, YamlFileDecl):
+        total = len(decl.decls)
+        for idx, c in enumerate(decl.decls):
+            connector = "└── " if idx == total - 1 else "├── "
+            src_pos = decl.source_positions[idx]
+            key = f"[{idx}]" if total > 1 else ""
+            rel = f"{Path(src_pos.filename).relative_to(parent_path)}"
+            lines.append(f"{prefix}{connector}{rel}{key} ({c.component_cls.__name__})")
+            extension = "    " if idx == total - 1 else "│   "
