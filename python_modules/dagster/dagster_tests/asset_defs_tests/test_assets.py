@@ -19,11 +19,11 @@ from dagster import (
     job,
 )
 from dagster._check import CheckError
-from dagster._core.definitions.asset_graph import AssetGraph
-from dagster._core.definitions.asset_spec import (
+from dagster._core.definitions.assets.definition.asset_spec import (
     SYSTEM_METADATA_KEY_DAGSTER_TYPE,
     SYSTEM_METADATA_KEY_IO_MANAGER_KEY,
 )
+from dagster._core.definitions.assets.graph.asset_graph import AssetGraph
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.errors import DagsterInvalidPropertyError
 from dagster._core.instance import DagsterInstance

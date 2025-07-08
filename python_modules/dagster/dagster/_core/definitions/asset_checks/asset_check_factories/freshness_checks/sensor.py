@@ -4,13 +4,13 @@ from typing import Any, Optional, Union, cast
 
 from dagster import _check as check
 from dagster._annotations import beta
-from dagster._core.definitions.asset_check_factories.utils import (
+from dagster._core.definitions.asset_checks.asset_check_factories.utils import (
     FRESH_UNTIL_METADATA_KEY,
     ensure_no_duplicate_asset_checks,
     seconds_in_words,
 )
-from dagster._core.definitions.asset_check_spec import AssetCheckKey
-from dagster._core.definitions.asset_checks import AssetChecksDefinition
+from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey
+from dagster._core.definitions.asset_checks.asset_checks_definition import AssetChecksDefinition
 from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.decorators import sensor
 from dagster._core.definitions.run_request import RunRequest, SkipReason

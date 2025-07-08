@@ -5,12 +5,12 @@ from typing import TYPE_CHECKING, AbstractSet, Any, Callable, Optional, Union  #
 from toposort import CircularDependencyError
 
 import dagster._check as check
-from dagster._core.definitions.asset_check_spec import AssetCheckKey
-from dagster._core.definitions.asset_checks import has_only_asset_checks
-from dagster._core.definitions.asset_graph import AssetGraph, AssetNode
-from dagster._core.definitions.asset_layer import AssetLayer
+from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey
+from dagster._core.definitions.asset_checks.asset_checks_definition import has_only_asset_checks
 from dagster._core.definitions.asset_selection import AssetSelection
-from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
+from dagster._core.definitions.assets.graph.asset_graph import AssetGraph, AssetNode
+from dagster._core.definitions.assets.job.asset_layer import AssetLayer
 from dagster._core.definitions.config import ConfigMapping
 from dagster._core.definitions.dependency import (
     BlockingAssetChecksDependencyDefinition,
@@ -43,7 +43,7 @@ from dagster._utils.merger import merge_dicts
 IMPLICIT_ASSET_JOB_NAME = "__ASSET_JOB"
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.asset_check_spec import AssetCheckSpec
+    from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckSpec
     from dagster._core.definitions.run_config import RunConfig
 
 

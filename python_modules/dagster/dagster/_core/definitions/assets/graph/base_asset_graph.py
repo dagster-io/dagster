@@ -17,7 +17,7 @@ from typing import (  # noqa: UP035
 )
 
 import dagster._check as check
-from dagster._core.definitions.asset_check_spec import AssetCheckKey
+from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.asset_key import AssetKey, EntityKey, T_EntityKey
 from dagster._core.definitions.backfill_policy import BackfillPolicy
 from dagster._core.definitions.events import AssetKeyPartitionKey
@@ -40,7 +40,7 @@ from dagster._core.utils import toposort
 from dagster._utils.cached_method import cached_method
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
+    from dagster._core.definitions.assets.graph.asset_graph_subset import AssetGraphSubset
     from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
     from dagster._core.definitions.declarative_automation.automation_condition import (
         AutomationCondition,
@@ -741,7 +741,7 @@ class BaseAssetGraph(ABC, Generic[T_AssetNode]):
 
         Visits parents before children.
         """
-        from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
+        from dagster._core.definitions.assets.graph.asset_graph_subset import AssetGraphSubset
 
         all_assets = set(initial_subset.asset_keys)
         check.invariant(

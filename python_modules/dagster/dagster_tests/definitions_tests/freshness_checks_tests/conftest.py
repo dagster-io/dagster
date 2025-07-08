@@ -4,9 +4,9 @@ from typing import Optional
 
 import dagster as dg
 import pytest
-from dagster._core.definitions.asset_check_spec import AssetCheckSeverity
+from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckSeverity
 from dagster._core.definitions.asset_selection import AssetSelection
-from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
 from dagster._core.definitions.events import AssetKey
 from dagster._core.instance import DagsterInstance
 from dagster._time import get_current_timestamp

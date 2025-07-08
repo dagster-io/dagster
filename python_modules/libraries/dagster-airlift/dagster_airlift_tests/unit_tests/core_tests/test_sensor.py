@@ -15,7 +15,7 @@ from dagster import (
     asset_check,
     build_sensor_context,
 )
-from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
 from dagster._core.definitions.events import AssetMaterialization
 from dagster._core.definitions.materialize import materialize
 from dagster._core.definitions.metadata.metadata_value import TimestampMetadataValue

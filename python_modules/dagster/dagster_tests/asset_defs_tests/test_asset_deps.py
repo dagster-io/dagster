@@ -1,7 +1,7 @@
 import dagster as dg
 import pytest
 from dagster._check import ParameterCheckError
-from dagster._core.definitions.asset_dep import AssetDep
+from dagster._core.definitions.assets.definition.asset_dep import AssetDep
 from dagster._core.types.dagster_type import DagsterTypeKind
 
 ### Tests for AssetDep

@@ -3,14 +3,14 @@ from collections.abc import Iterator, Mapping, Sequence
 from typing import Callable, Optional, Union
 
 from dagster import _check as check
-from dagster._core.definitions.asset_check_result import AssetCheckResult
-from dagster._core.definitions.asset_check_spec import (
+from dagster._core.definitions.asset_checks.asset_check_result import AssetCheckResult
+from dagster._core.definitions.asset_checks.asset_check_spec import (
     AssetCheckKey,
     AssetCheckSeverity,
     AssetCheckSpec,
 )
-from dagster._core.definitions.asset_checks import AssetChecksDefinition
-from dagster._core.definitions.assets import (
+from dagster._core.definitions.asset_checks.asset_checks_definition import AssetChecksDefinition
+from dagster._core.definitions.assets.definition.assets_definition import (
     AssetsDefinition,
     SourceAsset,
     unique_id_from_asset_and_check_keys,

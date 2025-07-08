@@ -6,7 +6,7 @@ from typing import AbstractSet, Optional, cast  # noqa: UP035
 
 import dagster._check as check
 from dagster._core.definitions.asset_key import AssetCheckKey, AssetKey, EntityKey
-from dagster._core.definitions.asset_spec import AssetExecutionType
+from dagster._core.definitions.assets.definition.asset_spec import AssetExecutionType
 from dagster._core.definitions.backfill_policy import BackfillPolicy
 from dagster._core.definitions.dependency import NodeHandle, NodeOutputHandle
 from dagster._core.definitions.graph_definition import GraphDefinition, SubselectedGraphDefinition

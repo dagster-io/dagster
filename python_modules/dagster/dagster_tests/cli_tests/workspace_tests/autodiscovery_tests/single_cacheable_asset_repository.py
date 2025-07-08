@@ -1,5 +1,7 @@
 import dagster as dg
-from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
+from dagster._core.definitions.assets.definition.cacheable_assets_definition import (
+    CacheableAssetsDefinition,
+)
 
 
 class FooCacheableAssetsDefinition(CacheableAssetsDefinition):

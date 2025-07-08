@@ -4,7 +4,7 @@ from typing import Any, Optional, Union, cast
 
 from dagster import _check as check
 from dagster._annotations import beta
-from dagster._core.definitions.asset_check_factories.utils import (
+from dagster._core.definitions.asset_checks.asset_check_factories.utils import (
     DEADLINE_CRON_PARAM_KEY,
     DEFAULT_FRESHNESS_SEVERITY,
     DEFAULT_FRESHNESS_TIMEZONE,
@@ -22,10 +22,13 @@ from dagster._core.definitions.asset_check_factories.utils import (
     retrieve_timestamp_from_record,
     seconds_in_words,
 )
-from dagster._core.definitions.asset_check_result import AssetCheckResult
-from dagster._core.definitions.asset_check_spec import AssetCheckSeverity
-from dagster._core.definitions.asset_checks import AssetChecksDefinition
-from dagster._core.definitions.assets import AssetsDefinition, SourceAsset
+from dagster._core.definitions.asset_checks.asset_check_result import AssetCheckResult
+from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckSeverity
+from dagster._core.definitions.asset_checks.asset_checks_definition import AssetChecksDefinition
+from dagster._core.definitions.assets.definition.assets_definition import (
+    AssetsDefinition,
+    SourceAsset,
+)
 from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
 from dagster._core.definitions.metadata import (
     JsonMetadataValue,

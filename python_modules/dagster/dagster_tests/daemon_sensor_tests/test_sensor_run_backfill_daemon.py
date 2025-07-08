@@ -3,7 +3,7 @@ import os
 import dagster as dg
 import pytest
 from dagster import DagsterInstance, sensor
-from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
+from dagster._core.definitions.assets.graph.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.events import AssetKeyPartitionKey
 from dagster._core.definitions.run_request import InstigatorType, RunRequest
 from dagster._core.scheduler.instigation import InstigatorState, InstigatorStatus, TickStatus

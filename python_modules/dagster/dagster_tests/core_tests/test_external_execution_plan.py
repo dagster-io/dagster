@@ -7,8 +7,8 @@ from typing import Optional
 import dagster as dg
 import pytest
 from dagster import DagsterEventType
-from dagster._core.definitions.assets import AssetsDefinition
-from dagster._core.definitions.cacheable_assets import (
+from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
+from dagster._core.definitions.assets.definition.cacheable_assets_definition import (
     AssetsDefinitionCacheableData,
     CacheableAssetsDefinition,
 )

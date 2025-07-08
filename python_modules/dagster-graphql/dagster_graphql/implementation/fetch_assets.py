@@ -10,6 +10,7 @@ from dagster import (
     DagsterRun,
     _check as check,
 )
+from dagster._core.definitions.assets.graph.remote_asset_graph import RemoteAssetNode
 from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.partitions.definition import (
     MultiPartitionsDefinition,
@@ -21,7 +22,6 @@ from dagster._core.definitions.partitions.utils.time_window import (
     PartitionRangeStatus,
     fetch_flattened_time_window_ranges,
 )
-from dagster._core.definitions.remote_asset_graph import RemoteAssetNode
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.event_api import AssetRecordsFilter, EventLogRecord
 from dagster._core.events.log import EventLogEntry

@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Any, ContextManager, Optional, Union, cast  # 
 
 import dagster._check as check
 from dagster._annotations import deprecated, deprecated_param, public
-from dagster._core.definitions.asset_spec import AssetSpec
+from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
 from dagster._core.definitions.events import (
     AssetKey,
     AssetMaterialization,

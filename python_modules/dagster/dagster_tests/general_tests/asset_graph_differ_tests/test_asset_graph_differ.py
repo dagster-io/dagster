@@ -7,7 +7,7 @@ from unittest import mock
 import dagster as dg
 import pytest
 from dagster import DagsterInstance
-from dagster._core.definitions.asset_graph_differ import (
+from dagster._core.definitions.assets.graph.asset_graph_differ import (
     AssetDefinitionChangeType,
     AssetDefinitionDiffDetails,
     AssetGraphDiffer,

@@ -9,7 +9,7 @@ from dagster_shared.serdes.errors import SerializationError
 from dagster_shared.utils.hash import hash_collection
 
 import dagster._check as check
-from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.backfill_policy import BackfillPolicy
 from dagster._core.definitions.events import AssetKey, CoercibleToAssetKeyPrefix

@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING, AbstractSet, Any, NamedTuple, Optional, Union,
 
 import dagster._check as check
 from dagster._annotations import public
-from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
 from dagster._core.definitions.dependency import OpNode
 from dagster._core.definitions.events import AssetKey, AssetLineageInfo, CoercibleToAssetKey
 from dagster._core.definitions.hook_definition import HookDefinition

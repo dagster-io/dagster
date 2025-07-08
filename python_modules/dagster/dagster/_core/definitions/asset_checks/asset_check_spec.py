@@ -16,8 +16,8 @@ from dagster._annotations import PublicAttr
 from dagster._core.definitions.asset_key import AssetCheckKey, AssetKey, CoercibleToAssetKey
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.asset_dep import AssetDep, CoercibleToAssetDep
-    from dagster._core.definitions.assets import AssetsDefinition
+    from dagster._core.definitions.assets.definition.asset_dep import AssetDep, CoercibleToAssetDep
+    from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
     from dagster._core.definitions.declarative_automation.automation_condition import (
         AutomationCondition,
     )
@@ -43,7 +43,9 @@ LazyAutomationCondition: TypeAlias = Annotated[
     ImportFrom("dagster._core.definitions.declarative_automation.automation_condition"),
 ]
 
-LazyAssetDep: TypeAlias = Annotated["AssetDep", ImportFrom("dagster._core.definitions.asset_dep")]
+LazyAssetDep: TypeAlias = Annotated[
+    "AssetDep", ImportFrom("dagster._core.definitions.assets.definition.asset_dep")
+]
 
 
 @record_custom
@@ -90,7 +92,9 @@ class AssetCheckSpec(IHaveNew, LegacyNamedTupleMixin):
         metadata: Optional[Mapping[str, Any]] = None,
         automation_condition: Optional["AutomationCondition[AssetCheckKey]"] = None,
     ):
-        from dagster._core.definitions.asset_dep import coerce_to_deps_and_check_duplicates
+        from dagster._core.definitions.assets.definition.asset_dep import (
+            coerce_to_deps_and_check_duplicates,
+        )
 
         asset_key = AssetKey.from_coercible_or_definition(asset)
 

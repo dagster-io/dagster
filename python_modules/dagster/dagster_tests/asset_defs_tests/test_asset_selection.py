@@ -7,7 +7,6 @@ from typing import AbstractSet, Union  # noqa: UP035
 import dagster as dg
 import pytest
 from dagster._core.definitions import AssetSelection
-from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_selection import (
     AllAssetCheckSelection,
     AllSelection,
@@ -33,7 +32,8 @@ from dagster._core.definitions.asset_selection import (
     TableNameAssetSelection,
     UpstreamAssetSelection,
 )
-from dagster._core.definitions.base_asset_graph import BaseAssetGraph
+from dagster._core.definitions.assets.graph.asset_graph import AssetGraph
+from dagster._core.definitions.assets.graph.base_asset_graph import BaseAssetGraph
 from dagster._core.remote_representation.external import RemoteRepository
 from dagster._core.remote_representation.external_data import RepositorySnap
 from dagster._core.remote_representation.handle import RepositoryHandle

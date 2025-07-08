@@ -6,11 +6,20 @@ from dagster import (
     AssetKey,
     _check as check,
 )
-from dagster._core.definitions.asset_graph_differ import AssetDefinitionChangeType, AssetGraphDiffer
 from dagster._core.definitions.asset_health.asset_freshness_health import (
     get_freshness_status_and_metadata,
 )
-from dagster._core.definitions.asset_spec import SYSTEM_METADATA_KEY_AUTO_CREATED_STUB_ASSET
+from dagster._core.definitions.assets.definition.asset_spec import (
+    SYSTEM_METADATA_KEY_AUTO_CREATED_STUB_ASSET,
+)
+from dagster._core.definitions.assets.graph.asset_graph_differ import (
+    AssetDefinitionChangeType,
+    AssetGraphDiffer,
+)
+from dagster._core.definitions.assets.graph.remote_asset_graph import (
+    RemoteAssetNode,
+    RemoteWorkspaceAssetNode,
+)
 from dagster._core.definitions.data_version import (
     NULL_DATA_VERSION,
     StaleCauseCategory,
@@ -22,7 +31,6 @@ from dagster._core.definitions.declarative_automation.serialized_objects import 
 from dagster._core.definitions.partitions.context import PartitionLoadingContext
 from dagster._core.definitions.partitions.definition import PartitionsDefinition
 from dagster._core.definitions.partitions.mapping import PartitionMapping
-from dagster._core.definitions.remote_asset_graph import RemoteAssetNode, RemoteWorkspaceAssetNode
 from dagster._core.definitions.selector import JobSelector
 from dagster._core.definitions.sensor_definition import SensorType
 from dagster._core.definitions.temporal_context import TemporalContext

@@ -19,12 +19,16 @@ from dagster._core.asset_graph_view.serializable_entity_subset import (
     EntitySubsetValue,
     SerializableEntitySubset,
 )
-from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.asset_selection import KeysAssetSelection
+from dagster._core.definitions.assets.graph.asset_graph_subset import AssetGraphSubset
+from dagster._core.definitions.assets.graph.base_asset_graph import BaseAssetGraph, BaseAssetNode
+from dagster._core.definitions.assets.graph.remote_asset_graph import (
+    RemoteAssetGraph,
+    RemoteWorkspaceAssetGraph,
+)
 from dagster._core.definitions.automation_tick_evaluation_context import (
     build_run_requests_with_backfill_policies,
 )
-from dagster._core.definitions.base_asset_graph import BaseAssetGraph, BaseAssetNode
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.partitions.definition import (
     PartitionsDefinition,
@@ -36,7 +40,6 @@ from dagster._core.definitions.partitions.mapping import (
 )
 from dagster._core.definitions.partitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.partitions.subset import PartitionsSubset, TimeWindowPartitionsSubset
-from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph, RemoteWorkspaceAssetGraph
 from dagster._core.definitions.run_request import RunRequest
 from dagster._core.definitions.selector import PartitionsByAssetSelector
 from dagster._core.definitions.timestamp import TimestampWithTimezone

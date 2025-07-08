@@ -6,12 +6,12 @@ import dagster._check as check
 import pytest
 from dagster import AssetsDefinition
 from dagster._core.definitions.asset_selection import AssetSelection
-from dagster._core.definitions.automation_condition_sensor_definition import (
-    DEFAULT_AUTOMATION_CONDITION_SENSOR_NAME,
-)
-from dagster._core.definitions.cacheable_assets import (
+from dagster._core.definitions.assets.definition.cacheable_assets_definition import (
     AssetsDefinitionCacheableData,
     CacheableAssetsDefinition,
+)
+from dagster._core.definitions.automation_condition_sensor_definition import (
+    DEFAULT_AUTOMATION_CONDITION_SENSOR_NAME,
 )
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationCondition,

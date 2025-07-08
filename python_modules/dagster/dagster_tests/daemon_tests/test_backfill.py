@@ -14,8 +14,8 @@ import dagster as dg
 import dagster._check as check
 import pytest
 from dagster import AssetExecutionContext, DagsterInstance
-from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.asset_selection import AssetSelection
+from dagster._core.definitions.assets.graph.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.backfill_policy import BackfillPolicy
 from dagster._core.definitions.events import AssetKeyPartitionKey
 from dagster._core.definitions.selector import (

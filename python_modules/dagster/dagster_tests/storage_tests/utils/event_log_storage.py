@@ -23,11 +23,11 @@ from dagster import (
 )
 from dagster._check import CheckError
 from dagster._core.assets import AssetDetails
-from dagster._core.definitions.asset_check_evaluation import (
+from dagster._core.definitions.asset_checks.asset_check_evaluation import (
     AssetCheckEvaluationPlanned,
     AssetCheckEvaluationTargetMaterializationData,
 )
-from dagster._core.definitions.asset_check_spec import AssetCheckSeverity
+from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckSeverity
 from dagster._core.definitions.data_version import (
     _OLD_DATA_VERSION_TAG,
     _OLD_INPUT_DATA_VERSION_TAG_PREFIX,

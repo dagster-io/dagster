@@ -25,8 +25,8 @@ from pydantic import ConfigDict, TypeAdapter, create_model
 from dagster._cli.utils import get_possibly_temporary_instance_for_cli
 from dagster._cli.workspace.cli_target import get_repository_python_origin_from_cli_opts
 from dagster._config.pythonic_config.resource import get_resource_type_name
-from dagster._core.definitions.asset_job import is_reserved_asset_job_name
 from dagster._core.definitions.asset_selection import AssetSelection
+from dagster._core.definitions.assets.job.asset_job import is_reserved_asset_job_name
 from dagster._core.definitions.repository_definition.repository_definition import (
     RepositoryDefinition,
 )

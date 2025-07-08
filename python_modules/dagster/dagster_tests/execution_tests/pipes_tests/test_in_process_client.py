@@ -1,7 +1,7 @@
 import dagster as dg
 import pytest
 from dagster import AssetExecutionContext, OpExecutionContext
-from dagster._core.definitions.asset_check_spec import AssetCheckSeverity
+from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckSeverity
 from dagster._core.execution.context.compute import AssetCheckExecutionContext
 from dagster_pipes import DagsterPipesError, PipesContext
 

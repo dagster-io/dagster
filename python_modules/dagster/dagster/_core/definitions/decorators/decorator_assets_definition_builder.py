@@ -7,23 +7,23 @@ from typing import AbstractSet, Any, Callable, NamedTuple, Optional  # noqa: UP0
 import dagster._check as check
 from dagster._config.config_schema import UserConfigSchema
 from dagster._core.decorator_utils import get_function_params, get_valid_name_permutations
-from dagster._core.definitions.asset_check_spec import AssetCheckSpec
-from dagster._core.definitions.asset_dep import AssetDep
-from dagster._core.definitions.asset_in import AssetIn
+from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckSpec
 from dagster._core.definitions.asset_key import AssetKey
-from dagster._core.definitions.asset_out import AssetOut
-from dagster._core.definitions.asset_spec import (
+from dagster._core.definitions.assets.definition.asset_dep import AssetDep
+from dagster._core.definitions.assets.definition.asset_spec import (
     SYSTEM_METADATA_KEY_DAGSTER_TYPE,
     SYSTEM_METADATA_KEY_IO_MANAGER_KEY,
     AssetExecutionType,
     AssetSpec,
 )
-from dagster._core.definitions.assets import (
+from dagster._core.definitions.assets.definition.assets_definition import (
     ASSET_SUBSET_INPUT_PREFIX,
     AssetsDefinition,
     get_partition_mappings_from_deps,
     stringify_asset_key_to_input_name,
 )
+from dagster._core.definitions.assets.job.asset_in import AssetIn
+from dagster._core.definitions.assets.job.asset_out import AssetOut
 from dagster._core.definitions.backfill_policy import BackfillPolicy
 from dagster._core.definitions.decorators.op_decorator import _Op
 from dagster._core.definitions.hook_definition import HookDefinition

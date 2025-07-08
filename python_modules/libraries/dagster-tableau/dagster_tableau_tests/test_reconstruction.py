@@ -2,7 +2,7 @@ from unittest.mock import MagicMock
 
 from dagster import AssetExecutionContext
 from dagster._core.code_pointer import CodePointer
-from dagster._core.definitions.asset_spec import AssetSpec
+from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.reconstruct import (
     ReconstructableJob,

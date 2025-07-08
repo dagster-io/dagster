@@ -34,7 +34,7 @@ from dagster._core.definitions import (
     HookDefinition,
     NodeHandle,
 )
-from dagster._core.definitions.asset_check_evaluation import (
+from dagster._core.definitions.asset_checks.asset_check_evaluation import (
     AssetCheckEvaluation,
     AssetCheckEvaluationPlanned,
 )
