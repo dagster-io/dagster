@@ -636,7 +636,7 @@ class BaseTableauWorkspace(ConfigurableResource):
         """
         assets_def = context.assets_def
         specs = [
-            assets_def.specs_by_key.get(selected_key)
+            assets_def.specs_by_key[selected_key]
             for selected_key in context.selected_asset_keys
         ]
         refreshable_data_source_ids = [
