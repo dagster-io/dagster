@@ -517,7 +517,6 @@ export type AssetMetadataEntry = MetadataEntry & {
 export type AssetNode = {
   __typename: 'AssetNode';
   assetChecksOrError: AssetChecksOrError;
-  assetHealth: Maybe<AssetHealth>;
   assetKey: AssetKey;
   assetMaterializationUsedData: Array<MaterializationUpstreamDataVersion>;
   assetMaterializations: Array<MaterializationEvent>;
@@ -7118,12 +7117,6 @@ export const buildAssetNode = (
         : relationshipsToOmit.has('AssetCheckNeedsAgentUpgradeError')
           ? ({} as AssetCheckNeedsAgentUpgradeError)
           : buildAssetCheckNeedsAgentUpgradeError({}, relationshipsToOmit),
-    assetHealth:
-      overrides && overrides.hasOwnProperty('assetHealth')
-        ? overrides.assetHealth!
-        : relationshipsToOmit.has('AssetHealth')
-          ? ({} as AssetHealth)
-          : buildAssetHealth({}, relationshipsToOmit),
     assetKey:
       overrides && overrides.hasOwnProperty('assetKey')
         ? overrides.assetKey!
