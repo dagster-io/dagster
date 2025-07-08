@@ -39,6 +39,13 @@ def _get_canonical_component_path(
     return _get_canonical_path_string(root_path, path), None
 
 
+@record
+class ComponentWithContext:
+    path: Path
+    component: Component
+    component_decl: ComponentDecl
+
+
 @record(
     checked=False,  # cant handle ModuleType
 )
@@ -156,31 +163,30 @@ class ComponentTree:
         return None
 
     @cached_method
-    def _component_at_posix_path(
+    def _component_and_context_at_posix_path(
         self, defs_path_posix: str, instance_key: Optional[Union[int, str]]
-    ) -> Optional[tuple[Path, Component]]:
+    ) -> Optional[ComponentWithContext]:
         component_decl_and_path = self._component_decl_at_posix_path(defs_path_posix, instance_key)
         if component_decl_and_path:
             path, component_decl = component_decl_and_path
-            return (path, component_decl._load_component())  # noqa: SLF001
+            return ComponentWithContext(
+                path=path,
+                component=component_decl._load_component(),  # noqa: SLF001
+                component_decl=component_decl,
+            )
         return None
 
     @cached_method
     def _defs_at_posix_path(
         self, defs_path_posix: str, instance_key: Optional[Union[int, str]]
     ) -> Optional[Definitions]:
-        component_info = self._component_at_posix_path(defs_path_posix, instance_key)
+        component_info = self._component_and_context_at_posix_path(defs_path_posix, instance_key)
         if component_info is None:
             return None
-        _, component = component_info
+        component = component_info.component
+        component_decl = component_info.component_decl
 
-        component_decl_info = self._component_decl_at_posix_path(defs_path_posix, instance_key)
-        if component_decl_info is None:
-            return None
-
-        clc = ComponentLoadContext(
-            **component_decl_info[1].context.__dict__, component_decl=component_decl_info[1]
-        )
+        clc = ComponentLoadContext.from_decl_load_context(self.decl_load_context, component_decl)
         return component.build_defs(clc)
 
     def find_decl_at_path(self, defs_path: Union[Path, ComponentPath]) -> ComponentDecl:
@@ -208,13 +214,12 @@ class ComponentTree:
         Returns:
             Component: The component loaded from the given path.
         """
-        component = self._component_at_posix_path(
+        component = self._component_and_context_at_posix_path(
             *_get_canonical_component_path(self.defs_module_path, defs_path)
         )
         if component is None:
             raise Exception(f"No component found for path {defs_path}")
-        path, component = component
-        return component
+        return component.component
 
     def build_defs_at_path(self, defs_path: Union[Path, ComponentPath]) -> Definitions:
         """Builds definitions from the given defs subdirectory. Currently
