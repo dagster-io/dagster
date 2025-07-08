@@ -1,4 +1,5 @@
 from unittest.mock import MagicMock
+import pytest
 
 from dagster import AssetExecutionContext
 from dagster._core.code_pointer import CodePointer
@@ -154,7 +155,7 @@ def cacheable_asset_defs_asset_decorator_with_context():
 
     return Definitions(
         assets=[my_tableau_assets],
-        jobs=[define_asset_job("all_asset_job")],
+        jobs=[define_asset_job("all_asset_job"), define_asset_job("subset_asset_job", selection="embedded_superstore_datasource")],
         resources={"tableau": resource},
     )
 
@@ -511,7 +512,20 @@ def test_load_assets_workspace_data_translator(
         ), repository_def.assets_defs_by_key
 
 
+@pytest.mark.parametrize(
+    "job_name, expected_asset_materializations",
+    [
+        ("all_asset_job", 4),
+        ("subset_asset_job", 1),
+    ],
+    ids=[
+        "all_asset_job",
+        "subset_asset_job",
+    ],
+)
 def test_load_assets_workspace_asset_decorator_with_context(
+    job_name: str,
+    expected_asset_materializations: int,
     sign_in: MagicMock,
     get_workbooks: MagicMock,
     get_workbook: MagicMock,
@@ -537,10 +551,10 @@ def test_load_assets_workspace_asset_decorator_with_context(
         repository_load_data = repository_def.repository_load_data
 
         # testing the job that materializes the tableau assets
-        job_def = repository_def.get_job("all_asset_job")
+        job_def = repository_def.get_job(job_name)
         recon_job = ReconstructableJob(
             repository=ReconstructableRepository(pointer),
-            job_name="all_asset_job",
+            job_name=job_name,
         )
 
         execution_plan = create_execution_plan(recon_job, repository_load_data=repository_load_data)
@@ -562,4 +576,5 @@ def test_load_assets_workspace_asset_decorator_with_context(
         asset_materializations = [
             event for event in events if event.event_type == DagsterEventType.ASSET_MATERIALIZATION
         ]
-        assert len(asset_materializations) == 4
+        assert len(asset_materializations) == expected_asset_materializations
+        print(asset_materializations)
