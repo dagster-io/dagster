@@ -577,4 +577,3 @@ def test_load_assets_workspace_asset_decorator_with_context(
             event for event in events if event.event_type == DagsterEventType.ASSET_MATERIALIZATION
         ]
         assert len(asset_materializations) == expected_asset_materializations
-        print(asset_materializations)
