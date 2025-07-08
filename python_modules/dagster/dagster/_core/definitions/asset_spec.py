@@ -11,7 +11,7 @@ from typing import (  # noqa: UP035
     overload,
 )
 
-from dagster_shared.serdes import serialize_value, whitelist_for_serdes
+from dagster_shared.serdes import whitelist_for_serdes
 
 import dagster._check as check
 from dagster._annotations import (
@@ -27,13 +27,10 @@ from dagster._core.definitions.declarative_automation.automation_condition impor
     AutomationCondition,
 )
 from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
-from dagster._core.definitions.freshness import (
-    INTERNAL_FRESHNESS_POLICY_METADATA_KEY,
-    InternalFreshnessPolicy,
-)
-from dagster._core.definitions.freshness_policy import FreshnessPolicy
-from dagster._core.definitions.partition import PartitionsDefinition
-from dagster._core.definitions.partition_mapping import PartitionMapping
+from dagster._core.definitions.freshness import InternalFreshnessPolicy
+from dagster._core.definitions.freshness_policy import LegacyFreshnessPolicy
+from dagster._core.definitions.partitions.definition import PartitionsDefinition
+from dagster._core.definitions.partitions.mapping import PartitionMapping
 from dagster._core.definitions.utils import (
     resolve_automation_condition,
     validate_asset_owner,
@@ -104,19 +101,14 @@ def validate_kind_tags(kinds: Optional[AbstractSet[str]]) -> None:
 
 
 @hidden_param(
-    param="freshness_policy",
-    breaking_version="1.10.0",
-    additional_warn_text="use freshness checks instead.",
+    param="legacy_freshness_policy",
+    breaking_version="1.12.0",
+    additional_warn_text="use the freshness policy abstraction instead.",
 )
 @hidden_param(
     param="auto_materialize_policy",
     breaking_version="1.10.0",
     additional_warn_text="use `automation_condition` instead",
-)
-@hidden_param(
-    param="internal_freshness_policy",
-    breaking_version="1.10.0",
-    additional_warn_text="experimental feature, use freshness checks instead",
 )
 @record_custom
 class AssetSpec(IHasInternalInit, IHaveNew, LegacyNamedTupleMixin):
@@ -161,7 +153,8 @@ class AssetSpec(IHasInternalInit, IHaveNew, LegacyNamedTupleMixin):
     group_name: PublicAttr[Optional[str]]
     skippable: PublicAttr[bool]
     code_version: PublicAttr[Optional[str]]
-    freshness_policy: PublicAttr[Optional[FreshnessPolicy]]
+    legacy_freshness_policy: PublicAttr[Optional[LegacyFreshnessPolicy]]
+    freshness_policy: PublicAttr[Optional[InternalFreshnessPolicy]]
     automation_condition: PublicAttr[Optional[AutomationCondition]]
     owners: PublicAttr[Sequence[str]]
     tags: PublicAttr[Mapping[str, str]]
@@ -182,6 +175,7 @@ class AssetSpec(IHasInternalInit, IHaveNew, LegacyNamedTupleMixin):
         tags: Optional[Mapping[str, str]] = None,
         kinds: Optional[set[str]] = None,
         partitions_def: Optional[PartitionsDefinition] = None,
+        freshness_policy: Optional[InternalFreshnessPolicy] = None,
         **kwargs,
     ):
         from dagster._core.definitions.asset_dep import coerce_to_deps_and_check_duplicates
@@ -207,15 +201,6 @@ class AssetSpec(IHasInternalInit, IHaveNew, LegacyNamedTupleMixin):
         }
         validate_kind_tags(kind_tags)
 
-        internal_freshness_policy: Optional[InternalFreshnessPolicy] = kwargs.get(
-            "internal_freshness_policy"
-        )
-        if internal_freshness_policy:
-            metadata = {
-                **(metadata or {}),
-                INTERNAL_FRESHNESS_POLICY_METADATA_KEY: serialize_value(internal_freshness_policy),
-            }
-
         return super().__new__(
             cls,
             key=key,
@@ -226,9 +211,15 @@ class AssetSpec(IHasInternalInit, IHaveNew, LegacyNamedTupleMixin):
             group_name=check.opt_str_param(group_name, "group_name"),
             code_version=check.opt_str_param(code_version, "code_version"),
             freshness_policy=check.opt_inst_param(
-                kwargs.get("freshness_policy"),
+                freshness_policy,
                 "freshness_policy",
-                FreshnessPolicy,
+                InternalFreshnessPolicy,
+                additional_message="If you are using a LegacyFreshnessPolicy, pass this in with the `legacy_freshness_policy` parameter instead.",
+            ),
+            legacy_freshness_policy=check.opt_inst_param(
+                kwargs.get("legacy_freshness_policy"),
+                "legacy_freshness_policy",
+                LegacyFreshnessPolicy,
             ),
             automation_condition=check.opt_inst_param(
                 resolve_automation_condition(
@@ -270,6 +261,7 @@ class AssetSpec(IHasInternalInit, IHaveNew, LegacyNamedTupleMixin):
             skippable=skippable,
             group_name=group_name,
             code_version=code_version,
+            legacy_freshness_policy=kwargs.get("legacy_freshness_policy"),
             freshness_policy=kwargs.get("freshness_policy"),
             automation_condition=automation_condition,
             owners=owners,
@@ -330,7 +322,8 @@ class AssetSpec(IHasInternalInit, IHaveNew, LegacyNamedTupleMixin):
         tags: Optional[Mapping[str, str]] = ...,
         kinds: Optional[set[str]] = ...,
         partitions_def: Optional[PartitionsDefinition] = ...,
-        freshness_policy: Optional[FreshnessPolicy] = ...,
+        legacy_freshness_policy: Optional[LegacyFreshnessPolicy] = ...,
+        freshness_policy: Optional[InternalFreshnessPolicy] = ...,
     ) -> "AssetSpec":
         """Returns a new AssetSpec with the specified attributes replaced."""
         current_tags_without_kinds = {
@@ -347,7 +340,10 @@ class AssetSpec(IHasInternalInit, IHaveNew, LegacyNamedTupleMixin):
                 skippable=skippable if skippable is not ... else self.skippable,
                 group_name=group_name if group_name is not ... else self.group_name,
                 code_version=code_version if code_version is not ... else self.code_version,
-                freshness_policy=self.freshness_policy,
+                legacy_freshness_policy=self.legacy_freshness_policy,
+                freshness_policy=freshness_policy
+                if freshness_policy is not ...
+                else self.freshness_policy,
                 automation_condition=automation_condition
                 if automation_condition is not ...
                 else self.automation_condition,
@@ -396,6 +392,7 @@ class AssetSpec(IHasInternalInit, IHaveNew, LegacyNamedTupleMixin):
                 skippable=self.skippable,
                 group_name=self.group_name,
                 code_version=self.code_version,
+                legacy_freshness_policy=self.legacy_freshness_policy,
                 freshness_policy=self.freshness_policy,
                 automation_condition=self.automation_condition,
                 owners=[*self.owners, *(owners if owners is not ... else [])],
@@ -459,21 +456,14 @@ def map_asset_specs(
 
 
 @checked
-def attach_internal_freshness_policy(
+def apply_freshness_policy(
     spec: AssetSpec, policy: InternalFreshnessPolicy, overwrite_existing=True
 ) -> AssetSpec:
-    """Apply a freshness policy to an asset spec, attaching it to the spec's metadata.
+    """Apply a freshness policy to an asset spec.
 
-    You can use this in Definitions.map_asset_specs to attach a freshness policy to an asset spec.
+    You can use this in Definitions.map_asset_specs to attach a freshness policy to a selection of asset specs.
     """
-    if INTERNAL_FRESHNESS_POLICY_METADATA_KEY in spec.metadata:
-        if overwrite_existing:
-            return spec.merge_attributes(
-                metadata={INTERNAL_FRESHNESS_POLICY_METADATA_KEY: serialize_value(policy)}  # pyright: ignore[reportArgumentType]
-            )
-        else:
-            return spec
-
-    return spec.merge_attributes(
-        metadata={INTERNAL_FRESHNESS_POLICY_METADATA_KEY: serialize_value(policy)}  # pyright: ignore[reportArgumentType]
-    )
+    if overwrite_existing:
+        return spec._replace(freshness_policy=policy)
+    else:
+        return spec._replace(freshness_policy=spec.freshness_policy or policy)

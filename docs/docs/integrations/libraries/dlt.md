@@ -10,6 +10,13 @@ sidebar_custom_props:
 partnerlink: https://dlthub.com/
 ---
 
+:::note
+
+If you are just getting started with the dlt integration, we recommend using the new [dlt component](/guides/build/components/integrations/dlt-component-tutorial).
+
+:::
+
+
 <p>{frontMatter.description}</p>
 
 It offers many advanced features, such as:
@@ -18,7 +25,7 @@ It offers many advanced features, such as:
 - Converting data into the structure required for a destination
 - Incremental updates and merges
 
-dlt also provides a large collection of [pre-built, verified sources](https://dlthub.com/docs/dlt-ecosystem/verified-sources/) and [destinations](https://dlthub.com/docs/dlt-ecosystem/destinations/), allowing you to write less code (if any!) by leveraging the work of the dlt community.
+dlt also provides a large collection of [pre-built, verified sources](https://dlthub.com/docs/dlt-ecosystem/verified-sources) and [destinations](https://dlthub.com/docs/dlt-ecosystem/destinations), allowing you to write less code (if any!) by leveraging the work of the dlt community.
 
 In this guide, we'll explain how the dlt integration works, how to set up a Dagster project for dlt, and how to use a pre-defined dlt source.
 
@@ -283,4 +290,4 @@ Want to see real-world examples of dlt in production? Check out how we use it in
 
 ### About dlt
 
-[Data Load Tool (dlt)](https://dlthub.com/) is an open source library for creating efficient data pipelines. It offers features like secret management, data structure conversion, incremental updates, and pre-built sources and destinations, simplifying the process of loading messy data into well-structured datasets.
+[Data Load Tool (dlt)](https://dlthub.com) is an open source library for creating efficient data pipelines. It offers features like secret management, data structure conversion, incremental updates, and pre-built sources and destinations, simplifying the process of loading messy data into well-structured datasets.

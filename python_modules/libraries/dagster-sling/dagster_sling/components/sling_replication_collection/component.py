@@ -1,3 +1,4 @@
+import textwrap
 from collections.abc import Iterator, Mapping, Sequence
 from dataclasses import dataclass, field
 from functools import cached_property
@@ -20,6 +21,8 @@ from dagster.components.resolved.context import ResolutionContext
 from dagster.components.resolved.core_models import AssetAttributesModel, AssetPostProcessor, OpSpec
 from dagster.components.scaffold.scaffold import scaffold_with
 from dagster.components.utils import TranslatorResolvingInfo
+from dagster_shared.utils.warnings import deprecation_warning
+from pydantic import BaseModel, ConfigDict, Field
 from typing_extensions import TypeAlias
 
 from dagster_sling.asset_decorator import sling_assets
@@ -27,7 +30,7 @@ from dagster_sling.components.sling_replication_collection.scaffolder import (
     SlingReplicationComponentScaffolder,
 )
 from dagster_sling.dagster_sling_translator import DagsterSlingTranslator
-from dagster_sling.resources import AssetExecutionContext, SlingResource
+from dagster_sling.resources import AssetExecutionContext, SlingConnectionResource, SlingResource
 
 SlingMetadataAddons: TypeAlias = Literal["column_metadata", "row_count"]
 
@@ -86,8 +89,59 @@ class SlingReplicationSpecModel(Resolvable):
 def resolve_resource(
     context: ResolutionContext,
     sling,
-) -> SlingResource:
-    return SlingResource(**context.resolve_value(sling.model_dump())) if sling else SlingResource()
+) -> Optional[SlingResource]:
+    if sling:
+        deprecation_warning(
+            "The `sling` field is deprecated, use `connections` instead. This field will be removed in a future release.",
+            "1.11.1",
+        )
+    return SlingResource(**context.resolve_value(sling.model_dump())) if sling else None
+
+
+def replicate(
+    context: AssetExecutionContext,
+    connections: list[SlingConnectionResource],
+) -> Iterator[Union[AssetMaterialization, MaterializeResult]]:
+    sling = SlingResource(connections=connections)
+    yield from sling.replicate(context=context)
+
+
+class SlingConnectionResourcePropertiesModel(Resolvable, BaseModel):
+    """Properties of a Sling connection resource."""
+
+    # each connection type supports a variety of different properties
+    model_config = ConfigDict(extra="allow")
+
+    type: str = Field(
+        description="Type of the source connection, must match the Sling connection types. Use 'file' for local storage."
+    )
+    connection_string: Optional[str] = Field(
+        description="The optional connection string for the source database, if not using keyword arguments.",
+        default=None,
+    )
+
+
+def resolve_connections(
+    context: ResolutionContext,
+    connections: Mapping[str, SlingConnectionResourcePropertiesModel],
+) -> list[SlingConnectionResource]:
+    return [
+        SlingConnectionResource(
+            name=name,
+            **context.resolve_value(
+                connection if isinstance(connection, dict) else connection.model_dump()
+            ),
+        )
+        for name, connection in connections.items()
+    ]
+
+
+ResolvedSlingConnections: TypeAlias = Annotated[
+    list[SlingConnectionResource],
+    Resolver(
+        resolve_connections, model_field_type=Mapping[str, SlingConnectionResourcePropertiesModel]
+    ),
+]
 
 
 @scaffold_with(SlingReplicationComponentScaffolder)
@@ -104,15 +158,18 @@ class SlingReplicationCollectionComponent(Component, Resolvable):
     file. See Sling's [documentation](https://docs.slingdata.io/concepts/replication#overview) on `replication.yaml`.
     """
 
-    resource: Annotated[
-        SlingResource,
-        Resolver(
-            resolve_resource,
-            model_field_name="sling",
-        ),
-    ] = field(default_factory=SlingResource)
+    connections: ResolvedSlingConnections = field(default_factory=list)
     replications: Sequence[SlingReplicationSpecModel] = field(default_factory=list)
+    # TODO: deprecate and then delete -- schrockn 2025-06-10
     asset_post_processors: Optional[Sequence[AssetPostProcessor]] = None
+    resource: Annotated[
+        Optional[SlingResource],
+        Resolver(resolve_resource, model_field_name="sling"),
+    ] = None
+
+    @cached_property
+    def sling_resource(self) -> SlingResource:
+        return self.resource or SlingResource(connections=self.connections)
 
     def build_asset(
         self, context: ComponentLoadContext, replication_spec_model: SlingReplicationSpecModel
@@ -140,7 +197,9 @@ class SlingReplicationCollectionComponent(Component, Resolvable):
         )
         def _asset(context: AssetExecutionContext):
             yield from self.execute(
-                context=context, sling=self.resource, replication_spec_model=replication_spec_model
+                context=context,
+                sling=self.sling_resource,
+                replication_spec_model=replication_spec_model,
             )
 
         return _asset
@@ -159,9 +218,25 @@ class SlingReplicationCollectionComponent(Component, Resolvable):
         yield from iterator
 
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
-        defs = Definitions(
+        if self.asset_post_processors:
+            raise Exception(
+                "The asset_post_processors field is deprecated, place your post-processors in the assets"
+                " field in the top-level post_processing field instead, as in this example:\n"
+                + textwrap.dedent(
+                    """
+                    type: dagster_sling.SlingReplicationCollectionComponent
+
+                    attributes: ~
+
+                    post_processing:
+                      assets:
+                        - target: "*"
+                          attributes:
+                            group_name: "my_group"
+                    """
+                )
+            )
+
+        return Definitions(
             assets=[self.build_asset(context, replication) for replication in self.replications],
         )
-        for post_processor in self.asset_post_processors or []:
-            defs = post_processor(defs)
-        return defs

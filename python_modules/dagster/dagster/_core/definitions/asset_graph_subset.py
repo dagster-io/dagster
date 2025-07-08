@@ -2,7 +2,7 @@ import operator
 from collections import defaultdict
 from collections.abc import Iterable, Mapping
 from datetime import datetime
-from typing import AbstractSet, Any, Callable, NamedTuple, Optional, Union, cast  # noqa: UP035
+from typing import AbstractSet, Any, Callable, NamedTuple, Optional, Union  # noqa: UP035
 
 from dagster_shared.serdes import (
     NamedTupleSerializer,
@@ -15,7 +15,8 @@ from dagster._core.asset_graph_view.entity_subset import EntitySubset
 from dagster._core.asset_graph_view.serializable_entity_subset import SerializableEntitySubset
 from dagster._core.definitions.base_asset_graph import BaseAssetGraph
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
-from dagster._core.definitions.partition import PartitionsDefinition, PartitionsSubset
+from dagster._core.definitions.partitions.definition import TimeWindowPartitionsDefinition
+from dagster._core.definitions.partitions.subset import PartitionsSubset
 from dagster._core.errors import DagsterDefinitionChangedDeserializationError
 from dagster._core.instance import DynamicPartitionsStore
 
@@ -258,6 +259,7 @@ class AssetGraphSubset(NamedTuple):
         cls,
         asset_partitions_set: AbstractSet[AssetKeyPartitionKey],
         asset_graph: BaseAssetGraph,
+        validate_time_range: bool = True,
     ) -> "AssetGraphSubset":
         partitions_by_asset_key = defaultdict(set)
         non_partitioned_asset_keys = set()
@@ -267,15 +269,18 @@ class AssetGraphSubset(NamedTuple):
             else:
                 non_partitioned_asset_keys.add(asset_key)
 
+        partitions_subsets_by_asset_key = {}
+        for asset_key, partition_keys in partitions_by_asset_key.items():
+            partitions_def = asset_graph.get(asset_key).partitions_def
+            subset = partitions_def.empty_subset()
+            if isinstance(partitions_def, TimeWindowPartitionsDefinition):
+                subset = subset.with_partition_keys(partition_keys, validate=validate_time_range)
+            else:
+                subset = subset.with_partition_keys(partition_keys)
+            partitions_subsets_by_asset_key[asset_key] = subset
+
         return AssetGraphSubset(
-            partitions_subsets_by_asset_key={
-                asset_key: (
-                    cast("PartitionsDefinition", asset_graph.get(asset_key).partitions_def)
-                    .empty_subset()
-                    .with_partition_keys(partition_keys)
-                )
-                for asset_key, partition_keys in partitions_by_asset_key.items()
-            },
+            partitions_subsets_by_asset_key=partitions_subsets_by_asset_key,
             non_partitioned_asset_keys=non_partitioned_asset_keys,
         )
 

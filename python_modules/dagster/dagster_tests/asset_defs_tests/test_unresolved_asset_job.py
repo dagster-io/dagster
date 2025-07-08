@@ -1,40 +1,17 @@
 import hashlib
 
+import dagster as dg
 import pytest
 from dagster import (
     AssetKey,
-    AssetOut,
     AssetsDefinition,
     AssetSelection,
     BackfillPolicy,
     DagsterEventType,
-    DailyPartitionsDefinition,
-    HourlyPartitionsDefinition,
-    IOManager,
-    Out,
-    Output,
-    RetryPolicy,
-    SourceAsset,
-    define_asset_job,
-    graph,
     in_process_executor,
-    io_manager,
-    op,
-    repository,
 )
-from dagster._core.definitions import asset, multi_asset
-from dagster._core.definitions.decorators.hook_decorator import failure_hook, success_hook
-from dagster._core.definitions.definitions_class import Definitions
-from dagster._core.definitions.metadata.metadata_value import TextMetadataValue
-from dagster._core.definitions.partition import (
-    StaticPartitionsDefinition,
-    static_partitioned_config,
-)
-from dagster._core.definitions.partitioned_schedule import build_schedule_from_partitioned_job
-from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidSubsetError
-from dagster._core.execution.with_resources import with_resources
 from dagster._core.storage.tags import PARTITION_NAME_TAG
-from dagster._core.test_utils import create_test_asset_job, instance_for_test
+from dagster._core.test_utils import create_test_asset_job
 
 
 def _all_asset_keys(result):
@@ -49,7 +26,7 @@ def _all_asset_keys(result):
 
 
 def asset_aware_io_manager():
-    class MyIOManager(IOManager):
+    class MyIOManager(dg.IOManager):
         def __init__(self):
             self.db = {}
 
@@ -61,7 +38,7 @@ def asset_aware_io_manager():
 
     io_manager_obj = MyIOManager()
 
-    @io_manager
+    @dg.io_manager
     def _asset_aware():
         return io_manager_obj
 
@@ -92,32 +69,32 @@ def _get_assets_defs(use_multi: bool = False, allow_subset: bool = False):
         }
     """
 
-    @asset
+    @dg.asset
     def start():
         return 1
 
-    @asset
+    @dg.asset
     def a(start):
         return start + 1
 
-    @asset
+    @dg.asset
     def b():
         return 1
 
-    @asset
+    @dg.asset
     def c(b):
         return b + 1
 
-    @multi_asset(
+    @dg.multi_asset(
         outs={
-            "a": AssetOut(is_required=False),
-            "b": AssetOut(is_required=False),
-            "c": AssetOut(is_required=False),
+            "a": dg.AssetOut(is_required=False),
+            "b": dg.AssetOut(is_required=False),
+            "c": dg.AssetOut(is_required=False),
         },
         internal_asset_deps={
-            "a": {AssetKey("start")},
+            "a": {dg.AssetKey("start")},
             "b": set(),
-            "c": {AssetKey("b")},
+            "c": {dg.AssetKey("b")},
         },
         can_subset=allow_subset,
     )
@@ -130,30 +107,30 @@ def _get_assets_defs(use_multi: bool = False, allow_subset: bool = False):
             sorted(context.op_execution_context.selected_output_names) if allow_subset else "abc"
         )
         for output_name in outputs_to_return:
-            yield Output(out_values[output_name], output_name)
+            yield dg.Output(out_values[output_name], output_name)
 
-    @asset
+    @dg.asset
     def d(a, b):
         return a + b
 
-    @asset
+    @dg.asset
     def e(c):
         return c + 1
 
-    @asset
+    @dg.asset
     def f(d, e):
         return d + e
 
-    @multi_asset(
+    @dg.multi_asset(
         outs={
-            "d": AssetOut(is_required=False),
-            "e": AssetOut(is_required=False),
-            "f": AssetOut(is_required=False),
+            "d": dg.AssetOut(is_required=False),
+            "e": dg.AssetOut(is_required=False),
+            "f": dg.AssetOut(is_required=False),
         },
         internal_asset_deps={
-            "d": {AssetKey("a"), AssetKey("b")},
-            "e": {AssetKey("c")},
-            "f": {AssetKey("d"), AssetKey("e")},
+            "d": {dg.AssetKey("a"), dg.AssetKey("b")},
+            "e": {dg.AssetKey("c")},
+            "f": {dg.AssetKey("d"), dg.AssetKey("e")},
         },
         can_subset=allow_subset,
     )
@@ -166,9 +143,9 @@ def _get_assets_defs(use_multi: bool = False, allow_subset: bool = False):
             sorted(context.op_execution_context.selected_output_names) if allow_subset else "def"
         )
         for output_name in outputs_to_return:
-            yield Output(out_values[output_name], output_name)
+            yield dg.Output(out_values[output_name], output_name)
 
-    @asset
+    @dg.asset
     def final(a, d):
         return a + d
 
@@ -183,26 +160,26 @@ def _get_assets_defs(use_multi: bool = False, allow_subset: bool = False):
         ("*", False, None),
         ("*", True, None),
         ("e", False, None),
-        ("e", True, (DagsterInvalidSubsetError, "")),
+        ("e", True, (dg.DagsterInvalidSubsetError, "")),
         (
             "x",
             False,
-            (DagsterInvalidSubsetError, r"were selected"),
+            (dg.DagsterInvalidSubsetError, r"were selected"),
         ),
         (
             "x",
             True,
-            (DagsterInvalidSubsetError, r"were selected"),
+            (dg.DagsterInvalidSubsetError, r"were selected"),
         ),
         (
             ["start", "x"],
             False,
-            (DagsterInvalidSubsetError, r"were selected"),
+            (dg.DagsterInvalidSubsetError, r"were selected"),
         ),
         (
             ["start", "x"],
             True,
-            (DagsterInvalidSubsetError, r"were selected"),
+            (dg.DagsterInvalidSubsetError, r"were selected"),
         ),
         (["d", "e", "f"], False, None),
         (["d", "e", "f"], True, None),
@@ -211,7 +188,7 @@ def _get_assets_defs(use_multi: bool = False, allow_subset: bool = False):
             ["start+"],
             True,
             (
-                DagsterInvalidSubsetError,
+                dg.DagsterInvalidSubsetError,
                 r"When building job, the AssetsDefinition 'abc_' contains asset keys "
                 r"\[AssetKey\(\['a'\]\), AssetKey\(\['b'\]\), AssetKey\(\['c'\]\)\] and check keys \[\], but"
                 r" attempted to "
@@ -240,27 +217,27 @@ def test_resolve_subset_job_errors(job_selection, use_multi, expected_error):
     ],
 )
 def test_simple_graph_backed_asset_subset(job_selection, expected_assets):
-    @op
+    @dg.op
     def one():
         return 1
 
-    @op
+    @dg.op
     def add_one(x):
         return x + 1
 
-    @op(out=Out(io_manager_key="asset_io_manager"))
+    @dg.op(out=dg.Out(io_manager_key="asset_io_manager"))
     def create_asset(x):
         return x * 2
 
-    @graph
+    @dg.graph
     def a():
         return create_asset(add_one(add_one(one())))
 
-    @graph
+    @dg.graph
     def b(a):
         return create_asset(add_one(add_one(a)))
 
-    @graph
+    @dg.graph
     def c(b):
         return create_asset(add_one(add_one(b)))
 
@@ -269,7 +246,9 @@ def test_simple_graph_backed_asset_subset(job_selection, expected_assets):
     c_asset = AssetsDefinition.from_graph(c)
 
     _, io_manager_def = asset_aware_io_manager()
-    final_assets = with_resources([a_asset, b_asset, c_asset], {"asset_io_manager": io_manager_def})
+    final_assets = dg.with_resources(
+        [a_asset, b_asset, c_asset], {"asset_io_manager": io_manager_def}
+    )
 
     # run once so values exist to load from
     create_test_asset_job(final_assets).execute_in_process()
@@ -279,18 +258,18 @@ def test_simple_graph_backed_asset_subset(job_selection, expected_assets):
 
     result = job.execute_in_process()
 
-    expected_asset_keys = set(AssetKey(a) for a in expected_assets.split(","))
+    expected_asset_keys = set(dg.AssetKey(a) for a in expected_assets.split(","))
 
     # make sure we've generated the correct set of keys
     assert _all_asset_keys(result) == expected_asset_keys
 
-    if AssetKey("a") in expected_asset_keys:
+    if dg.AssetKey("a") in expected_asset_keys:
         # (1 + 1 + 1) * 2
         assert result.output_for_node("a.create_asset") == 6
-    if AssetKey("b") in expected_asset_keys:
+    if dg.AssetKey("b") in expected_asset_keys:
         # (6 + 1 + 1) * 8
         assert result.output_for_node("b.create_asset") == 16
-    if AssetKey("c") in expected_asset_keys:
+    if dg.AssetKey("c") in expected_asset_keys:
         # (16 + 1 + 1) * 2
         assert result.output_for_node("c.create_asset") == 36
 
@@ -364,7 +343,7 @@ def test_define_selection_job(job_selection, expected_assets, use_multi, prefixe
             for assets_def in prefixed_assets
         ]
 
-    final_assets = with_resources(
+    final_assets = dg.with_resources(
         prefixed_assets,
         resource_defs={"io_manager": io_manager_def},
     )
@@ -374,7 +353,7 @@ def test_define_selection_job(job_selection, expected_assets, use_multi, prefixe
 
     # now build the subset job
     job = create_test_asset_job(final_assets, selection=job_selection)
-    with instance_for_test() as instance:
+    with dg.instance_for_test() as instance:
         result = job.execute_in_process(instance=instance)
         planned_asset_keys = {
             record.event_log_entry.dagster_event.event_specific_data.asset_key  # pyright: ignore[reportAttributeAccessIssue,reportOptionalMemberAccess]
@@ -384,7 +363,9 @@ def test_define_selection_job(job_selection, expected_assets, use_multi, prefixe
             ).records
         }
 
-    expected_asset_keys = set(AssetKey([*(prefixes or []), a]) for a in expected_assets.split(","))
+    expected_asset_keys = set(
+        dg.AssetKey([*(prefixes or []), a]) for a in expected_assets.split(",")
+    )
     # make sure we've planned on the correct set of keys
     assert planned_asset_keys == expected_asset_keys
 
@@ -421,7 +402,7 @@ def test_define_selection_job(job_selection, expected_assets, use_multi, prefixe
             # dealing with multi asset
             if output != asset_name:
                 node_def_name = output.split(".")[0]
-                keys_for_node = {AssetKey([*(prefixes or []), c]) for c in node_def_name[:-1]}
+                keys_for_node = {dg.AssetKey([*(prefixes or []), c]) for c in node_def_name[:-1]}
                 selected_keys_for_node = keys_for_node.intersection(expected_asset_keys)
                 if (
                     selected_keys_for_node != keys_for_node
@@ -442,13 +423,13 @@ def test_define_selection_job(job_selection, expected_assets, use_multi, prefixe
 
 
 def test_define_selection_job_assets_definition_selection():
-    @asset
+    @dg.asset
     def asset1(): ...
 
-    @asset
+    @dg.asset
     def asset2(): ...
 
-    @asset
+    @dg.asset
     def asset3(): ...
 
     all_assets = [asset1, asset2, asset3]
@@ -461,39 +442,39 @@ def test_define_selection_job_assets_definition_selection():
 
 
 def test_root_asset_selection():
-    @asset
+    @dg.asset
     def a(source):
         return source + 1
 
-    @asset
+    @dg.asset
     def b(a):
         return a + 1
 
     # Source asset should not be included in the job
-    assert create_test_asset_job([a, b, SourceAsset("source")], selection="*b")
+    assert create_test_asset_job([a, b, dg.SourceAsset("source")], selection="*b")
 
 
 def test_source_asset_selection_missing():
-    @asset
+    @dg.asset
     def a(source):
         return source + 1
 
-    @asset
+    @dg.asset
     def b(a):
         return a + 1
 
-    with pytest.raises(DagsterInvalidDefinitionError, match="sources"):
+    with pytest.raises(dg.DagsterInvalidDefinitionError, match="sources"):
         create_test_asset_job([a, b], selection="*b")
 
 
-@asset
+@dg.asset
 def foo():
     return 1
 
 
 def test_executor_def():
     job = create_test_asset_job([foo], executor_def=in_process_executor)
-    assert job.executor_def == in_process_executor
+    assert job.executor_def == dg.in_process_executor
 
 
 def test_tags():
@@ -511,15 +492,15 @@ def test_description():
 
 
 def _get_partitioned_assets(partitions_def):
-    @asset(partitions_def=partitions_def)
+    @dg.asset(partitions_def=partitions_def)
     def a():
         return 1
 
-    @asset(partitions_def=partitions_def)
+    @dg.asset(partitions_def=partitions_def)
     def b(a):
         return a + 1
 
-    @asset(partitions_def=partitions_def)
+    @dg.asset(partitions_def=partitions_def)
     def c(b):
         return b + 1
 
@@ -527,15 +508,15 @@ def _get_partitioned_assets(partitions_def):
 
 
 def test_config():
-    @asset
+    @dg.asset
     def foo():
         return 1
 
-    @asset(config_schema={"val": int})
+    @dg.asset(config_schema={"val": int})
     def config_asset(context, foo):
         return foo + context.op_execution_context.op_config["val"]
 
-    @asset(config_schema={"val": int})
+    @dg.asset(config_schema={"val": int})
     def other_config_asset(context, config_asset):
         return config_asset + context.op_execution_context.op_config["val"]
 
@@ -571,23 +552,23 @@ def test_config():
     ],
 )
 def test_subselect_config(selection, config):
-    @asset(io_manager_key="asset_io_manager")
+    @dg.asset(io_manager_key="asset_io_manager")
     def foo():
         return 1
 
-    @asset(config_schema={"val": int}, io_manager_key="asset_io_manager")
+    @dg.asset(config_schema={"val": int}, io_manager_key="asset_io_manager")
     def config_asset(context, foo):
         return foo + context.op_execution_context.op_config["val"]
 
-    @asset(config_schema={"val": int}, io_manager_key="asset_io_manager")
+    @dg.asset(config_schema={"val": int}, io_manager_key="asset_io_manager")
     def other_config_asset(context, config_asset):
         return config_asset + context.op_execution_context.op_config["val"]
 
     io_manager_obj, io_manager_def = asset_aware_io_manager()
-    io_manager_obj.db[AssetKey("foo")] = 1
-    io_manager_obj.db[AssetKey("config_asset")] = 1 + 2
+    io_manager_obj.db[dg.AssetKey("foo")] = 1
+    io_manager_obj.db[dg.AssetKey("config_asset")] = 1 + 2
 
-    all_assets = with_resources(
+    all_assets = dg.with_resources(
         [foo, config_asset, other_config_asset],
         resource_defs={"asset_io_manager": io_manager_def},
     )
@@ -599,7 +580,7 @@ def test_subselect_config(selection, config):
 
 
 def test_simple_partitions():
-    partitions_def = HourlyPartitionsDefinition(start_date="2020-01-01-00:00")
+    partitions_def = dg.HourlyPartitionsDefinition(start_date="2020-01-01-00:00")
     job = create_test_asset_job(
         _get_partitioned_assets(partitions_def), partitions_def=partitions_def
     )
@@ -607,19 +588,19 @@ def test_simple_partitions():
 
 
 def test_hooks():
-    @asset
+    @dg.asset
     def a():
         pass
 
-    @asset
+    @dg.asset
     def b(a):
         pass
 
-    @success_hook
+    @dg.success_hook
     def foo(_):
         pass
 
-    @failure_hook
+    @dg.failure_hook
     def bar(_):
         pass
 
@@ -628,60 +609,60 @@ def test_hooks():
 
 
 def test_hooks_with_resources():
-    @asset
+    @dg.asset
     def a():
         pass
 
-    @asset
+    @dg.asset
     def b(a):
         pass
 
-    @success_hook(required_resource_keys={"a"})
+    @dg.success_hook(required_resource_keys={"a"})
     def foo(_):
         pass
 
-    @failure_hook(required_resource_keys={"b", "c"})
+    @dg.failure_hook(required_resource_keys={"b", "c"})
     def bar(_):
         pass
 
     job = create_test_asset_job([a, b], hooks={foo, bar}, resources={"a": 1, "b": 2, "c": 3})
     assert job.hook_defs == {foo, bar}
 
-    defs = Definitions(
+    defs = dg.Definitions(
         assets=[a, b],
-        jobs=[define_asset_job("with_hooks", hooks={foo, bar})],
+        jobs=[dg.define_asset_job("with_hooks", hooks={foo, bar})],
         resources={"a": 1, "b": 2, "c": 3},
     )
     assert defs.resolve_job_def("with_hooks").hook_defs == {foo, bar}
 
     with pytest.raises(
-        DagsterInvalidDefinitionError,
+        dg.DagsterInvalidDefinitionError,
         match="resource with key 'c' required by hook 'bar'",
     ):
-        defs = Definitions(
+        defs = dg.Definitions(
             assets=[a, b],
-            jobs=[define_asset_job("with_hooks", hooks={foo, bar})],
+            jobs=[dg.define_asset_job("with_hooks", hooks={foo, bar})],
             resources={"a": 1, "b": 2},
         ).resolve_job_def("with_hooks")
 
 
 def test_partitioned_schedule():
-    partitions_def = HourlyPartitionsDefinition(start_date="2020-01-01-00:00")
-    job = define_asset_job("hourly", partitions_def=partitions_def)
+    partitions_def = dg.HourlyPartitionsDefinition(start_date="2020-01-01-00:00")
+    job = dg.define_asset_job("hourly", partitions_def=partitions_def)
 
-    schedule = build_schedule_from_partitioned_job(job)
+    schedule = dg.build_schedule_from_partitioned_job(job)
 
     spd = schedule.job.partitions_def
     assert spd == partitions_def
 
 
 def test_partitioned_schedule_on_repo():
-    partitions_def = HourlyPartitionsDefinition(start_date="2020-01-01-00:00")
-    job = define_asset_job("hourly", partitions_def=partitions_def)
+    partitions_def = dg.HourlyPartitionsDefinition(start_date="2020-01-01-00:00")
+    job = dg.define_asset_job("hourly", partitions_def=partitions_def)
 
-    schedule = build_schedule_from_partitioned_job(job)
+    schedule = dg.build_schedule_from_partitioned_job(job)
 
-    @repository
+    @dg.repository
     def my_repo():
         return [
             job,
@@ -693,18 +674,18 @@ def test_partitioned_schedule_on_repo():
 
 
 def test_intersecting_partitions_on_repo_invalid():
-    partitions_def = HourlyPartitionsDefinition(start_date="2020-01-01-00:00")
-    job = define_asset_job("hourly", partitions_def=partitions_def)
+    partitions_def = dg.HourlyPartitionsDefinition(start_date="2020-01-01-00:00")
+    job = dg.define_asset_job("hourly", partitions_def=partitions_def)
 
-    schedule = build_schedule_from_partitioned_job(job)
+    schedule = dg.build_schedule_from_partitioned_job(job)
 
-    @asset(partitions_def=DailyPartitionsDefinition(start_date="2020-01-01"))
+    @dg.asset(partitions_def=dg.DailyPartitionsDefinition(start_date="2020-01-01"))
     def d(c):
         return c
 
-    with pytest.raises(DagsterInvalidDefinitionError, match="must have the same partitions def"):
+    with pytest.raises(dg.DagsterInvalidDefinitionError, match="must have the same partitions def"):
 
-        @repository
+        @dg.repository
         def my_repo():
             return [
                 job,
@@ -717,19 +698,19 @@ def test_intersecting_partitions_on_repo_invalid():
 
 
 def test_intersecting_partitions_on_repo_valid():
-    partitions_def = HourlyPartitionsDefinition(start_date="2020-01-01-00:00")
-    partitions_def2 = DailyPartitionsDefinition(start_date="2020-01-01")
-    job = define_asset_job("hourly", partitions_def=partitions_def, selection="a++")
-    job2 = define_asset_job("daily", partitions_def=partitions_def2, selection="d")
+    partitions_def = dg.HourlyPartitionsDefinition(start_date="2020-01-01-00:00")
+    partitions_def2 = dg.DailyPartitionsDefinition(start_date="2020-01-01")
+    job = dg.define_asset_job("hourly", partitions_def=partitions_def, selection="a++")
+    job2 = dg.define_asset_job("daily", partitions_def=partitions_def2, selection="d")
 
-    schedule = build_schedule_from_partitioned_job(job)
-    schedule2 = build_schedule_from_partitioned_job(job2)
+    schedule = dg.build_schedule_from_partitioned_job(job)
+    schedule2 = dg.build_schedule_from_partitioned_job(job2)
 
-    @asset(partitions_def=partitions_def2)
+    @dg.asset(partitions_def=partitions_def2)
     def d(c):
         return c
 
-    @repository
+    @dg.repository
     def my_repo():
         return [
             job,
@@ -743,20 +724,20 @@ def test_intersecting_partitions_on_repo_valid():
 
 
 def test_job_run_request():
-    partitions_def = StaticPartitionsDefinition(["a", "b", "c", "d"])
+    partitions_def = dg.StaticPartitionsDefinition(["a", "b", "c", "d"])
 
     def partition_fn(partition_key: str):
         return {"ops": {"my_asset": {"config": {"partition": partition_key}}}}
 
-    @static_partitioned_config(partition_keys=partitions_def.get_partition_keys())
+    @dg.static_partitioned_config(partition_keys=partitions_def.get_partition_keys())
     def my_partitioned_config(partition_key: str):
         return partition_fn(partition_key)
 
-    @asset
+    @dg.asset
     def my_asset():
         pass
 
-    my_job = define_asset_job(
+    my_job = dg.define_asset_job(
         "my_job", "*", config=my_partitioned_config, partitions_def=partitions_def
     )
 
@@ -775,7 +756,7 @@ def test_job_run_request():
         assert run_request_with_tags.tags.get(PARTITION_NAME_TAG) == partition_key
         assert run_request_with_tags.tags.get("foo") == "bar"
 
-    my_job_hardcoded_config = define_asset_job(
+    my_job_hardcoded_config = dg.define_asset_job(
         "my_job_hardcoded_config",
         "*",
         config={"ops": {"my_asset": {"config": {"partition": "blabla"}}}},
@@ -791,29 +772,29 @@ def test_job_run_request():
 
 
 def test_job_partitions_def_unpartitioned_assets():
-    @asset
+    @dg.asset
     def my_asset():
         pass
 
-    my_job = define_asset_job(
-        "my_job", partitions_def=DailyPartitionsDefinition(start_date="2020-01-01")
+    my_job = dg.define_asset_job(
+        "my_job", partitions_def=dg.DailyPartitionsDefinition(start_date="2020-01-01")
     )
 
-    @repository
+    @dg.repository
     def my_repo():
         return [my_asset, my_job]
 
 
 def test_op_retry_policy():
-    ops_retry_policy = RetryPolicy(max_retries=2)
+    ops_retry_policy = dg.RetryPolicy(max_retries=2)
     tries = {"a": 0, "b": 0}
 
-    @asset
+    @dg.asset
     def a():
         tries["a"] += 1
         raise Exception()
 
-    @asset(retry_policy=RetryPolicy(max_retries=3))
+    @dg.asset(retry_policy=dg.RetryPolicy(max_retries=3))
     def b():
         tries["b"] += 1
         raise Exception()
@@ -826,21 +807,21 @@ def test_op_retry_policy():
 
 
 def test_backfill_policy():
-    partitions_def = StaticPartitionsDefinition(["a", "b", "c", "d"])
+    partitions_def = dg.StaticPartitionsDefinition(["a", "b", "c", "d"])
 
-    @asset(partitions_def=partitions_def, backfill_policy=BackfillPolicy.single_run())
+    @dg.asset(partitions_def=partitions_def, backfill_policy=BackfillPolicy.single_run())
     def foo(): ...
 
-    @asset(partitions_def=partitions_def, backfill_policy=BackfillPolicy.single_run())
+    @dg.asset(partitions_def=partitions_def, backfill_policy=BackfillPolicy.single_run())
     def bar(): ...
 
-    @asset(partitions_def=partitions_def, backfill_policy=BackfillPolicy.multi_run(2))
+    @dg.asset(partitions_def=partitions_def, backfill_policy=BackfillPolicy.multi_run(2))
     def baz(): ...
 
-    @asset
+    @dg.asset
     def qux(): ...
 
-    @asset(partitions_def=partitions_def)
+    @dg.asset(partitions_def=partitions_def)
     def pux(): ...
 
     assert create_test_asset_job([foo, bar]).backfill_policy == BackfillPolicy.single_run()
@@ -858,9 +839,9 @@ def test_backfill_policy():
         ).backfill_policy == BackfillPolicy.multi_run(1)
 
     # can't do PartitionedConfig for single-run backfills
-    with pytest.raises(DagsterInvalidDefinitionError, match="PartitionedConfig"):
+    with pytest.raises(dg.DagsterInvalidDefinitionError, match="PartitionedConfig"):
 
-        @static_partitioned_config(partition_keys=partitions_def.get_partition_keys())
+        @dg.static_partitioned_config(partition_keys=partitions_def.get_partition_keys())
         def my_partitioned_config(partition_key: str):
             return {"ops": {"foo": {"config": {"partition": partition_key}}}}
 
@@ -868,7 +849,7 @@ def test_backfill_policy():
 
 
 def test_metadata():
-    unresolved = define_asset_job("exmaple", metadata={"foo": "bar", "four": 4})
+    unresolved = dg.define_asset_job("exmaple", metadata={"foo": "bar", "four": 4})
     assert unresolved.metadata
 
     blanked = unresolved.with_metadata({})
@@ -878,6 +859,6 @@ def test_metadata():
     assert updated.metadata
     assert updated.metadata["foo"] == "baz"
 
-    defs = Definitions()
+    defs = dg.Definitions()
     resolved = updated.resolve(defs.resolve_asset_graph())
-    assert resolved.metadata["foo"] == TextMetadataValue("baz")
+    assert resolved.metadata["foo"] == dg.TextMetadataValue("baz")

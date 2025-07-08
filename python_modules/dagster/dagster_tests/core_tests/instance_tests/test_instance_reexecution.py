@@ -3,13 +3,11 @@ import os
 import dagster as dg
 import pytest
 from dagster._core.events import DagsterEventType
-from dagster._core.execution.api import execute_job
 from dagster._core.execution.plan.resume_retry import ReexecutionStrategy
 from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.storage.tags import ASSET_RESUME_RETRY_TAG, RESUME_RETRY_TAG, SYSTEM_TAG_PREFIX
 from dagster._core.test_utils import (
     environ,
-    instance_for_test,
     poll_for_finished_run,
     step_did_not_run,
     step_succeeded,
@@ -199,7 +197,7 @@ def unsubsettable_job():
 
 @pytest.fixture(name="instance", scope="module")
 def instance_fixture():
-    with instance_for_test() as instance:
+    with dg.instance_for_test() as instance:
         yield instance
 
 
@@ -231,7 +229,7 @@ def remote_job_fixture(code_location):
 def failed_run_fixture(instance):
     # trigger failure in the conditionally_fail op
     with environ({CONDITIONAL_FAIL_ENV: "1"}):
-        result = execute_job(
+        result = dg.execute_job(
             dg.reconstructable(conditional_fail_job),
             instance=instance,
             tags={"fizz": "buzz", "foo": "not bar!", f"{SYSTEM_TAG_PREFIX}run_metrics": "true"},
@@ -354,7 +352,7 @@ def test_create_reexecuted_run_from_multi_asset_failure(
 ):
     remote_job = code_location.get_repository("__repository__").get_full_job("multi_asset_fail_job")
     with environ({CONDITIONAL_FAIL_ENV: "c"}):
-        result = execute_job(dg.reconstructable(multi_asset_fail_job), instance=instance)
+        result = dg.execute_job(dg.reconstructable(multi_asset_fail_job), instance=instance)
         assert not result.success
         failed_run = instance.get_run_by_id(result.run_id)
         assert failed_run
@@ -385,7 +383,7 @@ def test_create_reexecuted_run_from_multi_asset_check_failure(
         "multi_asset_with_checks_fail_job"
     )
     with environ({CONDITIONAL_FAIL_ENV: "c_checked"}):
-        result = execute_job(
+        result = dg.execute_job(
             dg.reconstructable(multi_asset_with_checks_fail_job), instance=instance
         )
         assert not result.success
@@ -427,7 +425,7 @@ def test_create_reexecuted_run_from_multi_asset_check_failure_blocking_check(
 ):
     remote_job = code_location.get_repository("__repository__").get_full_job("blocking_check_job")
     with environ({CONDITIONAL_FAIL_ENV: "1"}):
-        result = execute_job(dg.reconstructable(blocking_check_job), instance=instance)
+        result = dg.execute_job(dg.reconstructable(blocking_check_job), instance=instance)
         assert not result.success
         failed_run = instance.get_run_by_id(result.run_id)
         assert failed_run
@@ -470,7 +468,7 @@ def test_create_reexecuted_run_from_multi_asset_check_failure_unsubsettable(
 ):
     remote_job = code_location.get_repository("__repository__").get_full_job("unsubsettable_job")
     with environ({CONDITIONAL_FAIL_ENV: "a2_unsubsettable"}):
-        result = execute_job(dg.reconstructable(unsubsettable_job), instance=instance)
+        result = dg.execute_job(dg.reconstructable(unsubsettable_job), instance=instance)
         assert not result.success
         failed_run = instance.get_run_by_id(result.run_id)
         assert failed_run

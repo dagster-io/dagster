@@ -7,28 +7,9 @@ from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
 from typing import Optional, cast
 
+import dagster as dg
 import pytest
-from dagster import (
-    Any,
-    AssetExecutionContext,
-    AssetKey,
-    DefaultScheduleStatus,
-    Field,
-    ScheduleDefinition,
-    StaticPartitionsDefinition,
-    asset,
-    build_schedule_from_partitioned_job,
-    define_asset_job,
-    graph,
-    job,
-    materialize,
-    op,
-    repository,
-    schedule,
-)
-from dagster._core.definitions.data_version import DataVersion
-from dagster._core.definitions.decorators.source_asset_decorator import observable_source_asset
-from dagster._core.definitions.run_request import RunRequest
+from dagster import AssetExecutionContext, DefaultScheduleStatus, schedule
 from dagster._core.instance import DagsterInstance
 from dagster._core.remote_representation import (
     CodeLocation,
@@ -56,7 +37,6 @@ from dagster._core.test_utils import (
     SingleThreadPoolExecutor,
     create_test_daemon_workspace_context,
     freeze_time,
-    instance_for_test,
     wait_for_futures,
 )
 from dagster._core.workspace.context import WorkspaceProcessContext
@@ -147,12 +127,12 @@ def evaluate_schedules(
     return iteration_times
 
 
-@op(config_schema={"time": str})
+@dg.op(config_schema={"time": str})
 def the_op(context):
     return "Ran at this time: {}".format(context.op_config["time"])
 
 
-@job
+@dg.job
 def the_job():
     the_op()
 
@@ -231,7 +211,7 @@ def daily_eastern_time_schedule(context):
 NUM_CALLS = {"sync": 0, "async": 0}
 
 
-def get_passes_on_retry_schedule(key: str) -> ScheduleDefinition:
+def get_passes_on_retry_schedule(key: str) -> dg.ScheduleDefinition:
     @schedule(
         cron_schedule="@daily",
         job_name="the_job",
@@ -322,7 +302,7 @@ def many_requests_schedule(context):
     REQUEST_COUNT = 15
 
     return [
-        RunRequest(run_key=str(i), run_config=_op_config(context.scheduled_execution_time))
+        dg.RunRequest(run_key=str(i), run_config=_op_config(context.scheduled_execution_time))
         for i in range(REQUEST_COUNT)
     ]
 
@@ -333,10 +313,10 @@ def many_requests_schedule(context):
     tags={"foo": "bar"},
 )
 def tags_and_eval_fn_schedule(context):
-    return RunRequest()
+    return dg.RunRequest()
 
 
-tags_and_no_eval_fn_schedule = ScheduleDefinition(
+tags_and_no_eval_fn_schedule = dg.ScheduleDefinition(
     cron_schedule="@daily",
     job_name="the_job",
     tags={"foo": "bar"},
@@ -350,10 +330,10 @@ def define_multi_run_schedule():
         else:
             date = context.scheduled_execution_time - relativedelta(days=1)
 
-        yield RunRequest(run_key="A", run_config=_op_config(date), tags={"label": "A"})
-        yield RunRequest(run_key="B", run_config=_op_config(date), tags={"label": "B"})
+        yield dg.RunRequest(run_key="A", run_config=_op_config(date), tags={"label": "A"})
+        yield dg.RunRequest(run_key="B", run_config=_op_config(date), tags={"label": "B"})
 
-    return ScheduleDefinition(
+    return dg.ScheduleDefinition(
         name="multi_run_schedule",
         cron_schedule="0 0 * * *",
         job_name="the_job",
@@ -369,10 +349,10 @@ def define_dup_run_key_schedule():
         else:
             date = context.scheduled_execution_time - relativedelta(days=1)
 
-        yield RunRequest(run_key="A", run_config=_op_config(date), tags={"label": "A"})
-        yield RunRequest(run_key="A", run_config=_op_config(date), tags={"label": "B"})
+        yield dg.RunRequest(run_key="A", run_config=_op_config(date), tags={"label": "A"})
+        yield dg.RunRequest(run_key="A", run_config=_op_config(date), tags={"label": "B"})
 
-    return ScheduleDefinition(
+    return dg.ScheduleDefinition(
         name="dup_run_key_schedule",
         cron_schedule="0 0 * * *",
         job_name="the_job",
@@ -393,8 +373,8 @@ def multi_run_list_schedule(context):
         date = context.scheduled_execution_time - relativedelta(days=1)
 
     return [
-        RunRequest(run_key="A", run_config=_op_config(date), tags={"label": "A"}),
-        RunRequest(run_key="B", run_config=_op_config(date), tags={"label": "B"}),
+        dg.RunRequest(run_key="A", run_config=_op_config(date), tags={"label": "A"}),
+        dg.RunRequest(run_key="B", run_config=_op_config(date), tags={"label": "B"}),
     ]
 
 
@@ -405,10 +385,10 @@ def define_multi_run_schedule_with_missing_run_key():
         else:
             date = context.scheduled_execution_time - relativedelta(days=1)
 
-        yield RunRequest(run_key="A", run_config=_op_config(date), tags={"label": "A"})
-        yield RunRequest(run_key=None, run_config=_op_config(date), tags={"label": "B"})
+        yield dg.RunRequest(run_key="A", run_config=_op_config(date), tags={"label": "A"})
+        yield dg.RunRequest(run_key=None, run_config=_op_config(date), tags={"label": "B"})
 
-    return ScheduleDefinition(
+    return dg.ScheduleDefinition(
         name="multi_run_schedule_with_missing_run_key",
         cron_schedule="0 0 * * *",
         job_name="the_job",
@@ -417,7 +397,7 @@ def define_multi_run_schedule_with_missing_run_key():
     )
 
 
-@repository
+@dg.repository
 def the_other_repo():
     return [
         the_job,
@@ -425,12 +405,12 @@ def the_other_repo():
     ]
 
 
-@op(config_schema=Field(Any))
+@dg.op(config_schema=dg.Field(dg.Any))
 def config_op(_):
     return 1
 
 
-@job
+@dg.job
 def config_job():
     config_op()
 
@@ -459,74 +439,74 @@ def large_schedule(_):
     }
 
 
-@op
+@dg.op
 def start(_, x):
     return x
 
 
-@op
+@dg.op
 def end(_, x=1):
     return x
 
 
-@job
+@dg.job
 def two_step_job():
     end(start())
 
 
 def define_default_config_job():
-    @op(config_schema=str)
+    @dg.op(config_schema=str)
     def my_op(context):
         assert context.op_config == "foo"
 
-    @job(config={"ops": {"my_op": {"config": "foo"}}})
+    @dg.job(config={"ops": {"my_op": {"config": "foo"}}})
     def default_config_job():
         my_op()
 
     return default_config_job
 
 
-default_config_schedule = ScheduleDefinition(
+default_config_schedule = dg.ScheduleDefinition(
     name="default_config_schedule",
     cron_schedule="* * * * *",
     job=define_default_config_job(),
 )
 
 
-@asset
+@dg.asset
 def asset1():
     return "asset1"
 
 
-@asset
+@dg.asset
 def asset2(asset1):
     return asset1 + "asset2"
 
 
-asset_job = define_asset_job("asset_job")
+asset_job = dg.define_asset_job("asset_job")
 
 
 @schedule(job=asset_job, cron_schedule="@daily")
 def asset_selection_schedule():
-    return RunRequest(asset_selection=[asset1.key])
+    return dg.RunRequest(asset_selection=[asset1.key])
 
 
 @schedule(job=asset_job, cron_schedule="@daily")
 def stale_asset_selection_schedule():
-    return RunRequest(stale_assets_only=True)
+    return dg.RunRequest(stale_assets_only=True)
 
 
-static_partition_def = StaticPartitionsDefinition(["a", "b", "c"])
+static_partition_def = dg.StaticPartitionsDefinition(["a", "b", "c"])
 
 
-@asset(partitions_def=static_partition_def)
+@dg.asset(partitions_def=static_partition_def)
 def static_partitioned_asset1(context: AssetExecutionContext):
     return f"static_partitioned_asset1[{context.partition_key}]"
 
 
-static_partitioned_asset1_schedule = build_schedule_from_partitioned_job(
+static_partitioned_asset1_schedule = dg.build_schedule_from_partitioned_job(
     name="static_partitioned_asset1_schedule",
-    job=define_asset_job(
+    job=dg.define_asset_job(
         "static_paritioned_asset1_job",
         selection=[static_partitioned_asset1],
         partitions_def=static_partition_def,
@@ -535,12 +515,12 @@ static_partitioned_asset1_schedule = build_schedule_from_partitioned_job(
 )
 
 
-@observable_source_asset
+@dg.observable_source_asset
 def source_asset():
-    return DataVersion("foo")
+    return dg.DataVersion("foo")
 
 
-observable_source_asset_job = define_asset_job(
+observable_source_asset_job = dg.define_asset_job(
     "observable_source_asset_job", selection=[source_asset]
 )
 
@@ -548,15 +528,15 @@ observable_source_asset_job = define_asset_job(
 @schedule(job=observable_source_asset_job, cron_schedule="@daily")
 def source_asset_observation_schedule():
     # pp("EVAL")
-    return RunRequest(asset_selection=[source_asset.key])
+    return dg.RunRequest(asset_selection=[source_asset.key])
 
 
-@op
+@dg.op
 def basic_op():
     return 1
 
 
-@graph
+@dg.graph
 def the_graph():
     basic_op()
 
@@ -574,20 +554,20 @@ job_no_tags_with_run_tags = the_graph.to_job(
 
 @schedule(cron_schedule="@daily", job=job_with_tags_with_run_tags)
 def job_with_tags_with_run_tags_schedule():
-    return RunRequest()
+    return dg.RunRequest()
 
 
 @schedule(cron_schedule="@daily", job=job_with_tags_no_run_tags)
 def job_with_tags_no_run_tags_schedule():
-    return RunRequest()
+    return dg.RunRequest()
 
 
 @schedule(cron_schedule="@daily", job=job_no_tags_with_run_tags)
 def job_no_tags_with_run_tags_schedule():
-    return RunRequest()
+    return dg.RunRequest()
 
 
-@repository
+@dg.repository
 def the_repo():
     return [
         the_job,
@@ -652,7 +632,7 @@ def never_running_schedule(context):
     return _op_config(context.scheduled_execution_time)
 
 
-@repository
+@dg.repository
 def the_status_in_code_repo():
     return [
         the_job,
@@ -774,7 +754,7 @@ def _get_unloadable_workspace_load_target():
 
 def test_settings():
     settings = {"use_threads": True, "num_workers": 4}
-    with instance_for_test(overrides={"schedules": settings}) as thread_inst:
+    with dg.instance_for_test(overrides={"schedules": settings}) as thread_inst:
         assert thread_inst.get_settings("schedules") == settings
 
 
@@ -1336,7 +1316,7 @@ def test_launch_failure(
     remote_repo: RemoteRepository,
     executor: ThreadPoolExecutor,
 ):
-    with instance_for_test(
+    with dg.instance_for_test(
         overrides={
             "run_launcher": {
                 "module": "dagster._core.test_utils",
@@ -2936,7 +2916,7 @@ class TestSchedulerRun:
 
             wait_for_all_runs_to_start(scheduler_instance)
             run = next(iter(scheduler_instance.get_runs()))
-            assert run.asset_selection == {AssetKey("asset1")}
+            assert run.asset_selection == {dg.AssetKey("asset1")}
 
             validate_run_started(
                 scheduler_instance, run, execution_time=create_datetime(2019, 2, 28)
@@ -2965,7 +2945,7 @@ class TestSchedulerRun:
                 (r for r in scheduler_instance.get_runs() if r.job_name == "asset_job"), None
             )
             assert schedule_run is not None
-            assert schedule_run.asset_selection == {AssetKey("asset1"), AssetKey("asset2")}
+            assert schedule_run.asset_selection == {dg.AssetKey("asset1"), dg.AssetKey("asset2")}
             validate_run_started(
                 scheduler_instance, schedule_run, execution_time=create_datetime(2019, 2, 28)
             )
@@ -2984,7 +2964,7 @@ class TestSchedulerRun:
         with freeze_time(freeze_datetime):
             scheduler_instance.start_schedule(schedule)
 
-        materialize([asset1, asset2], instance=scheduler_instance)
+        dg.materialize([asset1, asset2], instance=scheduler_instance)
 
         # assets previously materialized so we expect empy set
         freeze_datetime = freeze_datetime + relativedelta(seconds=2)
@@ -3010,7 +2990,7 @@ class TestSchedulerRun:
         with freeze_time(freeze_datetime):
             scheduler_instance.start_schedule(schedule)
 
-        materialize([asset1], instance=scheduler_instance)
+        dg.materialize([asset1], instance=scheduler_instance)
 
         # assets previously materialized so we expect empy set
         freeze_datetime = freeze_datetime + relativedelta(seconds=2)
@@ -3021,7 +3001,7 @@ class TestSchedulerRun:
                 (r for r in scheduler_instance.get_runs() if r.job_name == "asset_job"), None
             )
             assert schedule_run is not None
-            assert schedule_run.asset_selection == {AssetKey("asset2")}
+            assert schedule_run.asset_selection == {dg.AssetKey("asset2")}
             validate_run_started(
                 scheduler_instance, schedule_run, execution_time=create_datetime(2019, 2, 28)
             )
@@ -3063,7 +3043,7 @@ class TestSchedulerRun:
 
             wait_for_all_runs_to_start(scheduler_instance)
             run = next(iter(scheduler_instance.get_runs()))
-            assert run.asset_selection == {AssetKey("source_asset")}
+            assert run.asset_selection == {dg.AssetKey("source_asset")}
 
             validate_run_started(
                 scheduler_instance, run, execution_time=create_datetime(2019, 2, 28)

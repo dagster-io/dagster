@@ -574,6 +574,23 @@ def _sample_complex_asset_defs():
     def epsilon(delta):
         pass
 
+    @dg.asset(deps=[alpha, beta, delta, epsilon])
+    def omega():
+        """This is omega asset and it has a very very very long description that should be truncated.
+
+        Wow look at all this amazing context that should very much not all show up in the output because
+        it's far too long. This really should be truncated because there's no way anyone wants to read
+        this much output in tabular form, it's simply too much.
+
+        Args:
+            fake_arg (Optional[str]): A fake argument wow very unimportant.
+            fake_arg_2 (Optional[str]): A fake argument wow very unimportant as well.
+
+        Raises:
+            ValueError: If the fake argument is not None.
+        """
+        pass
+
     @dg.asset_check(asset=alpha)
     def alpha_check() -> dg.AssetCheckResult:
         """This check is for alpha."""
@@ -737,6 +754,32 @@ def test_list_env_succeeds(monkeypatch):
 def test_list_envs_aliases(alias: str):
     with ProxyRunner.test() as runner:
         assert_runner_result(runner.invoke("list", alias, "--help"))
+
+
+def test_list_env_succeeds_with_no_defs(monkeypatch):
+    with (
+        ProxyRunner.test(use_fixed_test_components=True) as runner,
+        isolated_example_project_foo_bar(runner, in_workspace=False, uv_sync=False),
+        tempfile.TemporaryDirectory() as cloud_config_dir,
+    ):
+        shutil.rmtree(Path("src") / "foo_bar" / "defs")
+
+        monkeypatch.setenv("DG_CLI_CONFIG", str(Path(cloud_config_dir) / "dg.toml"))
+        monkeypatch.setenv("DAGSTER_CLOUD_CLI_CONFIG", str(Path(cloud_config_dir) / "config"))
+
+        Path(".env").write_text("FOO=bar")
+        result = runner.invoke("list", "env")
+        assert_runner_result(result)
+        assert (
+            result.output.strip()
+            == textwrap.dedent("""
+               ┏━━━━━━━━━┳━━━━━━━┳━━━━━━━━━━━━┓
+               ┃ Env Var ┃ Value ┃ Components ┃
+               ┡━━━━━━━━━╇━━━━━━━╇━━━━━━━━━━━━┩
+               │ FOO     │ ✓     │            │
+               └─────────┴───────┴────────────┘
+        """).strip()
+        )
 
 
 # ########################

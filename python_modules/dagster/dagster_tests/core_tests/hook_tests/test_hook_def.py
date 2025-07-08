@@ -1,34 +1,19 @@
 from collections import defaultdict
 from unittest import mock
 
+import dagster as dg
 import pytest
-from dagster import (
-    DagsterEventType,
-    GraphDefinition,
-    JobDefinition,
-    NodeInvocation,
-    build_hook_context,
-    execute_job,
-    graph,
-    job,
-    op,
-    reconstructable,
-    resource,
-)
-from dagster._core.definitions import NodeHandle, failure_hook, success_hook
+from dagster import DagsterEventType
+from dagster._core.definitions import NodeHandle
 from dagster._core.definitions.decorators.hook_decorator import event_list_hook
 from dagster._core.definitions.events import HookExecutionResult
-from dagster._core.definitions.policy import RetryPolicy
-from dagster._core.errors import DagsterExecutionInterruptedError, DagsterInvalidDefinitionError
-from dagster._core.instance import DagsterInstance
-from dagster._core.test_utils import instance_for_test
 
 
 class SomeUserException(Exception):
     pass
 
 
-@resource
+@dg.resource
 def resource_a(_init_context):
     return 1
 
@@ -47,14 +32,16 @@ def test_hook():
         called[context.hook_def.name] = context.op.name
         return HookExecutionResult(hook_name="a_hook")
 
-    @op
+    @dg.op
     def a_op(_):
         pass
 
-    a_job = GraphDefinition(
+    a_job = dg.GraphDefinition(
         node_defs=[a_op],
         name="test",
-        dependencies={NodeInvocation("a_op", "a_op_with_hook", hook_defs={a_hook, named_hook}): {}},
+        dependencies={
+            dg.NodeInvocation("a_op", "a_op_with_hook", hook_defs={a_hook, named_hook}): {}
+        },
     )
 
     result = a_job.execute_in_process()
@@ -75,14 +62,14 @@ def test_hook_user_error():
     def error_hook(context, _):
         raise SomeUserException()
 
-    @op
+    @dg.op
     def a_op(_):
         return 1
 
-    a_job = GraphDefinition(
+    a_job = dg.GraphDefinition(
         node_defs=[a_op],
         name="test",
-        dependencies={NodeInvocation("a_op", "a_op_with_hook", hook_defs={error_hook}): {}},
+        dependencies={dg.NodeInvocation("a_op", "a_op_with_hook", hook_defs={error_hook}): {}},
     )
 
     result = a_job.execute_in_process()
@@ -96,19 +83,19 @@ def test_hook_user_error():
 
 
 def test_hook_decorator_arg_error():
-    with pytest.raises(DagsterInvalidDefinitionError, match="does not have required positional"):
+    with pytest.raises(dg.DagsterInvalidDefinitionError, match="does not have required positional"):
 
-        @success_hook  # pyright: ignore[reportArgumentType]
+        @dg.success_hook  # pyright: ignore[reportArgumentType]
         def _():
             pass
 
-    with pytest.raises(DagsterInvalidDefinitionError, match="does not have required positional"):
+    with pytest.raises(dg.DagsterInvalidDefinitionError, match="does not have required positional"):
 
-        @failure_hook  # pyright: ignore[reportCallIssue,reportArgumentType]
+        @dg.failure_hook  # pyright: ignore[reportCallIssue,reportArgumentType]
         def _():
             pass
 
-    with pytest.raises(DagsterInvalidDefinitionError, match="does not have required positional"):
+    with pytest.raises(dg.DagsterInvalidDefinitionError, match="does not have required positional"):
 
         @event_list_hook()
         def _(_):
@@ -124,14 +111,14 @@ def test_hook_with_resource():
         assert context.resources.resource_a == 1
         return HookExecutionResult(hook_name="a_hook")
 
-    @op
+    @dg.op
     def a_op(_):
         pass
 
-    a_job = GraphDefinition(
+    a_job = dg.GraphDefinition(
         node_defs=[a_op],
         name="test",
-        dependencies={NodeInvocation("a_op", "a_op_with_hook", hook_defs={a_hook}): {}},
+        dependencies={dg.NodeInvocation("a_op", "a_op_with_hook", hook_defs={a_hook}): {}},
     ).to_job(resource_defs={"resource_a": resource_a})
 
     result = a_job.execute_in_process()
@@ -144,59 +131,59 @@ def test_hook_resource_error():
     def a_hook(context, event_list):
         return HookExecutionResult(hook_name="a_hook")
 
-    @op
+    @dg.op
     def a_op(_):
         pass
 
     with pytest.raises(
-        DagsterInvalidDefinitionError,
+        dg.DagsterInvalidDefinitionError,
         match=(
             "resource with key 'resource_b' required by hook 'a_hook' attached to op"
             " 'a_op_with_hook' was not provided"
         ),
     ):
-        GraphDefinition(
+        dg.GraphDefinition(
             node_defs=[a_op],
             name="test",
-            dependencies={NodeInvocation("a_op", "a_op_with_hook", hook_defs={a_hook}): {}},
+            dependencies={dg.NodeInvocation("a_op", "a_op_with_hook", hook_defs={a_hook}): {}},
         ).to_job(resource_defs={"resource_a": resource_a})
 
 
 def test_success_hook():
     called_hook_to_ops = defaultdict(list)
 
-    @success_hook
+    @dg.success_hook
     def a_success_hook(context):
         called_hook_to_ops[context.hook_def.name].append(context.op.name)
 
-    @success_hook(name="a_named_success_hook")
+    @dg.success_hook(name="a_named_success_hook")
     def named_success_hook(context):
         called_hook_to_ops[context.hook_def.name].append(context.op.name)
 
-    @success_hook(required_resource_keys={"resource_a"})
+    @dg.success_hook(required_resource_keys={"resource_a"})
     def success_hook_resource(context):
         called_hook_to_ops[context.hook_def.name].append(context.op.name)
         assert context.resources.resource_a == 1
 
-    @op
+    @dg.op
     def succeeded_op(_):
         pass
 
-    @op
+    @dg.op
     def failed_op(_):
         # this op shouldn't trigger success hooks
         raise SomeUserException()
 
-    a_job = GraphDefinition(
+    a_job = dg.GraphDefinition(
         node_defs=[succeeded_op, failed_op],
         name="test",
         dependencies={
-            NodeInvocation(
+            dg.NodeInvocation(
                 "succeeded_op",
                 "succeeded_op_with_hook",
                 hook_defs={a_success_hook, named_success_hook, success_hook_resource},
             ): {},
-            NodeInvocation(
+            dg.NodeInvocation(
                 "failed_op",
                 "failed_op_with_hook",
                 hook_defs={a_success_hook, named_success_hook},
@@ -218,39 +205,39 @@ def test_success_hook():
 def test_failure_hook():
     called_hook_to_ops = defaultdict(list)
 
-    @failure_hook
+    @dg.failure_hook
     def a_failure_hook(context):
-        assert isinstance(context.instance, DagsterInstance)
+        assert isinstance(context.instance, dg.DagsterInstance)
         called_hook_to_ops[context.hook_def.name].append(context.op.name)
 
-    @failure_hook(name="a_named_failure_hook")
+    @dg.failure_hook(name="a_named_failure_hook")
     def named_failure_hook(context):
         called_hook_to_ops[context.hook_def.name].append(context.op.name)
 
-    @failure_hook(required_resource_keys={"resource_a"})
+    @dg.failure_hook(required_resource_keys={"resource_a"})
     def failure_hook_resource(context):
         called_hook_to_ops[context.hook_def.name].append(context.op.name)
         assert context.resources.resource_a == 1
 
-    @op
+    @dg.op
     def succeeded_op(_):
         # this op shouldn't trigger failure hooks
         pass
 
-    @op
+    @dg.op
     def failed_op(_):
         raise SomeUserException()
 
-    a_job = GraphDefinition(
+    a_job = dg.GraphDefinition(
         node_defs=[failed_op, succeeded_op],
         name="test",
         dependencies={
-            NodeInvocation(
+            dg.NodeInvocation(
                 "failed_op",
                 "failed_op_with_hook",
                 hook_defs={a_failure_hook, named_failure_hook, failure_hook_resource},
             ): {},
-            NodeInvocation(
+            dg.NodeInvocation(
                 "succeeded_op",
                 "succeeded_op_with_hook",
                 hook_defs={a_failure_hook, named_failure_hook},
@@ -271,16 +258,16 @@ def test_failure_hook():
 def test_failure_hook_framework_exception():
     called_hook_to_ops = defaultdict(list)
 
-    @failure_hook
+    @dg.failure_hook
     def a_failure_hook(context):
         called_hook_to_ops[context.hook_def.name].append(context.op.name)
 
-    @op
+    @dg.op
     def my_op(_):
         # this op shouldn't trigger failure hooks
         pass
 
-    @job(hooks={a_failure_hook})
+    @dg.job(hooks={a_failure_hook})
     def my_job():
         my_op()
 
@@ -298,7 +285,7 @@ def test_failure_hook_framework_exception():
         called_hook_to_ops = defaultdict(list)
 
         # Does not run if the execution is interrupted
-        mocked_event_sequence.side_effect = DagsterExecutionInterruptedError(
+        mocked_event_sequence.side_effect = dg.DagsterExecutionInterruptedError(
             "Execution interrupted during execution"
         )
 
@@ -310,24 +297,24 @@ def test_failure_hook_framework_exception():
 
 
 def test_success_hook_event():
-    @success_hook
+    @dg.success_hook
     def a_hook(_):
         pass
 
-    @op
+    @dg.op
     def a_op(_):
         pass
 
-    @op
+    @dg.op
     def failed_op(_):
         raise SomeUserException()
 
-    a_job = GraphDefinition(
+    a_job = dg.GraphDefinition(
         node_defs=[a_op, failed_op],
         name="test",
         dependencies={
-            NodeInvocation("a_op", hook_defs={a_hook}): {},
-            NodeInvocation("failed_op", hook_defs={a_hook}): {},
+            dg.NodeInvocation("a_op", hook_defs={a_hook}): {},
+            dg.NodeInvocation("failed_op", hook_defs={a_hook}): {},
         },
     )
 
@@ -345,24 +332,24 @@ def test_success_hook_event():
 
 
 def test_failure_hook_event():
-    @failure_hook
+    @dg.failure_hook
     def a_hook(_):
         pass
 
-    @op
+    @dg.op
     def a_op(_):
         pass
 
-    @op
+    @dg.op
     def failed_op(_):
         raise SomeUserException()
 
-    a_job = GraphDefinition(
+    a_job = dg.GraphDefinition(
         node_defs=[a_op, failed_op],
         name="test",
         dependencies={
-            NodeInvocation("a_op", hook_defs={a_hook}): {},
-            NodeInvocation("failed_op", hook_defs={a_hook}): {},
+            dg.NodeInvocation("a_op", hook_defs={a_hook}): {},
+            dg.NodeInvocation("failed_op", hook_defs={a_hook}): {},
         },
     )
 
@@ -379,60 +366,60 @@ def test_failure_hook_event():
             assert event.node_name == "a_op"
 
 
-@op
+@dg.op
 def noop(_):
     return
 
 
-@success_hook
+@dg.success_hook
 def noop_hook(_):
     return
 
 
 @noop_hook
-@job
+@dg.job
 def foo():
     noop()
 
 
 def test_jobs_with_hooks_are_reconstructable():
-    assert reconstructable(foo)
+    assert dg.reconstructable(foo)
 
 
 def test_hook_decorator():
     called_hook_to_ops = defaultdict(list)
 
-    @success_hook
+    @dg.success_hook
     def a_success_hook(context):
         called_hook_to_ops[context.hook_def.name].append(context.op.name)
 
-    @op
+    @dg.op
     def a_op(_):
         pass
 
     @a_success_hook
-    @job(
+    @dg.job(
         description="i am a job",
-        op_retry_policy=RetryPolicy(max_retries=3),
+        op_retry_policy=dg.RetryPolicy(max_retries=3),
         tags={"foo": "FOO"},
     )
     def a_job():
         a_op()
 
-    assert isinstance(a_job, JobDefinition)
+    assert isinstance(a_job, dg.JobDefinition)
     assert a_job.tags
     assert a_job.tags.get("foo") == "FOO"
     assert a_job.tags.get("foo") == "FOO"
     assert a_job.description == "i am a job"
     retry_policy = a_job.get_retry_policy_for_handle(NodeHandle("a_op", parent=None))
-    assert isinstance(retry_policy, RetryPolicy)
+    assert isinstance(retry_policy, dg.RetryPolicy)
     assert retry_policy.max_retries == 3
 
 
 def test_hook_with_resource_to_resource_dep():
     called = {}
 
-    @resource(required_resource_keys={"resource_a"})
+    @dg.resource(required_resource_keys={"resource_a"})
     def resource_b(context):
         return context.resources.resource_a
 
@@ -442,12 +429,12 @@ def test_hook_with_resource_to_resource_dep():
         assert context.resources.resource_b == 1
         return HookExecutionResult(hook_name="a_hook")
 
-    @op
+    @dg.op
     def basic_op():
         pass
 
     # Check that resource-to-resource dependency is caught when providing hook to op
-    @job(resource_defs={"resource_a": resource_a, "resource_b": resource_b})
+    @dg.job(resource_defs={"resource_a": resource_a, "resource_b": resource_b})
     def basic_job():
         basic_op.with_hooks({hook_requires_b})()
 
@@ -456,7 +443,7 @@ def test_hook_with_resource_to_resource_dep():
     assert called.get("basic_op")
 
     # Check that resource-to-resource dependency is caught when providing hook to job
-    @job(resource_defs={"resource_a": resource_a, "resource_b": resource_b})
+    @dg.job(resource_defs={"resource_a": resource_a, "resource_b": resource_b})
     def basic_job_gonna_use_hooks():
         basic_op()
 
@@ -472,27 +459,27 @@ def test_hook_graph_job_op():
     called = {}
     op_output = "hook_op_output"
 
-    @success_hook(required_resource_keys={"resource_a"})
+    @dg.success_hook(required_resource_keys={"resource_a"})
     def hook_one(context):
         assert context.op.name
         called[context.hook_def.name] = called.get(context.hook_def.name, 0) + 1
 
-    @success_hook()
+    @dg.success_hook()
     def hook_two(context):
         assert not context.op_config
         assert not context.op_exception
         assert context.op_output_values["result"] == op_output
         called[context.hook_def.name] = called.get(context.hook_def.name, 0) + 1
 
-    @op
+    @dg.op
     def hook_op(_):
         return op_output
 
-    ctx = build_hook_context(resources={"resource_a": resource_a}, op=hook_op)
+    ctx = dg.build_hook_context(resources={"resource_a": resource_a}, op=hook_op)
     hook_one(ctx)
     assert called.get("hook_one") == 1
 
-    @graph
+    @dg.graph
     def run_success_hook():
         hook_op.with_hooks({hook_one, hook_two})()
 
@@ -503,27 +490,27 @@ def test_hook_graph_job_op():
     assert called.get("hook_two") == 1
 
 
-@success_hook(required_resource_keys={"resource_a"})
+@dg.success_hook(required_resource_keys={"resource_a"})
 def res_hook(context):
     assert context.resources.resource_a == 1
 
 
-@op
+@dg.op
 def emit():
     return 1
 
 
-@graph
+@dg.graph
 def nested():
     emit.with_hooks({res_hook})()
 
 
-@graph
+@dg.graph
 def nested_two():
     nested()
 
 
-@job(resource_defs={"resource_a": resource_a})
+@dg.job(resource_defs={"resource_a": resource_a})
 def res_hook_job():
     nested_two()
 
@@ -532,22 +519,22 @@ def test_multiproc_hook_resource_deps():
     assert nested.execute_in_process(resources={"resource_a": resource_a}).success
     assert res_hook_job.execute_in_process().success
 
-    with instance_for_test() as instance:
-        assert execute_job(reconstructable(res_hook_job), instance=instance).success
+    with dg.instance_for_test() as instance:
+        assert dg.execute_job(dg.reconstructable(res_hook_job), instance=instance).success
 
 
 def test_hook_decorator_graph_job_op():
     called_hook_to_ops = defaultdict(list)
 
-    @success_hook
+    @dg.success_hook
     def a_success_hook(context):
         called_hook_to_ops[context.hook_def.name].append(context.op.name)
 
-    @op
+    @dg.op
     def my_op(_):
         pass
 
-    @graph
+    @dg.graph
     def a_graph():
         my_op()
 
@@ -558,11 +545,11 @@ def test_hook_decorator_graph_job_op():
 def test_job_hook_context_job_name():
     my_job_name = "my_test_job_name"
 
-    @success_hook
+    @dg.success_hook
     def a_success_hook(context):
         assert context.job_name == my_job_name
 
-    @graph
+    @dg.graph
     def a_graph():
         pass
 

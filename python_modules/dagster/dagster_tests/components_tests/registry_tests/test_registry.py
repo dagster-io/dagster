@@ -9,8 +9,8 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import Callable, Optional
 
+import dagster as dg
 import pytest
-from dagster import Component
 from dagster._core.test_utils import ensure_dagster_tests_import
 from dagster._utils import pushd
 from dagster.components.core.package_entry import (
@@ -117,14 +117,12 @@ def test_components_from_dagster():
     sling_root = _get_editable_package_root("dagster-sling")
 
     # No extras
-    with _temp_venv(
-        [
-            *common_deps,
-        ]
-    ) as python_executable:
+    with _temp_venv([*common_deps]) as python_executable:
         component_types = _get_component_types_in_python_environment(python_executable)
         assert "dagster_dbt.DbtProjectComponent" not in component_types
         assert "dagster_sling.SlingReplicationCollectionComponent" not in component_types
+        for t in ["FunctionComponent", "PythonScriptComponent", "UvRunComponent"]:
+            assert f"dagster.{t}" in component_types
 
     with _temp_venv([*common_deps, "-e", dbt_root]) as python_executable:
         component_types = _get_component_types_in_python_environment(python_executable)
@@ -132,6 +130,10 @@ def test_components_from_dagster():
         assert "dagster_sling.SlingReplicationCollectionComponent" not in component_types
 
     with _temp_venv([*common_deps, "-e", sling_root]) as python_executable:
+        python = get_venv_executable(python_executable, "python")
+        # Sling prints when it downloads its executable - this ensures we don't get that
+        # stdout when listing the component types subsequently.
+        subprocess.check_call([str(python), "-c", "import dagster_sling"])
         component_types = _get_component_types_in_python_environment(python_executable)
         assert "dagster_dbt.DbtProjectComponent" not in component_types
         assert "dagster_sling.SlingReplicationCollectionComponent" in component_types
@@ -140,7 +142,7 @@ def test_components_from_dagster():
 def test_all_components_have_defined_summary():
     registry = discover_entry_point_package_objects()
     for component_name, component_type in registry.items():
-        if isinstance(component_type, type) and issubclass(component_type, Component):
+        if isinstance(component_type, type) and issubclass(component_type, dg.Component):
             assert get_package_entry_snap(EnvRegistryKey("a", "a"), component_type).summary, (
                 f"Component {component_name} has no summary defined"
             )

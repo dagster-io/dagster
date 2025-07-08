@@ -1,16 +1,16 @@
-from dagster import job, op, repository
+import dagster as dg
 
 
-@op
+@dg.op
 def my_op():
     pass
 
 
-@job
+@dg.job
 def my_job():
     my_op()
 
 
-@repository
+@dg.repository
 def my_repo():
     return [my_job, my_job]

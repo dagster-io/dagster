@@ -87,11 +87,3 @@ def daily_regional_sales_schedule(context):
         )
         for region in region_partitions.get_partition_keys()
     ]
-
-
-# Define the Definitions object
-defs = dg.Definitions(
-    assets=[daily_regional_sales_data, daily_regional_sales_summary],
-    jobs=[daily_regional_sales_job],
-    schedules=[daily_regional_sales_schedule],
-)

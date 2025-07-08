@@ -9,7 +9,7 @@ This library provides an integration with the `BigQuery <https://cloud.google.co
 
 Related Guides:
 
-* `Using Dagster with BigQuery <https://docs.dagster.io/integrations/libraries/gcp/bigquery/>`_
+* `Using Dagster with BigQuery <https://docs.dagster.io/integrations/libraries/gcp/bigquery>`_
 * `BigQuery I/O manager reference <https://docs.dagster.io/integrations/libraries/gcp/bigquery/reference>`_
 
 

@@ -114,7 +114,7 @@ class ConfigurableIOManagerFactory(ConfigurableResourceFactory, Generic[TResValu
                 with database.connect(username, password) as connection:
                     return MyExternalIOManager(connection)
 
-        defs = Definitions(
+        Definitions(
             ...,
             resources={
                 "io_manager": ConfigurableExternalIOManager(
@@ -222,7 +222,7 @@ class ConfigurableIOManager(ConfigurableIOManagerFactory, IOManager):
             def load_input(self, context):
                 return read_csv(self._get_path(context))
 
-        defs = Definitions(
+        Definitions(
             ...,
             resources={
                 "io_manager": MyIOManager(path_prefix=["my", "prefix"])

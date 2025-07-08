@@ -1,10 +1,10 @@
+import dagster as dg
 import pytest
-from dagster import DagsterInvalidDefinitionError, op
 from dagster._utils.test import wrap_op_in_graph_and_execute
 
 
 def test_execute_op():
-    @op(required_resource_keys={"foo"}, config_schema=int)
+    @dg.op(required_resource_keys={"foo"}, config_schema=int)
     def the_op(context, x: int) -> int:
         return context.resources.foo + x + context.op_config
 
@@ -16,7 +16,7 @@ def test_execute_op():
     )
     assert result.success
     assert result.output_value() == 18
-    with pytest.raises(DagsterInvalidDefinitionError):
+    with pytest.raises(dg.DagsterInvalidDefinitionError):
         wrap_op_in_graph_and_execute(
             the_op,
             resources={"foo": 5},

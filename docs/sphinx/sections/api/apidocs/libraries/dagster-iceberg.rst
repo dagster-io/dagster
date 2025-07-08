@@ -1,10 +1,10 @@
 Iceberg (dagster-iceberg)
 -------------------------
 
-This library provides an integration with the `Iceberg <https://iceberg.apache.org/>`_ table
+This library provides an integration with the `Iceberg <https://iceberg.apache.org>`_ table
 format.
 
-For more information on getting started, see the `Dagster & Iceberg <https://docs.dagster.io/integrations/libraries/iceberg/>`_ documentation.
+For more information on getting started, see the `Dagster & Iceberg <https://docs.dagster.io/integrations/libraries/iceberg>`_ documentation.
 
 **Note:** This is a community-supported integration. For support, see the `Dagster Community Integrations repository <https://github.com/dagster-io/community-integrations/tree/main/libraries/dagster-iceberg>`_.
 

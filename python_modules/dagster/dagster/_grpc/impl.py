@@ -15,12 +15,12 @@ from dagster._core.definitions import ScheduleEvaluationContext
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.job_definition import JobDefinition
-from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
-from dagster._core.definitions.partition import (
+from dagster._core.definitions.partitions.definition import (
     DynamicPartitionsDefinition,
-    PartitionedConfig,
+    MultiPartitionsDefinition,
     PartitionsDefinition,
 )
+from dagster._core.definitions.partitions.partitioned_config import PartitionedConfig
 from dagster._core.definitions.reconstruct import ReconstructableJob, ReconstructableRepository
 from dagster._core.definitions.repository_definition import RepositoryDefinition
 from dagster._core.definitions.sensor_definition import SensorEvaluationContext

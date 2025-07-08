@@ -1,11 +1,11 @@
 from datetime import timedelta
 
 from dagster import asset
-from dagster._core.definitions.freshness import InternalFreshnessPolicy
+from dagster.preview.freshness import FreshnessPolicy
 
 
 @asset(
-    internal_freshness_policy=InternalFreshnessPolicy.cron(
+    freshness_policy=FreshnessPolicy.cron(
         deadline_cron="0 10 * * *",
         lower_bound_delta=timedelta(hours=1),
         timezone="America/Los_Angeles",

@@ -18,7 +18,7 @@ from dagster import (
     DagsterInvalidDefinitionError,
     DagsterInvariantViolationError,
     DefaultScheduleStatus,
-    FreshnessPolicy,
+    LegacyFreshnessPolicy,
     OpExecutionContext,
     RunConfig,
     ScheduleDefinition,
@@ -587,12 +587,14 @@ def default_owners_from_dbt_resource_props(
     return [owner]
 
 
-def default_freshness_policy_fn(dbt_resource_props: Mapping[str, Any]) -> Optional[FreshnessPolicy]:
+def default_freshness_policy_fn(
+    dbt_resource_props: Mapping[str, Any],
+) -> Optional[LegacyFreshnessPolicy]:
     dagster_metadata = dbt_resource_props.get("meta", {}).get("dagster", {})
     freshness_policy_config = dagster_metadata.get("freshness_policy", {})
 
     freshness_policy = (
-        FreshnessPolicy(
+        LegacyFreshnessPolicy(
             maximum_lag_minutes=float(freshness_policy_config["maximum_lag_minutes"]),
             cron_schedule=freshness_policy_config.get("cron_schedule"),
             cron_schedule_timezone=freshness_policy_config.get("cron_schedule_timezone"),
@@ -658,12 +660,17 @@ def default_asset_check_fn(
         for parent_id in parent_unique_ids
     }
     additional_deps.discard(asset_key)
+
+    severity = test_resource_props.get("config", {}).get("severity", "error")
+    blocking = severity.lower() == "error"
+
     return AssetCheckSpec(
         name=test_resource_props["name"],
         asset=asset_key,
         description=test_resource_props.get("meta", {}).get("description"),
         additional_deps=additional_deps,
         metadata={DAGSTER_DBT_UNIQUE_ID_METADATA_KEY: test_unique_id},
+        blocking=blocking,
     )
 
 

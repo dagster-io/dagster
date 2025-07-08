@@ -31,6 +31,7 @@ from dagster_shared.serdes.objects.definition_metadata import (
 )
 from dagster_shared.utils.warnings import disable_dagster_warnings
 from rich.console import Console
+from rich.text import Text
 
 from dagster_dg_cli.utils.plus import gql
 from dagster_dg_cli.utils.plus.gql_client import DagsterPlusGraphQLClient
@@ -208,6 +209,13 @@ class DefsColumn(str, Enum):
     TAGS = "tags"
     METADATA = "metadata"
     CRON = "cron"
+    IS_EXECUTABLE = "is_executable"
+
+
+# columns that are potentially truncated
+_TRUNCATED_COLUMN_WIDTHS = {
+    DefsColumn.DESCRIPTION: 100,
+}
 
 
 class DefsType(str, Enum):
@@ -246,6 +254,8 @@ def _supports_column(column: DefsColumn, defs_type: DefsType) -> bool:
         return defs_type in (DefsType.ASSET,)
     elif column == DefsColumn.CRON:
         return defs_type in (DefsType.SCHEDULE,)
+    elif column == DefsColumn.IS_EXECUTABLE:
+        return defs_type in (DefsType.ASSET,)
     else:
         raise ValueError(f"Invalid column: {column}")
 
@@ -265,6 +275,8 @@ def _get_asset_value(column: DefsColumn, asset: DgAssetMetadata) -> Optional[str
         return "\n".join(k if not v else f"{k}: {v}" for k, v in asset.tags)
     elif column == DefsColumn.METADATA:
         return "\n".join(k if not v else f"{k}: {v}" for k, v in asset.metadata)
+    elif column == DefsColumn.IS_EXECUTABLE:
+        return str(asset.is_executable)
     else:
         raise ValueError(f"Invalid column: {column}")
 
@@ -322,20 +334,26 @@ GET_VALUE_BY_DEFS_TYPE = {
 }
 
 
-def _get_value(
-    column: DefsColumn,
-    defs_type: DefsType,
-    defn: Any,
-) -> Optional[str]:
-    return GET_VALUE_BY_DEFS_TYPE[defs_type](column, defn)
+def _get_value(column: DefsColumn, defs_type: DefsType, defn: Any) -> Optional[Text]:
+    raw_value = GET_VALUE_BY_DEFS_TYPE[defs_type](column, defn)
+    value = Text(raw_value) if raw_value else None
+    if value and column in _TRUNCATED_COLUMN_WIDTHS:
+        value.truncate(max_width=_TRUNCATED_COLUMN_WIDTHS[column], overflow="ellipsis")
+    return value
 
 
 def _get_table(columns: Sequence[DefsColumn], defs_type: DefsType, defs: Sequence[Any]) -> "Table":
     columns_to_display = [column for column in columns if _supports_column(column, defs_type)]
-    table = DagsterInnerTable([column.value.capitalize() for column in columns_to_display])
+    table = DagsterInnerTable(
+        [column.value.replace("_", " ").capitalize() for column in columns_to_display]
+    )
     table.columns[-1].max_width = 100
 
-    for defn in sorted(defs, key=lambda x: _get_value(DefsColumn.KEY, defs_type, x) or ""):
+    for column_type, table_column in zip(columns_to_display, table.columns):
+        if column_type in _TRUNCATED_COLUMN_WIDTHS:
+            table_column.max_width = _TRUNCATED_COLUMN_WIDTHS[column_type]
+
+    for defn in sorted(defs, key=lambda x: str(_get_value(DefsColumn.KEY, defs_type, x))):
         table.add_row(
             *(_get_value(column, defs_type, defn) for column in columns_to_display),
         )

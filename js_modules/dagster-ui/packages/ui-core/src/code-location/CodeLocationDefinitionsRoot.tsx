@@ -17,7 +17,7 @@ interface Props {
 
 export const CodeLocationDefinitionsRoot = (props: Props) => {
   const {repoAddress, repository} = props;
-  const {locationEntries, loading} = useContext(WorkspaceContext);
+  const {locationEntries, loadingNonAssets: loading} = useContext(WorkspaceContext);
   const locationEntry = locationEntries.find((entry) => entry.name === repoAddress.location);
 
   if (!locationEntry) {

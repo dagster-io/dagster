@@ -1,3 +1,4 @@
+import asyncio
 from collections import defaultdict
 from collections.abc import Iterable, Iterator, Mapping, Sequence, Set
 from datetime import datetime
@@ -18,7 +19,7 @@ from dagster._core.definitions.automation_condition_sensor_definition import (
 from dagster._core.definitions.backfill_policy import BackfillPolicy
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.metadata import MetadataValue
-from dagster._core.definitions.partition import PartitionsDefinition
+from dagster._core.definitions.partitions.definition import PartitionsDefinition
 from dagster._core.definitions.run_request import InstigatorType
 from dagster._core.definitions.schedule_definition import DefaultScheduleStatus
 from dagster._core.definitions.selector import (
@@ -36,6 +37,7 @@ from dagster._core.definitions.sensor_definition import (
 from dagster._core.definitions.utils import get_default_automation_condition_sensor_selection
 from dagster._core.execution.plan.handle import ResolvedFromDynamicStepHandle, StepHandle
 from dagster._core.instance import DagsterInstance
+from dagster._core.loader import LoadableBy
 from dagster._core.origin import JobPythonOrigin, RepositoryPythonOrigin
 from dagster._core.remote_representation.external_data import (
     DEFAULT_MODE_NAME,
@@ -83,6 +85,8 @@ if TYPE_CHECKING:
     from dagster._core.definitions.remote_asset_graph import RemoteRepositoryAssetGraph
     from dagster._core.scheduler.instigation import InstigatorState
     from dagster._core.snap.execution_plan_snapshot import ExecutionStepSnap
+    from dagster._core.workspace.context import BaseWorkspaceRequestContext
+
 
 _empty_set = frozenset()
 
@@ -477,7 +481,7 @@ class RemoteRepository:
         return schedules
 
 
-class RemoteJob(RepresentedJob):
+class RemoteJob(RepresentedJob, LoadableBy[JobSubsetSelector, "BaseWorkspaceRequestContext"]):
     """RemoteJob is a object that represents a loaded job definition that
     is resident in another process or container. Host processes such as dagster-webserver use
     objects such as these to interact with user-defined artifacts.
@@ -519,6 +523,23 @@ class RemoteJob(RepresentedJob):
             job_name=self._name,
             repository_handle=repository_handle,
         )
+
+    @classmethod
+    async def _batch_load(
+        cls, keys: Iterable[JobSubsetSelector], context: "BaseWorkspaceRequestContext"
+    ) -> Iterable[Optional["RemoteJob"]]:
+        unique_keys = {key for key in keys}
+        tasks = [context.gen_job(unique_key) for unique_key in unique_keys]
+        results = await asyncio.gather(*tasks)
+
+        results_by_key = {unique_key: result for unique_key, result in zip(unique_keys, results)}
+        return [results_by_key[key] for key in keys]
+
+    @classmethod
+    def _blocking_batch_load(
+        cls, keys: Iterable[JobSubsetSelector], context: "BaseWorkspaceRequestContext"
+    ) -> Iterable[Optional["RemoteJob"]]:
+        raise NotImplementedError
 
     @property
     def _job_index(self) -> JobIndex:
@@ -685,7 +706,7 @@ class RemoteJob(RepresentedJob):
         )
 
 
-class RemoteExecutionPlan:
+class RemoteExecutionPlan(LoadableBy[JobSubsetSelector, "BaseWorkspaceRequestContext"]):
     """RemoteExecutionPlan is a object that represents an execution plan that
     was compiled in another process or persisted in an instance.
     """
@@ -708,6 +729,39 @@ class RemoteExecutionPlan:
         self._deps = None
         self._topological_steps = None
         self._topological_step_levels = None
+
+    @classmethod
+    async def _batch_load(
+        cls, keys: Iterable[JobSubsetSelector], context: "BaseWorkspaceRequestContext"
+    ) -> Iterable[Optional["RemoteExecutionPlan"]]:
+        remote_jobs = await RemoteJob.gen_many(context, keys)
+        remote_jobs_by_key = {key: job for key, job in zip(keys, remote_jobs)}
+        unique_keys = {key for key in keys}
+
+        tasks = [
+            context.gen_execution_plan(
+                check.not_none(remote_jobs_by_key[key]),
+                run_config={},
+                step_keys_to_execute=None,
+                known_state=None,
+            )
+            for key in unique_keys
+            if remote_jobs_by_key[key] is not None
+        ]
+
+        if tasks:
+            results = await asyncio.gather(*tasks)
+        else:
+            results = []
+        results_by_key = {unique_key: result for unique_key, result in zip(unique_keys, results)}
+
+        return [results_by_key.get(key) for key in keys]
+
+    @classmethod
+    def _blocking_batch_load(
+        cls, keys: Iterable[JobSubsetSelector], context: "BaseWorkspaceRequestContext"
+    ) -> Iterable[Optional["RemoteExecutionPlan"]]:
+        raise NotImplementedError
 
     @property
     def step_keys_in_plan(self) -> Sequence[str]:

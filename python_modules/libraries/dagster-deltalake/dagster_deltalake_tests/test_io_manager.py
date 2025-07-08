@@ -1,7 +1,7 @@
 from datetime import datetime
 
 import pytest
-from dagster import TimeWindow
+from dagster._core.definitions.partitions.utils import TimeWindow
 from dagster._core.storage.db_io_manager import TablePartitionDimension
 from dagster_deltalake.handler import partition_dimensions_to_dnf
 from deltalake.schema import Field, PrimitiveType, Schema

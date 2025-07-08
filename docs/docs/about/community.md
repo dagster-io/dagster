@@ -4,7 +4,7 @@ sidebar_position: 10
 title: Community
 ---
 
-No ecosystem is more heterogeneous than data processing. We enthusiastically welcome community contributions to code and to docs, issue, and bug reports on [GitHub](https://www.github.com/dagster-io/dagster/), and questions, feature requests, and discussion in our [Slack](https://dagster.io/slack).
+No ecosystem is more heterogeneous than data processing. We enthusiastically welcome community contributions to code and to docs, issue, and bug reports on [GitHub](https://www.github.com/dagster-io/dagster), and questions, feature requests, and discussion in our [Slack](https://dagster.io/slack).
 
 We're committed to making the Dagster project inclusive and welcoming. Working on this project should feel friendly, collegial, and relaxed for everyone.
 
@@ -14,7 +14,7 @@ We're committed to making the Dagster project inclusive and welcoming. Working o
 Interested in hacking on Dagster? Check out the [Contributing guide](/about/contributing) to get started!
 :::
 
-Dagster itself, defined as the code and intellectual property in the [Dagster public repository](https://www.github.com/dagster-io/dagster/), will forever and always be free. The Dagster core team also builds and operates the commercial product [Dagster+](https://dagster.io/plus) as a distinct and well-defined layer on top of Dagster. We believe that this structure will be the most sustainable for serving our users as the Dagster team and product grows.
+Dagster itself, defined as the code and intellectual property in the [Dagster public repository](https://www.github.com/dagster-io/dagster), will forever and always be free. The Dagster core team also builds and operates the commercial product [Dagster+](https://dagster.io/plus) as a distinct and well-defined layer on top of Dagster. We believe that this structure will be the most sustainable for serving our users as the Dagster team and product grows.
 
 ## Code of conduct
 
@@ -83,7 +83,7 @@ The Dagster core team will follow these Community Impact Guidelines in determini
 
 ### Attribution
 
-- This Code of Conduct is adapted from the [Contributor Covenant](https://www.contributor-covenant.org/), version 2.0, available at: [Contributor Covenant Code of Conduct](https://www.contributor-covenant.org/version/2/0/code_of_conduct.html).
+- This Code of Conduct is adapted from the [Contributor Covenant](https://www.contributor-covenant.org), version 2.0, available at: [Contributor Covenant Code of Conduct](https://www.contributor-covenant.org/version/2/0/code_of_conduct.html).
 - Community Impact Guidelines were inspired by [Mozilla's code of conduct enforcement ladder](https://github.com/mozilla/diversity).
 - Content Guidelines were inspired by [Discourse's FAQ for public discussion](https://meta.discourse.org/faq) and [dbt's Rules of the Road](https://docs.getdbt.com/docs/contributing/slack-rules-of-the-road).
 - For answers to common questions about this code of conduct, see the [Contributor Covenant FAQ](https://www.contributor-covenant.org/faq), or the [Contributor Covenant Translations](https://www.contributor-covenant.org/translations).

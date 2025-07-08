@@ -3868,7 +3868,7 @@ __metadata:
     babel-plugin-macros: "npm:^2.8.0"
     babel-plugin-transform-import-meta: "npm:^2.2.1"
     buildkite-test-collector: "npm:^1.8.1"
-    chart.js: "npm:^3.4.1"
+    chart.js: "npm:^4.5.0"
     chartjs-adapter-date-fns: "npm:^2.0.0"
     chartjs-plugin-zoom: "npm:^1.1.1"
     child-process: "npm:^1.0.2"
@@ -3905,7 +3905,7 @@ __metadata:
     prettier: "npm:^3.3.3"
     qs: "npm:^6.14.0"
     react: "npm:^18.3.1"
-    react-chartjs-2: "npm:^3.0.3"
+    react-chartjs-2: "npm:^5.1.0"
     react-docgen-typescript-plugin: "npm:^1.0.8"
     react-dom: "npm:^18.3.1"
     react-is: "npm:^18.3.1"
@@ -6299,6 +6299,13 @@ __metadata:
   peerDependencies:
     react: ^16.8.0
   checksum: 10/b2daed6366a5bfa0e7499d35e2a85ed8b5053f394b7b18187d0f8a9f9fef22f0e151f5adfffb4f3f7b85e44c2f3256c601af54447460eaae656f6814013af871
+  languageName: node
+  linkType: hard
+
+"@kurkle/color@npm:^0.3.0":
+  version: 0.3.4
+  resolution: "@kurkle/color@npm:0.3.4"
+  checksum: 10/a15bfb55eec4ff92ee27cdacff54e85c7497ec1f9e8e0e8eaec3d39320cc90b82eb7f716d92792a8235fad1617003c6e0c0d2cd07f6a79b7b138ca17ec5eb6e7
   languageName: node
   linkType: hard
 
@@ -10864,12 +10871,12 @@ __metadata:
   linkType: hard
 
 "brace-expansion@npm:^1.1.7":
-  version: 1.1.11
-  resolution: "brace-expansion@npm:1.1.11"
+  version: 1.1.12
+  resolution: "brace-expansion@npm:1.1.12"
   dependencies:
     balanced-match: "npm:^1.0.0"
     concat-map: "npm:0.0.1"
-  checksum: 10/faf34a7bb0c3fcf4b59c7808bc5d2a96a40988addf2e7e09dfbb67a2251800e0d14cd2bfc1aa79174f2f5095c54ff27f46fb1289fe2d77dac755b5eb3434cc07
+  checksum: 10/12cb6d6310629e3048cadb003e1aca4d8c9bb5c67c3c321bafdd7e7a50155de081f78ea3e0ed92ecc75a9015e784f301efc8132383132f4f7904ad1ac529c562
   languageName: node
   linkType: hard
 
@@ -11469,10 +11476,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"chart.js@npm:^3.4.1":
-  version: 3.9.1
-  resolution: "chart.js@npm:3.9.1"
-  checksum: 10/62ee137b296181d8d12e428cb83a02351768039ff672b8ff775534f844777e9c91a3213fc8c6c46b59175a47f23d1547178fdd64ff9afc37c2c1703b2cede93e
+"chart.js@npm:^4.5.0":
+  version: 4.5.0
+  resolution: "chart.js@npm:4.5.0"
+  dependencies:
+    "@kurkle/color": "npm:^0.3.0"
+  checksum: 10/3561fd996dbe20256f69d5e8b968f98b5bd0e3455e3a6336edba1d03c396fc9604e82dd48d92a87c04a187f7b7a0718a5512c9fc95ff755ca77bf571f88efe54
   languageName: node
   linkType: hard
 
@@ -12043,7 +12052,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"create-hash@npm:^1.1.0, create-hash@npm:^1.1.2, create-hash@npm:^1.2.0":
+"create-hash@npm:^1.1.0, create-hash@npm:^1.2.0":
   version: 1.2.0
   resolution: "create-hash@npm:1.2.0"
   dependencies:
@@ -12056,7 +12065,19 @@ __metadata:
   languageName: node
   linkType: hard
 
-"create-hmac@npm:^1.1.0, create-hmac@npm:^1.1.4, create-hmac@npm:^1.1.7":
+"create-hash@npm:~1.1.3":
+  version: 1.1.3
+  resolution: "create-hash@npm:1.1.3"
+  dependencies:
+    cipher-base: "npm:^1.0.1"
+    inherits: "npm:^2.0.1"
+    ripemd160: "npm:^2.0.0"
+    sha.js: "npm:^2.4.0"
+  checksum: 10/b9f675719321dd3a3c3540bb46afcbdaf7182366ce93da9265318290e928be881e5edeff8c48a5ee9263c342e5e3f705fad5eb48f2e2cddc5fed1eb54077e076
+  languageName: node
+  linkType: hard
+
+"create-hmac@npm:^1.1.0, create-hmac@npm:^1.1.7":
   version: 1.1.7
   resolution: "create-hmac@npm:1.1.7"
   dependencies:
@@ -15901,6 +15922,15 @@ __metadata:
   dependencies:
     function-bind: "npm:^1.1.1"
   checksum: 10/a449f3185b1d165026e8d25f6a8c3390bd25c201ff4b8c1aaf948fc6a5fcfd6507310b8c00c13a3325795ea9791fcc3d79d61eafa313b5750438fc19183df57b
+  languageName: node
+  linkType: hard
+
+"hash-base@npm:^2.0.0":
+  version: 2.0.2
+  resolution: "hash-base@npm:2.0.2"
+  dependencies:
+    inherits: "npm:^2.0.1"
+  checksum: 10/e39f3f2bb91679ed350bd2eb81035acb1e1e6e9bb86d9f1197fcfdc3cf39a2c56bf82a1870f000fae651477883b4c107fd6ac0c640a18ab06298b87c39939396
   languageName: node
   linkType: hard
 
@@ -21197,15 +21227,16 @@ __metadata:
   linkType: hard
 
 "pbkdf2@npm:^3.0.3, pbkdf2@npm:^3.1.2":
-  version: 3.1.2
-  resolution: "pbkdf2@npm:3.1.2"
+  version: 3.1.3
+  resolution: "pbkdf2@npm:3.1.3"
   dependencies:
-    create-hash: "npm:^1.1.2"
-    create-hmac: "npm:^1.1.4"
-    ripemd160: "npm:^2.0.1"
-    safe-buffer: "npm:^5.0.1"
-    sha.js: "npm:^2.4.8"
-  checksum: 10/40bdf30df1c9bb1ae41ec50c11e480cf0d36484b7c7933bf55e4451d1d0e3f09589df70935c56e7fccc5702779a0d7b842d012be8c08a187b44eb24d55bb9460
+    create-hash: "npm:~1.1.3"
+    create-hmac: "npm:^1.1.7"
+    ripemd160: "npm:=2.0.1"
+    safe-buffer: "npm:^5.2.1"
+    sha.js: "npm:^2.4.11"
+    to-buffer: "npm:^1.2.0"
+  checksum: 10/980cf2977aa84ec3166fde195a28464ab494131c0a5778fc8f20b8894410747e502159c19ef2b41842c728bc52ba49ffee6847e3ee61ac0d482689f85d8a1b30
   languageName: node
   linkType: hard
 
@@ -22058,13 +22089,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"react-chartjs-2@npm:^3.0.3":
-  version: 3.3.0
-  resolution: "react-chartjs-2@npm:3.3.0"
+"react-chartjs-2@npm:^5.1.0":
+  version: 5.3.0
+  resolution: "react-chartjs-2@npm:5.3.0"
   peerDependencies:
-    chart.js: ^3.5.0
-    react: ^16.8.0 || ^17.0.0
-  checksum: 10/4e498933aed4b14aba5417f1c2ccd4c4ba21e3d81ec1f3fe5af83577fadd2e84b6d03d4396d1370aa11649a3151f514d0b8e80cd58c4114427846ee7f03103aa
+    chart.js: ^4.1.1
+    react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
+  checksum: 10/3cad39fa154be833f9d091ad09f6a630ec1e31cc2536ec63f20ad0e49847b291e7973274df1d30bbae5e5168488789407625cde52c020146b611a47c79092d45
   languageName: node
   linkType: hard
 
@@ -23337,6 +23368,16 @@ __metadata:
   languageName: node
   linkType: hard
 
+"ripemd160@npm:=2.0.1":
+  version: 2.0.1
+  resolution: "ripemd160@npm:2.0.1"
+  dependencies:
+    hash-base: "npm:^2.0.0"
+    inherits: "npm:^2.0.1"
+  checksum: 10/f1a20b72b3ef897a981544c72a1fe15c2bd580f6f40e3062f7839af8e81232f746aa860964686e4b81e90929ad086f14823a9864e4e4bed3367e597fe14a0968
+  languageName: node
+  linkType: hard
+
 "ripemd160@npm:^2.0.0, ripemd160@npm:^2.0.1":
   version: 2.0.2
   resolution: "ripemd160@npm:2.0.2"
@@ -23777,7 +23818,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"sha.js@npm:^2.4.0, sha.js@npm:^2.4.8":
+"sha.js@npm:^2.4.0, sha.js@npm:^2.4.11, sha.js@npm:^2.4.8":
   version: 2.4.11
   resolution: "sha.js@npm:2.4.11"
   dependencies:
@@ -25191,6 +25232,17 @@ __metadata:
   version: 1.0.5
   resolution: "tmpl@npm:1.0.5"
   checksum: 10/cd922d9b853c00fe414c5a774817be65b058d54a2d01ebb415840960406c669a0fc632f66df885e24cb022ec812739199ccbdb8d1164c3e513f85bfca5ab2873
+  languageName: node
+  linkType: hard
+
+"to-buffer@npm:^1.2.0":
+  version: 1.2.1
+  resolution: "to-buffer@npm:1.2.1"
+  dependencies:
+    isarray: "npm:^2.0.5"
+    safe-buffer: "npm:^5.2.1"
+    typed-array-buffer: "npm:^1.0.3"
+  checksum: 10/f8d03f070b8567d9c949f1b59c8d47c83ed2e59b50b5449258f931df9a1fcb751aa8bb8756a9345adc529b6b1822521157c48e1a7d01779a47185060d7bf96d4
   languageName: node
   linkType: hard
 

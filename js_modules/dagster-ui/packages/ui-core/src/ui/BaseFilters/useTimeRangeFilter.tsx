@@ -1,7 +1,5 @@
 import {Box, Button, Colors, Dialog, DialogFooter, Icon, IconName} from '@dagster-io/ui-components';
 import dayjs from 'dayjs';
-import timezone from 'dayjs/plugin/timezone';
-import utc from 'dayjs/plugin/utc';
 import isEqual from 'lodash/isEqual';
 // eslint-disable-next-line no-restricted-imports
 import momentTZ from 'moment-timezone';
@@ -16,8 +14,7 @@ import {lazy} from '../../util/lazy';
 
 const DateRangePicker = lazy(() => import('./DateRangePickerWrapper'));
 
-dayjs.extend(utc);
-dayjs.extend(timezone);
+import '../../util/dayjsExtensions';
 
 export type TimeRangeState = [number | null, number | null];
 

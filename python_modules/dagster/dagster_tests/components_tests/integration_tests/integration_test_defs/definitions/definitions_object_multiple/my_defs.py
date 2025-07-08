@@ -1,13 +1,13 @@
-from dagster import Definitions, asset
+import dagster as dg
 
 
-@asset
+@dg.asset
 def a() -> None: ...
 
 
-@asset
+@dg.asset
 def b() -> None: ...
 
 
-defs1 = Definitions(assets=[a])
-defs2 = Definitions(assets=[b])
+defs1 = dg.Definitions(assets=[a])
+defs2 = dg.Definitions(assets=[b])

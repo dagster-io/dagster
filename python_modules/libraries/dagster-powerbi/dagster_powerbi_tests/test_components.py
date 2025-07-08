@@ -3,7 +3,7 @@ import uuid
 from collections.abc import Iterator, Mapping
 from contextlib import contextmanager, nullcontext
 from pathlib import Path
-from typing import Any, Callable, Optional
+from typing import Any, Callable, Optional, Union
 
 import pytest
 from dagster import AssetKey
@@ -11,7 +11,6 @@ from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.test_utils import ensure_dagster_tests_import
 from dagster._utils import alter_sys_path
-from dagster._utils.env import environ
 from dagster.components.testing import scaffold_defs_sandbox
 from dagster_dg_core.utils import ensure_dagster_dg_tests_import
 from dagster_powerbi import PowerBIWorkspaceComponent
@@ -45,7 +44,22 @@ def setup_powerbi_component(
             yield component, defs
 
 
-def test_basic_component_load(workspace_data_api_mocks, workspace_id: str) -> None:
+@pytest.mark.parametrize(
+    "enable_semantic_model_refresh, should_be_executable",
+    [
+        (True, True),
+        (False, False),
+        (["Sales & Returns Sample v201912"], True),
+        (["Sales & Returns Sample v201911", "Sales & Returns Sample v201912"], True),
+        (["Does not exist"], False),
+    ],
+)
+def test_basic_component_load(
+    workspace_data_api_mocks,
+    workspace_id: str,
+    enable_semantic_model_refresh: Union[bool, list[str]],
+    should_be_executable: bool,
+) -> None:
     with (
         setup_powerbi_component(
             component_body={
@@ -58,6 +72,7 @@ def test_basic_component_load(workspace_data_api_mocks, workspace_id: str) -> No
                         "workspace_id": workspace_id,
                     },
                     "use_workspace_scan": False,
+                    "enable_semantic_model_refresh": enable_semantic_model_refresh,
                 },
             }
         ) as (
@@ -72,6 +87,13 @@ def test_basic_component_load(workspace_data_api_mocks, workspace_id: str) -> No
             AssetKey(["sales_marketing_datas_xlsx"]),
             AssetKey(["report", "Sales_Returns_Sample_v201912"]),
         }
+
+        assert (
+            defs.get_assets_def(
+                AssetKey(["semantic_model", "Sales_Returns_Sample_v201912"])
+            ).is_executable
+            == should_be_executable
+        )
 
 
 @pytest.mark.parametrize(
@@ -168,7 +190,6 @@ def test_translation(
         }
         body["attributes"]["translation"] = attributes
         with (
-            environ({"SOURCES__ACCESS_TOKEN": "fake"}),
             setup_powerbi_component(
                 component_body=body,
             ) as (
@@ -186,3 +207,70 @@ def test_translation(
             assets_def = defs.get_assets_def(key)
             if assertion:
                 assert assertion(assets_def.get_asset_spec(key))
+
+
+def test_per_content_type_translation(
+    workspace_id: str,
+    workspace_data_api_mocks,
+) -> None:
+    body = {
+        "type": "dagster_powerbi.PowerBIWorkspaceComponent",
+        "attributes": {
+            "workspace": {
+                "credentials": {
+                    "token": uuid.uuid4().hex,
+                },
+                "workspace_id": workspace_id,
+            },
+            "use_workspace_scan": False,
+            "translation": {
+                "tags": {"custom_tag": "custom_value"},
+                "for_semantic_model": {
+                    "tags": {"is_semantic_model": "true"},
+                },
+                "for_dashboard": {
+                    "tags": {"is_dashboard": "true"},
+                    "metadata": {"id": "{{ data.properties.id }}"},
+                },
+                "for_report": {
+                    "tags": {"is_report": "true"},
+                    "metadata": {"base_key": "{{ spec.key.to_user_string() }}"},
+                },
+                "for_data_source": {
+                    "key_prefix": "data_source",
+                },
+            },
+        },
+    }
+    with (
+        setup_powerbi_component(
+            component_body=body,
+        ) as (
+            component,
+            defs,
+        ),
+    ):
+        semantic_model_spec = defs.get_assets_def(
+            AssetKey(["semantic_model", "Sales_Returns_Sample_v201912"])
+        ).get_asset_spec(AssetKey(["semantic_model", "Sales_Returns_Sample_v201912"]))
+        assert semantic_model_spec.tags.get("custom_tag") == "custom_value"
+        assert semantic_model_spec.tags.get("is_semantic_model") == "true"
+
+        dashboard_spec = defs.get_assets_def(
+            AssetKey(["dashboard", "Sales_Returns_Sample_v201912"])
+        ).get_asset_spec(AssetKey(["dashboard", "Sales_Returns_Sample_v201912"]))
+        assert dashboard_spec.tags.get("custom_tag") == "custom_value"
+        assert dashboard_spec.tags.get("is_dashboard") == "true"
+        assert dashboard_spec.metadata.get("id") == "efee0b80-4511-42e1-8ee0-2544fd44e122"
+
+        report_spec = defs.get_assets_def(
+            AssetKey(["report", "Sales_Returns_Sample_v201912"])
+        ).get_asset_spec(AssetKey(["report", "Sales_Returns_Sample_v201912"]))
+        assert report_spec.tags.get("custom_tag") == "custom_value"
+        assert report_spec.tags.get("is_report") == "true"
+        assert report_spec.metadata.get("base_key") == "report/Sales_Returns_Sample_v201912"
+
+        data_source_def = defs.get_assets_def(
+            AssetKey(["data_source", "sales_marketing_datas_xlsx"])
+        )
+        assert data_source_def

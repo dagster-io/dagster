@@ -80,7 +80,7 @@ const sortResultsByFuseScore = (
 
 export const useSearchDialog = () => {
   const history = useHistory();
-  const {initialize, loading, searchPrimary, searchSecondary} = useGlobalSearch({
+  const {loading, searchPrimary, searchSecondary} = useGlobalSearch({
     searchContext: 'global',
   });
   const trackEvent = useTrackEvent();
@@ -97,36 +97,31 @@ export const useSearchDialog = () => {
   const openSearch = React.useCallback(() => {
     trackEvent('open-global-search');
     trackEvent('searchOpen');
-    initialize();
     dispatch({type: 'show-dialog'});
-  }, [initialize, trackEvent]);
+  }, [trackEvent]);
 
   React.useEffect(() => {
     __updateSearchVisibility(shown);
   }, [shown]);
 
-  const searchAndHandlePrimary = React.useCallback(
-    async (queryString: string) => {
-      const {queryString: queryStringForResults, results} = await searchPrimary(queryString);
-      dispatch({type: 'complete-primary', queryString: queryStringForResults, results});
-    },
-    [searchPrimary],
-  );
-
-  const searchAndHandleSecondary = React.useCallback(
-    async (queryString: string) => {
-      const {queryString: queryStringForResults, results} = await searchSecondary(queryString);
-      dispatch({type: 'complete-secondary', queryString: queryStringForResults, results});
-    },
-    [searchSecondary],
-  );
-
   const debouncedSearch = React.useMemo(() => {
     return debounce(async (queryString: string) => {
-      searchAndHandlePrimary(queryString);
-      searchAndHandleSecondary(queryString);
+      const [secondaryResults, primaryResults] = await Promise.all([
+        searchSecondary(queryString),
+        searchPrimary(queryString),
+      ]);
+      dispatch({
+        type: 'complete-primary',
+        queryString: primaryResults.queryString,
+        results: primaryResults.results,
+      });
+      dispatch({
+        type: 'complete-secondary',
+        queryString: secondaryResults.queryString,
+        results: secondaryResults.results,
+      });
     }, DEBOUNCE_MSEC);
-  }, [searchAndHandlePrimary, searchAndHandleSecondary]);
+  }, [searchPrimary, searchSecondary]);
 
   const onChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value;

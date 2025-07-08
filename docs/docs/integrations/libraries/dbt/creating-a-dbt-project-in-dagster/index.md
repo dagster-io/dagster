@@ -10,7 +10,7 @@ Using dbt Cloud? Check out the [Dagster & dbt Cloud documentation](/integrations
 
 :::
 
-In this tutorial, we'll walk you through integrating dbt with Dagster using a smaller version of dbt's example [jaffle shop project](https://github.com/dbt-labs/jaffle_shop), the [dagster-dbt library](/api/libraries/dagster-dbt), and a data warehouse, such as [DuckDB](https://duckdb.org/).
+In this tutorial, we'll walk you through integrating dbt with Dagster using a smaller version of dbt's example [jaffle shop project](https://github.com/dbt-labs/jaffle_shop), the [dagster-dbt library](/api/libraries/dagster-dbt), and a data warehouse, such as [DuckDB](https://duckdb.org).
 
 By the end of this tutorial, you'll have your dbt models represented in Dagster along with other [Dagster asset definitions](/integrations/libraries/dbt/reference#dbt-models-and-dagster-asset-definitions) upstream and downstream of them:
 
@@ -33,7 +33,7 @@ To complete this tutorial, you'll need:
 
   <PackageInstallInstructions packageName="dagster-dbt dbt-duckdb" />
 
-  The `dagster-dbt` library installs both `dbt-core` and `dagster` as dependencies. `dbt-duckdb` is installed as you'll be using [DuckDB](https://duckdb.org/) as a database during this tutorial. Refer to the [dbt](https://docs.getdbt.com/dbt-cli/install/overview) and [Dagster](/getting-started/installation) installation docs for more info.
+  The `dagster-dbt` library installs both `dbt-core` and `dagster` as dependencies. `dbt-duckdb` is installed as you'll be using [DuckDB](https://duckdb.org) as a database during this tutorial. Refer to the [dbt](https://docs.getdbt.com/dbt-cli/install/overview) and [Dagster](/getting-started/installation) installation docs for more info.
 
 ## Ready to get started?
 

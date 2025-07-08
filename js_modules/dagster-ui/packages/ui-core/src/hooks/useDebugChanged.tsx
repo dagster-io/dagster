@@ -38,7 +38,7 @@ export const useDebugChanged = <T,>(objects: T[]): void => {
     const changes: Changes<T>[] = [];
 
     objects.forEach((obj, index) => {
-      if (!isEqual(obj, previousObjects[index])) {
+      if (obj !== previousObjects[index]) {
         changes.push({
           index,
           previous: previousObjects[index]!,

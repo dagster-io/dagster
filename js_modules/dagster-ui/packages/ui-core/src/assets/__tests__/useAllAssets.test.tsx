@@ -1,9 +1,22 @@
 import {MockedProvider} from '@apollo/client/testing';
 import {renderHook, waitFor} from '@testing-library/react';
 
-import {buildAssetRecord, buildAssetRecordConnection} from '../../graphql/types';
+import {
+  buildAssetKey,
+  buildAssetNode,
+  buildAssetRecord,
+  buildAssetRecordConnection,
+  buildDefinitionTag,
+  buildRepository,
+  buildRepositoryLocation,
+  buildTeamAssetOwner,
+  buildUserAssetOwner,
+  buildWorkspaceLocationEntry,
+} from '../../graphql/types';
 import {buildQueryMock} from '../../testing/mocking';
 import {cache as mockedCache} from '../../util/idb-lru-cache';
+import {WorkspaceProvider} from '../../workspace/WorkspaceContext/WorkspaceContext';
+import {buildWorkspaceMocks} from '../../workspace/WorkspaceContext/__fixtures__/Workspace.fixtures';
 import {useAllAssets} from '../AssetsCatalogTable';
 import {AssetCatalogTableQueryVersion} from '../types/AssetsCatalogTable.types';
 import {AssetRecordsQuery, AssetRecordsQueryVariables} from '../types/useAllAssets.types';
@@ -71,7 +84,11 @@ describe('useAllAssets', () => {
 
     const {result} = renderHook(() => useAllAssets({batchLimit: 2}), {
       wrapper(props) {
-        return <MockedProvider mocks={[mock, mock2, mock3]}>{props.children}</MockedProvider>;
+        return (
+          <MockedProvider mocks={[mock, mock2, mock3, ...buildWorkspaceMocks([], {delay: 10})]}>
+            <WorkspaceProvider>{props.children}</WorkspaceProvider>
+          </MockedProvider>
+        );
       },
     });
 
@@ -114,5 +131,121 @@ describe('useAllAssets', () => {
     await waitFor(() => {
       expect(result.current.assets?.length).toBe(5);
     });
+  });
+
+  it('dedupes SDAs that are defined in multiple locations and combines their definitions', async () => {
+    const assetNode1 = buildAssetNode({
+      assetKey: buildAssetKey({path: ['asset_key']}),
+      kinds: ['dbt'],
+      groupName: 'default',
+      owners: [
+        buildTeamAssetOwner({team: 'my-team'}),
+        buildUserAssetOwner({email: 'fake-email@gmail.com'}),
+      ],
+      tags: [buildDefinitionTag({key: 'tag', value: 'value'})],
+      repository: buildRepository({
+        name: 'repoName',
+        location: buildRepositoryLocation({name: 'locationName'}),
+      }),
+      isMaterializable: true,
+      isObservable: false,
+    });
+
+    const assetNode2 = buildAssetNode({
+      assetKey: buildAssetKey({path: ['asset_key']}), // Same asset key
+      kinds: ['python'],
+      groupName: 'default',
+      owners: [buildTeamAssetOwner({team: 'another-team'})],
+      tags: [buildDefinitionTag({key: 'tag2', value: 'value2'})],
+      repository: buildRepository({
+        name: 'anotherRepoName',
+        location: buildRepositoryLocation({name: 'anotherLocationName'}),
+      }),
+      isMaterializable: false,
+      isObservable: true,
+    });
+
+    const workspaceWithDuplicateAssets = buildWorkspaceMocks([
+      buildWorkspaceLocationEntry({
+        id: 'location1',
+        name: 'location1',
+        locationOrLoadError: buildRepositoryLocation({
+          id: 'location1',
+          name: 'location1',
+          repositories: [
+            buildRepository({
+              id: 'repo1',
+              name: 'repoName',
+              assetNodes: [assetNode1],
+            }),
+          ],
+        }),
+      }),
+      buildWorkspaceLocationEntry({
+        id: 'location2',
+        name: 'location2',
+        locationOrLoadError: buildRepositoryLocation({
+          id: 'location2',
+          name: 'location2',
+          repositories: [
+            buildRepository({
+              id: 'repo2',
+              name: 'anotherRepoName',
+              assetNodes: [assetNode2],
+            }),
+          ],
+        }),
+      }),
+    ]);
+
+    // Mock the ASSET_RECORDS_QUERY to return empty data
+    const assetRecordsMock = createMock({
+      nodes: [],
+      returnedCursor: null,
+      limit: 1000,
+    });
+
+    const {result} = renderHook(() => useAllAssets({}), {
+      wrapper(props) {
+        return (
+          <MockedProvider mocks={[...workspaceWithDuplicateAssets, assetRecordsMock]}>
+            <WorkspaceProvider>{props.children}</WorkspaceProvider>
+          </MockedProvider>
+        );
+      },
+    });
+
+    await waitFor(() => {
+      expect(result.current.loading).toBe(false);
+    });
+
+    // Should have exactly 1 asset (deduplicated)
+    expect(result.current.assets?.length).toBe(1);
+
+    const asset = result.current.assets?.[0];
+    expect(asset).toBeDefined();
+    expect(asset?.key.path).toEqual(['asset_key']);
+
+    // Should prefer materializable asset (assetNode1) as the base
+    expect(asset?.definition?.isMaterializable).toBe(true);
+
+    // Should merge boolean fields (OR of both values)
+    expect(asset?.definition?.isObservable).toBe(true);
+
+    // Should merge array fields (union of all values)
+    expect(asset?.definition?.kinds).toEqual(expect.arrayContaining(['dbt', 'python']));
+    expect(asset?.definition?.owners).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({team: 'my-team'}),
+        expect.objectContaining({email: 'fake-email@gmail.com'}),
+        expect.objectContaining({team: 'another-team'}),
+      ]),
+    );
+    expect(asset?.definition?.tags).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({key: 'tag', value: 'value'}),
+        expect.objectContaining({key: 'tag2', value: 'value2'}),
+      ]),
+    );
   });
 });

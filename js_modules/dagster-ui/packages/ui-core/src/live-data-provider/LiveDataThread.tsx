@@ -76,7 +76,21 @@ export class LiveDataThread<T> {
     return this.observedKeys;
   }
 
+  private _paused: boolean = false;
+
+  public pause() {
+    this._paused = true;
+    this.stopFetchLoop(true);
+  }
+  public unpause() {
+    this._paused = false;
+    this.startFetchLoop();
+  }
+
   public startFetchLoop() {
+    if (this._paused) {
+      return;
+    }
     this._scheduler.scheduleStartFetchLoop(() => {
       if (this.activeFetches !== this.parallelFetches) {
         requestAnimationFrame(this._batchedQueryKeys);

@@ -4,13 +4,13 @@ import time
 from dagster import (
     AssetExecutionContext,
     Definitions,
-    StaticPartitionsDefinition,
     asset,
     define_asset_job,
     in_process_executor,
     job,
     op,
 )
+from dagster._core.definitions.partitions.definition import StaticPartitionsDefinition
 
 example_partition_def = StaticPartitionsDefinition(
     partition_keys=[str(i) for i in range(1, 32)],

@@ -1,6 +1,6 @@
 import logging
 from collections.abc import Sequence
-from functools import cached_property, lru_cache
+from functools import cached_property
 from typing import NamedTuple, Optional, Union
 
 from dagster import (
@@ -13,7 +13,7 @@ from dagster import (
     get_dagster_logger,
     multi_asset_check,
 )
-from dagster._annotations import preview
+from dagster._annotations import beta
 from dagster._config.pythonic_config.resource import ResourceDependency
 from dagster._core.definitions.definitions_load_context import StateBackedDefinitionsLoader
 from dagster._record import record
@@ -57,7 +57,7 @@ def get_dagster_adhoc_job_name(
     return clean_name(name).upper()
 
 
-@preview
+@beta
 class DbtCloudCredentials(NamedTuple):
     """The DbtCloudCredentials to access your dbt Cloud Workspace."""
 
@@ -66,7 +66,7 @@ class DbtCloudCredentials(NamedTuple):
     access_url: str
 
 
-@preview
+@beta
 class DbtCloudWorkspace(ConfigurableResource):
     """This class represents a dbt Cloud workspace and provides utilities
     to interact with dbt Cloud APIs.
@@ -248,8 +248,8 @@ class DbtCloudWorkspace(ConfigurableResource):
             selector=DBT_DEFAULT_SELECTOR,
         ).get_or_fetch_state()
 
-    # Cache spec retrieval for a specific translator class.
-    @lru_cache(maxsize=1)
+    # Cache spec retrieval for a specific translator class and dbt selection args.
+    @cached_method
     def load_specs(
         self,
         select: str,
@@ -361,7 +361,7 @@ class DbtCloudWorkspace(ConfigurableResource):
         )
 
 
-@preview
+@beta
 def load_dbt_cloud_asset_specs(
     workspace: DbtCloudWorkspace,
     dagster_dbt_translator: Optional[DagsterDbtTranslator] = None,
@@ -377,7 +377,7 @@ def load_dbt_cloud_asset_specs(
     )
 
 
-@preview
+@beta
 def load_dbt_cloud_check_specs(
     workspace: DbtCloudWorkspace,
     dagster_dbt_translator: Optional[DagsterDbtTranslator] = None,
@@ -393,7 +393,7 @@ def load_dbt_cloud_check_specs(
     )
 
 
-@preview
+@beta
 @record
 class DbtCloudWorkspaceDefsLoader(StateBackedDefinitionsLoader[DbtCloudWorkspaceData]):
     workspace: DbtCloudWorkspace

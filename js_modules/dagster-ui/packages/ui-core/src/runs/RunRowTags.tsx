@@ -50,7 +50,7 @@ export const RunRowTags = ({
     const tags: TagType[] = [];
 
     if (targetBackfill && targetBackfill.pinned && !hideTags?.includes(DagsterTag.Backfill)) {
-      const link = getBackfillPath(targetBackfill.value, !!run.assetSelection?.length);
+      const link = getBackfillPath(targetBackfill.value);
       tags.push({
         ...targetBackfill,
         link,
@@ -73,7 +73,7 @@ export const RunRowTags = ({
       }
     });
     return tags;
-  }, [allTagsWithPinned, hideTags, run.assetSelection?.length]);
+  }, [allTagsWithPinned, hideTags]);
 
   return (
     <>

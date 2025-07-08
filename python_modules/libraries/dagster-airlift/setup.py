@@ -92,7 +92,7 @@ setup(
         "console_scripts": [
             "dagster-airlift = dagster_airlift.cli:cli",
         ],
-        "dagster_dg.plugin": [
+        "dagster_dg_cli.registry_modules": [
             "dagster_airlift.core.components = dagster_airlift.core.components",
         ],
     },

@@ -1,5 +1,5 @@
-from dagster import load_defs
+from pathlib import Path
 
-from dagster_airlift_tests.mwaa_integration_tests.dagster_defs import inner as inner
+from dagster import load_from_defs_folder
 
-defs_obj = load_defs(defs_root=inner)
+defs_obj = load_from_defs_folder(project_root=Path(__file__).parent.parent)

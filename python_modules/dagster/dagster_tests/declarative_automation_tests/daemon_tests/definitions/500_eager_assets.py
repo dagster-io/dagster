@@ -1,16 +1,11 @@
-from dagster import (
-    AutomationCondition,
-    AutomationConditionSensorDefinition,
-    DailyPartitionsDefinition,
-    Definitions,
-    HourlyPartitionsDefinition,
-)
+import dagster as dg
+from dagster import AutomationCondition
 from dagster_test.toys.auto_materializing.large_graph import AssetLayerConfig, build_assets
 
 
-def get_defs(n: int) -> Definitions:
-    hourly_partitions_def = HourlyPartitionsDefinition("2020-01-01-00:00")
-    daily_partitions_def = DailyPartitionsDefinition("2020-01-01")
+def get_defs(n: int) -> dg.Definitions:
+    hourly_partitions_def = dg.HourlyPartitionsDefinition("2020-01-01-00:00")
+    daily_partitions_def = dg.DailyPartitionsDefinition("2020-01-01")
     unit = n // 10
     assets = build_assets(
         id="perf_test",
@@ -24,10 +19,12 @@ def get_defs(n: int) -> Definitions:
         ],
         automation_condition=AutomationCondition.eager(),
     )
-    return Definitions(
+    return dg.Definitions(
         assets=assets,
         sensors=[
-            AutomationConditionSensorDefinition("the_sensor", target="*", use_user_code_server=True)
+            dg.AutomationConditionSensorDefinition(
+                "the_sensor", target="*", use_user_code_server=True
+            )
         ],
     )
 

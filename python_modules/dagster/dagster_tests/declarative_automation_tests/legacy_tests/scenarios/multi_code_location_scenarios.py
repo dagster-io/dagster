@@ -1,6 +1,7 @@
 from collections.abc import Sequence
 
-from dagster import AssetsDefinition, FreshnessPolicy
+import dagster as dg
+from dagster import AssetsDefinition
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 
 from dagster_tests.declarative_automation_tests.legacy_tests.scenarios.basic_scenarios import (
@@ -13,22 +14,22 @@ from dagster_tests.declarative_automation_tests.scenario_utils.base_scenario imp
     run_request,
 )
 
-freshness_30m = FreshnessPolicy(maximum_lag_minutes=30)
-freshness_inf = FreshnessPolicy(maximum_lag_minutes=99999)
+freshness_30m = dg.LegacyFreshnessPolicy(maximum_lag_minutes=30)
+freshness_inf = dg.LegacyFreshnessPolicy(maximum_lag_minutes=99999)
 
 diamond_freshness = diamond[:-1] + [
-    asset_def("asset4", ["asset2", "asset3"], freshness_policy=freshness_30m)
+    asset_def("asset4", ["asset2", "asset3"], legacy_freshness_policy=freshness_30m)
 ]
 
 overlapping_freshness_inf = diamond + [
-    asset_def("asset5", ["asset3"], freshness_policy=freshness_30m),
-    asset_def("asset6", ["asset4"], freshness_policy=freshness_inf),
+    asset_def("asset5", ["asset3"], legacy_freshness_policy=freshness_30m),
+    asset_def("asset6", ["asset4"], legacy_freshness_policy=freshness_inf),
 ]
 
 
 def with_auto_materialize_policy(
-    assets_defs: Sequence[AssetsDefinition], auto_materialize_policy: AutoMaterializePolicy
-) -> Sequence[AssetsDefinition]:
+    assets_defs: Sequence[dg.AssetsDefinition], auto_materialize_policy: AutoMaterializePolicy
+) -> Sequence[dg.AssetsDefinition]:
     ret = []
     for assets_def in assets_defs:
         ret.append(

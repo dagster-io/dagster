@@ -11,15 +11,17 @@ from tempfile import TemporaryDirectory
 from types import TracebackType
 from typing import Any, Iterable, Mapping, Optional, TypeVar, Union  # noqa: UP035
 
+import dagster as dg
 import tomlkit
 from click.testing import Result
-from dagster import Component, ComponentLoadContext, Definitions
+from dagster import Component
 from dagster._utils import alter_sys_path, pushd
 from dagster._utils.pydantic_yaml import enrich_validation_errors_with_source_position
 from dagster.components.core.defs_module import (
     asset_post_processor_list_from_post_processing_dict,
     context_with_injected_scope,
 )
+from dagster.components.core.tree import ComponentTree
 from dagster.components.resolved.core_models import post_process_defs
 from dagster.components.utils import ensure_loadable_path
 from dagster_shared import check
@@ -34,8 +36,8 @@ def load_context_and_component_for_test(
     component_type: type[T_Component],
     attrs: Union[str, dict[str, Any]],
     template_vars_module: Optional[str] = None,
-) -> tuple[ComponentLoadContext, T_Component]:
-    context = ComponentLoadContext.for_test()
+) -> tuple[dg.ComponentLoadContext, T_Component]:
+    context = ComponentTree.for_test().load_context
     model_cls = check.not_none(
         component_type.get_model_cls(), "Component must have schema for direct test"
     )
@@ -62,10 +64,10 @@ def load_component_for_test(
 
 
 def build_component_defs_for_test(
-    component_type: type[Component],
+    component_type: type[dg.Component],
     attrs: dict[str, Any],
     post_processing: Optional[Mapping[str, Any]] = None,
-) -> Definitions:
+) -> dg.Definitions:
     context, component = load_context_and_component_for_test(component_type, attrs)
     return post_process_defs(
         component.build_defs(context),

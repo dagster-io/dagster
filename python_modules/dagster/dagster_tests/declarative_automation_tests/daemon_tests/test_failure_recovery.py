@@ -1,14 +1,12 @@
 import datetime
 import multiprocessing
 
+import dagster as dg
 import pytest
-from dagster import instance_for_test
-from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.instance.ref import InstanceRef
 from dagster._core.instance_for_test import cleanup_test_instance
 from dagster._core.scheduler.instigation import TickStatus
 from dagster._core.test_utils import freeze_time
-from dagster._core.utils import InheritContextThreadPoolExecutor
 from dagster._utils import get_terminate_signal
 
 from dagster_tests.declarative_automation_tests.daemon_tests.test_e2e import (
@@ -30,17 +28,12 @@ def _execute(
             "five_runs_required", instance_ref=instance_ref
         ) as context,
         get_threadpool_executor() as executor,
-        InheritContextThreadPoolExecutor(
-            # fewer workers than runs
-            max_workers=3
-        ) as submit_executor,
     ):
         try:
             with freeze_time(evaluation_time):
                 _execute_ticks(
                     context,
                     executor,  # pyright: ignore[reportArgumentType]
-                    submit_executor,
                     {
                         crash_location: get_terminate_signal() if terminate else Exception("Oops!"),
                     },
@@ -72,7 +65,7 @@ def test_failure_recovery(crash_location: str, terminate: bool) -> None:
         assert len(sensors) == 1
         selector_id, origin_id = sensors[0].selector_id, sensors[0].get_remote_origin_id()
 
-    with instance_for_test() as instance:
+    with dg.instance_for_test() as instance:
         try:
             # run a tick that is destined to fail
             evaluation_time_1 = datetime.datetime(2024, 8, 16, 1, 35)
@@ -145,7 +138,7 @@ def test_failure_recovery(crash_location: str, terminate: bool) -> None:
             # the evaluations for each asset should have been updated
             assert instance.schedule_storage
             for i in range(5):
-                key = AssetKey(f"a{i}")
+                key = dg.AssetKey(f"a{i}")
                 evaluations = instance.schedule_storage.get_auto_materialize_asset_evaluations(
                     key=key, limit=100
                 )

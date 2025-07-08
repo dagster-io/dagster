@@ -33,7 +33,7 @@ class BigQueryPandasTypeHandler(DbTypeHandler[pd.DataFrame]):
             def my_table() -> pd.DataFrame:  # the name of the asset will be the table name
                 ...
 
-            defs = Definitions(
+            Definitions(
                 assets=[my_table],
                 resources={
                     "io_manager": MyBigQueryIOManager(project=EnvVar("GCP_PROJECT"))
@@ -120,7 +120,7 @@ Examples:
         def my_table() -> pd.DataFrame:  # the name of the asset will be the table name
             ...
 
-        defs = Definitions(
+        Definitions(
             assets=[my_table],
             resources={
                 "io_manager": bigquery_pandas_io_manager.configured({
@@ -134,7 +134,7 @@ Examples:
 
     .. code-block:: python
 
-        defs = Definitions(
+        Definitions(
             assets=[my_table],
             resources={
                     "io_manager": bigquery_pandas_io_manager.configured({
@@ -216,7 +216,7 @@ class BigQueryPandasIOManager(BigQueryIOManager):
             def my_table() -> pd.DataFrame:  # the name of the asset will be the table name
                 ...
 
-            defs = Definitions(
+            Definitions(
                 assets=[my_table],
                 resources={
                     "io_manager": BigQueryPandasIOManager(project=EnvVar("GCP_PROJECT"))
@@ -228,7 +228,7 @@ class BigQueryPandasIOManager(BigQueryIOManager):
 
         .. code-block:: python
 
-            defs = Definitions(
+            Definitions(
                 assets=[my_table],
                 resources={
                         "io_manager": BigQueryPandasIOManager(project=EnvVar("GCP_PROJECT", dataset="my_dataset")

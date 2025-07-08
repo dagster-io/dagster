@@ -1,55 +1,43 @@
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, cast
+from typing import cast
 
 import dagster as dg
 import pytest
-from dagster import (
-    AssetSpec,
-    AutoMaterializePolicy,
-    AutomationCondition,
-    IdentityPartitionMapping,
-    LastPartitionMapping,
-)
+from dagster import AutoMaterializePolicy, AutomationCondition
 from dagster._check import CheckError
-from dagster._core.definitions.asset_dep import AssetDep
-from dagster._core.definitions.asset_key import AssetKey
-from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from pydantic import BaseModel, TypeAdapter
-
-if TYPE_CHECKING:
-    from dagster._core.definitions.assets import AssetsDefinition
 
 
 def test_validate_asset_owner() -> None:
-    with pytest.raises(DagsterInvalidDefinitionError, match="Invalid owner"):
-        AssetSpec(key="asset1", owners=["owner@$#&*1"])
+    with pytest.raises(dg.DagsterInvalidDefinitionError, match="Invalid owner"):
+        dg.AssetSpec(key="asset1", owners=["owner@$#&*1"])
 
 
 def test_validate_group_name() -> None:
-    with pytest.raises(DagsterInvalidDefinitionError, match="is not a valid name"):
-        AssetSpec(key="asset1", group_name="group@$#&*1")
+    with pytest.raises(dg.DagsterInvalidDefinitionError, match="is not a valid name"):
+        dg.AssetSpec(key="asset1", group_name="group@$#&*1")
 
     with pytest.raises(
-        DagsterInvalidDefinitionError,
+        dg.DagsterInvalidDefinitionError,
         match="Empty asset group name was provided, which is not permitted",
     ):
-        AssetSpec(key="asset1", group_name="")
+        dg.AssetSpec(key="asset1", group_name="")
 
 
 def test_resolve_automation_condition() -> None:
-    ac_spec = AssetSpec(key="asset1", automation_condition=AutomationCondition.eager())
-    assert isinstance(ac_spec.auto_materialize_policy, AutoMaterializePolicy)
-    assert isinstance(ac_spec.automation_condition, AutomationCondition)
+    ac_spec = dg.AssetSpec(key="asset1", automation_condition=AutomationCondition.eager())
+    assert isinstance(ac_spec.auto_materialize_policy, dg.AutoMaterializePolicy)
+    assert isinstance(ac_spec.automation_condition, dg.AutomationCondition)
 
-    amp_spec = AssetSpec(key="asset1", auto_materialize_policy=AutoMaterializePolicy.eager())
-    assert isinstance(amp_spec.auto_materialize_policy, AutoMaterializePolicy)
-    assert isinstance(amp_spec.automation_condition, AutomationCondition)
+    amp_spec = dg.AssetSpec(key="asset1", auto_materialize_policy=AutoMaterializePolicy.eager())
+    assert isinstance(amp_spec.auto_materialize_policy, dg.AutoMaterializePolicy)
+    assert isinstance(amp_spec.automation_condition, dg.AutomationCondition)
 
     with pytest.raises(
-        DagsterInvariantViolationError,
+        dg.DagsterInvariantViolationError,
         match="both `automation_condition` and `auto_materialize_policy`",
     ):
-        AssetSpec(
+        dg.AssetSpec(
             key="asset1",
             automation_condition=AutomationCondition.eager(),
             auto_materialize_policy=AutoMaterializePolicy.eager(),
@@ -57,13 +45,13 @@ def test_resolve_automation_condition() -> None:
 
 
 def test_replace_attributes_basic() -> None:
-    spec = AssetSpec(key="foo")
-    assert spec.key == AssetKey("foo")
+    spec = dg.AssetSpec(key="foo")
+    assert spec.key == dg.AssetKey("foo")
 
     new_spec = spec.replace_attributes(key="bar")
-    assert new_spec.key == AssetKey("bar")
+    assert new_spec.key == dg.AssetKey("bar")
 
-    spec_with_metadata = AssetSpec(key="foo", metadata={"foo": "bar"})
+    spec_with_metadata = dg.AssetSpec(key="foo", metadata={"foo": "bar"})
     assert spec_with_metadata.metadata == {"foo": "bar"}
 
     spec_with_replace_metadata = spec_with_metadata.replace_attributes(metadata={"bar": "baz"})
@@ -71,7 +59,7 @@ def test_replace_attributes_basic() -> None:
 
 
 def test_replace_attributes_kinds() -> None:
-    spec = AssetSpec(key="foo", kinds={"foo"}, tags={"a": "b"})
+    spec = dg.AssetSpec(key="foo", kinds={"foo"}, tags={"a": "b"})
     assert spec.kinds == {"foo"}
     assert spec.tags == {"a": "b", "dagster/kind/foo": ""}
 
@@ -79,20 +67,20 @@ def test_replace_attributes_kinds() -> None:
     assert new_spec.kinds == {"bar"}
     assert new_spec.tags == {"c": "d", "dagster/kind/bar": ""}
 
-    with pytest.raises(DagsterInvalidDefinitionError):
+    with pytest.raises(dg.DagsterInvalidDefinitionError):
         spec.replace_attributes(kinds={"a", "b", "c", "d", "e"})
 
 
 def test_replace_attributes_deps_coercion() -> None:
-    spec = AssetSpec(key="foo", deps={AssetKey("bar")})
-    assert spec.deps == [AssetDep(AssetKey("bar"))]
+    spec = dg.AssetSpec(key="foo", deps={dg.AssetKey("bar")})
+    assert spec.deps == [dg.AssetDep(dg.AssetKey("bar"))]
 
-    new_spec = spec.replace_attributes(deps={AssetKey("baz")})
-    assert new_spec.deps == [AssetDep(AssetKey("baz"))]
+    new_spec = spec.replace_attributes(deps={dg.AssetKey("baz")})
+    assert new_spec.deps == [dg.AssetDep(dg.AssetKey("baz"))]
 
 
 def test_replace_attributes_group() -> None:
-    spec = AssetSpec(key="foo", group_name="group1")
+    spec = dg.AssetSpec(key="foo", group_name="group1")
     assert spec.group_name == "group1"
 
     new_spec = spec.replace_attributes(group_name="group2")
@@ -103,11 +91,11 @@ def test_replace_attributes_group() -> None:
 
 
 def test_merge_attributes_metadata() -> None:
-    spec = AssetSpec(key="foo")
-    assert spec.key == AssetKey("foo")
+    spec = dg.AssetSpec(key="foo")
+    assert spec.key == dg.AssetKey("foo")
 
     new_spec = spec.merge_attributes(metadata={"bar": "baz"})
-    assert new_spec.key == AssetKey("foo")
+    assert new_spec.key == dg.AssetKey("foo")
     assert new_spec.metadata == {"bar": "baz"}
 
     spec_new_meta_key = new_spec.merge_attributes(metadata={"baz": "qux"})
@@ -118,11 +106,11 @@ def test_merge_attributes_metadata() -> None:
 
 
 def test_merge_attributes_tags() -> None:
-    spec = AssetSpec(key="foo")
-    assert spec.key == AssetKey("foo")
+    spec = dg.AssetSpec(key="foo")
+    assert spec.key == dg.AssetKey("foo")
 
     new_spec = spec.merge_attributes(tags={"bar": "baz"})
-    assert new_spec.key == AssetKey("foo")
+    assert new_spec.key == dg.AssetKey("foo")
     assert new_spec.tags == {"bar": "baz"}
 
     spec_new_tags_key = new_spec.merge_attributes(tags={"baz": "qux"})
@@ -133,36 +121,36 @@ def test_merge_attributes_tags() -> None:
 
 
 def test_merge_attributes_owners() -> None:
-    spec = AssetSpec(key="foo")
-    assert spec.key == AssetKey("foo")
+    spec = dg.AssetSpec(key="foo")
+    assert spec.key == dg.AssetKey("foo")
 
     new_spec = spec.merge_attributes(owners=["owner1@dagsterlabs.com"])
-    assert new_spec.key == AssetKey("foo")
+    assert new_spec.key == dg.AssetKey("foo")
     assert new_spec.owners == ["owner1@dagsterlabs.com"]
 
     spec_new_owner = new_spec.merge_attributes(owners=["owner2@dagsterlabs.com"])
     assert spec_new_owner.owners == ["owner1@dagsterlabs.com", "owner2@dagsterlabs.com"]
 
-    with pytest.raises(DagsterInvalidDefinitionError):
+    with pytest.raises(dg.DagsterInvalidDefinitionError):
         spec_new_owner.merge_attributes(owners=["notvalid"])
 
 
 def test_merge_attributes_deps() -> None:
-    spec = AssetSpec(key="foo")
-    assert spec.key == AssetKey("foo")
+    spec = dg.AssetSpec(key="foo")
+    assert spec.key == dg.AssetKey("foo")
 
-    new_spec = spec.merge_attributes(deps={AssetKey("bar")})
-    assert new_spec.key == AssetKey("foo")
-    assert new_spec.deps == [AssetDep(AssetKey("bar"))]
+    new_spec = spec.merge_attributes(deps={dg.AssetKey("bar")})
+    assert new_spec.key == dg.AssetKey("foo")
+    assert new_spec.deps == [dg.AssetDep(dg.AssetKey("bar"))]
 
-    spec_new_dep = new_spec.merge_attributes(deps={AssetKey("baz")})
-    assert spec_new_dep.deps == [AssetDep(AssetKey("bar")), AssetDep(AssetKey("baz"))]
+    spec_new_dep = new_spec.merge_attributes(deps={dg.AssetKey("baz")})
+    assert spec_new_dep.deps == [dg.AssetDep(dg.AssetKey("bar")), dg.AssetDep(dg.AssetKey("baz"))]
 
 
 def test_map_asset_specs_basic_specs() -> None:
     specs = [
-        AssetSpec(key="foo"),
-        AssetSpec(key="bar"),
+        dg.AssetSpec(key="foo"),
+        dg.AssetSpec(key="bar"),
     ]
 
     mapped_specs = dg.map_asset_specs(
@@ -199,7 +187,7 @@ def test_map_asset_specs_mixed_specs_defs() -> None:
 
     spec_and_defs = [
         my_asset,
-        AssetSpec(key="bar"),
+        dg.AssetSpec(key="bar"),
     ]
 
     mapped_specs_and_defs = dg.map_asset_specs(
@@ -208,16 +196,16 @@ def test_map_asset_specs_mixed_specs_defs() -> None:
 
     assert all(
         spec.owners == ["ben@dagsterlabs.com"]
-        for spec in cast("AssetsDefinition", mapped_specs_and_defs[0]).specs
+        for spec in cast("dg.AssetsDefinition", mapped_specs_and_defs[0]).specs
     )
-    assert cast("AssetSpec", mapped_specs_and_defs[1]).owners == ["ben@dagsterlabs.com"]
+    assert cast("dg.AssetSpec", mapped_specs_and_defs[1]).owners == ["ben@dagsterlabs.com"]
 
 
 def test_map_asset_specs_multi_asset() -> None:
     @dg.multi_asset(
         specs=[
-            AssetSpec(key="foo"),
-            AssetSpec(key="bar"),
+            dg.AssetSpec(key="foo"),
+            dg.AssetSpec(key="bar"),
         ]
     )
     def my_multi_asset():
@@ -225,8 +213,8 @@ def test_map_asset_specs_multi_asset() -> None:
 
     @dg.multi_asset(
         specs=[
-            AssetSpec(key="baz"),
-            AssetSpec(key="qux"),
+            dg.AssetSpec(key="baz"),
+            dg.AssetSpec(key="qux"),
         ]
     )
     def my_other_multi_asset():
@@ -244,11 +232,11 @@ def test_map_asset_specs_multi_asset() -> None:
 
 
 def test_map_asset_specs_additional_deps() -> None:
-    @dg.multi_asset(specs=[AssetSpec(key="a")])
+    @dg.multi_asset(specs=[dg.AssetSpec(key="a")])
     def my_asset():
         pass
 
-    @dg.multi_asset(specs=[AssetSpec(key="c", deps=["a"])])
+    @dg.multi_asset(specs=[dg.AssetSpec(key="c", deps=["a"])])
     def my_other_asset():
         pass
 
@@ -260,30 +248,30 @@ def test_map_asset_specs_additional_deps() -> None:
     )
 
     c_asset = next(iter(asset for asset in mapped_assets if asset.key == my_other_asset.key))
-    assert set(next(iter(c_asset.specs)).deps) == {AssetDep("a"), AssetDep("b")}
+    assert set(next(iter(c_asset.specs)).deps) == {dg.AssetDep("a"), dg.AssetDep("b")}
 
 
 def test_map_asset_specs_multiple_deps_same_key() -> None:
-    @dg.multi_asset(specs=[AssetSpec(key="a", deps=[AssetDep("b")])])
+    @dg.multi_asset(specs=[dg.AssetSpec(key="a", deps=[dg.AssetDep("b")])])
     def my_asset():
         pass
 
     # This works because the dep is coerced to an identical object.
 
-    dg.map_asset_specs(lambda spec: spec.merge_attributes(deps=[AssetKey("b")]), [my_asset])
+    dg.map_asset_specs(lambda spec: spec.merge_attributes(deps=[dg.AssetKey("b")]), [my_asset])
 
     # This doesn't work because we change the object.
-    with pytest.raises(DagsterInvariantViolationError):
+    with pytest.raises(dg.DagsterInvariantViolationError):
         dg.map_asset_specs(
             lambda spec: spec.merge_attributes(
-                deps=[AssetDep(AssetKey("b"), partition_mapping=LastPartitionMapping())]
+                deps=[dg.AssetDep(dg.AssetKey("b"), partition_mapping=dg.LastPartitionMapping())]
             ),
             [my_asset],
         )
 
 
 def test_map_asset_specs_nonarg_dep_removal() -> None:
-    @dg.multi_asset(specs=[AssetSpec(key="a", deps=[AssetDep("b")])])
+    @dg.multi_asset(specs=[dg.AssetSpec(key="a", deps=[dg.AssetDep("b")])])
     def my_asset():
         pass
 
@@ -308,7 +296,11 @@ def test_map_asset_specs_arg_dep_removal() -> None:
 
 def test_map_additional_deps_partition_mapping() -> None:
     @dg.multi_asset(
-        specs=[AssetSpec(key="a", deps=[AssetDep("b", partition_mapping=LastPartitionMapping())])]
+        specs=[
+            dg.AssetSpec(
+                key="a", deps=[dg.AssetDep("b", partition_mapping=dg.LastPartitionMapping())]
+            )
+        ]
     )
     def my_asset():
         pass
@@ -317,26 +309,26 @@ def test_map_additional_deps_partition_mapping() -> None:
         iter(
             dg.map_asset_specs(
                 lambda spec: spec.merge_attributes(
-                    deps=[AssetDep("c", partition_mapping=IdentityPartitionMapping())]
+                    deps=[dg.AssetDep("c", partition_mapping=dg.IdentityPartitionMapping())]
                 ),
                 [my_asset],
             )
         )
     )
     a_spec = next(iter(a_asset.specs))
-    b_dep = next(iter(dep for dep in a_spec.deps if dep.asset_key == AssetKey("b")))
-    assert b_dep.partition_mapping == LastPartitionMapping()
-    c_dep = next(iter(dep for dep in a_spec.deps if dep.asset_key == AssetKey("c")))
-    assert c_dep.partition_mapping == IdentityPartitionMapping()
-    assert a_asset.get_partition_mapping(AssetKey("c")) == IdentityPartitionMapping()
-    assert a_asset.get_partition_mapping(AssetKey("b")) == LastPartitionMapping()
+    b_dep = next(iter(dep for dep in a_spec.deps if dep.asset_key == dg.AssetKey("b")))
+    assert b_dep.partition_mapping == dg.LastPartitionMapping()
+    c_dep = next(iter(dep for dep in a_spec.deps if dep.asset_key == dg.AssetKey("c")))
+    assert c_dep.partition_mapping == dg.IdentityPartitionMapping()
+    assert a_asset.get_partition_mapping(dg.AssetKey("c")) == dg.IdentityPartitionMapping()
+    assert a_asset.get_partition_mapping(dg.AssetKey("b")) == dg.LastPartitionMapping()
 
 
 def test_add_specs_non_executable_asset() -> None:
     assets_def = (
-        dg.Definitions(assets=[AssetSpec(key="foo")])
+        dg.Definitions(assets=[dg.AssetSpec(key="foo")])
         .get_repository_def()
-        .assets_defs_by_key[AssetKey("foo")]
+        .assets_defs_by_key[dg.AssetKey("foo")]
     )
     foo_spec = next(
         iter(
@@ -347,7 +339,7 @@ def test_add_specs_non_executable_asset() -> None:
             ).specs
         )
     )
-    assert foo_spec.deps == [AssetDep("a")]
+    assert foo_spec.deps == [dg.AssetDep("a")]
 
 
 def test_graph_backed_asset_additional_deps() -> None:
@@ -370,11 +362,13 @@ def test_static_partition_mapping_dep() -> None:
 
     @dg.multi_asset(
         specs=[
-            AssetSpec(
+            dg.AssetSpec(
                 key="a",
                 partitions_def=dg.StaticPartitionsDefinition(["1", "2"]),
                 deps=[
-                    AssetDep("b", partition_mapping=dg.StaticPartitionMapping({"1": "1", "2": "2"}))
+                    dg.AssetDep(
+                        "b", partition_mapping=dg.StaticPartitionMapping({"1": "1", "2": "2"})
+                    )
                 ],
             )
         ]
@@ -387,7 +381,7 @@ def test_static_partition_mapping_dep() -> None:
             dg.map_asset_specs(
                 lambda spec: spec.merge_attributes(
                     deps=[
-                        AssetDep(
+                        dg.AssetDep(
                             "c", partition_mapping=dg.StaticPartitionMapping({"1": "1", "2": "2"})
                         )
                     ]
@@ -398,30 +392,30 @@ def test_static_partition_mapping_dep() -> None:
     )
 
     a_spec = next(iter(a_asset.specs))
-    b_dep = next(iter(dep for dep in a_spec.deps if dep.asset_key == AssetKey("b")))
-    c_dep = next(iter(dep for dep in a_spec.deps if dep.asset_key == AssetKey("c")))
+    b_dep = next(iter(dep for dep in a_spec.deps if dep.asset_key == dg.AssetKey("b")))
+    c_dep = next(iter(dep for dep in a_spec.deps if dep.asset_key == dg.AssetKey("c")))
     assert b_dep.partition_mapping == dg.StaticPartitionMapping({"1": "1", "2": "2"})
     assert c_dep.partition_mapping == dg.StaticPartitionMapping({"1": "1", "2": "2"})
 
 
 def test_pydantic_spec() -> None:
     class SpecHolder(BaseModel):
-        spec: AssetSpec
-        spec_list: Sequence[AssetSpec]
+        spec: dg.AssetSpec
+        spec_list: Sequence[dg.AssetSpec]
 
-    holder = SpecHolder(spec=AssetSpec(key="foo"), spec_list=[AssetSpec(key="bar")])
+    holder = SpecHolder(spec=dg.AssetSpec(key="foo"), spec_list=[dg.AssetSpec(key="bar")])
     assert TypeAdapter(SpecHolder).validate_python(holder)
 
 
 def test_definitions_spec_collision():
-    first = AssetSpec("a", group_name="first")
-    second = AssetSpec("a", group_name="second")
+    first = dg.AssetSpec("a", group_name="first")
+    second = dg.AssetSpec("a", group_name="second")
 
     dg.AssetsDefinition(specs=[first, first])
     assert dg.Definitions(assets=[first, first]).resolve_all_asset_specs() == [first]
 
-    with pytest.warns(match="conflicting AssetSpec"):
+    with pytest.raises(dg.DagsterInvalidDefinitionError, match="conflicting AssetSpec"):
         dg.AssetsDefinition(specs=[first, second])
 
-    with pytest.warns(match="conflicting AssetSpec"):
+    with pytest.raises(dg.DagsterInvalidDefinitionError, match="conflicting AssetSpec"):
         dg.Definitions(assets=[first, second]).resolve_all_asset_specs()

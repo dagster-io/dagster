@@ -1,3 +1,4 @@
+# start_file
 import dagster as dg
 
 
@@ -6,7 +7,12 @@ def process_file(loaded_file: str) -> str:
     return loaded_file.strip()
 
 
-# highlight-start
+# end_file
+
+
+# start_test
 def test_process_file() -> None:
     assert process_file(" contents  ") == "contents"
-    # highlight-end
+
+
+# end_test

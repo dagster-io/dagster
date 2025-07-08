@@ -21,10 +21,3 @@ my_job = dg.define_asset_job("my_job", [weekly_report])
 def daily_sales_data_sensor():
     return dg.RunRequest()
     # highlight-end
-
-
-defs = dg.Definitions(
-    assets=[daily_sales_data, weekly_report],
-    jobs=[my_job],
-    sensors=[daily_sales_data_sensor],
-)

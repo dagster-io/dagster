@@ -12,7 +12,7 @@ In this guide, we'll walk you through the migration process in a Kubernetes envi
 
 Before you get started, complete the following:
 
-- **Check the [Dagster migration guide](/migration/version-migration).** Use the guide to verify any additional steps you may need to take to upgrade your Dagster version.
+- **Check the [Dagster upgrade guide](/migration/upgrading).** Use the guide to verify any additional steps you may need to take to upgrade your Dagster version.
 - **Back up your PostgreSQL database.**
 
 ## Step 1: Upgrade the Helm chart
@@ -23,7 +23,7 @@ This article assumes only one release of the Dagster Helm chart is installed in 
 
 :::
 
-1. First, [get the latest information about available charts](https://helm.sh/docs/helm/helm_repo_update/) by running:
+1. First, [get the latest information about available charts](https://helm.sh/docs/helm/helm_repo_update) by running:
 
    ```shell
    helm repo update
@@ -31,7 +31,7 @@ This article assumes only one release of the Dagster Helm chart is installed in 
 
    This retrieves the latest information about the Dagster Helm chart, which is updated with every Open Source (OSS) release.
 
-2. Run [`helm upgrade`](https://helm.sh/docs/helm/helm_upgrade/) with your desired Dagster chart version and Helm values:
+2. Run [`helm upgrade`](https://helm.sh/docs/helm/helm_upgrade) with your desired Dagster chart version and Helm values:
 
    ```shell
    helm upgrade --install dagster dagster/dagster -f /path/to/values.yaml

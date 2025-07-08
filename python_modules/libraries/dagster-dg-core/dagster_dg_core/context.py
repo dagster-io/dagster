@@ -9,6 +9,7 @@ from typing import Any, Final, Optional
 from dagster_shared.record import record
 from dagster_shared.serdes.serdes import whitelist_for_serdes
 from dagster_shared.seven import resolve_module_pattern
+from dagster_shared.utils.config import get_canonical_defs_module_name
 from packaging.version import Version
 from typing_extensions import Self
 
@@ -46,7 +47,6 @@ from dagster_dg_core.utils import (
 from dagster_dg_core.utils.warnings import emit_warning
 
 # Project
-_DEFAULT_PROJECT_DEFS_SUBMODULE: Final = "defs"
 _DEFAULT_PROJECT_CODE_LOCATION_TARGET_MODULE: Final = "definitions"
 _DEFAULT_PROJECT_PLUGIN_MODULE: Final = "components"
 _DEFAULT_PROJECT_PLUGIN_MODULE_REGISTRY_FILE: Final = "plugin_modules.json"
@@ -391,16 +391,26 @@ class DgContext:
     def defs_module_name(self) -> str:
         if not self.config.project:
             raise DgError("`defs_module_name` is only available in a Dagster project context")
-        return (
-            self.config.project.defs_module
-            or f"{self.root_module_name}.{_DEFAULT_PROJECT_DEFS_SUBMODULE}"
+        return get_canonical_defs_module_name(
+            self.config.project.defs_module, self.root_module_name
         )
 
     @cached_property
+    def _defs_path(self) -> Path:
+        defs_module_name = self.defs_module_name
+        return self.get_path_for_local_module(defs_module_name, require_exists=False)
+
+    @cached_property
+    def has_defs_path(self) -> bool:
+        return self._defs_path.exists()
+
+    @property
     def defs_path(self) -> Path:
-        if not self.is_project:
-            raise DgError("`defs_path` is only available in a Dagster project context")
-        return self.get_path_for_local_module(self.defs_module_name)
+        if not self.has_defs_path:
+            raise DgError(
+                f"Defs folder not found. Ensure folder `{self._defs_path.relative_to(self.root_path)}` exists in the project root."
+            )
+        return self._defs_path
 
     def get_component_instance_names(self) -> Iterable[str]:
         return [
@@ -412,8 +422,8 @@ class DgContext:
     def get_component_instance_module_name(self, name: str) -> str:
         return f"{self.defs_module_name}.{name}"
 
-    def has_component_instance(self, name: str) -> bool:
-        return (self.defs_path / name).is_dir()
+    def has_folder_at_defs_path(self, defs_path: str) -> bool:
+        return (self.defs_path / defs_path).is_dir()
 
     @property
     def target_args(self) -> Mapping[str, str]:
@@ -628,7 +638,7 @@ class DgContext:
         elif path.exists() or not require_exists:
             return path
 
-        exit_with_error(f"Cannot find module `{module_name}` in the current project.")
+        raise DgError(f"Cannot find module `{module_name}` in the current project.")
 
 
 # ########################

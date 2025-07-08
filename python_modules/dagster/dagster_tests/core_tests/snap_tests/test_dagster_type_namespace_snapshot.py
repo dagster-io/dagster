@@ -1,4 +1,4 @@
-from dagster import Dict, In, List, Out, Set, Tuple, job, op
+import dagster as dg
 from dagster._core.snap import build_dagster_type_namespace_snapshot
 from dagster._core.types.dagster_type import ALL_RUNTIME_BUILTINS, create_string_type
 
@@ -6,11 +6,11 @@ from dagster._core.types.dagster_type import ALL_RUNTIME_BUILTINS, create_string
 def test_simple_job_input_dagster_type_namespace():
     SomethingType = create_string_type("SomethingType", description="desc")
 
-    @op(ins={"something": In(SomethingType)})
+    @dg.op(ins={"something": dg.In(SomethingType)})
     def take_something(_, something):
         return something
 
-    @job
+    @dg.job
     def simple():
         take_something()
 
@@ -29,11 +29,11 @@ def test_simple_job_input_dagster_type_namespace():
 def test_simple_job_output_dagster_type_namespace():
     SomethingType = create_string_type("SomethingType")
 
-    @op(out=Out(SomethingType))
+    @dg.op(out=dg.Out(SomethingType))
     def take_something(_):
         return "something"
 
-    @job
+    @dg.job
     def simple():
         take_something()
 
@@ -44,25 +44,25 @@ def test_simple_job_output_dagster_type_namespace():
 def test_kitchen_sink_of_collection_types_snaps():
     SomethingType = create_string_type("SomethingType")
 
-    @op(ins={"somethings": In(List[SomethingType])})
+    @dg.op(ins={"somethings": dg.In(dg.List[SomethingType])})
     def take_list(_, somethings):
         return somethings
 
-    @op(ins={"somethings": In(Set[SomethingType])})
+    @dg.op(ins={"somethings": dg.In(dg.Set[SomethingType])})
     def take_set(_, somethings):
         return somethings
 
     # dict cannot be input without dep
     # see https://github.com/dagster-io/dagster/issues/2272
-    @op(out=Out(Dict[str, SomethingType]))
+    @dg.op(out=dg.Out(dg.Dict[str, SomethingType]))
     def return_dict(_):
         return {}
 
-    @op(ins={"somethings": In(Tuple[str, SomethingType])})
+    @dg.op(ins={"somethings": dg.In(dg.Tuple[str, SomethingType])})
     def take_tuple(_, somethings):
         return somethings
 
-    @job
+    @dg.job
     def simple():
         take_list()
         take_set()
@@ -71,27 +71,27 @@ def test_kitchen_sink_of_collection_types_snaps():
 
     namespace = build_dagster_type_namespace_snapshot(simple)
 
-    assert namespace.get_dagster_type_snap(List[SomethingType].key)
-    list_something = namespace.get_dagster_type_snap(List[SomethingType].key)
+    assert namespace.get_dagster_type_snap(dg.List[SomethingType].key)
+    list_something = namespace.get_dagster_type_snap(dg.List[SomethingType].key)
     assert len(list_something.type_param_keys) == 1
     assert list_something.type_param_keys[0] == SomethingType.key
     assert list_something.display_name == "[SomethingType]"
 
-    assert namespace.get_dagster_type_snap(Set[SomethingType].key)
-    something_set = namespace.get_dagster_type_snap(Set[SomethingType].key)
+    assert namespace.get_dagster_type_snap(dg.Set[SomethingType].key)
+    something_set = namespace.get_dagster_type_snap(dg.Set[SomethingType].key)
     assert len(something_set.type_param_keys) == 1
     assert something_set.type_param_keys[0] == SomethingType.key
     assert something_set.display_name == "Set[SomethingType]"
 
-    assert namespace.get_dagster_type_snap(Dict[str, SomethingType].key)
-    something_dict = namespace.get_dagster_type_snap(Dict[str, SomethingType].key)
+    assert namespace.get_dagster_type_snap(dg.Dict[str, SomethingType].key)
+    something_dict = namespace.get_dagster_type_snap(dg.Dict[str, SomethingType].key)
     assert len(something_dict.type_param_keys) == 2
     assert something_dict.type_param_keys[0] == "String"
     assert something_dict.type_param_keys[1] == SomethingType.key
     assert something_dict.display_name == "Dict[String,SomethingType]"
 
-    assert namespace.get_dagster_type_snap(Tuple[str, SomethingType].key)
-    something_tuple = namespace.get_dagster_type_snap(Tuple[str, SomethingType].key)
+    assert namespace.get_dagster_type_snap(dg.Tuple[str, SomethingType].key)
+    something_tuple = namespace.get_dagster_type_snap(dg.Tuple[str, SomethingType].key)
     assert len(something_tuple.type_param_keys) == 2
     assert something_tuple.type_param_keys[0] == "String"
     assert something_tuple.type_param_keys[1] == SomethingType.key
@@ -99,11 +99,11 @@ def test_kitchen_sink_of_collection_types_snaps():
 
 
 def test_kitchen_sink_of_builtins():
-    @op
+    @dg.op
     def noop(_):
         pass
 
-    @job
+    @dg.job
     def simple():
         noop()
 

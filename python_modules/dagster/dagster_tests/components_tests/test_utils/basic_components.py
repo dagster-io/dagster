@@ -1,3 +1,5 @@
+import dagster as dg
+
 """Sample local components for testing validation. Paired with test cases
 in integration_tests/integration_test_defs/validation.
 """
@@ -6,11 +8,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Annotated, Any
 
-from dagster._core.definitions.definitions_class import Definitions
-from dagster.components.component.component import Component
 from dagster.components.core.context import ComponentLoadContext
-from dagster.components.resolved.base import Resolvable
-from dagster.components.resolved.model import Resolver
 from pydantic import BaseModel, ConfigDict
 
 
@@ -29,13 +27,13 @@ def _maybe_throw(ctx, throw):
 
 
 @dataclass
-class MyComponent(Component, Resolvable):
+class MyComponent(dg.Component, dg.Resolvable):
     a_string: str
     an_int: int
-    throw: Annotated[bool, Resolver(_maybe_throw)] = False
+    throw: Annotated[bool, dg.Resolver(_maybe_throw)] = False
 
-    def build_defs(self, context: ComponentLoadContext) -> Definitions:
-        return Definitions()
+    def build_defs(self, context: ComponentLoadContext) -> dg.Definitions:
+        return dg.Definitions()
 
     @classmethod
     def get_additional_scope(cls) -> Mapping[str, Any]:
@@ -57,10 +55,10 @@ class MyNestedComponentModel(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
-class MyNestedComponent(Component):
+class MyNestedComponent(dg.Component):
     @classmethod
     def get_model_cls(cls) -> type[MyNestedComponentModel]:
         return MyNestedComponentModel
 
-    def build_defs(self, context: ComponentLoadContext) -> Definitions:
-        return Definitions()
+    def build_defs(self, context: ComponentLoadContext) -> dg.Definitions:
+        return dg.Definitions()

@@ -1,4 +1,5 @@
-from dagster import DagsterInstance, MultiPartitionKey, materialize_to_memory
+from dagster import DagsterInstance, materialize_to_memory
+from dagster._core.definitions.partitions.utils import MultiPartitionKey
 from dagster_test.toys.partitioned_assets.dynamic_asset_partitions import (
     customers_dynamic_partitions_asset1,
     customers_dynamic_partitions_asset2,

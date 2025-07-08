@@ -52,7 +52,9 @@ class ComponentDagsterDltTranslator(DagsterDltTranslator):
         table_name = data.resource.table_name
         if isinstance(table_name, Callable):
             table_name = data.resource.name
-        prefix = [data.pipeline.dataset_name] if data.pipeline else []
+        prefix = (
+            [data.pipeline.dataset_name] if data.pipeline and data.pipeline.dataset_name else []
+        )
         base_asset_spec = (
             super().get_asset_spec(data).replace_attributes(key=AssetKey(prefix + [table_name]))
         )

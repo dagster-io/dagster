@@ -251,6 +251,7 @@ export const RECENT_ASSET_EVENTS_QUERY = gql`
     $before: String
     $after: String
     $cursor: String
+    $partitions: [String!]
   ) {
     assetsLatestInfo(assetKeys: [$assetKey]) {
       id
@@ -268,6 +269,7 @@ export const RECENT_ASSET_EVENTS_QUERY = gql`
           beforeTimestampMillis: $before
           eventTypeSelectors: $eventTypeSelectors
           cursor: $cursor
+          partitions: $partitions
         ) {
           results {
             ...AssetSuccessfulMaterializationFragment

@@ -5,7 +5,7 @@ import uuid
 from abc import abstractmethod
 from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager
-from typing import Any, Optional, Union
+from typing import Optional, Union
 
 import jwt
 import requests
@@ -21,7 +21,7 @@ from dagster import (
     _check as check,
     get_dagster_logger,
 )
-from dagster._annotations import beta, superseded
+from dagster._annotations import beta, beta_param, superseded
 from dagster._core.definitions.definitions_load_context import StateBackedDefinitionsLoader
 from dagster._record import record
 from dagster._utils.cached_method import cached_method
@@ -39,6 +39,7 @@ from dagster_tableau.translator import (
     TableauTranslatorData,
     TableauViewMetadataSet,
     TableauWorkspaceData,
+    WorkbookSelectorFn,
 )
 
 DEFAULT_POLL_INTERVAL_SECONDS = 10
@@ -325,6 +326,8 @@ class BaseTableauClient:
                 createdAt
                 updatedAt
                 uri
+                projectName
+                projectLuid
                 sheets {
                   luid
                   name
@@ -578,6 +581,52 @@ class BaseTableauWorkspace(ConfigurableResource):
             workbooks + sheets + dashboards + data_sources,
         )
 
+    def get_or_fetch_workspace_data(
+        self,
+    ) -> TableauWorkspaceData:
+        """Retrieves all Tableau content from the workspace using the TableauWorkspaceDefsLoader
+        and returns it as a TableauWorkspaceData object. If the workspace data has already been fetched,
+        the cached TableauWorkspaceData object is returned.
+
+        Returns:
+            TableauWorkspaceData: A snapshot of the Tableau workspace's content.
+        """
+        return TableauWorkspaceDefsLoader(
+            workspace=self, translator=DagsterTableauTranslator()
+        ).get_or_fetch_state()
+
+    # Cache spec retrieval for a specific translator class and workbook_selector_fn
+    @cached_method
+    def load_asset_specs(
+        self,
+        dagster_tableau_translator: Optional[DagsterTableauTranslator] = None,
+        workbook_selector_fn: Optional[WorkbookSelectorFn] = None,
+    ) -> Sequence[AssetSpec]:
+        """Returns a list of AssetSpecs representing the Tableau content in the workspace.
+
+        Args:
+            dagster_tableau_translator (Optional[DagsterTableauTranslator]):
+                The translator to use to convert Tableau content into :py:class:`dagster.AssetSpec`.
+                Defaults to :py:class:`DagsterTableauTranslator`.
+            workbook_selector_fn (Optional[WorkbookSelectorFn]):
+                A function that allows for filtering which Tableau workbook assets are created for,
+                including data sources, sheets and dashboards.
+
+        Returns:
+            List[AssetSpec]: The set of assets representing the Tableau content in the workspace.
+        """
+        with self.process_config_and_initialize_cm() as initialized_workspace:
+            return check.is_list(
+                TableauWorkspaceDefsLoader(
+                    workspace=initialized_workspace,
+                    translator=dagster_tableau_translator or DagsterTableauTranslator(),
+                    workbook_selector_fn=workbook_selector_fn,
+                )
+                .build_defs()
+                .assets,
+                AssetSpec,
+            )
+
     def refresh_and_poll(
         self, context: AssetExecutionContext
     ) -> Iterator[Union[Output, ObserveResult]]:
@@ -638,9 +687,11 @@ class BaseTableauWorkspace(ConfigurableResource):
 
 
 @beta
+@beta_param(param="workbook_selector_fn")
 def load_tableau_asset_specs(
     workspace: BaseTableauWorkspace,
     dagster_tableau_translator: Optional[DagsterTableauTranslator] = None,
+    workbook_selector_fn: Optional[WorkbookSelectorFn] = None,
 ) -> Sequence[AssetSpec]:
     """Returns a list of AssetSpecs representing the Tableau content in the workspace.
 
@@ -649,20 +700,17 @@ def load_tableau_asset_specs(
         dagster_tableau_translator (Optional[DagsterTableauTranslator]):
             The translator to use to convert Tableau content into :py:class:`dagster.AssetSpec`.
             Defaults to :py:class:`DagsterTableauTranslator`.
+        workbook_selector_fn (Optional[WorkbookSelectorFn]):
+            A function that allows for filtering which Tableau workbook assets are created for,
+            including data sources, sheets and dashboards.
 
     Returns:
         List[AssetSpec]: The set of assets representing the Tableau content in the workspace.
     """
-    with workspace.process_config_and_initialize_cm() as initialized_workspace:
-        return check.is_list(
-            TableauWorkspaceDefsLoader(
-                workspace=initialized_workspace,
-                translator=dagster_tableau_translator or DagsterTableauTranslator(),
-            )
-            .build_defs()
-            .assets,
-            AssetSpec,
-        )
+    return workspace.load_asset_specs(
+        dagster_tableau_translator=dagster_tableau_translator,
+        workbook_selector_fn=workbook_selector_fn,
+    )
 
 
 @beta
@@ -704,27 +752,32 @@ class TableauServerWorkspace(BaseTableauWorkspace):
 
 
 @record
-class TableauWorkspaceDefsLoader(StateBackedDefinitionsLoader[Mapping[str, Any]]):
+class TableauWorkspaceDefsLoader(StateBackedDefinitionsLoader[TableauWorkspaceData]):
     workspace: BaseTableauWorkspace
     translator: DagsterTableauTranslator
+    workbook_selector_fn: Optional[WorkbookSelectorFn] = None
 
     @property
     def defs_key(self) -> str:
         return f"{TABLEAU_RECONSTRUCTION_METADATA_KEY_PREFIX}/{self.workspace.site_name}"
 
-    def fetch_state(self) -> TableauWorkspaceData:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def fetch_state(self) -> TableauWorkspaceData:
         return self.workspace.fetch_tableau_workspace_data()
 
-    def defs_from_state(self, state: TableauWorkspaceData) -> Definitions:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def defs_from_state(self, state: TableauWorkspaceData) -> Definitions:
+        selected_state = state.to_workspace_data_selection(
+            workbook_selector_fn=self.workbook_selector_fn
+        )
+
         all_external_data = [
-            *state.data_sources_by_id.values(),
-            *state.sheets_by_id.values(),
-            *state.dashboards_by_id.values(),
+            *selected_state.data_sources_by_id.values(),
+            *selected_state.sheets_by_id.values(),
+            *selected_state.dashboards_by_id.values(),
         ]
 
         all_external_asset_specs = [
             self.translator.get_asset_spec(
-                TableauTranslatorData(content_data=content, workspace_data=state)
+                TableauTranslatorData(content_data=content, workspace_data=selected_state)
             )
             for content in all_external_data
         ]

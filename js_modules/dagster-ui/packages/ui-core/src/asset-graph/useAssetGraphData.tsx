@@ -1,7 +1,6 @@
 import keyBy from 'lodash/keyBy';
 import reject from 'lodash/reject';
 import {useEffect, useLayoutEffect, useMemo, useRef, useState} from 'react';
-import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
 import {useAssetGraphSupplementaryData} from 'shared/asset-graph/useAssetGraphSupplementaryData.oss';
 import {Worker} from 'shared/workers/Worker.oss';
 
@@ -9,14 +8,11 @@ import {computeGraphData as computeGraphDataImpl} from './ComputeGraphData';
 import {BuildGraphDataMessageType, ComputeGraphDataMessageType} from './ComputeGraphData.types';
 import {GraphData, buildGraphData as buildGraphDataImpl, tokenForAssetKey} from './Utils';
 import {AssetGraphQueryItem, AssetNode} from './types';
-import {featureEnabled} from '../app/Flags';
 import {GraphQueryItem} from '../app/GraphQueryImpl';
-import {indexedDBAsyncMemoize} from '../app/Util';
 import {AssetKey} from '../assets/types';
 import {useAllAssetsNodes} from '../assets/useAllAssets';
 import {AssetGroupSelector, PipelineSelector} from '../graphql/types';
 import {useBlockTraceUntilTrue} from '../performance/TraceContext';
-import {hashObject} from '../util/hashObject';
 import {weakMapMemoize} from '../util/weakMapMemoize';
 import {workerSpawner} from '../workers/workerSpawner';
 import {WorkspaceAssetFragment} from '../workspace/WorkspaceContext/types/WorkspaceQueries.types';
@@ -40,6 +36,7 @@ export interface AssetGraphFetchScope {
   // This is used by pages where `hideNodesMatching` is only available asynchronously.
   loading?: boolean;
   useWorker?: boolean;
+  skip?: boolean;
 }
 
 export function useFullAssetGraphData(
@@ -73,7 +70,7 @@ export function useFullAssetGraphData(
       return;
     }
     const requestId = ++currentRequestRef.current;
-    buildGraphData(
+    buildGraphDataWrapper(
       {
         nodes: allNodes,
       },
@@ -92,7 +89,7 @@ export function useFullAssetGraphData(
       });
   }, [allNodes, options.loading, options.useWorker, spawnBuildGraphDataWorker]);
 
-  return {fullAssetGraphData, loading: loading || options.loading};
+  return {fullAssetGraphData, loading: loading || !!options.loading};
 }
 
 export type GraphDataState = {
@@ -179,7 +176,7 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
   }, [spawnComputeGraphDataWorker]);
 
   useLayoutEffect(() => {
-    if (options.loading || supplementaryDataLoading) {
+    if (options.loading || supplementaryDataLoading || assetsLoading || options.skip) {
       return;
     }
 
@@ -193,7 +190,7 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
 
     setGraphDataLoading(true);
 
-    computeGraphData(
+    computeGraphDataWrapper(
       {
         repoFilteredNodes,
         graphQueryItems,
@@ -236,9 +233,13 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
     supplementaryDataLoading,
     spawnComputeGraphDataWorker,
     options.useWorker,
+    options.skip,
+    assetsLoading,
   ]);
 
-  const loading = assetsLoading || graphDataLoading || supplementaryDataLoading;
+  const loading =
+    !options.skip &&
+    (assetsLoading || graphDataLoading || !!supplementaryDataLoading || !!options.loading);
   useBlockTraceUntilTrue('useAssetGraphData', !loading);
   return {
     loading,
@@ -248,12 +249,6 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
     allAssetKeys: state.allAssetKeys,
   };
 }
-
-const computeGraphData = indexedDBAsyncMemoize<GraphDataState, typeof computeGraphDataWrapper>(
-  computeGraphDataWrapper,
-  'computeGraphData',
-  (props) => hashObject({props, version: 2}),
-);
 
 const buildGraphQueryItems = (nodes: AssetNode[]) => {
   const items: {[name: string]: AssetGraphQueryItem} = {};
@@ -338,88 +333,78 @@ const EMPTY_GRAPH_DATA_STATE: GraphDataState = {
 };
 
 let _id = 0;
-async function computeGraphDataWrapper(
-  props: Omit<ComputeGraphDataMessageType, 'id' | 'type'>,
-  spawnComputeGraphDataWorker: () => Worker,
-  useWorker: boolean,
-): Promise<GraphDataState> {
-  if (
-    featureEnabled(FeatureFlag.flagAssetSelectionWorker) &&
-    useWorker &&
-    typeof window.Worker !== 'undefined'
-  ) {
-    const worker = spawnComputeGraphDataWorker();
-    return new Promise<GraphDataState>((resolve, reject) => {
-      const id = ++_id;
-      const removeMessageListener = worker.onMessage((event: MessageEvent) => {
-        const data = event.data as GraphDataState & {id: number};
-        if (data.id === id) {
-          resolve(data);
-          removeMessageListener();
+const computeGraphDataWrapper = weakMapMemoize(
+  (
+    props: Omit<ComputeGraphDataMessageType, 'id' | 'type'>,
+    spawnComputeGraphDataWorker: () => Worker,
+    useWorker: boolean,
+  ) => {
+    if (useWorker && typeof window.Worker !== 'undefined') {
+      const worker = spawnComputeGraphDataWorker();
+      return new Promise<GraphDataState>((resolve, reject) => {
+        const id = ++_id;
+        const removeMessageListener = worker.onMessage((event: MessageEvent) => {
+          const data = event.data as GraphDataState & {id: number};
+          if (data.id === id) {
+            resolve(data);
+            removeMessageListener();
+            worker.terminate();
+          }
+        });
+        const message: ComputeGraphDataMessageType = {
+          type: 'computeGraphData',
+          id,
+          ...props,
+        };
+        worker.onError((error) => {
+          console.error(error);
+          resolve(EMPTY_GRAPH_DATA_STATE);
           worker.terminate();
-        }
+        });
+        worker.onTerminate(() => {
+          reject(new Error('Worker terminated'));
+        });
+        worker.postMessage(message);
       });
-      const message: ComputeGraphDataMessageType = {
-        type: 'computeGraphData',
-        id,
-        ...props,
-      };
-      worker.onError((error) => {
-        console.error(error);
-        resolve(EMPTY_GRAPH_DATA_STATE);
-        worker.terminate();
-      });
-      worker.onTerminate(() => {
-        reject(new Error('Worker terminated'));
-      });
-      worker.postMessage(message);
-    });
-  }
-  return computeGraphDataImpl(props);
-}
-
-const buildGraphData = indexedDBAsyncMemoize<GraphData, typeof buildGraphDataWrapper>(
-  buildGraphDataWrapper,
-  'buildGraphData',
-  (props) => hashObject({props, version: 2}),
+    }
+    return Promise.resolve(computeGraphDataImpl(props));
+  },
 );
 
-async function buildGraphDataWrapper(
-  props: Omit<BuildGraphDataMessageType, 'id' | 'type'>,
-  spawnBuildGraphDataWorker: () => Worker,
-  useWorker: boolean,
-): Promise<GraphData> {
-  if (
-    featureEnabled(FeatureFlag.flagAssetSelectionWorker) &&
-    useWorker &&
-    typeof window.Worker !== 'undefined'
-  ) {
-    const worker = spawnBuildGraphDataWorker();
-    return new Promise<GraphData>((resolve) => {
-      const id = ++_id;
-      const removeMessageListener = worker.onMessage((event: MessageEvent) => {
-        const data = event.data as GraphData & {id: number};
-        if (data.id === id) {
-          resolve(data);
-          removeMessageListener();
+const buildGraphDataWrapper = weakMapMemoize(
+  (
+    props: Omit<BuildGraphDataMessageType, 'id' | 'type'>,
+    spawnBuildGraphDataWorker: () => Worker,
+    useWorker: boolean,
+  ) => {
+    if (useWorker && typeof window.Worker !== 'undefined') {
+      const worker = spawnBuildGraphDataWorker();
+      return new Promise<GraphData>((resolve) => {
+        const id = ++_id;
+        const removeMessageListener = worker.onMessage((event: MessageEvent) => {
+          const data = event.data as GraphData & {id: number};
+          if (data.id === id) {
+            resolve(data);
+            removeMessageListener();
+            worker.terminate();
+          }
+        });
+        worker.onError((error) => {
+          console.error(error);
+          resolve(EMPTY_GRAPH_DATA);
           worker.terminate();
-        }
+        });
+        const message: BuildGraphDataMessageType = {
+          type: 'buildGraphData',
+          id,
+          ...props,
+        };
+        worker.postMessage(message);
       });
-      worker.onError((error) => {
-        console.error(error);
-        resolve(EMPTY_GRAPH_DATA);
-        worker.terminate();
-      });
-      const message: BuildGraphDataMessageType = {
-        type: 'buildGraphData',
-        id,
-        ...props,
-      };
-      worker.postMessage(message);
-    });
-  }
-  return buildGraphDataImpl(props.nodes);
-}
+    }
+    return Promise.resolve(buildGraphDataImpl(props.nodes));
+  },
+);
 
 const buildExternalAssetQueryItem = (asset: {
   id: string;

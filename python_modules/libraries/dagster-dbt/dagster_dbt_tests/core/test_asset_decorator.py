@@ -12,24 +12,29 @@ from dagster import (
     AutomationCondition,
     BackfillPolicy,
     DagsterInvalidDefinitionError,
-    DailyPartitionsDefinition,
     Definitions,
     DependencyDefinition,
-    DimensionPartitionMapping,
-    FreshnessPolicy,
     Jitter,
-    LastPartitionMapping,
-    MultiPartitionMapping,
+    LegacyFreshnessPolicy,
     NodeInvocation,
     OpDefinition,
     PartitionMapping,
     PartitionsDefinition,
     RetryPolicy,
-    StaticPartitionMapping,
-    StaticPartitionsDefinition,
     TimeWindowPartitionMapping,
     asset,
     materialize,
+)
+from dagster._core.definitions.dependency import BlockingAssetChecksDependencyDefinition
+from dagster._core.definitions.partitions.definition import (
+    DailyPartitionsDefinition,
+    StaticPartitionsDefinition,
+)
+from dagster._core.definitions.partitions.mapping import (
+    DimensionPartitionMapping,
+    LastPartitionMapping,
+    MultiPartitionMapping,
+    StaticPartitionMapping,
 )
 from dagster._core.definitions.tags import build_kind_tag, has_kind
 from dagster._core.definitions.utils import DEFAULT_IO_MANAGER_KEY
@@ -338,7 +343,7 @@ def test_backfill_policy(
     expected_backfill_policy: BackfillPolicy,
 ) -> None:
     class CustomDagsterDbtTranslator(DagsterDbtTranslator):
-        def get_freshness_policy(self, _: Mapping[str, Any]) -> Optional[FreshnessPolicy]:  # pyright: ignore[reportIncompatibleMethodOverride]
+        def get_freshness_policy(self, _: Mapping[str, Any]) -> Optional[LegacyFreshnessPolicy]:  # pyright: ignore[reportIncompatibleMethodOverride]
             # Disable freshness policies when using static partitions
             return None
 
@@ -748,10 +753,10 @@ def test_all_assets_have_a_distinct_code_version(test_jaffle_shop_manifest: dict
 
 
 def test_with_freshness_policy_replacements(test_jaffle_shop_manifest: dict[str, Any]) -> None:
-    expected_freshness_policy = FreshnessPolicy(maximum_lag_minutes=60)
+    expected_freshness_policy = LegacyFreshnessPolicy(maximum_lag_minutes=60)
 
     class CustomDagsterDbtTranslator(DagsterDbtTranslator):
-        def get_freshness_policy(self, _: Mapping[str, Any]) -> Optional[FreshnessPolicy]:  # pyright: ignore[reportIncompatibleMethodOverride]
+        def get_freshness_policy(self, _: Mapping[str, Any]) -> Optional[LegacyFreshnessPolicy]:  # pyright: ignore[reportIncompatibleMethodOverride]
             return expected_freshness_policy
 
     expected_specs_by_key = {
@@ -767,9 +772,9 @@ def test_with_freshness_policy_replacements(test_jaffle_shop_manifest: dict[str,
     )
     def my_dbt_assets(): ...
 
-    for asset_key, freshness_policy in my_dbt_assets.freshness_policies_by_key.items():
+    for asset_key, freshness_policy in my_dbt_assets.legacy_freshness_policies_by_key.items():
         assert freshness_policy == expected_freshness_policy
-        assert expected_specs_by_key[asset_key].freshness_policy == expected_freshness_policy
+        assert expected_specs_by_key[asset_key].legacy_freshness_policy == expected_freshness_policy
 
 
 def test_with_auto_materialize_policy_replacements(
@@ -884,7 +889,9 @@ def test_dbt_meta_auto_materialize_policy(test_meta_config_manifest: dict[str, A
 
 
 def test_dbt_meta_freshness_policy(test_meta_config_manifest: dict[str, Any]) -> None:
-    expected_freshness_policy = FreshnessPolicy(maximum_lag_minutes=60.0, cron_schedule="* * * * *")
+    expected_freshness_policy = LegacyFreshnessPolicy(
+        maximum_lag_minutes=60.0, cron_schedule="* * * * *"
+    )
     expected_specs_by_key = {
         spec.key: spec for spec in build_dbt_asset_specs(manifest=test_meta_config_manifest)
     }
@@ -892,12 +899,12 @@ def test_dbt_meta_freshness_policy(test_meta_config_manifest: dict[str, Any]) ->
     @dbt_assets(manifest=test_meta_config_manifest)
     def my_dbt_assets(): ...
 
-    freshness_policies = my_dbt_assets.freshness_policies_by_key.items()
+    freshness_policies = my_dbt_assets.legacy_freshness_policies_by_key.items()
     assert freshness_policies
 
     for asset_key, freshness_policy in freshness_policies:
         assert freshness_policy == expected_freshness_policy
-        assert expected_specs_by_key[asset_key].freshness_policy == expected_freshness_policy
+        assert expected_specs_by_key[asset_key].legacy_freshness_policy == expected_freshness_policy
 
 
 def test_dbt_meta_asset_key(test_meta_config_manifest: dict[str, Any]) -> None:
@@ -1121,11 +1128,41 @@ def test_dbt_with_python_interleaving(
         },
         # the second invocation of my_dbt_assets depends on the first, and the python step
         NodeInvocation(name="my_dbt_assets"): {
-            "__subset_input__stg_orders": DependencyDefinition(
-                node="my_dbt_assets_2", output="stg_orders"
+            "__subset_input__stg_orders": BlockingAssetChecksDependencyDefinition(
+                asset_check_dependencies=[
+                    DependencyDefinition(
+                        node="my_dbt_assets_2",
+                        output="stg_orders_accepted_values_stg_orders_status__placed__shipped__completed__return_pending__returned",
+                    ),
+                    DependencyDefinition(
+                        node="my_dbt_assets_2",
+                        output="stg_orders_not_null_stg_orders_order_id",
+                    ),
+                    DependencyDefinition(
+                        node="my_dbt_assets_2",
+                        output="stg_orders_unique_stg_orders_order_id",
+                    ),
+                ],
+                other_dependency=DependencyDefinition(node="my_dbt_assets_2", output="stg_orders"),
             ),
-            "__subset_input__stg_payments": DependencyDefinition(
-                node="my_dbt_assets_2", output="stg_payments"
+            "__subset_input__stg_payments": BlockingAssetChecksDependencyDefinition(
+                asset_check_dependencies=[
+                    DependencyDefinition(
+                        node="my_dbt_assets_2",
+                        output="stg_payments_accepted_values_stg_payments_payment_method__credit_card__coupon__bank_transfer__gift_card",
+                    ),
+                    DependencyDefinition(
+                        node="my_dbt_assets_2",
+                        output="stg_payments_not_null_stg_payments_payment_id",
+                    ),
+                    DependencyDefinition(
+                        node="my_dbt_assets_2",
+                        output="stg_payments_unique_stg_payments_payment_id",
+                    ),
+                ],
+                other_dependency=DependencyDefinition(
+                    node="my_dbt_assets_2", output="stg_payments"
+                ),
             ),
             "dagster_python_augmented_customers": DependencyDefinition(
                 node="dagster__python_augmented_customers", output="result"

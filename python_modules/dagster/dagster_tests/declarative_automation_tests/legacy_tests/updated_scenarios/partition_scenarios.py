@@ -1,14 +1,7 @@
 import datetime
 
-from dagster import (
-    AssetDep,
-    AutoMaterializePolicy,
-    AutoMaterializeRule,
-    DimensionPartitionMapping,
-    IdentityPartitionMapping,
-    MultiPartitionMapping,
-    TimeWindowPartitionMapping,
-)
+import dagster as dg
+from dagster import AutoMaterializePolicy, AutoMaterializeRule
 from dagster._core.definitions.auto_materialize_rule_impls import (
     DiscardOnMaxMaterializationsExceededRule,
 )
@@ -254,9 +247,9 @@ partition_scenarios = [
         .with_asset_properties(
             keys=["B"],
             deps=[
-                AssetDep(
+                dg.AssetDep(
                     "A",
-                    partition_mapping=TimeWindowPartitionMapping(
+                    partition_mapping=dg.TimeWindowPartitionMapping(
                         allow_nonexistent_upstream_partitions=True
                     ),
                 )
@@ -410,9 +403,9 @@ partition_scenarios = [
             keys=["C"],
             deps=[
                 "A",
-                AssetDep(
+                dg.AssetDep(
                     "B",
-                    partition_mapping=TimeWindowPartitionMapping(
+                    partition_mapping=dg.TimeWindowPartitionMapping(
                         allow_nonexistent_upstream_partitions=True
                     ),
                 ),
@@ -544,13 +537,13 @@ partition_scenarios = [
         initial_spec=one_asset.with_asset_properties(
             partitions_def=time_multipartitions_def,
             deps=[
-                AssetDep(
+                dg.AssetDep(
                     "A",
-                    partition_mapping=MultiPartitionMapping(
+                    partition_mapping=dg.MultiPartitionMapping(
                         {
-                            "time": DimensionPartitionMapping("time", self_partition_mapping),
-                            "static": DimensionPartitionMapping(
-                                "static", IdentityPartitionMapping()
+                            "time": dg.DimensionPartitionMapping("time", self_partition_mapping),
+                            "static": dg.DimensionPartitionMapping(
+                                "static", dg.IdentityPartitionMapping()
                             ),
                         }
                     ),
@@ -594,7 +587,7 @@ partition_scenarios = [
             partitions_def=daily_partitions_def
         )
         .with_asset_properties(
-            keys=["B"], deps=["A", AssetDep("B", partition_mapping=self_partition_mapping)]
+            keys=["B"], deps=["A", dg.AssetDep("B", partition_mapping=self_partition_mapping)]
         )
         .with_all_eager()
         .with_current_time(time_partitions_start_str)

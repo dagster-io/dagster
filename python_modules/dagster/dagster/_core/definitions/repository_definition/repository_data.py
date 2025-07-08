@@ -32,7 +32,7 @@ from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariant
 if TYPE_CHECKING:
     from dagster._core.definitions import AssetsDefinition
     from dagster._core.definitions.asset_checks import AssetChecksDefinition
-    from dagster._core.definitions.partitioned_schedule import (
+    from dagster._core.definitions.partitions.partitioned_schedule import (
         UnresolvedPartitionedAssetScheduleDefinition,
     )
     from dagster.components.core.tree import ComponentTree

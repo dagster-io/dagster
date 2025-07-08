@@ -116,7 +116,6 @@ export type AssetAssetEventHistoryArgs = {
   cursor?: InputMaybe<Scalars['String']['input']>;
   eventTypeSelectors: Array<AssetEventHistoryEventTypeSelector>;
   limit: Scalars['Int']['input'];
-  partitionInLast?: InputMaybe<Scalars['Int']['input']>;
   partitions?: InputMaybe<Array<Scalars['String']['input']>>;
 };
 
@@ -124,7 +123,6 @@ export type AssetAssetMaterializationsArgs = {
   afterTimestampMillis?: InputMaybe<Scalars['String']['input']>;
   beforeTimestampMillis?: InputMaybe<Scalars['String']['input']>;
   limit?: InputMaybe<Scalars['Int']['input']>;
-  partitionInLast?: InputMaybe<Scalars['Int']['input']>;
   partitions?: InputMaybe<Array<Scalars['String']['input']>>;
 };
 
@@ -132,7 +130,6 @@ export type AssetAssetObservationsArgs = {
   afterTimestampMillis?: InputMaybe<Scalars['String']['input']>;
   beforeTimestampMillis?: InputMaybe<Scalars['String']['input']>;
   limit?: InputMaybe<Scalars['Int']['input']>;
-  partitionInLast?: InputMaybe<Scalars['Int']['input']>;
   partitions?: InputMaybe<Array<Scalars['String']['input']>>;
 };
 
@@ -542,6 +539,7 @@ export type AssetNode = {
   description: Maybe<Scalars['String']['output']>;
   freshnessInfo: Maybe<AssetFreshnessInfo>;
   freshnessPolicy: Maybe<FreshnessPolicy>;
+  freshnessStatusInfo: Maybe<FreshnessStatusInfo>;
   graphName: Maybe<Scalars['String']['output']>;
   groupName: Scalars['String']['output'];
   hasAssetChecks: Scalars['Boolean']['output'];
@@ -1880,6 +1878,12 @@ export type FreshnessPolicy = {
   maximumLagMinutes: Scalars['Float']['output'];
 };
 
+export type FreshnessStatusInfo = {
+  __typename: 'FreshnessStatusInfo';
+  freshnessStatus: AssetHealthStatus;
+  freshnessStatusMetadata: Maybe<AssetHealthFreshnessMeta>;
+};
+
 export type Graph = SolidContainer & {
   __typename: 'Graph';
   description: Maybe<Scalars['String']['output']>;
@@ -2109,6 +2113,7 @@ export type Instance = {
   concurrencyLimits: Array<ConcurrencyKeyInfo>;
   daemonHealth: DaemonHealth;
   executablePath: Scalars['String']['output'];
+  freshnessEvaluationEnabled: Scalars['Boolean']['output'];
   hasInfo: Scalars['Boolean']['output'];
   id: Scalars['String']['output'];
   info: Maybe<Scalars['String']['output']>;
@@ -7159,6 +7164,12 @@ export const buildAssetNode = (
         : relationshipsToOmit.has('FreshnessPolicy')
           ? ({} as FreshnessPolicy)
           : buildFreshnessPolicy({}, relationshipsToOmit),
+    freshnessStatusInfo:
+      overrides && overrides.hasOwnProperty('freshnessStatusInfo')
+        ? overrides.freshnessStatusInfo!
+        : relationshipsToOmit.has('FreshnessStatusInfo')
+          ? ({} as FreshnessStatusInfo)
+          : buildFreshnessStatusInfo({}, relationshipsToOmit),
     graphName: overrides && overrides.hasOwnProperty('graphName') ? overrides.graphName! : 'et',
     groupName:
       overrides && overrides.hasOwnProperty('groupName') ? overrides.groupName! : 'asperiores',
@@ -9254,6 +9265,27 @@ export const buildFreshnessPolicy = (
   };
 };
 
+export const buildFreshnessStatusInfo = (
+  overrides?: Partial<FreshnessStatusInfo>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'FreshnessStatusInfo'} & FreshnessStatusInfo => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('FreshnessStatusInfo');
+  return {
+    __typename: 'FreshnessStatusInfo',
+    freshnessStatus:
+      overrides && overrides.hasOwnProperty('freshnessStatus')
+        ? overrides.freshnessStatus!
+        : AssetHealthStatus.DEGRADED,
+    freshnessStatusMetadata:
+      overrides && overrides.hasOwnProperty('freshnessStatusMetadata')
+        ? overrides.freshnessStatusMetadata!
+        : relationshipsToOmit.has('AssetHealthFreshnessMeta')
+          ? ({} as AssetHealthFreshnessMeta)
+          : buildAssetHealthFreshnessMeta({}, relationshipsToOmit),
+  };
+};
+
 export const buildGraph = (
   overrides?: Partial<Graph>,
   _relationshipsToOmit: Set<string> = new Set(),
@@ -9603,6 +9635,10 @@ export const buildInstance = (
           : buildDaemonHealth({}, relationshipsToOmit),
     executablePath:
       overrides && overrides.hasOwnProperty('executablePath') ? overrides.executablePath! : 'fuga',
+    freshnessEvaluationEnabled:
+      overrides && overrides.hasOwnProperty('freshnessEvaluationEnabled')
+        ? overrides.freshnessEvaluationEnabled!
+        : true,
     hasInfo: overrides && overrides.hasOwnProperty('hasInfo') ? overrides.hasInfo! : true,
     id: overrides && overrides.hasOwnProperty('id') ? overrides.id! : 'deleniti',
     info: overrides && overrides.hasOwnProperty('info') ? overrides.info! : 'qui',

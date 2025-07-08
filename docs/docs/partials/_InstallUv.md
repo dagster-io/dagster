@@ -9,5 +9,3 @@
     <CliInvocationExample contents="curl -LsSf https://astral.sh/uv/install.sh | sh" />
   </TabItem>
 </Tabs>
-For more detailed `uv` installation instructions, see the [`uv`
-docs](https://docs.astral.sh/uv/getting-started/installation/).

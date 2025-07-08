@@ -5,9 +5,8 @@ attributes:
     - path: ./replication.yaml
       translation:
         key: "foo/{{ stream_definition.config.meta.dagster.asset_key }}"
-  sling:
-    connections:
-      - name: DUCKDB
-        type: duckdb
-        instance: <PLACEHOLDER>
-        password: "{{ env.SOME_PASSWORD }}"
+  connections:
+    DUCKDB:
+      type: duckdb
+      instance: <PLACEHOLDER>
+      password: "{{ env.SOME_PASSWORD }}"

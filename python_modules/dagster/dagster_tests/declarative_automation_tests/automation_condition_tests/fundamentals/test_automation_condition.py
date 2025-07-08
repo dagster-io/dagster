@@ -1,19 +1,17 @@
 import datetime
 import operator
 
+import dagster as dg
 import pytest
-from dagster import AutoMaterializePolicy, AutomationCondition, Definitions, asset
+from dagster import AutoMaterializePolicy, AutomationCondition
 from dagster._core.definitions.asset_selection import AssetSelection
-from dagster._core.definitions.declarative_automation.automation_condition import AutomationResult
 from dagster._core.definitions.declarative_automation.automation_context import AutomationContext
 from dagster._core.definitions.declarative_automation.operators import (
     AndAutomationCondition,
     OrAutomationCondition,
 )
 from dagster._core.remote_representation.external_data import RepositorySnap
-from dagster._serdes import serialize_value
 from dagster_shared.check import CheckError
-from dagster_shared.serdes import deserialize_value
 
 from dagster_tests.declarative_automation_tests.scenario_utils.automation_condition_scenario import (
     AutomationConditionScenarioState,
@@ -90,37 +88,37 @@ def test_serialize_definitions_with_asset_condition() -> None:
         )
     )
 
-    @asset(auto_materialize_policy=amp)
+    @dg.asset(auto_materialize_policy=amp)
     def my_asset() -> int:
         return 0
 
-    serialized = serialize_value(amp)
+    serialized = dg.serialize_value(amp)
     assert isinstance(serialized, str)
 
-    serialized = serialize_value(
-        RepositorySnap.from_def(Definitions(assets=[my_asset]).get_repository_def())
+    serialized = dg.serialize_value(
+        RepositorySnap.from_def(dg.Definitions(assets=[my_asset]).get_repository_def())
     )
     assert isinstance(serialized, str)
 
 
 def test_serialize_definitions_with_user_code_asset_condition() -> None:
-    class MyAutomationCondition(AutomationCondition):
-        def evaluate(self, context: AutomationContext) -> AutomationResult:
-            return AutomationResult(
+    class MyAutomationCondition(dg.AutomationCondition):
+        def evaluate(self, context: AutomationContext) -> dg.AutomationResult:
+            return dg.AutomationResult(
                 context, context.asset_graph_view.get_full_subset(key=context.key)
             )
 
     automation_condition = AutomationCondition.eager() | MyAutomationCondition()
 
-    @asset(automation_condition=automation_condition)
+    @dg.asset(automation_condition=automation_condition)
     def my_asset() -> int:
         return 0
 
-    serialized = serialize_value(
-        RepositorySnap.from_def(Definitions(assets=[my_asset]).get_repository_def())
+    serialized = dg.serialize_value(
+        RepositorySnap.from_def(dg.Definitions(assets=[my_asset]).get_repository_def())
     )
     assert isinstance(serialized, str)
-    deserialized = deserialize_value(serialized)
+    deserialized = dg.deserialize_value(serialized)
     assert isinstance(deserialized, RepositorySnap)
     external_assets = deserialized.asset_nodes
     assert len(external_assets) == 1
@@ -132,8 +130,8 @@ def test_serialize_definitions_with_user_code_asset_condition() -> None:
 def test_deserialize_definitions_with_asset_condition() -> None:
     serialized = """{"__class__": "AutoMaterializePolicy", "asset_condition": {"__class__": "AndAssetCondition", "operands": [{"__class__": "RuleCondition", "rule": {"__class__": "MaterializeOnParentUpdatedRule", "updated_parent_filter": null}}, {"__class__": "NotAssetCondition", "operand": {"__class__": "NotAssetCondition", "operand": {"__class__": "RuleCondition", "rule": {"__class__": "MaterializeOnCronRule", "all_partitions": false, "cron_schedule": "0 * * * *", "timezone": "UTC"}}}}]}, "max_materializations_per_minute": null, "rules": {"__frozenset__": []}, "time_window_partition_scope_minutes": 1e-06}"""
 
-    deserialized = deserialize_value(serialized, AutoMaterializePolicy)
-    assert isinstance(deserialized, AutoMaterializePolicy)
+    deserialized = dg.deserialize_value(serialized, dg.AutoMaterializePolicy)
+    assert isinstance(deserialized, dg.AutoMaterializePolicy)
 
 
 def test_label_automation_condition() -> None:

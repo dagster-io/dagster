@@ -178,7 +178,7 @@ class ConfigurableResourceFactory(
 
     * An existing class from a third-party library that the user does not control.
     * A complex class that requires substantial internal state management or itself requires arguments beyond its config values.
-    * A class with expensive initialization that should not be invoked on code location load, but rather lazily on first use in an op or asset during a run.
+    * A class with expensive initialization that should not be invoked on project load, but rather lazily on first use in an op or asset during a run.
     * A class that you desire to be a plain Python class, rather than a Pydantic class, for whatever reason.
 
     This class is a subclass of both :py:class:`ResourceDefinition` and :py:class:`Config`, and

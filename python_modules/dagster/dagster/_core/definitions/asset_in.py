@@ -10,7 +10,7 @@ from dagster._core.definitions.events import (
 )
 from dagster._core.definitions.input import NoValueSentinel
 from dagster._core.definitions.metadata import ArbitraryMetadataMapping
-from dagster._core.definitions.partition_mapping import PartitionMapping
+from dagster._core.definitions.partitions.mapping import PartitionMapping
 from dagster._core.types.dagster_type import DagsterType, resolve_dagster_type
 
 
@@ -82,6 +82,9 @@ class AssetIn(
     @classmethod
     def from_coercible(cls, coercible: "CoercibleToAssetIn") -> "AssetIn":
         return coercible if isinstance(coercible, AssetIn) else AssetIn(key=coercible)
+
+    def resolve_key(self, input_name: str) -> AssetKey:
+        return self.key or AssetKey.from_coercible(input_name).with_prefix(self.key_prefix or [])
 
 
 CoercibleToAssetIn = Union[AssetIn, CoercibleToAssetKey]

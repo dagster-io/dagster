@@ -1,9 +1,11 @@
 import {
-  BodySmall,
+  Body,
+  BodyLarge,
   Box,
-  CaptionMono,
   Colors,
   FontFamily,
+  Icon,
+  Mono,
   Spinner,
   Subheading,
 } from '@dagster-io/ui-components';
@@ -46,6 +48,7 @@ export type LineChartMetrics = {
   prevPeriod: {
     label: string;
     data: (number | null)[];
+    aggregateValue: number | null;
     color: string;
   };
 };
@@ -81,6 +84,8 @@ const getDataset = (
         backgroundColor: 'transparent',
         pointRadius: 0,
         borderWidth: 2,
+        pointHoverRadius: 6,
+        pointHoverBorderColor: metrics.currentPeriod.color,
       },
       {
         label: metrics.prevPeriod.label,
@@ -88,7 +93,9 @@ const getDataset = (
         borderColor: metrics.prevPeriod.color,
         backgroundColor: 'transparent',
         pointRadius: 0,
-        borderWidth: 1,
+        borderWidth: 2,
+        pointHoverRadius: 6,
+        pointHoverBorderColor: metrics.prevPeriod.color,
       },
     ],
   };
@@ -134,11 +141,11 @@ export const AssetCatalogInsightsLineChart = React.memo(
           const currentPeriodMetric = metrics.currentPeriod.data[currentPeriodDataPoint.dataIndex];
           return (
             <TooltipCard>
-              <Box flex={{direction: 'column', gap: 8}} padding={{vertical: 8, horizontal: 12}}>
-                <Box border="bottom" padding={{bottom: 8}}>
+              <Box flex={{direction: 'column'}}>
+                <Box border="bottom" padding={{horizontal: 12, vertical: 8}}>
                   <Subheading>{date}</Subheading>
                 </Box>
-                <div>
+                <Box padding={{horizontal: 16, vertical: 12}}>
                   <Box
                     flex={{direction: 'row', justifyContent: 'space-between'}}
                     margin={{bottom: 4}}
@@ -146,39 +153,41 @@ export const AssetCatalogInsightsLineChart = React.memo(
                     <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
                       <div
                         style={{
-                          width: 12,
-                          height: 12,
+                          width: 8,
+                          height: 8,
                           backgroundColor: metrics.currentPeriod.color,
                           borderRadius: '50%',
                         }}
                       />
-                      <BodySmall>Current period</BodySmall>
+                      <Body>Current period</Body>
                     </Box>
                     <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
-                      <CaptionMono>{currentPeriodDataPoint?.formattedValue ?? 0}</CaptionMono>
-                      <BodySmall color={Colors.textLight()}>{unitTypeToLabel[unitType]}</BodySmall>
+                      <Mono>{currentPeriodDataPoint?.formattedValue ?? 0}</Mono>
+                      <Body color={Colors.textLight()}>{unitTypeToLabel[unitType]}</Body>
                     </Box>
                   </Box>
                   <Box flex={{direction: 'row', justifyContent: 'space-between'}}>
                     <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
                       <div
                         style={{
-                          width: 12,
-                          height: 12,
+                          width: 8,
+                          height: 8,
                           backgroundColor: metrics.prevPeriod.color,
                           borderRadius: '50%',
                         }}
                       />
-                      <BodySmall>Previous period</BodySmall>
+                      <Body>Previous period</Body>
                     </Box>
                     <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
-                      <CaptionMono>{prevPeriodDataPoint?.formattedValue ?? 0}</CaptionMono>
-                      <BodySmall color={Colors.textLight()}>{unitTypeToLabel[unitType]}</BodySmall>
+                      <Mono>{prevPeriodDataPoint?.formattedValue ?? 0}</Mono>
+                      <Body color={Colors.textLight()}>{unitTypeToLabel[unitType]}</Body>
                     </Box>
                   </Box>
-                </div>
+                </Box>
                 {currentPeriodMetric ? (
-                  <BodySmall color={Colors.textLight()}>Click for asset breakdown</BodySmall>
+                  <Box padding={{horizontal: 12, vertical: 8}} border="top">
+                    <Body color={Colors.textLight()}>Click to view details</Body>
+                  </Box>
                 ) : null}
               </Box>
             </TooltipCard>
@@ -206,6 +215,9 @@ export const AssetCatalogInsightsLineChart = React.memo(
         },
         scales: {
           x: {
+            grid: {
+              display: false,
+            },
             ticks: {
               color: rgbColors[Colors.textLight()],
               maxRotation: 0,
@@ -215,6 +227,9 @@ export const AssetCatalogInsightsLineChart = React.memo(
             },
           },
           y: {
+            border: {
+              display: false,
+            },
             grid: {color: rgbColors[Colors.keylineDefault()]},
             beginAtZero: true,
             ticks: {
@@ -252,7 +267,7 @@ export const AssetCatalogInsightsLineChart = React.memo(
 
       const clickedElements = chart.getElementsAtEventForMode(
         event.nativeEvent,
-        'y',
+        'index',
         {axis: 'x', intersect: false},
         false, // get elements in the clicked position even if animations are not completed
       );
@@ -291,20 +306,36 @@ export const AssetCatalogInsightsLineChart = React.memo(
       <div className={styles.chartContainer}>
         <div className={styles.chartHeader}>
           <Box flex={{direction: 'row', gap: 4, justifyContent: 'space-between'}}>
-            <Subheading>{metrics.title}</Subheading>
+            <BodyLarge>{metrics.title}</BodyLarge>
             {loading ? <Spinner purpose="body-text" /> : null}
           </Box>
         </div>
-        <Box flex={{direction: 'row', justifyContent: 'space-between'}}>
+        <Box flex={{direction: 'column', justifyContent: 'space-between'}}>
           <div className={styles.chartCount}>
             {metrics.currentPeriod.aggregateValue
               ? numberFormatter.format(Math.round(metrics.currentPeriod.aggregateValue))
               : 0}
-            <BodySmall color={Colors.textLight()}>{unitTypeToLabel[unitType]}</BodySmall>
+            <Body color={Colors.textDefault()}>{unitTypeToLabel[unitType]}</Body>
           </div>
-          <div className={styles.chartChange}>
-            {percentFormatter.format(metrics.pctChange ?? 0)}
-          </div>
+          <Box
+            className={styles.chartChange}
+            flex={{direction: 'row', gap: 4, justifyContent: 'space-between'}}
+          >
+            <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+              {metrics.prevPeriod.aggregateValue
+                ? numberFormatter.format(Math.round(metrics.prevPeriod.aggregateValue))
+                : 0}
+              <span> previous period</span>
+            </Box>
+            <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+              {metrics.pctChange && metrics.pctChange > 0 ? (
+                <Icon name="trending_up" size={16} color={Colors.textLighter()} />
+              ) : metrics.pctChange && metrics.pctChange < 0 ? (
+                <Icon name="trending_down" size={16} color={Colors.textLighter()} />
+              ) : null}
+              {percentFormatter.format(Math.abs(metrics.pctChange ?? 0))}
+            </Box>
+          </Box>
         </Box>
         <div className={styles.chartWrapper}>
           <div className={styles.chartGraph}>
@@ -313,6 +344,7 @@ export const AssetCatalogInsightsLineChart = React.memo(
               data={getDataset(metrics, formatDatetime)}
               options={options}
               onClick={onClick}
+              updateMode="none"
             />
           </div>
         </div>

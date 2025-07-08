@@ -1,47 +1,40 @@
 import datetime
 from typing import Optional
 
+import dagster as dg
 import pytest
-from dagster import (
-    AssetKey,
-    DagsterInstance,
-    DailyPartitionsDefinition,
-    HourlyPartitionsDefinition,
-    MultiPartitionsDefinition,
-    PartitionsDefinition,
-    StaticPartitionsDefinition,
-)
+from dagster import DagsterInstance
 from dagster._core.asset_graph_view.serializable_entity_subset import SerializableEntitySubset
 from dagster._core.definitions.declarative_automation.legacy.valid_asset_subset import (
     ValidAssetSubset,
 )
 from dagster._core.definitions.events import AssetKeyPartitionKey
-from dagster._core.definitions.partition import AllPartitionsSubset, DefaultPartitionsSubset
-from dagster._core.definitions.time_window_partitions import (
-    PersistedTimeWindow,
+from dagster._core.definitions.partitions.subset import (
+    AllPartitionsSubset,
+    DefaultPartitionsSubset,
     TimeWindowPartitionsSubset,
 )
+from dagster._core.definitions.partitions.utils import PersistedTimeWindow
 from dagster._core.definitions.timestamp import TimestampWithTimezone
-from dagster._serdes import deserialize_value, serialize_value
 from dagster._time import create_datetime
 
 partitions_defs = [
     None,
-    DailyPartitionsDefinition(start_date="2020-01-01", end_date="2020-01-05"),
-    HourlyPartitionsDefinition(start_date="2020-01-01-00:00", end_date="2020-01-02-00:00"),
-    StaticPartitionsDefinition(["a", "b", "c"]),
-    MultiPartitionsDefinition(
+    dg.DailyPartitionsDefinition(start_date="2020-01-01", end_date="2020-01-05"),
+    dg.HourlyPartitionsDefinition(start_date="2020-01-01-00:00", end_date="2020-01-02-00:00"),
+    dg.StaticPartitionsDefinition(["a", "b", "c"]),
+    dg.MultiPartitionsDefinition(
         {
-            "day": DailyPartitionsDefinition(start_date="2020-01-01", end_date="2020-01-05"),
-            "other": StaticPartitionsDefinition(["a", "b", "c"]),
+            "day": dg.DailyPartitionsDefinition(start_date="2020-01-01", end_date="2020-01-05"),
+            "other": dg.StaticPartitionsDefinition(["a", "b", "c"]),
         }
     ),
 ]
 
 
 @pytest.mark.parametrize("partitions_def", partitions_defs)
-def test_empty_subset_subset(partitions_def: Optional[PartitionsDefinition]) -> None:
-    key = AssetKey(["foo"])
+def test_empty_subset_subset(partitions_def: Optional[dg.PartitionsDefinition]) -> None:
+    key = dg.AssetKey(["foo"])
     empty_subset = ValidAssetSubset.empty(key, partitions_def)
     assert empty_subset.size == 0
 
@@ -51,8 +44,8 @@ def test_empty_subset_subset(partitions_def: Optional[PartitionsDefinition]) -> 
 
 
 @pytest.mark.parametrize("partitions_def", partitions_defs)
-def test_all_subset(partitions_def: Optional[PartitionsDefinition]) -> None:
-    key = AssetKey(["foo"])
+def test_all_subset(partitions_def: Optional[dg.PartitionsDefinition]) -> None:
+    key = dg.AssetKey(["foo"])
     all_subset = ValidAssetSubset.all(
         key, partitions_def, DagsterInstance.ephemeral(), datetime.datetime.now()
     )
@@ -69,7 +62,7 @@ def test_all_subset(partitions_def: Optional[PartitionsDefinition]) -> None:
         True,
         False,
         TimeWindowPartitionsSubset(
-            DailyPartitionsDefinition("2020-01-01"),
+            dg.DailyPartitionsDefinition("2020-01-01"),
             num_partitions=2,
             included_time_windows=[
                 PersistedTimeWindow(
@@ -84,7 +77,7 @@ def test_all_subset(partitions_def: Optional[PartitionsDefinition]) -> None:
         ),
         DefaultPartitionsSubset(subset={"a", "b", "c", "d", "e"}),
         AllPartitionsSubset(
-            partitions_def=DailyPartitionsDefinition("2020-01-01"),
+            partitions_def=dg.DailyPartitionsDefinition("2020-01-01"),
             dynamic_partitions_store=None,  # type: ignore
             current_time=datetime.datetime(2020, 1, 20),
         ),
@@ -92,14 +85,16 @@ def test_all_subset(partitions_def: Optional[PartitionsDefinition]) -> None:
 )
 def test_serialization(value, use_valid_asset_subset) -> None:
     if use_valid_asset_subset:
-        asset_subset = ValidAssetSubset(key=AssetKey("foo"), value=value)
+        asset_subset = ValidAssetSubset(key=dg.AssetKey("foo"), value=value)
     else:
-        asset_subset = SerializableEntitySubset(key=AssetKey("foo"), value=value)
+        asset_subset = SerializableEntitySubset(key=dg.AssetKey("foo"), value=value)
 
-    serialized_asset_subset = serialize_value(asset_subset)
+    serialized_asset_subset = dg.serialize_value(asset_subset)
     assert "ValidAssetSubset" not in serialized_asset_subset
 
-    round_trip_asset_subset = deserialize_value(serialized_asset_subset, SerializableEntitySubset)
+    round_trip_asset_subset = dg.deserialize_value(
+        serialized_asset_subset, SerializableEntitySubset
+    )
 
     assert isinstance(round_trip_asset_subset, SerializableEntitySubset)
     # should always be deserialized as an AssetSubset

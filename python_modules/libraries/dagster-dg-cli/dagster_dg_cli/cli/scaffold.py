@@ -28,16 +28,19 @@ from dagster_dg_core.utils import (
     DgClickCommand,
     DgClickGroup,
     exit_with_error,
-    generate_missing_plugin_object_error_message,
+    generate_missing_registry_object_error_message,
     json_schema_property_to_click_option,
     not_none,
     parse_json_option,
     snakecase,
+    validate_dagster_availability,
 )
 from dagster_dg_core.utils.telemetry import cli_telemetry_wrapper
 from dagster_shared import check
+from dagster_shared.error import DagsterUnresolvableSymbolError
 from dagster_shared.plus.config import DagsterPlusCliConfig
 from dagster_shared.serdes.objects import EnvRegistryKey, EnvRegistryObjectSnap
+from dagster_shared.seven import load_module_object
 
 from dagster_dg_cli.cli.plus.constants import DgPlusAgentPlatform, DgPlusAgentType
 from dagster_dg_cli.scaffold import (
@@ -53,6 +56,13 @@ from dagster_dg_cli.utils.plus.build import (
     get_dockerfile_path,
 )
 from dagster_dg_cli.utils.plus.gql_client import DagsterPlusGraphQLClient
+
+
+def get_cli_version_or_main() -> str:
+    from dagster_dg_cli.version import __version__ as cli_version
+
+    return "main" if cli_version.endswith("+dev") else f"v{cli_version}"
+
 
 # These commands are not dynamically generated, but perhaps should be.
 HARDCODED_COMMANDS = {"component"}
@@ -135,12 +145,12 @@ class ScaffoldDefsGroup(DgClickGroup):
             context_settings={"help_option_names": ["-h", "--help"]},
             aliases=aliases,
         )
-        @click.argument("instance_name", type=str)
+        @click.argument("defs_path", type=str)
         @click.pass_context
         @cli_telemetry_wrapper
         def scaffold_command(
             cli_context: click.Context,
-            instance_name: str,
+            defs_path: str,
             **other_opts: Any,
         ) -> None:
             f"""Scaffold a {key.name} object.
@@ -160,6 +170,9 @@ class ScaffoldDefsGroup(DgClickGroup):
 
             It is an error to pass both --json-params and key-value pairs as options.
             """
+            cli_config = get_config_from_cli_context(cli_context)
+            dg_context = DgContext.for_project_environment(Path.cwd(), cli_config)
+
             # json_params will not be present in the key_value_params if no scaffold properties
             # are defined.
             json_scaffolder_params = other_opts.pop("json_params", None)
@@ -176,12 +189,11 @@ class ScaffoldDefsGroup(DgClickGroup):
                 scaffolder_format in ["yaml", "python"],
                 "format must be either 'yaml' or 'python'",
             )
-            cli_config = get_config_from_cli_context(cli_context)
             _core_scaffold(
+                dg_context,
                 cli_context,
-                cli_config,
                 key,
-                instance_name,
+                defs_path,
                 key_value_scaffolder_params,
                 scaffolder_format,
                 json_scaffolder_params,
@@ -220,8 +232,16 @@ class ScaffoldDefsGroup(DgClickGroup):
         cmd_query = input_cmd.lower()
         matches = sorted([name for name in commands if cmd_query in name.lower()])
 
+        # if input is not a substring match for any registered command, try to interpret it as a
+        # Python reference, load the corresponding registry object, and generate a command on the
+        # fly
         if len(matches) == 0:
-            exit_with_error(generate_missing_plugin_object_error_message(input_cmd))
+            snap = self._try_load_input_as_registry_object(input_cmd)
+            if snap:
+                self._create_subcommand(snap.key, snap, use_typename_alias=False)
+                return check.not_none(super().get_command(ctx, snap.key.to_typename()))
+            else:
+                exit_with_error(generate_missing_registry_object_error_message(input_cmd))
 
         if len(matches) == 1:
             click.echo(f"No exact match found for '{input_cmd}'. Did you mean this one?")
@@ -257,6 +277,20 @@ class ScaffoldDefsGroup(DgClickGroup):
         selected_cmd = matches[index - 1]
         click.echo(f"Using defs scaffolder: {selected_cmd}")
         return check.not_none(super().get_command(ctx, selected_cmd))
+
+    def _try_load_input_as_registry_object(self, input_str: str) -> Optional[EnvRegistryObjectSnap]:
+        validate_dagster_availability()
+
+        from dagster.components.core.snapshot import get_package_entry_snap
+
+        if not EnvRegistryKey.is_valid_typename(input_str):
+            return None
+        key = EnvRegistryKey.from_typename(input_str)
+        try:
+            obj = load_module_object(key.namespace, key.name)
+            return get_package_entry_snap(key, obj)
+        except DagsterUnresolvableSymbolError:
+            return None
 
 
 class ScaffoldDefsSubCommand(DgClickCommand):
@@ -328,6 +362,7 @@ def scaffold_defs_group(context: click.Context, help_: bool, **global_options: o
 @scaffold_defs_group.command(
     name="inline-component",
     cls=ScaffoldDefsSubCommand,
+    hidden=True,  # hiding for initial launch of 1.11 as it is undocumented. Will push out incrementally in later release -- schrockn 2025-06-20
 )
 @click.argument("path", type=str)
 @click.option(
@@ -353,7 +388,7 @@ def scaffold_defs_inline_component(
     cli_config = get_config_from_cli_context(context)
     dg_context = DgContext.for_project_environment(Path.cwd(), cli_config)
 
-    if dg_context.has_component_instance(path):
+    if dg_context.has_folder_at_defs_path(path):
         exit_with_error(f"A component instance at `{path}` already exists.")
 
     scaffold_inline_component(
@@ -469,7 +504,7 @@ def _get_scaffolded_container_context_yaml(agent_platform: DgPlusAgentPlatform) 
 @click.option(
     "--python-version",
     "python_version",
-    type=click.Choice(["3.9", "3.10", "3.11", "3.12"]),
+    type=click.Choice(["3.9", "3.10", "3.11", "3.12", "3.13"]),
     help=(
         "Python version used to deploy the project. If not set, defaults to the calling process's Python minor version."
     ),
@@ -714,6 +749,7 @@ def _get_build_fragment_for_locations(
             .replace("TEMPLATE_LOCATION_NAME", location_ctx.code_location_name)
             .replace("TEMPLATE_LOCATION_PATH", str(location_ctx.root_path.relative_to(git_root)))
             .replace("TEMPLATE_IMAGE_REGISTRY", registry_url)
+            .replace("TEMPLATE_DAGSTER_CLOUD_ACTION_VERSION", get_cli_version_or_main())
         )
     return "\n" + "\n".join(output)
 
@@ -804,6 +840,10 @@ def scaffold_github_actions_command(git_root: Optional[Path], **global_options: 
             "TEMPLATE_PROJECT_DIR",
             str(dg_context.root_path.relative_to(git_root)),
         )
+        .replace(
+            "TEMPLATE_DAGSTER_CLOUD_ACTION_VERSION",
+            get_cli_version_or_main(),
+        )
     )
 
     registry_urls = None
@@ -864,22 +904,23 @@ def scaffold_github_actions_command(git_root: Optional[Path], **global_options: 
 
 
 def _core_scaffold(
+    dg_context: DgContext,
     cli_context: click.Context,
-    cli_config: DgRawCliConfig,
     object_key: EnvRegistryKey,
-    instance_name: str,
+    defs_path: str,
     key_value_params: Mapping[str, Any],
     scaffold_format: ScaffoldFormatOptions,
     json_params: Optional[Mapping[str, Any]] = None,
 ) -> None:
+    from dagster.components.core.package_entry import is_scaffoldable_object_key
     from pydantic import ValidationError
 
-    dg_context = DgContext.for_project_environment(Path.cwd(), cli_config)
-    registry = EnvRegistry.from_dg_context(dg_context)
-    if not registry.has(object_key):
+    if not is_scaffoldable_object_key(object_key):
         exit_with_error(f"Scaffoldable object type `{object_key.to_typename()}` not found.")
-    elif dg_context.has_component_instance(instance_name):
-        exit_with_error(f"A component instance named `{instance_name}` already exists.")
+    elif dg_context.has_folder_at_defs_path(defs_path):
+        exit_with_error(
+            f"Folder at `{(dg_context.defs_path / defs_path).absolute()}` already exists."
+        )
 
     # Specified key-value params will be passed to this function with their default value of
     # `None` even if the user did not set them. Filter down to just the ones that were set by
@@ -903,7 +944,7 @@ def _core_scaffold(
 
     try:
         scaffold_registry_object(
-            Path(dg_context.defs_path) / instance_name,
+            Path(dg_context.defs_path) / defs_path,
             object_key.to_typename(),
             scaffold_params,
             dg_context,

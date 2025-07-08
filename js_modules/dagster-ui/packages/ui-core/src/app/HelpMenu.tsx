@@ -15,6 +15,7 @@ import {
   Tooltip,
 } from '@dagster-io/ui-components';
 import {useCallback, useState} from 'react';
+import {useLocation} from 'react-router-dom';
 
 import {ShortcutHandler} from './ShortcutHandler';
 import {TooltipShortcutInfo, TopNavButton} from './TopNavButton';
@@ -28,8 +29,15 @@ interface Props {
   onShareFeedback?: () => void;
 }
 
+const TOUR_BLOCKED_ROUTES = ['/getting-started'];
+
 export const HelpMenu = ({showContactSales = true, onShareFeedback}: Props) => {
   const [isOpen, setIsOpen] = useState(false);
+
+  const location = useLocation();
+  const isTourBlocked = TOUR_BLOCKED_ROUTES.some(
+    (route) => location.pathname === route || location.pathname.startsWith(route),
+  );
 
   const onInteraction = useCallback((open: boolean) => setIsOpen(open), []);
 
@@ -48,7 +56,7 @@ export const HelpMenu = ({showContactSales = true, onShareFeedback}: Props) => {
         title="Master the Dagster basics"
         description="Learn the basics of Dagster with the free Dagster Essentials course from Dagster University"
         position={ProductTourPosition.BOTTOM_LEFT}
-        canShow={!isOpen && !didDismissDaggyU}
+        canShow={!isOpen && !didDismissDaggyU && !isTourBlocked}
         img={DagsterUniversityImage.src}
         actions={{
           custom: (

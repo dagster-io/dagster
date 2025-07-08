@@ -1,4 +1,4 @@
-from dagster._core.definitions.partition import StaticPartitionsDefinition
+import dagster as dg
 
 from dagster_tests.declarative_automation_tests.scenario_utils.base_scenario import (
     AssetReconciliationScenario,
@@ -7,7 +7,7 @@ from dagster_tests.declarative_automation_tests.scenario_utils.base_scenario imp
     run_request,
 )
 
-three_partitions_def = StaticPartitionsDefinition(["a", "b", "c"])
+three_partitions_def = dg.StaticPartitionsDefinition(["a", "b", "c"])
 
 # A code version is not set on the root asset so that rematerializing it will be guaranteed to
 # produce a new data version.

@@ -56,6 +56,7 @@ export abstract class LocationBaseDataFetcher<TData, TVariables extends Operatio
             this.notifySubscribers();
           }
           await Promise.all(promises);
+          this.notifySubscribers();
         });
       },
     );

@@ -1,10 +1,6 @@
+import dagster as dg
 import pytest
-from dagster import (
-    AssetSpec,
-    # doing this rename to make the test cases fit on a single line for readability
-    AutomationCondition as SC,
-    DailyPartitionsDefinition,
-)
+from dagster import AutomationCondition as SC
 from dagster._core.definitions.asset_selection import AssetSelection
 
 from dagster_tests.declarative_automation_tests.scenario_utils.automation_condition_scenario import (
@@ -13,12 +9,12 @@ from dagster_tests.declarative_automation_tests.scenario_utils.automation_condit
 from dagster_tests.declarative_automation_tests.scenario_utils.base_scenario import run_request
 from dagster_tests.declarative_automation_tests.scenario_utils.scenario_specs import ScenarioSpec
 
-one_parent = ScenarioSpec(asset_specs=[AssetSpec("A"), AssetSpec("downstream", deps=["A"])])
+one_parent = ScenarioSpec(asset_specs=[dg.AssetSpec("A"), dg.AssetSpec("downstream", deps=["A"])])
 two_parents = ScenarioSpec(
-    asset_specs=[AssetSpec("A"), AssetSpec("B"), AssetSpec("downstream", deps=["A", "B"])]
+    asset_specs=[dg.AssetSpec("A"), dg.AssetSpec("B"), dg.AssetSpec("downstream", deps=["A", "B"])]
 )
 
-daily_partitions = DailyPartitionsDefinition(start_date="2020-01-01")
+daily_partitions = dg.DailyPartitionsDefinition(start_date="2020-01-01")
 one_parent_daily = one_parent.with_asset_properties(partitions_def=daily_partitions)
 two_parents_daily = two_parents.with_asset_properties(partitions_def=daily_partitions)
 

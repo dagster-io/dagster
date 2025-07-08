@@ -203,4 +203,9 @@ COMPONENT_VALIDATION_TEST_CASES = [
             "found character '@' that cannot start any token",
         ),
     ),
+    ComponentValidationTestCase(
+        component_path="validation/defs_folder_no_attributes",
+        component_type_filepath=None,
+        should_error=False,
+    ),
 ]

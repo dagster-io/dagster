@@ -21,20 +21,19 @@ from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.asset_key import AssetKey, EntityKey, T_EntityKey
 from dagster._core.definitions.backfill_policy import BackfillPolicy
 from dagster._core.definitions.events import AssetKeyPartitionKey
-from dagster._core.definitions.freshness_policy import FreshnessPolicy
+from dagster._core.definitions.freshness import InternalFreshnessPolicy
+from dagster._core.definitions.freshness_policy import LegacyFreshnessPolicy
 from dagster._core.definitions.metadata import ArbitraryMetadataMapping
-from dagster._core.definitions.partition import PartitionsDefinition, PartitionsSubset
-from dagster._core.definitions.partition_key_range import PartitionKeyRange
-from dagster._core.definitions.partition_mapping import (
-    PartitionMapping,
-    UpstreamPartitionsResult,
-    infer_partition_mapping,
-)
-from dagster._core.definitions.time_window_partitions import (
+from dagster._core.definitions.partitions.definition import PartitionsDefinition
+from dagster._core.definitions.partitions.mapping import PartitionMapping, UpstreamPartitionsResult
+from dagster._core.definitions.partitions.partition_key_range import PartitionKeyRange
+from dagster._core.definitions.partitions.subset import PartitionsSubset
+from dagster._core.definitions.partitions.utils import (
     get_time_partition_key,
     get_time_partitions_def,
+    infer_partition_mapping,
 )
-from dagster._core.errors import DagsterInvalidInvocationError
+from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidInvocationError
 from dagster._core.instance import DynamicPartitionsStore
 from dagster._core.selector.subset_selector import DependencyGraph, fetch_sources
 from dagster._core.utils import toposort
@@ -152,7 +151,27 @@ class BaseAssetNode(BaseEntityNode[AssetKey]):
 
     @property
     @abstractmethod
-    def freshness_policy(self) -> Optional[FreshnessPolicy]: ...
+    def legacy_freshness_policy(self) -> Optional[LegacyFreshnessPolicy]: ...
+
+    @property
+    @abstractmethod
+    def freshness_policy(self) -> Optional[InternalFreshnessPolicy]:
+        """WARNING: This field is not backwards compatible for policies created prior to 1.11.0.
+        For backwards compatibility, use freshness_policy_or_from_metadata instead.
+        """
+        ...
+
+    @property
+    def freshness_policy_or_from_metadata(self) -> Optional[InternalFreshnessPolicy]:
+        """Prior to 1.11.0, freshness policy was stored in the node metadata. Freshness policy is a first-class attribute of the asset starting in 1.11.0.
+
+        This field is backwards compatible since it checks for the policy in both the top-level attribute and the node metadata.
+        """
+        from dagster._core.definitions.freshness import InternalFreshnessPolicy
+
+        return self.freshness_policy or InternalFreshnessPolicy.from_asset_spec_metadata(
+            self.metadata
+        )
 
     @property
     @abstractmethod
@@ -632,6 +651,28 @@ class BaseAssetGraph(ABC, Generic[T_AssetNode]):
             and not self.has_materializable_parents(key)
         }
 
+    def validate_partition_mappings(self):
+        for node in self.asset_nodes:
+            if node.is_external:
+                continue
+
+            parents = self.get_parents(node)
+            for parent in parents:
+                if parent.partitions_def is None or parent.is_external:
+                    continue
+
+                partition_mapping = self.get_partition_mapping(node.key, parent.key)
+
+                try:
+                    partition_mapping.validate_partition_mapping(
+                        parent.partitions_def,
+                        node.partitions_def,
+                    )
+                except Exception as e:
+                    raise DagsterInvalidDefinitionError(
+                        f"Invalid partition mapping from {node.key.to_user_string()} to {parent.key.to_user_string()}"
+                    ) from e
+
     def upstream_key_iterator(self, asset_key: AssetKey) -> Iterator[AssetKey]:
         """Iterates through all asset keys which are upstream of the given key."""
         visited: set[AssetKey] = set()
@@ -654,19 +695,19 @@ class BaseAssetGraph(ABC, Generic[T_AssetNode]):
         ...
 
     @cached_method
-    def get_downstream_freshness_policies(
+    def get_downstream_legacy_freshness_policies(
         self, *, asset_key: AssetKey
-    ) -> AbstractSet[FreshnessPolicy]:
+    ) -> AbstractSet[LegacyFreshnessPolicy]:
         asset = self.get(asset_key)
         downstream_policies = set().union(
             *(
-                self.get_downstream_freshness_policies(asset_key=child_key)
+                self.get_downstream_legacy_freshness_policies(asset_key=child_key)
                 for child_key in self.get(asset_key).child_keys
                 if child_key != asset_key
             )
         )
-        if asset.partitions_def is None and asset.freshness_policy is not None:
-            downstream_policies.add(asset.freshness_policy)
+        if asset.partitions_def is None and asset.legacy_freshness_policy is not None:
+            downstream_policies.add(asset.legacy_freshness_policy)
 
         return downstream_policies
 

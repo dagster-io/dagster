@@ -1,3 +1,4 @@
+import dagster as dg
 from dagster.components.lib.executable_component.function_component import (
     FunctionComponent,
     FunctionSpec,
@@ -22,7 +23,7 @@ def test_nested_component() -> None:
 
         with sandbox.load(
             component_body={
-                "type": "dagster.components.lib.executable_component.function_component.FunctionComponent",
+                "type": "dagster.FunctionComponent",
                 "attributes": {
                     "execution": {
                         "name": "nested_component",
@@ -36,6 +37,6 @@ def test_nested_component() -> None:
                 },
             },
         ) as (component, defs):
-            assert isinstance(component, FunctionComponent)
+            assert isinstance(component, dg.FunctionComponent)
             assert isinstance(component.execution, FunctionSpec)
             assert component.execution.name == "nested_component"

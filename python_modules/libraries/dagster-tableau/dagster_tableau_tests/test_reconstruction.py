@@ -30,18 +30,18 @@ from dagster_tableau_tests.conftest import (
     FAKE_USERNAME,
 )
 
-resource = TableauCloudWorkspace(
-    connected_app_client_id=FAKE_CONNECTED_APP_CLIENT_ID,
-    connected_app_secret_id=FAKE_CONNECTED_APP_SECRET_ID,
-    connected_app_secret_value=FAKE_CONNECTED_APP_SECRET_VALUE,
-    username=FAKE_USERNAME,
-    site_name=FAKE_SITE_NAME,
-    pod_name=FAKE_POD_NAME,
-)
-
 
 @definitions
 def cacheable_asset_defs():
+    resource = TableauCloudWorkspace(
+        connected_app_client_id=FAKE_CONNECTED_APP_CLIENT_ID,
+        connected_app_secret_id=FAKE_CONNECTED_APP_SECRET_ID,
+        connected_app_secret_value=FAKE_CONNECTED_APP_SECRET_VALUE,
+        username=FAKE_USERNAME,
+        site_name=FAKE_SITE_NAME,
+        pod_name=FAKE_POD_NAME,
+    )
+
     tableau_specs = load_tableau_asset_specs(
         workspace=resource,
     )
@@ -68,6 +68,14 @@ def cacheable_asset_defs():
 
 @definitions
 def cacheable_asset_defs_refreshable_workbooks():
+    resource = TableauCloudWorkspace(
+        connected_app_client_id=FAKE_CONNECTED_APP_CLIENT_ID,
+        connected_app_secret_id=FAKE_CONNECTED_APP_SECRET_ID,
+        connected_app_secret_value=FAKE_CONNECTED_APP_SECRET_VALUE,
+        username=FAKE_USERNAME,
+        site_name=FAKE_SITE_NAME,
+        pod_name=FAKE_POD_NAME,
+    )
     tableau_specs = load_tableau_asset_specs(
         workspace=resource,
     )
@@ -94,6 +102,15 @@ def cacheable_asset_defs_refreshable_workbooks():
 
 @definitions
 def cacheable_asset_defs_refreshable_data_sources():
+    resource = TableauCloudWorkspace(
+        connected_app_client_id=FAKE_CONNECTED_APP_CLIENT_ID,
+        connected_app_secret_id=FAKE_CONNECTED_APP_SECRET_ID,
+        connected_app_secret_value=FAKE_CONNECTED_APP_SECRET_VALUE,
+        username=FAKE_USERNAME,
+        site_name=FAKE_SITE_NAME,
+        pod_name=FAKE_POD_NAME,
+    )
+
     tableau_specs = load_tableau_asset_specs(
         workspace=resource,
     )
@@ -122,6 +139,15 @@ def cacheable_asset_defs_refreshable_data_sources():
 
 @definitions
 def cacheable_asset_defs_asset_decorator_with_context():
+    resource = TableauCloudWorkspace(
+        connected_app_client_id=FAKE_CONNECTED_APP_CLIENT_ID,
+        connected_app_secret_id=FAKE_CONNECTED_APP_SECRET_ID,
+        connected_app_secret_value=FAKE_CONNECTED_APP_SECRET_VALUE,
+        username=FAKE_USERNAME,
+        site_name=FAKE_SITE_NAME,
+        pod_name=FAKE_POD_NAME,
+    )
+
     @tableau_assets(workspace=resource)
     def my_tableau_assets(context: AssetExecutionContext, tableau: TableauCloudWorkspace):
         yield from tableau.refresh_and_poll(context=context)
@@ -135,6 +161,15 @@ def cacheable_asset_defs_asset_decorator_with_context():
 
 @definitions
 def cacheable_asset_defs_custom_translator():
+    resource = TableauCloudWorkspace(
+        connected_app_client_id=FAKE_CONNECTED_APP_CLIENT_ID,
+        connected_app_secret_id=FAKE_CONNECTED_APP_SECRET_ID,
+        connected_app_secret_value=FAKE_CONNECTED_APP_SECRET_VALUE,
+        username=FAKE_USERNAME,
+        site_name=FAKE_SITE_NAME,
+        pod_name=FAKE_POD_NAME,
+    )
+
     class MyCoolTranslator(DagsterTableauTranslator):
         def get_asset_spec(self, data: TableauTranslatorData) -> AssetSpec:
             default_spec = super().get_asset_spec(data)

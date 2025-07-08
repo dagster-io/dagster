@@ -5,7 +5,6 @@ from dagster_shared.record import record
 from typing_extensions import TypeAlias
 
 import dagster._check as check
-from dagster._annotations import preview, public
 from dagster._core.definitions.asset_check_spec import AssetCheckSpec
 from dagster._core.definitions.asset_key import AssetKey, CoercibleToAssetKeyPrefix
 from dagster._core.definitions.asset_spec import AssetSpec
@@ -14,10 +13,13 @@ from dagster._core.definitions.declarative_automation.automation_condition impor
     AutomationCondition,
 )
 from dagster._core.definitions.definitions_class import Definitions
-from dagster._core.definitions.partition import PartitionsDefinition, StaticPartitionsDefinition
-from dagster._core.definitions.time_window_partitions import (
+from dagster._core.definitions.partitions.definition import (
     DailyPartitionsDefinition,
     HourlyPartitionsDefinition,
+    PartitionsDefinition,
+    StaticPartitionsDefinition,
+    TimeWindowPartitionsDefinition,
+    WeeklyPartitionsDefinition,
 )
 from dagster.components.resolved.base import Resolvable, resolve_fields
 from dagster.components.resolved.context import ResolutionContext
@@ -51,6 +53,25 @@ class DailyPartitionsDefinitionModel(Resolvable, Model):
     hour_offset: int = 0
 
 
+class WeeklyPartitionsDefinitionModel(Resolvable, Model):
+    type: Literal["weekly"] = "weekly"
+    start_date: str
+    end_date: Optional[str] = None
+    timezone: Optional[str] = None
+    minute_offset: int = 0
+    hour_offset: int = 0
+    day_offset: int = 0
+
+
+class TimeWindowPartitionsDefinitionModel(Resolvable, Model):
+    type: Literal["time_window"] = "time_window"
+    start_date: str
+    end_date: Optional[str] = None
+    timezone: Optional[str] = None
+    fmt: str
+    cron_schedule: str
+
+
 class StaticPartitionsDefinitionModel(Resolvable, Model):
     type: Literal["static"] = "static"
     partition_keys: Sequence[str]
@@ -73,6 +94,24 @@ def resolve_partitions_def(context: ResolutionContext, model) -> Optional[Partit
             end_date=model.end_date,
             timezone=model.timezone,
             minute_offset=model.minute_offset,
+            hour_offset=model.hour_offset,
+        )
+    elif model.type == "weekly":
+        return WeeklyPartitionsDefinition(
+            start_date=model.start_date,
+            end_date=model.end_date,
+            timezone=model.timezone,
+            minute_offset=model.minute_offset,
+            hour_offset=model.hour_offset,
+            day_offset=model.day_offset,
+        )
+    elif model.type == "time_window":
+        return TimeWindowPartitionsDefinition(
+            start=model.start_date,
+            end=model.end_date,
+            timezone=model.timezone,
+            fmt=model.fmt,
+            cron_schedule=model.cron_schedule,
         )
     elif model.type == "static":
         return StaticPartitionsDefinition(partition_keys=model.partition_keys)
@@ -212,6 +251,8 @@ class SharedAssetKwargs(Resolvable):
             model_field_type=Union[
                 HourlyPartitionsDefinitionModel,
                 DailyPartitionsDefinitionModel,
+                WeeklyPartitionsDefinitionModel,
+                TimeWindowPartitionsDefinitionModel,
                 StaticPartitionsDefinitionModel,
             ],
         ),
@@ -321,8 +362,6 @@ ResolvedAssetAttributes: TypeAlias = Annotated[
 ]
 
 
-@public
-@preview(emit_runtime_warning=False)
 class AssetPostProcessorModel(Resolvable, Model):
     """An object that defines asset transforms to be done via Definitions.map_asset_specs."""
 

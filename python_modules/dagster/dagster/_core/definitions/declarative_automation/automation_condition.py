@@ -27,8 +27,10 @@ from dagster._core.definitions.declarative_automation.serialized_objects import 
     OperatorType,
     get_serializable_candidate_subset,
 )
-from dagster._core.definitions.partition import AllPartitionsSubset
-from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsSubset
+from dagster._core.definitions.partitions.subset import (
+    AllPartitionsSubset,
+    TimeWindowPartitionsSubset,
+)
 from dagster._record import copy, record
 from dagster._time import get_current_timestamp
 from dagster._utils.schedules import is_valid_cron_schedule

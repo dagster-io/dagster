@@ -66,7 +66,7 @@ class FilesystemIOManager(ConfigurableIOManagerFactory["PickledObjectFilesystemI
         def asset2(asset1):
             return asset1[:5]
 
-        defs = Definitions(
+        Definitions(
             assets=[asset1, asset2],
             resources={
                 "io_manager": FilesystemIOManager(base_dir="/my/base/path")
@@ -178,7 +178,7 @@ def fs_io_manager(init_context: InitResourceContext) -> "PickledObjectFilesystem
         def asset2(asset1):
             return asset1[:5]
 
-        defs = Definitions(
+        Definitions(
             assets=[asset1, asset2],
             resources={
                 "io_manager": fs_io_manager.configured({"base_dir": "/my/base/path"})

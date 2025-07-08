@@ -4,7 +4,7 @@
   border: 1px solid var(--color-keyline-default);
   padding: 16px;
   width: 100%;
-  height: 260px;
+  height: auto;
   box-sizing: border-box;
 }
 
@@ -15,25 +15,26 @@
 
 .chartGraph {
   flex-grow: 1;
-  min-height: 160px;
+  height: 160px;
+  cursor: pointer;
 }
 
 .chartHeader {
   font-size: 16px;
-  margin-bottom: 8px;
+  margin-bottom: 12px;
 }
 
 .chartCount {
-  font-size: 32px;
-  font-weight: 600;
-  margin-bottom: 4px;
+  font-size: 24px;
+  font-weight: 500;
+  margin-bottom: 2px;
   display: flex;
-  align-items: center;
+  align-items: baseline;
   gap: 4px;
 }
 
 .chartChange {
   font-size: 14px;
-  color: var(--color-text-light);
-  margin-bottom: 12px;
+  color: var(--color-text-lighter);
+  margin-bottom: 16px;
 }

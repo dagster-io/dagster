@@ -12,8 +12,8 @@ This tutorial focuses on creating and interacting with BigQuery tables using Dag
 
 The `dagster-gcp` library provides two ways to interact with BigQuery tables:
 
-- [Resource](/guides/build/external-resources/): The resource allows you to directly run SQL queries against tables within an asset's compute function. Available resources: <PyObject section="libraries" module="dagster_gcp" object="BigQueryResource" />
-- [I/O manager](/guides/build/io-managers/): The I/O manager transfers the responsibility of storing and loading DataFrames as BigQuery tables to Dagster. Available I/O managers: <PyObject section="libraries" module="dagster_gcp_pandas" object="BigQueryPandasIOManager" />, <PyObject section="libraries" module="dagster_gcp_pyspark" object="BigQueryPySparkIOManager" />
+- [Resource](/guides/build/external-resources): The resource allows you to directly run SQL queries against tables within an asset's compute function. Available resources: <PyObject section="libraries" module="dagster_gcp" object="BigQueryResource" />
+- [I/O manager](/guides/build/io-managers): The I/O manager transfers the responsibility of storing and loading DataFrames as BigQuery tables to Dagster. Available I/O managers: <PyObject section="libraries" module="dagster_gcp_pandas" object="BigQueryPandasIOManager" />, <PyObject section="libraries" module="dagster_gcp_pyspark" object="BigQueryPySparkIOManager" />
 
 This tutorial is divided into two sections to demonstrate the differences between the BigQuery resource and the BigQuery I/O manager. Each section will create the same assets, but the first section will use the BigQuery resource to store data in BigQuery, whereas the second section will use the BigQuery I/O manager. When writing your own assets, you may choose one or the other (or both) approaches depending on your storage requirements. {/* See [When to use I/O managers](/guides/build/io-managers/#when-to-use-io-managers) to learn more about when to use I/O managers and when to use resources. */}
 
@@ -213,6 +213,6 @@ When finished, your code should look like the following:
 
 For more BigQuery features, refer to the [BigQuery reference](/integrations/libraries/gcp/bigquery/reference).
 
-For more information on asset definitions, see the [Assets documentation](/guides/build/assets/).
+For more information on asset definitions, see the [Assets documentation](/guides/build/assets).
 
-For more information on I/O managers, see the [I/O manager documentation](/guides/build/io-managers/).
+For more information on I/O managers, see the [I/O manager documentation](/guides/build/io-managers).

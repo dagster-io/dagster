@@ -51,6 +51,9 @@ def test_components_docs_adding_attributes_to_assets(
                 global_snippet_replace_regexes=[
                     MASK_MY_PROJECT,
                 ],
+                # For multi-parameter tests which share snippets, we don't want to clear the
+                # snapshot dir before updating the snippets
+                clear_snapshot_dir_before_update=False,
             )
         )
 
@@ -118,7 +121,7 @@ def test_components_docs_adding_attributes_to_assets(
                 ),
                 snippet_path=SNIPPETS_DIR
                 / component_type
-                / f"{context.get_next_snip_number()}defs.yaml",
+                / f"{context.get_next_snip_number()}-defs.yaml",
             )
             context.get_next_snip_number()
         elif component_type == "global":
@@ -162,7 +165,8 @@ def test_components_docs_adding_attributes_to_assets(
                 / f"{context.get_next_snip_number()}-defs.yaml",
             )
 
-        _run_command("dg check yaml")
+        if not update_snippets:
+            _run_command("dg check yaml")
 
         # Set up DuckDB to run, verify everything works ok
         _run_command(
@@ -207,16 +211,16 @@ def test_components_docs_adding_attributes_to_assets(
                 {type_str}
 
                 attributes:
-                  sling:
-                    connections:
-                      - name: DUCKDB
-                        type: duckdb
-                        instance: /tmp/jaffle_platform.duckdb
+                  connections:
+                    DUCKDB:
+                      type: duckdb
+                      instance: /tmp/jaffle_platform.duckdb
                   replications:
                     - path: replication.yaml
                 """),
         )
-        _run_command("dg launch --assets '*'")
+        if not update_snippets:
+            _run_command("dg launch --assets '*'")
 
         # Add debug logic
         context.create_file(
@@ -251,7 +255,8 @@ def test_components_docs_adding_attributes_to_assets(
         )
 
         # Validate works properly
-        _run_command("dg launch --assets '*'")
+        if not update_snippets:
+            _run_command("dg launch --assets '*'")
 
         # Add custom scope
         context.create_file(
@@ -289,14 +294,14 @@ def test_components_docs_adding_attributes_to_assets(
                 {type_str}
 
                 attributes:
-                  sling:
-                    connections:
-                      - name: DUCKDB
-                        type: duckdb
-                        instance: /tmp/jaffle_platform.duckdb
+                  connections:
+                    DUCKDB:
+                      type: duckdb
+                      instance: /tmp/jaffle_platform.duckdb
                   replications:
                     - path: replication.yaml
-                  asset_post_processors:
+                post_processing:
+                  assets:
                     - attributes:
                         automation_condition: "{{{{ custom_cron('@daily') }}}}"
                 """),
@@ -308,4 +313,5 @@ def test_components_docs_adding_attributes_to_assets(
             ],
         )
         # Validate works properly
-        _run_command("dg launch --assets '*'")
+        if not update_snippets:
+            _run_command("dg launch --assets '*'")

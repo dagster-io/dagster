@@ -1,24 +1,24 @@
 from collections.abc import Iterator
 
+import dagster as dg
 import pytest
 from dagster._core.instance import DagsterInstance
 from dagster._core.remote_representation.external import RemoteJob
-from dagster._core.run_coordinator import SubmitRunContext
 from dagster._core.run_coordinator.base import RunCoordinator
 from dagster._core.run_coordinator.default_run_coordinator import DefaultRunCoordinator
-from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
-from dagster._core.test_utils import create_run_for_test, instance_for_test
+from dagster._core.storage.dagster_run import DagsterRunStatus
+from dagster._core.test_utils import create_run_for_test
 from dagster._utils.merger import merge_dicts
 
 from dagster_tests.api_tests.utils import get_bar_workspace
 
 
 @pytest.fixture()
-def instance() -> Iterator[DagsterInstance]:
+def instance() -> Iterator[dg.DagsterInstance]:
     overrides = {
         "run_launcher": {"module": "dagster._core.test_utils", "class": "MockedRunLauncher"}
     }
-    with instance_for_test(overrides=overrides) as inst:
+    with dg.instance_for_test(overrides=overrides) as inst:
         yield inst
 
 
@@ -31,7 +31,7 @@ def coodinator(instance: DagsterInstance) -> Iterator[RunCoordinator]:
 
 def _create_run(
     instance: DagsterInstance, external_pipeline: RemoteJob, **kwargs: object
-) -> DagsterRun:
+) -> dg.DagsterRun:
     job_args = merge_dicts(
         {
             "job_name": "foo",
@@ -52,7 +52,7 @@ def test_submit_run(instance: DagsterInstance, coodinator: DefaultRunCoordinator
         )
 
         run = _create_run(instance, remote_job)
-        returned_run = coodinator.submit_run(SubmitRunContext(run, workspace))
+        returned_run = coodinator.submit_run(dg.SubmitRunContext(run, workspace))
         assert returned_run.run_id == run.run_id
         assert returned_run.status == DagsterRunStatus.STARTING
 
@@ -71,7 +71,7 @@ def test_submit_run_checks_status(instance: DagsterInstance, coodinator: Default
         )
 
         run = _create_run(instance, remote_job, status=DagsterRunStatus.STARTED)
-        coodinator.submit_run(SubmitRunContext(run, workspace))
+        coodinator.submit_run(dg.SubmitRunContext(run, workspace))
 
         # assert that runs not in a NOT_STARTED state are not launched
         assert len(instance.run_launcher.queue()) == 0  # type: ignore

@@ -72,7 +72,7 @@ const RemoveExtraConfigButton = ({
   for (const path of extraNodes) {
     const parts = path.split('.');
 
-    // If the length is 2, the first part of the path is a known key, such as "solids", "resouces",
+    // If the length is 2, the first part of the path is a known key, such as "solids", "resources",
     // or "loggers", and the user has provided extra config for one of those. We will keep track of
     // these in `knownKeyExtraPaths` just so we can display them with an extra description.
     if (parts.length === 2) {

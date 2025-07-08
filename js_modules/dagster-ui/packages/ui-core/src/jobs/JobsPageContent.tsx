@@ -30,7 +30,12 @@ import {RepoAddress} from '../workspace/types';
 const FILTER_FIELDS = ['jobs', 'tags', 'codeLocations'] as const;
 
 export const JobsPageContent = () => {
-  const {allRepos, visibleRepos, loading, data: cachedData} = useContext(WorkspaceContext);
+  const {
+    allRepos,
+    visibleRepos,
+    loadingNonAssets: loading,
+    data: cachedData,
+  } = useContext(WorkspaceContext);
   const repoCount = allRepos.length;
   // Batch up the data and bucket by repo.
   const repoBuckets = useMemo(() => {

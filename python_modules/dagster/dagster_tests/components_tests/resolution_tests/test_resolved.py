@@ -1,12 +1,10 @@
 from collections.abc import Sequence
 from dataclasses import dataclass, field
+from enum import Enum
 from typing import Annotated, Literal, NamedTuple, Optional, Union
 
 import dagster as dg
 import pytest
-from dagster import Component, Model, Resolvable, ResolvedAssetSpec
-from dagster._core.definitions.asset_key import AssetKey
-from dagster._core.definitions.definitions_class import Definitions
 from dagster.components.resolved.core_models import AssetPostProcessor, AssetSpecKwargs
 from dagster.components.resolved.errors import ResolutionException
 from dagster.components.resolved.model import Resolver
@@ -17,7 +15,7 @@ from typing_extensions import TypeAlias
 
 def test_basic():
     @dataclass
-    class MyThing(Resolvable):
+    class MyThing(dg.Resolvable):
         name: str
 
     MyThing.resolve_from_yaml(
@@ -31,7 +29,7 @@ def test_error():
     class Foo: ...
 
     @dataclass
-    class MyNewThing(Resolvable):
+    class MyNewThing(dg.Resolvable):
         name: str
         foo: Foo
 
@@ -43,8 +41,8 @@ def test_error():
 
 def test_error_core_model_suggestion():
     @dataclass
-    class MyKeyThing(Resolvable):
-        key: AssetKey
+    class MyKeyThing(dg.Resolvable):
+        key: dg.AssetKey
 
     with pytest.raises(
         ResolutionException,
@@ -55,11 +53,11 @@ def test_error_core_model_suggestion():
 
 def test_nested():
     @dataclass
-    class OtherThing(Resolvable):
+    class OtherThing(dg.Resolvable):
         num: int
 
     @dataclass
-    class MyThing(Resolvable):
+    class MyThing(dg.Resolvable):
         name: str
         other_thing: OtherThing
         other_things: Optional[list[OtherThing]]
@@ -84,11 +82,11 @@ def test_custom_resolution():
         return Foo(name)
 
     @dataclass
-    class MyThing(Resolvable):
+    class MyThing(dg.Resolvable):
         name: str
         foo: Annotated[
             Foo,
-            Resolver(
+            dg.Resolver(
                 _resolve_foo,
                 model_field_type=str,
                 model_field_name="foo_name",
@@ -107,7 +105,7 @@ foo_name: steve
 
 def test_passthru():
     @dataclass
-    class MyThing(Resolvable):
+    class MyThing(dg.Resolvable):
         foo: Annotated[str, Resolver.passthrough()]
 
     thing = MyThing.resolve_from_yaml(
@@ -126,11 +124,11 @@ foo: "{{ template_var }}"
 
 
 def test_passthru_does_not_process_nested_resolvers():
-    class Foo(BaseModel, Resolvable):
-        name: Annotated[str, Resolver(lambda context, name: name.upper())]
+    class Foo(BaseModel, dg.Resolvable):
+        name: Annotated[str, dg.Resolver(lambda context, name: name.upper())]
 
     @dataclass
-    class MyThing(Resolvable):
+    class MyThing(dg.Resolvable):
         foo: Annotated[Foo, Resolver.passthrough()]
 
     thing = MyThing.resolve_from_yaml(
@@ -152,13 +150,13 @@ def test_py_model():
     def _resolve_foo(context, name: str):
         return Foo(name)
 
-    class MyThing(Resolvable, BaseModel):
+    class MyThing(dg.Resolvable, BaseModel):
         model_config = ConfigDict(arbitrary_types_allowed=True)  # to allow Foo
 
         name: str = "bad"
         foo: Annotated[
             Foo,
-            Resolver(
+            dg.Resolver(
                 _resolve_foo,
                 model_field_type=str,
                 model_field_name="foo_name",
@@ -176,8 +174,8 @@ foo_name: steve
 
 def test_legacy_core_components_compat():
     @dataclass
-    class Example(Resolvable):
-        asset_specs: list[ResolvedAssetSpec]
+    class Example(dg.Resolvable):
+        asset_specs: list[dg.ResolvedAssetSpec]
 
     ex = Example.resolve_from_yaml("""
 asset_specs:
@@ -185,11 +183,11 @@ asset_specs:
     - key: bar
 """)
 
-    assert ex.asset_specs[0].key == AssetKey("foo")
+    assert ex.asset_specs[0].key == dg.AssetKey("foo")
 
 
 def test_class():
-    class Person(Resolvable):
+    class Person(dg.Resolvable):
         random: str  # ensure random annotations ignored
 
         def __init__(
@@ -205,7 +203,7 @@ age: 7
 """,
     )
 
-    class Flexible(Resolvable):
+    class Flexible(dg.Resolvable):
         def __init__(
             self,
             *args,
@@ -221,19 +219,19 @@ name: flex
 
 
 def test_bad_class():
-    class Empty(Resolvable): ...
+    class Empty(dg.Resolvable): ...
 
     with pytest.raises(ResolutionException, match="class with __init__"):
         Empty.resolve_from_yaml("")
 
-    class JustSelf(Resolvable):
+    class JustSelf(dg.Resolvable):
         def __init__(
             self,
         ): ...
 
     JustSelf.resolve_from_yaml("")
 
-    class PosOnly(Resolvable):
+    class PosOnly(dg.Resolvable):
         def __init__(
             self,
             a: int,
@@ -246,22 +244,22 @@ def test_bad_class():
 
 
 def test_component_docs():
-    class RangeTest(Model):
+    class RangeTest(dg.Model):
         type: Literal["range"] = Field(..., description="Must be 'range'.")
         name: str
 
-    class SumTest(Model):
+    class SumTest(dg.Model):
         type: Literal["sum"] = Field(..., description="Must be 'sum'")
         name: str
 
-    class TestSuiteComponent(Component, Resolvable, Model):
+    class TestSuiteComponent(dg.Component, dg.Resolvable, dg.Model):
         asset_key: str = Field(
             ..., description="The asset key to test. Slashes are parsed into key parts."
         )
         tests: list[Union[RangeTest, SumTest]]
 
         def build_defs(self, context):
-            return Definitions()
+            return dg.Definitions()
 
     model_cls = TestSuiteComponent.get_model_cls()
     assert model_cls
@@ -277,7 +275,7 @@ def test_nested_not_resolvable():
         name: str
 
     @dataclass
-    class Parent(Resolvable):
+    class Parent(dg.Resolvable):
         children: list[Child]
 
     with pytest.raises(ResolutionException, match="Resolvable subclass"):
@@ -286,7 +284,7 @@ def test_nested_not_resolvable():
 
 def test_post_process():
     @dataclass
-    class Test(Resolvable):
+    class Test(dg.Resolvable):
         post_process: AssetPostProcessor
 
     with pytest.raises(Exception, match="junk_extra_input"):
@@ -313,28 +311,28 @@ def test_nested_from_model():
         return "cool"
 
     @dataclass
-    class Double(Resolvable):
+    class Double(dg.Resolvable):
         foo: Optional[list[Annotated[str, Resolver.from_model(_resolve_from_obj)]]]
 
     with pytest.raises(Exception):
         Double.model()
 
     @dataclass
-    class Opt(Resolvable):
+    class Opt(dg.Resolvable):
         foo: Optional[Annotated[str, Resolver.from_model(_resolve_from_obj)]]
 
     with pytest.raises(Exception):
         Opt.model()
 
     @dataclass
-    class Lizt(Resolvable):
+    class Lizt(dg.Resolvable):
         foo: list[Annotated[str, Resolver.from_model(_resolve_from_obj)]]
 
     with pytest.raises(Exception):
         Lizt.model()
 
     @dataclass
-    class Works(Resolvable):
+    class Works(dg.Resolvable):
         foo: Annotated[str, Resolver.from_model(_resolve_from_obj)]
         bar: str
 
@@ -346,12 +344,12 @@ bar: bar
 
 
 def test_scope():
-    class DailyPartitionDefinitionModel(Resolvable, Model):
+    class DailyPartitionDefinitionModel(dg.Resolvable, dg.Model):
         type: Literal["daily"] = "daily"
         start_date: str
         end_offset: int = 0
 
-    class Example(Resolvable, Model):
+    class Example(dg.Resolvable, dg.Model):
         part: Annotated[
             dg.DailyPartitionsDefinition,
             Resolver.default(
@@ -374,10 +372,10 @@ part: "{{ daily }}"
 
 
 def test_inject():
-    class Target(Resolvable, Model):
-        spec: ResolvedAssetSpec
-        specs: list[ResolvedAssetSpec]
-        maybe_specs: Optional[list[ResolvedAssetSpec]] = None
+    class Target(dg.Resolvable, dg.Model):
+        spec: dg.ResolvedAssetSpec
+        specs: list[dg.ResolvedAssetSpec]
+        maybe_specs: Optional[list[dg.ResolvedAssetSpec]] = None
 
     boop = dg.AssetSpec("boop")
     scope = {"boop": boop, "blank": None}
@@ -422,8 +420,8 @@ specs: "{{ [boop] }}"
 
 
 def test_inner_inject():
-    class Target(Resolvable, Model):
-        specs: list[ResolvedAssetSpec]
+    class Target(dg.Resolvable, dg.Model):
+        specs: list[dg.ResolvedAssetSpec]
 
     boop = dg.AssetSpec("boop")
     scope = {"boop": boop, "blank": None}
@@ -440,7 +438,7 @@ specs:
 
 
 def test_dict():
-    class Target(Resolvable, Model):
+    class Target(dg.Resolvable, dg.Model):
         thing: dict
         stuff: list
 
@@ -458,7 +456,7 @@ stuff:
 
 
 def test_empty_str():
-    class Thing(Resolvable, Model):
+    class Thing(dg.Resolvable, dg.Model):
         name: str
 
     t = Thing.resolve_from_dict({"name": ""})
@@ -471,7 +469,7 @@ def test_plain_named_tuple():
 
     class MyNamedTuple(NamedTuple("_", [("foo", str)])): ...
 
-    class MyModel(Resolvable, Model):
+    class MyModel(dg.Resolvable, dg.Model):
         nt: MyNamedTuple
 
     # directly
@@ -480,13 +478,13 @@ def test_plain_named_tuple():
     ):
         MyModel.model()
 
-    class Wrapper(Model):
+    class Wrapper(dg.Model):
         nt: MyNamedTuple
 
-    class OuterWrapper(Model):
+    class OuterWrapper(dg.Model):
         wrapper: Wrapper
 
-    class Outer(Resolvable, Model):
+    class Outer(dg.Resolvable, dg.Model):
         thing: OuterWrapper
 
     # or indirectly
@@ -498,22 +496,22 @@ def test_resolvable_named_tuple():
     # Resolvable supports @record and dataclass, but not plain namedtuple so this is invalid.
     # We won't catch this til its used either
 
-    class MyNamedTuple(NamedTuple("_", [("foo", str)]), Resolvable): ...
+    class MyNamedTuple(NamedTuple("_", [("foo", str)]), dg.Resolvable): ...
 
-    class MyModel(Resolvable, Model):
+    class MyModel(dg.Resolvable, dg.Model):
         nt: MyNamedTuple
 
     # directly
     with pytest.raises(ResolutionException, match="Invalid Resolvable type"):
         MyModel.model()
 
-    class Wrapper(Model):
+    class Wrapper(dg.Model):
         nt: MyNamedTuple
 
-    class OuterWrapper(Model):
+    class OuterWrapper(dg.Model):
         wrapper: Wrapper
 
-    class Outer(Resolvable, Model):
+    class Outer(dg.Resolvable, dg.Model):
         thing: OuterWrapper
 
     # or indirectly
@@ -526,11 +524,11 @@ class Foo:
     name: str
 
 
-ResolvedFoo: TypeAlias = Annotated[Foo, Resolver(lambda _, v: Foo(name=v), model_field_type=str)]
+ResolvedFoo: TypeAlias = Annotated[Foo, dg.Resolver(lambda _, v: Foo(name=v), model_field_type=str)]
 
 
 def test_containers():
-    class Target(Resolvable, Model):
+    class Target(dg.Resolvable, dg.Model):
         li: list[ResolvedFoo]
         t: tuple[ResolvedFoo, ...]
         s: Sequence[ResolvedFoo]
@@ -565,21 +563,40 @@ uli:
 
 
 def test_non_resolvable_resolver():
-    class Plain(Model):
+    class Plain(dg.Model):
         num: Annotated[int, Field(description="cool")]
 
-    class Target(Model, Resolvable):
+    class Target(dg.Model, dg.Resolvable):
         plain: Plain
 
     # ensure annotations on plain models are fine
     assert Target.model()
 
-    class Mistake(Model):
-        num: Annotated[int, Resolver(lambda _, v: v + 2)]
+    class Mistake(dg.Model):
+        num: Annotated[int, dg.Resolver(lambda _, v: v + 2)]
 
-    class Bad(Model, Resolvable):
+    class Bad(dg.Model, dg.Resolvable):
         mistake: Mistake
 
     # but if Resolver is used on a class that does not subclass Resolvable, we throw
     with pytest.raises(ResolutionException, match="Subclass Resolvable"):
         Bad.model()
+
+
+def test_enums():
+    class Thing(Enum):
+        FOO = "FOO"
+        BAR = "BAR"
+
+    class Direct(dg.Resolvable, dg.Model):
+        thing: Thing
+
+    assert Direct.resolve_from_dict({"thing": "FOO"})
+
+    class Wrapper(dg.Model):
+        thing: Thing
+
+    class Indirect(dg.Resolvable, dg.Model):
+        wrapper: Wrapper
+
+    assert Indirect.resolve_from_dict({"wrapper": {"thing": "BAR"}})

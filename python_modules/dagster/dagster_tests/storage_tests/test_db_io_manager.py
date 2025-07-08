@@ -1,11 +1,9 @@
 from unittest.mock import MagicMock
 
+import dagster as dg
 import pytest
-from dagster import AssetKey, InputContext, OutputContext, asset, build_output_context
+from dagster import InputContext, OutputContext
 from dagster._check import CheckError
-from dagster._core.definitions.partition import StaticPartitionsDefinition
-from dagster._core.definitions.time_window_partitions import DailyPartitionsDefinition, TimeWindow
-from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.storage.db_io_manager import (
     DbClient,
     DbIOManager,
@@ -84,8 +82,8 @@ def test_asset_out():
         get_table_name=mock_table_name,
     )
     manager = build_db_io_manager(type_handlers=[handler], db_client=db_client)
-    asset_key = AssetKey(["schema1", "table1"])
-    output_context = build_output_context(asset_key=asset_key, resource_config=resource_config)
+    asset_key = dg.AssetKey(["schema1", "table1"])
+    output_context = dg.build_output_context(asset_key=asset_key, resource_config=resource_config)
     manager.handle_output(output_context, 5)
     input_context = MagicMock(
         upstream_output=output_context,
@@ -120,8 +118,8 @@ def test_asset_out_columns():
         get_table_name=mock_table_name,
     )
     manager = build_db_io_manager(type_handlers=[handler], db_client=db_client)
-    asset_key = AssetKey(["schema1", "table1"])
-    output_context = build_output_context(asset_key=asset_key, resource_config=resource_config)
+    asset_key = dg.AssetKey(["schema1", "table1"])
+    output_context = dg.build_output_context(asset_key=asset_key, resource_config=resource_config)
     manager.handle_output(output_context, 5)
     input_context = MagicMock(
         asset_key=asset_key,
@@ -162,15 +160,15 @@ def test_asset_out_partitioned():
         get_table_name=mock_table_name,
     )
     manager = build_db_io_manager(type_handlers=[handler], db_client=db_client)
-    asset_key = AssetKey(["schema1", "table1"])
-    partitions_def = DailyPartitionsDefinition(start_date="2020-01-02")
+    asset_key = dg.AssetKey(["schema1", "table1"])
+    partitions_def = dg.DailyPartitionsDefinition(start_date="2020-01-02")
     partitions_def.time_window_for_partition_key = MagicMock(
-        return_value=TimeWindow(create_datetime(2020, 1, 2), create_datetime(2020, 1, 3))
+        return_value=dg.TimeWindow(create_datetime(2020, 1, 2), create_datetime(2020, 1, 3))
     )
     output_context = MagicMock(
         asset_key=asset_key,
         resource_config=resource_config,
-        asset_partitions_time_window=TimeWindow(
+        asset_partitions_time_window=dg.TimeWindow(
             create_datetime(2020, 1, 2), create_datetime(2020, 1, 3)
         ),
         definition_metadata={"partition_expr": "abc"},
@@ -182,7 +180,7 @@ def test_asset_out_partitioned():
         upstream_output=output_context,
         resource_config=resource_config,
         dagster_type=resolve_dagster_type(int),
-        asset_partitions_time_window=TimeWindow(
+        asset_partitions_time_window=dg.TimeWindow(
             create_datetime(2020, 1, 2), create_datetime(2020, 1, 3)
         ),
         definition_metadata=None,
@@ -197,7 +195,7 @@ def test_asset_out_partitioned():
         table="table1",
         partition_dimensions=[
             TablePartitionDimension(
-                partitions=TimeWindow(create_datetime(2020, 1, 2), create_datetime(2020, 1, 3)),
+                partitions=dg.TimeWindow(create_datetime(2020, 1, 2), create_datetime(2020, 1, 3)),
                 partition_expr="abc",
             )
         ],
@@ -221,8 +219,8 @@ def test_asset_out_static_partitioned():
         get_table_name=mock_table_name,
     )
     manager = build_db_io_manager(type_handlers=[handler], db_client=db_client)
-    asset_key = AssetKey(["schema1", "table1"])
-    partitions_def = StaticPartitionsDefinition(["red", "yellow", "blue"])
+    asset_key = dg.AssetKey(["schema1", "table1"])
+    partitions_def = dg.StaticPartitionsDefinition(["red", "yellow", "blue"])
     output_context = MagicMock(
         asset_key=asset_key,
         resource_config=resource_config,
@@ -273,8 +271,8 @@ def test_asset_out_multiple_static_partitions():
         get_table_name=mock_table_name,
     )
     manager = build_db_io_manager(type_handlers=[handler], db_client=db_client)
-    asset_key = AssetKey(["schema1", "table1"])
-    partitions_def = StaticPartitionsDefinition(["red", "yellow", "blue"])
+    asset_key = dg.AssetKey(["schema1", "table1"])
+    partitions_def = dg.StaticPartitionsDefinition(["red", "yellow", "blue"])
     output_context = MagicMock(
         asset_key=asset_key,
         resource_config=resource_config,
@@ -326,8 +324,8 @@ def test_different_output_and_input_types():
         get_table_name=mock_table_name,
     )
     manager = build_db_io_manager(type_handlers=[int_handler, str_handler], db_client=db_client)
-    asset_key = AssetKey(["schema1", "table1"])
-    output_context = build_output_context(asset_key=asset_key, resource_config=resource_config)
+    asset_key = dg.AssetKey(["schema1", "table1"])
+    output_context = dg.build_output_context(asset_key=asset_key, resource_config=resource_config)
     manager.handle_output(output_context, 5)
     assert len(int_handler.handle_output_calls) == 1
     assert len(str_handler.handle_output_calls) == 0
@@ -364,7 +362,7 @@ def test_non_asset_out():
         get_table_name=mock_table_name,
     )
     manager = build_db_io_manager(type_handlers=[handler], db_client=db_client)
-    output_context = build_output_context(
+    output_context = dg.build_output_context(
         name="table1",
         definition_metadata={"schema": "schema1"},
         resource_config=resource_config,
@@ -403,20 +401,20 @@ def test_asset_schema_defaults():
     )
     manager = build_db_io_manager(type_handlers=[handler], db_client=db_client)
 
-    asset_key = AssetKey(["schema1", "table1"])
-    output_context = build_output_context(asset_key=asset_key, resource_config=resource_config)
+    asset_key = dg.AssetKey(["schema1", "table1"])
+    output_context = dg.build_output_context(asset_key=asset_key, resource_config=resource_config)
     table_slice = manager._get_table_slice(output_context, output_context)  # noqa: SLF001
 
     assert table_slice.schema == "schema1"
 
-    asset_key = AssetKey(["table1"])
-    output_context = build_output_context(asset_key=asset_key, resource_config=resource_config)
+    asset_key = dg.AssetKey(["table1"])
+    output_context = dg.build_output_context(asset_key=asset_key, resource_config=resource_config)
     table_slice = manager._get_table_slice(output_context, output_context)  # noqa: SLF001
 
     assert table_slice.schema == "public"
 
-    asset_key = AssetKey(["schema1", "table1"])
-    output_context = build_output_context(
+    asset_key = dg.AssetKey(["schema1", "table1"])
+    output_context = dg.build_output_context(
         asset_key=asset_key,
         definition_metadata={"schema": "schema2"},
         resource_config=resource_config,
@@ -425,8 +423,8 @@ def test_asset_schema_defaults():
 
     assert table_slice.schema == "schema2"
 
-    asset_key = AssetKey(["table1"])
-    output_context = build_output_context(
+    asset_key = dg.AssetKey(["table1"])
+    output_context = dg.build_output_context(
         asset_key=asset_key,
         definition_metadata={"schema": "schema1"},
         resource_config=resource_config,
@@ -450,23 +448,23 @@ def test_asset_schema_defaults():
         resource_config_override=resource_config_w_schema,
     )
 
-    asset_key = AssetKey(["table1"])
-    output_context = build_output_context(
+    asset_key = dg.AssetKey(["table1"])
+    output_context = dg.build_output_context(
         asset_key=asset_key, resource_config=resource_config_w_schema
     )
     table_slice = manager_w_schema._get_table_slice(output_context, output_context)  # noqa: SLF001
 
     assert table_slice.schema == "my_schema"
 
-    asset_key = AssetKey(["schema1", "table1"])
-    output_context = build_output_context(
+    asset_key = dg.AssetKey(["schema1", "table1"])
+    output_context = dg.build_output_context(
         asset_key=asset_key, resource_config=resource_config_w_schema
     )
     table_slice = manager_w_schema._get_table_slice(output_context, output_context)  # noqa: SLF001
     assert table_slice.schema == "my_schema"
 
-    asset_key = AssetKey(["table1"])
-    output_context = build_output_context(
+    asset_key = dg.AssetKey(["table1"])
+    output_context = dg.build_output_context(
         asset_key=asset_key,
         definition_metadata={"schema": "schema1"},
         resource_config=resource_config_w_schema,
@@ -480,7 +478,7 @@ def test_output_schema_defaults():
     handler = IntHandler()
     db_client = MagicMock(spec=DbClient, get_select_statement=MagicMock(return_value=""))
     manager = build_db_io_manager(type_handlers=[handler], db_client=db_client)
-    output_context = build_output_context(
+    output_context = dg.build_output_context(
         name="table1",
         definition_metadata={"schema": "schema1"},
         resource_config=resource_config,
@@ -489,7 +487,7 @@ def test_output_schema_defaults():
 
     assert table_slice.schema == "schema1"
 
-    output_context = build_output_context(name="table1", resource_config=resource_config)
+    output_context = dg.build_output_context(name="table1", resource_config=resource_config)
     table_slice = manager._get_table_slice(output_context, output_context)  # noqa: SLF001
 
     assert table_slice.schema == "public"
@@ -509,12 +507,14 @@ def test_output_schema_defaults():
         resource_config_override=resource_config_w_schema,
     )
 
-    output_context = build_output_context(name="table1", resource_config=resource_config_w_schema)
+    output_context = dg.build_output_context(
+        name="table1", resource_config=resource_config_w_schema
+    )
     table_slice = manager_w_schema._get_table_slice(output_context, output_context)  # noqa: SLF001
 
     assert table_slice.schema == "my_schema"
 
-    output_context = build_output_context(
+    output_context = dg.build_output_context(
         name="table1",
         definition_metadata={"schema": "schema1"},
         resource_config=resource_config_w_schema,
@@ -527,7 +527,7 @@ def test_configuration_via_output_metadata():
     handler = IntHandler()
     db_client = MagicMock(spec=DbClient, get_select_statement=MagicMock(return_value=""))
     manager = build_db_io_manager(type_handlers=[handler], db_client=db_client)
-    output_context = build_output_context(
+    output_context = dg.build_output_context(
         name="table1",
         definition_metadata={"schema": "schema1"},
         resource_config=resource_config,
@@ -536,7 +536,7 @@ def test_configuration_via_output_metadata():
 
     assert table_slice.schema == "schema1"
 
-    output_context = build_output_context(name="table1", resource_config=resource_config)
+    output_context = dg.build_output_context(name="table1", resource_config=resource_config)
     table_slice = manager._get_table_slice(output_context, output_context)  # noqa: SLF001
 
     assert table_slice.schema == "public"
@@ -556,12 +556,14 @@ def test_configuration_via_output_metadata():
         resource_config_override=resource_config_w_schema,
     )
 
-    output_context = build_output_context(name="table1", resource_config=resource_config_w_schema)
+    output_context = dg.build_output_context(
+        name="table1", resource_config=resource_config_w_schema
+    )
     table_slice = manager_w_schema._get_table_slice(output_context, output_context)  # noqa: SLF001
 
     assert table_slice.schema == "my_schema"
 
-    output_context = build_output_context(
+    output_context = dg.build_output_context(
         name="table1",
         definition_metadata={"schema": "schema2", "table": "table2"},
         resource_config=resource_config_w_schema,
@@ -576,15 +578,15 @@ def test_handle_none_output():
     db_client = MagicMock(spec=DbClient, get_select_statement=MagicMock(return_value=""))
     manager = build_db_io_manager(type_handlers=[handler], db_client=db_client)
 
-    asset_key = AssetKey(["schema1", "table1"])
-    output_context = build_output_context(
+    asset_key = dg.AssetKey(["schema1", "table1"])
+    output_context = dg.build_output_context(
         asset_key=asset_key,
         resource_config=resource_config,
         dagster_type=resolve_dagster_type(type(None)),
         name="result",
     )
 
-    with pytest.raises(DagsterInvariantViolationError):
+    with pytest.raises(dg.DagsterInvariantViolationError):
         manager.handle_output(output_context, None)
 
 
@@ -600,8 +602,8 @@ def test_handle_subclass_output():
     class TestClass(int):
         pass
 
-    asset_key = AssetKey(["schema1", "table1"])
-    output_context = build_output_context(
+    asset_key = dg.AssetKey(["schema1", "table1"])
+    output_context = dg.build_output_context(
         asset_key=asset_key,
         resource_config=resource_config,
         dagster_type=resolve_dagster_type(type(TestClass)),
@@ -616,8 +618,8 @@ def test_non_supported_type():
     handler = IntHandler()
     db_client = MagicMock(spec=DbClient, get_select_statement=MagicMock(return_value=""))
     manager = build_db_io_manager(type_handlers=[handler], db_client=db_client)
-    asset_key = AssetKey(["schema1", "table1"])
-    output_context = build_output_context(
+    asset_key = dg.AssetKey(["schema1", "table1"])
+    output_context = dg.build_output_context(
         asset_key=asset_key,
         resource_config=resource_config,
         dagster_type=resolve_dagster_type(type(None)),
@@ -641,10 +643,10 @@ def test_default_load_type():
         db_client=db_client,
         default_load_type=int,
     )
-    asset_key = AssetKey(["schema1", "table1"])
-    output_context = build_output_context(asset_key=asset_key, resource_config=resource_config)
+    asset_key = dg.AssetKey(["schema1", "table1"])
+    output_context = dg.build_output_context(asset_key=asset_key, resource_config=resource_config)
 
-    @asset
+    @dg.asset
     def asset1(): ...
 
     input_context = MagicMock(

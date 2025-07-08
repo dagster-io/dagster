@@ -1,30 +1,20 @@
 import operator
 from typing import Optional
 
+import dagster as dg
 import pytest
-from dagster import (
-    DagsterInstance,
-    DailyPartitionsDefinition,
-    Definitions,
-    HourlyPartitionsDefinition,
-    MultiPartitionsDefinition,
-    PartitionsDefinition,
-    StaticPartitionsDefinition,
-    asset,
-    deserialize_value,
-    serialize_value,
-)
+from dagster import DagsterInstance
 from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView, SerializableEntitySubset
 
 partitions_defs = [
     None,
-    DailyPartitionsDefinition(start_date="2020-01-01", end_date="2020-01-05"),
-    HourlyPartitionsDefinition(start_date="2020-01-01-00:00", end_date="2020-01-02-00:00"),
-    StaticPartitionsDefinition(["a", "b", "c"]),
-    MultiPartitionsDefinition(
+    dg.DailyPartitionsDefinition(start_date="2020-01-01", end_date="2020-01-05"),
+    dg.HourlyPartitionsDefinition(start_date="2020-01-01-00:00", end_date="2020-01-02-00:00"),
+    dg.StaticPartitionsDefinition(["a", "b", "c"]),
+    dg.MultiPartitionsDefinition(
         {
-            "day": DailyPartitionsDefinition(start_date="2020-01-01", end_date="2020-01-05"),
-            "other": StaticPartitionsDefinition(["a", "b", "c"]),
+            "day": dg.DailyPartitionsDefinition(start_date="2020-01-01", end_date="2020-01-05"),
+            "other": dg.StaticPartitionsDefinition(["a", "b", "c"]),
         }
     ),
 ]
@@ -34,12 +24,12 @@ partitions_defs = [
 @pytest.mark.parametrize("first_all", [True, False])
 @pytest.mark.parametrize("second_all", [True, False])
 def test_operations(
-    partitions_def: Optional[PartitionsDefinition], first_all: bool, second_all: bool
+    partitions_def: Optional[dg.PartitionsDefinition], first_all: bool, second_all: bool
 ) -> None:
-    @asset(partitions_def=partitions_def)
+    @dg.asset(partitions_def=partitions_def)
     def foo() -> None: ...
 
-    defs = Definitions([foo])
+    defs = dg.Definitions([foo])
     instance = DagsterInstance.ephemeral()
     asset_graph_view = AssetGraphView.for_test(defs, instance)
 
@@ -70,18 +60,19 @@ def test_operations(
 
 
 @pytest.mark.parametrize("partitions_def", partitions_defs)
-def test_round_trip(partitions_def: Optional[PartitionsDefinition]) -> None:
-    @asset(partitions_def=partitions_def)
+def test_round_trip(partitions_def: Optional[dg.PartitionsDefinition]) -> None:
+    @dg.asset(partitions_def=partitions_def)
     def foo() -> None: ...
 
-    defs = Definitions([foo])
+    defs = dg.Definitions([foo])
     instance = DagsterInstance.ephemeral()
     asset_graph_view = AssetGraphView.for_test(defs, instance)
 
     initial_subset = asset_graph_view.get_full_subset(key=foo.key)
 
-    inner_subset = deserialize_value(
-        serialize_value(initial_subset.convert_to_serializable_subset()), SerializableEntitySubset
+    inner_subset = dg.deserialize_value(
+        dg.serialize_value(initial_subset.convert_to_serializable_subset()),
+        SerializableEntitySubset,
     )
     subset = asset_graph_view.get_subset_from_serializable_subset(inner_subset)
 
@@ -92,6 +83,6 @@ def test_round_trip(partitions_def: Optional[PartitionsDefinition]) -> None:
     )
 
     # if asset is removed, don't error just return None
-    empty_asset_graph_view = AssetGraphView.for_test(Definitions(), instance)
+    empty_asset_graph_view = AssetGraphView.for_test(dg.Definitions(), instance)
     subset = empty_asset_graph_view.get_subset_from_serializable_subset(inner_subset)
     assert subset is None
