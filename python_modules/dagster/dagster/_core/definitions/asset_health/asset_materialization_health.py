@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 
 @whitelist_for_serdes
 @record.record
-class MinimalAssetMaterializationHealthState:
+class MinimalAssetMaterializationHealthState(LoadableBy[AssetKey]):
     """Minimal object for computing the health status for the materialization state of an asset.
     This object is intended to be small and quick to deserialize. Deserializing AssetMaterializationHealthState
     can be slow if there is a large entity subset. Rather than storing entity subsets, we store the number
@@ -63,6 +63,19 @@ class MinimalAssetMaterializationHealthState:
             num_currently_materialized_partitions=asset_materialization_health_state.currently_materialized_subset.size,
             partitions_snap=asset_materialization_health_state.partitions_snap,
         )
+
+    @classmethod
+    def _blocking_batch_load(
+        cls, keys: Iterable[AssetKey], context: LoadingContext
+    ) -> Iterable[Optional["MinimalAssetMaterializationHealthState"]]:
+        asset_materialization_health_states = (
+            context.instance.get_asset_materialization_health_state_for_assets(list(keys))
+        )
+
+        if asset_materialization_health_states is None:
+            return [None for _ in keys]
+        else:
+            return [asset_materialization_health_states.get(key) for key in keys]
 
 
 @whitelist_for_serdes
@@ -211,19 +224,6 @@ class AssetMaterializationHealthState(LoadableBy[AssetKey]):
             latest_materialization_timestamp=latest_materialization_timestamp,
         )
 
-    @classmethod
-    def _blocking_batch_load(
-        cls, keys: Iterable[AssetKey], context: LoadingContext
-    ) -> Iterable[Optional["AssetMaterializationHealthState"]]:
-        asset_materialization_health_states = (
-            context.instance.get_asset_materialization_health_state_for_assets(list(keys))
-        )
-
-        if asset_materialization_health_states is None:
-            return [None for _ in keys]
-        else:
-            return [asset_materialization_health_states.get(key) for key in keys]
-
 
 async def _get_is_currently_failed_and_latest_terminal_run_id(
     loading_context: LoadingContext, asset_record: AssetRecord
@@ -320,7 +320,7 @@ async def get_materialization_status_and_metadata(
     needed to power the UIs. Metadata is fetched from the AssetLatestMaterializationState object, again
     either via streamline or by computing it based on the state of the DB.
     """
-    asset_materialization_health_state = await AssetMaterializationHealthState.gen(
+    asset_materialization_health_state = await MinimalAssetMaterializationHealthState.gen(
         context, asset_key
     )
     # captures streamline disabled or consumer state doesn't exist
@@ -358,11 +358,14 @@ async def get_materialization_status_and_metadata(
                 return AssetHealthStatus.HEALTHY, None
             return AssetHealthStatus.UNKNOWN, None
 
+        big_materialization_health_state = await AssetMaterializationHealthState.compute_for_asset(
+            asset_key,
+            node_snap.partitions_def,
+            context,
+        )
         asset_materialization_health_state = (
-            await AssetMaterializationHealthState.compute_for_asset(
-                asset_key,
-                node_snap.partitions_def,
-                context,
+            MinimalAssetMaterializationHealthState.from_asset_materialization_health_state(
+                big_materialization_health_state
             )
         )
 
@@ -374,11 +377,11 @@ async def get_materialization_status_and_metadata(
                 total_num_partitions = (
                     asset_materialization_health_state.partitions_def.get_num_partitions()
                 )
-            # asset is health, so no partitions are failed
-            num_materialized = len(
-                asset_materialization_health_state.materialized_subset.subset_value
+            # asset is healthy, so no partitions are failed
+            num_missing = (
+                total_num_partitions
+                - asset_materialization_health_state.num_currently_materialized_partitions
             )
-            num_missing = total_num_partitions - num_materialized
         if num_missing > 0 and total_num_partitions > 0:
             meta = AssetHealthMaterializationHealthyPartitionedMeta(
                 num_missing_partitions=num_missing,
@@ -394,13 +397,13 @@ async def get_materialization_status_and_metadata(
                 total_num_partitions = (
                     asset_materialization_health_state.partitions_def.get_num_partitions()
                 )
-            num_failed = len(asset_materialization_health_state.failed_subset.subset_value)
-            num_materialized = len(
-                asset_materialization_health_state.currently_materialized_subset.subset_value
+            num_missing = (
+                total_num_partitions
+                - asset_materialization_health_state.num_currently_materialized_partitions
+                - asset_materialization_health_state.num_failed_partitions
             )
-            num_missing = total_num_partitions - num_materialized - num_failed
             meta = AssetHealthMaterializationDegradedPartitionedMeta(
-                num_failed_partitions=num_failed,
+                num_failed_partitions=asset_materialization_health_state.num_failed_partitions,
                 num_missing_partitions=num_missing,
                 total_num_partitions=total_num_partitions,
             )

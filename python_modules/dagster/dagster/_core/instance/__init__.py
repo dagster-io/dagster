@@ -120,7 +120,7 @@ if TYPE_CHECKING:
         AssetFreshnessHealthState,
     )
     from dagster._core.definitions.asset_health.asset_materialization_health import (
-        AssetMaterializationHealthState,
+        MinimalAssetMaterializationHealthState,
     )
     from dagster._core.definitions.asset_key import EntityKey
     from dagster._core.definitions.assets.graph.base_asset_graph import (
@@ -3713,5 +3713,5 @@ class DagsterInstance(DynamicPartitionsStore):
 
     def get_asset_materialization_health_state_for_assets(
         self, asset_keys: Sequence[AssetKey]
-    ) -> Optional[Mapping[AssetKey, Optional["AssetMaterializationHealthState"]]]:
+    ) -> Optional[Mapping[AssetKey, Optional["MinimalAssetMaterializationHealthState"]]]:
         return None
