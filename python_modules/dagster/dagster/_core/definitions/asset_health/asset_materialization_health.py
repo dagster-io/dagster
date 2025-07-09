@@ -75,7 +75,7 @@ class MinimalAssetMaterializationHealthState(LoadableBy[AssetKey]):
         cls, keys: Iterable[AssetKey], context: LoadingContext
     ) -> Iterable[Optional["MinimalAssetMaterializationHealthState"]]:
         asset_materialization_health_states = (
-            context.instance.get_asset_materialization_health_state_for_assets(list(keys))
+            context.instance.get_minimal_asset_materialization_health_state_for_assets(list(keys))
         )
 
         if asset_materialization_health_states is None:
@@ -131,6 +131,19 @@ class AssetMaterializationHealthState(LoadableBy[AssetKey]):
             return AssetHealthStatus.DEGRADED
         else:
             return AssetHealthStatus.HEALTHY
+
+    @classmethod
+    def _blocking_batch_load(
+        cls, keys: Iterable[AssetKey], context: LoadingContext
+    ) -> Iterable[Optional["AssetMaterializationHealthState"]]:
+        asset_materialization_health_states = (
+            context.instance.get_asset_materialization_health_state_for_assets(list(keys))
+        )
+
+        if asset_materialization_health_states is None:
+            return [None for _ in keys]
+        else:
+            return [asset_materialization_health_states.get(key) for key in keys]
 
     @classmethod
     async def compute_for_asset(
