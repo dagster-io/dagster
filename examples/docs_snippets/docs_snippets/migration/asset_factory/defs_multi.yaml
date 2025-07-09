@@ -1,0 +1,16 @@
+type: my_project.components.asset_factory.AssetFactory
+
+attributes:
+  department: engineering
+
+---
+type: my_project.components.asset_factory.AssetFactory
+
+attributes:
+  department: marketing
+
+---
+type: my_project.components.asset_factory.AssetFactory
+
+attributes:
+  department: sales
