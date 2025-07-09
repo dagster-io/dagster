@@ -64,6 +64,12 @@ class MinimalAssetMaterializationHealthState(LoadableBy[AssetKey]):
             partitions_snap=asset_materialization_health_state.partitions_snap,
         )
 
+    @property
+    def partitions_def(self) -> Optional[PartitionsDefinition]:
+        if self.partitions_snap is None:
+            return None
+        return self.partitions_snap.get_partitions_definition()
+
     @classmethod
     def _blocking_batch_load(
         cls, keys: Iterable[AssetKey], context: LoadingContext
