@@ -542,10 +542,14 @@ class BaseTableauWorkspace(ConfigurableResource):
                             data_source_id = published_data_source_data["luid"]
                             if data_source_id and data_source_id not in data_source_ids:
                                 data_source_ids.add(data_source_id)
+                                augmented_published_data_source_data = {
+                                    **published_data_source_data,
+                                    "isPublished": True,
+                                }
                                 data_sources.append(
                                     TableauContentData(
                                         content_type=TableauContentType.DATA_SOURCE,
-                                        properties=published_data_source_data,
+                                        properties=augmented_published_data_source_data,
                                     )
                                 )
                         if not published_data_source_list:
@@ -555,10 +559,15 @@ class BaseTableauWorkspace(ConfigurableResource):
                             if data_source_id and data_source_id not in data_source_ids:
                                 data_source_ids.add(data_source_id)
                                 embedded_data_source_data["luid"] = data_source_id
+                                augmented_embedded_data_source_data = {
+                                    **embedded_data_source_data,
+                                    "isPublished": False,
+                                    "workbook": {"luid": workbook_id},
+                                }
                                 data_sources.append(
                                     TableauContentData(
                                         content_type=TableauContentType.DATA_SOURCE,
-                                        properties=embedded_data_source_data,
+                                        properties=augmented_embedded_data_source_data,
                                     )
                                 )
 

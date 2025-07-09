@@ -13,6 +13,7 @@ FAKE_USERNAME = "fake_username"
 FAKE_SITE_NAME = "fake_site_name"
 FAKE_POD_NAME = "fake_pod_name"
 
+TEST_DATA_SOURCE_ID = "0f5660c7-2b05-4ff0-90ce-3199226956c6"
 TEST_EMBEDDED_DATA_SOURCE_ID = "1f5660c7-3b05-5ff0-90ce-4199226956c6"
 
 TEST_WORKBOOK_ID = "b75fc023-a7ca-4115-857b-4342028640d0"
@@ -21,15 +22,18 @@ TEST_PROJECT_ID = "test_project_id"
 
 
 SAMPLE_DATA_SOURCE = {
-    "luid": "0f5660c7-2b05-4ff0-90ce-3199226956c6",
+    "luid": TEST_DATA_SOURCE_ID,
     "name": "Superstore Datasource",
     "hasExtracts": False,
+    "isPublished": True,
 }
 
 SAMPLE_EMBEDDED_DATA_SOURCE = {
     "id": TEST_EMBEDDED_DATA_SOURCE_ID,
     "name": "Embedded Superstore Datasource",
     "hasExtracts": True,
+    "isPublished": False,
+    # "workbook": {"luid": TEST_WORKBOOK_ID},
 }
 
 SAMPLE_SHEET = {
@@ -158,7 +162,7 @@ def dashboard_id_fixture() -> str:
 
 @pytest.fixture(name="data_source_id")
 def data_source_id_fixture() -> str:
-    return "0f5660c7-2b05-4ff0-90ce-3199226956c6"
+    return TEST_DATA_SOURCE_ID
 
 
 @pytest.fixture(name="embedded_data_source_id")
