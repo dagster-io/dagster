@@ -1,4 +1,5 @@
 import importlib
+import textwrap
 from pathlib import Path
 from typing import Union
 
@@ -156,6 +157,16 @@ def test_definitions_component_with_multiple_definitions_objects() -> None:
 def test_autoload_single_file(component_tree: ComponentTree) -> None:
     defs = component_tree.build_defs()
     assert {spec.key for spec in defs.resolve_all_asset_specs()} == {dg.AssetKey("an_asset")}
+    assert (
+        component_tree.to_string_representation()
+        == textwrap.dedent(
+            """
+        ├── single_file
+        │   └── single_file/some_file.py
+        └── __init__.py
+        """
+        ).strip()
+    )
 
 
 @pytest.mark.parametrize("component_tree", ["definitions/multiple_files"], indirect=True)
@@ -165,6 +176,17 @@ def test_autoload_multiple_files(component_tree: ComponentTree) -> None:
         dg.AssetKey("asset_in_some_file"),
         dg.AssetKey("asset_in_other_file"),
     }
+    assert (
+        component_tree.to_string_representation()
+        == textwrap.dedent(
+            """
+        ├── __init__.py
+        └── multiple_files
+            ├── multiple_files/other_file.py
+            └── multiple_files/some_file.py
+        """
+        ).strip()
+    )
 
 
 @pytest.mark.parametrize("component_tree", ["definitions/empty"], indirect=True)

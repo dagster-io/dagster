@@ -8,13 +8,19 @@ from unittest import mock
 
 from dagster_shared import check
 from dagster_shared.record import record
+from dagster_shared.utils.cached_method import get_cached_method_cache, make_cached_method_cache_key
 from typing_extensions import Self, TypeVar
 
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._utils.cached_method import cached_method
 from dagster.components.component.component import Component
 from dagster.components.core.context import ComponentDeclLoadContext, ComponentLoadContext
-from dagster.components.core.decl import ComponentDecl, build_component_decl_from_context
+from dagster.components.core.decl import (
+    ComponentDecl,
+    ComponentLoaderDecl,
+    YamlDecl,
+    build_component_decl_from_context,
+)
 from dagster.components.core.defs_module import ComponentPath, DefsFolderComponent
 from dagster.components.resolved.context import ResolutionContext
 from dagster.components.utils import get_path_from_module
@@ -251,6 +257,72 @@ class ComponentTree:
             for component in root_component.iterate_components()
             if isinstance(component, of_type)
         ]
+
+    def _has_loaded_component_at_path(self, path: Union[Path, ComponentPath]) -> bool:
+        cache = get_cached_method_cache(self, "_component_and_context_at_posix_path")
+        canonical_path = _get_canonical_component_path(self.defs_module_path, path)
+        key = make_cached_method_cache_key(
+            {"defs_path_posix": canonical_path[0], "instance_key": canonical_path[1]}
+        )
+        return key in cache
+
+    def _has_built_defs_at_path(self, path: Union[Path, ComponentPath]) -> bool:
+        cache = get_cached_method_cache(self, "_defs_at_posix_path")
+        canonical_path = _get_canonical_component_path(self.defs_module_path, path)
+        key = make_cached_method_cache_key(
+            {"defs_path_posix": canonical_path[0], "instance_key": canonical_path[1]}
+        )
+        return key in cache
+
+    def _add_string_representation(
+        self,
+        lines: list[str],
+        decl: ComponentDecl,
+        prefix: str,
+        include_load_and_build_status: bool = False,
+    ) -> None:
+        decls = list(decl.iterate_child_component_decls())
+        parent_path = decl.path.file_path
+
+        total = len(decls)
+        for idx, child_decl in enumerate(decls):
+            file_path = child_decl.path.file_path.relative_to(parent_path)
+            if isinstance(child_decl, ComponentLoaderDecl):
+                file_path = file_path / "component.py"
+            if isinstance(child_decl, YamlDecl):
+                file_path = file_path / "defs.yaml"
+
+            if child_decl.path.instance_key is not None:
+                name = f"{file_path}[{child_decl.path.instance_key}]"
+            else:
+                name = file_path
+
+            connector = "└── " if idx == total - 1 else "├── "
+            if include_load_and_build_status:
+                loaded = self._has_loaded_component_at_path(child_decl.path)
+                built = self._has_built_defs_at_path(child_decl.path)
+
+                state = ""
+                if built:
+                    state = "built"
+                elif loaded:
+                    state = "loaded"
+
+                lines.append(f"{prefix}{connector}{name}{' (' + state + ')' if state else ''}")
+            else:
+                lines.append(f"{prefix}{connector}{name}")
+
+            extension = "    " if idx == total - 1 else "│   "
+            self._add_string_representation(
+                lines, child_decl, prefix + extension, include_load_and_build_status
+            )
+
+    def to_string_representation(self, include_load_and_build_status: bool = False) -> str:
+        lines = []
+        self._add_string_representation(
+            lines, self.find_root_decl(), "", include_load_and_build_status
+        )
+        return "\n".join(lines)
 
 
 class TestComponentTree(ComponentTree):
