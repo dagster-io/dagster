@@ -14,7 +14,7 @@ from dagster._core.definitions.declarative_automation.automation_condition impor
     AutomationCondition,
     AutomationResult,
     BuiltinAutomationCondition,
-    T_ReplaceNew
+    T_AutomationCondition,
 )
 from dagster._core.definitions.declarative_automation.automation_context import AutomationContext
 from dagster._core.definitions.declarative_automation.serialized_objects import OperatorType
@@ -68,8 +68,8 @@ class EntityMatchesCondition(
 
     @public
     def replace(
-        self, old: Union[AutomationCondition, str], new: T_ReplaceNew
-    ) -> Union[Self, T_ReplaceNew]:
+        self, old: Union[AutomationCondition, str], new: T_AutomationCondition
+    ) -> Union[Self, T_AutomationCondition]:
         """Replaces all instances of ``old`` across any sub-conditions with ``new``.
 
         If ``old`` is a string, then conditions with a label matching
@@ -164,8 +164,8 @@ class DepsAutomationCondition(BuiltinAutomationCondition[T_EntityKey]):
 
     @public
     def replace(
-        self, old: Union[AutomationCondition, str], new: T_ReplaceNew
-    ) -> Union[Self, T_ReplaceNew]:
+        self, old: Union[AutomationCondition, str], new: T_AutomationCondition
+    ) -> Union[Self, T_AutomationCondition]:
         """Replaces all instances of ``old`` across any sub-conditions with ``new``.
 
         If ``old`` is a string, then conditions with a label matching

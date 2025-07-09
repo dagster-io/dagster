@@ -54,6 +54,9 @@ if TYPE_CHECKING:
     )
 
 
+T_AutomationCondition = TypeVar("T_AutomationCondition", bound="AutomationCondition")
+
+
 class AutomationCondition(ABC, Generic[T_EntityKey]):
     """An AutomationCondition represents a condition of an asset that impacts whether it should be
     automatically executed. For example, you can have a condition which becomes true whenever the
@@ -295,12 +298,10 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
                 ).with_label("handled")
             )
 
-    T_ReplaceNew = TypeVar("T_ReplaceNew", bound="AutomationCondition")
-
     @public
     def replace(
-        self, old: Union["AutomationCondition", str], new: T_ReplaceNew
-    ) -> Union[Self, T_ReplaceNew]:
+        self, old: Union["AutomationCondition", str], new: T_AutomationCondition
+    ) -> Union[Self, T_AutomationCondition]:
         """Replaces all instances of ``old`` across any sub-conditions with ``new``.
 
         If ``old`` is a string, then conditions with a label matching
