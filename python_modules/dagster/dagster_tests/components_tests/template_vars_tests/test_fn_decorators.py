@@ -12,7 +12,7 @@ def test_template_udf_decorator():
         return lambda x: f"udf_{x}"
 
     assert is_template_var(my_udf)
-    assert my_udf(ComponentTree.for_test().load_context)("test") == "udf_test"
+    assert my_udf(ComponentTree.for_test().decl_load_context)("test") == "udf_test"
 
 
 def test_template_udf_decorator_with_parens():
@@ -21,7 +21,7 @@ def test_template_udf_decorator_with_parens():
         return lambda x: f"udf_{x}"
 
     assert is_template_var(my_udf)
-    assert my_udf(ComponentTree.for_test().load_context)("test") == "udf_test"
+    assert my_udf(ComponentTree.for_test().decl_load_context)("test") == "udf_test"
 
 
 def test_template_udf_decorator_preserves_function_metadata():
@@ -52,7 +52,7 @@ def test_template_var_decorator():
         return "var_value"
 
     assert is_template_var(my_var)
-    assert my_var(ComponentTree.for_test().load_context) == "var_value"
+    assert my_var(ComponentTree.for_test().decl_load_context) == "var_value"
 
 
 def test_template_var_decorator_with_parens():
@@ -61,7 +61,7 @@ def test_template_var_decorator_with_parens():
         return "var_value"
 
     assert is_template_var(my_var)
-    assert my_var(ComponentTree.for_test().load_context) == "var_value"
+    assert my_var(ComponentTree.for_test().decl_load_context) == "var_value"
 
 
 def test_template_var_decorator_preserves_function_metadata():

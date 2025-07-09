@@ -13,7 +13,7 @@ from typing_extensions import Self, TypeVar
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._utils.cached_method import cached_method
 from dagster.components.component.component import Component
-from dagster.components.core.context import ComponentLoadContext
+from dagster.components.core.context import ComponentDeclLoadContext, ComponentLoadContext
 from dagster.components.core.decl import ComponentDecl, build_component_decl_from_context
 from dagster.components.core.defs_module import ComponentPath, DefsFolderComponent
 from dagster.components.resolved.context import ResolutionContext
@@ -37,6 +37,13 @@ def _get_canonical_component_path(
     if isinstance(path, ComponentPath):
         return _get_canonical_path_string(root_path, path.file_path), path.instance_key
     return _get_canonical_path_string(root_path, path), None
+
+
+@record
+class ComponentWithContext:
+    path: Path
+    component: Component
+    component_decl: ComponentDecl
 
 
 @record(
@@ -102,8 +109,8 @@ class ComponentTree:
         )
 
     @cached_property
-    def load_context(self):
-        return ComponentLoadContext(
+    def decl_load_context(self):
+        return ComponentDeclLoadContext(
             path=self.defs_module_path,
             project_root=self.project_root,
             defs_module_path=self.defs_module_path,
@@ -113,9 +120,15 @@ class ComponentTree:
             component_tree=self,
         )
 
+    @cached_property
+    def load_context(self):
+        return ComponentLoadContext.from_decl_load_context(
+            self.decl_load_context, self.find_root_decl()
+        )
+
     @cached_method
     def find_root_decl(self) -> ComponentDecl:
-        return check.not_none(build_component_decl_from_context(self.load_context))
+        return check.not_none(build_component_decl_from_context(self.decl_load_context))
 
     @cached_method
     def load_root_component(self) -> Component:
@@ -126,7 +139,7 @@ class ComponentTree:
         from dagster.components.core.load_defs import get_library_json_enriched_defs
 
         return Definitions.merge(
-            self.load_root_component().build_defs(self.load_context),
+            self.build_defs_at_path(self.defs_module_path),
             get_library_json_enriched_defs(self),
         )
 
@@ -150,24 +163,31 @@ class ComponentTree:
         return None
 
     @cached_method
-    def _component_at_posix_path(
+    def _component_and_context_at_posix_path(
         self, defs_path_posix: str, instance_key: Optional[Union[int, str]]
-    ) -> Optional[tuple[Path, Component]]:
+    ) -> Optional[ComponentWithContext]:
         component_decl_and_path = self._component_decl_at_posix_path(defs_path_posix, instance_key)
         if component_decl_and_path:
             path, component_decl = component_decl_and_path
-            return (path, component_decl._load_component())  # noqa: SLF001
+            return ComponentWithContext(
+                path=path,
+                component=component_decl._load_component(),  # noqa: SLF001
+                component_decl=component_decl,
+            )
         return None
 
     @cached_method
     def _defs_at_posix_path(
         self, defs_path_posix: str, instance_key: Optional[Union[int, str]]
     ) -> Optional[Definitions]:
-        component = self._component_at_posix_path(defs_path_posix, instance_key)
-        if component is None:
+        component_info = self._component_and_context_at_posix_path(defs_path_posix, instance_key)
+        if component_info is None:
             return None
-        path, component = component
-        return component.build_defs(self.load_context.for_path(path))
+        component = component_info.component
+        component_decl = component_info.component_decl
+
+        clc = ComponentLoadContext.from_decl_load_context(component_decl.context, component_decl)
+        return component.build_defs(clc)
 
     def find_decl_at_path(self, defs_path: Union[Path, ComponentPath]) -> ComponentDecl:
         """Loads a component declaration from the given path.
@@ -194,13 +214,12 @@ class ComponentTree:
         Returns:
             Component: The component loaded from the given path.
         """
-        component = self._component_at_posix_path(
+        component = self._component_and_context_at_posix_path(
             *_get_canonical_component_path(self.defs_module_path, defs_path)
         )
         if component is None:
             raise Exception(f"No component found for path {defs_path}")
-        path, component = component
-        return component
+        return component.component
 
     def build_defs_at_path(self, defs_path: Union[Path, ComponentPath]) -> Definitions:
         """Builds definitions from the given defs subdirectory. Currently
@@ -256,8 +275,8 @@ class TestComponentTree(ComponentTree):
         return Path.cwd()
 
     @cached_property
-    def load_context(self):
-        return ComponentLoadContext(
+    def decl_load_context(self):
+        return ComponentDeclLoadContext(
             path=self.defs_module_path,
             project_root=self.project_root,
             defs_module_path=self.defs_module_path,
@@ -267,6 +286,12 @@ class TestComponentTree(ComponentTree):
             component_tree=self,
         )
 
+    @cached_property
+    def load_context(self):
+        component_decl = mock.Mock()
+        component_decl.iterate_child_component_decls = mock.Mock(return_value=[])
+        return ComponentLoadContext.from_decl_load_context(self.decl_load_context, component_decl)
+
 
 class LegacyAutoloadingComponentTree(ComponentTree):
     """ComponentTree variant which terminates autoloading of defs on the keyword
@@ -275,8 +300,8 @@ class LegacyAutoloadingComponentTree(ComponentTree):
     """
 
     @cached_property
-    def load_context(self):
-        return ComponentLoadContext(
+    def decl_load_context(self):
+        return ComponentDeclLoadContext(
             path=self.defs_module_path,
             project_root=self.project_root,
             defs_module_path=self.defs_module_path,

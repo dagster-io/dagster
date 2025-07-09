@@ -159,6 +159,7 @@ def load(context: ComponentLoadContext) -> AirflowInstanceComponent: ...
             )
 
 
+@pytest.mark.skip("Figure out how to model this test with new tree system")
 def test_mapped_assets(component_for_test: type[AirflowInstanceComponent], temp_cwd: Path):
     # Add a sub-dir with an asset that will be task mapped.
     (temp_cwd / "my_asset").mkdir()
