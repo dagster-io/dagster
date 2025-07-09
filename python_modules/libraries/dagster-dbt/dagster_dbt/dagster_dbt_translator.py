@@ -1,8 +1,8 @@
 import os
 from collections.abc import Mapping, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any, Optional, Set
 
 from dagster import (
     AssetCheckSpec,
@@ -72,6 +72,44 @@ class DagsterDbtTranslatorSettings(Resolvable):
     enable_source_tests_as_checks: bool = False
 
 
+@dataclass
+class DagsterDbtKindsMapper:
+    """Configurable class handling the translation of dbt configs to Dagster kinds.
+
+    This dataclass is exposed so that configs can be overriden to customize how dbt props are
+    translated into Dagster kinds
+    """
+    resource_type_map: Mapping[str, str] = field(default_factory= lambda: {
+        "seed": "seed"
+    })
+
+    materialization_map: Mapping[str, str] = field(default_factory= lambda: {
+        "table": "table",
+        "incremental": "table",
+        "view": "view",
+    })
+
+    def get_kinds(
+        self, dbt_resource_props: Mapping[str, Any],
+        dbt_adapter_type: Optional[str],
+    ) -> Set[str]:
+        """Convert dbt resource props to set of kinds"""
+        kinds = {"dbt"}
+
+        if isinstance(dbt_adapter_type, str):
+            kinds.add(dbt_adapter_type)
+
+        resource_type = dbt_resource_props.get("resource_type")
+        if resource_type in self.resource_type_map and isinstance(resource_type, str):
+            kinds.add(self.resource_type_map[resource_type])
+
+        materialized = dbt_resource_props.get("config", {}).get("materialized")
+        if materialized in self.materialization_map and isinstance(materialized, str):
+            kinds.add(self.materialization_map[materialized])
+
+        return kinds
+
+
 class DagsterDbtTranslator:
     """Holds a set of methods that derive Dagster asset definition metadata given a representation
     of a dbt resource (models, tests, sources, etc).
@@ -80,13 +118,17 @@ class DagsterDbtTranslator:
     is derived.
     """
 
-    def __init__(self, settings: Optional[DagsterDbtTranslatorSettings] = None):
+    def __init__(
+        self, settings: Optional[DagsterDbtTranslatorSettings] = None,
+        kinds_mapper: Optional[DagsterDbtKindsMapper] = None
+    ):
         """Initialize the translator.
 
         Args:
             settings (Optional[DagsterDbtTranslatorSettings]): Settings for the translator.
         """
         self._settings = settings or DagsterDbtTranslatorSettings()
+        self._kinds_mapper = kinds_mapper or DagsterDbtKindsMapper()
 
     @property
     def settings(self) -> DagsterDbtTranslatorSettings:
@@ -94,6 +136,12 @@ class DagsterDbtTranslator:
             self._settings = DagsterDbtTranslatorSettings()
 
         return self._settings
+    
+    @property
+    def kinds_mapper(self) -> DagsterDbtKindsMapper:
+        if not hasattr(self, "_kinds_mapper"):
+            self._kinds_mapper = DagsterDbtKindsMapper()
+        return self._kinds_mapper
 
     def get_asset_spec(
         self,
@@ -115,6 +163,7 @@ class DagsterDbtTranslator:
 
         group_props = {group["name"]: group for group in manifest.get("groups", {}).values()}
         resource_props = get_node(manifest, unique_id)
+        dbt_adapter_type = manifest.get("metadata", {}).get("adapter_type", "dbt")
 
         # calculate the dependencies for the asset
         upstream_ids = get_upstream_unique_ids(manifest, resource_props)
@@ -160,7 +209,7 @@ class DagsterDbtTranslator:
             legacy_freshness_policy=self.get_freshness_policy(resource_props),
             owners=self.get_owners(owners_resource_props),
             tags=self.get_tags(resource_props),
-            kinds={"dbt", manifest.get("metadata", {}).get("adapter_type", "dbt")},
+            kinds=self.kinds_mapper.get_kinds(resource_props, dbt_adapter_type),
             partitions_def=self.get_partitions_def(resource_props),
         )
 
