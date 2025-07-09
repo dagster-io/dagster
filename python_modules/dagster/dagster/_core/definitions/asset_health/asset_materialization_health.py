@@ -53,12 +53,8 @@ class MinimalAssetMaterializationHealthState:
         return cls(
             latest_materialization_timestamp=asset_materialization_health_state.latest_materialization_timestamp,
             latest_terminal_run_id=asset_materialization_health_state.latest_terminal_run_id,
-            num_failed_partitions=len(
-                asset_materialization_health_state.failed_subset.subset_value
-            ),
-            num_currently_materialized_partitions=len(
-                asset_materialization_health_state.currently_materialized_subset.subset_value
-            ),
+            num_failed_partitions=asset_materialization_health_state.failed_subset.size,
+            num_currently_materialized_partitions=asset_materialization_health_state.currently_materialized_subset.size,
             partitions_snap=asset_materialization_health_state.partitions_snap,
         )
 
