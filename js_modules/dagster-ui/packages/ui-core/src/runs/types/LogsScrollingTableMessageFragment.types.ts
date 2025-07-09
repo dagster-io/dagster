@@ -1441,6 +1441,7 @@ export type LogsScrollingTableMessageFragment_HealthChangedEvent = {
   stepKey: string | null;
   label: string | null;
   description: string | null;
+  partition: string | null;
   metadataEntries: Array<
     | {
         __typename: 'AssetMetadataEntry';
@@ -1589,6 +1590,7 @@ export type LogsScrollingTableMessageFragment_HealthChangedEvent = {
       }
     | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
   >;
+  assetKey: {__typename: 'AssetKey'; path: Array<string>} | null;
 };
 
 export type LogsScrollingTableMessageFragment_HookCompletedEvent = {
