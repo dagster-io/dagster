@@ -641,7 +641,8 @@ class BaseTableauWorkspace(ConfigurableResource):
         refreshable_data_source_ids = [
             check.not_none(TableauDataSourceMetadataSet.extract(spec.metadata).id)
             for spec in specs
-            if TableauDataSourceMetadataSet.extract(spec.metadata).has_extracts
+            if check.inst(TableauTagSet.extract(spec.tags).asset_type, str) == "data_source"
+            and TableauDataSourceMetadataSet.extract(spec.metadata).has_extracts
         ]
 
         with self.get_client() as client:
