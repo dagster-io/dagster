@@ -162,7 +162,7 @@ def test_autoload_single_file(component_tree: ComponentTree) -> None:
         == textwrap.dedent(
             """
         ├── single_file
-        │   └── single_file/some_file.py
+        │   └── some_file.py
         └── __init__.py
         """
         ).strip()
@@ -182,8 +182,8 @@ def test_autoload_multiple_files(component_tree: ComponentTree) -> None:
             """
         ├── __init__.py
         └── multiple_files
-            ├── multiple_files/other_file.py
-            └── multiple_files/some_file.py
+            ├── other_file.py
+            └── some_file.py
         """
         ).strip()
     )

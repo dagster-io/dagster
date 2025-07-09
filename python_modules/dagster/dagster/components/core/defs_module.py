@@ -343,7 +343,7 @@ EXPLICITLY_IGNORED_GLOB_PATTERNS = [
 
 def find_components_from_context(context: ComponentLoadContext) -> Mapping[Path, Component]:
     found = {}
-    for subpath in context.path.iterdir():
+    for subpath in sorted(context.path.iterdir()):
         relative_subpath = subpath.relative_to(context.path)
         if any(relative_subpath.match(pattern) for pattern in EXPLICITLY_IGNORED_GLOB_PATTERNS):
             continue
