@@ -18,6 +18,7 @@ from dagster.components.core.context import ComponentDeclLoadContext, ComponentL
 from dagster.components.core.decl import (
     ComponentDecl,
     ComponentLoaderDecl,
+    DagsterDefsDecl,
     YamlDecl,
     build_component_decl_from_context,
 )
@@ -280,24 +281,35 @@ class ComponentTree:
         decl: ComponentDecl,
         prefix: str,
         include_load_and_build_status: bool = False,
+        hide_plain_defs: bool = False,
     ) -> None:
         decls = list(decl.iterate_child_component_decls())
         parent_path = decl.path.file_path
 
         total = len(decls)
         for idx, child_decl in enumerate(decls):
+            if isinstance(child_decl, DagsterDefsDecl) and hide_plain_defs:
+                continue
+
+            component_type = None
             file_path = child_decl.path.file_path.relative_to(parent_path)
             if isinstance(child_decl, ComponentLoaderDecl):
                 file_path = file_path / "component.py"
             if isinstance(child_decl, YamlDecl):
                 file_path = file_path / "defs.yaml"
+                component_type = child_decl.component_cls.__name__
 
-            if child_decl.path.instance_key is not None:
+            if child_decl.path.instance_key is not None and len(decls) > 1:
                 name = f"{file_path}[{child_decl.path.instance_key}]"
             else:
                 name = file_path
 
             connector = "└── " if idx == total - 1 else "├── "
+            out_txt = f"{prefix}{connector}{name}"
+
+            if component_type:
+                out_txt += f" ({component_type})"
+
             if include_load_and_build_status:
                 loaded = self._has_loaded_component_at_path(child_decl.path)
                 built = self._has_built_defs_at_path(child_decl.path)
@@ -308,19 +320,38 @@ class ComponentTree:
                 elif loaded:
                     state = "loaded"
 
-                lines.append(f"{prefix}{connector}{name}{' (' + state + ')' if state else ''}")
-            else:
-                lines.append(f"{prefix}{connector}{name}")
+                out_txt += f" ({state})"
+
+            lines.append(out_txt)
 
             extension = "    " if idx == total - 1 else "│   "
             self._add_string_representation(
-                lines, child_decl, prefix + extension, include_load_and_build_status
+                lines,
+                child_decl,
+                prefix + extension,
+                include_load_and_build_status,
+                hide_plain_defs,
             )
 
-    def to_string_representation(self, include_load_and_build_status: bool = False) -> str:
+        if (
+            hide_plain_defs
+            and len(decls) > 0
+            and all(isinstance(child_decl, DagsterDefsDecl) for child_decl in decls)
+        ):
+            lines.append(f"{prefix}└── ...")
+
+    def to_string_representation(
+        self, include_load_and_build_status: bool = False, hide_plain_defs: bool = False
+    ) -> str:
+        """Returns a string representation of the component tree.
+
+        Args:
+            include_load_and_build_status: Whether to include the load and build status of the components.
+            hide_plain_defs: Whether to hide any plain Dagster defs, which are not components, e.g. Python files without components.
+        """
         lines = []
         self._add_string_representation(
-            lines, self.find_root_decl(), "", include_load_and_build_status
+            lines, self.find_root_decl(), "", include_load_and_build_status, hide_plain_defs
         )
         return "\n".join(lines)
 
