@@ -142,12 +142,6 @@ export const LOGS_ROW_STRUCTURED_FRAGMENT = gql`
         path
       }
     }
-    ... on HealthChangedEvent {
-      partition
-      assetKey {
-        path
-      }
-    }
     ... on MaterializationEvent {
       partition
       assetKey {
