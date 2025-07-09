@@ -124,8 +124,6 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
 
   const {kinds, hideEdgesToNodesOutsideQuery} = options;
 
-  const [graphDataLoading, setGraphDataLoading] = useState(true);
-
   const {loading: supplementaryDataLoading, data: supplementaryData} =
     useAssetGraphSupplementaryData(opsQuery, allNodes);
 
@@ -138,8 +136,6 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
       setState({allAssetKeys: [], graphAssetKeys: [], assetGraphData: null});
       return;
     }
-
-    setGraphDataLoading(true);
 
     const data = computeGraphData({
       repoFilteredNodes,
@@ -164,8 +160,7 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
   ]);
 
   const loading =
-    !options.skip &&
-    (assetsLoading || graphDataLoading || !!supplementaryDataLoading || !!options.loading);
+    !options.skip && (assetsLoading || !!supplementaryDataLoading || !!options.loading);
   useBlockTraceUntilTrue('useAssetGraphData', !loading);
   return {
     loading,
