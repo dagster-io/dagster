@@ -1652,7 +1652,6 @@ export type PipelineRunLogsSubscription = {
               eventType: Types.DagsterEventType | null;
               label: string | null;
               description: string | null;
-              partition: string | null;
               metadataEntries: Array<
                 | {
                     __typename: 'AssetMetadataEntry';
@@ -1826,7 +1825,6 @@ export type PipelineRunLogsSubscription = {
                     description: string | null;
                   }
               >;
-              assetKey: {__typename: 'AssetKey'; path: Array<string>} | null;
             }
           | {
               __typename: 'HookCompletedEvent';
@@ -5475,7 +5473,6 @@ export type RunLogsSubscriptionSuccessFragment = {
         eventType: Types.DagsterEventType | null;
         label: string | null;
         description: string | null;
-        partition: string | null;
         metadataEntries: Array<
           | {
               __typename: 'AssetMetadataEntry';
@@ -5644,7 +5641,6 @@ export type RunLogsSubscriptionSuccessFragment = {
             }
           | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
         >;
-        assetKey: {__typename: 'AssetKey'; path: Array<string>} | null;
       }
     | {
         __typename: 'HookCompletedEvent';
@@ -9297,7 +9293,6 @@ export type RunLogsQuery = {
               eventType: Types.DagsterEventType | null;
               label: string | null;
               description: string | null;
-              partition: string | null;
               metadataEntries: Array<
                 | {
                     __typename: 'AssetMetadataEntry';
@@ -9471,7 +9466,6 @@ export type RunLogsQuery = {
                     description: string | null;
                   }
               >;
-              assetKey: {__typename: 'AssetKey'; path: Array<string>} | null;
             }
           | {
               __typename: 'HookCompletedEvent';
@@ -11517,6 +11511,6 @@ export type RunLogsQuery = {
     | {__typename: 'RunNotFoundError'};
 };
 
-export const PipelineRunLogsSubscriptionVersion = '929d969805de91b8890960433258984bbd32d2c08dbca55583da64c309fa3127';
+export const PipelineRunLogsSubscriptionVersion = '564c771292632773b15107100b12817e8058821400295dda573c7fa6ee87ce69';
 
-export const RunLogsQueryVersion = '811ef63a737599640cc1677f4a6c01c5193e5651e0b641680847abe613296deb';
+export const RunLogsQueryVersion = 'c1d1c5ceeddbe3ab4283b5ade99eaece9dea9eb4e85d5f5db8b32ecb412b691a';
