@@ -133,7 +133,6 @@ export const LogsRowStructuredContent = ({node, metadata}: IStructuredContentPro
         </DefaultContent>
       );
     case 'FailedToMaterializeEvent':
-    case 'HealthChangedEvent':
     case 'MaterializationEvent':
       return (
         <AssetMetadataContent
@@ -199,6 +198,7 @@ export const LogsRowStructuredContent = ({node, metadata}: IStructuredContentPro
       return <DefaultContent message={node.message} eventType={eventType} eventIntent="danger" />;
     case 'RunSuccessEvent':
       return <DefaultContent message={node.message} eventType={eventType} eventIntent="success" />;
+    case 'HealthChangedEvent':
     case 'RunStartEvent':
     case 'RunEnqueuedEvent':
     case 'RunDequeuedEvent':
