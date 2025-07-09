@@ -1,5 +1,5 @@
 import asyncio
-from typing import TYPE_CHECKING, Optional, cast
+from typing import TYPE_CHECKING, Optional
 
 import graphene
 from dagster import _check as check
@@ -437,18 +437,15 @@ class GrapheneRepository(graphene.ObjectType):
         graphene_info: ResolveInfo,
     ) -> GrapheneLocationDocsJson:
         repository = self.get_repository(graphene_info)
-        plugin_docs_json = (
-            cast(
-                "list",
-                repository.repository_snap.metadata.get(
-                    PLUGIN_COMPONENT_TYPES_JSON_METADATA_KEY, [[]]
-                ),
-            )[0]
-            if repository.repository_snap.metadata
-            else []
-        )
+        value = []
+        if repository.repository_snap.metadata:
+            entry = repository.repository_snap.metadata.get(
+                PLUGIN_COMPONENT_TYPES_JSON_METADATA_KEY
+            )
+            if entry:
+                value = entry.value
 
-        return GrapheneLocationDocsJson(json=plugin_docs_json)
+        return GrapheneLocationDocsJson(json=value)
 
 
 class GrapheneRepositoryConnection(graphene.ObjectType):
