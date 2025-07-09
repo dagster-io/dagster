@@ -161,9 +161,9 @@ def test_autoload_single_file(component_tree: ComponentTree) -> None:
         component_tree.to_string_representation()
         == textwrap.dedent(
             """
-        ├── single_file
-        │   └── some_file.py
-        └── __init__.py
+        ├── __init__.py
+        └── single_file
+            └── some_file.py
         """
         ).strip()
     )

@@ -19,23 +19,23 @@ def test_load_from_path() -> None:
         tree.to_string_representation(include_load_and_build_status=True)
         == textwrap.dedent(
             """
-            ├── multiple_component_instances_defs_py
-            │   ├── component.py[bar]
-            │   └── component.py[foo]
             ├── multiple_component_instances
             │   ├── component.py[bar]
             │   └── component.py[foo]
+            ├── multiple_component_instances_defs_py
+            │   ├── component.py[bar]
+            │   └── component.py[foo]
+            ├── multiple_definitions_calls
+            │   └── defs.py
             ├── script_python_decl/component.py
-            ├── triple_dash_scripts
-            │   ├── defs.yaml[0]
-            │   ├── defs.yaml[1]
-            │   └── defs.yaml[2]
             ├── scripts
             │   ├── defs.yaml[0]
             │   ├── defs.yaml[1]
             │   └── defs.yaml[2]
-            └── multiple_definitions_calls
-                └── defs.py
+            └── triple_dash_scripts
+                ├── defs.yaml[0]
+                ├── defs.yaml[1]
+                └── defs.yaml[2]
             """
         ).strip()
     )
@@ -44,23 +44,23 @@ def test_load_from_path() -> None:
         tree.to_string_representation(include_load_and_build_status=True)
         == textwrap.dedent(
             """
-            ├── multiple_component_instances_defs_py (loaded)
-            │   ├── component.py[bar] (loaded)
-            │   └── component.py[foo] (loaded)
             ├── multiple_component_instances (loaded)
             │   ├── component.py[bar] (loaded)
             │   └── component.py[foo] (loaded)
+            ├── multiple_component_instances_defs_py (loaded)
+            │   ├── component.py[bar] (loaded)
+            │   └── component.py[foo] (loaded)
+            ├── multiple_definitions_calls (loaded)
+            │   └── defs.py (loaded)
             ├── script_python_decl/component.py (loaded)
-            ├── triple_dash_scripts (loaded)
-            │   ├── defs.yaml[0] (loaded)
-            │   ├── defs.yaml[1] (loaded)
-            │   └── defs.yaml[2] (loaded)
             ├── scripts (loaded)
             │   ├── defs.yaml[0] (loaded)
             │   ├── defs.yaml[1] (loaded)
             │   └── defs.yaml[2] (loaded)
-            └── multiple_definitions_calls (loaded)
-                └── defs.py (loaded)
+            └── triple_dash_scripts (loaded)
+                ├── defs.yaml[0] (loaded)
+                ├── defs.yaml[1] (loaded)
+                └── defs.yaml[2] (loaded)
             """
         ).strip()
     )
@@ -93,23 +93,23 @@ def test_load_from_path() -> None:
         tree.to_string_representation(include_load_and_build_status=True)
         == textwrap.dedent(
             """
-            ├── multiple_component_instances_defs_py (built)
-            │   ├── component.py[bar] (built)
-            │   └── component.py[foo] (built)
             ├── multiple_component_instances (built)
             │   ├── component.py[bar] (built)
             │   └── component.py[foo] (built)
+            ├── multiple_component_instances_defs_py (built)
+            │   ├── component.py[bar] (built)
+            │   └── component.py[foo] (built)
+            ├── multiple_definitions_calls (built)
+            │   └── defs.py (built)
             ├── script_python_decl/component.py (built)
-            ├── triple_dash_scripts (built)
-            │   ├── defs.yaml[0] (built)
-            │   ├── defs.yaml[1] (built)
-            │   └── defs.yaml[2] (built)
             ├── scripts (built)
             │   ├── defs.yaml[0] (built)
             │   ├── defs.yaml[1] (built)
             │   └── defs.yaml[2] (built)
-            └── multiple_definitions_calls (built)
-                └── defs.py (built)
+            └── triple_dash_scripts (built)
+                ├── defs.yaml[0] (built)
+                ├── defs.yaml[1] (built)
+                └── defs.yaml[2] (built)
             """
         ).strip()
     )

@@ -317,7 +317,7 @@ def build_component_decls_from_directory_items(
     context: ComponentDeclLoadContext, component_file_model: Optional[ComponentFileModel]
 ) -> Mapping[Path, ComponentDecl]:
     found = {}
-    for subpath in context.path.iterdir():
+    for subpath in sorted(context.path.iterdir()):
         relative_subpath = subpath.relative_to(context.path)
         if any(relative_subpath.match(pattern) for pattern in EXPLICITLY_IGNORED_GLOB_PATTERNS):
             continue
