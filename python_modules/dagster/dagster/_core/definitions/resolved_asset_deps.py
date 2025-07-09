@@ -4,7 +4,7 @@ from collections.abc import Iterable, Mapping, Sequence
 from typing import AbstractSet, cast  # noqa: UP035
 
 from dagster import _check as check
-from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.errors import DagsterInvalidDefinitionError

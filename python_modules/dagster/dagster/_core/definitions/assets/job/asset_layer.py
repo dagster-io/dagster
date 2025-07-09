@@ -5,14 +5,14 @@ from typing import TYPE_CHECKING, AbstractSet, Optional, Sequence, Union  # noqa
 from dagster_shared.record import record
 
 import dagster._check as check
-from dagster._core.definitions.asset_check_spec import AssetCheckKey
+from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.asset_key import AssetKey, EntityKey
 from dagster._core.definitions.dependency import NodeHandle, NodeInputHandle, NodeOutputHandle
 from dagster._core.definitions.graph_definition import GraphDefinition
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.asset_graph import AssetGraph, AssetNode
-    from dagster._core.definitions.assets import AssetsDefinition
+    from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
+    from dagster._core.definitions.assets.graph.asset_graph import AssetGraph, AssetNode
 
 
 @record(checked=False)
@@ -130,7 +130,7 @@ class AssetLayer:
 
     @staticmethod
     def for_external_job(asset_keys: Iterable[AssetKey]) -> "AssetLayer":
-        from dagster._core.definitions.asset_graph import AssetGraph
+        from dagster._core.definitions.assets.graph.asset_graph import AssetGraph
 
         return AssetLayer(
             data=[], asset_graph=AssetGraph.from_assets([]), external_job_asset_keys=set(asset_keys)

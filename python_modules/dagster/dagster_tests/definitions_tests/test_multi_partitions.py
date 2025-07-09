@@ -6,7 +6,7 @@ import dagster as dg
 import pytest
 from dagster import AssetExecutionContext
 from dagster._check import CheckError
-from dagster._core.definitions.asset_graph import AssetGraph
+from dagster._core.definitions.assets.graph.asset_graph import AssetGraph
 from dagster._core.definitions.partitions.context import PartitionLoadingContext
 from dagster._core.definitions.partitions.utils import get_time_partitions_def
 from dagster._core.definitions.temporal_context import TemporalContext

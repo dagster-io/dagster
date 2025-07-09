@@ -3,21 +3,21 @@ from collections.abc import Iterable, Mapping, Sequence
 from functools import cached_property
 from typing import AbstractSet, Optional, Union  # noqa: UP035
 
-from dagster._core.definitions.asset_check_spec import AssetCheckKey, AssetCheckSpec
-from dagster._core.definitions.asset_spec import (
+from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey, AssetCheckSpec
+from dagster._core.definitions.assets.definition.asset_spec import (
     SYSTEM_METADATA_KEY_AUTO_CREATED_STUB_ASSET,
     AssetExecutionType,
     AssetSpec,
 )
-from dagster._core.definitions.assets import AssetsDefinition
-from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
-from dagster._core.definitions.backfill_policy import BackfillPolicy
-from dagster._core.definitions.base_asset_graph import (
+from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
+from dagster._core.definitions.assets.graph.base_asset_graph import (
     AssetCheckNode,
     BaseAssetGraph,
     BaseAssetNode,
     EntityKey,
 )
+from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
+from dagster._core.definitions.backfill_policy import BackfillPolicy
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationCondition,
 )
@@ -379,11 +379,11 @@ def executable_in_same_run(
     asset_graph: BaseAssetGraph, child_key: EntityKey, parent_key: EntityKey
 ):
     """Returns whether a child asset can be materialized in the same run as a parent asset."""
+    from dagster._core.definitions.assets.graph.remote_asset_graph import RemoteWorkspaceAssetGraph
     from dagster._core.definitions.partitions.mapping import (
         IdentityPartitionMapping,
         TimeWindowPartitionMapping,
     )
-    from dagster._core.definitions.remote_asset_graph import RemoteWorkspaceAssetGraph
 
     child_node = asset_graph.get(child_key)
     parent_node = asset_graph.get(parent_key)

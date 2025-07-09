@@ -6,14 +6,18 @@ from unittest.mock import MagicMock
 import dagster as dg
 import pytest
 from dagster import AssetsDefinition, AutomationCondition
-from dagster._core.definitions.asset_graph import AssetGraph
-from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
-from dagster._core.definitions.base_asset_graph import AssetCheckNode, BaseAssetGraph, BaseAssetNode
+from dagster._core.definitions.assets.graph.asset_graph import AssetGraph
+from dagster._core.definitions.assets.graph.asset_graph_subset import AssetGraphSubset
+from dagster._core.definitions.assets.graph.base_asset_graph import (
+    AssetCheckNode,
+    BaseAssetGraph,
+    BaseAssetNode,
+)
+from dagster._core.definitions.assets.graph.remote_asset_graph import RemoteAssetGraph
 from dagster._core.definitions.events import AssetKeyPartitionKey
 from dagster._core.definitions.partitions.definition import PartitionsDefinition
 from dagster._core.definitions.partitions.mapping import UpstreamPartitionsResult
 from dagster._core.definitions.partitions.subset import PartitionsSubset
-from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
 from dagster._core.errors import DagsterDefinitionChangedDeserializationError
 from dagster._core.instance import DynamicPartitionsStore
 from dagster._core.remote_representation.external import RemoteRepository

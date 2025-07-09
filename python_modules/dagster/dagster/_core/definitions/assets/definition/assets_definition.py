@@ -19,11 +19,13 @@ from dagster_shared.record import replace
 
 import dagster._check as check
 from dagster._annotations import beta_param, deprecated_param, public
-from dagster._core.definitions.asset_check_spec import AssetCheckSpec
-from dagster._core.definitions.asset_dep import AssetDep
-from dagster._core.definitions.asset_graph_computation import AssetGraphComputation
+from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckSpec
 from dagster._core.definitions.asset_key import AssetCheckKey, AssetKey, EntityKey
-from dagster._core.definitions.asset_spec import (
+from dagster._core.definitions.assets.definition.asset_dep import AssetDep
+from dagster._core.definitions.assets.definition.asset_graph_computation import (
+    AssetGraphComputation,
+)
+from dagster._core.definitions.assets.definition.asset_spec import (
     SYSTEM_METADATA_KEY_AUTO_CREATED_STUB_ASSET,
     SYSTEM_METADATA_KEY_AUTO_OBSERVE_INTERVAL_MINUTES,
     SYSTEM_METADATA_KEY_IO_MANAGER_KEY,
@@ -81,7 +83,7 @@ from dagster._utils.tags import normalize_tags
 from dagster._utils.warnings import BetaWarning, PreviewWarning, disable_dagster_warnings
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.asset_checks import AssetChecksDefinition
+    from dagster._core.definitions.asset_checks.asset_checks_definition import AssetChecksDefinition
     from dagster._core.definitions.graph_definition import GraphDefinition
 
 ASSET_SUBSET_INPUT_PREFIX = "__subset_input__"
@@ -1249,7 +1251,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         return self.node_def.resolve_output_to_origin_op_def(output_name)
 
     def coerce_to_checks_def(self) -> "AssetChecksDefinition":
-        from dagster._core.definitions.asset_checks import (
+        from dagster._core.definitions.asset_checks.asset_checks_definition import (
             AssetChecksDefinition,
             has_only_asset_checks,
         )

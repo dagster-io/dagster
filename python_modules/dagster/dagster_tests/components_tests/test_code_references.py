@@ -2,7 +2,9 @@ import tempfile
 from pathlib import Path
 
 import dagster as dg
-from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
+from dagster._core.definitions.assets.definition.cacheable_assets_definition import (
+    CacheableAssetsDefinition,
+)
 from dagster._core.test_utils import new_cwd
 from dagster.components.core.context import ComponentLoadContext
 from dagster.components.core.defs_module import CompositeYamlComponent

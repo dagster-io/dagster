@@ -13,7 +13,7 @@ from unittest.mock import patch
 import dagster as dg
 import pytest
 from dagster import AssetSelection, AutoMaterializePolicy, DagsterInstance, DagsterRunStatus
-from dagster._core.definitions.asset_graph import AssetGraph
+from dagster._core.definitions.assets.graph.asset_graph import AssetGraph
 from dagster._core.definitions.decorators.sensor_decorator import sensor
 from dagster._core.definitions.instigation_logger import get_instigation_log_records
 from dagster._core.definitions.multi_asset_sensor_definition import (

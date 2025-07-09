@@ -4,12 +4,17 @@ from functools import cached_property, reduce
 from types import ModuleType
 from typing import Any, Callable, Optional, Union, cast, get_args
 
-from dagster._core.definitions.asset_checks import AssetChecksDefinition, has_only_asset_checks
+from dagster._core.definitions.asset_checks.asset_checks_definition import (
+    AssetChecksDefinition,
+    has_only_asset_checks,
+)
 from dagster._core.definitions.asset_key import AssetKey, CoercibleToAssetKeyPrefix
-from dagster._core.definitions.asset_spec import AssetSpec
-from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
+from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
+from dagster._core.definitions.assets.definition.cacheable_assets_definition import (
+    CacheableAssetsDefinition,
+)
 from dagster._core.definitions.backfill_policy import BackfillPolicy
-from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationCondition,
 )

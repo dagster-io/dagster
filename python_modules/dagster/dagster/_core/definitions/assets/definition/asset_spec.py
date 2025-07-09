@@ -21,7 +21,7 @@ from dagster._annotations import (
     public,
 )
 from dagster._check import checked
-from dagster._core.definitions.asset_dep import AssetDep, CoercibleToAssetDep
+from dagster._core.definitions.assets.definition.asset_dep import AssetDep, CoercibleToAssetDep
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationCondition,
@@ -44,7 +44,7 @@ from dagster._utils.tags import normalize_tags
 from dagster._utils.warnings import disable_dagster_warnings
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.assets import AssetsDefinition
+    from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
 
 # SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE lives on the metadata of an asset
 # (which currently ends up on the Output associated with the asset key)
@@ -178,7 +178,9 @@ class AssetSpec(IHasInternalInit, IHaveNew, LegacyNamedTupleMixin):
         freshness_policy: Optional[InternalFreshnessPolicy] = None,
         **kwargs,
     ):
-        from dagster._core.definitions.asset_dep import coerce_to_deps_and_check_duplicates
+        from dagster._core.definitions.assets.definition.asset_dep import (
+            coerce_to_deps_and_check_duplicates,
+        )
 
         only_allow_hidden_params_in_kwargs(AssetSpec, kwargs)
 
@@ -447,7 +449,7 @@ def map_asset_specs(
             mapped_specs = map_asset_specs(lambda spec: spec.replace_attributes(owners=["nelson@hooli.com"]), asset_specs)
 
     """
-    from dagster._core.definitions.assets import AssetsDefinition
+    from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
 
     return [
         obj.map_asset_specs(func) if isinstance(obj, AssetsDefinition) else func(obj)

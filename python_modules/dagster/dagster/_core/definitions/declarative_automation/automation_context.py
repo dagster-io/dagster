@@ -29,7 +29,7 @@ from dagster._core.definitions.partitions.definition import PartitionsDefinition
 from dagster._time import get_current_datetime
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.base_asset_graph import BaseAssetGraph
+    from dagster._core.definitions.assets.graph.base_asset_graph import BaseAssetGraph
     from dagster._core.definitions.declarative_automation.automation_condition_evaluator import (
         AutomationConditionEvaluator,
     )

@@ -8,7 +8,9 @@ from dagster import (
     _check as check,
 )
 from dagster._check import CheckError
-from dagster._core.definitions.asset_spec import SYSTEM_METADATA_KEY_IO_MANAGER_KEY
+from dagster._core.definitions.assets.definition.asset_spec import (
+    SYSTEM_METADATA_KEY_IO_MANAGER_KEY,
+)
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationCondition,
 )

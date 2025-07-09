@@ -12,8 +12,8 @@ from dagster import (
     OutputContext,
     ResourceDefinition,
 )
-from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_selection import AssetSelection, CoercibleToAssetSelection
+from dagster._core.definitions.assets.graph.asset_graph import AssetGraph
 from dagster._core.definitions.dependency import NodeHandle
 from dagster._core.definitions.executor_definition import in_process_executor
 from dagster._core.execution.api import execute_run_iterator

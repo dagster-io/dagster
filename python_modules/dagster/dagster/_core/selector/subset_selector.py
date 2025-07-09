@@ -14,7 +14,7 @@ from typing import (  # noqa: UP035
 
 from typing_extensions import Literal, TypeAlias
 
-from dagster._core.definitions.asset_check_spec import AssetCheckKey
+from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.dependency import DependencyStructure
 from dagster._core.definitions.events import AssetKey
 from dagster._core.errors import DagsterExecutionStepNotFoundError, DagsterInvalidSubsetError
@@ -22,8 +22,8 @@ from dagster._record import record
 from dagster._utils import check
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.assets import AssetsDefinition
-    from dagster._core.definitions.base_asset_graph import BaseAssetGraph, T_AssetNode
+    from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
+    from dagster._core.definitions.assets.graph.base_asset_graph import BaseAssetGraph, T_AssetNode
     from dagster._core.definitions.graph_definition import GraphDefinition
     from dagster._core.definitions.job_definition import JobDefinition
 

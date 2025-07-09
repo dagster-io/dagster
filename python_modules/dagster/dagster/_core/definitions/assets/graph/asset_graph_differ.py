@@ -7,7 +7,7 @@ from dagster._record import record
 from dagster._serdes import whitelist_for_serdes
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
+    from dagster._core.definitions.assets.graph.remote_asset_graph import RemoteAssetGraph
 
 
 @whitelist_for_serdes

@@ -11,7 +11,7 @@ from dagster._core.definitions import (
     NodeOutput,
     OpDefinition,
 )
-from dagster._core.definitions.asset_layer import AssetLayer
+from dagster._core.definitions.assets.job.asset_layer import AssetLayer
 from dagster._core.definitions.composition import MappedInputPlaceholder
 from dagster._core.definitions.dependency import (
     BlockingAssetChecksDependencyDefinition,

@@ -25,7 +25,7 @@ from dagster import (
 )
 from dagster._annotations import deprecated, public
 from dagster._config.pythonic_config import ConfigurableResource
-from dagster._core.definitions.asset_spec import AssetSpec
+from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
 from dagster._core.definitions.definitions_load_context import StateBackedDefinitionsLoader
 from dagster._core.definitions.repository_definition.repository_definition import RepositoryLoadData
 from dagster._core.definitions.resource_definition import dagster_maintained_resource

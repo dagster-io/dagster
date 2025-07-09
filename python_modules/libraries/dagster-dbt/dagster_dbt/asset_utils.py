@@ -28,7 +28,7 @@ from dagster import (
     define_asset_job,
     get_dagster_logger,
 )
-from dagster._core.definitions.asset_spec import SYSTEM_METADATA_KEY_DAGSTER_TYPE
+from dagster._core.definitions.assets.definition.asset_spec import SYSTEM_METADATA_KEY_DAGSTER_TYPE
 from dagster._core.definitions.metadata import TableMetadataSet
 from dagster._core.errors import DagsterInvalidPropertyError
 from dagster._core.types.dagster_type import Nothing

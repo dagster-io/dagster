@@ -15,8 +15,8 @@ from dagster import _check as check
 from dagster._check import CheckError
 from dagster._core.asset_graph_view.entity_subset import EntitySubset, _ValidatedEntitySubsetValue
 from dagster._core.asset_graph_view.serializable_entity_subset import SerializableEntitySubset
-from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.asset_key import AssetCheckKey, AssetKey, EntityKey, T_EntityKey
+from dagster._core.definitions.assets.graph.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.events import AssetKeyPartitionKey
 from dagster._core.definitions.partitions.definition import (
     MultiPartitionsDefinition,
@@ -40,7 +40,10 @@ from dagster._utils.aiodataloader import DataLoader
 from dagster._utils.cached_method import cached_method
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.base_asset_graph import BaseAssetGraph, BaseAssetNode
+    from dagster._core.definitions.assets.graph.base_asset_graph import (
+        BaseAssetGraph,
+        BaseAssetNode,
+    )
     from dagster._core.definitions.declarative_automation.legacy.valid_asset_subset import (
         ValidAssetSubset,
     )

@@ -3,7 +3,7 @@ from typing import cast
 import dagster as dg
 import pytest
 from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView
-from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
+from dagster._core.definitions.assets.graph.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.events import AssetKeyPartitionKey
 from dagster._core.definitions.partitions.subset import (
     AllPartitionsSubset,

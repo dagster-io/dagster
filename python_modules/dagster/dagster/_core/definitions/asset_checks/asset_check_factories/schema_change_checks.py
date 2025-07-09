@@ -4,15 +4,20 @@ from typing import TYPE_CHECKING, Union, cast
 from pydantic import BaseModel
 
 from dagster._annotations import beta
-from dagster._core.definitions.asset_check_factories.utils import build_multi_asset_check
-from dagster._core.definitions.asset_check_spec import (
+from dagster._core.definitions.asset_checks.asset_check_factories.utils import (
+    build_multi_asset_check,
+)
+from dagster._core.definitions.asset_checks.asset_check_spec import (
     AssetCheckKey,
     AssetCheckSeverity,
     AssetCheckSpec,
 )
-from dagster._core.definitions.asset_checks import AssetChecksDefinition
+from dagster._core.definitions.asset_checks.asset_checks_definition import AssetChecksDefinition
 from dagster._core.definitions.asset_key import AssetKey, CoercibleToAssetKey
-from dagster._core.definitions.assets import AssetsDefinition, SourceAsset
+from dagster._core.definitions.assets.definition.assets_definition import (
+    AssetsDefinition,
+    SourceAsset,
+)
 from dagster._core.definitions.metadata import TableColumn, TableMetadataSet, TableSchema
 from dagster._core.instance import DagsterInstance
 

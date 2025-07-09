@@ -6,7 +6,7 @@ from typing import Optional, Union
 
 from dagster import AssetKey, Output, asset, define_asset_job
 from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView, TemporalContext
-from dagster._core.definitions.asset_graph import AssetGraph
+from dagster._core.definitions.assets.graph.asset_graph import AssetGraph
 from dagster._core.definitions.partitions.partition_key_range import PartitionKeyRange
 from dagster._core.execution.asset_backfill import (
     execute_asset_backfill_iteration,

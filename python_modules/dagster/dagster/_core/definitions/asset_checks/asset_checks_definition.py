@@ -1,8 +1,8 @@
 from collections.abc import Mapping
 from typing import Optional
 
-from dagster._core.definitions.asset_check_spec import AssetCheckSpec
-from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckSpec
+from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.resource_definition import ResourceDefinition

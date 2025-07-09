@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, NamedTuple, Optional, Union
 
 import dagster._check as check
 from dagster._annotations import PublicAttr
-from dagster._core.definitions.asset_check_spec import AssetCheckKey
+from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
 from dagster._core.definitions.partitions.mapping import PartitionMapping
 from dagster._core.definitions.partitions.utils import warn_if_partition_mapping_not_builtin
@@ -11,8 +11,8 @@ from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariant
 from dagster._utils.warnings import deprecation_warning
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.asset_spec import AssetSpec
-    from dagster._core.definitions.assets import AssetsDefinition
+    from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
+    from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
     from dagster._core.definitions.source_asset import SourceAsset
 
 
@@ -60,8 +60,8 @@ class AssetDep(
         *,
         partition_mapping: Optional[PartitionMapping] = None,
     ):
-        from dagster._core.definitions.asset_spec import AssetSpec
-        from dagster._core.definitions.assets import AssetsDefinition
+        from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
+        from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
         from dagster._core.definitions.source_asset import SourceAsset
 
         if isinstance(asset, list):
@@ -101,8 +101,8 @@ class AssetDep(
 
 
 def _get_asset_key(arg: "CoercibleToAssetDep") -> AssetKey:
-    from dagster._core.definitions.asset_spec import AssetSpec
-    from dagster._core.definitions.assets import AssetsDefinition
+    from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
+    from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
     from dagster._core.definitions.source_asset import SourceAsset
 
     if isinstance(arg, (AssetsDefinition, SourceAsset, AssetSpec)):
@@ -117,7 +117,7 @@ def coerce_to_deps_and_check_duplicates(
     coercible_to_asset_deps: Optional[Iterable["CoercibleToAssetDep"]],
     key: Optional[Union[AssetKey, AssetCheckKey]],
 ) -> Sequence[AssetDep]:
-    from dagster._core.definitions.assets import AssetsDefinition
+    from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
 
     if not coercible_to_asset_deps:
         return []

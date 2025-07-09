@@ -2,7 +2,7 @@ from collections.abc import Mapping
 from typing import Any, Optional
 
 import dagster as dg
-from dagster._core.definitions.asset_checks import AssetChecksDefinition
+from dagster._core.definitions.asset_checks.asset_checks_definition import AssetChecksDefinition
 from dagster._core.definitions.asset_selection import AssetSelection
 from dagster.components.core.tree import ComponentTree
 from dagster.components.lib.executable_component.function_component import (

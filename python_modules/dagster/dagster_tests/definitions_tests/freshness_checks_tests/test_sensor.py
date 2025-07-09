@@ -6,8 +6,12 @@ import dagster as dg
 import pytest
 from dagster import DagsterInstance
 from dagster._check import CheckError
-from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluationPlanned
-from dagster._core.definitions.asset_check_factories.utils import FRESH_UNTIL_METADATA_KEY
+from dagster._core.definitions.asset_checks.asset_check_evaluation import (
+    AssetCheckEvaluationPlanned,
+)
+from dagster._core.definitions.asset_checks.asset_check_factories.utils import (
+    FRESH_UNTIL_METADATA_KEY,
+)
 from dagster._core.events import DagsterEventType
 from dagster._core.storage.tags import SENSOR_NAME_TAG
 from dagster._core.test_utils import create_run_for_test, freeze_time

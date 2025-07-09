@@ -17,21 +17,21 @@ from typing import (  # noqa: UP035
 from dagster_shared.serdes import whitelist_for_serdes
 
 import dagster._check as check
-from dagster._core.definitions.asset_check_spec import AssetCheckKey
-from dagster._core.definitions.asset_job import IMPLICIT_ASSET_JOB_NAME
+from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.asset_key import EntityKey
-from dagster._core.definitions.asset_spec import (
+from dagster._core.definitions.assets.definition.asset_spec import (
     SYSTEM_METADATA_KEY_AUTO_CREATED_STUB_ASSET,
     AssetExecutionType,
 )
-from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
-from dagster._core.definitions.backfill_policy import BackfillPolicy
-from dagster._core.definitions.base_asset_graph import (
+from dagster._core.definitions.assets.graph.base_asset_graph import (
     AssetCheckNode,
     AssetKey,
     BaseAssetGraph,
     BaseAssetNode,
 )
+from dagster._core.definitions.assets.job.asset_job import IMPLICIT_ASSET_JOB_NAME
+from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
+from dagster._core.definitions.backfill_policy import BackfillPolicy
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationCondition,
 )

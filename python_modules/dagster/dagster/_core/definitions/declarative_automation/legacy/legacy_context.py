@@ -27,7 +27,7 @@ from dagster._core.definitions.partitions.definition import PartitionsDefinition
 from dagster._time import get_current_timestamp
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.base_asset_graph import BaseAssetGraph
+    from dagster._core.definitions.assets.graph.base_asset_graph import BaseAssetGraph
     from dagster._core.definitions.data_time import CachingDataTimeResolver
     from dagster._core.definitions.declarative_automation.automation_condition import (
         AutomationCondition,
@@ -344,7 +344,7 @@ class LegacyRuleEvaluationContext:
 
     def materializable_in_same_run(self, child_key: AssetKey, parent_key: AssetKey) -> bool:
         """Returns whether a child asset can be materialized in the same run as a parent asset."""
-        from dagster._core.definitions.asset_graph import executable_in_same_run
+        from dagster._core.definitions.assets.graph.asset_graph import executable_in_same_run
 
         return executable_in_same_run(self.asset_graph, child_key, parent_key)
 

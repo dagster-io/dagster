@@ -3,11 +3,14 @@ from typing import TYPE_CHECKING, AbstractSet, NamedTuple, Optional  # noqa: UP0
 
 import dagster._check as check
 from dagster._annotations import PublicAttr
-from dagster._core.definitions.asset_check_evaluation import (
+from dagster._core.definitions.asset_checks.asset_check_evaluation import (
     AssetCheckEvaluation,
     AssetCheckEvaluationTargetMaterializationData,
 )
-from dagster._core.definitions.asset_check_spec import AssetCheckKey, AssetCheckSeverity
+from dagster._core.definitions.asset_checks.asset_check_spec import (
+    AssetCheckKey,
+    AssetCheckSeverity,
+)
 from dagster._core.definitions.events import (
     AssetKey,
     CoercibleToAssetKey,

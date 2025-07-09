@@ -40,7 +40,9 @@ from dagster._core.events.log import EventLogEntry
 from dagster._core.storage.event_log.base import EventLogConnection
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluationPlanned
+    from dagster._core.definitions.asset_checks.asset_check_evaluation import (
+        AssetCheckEvaluationPlanned,
+    )
     from dagster._core.execution.plan.inputs import StepInputData
     from dagster._core.execution.plan.outputs import StepOutputData
 

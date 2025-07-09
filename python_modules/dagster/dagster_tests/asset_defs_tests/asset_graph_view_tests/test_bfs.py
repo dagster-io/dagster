@@ -6,7 +6,7 @@ from dagster._core.asset_graph_view.bfs import (
     AssetGraphViewBfsFilterConditionResult,
     bfs_filter_asset_graph_view,
 )
-from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
+from dagster._core.definitions.assets.graph.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.events import AssetKeyPartitionKey
 from dagster._time import create_datetime
 

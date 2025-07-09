@@ -18,11 +18,11 @@ from dagster import (
     DagsterRunStatus,
     RunRequest,
 )
-from dagster._core.definitions.asset_graph import AssetGraph
-from dagster._core.definitions.asset_spec import (
+from dagster._core.definitions.assets.definition.asset_spec import (
     SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE,
     AssetExecutionType,
 )
+from dagster._core.definitions.assets.graph.asset_graph import AssetGraph
 from dagster._core.definitions.data_version import DATA_VERSION_TAG
 from dagster._core.definitions.events import CoercibleToAssetKey
 from dagster._core.definitions.executor_definition import in_process_executor

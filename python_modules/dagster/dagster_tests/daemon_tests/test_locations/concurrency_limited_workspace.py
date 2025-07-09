@@ -1,5 +1,5 @@
 import dagster as dg
-from dagster._core.definitions.asset_graph import AssetGraph
+from dagster._core.definitions.assets.graph.asset_graph import AssetGraph
 from dagster._core.storage.tags import GLOBAL_CONCURRENCY_TAG
 
 

@@ -8,11 +8,11 @@ from threading import Thread
 import dagster as dg
 import pytest
 from dagster import AssetsDefinition, DagsterInstance, ResourceDefinition
-from dagster._core.definitions.asset_graph import AssetGraph
-from dagster._core.definitions.cacheable_assets import (
+from dagster._core.definitions.assets.definition.cacheable_assets_definition import (
     AssetsDefinitionCacheableData,
     CacheableAssetsDefinition,
 )
+from dagster._core.definitions.assets.graph.asset_graph import AssetGraph
 from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.definitions.no_step_launcher import no_step_launcher
 from dagster._core.definitions.reconstruct import ReconstructableJob, ReconstructableRepository
