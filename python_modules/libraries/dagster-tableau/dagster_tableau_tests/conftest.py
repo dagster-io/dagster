@@ -33,7 +33,7 @@ SAMPLE_EMBEDDED_DATA_SOURCE = {
     "name": "Embedded Superstore Datasource",
     "hasExtracts": True,
     "isPublished": False,
-    # "workbook": {"luid": TEST_WORKBOOK_ID},
+    "workbook": {"luid": TEST_WORKBOOK_ID},
 }
 
 SAMPLE_SHEET = {
