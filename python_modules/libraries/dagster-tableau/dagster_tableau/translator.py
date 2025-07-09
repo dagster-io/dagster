@@ -211,6 +211,8 @@ class TableauViewMetadataSet(TableauMetadataSet):
 
 class TableauDataSourceMetadataSet(TableauMetadataSet):
     has_extracts: bool = False
+    is_published: bool
+    workbook_id: Optional[str] = None
 
 
 class DagsterTableauTranslator:
@@ -310,7 +312,12 @@ class DagsterTableauTranslator:
             tags={"dagster/storage_kind": "tableau", **TableauTagSet(asset_type="data_source")},
             metadata={
                 **TableauDataSourceMetadataSet(
-                    id=data.properties["luid"], has_extracts=data.properties["hasExtracts"]
+                    id=data.properties["luid"],
+                    has_extracts=data.properties["hasExtracts"],
+                    is_published=data.properties["isPublished"],
+                    workbook_id=data.properties["workbook"]["luid"]
+                    if not data.properties["isPublished"]
+                    else None,
                 )
             },
         )
