@@ -22,6 +22,49 @@ if TYPE_CHECKING:
 
 @whitelist_for_serdes
 @record.record
+class MinimalAssetMaterializationHealthState:
+    """Minimal object for computing the health status for the materialization state of an asset.
+    This object is intended to be small and quick to deserialize. Deserializing AssetMaterializationHealthState
+    can be slow if there is a large entity subset. Rather than storing entity subsets, we store the number
+    of partitions in each state. This lets us quickly compute the health status of the asset and create
+    the metadata required for the UI.
+    """
+
+    latest_materialization_timestamp: Optional[float]
+    latest_terminal_run_id: Optional[str]
+    num_failed_partitions: int
+    num_currently_materialized_partitions: int
+    partitions_snap: Optional[PartitionsSnap]
+
+    @property
+    def health_status(self) -> AssetHealthStatus:
+        if self.num_failed_partitions == 0 and self.num_currently_materialized_partitions == 0:
+            return AssetHealthStatus.UNKNOWN
+        if self.num_failed_partitions > 0:
+            return AssetHealthStatus.DEGRADED
+        else:
+            return AssetHealthStatus.HEALTHY
+
+    @classmethod
+    def from_asset_materialization_health_state(
+        cls,
+        asset_materialization_health_state: "AssetMaterializationHealthState",
+    ) -> "MinimalAssetMaterializationHealthState":
+        return cls(
+            latest_materialization_timestamp=asset_materialization_health_state.latest_materialization_timestamp,
+            latest_terminal_run_id=asset_materialization_health_state.latest_terminal_run_id,
+            num_failed_partitions=len(
+                asset_materialization_health_state.failed_subset.subset_value
+            ),
+            num_currently_materialized_partitions=len(
+                asset_materialization_health_state.currently_materialized_subset.subset_value
+            ),
+            partitions_snap=asset_materialization_health_state.partitions_snap,
+        )
+
+
+@whitelist_for_serdes
+@record.record
 class AssetMaterializationHealthState(LoadableBy[AssetKey]):
     """For tracking the materialization health of an asset, we only care about the most recent
     completed materialization attempt for each asset/partition. This record keeps track of the
@@ -46,6 +89,7 @@ class AssetMaterializationHealthState(LoadableBy[AssetKey]):
     failed_subset: SerializableEntitySubset[AssetKey]
     partitions_snap: Optional[PartitionsSnap]
     latest_terminal_run_id: Optional[str]
+    latest_materialization_timestamp: Optional[float]
 
     @property
     def partitions_def(self) -> Optional[PartitionsDefinition]:
@@ -96,6 +140,7 @@ class AssetMaterializationHealthState(LoadableBy[AssetKey]):
                 check.failed("Expected partitions subset for a partitioned asset")
 
             last_run_id = None
+            latest_materialization_timestamp = None
             if asset_record is not None:
                 entry = asset_record.asset_entry
                 latest_record = max(
@@ -106,6 +151,11 @@ class AssetMaterializationHealthState(LoadableBy[AssetKey]):
                     key=lambda record: -1 if record is None else record.storage_id,
                 )
                 last_run_id = latest_record.run_id if latest_record else None
+                latest_materialization_timestamp = (
+                    entry.last_materialization_record.timestamp
+                    if entry.last_materialization_record
+                    else None
+                )
 
             return cls(
                 materialized_subset=SerializableEntitySubset(
@@ -116,6 +166,7 @@ class AssetMaterializationHealthState(LoadableBy[AssetKey]):
                 ),
                 partitions_snap=PartitionsSnap.from_def(partitions_def),
                 latest_terminal_run_id=last_run_id,
+                latest_materialization_timestamp=latest_materialization_timestamp,
             )
 
         if asset_record is None:
@@ -124,15 +175,22 @@ class AssetMaterializationHealthState(LoadableBy[AssetKey]):
                 failed_subset=SerializableEntitySubset(key=asset_key, value=False),
                 partitions_snap=None,
                 latest_terminal_run_id=None,
+                latest_materialization_timestamp=None,
             )
 
         asset_entry = asset_record.asset_entry
+        latest_materialization_timestamp = (
+            asset_entry.last_materialization_record.timestamp
+            if asset_entry.last_materialization_record
+            else None
+        )
         if asset_entry.last_run_id is None:
             return AssetMaterializationHealthState(
                 materialized_subset=SerializableEntitySubset(key=asset_key, value=False),
                 failed_subset=SerializableEntitySubset(key=asset_key, value=False),
                 partitions_snap=None,
                 latest_terminal_run_id=None,
+                latest_materialization_timestamp=latest_materialization_timestamp,
             )
 
         has_ever_materialized = asset_entry.last_materialization is not None
@@ -148,6 +206,7 @@ class AssetMaterializationHealthState(LoadableBy[AssetKey]):
             failed_subset=SerializableEntitySubset(key=asset_key, value=is_currently_failed),
             partitions_snap=None,
             latest_terminal_run_id=latest_terminal_run_id,
+            latest_materialization_timestamp=latest_materialization_timestamp,
         )
 
     @classmethod
