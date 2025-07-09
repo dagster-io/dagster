@@ -106,7 +106,6 @@ class DagsterDbtKindsMapper:
         materialized = dbt_resource_props.get("config", {}).get("materialized")
         if materialized in self.materialization_map and isinstance(materialized, str):
             kinds.add(self.materialization_map[materialized])
-
         return kinds
 
 
@@ -134,7 +133,6 @@ class DagsterDbtTranslator:
     def settings(self) -> DagsterDbtTranslatorSettings:
         if not hasattr(self, "_settings"):
             self._settings = DagsterDbtTranslatorSettings()
-
         return self._settings
     
     @property
