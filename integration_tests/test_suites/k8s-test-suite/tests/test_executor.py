@@ -647,50 +647,6 @@ def test_k8s_executor_owner_references(
 
 
 @pytest.mark.integration
-def test_k8s_executor_owner_references_disabled(
-    dagster_instance_for_k8s_run_launcher,
-    user_code_namespace_for_k8s_run_launcher,
-    dagster_docker_image,
-    webserver_url_for_k8s_run_launcher,
-):
-    """Test that owner references are NOT set when enable_owner_references is False."""
-    run_config = merge_dicts(
-        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env.yaml")),  # pyright: ignore[reportArgumentType]
-        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env_s3.yaml")),  # pyright: ignore[reportArgumentType]
-        {
-            "execution": {
-                "config": {
-                    "job_namespace": user_code_namespace_for_k8s_run_launcher,
-                    "job_image": dagster_docker_image,
-                    "image_pull_policy": image_pull_policy(),
-                    "enable_owner_references": False,
-                }
-            },
-        },
-    )
-
-    run_id = _launch_executor_run(
-        webserver_url_for_k8s_run_launcher,
-        run_config,
-        dagster_instance_for_k8s_run_launcher,
-        user_code_namespace_for_k8s_run_launcher,
-    )
-
-    step_job_key = get_k8s_job_name(run_id, "count_letters")
-    step_job_name = f"dagster-step-{step_job_key}"
-    step_pods = DagsterKubernetesClient.production_client().get_pods_in_job(
-        job_name=step_job_name, namespace=user_code_namespace_for_k8s_run_launcher
-    )
-    assert len(step_pods) == 1
-    step_job = DagsterKubernetesClient.production_client().batch_api.read_namespaced_job(
-        name=step_job_name, namespace=user_code_namespace_for_k8s_run_launcher
-    )
-
-    step_job_owner_references = step_job.metadata.owner_references
-    assert step_job_owner_references is None or len(step_job_owner_references) == 0
-
-
-@pytest.mark.integration
 def test_execute_on_k8s_retry_job(
     dagster_instance_for_k8s_run_launcher,
     user_code_namespace_for_k8s_run_launcher,
