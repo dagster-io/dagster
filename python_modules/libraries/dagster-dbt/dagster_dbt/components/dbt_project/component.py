@@ -5,11 +5,12 @@ from pathlib import Path
 from typing import Annotated, Any, Callable, Optional, Union
 
 from dagster import Resolvable
+from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster.components.component.component import Component
-from dagster.components.core.context import ComponentLoadContext
+from dagster.components.core.context import ComponentDeclLoadContext, ComponentLoadContext
 from dagster.components.core.tree import ComponentTree
 from dagster.components.resolved.core_models import AssetAttributesModel, OpSpec, ResolutionContext
 from dagster.components.resolved.model import Resolver
@@ -17,6 +18,7 @@ from dagster.components.scaffold.scaffold import scaffold_with
 from dagster.components.utils import TranslatorResolvingInfo
 from typing_extensions import TypeAlias
 
+from dagster_dbt import get_asset_key_for_model
 from dagster_dbt.asset_decorator import dbt_assets
 from dagster_dbt.asset_utils import DBT_DEFAULT_EXCLUDE, DBT_DEFAULT_SELECT, get_node
 from dagster_dbt.components.dbt_project.scaffolder import DbtProjectComponentScaffolder
@@ -235,6 +237,16 @@ class DbtProjectComponent(Component, Resolvable):
 
     def execute(self, context: AssetExecutionContext, dbt: DbtCliResource) -> Iterator:
         yield from dbt.cli(["build"], context=context).stream()
+
+    def get_asset_key_for_model(
+        self, context: ComponentDeclLoadContext, model_name: str
+    ) -> AssetKey:
+        assets_defs = (
+            context.component_tree.build_defs_at_path(context.path)
+            .resolve_asset_graph()
+            .assets_defs
+        )
+        return get_asset_key_for_model(assets_defs, model_name)
 
 
 class ProxyDagsterDbtTranslator(DagsterDbtTranslator):

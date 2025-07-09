@@ -241,11 +241,20 @@ def test_dependency_on_dbt_project():
     project.preparer.prepare(project)
 
     defs = build_component_defs(DEPENDENCY_ON_DBT_PROJECT_LOCATION_PATH / "defs")
+
     assert AssetKey("downstream_of_customers") in defs.resolve_asset_graph().get_all_asset_keys()
     downstream_of_customers_def = defs.resolve_assets_def("downstream_of_customers")
     assert set(downstream_of_customers_def.asset_deps[AssetKey("downstream_of_customers")]) == {
         AssetKey("customers")
     }
+
+    assert (
+        AssetKey("downstream_of_customers_two") in defs.resolve_asset_graph().get_all_asset_keys()
+    )
+    downstream_of_customers_two_def = defs.resolve_assets_def("downstream_of_customers_two")
+    assert set(
+        downstream_of_customers_two_def.asset_deps[AssetKey("downstream_of_customers_two")]
+    ) == {AssetKey("customers")}
 
 
 def test_spec_is_available_in_scope(dbt_path: Path) -> None:
