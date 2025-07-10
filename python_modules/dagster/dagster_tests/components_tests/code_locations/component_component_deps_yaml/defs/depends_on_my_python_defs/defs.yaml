@@ -1,4 +1,4 @@
 type: .custom_component.MyCustomComponent
 
 attributes:
-  deps: "{{ context.component_tree.build_defs_at_path('my_python_defs').resolve_all_asset_keys() }}"
+  deps: "{{ build_defs_at_path('my_python_defs').resolve_all_asset_keys() }}"
