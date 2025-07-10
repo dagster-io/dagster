@@ -549,6 +549,18 @@ class DagsterKubernetesClient:
 
     ### Pod operations ###
 
+    def get_pod_by_name(self, pod_name: str, namespace: str):
+        """Get a pod by name.
+
+        Args:
+            pod_name (str): Name of the pod to get.
+            namespace (str): Namespace in which the pod is located.
+        """
+        check.str_param(pod_name, "pod_name")
+        check.str_param(namespace, "namespace")
+
+        return self.core_api.read_namespaced_pod(pod_name, namespace=namespace)
+
     def get_pods_in_job(self, job_name, namespace):
         """Get the pods launched by the job ``job_name``.
 
