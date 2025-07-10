@@ -52,7 +52,7 @@ import {AssetTableFragment} from '../types/AssetTableFragment.types';
 
 export const AssetCatalogTableV2 = React.memo(() => {
   const {assets, loading: assetsLoading, error} = useAllAssets();
-  useBlockTraceUntilTrue('useAllAssets', !!assets?.length && !assetsLoading);
+  useBlockTraceUntilTrue('useAllAssets', !assetsLoading);
   const trackEvent = useTrackEvent();
 
   const {favorites, loading: favoritesLoading} = useFavoriteAssets();
