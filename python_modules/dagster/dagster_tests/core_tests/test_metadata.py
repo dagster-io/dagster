@@ -4,6 +4,7 @@ from dagster import MetadataValue, TableSchema
 from dagster._core.definitions.metadata.metadata_value import (
     CodeLocationReconstructionMetadataValue,
     ObjectMetadataValue,
+    TimestampMetadataValue,
 )
 from dagster_shared.check import CheckError
 from dagster_shared.record import copy
@@ -142,3 +143,10 @@ def test_instance_metadata_value():
     v3 = dg.deserialize_value(dg.serialize_value(v), ObjectMetadataValue)
     assert v3.class_name == "Foo"
     assert v3.instance is None  # instance lost in serialization
+
+
+def test_serialized_time_entry():
+    assert dg.deserialize_value(
+        '{"__class__": "TimestampMetadataValue", "value": 1752171695.0141509}',
+        TimestampMetadataValue,
+    )
