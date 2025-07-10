@@ -4,7 +4,7 @@ from contextlib import contextmanager
 from functools import cached_property
 from pathlib import Path
 from types import ModuleType
-from typing import Callable, Optional, Union
+from typing import Callable, Optional, Union, overload
 from unittest import mock
 
 from dagster_shared import check
@@ -23,7 +23,12 @@ from dagster.components.core.decl import (
     YamlDecl,
     build_component_decl_from_context,
 )
-from dagster.components.core.defs_module import ComponentPath, DefsFolderComponent
+from dagster.components.core.defs_module import (
+    ComponentPath,
+    CompositeComponent,
+    CompositeYamlComponent,
+    DefsFolderComponent,
+)
 from dagster.components.resolved.context import ResolutionContext
 from dagster.components.utils import get_path_from_module
 
@@ -64,6 +69,9 @@ class ComponentWithContext:
     path: Path
     component: Component
     component_decl: ComponentDecl
+
+
+T = TypeVar("T", bound=Component)
 
 
 class ComponentTreeException(Exception):
@@ -170,7 +178,7 @@ class ComponentTree:
 
     @cached_method
     def load_root_component(self) -> Component:
-        return self.load_component_at_path(self.defs_module_path)
+        return self.raw_load_component_at_path(self.defs_module_path)
 
     @cached_method
     def build_defs(self) -> Definitions:
@@ -257,8 +265,42 @@ class ComponentTree:
             raise Exception(f"No component decl found for path {defs_path}")
         return component_decl_and_path[1]
 
-    def load_component_at_path(self, defs_path: Union[Path, ComponentPath, str]) -> Component:
+    @overload
+    def load_component_at_path(self, defs_path: Union[Path, ComponentPath, str]) -> Component: ...
+    @overload
+    def load_component_at_path(
+        self, defs_path: Union[Path, ComponentPath, str], expected_type: type[T]
+    ) -> T: ...
+
+    def load_component_at_path(
+        self, defs_path: Union[Path, ComponentPath, str], expected_type: Optional[type[T]] = None
+    ) -> T:
         """Loads a component from the given path.
+
+        Args:
+            defs_path: Path to the component to load. If relative, resolves relative to the defs root.
+
+        Returns:
+            Component: The component loaded from the given path.
+        """
+        component = self.raw_load_component_at_path(defs_path)
+        if (
+            isinstance(component, (CompositeYamlComponent, CompositeComponent))
+            and len(component.components) == 1
+        ):
+            component = (
+                component.components[0]
+                if isinstance(component, CompositeYamlComponent)
+                else next(iter(component.components.values()))
+            )
+        if expected_type and not isinstance(component, expected_type):
+            raise Exception(f"Component at path {defs_path} is not of type {expected_type}")
+
+        return component  # type: ignore
+
+    def raw_load_component_at_path(self, defs_path: Union[Path, ComponentPath, str]) -> Component:
+        """Loads a component from the given path, does not resolve e.g. CompositeYamlComponent to an underlying
+        component type.
 
         Args:
             defs_path: Path to the component to load. If relative, resolves relative to the defs root.
@@ -271,6 +313,7 @@ class ComponentTree:
         )
         if component is None:
             raise Exception(f"No component found for path {defs_path}")
+
         return component.component
 
     def build_defs_at_path(self, defs_path: Union[Path, ComponentPath, str]) -> Definitions:

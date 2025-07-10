@@ -90,7 +90,7 @@ class CompositePythonDecl(ComponentDecl[CompositeComponent]):
     def _load_component(self) -> "CompositeComponent":
         return CompositeComponent(
             components={
-                attr: self.context.load_component_at_path(decl.path)
+                attr: self.context.raw_load_component_at_path(decl.path)
                 for attr, decl in self.decls.items()
             }
         )
@@ -224,7 +224,7 @@ class YamlFileDecl(ComponentDecl[CompositeYamlComponent]):
 
     def _load_component(self) -> "CompositeYamlComponent":
         return CompositeYamlComponent(
-            components=[self.context.load_component_at_path(decl.path) for decl in self.decls],
+            components=[self.context.raw_load_component_at_path(decl.path) for decl in self.decls],
             source_positions=self.source_positions,
             asset_post_processor_lists=[
                 decl.get_asset_post_processor_lists() for decl in self.decls
@@ -261,7 +261,7 @@ class DefsFolderDecl(YamlBackedComponentDecl[DefsFolderComponent]):
         return DefsFolderComponent(
             path=self.path.file_path,
             children={
-                subpath: self.context.load_component_at_path(decl.path)
+                subpath: self.context.raw_load_component_at_path(decl.path)
                 for subpath, decl in self.children.items()
             },
         )
