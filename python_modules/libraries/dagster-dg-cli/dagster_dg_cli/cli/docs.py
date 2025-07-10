@@ -56,7 +56,7 @@ def serve_docs_command(
 ) -> None:
     """Serve the Dagster components docs, to be viewed in a browser."""
     cli_config = normalize_cli_config(global_options, click.get_current_context())
-    dg_context = DgContext.for_defined_registry_environment(target_path, cli_config)
+    dg_context = DgContext.from_file_discovery_and_command_line_config(target_path, cli_config)
     registry = EnvRegistry.from_dg_context(dg_context)
 
     component_key = None
@@ -123,7 +123,7 @@ def build_docs_command(
 ) -> None:
     """Build a static version of the Dagster components docs, to be served by a static file server."""
     cli_config = normalize_cli_config(global_options, click.get_current_context())
-    dg_context = DgContext.for_defined_registry_environment(target_path, cli_config)
+    dg_context = DgContext.from_file_discovery_and_command_line_config(target_path, cli_config)
     registry = EnvRegistry.from_dg_context(dg_context)
 
     with pushd(ACTIVE_DOCS_DIR):

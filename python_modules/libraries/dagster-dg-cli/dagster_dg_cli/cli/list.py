@@ -12,12 +12,7 @@ from dagster_dg_core.config import normalize_cli_config
 from dagster_dg_core.context import DgContext
 from dagster_dg_core.env import ProjectEnvVars, get_project_specified_env_vars
 from dagster_dg_core.shared_options import dg_global_options, dg_path_options
-from dagster_dg_core.utils import (
-    DgClickCommand,
-    DgClickGroup,
-    capture_stdout,
-    validate_dagster_availability,
-)
+from dagster_dg_core.utils import DgClickCommand, DgClickGroup, capture_stdout
 from dagster_dg_core.utils.telemetry import cli_telemetry_wrapper
 from dagster_shared.plus.config import DagsterPlusCliConfig
 from dagster_shared.serdes.objects.definition_metadata import (
@@ -112,7 +107,7 @@ def list_components_command(
 ) -> None:
     """List all available Dagster component types in the current Python environment."""
     cli_config = normalize_cli_config(global_options, click.get_current_context())
-    dg_context = DgContext.for_defined_registry_environment(target_path, cli_config)
+    dg_context = DgContext.from_file_discovery_and_command_line_config(target_path, cli_config)
     registry = EnvRegistry.from_dg_context(dg_context)
 
     # Get all components (objects that have the 'component' feature)
@@ -168,7 +163,7 @@ def list_registry_modules_command(
     from rich.console import Console
 
     cli_config = normalize_cli_config(global_options, click.get_current_context())
-    dg_context = DgContext.for_defined_registry_environment(target_path, cli_config)
+    dg_context = DgContext.from_file_discovery_and_command_line_config(target_path, cli_config)
     registry = EnvRegistry.from_dg_context(dg_context)
 
     if output_json:
@@ -401,8 +396,6 @@ def list_defs_command(
 
     cli_config = normalize_cli_config(global_options, click.get_current_context())
     dg_context = DgContext.for_project_environment(target_path, cli_config)
-
-    validate_dagster_availability()
 
     from dagster.components.list import list_definitions
 
