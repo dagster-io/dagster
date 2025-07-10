@@ -272,9 +272,11 @@ class ComponentTree:
         self, defs_path: Union[Path, ComponentPath, str], expected_type: type[T]
     ) -> T: ...
 
+
     def load_component_at_path(
         self, defs_path: Union[Path, ComponentPath, str], expected_type: Optional[type[T]] = None
-    ) -> T:
+    ) -> Any:
+
         """Loads a component from the given path.
 
         Args:
