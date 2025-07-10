@@ -175,3 +175,36 @@ def test_components_docs_dbt_project(
         _run_command(
             cmd="dg launch --assets '*'",
         )
+
+        # scaffold a PythonScriptComponent
+        context.run_command_and_snippet_output(
+            cmd="dg scaffold defs dagster.PythonScriptComponent my_python_script",
+            snippet_path=f"{context.get_next_snip_number()}-scaffold-python-script-component.txt",
+        )
+        context.run_command_and_snippet_output(
+            cmd="touch src/my_project/defs/my_python_script/export_customers.py",
+            snippet_path=f"{context.get_next_snip_number()}-touch-export-customers.txt",
+        )
+
+        context.create_file(
+            Path("src") / "my_project" / "defs" / "my_python_script" / "defs.yaml",
+            contents=textwrap.dedent(
+                """\
+                type: dagster.PythonScriptComponent
+
+                attributes:
+                  execution:
+                    path: my_script.py
+                  assets:
+                    - key: customers_export
+                      deps:
+                        - "{{ context.component_tree.load_component_at_path('dbt_ingest').get_asset_key_for_model('customers') }}"
+                """
+            ),
+            snippet_path=f"{context.get_next_snip_number()}-component.yaml",
+        )
+
+        context.run_command_and_snippet_output(
+            cmd="dg list defs",
+            snippet_path=f"{context.get_next_snip_number()}-list-defs.txt",
+        )
