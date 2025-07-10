@@ -53,7 +53,9 @@ class CloudStorageComputeLogManager(ComputeLogManager[T_DagsterInstance]):
         """Deletes logs for a given log_key or prefix."""
 
     @abstractmethod
-    def download_url_for_type(self, log_key: Sequence[str], io_type: ComputeIOType) -> str:
+    def download_url_for_type(
+        self, log_key: Sequence[str], io_type: ComputeIOType
+    ) -> Optional[str]:
         """Calculates a download url given a log key and compute io type."""
 
     @abstractmethod
