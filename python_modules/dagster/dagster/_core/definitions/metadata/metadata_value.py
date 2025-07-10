@@ -751,7 +751,7 @@ class BoolMetadataValue(MetadataValue[Optional[bool]]):
     value: PublicAttr[Optional[bool]]  # type: ignore
 
 
-@whitelist_for_serdes(storage_name="TimestampMetadataEntryData")
+@whitelist_for_serdes
 @record(kw_only=False)
 class TimestampMetadataValue(MetadataValue[float]):
     """Container class for metadata value that's a unix timestamp.
@@ -781,7 +781,7 @@ class DagsterRunMetadataValue(MetadataValue[str]):
         return self.run_id
 
 
-@whitelist_for_serdes(storage_name="DagsterJobMetadataEntryData")
+@whitelist_for_serdes
 @record(kw_only=False)
 class DagsterJobMetadataValue(MetadataValue["DagsterJobMetadataValue"]):
     """Representation of a dagster run.
