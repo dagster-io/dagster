@@ -556,3 +556,31 @@ def list_env_command(target_path: Path, **global_options: object) -> None:
 
     console = Console()
     console.print(table)
+
+
+@list_group.command(name="component-tree", aliases=["tree"], cls=DgClickCommand)
+@click.option(
+    "--output-file",
+    help="Write to file instead of stdout. If not specified, will write to stdout.",
+)
+@dg_path_options
+@dg_global_options
+@cli_telemetry_wrapper
+def list_component_tree_command(
+    target_path: Path,
+    output_file: Optional[str],
+    **other_opts: object,
+) -> None:
+    cli_config = normalize_cli_config(other_opts, click.get_current_context())
+    dg_context = DgContext.for_project_environment(target_path, cli_config)
+
+    from dagster.components.core.tree import ComponentTree
+
+    tree = ComponentTree.load(dg_context.root_path)
+    output = tree.to_string_representation(hide_plain_defs=True)
+
+    if output_file:
+        click.echo("[dagster-components] Writing to file " + output_file)
+        Path(output_file).write_text(output)
+    else:
+        click.echo(output)

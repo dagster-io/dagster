@@ -1,4 +1,12 @@
 # serializer version: 1
+# name: test_list_component_tree_succeeds
+  '''
+  ├── assets
+  │   └── ...
+  └── my_function
+      └── defs.yaml (FunctionComponent)
+  '''
+# ---
 # name: test_list_defs_complex_assets_succeeds
   '''
   ┏━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
