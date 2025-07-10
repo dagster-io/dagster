@@ -229,6 +229,7 @@ def build_k8s_suite_steps() -> List[BuildkiteTopLevelStep]:
         pytest_tox_factors,
         always_run_if=has_helm_changes,
         pytest_extra_cmds=k8s_integration_suite_pytest_extra_cmds,
+        queue=BuildkiteQueue.DOCKER,
     )
 
 
