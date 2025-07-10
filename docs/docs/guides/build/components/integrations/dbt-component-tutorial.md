@@ -78,7 +78,7 @@ You can customize the properties of the assets emitted by each dbt model using t
 
 ## 7. Depending on dbt assets in other components
 
-If you want to refer to assets built by the dbt component elsewhere in your Dagster project, you can use the `get_asset_key_for_model` method on the dbt component.
+If you want to refer to assets built by the dbt component elsewhere in your Dagster project, you can use the `asset_key_for_model` method on the dbt component.
 This lets you refer to an asset by the model name without having to know how that model is translated to an asset key.
 
 Imagine a `PythonScriptComponent` that exports the `customers` model to a CSV file:
@@ -87,7 +87,7 @@ Imagine a `PythonScriptComponent` that exports the `customers` model to a CSV fi
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/dbt-component/15-touch-export-customers.txt" />
 
-You can refer to the `customers` asset in this component by using the `get_asset_key_for_model` method on the dbt component:
+You can refer to the `customers` asset in this component by using the `asset_key_for_model` method on the dbt component:
 
 <CodeExample path="docs_snippets/docs_snippets/guides/components/integrations/dbt-component/16-component.yaml" title="my_project/defs/my_python_script/defs.yaml" language="yaml" />
 

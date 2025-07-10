@@ -253,7 +253,7 @@ class DbtProjectComponent(Component, Resolvable):
         return validate_translator(self.translator)
 
     @cached_method
-    def get_asset_key_for_model(self, model_name: str) -> AssetKey:
+    def asset_key_for_model(self, model_name: str) -> AssetKey:
         dagster_dbt_translator = self._validated_translator
         manifest = self._validated_manifest
 
