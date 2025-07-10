@@ -194,6 +194,7 @@ class ComponentTree:
         component_decl = component_info.component_decl
 
         clc = ComponentLoadContext.from_decl_load_context(component_decl.context, component_decl)
+
         return component.build_defs(clc)
 
     def find_decl_at_path(self, defs_path: Union[Path, ComponentPath]) -> ComponentDecl:
