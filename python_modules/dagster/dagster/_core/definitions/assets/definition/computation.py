@@ -1,5 +1,5 @@
-from collections.abc import Iterator, Mapping, Sequence
-from typing import TYPE_CHECKING, Callable, Optional, Union
+from collections.abc import Generator, Iterable, Iterator, Mapping, Sequence
+from typing import TYPE_CHECKING, Any, Callable, Optional, Union, get_args, get_origin
 
 from dagster_shared import check
 from dagster_shared.record import record
@@ -19,16 +19,17 @@ from dagster._core.definitions.decorators.decorator_assets_definition_builder im
     build_and_validate_named_ins,
 )
 from dagster._core.definitions.decorators.op_decorator import DecoratedOpFunction
-from dagster._core.definitions.inference import get_config_param_type
+from dagster._core.definitions.inference import get_config_param_type, get_return_annotation
 from dagster._core.definitions.node_definition import NodeDefinition
 from dagster._core.definitions.op_definition import OpDefinition
-from dagster._core.definitions.result import AssetResult
+from dagster._core.definitions.result import AssetResult, MaterializeResult
+from dagster._core.types.dagster_type import PythonObjectDagsterType
 from dagster.components.resolved.core_models import OpSpec
 
 if TYPE_CHECKING:
     from dagster._core.definitions.assets.definition.asset_dep import AssetDep
 
-ComputationFn: TypeAlias = Callable[..., Iterator[Union[AssetResult, AssetCheckResult]]]
+ComputationFn: TypeAlias = Callable[..., Iterable[Union[AssetResult, AssetCheckResult]]]
 
 
 @record
@@ -82,12 +83,13 @@ class Computation:
         output_mappings = {effect.spec.key.to_python_identifier(): effect for effect in effects}
 
         config_type = get_config_param_type(fn)
+        annotation_type = _extract_output_annotation_type_from_computation_fn(fn)
         op_def = OpDefinition(
             compute_fn=wrapped_fn,
             name=op_spec.name or wrapped_fn.name,
             ins={named_in.input_name: named_in.input for named_in in named_ins.values()},
             outs={
-                output_name: effect.to_out(can_subset=can_subset)
+                output_name: effect.to_out(can_subset=can_subset, annotation_type=annotation_type)
                 for output_name, effect in output_mappings.items()
             },
             description=op_spec.description,
@@ -153,3 +155,38 @@ def computation(
         )
 
     return wrapper
+
+
+def _extract_output_annotation_type_from_computation_fn(fn: ComputationFn) -> Any:
+    """Extracts the annotation type of a ComputationFn. This is used to apply the correct
+    DagsterType to the asset-related outputs of the computation.
+
+    Examples:
+        Iterator[MaterializeResult[int]] -> int
+        Iterator[Union[MaterializeResult[int], MaterializeResult[str], AssetCheckResult]] -> (int, str)
+        Union[Iterator[MaterializeResult[int]], Iterator[MaterializeResult[str]]] -> (int, str)
+    """
+    return_annotation = get_return_annotation(fn)
+    inner_types = _extract_inner_materialize_result_annotation_types(return_annotation)
+    if len(inner_types) == 0:
+        return None
+    elif len(inner_types) == 1:
+        return inner_types[0]
+    else:
+        return PythonObjectDagsterType(tuple(sorted(inner_types, key=lambda x: x.__name__)))
+
+
+def _extract_inner_materialize_result_annotation_types(annotation: Any) -> Sequence[type]:
+    """Recursive helper to find all inner MaterializeResult[T] annotations."""
+    origin = get_origin(annotation)
+    if origin in (Iterator, Generator, Iterable):
+        return _extract_inner_materialize_result_annotation_types(get_args(annotation)[0])
+    elif origin == Union:
+        child_annotations = [
+            _extract_inner_materialize_result_annotation_types(arg) for arg in get_args(annotation)
+        ]
+        return list(set().union(*child_annotations))
+    elif origin == MaterializeResult:
+        return [get_args(annotation)[0]]
+    else:
+        return []
