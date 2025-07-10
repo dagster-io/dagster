@@ -400,6 +400,18 @@ def _does_namespaced_pod_exist(pod_name: str, namespace: str) -> bool:
         raise
 
 
+def _does_pod_in_job_exist(job_name: str, namespace: str) -> bool:
+    try:
+        pods = DagsterKubernetesClient.production_client().get_pods_in_job(
+            job_name=job_name, namespace=namespace
+        )
+        return len(pods) > 0
+    except kubernetes.client.rest.ApiException as e:
+        if e.status == 404:
+            return False
+        raise
+
+
 @pytest.mark.integration
 def test_k8s_executor_owner_references_garbage_collection(
     dagster_instance_for_k8s_run_launcher,
@@ -442,20 +454,28 @@ def test_k8s_executor_owner_references_garbage_collection(
     assert len(run_pods) == 1
     run_pod = run_pods[0]
 
-    # Wait a bit for the step job to be created
-    time.sleep(10)
     step_job_key = get_k8s_job_name(run_id, "spin_forever_op")
     step_job_name = f"dagster-step-{step_job_key}"
 
+    timeout = datetime.timedelta(0, 30)
+    start_time = datetime.datetime.now()
+    while True:
+        assert datetime.datetime.now() < start_time + timeout, (
+            "Timed out waiting for step job creation"
+        )
+        if _does_namespaced_job_exist(
+            step_job_name, user_code_namespace_for_k8s_run_launcher
+        ) and _does_pod_in_job_exist(step_job_name, user_code_namespace_for_k8s_run_launcher):
+            break
+        time.sleep(1)
+    step_job = DagsterKubernetesClient.production_client().batch_api.read_namespaced_job(
+        name=step_job_name, namespace=user_code_namespace_for_k8s_run_launcher
+    )
     step_pods = DagsterKubernetesClient.production_client().get_pods_in_job(
         job_name=step_job_name, namespace=user_code_namespace_for_k8s_run_launcher
     )
     assert len(step_pods) == 1
     step_pod = step_pods[0]
-
-    step_job = DagsterKubernetesClient.production_client().batch_api.read_namespaced_job(
-        name=step_job_name, namespace=user_code_namespace_for_k8s_run_launcher
-    )
 
     # Verify that the step job has an owner reference to the run pod
     step_job_owner_references = step_job.metadata.owner_references
@@ -541,9 +561,24 @@ def test_k8s_executor_owner_references_disabled(
     )
     assert len(run_pods) == 1
     run_pod = run_pods[0]
-    time.sleep(10)
+
     step_job_key = get_k8s_job_name(run_id, "spin_forever_op")
     step_job_name = f"dagster-step-{step_job_key}"
+
+    timeout = datetime.timedelta(0, 30)
+    start_time = datetime.datetime.now()
+    while True:
+        assert datetime.datetime.now() < start_time + timeout, (
+            "Timed out waiting for step job creation"
+        )
+        if _does_namespaced_job_exist(
+            step_job_name, user_code_namespace_for_k8s_run_launcher
+        ) and _does_pod_in_job_exist(step_job_name, user_code_namespace_for_k8s_run_launcher):
+            break
+        time.sleep(1)
+    step_job = DagsterKubernetesClient.production_client().batch_api.read_namespaced_job(
+        name=step_job_name, namespace=user_code_namespace_for_k8s_run_launcher
+    )
     step_pods = DagsterKubernetesClient.production_client().get_pods_in_job(
         job_name=step_job_name, namespace=user_code_namespace_for_k8s_run_launcher
     )
