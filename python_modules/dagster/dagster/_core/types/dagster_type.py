@@ -6,7 +6,6 @@ from typing import (
     AbstractSet as TypingAbstractSet,
 )
 from typing import (
-    Annotated,
     AnyStr,
     Mapping,
     Sequence,
@@ -907,10 +906,6 @@ def resolve_dagster_type(dagster_type: object) -> DagsterType:
         not (isinstance(dagster_type, type) and is_subclass(dagster_type, DagsterType)),
         f"Do not pass runtime type classes. Got {dagster_type}",
     )
-
-    # For Annotated[str, ...], extract the inner type
-    if get_origin(dagster_type) == Annotated:
-        dagster_type = get_args(dagster_type)[0]
 
     # First, check to see if we're using Dagster's generic output type to do the type catching.
     if is_generic_output_annotation(

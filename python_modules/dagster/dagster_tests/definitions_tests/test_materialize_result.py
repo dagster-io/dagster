@@ -1,10 +1,11 @@
 import asyncio
-from collections.abc import Generator
+from collections.abc import Generator, Iterator
 from typing import Any
 
 import dagster as dg
 import pytest
 from dagster import AssetExecutionContext, InputContext, OutputContext
+from dagster._core.definitions.utils import NoValueSentinel
 from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionRecordStatus
 
 
@@ -367,6 +368,16 @@ def test_materialize_result_output_typing():
         resources={"io_manager": TestingIOManager()},
     )
 
+    @dg.multi_asset(specs=[dg.AssetSpec("one"), dg.AssetSpec("two")])
+    def multi_asset_with_specs_and_iterator() -> Iterator[dg.MaterializeResult]:
+        yield dg.MaterializeResult(asset_key="one")
+        yield dg.MaterializeResult(asset_key="two")
+
+    _exec_asset(
+        multi_asset_with_specs_and_iterator,
+        resources={"io_manager": TestingIOManager()},
+    )
+
 
 def test_materialize_result_no_output_typing_does_not_call_io():
     """Returning MaterializeResult from a vanilla asset or a multi asset that does not use
@@ -404,6 +415,24 @@ def test_materialize_result_no_output_typing_does_not_call_io():
 
     io_mgr.reset()
     _exec_asset(multi_asset_with_outs, resources={"io_manager": io_mgr})
+    assert io_mgr.handle_output_calls == 0
+
+    @dg.multi_asset(outs={"one": dg.AssetOut(), "two": dg.AssetOut()})
+    def multi_asset_with_outs_generator():
+        yield dg.MaterializeResult(asset_key="one")
+        yield dg.MaterializeResult(asset_key="two")
+
+    io_mgr.reset()
+    _exec_asset(multi_asset_with_outs_generator, resources={"io_manager": io_mgr})
+    assert io_mgr.handle_output_calls == 0
+
+    @dg.multi_asset(outs={"one": dg.AssetOut(), "two": dg.AssetOut()})
+    def multi_asset_with_outs_generator_annotated() -> Iterator[dg.MaterializeResult]:
+        yield dg.MaterializeResult(asset_key="one")
+        yield dg.MaterializeResult(asset_key="two")
+
+    io_mgr.reset()
+    _exec_asset(multi_asset_with_outs_generator_annotated, resources={"io_manager": io_mgr})
     assert io_mgr.handle_output_calls == 0
 
     io_mgr.reset()
@@ -651,6 +680,67 @@ def test_materialize_result_value_annotated_explicit_type():
 
     assert result.success
     assert result.asset_value("asset_with_value") == "hello"
+
+
+def test_materialize_result_iterator_no_value():
+    @dg.multi_asset(specs=[dg.AssetSpec("one"), dg.AssetSpec("two")])
+    def multi_asset_with_specs() -> Iterator[dg.MaterializeResult]:
+        yield dg.MaterializeResult(asset_key="one")
+        yield dg.MaterializeResult(asset_key="two", value=2)
+
+    result = dg.materialize([multi_asset_with_specs])
+    assert result.asset_value("one") == NoValueSentinel
+    assert result.asset_value("two") == 2
+
+    assert result.success
+
+
+def test_materialize_result_iterator_value():
+    @dg.multi_asset(specs=[dg.AssetSpec("one"), dg.AssetSpec("two")])
+    def multi_asset_with_specs() -> Iterator[dg.MaterializeResult[str]]:
+        yield dg.MaterializeResult(asset_key="one", value="hello")
+        yield dg.MaterializeResult(asset_key="two", value="world")
+
+    result = dg.materialize([multi_asset_with_specs])
+
+    assert result.success
+    assert result.asset_value("one") == "hello"
+    assert result.asset_value("two") == "world"
+
+
+def test_materialize_result_iterator_unannotated_no_value():
+    @dg.multi_asset(specs=[dg.AssetSpec("one"), dg.AssetSpec("two")])
+    def multi_asset_with_specs():
+        yield dg.MaterializeResult(asset_key="one")
+        yield dg.MaterializeResult(asset_key="two")
+
+    result = dg.materialize([multi_asset_with_specs])
+
+    assert result.success
+    assert result.asset_value("one") == NoValueSentinel
+    assert result.asset_value("two") == NoValueSentinel
+
+
+def test_materialize_result_iterator_unannotated_value():
+    @dg.multi_asset(specs=[dg.AssetSpec("one"), dg.AssetSpec("two")])
+    def multi_asset_with_specs():
+        yield dg.MaterializeResult(asset_key="one", value="hello")
+        yield dg.MaterializeResult(asset_key="two", value="world")
+
+    # if the return type is not annotated, it is assumed to be Nothing,
+    # meaning we cannot return a value
+    with pytest.raises(dg.DagsterTypeCheckDidNotPass):
+        dg.materialize([multi_asset_with_specs])
+
+
+def test_materialize_result_iterator_value_incorrect_type():
+    @dg.multi_asset(specs=[dg.AssetSpec("one"), dg.AssetSpec("two")])
+    def multi_asset_with_specs() -> Iterator[dg.MaterializeResult[str]]:
+        yield dg.MaterializeResult(asset_key="one", value="hello")
+        yield dg.MaterializeResult(asset_key="two", value=1)  # type: ignore
+
+    with pytest.raises(dg.DagsterTypeCheckDidNotPass):
+        dg.materialize([multi_asset_with_specs])
 
 
 def test_materialize_result_value_annotated_incorrect_type():
