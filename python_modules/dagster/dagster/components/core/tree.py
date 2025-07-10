@@ -1,9 +1,10 @@
 import importlib
 from collections.abc import Sequence
+from contextlib import contextmanager
 from functools import cached_property
 from pathlib import Path
 from types import ModuleType
-from typing import Optional, Union
+from typing import Callable, Optional, Union
 from unittest import mock
 
 from dagster_shared import check
@@ -53,6 +54,10 @@ class ComponentWithContext:
     component_decl: ComponentDecl
 
 
+class ComponentTreeException(Exception):
+    pass
+
+
 @record(
     checked=False,  # cant handle ModuleType
 )
@@ -64,6 +69,19 @@ class ComponentTree:
 
     defs_module: ModuleType
     project_root: Path
+
+    @contextmanager
+    def augment_component_tree_exception(
+        self, path: ComponentPath, msg_for_path: Callable[[str], str]
+    ):
+        try:
+            yield
+        except Exception as e:
+            if not isinstance(e, ComponentTreeException):
+                raise ComponentTreeException(
+                    f"{msg_for_path(path.get_relative_key(self.defs_module_path))}:\n{self.to_string_representation(include_load_and_build_status=True, match_path=path)}"
+                ) from e
+            raise
 
     @property
     def defs_module_name(self) -> str:
@@ -173,28 +191,42 @@ class ComponentTree:
     def _component_and_context_at_posix_path(
         self, defs_path_posix: str, instance_key: Optional[Union[int, str]]
     ) -> Optional[ComponentWithContext]:
-        component_decl_and_path = self._component_decl_at_posix_path(defs_path_posix, instance_key)
-        if component_decl_and_path:
-            path, component_decl = component_decl_and_path
-            return ComponentWithContext(
-                path=path,
-                component=component_decl._load_component(),  # noqa: SLF001
-                component_decl=component_decl,
+        with self.augment_component_tree_exception(
+            ComponentPath(file_path=Path(defs_path_posix), instance_key=instance_key),
+            lambda path: f"Error while loading component {path}",
+        ):
+            component_decl_and_path = self._component_decl_at_posix_path(
+                defs_path_posix, instance_key
             )
-        return None
+            if component_decl_and_path:
+                path, component_decl = component_decl_and_path
+                return ComponentWithContext(
+                    path=path,
+                    component=component_decl._load_component(),  # noqa: SLF001
+                    component_decl=component_decl,
+                )
+            return None
 
     @cached_method
     def _defs_at_posix_path(
         self, defs_path_posix: str, instance_key: Optional[Union[int, str]]
     ) -> Optional[Definitions]:
-        component_info = self._component_and_context_at_posix_path(defs_path_posix, instance_key)
-        if component_info is None:
-            return None
-        component = component_info.component
-        component_decl = component_info.component_decl
+        with self.augment_component_tree_exception(
+            ComponentPath(file_path=Path(defs_path_posix), instance_key=instance_key),
+            lambda path: f"Error while building definitions for {path}",
+        ):
+            component_info = self._component_and_context_at_posix_path(
+                defs_path_posix, instance_key
+            )
+            if component_info is None:
+                return None
+            component = component_info.component
+            component_decl = component_info.component_decl
 
-        clc = ComponentLoadContext.from_decl_load_context(component_decl.context, component_decl)
-        return component.build_defs(clc)
+            clc = ComponentLoadContext.from_decl_load_context(
+                component_decl.context, component_decl
+            )
+            return component.build_defs(clc)
 
     def find_decl_at_path(self, defs_path: Union[Path, ComponentPath]) -> ComponentDecl:
         """Loads a component declaration from the given path.
@@ -282,6 +314,7 @@ class ComponentTree:
         prefix: str,
         include_load_and_build_status: bool = False,
         hide_plain_defs: bool = False,
+        match_path: Optional[ComponentPath] = None,
     ) -> None:
         decls = list(decl.iterate_child_component_decls())
         parent_path = decl.path.file_path
@@ -302,7 +335,7 @@ class ComponentTree:
             if child_decl.path.instance_key is not None and len(decls) > 1:
                 name = f"{file_path}[{child_decl.path.instance_key}]"
             else:
-                name = file_path
+                name = str(file_path)
 
             connector = "└── " if idx == total - 1 else "├── "
             out_txt = f"{prefix}{connector}{name}"
@@ -310,13 +343,23 @@ class ComponentTree:
             if component_type:
                 out_txt += f" ({component_type})"
 
+            is_error = (
+                match_path
+                and child_decl.path.file_path.as_posix() == match_path.file_path.as_posix()
+                and child_decl.path.instance_key == match_path.instance_key
+            )
             if include_load_and_build_status:
-                if self._has_built_defs_at_path(child_decl.path):
-                    out_txt += " (built)"
+                if is_error:
+                    out_txt = f"{out_txt} (error)"
+                elif self._has_built_defs_at_path(child_decl.path):
+                    out_txt = f"{out_txt} (built)"
                 elif self._has_loaded_component_at_path(child_decl.path):
-                    out_txt += " (loaded)"
+                    out_txt = f"{out_txt} (loaded)"
 
             lines.append(out_txt)
+
+            if is_error:
+                lines.append(f"{prefix}{' ' * len(connector)}{'^' * len(name)}")
 
             extension = "    " if idx == total - 1 else "│   "
             self._add_string_representation(
@@ -325,6 +368,7 @@ class ComponentTree:
                 prefix + extension,
                 include_load_and_build_status,
                 hide_plain_defs,
+                match_path,
             )
 
         if (
@@ -335,7 +379,10 @@ class ComponentTree:
             lines.append(f"{prefix}└── ...")
 
     def to_string_representation(
-        self, include_load_and_build_status: bool = False, hide_plain_defs: bool = False
+        self,
+        include_load_and_build_status: bool = False,
+        hide_plain_defs: bool = False,
+        match_path: Optional[ComponentPath] = None,
     ) -> str:
         """Returns a string representation of the component tree.
 
@@ -345,7 +392,12 @@ class ComponentTree:
         """
         lines = []
         self._add_string_representation(
-            lines, self.find_root_decl(), "", include_load_and_build_status, hide_plain_defs
+            lines,
+            self.find_root_decl(),
+            "",
+            include_load_and_build_status,
+            hide_plain_defs,
+            match_path,
         )
         return "\n".join(lines)
 
