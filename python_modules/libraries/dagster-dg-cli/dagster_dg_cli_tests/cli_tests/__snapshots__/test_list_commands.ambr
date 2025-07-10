@@ -87,7 +87,8 @@
               "description": null,
               "automation_condition": null,
               "tags": [],
-              "is_executable": true
+              "is_executable": true,
+              "source": "src/foo_bar/defs/mydefs/defs.yaml:1"
           },
           {
               "key": "my_asset_2",
@@ -97,14 +98,16 @@
               "description": null,
               "automation_condition": null,
               "tags": [],
-              "is_executable": true
+              "is_executable": true,
+              "source": "src/foo_bar/defs/mydefs/defs.yaml:1"
           }
       ],
       "asset_checks": [],
       "jobs": [
           {
               "name": "my_job",
-              "description": null
+              "description": null,
+              "source": null
           }
       ],
       "resources": [
@@ -116,12 +119,14 @@
       "schedules": [
           {
               "name": "my_schedule",
-              "cron_schedule": "@daily"
+              "cron_schedule": "@daily",
+              "source": null
           }
       ],
       "sensors": [
           {
-              "name": "my_sensor"
+              "name": "my_sensor",
+              "source": null
           }
       ]
   }
