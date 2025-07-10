@@ -74,6 +74,15 @@ class AssetCheckEffect(EntityEffect[AssetCheckSpec]):
 
 
 class AssetEffect(EntityEffect[AssetSpec]):
+    @staticmethod
+    def from_spec(spec: AssetSpec, execution_type: AssetExecutionType) -> "AssetEffect":
+        if execution_type == AssetExecutionType.MATERIALIZATION:
+            return AssetMaterializationEffect(spec=spec)
+        elif execution_type == AssetExecutionType.OBSERVATION:
+            return AssetObservationEffect(spec=spec)
+        else:
+            raise ValueError(f"Invalid execution type: {execution_type}")
+
     @property
     @abstractmethod
     def execution_type(self) -> AssetExecutionType: ...
