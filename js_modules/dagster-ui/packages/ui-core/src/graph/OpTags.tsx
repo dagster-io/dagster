@@ -23,10 +23,12 @@ import airflow from './kindtag-images/tool-airflow-color.svg';
 import airtable from './kindtag-images/tool-airtable-color.svg';
 import atlan from './kindtag-images/tool-atlan-color.svg';
 import aws from './kindtag-images/tool-aws-color.svg';
+import ax from './kindtag-images/tool-ax-color.svg';
 import axioma from './kindtag-images/tool-axioma-color.svg';
 import azure from './kindtag-images/tool-azure-color.svg';
 import azureml from './kindtag-images/tool-azureml-color.svg';
 import bigquery from './kindtag-images/tool-bigquery-color.svg';
+import botorch from './kindtag-images/tool-botorch-color.svg';
 import cassandra from './kindtag-images/tool-cassandra-color.svg';
 import catboost from './kindtag-images/tool-catboost-color.svg';
 import celery from './kindtag-images/tool-celery-color.svg';
@@ -448,7 +450,9 @@ export type KnownTagType =
   | 'starrocks'
   | 'superset'
   | 'spanner'
-  | 'supabase';
+  | 'supabase'
+  | 'ax'
+  | 'botorch';
 
 export const KNOWN_TAGS: Record<KnownTagType, KnownTag> = {
   json: {
@@ -1373,6 +1377,14 @@ export const KNOWN_TAGS: Record<KnownTagType, KnownTag> = {
   spanner: {
     icon: spanner,
     content: 'Spanner',
+  },
+  ax: {
+    icon: ax,
+    content: 'Ax',
+  },
+  botorch: {
+    icon: botorch,
+    content: 'BoTorch',
   },
   expand: {color: '#D7A540', content: 'Expand'},
 };
