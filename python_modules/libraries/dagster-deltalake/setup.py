@@ -33,7 +33,7 @@ setup(
     python_requires=">=3.9,<=3.13.3",
     install_requires=[
         "deltalake>=0.25.0,<1",
-        f"dagster{pin}",
+        "dagster==1.11.2",
     ],
     extras_require={
         "pandas": ["pandas"],
