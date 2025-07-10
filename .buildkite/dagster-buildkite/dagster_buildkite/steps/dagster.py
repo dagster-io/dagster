@@ -113,7 +113,7 @@ def build_check_changelog_steps() -> List[BuildkiteStep]:
         return []
 
     release_number = branch_name.split("-", 1)[-1].replace("-", ".")
-    release_number = "1.11.1"
+    release_number = "1.11.2"
 
     changelog_validation_step = (
         CommandStepBuilder(":memo: changelog")
