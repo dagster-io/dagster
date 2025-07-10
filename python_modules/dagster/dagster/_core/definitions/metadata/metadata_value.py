@@ -1001,3 +1001,55 @@ class PoolMetadataValue(
     @property
     def pool(self) -> str:  # type: ignore
         return self.name
+
+
+class NullFieldSerializer(FieldSerializer):
+    def pack(self, value: Any, whitelist_map: WhitelistMap, descent_path: str) -> Any:
+        return None
+
+    def unpack(self, value: Any, whitelist_map: WhitelistMap, context: UnpackContext) -> Any:
+        return None
+
+
+@whitelist_for_serdes(
+    field_serializers={"instance": NullFieldSerializer},
+    kwargs_fields={"instance"},
+    skip_when_none_fields={"instance"},
+)
+@record_custom(
+    field_to_new_mapping={
+        "class_name": "inst",
+    }
+)
+class ObjectMetadataValue(
+    MetadataValue[str],
+    IHaveNew,
+):
+    """An instance of an unserializable object. Only the class name will be available across process,
+    but the instance can be accessed within the origin process.
+    """
+
+    class_name: PublicAttr[str]
+    instance: Optional[object] = None
+
+    def __new__(
+        cls,
+        inst: Union[str, object],
+        **kwargs,
+    ):
+        if isinstance(inst, str):
+            class_name = inst
+            instance = kwargs.get("instance", None)
+        else:
+            class_name = inst.__class__.__name__
+            instance = inst
+        return super().__new__(
+            cls,
+            class_name=class_name,
+            instance=instance,
+        )
+
+    @public
+    @property
+    def value(self) -> str:
+        return self.class_name
