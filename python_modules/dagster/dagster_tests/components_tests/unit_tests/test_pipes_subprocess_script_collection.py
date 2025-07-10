@@ -29,13 +29,13 @@ def test_load_from_path() -> None:
             │   └── defs.py
             ├── script_python_decl/component.py
             ├── scripts
-            │   ├── defs.yaml[0]
-            │   ├── defs.yaml[1]
-            │   └── defs.yaml[2]
+            │   ├── defs.yaml[0] (PythonScriptComponent)
+            │   ├── defs.yaml[1] (PythonScriptComponent)
+            │   └── defs.yaml[2] (PythonScriptComponent)
             └── triple_dash_scripts
-                ├── defs.yaml[0]
-                ├── defs.yaml[1]
-                └── defs.yaml[2]
+                ├── defs.yaml[0] (PythonScriptComponent)
+                ├── defs.yaml[1] (PythonScriptComponent)
+                └── defs.yaml[2] (PythonScriptComponent)
             """
         ).strip()
     )
@@ -54,13 +54,13 @@ def test_load_from_path() -> None:
             │   └── defs.py (loaded)
             ├── script_python_decl/component.py (loaded)
             ├── scripts (loaded)
-            │   ├── defs.yaml[0] (loaded)
-            │   ├── defs.yaml[1] (loaded)
-            │   └── defs.yaml[2] (loaded)
+            │   ├── defs.yaml[0] (PythonScriptComponent) (loaded)
+            │   ├── defs.yaml[1] (PythonScriptComponent) (loaded)
+            │   └── defs.yaml[2] (PythonScriptComponent) (loaded)
             └── triple_dash_scripts (loaded)
-                ├── defs.yaml[0] (loaded)
-                ├── defs.yaml[1] (loaded)
-                └── defs.yaml[2] (loaded)
+                ├── defs.yaml[0] (PythonScriptComponent) (loaded)
+                ├── defs.yaml[1] (PythonScriptComponent) (loaded)
+                └── defs.yaml[2] (PythonScriptComponent) (loaded)
             """
         ).strip()
     )
@@ -103,13 +103,13 @@ def test_load_from_path() -> None:
             │   └── defs.py (built)
             ├── script_python_decl/component.py (built)
             ├── scripts (built)
-            │   ├── defs.yaml[0] (built)
-            │   ├── defs.yaml[1] (built)
-            │   └── defs.yaml[2] (built)
+            │   ├── defs.yaml[0] (PythonScriptComponent) (built)
+            │   ├── defs.yaml[1] (PythonScriptComponent) (built)
+            │   └── defs.yaml[2] (PythonScriptComponent) (built)
             └── triple_dash_scripts (built)
-                ├── defs.yaml[0] (built)
-                ├── defs.yaml[1] (built)
-                └── defs.yaml[2] (built)
+                ├── defs.yaml[0] (PythonScriptComponent) (built)
+                ├── defs.yaml[1] (PythonScriptComponent) (built)
+                └── defs.yaml[2] (PythonScriptComponent) (built)
             """
         ).strip()
     )

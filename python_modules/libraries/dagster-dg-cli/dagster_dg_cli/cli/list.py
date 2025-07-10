@@ -574,8 +574,6 @@ def list_component_tree_command(
     cli_config = normalize_cli_config(other_opts, click.get_current_context())
     dg_context = DgContext.for_project_environment(target_path, cli_config)
 
-    validate_dagster_availability()
-
     from dagster.components.core.tree import ComponentTree
 
     tree = ComponentTree.load(dg_context.root_path)

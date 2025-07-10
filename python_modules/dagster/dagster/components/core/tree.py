@@ -311,16 +311,10 @@ class ComponentTree:
                 out_txt += f" ({component_type})"
 
             if include_load_and_build_status:
-                loaded = self._has_loaded_component_at_path(child_decl.path)
-                built = self._has_built_defs_at_path(child_decl.path)
-
-                state = ""
-                if built:
-                    state = "built"
-                elif loaded:
-                    state = "loaded"
-
-                out_txt += f" ({state})"
+                if self._has_built_defs_at_path(child_decl.path):
+                    out_txt += " (built)"
+                elif self._has_loaded_component_at_path(child_decl.path):
+                    out_txt += " (loaded)"
 
             lines.append(out_txt)
 
