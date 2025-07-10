@@ -198,7 +198,7 @@ def test_components_docs_dbt_project(
                   assets:
                     - key: customers_export
                       deps:
-                        - "{{ context.component_tree.load_component_at_path('dbt_ingest').get_asset_key_for_model('customers') }}"
+                        - "{{ load_component_at_path('dbt_ingest').get_asset_key_for_model('customers') }}"
                 """
             ),
             snippet_path=f"{context.get_next_snip_number()}-component.yaml",
