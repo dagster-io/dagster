@@ -128,8 +128,9 @@ def build_databricks_jobs_monitor_sensor(client: WorkspaceClient) -> SensorDefin
         else:
             cursor = deserialize_value(context.cursor, DatabricksJobSensorCursor)
 
-        context.log.info(f"Start {cursor.range_start}")
-        context.log.info(f"Etart {cursor.range_end}")
+        context.log.info(
+            f"Polling for jobs within the range {cursor.range_start} and {cursor.range_end}"
+        )
 
         # NOTE- we can either get all job runs from `list_runs` or get the runs for a particular job
         # by providing the `job_id` parameter. Currently, we first get the job IDs, and then the
@@ -144,12 +145,9 @@ def build_databricks_jobs_monitor_sensor(client: WorkspaceClient) -> SensorDefin
             # TODO- ensure run is most recent
             run = next(iter(runs), None)
 
-            # TODO- handle pending / failures
+            # TODO- handle pending
             # see: dagster_airlift/core/monitoring_job/event_stream.py
             if run:
-                context.log.info(f"-> {run.job_id}")
-                context.log.info(f"-> {run.run_id}")
-
                 if run.state and run.state.life_cycle_state == RunLifeCycleState.TERMINATED:
                     if run.state.result_state == RunResultState.SUCCESS:
                         context.instance.report_dagster_event(
