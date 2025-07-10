@@ -7,7 +7,7 @@ import click
 from dagster_dg_core.config import normalize_cli_config
 from dagster_dg_core.context import DgContext
 from dagster_dg_core.shared_options import dg_global_options, dg_path_options
-from dagster_dg_core.utils import DgClickCommand, validate_dagster_availability
+from dagster_dg_core.utils import DgClickCommand
 from dagster_dg_core.utils.telemetry import cli_telemetry_wrapper
 from dagster_shared import check
 from dagster_shared.cli import PythonPointerOpts, python_pointer_options
@@ -63,7 +63,6 @@ def launch_command(
     # dev/OSS, and executes the selected assets in process using the "dagster asset materialize"
     # command.
 
-    validate_dagster_availability()
     pointer_opts = PythonPointerOpts.extract_from_cli_options(copy(other_options))
 
     if pointer_opts.specifies_target():

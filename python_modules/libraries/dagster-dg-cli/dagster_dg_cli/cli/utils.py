@@ -155,7 +155,7 @@ def inspect_component_type_command(
 ) -> None:
     """Get detailed information on a registered Dagster component type."""
     cli_config = normalize_cli_config(global_options, click.get_current_context())
-    dg_context = DgContext.for_defined_registry_environment(target_path, cli_config)
+    dg_context = DgContext.from_file_discovery_and_command_line_config(target_path, cli_config)
     registry = EnvRegistry.from_dg_context(dg_context)
     component_key = EnvRegistryKey.from_typename(component_type)
     if not registry.has(component_key):

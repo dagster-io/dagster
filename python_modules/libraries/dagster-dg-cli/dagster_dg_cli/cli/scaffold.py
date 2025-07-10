@@ -33,7 +33,6 @@ from dagster_dg_core.utils import (
     not_none,
     parse_json_option,
     snakecase,
-    validate_dagster_availability,
 )
 from dagster_dg_core.utils.telemetry import cli_telemetry_wrapper
 from dagster_shared import check
@@ -109,7 +108,7 @@ class ScaffoldDefsGroup(DgClickGroup):
         if not has_config_on_cli_context(cli_context):
             cli_context.invoke(not_none(self.callback), **cli_context.params)
         config = get_config_from_cli_context(cli_context)
-        dg_context = DgContext.for_defined_registry_environment(Path.cwd(), config)
+        dg_context = DgContext.from_file_discovery_and_command_line_config(Path.cwd(), config)
 
         registry = EnvRegistry.from_dg_context(dg_context)
 
@@ -279,8 +278,6 @@ class ScaffoldDefsGroup(DgClickGroup):
         return check.not_none(super().get_command(ctx, selected_cmd))
 
     def _try_load_input_as_registry_object(self, input_str: str) -> Optional[EnvRegistryObjectSnap]:
-        validate_dagster_availability()
-
         from dagster.components.core.snapshot import get_package_entry_snap
 
         if not EnvRegistryKey.is_valid_typename(input_str):
