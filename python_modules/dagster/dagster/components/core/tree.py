@@ -4,7 +4,7 @@ from contextlib import contextmanager
 from functools import cached_property
 from pathlib import Path
 from types import ModuleType
-from typing import Callable, Optional, Union, overload
+from typing import Any, Callable, Optional, Union, overload
 from unittest import mock
 
 from dagster_shared import check
@@ -272,11 +272,9 @@ class ComponentTree:
         self, defs_path: Union[Path, ComponentPath, str], expected_type: type[T]
     ) -> T: ...
 
-
     def load_component_at_path(
         self, defs_path: Union[Path, ComponentPath, str], expected_type: Optional[type[T]] = None
     ) -> Any:
-
         """Loads a component from the given path.
 
         Args:
@@ -298,7 +296,7 @@ class ComponentTree:
         if expected_type and not isinstance(component, expected_type):
             raise Exception(f"Component at path {defs_path} is not of type {expected_type}")
 
-        return component  # type: ignore
+        return component
 
     def raw_load_component_at_path(self, defs_path: Union[Path, ComponentPath, str]) -> Component:
         """Loads a component from the given path, does not resolve e.g. CompositeYamlComponent to an underlying
