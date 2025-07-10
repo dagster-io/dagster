@@ -3,17 +3,17 @@
   '''
   ├── multiple_component_instances
   │   └── component.py
-  │       ├── bar
-  │       └── foo
+  │       ├── bar (PythonScriptComponent)
+  │       └── foo (PythonScriptComponent)
   ├── multiple_component_instances_defs_py
   │   └── component.py
-  │       ├── bar
-  │       └── foo
+  │       ├── bar (PythonScriptComponent)
+  │       └── foo (PythonScriptComponent)
   ├── multiple_definitions_calls
   │   └── defs.py
   ├── script_python_decl
   │   ├── component.py
-  │   │   └── load
+  │   │   └── load (PythonScriptComponent)
   │   └── cool_script.py
   ├── scripts
   │   ├── defs.yaml[0] (PythonScriptComponent)
@@ -29,17 +29,17 @@
   '''
   ├── multiple_component_instances (loaded)
   │   └── component.py (loaded)
-  │       ├── bar (loaded)
-  │       └── foo (loaded)
+  │       ├── bar (PythonScriptComponent) (loaded)
+  │       └── foo (PythonScriptComponent) (loaded)
   ├── multiple_component_instances_defs_py (loaded)
   │   └── component.py (loaded)
-  │       ├── bar (loaded)
-  │       └── foo (loaded)
+  │       ├── bar (PythonScriptComponent) (loaded)
+  │       └── foo (PythonScriptComponent) (loaded)
   ├── multiple_definitions_calls (loaded)
   │   └── defs.py (loaded)
   ├── script_python_decl (loaded)
   │   ├── component.py (loaded)
-  │   │   └── load (loaded)
+  │   │   └── load (PythonScriptComponent) (loaded)
   │   └── cool_script.py (loaded)
   ├── scripts (loaded)
   │   ├── defs.yaml[0] (PythonScriptComponent) (loaded)
@@ -55,17 +55,17 @@
   '''
   ├── multiple_component_instances (built)
   │   └── component.py (built)
-  │       ├── bar (built)
-  │       └── foo (built)
+  │       ├── bar (PythonScriptComponent) (built)
+  │       └── foo (PythonScriptComponent) (built)
   ├── multiple_component_instances_defs_py (built)
   │   └── component.py (built)
-  │       ├── bar (built)
-  │       └── foo (built)
+  │       ├── bar (PythonScriptComponent) (built)
+  │       └── foo (PythonScriptComponent) (built)
   ├── multiple_definitions_calls (built)
   │   └── defs.py (built)
   ├── script_python_decl (built)
   │   ├── component.py (built)
-  │   │   └── load (built)
+  │   │   └── load (PythonScriptComponent) (built)
   │   └── cool_script.py (built)
   ├── scripts (built)
   │   ├── defs.yaml[0] (PythonScriptComponent) (built)

@@ -296,6 +296,8 @@ class ComponentTree:
 
             if isinstance(child_decl, ComponentLoaderDecl):
                 name = child_decl.path.instance_key
+                if child_decl.component_node_fn.__annotations__.get("return"):
+                    component_type = child_decl.component_node_fn.__annotations__["return"].__name__
             elif isinstance(child_decl, YamlDecl):
                 file_path = file_path / "defs.yaml"
                 component_type = child_decl.component_cls.__name__
