@@ -408,8 +408,8 @@ class DgContext:
     def get_component_instance_module_name(self, name: str) -> str:
         return f"{self.defs_module_name}.{name}"
 
-    def has_folder_at_defs_path(self, defs_path: str) -> bool:
-        return (self.defs_path / defs_path).is_dir()
+    def has_object_at_defs_path(self, defs_path: str) -> bool:
+        return (self.defs_path / defs_path).exists()
 
     @property
     def target_args(self) -> Mapping[str, str]:
