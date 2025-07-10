@@ -304,6 +304,29 @@ def test_list_component_tree_succeeds(snapshot):
             Path("src/foo_bar/defs/assets").mkdir(parents=True, exist_ok=True)
             Path("src/foo_bar/defs/assets/asset.py").touch()
 
+            Path("src/foo_bar/defs/pythonic_components").mkdir(parents=True, exist_ok=True)
+            Path("src/foo_bar/defs/pythonic_components/my_component.py").write_text(
+                textwrap.dedent(
+                    """
+                    import dagster as dg
+
+                    class PyComponent(dg.Component, dg.Model, dg.Resolvable):
+                        asset: dg.ResolvedAssetSpec
+
+                        def build_defs(self, context):
+                            return dg.Definitions(assets=[self.asset])
+
+                    @dg.component_instance
+                    def first(_):
+                        return PyComponent(asset=dg.AssetSpec("first_py"))
+
+                    @dg.component_instance
+                    def second(_) -> PyComponent:
+                        return PyComponent(asset=dg.AssetSpec("second_py"))
+                    """
+                )
+            )
+
             result = subprocess.run(
                 ["dg", "list", "component-tree"], check=True, capture_output=True
             )

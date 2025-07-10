@@ -8,10 +8,10 @@ from dagster.components.core.context import ComponentLoadContext
 from dagster.components.core.decl import (
     ComponentDecl,
     ComponentLoaderDecl,
-    CompositePythonDecl,
     DefsFolderDecl,
+    PythonFileDecl,
 )
-from dagster.components.core.defs_module import ComponentPath, CompositeComponent
+from dagster.components.core.defs_module import ComponentPath, PythonFileComponent
 from dagster.components.core.tree import ComponentTree
 from dagster_shared.record import record
 
@@ -61,7 +61,7 @@ def test_composite_python_decl(component_tree: MockComponentTree):
         path=ComponentPath(file_path=Path(__file__).parent, instance_key="my_component"),
         component_node_fn=lambda context: my_component,
     )
-    decl = CompositePythonDecl(
+    decl = PythonFileDecl(
         path=ComponentPath(file_path=Path(__file__).parent, instance_key=None),
         context=component_tree.decl_load_context,
         decls={"my_component": loader_decl},
@@ -69,7 +69,7 @@ def test_composite_python_decl(component_tree: MockComponentTree):
 
     component_tree.set_root_decl(decl)
     loaded_component = component_tree.load_root_component()
-    assert isinstance(loaded_component, CompositeComponent)
+    assert isinstance(loaded_component, PythonFileComponent)
     assert loaded_component.components["my_component"] == my_component
 
 
