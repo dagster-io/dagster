@@ -1,5 +1,26 @@
 # Changelog
 
+## 1.11.2 (core) / 0.27.2 (libraries)
+
+### New
+
+- The `dagster` package now supports Python 3.13.
+- [dagster-tableau] Tableau assets can now be subsetted and materialized individually. [#31078](https://github.com/dagster-io/dagster/pull/31078)
+- [dagster-snowflake-polars] The new `dagster-snowflake-polars` package adds a `SnowflakePolarsIOManager` that can be used to read and write Snowflake tables using Polars.
+
+### Bugfixes
+
+- [ui] Fixed some cases where strings would be incorrectly middle-truncated.
+
+### Documentation
+
+- [dbt] Fixed incorrect reference to `dbt_profiles.yml` in the `dagster-dbt` tutorial (thanks [@EFox2413](https://github.com/EFox2413)!).
+- [dbt] Added documentation for the new dbt Cloud integration.
+
+### Dagster Plus
+
+- [ui][observe] You can now bulk add/remove assets to/from your favorites.
+
 ## 1.11.1 (core) / 0.27.1 (libraries)
 
 ### New
