@@ -7,10 +7,9 @@ from dagster_shared import check
 from typing_extensions import TypeAlias
 
 from dagster._config.field import Field
-from dagster._config.pythonic_config.config import Config
-from dagster._config.pythonic_config.type_check_utils import safe_is_subclass
 from dagster._core.decorator_utils import get_function_params
 from dagster._core.definitions.asset_checks.asset_check_result import AssetCheckResult
+from dagster._core.definitions.inference import get_config_param_type
 from dagster._core.definitions.resource_annotation import get_resource_args
 from dagster._core.definitions.result import MaterializeResult
 from dagster._core.execution.context.asset_check_execution_context import AssetCheckExecutionContext
@@ -42,26 +41,6 @@ ResolvableCallable: TypeAlias = Annotated[
 class FunctionSpec(OpSpec):
     type: Literal["function"] = "function"
     fn: ResolvableCallable
-
-
-def get_config_param_type(fn: Callable) -> Union[type[Config], None]:
-    """Get the type annotation of the 'config' parameter if it exists.
-
-    Args:
-        fn: The function to check
-
-    Returns:
-        The type annotation of the config parameter if it exists, None otherwise
-    """
-    params = get_function_params(fn)
-    for param in params:
-        if param.name == "config":
-            if not safe_is_subclass(param.annotation, Config):
-                check.failed(
-                    f"Config parameter must be annotated with Config, got {param.annotation}"
-                )
-            return param.annotation
-    return None
 
 
 class ExecuteFnMetadata:
