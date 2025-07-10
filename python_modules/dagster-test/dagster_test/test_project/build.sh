@@ -37,8 +37,6 @@ cp $GOOGLE_APPLICATION_CREDENTIALS ./modules/gac.json
 
 echo -e "--- \033[32m:truck: Copying files...\033[0m"
 
-echo "ROOT IS $ROOT"
-
 rsync \
         -av \
         --progress \

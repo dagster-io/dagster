@@ -25,6 +25,7 @@ from dagster._core.executor.step_delegating import (
     StepHandler,
     StepHandlerContext,
 )
+from dagster._utils.cached_method import cached_method
 from dagster._utils.merger import merge_dicts
 
 from dagster_k8s.client import DagsterKubernetesClient
@@ -88,7 +89,9 @@ _K8S_EXECUTOR_CONFIG_SCHEMA = merge_dicts(
             bool,
             is_required=False,
             default_value=False,
-            description="Whether to insert Kubernetes owner references on step jobs to their parent run pod.",
+            description="Whether to insert Kubernetes owner references on step jobs to their parent run pod."
+            " This ensures that step jobs and step pods are garbage collected when the run pod is deleted."
+            " For more information, see https://kubernetes.io/docs/concepts/overview/working-with-objects/owners-dependents/",
         ),
     },
 )
@@ -280,6 +283,7 @@ class K8sStepHandler(StepHandler):
 
         return f"dagster-step-{name_key}"
 
+    @cached_method
     def _detect_current_name_and_uid(
         self,
     ) -> Optional[tuple[str, str]]:

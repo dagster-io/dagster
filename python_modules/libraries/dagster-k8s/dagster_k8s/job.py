@@ -944,6 +944,16 @@ def construct_dagster_k8s_job(
     user_defined_job_metadata = copy.deepcopy(dict(user_defined_k8s_config.job_metadata))
     user_defined_job_labels = user_defined_job_metadata.pop("labels", {})
 
+    owner_reference_dicts = (
+        [owner_reference.to_dict() for owner_reference in owner_references]
+        if owner_references
+        else []
+    )
+    if "owner_references" in user_defined_job_metadata:
+        user_defined_job_metadata["owner_references"] = (
+            owner_reference_dicts + user_defined_job_metadata["owner_references"]
+        )
+
     job = k8s_model_from_dict(
         kubernetes.client.V1Job,
         merge_dicts(
@@ -959,13 +969,7 @@ def construct_dagster_k8s_job(
                             dagster_labels, user_defined_job_labels, job_config.labels
                         ),
                     },
-                    {
-                        "owner_references": [
-                            owner_reference.to_dict() for owner_reference in owner_references
-                        ]
-                    }
-                    if owner_references
-                    else {},
+                    {"owner_references": owner_reference_dicts} if owner_reference_dicts else {},
                 ),
                 "spec": job_spec_config,
             },
