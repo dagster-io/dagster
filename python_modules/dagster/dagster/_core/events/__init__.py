@@ -65,7 +65,11 @@ from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
 from dagster._core.storage.tags import PARTITION_NAME_TAG
 from dagster._record import record
 from dagster._serdes import NamedTupleSerializer, whitelist_for_serdes
-from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
+from dagster._utils.error import (
+    SerializableErrorInfo,
+    serializable_error_info_from_exc_info,
+    truncate_event_error_info,
+)
 from dagster._utils.timing import format_duration
 
 if TYPE_CHECKING:
@@ -1711,7 +1715,9 @@ class AssetFailedToMaterializeData(
                 "asset_materialization_failure",
                 AssetMaterializationFailure,
             ),
-            error=check.opt_inst_param(error, "error", SerializableErrorInfo),
+            error=truncate_event_error_info(
+                check.opt_inst_param(error, "error", SerializableErrorInfo)
+            ),
         )
 
     @property
@@ -1918,7 +1924,9 @@ class EngineEventData(
             metadata=normalize_metadata(
                 check.opt_mapping_param(metadata, "metadata", key_type=str)
             ),
-            error=check.opt_inst_param(error, "error", SerializableErrorInfo),
+            error=truncate_event_error_info(
+                check.opt_inst_param(error, "error", SerializableErrorInfo)
+            ),
             marker_start=check.opt_str_param(marker_start, "marker_start"),
             marker_end=check.opt_str_param(marker_end, "marker_end"),
         )
@@ -1983,7 +1991,9 @@ class JobFailureData(
     ):
         return super().__new__(
             cls,
-            error=check.opt_inst_param(error, "error", SerializableErrorInfo),
+            error=truncate_event_error_info(
+                check.opt_inst_param(error, "error", SerializableErrorInfo)
+            ),
             failure_reason=check.opt_inst_param(failure_reason, "failure_reason", RunFailureReason),
             first_step_failure_event=check.opt_inst_param(
                 first_step_failure_event, "first_step_failure_event", DagsterEvent
@@ -2002,7 +2012,10 @@ class JobCanceledData(
 ):
     def __new__(cls, error: Optional[SerializableErrorInfo]):
         return super().__new__(
-            cls, error=check.opt_inst_param(error, "error", SerializableErrorInfo)
+            cls,
+            error=truncate_event_error_info(
+                check.opt_inst_param(error, "error", SerializableErrorInfo)
+            ),
         )
 
 
@@ -2016,7 +2029,12 @@ class HookErroredData(
     )
 ):
     def __new__(cls, error: SerializableErrorInfo):
-        return super().__new__(cls, error=check.inst_param(error, "error", SerializableErrorInfo))
+        return super().__new__(
+            cls,
+            error=check.not_none(
+                truncate_event_error_info(check.inst_param(error, "error", SerializableErrorInfo))
+            ),
+        )
 
 
 @whitelist_for_serdes(
