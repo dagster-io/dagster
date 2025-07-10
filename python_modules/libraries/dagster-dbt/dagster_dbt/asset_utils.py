@@ -579,12 +579,14 @@ def default_owners_from_dbt_resource_props(
     if owners_config:
         return owners_config
 
-    owner: Optional[str] = (dbt_resource_props.get("group") or {}).get("owner", {}).get("email")
+    owner: Optional[Union[str, Sequence[str]]] = (
+        (dbt_resource_props.get("group") or {}).get("owner", {}).get("email")
+    )
 
     if not owner:
         return None
 
-    return [owner]
+    return [owner] if isinstance(owner, str) else owner
 
 
 def default_freshness_policy_fn(
