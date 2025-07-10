@@ -9,6 +9,7 @@ from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
+from dagster._utils.cached_method import cached_method
 from dagster.components.component.component import Component
 from dagster.components.core.context import ComponentLoadContext
 from dagster.components.core.tree import ComponentTree
@@ -243,9 +244,18 @@ class DbtProjectComponent(Component, Resolvable):
     def execute(self, context: AssetExecutionContext, dbt: DbtCliResource) -> Iterator:
         yield from dbt.cli(["build"], context=context).stream()
 
+    @cached_property
+    def _validated_manifest(self):
+        return validate_manifest(self.project.manifest_path)
+
+    @cached_property
+    def _validated_translator(self):
+        return validate_translator(self.translator)
+
+    @cached_method
     def get_asset_key_for_model(self, model_name: str) -> AssetKey:
-        dagster_dbt_translator = validate_translator(self.translator)
-        manifest = validate_manifest(self.project.manifest_path)
+        dagster_dbt_translator = self._validated_translator
+        manifest = self._validated_manifest
 
         matching_model_ids = [
             unique_id
