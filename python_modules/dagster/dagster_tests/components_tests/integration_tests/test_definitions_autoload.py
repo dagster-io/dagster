@@ -13,9 +13,12 @@ from dagster.components.core.decl import (
     YamlFileDecl,
 )
 from dagster.components.core.defs_module import ComponentPath, CompositeYamlComponent
-from dagster.components.core.tree import ComponentTree, LegacyAutoloadingComponentTree
+from dagster.components.core.tree import (
+    ComponentTree,
+    ComponentTreeException,
+    LegacyAutoloadingComponentTree,
+)
 from dagster_shared import check
-from pydantic import ValidationError
 
 from dagster_tests.components_tests.integration_tests.component_loader import (
     chdir as chdir,
@@ -140,17 +143,25 @@ def test_definitions_component_with_explicit_file_relative_imports_complex(
 
 
 def test_definitions_component_validation_error() -> None:
-    with pytest.raises(ValidationError) as e:
+    with pytest.raises(ComponentTreeException) as e:
         sync_load_test_component_defs("definitions/validation_error_file")
 
-    assert "defs.yaml:4" in str(e.value)
+    assert "└── definitions.py" in str(e.value)
+
+    underlying_validation_error = e.value.__cause__
+
+    assert "defs.yaml:4" in str(underlying_validation_error)
 
 
 def test_definitions_component_with_multiple_definitions_objects() -> None:
-    with pytest.raises(
-        dg.DagsterInvalidDefinitionError, match="Found multiple Definitions objects in"
-    ):
+    with pytest.raises(ComponentTreeException) as e:
         sync_load_test_component_defs("definitions/definitions_object_multiple")
+
+    assert "my_defs.py (error)" in str(e.value)
+
+    underlying_validation_error = e.value.__cause__
+
+    assert "Found multiple Definitions objects in" in str(underlying_validation_error)
 
 
 @pytest.mark.parametrize("component_tree", ["definitions/single_file"], indirect=True)
