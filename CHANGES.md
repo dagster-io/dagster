@@ -1,5 +1,37 @@
 # Changelog
 
+## 1.11.2 (core) / 0.27.2 (libraries)
+
+### New
+
+- Performance improvements for run dequeuing when there are many queued runs using pools.
+- Added support for Python 3.13.
+- [dagster-tableau] Tableau assets can now be subsetted and materialized individually.
+- [ui][observe] You can now bulk add/remove assets to/from your favorites.
+- Deduplicated asset graph traversals when evaluating upstream or downstream asset selections for a large set of assets, substantially speeding up some selection evaluations.
+- [dagster-snowflake] SnowflakePolarsIOManager: Adds support for Polars DataFrames.
+
+### Bugfixes
+
+- [ui] Fix string middle truncation in some circumstances.
+- [ui] The `type` filter on the Asset Events view now behaves as expected in all scenarios.
+
+### Documentation
+
+### Breaking Changes
+
+- Renamed dbt_profiles.yml to dbt_project.yml.
+
+### Deprecations
+
+### Dagster Plus
+
+### dg & Components (Preview)
+
+- Fixed an issue where `dg dev` and `dg check yaml` would error for YAML components lacking an `attributes` field.
+- Fixed an issue where `dg list env` did not work properly in projects without a defs folder.
+ Changelog
+
 ## 1.11.1 (core) / 0.27.1 (libraries)
 
 ### New
