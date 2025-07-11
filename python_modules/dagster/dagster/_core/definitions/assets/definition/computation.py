@@ -1,5 +1,5 @@
 from collections.abc import Iterator, Mapping, Sequence
-from typing import TYPE_CHECKING, Callable, Union
+from typing import TYPE_CHECKING, Callable, Optional, Union
 
 from dagster_shared import check
 from dagster_shared.record import record
@@ -8,7 +8,11 @@ from typing_extensions import TypeAlias
 from dagster._core.definitions.asset_checks.asset_check_result import AssetCheckResult
 from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckSpec
 from dagster._core.definitions.asset_key import AssetKey
-from dagster._core.definitions.assets.definition.asset_effect import AssetEffect, Effect
+from dagster._core.definitions.assets.definition.asset_effect import (
+    AssetEffect,
+    CoercibleToEffect,
+    Effect,
+)
 from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
 from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
 from dagster._core.definitions.decorators.decorator_assets_definition_builder import (
@@ -133,3 +137,19 @@ class Computation:
             },
             can_subset=self.can_subset,
         )
+
+
+def computation(
+    effects: Sequence[CoercibleToEffect],
+    op_spec: Optional[OpSpec] = None,
+    can_subset: bool = False,
+) -> Callable[[ComputationFn], Computation]:
+    def wrapper(fn: ComputationFn) -> Computation:
+        return Computation.from_fn(
+            fn,
+            op_spec=op_spec or OpSpec(),
+            effects=[Effect.from_coercible(effect) for effect in effects],
+            can_subset=can_subset,
+        )
+
+    return wrapper

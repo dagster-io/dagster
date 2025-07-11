@@ -8,7 +8,7 @@ from dagster._core.definitions.assets.definition.asset_effect import (
     AssetMaterializationEffect,
     Effect,
 )
-from dagster._core.definitions.assets.definition.computation import Computation
+from dagster._core.definitions.assets.definition.computation import Computation, computation
 from dagster.components.resolved.core_models import OpSpec
 
 
@@ -31,12 +31,12 @@ def test_computation_from_fn_no_params() -> None:
     ]
     computation = Computation.from_fn(
         fn=_fn,  # type: ignore
-        op_spec=OpSpec(name="test_op"),
+        op_spec=OpSpec(name="my_fn"),
         effects=[Effect.from_coercible(spec) for spec in specs],
         can_subset=False,
     )
 
-    assert computation.node_def.name == "test_op"
+    assert computation.node_def.name == "my_fn"
 
     # Test Outputs
     output_defs = computation.node_def.output_dict
@@ -91,12 +91,12 @@ def test_computation_from_fn_with_complex_deps_and_additional_args() -> None:
     ]
     computation = Computation.from_fn(
         fn=_fn,
-        op_spec=OpSpec(name="test_op"),
+        op_spec=OpSpec(name="my_fn"),
         effects=[Effect.from_coercible(spec) for spec in specs],
         can_subset=False,
     )
 
-    assert computation.node_def.name == "test_op"
+    assert computation.node_def.name == "my_fn"
 
     # Test Outputs
     output_defs = computation.node_def.output_dict
@@ -151,7 +151,7 @@ def test_computation_from_fn_with_complex_deps_and_additional_args() -> None:
     result = dg.materialize_to_memory(
         [a, b, assets_def],
         resources={"my_res": MyResource(c=1, d=True)},
-        run_config=dg.RunConfig(ops={"test_op": {"config": {"a": 1, "b": "b"}}}),
+        run_config=dg.RunConfig(ops={"my_fn": {"config": {"a": 1, "b": "b"}}}),
     )
     assert result.success
 
@@ -180,7 +180,7 @@ def test_computation_from_fn_spec_properties() -> None:
     computation = Computation.from_fn(
         fn=_fn,  # type: ignore
         op_spec=OpSpec(
-            name="test_op",
+            name="my_fn",
             description="test_description",
             tags=tags,
             pool="test_pool",
@@ -190,7 +190,7 @@ def test_computation_from_fn_spec_properties() -> None:
     )
 
     # Test Node Properties
-    assert computation.node_def.name == "test_op"
+    assert computation.node_def.name == "my_fn"
     assert computation.node_def.description == "test_description"
     assert computation.node_def.tags == {"test_tag": "test_value"}
     assert computation.node_def.pools == {"test_pool"}
@@ -209,3 +209,43 @@ def test_computation_from_fn_spec_properties() -> None:
     assert asset_check_output.name == "asset1_asset_check1"
     assert asset_check_output.description is None
     assert asset_check_output.metadata == metadata
+
+
+def test_decorator_complex_deps_and_additional_args() -> None:
+    @computation(
+        effects=[
+            dg.AssetSpec(key="asset1", deps=["a"]).with_dagster_type(int),
+            dg.AssetSpec(key="asset2", deps=["a", "b"]),
+            dg.AssetSpec(key="asset3", deps=["asset1", "asset2", "b", "d"]),
+            dg.AssetCheckSpec(name="asset_check1", asset="asset1", additional_deps=["a", "c"]),
+            dg.AssetCheckSpec(name="asset_check2", asset="asset2"),
+        ],
+    )
+    def my_fn(
+        context: dg.AssetExecutionContext,
+        config: MyConfig,
+        my_res: MyResource,
+        # asset inputs
+        a: int,
+        b: str,
+    ):  # -> Iterator[Union[dg.MaterializeResult, dg.AssetCheckResult]]:
+        yield dg.MaterializeResult(asset_key="asset1", value=1)
+        yield dg.MaterializeResult(asset_key="asset2")
+        yield dg.MaterializeResult(asset_key="asset3", value=3)
+        yield dg.AssetCheckResult(asset_key="asset1", passed=True)
+        yield dg.AssetCheckResult(asset_key="asset2", passed=True)
+
+    @dg.asset
+    def a() -> int:
+        return 1
+
+    @dg.asset
+    def b() -> str:
+        return "b"
+
+    result = dg.materialize_to_memory(
+        [a, b, my_fn.to_assets_def()],
+        resources={"my_res": MyResource(c=1, d=True)},
+        run_config=dg.RunConfig(ops={"my_fn": {"config": {"a": 1, "b": "b"}}}),
+    )
+    assert result.success
