@@ -50,6 +50,7 @@ def normalize_dagster_name(name: str) -> str:
     return name_valid
 
 
+# NOTE- we should consider using the job_id, as this cannot be changed.
 def normalize_job_id(job: BaseJob) -> str:
     if job.settings and job.settings.name:
         return normalize_dagster_name(job.settings.name)
@@ -97,6 +98,14 @@ class DatabricksJobSensorCursor:
     def range_end_utc_ms(self) -> int:
         return int(datetime.fromisoformat(self.range_end).timestamp() * 1000)
 
+    @property
+    def range_start_dt(self) -> datetime:
+        return datetime.fromisoformat(self.range_start)
+
+    @property
+    def range_end_dt(self) -> datetime:
+        return datetime.fromisoformat(self.range_end)
+
     def advance(self, effective_timestamp: datetime) -> "DatabricksJobSensorCursor":
         return DatabricksJobSensorCursor(
             range_start=self.range_end, range_end=effective_timestamp.isoformat()
@@ -140,35 +149,27 @@ def build_databricks_jobs_monitor_sensor(client: WorkspaceClient) -> SensorDefin
             f"Polling for jobs within the range {cursor.range_start} and {cursor.range_end}"
         )
 
-        # NOTE- we can either get all job runs from `list_runs` or get the runs for a particular job
-        # by providing the `job_id` parameter. Currently, we first get the job IDs, and then the
-        # runs for each job to make it easier to support job filters in a future implementation.
         for job in client.jobs.list():
-            # TODO-
-            #
-            # We are limited to `start_time_to` and `start_time_from` but are only representing
-            # `completed_only`. With our polling technique this will cause us to miss some jobs.
-            # We will need to filter the runs for the end time range.
             runs = client.jobs.list_runs(
                 job_id=job.job_id,
-                start_time_from=cursor.range_start_utc_ms,
-                start_time_to=cursor.range_end_utc_ms,
                 completed_only=True,
             )
 
-            # run = next(iter(runs), None)
-
-            # see: dagster_airlift/core/monitoring_job/event_stream.py
             for run in runs:
-                # TODO- handle pending, and completed date ranges
+                run_start_time_dt = datetime.fromtimestamp(run.start_time / 1000.0, tz=timezone.utc)
+                run_end_time_dt = datetime.fromtimestamp(run.end_time / 1000.0, tz=timezone.utc)
+
+                # The Databricks SDK does not provide a way to get jobs completed between a certain
+                # range, and instead offers `start_time_from` and `start_time_to`. Therefore we must
+                # iterate until the completion timestamp exceeds our window.
+                #
+                # By default `list_runs` lists in order of descending start time.
+                if run_end_time_dt < cursor.range_start_dt:
+                    break
+
                 if run.state and run.state.life_cycle_state == RunLifeCycleState.TERMINATED:
                     dagster_job_name = normalize_job_id(job)
                     dagster_run_id = make_new_run_id()
-
-                    run_start_time_dt = datetime.fromtimestamp(
-                        run.start_time / 1000.0, tz=timezone.utc
-                    )
-                    run_end_time_dt = datetime.fromtimestamp(run.end_time / 1000.0, tz=timezone.utc)
 
                     context.instance.run_storage.add_historical_run(
                         dagster_run=DagsterRun(
