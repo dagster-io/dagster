@@ -1,3 +1,4 @@
+from collections.abc import Iterable
 from typing import Union
 
 import dagster as dg
@@ -10,8 +11,8 @@ class MyExecutableComponent(ExecutableComponent):
         self,
         context: Union[dg.AssetExecutionContext, dg.AssetCheckExecutionContext],
         component_load_context: dg.ComponentLoadContext,
-    ):
-        pass
+    ) -> Iterable:
+        return []
 
     @property
     def op_spec(self) -> OpSpec:
