@@ -27,6 +27,7 @@ from dagster._core.definitions.run_request import RunRequest, SkipReason
 from dagster._core.definitions.sensor_definition import DefaultSensorStatus, SensorEvaluationContext
 from dagster._core.definitions.utils import VALID_NAME_REGEX
 from dagster._core.events import DagsterEvent
+from dagster._core.remote_representation.origin import RemoteJobOrigin, RemoteRepositoryOrigin
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
 from dagster._core.storage.tags import EXTERNAL_JOB_SOURCE_TAG_KEY
 from dagster._core.utils import make_new_run_id
@@ -37,7 +38,7 @@ from dagster_shared.serdes import whitelist_for_serdes
 from databricks.sdk import WorkspaceClient
 from databricks.sdk.service.jobs import BaseJob, RunLifeCycleState, RunResultState
 
-NO_CURSOR_LOOKBACK_DELTA = timedelta(days=1)
+NO_CURSOR_LOOKBACK_DELTA = timedelta(days=7)
 
 
 # TODO- refactor from shared method in `dagster-airlift`
@@ -173,14 +174,15 @@ def build_databricks_jobs_monitor_sensor(client: WorkspaceClient) -> SensorDefin
                                     "dagster-databricks/job-run-id": str(run.run_id),
                                     EXTERNAL_JOB_SOURCE_TAG_KEY: "databricks",
                                 },
-                                # remote_job_origin=RemoteJobOrigin(
-                                #     # We steal the repository origin from the original run.
-                                #     # This allows the UI to link the run we're creating here back to the
-                                #     # job in Dagster.
-                                #     # It's not set in test contexts
-                                #     repository_origin=context.run.remote_job_origin.repository_origin,
-                                #     job_name=relevant_job_def.name,
-                                # )
+                                # Setting `remote_job_origin` is required to link the run back to
+                                # the job in the `Runs` tab of the UI.
+                                remote_job_origin=RemoteJobOrigin(
+                                    repository_origin=RemoteRepositoryOrigin(
+                                        repository_name=context.repository_name,
+                                        code_location_origin=context.code_location_origin,
+                                    ),
+                                    job_name=dagster_job_name,
+                                ),
                             ),
                             run_creation_time=run_start_time_dt,
                         )
