@@ -16,6 +16,7 @@ USAGE
 
 """
 
+import re
 from datetime import datetime, timedelta, timezone
 from typing import Union
 from urllib.parse import urlparse
@@ -43,12 +44,15 @@ NO_CURSOR_LOOKBACK_DELTA = timedelta(days=7)
 
 # TODO- refactor from shared method in `dagster-airlift`
 def normalize_dagster_name(name: str) -> str:
-    """Converts a name to a valid dagster name by replacing invalid characters with underscores. / is converted to a double underscore."""
-    return "".join(c if VALID_NAME_REGEX.match(c) else "__" if c == "/" else "_" for c in name)
+    """Converts a name to a valid dagster name by replacing invalid characters with underscores."""
+    name_valid = "".join(c if VALID_NAME_REGEX.match(c) else "_" for c in name)
+    name_valid = re.sub(r"_+", "_", name_valid).strip("_")
+    return name_valid
 
 
 def normalize_job_id(job: BaseJob) -> str:
-    # name=normalize_dagster_name(job.settings.name or str(job.job_id)),
+    if job.settings and job.settings.name:
+        return normalize_dagster_name(job.settings.name)
     return str(job.job_id)
 
 
@@ -140,18 +144,23 @@ def build_databricks_jobs_monitor_sensor(client: WorkspaceClient) -> SensorDefin
         # by providing the `job_id` parameter. Currently, we first get the job IDs, and then the
         # runs for each job to make it easier to support job filters in a future implementation.
         for job in client.jobs.list():
+            # TODO-
+            #
+            # We are limited to `start_time_to` and `start_time_from` but are only representing
+            # `completed_only`. With our polling technique this will cause us to miss some jobs.
+            # We will need to filter the runs for the end time range.
             runs = client.jobs.list_runs(
                 job_id=job.job_id,
                 start_time_from=cursor.range_start_utc_ms,
                 start_time_to=cursor.range_end_utc_ms,
+                completed_only=True,
             )
-            # TODO- handle backfilling of run history
-            # TODO- ensure run is most recent
-            run = next(iter(runs), None)
 
-            # TODO- handle pending
+            # run = next(iter(runs), None)
+
             # see: dagster_airlift/core/monitoring_job/event_stream.py
-            if run:
+            for run in runs:
+                # TODO- handle pending, and completed date ranges
                 if run.state and run.state.life_cycle_state == RunLifeCycleState.TERMINATED:
                     dagster_job_name = normalize_job_id(job)
                     dagster_run_id = make_new_run_id()
@@ -203,7 +212,20 @@ def build_databricks_jobs_monitor_sensor(client: WorkspaceClient) -> SensorDefin
                             timestamp=run_end_time_dt.timestamp(),
                         )
 
-                    elif run.state.result_state == RunResultState.FAILED:
+                    # TODO- for now, we are considering all statuses but `SUCCESS` a failure, but
+                    # ultimately we should handle each of the following:
+                    #
+                    # RunResultState
+                    #     FAILED
+                    #     CANCELED
+                    #     EXCLUDED
+                    #     MAXIMUM_CONCURRENT_RUNS_REACHED
+                    #     SUCCESS_WITH_FAILURES
+                    #     UPSTREAM_CANCELED
+                    #     UPSTREAM_FAILED
+                    #     TIMEDOUT
+                    #
+                    else:
                         context.instance.report_dagster_event(
                             run_id=dagster_run_id,
                             dagster_event=DagsterEvent(
