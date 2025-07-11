@@ -27,6 +27,10 @@ from dagster._cli.workspace.cli_target import get_repository_python_origin_from_
 from dagster._config.pythonic_config.resource import get_resource_type_name
 from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.assets.job.asset_job import is_reserved_asset_job_name
+from dagster._core.definitions.definitions_load_context import (
+    DefinitionsLoadContext,
+    DefinitionsLoadType,
+)
 from dagster._core.definitions.repository_definition.repository_definition import (
     RepositoryDefinition,
 )
@@ -88,6 +92,12 @@ def _load_defs_at_path(dg_context: DgContext, path: Optional[Path]) -> Repositor
     """Attempts to load the component tree from the context project root, falling back to
     resolving the entire repository and using the attached component tree.
     """
+    DefinitionsLoadContext.set(
+        DefinitionsLoadContext(
+            load_type=DefinitionsLoadType.INITIALIZATION, repository_load_data=None
+        )
+    )
+
     if not path:
         repository_origin = get_repository_python_origin_from_cli_opts(
             PythonPointerOpts.extract_from_cli_options(dict(dg_context.target_args))
