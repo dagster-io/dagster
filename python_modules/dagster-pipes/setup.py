@@ -35,7 +35,7 @@ setup(
     ],
     packages=find_packages(exclude=["dagster_pipes_tests*"]),
     include_package_data=True,
-    python_requires=">=3.9,<=3.13.3",
+    python_requires=">=3.9,<3.14",
     zip_safe=False,
     extras_require={
         "stubs": [

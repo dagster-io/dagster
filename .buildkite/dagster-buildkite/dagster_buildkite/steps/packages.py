@@ -701,7 +701,6 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
     PackageSpec(
         "python_modules/libraries/dagster-wandb",
         unsupported_python_versions=[
-            # duckdb
             AvailablePythonVersion.V3_12,
             AvailablePythonVersion.V3_13,
         ],
@@ -710,11 +709,13 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         "python_modules/libraries/dagstermill",
         pytest_tox_factors=["papermill1", "papermill2"],
         retries=2,  # Workaround for flaky kernel issues
-        unsupported_python_versions=[
-            # duckdb
-            AvailablePythonVersion.V3_12,
-            AvailablePythonVersion.V3_13,
-        ],
+        unsupported_python_versions=(
+            lambda tox_factor: (
+                [AvailablePythonVersion.V3_12, AvailablePythonVersion.V3_13]
+                if (tox_factor == "papermill1")
+                else []
+            )
+        ),
     ),
     PackageSpec(
         "python_modules/libraries/dagster-airlift/perf-harness",
