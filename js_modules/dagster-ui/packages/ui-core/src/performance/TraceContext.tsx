@@ -2,7 +2,6 @@ import {ReactNode, createContext, useContext, useLayoutEffect, useMemo} from 're
 
 import {QueryResult} from '../apollo-client';
 import {useDangerousRenderEffect} from '../hooks/useDangerousRenderEffect';
-import {useUpdatingRef} from '../hooks/useUpdatingRef';
 
 export enum CompletionType {
   SUCCESS = 1,
@@ -96,8 +95,7 @@ export function useTraceDependency(name: string, opts: Options = {}) {
   useLayoutEffect(() => {
     return () => {
       // By default cancel a dependency when the component unmounts.
-      // Rely on the user of TraceContext to track if the dependency
-      // was already completed prior to this.
+      // This will no-op if the dependency was already completed.
       completeDependency(dependency, CompletionType.CANCELLED);
     };
   }, [addDependency, completeDependency, dependency]);
@@ -114,20 +112,19 @@ export function useTraceDependency(name: string, opts: Options = {}) {
 
 export function useBlockTraceUntilTrue(name: string, isSuccessful: boolean, opts: Options = {}) {
   const dep = useTraceDependency(name, opts);
-  const isSuccessfulRef = useUpdatingRef(isSuccessful);
   useLayoutEffect(() => {
     if (isSuccessful) {
       dep.completeDependency(CompletionType.SUCCESS);
     }
+  }, [dep, isSuccessful, name]);
+
+  useLayoutEffect(() => {
     return () => {
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-      if (isSuccessfulRef.current) {
-        dep.completeDependency(CompletionType.SUCCESS);
-      } else {
-        dep.completeDependency(CompletionType.CANCELLED);
-      }
+      // By default cancel a dependency when the component unmounts.
+      // This will no-op if the dependency was already completed.
+      dep.completeDependency(CompletionType.CANCELLED);
     };
-  }, [dep, isSuccessful, isSuccessfulRef, name]);
+  }, [dep]);
 
   return dep;
 }
