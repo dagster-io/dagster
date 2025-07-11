@@ -95,8 +95,7 @@ export function useTraceDependency(name: string, opts: Options = {}) {
   useLayoutEffect(() => {
     return () => {
       // By default cancel a dependency when the component unmounts.
-      // Rely on the user of TraceContext to track if the dependency
-      // was already completed prior to this.
+      // This will no-op if the dependency was already completed.
       completeDependency(dependency, CompletionType.CANCELLED);
     };
   }, [addDependency, completeDependency, dependency]);
@@ -113,7 +112,7 @@ export function useTraceDependency(name: string, opts: Options = {}) {
 
 export function useBlockTraceUntilTrue(name: string, isSuccessful: boolean, opts: Options = {}) {
   const dep = useTraceDependency(name, opts);
-  useLayoutEffect(() => {
+  useDangerousRenderEffect(() => {
     if (isSuccessful) {
       dep.completeDependency(CompletionType.SUCCESS);
     }
