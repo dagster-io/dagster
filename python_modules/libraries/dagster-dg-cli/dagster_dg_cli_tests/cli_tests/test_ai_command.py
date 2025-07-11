@@ -38,5 +38,5 @@ def test_ai_command_keyboard_interrupt(runner):
 def test_ai_command_success(runner):
     with patch("subprocess.run") as mock_run:
         mock_run.return_value = None  # Successful execution
-        result = runner.invoke("ai")
+        result = runner.invoke("ai", input="claude")
         assert_runner_result(result)
