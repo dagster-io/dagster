@@ -2,7 +2,7 @@ import datetime
 from abc import ABC, abstractmethod
 from collections.abc import Mapping, Sequence, Set
 from functools import cached_property
-from typing import TYPE_CHECKING, Generic, Optional, Union
+from typing import TYPE_CHECKING, Generic, Optional, TypeVar, Union
 
 from dagster_shared.serdes.serdes import is_whitelisted_for_serdes_object
 from typing_extensions import Self
@@ -52,6 +52,9 @@ if TYPE_CHECKING:
     from dagster._core.definitions.declarative_automation.operators.since_operator import (
         SinceCondition,
     )
+
+
+T_AutomationCondition = TypeVar("T_AutomationCondition", bound="AutomationCondition")
 
 
 class AutomationCondition(ABC, Generic[T_EntityKey]):
@@ -297,8 +300,8 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
 
     @public
     def replace(
-        self, old: Union["AutomationCondition", str], new: "AutomationCondition"
-    ) -> "AutomationCondition":
+        self, old: Union["AutomationCondition", str], new: T_AutomationCondition
+    ) -> Union[Self, T_AutomationCondition]:
         """Replaces all instances of ``old`` across any sub-conditions with ``new``.
 
         If ``old`` is a string, then conditions with a label matching

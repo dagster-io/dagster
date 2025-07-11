@@ -220,6 +220,15 @@ def test_replace_automation_condition_since() -> None:
     )
 
 
+def test_replace_automation_condition_with_label() -> None:
+    a = (
+        AutomationCondition.eager()
+        .replace("newly_updated", AutomationCondition.data_version_changed())
+        .with_label("eager_respecting_data_version")
+    )
+    assert a.get_label() == "eager_respecting_data_version"
+
+
 @pytest.mark.parametrize("method", ["allow", "ignore"])
 def test_filter_automation_condition(method: str) -> None:
     a = AutomationCondition.in_latest_time_window()
