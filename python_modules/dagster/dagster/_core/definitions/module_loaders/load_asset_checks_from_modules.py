@@ -44,6 +44,7 @@ def load_asset_checks_from_modules(
             group_name=None,
             legacy_freshness_policy=None,
             automation_condition=None,
+            dont_override_automation_condition=None,
             backfill_policy=None,
         )
         .checks_defs

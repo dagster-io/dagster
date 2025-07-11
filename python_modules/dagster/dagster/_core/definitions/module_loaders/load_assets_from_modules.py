@@ -62,6 +62,7 @@ def load_assets_from_modules(
     legacy_freshness_policy: Optional[LegacyFreshnessPolicy] = None,
     auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
     automation_condition: Optional[AutomationCondition] = None,
+    dont_override_automation_condition: Optional[bool] = None,
     backfill_policy: Optional[BackfillPolicy] = None,
     source_key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     include_specs: bool = False,
@@ -80,6 +81,9 @@ def load_assets_from_modules(
             all the loaded assets.
         automation_condition (Optional[AutomationCondition]): AutomationCondition to apply
             to all the loaded assets.
+        dont_override_automation_condition: (Optional[bool]): Pass True to allow loaded assets with an
+            automation_condition assigned to retain it, rather than overriding it with the automation_condition
+            passed to the module.
         backfill_policy (Optional[AutoMaterializePolicy]): BackfillPolicy to apply to all the loaded assets.
         source_key_prefix (bool): Prefix to prepend to the keys of loaded SourceAssets. The returned
             assets will be copies of the loaded objects, with the prefix prepended.
@@ -116,6 +120,7 @@ def load_assets_from_modules(
             automation_condition=resolve_automation_condition(
                 automation_condition, auto_materialize_policy
             ),
+            dont_override_automation_condition=dont_override_automation_condition,
             backfill_policy=check.opt_inst_param(
                 backfill_policy, "backfill_policy", BackfillPolicy
             ),

@@ -356,6 +356,7 @@ class DagsterObjectsList:
         group_name: Optional[str],
         legacy_freshness_policy: Optional[LegacyFreshnessPolicy],
         automation_condition: Optional[AutomationCondition],
+        dont_override_automation_condition: Optional[bool],
         backfill_policy: Optional[BackfillPolicy],
     ) -> "DagsterObjectsList":
         dagster_def_list = self.assets_with_loadable_prefix(key_prefix) if key_prefix else self
@@ -368,7 +369,9 @@ class DagsterObjectsList:
         for dagster_def in dagster_def_list.loaded_defs:
             if isinstance(dagster_def, AssetsDefinition):
                 new_asset = dagster_def.map_asset_specs(
-                    _spec_mapper_disallow_group_override(group_name, automation_condition)
+                    _spec_mapper_disallow_group_override(
+                        group_name, automation_condition, dont_override_automation_condition
+                    )
                 ).with_attributes(
                     backfill_policy=backfill_policy, legacy_freshness_policy=legacy_freshness_policy
                 )
@@ -381,9 +384,9 @@ class DagsterObjectsList:
                 return_list.append(dagster_def.with_attributes(group_name=group_name))
             elif isinstance(dagster_def, AssetSpec):
                 return_list.append(
-                    _spec_mapper_disallow_group_override(group_name, automation_condition)(
-                        dagster_def
-                    )
+                    _spec_mapper_disallow_group_override(
+                        group_name, automation_condition, dont_override_automation_condition
+                    )(dagster_def)
                 )
             elif isinstance(dagster_def, CacheableAssetsDefinition):
                 return_list.append(
@@ -411,7 +414,9 @@ class DagsterObjectsList:
 
 
 def _spec_mapper_disallow_group_override(
-    group_name: Optional[str], automation_condition: Optional[AutomationCondition]
+    group_name: Optional[str],
+    automation_condition: Optional[AutomationCondition],
+    dont_override_automation_condition: Optional[bool],
 ) -> Callable[[AssetSpec], AssetSpec]:
     def _inner(spec: AssetSpec) -> AssetSpec:
         if (
@@ -425,7 +430,11 @@ def _spec_mapper_disallow_group_override(
             )
         return spec.replace_attributes(
             group_name=group_name if group_name else ...,
-            automation_condition=automation_condition if automation_condition else ...,
+            automation_condition=spec.automation_condition
+            if (spec.automation_condition and dont_override_automation_condition)
+            else automation_condition
+            if automation_condition
+            else ...,
         )
 
     return _inner
