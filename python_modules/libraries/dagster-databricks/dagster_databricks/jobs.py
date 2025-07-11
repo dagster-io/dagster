@@ -155,6 +155,13 @@ def build_databricks_jobs_monitor_sensor(client: WorkspaceClient) -> SensorDefin
                         dagster_job_name = normalize_job_id(job)
                         dagster_run_id = make_new_run_id()
 
+                        run_start_time_dt = datetime.fromtimestamp(
+                            run.start_time / 1000.0, tz=timezone.utc
+                        )
+                        run_end_time_dt = datetime.fromtimestamp(
+                            run.end_time / 1000.0, tz=timezone.utc
+                        )
+
                         context.instance.run_storage.add_historical_run(
                             dagster_run=DagsterRun(
                                 run_id=dagster_run_id,
@@ -169,9 +176,7 @@ def build_databricks_jobs_monitor_sensor(client: WorkspaceClient) -> SensorDefin
                                 #     job_name=relevant_job_def.name,
                                 # )
                             ),
-                            run_creation_time=datetime.fromtimestamp(
-                                run.start_time / 1000.0, tz=timezone.utc
-                            ),
+                            run_creation_time=run_start_time_dt,
                         )
 
                         context.instance.report_dagster_event(
@@ -180,7 +185,7 @@ def build_databricks_jobs_monitor_sensor(client: WorkspaceClient) -> SensorDefin
                                 event_type_value="PIPELINE_START",
                                 job_name=dagster_job_name,
                             ),
-                            timestamp=run.start_time / 1000.0,
+                            timestamp=run_start_time_dt.timestamp(),
                         )
 
                         context.instance.report_dagster_event(
@@ -189,7 +194,7 @@ def build_databricks_jobs_monitor_sensor(client: WorkspaceClient) -> SensorDefin
                                 event_type_value="PIPELINE_SUCCESS",
                                 job_name=dagster_job_name,
                             ),
-                            timestamp=run.end_time / 1000.0,
+                            timestamp=run_end_time_dt.timestamp(),
                         )
 
                     # TODO- handle failures
