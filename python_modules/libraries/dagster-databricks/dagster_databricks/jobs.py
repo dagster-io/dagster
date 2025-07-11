@@ -28,6 +28,7 @@ from dagster._core.definitions.sensor_definition import DefaultSensorStatus, Sen
 from dagster._core.definitions.utils import VALID_NAME_REGEX
 from dagster._core.events import DagsterEvent
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
+from dagster._core.storage.tags import EXTERNAL_JOB_SOURCE_TAG_KEY
 from dagster._core.utils import make_new_run_id
 from dagster._record import record
 from dagster._serdes import deserialize_value, serialize_value
@@ -167,6 +168,11 @@ def build_databricks_jobs_monitor_sensor(client: WorkspaceClient) -> SensorDefin
                                 run_id=dagster_run_id,
                                 job_name=dagster_job_name,
                                 status=DagsterRunStatus.NOT_STARTED,
+                                tags={
+                                    "dagster-databricks/job-id": str(run.job_id),
+                                    "dagster-databricks/job-run-id": str(run.run_id),
+                                    EXTERNAL_JOB_SOURCE_TAG_KEY: "databricks",
+                                },
                                 # remote_job_origin=RemoteJobOrigin(
                                 #     # We steal the repository origin from the original run.
                                 #     # This allows the UI to link the run we're creating here back to the
