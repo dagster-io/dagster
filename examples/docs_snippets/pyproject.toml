@@ -15,6 +15,7 @@ extend-exclude = [
   "docs_snippets/guides/dg/migrating-definitions/7-definitions-after-all.py",
   "docs_snippets/guides/components/integrations/dlt-component/5-loads.py",
   "docs_snippets/guides/components/integrations/dlt-component/7-customized-loads.py",
+  "docs_snippets/guides/components/python-components/python-component.py",
 ]
 
 [tool.ruff.lint]

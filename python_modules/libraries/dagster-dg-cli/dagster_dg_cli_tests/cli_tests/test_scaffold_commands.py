@@ -141,6 +141,35 @@ def test_scaffold_defs_component_no_params_success(in_workspace: bool) -> None:
         )
 
 
+@pytest.mark.parametrize("in_workspace", [True, False])
+def test_scaffold_python_defs(in_workspace: bool) -> None:
+    with (
+        ProxyRunner.test(use_fixed_test_components=True) as runner,
+        isolated_example_project_foo_bar(runner, in_workspace, uv_sync=True) as project_dir,
+        activate_venv(project_dir / ".venv"),
+    ):
+        result = runner.invoke(
+            "scaffold",
+            "defs",
+            "dagster_test.components.AllMetadataEmptyComponent",
+            "qux",
+            "--format",
+            "python",
+        )
+        assert_runner_result(result)
+        assert Path("src/foo_bar/defs/qux").exists()
+        component_py_path = Path("src/foo_bar/defs/qux/component.py")
+        assert component_py_path.exists()
+
+        component_py_path.write_text(
+            component_py_path.read_text().replace("...", "return AllMetadataEmptyComponent()")
+        )
+
+        result = runner.invoke("list", "defs")
+        assert_runner_result(result)
+        assert "hardcoded_asset" in result.output
+
+
 @pytest.mark.parametrize(
     "selection",
     ["", "y", "n", "a"],
