@@ -158,7 +158,9 @@ class ComponentDeclLoadContext:
         """
         return importlib.import_module(self.defs_relative_module_name(path))
 
-    def raw_load_component_at_path(self, defs_path: Union[Path, "ComponentPath"]) -> "Component":
+    def load_structural_component_at_path(
+        self, defs_path: Union[Path, "ComponentPath"]
+    ) -> "Component":
         """Loads a component from the given path.
 
         Args:
@@ -167,7 +169,7 @@ class ComponentDeclLoadContext:
         Returns:
             Component: The component loaded from the given path.
         """
-        return self.component_tree.raw_load_component_at_path(defs_path)
+        return self.component_tree.load_structural_component_at_path(defs_path)
 
 
 @public

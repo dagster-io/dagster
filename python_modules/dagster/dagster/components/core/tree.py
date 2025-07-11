@@ -178,7 +178,7 @@ class ComponentTree:
 
     @cached_method
     def load_root_component(self) -> Component:
-        return self.raw_load_component_at_path(self.defs_module_path)
+        return self.load_structural_component_at_path(self.defs_module_path)
 
     @cached_method
     def build_defs(self) -> Definitions:
@@ -283,7 +283,7 @@ class ComponentTree:
         Returns:
             Component: The component loaded from the given path.
         """
-        component = self.raw_load_component_at_path(defs_path)
+        component = self.load_structural_component_at_path(defs_path)
         if (
             isinstance(component, (CompositeYamlComponent, CompositeComponent))
             and len(component.components) == 1
@@ -298,7 +298,9 @@ class ComponentTree:
 
         return component
 
-    def raw_load_component_at_path(self, defs_path: Union[Path, ComponentPath, str]) -> Component:
+    def load_structural_component_at_path(
+        self, defs_path: Union[Path, ComponentPath, str]
+    ) -> Component:
         """Loads a component from the given path, does not resolve e.g. CompositeYamlComponent to an underlying
         component type.
 

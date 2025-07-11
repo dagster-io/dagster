@@ -177,7 +177,7 @@ def get_component(context: ComponentLoadContext) -> Optional[Component]:
 
     component_decl = build_component_decl_from_context(context)
     if component_decl:
-        return context.raw_load_component_at_path(component_decl.path)
+        return context.load_structural_component_at_path(component_decl.path)
     return None
 
 
@@ -410,7 +410,7 @@ def load_yaml_component_from_path(context: ComponentLoadContext, component_def_p
     from dagster.components.core.decl import build_component_decl_from_yaml_file
 
     decl = build_component_decl_from_yaml_file(context, component_def_path)
-    return context.raw_load_component_at_path(decl.path)
+    return context.load_structural_component_at_path(decl.path)
 
 
 # When we remove component.yaml, we can remove this function for just a defs.yaml check
