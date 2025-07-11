@@ -35,6 +35,7 @@ def test_computation_from_fn_no_params() -> None:
         op_spec=OpSpec(name="my_fn"),
         effects=[Effect.from_coercible(spec) for spec in specs],
         can_subset=False,
+        additional_resource_keys=set(),
     )
 
     assert computation.node_def.name == "my_fn"
@@ -95,6 +96,7 @@ def test_computation_from_fn_with_complex_deps_and_additional_args() -> None:
         op_spec=OpSpec(name="my_fn"),
         effects=[Effect.from_coercible(spec) for spec in specs],
         can_subset=False,
+        additional_resource_keys=set(),
     )
 
     assert computation.node_def.name == "my_fn"
@@ -190,6 +192,7 @@ def test_computation_from_fn_spec_properties() -> None:
         ),
         effects=effects,
         can_subset=False,
+        additional_resource_keys=set(),
     )
 
     # Test Node Properties

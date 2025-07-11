@@ -159,10 +159,6 @@ class OpSpec(Model, Resolvable):
     ] = None
 
 
-def _expect_injected(context, val):
-    return check.opt_inst_param(val, "val", AutomationCondition)
-
-
 ResolvedAssetKey: TypeAlias = Annotated[
     AssetKey,
     Resolver(

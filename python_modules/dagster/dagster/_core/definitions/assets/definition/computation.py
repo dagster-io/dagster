@@ -1,4 +1,4 @@
-from collections.abc import Generator, Iterable, Iterator, Mapping, Sequence
+from collections.abc import Generator, Iterable, Iterator, Mapping, Sequence, Set
 from typing import TYPE_CHECKING, Any, Callable, Optional, Union, get_args, get_origin
 
 from dagster_shared import check
@@ -29,7 +29,8 @@ from dagster.components.resolved.core_models import OpSpec
 if TYPE_CHECKING:
     from dagster._core.definitions.assets.definition.asset_dep import AssetDep
 
-ComputationFn: TypeAlias = Callable[..., Iterable[Union[AssetResult, AssetCheckResult]]]
+ComputationResult: TypeAlias = Union[AssetResult, AssetCheckResult]
+ComputationFn: TypeAlias = Callable[..., Iterable[ComputationResult]]
 
 
 @record
@@ -50,7 +51,12 @@ class Computation:
 
     @staticmethod
     def from_fn(
-        fn: ComputationFn, *, op_spec: OpSpec, effects: Sequence[Effect], can_subset: bool
+        fn: ComputationFn,
+        *,
+        op_spec: OpSpec,
+        effects: Sequence[Effect],
+        can_subset: bool,
+        additional_resource_keys: Set[str],
     ) -> "Computation":
         """Create a computation from a single function. Output definitions are created from the
         provided effects. Input definitions are inferred from the function signature and provided
@@ -61,6 +67,8 @@ class Computation:
             op_spec: The spec for the op that will be created.
             effects: The effects that the function will have when executed.
             can_subset: Whether the computation can be subsetted.
+            additional_resource_keys: The resource keys that the computation will use and are not
+                part of the function signature.
         """
         wrapped_fn = DecoratedOpFunction(fn)
 
@@ -95,7 +103,8 @@ class Computation:
             description=op_spec.description,
             tags=op_spec.tags,
             config_schema=config_type.to_config_schema() if config_type else None,
-            required_resource_keys={arg.name for arg in wrapped_fn.get_resource_args()},
+            required_resource_keys={arg.name for arg in wrapped_fn.get_resource_args()}
+            | additional_resource_keys,
             pool=op_spec.pool,
         )
         return Computation(
@@ -152,6 +161,7 @@ def computation(
             op_spec=op_spec or OpSpec(),
             effects=[Effect.from_coercible(effect) for effect in effects],
             can_subset=can_subset,
+            additional_resource_keys=set(),
         )
 
     return wrapper

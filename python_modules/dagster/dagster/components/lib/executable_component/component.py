@@ -1,21 +1,18 @@
 from abc import ABC, abstractmethod
 from collections.abc import Generator, Iterable
-from functools import cached_property
 from typing import Any, Optional, TypeVar, Union
 
 from dagster_shared import check
 from pydantic import BaseModel
 
-from dagster._config.field import Field
 from dagster._core.definitions.asset_checks.asset_check_result import AssetCheckResult
 from dagster._core.definitions.asset_checks.asset_checks_definition import AssetChecksDefinition
+from dagster._core.definitions.assets.definition.asset_effect import AssetCheckEffect, AssetEffect
+from dagster._core.definitions.assets.definition.asset_spec import AssetExecutionType
 from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
-from dagster._core.definitions.decorators.asset_check_decorator import multi_asset_check
-from dagster._core.definitions.decorators.asset_decorator import multi_asset
+from dagster._core.definitions.assets.definition.computation import Computation, ComputationFn
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.result import MaterializeResult
-from dagster._core.execution.context.asset_check_execution_context import AssetCheckExecutionContext
-from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster.components.component.component import Component
 from dagster.components.core.context import ComponentLoadContext
 from dagster.components.resolved.base import Resolvable
@@ -58,6 +55,7 @@ class ExecutableComponent(Component, Resolvable, Model, BaseModel, ABC):
 
     assets: Optional[list[ResolvedAssetSpec]] = None
     checks: Optional[list[ResolvedAssetCheckSpec]] = None
+    asset_execution_type: AssetExecutionType = AssetExecutionType.MATERIALIZATION
 
     @property
     @abstractmethod
@@ -67,59 +65,32 @@ class ExecutableComponent(Component, Resolvable, Model, BaseModel, ABC):
     def resource_keys(self) -> set[str]:
         return set()
 
-    @cached_property
-    def config_fields(self) -> Optional[dict[str, Field]]:
-        return None
-
     @abstractmethod
-    def invoke_execute_fn(
-        self,
-        context: Union[AssetExecutionContext, AssetCheckExecutionContext],
-        component_load_context: ComponentLoadContext,
-    ) -> Iterable[Union[MaterializeResult, AssetCheckResult]]: ...
+    def get_execute_fn(self, component_load_context: ComponentLoadContext) -> ComputationFn: ...
 
     def build_underlying_assets_def(
         self, component_load_context: ComponentLoadContext
     ) -> AssetsDefinition:
-        if self.assets:
+        asset_effects = [
+            AssetEffect.from_spec(spec=asset_spec, execution_type=self.asset_execution_type)
+            for asset_spec in (self.assets or [])
+        ]
+        check_effects = [AssetCheckEffect(spec=check_spec) for check_spec in (self.checks or [])]
+        effects = [*asset_effects, *check_effects]
+        check.invariant(
+            len(effects) > 0,
+            "No assets or checks provided",
+        )
 
-            @multi_asset(
-                name=self.op_spec.name,
-                op_tags=self.op_spec.tags,
-                description=self.op_spec.description,
-                specs=self.assets,
-                check_specs=self.checks,
-                required_resource_keys=self.resource_keys,
-                pool=self.op_spec.pool,
-                config_schema=self.config_fields,
-            )
-            def _assets_def(context: AssetExecutionContext, **kwargs):
-                return to_iterable(
-                    self.invoke_execute_fn(context, component_load_context=component_load_context),
-                    of_type=(MaterializeResult, AssetCheckResult),
-                )
+        computation = Computation.from_fn(
+            fn=self.get_execute_fn(component_load_context=component_load_context),
+            op_spec=self.op_spec,
+            effects=effects,
+            can_subset=False,
+            additional_resource_keys=self.resource_keys,
+        )
 
-            return _assets_def
-        elif self.checks:
-
-            @multi_asset_check(
-                name=self.op_spec.name,
-                op_tags=self.op_spec.tags,
-                specs=self.checks,
-                description=self.op_spec.description,
-                required_resource_keys=self.resource_keys,
-                pool=self.op_spec.pool,
-                config_schema=self.config_fields,
-            )
-            def _asset_check_def(context: AssetCheckExecutionContext, **kwargs):
-                return to_iterable(
-                    self.invoke_execute_fn(context, component_load_context=component_load_context),
-                    of_type=AssetCheckResult,
-                )
-
-            return _asset_check_def
-
-        check.failed("No assets or checks provided")
+        return computation.to_assets_def()
 
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
         assets_def = self.build_underlying_assets_def(component_load_context=context)
