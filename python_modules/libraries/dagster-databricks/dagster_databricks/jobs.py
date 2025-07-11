@@ -16,7 +16,7 @@ USAGE
 
 """
 
-import datetime
+from datetime import datetime, timedelta, timezone
 from typing import Union
 from urllib.parse import urlparse
 
@@ -27,6 +27,8 @@ from dagster._core.definitions.run_request import RunRequest, SkipReason
 from dagster._core.definitions.sensor_definition import DefaultSensorStatus, SensorEvaluationContext
 from dagster._core.definitions.utils import VALID_NAME_REGEX
 from dagster._core.events import DagsterEvent
+from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
+from dagster._core.utils import make_new_run_id
 from dagster._record import record
 from dagster._serdes import deserialize_value, serialize_value
 from dagster._time import get_current_datetime
@@ -34,7 +36,7 @@ from dagster_shared.serdes import whitelist_for_serdes
 from databricks.sdk import WorkspaceClient
 from databricks.sdk.service.jobs import BaseJob, RunLifeCycleState, RunResultState
 
-NO_CURSOR_LOOKBACK_DELTA = datetime.timedelta(days=1)
+NO_CURSOR_LOOKBACK_DELTA = timedelta(days=1)
 
 
 # TODO- refactor from shared method in `dagster-airlift`
@@ -83,13 +85,13 @@ class DatabricksJobSensorCursor:
 
     @property
     def range_start_utc_ms(self) -> int:
-        return int(datetime.datetime.fromisoformat(self.range_start).timestamp() * 1000)
+        return int(datetime.fromisoformat(self.range_start).timestamp() * 1000)
 
     @property
     def range_end_utc_ms(self) -> int:
-        return int(datetime.datetime.fromisoformat(self.range_end).timestamp() * 1000)
+        return int(datetime.fromisoformat(self.range_end).timestamp() * 1000)
 
-    def advance(self, effective_timestamp: datetime.datetime) -> "DatabricksJobSensorCursor":
+    def advance(self, effective_timestamp: datetime) -> "DatabricksJobSensorCursor":
         return DatabricksJobSensorCursor(
             range_start=self.range_end, range_end=effective_timestamp.isoformat()
         )
@@ -141,7 +143,7 @@ def build_databricks_jobs_monitor_sensor(client: WorkspaceClient) -> SensorDefin
                 start_time_from=cursor.range_start_utc_ms,
                 start_time_to=cursor.range_end_utc_ms,
             )
-            # TODO- handle run history
+            # TODO- handle backfilling of run history
             # TODO- ensure run is most recent
             run = next(iter(runs), None)
 
@@ -150,21 +152,56 @@ def build_databricks_jobs_monitor_sensor(client: WorkspaceClient) -> SensorDefin
             if run:
                 if run.state and run.state.life_cycle_state == RunLifeCycleState.TERMINATED:
                     if run.state.result_state == RunResultState.SUCCESS:
+                        dagster_job_name = normalize_job_id(job)
+                        dagster_run_id = make_new_run_id()
+
+                        context.instance.run_storage.add_historical_run(
+                            dagster_run=DagsterRun(
+                                run_id=dagster_run_id,
+                                job_name=dagster_job_name,
+                                status=DagsterRunStatus.NOT_STARTED,
+                                # remote_job_origin=RemoteJobOrigin(
+                                #     # We steal the repository origin from the original run.
+                                #     # This allows the UI to link the run we're creating here back to the
+                                #     # job in Dagster.
+                                #     # It's not set in test contexts
+                                #     repository_origin=context.run.remote_job_origin.repository_origin,
+                                #     job_name=relevant_job_def.name,
+                                # )
+                            ),
+                            run_creation_time=datetime.fromtimestamp(
+                                run.start_time / 1000.0, tz=timezone.utc
+                            ),
+                        )
+
                         context.instance.report_dagster_event(
-                            run_id=str(run.run_id),
+                            run_id=dagster_run_id,
+                            dagster_event=DagsterEvent(
+                                event_type_value="PIPELINE_START",
+                                job_name=dagster_job_name,
+                            ),
+                            timestamp=run.start_time / 1000.0,
+                        )
+
+                        context.instance.report_dagster_event(
+                            run_id=dagster_run_id,
                             dagster_event=DagsterEvent(
                                 event_type_value="PIPELINE_SUCCESS",
-                                job_name=normalize_job_id(job),
+                                job_name=dagster_job_name,
                             ),
+                            timestamp=run.end_time / 1000.0,
                         )
-                    elif run.state.result_state == RunResultState.FAILED:
-                        context.instance.report_dagster_event(
-                            run_id=str(run.run_id),
-                            dagster_event=DagsterEvent(
-                                event_type_value="PIPELINE_FAILURE",
-                                job_name=normalize_job_id(job),
-                            ),
-                        )
+
+                    # TODO- handle failures
+                    # elif run.state.result_state == RunResultState.FAILED:
+                    #     context.instance.report_dagster_event(
+                    #         run_id=make_new_run_id(),
+                    #         dagster_event=DagsterEvent(
+                    #             event_type_value="PIPELINE_FAILURE",
+                    #             job_name=normalize_job_id(job),
+                    #         ),
+                    #         timestamp=run.end_time / 1000.0,  # ms int to float
+                    #     )
 
         cursor = cursor.advance(effective_timestamp)
         context.update_cursor(serialize_value(cursor))
