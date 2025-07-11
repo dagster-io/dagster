@@ -40,6 +40,10 @@ class LocalFileCodeReference(DagsterModel):
     line_number: Optional[int] = None
     label: Optional[str] = None
 
+    @property
+    def source(self) -> str:
+        return f"{self.file_path}:{self.line_number}" if self.line_number else self.file_path
+
 
 @beta
 @whitelist_for_serdes
@@ -50,6 +54,10 @@ class UrlCodeReference(DagsterModel):
 
     url: str
     label: Optional[str] = None
+
+    @property
+    def source(self) -> str:
+        return self.url
 
 
 CodeReference: TypeAlias = Union[LocalFileCodeReference, UrlCodeReference]

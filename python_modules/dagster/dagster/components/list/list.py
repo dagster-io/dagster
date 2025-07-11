@@ -6,6 +6,7 @@ from traceback import TracebackException
 from typing import Any, Literal, Optional, Union
 
 import click
+import dagster_shared.check as check
 from dagster_dg_core.context import DgContext
 from dagster_shared.cli import PythonPointerOpts
 from dagster_shared.error import SerializableErrorInfo, remove_system_frames_from_error
@@ -27,6 +28,7 @@ from dagster._cli.workspace.cli_target import get_repository_python_origin_from_
 from dagster._config.pythonic_config.resource import get_resource_type_name
 from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.assets.job.asset_job import is_reserved_asset_job_name
+from dagster._core.definitions.metadata import CodeReferencesMetadataValue
 from dagster._core.definitions.repository_definition.repository_definition import (
     RepositoryDefinition,
 )
@@ -158,6 +160,13 @@ def list_definitions(
             key=lambda key: key.to_user_string(),
         ):
             node = asset_graph.get(key)
+            source = None
+            code_ref_metadata = check.opt_inst(
+                node.metadata.get("dagster/code_references"), CodeReferencesMetadataValue
+            )
+            if code_ref_metadata and code_ref_metadata.code_references:
+                source = code_ref_metadata.code_references[0].source
+
             assets.append(
                 DgAssetMetadata(
                     key=key.to_user_string(),
@@ -170,11 +179,19 @@ def list_definitions(
                     else None,
                     tags=sorted(f'"{k}"="{v}"' for k, v in node.tags.items() if _tag_filter(k)),
                     is_executable=node.is_executable,
+                    source=source,
                 )
             )
         checks = []
         for key in selected_checks if selected_checks is not None else asset_graph.asset_check_keys:
             node = asset_graph.get(key)
+            source = None
+            code_ref_metadata = check.opt_inst(
+                node.metadata.get("dagster/code_references"), CodeReferencesMetadataValue
+            )
+            if code_ref_metadata and code_ref_metadata.code_references:
+                source = code_ref_metadata.code_references[0].source
+
             checks.append(
                 DgAssetCheckMetadata(
                     key=key.to_user_string(),
@@ -182,13 +199,26 @@ def list_definitions(
                     name=key.name,
                     additional_deps=sorted([k.to_user_string() for k in node.parent_entity_keys]),
                     description=node.description,
+                    source=source,
                 )
             )
 
         jobs = []
         for job in repo_def.get_all_jobs():
             if not is_reserved_asset_job_name(job.name):
-                jobs.append(DgJobMetadata(name=job.name, description=job.description))
+                source = None
+                code_ref_metadata = check.opt_inst(
+                    job.metadata.get("dagster/code_references"), CodeReferencesMetadataValue
+                )
+                if code_ref_metadata and code_ref_metadata.code_references:
+                    source = code_ref_metadata.code_references[0].source
+                jobs.append(
+                    DgJobMetadata(
+                        name=job.name,
+                        description=job.description,
+                        source=source,
+                    )
+                )
 
         schedules = []
         for schedule in repo_def.schedule_defs:
@@ -197,20 +227,43 @@ def list_definitions(
                 if isinstance(schedule.cron_schedule, str)
                 else ", ".join(schedule.cron_schedule)
             )
+            source = None
+            code_ref_metadata = check.opt_inst(
+                schedule.metadata.get("dagster/code_references"), CodeReferencesMetadataValue
+            )
+            if code_ref_metadata and code_ref_metadata.code_references:
+                source = code_ref_metadata.code_references[0].source
             schedules.append(
                 DgScheduleMetadata(
                     name=schedule.name,
                     cron_schedule=schedule_str,
+                    source=source,
                 )
             )
 
         sensors = []
         for sensor in repo_def.sensor_defs:
-            sensors.append(DgSensorMetadata(name=sensor.name))
+            source = None
+            code_ref_metadata = check.opt_inst(
+                sensor.metadata.get("dagster/code_references"), CodeReferencesMetadataValue
+            )
+            if code_ref_metadata and code_ref_metadata.code_references:
+                source = code_ref_metadata.code_references[0].source
+            sensors.append(
+                DgSensorMetadata(
+                    name=sensor.name,
+                    source=source,
+                )
+            )
 
         resources = []
         for name, resource in repo_def.get_top_level_resources().items():
-            resources.append(DgResourceMetadata(name=name, type=get_resource_type_name(resource)))
+            resources.append(
+                DgResourceMetadata(
+                    name=name,
+                    type=get_resource_type_name(resource),
+                )
+            )
 
         return DgDefinitionMetadata(
             assets=assets,
