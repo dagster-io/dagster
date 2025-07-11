@@ -32,6 +32,7 @@ from dagster._core.definitions.repository_definition.repository_definition impor
 )
 from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._utils.hosted_user_process import recon_repository_from_origin
+from dagster._utils.test.definitions import scoped_definitions_load_context
 from dagster.components.component.component import Component
 from dagster.components.core.defs_module import ComponentRequirementsModel
 from dagster.components.core.package_entry import (
@@ -88,23 +89,24 @@ def _load_defs_at_path(dg_context: DgContext, path: Optional[Path]) -> Repositor
     """Attempts to load the component tree from the context project root, falling back to
     resolving the entire repository and using the attached component tree.
     """
-    if not path:
-        repository_origin = get_repository_python_origin_from_cli_opts(
-            PythonPointerOpts.extract_from_cli_options(dict(dg_context.target_args))
-        )
-        recon_repo = recon_repository_from_origin(repository_origin)
-        repo_def = recon_repo.get_definition()
-        return repo_def
+    with scoped_definitions_load_context():
+        if not path:
+            repository_origin = get_repository_python_origin_from_cli_opts(
+                PythonPointerOpts.extract_from_cli_options(dict(dg_context.target_args))
+            )
+            recon_repo = recon_repository_from_origin(repository_origin)
+            repo_def = recon_repo.get_definition()
+            return repo_def
 
-    tree = ComponentTree.load(dg_context.root_path)
+        tree = ComponentTree.load(dg_context.root_path)
 
-    try:
-        defs = tree.build_defs_at_path(path) if path else tree.build_defs()
-    except Exception as e:
-        path_text = f" at {path}" if path else ""
-        raise click.ClickException(f"Unable to load definitions{path_text}: {e}") from e
+        try:
+            defs = tree.build_defs_at_path(path) if path else tree.build_defs()
+        except Exception as e:
+            path_text = f" at {path}" if path else ""
+            raise click.ClickException(f"Unable to load definitions{path_text}: {e}") from e
 
-    return defs.get_repository_def()
+        return defs.get_repository_def()
 
 
 def _tag_filter(tag_key: str) -> bool:
