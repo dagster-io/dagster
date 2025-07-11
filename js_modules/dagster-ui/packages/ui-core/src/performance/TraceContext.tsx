@@ -112,19 +112,10 @@ export function useTraceDependency(name: string, opts: Options = {}) {
 
 export function useBlockTraceUntilTrue(name: string, isSuccessful: boolean, opts: Options = {}) {
   const dep = useTraceDependency(name, opts);
-  useLayoutEffect(() => {
+  useDangerousRenderEffect(() => {
     if (isSuccessful) {
       dep.completeDependency(CompletionType.SUCCESS);
     }
   }, [dep, isSuccessful, name]);
-
-  useLayoutEffect(() => {
-    return () => {
-      // By default cancel a dependency when the component unmounts.
-      // This will no-op if the dependency was already completed.
-      dep.completeDependency(CompletionType.CANCELLED);
-    };
-  }, [dep]);
-
   return dep;
 }
