@@ -227,6 +227,8 @@ type KnownTag = {
 };
 
 export type KnownTagType =
+  | 'ax'
+  | 'botorch'
   | 'json'
   | 'toml'
   | 'jupyter'
@@ -450,9 +452,7 @@ export type KnownTagType =
   | 'starrocks'
   | 'superset'
   | 'spanner'
-  | 'supabase'
-  | 'ax'
-  | 'botorch';
+  | 'supabase';
 
 export const KNOWN_TAGS: Record<KnownTagType, KnownTag> = {
   json: {
