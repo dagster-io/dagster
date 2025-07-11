@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Generic, TypeVar, Union
+from typing import Any, Generic, TypeVar, Union
 
 from dagster_shared.record import record
 from typing_extensions import TypeAlias
@@ -43,14 +43,14 @@ class Effect(ABC, Generic[T_Spec]):
             raise ValueError(f"Invalid effect type: {type(coercible)}")
 
     @abstractmethod
-    def to_out(self, can_subset: bool) -> Out: ...
+    def to_out(self, can_subset: bool, annotation_type: Any) -> Out: ...
 
 
 @record
 class AssetCheckEffect(Effect[AssetCheckSpec]):
     spec: AssetCheckSpec
 
-    def to_out(self, can_subset: bool) -> Out:
+    def to_out(self, can_subset: bool, annotation_type: Any) -> Out:
         return Out(
             dagster_type=Nothing,
             io_manager_key=None,
@@ -67,9 +67,10 @@ class AssetEffect(Effect[AssetSpec]):
     @abstractmethod
     def execution_type(self) -> AssetExecutionType: ...
 
-    def to_out(self, can_subset: bool) -> Out:
+    def to_out(self, can_subset: bool, annotation_type: Any) -> Out:
         return Out(
-            dagster_type=self.spec.metadata.get(SYSTEM_METADATA_KEY_DAGSTER_TYPE),
+            dagster_type=self.spec.metadata.get(SYSTEM_METADATA_KEY_DAGSTER_TYPE)
+            or annotation_type,
             io_manager_key=self.spec.metadata.get(SYSTEM_METADATA_KEY_IO_MANAGER_KEY),
             # do not redundantly copy over description
             description=None,

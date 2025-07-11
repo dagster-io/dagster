@@ -1,5 +1,5 @@
-from collections.abc import Iterator
-from typing import Annotated
+from collections.abc import Iterable, Iterator
+from typing import Annotated, Union
 
 import dagster as dg
 import pytest
@@ -23,14 +23,15 @@ class MyResource(dg.ConfigurableResource):
 
 
 def test_computation_from_fn_no_params() -> None:
-    def _fn(): ...  # -> Iterator[dg.MaterializeResult]: ...
+    def _fn() -> Iterator[dg.MaterializeResult]:
+        yield dg.MaterializeResult(asset_key="asset1", value=1)
 
     specs = [
         dg.AssetSpec(key=dg.AssetKey(["prefix", "a"])),
         dg.AssetCheckSpec(name="asset_check1", asset=dg.AssetKey(["prefix", "a"])),
     ]
     computation = Computation.from_fn(
-        fn=_fn,  # type: ignore
+        fn=_fn,
         op_spec=OpSpec(name="my_fn"),
         effects=[Effect.from_coercible(spec) for spec in specs],
         can_subset=False,
@@ -75,7 +76,7 @@ def test_computation_from_fn_with_complex_deps_and_additional_args() -> None:
         # asset inputs
         a: int,
         b: str,
-    ):  # -> Iterator[Union[dg.MaterializeResult, dg.AssetCheckResult]]:
+    ) -> Iterator[Union[dg.MaterializeResult, dg.AssetCheckResult]]:
         yield dg.MaterializeResult(asset_key="asset1", value=1)
         yield dg.MaterializeResult(asset_key="asset2")
         yield dg.MaterializeResult(asset_key="asset3", value=3)
@@ -164,11 +165,13 @@ def test_computation_from_fn_with_complex_deps_and_asset_ins() -> None:
         my_res: MyResource,
         a: int,
         b_renamed: Annotated[str, dg.AssetIn(key=dg.AssetKey("b"))],
-    ) -> Iterator[dg.MaterializeResult]: ...
+    ) -> Iterable[dg.MaterializeResult]:
+        yield dg.MaterializeResult(asset_key="asset1", value=1)
 
 
 def test_computation_from_fn_spec_properties() -> None:
-    def _fn(): ...  # -> Iterator[dg.MaterializeResult]: ...
+    def _fn() -> Iterable[dg.MaterializeResult]:
+        yield dg.MaterializeResult(asset_key="asset1", value=1)
 
     metadata = {"foo": 1, "bar": "baz"}
     tags = {"test_tag": "test_value"}
@@ -178,7 +181,7 @@ def test_computation_from_fn_spec_properties() -> None:
     ]
     effects = [Effect.from_coercible(spec) for spec in specs]
     computation = Computation.from_fn(
-        fn=_fn,  # type: ignore
+        fn=_fn,
         op_spec=OpSpec(
             name="my_fn",
             description="test_description",
@@ -228,7 +231,7 @@ def test_decorator_complex_deps_and_additional_args() -> None:
         # asset inputs
         a: int,
         b: str,
-    ):  # -> Iterator[Union[dg.MaterializeResult, dg.AssetCheckResult]]:
+    ) -> Iterable[Union[dg.MaterializeResult, dg.AssetCheckResult]]:
         yield dg.MaterializeResult(asset_key="asset1", value=1)
         yield dg.MaterializeResult(asset_key="asset2")
         yield dg.MaterializeResult(asset_key="asset3", value=3)
@@ -249,3 +252,50 @@ def test_decorator_complex_deps_and_additional_args() -> None:
         run_config=dg.RunConfig(ops={"my_fn": {"config": {"a": 1, "b": "b"}}}),
     )
     assert result.success
+
+
+@pytest.mark.parametrize("valid", [True, False])
+def test_computation_return_type_value_valid_simple(valid: bool) -> None:
+    class Foo:
+        pass
+
+    @computation(
+        effects=[
+            dg.AssetSpec(key="asset1"),
+            dg.AssetSpec(key="asset2"),
+        ]
+    )
+    def _fn() -> Iterator[dg.MaterializeResult[int]]:
+        yield dg.MaterializeResult(asset_key="asset1", value=1)
+        yield dg.MaterializeResult(asset_key="asset2", value=2 if valid else Foo())  # type: ignore
+
+    assert _fn.node_def.output_dict["asset1"].dagster_type.display_name == "Int"
+    assert _fn.node_def.output_dict["asset2"].dagster_type.display_name == "Int"
+
+    result = dg.materialize_to_memory([_fn.to_assets_def()], raise_on_error=False)
+    assert result.success == valid
+
+
+@pytest.mark.parametrize("valid", [True, False])
+def test_computation_return_type_value_valid_complex(valid: bool) -> None:
+    class Foo:
+        pass
+
+    @computation(
+        effects=[
+            dg.AssetSpec(key="asset1").with_dagster_type(int),
+            dg.AssetSpec(key="asset2").with_dagster_type(str),
+            dg.AssetCheckSpec(name="asset_check1", asset="asset2"),
+        ]
+    )
+    def _fn() -> Iterator[Union[dg.MaterializeResult[Union[int, str]], dg.AssetCheckResult]]:
+        yield dg.MaterializeResult(asset_key="asset1", value=1)
+        # this is valid in the python type system, but asset2 explicitly has a str DagsterType
+        yield dg.MaterializeResult(asset_key="asset2", value="a" if valid else 1)
+        yield dg.AssetCheckResult(asset_key="asset2", passed=True)
+
+    assert _fn.node_def.output_dict["asset1"].dagster_type.display_name == "Int"
+    assert _fn.node_def.output_dict["asset2"].dagster_type.display_name == "String"
+
+    result = dg.materialize_to_memory([_fn.to_assets_def()], raise_on_error=False)
+    assert result.success == valid
