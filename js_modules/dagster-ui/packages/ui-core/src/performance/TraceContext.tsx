@@ -2,6 +2,7 @@ import {ReactNode, createContext, useContext, useLayoutEffect, useMemo} from 're
 
 import {QueryResult} from '../apollo-client';
 import {useDangerousRenderEffect} from '../hooks/useDangerousRenderEffect';
+import {useUpdatingRef} from '../hooks/useUpdatingRef';
 
 export enum CompletionType {
   SUCCESS = 1,
@@ -113,10 +114,20 @@ export function useTraceDependency(name: string, opts: Options = {}) {
 
 export function useBlockTraceUntilTrue(name: string, isSuccessful: boolean, opts: Options = {}) {
   const dep = useTraceDependency(name, opts);
+  const isSuccessfulRef = useUpdatingRef(isSuccessful);
   useLayoutEffect(() => {
     if (isSuccessful) {
       dep.completeDependency(CompletionType.SUCCESS);
     }
-  }, [dep, isSuccessful, name]);
+    return () => {
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      if (isSuccessfulRef.current) {
+        dep.completeDependency(CompletionType.SUCCESS);
+      } else {
+        dep.completeDependency(CompletionType.CANCELLED);
+      }
+    };
+  }, [dep, isSuccessful, isSuccessfulRef, name]);
+
   return dep;
 }
