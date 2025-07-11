@@ -1,13 +1,17 @@
 import dagster as dg
 from dagster.components.core.context import ComponentLoadContext
-from dagster_dbt.components.dbt_project.component import get_asset_key_for_model_from_module
+from dagster_dbt.asset_utils import get_asset_key_for_model
 
 
 @dg.definitions
 def defs(context: ComponentLoadContext) -> dg.Definitions:
-    from dependency_on_dbt_project_location.defs import jaffle_shop_dbt  # type: ignore
+    dbt_assets = (
+        context.component_tree.build_defs_at_path("jaffle_shop_dbt")
+        .resolve_asset_graph()
+        .assets_defs
+    )
 
-    @dg.asset(deps={get_asset_key_for_model_from_module(context, jaffle_shop_dbt, "customers")})
+    @dg.asset(deps={get_asset_key_for_model(dbt_assets, "customers")})
     def downstream_of_customers():
         pass
 

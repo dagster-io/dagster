@@ -812,10 +812,12 @@ class Definitions(IHaveNew):
 
                 component_tree = def_set.component_tree
 
-            check.invariant(
-                not def_set.has_resolved_repository_def(),
-                "Definitions object should have been resolved",
-            )
+            # This check is commented out now, since it's possible that particular component
+            # Definitions are resolved by another component
+            # check.invariant(
+            #     not def_set.has_resolved_repository_def(),
+            #     "Definitions object should have been resolved",
+            # )
         return Definitions(
             assets=assets,
             schedules=schedules,
@@ -844,6 +846,11 @@ class Definitions(IHaveNew):
         """Returns an AssetSpec object for every asset contained inside the resolved Definitions object."""
         asset_graph = self.resolve_asset_graph()
         return [asset_node.to_asset_spec() for asset_node in asset_graph.asset_nodes]
+
+    @public
+    def resolve_all_asset_keys(self) -> Sequence[AssetKey]:
+        """Returns an AssetKey object for every asset contained inside the resolved Definitions object."""
+        return [spec.key for spec in self.resolve_all_asset_specs()]
 
     @preview
     def with_reconstruction_metadata(self, reconstruction_metadata: Mapping[str, str]) -> Self:
