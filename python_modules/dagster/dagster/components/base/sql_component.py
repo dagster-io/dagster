@@ -8,6 +8,7 @@ from jinja2 import Template
 from pydantic import BaseModel, Field
 from typing_extensions import TypeVar
 
+from dagster._annotations import preview, public
 from dagster._core.definitions.result import MaterializeResult
 from dagster._core.execution.context.asset_check_execution_context import AssetCheckExecutionContext
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
@@ -19,14 +20,18 @@ from dagster.components.resolved.model import Model, Resolver
 T = TypeVar("T")
 
 
+@public
+@preview
 class SqlComponent(ExecutableComponent, Model, BaseModel, Generic[T], ABC):
-    """Base component which executes templated SQL."""
+    """Base component which executes templated SQL. Subclasses
+    implement instructions on where to load the SQL content from
+    and how to execute it.
+    """
 
     execution: Optional[OpSpec] = None
 
-    @property
     @abstractmethod
-    def sql_content(self) -> str:
+    def get_sql_content(self, context: AssetExecutionContext) -> str:
         """The SQL content to execute."""
         ...
 
@@ -71,8 +76,11 @@ ResolvedSqlTemplate = Annotated[
 ]
 
 
-class TemplatedSqlComponent(SqlComponent[T], Generic[T]):
-    """A component that executes templated SQL from a string or file."""
+class TemplatedSqlComponentMixin:
+    """A component mixin that builds templated SQL from a string or file.
+    User-defined components can inherit from this mixin to incorporate behavior
+    of loading SQL from a string or file.
+    """
 
     sql_template: Annotated[
         ResolvedSqlTemplate,
@@ -83,8 +91,7 @@ class TemplatedSqlComponent(SqlComponent[T], Generic[T]):
         Field(default=None, description="Template variables to pass to the SQL template."),
     ]
 
-    @property
-    def sql_content(self) -> str:
+    def get_sql_content(self, context: AssetExecutionContext) -> str:
         template_str = self.sql_template
         if isinstance(template_str, SqlFile):
             template_str = Path(template_str.path).read_text()
