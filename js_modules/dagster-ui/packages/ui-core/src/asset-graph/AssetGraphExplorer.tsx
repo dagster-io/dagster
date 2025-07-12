@@ -447,9 +447,11 @@ const AssetGraphExplorerWithData = ({
   );
 
   const onFilterToGroup = (group: AssetGroup | GroupLayout) => {
-    onChangeAssetSelection(
-      `group:"${group.groupName}" and code_location:"${group.repositoryLocationName}"`,
-    );
+    const codeLocationFilter =
+      group.repositoryName !== '__repository__'
+        ? `${group.repositoryName}@${group.repositoryLocationName}`
+        : `${group.repositoryLocationName}`;
+    onChangeAssetSelection(`group:"${group.groupName}" and code_location:"${codeLocationFilter}"`);
   };
 
   const svgViewport = layout ? (
