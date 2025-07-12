@@ -1,10 +1,13 @@
 from collections.abc import Mapping, Sequence
 from inspect import Parameter, Signature, isgeneratorfunction, signature
-from typing import Any, Callable, NamedTuple, Optional
+from typing import Any, Callable, NamedTuple, Optional, Union
 
+from dagster_shared import check
 from dagster_shared.seven import is_module_available
 
-from dagster._core.decorator_utils import get_type_hints
+from dagster._config.pythonic_config.config import Config
+from dagster._config.pythonic_config.type_check_utils import safe_is_subclass
+from dagster._core.decorator_utils import get_function_params, get_type_hints
 from dagster._core.definitions.utils import NoValueSentinel
 
 IS_DOCSTRING_PARSER_AVAILABLE = is_module_available("docstring_parser")
@@ -112,3 +115,23 @@ def infer_input_props(
     params_to_infer = params[1:] if context_arg_provided else params
     defs = _infer_inputs_from_params(params_to_infer, type_hints, descriptions=descriptions)
     return defs
+
+
+def get_config_param_type(fn: Callable) -> Union[type[Config], None]:
+    """Get the type annotation of the 'config' parameter if it exists.
+
+    Args:
+        fn: The function to check
+
+    Returns:
+        The type annotation of the config parameter if it exists, None otherwise
+    """
+    params = get_function_params(fn)
+    for param in params:
+        if param.name == "config":
+            if not safe_is_subclass(param.annotation, Config):
+                check.failed(
+                    f"Config parameter must be annotated with Config, got {param.annotation}"
+                )
+            return param.annotation
+    return None
