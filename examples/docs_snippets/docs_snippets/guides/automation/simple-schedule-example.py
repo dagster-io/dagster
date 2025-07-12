@@ -9,13 +9,15 @@ def customer_data(): ...
 def sales_report(): ...
 
 
-daily_refresh_job = dg.define_asset_job(
-    "daily_refresh", selection=["customer_data", "sales_report"]
-)
+@dg.job
+def daily_refresh():
+    customer_data()
+    sales_report()
+
 
 # highlight-start
-daily_schedule = dg.ScheduleDefinition(
-    job=daily_refresh_job,
-    cron_schedule="0 0 * * *",  # Runs at midnight daily
-)
+@dg.schedule(cron_schedule="0 0 * * *")
+def daily_refresh_job(): ...
+
+
 # highlight-end
