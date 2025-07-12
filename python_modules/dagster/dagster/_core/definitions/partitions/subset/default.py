@@ -4,6 +4,7 @@ from datetime import datetime
 from typing import NamedTuple, Optional
 
 import dagster._check as check
+from dagster._core.definitions.partitions.context import partition_loading_context
 from dagster._core.definitions.partitions.definition.partitions_definition import (
     PartitionsDefinition,
 )
@@ -36,11 +37,13 @@ class DefaultPartitionsSubset(
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> Iterable[str]:
-        return set(
-            partitions_def.get_partition_keys(
-                current_time=current_time, dynamic_partitions_store=dynamic_partitions_store
-            )
-        ) - set(self.subset)
+        with partition_loading_context(current_time, dynamic_partitions_store) as ctx:
+            return set(
+                partitions_def.get_partition_keys(
+                    current_time=ctx.effective_dt,
+                    dynamic_partitions_store=ctx.dynamic_partitions_store,
+                )
+            ) - set(self.subset)
 
     def get_partition_keys(self) -> Iterable[str]:
         return self.subset
@@ -71,55 +74,57 @@ class DefaultPartitionsSubset(
     ) -> Sequence[PartitionKeyRange]:
         from dagster._core.definitions.partitions.definition.multi import MultiPartitionsDefinition
 
-        if isinstance(partitions_def, MultiPartitionsDefinition):
-            # For multi-partitions, we construct the ranges by holding one dimension constant
-            # and constructing the range for the other dimension
-            primary_dimension = partitions_def.primary_dimension
-            secondary_dimension = partitions_def.secondary_dimension
+        with partition_loading_context(current_time, dynamic_partitions_store) as ctx:
+            if isinstance(partitions_def, MultiPartitionsDefinition):
+                # For multi-partitions, we construct the ranges by holding one dimension constant
+                # and constructing the range for the other dimension
+                primary_dimension = partitions_def.primary_dimension
+                secondary_dimension = partitions_def.secondary_dimension
 
-            primary_keys_in_subset = set()
-            secondary_keys_in_subset = set()
-            for partition_key in self.subset:
-                primary_keys_in_subset.add(
-                    partitions_def.get_partition_key_from_str(partition_key).keys_by_dimension[
-                        primary_dimension.name
-                    ]
+                primary_keys_in_subset = set()
+                secondary_keys_in_subset = set()
+                for partition_key in self.subset:
+                    primary_keys_in_subset.add(
+                        partitions_def.get_partition_key_from_str(partition_key).keys_by_dimension[
+                            primary_dimension.name
+                        ]
+                    )
+                    secondary_keys_in_subset.add(
+                        partitions_def.get_partition_key_from_str(partition_key).keys_by_dimension[
+                            secondary_dimension.name
+                        ]
+                    )
+
+                # for efficiency, group the keys by whichever dimension has fewer distinct keys
+                grouping_dimension = (
+                    primary_dimension
+                    if len(primary_keys_in_subset) <= len(secondary_keys_in_subset)
+                    else secondary_dimension
                 )
-                secondary_keys_in_subset.add(
-                    partitions_def.get_partition_key_from_str(partition_key).keys_by_dimension[
-                        secondary_dimension.name
-                    ]
+                grouping_keys = (
+                    primary_keys_in_subset
+                    if grouping_dimension == primary_dimension
+                    else secondary_keys_in_subset
                 )
 
-            # for efficiency, group the keys by whichever dimension has fewer distinct keys
-            grouping_dimension = (
-                primary_dimension
-                if len(primary_keys_in_subset) <= len(secondary_keys_in_subset)
-                else secondary_dimension
-            )
-            grouping_keys = (
-                primary_keys_in_subset
-                if grouping_dimension == primary_dimension
-                else secondary_keys_in_subset
-            )
+                results = []
+                for grouping_key in grouping_keys:
+                    keys = partitions_def.get_multipartition_keys_with_dimension_value(
+                        dimension_name=grouping_dimension.name,
+                        dimension_partition_key=grouping_key,
+                        current_time=ctx.effective_dt,
+                        dynamic_partitions_store=ctx.dynamic_partitions_store,
+                    )
+                    results.extend(self.get_ranges_for_keys(keys))
+                return results
 
-            results = []
-            for grouping_key in grouping_keys:
-                keys = partitions_def.get_multipartition_keys_with_dimension_value(
-                    dimension_name=grouping_dimension.name,
-                    dimension_partition_key=grouping_key,
-                    current_time=current_time,
-                    dynamic_partitions_store=dynamic_partitions_store,
+            else:
+                partition_keys = partitions_def.get_partition_keys(
+                    current_time=ctx.effective_dt,
+                    dynamic_partitions_store=ctx.dynamic_partitions_store,
                 )
-                results.extend(self.get_ranges_for_keys(keys))
-            return results
 
-        else:
-            partition_keys = partitions_def.get_partition_keys(
-                current_time, dynamic_partitions_store=dynamic_partitions_store
-            )
-
-            return self.get_ranges_for_keys(partition_keys)
+                return self.get_ranges_for_keys(partition_keys)
 
     def with_partition_keys(self, partition_keys: Iterable[str]) -> "DefaultPartitionsSubset":
         return DefaultPartitionsSubset(
