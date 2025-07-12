@@ -136,19 +136,6 @@ class CompositeYamlComponent(Component):
         return Definitions.merge(*defs_list)
 
 
-class CompositeComponent(Component):
-    def __init__(self, components: Mapping[str, Component]):
-        self.components = components
-
-    def build_defs(self, context: ComponentLoadContext) -> Definitions:
-        return Definitions.merge(
-            *[
-                context.build_defs_at_path(child_decl.path)
-                for child_decl in context.component_decl.iterate_child_component_decls()
-            ]
-        )
-
-
 @record
 class ComponentPath:
     """Identifier for where a Component instance was defined:
@@ -221,9 +208,9 @@ class DefsFolderComponent(Component):
             │       └── defs.yaml
             └── data_ingestion/        # DefsFolderComponent
                 ├── api_sources/       # DefsFolderComponent
-                │   └── some_defs.py   # DagsterDefsComponent
+                │   └── some_defs.py   # PythonFileComponent
                 └── file_sources/      # DefsFolderComponent
-                    └── files.py       # DagsterDefsComponent
+                    └── files.py       # PythonFileComponent
 
     Args:
         path: The filesystem path to the directory containing child components.
@@ -330,7 +317,7 @@ class DefsFolderComponent(Component):
                 for idx, inner_comp in enumerate(component.components):
                     yield ComponentPath(file_path=path, instance_key=idx), inner_comp
 
-            if isinstance(component, CompositeComponent):
+            if isinstance(component, PythonFileComponent):
                 for attr, inner_comp in component.components.items():
                     yield ComponentPath(file_path=path, instance_key=attr), inner_comp
 
@@ -354,12 +341,14 @@ def find_components_from_context(context: ComponentLoadContext) -> Mapping[Path,
 
 
 @dataclass
-class DagsterDefsComponent(Component):
-    """A Python module containing Dagster definitions. Used for implicit loading of
-    Dagster definitions from Python files in the defs folder.
+class PythonFileComponent(Component):
+    """A Python module containing Dagster definitions or Pythonic
+    components. Used for implicit loading of Dagster definitions from
+    Python files in the defs folder.
     """
 
     path: Path
+    components: Mapping[str, Component]
 
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
         module = context.load_defs_relative_python_module(self.path)
@@ -393,7 +382,13 @@ class DagsterDefsComponent(Component):
         if len(lazy_def_objects) > 1:
             return Definitions.merge(*[lazy_def(context) for lazy_def in lazy_def_objects])
 
-        return load_definitions_from_module(module)
+        return Definitions.merge(
+            *[
+                context.build_defs_at_path(child_decl.path)
+                for child_decl in context.component_decl.iterate_child_component_decls()
+            ],
+            load_definitions_from_module(module),
+        )
 
 
 def invoke_inline_template_var(context: ComponentDeclLoadContext, tv: Callable) -> Any:

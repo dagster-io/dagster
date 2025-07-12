@@ -101,8 +101,8 @@ def test_component_tree():
 
     inst_map = {snap.key: snap.full_type_name for snap in repo_snap.component_tree.leaf_instances}
     assert inst_map == {
-        "composites/python[first]": "dagster_test.dg_defs.composites.python.component.PyComponent",
-        "composites/python[second]": "dagster_test.dg_defs.composites.python.component.PyComponent",
+        "composites/python/component.py[first]": "dagster_test.dg_defs.composites.python.component.PyComponent",
+        "composites/python/component.py[second]": "dagster_test.dg_defs.composites.python.component.PyComponent",
         "composites/yaml[0]": "dagster_test.components.simple_asset.SimpleAssetComponent",
         "composites/yaml[1]": "dagster_test.components.simple_asset.SimpleAssetComponent",
     }
