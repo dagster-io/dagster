@@ -162,6 +162,7 @@ def list_definitions(
                 DgAssetMetadata(
                     key=key.to_user_string(),
                     deps=sorted([k.to_user_string() for k in node.parent_keys]),
+                    owners=node.owners,
                     group=node.group_name,
                     kinds=sorted(list(node.kinds)),
                     description=node.description,
