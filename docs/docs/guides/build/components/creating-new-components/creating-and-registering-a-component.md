@@ -1,5 +1,5 @@
 ---
-description: Create and register reusable components with the dg CLI.
+description: Use the dg CLI to create and register a reusable component with a YAML or Pythonic interface.
 sidebar_position: 100
 title: Creating and registering a component
 ---
@@ -8,76 +8,138 @@ The components system makes it easy to create new components that you and your t
 
 In most cases, components map to a specific technology. For example, you might create a `DockerScriptComponent` that executes a script in a Docker container, or a `SnowflakeQueryComponent` that runs a query on Snowflake.
 
-## Prerequisites
+:::info Prerequisites
 
 Before creating and registering custom components, you will need to [create a components-ready project](/guides/build/projects/creating-a-new-project).
+
+:::
 
 ## Creating a new component
 
 For this example, we'll create a `ShellCommand` component that executes a shell command.
 
-### 1. Create the new component file
 
-First, use the `dg scaffold component` command to scaffold the `ShellCommand` component:
+### 1. Scaffold the new component file
 
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/shell-script-component/generated/1-dg-scaffold-shell-command.txt" />
+First, use the [`dg scaffold component`](/api/dg/dg-cli#dg-scaffold) command to scaffold the `ShellCommand` component. You can scaffold a component with either a YAML or Pythonic interface.
 
-This will add a new file to the `components` directory of your Dagster project that contains the basic structure for the new component:
+<Tabs groupId="interface">
+    <TabItem value="yaml" label="YAML interface">
 
-<CodeExample
-  path="docs_snippets/docs_snippets/guides/components/shell-script-component/generated/2-shell-command-empty.py"
-  language="python"
-  title="components/shell_command.py"
-/>
 
-:::tip
+        <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/shell-script-component/generated/1-dg-scaffold-shell-command.txt" />
 
-`Model` is used to implement a YAML interface for a component. If your component only needs a Pythonic interface, you can use the `--no-model` flag when creating it:
+        This will add a new file to the `components` directory of your Dagster project that contains the basic structure for the new component. The `ShellCommand` class inherits from <PyObject section="components" module="dagster" object="Model" />, in addition to <PyObject section="components" module="dagster" object="Component" /> and <PyObject section="components" module="dagster" object="Resolvable" />. `Model` is used to implement a YAML interface for the component:
 
-```
-dg scaffold component ShellCommand --no-model
-```
+        <CodeExample
+          path="docs_snippets/docs_snippets/guides/components/shell-script-component/generated/2-shell-command-empty.py"
+          language="python"
+          title="src/my_project/components/shell_command.py"
+        />
+    </TabItem>
+    <TabItem value="pythonic" label="Pythonic interface">
+        <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/shell-script-component/1-dg-scaffold-shell-command-no-model.txt" />
 
-This will allow you to implement an `__init__` method for your class, either manually or by using `@dataclasses.dataclass`.
+        This will add a new file to the `components` directory of your Dagster project that contains the basic structure for the new component. Since this component only needs a Python interface, the `ShellCommand` class does not inherit from <PyObject section="components" module="dagster" object="Model" />, and an empty `__init__` method is included:
 
-:::
+        <CodeExample
+          path="docs_snippets/docs_snippets/guides/components/shell-script-component/2-shell-command-empty-no-model-init.py"
+          language="python"
+          title="src/my_project/components/shell_command.py"
+        />
 
-### 2. Update the component Python class
+        :::info
 
-The next step is to define the information the component needs when it is instantiated.
+        You can also use [`@dataclasses.dataclass`](https://docs.python.org/3/library/dataclasses.html#dataclasses.dataclass) to implement the `__init__` method:
 
-The `ShellCommand` component will need the following to be defined:
+        <CodeExample path="docs_snippets/docs_snippets/guides/components/shell-script-component/2-shell-command-empty-no-model-dataclass.py" language="python" title="src/my_project/components/shell_command.py" />
+
+        :::
+    </TabItem>
+</Tabs>
+
+
+### 2. Define the component schema
+
+The next step is to define the information the component will need when it is used. The `ShellCommand` component will need the following information:
 
 - The path to the shell script to be run
 - The assets the shell script is expected to produce
 
-The `ShellCommand` class inherits from <PyObject section="components" module="dagster" object="Resolvable" />, in addition to <PyObject section="components" module="dagster" object="Component" />. `Resolvable` handles deriving a YAML schema for the `ShellCommand` class based on what the class is annotated with. To simplify common use cases, Dagster provides annotations for common bits of configuration, such as `ResolvedAssetSpec`, which will handle exposing a schema for defining <PyObject section="assets" module="dagster" object="AssetSpec" pluralize /> from YAML and resolving them before instantiating the component.
+<Tabs groupId="interface">
+  <TabItem value="yaml" label="YAML interface">
+    The `ShellCommand` class inherits from <PyObject section="components" module="dagster" object="Resolvable" />, in addition to <PyObject section="components" module="dagster" object="Component" /> and <PyObject section="components" module="dagster" object="Model" /> . `Resolvable` handles deriving a YAML schema for the class that inherits from it based on what the class is annotated with. In our example, the `ShellCommand` class is annotated with `script_path` and `asset_specs`:
 
-You can define the schema for the `ShellCommand` component and add it to the `ShellCommand` class as follows:
+    <CodeExample
+      path="docs_snippets/docs_snippets/guides/components/shell-script-component/with-config-schema.py"
+      language="python"
+      title="components/shell_command.py"
+    />
 
-<CodeExample
-  path="docs_snippets/docs_snippets/guides/components/shell-script-component/with-config-schema.py"
-  language="python"
-  title="components/shell_command.py"
-/>
+    :::info
 
-Additionally, you can include metadata for your component by overriding the `get_spec` method. This allows you to set fields like `owners` and `tags` that will be visible in the generated documentation:
+    In the example above, we use the annotation `asset_specs: Sequence[dg.ResolvedAssetSpec]` because the `ShellCommand` component produces more than one `AssetSpec`.
+    
+    If the component only produced one asset, the annotation would be `asset_spec: ResolvedAssetSpec`, and the `Sequence` import would be unnecessary.
 
-<CodeExample
-  path="docs_snippets/docs_snippets/guides/components/shell-script-component/with-config-schema-meta.py"
-  language="python"
-  title="components/shell_command.py"
-/>
+    :::
+  </TabItem>
+  <TabItem value="pythonic" label="Pythonic interface">
+    The `ShellCommand` class inherits from <PyObject section="components" module="dagster" object="Resolvable" />, in addition to <PyObject section="components" module="dagster" object="Component" /> and <PyObject section="components" module="dagster" object="Model" /> . `Resolvable` handles deriving a YAML schema for the class that inherits from it based on what the class is annotated with. In our example, the `ShellCommand` class is annotated with `script_path` and `asset_specs`:
 
-:::tip
+    <CodeExample
+      path="docs_snippets/docs_snippets/guides/components/shell-script-component/with-config-schema-pythonic.py"
+      language="python"
+      title="components/shell_command.py"
+    />
 
-When defining a field on a component that isn't on the schema, or is of a different type, the components system allows you to provide custom resolution logic for that field. For more information, see "[Providing resolution logic for non-standard types](/guides/build/components/creating-new-components/component-customization#providing-resolution-logic-for-non-standard-types)".
+    :::info
 
-:::
+    In the example above, we use the annotation `asset_specs: Sequence[dg.ResolvedAssetSpec]` because the `ShellCommand` component produces more than one `AssetSpec`.
+    
+    If the component only produced one asset, the annotation would be `asset_spec: ResolvedAssetSpec`, and the `Sequence` import would be unnecessary.
 
-### 3. Update the `build_defs` method
+    :::
+  </TabItem>
+</Tabs>
 
-Next, you'll need to define how to turn the component parameters into a `Definitions` object.
+#### Using Dagster models for common schema annotations
+
+To simplify common use cases, Dagster provides models for common annotations, such as <PyObject section="components" module="dagster" object="ResolvedAssetSpec" />, which handles exposing a schema for defining <PyObject section="assets" module="dagster" object="AssetSpec" pluralize /> from YAML and resolving them before instantiating the component.
+
+The full list of models is:
+
+* <PyObject section="components" module="dagster" object="ResolvedAssetKey" />
+* <PyObject section="components" module="dagster" object="ResolvedAssetSpec" />
+* <PyObject section="components" module="dagster" object="AssetAttributesModel" />
+* <PyObject section="components" module="dagster" object="ResolvedAssetCheckSpec" />
+
+For more information, see the [Components Core Models API documentation](/api/dagster/components#core-models).
+
+### 3. (Optional) Add metadata to your component
+
+You can optionally include metadata for your component by overriding the `get_spec` method. This allows you to set fields like `owners` and `tags` that will be visible in the generated documentation:
+
+<Tabs groupId="interface">
+  <TabItem value="yaml" label="YAML interface">
+    <CodeExample
+      path="docs_snippets/docs_snippets/guides/components/shell-script-component/with-config-schema-meta.py"
+      language="python"
+      title="components/shell_command.py"
+    />
+  </TabItem>
+  <TabItem value="pythonic" label="Pythonic interface">
+    <CodeExample
+      path="docs_snippets/docs_snippets/guides/components/shell-script-component/with-config-schema-meta-pythonic.py"
+      language="python"
+      title="components/shell_command.py"
+    />
+  </TabItem>
+</Tabs>
+
+### 4. Update the `build_defs` method
+
+Finally, you'll need to define how to turn the component parameters into a `Definitions` object.
 
 To do so, you will need to update the `build_defs` method, which is responsible for returning a `Definitions` object containing all definitions related to the component.
 
@@ -89,11 +151,22 @@ The `@multi_asset` decorator is used to provide the flexibility of assigning mul
 
 :::
 
-<CodeExample
-  path="docs_snippets/docs_snippets/guides/components/shell-script-component/with-build-defs.py"
-  language="python"
-  title="components/shell_command.py"
-/>
+<Tabs groupId="interface">
+  <TabItem value="yaml" label="YAML interface">
+    <CodeExample
+      path="docs_snippets/docs_snippets/guides/components/shell-script-component/with-build-defs.py"
+      language="python"
+      title="components/shell_command.py"
+    />
+  </TabItem>
+  <TabItem value="pythonic" label="Pythonic interface">
+    <CodeExample
+      path="docs_snippets/docs_snippets/guides/components/shell-script-component/with-build-defs-pythonic.py"
+      language="python"
+      title="components/shell_command.py"
+    />
+  </TabItem>
+</Tabs>
 
 ## Registering a new component in your environment
 
