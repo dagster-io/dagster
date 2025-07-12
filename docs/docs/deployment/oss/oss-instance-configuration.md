@@ -61,7 +61,7 @@ To do this, provide a `$DAGSTER_HOME/dagster.yaml` file, which the webserver and
 | Compute log storage    | `compute_logs`           | Controls the capture and persistence of raw stdout and stderr ext logs.                                                                    |
 | Local artifact storage | `local_artifact_storage` | Configures storage for artifacts that require a local disk or when using the filesystem I/O manager ( ).                                        |
 | Telemetry              | `telemetry`              | Used to opt in/out of Dagster collecting anonymized usage statistics.                                                                           |
-| gRPC servers           | `code_servers`           | Configures how Dagster loads the code in a code location.                                                                                       |
+| gRPC servers           | `code_servers`           | Configures how Dagster loads the code in a project.                                                                                       |
 | Data retention         | `data_retention`         | Controls how long Dagster retains certain types of data that have diminishing value over time, such as schedule/sensor tick data.               |
 | Sensor evaluation      | `sensors`                | Controls how sensors are evaluated.                                                                                                             |
 | Schedule evaluation    | `schedules`              | Controls how schedules are evaluated.                                                                                                           |
@@ -145,7 +145,7 @@ Refer to the following tabs for available options and sample configuration. Keep
 
 **DefaultRunLauncher**
 
-The <PyObject section="internals" module="dagster._core.launcher" object="DefaultRunLauncher" /> spawns a new process in the same node as a job's code location.
+The <PyObject section="internals" module="dagster._core.launcher" object="DefaultRunLauncher" /> spawns a new process in the same node as a job's project.
 
 <CodeExample
   path="docs_snippets/docs_snippets/deploying/dagster_instance/dagster.yaml"
@@ -328,7 +328,7 @@ For more information, see the [Telemetry documentation](/about/telemetry).
 
 ### gRPC servers
 
-The `code_servers` key allows you to configure how Dagster loads the code in a [code location](/deployment/code-locations).
+The `code_servers` key allows you to configure how Dagster loads the code in a [project](/deployment/code-locations).
 
 When you aren't [running your own gRPC server](/deployment/code-locations/workspace-yaml#grpc-server), the webserver and the Dagster daemon load your code from a gRPC server running in a subprocess. By default, if your code takes more than 180 seconds to load, Dagster assumes that it's hanging and stops waiting for it to load.
 

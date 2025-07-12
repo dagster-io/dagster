@@ -1,5 +1,5 @@
 ---
-description: Use a workspace.yaml file to configure open source Dagster code locations.
+description: Use a workspace.yaml file to configure open source Dagster projects.
 sidebar_position: 200
 title: workspace.yaml reference (Dagster OSS)
 ---
@@ -8,7 +8,7 @@ import DagsterOSS from '@site/docs/partials/\_DagsterOSS.md';
 
 <DagsterOSS />
 
-A workspace file is used to configure code locations in Dagster. It tells Dagster where to find your code and how to load it. By default, this is a YAML document named workspace.yaml. For example:
+A workspace file is used to configure projects in Dagster. It tells Dagster where to find your code and how to load it. By default, this is a YAML document named workspace.yaml. For example:
 
 ```yaml
 # workspace.yaml
@@ -17,13 +17,13 @@ load_from:
   - python_file: my_file.py
 ```
 
-Each entry in a workspace file is considered a code location. A code location should contain a single <PyObject section="definitions" module="dagster" object="Definitions" /> object.
+Each entry in a workspace file is considered a project. A project should contain a single <PyObject section="definitions" module="dagster" object="Definitions" /> object.
 
-Each code location is loaded in its own process that Dagster tools use an RPC protocol to communicate with. This process separation allows multiple code locations in different environments to be loaded independently, and ensures that errors in user code can't impact Dagster system code.
+Each project is loaded in its own process that Dagster tools use an RPC protocol to communicate with. This process separation allows multiple projects in different environments to be loaded independently, and ensures that errors in user code can't impact Dagster system code.
 
 :::info Migrating from `@repository` to `Definitions`
 
-To accommodate incrementally migrating from `@repository` to `Definitions`, code locations in a single workspace file can mix and match between definition approaches. For example, `code-location-1` could load a single `Definitions` object from a file or module, and `code-location-2` could load multiple repositories.
+To accommodate incrementally migrating from `@repository` to `Definitions`, projects in a single workspace file can mix and match between definition approaches. For example, `code-location-1` could load a single `Definitions` object from a file or module, and `code-location-2` could load multiple repositories.
 
 :::
 
@@ -52,19 +52,19 @@ Where `<loading_method>` can be one of:
 - `python_module`
 - `grpc_server`
 
-## Loading code locations
+## Loading projects
 
 We recommend loading from a Python module for most cases.
 
 :::note
 
-Each code location is loaded in its own process.
+Each project is loaded in its own process.
 
 :::
 
 ### Python module
 
-To load a code location from a local or installed Python module, use the `python_module` key in workspace.yaml.
+To load a project from a local or installed Python module, use the `python_module` key in workspace.yaml.
 
 **Options:**
 
@@ -81,7 +81,7 @@ load_from:
 
 ### Python file
 
-To load a code location from a Python file, use the `python_file` key in workspace.yaml. The value of `python_file` should specify a path relative to `workspace.yaml` leading to a file that contains a code location definition.
+To load a project from a Python file, use the `python_file` key in workspace.yaml. The value of `python_file` should specify a path relative to `workspace.yaml` leading to a file that contains a project definition.
 
 **Options:**
 
@@ -89,7 +89,7 @@ To load a code location from a Python file, use the `python_file` key in workspa
 - `attribute` (optional): Name of a specific repository or function returning a `RepositoryDefinition`.
 - `working_directory` (optional): Custom working directory for relative imports.
 - `executable_path` (optional): Path to a specific Python executable.
-- `location_name` (optional): Custom name for the code location.
+- `location_name` (optional): Custom name for the project.
 
 **Example:**
 
@@ -105,7 +105,7 @@ load_from:
 
 :::info Using @repository
 
-If using `@repository` to define code locations, you can identify a single repository within the module using the `attribute` key. The value of this key must be the name of a repository or the name of a function that returns a <PyObject section="repositories" module="dagster" object="RepositoryDefinition" />. For example:
+If using `@repository` to define projects, you can identify a single repository within the module using the `attribute` key. The value of this key must be the name of a repository or the name of a function that returns a <PyObject section="repositories" module="dagster" object="RepositoryDefinition" />. For example:
 
 ```yaml
 # workspace.yaml
@@ -120,13 +120,13 @@ load_from:
 
 ### gRPC server
 
-Configures a gRPC server as a code location.
+Configures a gRPC server as a project.
 
 **Options:**
 
 - `host`: The host address of the gRPC server.
 - `port`: The port number of the gRPC server.
-- `location_name`: Custom name for the code location.
+- `location_name`: Custom name for the project.
 
 **Example:**
 
@@ -138,9 +138,9 @@ load_from:
       location_name: 'my_grpc_server'
 ```
 
-## Multiple code locations
+## Multiple projects
 
-You can define multiple code locations in a single `workspace.yaml` file:
+You can define multiple projects in a single `workspace.yaml` file:
 
 ```yaml
 load_from:
@@ -168,19 +168,19 @@ To load the `workspace.yaml` file from a different folder, use the `-w` argument
 dagster dev -w path/to/workspace.yaml
 ```
 
-When `dagster dev` is run, Dagster will load all the code locations defined by the workspace file. For more information and examples, see the [CLI reference](/api/dagster/cli#dagster-dev).
+When `dagster dev` is run, Dagster will load all the projects defined by the workspace file. For more information and examples, see the [CLI reference](/api/dagster/cli#dagster-dev).
 
-If a code location can't be loaded - for example, due to a syntax error or other unrecoverable error - a warning message will display in the Dagster UI. You'll be directed to a status page with a descriptive error and stack trace for any locations Dagster was unable to load.
+If a project can't be loaded - for example, due to a syntax error or other unrecoverable error - a warning message will display in the Dagster UI. You'll be directed to a status page with a descriptive error and stack trace for any locations Dagster was unable to load.
 
 :::info
 
-If a code location is renamed or its configuration in a workspace file is modified, you must stop and restart any running schedules or sensors in that code location. You can do this in the UI by navigating to the [**Deployment overview** page](/guides/operate/webserver#deployment), clicking a code location, and using the **Schedules** and **Sensors** tabs.
+If a project is renamed or its configuration in a workspace file is modified, you must stop and restart any running schedules or sensors in that project. You can do this in the UI by navigating to the [**Deployment overview** page](/guides/operate/webserver#deployment), clicking a project, and using the **Schedules** and **Sensors** tabs.
 
 :::
 
 ## Running your own gRPC server
 
-By default, Dagster tools automatically create a process on your local machine for each of your code locations. However, it's also possible to run your own gRPC server that's responsible for serving information about your code locations. This can be useful in more complex system architectures that deploy user code separately from the Dagster webserver.
+By default, Dagster tools automatically create a process on your local machine for each of your projects. However, it's also possible to run your own gRPC server that's responsible for serving information about your projects. This can be useful in more complex system architectures that deploy user code separately from the Dagster webserver.
 
 - [Initializing the server](#initializing-the-server)
 - [Specifying a Docker image](#specifying-a-docker-image)
@@ -224,7 +224,7 @@ dagster api grpc --module-name my_module_name.definitions --host 0.0.0.0 --port 
 
 :::note
 
-This only applies to code locations defined with <PyObject section="repositories" module="dagster" object="repository" decorator />.
+This only applies to projects defined with <PyObject section="repositories" module="dagster" object="repository" decorator />.
 
 :::
 
@@ -248,7 +248,7 @@ dagster api grpc --python-file /path/to/file.py --working-directory /var/my_work
 
 Refer to the [API docs](/api/dagster/cli#dagster-api-grpc) for the full list of options that can be set when running a new gRPC server.
 
-Then, in your workspace file, configure a new gRPC server code location to load:
+Then, in your workspace file, configure a new gRPC server project to load:
 
 ```yaml file=/concepts/repositories_workspaces/workspace_grpc.yaml
 # workspace.yaml
@@ -262,9 +262,9 @@ load_from:
 
 ### Specifying a Docker image
 
-When running your own gRPC server within a container, you can tell the webserver that any runs launched from a code location should be launched in a container with that same image.
+When running your own gRPC server within a container, you can tell the webserver that any runs launched from a project should be launched in a container with that same image.
 
-To do this, set the `DAGSTER_CURRENT_IMAGE` environment variable to the name of the image before starting the server. After setting this environment variable for your server, the image should be listed alongside the code location on the **Status** page in the UI.
+To do this, set the `DAGSTER_CURRENT_IMAGE` environment variable to the name of the image before starting the server. After setting this environment variable for your server, the image should be listed alongside the project on the **Status** page in the UI.
 
 This image will only be used by [run launchers](/deployment/execution/run-launchers) and [executors](/guides/operate/run-executors) that expect to use Docker images (like the <PyObject section="libraries" module="dagster_docker" object="DockerRunLauncher" />, <PyObject section="libraries" module="dagster_k8s" object="K8sRunLauncher" />, <PyObject section="libraries" module="dagster_docker" object="docker_executor" />, or <PyObject section="libraries" module="dagster_k8s" object="k8s_job_executor" />).
 
@@ -286,15 +286,15 @@ By default, code is loaded with `dagster-webserver`'s working directory as the b
 
 ### Loading multiple Python environments
 
-By default, the webserver and other Dagster tools assume that code locations should be loaded using the same Python environment used to load Dagster. However, it's often useful for code locations to use independent environments. For example, a data engineering team running Spark can have dramatically different dependencies than an ML team running Tensorflow.
+By default, the webserver and other Dagster tools assume that projects should be loaded using the same Python environment used to load Dagster. However, it's often useful for projects to use independent environments. For example, a data engineering team running Spark can have dramatically different dependencies than an ML team running Tensorflow.
 
-To enable this use case, Dagster supports customizing the Python environment for each code location by adding the `executable_path` key to the YAML for a location. These environments can involve distinct sets of installed dependencies, or even completely different Python versions. For example:
+To enable this use case, Dagster supports customizing the Python environment for each project by adding the `executable_path` key to the YAML for a location. These environments can involve distinct sets of installed dependencies, or even completely different Python versions. For example:
 
 <CodeExample path="docs_snippets/docs_snippets/concepts/repositories_workspaces/python_environment_example.yaml" />
 
-The example above also illustrates the `location_name` key. Each code location in a workspace file has a unique name that is displayed in the UI, and is also used to disambiguate definitions with the same name across multiple code locations. Dagster will supply a default name for each location based on its workspace entry if a custom one is not supplied.
+The example above also illustrates the `location_name` key. Each project in a workspace file has a unique name that is displayed in the UI, and is also used to disambiguate definitions with the same name across multiple projects. Dagster will supply a default name for each location based on its workspace entry if a custom one is not supplied.
 
 </TabItem>
 </Tabs>
 
-You can see a working example of a Dagster project that has multiple code locations in our [cloud-examples/multi-location-project repo](https://github.com/dagster-io/cloud-examples/tree/main/multi-location-project).
+You can see a working example of a Dagster project that has multiple projects in our [cloud-examples/multi-location-project repo](https://github.com/dagster-io/cloud-examples/tree/main/multi-location-project).

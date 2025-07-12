@@ -15,7 +15,7 @@ Not sure what automation method to use? Check out the [automation overview](/gui
 
 :::note
 
-To use Declarative Automation, you will need to enable the default **[automation condition sensor](automation-condition-sensors)** in the UI, which evaluates automation conditions and launches runs in response to their statuses. To do so, navigate to **Automation**, find the desired code location, and toggle on the **default_automation_condition_sensor** sensor.
+To use Declarative Automation, you will need to enable the default **[automation condition sensor](automation-condition-sensors)** in the UI, which evaluates automation conditions and launches runs in response to their statuses. To do so, navigate to **Automation**, find the desired project, and toggle on the **default_automation_condition_sensor** sensor.
 
 :::
 

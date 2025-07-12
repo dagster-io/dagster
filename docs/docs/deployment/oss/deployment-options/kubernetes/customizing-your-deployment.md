@@ -119,7 +119,7 @@ Other executors will ignore the `dagster-k8s/config` tag when it is set on an op
 Kubernetes configuration can be applied at several different scopes:
 
 - At the deployment level, applying to every run in the deployment
-- At the code location, applying to every run launched from the code location
+- At the project, applying to every run launched from the project
 - At the job level, applying to every run launched for that job
 - At the step level, if using the <PyObject section="libraries" module="dagster_k8s" object="k8s_job_executor" />
 
@@ -159,7 +159,7 @@ The job will merge the two `node_selector` dictionaries, append the two `image_p
 }
 ```
 
-To customize this behavior, you can also set the `merge_behavior` key in the `dagster-k8s/config` tag to `SHALLOW` instead of `DEEP`. When `merge_behavior` is set to `SHALLOW`, the dictionaries will be shallowly merged. The configuration for the more specific scope takes precedence if the same key is set in both dictionaries or if scalar values need to be replaced - for example, configuration at the code location level will replace configuration at the deployment level.
+To customize this behavior, you can also set the `merge_behavior` key in the `dagster-k8s/config` tag to `SHALLOW` instead of `DEEP`. When `merge_behavior` is set to `SHALLOW`, the dictionaries will be shallowly merged. The configuration for the more specific scope takes precedence if the same key is set in both dictionaries or if scalar values need to be replaced - for example, configuration at the project level will replace configuration at the deployment level.
 
 To modify the previous example:
 

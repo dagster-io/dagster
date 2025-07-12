@@ -17,7 +17,7 @@ To complete the steps in this guide, you'll need:
 - The Azure CLI installed on your machine. You can download it [here](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli).
 - An Azure account with the ability to create resources in Azure Blob Storage or Azure Data Lake Storage.
 - An Azure container in Azure Blob Storage or Azure Data Lake Storage where you want to store logs.
-- Either the `quickstart_etl` module from the [hybrid quickstart repo](https://github.com/dagster-io/dagster-cloud-hybrid-quickstart), or any other code location successfully imported, which contains at least one asset or job that will generate logs for you to test against.
+- Either the `quickstart_etl` module from the [hybrid quickstart repo](https://github.com/dagster-io/dagster-cloud-hybrid-quickstart), or any other project successfully imported, which contains at least one asset or job that will generate logs for you to test against.
 
 ## Step 1: Give AKS agent access to blob storage account
 
@@ -131,7 +131,7 @@ Finally, update your deployment with the new values:
 helm upgrade user-cloud dagster-cloud/dagster-cloud-agent -n <dagster-agent-namespace> -f values.yaml
 ```
 
-## Step 3: Update your code location to enable the use of the AzureBlobComputeLogManager
+## Step 3: Update your project to enable the use of the AzureBlobComputeLogManager
 
 - Add `dagster-azure` to your `setup.py` file. This will allow you to import the `AzureBlobComputeLogManager` class.
 

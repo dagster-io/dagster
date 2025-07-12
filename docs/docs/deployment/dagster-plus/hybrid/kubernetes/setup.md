@@ -81,7 +81,7 @@ kubectl --namespace dagster-cloud logs -l deployment=agent
 There are three places to customize how Dagster interacts with Kubernetes:
 
 - **Per Deployment** by configuring the Dagster+ agent using [Helm values](https://artifacthub.io/packages/helm/dagster-cloud/dagster-cloud-agent?modal=values)
-- **Per Project** by configuring the `dagster_cloud.yaml` file for your [code location](/deployment/code-locations)
+- **Per Project** by configuring the `dagster_cloud.yaml` file for your [project](/deployment/code-locations)
 - **Per Asset or Job** by adding tags to the [asset](/guides/build/assets/defining-assets), [job](/guides/build/jobs/asset-jobs), or [customizing the Kubernetes pipes invocation](/guides/build/external-pipelines/kubernetes-pipeline)
 
 Changes apply in a hierarchy, for example, a customization for an asset will override a default set globally in the agent configuration. Attributes that are not customized will use the global defaults.
@@ -135,7 +135,7 @@ helm --namespace dagster-cloud upgrade agent \
 
 ### Use a secret to pull images
 
-The agent is responsible for managing the lifecycle of your code locations and will typically need to pull images after your CI/CD process builds them and pushes them to your registry. You can specify a secret the agent will use to authenticate to your image registry.
+The agent is responsible for managing the lifecycle of your projects and will typically need to pull images after your CI/CD process builds them and pushes them to your registry. You can specify a secret the agent will use to authenticate to your image registry.
 
 :::tip
 For cloud-based Kubernetes deployments such as AWS EKS, AKS, or GCP, you don't need an image pull secret. The role used by Kubernetes will have permission to access the registry, so you can skip this configuration.
@@ -223,10 +223,10 @@ kubectl create secret generic database-password-kubernetes-secret \
     --namespace dagster-plus
 ```
 
-Next, determine if the secret should be available to all code locations or a single code location.
+Next, determine if the secret should be available to all projects or a single project.
 
 <Tabs>
-<TabItem value="agent-secrets" label="All code locations">
+<TabItem value="agent-secrets" label="All projects">
 
 ```yaml file=values.yaml
 # values.yaml
@@ -245,7 +245,7 @@ helm --namespace dagster-cloud upgrade agent \
 
 </TabItem>
 
-<TabItem value="code-location-secrets" label="Single code location">
+<TabItem value="code-location-secrets" label="Single project">
 
 Modify the [`dagster_cloud.yaml` file](/deployment/code-locations/dagster-cloud-yaml) in your project's Git repository:
 
@@ -270,7 +270,7 @@ location:
 If you need to request secrets from a secret manager like AWS Secrets Manager or HashiCorp Vault, follow one of the prior methods to give your code access to vault credentials. Then, inside your Dagster code, use those credentials to authenticate a Python client that requests secrets from the secret manager.
 :::
 
-### Use a different service account for a specific code location
+### Use a different service account for a specific project
 
 Modify the [`dagster_cloud.yaml` file](/deployment/code-locations/dagster-cloud-yaml) in your project's Git repository:
 
@@ -346,8 +346,8 @@ You may wish to run data pipelines from project A in Kubernetes cluster A, and p
     --values ./values.yaml
   ```
 
-- Create separate code locations for each project
-- Update the `dagster_cloud.yaml` file for each code location
+- Create separate projects for each project
+- Update the `dagster_cloud.yaml` file for each project
   ```yaml file=dagster_cloud.yaml
   locations:
     - location_name: project-a
@@ -359,7 +359,7 @@ You may wish to run data pipelines from project A in Kubernetes cluster A, and p
   ```
 
 :::tip
-Code locations without an `agent_queue` will be routed to a default queue. By default, all agents will serve this default queue. You can specify which agent should serve the default queue using the `includeDefaultQueue` setting:
+Projects without an `agent_queue` will be routed to a default queue. By default, all agents will serve this default queue. You can specify which agent should serve the default queue using the `includeDefaultQueue` setting:
 
 ```yaml file=values.yaml
 dagsterCloud:
@@ -387,14 +387,14 @@ If you want completely separate environments with their own asset graph, run his
 
 :::tip
 
-Dagster+ makes it easy to monitor CPU and memory used by code location servers and individual runs. For more information, see the [run monitoring documentation](/deployment/execution/run-monitoring).
+Dagster+ makes it easy to monitor CPU and memory used by project servers and individual runs. For more information, see the [run monitoring documentation](/deployment/execution/run-monitoring).
 :::
 
-First determine if you want to change the requested resource for everything in a code location, or for a specific job or asset.
+First determine if you want to change the requested resource for everything in a project, or for a specific job or asset.
 
 <Tabs>
 
-<TabItem value="code-location-resource" label="Resources for everything in a code location">
+<TabItem value="code-location-resource" label="Resources for everything in a project">
 
 Modify the [`dagster_cloud.yaml` file](/deployment/code-locations/dagster-cloud-yaml) in your project's Git repository:
 
@@ -421,7 +421,7 @@ locations:
                 nvidia.com/gpu: 1
 ```
 
-The `server_k8s_config` section sets resources for the code location servers, which is where schedule and sensor evaluations occur.
+The `server_k8s_config` section sets resources for the project servers, which is where schedule and sensor evaluations occur.
 
 The `runs_k8s_config` section sets resources for the individual run.
 

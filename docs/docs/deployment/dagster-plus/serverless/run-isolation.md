@@ -37,9 +37,9 @@ If non-isolated runs are disabled (see the section below), the toggle won't appe
 
 ## Non-isolated runs
 
-Non-isolated runs provide a faster start time by using a standing, shared container for each code location.
+Non-isolated runs provide a faster start time by using a standing, shared container for each project.
 
-They have fewer compute resources: 0.25 vCPUs and 1GB of RAM. These resources are shared with other processes running within a code location like sensors. As a result, it's recommended to use isolated runs for compute intensive jobs and asset materializations.
+They have fewer compute resources: 0.25 vCPUs and 1GB of RAM. These resources are shared with other processes running within a project like sensors. As a result, it's recommended to use isolated runs for compute intensive jobs and asset materializations.
 
 To be able to use non-isolated runs, the `non_isolated_runs` setting must first be enabled in [Full deployment settings](/deployment/dagster-plus/full-deployments/deployment-settings-reference#non-isolated-runs):
 

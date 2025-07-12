@@ -136,7 +136,7 @@ dagster-cloud deployment alert-policies sync -a /path/to/alert_policies.yaml
   </TabItem>
 </Tabs>
 
-## Code location alert
+## Project alert
 
 <Tabs groupId="notification_service">
   <TabItem value="email" label="Email">

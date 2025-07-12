@@ -10,7 +10,7 @@ import ScaffoldAsset from '@site/docs/partials/\_ScaffoldAsset.md';
 
 Asset sensors in Dagster provide a powerful mechanism for monitoring asset materializations and triggering downstream computations or notifications based on those events.
 
-This guide covers the most common use cases for asset sensors, such as defining cross-job and cross-code location dependencies.
+This guide covers the most common use cases for asset sensors, such as defining cross-job and cross-project dependencies.
 
 :::note
 
@@ -26,9 +26,9 @@ Typically, asset sensors return a `RunRequest` when a new job is to be triggered
 
 For example, you may wish to monitor an asset that's materialized daily, but don't want to trigger jobs on holidays.
 
-## Cross-job and cross-code location dependencies
+## Cross-job and cross-project dependencies
 
-Asset sensors enable dependencies across different jobs and different code locations. This flexibility allows for modular and decoupled workflows.
+Asset sensors enable dependencies across different jobs and different projects. This flexibility allows for modular and decoupled workflows.
 
 ```mermaid
 %%{
@@ -64,7 +64,7 @@ subgraph CodeLocationB
 end
 ```
 
-This is an example of an asset sensor that triggers a job when an asset is materialized. The `daily_sales_data` asset is in the same code location as the job and other asset for this example, but the same pattern can be applied to assets in different code locations.
+This is an example of an asset sensor that triggers a job when an asset is materialized. The `daily_sales_data` asset is in the same project as the job and other asset for this example, but the same pattern can be applied to assets in different projects.
 
 <CodeExample path="docs_snippets/docs_snippets/guides/automation/simple-asset-sensor-example.py" language="python" title="src/<project_name>/defs/assets.py" />
 

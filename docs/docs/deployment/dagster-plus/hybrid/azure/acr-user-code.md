@@ -45,12 +45,12 @@ The project has the following structure:
 ```plaintext
 ├── .github
 │   └── workflows
-│       └── dagster-cloud-deploy.yml # GitHub Actions workflow for re-deploying code location
+│       └── dagster-cloud-deploy.yml # GitHub Actions workflow for re-deploying project
 ├── .vscode # Standard VSCode settings for working with a Dagster repository
 ├── Dockerfile # Dockerfile for building the user code image
 ├── README.md
-├── dagster_cloud.yaml # Configuration file describing all code locations in the repository
-├── pyproject.toml # Python project configuration file for the code location
+├── dagster_cloud.yaml # Configuration file describing all projects in the repository
+├── pyproject.toml # Python project configuration file for the project
 ├── quickstart_etl # Python package containing the user code
 │   ├── __init__.py
 │   ├── assets
@@ -83,7 +83,7 @@ az aks update -n <your-cluster-name> -g <your_resource_group> --attach-acr <your
 
 Now, we'll set up a Github Actions workflow to build and push our Docker image to Azure Container Registry.
 
-We already have a GitHub Actions workflow in our repository, located at `.github/workflows/dagster-cloud-deploy.yml`. This workflow will build the Docker image, push it to ACR, and update the code location in Dagster+. To get it working with your repository, you'll need to do a few things.
+We already have a GitHub Actions workflow in our repository, located at `.github/workflows/dagster-cloud-deploy.yml`. This workflow will build the Docker image, push it to ACR, and update the project in Dagster+. To get it working with your repository, you'll need to do a few things.
 
 #### Generate Azure credentials
 
@@ -142,7 +142,7 @@ Finally, update the tags in the "Build and upload Docker image" step to match th
 
 ### Update the `dagster_cloud.yaml` build configuration to use the Azure Container Registry
 
-Edit the `dagster_cloud.yaml` file in the root of your repository. Update the `build` section to use the Azure Container Registry, and provide an image name specific to the code location. This must match the registry and image name used in the previous step.
+Edit the `dagster_cloud.yaml` file in the root of your repository. Update the `build` section to use the Azure Container Registry, and provide an image name specific to the project. This must match the registry and image name used in the previous step.
 
 ```yaml
 locations:
@@ -160,10 +160,10 @@ Now, commit and push the changes to your repository. The GitHub Actions workflow
 
 ![GitHub Actions workflow for deploying user code to Azure Container Registry](/images/dagster-plus/deployment/azure/github-actions-workflow.png)
 
-When the workflow completes, you should see the new code location in Dagster+. Navigate to the `Status` page, and click the `Code Locations` tab. You should see your new code location listed.
+When the workflow completes, you should see the new project in Dagster+. Navigate to the `Status` page, and click the `Code Locations` tab. You should see your new project listed.
 
-![Dagster+ code locations page showing the new code location](/images/dagster-plus/deployment/azure/dagster-cloud-code-locations.png)
+![Dagster+ projects page showing the new project](/images/dagster-plus/deployment/azure/dagster-cloud-code-locations.png)
 
 ## Next steps
 
-Now that you have your code location deployed, you can follow the guide [here](/deployment/dagster-plus/hybrid/azure/blob-compute-logs) to set up logging in your AKS cluster.
+Now that you have your project deployed, you can follow the guide [here](/deployment/dagster-plus/hybrid/azure/blob-compute-logs) to set up logging in your AKS cluster.
