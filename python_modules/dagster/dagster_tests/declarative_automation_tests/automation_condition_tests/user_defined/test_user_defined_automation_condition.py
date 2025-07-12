@@ -2,6 +2,7 @@ import logging
 
 import dagster as dg
 from dagster import AutomationContext, DagsterInstance
+from dagster._core.remote_representation.external_data import asset_node_snaps_from_repo
 
 
 def test_cursoring() -> None:
@@ -56,3 +57,20 @@ def test_logging(caplog) -> None:
     caplog.set_level(logging.DEBUG)
     dg.evaluate_automation_conditions(defs=[my_asset], instance=DagsterInstance.ephemeral())
     assert "DEBUG_THING" in caplog.text
+
+
+def test_any_deps_match() -> None:
+    class MyAutomationCondition(dg.AutomationCondition):
+        def evaluate(self, context: AutomationContext) -> dg.AutomationResult:
+            return dg.AutomationResult(context, true_subset=context.get_empty_subset())
+
+    @dg.asset(automation_condition=dg.AutomationCondition.any_deps_match(MyAutomationCondition()))
+    def my_asset() -> None: ...
+
+    defs = dg.Definitions(assets=[my_asset])
+
+    snaps = asset_node_snaps_from_repo(defs.get_repository_def())
+    assert len(snaps) == 1
+
+    serialized = dg.serialize_value(snaps)
+    assert len(dg.deserialize_value(serialized)) == 1
