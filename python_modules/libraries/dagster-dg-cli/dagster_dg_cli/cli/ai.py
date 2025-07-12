@@ -11,6 +11,8 @@ from dagster_dg_core.context import DgContext
 from dagster_dg_core.shared_options import dg_global_options, dg_path_options
 from dagster_dg_core.utils import DgClickCommand
 from dagster_dg_core.utils.telemetry import cli_telemetry_wrapper
+from rich.console import Console
+from rich.prompt import Prompt
 
 
 def _context_prompt(dg_context: DgContext):
@@ -99,13 +101,13 @@ dg list components # Show available component types
     """
 
 
-def _find_claude(dg_context: DgContext) -> Optional[str]:
+def _find_claude(dg_context: DgContext) -> Optional[list[str]]:
     try:  # on PATH
         subprocess.run(
             ["claude", "--version"],
             check=False,
         )
-        return "claude"
+        return ["claude"]
     except FileNotFoundError:
         pass
 
@@ -118,7 +120,20 @@ def _find_claude(dg_context: DgContext) -> Optional[str]:
         )
         path_match = re.search(r"(/[^\s`\']+)", result.stdout)
         if path_match:
-            return path_match.group(1)
+            return [path_match.group(1)]
+    except FileNotFoundError:
+        pass
+
+    return None
+
+
+def _find_codex(dg_context: DgContext) -> Optional[list[str]]:
+    try:  # on PATH
+        subprocess.run(
+            ["codex", "--version"],
+            check=False,
+        )
+        return ["codex"]
     except FileNotFoundError:
         pass
 
@@ -140,18 +155,47 @@ def ai_command(
     cli_config = normalize_cli_config(other_options, click.get_current_context())
     dg_context = DgContext.for_workspace_or_project_environment(target_path, cli_config)
 
-    click.echo("WARNING: This feature is under active development.")
-    click.echo("Features and behavior may change significantly in future versions.\n")
-    click.echo("Checking for supported CLI agent...\n")
-    claude_path = _find_claude(dg_context)
-    if not claude_path:
-        click.echo("No supported CLI agent found.")
-        click.echo("Currently supported agents:")
-        click.echo("  - Claude Code: https://claude.ai/code")
+    console = Console()
+    console.print("WARNING: This feature is under active development.")
+    console.print("Features and behavior may change significantly in future versions.\n")
+    console.print("Checking for supported CLI agent...\n")
+
+    claude_cmd = _find_claude(dg_context)
+    codex_cmd = _find_codex(dg_context)
+
+    available_agents = []
+    agent_map = {}
+
+    if claude_cmd:
+        available_agents.append("claude")
+        agent_map["claude"] = claude_cmd
+    if codex_cmd:
+        available_agents.append("codex")
+        agent_map["codex"] = codex_cmd
+
+    if not available_agents:
+        console.print("No supported CLI agent found.")
+        console.print("Currently supported agents:")
+        console.print("  - Claude Code: https://github.com/anthropics/claude-code")
+        console.print("  - OpenAI Codex: https://github.com/openai/codex")
+        # TODO: add gemini once there is a way to start a session with a prompt
+        # at time of writing --prompt evals and exits
         sys.exit(1)
 
-    click.echo(f"Found {claude_path}. Starting session with context...\n")
+    # If multiple agents are available, let user choose
+    if len(available_agents) > 1:
+        console.print(f"Found {len(available_agents)} CLI agents: {', '.join(available_agents)}")
+        choice = Prompt.ask(
+            "Which would you like to use?", choices=available_agents, default=available_agents[0]
+        )
+        cli_cmd = agent_map[choice]
+        cli_name = choice.capitalize()
+    else:
+        cli_cmd = agent_map[available_agents[0]]
+        cli_name = available_agents[0].capitalize()
+
+    console.print(f"Starting {cli_name} session with context...\n")
     subprocess.run(
-        [claude_path, _context_prompt(dg_context)],
+        cli_cmd + [_context_prompt(dg_context)],
         check=False,
     )
