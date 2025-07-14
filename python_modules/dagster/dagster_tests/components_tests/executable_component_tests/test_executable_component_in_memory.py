@@ -2,8 +2,9 @@ from collections.abc import Mapping
 from typing import Any, Optional
 
 import dagster as dg
+import pytest
 from dagster._core.definitions.asset_key import CoercibleToAssetKey
-from dagster._core.definitions.asset_selection import AssetSelection
+from dagster._core.definitions.assets.definition.asset_spec import AssetExecutionType
 from dagster.components.core.tree import ComponentTree
 from dagster.components.lib.executable_component.component import ExecutableComponent
 from dagster.components.lib.executable_component.function_component import (
@@ -51,6 +52,7 @@ def assert_singular_component(
     component: FunctionComponent,
     resources: Optional[Mapping[str, Any]] = None,
     run_config: Optional[Mapping[str, Any]] = None,
+    observe: bool = False,
 ) -> None:
     defs = component.build_defs(ComponentTree.for_test().load_context)
     assets_def = defs.get_assets_def("asset")
@@ -58,11 +60,19 @@ def assert_singular_component(
     assert assets_def.op.name == "op_name"
     assert assets_def.key.to_user_string() == "asset"
 
-    result = dg.materialize([assets_def], resources=resources, run_config=run_config)
+    if observe:
+        job = defs.get_implicit_global_asset_job_def()
+        result = job.execute_in_process(
+            run_config=run_config,
+            resources=resources,
+        )
+        events = result.asset_observations_for_node("op_name")
+    else:
+        result = dg.materialize([assets_def], resources=resources, run_config=run_config)
+        events = result.asset_materializations_for_node("op_name")
     assert result.success
-    mats = result.asset_materializations_for_node("op_name")
-    assert len(mats) == 1
-    assert mats[0].metadata == {"foo": dg.TextMetadataValue("bar")}
+    assert len(events) == 1
+    assert events[0].metadata == {"foo": dg.TextMetadataValue("bar")}
 
 
 def execute_singular_asset(context) -> dg.MaterializeResult:
@@ -73,7 +83,9 @@ def op_name(context) -> dg.MaterializeResult:
     return dg.MaterializeResult(metadata={"foo": "bar"})
 
 
-def test_basic_singular_asset_from_yaml() -> None:
+@pytest.mark.parametrize("observe", [True, False])
+def test_basic_singular_asset_from_yaml(observe: bool) -> None:
+    observe_config = {"asset_execution_type": "OBSERVATION"} if observe else {}
     component = FunctionComponent.from_attributes_dict(
         attributes={
             "execution": {
@@ -85,10 +97,11 @@ def test_basic_singular_asset_from_yaml() -> None:
                     "key": "asset",
                 }
             ],
+            **observe_config,
         }
     )
     assert isinstance(component, dg.FunctionComponent)
-    assert_singular_component(component)
+    assert_singular_component(component, observe=observe)
 
 
 def execute_singular_asset_with_resource(
@@ -252,23 +265,20 @@ def test_asset_check_with_config() -> None:
             metadata={"foo": config.foo},
         )
 
+    spec = dg.AssetCheckSpec(name="asset_check", asset="asset")
     component = dg.FunctionComponent(
         execution=FunctionSpec(name="op_name", fn=execute_fn),
-        checks=[dg.AssetCheckSpec(name="asset_check", asset="asset")],
+        checks=[spec],
     )
 
     defs = component.build_defs(ComponentTree.for_test().load_context)
-    checks_def = defs.get_asset_checks_def(
-        dg.AssetCheckKey(asset_key=dg.AssetKey("asset"), name="asset_check")
-    )
-    defs = dg.Definitions(asset_checks=[checks_def])
-    result = dg.materialize(
-        [checks_def],
-        run_config={"ops": {"op_name": {"config": {"foo": "bar"}}}},
-        selection=AssetSelection.all_asset_checks(),
+    assert len(list(defs.assets or [])) == 1
+    assert next(iter(defs.assets or [])).op.config_schema is not None  # type: ignore
+
+    result = defs.get_implicit_global_asset_job_def().execute_in_process(
+        run_config={"ops": {"op_name": {"config": {"foo": "bar"}}}}
     )
     assert result.success
-    assert checks_def.op.config_schema
 
     aces = result.get_asset_check_evaluations()
     assert len(aces) == 1
@@ -276,3 +286,30 @@ def test_asset_check_with_config() -> None:
     assert aces[0].asset_key == dg.AssetKey("asset")
     assert aces[0].passed
     assert aces[0].metadata == {"foo": dg.TextMetadataValue("bar")}
+
+
+def test_observation_with_config() -> None:
+    class MyConfig(dg.Config):
+        foo: str
+
+    def execute_fn(context, config: MyConfig) -> dg.ObserveResult:
+        return dg.ObserveResult(metadata={"foo": config.foo})
+
+    component = dg.FunctionComponent(
+        execution=FunctionSpec(name="op_name", fn=execute_fn),
+        assets=[dg.AssetSpec(key="asset")],
+        asset_execution_type=AssetExecutionType.OBSERVATION,
+    )
+
+    defs = component.build_defs(ComponentTree.for_test().load_context)
+    assert len(list(defs.assets or [])) == 1
+    assert next(iter(defs.assets or [])).op.config_schema is not None  # type: ignore
+
+    result = defs.get_implicit_global_asset_job_def().execute_in_process(
+        run_config={"ops": {"op_name": {"config": {"foo": "bar"}}}}
+    )
+    assert result.success
+
+    obs = result.asset_observations_for_node("op_name")
+    assert len(obs) == 1
+    assert obs[0].metadata == {"foo": dg.TextMetadataValue("bar")}
