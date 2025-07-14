@@ -9,17 +9,17 @@ from dagster._config.pythonic_config import (
     ConfigurableIOManagerFactoryResourceDefinition,
     ConfigurableResourceFactoryResourceDefinition,
 )
-from dagster._core.definitions.asset_graph import AssetGraph
-from dagster._core.definitions.asset_job import (
+from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
+from dagster._core.definitions.assets.graph.asset_graph import AssetGraph
+from dagster._core.definitions.assets.graph.base_asset_graph import BaseAssetGraph
+from dagster._core.definitions.assets.job.asset_job import (
     IMPLICIT_ASSET_JOB_NAME,
     get_base_asset_job_lambda,
     is_reserved_asset_job_name,
 )
-from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.automation_condition_sensor_definition import (
     AutomationConditionSensorDefinition,
 )
-from dagster._core.definitions.base_asset_graph import BaseAssetGraph
 from dagster._core.definitions.executor_definition import ExecutorDefinition
 from dagster._core.definitions.graph_definition import GraphDefinition
 from dagster._core.definitions.job_definition import JobDefinition
@@ -48,7 +48,7 @@ from dagster._core.definitions.utils import get_default_automation_condition_sen
 from dagster._core.errors import DagsterInvalidDefinitionError
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.asset_check_spec import AssetCheckKey
+    from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey
     from dagster._core.definitions.events import AssetKey
     from dagster.components.core.tree import ComponentTree
 

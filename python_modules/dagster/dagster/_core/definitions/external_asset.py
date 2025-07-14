@@ -2,13 +2,13 @@ from collections.abc import Sequence
 
 from dagster import _check as check
 from dagster._annotations import deprecated
-from dagster._core.definitions.asset_spec import (
+from dagster._core.definitions.assets.definition.asset_spec import (
     SYSTEM_METADATA_KEY_AUTO_OBSERVE_INTERVAL_MINUTES,
     SYSTEM_METADATA_KEY_IO_MANAGER_KEY,
     AssetExecutionType,
     AssetSpec,
 )
-from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
 from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.output import Out
 from dagster._core.definitions.source_asset import (

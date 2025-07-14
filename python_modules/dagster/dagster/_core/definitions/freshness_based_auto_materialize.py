@@ -123,7 +123,7 @@ def get_expected_data_time_for_asset_key(
     """Returns the data time that you would expect this asset to have if you were to execute it
     on this tick.
     """
-    from dagster._core.definitions.remote_asset_graph import RemoteWorkspaceAssetGraph
+    from dagster._core.definitions.assets.graph.remote_asset_graph import RemoteWorkspaceAssetGraph
 
     asset_key = context.asset_key
     asset_graph = context.asset_graph

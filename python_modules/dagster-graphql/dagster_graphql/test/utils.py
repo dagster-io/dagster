@@ -9,8 +9,8 @@ from typing import Any, Optional, Union, cast
 import dagster._check as check
 import graphene
 import yaml
-from dagster._core.definitions.asset_job import IMPLICIT_ASSET_JOB_NAME
 from dagster._core.definitions.asset_key import AssetKey
+from dagster._core.definitions.assets.job.asset_job import IMPLICIT_ASSET_JOB_NAME
 from dagster._core.instance import DagsterInstance
 from dagster._core.remote_representation.external import RemoteRepository
 from dagster._core.test_utils import wait_for_runs_to_finish

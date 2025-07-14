@@ -2,7 +2,7 @@ from typing import Optional
 from unittest import mock
 
 from dagster import AssetKey, Definitions, asset
-from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
+from dagster._core.definitions.assets.graph.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.partitions.definition import (
     DailyPartitionsDefinition,
     HourlyPartitionsDefinition,

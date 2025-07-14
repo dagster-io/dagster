@@ -7,7 +7,7 @@ from typing import Any, Literal, Optional
 import click
 import dagster_shared.check as check
 from dagster_dg_core.context import DgContext
-from dagster_dg_core.utils import snakecase, validate_dagster_availability
+from dagster_dg_core.utils import snakecase
 from dagster_shared.scaffold import scaffold_subtree
 from dagster_shared.serdes.objects.package_entry import EnvRegistryKey
 from dagster_shared.seven import match_module_pattern
@@ -123,7 +123,6 @@ def scaffold_registry_object(
     dg_context: "DgContext",
     scaffold_format: ScaffoldFormatOptions,
 ) -> None:
-    validate_dagster_availability()
     from dagster.components.component_scaffolding import scaffold_object
 
     scaffold_object(

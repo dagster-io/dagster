@@ -1,21 +1,24 @@
 from collections.abc import Sequence
 from typing import Optional
 
+import dagster as dg
 import pytest
 from click.testing import CliRunner
 from dagster._cli.definitions import definitions_validate_command
-from dagster._utils import file_relative_path, pushd
+from dagster._utils import pushd
 
-EMPTY_PROJECT_PATH = file_relative_path(__file__, "definitions_command_projects/empty_project")
-VALID_PROJECT_PATH = file_relative_path(__file__, "definitions_command_projects/valid_project")
-INVALID_PROJECT_PATH = file_relative_path(__file__, "definitions_command_projects/invalid_project")
-INVALID_PARTITION_MAPPINGS_WORKSPACE_PATH = file_relative_path(
+EMPTY_PROJECT_PATH = dg.file_relative_path(__file__, "definitions_command_projects/empty_project")
+VALID_PROJECT_PATH = dg.file_relative_path(__file__, "definitions_command_projects/valid_project")
+INVALID_PROJECT_PATH = dg.file_relative_path(
+    __file__, "definitions_command_projects/invalid_project"
+)
+INVALID_PARTITION_MAPPINGS_WORKSPACE_PATH = dg.file_relative_path(
     __file__, "definitions_command_projects/invalid_partition_mappings_workspace"
 )
-INVALID_PROJECT_PATH_WITH_EXCEPTION = file_relative_path(
+INVALID_PROJECT_PATH_WITH_EXCEPTION = dg.file_relative_path(
     __file__, "definitions_command_projects/invalid_project_exc"
 )
-PROJECT_ALTERNATE_ENTRYPOINT_PATH = file_relative_path(
+PROJECT_ALTERNATE_ENTRYPOINT_PATH = dg.file_relative_path(
     __file__, "definitions_command_projects/alternate_entrypoint_project"
 )
 

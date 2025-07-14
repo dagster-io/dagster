@@ -36,6 +36,7 @@ setup(
     include_package_data=True,
     install_requires=[
         f"dagster-dg-core{pin}",
+        f"dagster{pin}",
     ],
     entry_points={
         "console_scripts": [
@@ -43,9 +44,6 @@ setup(
         ]
     },
     extras_require={
-        "local": [
-            f"dagster{pin}",
-        ],
         "mcp": [
             "mcp",
         ],

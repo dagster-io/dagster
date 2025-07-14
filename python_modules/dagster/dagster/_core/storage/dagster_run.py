@@ -10,7 +10,7 @@ from typing_extensions import Self
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, public
-from dagster._core.definitions.asset_check_spec import AssetCheckKey
+from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.events import AssetKey
 from dagster._core.loader import LoadableBy, LoadingContext
 from dagster._core.origin import JobPythonOrigin

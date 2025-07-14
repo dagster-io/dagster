@@ -1,4 +1,5 @@
-from dagster import AutoMaterializeAssetPartitionsFilter, AutoMaterializePolicy, AutoMaterializeRule
+import dagster as dg
+from dagster import AutoMaterializePolicy, AutoMaterializeRule
 
 from dagster_tests.declarative_automation_tests.scenario_utils.asset_daemon_scenario import (
     AssetDaemonScenario,
@@ -15,7 +16,7 @@ filter_latest_run_tag_key_policy = (
     .without_rules(AutoMaterializeRule.materialize_on_parent_updated())
     .with_rules(
         AutoMaterializeRule.materialize_on_parent_updated(
-            updated_parent_filter=AutoMaterializeAssetPartitionsFilter(
+            updated_parent_filter=dg.AutoMaterializeAssetPartitionsFilter(
                 latest_run_required_tags={"dagster/auto_materialize": "true"}
             )
         )
@@ -51,7 +52,7 @@ latest_materialization_run_tag_scenarios = [
             .without_rules(AutoMaterializeRule.materialize_on_parent_updated())
             .with_rules(
                 AutoMaterializeRule.materialize_on_parent_updated(
-                    updated_parent_filter=AutoMaterializeAssetPartitionsFilter(
+                    updated_parent_filter=dg.AutoMaterializeAssetPartitionsFilter(
                         latest_run_required_tags={
                             "dagster/auto_materialize": "true",
                             "some_other_key": "some_other_value",

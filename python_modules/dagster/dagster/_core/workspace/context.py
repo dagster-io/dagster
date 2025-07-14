@@ -14,10 +14,10 @@ from typing_extensions import Self
 import dagster._check as check
 from dagster._config.snap import ConfigTypeSnap
 from dagster._core.definitions.asset_key import AssetKey
+from dagster._core.definitions.assets.graph.remote_asset_graph import RemoteRepositoryAssetNode
 from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.data_version import CachingStaleStatusResolver
 from dagster._core.definitions.partitions.utils import CachingDynamicPartitionsLoader
-from dagster._core.definitions.remote_asset_graph import RemoteRepositoryAssetNode
 from dagster._core.definitions.selector import (
     JobSelector,
     JobSubsetSelector,
@@ -77,7 +77,7 @@ from dagster._utils.env import using_dagster_dev
 from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.remote_asset_graph import RemoteWorkspaceAssetGraph
+    from dagster._core.definitions.assets.graph.remote_asset_graph import RemoteWorkspaceAssetGraph
     from dagster._core.remote_representation import (
         PartitionConfigSnap,
         PartitionExecutionErrorSnap,

@@ -399,7 +399,7 @@ def log_repo_stats(
     job: Optional[IJob] = None,
     repo: Optional[ReconstructableRepository] = None,
 ) -> None:
-    from dagster._core.definitions.assets import AssetsDefinition
+    from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
     from dagster._core.definitions.partitions.definition import DynamicPartitionsDefinition
 
     check.inst_param(instance, "instance", DagsterInstance)

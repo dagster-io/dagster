@@ -107,7 +107,7 @@ def cached_method(method: Callable[Concatenate[S, P], T]) -> Callable[Concatenat
             cache = cache_dict[method.__name__]
 
             canonical_kwargs = get_canonical_kwargs(*args, **kwargs)
-            key = _make_key(canonical_kwargs)
+            key = make_cached_method_cache_key(canonical_kwargs)
 
             if key not in cache:
                 result = await method(self, *args, **kwargs)
@@ -130,7 +130,7 @@ def cached_method(method: Callable[Concatenate[S, P], T]) -> Callable[Concatenat
             cache = cache_dict[method.__name__]
 
             canonical_kwargs = get_canonical_kwargs(*args, **kwargs)
-            key = _make_key(canonical_kwargs)
+            key = make_cached_method_cache_key(canonical_kwargs)
             if key not in cache:
                 result = method(self, *args, **kwargs)
                 cache[key] = result
@@ -157,7 +157,7 @@ class _HashedSeq(list):
         return self.hashvalue
 
 
-def _make_key(
+def make_cached_method_cache_key(
     canonical_kwargs: Mapping[str, object],
 ) -> Hashable:
     """Adapted from https://github.com/python/cpython/blob/f9433fff476aa13af9cb314fcc6962055faa4085/Lib/functools.py#L448.

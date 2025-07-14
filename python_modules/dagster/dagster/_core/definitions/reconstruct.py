@@ -29,7 +29,7 @@ from dagster._core.code_pointer import (
     ModuleCodePointer,
     get_python_file_from_target,
 )
-from dagster._core.definitions.asset_check_spec import AssetCheckKey
+from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.job_base import IJob
 from dagster._core.errors import DagsterInvariantViolationError
@@ -41,7 +41,7 @@ from dagster._core.origin import (
 from dagster._serdes import pack_value, unpack_value, whitelist_for_serdes
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.assets import AssetsDefinition
+    from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
     from dagster._core.definitions.graph_definition import GraphDefinition
     from dagster._core.definitions.job_definition import JobDefinition
     from dagster._core.definitions.repository_definition import (
@@ -568,7 +568,7 @@ T_LoadableDefinition = TypeVar("T_LoadableDefinition", bound=LoadableDefinition)
 def _is_list_of_assets(
     definition: LoadableDefinition,
 ) -> bool:
-    from dagster._core.definitions.assets import AssetsDefinition
+    from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
     from dagster._core.definitions.source_asset import SourceAsset
 
     return isinstance(definition, list) and all(
@@ -685,7 +685,7 @@ def repository_def_from_target_def(
 def _repository_def_from_target_def_inner(
     target: object, repository_load_data: Optional["RepositoryLoadData"]
 ) -> Optional["RepositoryDefinition"]:
-    from dagster._core.definitions.assets import AssetsDefinition
+    from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
     from dagster._core.definitions.definitions_class import Definitions
     from dagster._core.definitions.graph_definition import GraphDefinition
     from dagster._core.definitions.job_definition import JobDefinition

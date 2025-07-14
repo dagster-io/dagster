@@ -19,8 +19,14 @@ from dagster._core.definitions.metadata.metadata_value import MetadataValue
 from dagster._serdes import whitelist_for_serdes
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.assets import AssetsDefinition, AssetSpec, SourceAsset
-    from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
+    from dagster._core.definitions.assets.definition.assets_definition import (
+        AssetsDefinition,
+        AssetSpec,
+        SourceAsset,
+    )
+    from dagster._core.definitions.assets.definition.cacheable_assets_definition import (
+        CacheableAssetsDefinition,
+    )
 
 DEFAULT_SOURCE_FILE_KEY = "asset_definition"
 
@@ -120,7 +126,7 @@ class CodeReferencesMetadataSet(NamespacedMetadataSet):
 def _with_code_source_single_definition(
     assets_def: Union["AssetsDefinition", "SourceAsset", "CacheableAssetsDefinition", "AssetSpec"],
 ) -> Union["AssetsDefinition", "SourceAsset", "CacheableAssetsDefinition", "AssetSpec"]:
-    from dagster._core.definitions.assets import AssetsDefinition
+    from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
 
     # SourceAsset and AssetSpec don't have an op definition to point to - cacheable assets
     # will be supported eventually but are a bit trickier
@@ -276,7 +282,7 @@ def _convert_local_path_to_git_path_single_definition(
     file_path_mapping: FilePathMapping,
     assets_def: Union["AssetsDefinition", "SourceAsset", "CacheableAssetsDefinition", "AssetSpec"],
 ) -> Union["AssetsDefinition", "SourceAsset", "CacheableAssetsDefinition", "AssetSpec"]:
-    from dagster._core.definitions.assets import AssetsDefinition
+    from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
 
     # SourceAsset doesn't have an op definition to point to - cacheable assets
     # will be supported eventually but are a bit trickier

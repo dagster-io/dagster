@@ -37,6 +37,13 @@ export type WorkspaceScheduleFragment = {
   tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
 };
 
+export type WorkspacePartitionSetFragment = {
+  __typename: 'PartitionSet';
+  id: string;
+  name: string;
+  pipelineName: string;
+};
+
 export type WorkspaceSensorFragment = {
   __typename: 'Sensor';
   id: string;
@@ -112,7 +119,7 @@ export type PartialWorkspaceRepositoryFragment = {
   partitionSets: Array<{
     __typename: 'PartitionSet';
     id: string;
-    mode: string;
+    name: string;
     pipelineName: string;
   }>;
   allTopLevelResourceDetails: Array<{
@@ -196,7 +203,7 @@ export type PartialWorkspaceLocationFragment = {
     partitionSets: Array<{
       __typename: 'PartitionSet';
       id: string;
-      mode: string;
+      name: string;
       pipelineName: string;
     }>;
     allTopLevelResourceDetails: Array<{
@@ -301,7 +308,7 @@ export type PartialWorkspaceLocationNodeFragment = {
           partitionSets: Array<{
             __typename: 'PartitionSet';
             id: string;
-            mode: string;
+            name: string;
             pipelineName: string;
           }>;
           allTopLevelResourceDetails: Array<{
@@ -462,6 +469,8 @@ export type WorkspaceRepositoryAssetsFragment = {
   assetGroups: Array<{__typename: 'AssetGroup'; id: string; groupName: string}>;
 };
 
+export type WorkspaceAssetGroupFragment = {__typename: 'AssetGroup'; id: string; groupName: string};
+
 export type WorkspaceLocationAssetsFragment = {
   __typename: 'RepositoryLocation';
   id: string;
@@ -600,7 +609,7 @@ export type WorkspaceLocationFragment = {
     partitionSets: Array<{
       __typename: 'PartitionSet';
       id: string;
-      mode: string;
+      name: string;
       pipelineName: string;
     }>;
     allTopLevelResourceDetails: Array<{
@@ -878,7 +887,7 @@ export type LocationWorkspaceQuery = {
                 partitionSets: Array<{
                   __typename: 'PartitionSet';
                   id: string;
-                  mode: string;
+                  name: string;
                   pipelineName: string;
                 }>;
                 allTopLevelResourceDetails: Array<{
@@ -1118,7 +1127,7 @@ export type WorkspaceLocationNodeFragment = {
           partitionSets: Array<{
             __typename: 'PartitionSet';
             id: string;
-            mode: string;
+            name: string;
             pipelineName: string;
           }>;
           allTopLevelResourceDetails: Array<{
@@ -1268,7 +1277,7 @@ export type WorkspaceRepositoryLocationFragment = {
     partitionSets: Array<{
       __typename: 'PartitionSet';
       id: string;
-      mode: string;
+      name: string;
       pipelineName: string;
     }>;
     allTopLevelResourceDetails: Array<{
@@ -1409,7 +1418,7 @@ export type WorkspaceRepositoryFragment = {
   partitionSets: Array<{
     __typename: 'PartitionSet';
     id: string;
-    mode: string;
+    name: string;
     pipelineName: string;
   }>;
   allTopLevelResourceDetails: Array<{
@@ -1490,8 +1499,8 @@ export type WorkspaceRepositoryFragment = {
   displayMetadata: Array<{__typename: 'RepositoryMetadata'; key: string; value: string}>;
 };
 
-export const LocationWorkspaceQueryVersion = '29ccbcf54f008238364fa8d1e9476dd5de2492098403a67e893de7c082d0009f';
+export const LocationWorkspaceQueryVersion = 'dc3c765d258d59c8c265f45109e72281af380ac95cb06b3e8faf799e7edba7ef';
 
 export const CodeLocationStatusQueryVersion = '5491629a2659feca3a6cf0cc976c6f59c8e78dff1193e07d7850ae4355698b04';
 
-export const LocationWorkspaceAssetsQueryVersion = '05624e8a7d1522362cab7503a61408521b1296fda909dbfd4ef4d5567f87c19e';
+export const LocationWorkspaceAssetsQueryVersion = '3e053c920a3fd3448cf3cb0ee19ab1b643c66ecde751bb81d464b6e75e046d3f';

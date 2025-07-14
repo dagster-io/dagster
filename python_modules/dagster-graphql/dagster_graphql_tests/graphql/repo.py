@@ -80,7 +80,7 @@ from dagster import (
     schedule,
     usable_as_dagster_type,
 )
-from dagster._core.definitions.asset_spec import AssetSpec
+from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
 from dagster._core.definitions.automation_condition_sensor_definition import (
     AutomationConditionSensorDefinition,
 )

@@ -1,3 +1,4 @@
+import os
 from collections.abc import Iterator
 from typing import Optional, cast
 
@@ -24,6 +25,7 @@ from dagster._core.executor.step_delegating import (
     StepHandler,
     StepHandlerContext,
 )
+from dagster._utils.cached_method import cached_method
 from dagster._utils.merger import merge_dicts
 
 from dagster_k8s.client import DagsterKubernetesClient
@@ -31,6 +33,7 @@ from dagster_k8s.container_context import K8sContainerContext
 from dagster_k8s.job import (
     USER_DEFINED_K8S_JOB_CONFIG_SCHEMA,
     DagsterK8sJobConfig,
+    OwnerReference,
     UserDefinedDagsterK8sConfig,
     construct_dagster_k8s_job,
     get_k8s_job_name,
@@ -81,6 +84,14 @@ _K8S_EXECUTOR_CONFIG_SCHEMA = merge_dicts(
             is_required=False,
             default_value={},
             description="Per op k8s configuration overrides.",
+        ),
+        "enable_owner_references": Field(
+            bool,
+            is_required=False,
+            default_value=False,
+            description="Whether to insert Kubernetes owner references on step jobs to their parent run pod."
+            " This ensures that step jobs and step pods are garbage collected when the run pod is deleted."
+            " For more information, see https://kubernetes.io/docs/concepts/overview/working-with-objects/owners-dependents/",
         ),
     },
 )
@@ -171,6 +182,9 @@ def k8s_job_executor(init_context: InitExecutorContext) -> Executor:
             load_incluster_config=load_incluster_config,
             kubeconfig_file=kubeconfig_file,
             per_step_k8s_config=exc_cfg.get("per_step_k8s_config", {}),
+            enable_owner_references=check.opt_bool_param(
+                exc_cfg.get("enable_owner_references"), "enable_owner_references", False
+            ),
         ),
         retries=RetryMode.from_config(exc_cfg["retries"]),  # type: ignore
         max_concurrent=check.opt_int_elem(exc_cfg, "max_concurrent"),
@@ -191,7 +205,9 @@ class K8sStepHandler(StepHandler):
         load_incluster_config: bool,
         kubeconfig_file: Optional[str],
         k8s_client_batch_api=None,
+        k8s_client_core_api=None,
         per_step_k8s_config=None,
+        enable_owner_references=False,
     ):
         super().__init__()
 
@@ -199,7 +215,7 @@ class K8sStepHandler(StepHandler):
         self._executor_container_context = check.inst_param(
             container_context, "container_context", K8sContainerContext
         )
-
+        self._kubeconfig_file = None
         if load_incluster_config:
             check.invariant(
                 kubeconfig_file is None,
@@ -209,13 +225,16 @@ class K8sStepHandler(StepHandler):
         else:
             check.opt_str_param(kubeconfig_file, "kubeconfig_file")
             kubernetes.config.load_kube_config(kubeconfig_file)
+            self._kubeconfig_file = kubeconfig_file
 
         self._api_client = DagsterKubernetesClient.production_client(
-            batch_api_override=k8s_client_batch_api
+            batch_api_override=k8s_client_batch_api,
+            core_api_override=k8s_client_core_api,
         )
         self._per_step_k8s_config = check.opt_dict_param(
             per_step_k8s_config, "per_step_k8s_config", key_type=str, value_type=dict
         )
+        self._enable_owner_references = enable_owner_references
 
     def _get_step_key(self, step_handler_context: StepHandlerContext) -> str:
         step_keys_to_execute = cast(
@@ -264,6 +283,25 @@ class K8sStepHandler(StepHandler):
 
         return f"dagster-step-{name_key}"
 
+    @cached_method
+    def _detect_current_name_and_uid(
+        self,
+    ) -> Optional[tuple[str, str]]:
+        """Get the current pod's pod name and uid, if available."""
+        from dagster_k8s.utils import detect_current_namespace
+
+        hostname = os.getenv("HOSTNAME")
+        if not hostname:
+            return None
+
+        namespace = detect_current_namespace(self._kubeconfig_file)
+        if not namespace:
+            return None
+
+        pod = self._api_client.get_pod_by_name(pod_name=hostname, namespace=namespace)
+
+        return pod.metadata.name, pod.metadata.uid
+
     def launch_step(self, step_handler_context: StepHandlerContext) -> Iterator[DagsterEvent]:
         step_key = self._get_step_key(step_handler_context)
 
@@ -301,6 +339,13 @@ class K8sStepHandler(StepHandler):
         deployment_name_env_var = get_deployment_id_label(container_context.run_k8s_config)
         if deployment_name_env_var:
             labels["dagster/deployment-name"] = deployment_name_env_var
+
+        owner_references = []
+        if self._enable_owner_references:
+            my_pod = self._detect_current_name_and_uid()
+            if my_pod:
+                owner_references = [OwnerReference(kind="Pod", name=my_pod[0], uid=my_pod[1])]
+
         job = construct_dagster_k8s_job(
             job_config=job_config,
             args=args,
@@ -317,6 +362,7 @@ class K8sStepHandler(StepHandler):
                 },
                 {"name": "DAGSTER_RUN_STEP_KEY", "value": step_key},
             ],
+            owner_references=owner_references,
         )
 
         yield DagsterEvent.step_worker_starting(

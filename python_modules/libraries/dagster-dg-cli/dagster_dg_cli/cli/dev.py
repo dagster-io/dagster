@@ -8,12 +8,7 @@ import click
 from dagster_dg_core.config import normalize_cli_config
 from dagster_dg_core.context import DgContext
 from dagster_dg_core.shared_options import dg_global_options, dg_path_options
-from dagster_dg_core.utils import (
-    DgClickCommand,
-    exit_with_error,
-    pushd,
-    validate_dagster_availability,
-)
+from dagster_dg_core.utils import DgClickCommand, exit_with_error, pushd
 from dagster_dg_core.utils.telemetry import cli_telemetry_wrapper
 from dagster_shared.cli import WorkspaceOpts, dg_workspace_options
 
@@ -95,7 +90,6 @@ def dev_command(
     """
     from dagster_dg_core.check import check_yaml as check_yaml_fn
 
-    validate_dagster_availability()
     workspace_opts = WorkspaceOpts.extract_from_cli_options(other_options)
 
     # If we got CLI flags that specify a target jump right to dagster core

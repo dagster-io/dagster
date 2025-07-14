@@ -27,7 +27,7 @@ from typing_extensions import TypeAlias
 
 import dagster._check as check
 from dagster._core.assets import AssetDetails
-from dagster._core.definitions.asset_check_spec import AssetCheckKey
+from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.data_version import DATA_VERSION_TAG
 from dagster._core.definitions.events import AssetKey, AssetMaterialization
 from dagster._core.definitions.freshness import FreshnessStateRecord
@@ -111,7 +111,7 @@ from dagster._utils.concurrency import (
 from dagster._utils.warnings import deprecation_warning
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.asset_check_evaluation import (
+    from dagster._core.definitions.asset_checks.asset_check_evaluation import (
         AssetCheckEvaluation,
         AssetCheckEvaluationPlanned,
     )

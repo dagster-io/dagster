@@ -55,7 +55,7 @@ export const JobOrAssetLaunchpad = (props: {repoAddress: RepoAddress}) => {
     permissions: {canLaunchPipelineExecution},
     loading,
   } = usePermissionsForLocation(repoAddress.location);
-  useBlockTraceUntilTrue('Permissions', loading);
+  useBlockTraceUntilTrue('Permissions', !loading);
 
   if (loading) {
     return null;

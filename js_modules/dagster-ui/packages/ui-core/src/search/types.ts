@@ -1,15 +1,15 @@
 import Fuse from 'fuse.js';
 
-import {
-  SearchGroupFragment,
-  SearchPartitionSetFragment,
-  SearchPipelineFragment,
-  SearchResourceDetailFragment,
-  SearchScheduleFragment,
-  SearchSensorFragment,
-} from './types/useGlobalSearch.types';
 import {AssetTableFragment} from '../assets/types/AssetTableFragment.types';
 import {AssetKey, DefinitionTag} from '../graphql/types';
+import {ResourceEntryFragment} from '../resources/types/WorkspaceResourcesQuery.types';
+import {
+  WorkspaceAssetGroupFragment,
+  WorkspacePartitionSetFragment,
+  WorkspacePipelineFragment,
+  WorkspaceScheduleFragment,
+  WorkspaceSensorFragment,
+} from '../workspace/WorkspaceContext/types/WorkspaceQueries.types';
 
 export enum SearchResultType {
   AssetGroup,
@@ -66,12 +66,12 @@ export type SearchResult = {
   node?:
     | null
     | AssetTableFragment
-    | SearchGroupFragment
-    | SearchPipelineFragment
-    | SearchScheduleFragment
-    | SearchSensorFragment
-    | SearchPartitionSetFragment
-    | SearchResourceDetailFragment;
+    | WorkspaceAssetGroupFragment
+    | WorkspacePipelineFragment
+    | WorkspaceScheduleFragment
+    | WorkspaceSensorFragment
+    | WorkspacePartitionSetFragment
+    | ResourceEntryFragment;
 };
 
 export type ReadyResponse = {type: 'ready'};

@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, Optional, Union
 
 from dagster_shared.record import replace
 from dagster_shared.serdes import whitelist_for_serdes
+from typing_extensions import Self
 
 import dagster._check as check
 from dagster._annotations import public
@@ -12,6 +13,7 @@ from dagster._core.definitions.declarative_automation.automation_condition impor
     AutomationCondition,
     AutomationResult,
     BuiltinAutomationCondition,
+    T_AutomationCondition,
 )
 from dagster._core.definitions.declarative_automation.automation_context import AutomationContext
 from dagster._core.definitions.declarative_automation.operators.utils import has_allow_ignore
@@ -137,8 +139,8 @@ class SinceCondition(BuiltinAutomationCondition[T_EntityKey]):
         )
 
     def replace(
-        self, old: Union[AutomationCondition, str], new: AutomationCondition
-    ) -> AutomationCondition:
+        self, old: Union[AutomationCondition, str], new: T_AutomationCondition
+    ) -> Union[Self, T_AutomationCondition]:
         """Replaces all instances of ``old`` across any sub-conditions with ``new``.
 
         If ``old`` is a string, then conditions with a label matching

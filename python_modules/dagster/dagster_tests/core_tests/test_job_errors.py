@@ -1,19 +1,8 @@
 import re
 
+import dagster as dg
 import pytest
-from dagster import (
-    DagsterInvariantViolationError,
-    DagsterTypeCheckDidNotPass,
-    DependencyDefinition,
-    GraphDefinition,
-    In,
-    OpDefinition,
-    Out,
-    Output,
-    _check as check,
-    job,
-    op,
-)
+from dagster import _check as check
 from dagster._core.definitions.metadata import MetadataValue
 from dagster._utils.test import wrap_op_in_graph_and_execute
 
@@ -38,7 +27,7 @@ def did_op_skip(op_name, error_log):
 
 
 def create_root_success_op(name):
-    @op(name=name)
+    @dg.op(name=name)
     def root_op(_context):
         passed_rows = []
         passed_rows.append({name: "compute_called"})
@@ -48,7 +37,7 @@ def create_root_success_op(name):
 
 
 def create_root_fn_failure_op(name):
-    @op(name=name)
+    @dg.op(name=name)
     def failed_op(_):
         raise Exception("Compute failed")
 
@@ -56,7 +45,7 @@ def create_root_fn_failure_op(name):
 
 
 def test_compute_failure_job():
-    job_def = GraphDefinition(
+    job_def = dg.GraphDefinition(
         node_defs=[create_root_fn_failure_op("failing")],
         name="test",
     ).to_job()
@@ -78,16 +67,16 @@ def test_failure_midstream(capsys):
     op_a = create_root_success_op("op_a")
     op_b = create_root_success_op("op_b")
 
-    @op
+    @dg.op
     def op_c(_, a, b):
         check.failed("user error")
         return [a, b, {"C": "compute_called"}]
 
-    @op
+    @dg.op
     def op_d(_, c):
         return [c, {"D": "compute_called"}]
 
-    @job
+    @dg.job
     def job_def():
         op_d(op_c(op_a(), op_b()))
 
@@ -135,27 +124,27 @@ def test_failure_propagation(capsys):
     """
     op_a = create_root_success_op("op_a")
 
-    @op
+    @dg.op
     def op_b(_, in_):
         return in_
 
-    @op
+    @dg.op
     def op_c(_, in_):
         return in_
 
-    @op
+    @dg.op
     def op_d(_, _in):
         check.failed("user error")
 
-    @op
+    @dg.op
     def op_e(_, in_):
         return in_
 
-    @op
+    @dg.op
     def op_f(_, in_, _in2):
         return in_
 
-    @job
+    @dg.job
     def job_def():
         a_result = op_a()
         op_f(op_c(op_b(a_result)), op_e(op_d(a_result)))
@@ -192,27 +181,27 @@ def test_failure_propagation(capsys):
 
 
 def test_do_not_yield_result():
-    op_inst = OpDefinition(
+    op_inst = dg.OpDefinition(
         name="do_not_yield_result",
         ins={},
-        outs={"result": Out()},
-        compute_fn=lambda *_args, **_kwargs: Output("foo"),
+        outs={"result": dg.Out()},
+        compute_fn=lambda *_args, **_kwargs: dg.Output("foo"),
     )
 
     with pytest.raises(
-        DagsterInvariantViolationError,
+        dg.DagsterInvariantViolationError,
         match='Compute function for op "do_not_yield_result" returned an Output',
     ):
         wrap_op_in_graph_and_execute(op_inst)
 
 
 def test_yield_non_result():
-    @op
+    @dg.op
     def yield_wrong_thing(_):
         yield "foo"
 
     with pytest.raises(
-        DagsterInvariantViolationError,
+        dg.DagsterInvariantViolationError,
         match=re.escape('Compute function for op "yield_wrong_thing" yielded a value of type <')
         + r"(class|type)"
         + re.escape(
@@ -223,13 +212,13 @@ def test_yield_non_result():
 
 
 def test_single_compute_fn_returning_result():
-    test_return_result = OpDefinition(
+    test_return_result = dg.OpDefinition(
         name="test_return_result",
         ins={},
-        compute_fn=lambda *args, **kwargs: Output(None),
+        compute_fn=lambda *args, **kwargs: dg.Output(None),
     )
 
-    with pytest.raises(DagsterInvariantViolationError):
+    with pytest.raises(dg.DagsterInvariantViolationError):
         wrap_op_in_graph_and_execute(test_return_result)
 
 
@@ -239,22 +228,22 @@ def test_user_error_propogation():
     class UserError(Exception):
         pass
 
-    @op
+    @dg.op
     def throws_user_error():
         raise UserError(err_msg)
 
-    @op
+    @dg.op
     def return_one():
         return 1
 
-    @op(ins={"num": In()})
+    @dg.op(ins={"num": dg.In()})
     def add_one(num):
         return num + 1
 
-    job_def = GraphDefinition(
+    job_def = dg.GraphDefinition(
         name="test_user_error_propogation",
         node_defs=[throws_user_error, return_one, add_one],
-        dependencies={"add_one": {"num": DependencyDefinition("return_one")}},
+        dependencies={"add_one": {"num": dg.DependencyDefinition("return_one")}},
     ).to_job()
 
     with pytest.raises(UserError) as e_info:
@@ -264,18 +253,18 @@ def test_user_error_propogation():
 
 
 def test_explicit_failure():
-    @op
+    @dg.op
     def throws_failure():
-        raise DagsterTypeCheckDidNotPass(
+        raise dg.DagsterTypeCheckDidNotPass(
             description="Always fails.",
             metadata={"always_fails": "why"},
         )
 
-    @job
+    @dg.job
     def pipe():
         throws_failure()
 
-    with pytest.raises(DagsterTypeCheckDidNotPass) as exc_info:
+    with pytest.raises(dg.DagsterTypeCheckDidNotPass) as exc_info:
         pipe.execute_in_process()
 
     assert exc_info.value.description == "Always fails."

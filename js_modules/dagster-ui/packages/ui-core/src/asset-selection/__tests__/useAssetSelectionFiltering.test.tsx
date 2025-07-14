@@ -75,7 +75,6 @@ describe('useAssetSelectionFiltering', () => {
     loading: false,
     assetSelection: '*',
     assets: [],
-    useWorker: true,
     includeExternalAssets: true,
     skip: false,
   };
@@ -231,19 +230,9 @@ describe('useAssetSelectionFiltering', () => {
   it('passes useWorker option to useAssetGraphData', () => {
     mockUseAssetGraphData.mockReturnValue(createMockAssetGraphResponse([], false));
 
-    renderHook(() =>
-      useAssetSelectionFiltering({
-        ...defaultProps,
-        useWorker: false,
-      }),
-    );
+    renderHook(() => useAssetSelectionFiltering(defaultProps));
 
-    expect(mockUseAssetGraphData).toHaveBeenCalledWith(
-      '*',
-      expect.objectContaining({
-        useWorker: false,
-      }),
-    );
+    expect(mockUseAssetGraphData).toHaveBeenCalledWith('*', expect.any(Object));
   });
 
   it('passes skip option to useAssetGraphData', () => {

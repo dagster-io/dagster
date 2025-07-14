@@ -26,7 +26,7 @@ We need to ensure that the AKS agent has the necessary permissions to write logs
 First, we'll enable the cluster to use workload identity. This will allow the AKS agent to use a managed identity to access Azure resources.
 
 ```bash
-az aks update --resource-group <resource-group> --name <cluster-name> --enable-workload-identity
+az aks update --resource-group <resource-group> --name <cluster-name> --enable-workload-identity --enable-oidc-issuer
 ```
 
 Then, we'll create a new managed identity for the AKS agent.
@@ -121,8 +121,8 @@ computeLogs:
       default_azure_credential:
         exclude_environment_credential: false
       prefix: dagster-logs
-      local_dir: '/tmp/cool'
       upload_interval: 30
+      show_url_only: true
 ```
 
 Finally, update your deployment with the new values:

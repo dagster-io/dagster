@@ -4,37 +4,13 @@ import time
 from collections import defaultdict
 from collections.abc import Sequence
 
+import dagster as dg
 import pytest
-from dagster import (
-    Backoff,
-    DagsterEventType,
-    Failure,
-    Jitter,
-    Out,
-    Output,
-    RetryPolicy,
-    RetryRequested,
-    failure_hook,
-    graph,
-    job,
-    op,
-    reconstructable,
-    success_hook,
-)
+from dagster import Backoff, DagsterEventType, Jitter
 from dagster._core.definitions.events import HookExecutionResult
 from dagster._core.definitions.job_base import InMemoryJob
-from dagster._core.errors import DagsterInvalidDefinitionError
-from dagster._core.events import DagsterEvent
-from dagster._core.execution.api import (
-    ReexecutionOptions,
-    create_execution_plan,
-    execute_job,
-    execute_plan,
-    execute_run_iterator,
-)
+from dagster._core.execution.api import create_execution_plan, execute_plan, execute_run_iterator
 from dagster._core.execution.retries import RetryMode
-from dagster._core.storage.dagster_run import DagsterRun
-from dagster._core.test_utils import instance_for_test
 from dagster._utils import segfault
 
 executors = pytest.mark.parametrize(
@@ -47,32 +23,32 @@ executors = pytest.mark.parametrize(
 
 
 def define_run_retry_job():
-    @op(config_schema={"fail": bool})
+    @dg.op(config_schema={"fail": bool})
     def can_fail(context, _start_fail):
         if context.op_config["fail"]:
             raise Exception("blah")
 
         return "okay perfect"
 
-    @op(
+    @dg.op(
         out={
-            "start_fail": Out(bool, is_required=False),
-            "start_skip": Out(bool, is_required=False),
+            "start_fail": dg.Out(bool, is_required=False),
+            "start_skip": dg.Out(bool, is_required=False),
         }
     )
     def two_outputs(_):
-        yield Output(True, "start_fail")
+        yield dg.Output(True, "start_fail")
         # won't yield start_skip
 
-    @op
+    @dg.op
     def will_be_skipped(_, _start_skip):
         pass  # doesn't matter
 
-    @op
+    @dg.op
     def downstream_of_failed(_, input_str):
         return input_str
 
-    @job
+    @dg.job
     def pipe():
         start_fail, start_skip = two_outputs()
         downstream_of_failed(can_fail(start_fail))
@@ -83,12 +59,12 @@ def define_run_retry_job():
 
 @executors
 def test_retries(environment):
-    with instance_for_test() as instance:
-        pipe = reconstructable(define_run_retry_job)
+    with dg.instance_for_test() as instance:
+        pipe = dg.reconstructable(define_run_retry_job)
         fails = dict(environment)
         fails["ops"] = {"can_fail": {"config": {"fail": True}}}
 
-        with execute_job(
+        with dg.execute_job(
             pipe,
             run_config=fails,
             instance=instance,
@@ -99,9 +75,9 @@ def test_retries(environment):
             passes = dict(environment)
             passes["ops"] = {"can_fail": {"config": {"fail": False}}}
 
-        with execute_job(
+        with dg.execute_job(
             pipe,
-            reexecution_options=ReexecutionOptions(parent_run_id=result.run_id),
+            reexecution_options=dg.ReexecutionOptions(parent_run_id=result.run_id),
             run_config=passes,
             instance=instance,
         ) as result:
@@ -117,16 +93,16 @@ def test_retries(environment):
 
 
 def define_step_retry_job():
-    @op(config_schema=str)
+    @dg.op(config_schema=str)
     def fail_first_time(context):
         file = os.path.join(context.op_config, "i_threw_up")
         if os.path.exists(file):
             return "okay perfect"
         else:
             open(file, "a", encoding="utf8").close()
-            raise RetryRequested()
+            raise dg.RetryRequested()
 
-    @job
+    @dg.job
     def step_retry():
         fail_first_time()
 
@@ -135,12 +111,12 @@ def define_step_retry_job():
 
 @executors
 def test_step_retry(environment):
-    with instance_for_test() as instance:
+    with dg.instance_for_test() as instance:
         with tempfile.TemporaryDirectory() as tempdir:
             env = dict(environment)
             env["ops"] = {"fail_first_time": {"config": tempdir}}
-            with execute_job(
-                reconstructable(define_step_retry_job),
+            with dg.execute_job(
+                dg.reconstructable(define_step_retry_job),
                 run_config=env,
                 instance=instance,
             ) as result:
@@ -156,15 +132,15 @@ def test_step_retry(environment):
 
 
 def define_retry_limit_job():
-    @op
+    @dg.op
     def default_max():
-        raise RetryRequested()
+        raise dg.RetryRequested()
 
-    @op
+    @dg.op
     def three_max():
-        raise RetryRequested(max_retries=3)
+        raise dg.RetryRequested(max_retries=3)
 
-    @job
+    @dg.job
     def retry_limits():
         default_max()
         three_max()
@@ -174,9 +150,9 @@ def define_retry_limit_job():
 
 @executors
 def test_step_retry_limit(environment):
-    with instance_for_test() as instance:
-        with execute_job(
-            reconstructable(define_retry_limit_job),
+    with dg.instance_for_test() as instance:
+        with dg.execute_job(
+            dg.reconstructable(define_retry_limit_job),
             run_config=environment,
             raise_on_error=False,
             instance=instance,
@@ -203,12 +179,12 @@ def test_step_retry_limit(environment):
 
 
 def test_retry_deferral():
-    with instance_for_test() as instance:
+    with dg.instance_for_test() as instance:
         job_def = define_retry_limit_job()
         events = execute_plan(
             create_execution_plan(job_def),
             InMemoryJob(job_def),
-            dagster_run=DagsterRun(job_name="retry_limits", run_id="42"),
+            dagster_run=dg.DagsterRun(job_name="retry_limits", run_id="42"),
             retry_mode=RetryMode.DEFERRED,
             instance=instance,
         )
@@ -226,16 +202,16 @@ DELAY = 2
 
 
 def define_retry_wait_fixed_job():
-    @op(config_schema=str)
+    @dg.op(config_schema=str)
     def fail_first_and_wait(context):
         file = os.path.join(context.op_config, "i_threw_up")
         if os.path.exists(file):
             return "okay perfect"
         else:
             open(file, "a", encoding="utf8").close()
-            raise RetryRequested(seconds_to_wait=DELAY)
+            raise dg.RetryRequested(seconds_to_wait=DELAY)
 
-    @job
+    @dg.job
     def step_retry():
         fail_first_and_wait()
 
@@ -244,7 +220,7 @@ def define_retry_wait_fixed_job():
 
 @executors
 def test_step_retry_fixed_wait(environment):
-    with instance_for_test() as instance:
+    with dg.instance_for_test() as instance:
         with tempfile.TemporaryDirectory() as tempdir:
             env = dict(environment)
             env["ops"] = {"fail_first_and_wait": {"config": tempdir}}
@@ -252,7 +228,7 @@ def test_step_retry_fixed_wait(environment):
             dagster_run = instance.create_run_for_job(define_retry_wait_fixed_job(), run_config=env)
 
             event_iter = execute_run_iterator(
-                reconstructable(define_retry_wait_fixed_job),
+                dg.reconstructable(define_retry_wait_fixed_job),
                 dagster_run,
                 instance=instance,
             )
@@ -275,11 +251,11 @@ def test_step_retry_fixed_wait(environment):
 
 
 def test_basic_retry_policy():
-    @op(retry_policy=RetryPolicy())
+    @dg.op(retry_policy=dg.RetryPolicy())
     def throws(_):
         raise Exception("I fail")
 
-    @job
+    @dg.job
     def policy_test():
         throws()
 
@@ -289,28 +265,28 @@ def test_basic_retry_policy():
 
 
 def test_retry_policy_rules():
-    @op(retry_policy=RetryPolicy(max_retries=2))
+    @dg.op(retry_policy=dg.RetryPolicy(max_retries=2))
     def throw_with_policy():
         raise Exception("I throw")
 
-    @op
+    @dg.op
     def throw_no_policy():
         raise Exception("I throw")
 
-    @op
+    @dg.op
     def fail_no_policy():
-        raise Failure("I fail")
+        raise dg.Failure("I fail")
 
-    @job(op_retry_policy=RetryPolicy(max_retries=3))
+    @dg.job(op_retry_policy=dg.RetryPolicy(max_retries=3))
     def policy_test():
         throw_with_policy()
         throw_no_policy()
-        throw_with_policy.with_retry_policy(RetryPolicy(max_retries=1)).alias("override_with")()
-        throw_no_policy.alias("override_no").with_retry_policy(RetryPolicy(max_retries=1))()
+        throw_with_policy.with_retry_policy(dg.RetryPolicy(max_retries=1)).alias("override_with")()
+        throw_no_policy.alias("override_no").with_retry_policy(dg.RetryPolicy(max_retries=1))()
         throw_no_policy.configured({"jonx": True}, name="config_override_no").with_retry_policy(
-            RetryPolicy(max_retries=1)
+            dg.RetryPolicy(max_retries=1)
         )()
-        fail_no_policy.alias("override_fail").with_retry_policy(RetryPolicy(max_retries=1))()
+        fail_no_policy.alias("override_fail").with_retry_policy(dg.RetryPolicy(max_retries=1))()
 
     result = policy_test.execute_in_process(raise_on_error=False)
     assert not result.success
@@ -325,11 +301,11 @@ def test_retry_policy_rules():
 def test_delay():
     delay = 0.3
 
-    @op(retry_policy=RetryPolicy(delay=delay))
+    @dg.op(retry_policy=dg.RetryPolicy(delay=delay))
     def throws(_):
         raise Exception("I fail")
 
-    @job
+    @dg.job
     def policy_test():
         throws()
 
@@ -342,34 +318,34 @@ def test_delay():
 
 
 def test_policy_delay_calc():
-    empty = RetryPolicy()
+    empty = dg.RetryPolicy()
     assert empty.calculate_delay(1) == 0
     assert empty.calculate_delay(2) == 0
     assert empty.calculate_delay(3) == 0
 
-    one = RetryPolicy(delay=1)
+    one = dg.RetryPolicy(delay=1)
     assert one.calculate_delay(1) == 1
     assert one.calculate_delay(2) == 1
     assert one.calculate_delay(3) == 1
 
-    one_linear = RetryPolicy(delay=1, backoff=Backoff.LINEAR)
+    one_linear = dg.RetryPolicy(delay=1, backoff=Backoff.LINEAR)
     assert one_linear.calculate_delay(1) == 1
     assert one_linear.calculate_delay(2) == 2
     assert one_linear.calculate_delay(3) == 3
 
-    one_expo = RetryPolicy(delay=1, backoff=Backoff.EXPONENTIAL)
+    one_expo = dg.RetryPolicy(delay=1, backoff=Backoff.EXPONENTIAL)
     assert one_expo.calculate_delay(1) == 1
     assert one_expo.calculate_delay(2) == 3
     assert one_expo.calculate_delay(3) == 7
 
     # jitter
 
-    one_linear_full = RetryPolicy(delay=1, backoff=Backoff.LINEAR, jitter=Jitter.FULL)
-    one_expo_full = RetryPolicy(delay=1, backoff=Backoff.EXPONENTIAL, jitter=Jitter.FULL)
-    one_linear_pm = RetryPolicy(delay=1, backoff=Backoff.LINEAR, jitter=Jitter.PLUS_MINUS)
-    one_expo_pm = RetryPolicy(delay=1, backoff=Backoff.EXPONENTIAL, jitter=Jitter.PLUS_MINUS)
-    one_full = RetryPolicy(delay=1, jitter=Jitter.FULL)
-    one_pm = RetryPolicy(delay=1, jitter=Jitter.PLUS_MINUS)
+    one_linear_full = dg.RetryPolicy(delay=1, backoff=Backoff.LINEAR, jitter=Jitter.FULL)
+    one_expo_full = dg.RetryPolicy(delay=1, backoff=Backoff.EXPONENTIAL, jitter=Jitter.FULL)
+    one_linear_pm = dg.RetryPolicy(delay=1, backoff=Backoff.LINEAR, jitter=Jitter.PLUS_MINUS)
+    one_expo_pm = dg.RetryPolicy(delay=1, backoff=Backoff.EXPONENTIAL, jitter=Jitter.PLUS_MINUS)
+    one_full = dg.RetryPolicy(delay=1, jitter=Jitter.FULL)
+    one_pm = dg.RetryPolicy(delay=1, jitter=Jitter.PLUS_MINUS)
 
     # test many times to navigate randomness
     for _ in range(100):
@@ -387,25 +363,27 @@ def test_policy_delay_calc():
         assert 0 < one_full.calculate_delay(100) < 1
         assert 0 < one_pm.calculate_delay(100) < 2
 
-    with pytest.raises(DagsterInvalidDefinitionError):
-        RetryPolicy(jitter=Jitter.PLUS_MINUS)
+    with pytest.raises(dg.DagsterInvalidDefinitionError):
+        dg.RetryPolicy(jitter=Jitter.PLUS_MINUS)
 
-    with pytest.raises(DagsterInvalidDefinitionError):
-        RetryPolicy(backoff=Backoff.EXPONENTIAL)
+    with pytest.raises(dg.DagsterInvalidDefinitionError):
+        dg.RetryPolicy(backoff=Backoff.EXPONENTIAL)
 
 
 def test_linear_backoff():
     delay = 0.1
     logged_times = []
 
-    @op
+    @dg.op
     def throws(_):
         logged_times.append(time.time())
         raise Exception("I fail")
 
-    @job
+    @dg.job
     def linear_backoff():
-        throws.with_retry_policy(RetryPolicy(max_retries=3, delay=delay, backoff=Backoff.LINEAR))()
+        throws.with_retry_policy(
+            dg.RetryPolicy(max_retries=3, delay=delay, backoff=Backoff.LINEAR)
+        )()
 
     result = linear_backoff.execute_in_process(raise_on_error=False)
     assert not result.success
@@ -419,15 +397,15 @@ def test_expo_backoff():
     delay = 0.1
     logged_times = []
 
-    @op
+    @dg.op
     def throws(_):
         logged_times.append(time.time())
         raise Exception("I fail")
 
-    @job
+    @dg.job
     def expo_backoff():
         throws.with_retry_policy(
-            RetryPolicy(max_retries=3, delay=delay, backoff=Backoff.EXPONENTIAL)
+            dg.RetryPolicy(max_retries=3, delay=delay, backoff=Backoff.EXPONENTIAL)
         )()
 
     result = expo_backoff.execute_in_process(raise_on_error=False)
@@ -438,7 +416,7 @@ def test_expo_backoff():
     assert (logged_times[3] - logged_times[2]) > (delay * 7)
 
 
-def _get_retry_events(events: Sequence[DagsterEvent]):
+def _get_retry_events(events: Sequence[dg.DagsterEvent]):
     return list(
         filter(
             lambda evt: evt.event_type == DagsterEventType.STEP_UP_FOR_RETRY,
@@ -448,11 +426,11 @@ def _get_retry_events(events: Sequence[DagsterEvent]):
 
 
 def test_basic_op_retry_policy():
-    @op(retry_policy=RetryPolicy())
+    @dg.op(retry_policy=dg.RetryPolicy())
     def throws(_):
         raise Exception("I fail")
 
-    @job
+    @dg.job
     def policy_test():
         throws()
 
@@ -462,28 +440,28 @@ def test_basic_op_retry_policy():
 
 
 def test_retry_policy_rules_job():
-    @op(retry_policy=RetryPolicy(max_retries=2))
+    @dg.op(retry_policy=dg.RetryPolicy(max_retries=2))
     def throw_with_policy():
         raise Exception("I throw")
 
-    @op
+    @dg.op
     def throw_no_policy():
         raise Exception("I throw")
 
-    @op
+    @dg.op
     def fail_no_policy():
-        raise Failure("I fail")
+        raise dg.Failure("I fail")
 
-    @job(op_retry_policy=RetryPolicy(max_retries=3))
+    @dg.job(op_retry_policy=dg.RetryPolicy(max_retries=3))
     def policy_test():
         throw_with_policy()
         throw_no_policy()
-        throw_with_policy.with_retry_policy(RetryPolicy(max_retries=1)).alias("override_with")()
-        throw_no_policy.alias("override_no").with_retry_policy(RetryPolicy(max_retries=1))()
+        throw_with_policy.with_retry_policy(dg.RetryPolicy(max_retries=1)).alias("override_with")()
+        throw_no_policy.alias("override_no").with_retry_policy(dg.RetryPolicy(max_retries=1))()
         throw_no_policy.configured({"jonx": True}, name="config_override_no").with_retry_policy(
-            RetryPolicy(max_retries=1)
+            dg.RetryPolicy(max_retries=1)
         )()
-        fail_no_policy.alias("override_fail").with_retry_policy(RetryPolicy(max_retries=1))()
+        fail_no_policy.alias("override_fail").with_retry_policy(dg.RetryPolicy(max_retries=1))()
 
     result = policy_test.execute_in_process(raise_on_error=False)
     assert not result.success
@@ -496,15 +474,15 @@ def test_retry_policy_rules_job():
 
 
 def test_basic_op_retry_policy_subset():
-    @op
+    @dg.op
     def do_nothing():
         pass
 
-    @op
+    @dg.op
     def throws(_):
         raise Exception("I fail")
 
-    @job(op_retry_policy=RetryPolicy())
+    @dg.job(op_retry_policy=dg.RetryPolicy())
     def policy_test():
         throws()
         do_nothing()
@@ -515,30 +493,30 @@ def test_basic_op_retry_policy_subset():
 
 
 def test_retry_policy_rules_on_graph_to_job():
-    @op(retry_policy=RetryPolicy(max_retries=2))
+    @dg.op(retry_policy=dg.RetryPolicy(max_retries=2))
     def throw_with_policy():
         raise Exception("I throw")
 
-    @op
+    @dg.op
     def throw_no_policy():
         raise Exception("I throw")
 
-    @op
+    @dg.op
     def fail_no_policy():
-        raise Failure("I fail")
+        raise dg.Failure("I fail")
 
-    @graph
+    @dg.graph
     def policy_test():
         throw_with_policy()
         throw_no_policy()
-        throw_with_policy.with_retry_policy(RetryPolicy(max_retries=1)).alias("override_with")()
-        throw_no_policy.alias("override_no").with_retry_policy(RetryPolicy(max_retries=1))()
+        throw_with_policy.with_retry_policy(dg.RetryPolicy(max_retries=1)).alias("override_with")()
+        throw_no_policy.alias("override_no").with_retry_policy(dg.RetryPolicy(max_retries=1))()
         throw_no_policy.configured({"jonx": True}, name="config_override_no").with_retry_policy(
-            RetryPolicy(max_retries=1)
+            dg.RetryPolicy(max_retries=1)
         )()
-        fail_no_policy.alias("override_fail").with_retry_policy(RetryPolicy(max_retries=1))()
+        fail_no_policy.alias("override_fail").with_retry_policy(dg.RetryPolicy(max_retries=1))()
 
-    my_job = policy_test.to_job(op_retry_policy=RetryPolicy(max_retries=3))
+    my_job = policy_test.to_job(op_retry_policy=dg.RetryPolicy(max_retries=3))
     result = my_job.execute_in_process(raise_on_error=False)
     assert not result.success
     assert len(_get_retry_events(result.events_for_node("throw_no_policy"))) == 3
@@ -550,35 +528,35 @@ def test_retry_policy_rules_on_graph_to_job():
 
 
 def test_retry_policy_rules_on_pending_node_invocation_to_job():
-    @success_hook
+    @dg.success_hook
     def a_hook(_):
         return HookExecutionResult("a_hook")
 
-    @op(retry_policy=RetryPolicy(max_retries=2))
+    @dg.op(retry_policy=dg.RetryPolicy(max_retries=2))
     def throw_with_policy():
         raise Exception("I throw")
 
-    @op
+    @dg.op
     def throw_no_policy():
         raise Exception("I throw")
 
-    @op
+    @dg.op
     def fail_no_policy():
-        raise Failure("I fail")
+        raise dg.Failure("I fail")
 
     @a_hook  # turn policy_test into a PendingNodeInvocation
-    @graph
+    @dg.graph
     def policy_test():
         throw_with_policy()
         throw_no_policy()
-        throw_with_policy.with_retry_policy(RetryPolicy(max_retries=1)).alias("override_with")()
-        throw_no_policy.alias("override_no").with_retry_policy(RetryPolicy(max_retries=1))()
+        throw_with_policy.with_retry_policy(dg.RetryPolicy(max_retries=1)).alias("override_with")()
+        throw_no_policy.alias("override_no").with_retry_policy(dg.RetryPolicy(max_retries=1))()
         throw_no_policy.configured({"jonx": True}, name="config_override_no").with_retry_policy(
-            RetryPolicy(max_retries=1)
+            dg.RetryPolicy(max_retries=1)
         )()
-        fail_no_policy.alias("override_fail").with_retry_policy(RetryPolicy(max_retries=1))()
+        fail_no_policy.alias("override_fail").with_retry_policy(dg.RetryPolicy(max_retries=1))()
 
-    my_job = policy_test.to_job(op_retry_policy=RetryPolicy(max_retries=3))
+    my_job = policy_test.to_job(op_retry_policy=dg.RetryPolicy(max_retries=3))
     result = my_job.execute_in_process(raise_on_error=False)
     assert not result.success
     assert len(_get_retry_events(result.events_for_node("throw_no_policy"))) == 3
@@ -590,15 +568,15 @@ def test_retry_policy_rules_on_pending_node_invocation_to_job():
 
 
 def test_failure_allow_retries():
-    @op
+    @dg.op
     def fail_allow():
-        raise Failure("I fail")
+        raise dg.Failure("I fail")
 
-    @op
+    @dg.op
     def fail_disallow():
-        raise Failure("I fail harder", allow_retries=False)
+        raise dg.Failure("I fail harder", allow_retries=False)
 
-    @job(op_retry_policy=RetryPolicy(max_retries=1))
+    @dg.job(op_retry_policy=dg.RetryPolicy(max_retries=1))
     def hard_fail_job():
         fail_allow()
         fail_disallow()
@@ -614,15 +592,15 @@ def test_retry_policy_with_failure_hook():
 
     hook_calls = []
 
-    @failure_hook
+    @dg.failure_hook
     def something_on_failure(context):
         hook_calls.append(context)
 
-    @op(retry_policy=RetryPolicy(max_retries=2))
+    @dg.op(retry_policy=dg.RetryPolicy(max_retries=2))
     def op1():
         raise exception
 
-    @job(hooks={something_on_failure})
+    @dg.job(hooks={something_on_failure})
     def job1():
         op1()
 
@@ -633,11 +611,11 @@ def test_retry_policy_with_failure_hook():
 
 
 def test_failure_metadata():
-    @op(retry_policy=RetryPolicy(max_retries=1))
+    @dg.op(retry_policy=dg.RetryPolicy(max_retries=1))
     def fails():
-        raise Failure("FAILURE", metadata={"meta": "data"})
+        raise dg.Failure("FAILURE", metadata={"meta": "data"})
 
-    @job
+    @dg.job
     def exceeds():
         fails()
 
@@ -650,7 +628,7 @@ def test_failure_metadata():
 
 
 def define_crash_once_job():
-    @op(config_schema=str, retry_policy=RetryPolicy(max_retries=1))
+    @dg.op(config_schema=str, retry_policy=dg.RetryPolicy(max_retries=1))
     def crash_once(context):
         file = os.path.join(context.op_config, "i_threw_up")
         if not os.path.exists(file):
@@ -658,7 +636,7 @@ def define_crash_once_job():
             segfault()
         return "okay perfect"
 
-    @job
+    @dg.job
     def crash_retry():
         crash_once()
 
@@ -666,11 +644,11 @@ def define_crash_once_job():
 
 
 def define_crash_always_job():
-    @op(config_schema=str, retry_policy=RetryPolicy(max_retries=1))
+    @dg.op(config_schema=str, retry_policy=dg.RetryPolicy(max_retries=1))
     def crash_always(context):
         segfault()
 
-    @job
+    @dg.job
     def crash_always_job():
         crash_always()
 
@@ -678,10 +656,10 @@ def define_crash_always_job():
 
 
 def test_multiprocess_crash_retry():
-    with instance_for_test() as instance:
+    with dg.instance_for_test() as instance:
         with tempfile.TemporaryDirectory() as tempdir:
-            with execute_job(
-                reconstructable(define_crash_once_job),
+            with dg.execute_job(
+                dg.reconstructable(define_crash_once_job),
                 run_config={
                     "execution": {"config": {"multiprocess": {}}},
                     "ops": {"crash_once": {"config": tempdir}},
@@ -699,8 +677,8 @@ def test_multiprocess_crash_retry():
                 assert len(events[DagsterEventType.STEP_SUCCESS]) == 1
 
         with tempfile.TemporaryDirectory() as tempdir:
-            with execute_job(
-                reconstructable(define_crash_always_job),
+            with dg.execute_job(
+                dg.reconstructable(define_crash_always_job),
                 run_config={
                     "execution": {"config": {"multiprocess": {}}},
                     "ops": {"crash_always": {"config": tempdir}},

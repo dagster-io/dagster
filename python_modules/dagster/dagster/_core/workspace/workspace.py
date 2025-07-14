@@ -7,7 +7,7 @@ from dagster._record import ImportFrom, record
 from dagster._utils.error import SerializableErrorInfo
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.remote_asset_graph import RemoteWorkspaceAssetGraph
+    from dagster._core.definitions.assets.graph.remote_asset_graph import RemoteWorkspaceAssetGraph
     from dagster._core.remote_representation import CodeLocation, CodeLocationOrigin
 
 
@@ -48,7 +48,9 @@ class CurrentWorkspace:
 
     @cached_property
     def asset_graph(self) -> "RemoteWorkspaceAssetGraph":
-        from dagster._core.definitions.remote_asset_graph import RemoteWorkspaceAssetGraph
+        from dagster._core.definitions.assets.graph.remote_asset_graph import (
+            RemoteWorkspaceAssetGraph,
+        )
 
         return RemoteWorkspaceAssetGraph.build(self)
 

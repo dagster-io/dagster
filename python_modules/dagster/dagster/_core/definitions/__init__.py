@@ -1,4 +1,4 @@
-from dagster._core.definitions.asset_check_result import (
+from dagster._core.definitions.asset_checks.asset_check_result import (
     AssetCheckEvaluation as AssetCheckEvaluation,
     AssetCheckResult as AssetCheckResult,
     AssetCheckSeverity as AssetCheckSeverity,
@@ -154,10 +154,12 @@ from dagster._core.definitions.sensor_definition import (
 )
 
 # ruff: isort: split
-from dagster._core.definitions.asset_in import AssetIn as AssetIn
-from dagster._core.definitions.asset_out import AssetOut as AssetOut
 from dagster._core.definitions.asset_selection import AssetSelection as AssetSelection
-from dagster._core.definitions.assets import AssetsDefinition as AssetsDefinition
+from dagster._core.definitions.assets.definition.assets_definition import (
+    AssetsDefinition as AssetsDefinition,
+)
+from dagster._core.definitions.assets.job.asset_in import AssetIn as AssetIn
+from dagster._core.definitions.assets.job.asset_out import AssetOut as AssetOut
 from dagster._core.definitions.decorators import (
     asset as asset,
     asset_sensor as asset_sensor,

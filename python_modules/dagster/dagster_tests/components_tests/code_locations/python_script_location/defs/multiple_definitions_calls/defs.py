@@ -1,11 +1,11 @@
-from dagster import AssetSpec, Definitions, definitions
+import dagster as dg
 
 
-@definitions
+@dg.definitions
 def defs_one():
-    return Definitions(assets=[AssetSpec(key="from_defs_one")])
+    return dg.Definitions(assets=[dg.AssetSpec(key="from_defs_one")])
 
 
-@definitions
+@dg.definitions
 def defs_two():
-    return Definitions(assets=[AssetSpec(key="from_defs_two")])
+    return dg.Definitions(assets=[dg.AssetSpec(key="from_defs_two")])

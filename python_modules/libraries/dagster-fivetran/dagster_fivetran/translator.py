@@ -5,7 +5,7 @@ from typing import Any, Callable, NamedTuple, Optional
 
 from dagster import Failure
 from dagster._core.definitions.asset_key import AssetKey
-from dagster._core.definitions.asset_spec import AssetSpec
+from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
 from dagster._core.definitions.metadata.metadata_set import NamespacedMetadataSet
 from dagster._record import as_dict, record
 from dagster._utils.cached_method import cached_method

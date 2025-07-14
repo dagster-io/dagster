@@ -4,7 +4,7 @@ from typing import Any, Callable, Literal, Optional
 
 from dagster import _check as check
 from dagster._core.definitions.asset_key import AssetKey
-from dagster._core.definitions.asset_spec import AssetSpec
+from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
 from dagster._core.definitions.metadata.metadata_set import NamespacedMetadataSet
 from dagster._core.definitions.tags.tag_set import NamespacedTagSet
 from dagster._record import record
@@ -211,6 +211,8 @@ class TableauViewMetadataSet(TableauMetadataSet):
 
 class TableauDataSourceMetadataSet(TableauMetadataSet):
     has_extracts: bool = False
+    is_published: bool
+    workbook_id: Optional[str] = None
 
 
 class DagsterTableauTranslator:
@@ -310,7 +312,12 @@ class DagsterTableauTranslator:
             tags={"dagster/storage_kind": "tableau", **TableauTagSet(asset_type="data_source")},
             metadata={
                 **TableauDataSourceMetadataSet(
-                    id=data.properties["luid"], has_extracts=data.properties["hasExtracts"]
+                    id=data.properties["luid"],
+                    has_extracts=data.properties["hasExtracts"],
+                    is_published=data.properties["isPublished"],
+                    workbook_id=data.properties["workbook"]["luid"]
+                    if not data.properties["isPublished"]
+                    else None,
                 )
             },
         )

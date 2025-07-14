@@ -1,5 +1,5 @@
 from dagster._core.definitions.asset_key import AssetKey, CoercibleToAssetKey
-from dagster._core.definitions.asset_spec import AssetSpec
+from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
 from dagster_airlift.constants import TASK_MAPPING_METADATA_KEY
 from dagster_airlift.core.airflow_instance import DagInfo
 from dagster_airlift.core.filter import AirflowFilter

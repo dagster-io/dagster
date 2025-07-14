@@ -10,7 +10,7 @@ from docs_snippets.integrations.dbt.dbt import (
     scope_schedule_assets_dbt_and_downstream,
     scope_schedule_assets_dbt_only,
 )
-from docs_snippets.integrations.dbt.dbt_cloud import (
+from docs_snippets.integrations.dbt.dbt_cloud_legacy import (
     scope_define_instance,
     scope_schedule_dbt_cloud_assets,
 )

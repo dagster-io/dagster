@@ -58,8 +58,8 @@ from dagster._core.utils import toposort_flatten
 from dagster._utils.warnings import normalize_renamed_param
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.asset_layer import AssetLayer
-    from dagster._core.definitions.assets import AssetsDefinition
+    from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
+    from dagster._core.definitions.assets.job.asset_layer import AssetLayer
     from dagster._core.definitions.composition import PendingNodeInvocation
     from dagster._core.definitions.executor_definition import ExecutorDefinition
     from dagster._core.definitions.job_definition import JobDefinition

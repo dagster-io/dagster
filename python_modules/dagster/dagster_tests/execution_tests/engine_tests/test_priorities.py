@@ -1,26 +1,22 @@
-from dagster import reconstructable
-from dagster._core.definitions import op
-from dagster._core.definitions.decorators.job_decorator import job
-from dagster._core.execution.api import execute_job
-from dagster._core.test_utils import instance_for_test
+import dagster as dg
 
 
-@op(tags={"dagster/priority": "-1"})
+@dg.op(tags={"dagster/priority": "-1"})
 def low(_):
     pass
 
 
-@op
+@dg.op
 def none(_):
     pass
 
 
-@op(tags={"dagster/priority": "1"})
+@dg.op(tags={"dagster/priority": "1"})
 def high(_):
     pass
 
 
-@job
+@dg.job
 def priority_test():
     none()
     low()
@@ -44,9 +40,9 @@ def test_priorities():
 
 
 def test_priorities_mp():
-    with instance_for_test() as instance:
-        recon_job = reconstructable(priority_test)
-        with execute_job(
+    with dg.instance_for_test() as instance:
+        recon_job = dg.reconstructable(priority_test)
+        with dg.execute_job(
             recon_job,
             run_config={
                 "execution": {"config": {"multiprocess": {"max_concurrent": 1}}},

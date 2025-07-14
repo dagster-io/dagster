@@ -1,6 +1,6 @@
+import dagster as dg
 import pytest
-from dagster import AssetKey, SourceAsset, asset, load_assets_from_current_module
-from dagster._core.errors import DagsterInvalidDefinitionError
+from dagster import AssetKey
 
 # While it's not trivial to achieve, slashes can ponentially sneak into asset keys
 # inside definitions. These tests pin the current behavior around getting forward
@@ -8,52 +8,52 @@ from dagster._core.errors import DagsterInvalidDefinitionError
 
 
 def test_forward_slashes_fail():
-    with pytest.raises(DagsterInvalidDefinitionError):
+    with pytest.raises(dg.DagsterInvalidDefinitionError):
 
-        @asset(key="foo/bar")
+        @dg.asset(key="foo/bar")
         def fn(): ...
 
-    with pytest.raises(DagsterInvalidDefinitionError):
+    with pytest.raises(dg.DagsterInvalidDefinitionError):
 
-        @asset(key=["foo/bar"])
+        @dg.asset(key=["foo/bar"])
         def fn(): ...
 
-    with pytest.raises(DagsterInvalidDefinitionError):
+    with pytest.raises(dg.DagsterInvalidDefinitionError):
 
-        @asset(key=["foo/bar", "baz"])
+        @dg.asset(key=["foo/bar", "baz"])
         def fn(): ...
 
-    with pytest.raises(DagsterInvalidDefinitionError):
+    with pytest.raises(dg.DagsterInvalidDefinitionError):
 
-        @asset(key_prefix="foo/bar")
+        @dg.asset(key_prefix="foo/bar")
         def fn(): ...
 
-    with pytest.raises(DagsterInvalidDefinitionError):
+    with pytest.raises(dg.DagsterInvalidDefinitionError):
 
-        @asset(key_prefix=["foo/bar"])
+        @dg.asset(key_prefix=["foo/bar"])
         def fn(): ...
 
-    with pytest.raises(DagsterInvalidDefinitionError):
+    with pytest.raises(dg.DagsterInvalidDefinitionError):
 
-        @asset(key_prefix=["foo/bar", "baz"])
+        @dg.asset(key_prefix=["foo/bar", "baz"])
         def fn(): ...
 
 
-@asset(key=["baz"])
+@dg.asset(key=["baz"])
 def asset_1(): ...
 
 
-@asset(key=["baz", "quix"])
+@dg.asset(key=["baz", "quix"])
 def asset_2(): ...
 
 
-source_asset = SourceAsset(key=["key0"])
+source_asset = dg.SourceAsset(key=["key0"])
 
 
 def test_forward_slashes_allowed():
-    keys1 = [a.key for a in load_assets_from_current_module(key_prefix="foo/bar")]  # pyright: ignore[reportAttributeAccessIssue]
-    assert AssetKey(["foo/bar", "baz"]) in keys1
-    assert AssetKey(["foo/bar", "baz", "quix"]) in keys1
+    keys1 = [a.key for a in dg.load_assets_from_current_module(key_prefix="foo/bar")]  # pyright: ignore[reportAttributeAccessIssue]
+    assert dg.AssetKey(["foo/bar", "baz"]) in keys1
+    assert dg.AssetKey(["foo/bar", "baz", "quix"]) in keys1
 
 
 def test_to_asset_key_path():

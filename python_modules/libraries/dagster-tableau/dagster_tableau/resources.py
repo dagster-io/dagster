@@ -542,10 +542,14 @@ class BaseTableauWorkspace(ConfigurableResource):
                             data_source_id = published_data_source_data["luid"]
                             if data_source_id and data_source_id not in data_source_ids:
                                 data_source_ids.add(data_source_id)
+                                augmented_published_data_source_data = {
+                                    **published_data_source_data,
+                                    "isPublished": True,
+                                }
                                 data_sources.append(
                                     TableauContentData(
                                         content_type=TableauContentType.DATA_SOURCE,
-                                        properties=published_data_source_data,
+                                        properties=augmented_published_data_source_data,
                                     )
                                 )
                         if not published_data_source_list:
@@ -555,10 +559,15 @@ class BaseTableauWorkspace(ConfigurableResource):
                             if data_source_id and data_source_id not in data_source_ids:
                                 data_source_ids.add(data_source_id)
                                 embedded_data_source_data["luid"] = data_source_id
+                                augmented_embedded_data_source_data = {
+                                    **embedded_data_source_data,
+                                    "isPublished": False,
+                                    "workbook": {"luid": workbook_id},
+                                }
                                 data_sources.append(
                                     TableauContentData(
                                         content_type=TableauContentType.DATA_SOURCE,
-                                        properties=embedded_data_source_data,
+                                        properties=augmented_embedded_data_source_data,
                                     )
                                 )
 
@@ -635,11 +644,14 @@ class BaseTableauWorkspace(ConfigurableResource):
         This method can only be used in the context of an asset execution.
         """
         assets_def = context.assets_def
-        specs = assets_def.specs
+        specs = [
+            assets_def.specs_by_key[selected_key] for selected_key in context.selected_asset_keys
+        ]
         refreshable_data_source_ids = [
             check.not_none(TableauDataSourceMetadataSet.extract(spec.metadata).id)
             for spec in specs
-            if TableauDataSourceMetadataSet.extract(spec.metadata).has_extracts
+            if check.inst(TableauTagSet.extract(spec.tags).asset_type, str) == "data_source"
+            and TableauDataSourceMetadataSet.extract(spec.metadata).has_extracts
         ]
 
         with self.get_client() as client:
@@ -651,13 +663,12 @@ class BaseTableauWorkspace(ConfigurableResource):
 
             # If a sheet depends on a refreshed data source, then its workbook is considered refreshed
             refreshed_workbook_ids = set()
-            specs_by_asset_key = {spec.key: spec for spec in specs}
             for spec in specs:
                 if TableauTagSet.extract(spec.tags).asset_type == "sheet":
                     for dep in spec.deps:
                         # Only materializable data sources are included in materializable asset specs,
                         # so we must verify for None values - data sources that are external specs are not available here.
-                        dep_spec = specs_by_asset_key.get(dep.asset_key, None)
+                        dep_spec = assets_def.specs_by_key.get(dep.asset_key)
                         if (
                             dep_spec
                             and TableauMetadataSet.extract(dep_spec.metadata).id
@@ -668,22 +679,49 @@ class BaseTableauWorkspace(ConfigurableResource):
                             )
                             break
 
-            for spec in specs:
-                asset_type = check.inst(TableauTagSet.extract(spec.tags).asset_type, str)
-                asset_id = check.inst(TableauMetadataSet.extract(spec.metadata).id, str)
+            data_source_specs = [
+                spec
+                for spec in specs
+                if check.inst(TableauTagSet.extract(spec.tags).asset_type, str) == "data_source"
+            ]
+            sheet_source_specs = [
+                spec
+                for spec in specs
+                if check.inst(TableauTagSet.extract(spec.tags).asset_type, str) == "sheet"
+            ]
+            dashboards_source_specs = [
+                spec
+                for spec in specs
+                if check.inst(TableauTagSet.extract(spec.tags).asset_type, str) == "dashboard"
+            ]
 
-                if asset_type == "data_source":
-                    yield from create_data_source_asset_event(
-                        data_source=client.get_data_source(asset_id),
-                        spec=spec,
-                        refreshed_data_source_ids=refreshed_data_source_ids,
-                    )
-                else:
-                    yield from create_view_asset_event(
-                        view=client.get_view(asset_id),
-                        spec=spec,
-                        refreshed_workbook_ids=refreshed_workbook_ids,
-                    )
+            # Order of materialization matters - first we materialize data sources, then sheets, and finally dashboards.
+            for spec in data_source_specs:
+                yield from create_data_source_asset_event(
+                    data_source=client.get_data_source(
+                        check.inst(TableauMetadataSet.extract(spec.metadata).id, str)
+                    ),
+                    spec=spec,
+                    refreshed_data_source_ids=refreshed_data_source_ids,
+                )
+
+            for spec in sheet_source_specs:
+                yield from create_view_asset_event(
+                    view=client.get_view(
+                        check.inst(TableauMetadataSet.extract(spec.metadata).id, str)
+                    ),
+                    spec=spec,
+                    refreshed_workbook_ids=refreshed_workbook_ids,
+                )
+
+            for spec in dashboards_source_specs:
+                yield from create_view_asset_event(
+                    view=client.get_view(
+                        check.inst(TableauMetadataSet.extract(spec.metadata).id, str)
+                    ),
+                    spec=spec,
+                    refreshed_workbook_ids=refreshed_workbook_ids,
+                )
 
 
 @beta

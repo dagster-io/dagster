@@ -2,19 +2,13 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 from typing import Callable, Optional, Union
 
+import dagster as dg
 from dagster._annotations import public
 from dagster._core.definitions.metadata import RawMetadataMapping
 from dagster._core.definitions.resource_annotation import TreatAsResourceParam
-from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
-from dagster._core.execution.context.op_execution_context import OpExecutionContext
-from dagster._core.pipes.client import (
-    PipesClient,
-    PipesClientCompletedInvocation,
-    PipesContextInjector,
-    PipesMessageReader,
-)
+from dagster._core.pipes.client import PipesClientCompletedInvocation
 from dagster._core.pipes.context import build_external_execution_context_data
-from dagster._core.pipes.utils import PipesMessageHandler, open_pipes_session
+from dagster._core.pipes.utils import PipesMessageHandler
 from dagster_pipes import (
     PipesContext,
     PipesContextData,
@@ -65,7 +59,7 @@ class InProcessPipesParamLoader(PipesParamsLoader):
         return True
 
 
-class InProcessContextInjector(PipesContextInjector):
+class InProcessContextInjector(dg.PipesContextInjector):
     @contextmanager
     def inject_context(self, context_data: "PipesContextData") -> Iterator[PipesParams]:
         yield {}
@@ -74,7 +68,7 @@ class InProcessContextInjector(PipesContextInjector):
         return "In-process context injection."
 
 
-class InProcessMessageReader(PipesMessageReader):
+class InProcessMessageReader(dg.PipesMessageReader):
     def __init__(
         self,
         message_writer: InProcessPipesMessageWriter,
@@ -84,7 +78,7 @@ class InProcessMessageReader(PipesMessageReader):
         self.pipes_context = pipes_context
 
     @contextmanager
-    def read_messages(self, handler: "PipesMessageHandler") -> Iterator[PipesParams]:
+    def read_messages(self, handler: PipesMessageHandler) -> Iterator[PipesParams]:
         yield {}
         for pipes_message in self.message_writer.write_channel.messages:
             handler.handle_message(pipes_message)
@@ -93,7 +87,7 @@ class InProcessMessageReader(PipesMessageReader):
         return "In-process message reader."
 
 
-class InProcessPipesClient(PipesClient, TreatAsResourceParam):
+class InProcessPipesClient(dg.PipesClient, TreatAsResourceParam):
     """An in-process pipes clients unusable in test cases. A function inside the orchestration
     process actually serves as the "external" execution. This allows us to test the inner machinery
     of pipes without actually launching subprocesses, which makes the tests much more lightweight
@@ -104,7 +98,7 @@ class InProcessPipesClient(PipesClient, TreatAsResourceParam):
     def run(  # pyright: ignore[reportIncompatibleMethodOverride]
         self,
         *,
-        context: Union[OpExecutionContext, AssetExecutionContext],
+        context: Union[dg.OpExecutionContext, dg.AssetExecutionContext],
         fn: Callable[[PipesContext], None],
         extras: Optional[PipesExtras] = None,
         metadata: Optional[RawMetadataMapping] = None,  # metadata to attach to all materializations
@@ -119,7 +113,7 @@ class InProcessPipesClient(PipesClient, TreatAsResourceParam):
                 params_loader=InProcessPipesParamLoader(),
             ) as pipes_context
         ):
-            with open_pipes_session(
+            with dg.open_pipes_session(
                 context=context,
                 context_injector=InProcessContextInjector(),
                 message_reader=InProcessMessageReader(

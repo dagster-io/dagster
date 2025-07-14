@@ -106,7 +106,6 @@ const SelectionHealthDataObserver = React.memo(
       assets,
       assetSelection: selection,
       loading,
-      useWorker: false,
       includeExternalAssets: true,
       skip: skipFilters,
     });

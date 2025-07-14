@@ -1,10 +1,11 @@
-import os
 from abc import ABC, abstractmethod
 from collections.abc import Mapping, Sequence
 from datetime import datetime
-from typing import Any, Callable, Generic, NamedTuple, Optional, Union
+from os import PathLike
+from typing import Any, Callable, Generic, Optional, Union
 
 import dagster_shared.seven as seven
+from dagster_shared.record import IHaveNew, LegacyNamedTupleMixin, record, record_custom
 from dagster_shared.serdes.serdes import (
     FieldSerializer,
     JsonSerializableValue,
@@ -112,7 +113,7 @@ class MetadataValue(ABC, Generic[T_Packable]):
 
     @public
     @staticmethod
-    def path(path: Union[str, os.PathLike]) -> "PathMetadataValue":
+    def path(path: Union[str, PathLike]) -> "PathMetadataValue":
         """Static constructor for a metadata value wrapping a path as
         :py:class:`PathMetadataValue`.
 
@@ -135,7 +136,7 @@ class MetadataValue(ABC, Generic[T_Packable]):
 
     @public
     @staticmethod
-    def notebook(path: Union[str, os.PathLike]) -> "NotebookMetadataValue":
+    def notebook(path: Union[str, PathLike]) -> "NotebookMetadataValue":
         """Static constructor for a metadata value wrapping a notebook path as
         :py:class:`NotebookMetadataValue`.
 
@@ -524,95 +525,99 @@ class MetadataValue(ABC, Generic[T_Packable]):
 
 
 @whitelist_for_serdes(storage_name="TextMetadataEntryData")
-class TextMetadataValue(
-    NamedTuple(
-        "_TextMetadataValue",
-        [
-            ("text", PublicAttr[Optional[str]]),
-        ],
-    ),
-    MetadataValue[str],
-):
+@record(kw_only=False)
+class TextMetadataValue(MetadataValue[str]):
     """Container class for text metadata entry data.
 
     Args:
         text (Optional[str]): The text data.
     """
 
-    def __new__(cls, text: Optional[str]):
-        return super().__new__(cls, check.opt_str_param(text, "text", default=""))
+    text: PublicAttr[Optional[str]] = ""  # type: ignore
 
     @public
     @property
-    def value(self) -> Optional[str]:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def value(self) -> str:
         """Optional[str]: The wrapped text data."""
-        return self.text
+        return self.text if self.text is not None else ""
 
 
 @whitelist_for_serdes(storage_name="UrlMetadataEntryData")
-class UrlMetadataValue(
-    NamedTuple(
-        "_UrlMetadataValue",
-        [
-            ("url", PublicAttr[Optional[str]]),
-        ],
-    ),
-    MetadataValue[str],
-):
+@record(kw_only=False)
+class UrlMetadataValue(MetadataValue[str]):
     """Container class for URL metadata entry data.
 
     Args:
         url (Optional[str]): The URL as a string.
     """
 
-    def __new__(cls, url: Optional[str]):
-        return super().__new__(cls, check.opt_str_param(url, "url", default=""))
+    url: PublicAttr[Optional[str]] = ""  # type: ignore
 
     @public
     @property
-    def value(self) -> Optional[str]:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def value(self) -> str:
         """Optional[str]: The wrapped URL."""
-        return self.url
+        return self.url if self.url is not None else ""
 
 
 @whitelist_for_serdes(storage_name="PathMetadataEntryData")
-class PathMetadataValue(
-    NamedTuple("_PathMetadataValue", [("path", PublicAttr[Optional[str]])]), MetadataValue[str]
-):
+@record_custom(field_to_new_mapping={"fspath": "path"})
+class PathMetadataValue(MetadataValue[str], IHaveNew):
     """Container class for path metadata entry data.
 
     Args:
-        path (Optional[str]): The path as a string or conforming to os.PathLike.
+        path (str): The path as a string or conforming to os.PathLike.
     """
 
-    def __new__(cls, path: Optional[Union[str, os.PathLike]]):
-        return super().__new__(cls, check.opt_path_param(path, "path", default=""))
+    fspath: str
+
+    def __new__(cls, path: Optional[Union[str, PathLike]]):
+        return super().__new__(
+            cls,
+            # coerces to str
+            fspath=check.opt_path_param(path, "path", default=""),
+        )
 
     @public
     @property
-    def value(self) -> Optional[str]:  # pyright: ignore[reportIncompatibleMethodOverride]
-        """Optional[str]: The wrapped path."""
-        return self.path
+    def value(self) -> str:
+        """str: The wrapped path."""
+        return self.fspath
+
+    @public
+    @property
+    def path(self) -> str:  # type: ignore
+        return self.fspath
 
 
 @whitelist_for_serdes(storage_name="NotebookMetadataEntryData")
-class NotebookMetadataValue(
-    NamedTuple("_NotebookMetadataValue", [("path", PublicAttr[Optional[str]])]), MetadataValue[str]
-):
+@record_custom(field_to_new_mapping={"fspath": "path"})
+class NotebookMetadataValue(MetadataValue[str], IHaveNew):
     """Container class for notebook metadata entry data.
 
     Args:
         path (Optional[str]): The path to the notebook as a string or conforming to os.PathLike.
     """
 
-    def __new__(cls, path: Optional[Union[str, os.PathLike]]):
-        return super().__new__(cls, check.opt_path_param(path, "path", default=""))
+    fspath: str
+
+    def __new__(cls, path: Optional[Union[str, PathLike]]):
+        return super().__new__(
+            cls,
+            # coerces to str
+            fspath=check.opt_path_param(path, "path", default=""),
+        )
 
     @public
     @property
-    def value(self) -> Optional[str]:  # pyright: ignore[reportIncompatibleMethodOverride]
-        """Optional[str]: The wrapped path to the notebook as a string."""
-        return self.path
+    def value(self) -> str:
+        """str: The wrapped path to the notebook as a string."""
+        return self.fspath
+
+    @public
+    @property
+    def path(self) -> str:  # type: ignore
+        return self.fspath
 
 
 class JsonDataFieldSerializer(FieldSerializer):
@@ -640,14 +645,10 @@ class JsonDataFieldSerializer(FieldSerializer):
     storage_name="JsonMetadataEntryData",
     field_serializers={"data": JsonDataFieldSerializer},
 )
+@record_custom
 class JsonMetadataValue(
-    NamedTuple(
-        "_JsonMetadataValue",
-        [
-            ("data", PublicAttr[Optional[Union[Sequence[Any], Mapping[str, Any]]]]),
-        ],
-    ),
-    MetadataValue[Union[Sequence[Any], Mapping[str, Any]]],
+    IHaveNew,
+    MetadataValue[Optional[Union[Sequence[Any], Mapping[str, Any]]]],
 ):
     """Container class for JSON metadata entry data.
 
@@ -655,58 +656,46 @@ class JsonMetadataValue(
         data (Union[Sequence[Any], Dict[str, Any]]): The JSON data.
     """
 
+    data: PublicAttr[Optional[Union[Sequence[Any], Mapping[str, Any]]]]
+
     def __new__(cls, data: Optional[Union[Sequence[Any], Mapping[str, Any]]]):
-        data = check.opt_inst_param(data, "data", (Sequence, Mapping))
         try:
             # check that the value is JSON serializable
             seven.dumps(data)
         except TypeError:
             raise DagsterInvalidMetadata("Value is not JSON serializable.")
-        return super().__new__(cls, data)
+        return super().__new__(cls, data=data)
 
     @public
     @property
-    def value(self) -> Optional[Union[Sequence[Any], Mapping[str, Any]]]:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def value(self) -> Optional[Union[Sequence[Any], Mapping[str, Any]]]:
         """Optional[Union[Sequence[Any], Dict[str, Any]]]: The wrapped JSON data."""
         return self.data
 
 
 @whitelist_for_serdes(storage_name="MarkdownMetadataEntryData")
-class MarkdownMetadataValue(
-    NamedTuple(
-        "_MarkdownMetadataValue",
-        [
-            ("md_str", PublicAttr[Optional[str]]),
-        ],
-    ),
-    MetadataValue[str],
-):
+@record(kw_only=False)
+class MarkdownMetadataValue(MetadataValue[str]):
     """Container class for markdown metadata entry data.
 
     Args:
         md_str (Optional[str]): The markdown as a string.
     """
 
-    def __new__(cls, md_str: Optional[str]):
-        return super().__new__(cls, check.opt_str_param(md_str, "md_str", default=""))
+    md_str: PublicAttr[Optional[str]] = ""
 
     @public
     @property
-    def value(self) -> Optional[str]:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def value(self) -> str:
         """Optional[str]: The wrapped markdown as a string."""
-        return self.md_str
+        return self.md_str if self.md_str is not None else ""
 
 
 # This should be deprecated or fixed so that `value` does not return itself.
 @whitelist_for_serdes(storage_name="PythonArtifactMetadataEntryData")
+@record(kw_only=False)
 class PythonArtifactMetadataValue(
-    NamedTuple(
-        "_PythonArtifactMetadataValue",
-        [
-            ("module", PublicAttr[str]),
-            ("name", PublicAttr[str]),
-        ],
-    ),
+    LegacyNamedTupleMixin,
     MetadataValue["PythonArtifactMetadataValue"],
 ):
     """Container class for python artifact metadata entry data.
@@ -716,10 +705,8 @@ class PythonArtifactMetadataValue(
         name (str): The name of the python artifact
     """
 
-    def __new__(cls, module: str, name: str):
-        return super().__new__(
-            cls, check.str_param(module, "module"), check.str_param(name, "name")
-        )
+    module: PublicAttr[str]
+    name: PublicAttr[str]
 
     @public
     @property
@@ -729,96 +716,63 @@ class PythonArtifactMetadataValue(
 
 
 @whitelist_for_serdes(storage_name="FloatMetadataEntryData")
-class FloatMetadataValue(  # pyright: ignore[reportIncompatibleVariableOverride]
-    NamedTuple(
-        "_FloatMetadataValue",
-        [
-            ("value", PublicAttr[Optional[float]]),
-        ],
-    ),
-    MetadataValue[float],
-):
+@record(kw_only=False)
+class FloatMetadataValue(MetadataValue[Optional[float]]):
     """Container class for float metadata entry data.
 
     Args:
         value (Optional[float]): The float value.
     """
 
-    def __new__(cls, value: Optional[float]):
-        return super().__new__(cls, check.opt_float_param(value, "value"))
+    value: PublicAttr[Optional[float]]  # type: ignore
 
 
 @whitelist_for_serdes(storage_name="IntMetadataEntryData")
-class IntMetadataValue(  # pyright: ignore[reportIncompatibleVariableOverride]
-    NamedTuple(
-        "_IntMetadataValue",
-        [
-            ("value", PublicAttr[Optional[int]]),
-        ],
-    ),
-    MetadataValue[int],
-):
+@record(kw_only=False)
+class IntMetadataValue(MetadataValue[Optional[int]]):
     """Container class for int metadata entry data.
 
     Args:
         value (Optional[int]): The int value.
     """
 
-    def __new__(cls, value: Optional[int]):
-        return super().__new__(cls, check.opt_int_param(value, "value"))
+    value: PublicAttr[Optional[int]]  # type: ignore
 
 
 @whitelist_for_serdes(storage_name="BoolMetadataEntryData")
-class BoolMetadataValue(  # pyright: ignore[reportIncompatibleVariableOverride]
-    NamedTuple("_BoolMetadataValue", [("value", PublicAttr[Optional[bool]])]),
-    MetadataValue[bool],
-):
+@record(kw_only=False)
+class BoolMetadataValue(MetadataValue[Optional[bool]]):
     """Container class for bool metadata entry data.
 
     Args:
         value (Optional[bool]): The bool value.
     """
 
-    def __new__(cls, value: Optional[bool]):
-        return super().__new__(cls, check.opt_bool_param(value, "value"))
+    value: PublicAttr[Optional[bool]]  # type: ignore
 
 
 @whitelist_for_serdes
-class TimestampMetadataValue(  # pyright: ignore[reportIncompatibleVariableOverride]
-    NamedTuple(
-        "_DateTimeMetadataValue",
-        [("value", PublicAttr[float])],
-    ),
-    MetadataValue[float],
-):
+@record(kw_only=False)
+class TimestampMetadataValue(MetadataValue[float]):
     """Container class for metadata value that's a unix timestamp.
 
     Args:
         value (float): Seconds since the unix epoch.
     """
 
-    def __new__(cls, value: float):
-        return super().__new__(cls, check.float_param(value, "value"))
+    value: PublicAttr[float]  # type: ignore
 
 
 @whitelist_for_serdes(storage_name="DagsterPipelineRunMetadataEntryData")
-class DagsterRunMetadataValue(
-    NamedTuple(
-        "_DagsterRunMetadataValue",
-        [
-            ("run_id", PublicAttr[str]),
-        ],
-    ),
-    MetadataValue[str],
-):
+@record(kw_only=False)
+class DagsterRunMetadataValue(MetadataValue[str]):
     """Representation of a dagster run.
 
     Args:
         run_id (str): The run id
     """
 
-    def __new__(cls, run_id: str):
-        return super().__new__(cls, check.str_param(run_id, "run_id"))
+    run_id: PublicAttr[str]
 
     @public
     @property
@@ -828,17 +782,8 @@ class DagsterRunMetadataValue(
 
 
 @whitelist_for_serdes
-class DagsterJobMetadataValue(
-    NamedTuple(
-        "_DagsterJobMetadataValue",
-        [
-            ("job_name", PublicAttr[str]),
-            ("location_name", PublicAttr[str]),
-            ("repository_name", PublicAttr[Optional[str]]),
-        ],
-    ),
-    MetadataValue["DagsterJobMetadataValue"],
-):
+@record(kw_only=False)
+class DagsterJobMetadataValue(MetadataValue["DagsterJobMetadataValue"]):
     """Representation of a dagster run.
 
     Args:
@@ -848,18 +793,9 @@ class DagsterJobMetadataValue(
             assumed to be in the same repository as this object.
     """
 
-    def __new__(
-        cls,
-        job_name: str,
-        location_name: str,
-        repository_name: Optional[str] = None,
-    ):
-        return super().__new__(
-            cls,
-            check.str_param(job_name, "job_name"),
-            check.str_param(location_name, "location_name"),
-            check.opt_str_param(repository_name, "repository_name"),
-        )
+    job_name: PublicAttr[str]
+    location_name: PublicAttr[str]
+    repository_name: PublicAttr[Optional[str]] = None
 
     @public
     @property
@@ -868,20 +804,15 @@ class DagsterJobMetadataValue(
 
 
 @whitelist_for_serdes(storage_name="DagsterAssetMetadataEntryData")
-class DagsterAssetMetadataValue(
-    NamedTuple("_DagsterAssetMetadataValue", [("asset_key", PublicAttr[AssetKey])]),
-    MetadataValue[AssetKey],
-):
+@record(kw_only=False)
+class DagsterAssetMetadataValue(MetadataValue[AssetKey]):
     """Representation of a dagster asset.
 
     Args:
         asset_key (AssetKey): The dagster asset key
     """
 
-    def __new__(cls, asset_key: AssetKey):
-        from dagster._core.definitions.events import AssetKey
-
-        return super().__new__(cls, check.inst_param(asset_key, "asset_key", AssetKey))
+    asset_key: PublicAttr[AssetKey]
 
     @public
     @property
@@ -892,15 +823,11 @@ class DagsterAssetMetadataValue(
 
 # This should be deprecated or fixed so that `value` does not return itself.
 @whitelist_for_serdes(storage_name="TableMetadataEntryData")
+@record_custom
 class TableMetadataValue(
-    NamedTuple(
-        "_TableMetadataValue",
-        [
-            ("records", PublicAttr[Sequence[TableRecord]]),
-            ("schema", PublicAttr[TableSchema]),
-        ],
-    ),
     MetadataValue["TableMetadataValue"],
+    LegacyNamedTupleMixin,
+    IHaveNew,
 ):
     """Container class for table metadata entry data.
 
@@ -921,6 +848,9 @@ class TableMetadataValue(
                 ]
             )
     """
+
+    records: PublicAttr[Sequence[TableRecord]]
+    schema: PublicAttr[TableSchema]
 
     @public
     @staticmethod
@@ -956,8 +886,8 @@ class TableMetadataValue(
 
         return super().__new__(
             cls,
-            records,
-            schema,
+            records=records,
+            schema=schema,
         )
 
     @public
@@ -968,18 +898,15 @@ class TableMetadataValue(
 
 
 @whitelist_for_serdes(storage_name="TableSchemaMetadataEntryData")
-class TableSchemaMetadataValue(
-    NamedTuple("_TableSchemaMetadataValue", [("schema", PublicAttr[TableSchema])]),
-    MetadataValue[TableSchema],
-):
+@record(kw_only=False)
+class TableSchemaMetadataValue(MetadataValue[TableSchema]):
     """Representation of a schema for arbitrary tabular data.
 
     Args:
         schema (TableSchema): The dictionary containing the schema representation.
     """
 
-    def __new__(cls, schema: TableSchema):
-        return super().__new__(cls, check.inst_param(schema, "schema", TableSchema))
+    schema: PublicAttr[TableSchema]
 
     @public
     @property
@@ -989,11 +916,10 @@ class TableSchemaMetadataValue(
 
 
 @whitelist_for_serdes
+@record_custom(field_to_new_mapping={"lineage": "column_lineage"})
 class TableColumnLineageMetadataValue(
-    NamedTuple(
-        "_TableColumnLineageMetadataValue", [("column_lineage", PublicAttr[TableColumnLineage])]
-    ),
     MetadataValue[TableColumnLineage],
+    IHaveNew,
 ):
     """Representation of the lineage of column inputs to column outputs of arbitrary tabular data.
 
@@ -1002,9 +928,12 @@ class TableColumnLineageMetadataValue(
             for the table.
     """
 
+    lineage: PublicAttr[TableColumnLineage]
+
     def __new__(cls, column_lineage: TableColumnLineage):
         return super().__new__(
-            cls, check.inst_param(column_lineage, "column_lineage", TableColumnLineage)
+            cls,
+            lineage=column_lineage,
         )
 
     @public
@@ -1013,9 +942,15 @@ class TableColumnLineageMetadataValue(
         """TableSpec: The wrapped :py:class:`TableSpec`."""
         return self.column_lineage
 
+    @public
+    @property
+    def column_lineage(self) -> TableColumnLineage:  # type: ignore
+        return self.lineage
+
 
 @whitelist_for_serdes(storage_name="NullMetadataEntryData")
-class NullMetadataValue(NamedTuple("_NullMetadataValue", []), MetadataValue[None]):
+@record(kw_only=False)
+class NullMetadataValue(MetadataValue[None]):
     """Representation of null."""
 
     @public
@@ -1026,10 +961,8 @@ class NullMetadataValue(NamedTuple("_NullMetadataValue", []), MetadataValue[None
 
 
 @whitelist_for_serdes
-class CodeLocationReconstructionMetadataValue(
-    NamedTuple("_CodeLocationReconstructionMetadataValue", [("data", PublicAttr[str])]),
-    MetadataValue[str],
-):
+@record(kw_only=False)
+class CodeLocationReconstructionMetadataValue(MetadataValue[str]):
     """Representation of some state data used to define the Definitions in a code location. Users
     are expected to serialize data before passing it to this class.
 
@@ -1038,8 +971,7 @@ class CodeLocationReconstructionMetadataValue(
             code location.
     """
 
-    def __new__(cls, data: str):
-        return super().__new__(cls, check.str_param(data, "data"))
+    data: PublicAttr[str]
 
     @public
     @property
@@ -1049,15 +981,75 @@ class CodeLocationReconstructionMetadataValue(
 
 
 @whitelist_for_serdes
+@record_custom(field_to_new_mapping={"name": "pool"})
 class PoolMetadataValue(
-    NamedTuple("_PoolMetadataValue", [("pool", PublicAttr[str])]),
     MetadataValue[str],
+    IHaveNew,
 ):
+    name: PublicAttr[str]
+
     def __new__(cls, pool: str):
-        return super().__new__(cls, check.str_param(pool, "pool"))
+        return super().__new__(cls, name=pool)
 
     @public
     @property
     def value(self) -> str:
         """str: The wrapped pool string."""
         return self.pool
+
+    @public
+    @property
+    def pool(self) -> str:  # type: ignore
+        return self.name
+
+
+class NullFieldSerializer(FieldSerializer):
+    def pack(self, value: Any, whitelist_map: WhitelistMap, descent_path: str) -> Any:
+        return None
+
+    def unpack(self, value: Any, whitelist_map: WhitelistMap, context: UnpackContext) -> Any:
+        return None
+
+
+@whitelist_for_serdes(
+    field_serializers={"instance": NullFieldSerializer},
+    kwargs_fields={"instance"},
+    skip_when_none_fields={"instance"},
+)
+@record_custom(
+    field_to_new_mapping={
+        "class_name": "inst",
+    }
+)
+class ObjectMetadataValue(
+    MetadataValue[str],
+    IHaveNew,
+):
+    """An instance of an unserializable object. Only the class name will be available across process,
+    but the instance can be accessed within the origin process.
+    """
+
+    class_name: PublicAttr[str]
+    instance: Optional[object] = None
+
+    def __new__(
+        cls,
+        inst: Union[str, object],
+        **kwargs,
+    ):
+        if isinstance(inst, str):
+            class_name = inst
+            instance = kwargs.get("instance", None)
+        else:
+            class_name = inst.__class__.__name__
+            instance = inst
+        return super().__new__(
+            cls,
+            class_name=class_name,
+            instance=instance,
+        )
+
+    @public
+    @property
+    def value(self) -> str:
+        return self.class_name

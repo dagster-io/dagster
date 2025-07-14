@@ -37,10 +37,10 @@ from dagster._core.definitions import (
     RepositoryDefinition,
     ScheduleDefinition,
 )
-from dagster._core.definitions.asset_check_spec import AssetCheckKey
-from dagster._core.definitions.asset_job import is_reserved_asset_job_name
+from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.asset_sensor_definition import AssetSensorDefinition
-from dagster._core.definitions.asset_spec import AssetExecutionType
+from dagster._core.definitions.assets.definition.asset_spec import AssetExecutionType
+from dagster._core.definitions.assets.job.asset_job import is_reserved_asset_job_name
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.automation_condition_sensor_definition import (
     AutomationConditionSensorDefinition,

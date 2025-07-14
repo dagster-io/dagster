@@ -24,18 +24,18 @@ from dagster._core.definitions.asset_daemon_cursor import (
 )
 from dagster._core.definitions.asset_key import AssetCheckKey, EntityKey
 from dagster._core.definitions.asset_selection import AssetSelection
+from dagster._core.definitions.assets.graph.base_asset_graph import BaseAssetGraph
+from dagster._core.definitions.assets.graph.remote_asset_graph import RemoteWorkspaceAssetGraph
 from dagster._core.definitions.automation_condition_sensor_definition import (
     EMIT_BACKFILLS_METADATA_KEY,
 )
 from dagster._core.definitions.automation_tick_evaluation_context import (
     AutomationTickEvaluationContext,
 )
-from dagster._core.definitions.base_asset_graph import BaseAssetGraph
 from dagster._core.definitions.declarative_automation.serialized_objects import (
     AutomationConditionEvaluationWithRunIds,
 )
 from dagster._core.definitions.events import AssetKey
-from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
 from dagster._core.definitions.repository_definition.valid_definitions import (
     SINGLETON_REPOSITORY_NAME,
 )
@@ -596,6 +596,7 @@ class AssetDaemon(DagsterDaemon):
                 future = threadpool_executor.submit(
                     self._process_auto_materialize_tick,
                     workspace_process_context,
+                    workspace,
                     repo,
                     sensor,
                     debug_crash_flags,
@@ -604,6 +605,7 @@ class AssetDaemon(DagsterDaemon):
             else:
                 self._process_auto_materialize_tick(
                     workspace_process_context,
+                    workspace,
                     repo,
                     sensor,
                     debug_crash_flags,
@@ -690,6 +692,7 @@ class AssetDaemon(DagsterDaemon):
     def _process_auto_materialize_tick(
         self,
         workspace_process_context: IWorkspaceProcessContext,
+        workspace: BaseWorkspaceRequestContext,
         repository: Optional[RemoteRepository],
         sensor: Optional[RemoteSensor],
         debug_crash_flags: SingleInstigatorDebugCrashFlags,  # TODO No longer single instigator
@@ -697,6 +700,7 @@ class AssetDaemon(DagsterDaemon):
         asyncio.run(
             self._async_process_auto_materialize_tick(
                 workspace_process_context,
+                workspace.asset_graph,
                 repository,
                 sensor,
                 debug_crash_flags,
@@ -706,6 +710,7 @@ class AssetDaemon(DagsterDaemon):
     async def _async_process_auto_materialize_tick(
         self,
         workspace_process_context: IWorkspaceProcessContext,
+        workspace_asset_graph: RemoteWorkspaceAssetGraph,
         repository: Optional[RemoteRepository],
         sensor: Optional[RemoteSensor],
         debug_crash_flags: SingleInstigatorDebugCrashFlags,  # TODO No longer single instigator
@@ -713,8 +718,6 @@ class AssetDaemon(DagsterDaemon):
         evaluation_time = get_current_datetime()
 
         workspace = workspace_process_context.create_request_context()
-
-        workspace_asset_graph = workspace.asset_graph
 
         instance: DagsterInstance = workspace_process_context.instance
 
@@ -911,6 +914,7 @@ class AssetDaemon(DagsterDaemon):
                     tick,
                     sensor,
                     workspace_process_context,
+                    workspace,
                     workspace_asset_graph,
                     auto_materialize_entity_keys,
                     stored_cursor,
@@ -931,7 +935,8 @@ class AssetDaemon(DagsterDaemon):
         tick: InstigatorTick,
         sensor: Optional[RemoteSensor],
         workspace_process_context: IWorkspaceProcessContext,
-        asset_graph: RemoteAssetGraph,
+        workspace: BaseWorkspaceRequestContext,
+        asset_graph: RemoteWorkspaceAssetGraph,
         auto_materialize_entity_keys: set[EntityKey],
         stored_cursor: AssetDaemonCursor,
         auto_observe_asset_keys: set[AssetKey],
@@ -939,7 +944,6 @@ class AssetDaemon(DagsterDaemon):
         is_retry: bool,
     ):
         evaluation_id = tick.automation_condition_evaluation_id
-
         instance = workspace_process_context.instance
 
         schedule_storage = check.not_none(instance.schedule_storage)
@@ -953,8 +957,6 @@ class AssetDaemon(DagsterDaemon):
             # need to finish it
             run_requests = tick.tick_data.run_requests or []
             reserved_run_ids = tick.tick_data.reserved_run_ids or []
-
-            workspace = workspace_process_context.create_request_context()
 
             if schedule_storage.supports_auto_materialize_asset_evaluations:
                 evaluation_records = (
@@ -1043,13 +1045,12 @@ class AssetDaemon(DagsterDaemon):
             # Fetch all data that requires the code server before writing the cursor, to minimize
             # the chances that changes to code servers after the cursor is written (e.g. a
             # code server moving into an error state or an asset being renamed) causes problems
-            workspace = workspace_process_context.create_request_context()
             async_code_server_tasks = []
             for run_request_index, run_request in enumerate(run_requests):
                 if not run_request.requires_backfill_daemon():
                     async_code_server_tasks.append(
                         get_job_execution_data_from_run_request(
-                            workspace.asset_graph,
+                            asset_graph,
                             run_request,
                             instance,
                             workspace=workspace,

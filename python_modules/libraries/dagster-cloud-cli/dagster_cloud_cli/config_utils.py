@@ -42,7 +42,6 @@ DEFAULT_LOCATION_LOAD_TIMEOUT = 3600
 AGENT_HEARTBEAT_TIMEOUT_CLI_ARGUMENT = "agent-heartbeat-timeout"
 AGENT_HEARTBEAT_TIMEOUT_ARGUMENT_VAR = AGENT_HEARTBEAT_TIMEOUT_CLI_ARGUMENT.replace("-", "_")
 AGENT_HEARTBEAT_TIMEOUT_ENV_VAR_NAME = "DAGSTER_CLOUD_AGENT_HEARTBEAT_TIMEOUT"
-DEFAULT_AGENT_HEARTBEAT_TIMEOUT = 60
 
 
 def get_config_path():
@@ -102,15 +101,14 @@ def get_location_load_timeout() -> int:
     return int(cast("str", env_val)) if env_val is not None else default_timeout
 
 
-def get_agent_heartbeat_timeout() -> int:
+def get_agent_heartbeat_timeout(default_timeout: Optional[int]) -> Optional[int]:
     """Gets the configured agent timeout to target.
     Highest precedence is an agent-timeout argument, then `DAGTER_CLOUD_AGENT_HEARTBEAT_TIMEOUT`
     env var.
     """
-    default_timeout = DEFAULT_AGENT_HEARTBEAT_TIMEOUT
     env_val = os.getenv(AGENT_HEARTBEAT_TIMEOUT_ENV_VAR_NAME)
 
-    return int(cast("str", env_val)) if env_val is not None else default_timeout
+    return int(cast("str", env_val)) if env_val is not None else None
 
 
 def get_user_token(ctx: Optional[Context] = None) -> Optional[str]:
@@ -204,15 +202,17 @@ LOCATION_LOAD_TIMEOUT_OPTION = Option(
     ),
 )
 
-AGENT_HEARTBEAT_TIMEOUT_OPTION = Option(
-    get_agent_heartbeat_timeout(),
-    f"--{AGENT_HEARTBEAT_TIMEOUT_CLI_ARGUMENT}",
-    "--agent-timeout",
-    help=(
-        "After making changes to the workspace. how long in seconds to wait for the agent to"
-        " heartbeat before timing out with an error"
-    ),
-)
+
+def get_agent_heartbeat_timeout_option(default_timeout: Optional[int]):
+    return Option(
+        get_agent_heartbeat_timeout(default_timeout),
+        f"--{AGENT_HEARTBEAT_TIMEOUT_CLI_ARGUMENT}",
+        "--agent-timeout",
+        help=(
+            "After making changes to the workspace. how long in seconds to wait for the agent to"
+            " heartbeat before timing out with an error"
+        ),
+    )
 
 
 def dagster_cloud_options(
@@ -262,7 +262,7 @@ def dagster_cloud_options(
         if has_agent_heartbeat_timeout_param:
             options[AGENT_HEARTBEAT_TIMEOUT_ARGUMENT_VAR] = (  # pyright: ignore[reportArgumentType]
                 int,
-                AGENT_HEARTBEAT_TIMEOUT_OPTION,
+                get_agent_heartbeat_timeout_option(default_timeout=60),
             )
 
         with_options = add_options(options)(to_wrap)

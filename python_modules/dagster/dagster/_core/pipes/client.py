@@ -13,7 +13,7 @@ from dagster_pipes import (
 
 import dagster._check as check
 from dagster._annotations import public
-from dagster._core.definitions.asset_check_result import AssetCheckResult
+from dagster._core.definitions.asset_checks.asset_check_result import AssetCheckResult
 from dagster._core.definitions.metadata import MetadataValue, RawMetadataMapping, normalize_metadata
 from dagster._core.definitions.result import MaterializeResult
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext

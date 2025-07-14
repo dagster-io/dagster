@@ -4,6 +4,7 @@ import {AbstractParseTreeVisitor} from 'antlr4ts/tree/AbstractParseTreeVisitor';
 import {AssetSelectionLexer} from './generated/AssetSelectionLexer';
 import {AssetSelectionParser, StatusAttributeExprContext} from './generated/AssetSelectionParser';
 import {AssetSelectionVisitor} from './generated/AssetSelectionVisitor';
+import {AntlrInputErrorListener} from './parseAssetSelectionQuery';
 import {getValue} from './util';
 
 export type Filter = {field: 'status'; value: string};
@@ -27,10 +28,20 @@ export class AssetSelectionSupplementaryDataVisitor
 }
 
 export const parseExpression = (expression: string) => {
+  if (expression === '') {
+    return [];
+  }
+
   const inputStream = CharStreams.fromString(expression);
   const lexer = new AssetSelectionLexer(inputStream);
+  lexer.removeErrorListeners();
+  lexer.addErrorListener(new AntlrInputErrorListener());
+
   const tokenStream = new CommonTokenStream(lexer);
   const parser = new AssetSelectionParser(tokenStream);
+  parser.removeErrorListeners();
+  parser.addErrorListener(new AntlrInputErrorListener());
+
   const tree = parser.start();
   const visitor = new AssetSelectionSupplementaryDataVisitor();
   tree.accept(visitor);

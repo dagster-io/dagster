@@ -1,7 +1,7 @@
 import os
 
 from dagster import AssetKey, AssetSpec
-from dagster._core.definitions.asset_dep import AssetDep
+from dagster._core.definitions.assets.definition.asset_dep import AssetDep
 from dagster_dbt.asset_utils import DAGSTER_DBT_UNIQUE_ID_METADATA_KEY
 
 SELECTION_TAG = "tag:demo"

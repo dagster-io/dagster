@@ -6,7 +6,7 @@ from typing_extensions import TypeAlias
 import dagster._check as check
 from dagster._annotations import PublicAttr, beta_param, deprecated, deprecated_param, public
 from dagster._core.decorator_utils import get_function_params
-from dagster._core.definitions.asset_spec import AssetExecutionType
+from dagster._core.definitions.assets.definition.asset_spec import AssetExecutionType
 from dagster._core.definitions.data_version import (
     DATA_VERSION_TAG,
     DataVersion,

@@ -16,8 +16,8 @@ from dagster._core.definitions import (
     NodeHandle,
     Output,
 )
-from dagster._core.definitions.asset_check_spec import AssetCheckKey
-from dagster._core.definitions.asset_layer import AssetLayer
+from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey
+from dagster._core.definitions.assets.job.asset_layer import AssetLayer
 from dagster._core.definitions.op_definition import OpComputeFunction
 from dagster._core.definitions.result import AssetResult, MaterializeResult, ObserveResult
 from dagster._core.errors import DagsterExecutionStepExecutionError, DagsterInvariantViolationError

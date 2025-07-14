@@ -12,11 +12,14 @@ from typing_extensions import TypeAlias
 
 import dagster._check as check
 from dagster._core.errors import DagsterUserCodeExecutionError
+from dagster._serdes import serialize_value
 
 ExceptionInfo: TypeAlias = Union[
     tuple[type[BaseException], BaseException, TracebackType],
     tuple[None, None, None],
 ]
+
+ERROR_CLASS_NAME_SIZE_LIMIT = 1000
 
 
 def _should_redact_user_code_error() -> bool:
@@ -188,4 +191,101 @@ def unwrap_user_code_error(error_info: SerializableErrorInfo) -> SerializableErr
     """Extracts the underlying error from the passed error, if it is a DagsterUserCodeLoadError."""
     if error_info.cls_name == "DagsterUserCodeLoadError":
         return unwrap_user_code_error(error_info.cause)
+    return error_info
+
+
+def truncate_event_error_info(
+    error_info: Optional[SerializableErrorInfo],
+) -> Optional[SerializableErrorInfo]:
+    event_error_field_size_limit = int(os.getenv("DAGSTER_EVENT_ERROR_FIELD_SIZE_LIMIT", "500000"))
+    event_error_max_stack_trace_depth = int(
+        os.getenv("DAGSTER_EVENT_ERROR_MAX_STACK_TRACE_DEPTH", "5")
+    )
+
+    if error_info is None:
+        return None
+
+    return truncate_serialized_error(
+        error_info,
+        field_size_limit=event_error_field_size_limit,
+        max_depth=event_error_max_stack_trace_depth,
+    )
+
+
+def truncate_serialized_error(
+    error_info: SerializableErrorInfo,
+    field_size_limit: int,
+    max_depth: int,
+    truncations: Optional[list[str]] = None,
+):
+    truncations = [] if truncations is None else truncations
+
+    if error_info.cause:
+        if max_depth == 0:
+            truncations.append("cause")
+            new_cause = (
+                error_info.cause
+                if len(serialize_value(error_info.cause)) <= field_size_limit
+                else SerializableErrorInfo(
+                    message="(Cause truncated due to size limitations)",
+                    stack=[],
+                    cls_name=None,
+                )
+            )
+        else:
+            new_cause = truncate_serialized_error(
+                error_info.cause,
+                field_size_limit,
+                max_depth=max_depth - 1,
+                truncations=truncations,
+            )
+        error_info = error_info._replace(cause=new_cause)
+
+    if error_info.context:
+        if max_depth == 0:
+            truncations.append("context")
+            new_context = (
+                error_info.context
+                if len(serialize_value(error_info.context)) <= field_size_limit
+                else SerializableErrorInfo(
+                    message="(Context truncated due to size limitations)",
+                    stack=[],
+                    cls_name=None,
+                )
+            )
+        else:
+            new_context = truncate_serialized_error(
+                error_info.context,
+                field_size_limit,
+                max_depth=max_depth - 1,
+                truncations=truncations,
+            )
+        error_info = error_info._replace(context=new_context)
+
+    stack_size_so_far = 0
+    truncated_stack = []
+    for stack_elem in error_info.stack:
+        stack_size_so_far += len(stack_elem)
+        if stack_size_so_far > field_size_limit:
+            truncations.append("stack")
+            truncated_stack.append("(TRUNCATED)")
+            break
+
+        truncated_stack.append(stack_elem)
+
+    error_info = error_info._replace(stack=truncated_stack)
+
+    msg_len = len(error_info.message)
+    if msg_len > field_size_limit:
+        truncations.append(f"message from {msg_len} to {field_size_limit}")
+        error_info = error_info._replace(
+            message=error_info.message[:field_size_limit] + " (TRUNCATED)"
+        )
+
+    if error_info.cls_name and len(error_info.cls_name) > ERROR_CLASS_NAME_SIZE_LIMIT:
+        truncations.append("cls_name")
+        error_info = error_info._replace(
+            cls_name=error_info.cls_name[:ERROR_CLASS_NAME_SIZE_LIMIT] + " (TRUNCATED)"
+        )
+
     return error_info

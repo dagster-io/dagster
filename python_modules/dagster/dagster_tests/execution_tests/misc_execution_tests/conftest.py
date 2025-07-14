@@ -1,7 +1,7 @@
 import tempfile
 
+import dagster as dg
 import pytest
-from dagster._core.test_utils import instance_for_test
 
 CUSTOM_SLEEP_INTERVAL = 3
 
@@ -9,7 +9,7 @@ CUSTOM_SLEEP_INTERVAL = 3
 @pytest.fixture()
 def concurrency_instance_default_granularity():
     with tempfile.TemporaryDirectory() as temp_dir:
-        with instance_for_test(
+        with dg.instance_for_test(
             overrides={
                 "event_log_storage": {
                     "module": "dagster.utils.test",
@@ -24,7 +24,7 @@ def concurrency_instance_default_granularity():
 @pytest.fixture()
 def concurrency_instance_run_granularity():
     with tempfile.TemporaryDirectory() as temp_dir:
-        with instance_for_test(
+        with dg.instance_for_test(
             overrides={
                 "event_log_storage": {
                     "module": "dagster.utils.test",
@@ -42,7 +42,7 @@ def concurrency_instance_run_granularity():
 @pytest.fixture()
 def concurrency_instance_op_granularity():
     with tempfile.TemporaryDirectory() as temp_dir:
-        with instance_for_test(
+        with dg.instance_for_test(
             overrides={
                 "event_log_storage": {
                     "module": "dagster.utils.test",
@@ -60,7 +60,7 @@ def concurrency_instance_op_granularity():
 @pytest.fixture()
 def concurrency_instance_with_default_one():
     with tempfile.TemporaryDirectory() as temp_dir:
-        with instance_for_test(
+        with dg.instance_for_test(
             overrides={
                 "event_log_storage": {
                     "module": "dagster.utils.test",
@@ -78,7 +78,7 @@ def concurrency_instance_with_default_one():
 @pytest.fixture()
 def concurrency_custom_sleep_instance():
     with tempfile.TemporaryDirectory() as temp_dir:
-        with instance_for_test(
+        with dg.instance_for_test(
             overrides={
                 "event_log_storage": {
                     "module": "dagster.utils.test",

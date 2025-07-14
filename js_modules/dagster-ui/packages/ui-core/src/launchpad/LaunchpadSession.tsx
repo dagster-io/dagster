@@ -193,7 +193,7 @@ const LaunchpadSession = (props: LaunchpadSessionProps) => {
     permissions: {canLaunchPipelineExecution},
     loading,
   } = usePermissionsForLocation(repoAddress.location);
-  useBlockTraceUntilTrue('Permissions', loading);
+  useBlockTraceUntilTrue('Permissions', !loading);
 
   const mounted = React.useRef<boolean>(false);
   const editor = React.useRef<ConfigEditorHandle | null>(null);

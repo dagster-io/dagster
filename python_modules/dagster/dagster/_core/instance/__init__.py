@@ -32,7 +32,7 @@ from typing_extensions import Protocol, Self, TypeAlias, TypeVar, runtime_checka
 
 import dagster._check as check
 from dagster._annotations import deprecated, public
-from dagster._core.definitions.asset_check_evaluation import (
+from dagster._core.definitions.asset_checks.asset_check_evaluation import (
     AssetCheckEvaluation,
     AssetCheckEvaluationPlanned,
 )
@@ -113,7 +113,7 @@ RUNLESS_JOB_NAME = ""
 
 if TYPE_CHECKING:
     from dagster._core.debug import DebugRunPayload
-    from dagster._core.definitions.asset_check_spec import AssetCheckKey
+    from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey
     from dagster._core.definitions.asset_health.asset_check_health import AssetCheckHealthState
     from dagster._core.definitions.asset_health.asset_freshness_health import (
         AssetFreshnessHealthState,
@@ -122,7 +122,7 @@ if TYPE_CHECKING:
         AssetMaterializationHealthState,
     )
     from dagster._core.definitions.asset_key import EntityKey
-    from dagster._core.definitions.base_asset_graph import BaseAssetGraph
+    from dagster._core.definitions.assets.graph.base_asset_graph import BaseAssetGraph
     from dagster._core.definitions.job_definition import JobDefinition
     from dagster._core.definitions.partitions.definition import PartitionsDefinition
     from dagster._core.definitions.repository_definition.repository_definition import (
@@ -1724,7 +1724,7 @@ class DagsterInstance(DynamicPartitionsStore):
         An asset check key will be included if it was planned but not executed in the original run,
         or if it was associated with an asset that will be re-executed.
         """
-        from dagster._core.definitions.asset_check_spec import AssetCheckKey
+        from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey
         from dagster._core.events import (
             AssetCheckEvaluation,
             DagsterEventType,

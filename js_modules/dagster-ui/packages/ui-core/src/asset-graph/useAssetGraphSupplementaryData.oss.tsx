@@ -41,8 +41,12 @@ export const useAssetGraphSupplementaryData = (
   }, [liveDataByNode, loading]);
 
   const needsAssetHealthData = useMemo(() => {
-    const filters = parseExpression(selection);
-    return filters.some((filter) => filter.field === 'status');
+    try {
+      const filters = parseExpression(selection);
+      return filters.some((filter) => filter.field === 'status');
+    } catch {
+      return false;
+    }
   }, [selection]);
 
   const data = useStableReferenceByHash(assetsByStatus, true);

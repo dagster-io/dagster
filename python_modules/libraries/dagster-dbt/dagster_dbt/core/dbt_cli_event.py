@@ -17,7 +17,7 @@ from dagster import (
     get_dagster_logger,
 )
 from dagster._annotations import public
-from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluation
+from dagster._core.definitions.asset_checks.asset_check_evaluation import AssetCheckEvaluation
 from dagster._core.definitions.metadata import TableMetadataSet
 from dagster._utils.warnings import disable_dagster_warnings
 from dbt.contracts.results import NodeStatus, TestStatus

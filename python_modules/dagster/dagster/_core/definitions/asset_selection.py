@@ -11,8 +11,7 @@ from typing_extensions import TypeAlias, TypeGuard
 
 import dagster._check as check
 from dagster._annotations import beta_param, deprecated, public
-from dagster._core.definitions.asset_check_spec import AssetCheckKey
-from dagster._core.definitions.asset_graph import AssetGraph
+from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.asset_key import (
     AssetKey,
     CoercibleToAssetKey,
@@ -20,8 +19,9 @@ from dagster._core.definitions.asset_key import (
     asset_keys_from_defs_and_coercibles,
     key_prefix_from_coercible,
 )
-from dagster._core.definitions.assets import AssetsDefinition
-from dagster._core.definitions.base_asset_graph import BaseAssetGraph, BaseAssetNode
+from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
+from dagster._core.definitions.assets.graph.asset_graph import AssetGraph
+from dagster._core.definitions.assets.graph.base_asset_graph import BaseAssetGraph, BaseAssetNode
 from dagster._core.definitions.resolved_asset_deps import resolve_similar_asset_names
 from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.errors import DagsterInvalidSubsetError
@@ -1055,7 +1055,7 @@ class CodeLocationAssetSelection(AssetSelection):
     def resolve_inner(
         self, asset_graph: BaseAssetGraph, allow_missing: bool
     ) -> AbstractSet[AssetKey]:
-        from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
+        from dagster._core.definitions.assets.graph.remote_asset_graph import RemoteAssetGraph
 
         check.invariant(
             isinstance(asset_graph, RemoteAssetGraph),

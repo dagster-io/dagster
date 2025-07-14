@@ -10,7 +10,7 @@ from dagster._config.field import Field
 from dagster._config.pythonic_config.config import Config
 from dagster._config.pythonic_config.type_check_utils import safe_is_subclass
 from dagster._core.decorator_utils import get_function_params
-from dagster._core.definitions.asset_check_result import AssetCheckResult
+from dagster._core.definitions.asset_checks.asset_check_result import AssetCheckResult
 from dagster._core.definitions.resource_annotation import get_resource_args
 from dagster._core.definitions.result import MaterializeResult
 from dagster._core.execution.context.asset_check_execution_context import AssetCheckExecutionContext

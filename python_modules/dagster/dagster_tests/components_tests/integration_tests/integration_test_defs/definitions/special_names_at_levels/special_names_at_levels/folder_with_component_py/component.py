@@ -1,19 +1,18 @@
-from dagster import Component, ComponentLoadContext, component_instance
-from dagster._core.definitions.decorators.asset_decorator import asset
-from dagster._core.definitions.definitions_class import Definitions
+import dagster as dg
+from dagster import ComponentLoadContext
 
 
-class AComponent(Component):
+class AComponent(dg.Component):
     """A simple component class for demonstration purposes."""
 
-    def build_defs(self, context: ComponentLoadContext) -> Definitions:
-        @asset
+    def build_defs(self, context: ComponentLoadContext) -> dg.Definitions:
+        @dg.asset
         def asset_in_component_py() -> None: ...
 
-        return Definitions(assets=[asset_in_component_py])
+        return dg.Definitions(assets=[asset_in_component_py])
 
 
-@component_instance
-def load(context: ComponentLoadContext) -> Component:
+@dg.component_instance
+def load(context: ComponentLoadContext) -> dg.Component:
     """A component that loads a component from the same module."""
     return AComponent()

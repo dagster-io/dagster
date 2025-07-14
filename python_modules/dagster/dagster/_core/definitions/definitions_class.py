@@ -10,13 +10,18 @@ from typing_extensions import Self, TypeAlias
 import dagster._check as check
 from dagster._annotations import deprecated, preview, public
 from dagster._core.definitions import AssetSelection
-from dagster._core.definitions.asset_checks import AssetChecksDefinition
-from dagster._core.definitions.asset_graph import AssetGraph
+from dagster._core.definitions.asset_checks.asset_checks_definition import AssetChecksDefinition
 from dagster._core.definitions.asset_key import AssetCheckKey
 from dagster._core.definitions.asset_selection import CoercibleToAssetSelection
-from dagster._core.definitions.asset_spec import AssetSpec, map_asset_specs
-from dagster._core.definitions.assets import AssetsDefinition, SourceAsset
-from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
+from dagster._core.definitions.assets.definition.asset_spec import AssetSpec, map_asset_specs
+from dagster._core.definitions.assets.definition.assets_definition import (
+    AssetsDefinition,
+    SourceAsset,
+)
+from dagster._core.definitions.assets.definition.cacheable_assets_definition import (
+    CacheableAssetsDefinition,
+)
+from dagster._core.definitions.assets.graph.asset_graph import AssetGraph
 from dagster._core.definitions.decorators import repository
 from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
 from dagster._core.definitions.executor_definition import ExecutorDefinition

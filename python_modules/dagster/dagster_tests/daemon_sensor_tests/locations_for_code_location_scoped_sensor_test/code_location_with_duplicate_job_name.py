@@ -1,17 +1,17 @@
-from dagster import Definitions, job, op
+import dagster as dg
 
 
 # this code location also contains a job named success_job. But it should not trigger the sensor in code_location_with_sensor
-@op
+@dg.op
 def an_op():
     pass
 
 
-@job
+@dg.job
 def success_job():
     an_op()
 
 
-defs = Definitions(
+defs = dg.Definitions(
     jobs=[success_job],
 )

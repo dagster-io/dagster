@@ -1,5 +1,5 @@
 from dagster import AssetsDefinition, Definitions
-from dagster._core.definitions.asset_spec import AssetSpec
+from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
 from dagster._core.definitions.decorators.asset_decorator import multi_asset
 from dagster_airlift.core import (
     AirflowBasicAuthBackend,

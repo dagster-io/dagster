@@ -1,37 +1,20 @@
 import time
 from multiprocessing import Process
 
+import dagster as dg
 import pytest
-from dagster import (
-    AssetSelection,
-    DynamicOutput,
-    OpExecutionContext,
-    ReexecutionOptions,
-    define_asset_job,
-    execute_job,
-    fs_io_manager,
-    graph_asset,
-    in_process_executor,
-    job,
-    op,
-    reconstructable,
-)
-from dagster._core.definitions.asset_graph import AssetGraph
-from dagster._core.definitions.decorators.asset_decorator import asset
-from dagster._core.definitions.events import Output
-from dagster._core.definitions.output import DynamicOut, Out
-from dagster._core.errors import DagsterExecutionStepNotFoundError
+from dagster import AssetSelection, OpExecutionContext, ReexecutionOptions, in_process_executor
+from dagster._core.definitions.assets.graph.asset_graph import AssetGraph
 from dagster._core.instance import DagsterInstance
-from dagster._core.test_utils import instance_for_test
 
 
-@op
+@dg.op
 def multiply_by_two(context, y):
     context.log.info("multiply_by_two is returning " + str(y * 2))
     return y * 2
 
 
-@op
+@dg.op
 def multiply_inputs(context, y, ten):
     # current_run = context.instance.get_run_by_id(context.run_id)
     # if y == 2 and current_run.parent_run_id is None:
@@ -40,18 +23,18 @@ def multiply_inputs(context, y, ten):
     return y * ten
 
 
-@op
+@dg.op
 def emit_ten(_):
     return 10
 
 
-@op(out=DynamicOut())
+@dg.op(out=dg.DynamicOut())
 def emit(_):
     for i in range(3):
-        yield DynamicOutput(value=i, mapping_key=str(i))
+        yield dg.DynamicOutput(value=i, mapping_key=str(i))
 
 
-@job(executor_def=in_process_executor)
+@dg.job(executor_def=in_process_executor)
 def dynamic_job():
     emit().map(lambda n: multiply_by_two(multiply_inputs(n, emit_ten())))
 
@@ -62,17 +45,17 @@ def test_map():
 
 
 def test_reexec_from_parent_basic():
-    with instance_for_test() as instance:
-        parent_result = execute_job(
-            reconstructable(dynamic_job),
+    with dg.instance_for_test() as instance:
+        parent_result = dg.execute_job(
+            dg.reconstructable(dynamic_job),
             instance=instance,
         )
         parent_run_id = parent_result.run_id
 
-        with execute_job(
-            reconstructable(dynamic_job),
+        with dg.execute_job(
+            dg.reconstructable(dynamic_job),
             instance=instance,
-            reexecution_options=ReexecutionOptions(
+            reexecution_options=dg.ReexecutionOptions(
                 parent_run_id=parent_run_id,
                 step_selection=["emit"],
             ),
@@ -86,14 +69,14 @@ def test_reexec_from_parent_basic():
 
 
 def test_reexec_from_parent_1():
-    with instance_for_test() as instance:
-        parent_result = execute_job(reconstructable(dynamic_job), instance=instance)
+    with dg.instance_for_test() as instance:
+        parent_result = dg.execute_job(dg.reconstructable(dynamic_job), instance=instance)
         parent_run_id = parent_result.run_id
 
-        with execute_job(
-            reconstructable(dynamic_job),
+        with dg.execute_job(
+            dg.reconstructable(dynamic_job),
             instance=instance,
-            reexecution_options=ReexecutionOptions(
+            reexecution_options=dg.ReexecutionOptions(
                 parent_run_id=parent_run_id,
                 step_selection=["multiply_inputs[0]"],
             ),
@@ -105,13 +88,13 @@ def test_reexec_from_parent_1():
 
 
 def test_reexec_from_parent_dynamic():
-    with instance_for_test() as instance:
-        parent_result = execute_job(reconstructable(dynamic_job), instance=instance)
+    with dg.instance_for_test() as instance:
+        parent_result = dg.execute_job(dg.reconstructable(dynamic_job), instance=instance)
         parent_run_id = parent_result.run_id
-        with execute_job(
-            reconstructable(dynamic_job),
+        with dg.execute_job(
+            dg.reconstructable(dynamic_job),
             instance=instance,
-            reexecution_options=ReexecutionOptions(
+            reexecution_options=dg.ReexecutionOptions(
                 parent_run_id=parent_run_id,
                 step_selection=["multiply_inputs[?]"],
             ),
@@ -121,14 +104,14 @@ def test_reexec_from_parent_dynamic():
 
 
 def test_reexec_from_parent_2():
-    with instance_for_test() as instance:
-        parent_result = execute_job(reconstructable(dynamic_job), instance=instance)
+    with dg.instance_for_test() as instance:
+        parent_result = dg.execute_job(dg.reconstructable(dynamic_job), instance=instance)
         parent_run_id = parent_result.run_id
 
-        with execute_job(
-            reconstructable(dynamic_job),
+        with dg.execute_job(
+            dg.reconstructable(dynamic_job),
             instance=instance,
-            reexecution_options=ReexecutionOptions(
+            reexecution_options=dg.ReexecutionOptions(
                 parent_run_id=parent_run_id,
                 step_selection=["multiply_by_two[1]"],
             ),
@@ -140,14 +123,14 @@ def test_reexec_from_parent_2():
 
 
 def test_reexec_from_parent_3():
-    with instance_for_test() as instance:
-        parent_result = execute_job(reconstructable(dynamic_job), instance=instance)
+    with dg.instance_for_test() as instance:
+        parent_result = dg.execute_job(dg.reconstructable(dynamic_job), instance=instance)
         parent_run_id = parent_result.run_id
 
-        with execute_job(
-            reconstructable(dynamic_job),
+        with dg.execute_job(
+            dg.reconstructable(dynamic_job),
             instance=instance,
-            reexecution_options=ReexecutionOptions(
+            reexecution_options=dg.ReexecutionOptions(
                 parent_run_id=parent_run_id,
                 step_selection=["multiply_inputs[1]", "multiply_by_two[2]"],
             ),
@@ -161,24 +144,24 @@ def test_reexec_from_parent_3():
             }
 
 
-@op
+@dg.op
 def echo(x):
     return x
 
 
-@op
+@dg.op
 def adder(ls: list[int]) -> int:
     return sum(ls)
 
 
-@op(out=DynamicOut())
+@dg.op(out=dg.DynamicOut())
 def dynamic_op():
     for i in range(10):
-        yield DynamicOutput(value=i, mapping_key=str(i))
+        yield dg.DynamicOutput(value=i, mapping_key=str(i))
 
 
 def dynamic_with_optional_output_job():
-    @op(out=DynamicOut(is_required=False))
+    @dg.op(out=dg.DynamicOut(is_required=False))
     def dynamic_optional_output_op(context):
         for i in range(10):
             if (
@@ -188,9 +171,9 @@ def dynamic_with_optional_output_job():
                 # root run skipped even numbers
                 not context.run.parent_run_id and i % 2 == 1
             ):
-                yield DynamicOutput(value=i, mapping_key=str(i))
+                yield dg.DynamicOutput(value=i, mapping_key=str(i))
 
-    @job(resource_defs={"io_manager": fs_io_manager})
+    @dg.job(resource_defs={"io_manager": dg.fs_io_manager})
     def _dynamic_with_optional_output_job():
         dynamic_results = dynamic_optional_output_op().map(echo)
         adder(dynamic_results.collect())
@@ -199,14 +182,14 @@ def dynamic_with_optional_output_job():
 
 
 def test_reexec_dynamic_with_optional_output_job_1():
-    with instance_for_test() as instance:
+    with dg.instance_for_test() as instance:
         result = dynamic_with_optional_output_job().execute_in_process(instance=instance)
 
         # re-execute all
-        with execute_job(
-            reconstructable(dynamic_with_optional_output_job),
+        with dg.execute_job(
+            dg.reconstructable(dynamic_with_optional_output_job),
             instance=instance,
-            reexecution_options=ReexecutionOptions(
+            reexecution_options=dg.ReexecutionOptions(
                 parent_run_id=result.run_id,
             ),
         ) as re_result:
@@ -215,14 +198,14 @@ def test_reexec_dynamic_with_optional_output_job_1():
 
 
 def test_reexec_dynamic_with_optional_output_job_2():
-    with instance_for_test() as instance:
+    with dg.instance_for_test() as instance:
         result = dynamic_with_optional_output_job().execute_in_process(instance=instance)
 
         # re-execute the step where the source yielded an output
-        with execute_job(
-            reconstructable(dynamic_with_optional_output_job),
+        with dg.execute_job(
+            dg.reconstructable(dynamic_with_optional_output_job),
             instance=instance,
-            reexecution_options=ReexecutionOptions(
+            reexecution_options=dg.ReexecutionOptions(
                 parent_run_id=result.run_id,
                 step_selection=["echo[1]"],
             ),
@@ -234,19 +217,19 @@ def test_reexec_dynamic_with_optional_output_job_2():
 
 
 def test_reexec_dynamic_with_optional_output_job_3():
-    with instance_for_test() as instance:
+    with dg.instance_for_test() as instance:
         result = dynamic_with_optional_output_job().execute_in_process(instance=instance)
 
         # re-execute the step where the source did not yield
         # -> error because the dynamic step wont exist in execution plan
         with pytest.raises(
-            DagsterExecutionStepNotFoundError,
+            dg.DagsterExecutionStepNotFoundError,
             match=r"Step selection refers to unknown step: echo\[0\]",
         ):
-            execute_job(
-                reconstructable(dynamic_with_optional_output_job),
+            dg.execute_job(
+                dg.reconstructable(dynamic_with_optional_output_job),
                 instance=instance,
-                reexecution_options=ReexecutionOptions(
+                reexecution_options=dg.ReexecutionOptions(
                     parent_run_id=result.run_id,
                     step_selection=["echo[0]"],
                 ),
@@ -254,15 +237,15 @@ def test_reexec_dynamic_with_optional_output_job_3():
 
 
 def dynamic_with_transitive_optional_output_job():
-    @op(out=Out(is_required=False))
+    @dg.op(out=dg.Out(is_required=False))
     def add_one_with_optional_output(context, i: int):
         if (
             (context.run.parent_run_id and i % 2 == 0)  # re-execution run skipped odd numbers
             or (not context.run.parent_run_id and i % 2 == 1)  # root run skipped even numbers
         ):
-            yield Output(i + 1)
+            yield dg.Output(i + 1)
 
-    @job(resource_defs={"io_manager": fs_io_manager})
+    @dg.job(resource_defs={"io_manager": dg.fs_io_manager})
     def _dynamic_with_transitive_optional_output_job():
         dynamic_results = dynamic_op().map(lambda n: echo(add_one_with_optional_output(n)))
         adder(dynamic_results.collect())
@@ -271,16 +254,16 @@ def dynamic_with_transitive_optional_output_job():
 
 
 def test_reexec_dynamic_with_transitive_optional_output_job_1():
-    with instance_for_test() as instance:
+    with dg.instance_for_test() as instance:
         result = dynamic_with_transitive_optional_output_job().execute_in_process(instance=instance)
         assert result.success
         assert result.output_for_node("adder") == sum([i + 1 for i in range(10) if i % 2 == 1])
 
         # re-execute all
-        with execute_job(
-            reconstructable(dynamic_with_transitive_optional_output_job),
+        with dg.execute_job(
+            dg.reconstructable(dynamic_with_transitive_optional_output_job),
             instance=instance,
-            reexecution_options=ReexecutionOptions(
+            reexecution_options=dg.ReexecutionOptions(
                 parent_run_id=result.run_id,
             ),
         ) as re_result:
@@ -291,14 +274,14 @@ def test_reexec_dynamic_with_transitive_optional_output_job_1():
 
 
 def test_reexec_dynamic_with_transitive_optional_output_job_2():
-    with instance_for_test() as instance:
+    with dg.instance_for_test() as instance:
         result = dynamic_with_transitive_optional_output_job().execute_in_process(instance=instance)
 
         # re-execute the step where the source yielded an output
-        with execute_job(
-            reconstructable(dynamic_with_transitive_optional_output_job),
+        with dg.execute_job(
+            dg.reconstructable(dynamic_with_transitive_optional_output_job),
             instance=instance,
-            reexecution_options=ReexecutionOptions(
+            reexecution_options=dg.ReexecutionOptions(
                 parent_run_id=result.run_id,
                 step_selection=["echo[1]"],
             ),
@@ -308,15 +291,15 @@ def test_reexec_dynamic_with_transitive_optional_output_job_2():
 
 
 def test_reexec_dynamic_with_transitive_optional_output_job_3():
-    with instance_for_test() as instance:
+    with dg.instance_for_test() as instance:
         result = dynamic_with_transitive_optional_output_job().execute_in_process(instance=instance)
 
         # re-execute the step where the source did not yield
-        re_result = execute_job(
-            reconstructable(dynamic_with_transitive_optional_output_job),
+        re_result = dg.execute_job(
+            dg.reconstructable(dynamic_with_transitive_optional_output_job),
             instance=instance,
             raise_on_error=False,
-            reexecution_options=ReexecutionOptions(
+            reexecution_options=dg.ReexecutionOptions(
                 parent_run_id=result.run_id,
                 step_selection=["echo[0]"],
             ),
@@ -329,13 +312,13 @@ def test_reexec_dynamic_with_transitive_optional_output_job_3():
 
 
 def test_reexec_all_steps_issue():
-    with instance_for_test() as instance:
+    with dg.instance_for_test() as instance:
         result_1 = dynamic_job.execute_in_process(instance=instance)
         assert result_1.success
 
-        result_2 = execute_job(
-            reconstructable(dynamic_job),
-            reexecution_options=ReexecutionOptions(
+        result_2 = dg.execute_job(
+            dg.reconstructable(dynamic_job),
+            reexecution_options=dg.ReexecutionOptions(
                 parent_run_id=result_1.run_id,
                 step_selection=["+multiply_inputs[?]"],
             ),
@@ -344,19 +327,19 @@ def test_reexec_all_steps_issue():
         assert result_2.success
 
 
-@op(
+@dg.op(
     out={
-        "some": Out(is_required=False),
-        "none": Out(is_required=False),
-        "skip": Out(is_required=False),
+        "some": dg.Out(is_required=False),
+        "none": dg.Out(is_required=False),
+        "skip": dg.Out(is_required=False),
     }
 )
 def some_none_skip():
-    yield Output("abc", "some")
-    yield Output("", "none")
+    yield dg.Output("abc", "some")
+    yield dg.Output("", "none")
 
 
-@op
+@dg.op
 def fail_once(context: OpExecutionContext, x):
     key = context.op_handle.name
     map_key = context.get_mapping_key()
@@ -368,27 +351,27 @@ def fail_once(context: OpExecutionContext, x):
     raise Exception("failed (just this once)")
 
 
-@op(out=DynamicOut())
+@dg.op(out=dg.DynamicOut())
 def fan_out(y: str):
     for letter in y:
-        yield DynamicOutput(letter, mapping_key=letter)
+        yield dg.DynamicOutput(letter, mapping_key=letter)
 
 
-@job(executor_def=in_process_executor)
+@dg.job(executor_def=in_process_executor)
 def fail_job():
     some, _n, _s = some_none_skip()
     fan_out(some).map(fail_once).map(echo)
 
 
 def test_resume_failed_mapped():
-    with instance_for_test() as instance:
-        result = execute_job(reconstructable(fail_job), instance)
+    with dg.instance_for_test() as instance:
+        result = dg.execute_job(dg.reconstructable(fail_job), instance)
         assert not result.success
         success_steps = {ev.step_key for ev in result.get_step_success_events()}
         assert success_steps == {"some_none_skip", "fan_out"}
 
-        result_2 = execute_job(
-            reconstructable(fail_job),
+        result_2 = dg.execute_job(
+            dg.reconstructable(fail_job),
             instance,
             reexecution_options=ReexecutionOptions.from_failure(result.run_id, instance),
         )
@@ -421,14 +404,14 @@ def _branching_graph():
     return echo.alias("final")([col_some, col_none, col_skip])
 
 
-@job(executor_def=in_process_executor)
+@dg.job(executor_def=in_process_executor)
 def branching_job():
     _branching_graph()
 
 
 def test_branching():
-    with instance_for_test() as instance:
-        result = execute_job(reconstructable(branching_job), instance)
+    with dg.instance_for_test() as instance:
+        result = dg.execute_job(dg.reconstructable(branching_job), instance)
         assert not result.success
         success_steps = {ev.step_key for ev in result.get_step_success_events()}
         assert success_steps == {"some_none_skip"}
@@ -438,8 +421,8 @@ def test_branching():
             "echo_skip",
         }
 
-        result_2 = execute_job(
-            reconstructable(branching_job),
+        result_2 = dg.execute_job(
+            dg.reconstructable(branching_job),
             instance,
             reexecution_options=ReexecutionOptions.from_failure(result.run_id, instance),
         )
@@ -452,8 +435,8 @@ def test_branching():
             "echo_none",
         }
 
-        result_3 = execute_job(
-            reconstructable(branching_job),
+        result_3 = dg.execute_job(
+            dg.reconstructable(branching_job),
             instance,
             reexecution_options=ReexecutionOptions.from_failure(result_2.run_id, instance),
         )
@@ -471,13 +454,13 @@ def test_branching():
             assert result_3.output_for_node("final") == [["a", "b", "c"], []]
 
 
-@op(out=DynamicOut())
+@dg.op(out=dg.DynamicOut())
 def emit_nums():
     for i in range(4):
-        yield DynamicOutput(i, mapping_key=str(i))
+        yield dg.DynamicOutput(i, mapping_key=str(i))
 
 
-@op
+@dg.op
 def fail_n(context: OpExecutionContext, x):
     map_key = context.get_mapping_key()
     assert map_key
@@ -495,20 +478,20 @@ def _mapped_fail_graph():
     return echo(emit_nums().map(fail_n).collect())
 
 
-@job(executor_def=in_process_executor)
+@dg.job(executor_def=in_process_executor)
 def mapped_fail_job():
     _mapped_fail_graph()
 
 
 def test_many_retries():
-    with instance_for_test() as instance:
-        result = execute_job(reconstructable(mapped_fail_job), instance)
+    with dg.instance_for_test() as instance:
+        result = dg.execute_job(dg.reconstructable(mapped_fail_job), instance)
         assert not result.success
         success_steps = {ev.step_key for ev in result.get_step_success_events()}
         assert success_steps == {"emit_nums", "fail_n[0]"}
 
-        result_2 = execute_job(
-            reconstructable(mapped_fail_job),
+        result_2 = dg.execute_job(
+            dg.reconstructable(mapped_fail_job),
             instance,
             reexecution_options=ReexecutionOptions.from_failure(result.run_id, instance),
         )
@@ -516,8 +499,8 @@ def test_many_retries():
         success_steps = {ev.step_key for ev in result_2.get_step_success_events()}
         assert success_steps == {"fail_n[1]"}
 
-        result_3 = execute_job(
-            reconstructable(mapped_fail_job),
+        result_3 = dg.execute_job(
+            dg.reconstructable(mapped_fail_job),
             instance,
             reexecution_options=ReexecutionOptions.from_failure(result_2.run_id, instance),
         )
@@ -525,8 +508,8 @@ def test_many_retries():
         success_steps = {ev.step_key for ev in result_3.get_step_success_events()}
         assert success_steps == {"fail_n[2]"}
 
-        result_4 = execute_job(
-            reconstructable(mapped_fail_job),
+        result_4 = dg.execute_job(
+            dg.reconstructable(mapped_fail_job),
             instance,
             reexecution_options=ReexecutionOptions.from_failure(result_3.run_id, instance),
         )
@@ -535,33 +518,33 @@ def test_many_retries():
         assert success_steps == {"fail_n[3]", "echo"}
 
 
-@graph_asset
+@dg.graph_asset
 def branching_asset():
     return _branching_graph()
 
 
-@asset
+@dg.asset
 def echo_branching(branching_asset):
     return branching_asset
 
 
-@asset
+@dg.asset
 def absent_asset(branching_asset):
     return branching_asset
 
 
-@graph_asset
+@dg.graph_asset
 def mapped_fail_asset():
     return _mapped_fail_graph()
 
 
-@asset
+@dg.asset
 def echo_mapped(mapped_fail_asset):
     return mapped_fail_asset
 
 
 def asset_job():
-    return define_asset_job(
+    return dg.define_asset_job(
         "asset_job",
         selection=AssetSelection.assets(
             branching_asset,
@@ -586,8 +569,8 @@ def asset_job():
 def test_assets():
     # ensure complex re-execution behavior works when assets & graphs are layered atop
 
-    with instance_for_test() as instance:
-        result = execute_job(reconstructable(asset_job), instance)
+    with dg.instance_for_test() as instance:
+        result = dg.execute_job(dg.reconstructable(asset_job), instance)
         assert not result.success
         success_steps = {ev.step_key for ev in result.get_step_success_events()}
         assert success_steps == {
@@ -601,8 +584,8 @@ def test_assets():
             "branching_asset.echo_skip",
         }
 
-        result_2 = execute_job(
-            reconstructable(asset_job),
+        result_2 = dg.execute_job(
+            dg.reconstructable(asset_job),
             instance,
             reexecution_options=ReexecutionOptions.from_failure(result.run_id, instance),
         )
@@ -616,8 +599,8 @@ def test_assets():
             "mapped_fail_asset.fail_n[1]",
         }
 
-        result_3 = execute_job(
-            reconstructable(asset_job),
+        result_3 = dg.execute_job(
+            dg.reconstructable(asset_job),
             instance,
             reexecution_options=ReexecutionOptions.from_failure(result_2.run_id, instance),
         )
@@ -632,8 +615,8 @@ def test_assets():
             "mapped_fail_asset.fail_n[2]",
         }
 
-        result_4 = execute_job(
-            reconstructable(asset_job),
+        result_4 = dg.execute_job(
+            dg.reconstructable(asset_job),
             instance,
             reexecution_options=ReexecutionOptions.from_failure(result_3.run_id, instance),
         )
@@ -645,22 +628,22 @@ def test_assets():
         }
 
 
-@op(out={"enable_a": Out(is_required=False), "enable_b": Out(is_required=False)})
+@dg.op(out={"enable_a": dg.Out(is_required=False), "enable_b": dg.Out(is_required=False)})
 def if_op():
-    yield Output(0, "enable_a")
+    yield dg.Output(0, "enable_a")
 
 
-@op
+@dg.op
 def a(_enable, arg):
     return arg
 
 
-@op
+@dg.op
 def b(_enable, arg):
     return arg
 
 
-@job(executor_def=in_process_executor)
+@dg.job(executor_def=in_process_executor)
 def conditional_job():
     arg = fail_once(emit_ten())
     enable_a, enable_b = if_op()
@@ -669,11 +652,11 @@ def conditional_job():
 
 
 def test_conditional():
-    with instance_for_test() as instance:
-        parent_result = execute_job(reconstructable(conditional_job), instance=instance)
+    with dg.instance_for_test() as instance:
+        parent_result = dg.execute_job(dg.reconstructable(conditional_job), instance=instance)
         parent_run_id = parent_result.run_id
-        with execute_job(
-            reconstructable(conditional_job),
+        with dg.execute_job(
+            dg.reconstructable(conditional_job),
             instance=instance,
             reexecution_options=ReexecutionOptions.from_failure(
                 run_id=parent_run_id,
@@ -683,7 +666,7 @@ def test_conditional():
             assert reexec_result.success
 
 
-@op
+@dg.op
 def maybe_trigger(context: OpExecutionContext, b):
     if b and not context.instance.run_storage.get_cursor_values({"boom"}):
         time.sleep(1)
@@ -693,24 +676,24 @@ def maybe_trigger(context: OpExecutionContext, b):
     return 1
 
 
-@op(out=DynamicOut())
+@dg.op(out=dg.DynamicOut())
 def dyn_bool():
     for i in range(2):
-        yield DynamicOutput(None, mapping_key=f"no_{i}")
-    yield DynamicOutput(True, mapping_key="yes")
+        yield dg.DynamicOutput(None, mapping_key=f"no_{i}")
+    yield dg.DynamicOutput(True, mapping_key="yes")
 
 
-@job
+@dg.job
 def crashy_job():
     echo(dyn_bool().map(maybe_trigger).collect())
 
 
 def _execute_crashy_job():
-    execute_job(reconstructable(crashy_job), instance=DagsterInstance.get())
+    dg.execute_job(dg.reconstructable(crashy_job), instance=DagsterInstance.get())
 
 
 def test_crash() -> None:
-    with instance_for_test() as instance:
+    with dg.instance_for_test() as instance:
         run_proc = Process(
             target=_execute_crashy_job,
         )
@@ -735,8 +718,8 @@ def test_crash() -> None:
         }
         assert success_steps == {"dyn_bool", "maybe_trigger[no_0]", "maybe_trigger[no_1]"}
 
-        with execute_job(
-            reconstructable(crashy_job),
+        with dg.execute_job(
+            dg.reconstructable(crashy_job),
             instance=instance,
             reexecution_options=ReexecutionOptions.from_failure(
                 run_id=run_id,

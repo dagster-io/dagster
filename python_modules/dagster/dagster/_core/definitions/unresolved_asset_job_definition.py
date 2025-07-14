@@ -9,8 +9,8 @@ from dagster_shared.record import IHaveNew, record_custom, replace
 import dagster._check as check
 from dagster._annotations import deprecated, deprecated_param
 from dagster._core.definitions import AssetKey
-from dagster._core.definitions.asset_job import build_asset_job, get_asset_graph_for_job
 from dagster._core.definitions.asset_selection import AssetSelection
+from dagster._core.definitions.assets.job.asset_job import build_asset_job, get_asset_graph_for_job
 from dagster._core.definitions.backfill_policy import resolve_backfill_policy
 from dagster._core.definitions.config import ConfigMapping
 from dagster._core.definitions.executor_definition import ExecutorDefinition
@@ -30,8 +30,8 @@ from dagster._utils.tags import normalize_tags
 
 if TYPE_CHECKING:
     from dagster._core.definitions import JobDefinition
-    from dagster._core.definitions.asset_graph import AssetGraph
     from dagster._core.definitions.asset_selection import CoercibleToAssetSelection
+    from dagster._core.definitions.assets.graph.asset_graph import AssetGraph
     from dagster._core.definitions.run_config import RunConfig
 
 

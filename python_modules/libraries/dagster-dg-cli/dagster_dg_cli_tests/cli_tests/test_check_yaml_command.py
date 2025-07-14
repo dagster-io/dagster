@@ -238,7 +238,7 @@ def test_check_yaml_with_watch() -> None:
 
             stdout, stderr = check_process.communicate()
 
-            assert "All components validated successfully" in stdout.decode("utf-8")
+            assert "All component YAML validated successfully" in stdout.decode("utf-8")
             assert BASIC_INVALID_VALUE.check_error_msg
             BASIC_INVALID_VALUE.check_error_msg(stdout.decode("utf-8"))
 

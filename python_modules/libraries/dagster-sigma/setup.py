@@ -37,7 +37,7 @@ setup(
     install_requires=[f"dagster{pin}", "sqlglot", "aiohttp"],
     extras_require={"test": ["aioresponses", "aiohttp<3.11"]},
     include_package_data=True,
-    python_requires=">=3.9,<=3.13.3",
+    python_requires=">=3.9,<3.14",
     entry_points={
         "console_scripts": [
             "dagster-sigma = dagster_sigma.cli:app",

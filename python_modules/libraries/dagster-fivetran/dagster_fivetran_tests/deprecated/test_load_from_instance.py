@@ -1,7 +1,7 @@
 import pytest
 import responses
 from dagster import AssetKey, EnvVar
-from dagster._core.definitions.asset_spec import AssetSpec
+from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
 from dagster._core.definitions.metadata.table import TableColumn, TableSchema
 from dagster._core.definitions.tags import has_kind
 from dagster._core.instance_for_test import environ

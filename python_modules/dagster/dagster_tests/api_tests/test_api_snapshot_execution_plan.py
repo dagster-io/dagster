@@ -1,12 +1,12 @@
 import re
 
+import dagster as dg
 import dagster._check as check
 import pytest
 from dagster._api.snapshot_execution_plan import (
     gen_external_execution_plan_grpc,
     sync_get_external_execution_plan_grpc,
 )
-from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.selector import JobSubsetSelector
 from dagster._core.errors import DagsterUserCodeProcessError
 from dagster._core.instance import DagsterInstance
@@ -129,7 +129,7 @@ async def test_async_execution_plan_error_grpc(instance: DagsterInstance):
                 api_client,
                 job_handle.get_remote_origin(),
                 run_config={},
-                asset_selection={AssetKey("fake")},
+                asset_selection={dg.AssetKey("fake")},
                 job_snapshot_id="12345",
             )
 
@@ -149,7 +149,7 @@ def test_execution_plan_error_grpc(instance: DagsterInstance):
                 api_client,
                 job_handle.get_remote_origin(),
                 run_config={},
-                asset_selection={AssetKey("fake")},
+                asset_selection={dg.AssetKey("fake")},
                 job_snapshot_id="12345",
             )
 

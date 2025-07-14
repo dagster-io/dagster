@@ -1,16 +1,16 @@
-from dagster import AssetCheckResult, AssetCheckSpec, AssetSpec, Output, asset, asset_check
+import dagster as dg
 
 
-@asset(check_specs=[AssetCheckSpec(name="in_op_check", asset="asset_1")])
+@dg.asset(check_specs=[dg.AssetCheckSpec(name="in_op_check", asset="asset_1")])
 def asset_1():
-    yield Output(1)
-    yield AssetCheckResult(passed=True)
+    yield dg.Output(1)
+    yield dg.AssetCheckResult(passed=True)
 
 
-@asset_check(asset=asset_1)
+@dg.asset_check(asset=asset_1)
 def asset_check_1(asset_1):
-    return AssetCheckResult(passed=True)
+    return dg.AssetCheckResult(passed=True)
 
 
 # duplicate asset specs in scope shouldn't error
-asset_specs = [AssetSpec("asset_1"), AssetSpec("asset_1")]
+asset_specs = [dg.AssetSpec("asset_1"), dg.AssetSpec("asset_1")]

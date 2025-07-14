@@ -1,6 +1,6 @@
 [project]
 name = "etl_tutorial"
-requires-python = ">=3.9,<3.13"
+requires-python = ">=3.9,<3.14"
 version = "0.1.0"
 dependencies = [
     "dagster",
@@ -17,7 +17,7 @@ dependencies = [
 [dependency-groups]
 dev = [
     "dagster-webserver",
-    "dagster-dg-cli[local]",
+    "dagster-dg-cli",
 ]
 
 [build-system]
@@ -32,5 +32,3 @@ root_module = "etl_tutorial"
 registry_modules = [
     "etl_tutorial.components.*",
 ]
-
-

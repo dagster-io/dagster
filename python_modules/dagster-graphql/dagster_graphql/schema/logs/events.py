@@ -420,6 +420,22 @@ GrapheneAssetMaterializationFailureReason = graphene.Enum.from_enum(
 )
 
 
+class GrapheneHealthChangedEvent(graphene.ObjectType, AssetEventMixin):
+    class Meta:
+        interfaces = (GrapheneMessageEvent, GrapheneStepEvent, GrapheneDisplayableEvent)
+        name = "HealthChangedEvent"
+
+    def __init__(self, event: EventLogEntry):
+        dagster_event = check.not_none(event.dagster_event)
+        self.asset_health_changed = dagster_event.asset_health_changed_data
+        super().__init__(**_construct_asset_event_metadata_params(event, self.asset_health_changed))
+        AssetEventMixin.__init__(
+            self,
+            event=event,
+            metadata=self.asset_health_changed,
+        )
+
+
 class GrapheneFailedToMaterializeEvent(graphene.ObjectType, AssetEventMixin):
     class Meta:
         interfaces = (GrapheneMessageEvent, GrapheneStepEvent, GrapheneDisplayableEvent)
@@ -632,6 +648,7 @@ class GrapheneDagsterRunEvent(graphene.Union):
             GrapheneExecutionStepSuccessEvent,
             GrapheneExecutionStepUpForRetryEvent,
             GrapheneExecutionStepRestartEvent,
+            GrapheneHealthChangedEvent,
             GrapheneLogMessageEvent,
             GrapheneResourceInitFailureEvent,
             GrapheneResourceInitStartedEvent,

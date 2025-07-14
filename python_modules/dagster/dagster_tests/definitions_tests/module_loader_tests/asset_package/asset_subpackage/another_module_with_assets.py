@@ -1,8 +1,8 @@
-from dagster import AssetKey, SourceAsset, asset
+import dagster as dg
 
-patsy_cline = SourceAsset(key=AssetKey("patsy_cline"))
+patsy_cline = dg.SourceAsset(key=dg.AssetKey("patsy_cline"))
 
 
-@asset
+@dg.asset
 def miles_davis():
     pass

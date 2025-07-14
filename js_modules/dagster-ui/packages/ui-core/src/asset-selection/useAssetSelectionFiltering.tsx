@@ -35,14 +35,12 @@ export const useAssetSelectionFiltering = <
   loading: assetsLoading,
   assetSelection,
   assets,
-  useWorker = true,
   includeExternalAssets = true,
   skip = false,
 }: {
   loading?: boolean;
   assetSelection: string;
   assets: T[] | undefined;
-  useWorker?: boolean;
   includeExternalAssets?: boolean;
   skip?: boolean;
 }) => {
@@ -64,12 +62,11 @@ export const useAssetSelectionFiltering = <
           return !assetsByKey.get(tokenForAssetKey(node.assetKey));
         },
         loading: !!assetsLoading,
-        useWorker,
         externalAssets,
         skip,
       }),
       // eslint-disable-next-line react-hooks/exhaustive-deps
-      [assetsByKeyHash, assetsLoading, useWorker, externalAssets, skip],
+      [assetsByKeyHash, assetsLoading, externalAssets, skip],
     ),
   );
 

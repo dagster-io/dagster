@@ -1,60 +1,49 @@
+import dagster as dg
 import pytest
-from dagster import (
-    AssetKey,
-    AutoMaterializePolicy,
-    Definitions,
-    SkipReason,
-    asset,
-    observable_source_asset,
-    sensor,
-)
+from dagster import AutoMaterializePolicy
 from dagster._core.definitions.asset_selection import AssetSelection
-from dagster._core.definitions.automation_condition_sensor_definition import (
-    AutomationConditionSensorDefinition,
-)
 from dagster._core.definitions.sensor_definition import SensorType
 from dagster._core.remote_representation.external import RemoteRepository
 from dagster._core.remote_representation.external_data import RepositorySnap
 from dagster._core.remote_representation.handle import RepositoryHandle
-from dagster._core.test_utils import instance_for_test
 
 
-@asset(auto_materialize_policy=AutoMaterializePolicy.eager())
+@dg.asset(auto_materialize_policy=AutoMaterializePolicy.eager())
 def auto_materialize_asset():
     pass
 
 
-@asset(auto_materialize_policy=AutoMaterializePolicy.eager())
+@dg.asset(auto_materialize_policy=AutoMaterializePolicy.eager())
 def other_auto_materialize_asset():
     pass
 
 
-@observable_source_asset(auto_observe_interval_minutes=1)
+@dg.observable_source_asset(auto_observe_interval_minutes=1)
 def auto_observe_asset():
     pass
 
 
-@observable_source_asset(auto_observe_interval_minutes=1)
+@dg.observable_source_asset(auto_observe_interval_minutes=1)
 def other_auto_observe_asset():
     pass
 
 
-@asset
+@dg.asset
 def boring_asset():
     pass
 
 
-@observable_source_asset
+@dg.observable_source_asset
 def boring_observable_asset():
     pass
 
 
-@sensor(asset_selection=[auto_materialize_asset])
+@dg.sensor(asset_selection=[auto_materialize_asset])
 def normal_sensor():
-    yield SkipReason("OOPS")
+    yield dg.SkipReason("OOPS")
 
 
-defs = Definitions(
+defs = dg.Definitions(
     assets=[
         auto_materialize_asset,
         other_auto_materialize_asset,
@@ -66,7 +55,7 @@ defs = Definitions(
     sensors=[normal_sensor],
 )
 
-defs_without_observables = Definitions(
+defs_without_observables = dg.Definitions(
     assets=[
         auto_materialize_asset,
         other_auto_materialize_asset,
@@ -77,13 +66,13 @@ defs_without_observables = Definitions(
 
 @pytest.fixture
 def instance_with_auto_materialize_sensors():
-    with instance_for_test() as the_instance:
+    with dg.instance_for_test() as the_instance:
         yield the_instance
 
 
 @pytest.fixture
 def instance_without_auto_materialize_sensors():
-    with instance_for_test({"auto_materialize": {"use_sensors": False}}) as the_instance:
+    with dg.instance_for_test({"auto_materialize": {"use_sensors": False}}) as the_instance:
         yield the_instance
 
 
@@ -106,9 +95,7 @@ def test_default_auto_materialize_sensors():
 
     assert remote_repo.has_sensor("normal_sensor")
 
-    auto_materialize_sensors = [
-        sensor for sensor in sensors if sensor.sensor_type == SensorType.AUTO_MATERIALIZE
-    ]
+    auto_materialize_sensors = [s for s in sensors if s.sensor_type == SensorType.AUTO_MATERIALIZE]
     assert len(auto_materialize_sensors) == 1
 
     auto_materialize_sensor = auto_materialize_sensors[0]
@@ -166,12 +153,12 @@ def test_opt_out_default_auto_materialize_sensors():
 
 
 def test_combine_default_sensors_with_non_default_sensors():
-    auto_materialize_sensor = AutomationConditionSensorDefinition(
+    auto_materialize_sensor = dg.AutomationConditionSensorDefinition(
         "my_custom_policy_sensor",
         target=[auto_materialize_asset, auto_observe_asset],
     )
 
-    defs_with_auto_materialize_sensor = Definitions(
+    defs_with_auto_materialize_sensor = dg.Definitions(
         assets=[
             auto_materialize_asset,
             other_auto_materialize_asset,
@@ -215,22 +202,22 @@ def test_combine_default_sensors_with_non_default_sensors():
     )
 
     assert default_sensor.asset_selection.resolve(asset_graph) == {  # pyright: ignore[reportOptionalMemberAccess]
-        AssetKey(["other_auto_materialize_asset"]),
-        AssetKey(["other_auto_observe_asset"]),
-        AssetKey(["boring_asset"]),
-        AssetKey(["boring_observable_asset"]),
+        dg.AssetKey(["other_auto_materialize_asset"]),
+        dg.AssetKey(["other_auto_observe_asset"]),
+        dg.AssetKey(["boring_asset"]),
+        dg.AssetKey(["boring_observable_asset"]),
     }
 
     custom_sensor = remote_repo.get_sensor("my_custom_policy_sensor")
 
     assert custom_sensor.asset_selection.resolve(asset_graph) == {  # pyright: ignore[reportOptionalMemberAccess]
-        AssetKey(["auto_materialize_asset"]),
-        AssetKey(["auto_observe_asset"]),
+        dg.AssetKey(["auto_materialize_asset"]),
+        dg.AssetKey(["auto_observe_asset"]),
     }
 
 
 def test_custom_sensors_cover_all():
-    auto_materialize_sensor = AutomationConditionSensorDefinition(
+    auto_materialize_sensor = dg.AutomationConditionSensorDefinition(
         "my_custom_policy_sensor",
         target=[
             auto_materialize_asset,
@@ -240,7 +227,7 @@ def test_custom_sensors_cover_all():
         ],
     )
 
-    defs_with_auto_materialize_sensor = Definitions(
+    defs_with_auto_materialize_sensor = dg.Definitions(
         assets=[
             auto_materialize_asset,
             other_auto_materialize_asset,
@@ -278,8 +265,8 @@ def test_custom_sensors_cover_all():
     custom_sensor = remote_repo.get_sensor("my_custom_policy_sensor")
 
     assert custom_sensor.asset_selection.resolve(asset_graph) == {  # pyright: ignore[reportOptionalMemberAccess]
-        AssetKey(["auto_materialize_asset"]),
-        AssetKey(["auto_observe_asset"]),
-        AssetKey(["other_auto_materialize_asset"]),
-        AssetKey(["other_auto_observe_asset"]),
+        dg.AssetKey(["auto_materialize_asset"]),
+        dg.AssetKey(["auto_observe_asset"]),
+        dg.AssetKey(["other_auto_materialize_asset"]),
+        dg.AssetKey(["other_auto_observe_asset"]),
     }

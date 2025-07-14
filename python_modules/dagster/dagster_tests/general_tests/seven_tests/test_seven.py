@@ -5,17 +5,16 @@ import tempfile
 from abc import ABC
 from functools import update_wrapper
 
+import dagster as dg
 import pytest
-from dagster import DagsterType
 from dagster._core.types.dagster_type import ListType
-from dagster._utils import file_relative_path
 from dagster_shared import seven
 from dagster_shared.seven import is_subclass
 
 
 def test_import_module_from_path():
     foo_module = seven.import_module_from_path(
-        "foo_module", file_relative_path(__file__, "foo_module.py")
+        "foo_module", dg.file_relative_path(__file__, "foo_module.py")
     )
     assert foo_module.FOO == 7
 
@@ -104,15 +103,15 @@ def test_is_subclass():
     assert is_subclass(Bar, Foo)
     assert not is_subclass(Foo, Bar)
 
-    assert is_subclass(DagsterType, DagsterType)
+    assert is_subclass(dg.DagsterType, dg.DagsterType)
     assert is_subclass(str, str)
-    assert is_subclass(ListType, DagsterType)
-    assert not is_subclass(DagsterType, ListType)
+    assert is_subclass(ListType, dg.DagsterType)
+    assert not is_subclass(dg.DagsterType, ListType)
     assert not is_subclass(ListType, str)
 
     # type that aren't classes can be passed into is_subclass
     assert not inspect.isclass(2)
-    assert not is_subclass(2, DagsterType)  # pyright: ignore[reportArgumentType]
+    assert not is_subclass(2, dg.DagsterType)  # pyright: ignore[reportArgumentType]
 
 
 @pytest.mark.skipif(

@@ -18,7 +18,7 @@ from dagster_shared.serdes.serdes import (
 )
 
 from dagster._core.definitions.asset_key import EntityKey, T_EntityKey
-from dagster._core.definitions.base_asset_graph import BaseAssetGraph
+from dagster._core.definitions.assets.graph.base_asset_graph import BaseAssetGraph
 from dagster._core.definitions.events import AssetKey
 
 if TYPE_CHECKING:

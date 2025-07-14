@@ -4,16 +4,16 @@ from typing import Optional, Union, cast
 import dagster._check as check
 import graphene
 from dagster import EventLogEntry
-from dagster._core.definitions.asset_check_evaluation import (
+from dagster._core.definitions.asset_checks.asset_check_evaluation import (
     AssetCheckEvaluation,
     AssetCheckEvaluationTargetMaterializationData,
 )
-from dagster._core.definitions.asset_check_spec import AssetCheckSeverity
+from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckSeverity
 from dagster._core.definitions.asset_key import AssetKey
+from dagster._core.definitions.assets.graph.remote_asset_graph import RemoteAssetCheckNode
 from dagster._core.definitions.declarative_automation.serialized_objects import (
     AutomationConditionSnapshot,
 )
-from dagster._core.definitions.remote_asset_graph import RemoteAssetCheckNode
 from dagster._core.events import DagsterEventType
 from dagster._core.storage.asset_check_execution_record import (
     AssetCheckExecutionRecord,

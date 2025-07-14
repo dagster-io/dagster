@@ -15,7 +15,7 @@ from dagster import (
 )
 from dagster._annotations import beta, deprecated, public
 from dagster._config.pythonic_config.resource import ResourceDependency
-from dagster._core.definitions.asset_spec import AssetSpec
+from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
 from dagster._core.definitions.definitions_load_context import StateBackedDefinitionsLoader
 from dagster._core.definitions.events import Failure
 from dagster._time import get_current_timestamp

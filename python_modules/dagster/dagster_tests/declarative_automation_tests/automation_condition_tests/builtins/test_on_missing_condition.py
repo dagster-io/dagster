@@ -1,7 +1,6 @@
+import dagster as dg
 import pytest
 from dagster import AutomationCondition
-from dagster._core.definitions.asset_key import AssetKey
-from dagster._core.definitions.events import AssetMaterialization
 
 from dagster_tests.declarative_automation_tests.scenario_utils.automation_condition_scenario import (
     AutomationConditionScenarioState,
@@ -22,7 +21,7 @@ async def test_on_missing_unpartitioned() -> None:
     )
 
     # B starts off as materialized
-    state.instance.report_runless_asset_event(AssetMaterialization(asset_key=AssetKey("B")))
+    state.instance.report_runless_asset_event(dg.AssetMaterialization(asset_key=dg.AssetKey("B")))
     state, result = await state.evaluate("B")
     assert result.true_subset.size == 0
 
@@ -32,7 +31,7 @@ async def test_on_missing_unpartitioned() -> None:
     assert result.true_subset.size == 0
 
     # now wipe B so that it is newly missing, should update
-    state.instance.wipe_assets([AssetKey("B")])
+    state.instance.wipe_assets([dg.AssetKey("B")])
     state, result = await state.evaluate("B")
     assert result.true_subset.size == 1
 

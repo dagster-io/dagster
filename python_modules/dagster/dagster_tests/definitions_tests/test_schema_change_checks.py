@@ -1,53 +1,43 @@
 from collections.abc import Sequence
 from typing import Optional
 
-from dagster import (
-    AssetSelection,
-    DagsterInstance,
-    Definitions,
-    ExecuteInProcessResult,
-    MaterializeResult,
-    TableSchema,
-    asset,
-    build_column_schema_change_checks,
-    define_asset_job,
-    materialize,
-)
-from dagster._core.definitions.asset_check_spec import AssetCheckSeverity
+import dagster as dg
+from dagster import AssetSelection, DagsterInstance, TableSchema
+from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckSeverity
 from dagster._core.definitions.metadata import TableMetadataSet
 from dagster._core.execution.context.compute import AssetExecutionContext
 
 
-def execute_checks(asset_checks, instance=None) -> ExecuteInProcessResult:
-    defs = Definitions(
+def execute_checks(asset_checks, instance=None) -> dg.ExecuteInProcessResult:
+    defs = dg.Definitions(
         asset_checks=asset_checks,
-        jobs=[define_asset_job("job1", selection=AssetSelection.all_asset_checks())],
+        jobs=[dg.define_asset_job("job1", selection=AssetSelection.all_asset_checks())],
     )
     job_def = defs.resolve_job_def("job1")
     return job_def.execute_in_process(instance=instance)
 
 
 def assert_expected_schema_change(
-    old_schema: Optional[TableSchema],
-    new_schema: Optional[TableSchema],
+    old_schema: Optional[dg.TableSchema],
+    new_schema: Optional[dg.TableSchema],
     description_substrs: Sequence[str],
     passed: bool,
 ):
-    @asset(name="asset1")
+    @dg.asset(name="asset1")
     def my_asset(context: AssetExecutionContext):
         if context.has_tag("old"):
-            return MaterializeResult(
+            return dg.MaterializeResult(
                 metadata=dict(TableMetadataSet(column_schema=old_schema)) if old_schema else None
             )
-        return MaterializeResult(
+        return dg.MaterializeResult(
             metadata=dict(TableMetadataSet(column_schema=new_schema)) if new_schema else None
         )
 
     instance = DagsterInstance.ephemeral()
-    materialize([my_asset], instance=instance, tags={"old": "true"})
-    materialize([my_asset], instance=instance)
+    dg.materialize([my_asset], instance=instance, tags={"old": "true"})
+    dg.materialize([my_asset], instance=instance)
 
-    checks = build_column_schema_change_checks(assets=[my_asset])
+    checks = dg.build_column_schema_change_checks(assets=[my_asset])
     result = execute_checks(checks, instance=instance)
     assert result.success
 
@@ -130,11 +120,11 @@ def test_changed():
 
 
 def test_not_enough_materializations():
-    @asset(name="asset1")
+    @dg.asset(name="asset1")
     def my_asset(context: AssetExecutionContext):
         pass
 
-    checks = build_column_schema_change_checks(assets=[my_asset])
+    checks = dg.build_column_schema_change_checks(assets=[my_asset])
     result = execute_checks(checks)
     assert result.success
 
@@ -147,44 +137,44 @@ def test_not_enough_materializations():
 
 
 def assert_expected_schema_change_two_assets(
-    old_schema_1: Optional[TableSchema],
-    new_schema_1: Optional[TableSchema],
-    old_schema_2: Optional[TableSchema],
-    new_schema_2: Optional[TableSchema],
+    old_schema_1: Optional[dg.TableSchema],
+    new_schema_1: Optional[dg.TableSchema],
+    old_schema_2: Optional[dg.TableSchema],
+    new_schema_2: Optional[dg.TableSchema],
     description_1_substrs: Sequence[str],
     passed_1: bool,
     description_2_substrs: Sequence[str],
     passed_2: bool,
 ):
-    @asset()
+    @dg.asset()
     def my_asset_1(context: AssetExecutionContext):
         if context.has_tag("old"):
-            return MaterializeResult(
+            return dg.MaterializeResult(
                 metadata=dict(TableMetadataSet(column_schema=old_schema_1))
                 if old_schema_1
                 else None
             )
-        return MaterializeResult(
+        return dg.MaterializeResult(
             metadata=dict(TableMetadataSet(column_schema=new_schema_1)) if new_schema_1 else None
         )
 
-    @asset()
+    @dg.asset()
     def my_asset_2(context: AssetExecutionContext):
         if context.has_tag("old"):
-            return MaterializeResult(
+            return dg.MaterializeResult(
                 metadata=dict(TableMetadataSet(column_schema=old_schema_2))
                 if old_schema_2
                 else None
             )
-        return MaterializeResult(
+        return dg.MaterializeResult(
             metadata=dict(TableMetadataSet(column_schema=new_schema_2)) if new_schema_2 else None
         )
 
     instance = DagsterInstance.ephemeral()
-    materialize([my_asset_1, my_asset_2], instance=instance, tags={"old": "true"})
-    materialize([my_asset_1, my_asset_2], instance=instance)
+    dg.materialize([my_asset_1, my_asset_2], instance=instance, tags={"old": "true"})
+    dg.materialize([my_asset_1, my_asset_2], instance=instance)
 
-    checks = build_column_schema_change_checks(assets=[my_asset_1, my_asset_2])
+    checks = dg.build_column_schema_change_checks(assets=[my_asset_1, my_asset_2])
     result = execute_checks(checks, instance=instance)
     assert result.success
 
@@ -221,16 +211,18 @@ def test_multiple_assets():
 
 
 def test_multiple_calls():
-    @asset
+    @dg.asset
     def asset_1():
         pass
 
-    @asset
+    @dg.asset
     def asset_2():
         pass
 
-    checks_1 = build_column_schema_change_checks(assets=[asset_1])
-    checks_2 = build_column_schema_change_checks(assets=[asset_2], severity=AssetCheckSeverity.WARN)
+    checks_1 = dg.build_column_schema_change_checks(assets=[asset_1])
+    checks_2 = dg.build_column_schema_change_checks(
+        assets=[asset_2], severity=AssetCheckSeverity.WARN
+    )
     result = execute_checks([*checks_1, *checks_2])
     assert result.success
 

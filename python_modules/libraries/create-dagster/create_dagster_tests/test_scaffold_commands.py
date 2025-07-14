@@ -369,7 +369,7 @@ def validate_published_pyproject_toml(
     ) == {
         "dev": [
             "dagster-webserver",
-            "dagster-dg-cli[local]",
+            "dagster-dg-cli",
         ]
     }
 

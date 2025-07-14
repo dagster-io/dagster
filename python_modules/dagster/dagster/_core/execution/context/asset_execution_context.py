@@ -3,8 +3,8 @@ from typing import AbstractSet, Any, Optional  # noqa: UP035
 
 import dagster._check as check
 from dagster._annotations import deprecated, public
-from dagster._core.definitions.asset_check_spec import AssetCheckKey
-from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey
+from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
 from dagster._core.definitions.data_version import DataProvenance, DataVersion
 from dagster._core.definitions.dependency import Node, NodeHandle
 from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey, UserEvent

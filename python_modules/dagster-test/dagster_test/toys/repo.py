@@ -74,7 +74,7 @@ from dagster_test.toys.unreliable import unreliable_job
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
-    from dagster._core.definitions.assets import AssetsDefinition
+    from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
 
 
 @op

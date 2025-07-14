@@ -20,7 +20,7 @@ from dagster_shared.utils.hash import make_hashable
 
 import dagster._check as check
 from dagster._core.definitions.asset_selection import KeysAssetSelection
-from dagster._core.definitions.base_asset_graph import BaseAssetGraph
+from dagster._core.definitions.assets.graph.base_asset_graph import BaseAssetGraph
 from dagster._core.definitions.data_version import (
     DATA_VERSION_TAG,
     DataVersion,

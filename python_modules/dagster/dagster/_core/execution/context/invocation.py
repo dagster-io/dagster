@@ -5,7 +5,7 @@ from contextlib import ExitStack
 from typing import TYPE_CHECKING, AbstractSet, Any, NamedTuple, Optional, Union, cast  # noqa: UP035
 
 import dagster._check as check
-from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
 from dagster._core.definitions.composition import PendingNodeInvocation
 from dagster._core.definitions.dependency import Node, NodeHandle
 from dagster._core.definitions.events import (

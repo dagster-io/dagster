@@ -13,7 +13,7 @@ from typing import (  # noqa: UP035
 
 import dagster._check as check
 from dagster._annotations import public
-from dagster._core.definitions.asset_check_spec import AssetCheckKey
+from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.executor_definition import ExecutorDefinition
 from dagster._core.definitions.graph_definition import SubselectedGraphDefinition
@@ -31,7 +31,7 @@ from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariant
 
 if TYPE_CHECKING:
     from dagster._core.definitions import AssetsDefinition
-    from dagster._core.definitions.asset_checks import AssetChecksDefinition
+    from dagster._core.definitions.asset_checks.asset_checks_definition import AssetChecksDefinition
     from dagster._core.definitions.partitions.partitioned_schedule import (
         UnresolvedPartitionedAssetScheduleDefinition,
     )
@@ -506,7 +506,9 @@ class CachingRepositoryData(RepositoryData):
         return self._assets_defs_by_key
 
     def get_asset_checks_defs_by_key(self) -> Mapping[AssetCheckKey, "AssetChecksDefinition"]:
-        from dagster._core.definitions.asset_checks import AssetChecksDefinition
+        from dagster._core.definitions.asset_checks.asset_checks_definition import (
+            AssetChecksDefinition,
+        )
 
         return {
             key: (

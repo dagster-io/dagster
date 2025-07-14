@@ -15,7 +15,7 @@ from dagster import (
     build_sensor_context,
     multi_asset,
 )
-from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluation
+from dagster._core.definitions.asset_checks.asset_check_evaluation import AssetCheckEvaluation
 from dagster._core.definitions.definitions_load_context import (
     DefinitionsLoadContext,
     DefinitionsLoadType,

@@ -1,14 +1,14 @@
 from dataclasses import dataclass
 from typing import Annotated
 
-from dagster import Resolvable, Resolver
+import dagster as dg
 from dagster.components.resolved.base import _get_annotations, _get_resolver
 from pydantic import BaseModel
 
 
 def test_inheritance_dataclass() -> None:
     @dataclass
-    class Base(Resolvable):
+    class Base(dg.Resolvable):
         base_field: int
 
     @dataclass
@@ -21,7 +21,7 @@ def test_inheritance_dataclass() -> None:
 
 
 def test_inheritance_pydantic() -> None:
-    class Base(BaseModel, Resolvable):
+    class Base(BaseModel, dg.Resolvable):
         base_field: int
 
     class Derived(Base):
@@ -34,10 +34,10 @@ def test_inheritance_pydantic() -> None:
 
 def test_override_dataclass() -> None:
     @dataclass
-    class Base(Resolvable):
+    class Base(dg.Resolvable):
         value: int
 
-    class CustomResolver(Resolver): ...
+    class CustomResolver(dg.Resolver): ...
 
     @dataclass
     class Derived(Base):
@@ -51,10 +51,10 @@ def test_override_dataclass() -> None:
 
 
 def test_override_pydantic() -> None:
-    class Base(BaseModel, Resolvable):
+    class Base(BaseModel, dg.Resolvable):
         value: int
 
-    class CustomResolver(Resolver): ...
+    class CustomResolver(dg.Resolver): ...
 
     class Derived(Base):
         value: Annotated[str, CustomResolver(lambda context, val: str(val))]  # pyright: ignore[reportIncompatibleVariableOverride]

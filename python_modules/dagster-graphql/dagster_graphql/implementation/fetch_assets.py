@@ -1,6 +1,6 @@
 import datetime
 from collections import defaultdict
-from collections.abc import Mapping, Sequence
+from collections.abc import Sequence
 from typing import TYPE_CHECKING, AbstractSet, Optional, Union, cast  # noqa: UP035
 
 import dagster_shared.seven as seven
@@ -21,7 +21,6 @@ from dagster._core.definitions.partitions.utils.time_window import (
     PartitionRangeStatus,
     fetch_flattened_time_window_ranges,
 )
-from dagster._core.definitions.remote_asset_graph import RemoteAssetNode
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.event_api import AssetRecordsFilter, EventLogRecord
 from dagster._core.events.log import EventLogEntry
@@ -119,17 +118,18 @@ def get_assets(
         materialized_keys = instance.get_asset_keys(
             prefix=prefix, limit=limit, cursor=normalized_cursor_str
         )
-        asset_nodes_by_asset_key = {
-            asset_key: asset_node
-            for asset_key, asset_node in _get_asset_nodes_by_asset_key(graphene_info).items()
-            if (not prefix or asset_key.path[: len(prefix)] == prefix)
-            and (not normalized_cursor_str or asset_key.to_string() > normalized_cursor_str)
-            and (not asset_keys or asset_key in asset_keys)
+
+        asset_graph_keys = {
+            asset_key
+            for asset_key in graphene_info.context.asset_graph.get_all_asset_keys()
+            if (
+                (not prefix or asset_key.path[: len(prefix)] == prefix)
+                and (not normalized_cursor_str or asset_key.to_string() > normalized_cursor_str)
+                and (not asset_keys or asset_key in asset_keys)
+            )
         }
 
-        merged_asset_keys = sorted(
-            set(materialized_keys).union(asset_nodes_by_asset_key.keys()), key=str
-        )
+        merged_asset_keys = sorted(set(materialized_keys).union(asset_graph_keys), key=str)
     else:
         merged_asset_keys = asset_keys
 
@@ -186,18 +186,6 @@ def get_asset_node_definition_collisions(
             )
 
     return results
-
-
-def _get_asset_nodes_by_asset_key(
-    graphene_info: "ResolveInfo",
-) -> Mapping[AssetKey, RemoteAssetNode]:
-    """If multiple repositories have asset nodes for the same asset key, chooses the asset node that
-    has an op.
-    """
-    return {
-        remote_node.key: remote_node
-        for remote_node in graphene_info.context.asset_graph.asset_nodes
-    }
 
 
 def get_asset_node(

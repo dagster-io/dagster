@@ -1,35 +1,23 @@
 from collections.abc import Sequence
 from typing import Union, cast
 
+import dagster as dg
 import dagster._check as check
 import pytest
-from dagster import (
-    AssetKey,
-    AssetsDefinition,
-    DagsterInvalidDefinitionError,
-    JobDefinition,
-    RepositoryDefinition,
-    asset,
-    define_asset_job,
-    op,
-    repository,
-)
+from dagster import AssetsDefinition
 from dagster._core.definitions.asset_selection import AssetSelection
-from dagster._core.definitions.automation_condition_sensor_definition import (
-    DEFAULT_AUTOMATION_CONDITION_SENSOR_NAME,
-)
-from dagster._core.definitions.cacheable_assets import (
+from dagster._core.definitions.assets.definition.cacheable_assets_definition import (
     AssetsDefinitionCacheableData,
     CacheableAssetsDefinition,
+)
+from dagster._core.definitions.automation_condition_sensor_definition import (
+    DEFAULT_AUTOMATION_CONDITION_SENSOR_NAME,
 )
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationCondition,
 )
-from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.reconstruct import ReconstructableRepository
 from dagster._core.definitions.repository_definition import RepositoryLoadData
-from dagster._core.definitions.resource_definition import resource
-from dagster._core.execution.with_resources import with_resources
 from dagster._utils.test.definitions import scoped_definitions_load_context
 from dagster.components.definitions import lazy_repository
 
@@ -45,13 +33,13 @@ def define_cacheable_and_uncacheable_assets():
         def compute_cacheable_data(self):
             return [
                 AssetsDefinitionCacheableData(
-                    keys_by_input_name={"upstream": AssetKey("upstream")},
-                    keys_by_output_name={"result": AssetKey(self.unique_id)},
+                    keys_by_input_name={"upstream": dg.AssetKey("upstream")},
+                    keys_by_output_name={"result": dg.AssetKey(self.unique_id)},
                 )
             ]
 
         def build_definitions(self, data):
-            @op(name=self.unique_id)
+            @dg.op(name=self.unique_id)
             def _op(upstream):
                 return upstream + 1
 
@@ -64,11 +52,11 @@ def define_cacheable_and_uncacheable_assets():
                 for cd in data
             ]
 
-    @asset
+    @dg.asset
     def upstream():
         return 1
 
-    @asset
+    @dg.asset
     def downstream(a, b):
         return a + b
 
@@ -77,17 +65,20 @@ def define_cacheable_and_uncacheable_assets():
 
 @lazy_repository
 def cacheable_asset_repo():
-    @repository
+    @dg.repository
     def cacheable_asset_repo():
         return [
             define_empty_job(),
             define_simple_job(),
             *define_with_resources_job(),
             define_cacheable_and_uncacheable_assets(),
-            define_asset_job(
+            dg.define_asset_job(
                 "all_asset_job",
                 selection=AssetSelection.assets(
-                    AssetKey("a"), AssetKey("b"), AssetKey("upstream"), AssetKey("downstream")
+                    dg.AssetKey("a"),
+                    dg.AssetKey("b"),
+                    dg.AssetKey("upstream"),
+                    dg.AssetKey("downstream"),
                 ),
             ),
         ]
@@ -98,9 +89,9 @@ def cacheable_asset_repo():
 def test_resolve_empty():
     recon_repo = ReconstructableRepository.for_file(__file__, "cacheable_asset_repo")
     repo = recon_repo.get_definition()
-    assert isinstance(repo, RepositoryDefinition)
-    assert isinstance(repo.get_job("simple_job"), JobDefinition)
-    assert isinstance(repo.get_job("all_asset_job"), JobDefinition)
+    assert isinstance(repo, dg.RepositoryDefinition)
+    assert isinstance(repo.get_job("simple_job"), dg.JobDefinition)
+    assert isinstance(repo.get_job("all_asset_job"), dg.JobDefinition)
 
 
 def test_resolve_missing_key():
@@ -111,8 +102,8 @@ def test_resolve_missing_key():
             cacheable_asset_data={
                 "a": [
                     AssetsDefinitionCacheableData(
-                        keys_by_input_name={"upstream": AssetKey("upstream")},
-                        keys_by_output_name={"result": AssetKey("a")},
+                        keys_by_input_name={"upstream": dg.AssetKey("upstream")},
+                        keys_by_output_name={"result": dg.AssetKey("a")},
                     )
                 ]
             }
@@ -130,21 +121,21 @@ def test_resolve_wrong_data():
             cacheable_asset_data={
                 "a": [
                     AssetsDefinitionCacheableData(
-                        keys_by_input_name={"upstream": AssetKey("upstream")},
-                        keys_by_output_name={"result": AssetKey("a")},
+                        keys_by_input_name={"upstream": dg.AssetKey("upstream")},
+                        keys_by_output_name={"result": dg.AssetKey("a")},
                     )
                 ],
                 "b": [
                     AssetsDefinitionCacheableData(
-                        keys_by_input_name={"upstream": AssetKey("upstream")},
-                        keys_by_output_name={"result": AssetKey("BAD_ASSET_KEY")},
+                        keys_by_input_name={"upstream": dg.AssetKey("upstream")},
+                        keys_by_output_name={"result": dg.AssetKey("BAD_ASSET_KEY")},
                     )
                 ],
             }
         ),
     )
     with pytest.raises(
-        DagsterInvalidDefinitionError,
+        dg.DagsterInvalidDefinitionError,
         match=(
             r"Input asset .*\"b\".* is not produced by any of the provided asset ops and is not one"
             r" of the provided sources"
@@ -154,7 +145,7 @@ def test_resolve_wrong_data():
 
 
 def define_uncacheable_and_resource_dependent_cacheable_assets() -> Sequence[
-    Union[CacheableAssetsDefinition, AssetsDefinition]
+    Union[CacheableAssetsDefinition, dg.AssetsDefinition]
 ]:
     class ResourceDependentCacheableAsset(CacheableAssetsDefinition):
         def __init__(self):
@@ -163,13 +154,13 @@ def define_uncacheable_and_resource_dependent_cacheable_assets() -> Sequence[
         def compute_cacheable_data(self):
             return [
                 AssetsDefinitionCacheableData(
-                    keys_by_input_name={"res_upstream": AssetKey("res_upstream")},
-                    keys_by_output_name={"result": AssetKey("res_midstream")},
+                    keys_by_input_name={"res_upstream": dg.AssetKey("res_upstream")},
+                    keys_by_output_name={"result": dg.AssetKey("res_midstream")},
                 )
             ]
 
         def build_definitions(self, data):
-            @op(name="res_midstream", required_resource_keys={"foo"})
+            @dg.op(name="res_midstream", required_resource_keys={"foo"})
             def _op(context, res_upstream):
                 return res_upstream + context.resources.foo
 
@@ -182,11 +173,11 @@ def define_uncacheable_and_resource_dependent_cacheable_assets() -> Sequence[
                 for cd in data
             ]
 
-    @asset
+    @dg.asset
     def res_upstream(context):
         return context.resources.foo
 
-    @asset
+    @dg.asset
     def res_downstream(context, res_midstream):
         return res_midstream + context.resources.foo
 
@@ -198,20 +189,20 @@ def test_resolve_no_resources():
     provided.
     """
     with scoped_definitions_load_context():
-        with pytest.raises(DagsterInvalidDefinitionError):
+        with pytest.raises(dg.DagsterInvalidDefinitionError):
             try:
 
-                @repository
+                @dg.repository
                 def resource_dependent_repo_no_resources():
                     return [
                         define_uncacheable_and_resource_dependent_cacheable_assets(),
-                        define_asset_job(
+                        dg.define_asset_job(
                             "all_asset_job",
                         ),
                     ]
 
                 resource_dependent_repo_no_resources.get_all_jobs()
-            except DagsterInvalidDefinitionError as e:
+            except dg.DagsterInvalidDefinitionError as e:
                 # Make sure we get an error for the cacheable asset in particular
                 assert "res_midstream" in str(e)
                 raise e
@@ -223,12 +214,12 @@ def test_resolve_with_resources():
     """
     with scoped_definitions_load_context():
 
-        @resource
+        @dg.resource
         def foo_resource():
             return 3
 
         cacheable_assets = define_uncacheable_and_resource_dependent_cacheable_assets()
-        cacheable_assets_with_resources = with_resources(
+        cacheable_assets_with_resources = dg.with_resources(
             define_uncacheable_and_resource_dependent_cacheable_assets(),
             {"foo": foo_resource},
         )
@@ -238,18 +229,18 @@ def test_resolve_with_resources():
             == f"{cacheable_assets[0].unique_id}_with_resources"
         )
 
-        @repository
+        @dg.repository
         def resource_dependent_repo_with_resources():
             return [
                 cacheable_assets_with_resources,
-                define_asset_job(
+                dg.define_asset_job(
                     "all_asset_job",
                 ),
             ]
 
-        assert isinstance(resource_dependent_repo_with_resources, RepositoryDefinition)
+        assert isinstance(resource_dependent_repo_with_resources, dg.RepositoryDefinition)
         assert isinstance(
-            resource_dependent_repo_with_resources.get_job("all_asset_job"), JobDefinition
+            resource_dependent_repo_with_resources.get_job("all_asset_job"), dg.JobDefinition
         )
 
 
@@ -260,12 +251,13 @@ def test_group_cached_assets():
         def compute_cacheable_data(self):
             return [
                 AssetsDefinitionCacheableData(
-                    keys_by_input_name={}, keys_by_output_name={"result": AssetKey(self.unique_id)}
+                    keys_by_input_name={},
+                    keys_by_output_name={"result": dg.AssetKey(self.unique_id)},
                 )
             ]
 
         def build_definitions(self, data):
-            @op(name=self.unique_id)
+            @dg.op(name=self.unique_id)
             def _op():
                 return 5
 
@@ -279,7 +271,7 @@ def test_group_cached_assets():
             ]
 
     my_cacheable_assets_cool = MyCacheableAssets("foo").with_attributes(
-        group_names_by_key={AssetKey("foo"): "my_cool_group"}
+        group_names_by_key={dg.AssetKey("foo"): "my_cool_group"}
     )
 
     my_lame_group_sel = AssetSelection.groups("my_lame_group")
@@ -310,17 +302,21 @@ def test_group_cached_assets():
 def test_multiple_wrapped_cached_assets() -> None:
     """Test that multiple wrappers (with_attributes, with_resources) work properly on cacheable assets."""
 
-    @resource
+    @dg.resource
     def foo_resource():
         return 3
 
     my_cacheable_assets_with_group_and_asset = [
         x.with_attributes(
-            asset_key_replacements={AssetKey("res_downstream"): AssetKey("res_downstream_too")}
+            asset_key_replacements={
+                dg.AssetKey("res_downstream"): dg.AssetKey("res_downstream_too")
+            }
         )
-        for x in with_resources(
+        for x in dg.with_resources(
             [
-                x.with_attributes(group_names_by_key={AssetKey("res_midstream"): "my_cool_group"})
+                x.with_attributes(
+                    group_names_by_key={dg.AssetKey("res_midstream"): "my_cool_group"}
+                )
                 for x in define_uncacheable_and_resource_dependent_cacheable_assets()
             ],
             {"foo": foo_resource},
@@ -329,18 +325,18 @@ def test_multiple_wrapped_cached_assets() -> None:
 
     with scoped_definitions_load_context():
 
-        @repository
+        @dg.repository
         def resource_dependent_repo_with_resources():
             return [
                 my_cacheable_assets_with_group_and_asset,
-                define_asset_job(
+                dg.define_asset_job(
                     "all_asset_job",
                 ),
             ]
 
         repo = resource_dependent_repo_with_resources
-        assert isinstance(repo, RepositoryDefinition)
-        assert isinstance(repo.get_job("all_asset_job"), JobDefinition)
+        assert isinstance(repo, dg.RepositoryDefinition)
+        assert isinstance(repo.get_job("all_asset_job"), dg.JobDefinition)
 
         my_cool_group_sel = AssetSelection.groups("my_cool_group")
         cacheable_resource_asset = cast(
@@ -367,8 +363,8 @@ def test_automation_condition_sensor_definition() -> None:
         def compute_cacheable_data(self) -> Sequence[AssetsDefinitionCacheableData]:
             return [AssetsDefinitionCacheableData(group_name="cacheable")]
 
-        def build_definitions(self, data) -> Sequence[AssetsDefinition]:
-            @asset(
+        def build_definitions(self, data) -> Sequence[dg.AssetsDefinition]:
+            @dg.asset(
                 name=self.unique_id,
                 automation_condition=AutomationCondition.eager() if self.unique_id == "x" else None,
                 group_name=data[0].group_name,
@@ -379,22 +375,22 @@ def test_automation_condition_sensor_definition() -> None:
 
     # will have a default automation condition sensor
     with scoped_definitions_load_context():
-        defs = Definitions(assets=[AutomationConditionCacheableAsset("x")])
+        defs = dg.Definitions(assets=[AutomationConditionCacheableAsset("x")])
         default_sensor = defs.resolve_sensor_def(DEFAULT_AUTOMATION_CONDITION_SENSOR_NAME)
         assert default_sensor.asset_selection == AssetSelection.all()
         assert len(defs.get_repository_def().sensor_defs) == 1
 
     with scoped_definitions_load_context():
         # will not have a default automation condition sensor
-        defs = Definitions(assets=[AutomationConditionCacheableAsset("y")])
+        defs = dg.Definitions(assets=[AutomationConditionCacheableAsset("y")])
         assert len(defs.get_repository_def().sensor_defs) == 0
 
     with scoped_definitions_load_context():
 
-        @repository
+        @dg.repository
         def repo() -> Sequence:
             return [AutomationConditionCacheableAsset("x")]
 
-        assert isinstance(repo, RepositoryDefinition)
+        assert isinstance(repo, dg.RepositoryDefinition)
         assert len(repo.sensor_defs) == 1
         assert repo.sensor_defs[0].name == DEFAULT_AUTOMATION_CONDITION_SENSOR_NAME

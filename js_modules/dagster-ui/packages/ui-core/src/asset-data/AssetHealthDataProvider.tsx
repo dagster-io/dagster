@@ -19,6 +19,8 @@ import {weakMapMemoize} from '../util/weakMapMemoize';
 const BATCH_SIZE = 250;
 const PARALLEL_FETCHES = 4;
 
+const EMPTY_ARRAY: any[] = [];
+
 function init() {
   return liveDataFactory(
     () => {
@@ -102,7 +104,7 @@ export function useAssetsHealthData({
   skip?: boolean;
   loading?: boolean;
 }) {
-  const keys = memoizedAssetKeys(observeEnabled() ? assetKeys : []);
+  const keys = memoizedAssetKeys(observeEnabled() ? assetKeys : EMPTY_ARRAY);
   const result = AssetHealthData.useLiveData(keys, thread, skip);
   useBlockTraceUntilTrue(
     'useAssetsHealthData',

@@ -9,7 +9,7 @@ from dagster import (
     repository,
     with_resources,
 )
-from dagster._core.definitions.cacheable_assets import (
+from dagster._core.definitions.assets.definition.cacheable_assets_definition import (
     AssetsDefinitionCacheableData,
     CacheableAssetsDefinition,
 )

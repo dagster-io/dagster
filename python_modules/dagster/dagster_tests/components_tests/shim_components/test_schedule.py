@@ -1,4 +1,4 @@
-from dagster._core.definitions.schedule_definition import ScheduleDefinition
+import dagster as dg
 from dagster.components.lib.shim_components.schedule import ScheduleScaffolder
 
 from dagster_tests.components_tests.shim_components.shim_test_utils import (
@@ -19,7 +19,7 @@ def test_schedule_scaffolder():
     assert "RunRequest" in code
 
     schedule_fn = execute_scaffolder_and_get_symbol(scaffolder, "my_schedule")
-    assert isinstance(schedule_fn, ScheduleDefinition)
+    assert isinstance(schedule_fn, dg.ScheduleDefinition)
     assert schedule_fn.name == "my_schedule"
 
 

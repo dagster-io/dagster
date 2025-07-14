@@ -63,7 +63,7 @@ def create_target_from_fn_and_local_scope(
 
         file_contents = f"""
 ## Preamble
-from dagster import *
+import dagster as dg
 from dagster._core.definitions.freshness import InternalFreshnessPolicy
 import datetime
 

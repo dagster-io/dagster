@@ -1,5 +1,6 @@
 from collections.abc import Generator, Sequence
 from contextlib import contextmanager, suppress
+from enum import Enum
 from typing import Any, Optional, cast
 
 from dagster_cloud_cli.core.graphql_client import (
@@ -119,8 +120,28 @@ query CliAgentStatus {
 """
 
 
+class DagsterPlusDeploymentAgentType(Enum):
+    SERVERLESS = "SERVERLESS"
+    HYBRID = "HYBRID"
+
+
 def fetch_agent_status(client: DagsterCloudGraphQLClient) -> list[Any]:
     return client.execute(AGENT_STATUS_QUERY)["data"]["agents"]
+
+
+AGENT_TYPE_QUERY = """
+query DeploymentInfoQuery {
+	currentDeployment {
+        agentType
+    }
+}
+"""
+
+
+def fetch_agent_type(client: DagsterCloudGraphQLClient) -> DagsterPlusDeploymentAgentType:
+    return DagsterPlusDeploymentAgentType(
+        client.execute(AGENT_TYPE_QUERY)["data"]["currentDeployment"]["agentType"]
+    )
 
 
 WORKSPACE_ENTRIES_QUERY = """

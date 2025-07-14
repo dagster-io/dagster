@@ -5,12 +5,12 @@ from types import ModuleType
 from typing import Optional
 
 import dagster._check as check
-from dagster._core.definitions.asset_checks import AssetChecksDefinition
+from dagster._core.definitions.asset_checks.asset_checks_definition import AssetChecksDefinition
 from dagster._core.definitions.asset_key import (
     CoercibleToAssetKeyPrefix,
     check_opt_coercible_to_asset_key_prefix_param,
 )
-from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
 from dagster._core.definitions.module_loaders.object_list import ModuleScopedDagsterDefs
 from dagster._core.definitions.module_loaders.utils import find_modules_in_package
 

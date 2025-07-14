@@ -175,6 +175,10 @@ def build_dbt_cloud_polling_sensor(
         name=clean_name(
             f"{workspace.account_name}_{workspace.project_name}_{workspace.environment_name}__run_status_sensor"
         ),
+        description=(
+            f"dbt Cloud polling sensor for dbt Cloud workspace for account {workspace.account_name}, "
+            f"project {workspace.project_name} and environment {workspace.environment_name}"
+        ),
         minimum_interval_seconds=minimum_interval_seconds,
         default_status=default_sensor_status or DefaultSensorStatus.RUNNING,
     )

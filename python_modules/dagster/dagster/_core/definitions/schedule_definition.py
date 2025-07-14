@@ -47,7 +47,7 @@ from dagster._utils.tags import normalize_tags
 if TYPE_CHECKING:
     from dagster import ResourceDefinition
     from dagster._core.definitions.asset_selection import CoercibleToAssetSelection
-    from dagster._core.definitions.assets import AssetsDefinition
+    from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
     from dagster._core.definitions.repository_definition import RepositoryDefinition
     from dagster._core.definitions.run_config import RunConfig
 

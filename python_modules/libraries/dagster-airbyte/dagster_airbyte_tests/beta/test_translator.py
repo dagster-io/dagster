@@ -1,5 +1,5 @@
 import responses
-from dagster._core.definitions.asset_spec import AssetSpec
+from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
 from dagster._core.definitions.metadata.metadata_set import TableMetadataSet
 from dagster._core.definitions.tags import has_kind
 from dagster_airbyte import AirbyteCloudWorkspace, DagsterAirbyteTranslator

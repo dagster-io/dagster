@@ -28,7 +28,7 @@ from dagster._core.definitions.unresolved_asset_job_definition import Unresolved
 from dagster._core.errors import DagsterInvalidDefinitionError
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.cacheable_assets import (
+    from dagster._core.definitions.assets.definition.cacheable_assets_definition import (
         AssetsDefinitionCacheableData,
         CacheableAssetsDefinition,
     )
@@ -86,7 +86,9 @@ class _Repository:
         ],
     ) -> RepositoryDefinition:
         from dagster._core.definitions import AssetsDefinition, SourceAsset
-        from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
+        from dagster._core.definitions.assets.definition.cacheable_assets_definition import (
+            CacheableAssetsDefinition,
+        )
         from dagster._core.definitions.definitions_load_context import (
             DefinitionsLoadContext,
             DefinitionsLoadType,

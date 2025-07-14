@@ -10,7 +10,7 @@ from dagster._core.loader import LoadingContext
 from dagster._utils.cached_method import cached_method
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.base_asset_graph import BaseAssetGraph
+    from dagster._core.definitions.assets.graph.base_asset_graph import BaseAssetGraph
     from dagster._core.definitions.events import (
         AssetKey,
         AssetKeyPartitionKey,
@@ -374,7 +374,7 @@ class CachingStaleStatusResolver:
         loading_context: LoadingContext,
         instance_queryer: Optional["CachingInstanceQueryer"] = None,
     ):
-        from dagster._core.definitions.base_asset_graph import BaseAssetGraph
+        from dagster._core.definitions.assets.graph.base_asset_graph import BaseAssetGraph
 
         self._instance = instance
         self._instance_queryer = instance_queryer

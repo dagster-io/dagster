@@ -41,6 +41,6 @@ setup(
         "tableauserverclient>=0.32",
     ],
     include_package_data=True,
-    python_requires=">=3.9,<=3.13.3",
+    python_requires=">=3.9,<3.14",
     zip_safe=False,
 )

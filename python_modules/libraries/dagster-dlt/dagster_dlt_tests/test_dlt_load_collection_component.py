@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING, Any, Callable, Optional, cast
 import pytest
 from dagster import AssetKey
 from dagster._core.definitions import materialize
-from dagster._core.definitions.asset_spec import AssetSpec
+from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._utils import pushd
 from dagster._utils.env import environ
@@ -22,7 +22,7 @@ from dagster_dlt import DagsterDltResource, DltLoadCollectionComponent
 from dagster_dlt.components.dlt_load_collection.component import DltLoadSpecModel
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.assets import AssetsDefinition
+    from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
 
 
 from dlt import Pipeline

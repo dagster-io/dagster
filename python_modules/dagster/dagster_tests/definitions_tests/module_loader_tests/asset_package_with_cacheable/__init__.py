@@ -1,6 +1,6 @@
-from dagster import AssetKey, op
-from dagster._core.definitions.assets import AssetsDefinition
-from dagster._core.definitions.cacheable_assets import (
+import dagster as dg
+from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
+from dagster._core.definitions.assets.definition.cacheable_assets_definition import (
     AssetsDefinitionCacheableData,
     CacheableAssetsDefinition,
 )
@@ -10,12 +10,12 @@ class MyCacheableAssetsDefinition(CacheableAssetsDefinition):
     def compute_cacheable_data(self):
         return [
             AssetsDefinitionCacheableData(
-                keys_by_input_name={}, keys_by_output_name={"result": AssetKey(self.unique_id)}
+                keys_by_input_name={}, keys_by_output_name={"result": dg.AssetKey(self.unique_id)}
             )
         ]
 
     def build_definitions(self, data):
-        @op
+        @dg.op
         def my_op():
             return 1
 

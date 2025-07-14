@@ -7,20 +7,20 @@ from dagster import (
     _check as check,
 )
 from dagster._annotations import beta
-from dagster._core.definitions.asset_check_factories.freshness_checks.last_update import (
+from dagster._core.definitions.asset_checks.asset_check_factories.freshness_checks.last_update import (
     build_last_update_freshness_checks,
 )
-from dagster._core.definitions.asset_check_factories.freshness_checks.time_partition import (
+from dagster._core.definitions.asset_checks.asset_check_factories.freshness_checks.time_partition import (
     build_time_partition_freshness_checks,
 )
-from dagster._core.definitions.asset_check_factories.utils import (
+from dagster._core.definitions.asset_checks.asset_check_factories.utils import (
     DEFAULT_FRESHNESS_SEVERITY,
     asset_to_keys_iterable,
     assets_to_keys,
     ensure_no_duplicate_assets,
 )
-from dagster._core.definitions.asset_check_spec import AssetCheckSeverity
-from dagster._core.definitions.asset_checks import AssetChecksDefinition
+from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckSeverity
+from dagster._core.definitions.asset_checks.asset_checks_definition import AssetChecksDefinition
 from dagster._core.definitions.partitions.definition import TimeWindowPartitionsDefinition
 from dagster._core.errors import DagsterInvariantViolationError
 

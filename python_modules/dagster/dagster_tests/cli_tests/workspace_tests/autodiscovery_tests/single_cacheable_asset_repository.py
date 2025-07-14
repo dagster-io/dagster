@@ -1,5 +1,7 @@
-from dagster import repository
-from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
+import dagster as dg
+from dagster._core.definitions.assets.definition.cacheable_assets_definition import (
+    CacheableAssetsDefinition,
+)
 
 
 class FooCacheableAssetsDefinition(CacheableAssetsDefinition):
@@ -10,6 +12,6 @@ class FooCacheableAssetsDefinition(CacheableAssetsDefinition):
         return []
 
 
-@repository
+@dg.repository
 def single_cacheable_asset_repository():
     return [FooCacheableAssetsDefinition("abc")]

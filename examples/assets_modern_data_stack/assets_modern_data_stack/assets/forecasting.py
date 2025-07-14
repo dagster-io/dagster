@@ -2,10 +2,7 @@ import datetime
 
 import numpy as np
 import pandas as pd
-from dagster import AssetExecutionContext, asset
-from dagster._core.definitions.asset_check_factories.freshness_checks.last_update import (
-    build_last_update_freshness_checks,
-)
+from dagster import AssetExecutionContext, asset, build_last_update_freshness_checks
 from dagster_airbyte import build_airbyte_assets
 from dagster_dbt import DbtCliResource, dbt_assets
 from scipy import optimize

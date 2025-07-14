@@ -2,7 +2,9 @@ from collections.abc import Mapping, Sequence
 
 from dagster import AssetsDefinition, AssetSpec, AutomationCondition, Definitions, Nothing
 from dagster._core.definitions.asset_key import AssetKey
-from dagster._core.definitions.assets import stringify_asset_key_to_input_name
+from dagster._core.definitions.assets.definition.assets_definition import (
+    stringify_asset_key_to_input_name,
+)
 from dagster._core.definitions.input import In
 from dagster_airlift.core.airflow_instance import AirflowInstance
 from dagster_airlift.core.basic_auth import AirflowBasicAuthBackend

@@ -21,8 +21,9 @@ export const PipelineOrJobDisambiguationRoot = (props: Props) => {
   const {loading: permissionsLoading} = useContext(PermissionsContext);
   const repo = useRepository(repoAddress);
 
-  useBlockTraceUntilTrue('Workspace', loading);
-  useBlockTraceUntilTrue('Permissions', permissionsLoading);
+  useBlockTraceUntilTrue('Workspace', !loading);
+  useBlockTraceUntilTrue('Permissions', !permissionsLoading);
+
   if (loading || permissionsLoading) {
     return null;
   }

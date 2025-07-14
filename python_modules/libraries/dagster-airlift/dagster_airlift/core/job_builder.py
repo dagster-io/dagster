@@ -1,7 +1,7 @@
 from collections.abc import Mapping, Sequence
 
 from dagster import JobDefinition
-from dagster._core.definitions.asset_spec import AssetSpec
+from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
 from dagster._core.definitions.decorators.job_decorator import job
 
 from dagster_airlift.core.dag_asset import peered_dag_asset_metadata

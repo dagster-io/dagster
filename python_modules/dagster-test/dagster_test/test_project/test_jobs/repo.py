@@ -392,6 +392,17 @@ def slow_graph():
 
 
 @op
+def spin_forever_op(_):
+    while True:
+        time.sleep(10)
+
+
+@graph
+def spin_forever_graph():
+    spin_forever_op()
+
+
+@op
 def slow_execute_k8s_op(context):
     # lazily import, since this repo is used in docker-tests and we can avoid the k8s import
     from dagster_k8s import execute_k8s_job
@@ -563,6 +574,7 @@ def define_demo_execution_repo():
                 "demo_slow_job_docker": define_job(demo_slow_graph, "docker"),
                 "demo_job_gcs": define_job(demo_graph, "gcs"),
                 "demo_job_k8s": define_job(demo_graph, "k8s"),
+                "spin_forever_job_k8s": define_job(spin_forever_graph, "k8s"),
                 "docker_celery_job": define_job(
                     demo_resource_output_graph,
                     "celery_docker",

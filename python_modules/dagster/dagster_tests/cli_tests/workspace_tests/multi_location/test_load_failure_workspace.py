@@ -1,20 +1,19 @@
+import dagster as dg
 import pytest
-from dagster._core.test_utils import instance_for_test
 from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._core.workspace.load import load_workspace_process_context_from_yaml_paths
-from dagster._utils import file_relative_path
 
 
 @pytest.fixture
 def instance():
-    with instance_for_test() as instance:
+    with dg.instance_for_test() as instance:
         yield instance
 
 
 def test_multi_location_error(instance):
     with load_workspace_process_context_from_yaml_paths(
         instance,
-        [file_relative_path(__file__, "multi_location_with_error.yaml")],
+        [dg.file_relative_path(__file__, "multi_location_with_error.yaml")],
     ) as cli_workspace:
         assert isinstance(cli_workspace, WorkspaceProcessContext)
         assert cli_workspace.code_locations_count == 2
@@ -39,7 +38,7 @@ def test_multi_location_error(instance):
 def test_workspace_with_only_error(instance):
     with load_workspace_process_context_from_yaml_paths(
         instance,
-        [file_relative_path(__file__, "workspace_with_only_error.yaml")],
+        [dg.file_relative_path(__file__, "workspace_with_only_error.yaml")],
     ) as cli_workspace:
         assert isinstance(cli_workspace, WorkspaceProcessContext)
         assert cli_workspace.code_locations_count == 1

@@ -33,7 +33,7 @@ export const LaunchpadSetupFromRunRoot = (props: {repoAddress: RepoAddress}) => 
     runId: string;
   }>();
 
-  useBlockTraceUntilTrue('Permissions', loading);
+  useBlockTraceUntilTrue('Permissions', !loading);
   if (loading) {
     return null;
   }

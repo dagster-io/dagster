@@ -9,7 +9,7 @@ from dagster._core.definitions.asset_selection import (
     CoercibleToAssetSelection,
     is_coercible_to_asset_selection,
 )
-from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
 from dagster._core.definitions.graph_definition import GraphDefinition
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.source_asset import SourceAsset

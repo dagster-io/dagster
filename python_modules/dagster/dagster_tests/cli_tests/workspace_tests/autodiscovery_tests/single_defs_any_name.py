@@ -1,8 +1,8 @@
-from dagster import Definitions
+import dagster as dg
 
 
 def _make_defs():
-    return Definitions()
+    return dg.Definitions()
 
 
 not_defs = _make_defs()
