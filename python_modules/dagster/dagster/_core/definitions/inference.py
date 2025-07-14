@@ -59,13 +59,13 @@ def _infer_output_description_from_docstring(fn: Callable[..., Any]) -> Optional
         return None
 
 
-def infer_output_props(fn: Callable[..., Any]) -> InferredOutputProps:
+def get_return_annotation(fn: Callable[..., Any]) -> Any:
     type_hints = get_type_hints(fn)
-    annotation = (
-        type_hints["return"]
-        if not isgeneratorfunction(fn) and "return" in type_hints
-        else Parameter.empty
-    )
+    return type_hints["return"] if "return" in type_hints else Parameter.empty
+
+
+def infer_output_props(fn: Callable[..., Any]) -> InferredOutputProps:
+    annotation = get_return_annotation(fn) if not isgeneratorfunction(fn) else Parameter.empty
 
     return InferredOutputProps(
         annotation=annotation,
