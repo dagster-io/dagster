@@ -109,15 +109,6 @@ def resolve_dbt_project(context: ResolutionContext, model) -> DbtProject:
     )
 
 
-ResolvedDbtProject: TypeAlias = Annotated[
-    DbtProject,
-    Resolver(
-        resolve_dbt_project,
-        model_field_type=Union[str, DbtProjectArgs.model()],
-    ),
-]
-
-
 @scaffold_with(DbtProjectComponentScaffolder)
 @dataclass
 class DbtProjectComponent(Component, Resolvable):
@@ -139,13 +130,77 @@ class DbtProjectComponent(Component, Resolvable):
     version control, modularity, portability, CI/CD, and documentation.
     """
 
-    project: ResolvedDbtProject
-    op: Optional[OpSpec] = None
-    translation: Optional[ResolvedTranslationFn] = None
-    select: str = DBT_DEFAULT_SELECT
-    exclude: str = DBT_DEFAULT_EXCLUDE
-    translation_settings: Optional[DagsterDbtComponentsTranslatorSettings] = None
-    prepare_if_dev: bool = True
+    project: Annotated[
+        DbtProject,
+        Resolver(
+            resolve_dbt_project,
+            model_field_type=Union[str, DbtProjectArgs.model()],
+            description="The path to the dbt project or a mapping defining a DbtProject",
+            examples=[
+                "{{ project_root }}/path/to/dbt_project",
+                {
+                    "project_dir": "path/to/dbt_project",
+                    "profile": "your_profile",
+                    "target": "your_target",
+                },
+            ],
+        ),
+    ]
+    op: Annotated[
+        Optional[OpSpec],
+        Resolver.default(
+            description="Op related arguments to set on the generated @dbt_assets",
+            examples=[
+                {
+                    "name": "some_op",
+                    "tags": {"tag1": "value"},
+                    "backfill_policy": {"type": "single_run"},
+                },
+            ],
+        ),
+    ] = None
+    translation: Annotated[
+        Optional[ResolvedTranslationFn],
+        Resolver.default(
+            description="Defines how AssetSpecs are translated from dbt nodes",
+            examples=[
+                {
+                    "key": "target/main/{{ node.name }}",
+                },
+            ],
+        ),
+    ] = None
+    select: Annotated[
+        str,
+        Resolver.default(
+            description="The dbt selection string for models in the project you want to include.",
+            examples=["tag:dagster"],
+        ),
+    ] = DBT_DEFAULT_SELECT
+    exclude: Annotated[
+        str,
+        Resolver.default(
+            description="The dbt selection string for models in the project you want to exclude.",
+            examples=["tag:skip_dagster"],
+        ),
+    ] = DBT_DEFAULT_EXCLUDE
+    translation_settings: Annotated[
+        Optional[DagsterDbtComponentsTranslatorSettings],
+        Resolver.default(
+            description="Allows enabling or disabling various features for translating dbt models in to Dagster assets.",
+            examples=[
+                {
+                    "enable_source_tests_as_checks": True,
+                },
+            ],
+        ),
+    ] = None
+    prepare_if_dev: Annotated[
+        bool,
+        Resolver.default(
+            description="Whether to prepare the dbt project every time in `dagster dev` or `dg` cli calls."
+        ),
+    ] = True
 
     @cached_property
     def translator(self):
