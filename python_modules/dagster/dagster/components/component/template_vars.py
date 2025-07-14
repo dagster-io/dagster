@@ -19,6 +19,93 @@ def template_var() -> Callable[[TemplateVarFn], TemplateVarFn]: ...
 def template_var(
     fn: Optional[TemplateVarFn] = None,
 ) -> Union[TemplateVarFn, Callable[[TemplateVarFn], TemplateVarFn]]:
+    """A decorator that marks a functions as a template variables for use in Dagster component
+    YAML files.
+
+    Template variables allow you to inject dynamic values into component YAML configurations by
+    calling Python functions during the component loading process. This enables parameterization
+    of component definitions with computed values, environment variables, or other dynamic data.
+
+    Template variables can return simple values or callable functions. When a template variable
+    returns a function, it can be invoked in YAML with parameters using function call syntax
+    within the template string (e.g., "{{ func_name('arg1', 'arg2') }}").
+
+    The decorator can be used in two ways:
+    1. As a bare decorator: @template_var
+    2. As a decorator with parentheses: @template_var()
+
+    Functions decorated with @template_var can accept 0 or 1 parameters:
+    - 0 parameters: Simple value generation or function factory
+    - 1 parameter: Receives ComponentDeclLoadContext for accessing component loading context. This
+      is for cases when the udf needs access to information about the project, such as its location
+      in the file system.
+
+    Args:
+        fn: The function to decorate as a template variable. If None, returns a decorator
+            function that can be applied to the target function.
+
+    Returns:
+        Either the decorated function (if fn is provided) or a decorator function that
+        can be applied to mark a function as a template variable.
+
+    Examples:
+        Basic usage with no parameters:
+
+        .. code-block:: python
+
+            @template_var
+            def current_timestamp():
+                return int(time.time())
+
+        Usage with context parameter:
+
+        .. code-block:: python
+
+            @template_var
+            def component_name(context: ComponentDeclLoadContext):
+                return context.path.name
+
+        Returning a function for parameterized template usage:
+
+        .. code-block:: python
+
+            @template_var
+            def env_var():
+                def get_env_var(name: str, default: str = ""):
+                    return os.getenv(name, default)
+                return get_env_var
+
+            @template_var
+            def path_join():
+                def join_paths(*parts: str) -> str:
+                    return os.path.join(*parts)
+                return join_paths
+
+        Usage in component YAML:
+
+        .. code-block:: yaml
+
+            # defs.yaml
+            type: my_component.MyComponent
+            template_vars_module: .template_vars
+            attributes:
+              name: "{{ component_name }}"
+              timestamp: "{{ current_timestamp }}"
+              database_url: "{{ env_var('DATABASE_URL', 'sqlite:///default.db') }}"
+              config_path: "{{ path_join('/etc', 'myapp', 'config.yaml') }}"
+
+    Note:
+        Template variable functions are discovered automatically by the component loading
+        system when specified in the `template_vars_module` field of a component YAML file.
+        The functions are then available for use in YAML value templating using double
+        curly brace syntax: {{ function_name }}.
+
+        When a template variable returns a function, that function can be called with
+        parameters directly in the YAML template string. This pattern is useful for
+        creating reusable utilities like environment variable lookups, path operations,
+        or string formatting functions that can be parameterized at the YAML level.
+    """
+
     def decorator(func: TemplateVarFn) -> TemplateVarFn:
         setattr(func, TEMPLATE_VAR_ATTR, True)
         return func
