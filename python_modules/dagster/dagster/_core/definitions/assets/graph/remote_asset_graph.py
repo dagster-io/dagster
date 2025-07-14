@@ -441,6 +441,7 @@ class RemoteAssetGraph(BaseAssetGraph[TRemoteAssetNode], ABC, Generic[TRemoteAss
                 v.asset_check.blocking,
                 v.asset_check.description,
                 v.asset_check.automation_condition,
+                {},  # metadata not yet on AssetCheckNodeSnap
             )
             for k, v in self.remote_asset_check_nodes_by_key.items()
         }

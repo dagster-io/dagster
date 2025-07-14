@@ -14,23 +14,27 @@ class DgAssetMetadata:
     automation_condition: Optional[str]
     tags: Sequence[str]
     is_executable: bool
+    source: Optional[str]
 
 
 @record
 class DgSensorMetadata:
     name: str
+    source: Optional[str]
 
 
 @record
 class DgScheduleMetadata:
     name: str
     cron_schedule: str
+    source: Optional[str]
 
 
 @record
 class DgJobMetadata:
     name: str
     description: Optional[str]
+    source: Optional[str]
 
 
 @record
@@ -46,6 +50,7 @@ class DgAssetCheckMetadata:
     name: str
     additional_deps: list[str]
     description: Optional[str]
+    source: Optional[str]
 
 
 @record

@@ -215,12 +215,14 @@ class AssetCheckNode(BaseEntityNode[AssetCheckKey]):
         blocking: bool,
         description: Optional[str],
         automation_condition: Optional["AutomationCondition[AssetCheckKey]"],
+        metadata: ArbitraryMetadataMapping,
     ):
         self.key = key
         self.blocking = blocking
         self._automation_condition = automation_condition
         self._additional_deps = additional_deps
         self._description = description
+        self._metadata = metadata
 
     @property
     def parent_entity_keys(self) -> AbstractSet[AssetKey]:
@@ -246,6 +248,10 @@ class AssetCheckNode(BaseEntityNode[AssetCheckKey]):
     @property
     def description(self) -> Optional[str]:
         return self._description
+
+    @property
+    def metadata(self) -> ArbitraryMetadataMapping:
+        return self._metadata
 
 
 T_AssetNode = TypeVar("T_AssetNode", bound=BaseAssetNode)
