@@ -20,7 +20,7 @@ export const useQueryAndLocalStoragePersistedState = <T extends QueryPersistedDa
 
   const [valueFromLocalStorage, setValueFromLocalStorage] = useStateWithStorage(
     localStorageKey,
-    (json) => (decode ? decode(json) : json),
+    (json) => (decode ? decode(json ?? {}) : json),
   );
 
   const [state, setter] = useQueryPersistedState(props);
