@@ -15,6 +15,7 @@ class DgAssetMetadata:
     tags: Sequence[str]
     is_executable: bool
     source: Optional[str]
+    owners: Optional[Sequence[str]]
 
 
 @record
