@@ -87,7 +87,6 @@ def template_var(
 
             # defs.yaml
             type: my_component.MyComponent
-            template_vars_module: .template_vars
             attributes:
               name: "{{ component_name }}"
               timestamp: "{{ current_timestamp }}"
