@@ -733,8 +733,10 @@ class Definitions(IHaveNew):
 
     @staticmethod
     def merge_unbound_defs(*def_sets: "Definitions") -> "Definitions":
-        """Variant of merge with some more strict checks on input Definitions objects,
-        including that they have not been resolved.
+        """Merges multiple Definitions objects into a single Definitions object.
+
+        Asserts that input Definitions objects have not yet had their asset graphs resolved,
+        intended for internal use-cases to safeguard against unnecessarily resolving subgraphs.
         """
         for i, def_set in enumerate(def_sets):
             check.invariant(
