@@ -731,6 +731,20 @@ class Definitions(IHaveNew):
         """
         defs.get_repository_def().validate_loadable()
 
+    @staticmethod
+    def merge_unbound_defs(*def_sets: "Definitions") -> "Definitions":
+        """Variant of merge with some more strict checks on input Definitions objects,
+        including that they have not been resolved.
+        """
+        for i, def_set in enumerate(def_sets):
+            check.invariant(
+                not def_set.has_resolved_repository_def(),
+                f"Definitions object {i} has previously been resolved."
+                " merge_unbound_defs should only be used on definitions that have not been resolved.",
+            )
+
+        return Definitions.merge(*def_sets)
+
     @public
     @staticmethod
     def merge(*def_sets: "Definitions") -> "Definitions":
@@ -812,10 +826,6 @@ class Definitions(IHaveNew):
 
                 component_tree = def_set.component_tree
 
-            check.invariant(
-                not def_set.has_resolved_repository_def(),
-                "Definitions object should have been resolved",
-            )
         return Definitions(
             assets=assets,
             schedules=schedules,
