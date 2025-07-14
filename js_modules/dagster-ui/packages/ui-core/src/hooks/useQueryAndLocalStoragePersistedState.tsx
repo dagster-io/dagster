@@ -2,6 +2,7 @@ import * as React from 'react';
 
 import {QueryPersistedDataType, useQueryPersistedState} from './useQueryPersistedState';
 import {useSetStateUpdateCallback} from './useSetStateUpdateCallback';
+import {useStateWithStorage} from './useStateWithStorage';
 
 /**
  *
@@ -15,39 +16,20 @@ export const useQueryAndLocalStoragePersistedState = <T extends QueryPersistedDa
     isEmptyState: (state: T) => boolean;
   },
 ): [T, (setterOrState: React.SetStateAction<T>) => void] => {
-  const {localStorageKey, isEmptyState, decode} = props;
+  const {localStorageKey, isEmptyState, decode, encode} = props;
 
-  const getInitialValueFromLocalStorage = React.useMemo(() => {
-    let value: T | undefined;
-    return () => {
-      if (value !== undefined) {
-        return value;
-      }
-      try {
-        const item = window.localStorage.getItem(localStorageKey);
-        if (item) {
-          const parsed = JSON.parse(item);
-          return decode ? decode(parsed) : parsed;
-        }
-      } catch (error) {
-        console.error('Error reading from localStorage:', error);
-      }
-      return undefined;
-    };
-  }, [localStorageKey, decode]);
+  const [valueFromLocalStorage, setValueFromLocalStorage] = useStateWithStorage(
+    localStorageKey,
+    (json) => (decode ? decode(json) : json),
+  );
 
   const [state, setter] = useQueryPersistedState(props);
 
   return [
-    isEmptyState(state) ? (getInitialValueFromLocalStorage() ?? state) : state,
+    isEmptyState(state) ? (valueFromLocalStorage ?? state) : state,
     useSetStateUpdateCallback(state, (nextState) => {
+      setValueFromLocalStorage(encode ? encode(nextState) : nextState);
       setter(nextState);
-
-      // Persist state updates to localStorage
-      window.localStorage.setItem(
-        props.localStorageKey,
-        JSON.stringify(props.encode ? props.encode(nextState) : nextState),
-      );
     }),
   ];
 };
