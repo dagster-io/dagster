@@ -3,6 +3,8 @@ from typing import Any, Callable, Optional, Union, overload
 
 from typing_extensions import TypeAlias
 
+from dagster._annotations import public
+
 TemplateVarFn: TypeAlias = Callable[..., Any]
 
 TEMPLATE_VAR_ATTR = "__dagster_template_var"
@@ -16,6 +18,7 @@ def template_var(fn: TemplateVarFn) -> TemplateVarFn: ...
 def template_var() -> Callable[[TemplateVarFn], TemplateVarFn]: ...
 
 
+@public
 def template_var(
     fn: Optional[TemplateVarFn] = None,
 ) -> Union[TemplateVarFn, Callable[[TemplateVarFn], TemplateVarFn]]:
