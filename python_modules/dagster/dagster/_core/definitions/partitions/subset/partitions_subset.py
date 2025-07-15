@@ -6,6 +6,7 @@ from typing import Generic, Optional
 from typing_extensions import TypeVar
 
 from dagster._annotations import public
+from dagster._core.definitions.partitions.context import partition_loading_context
 from dagster._core.definitions.partitions.definition.partitions_definition import (
     PartitionsDefinition,
 )
@@ -51,11 +52,12 @@ class PartitionsSubset(ABC, Generic[T_str]):
         partition_key_range: PartitionKeyRange,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> "PartitionsSubset[T_str]":
-        return self.with_partition_keys(
-            partitions_def.get_partition_keys_in_range(
-                partition_key_range, dynamic_partitions_store=dynamic_partitions_store
+        with partition_loading_context(dynamic_partitions_store=dynamic_partitions_store) as ctx:
+            return self.with_partition_keys(
+                partitions_def.get_partition_keys_in_range(
+                    partition_key_range, dynamic_partitions_store=ctx.dynamic_partitions_store
+                )
             )
-        )
 
     def __or__(self, other: "PartitionsSubset") -> "PartitionsSubset":
         from dagster._core.definitions.partitions.subset.all import AllPartitionsSubset

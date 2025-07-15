@@ -3,6 +3,7 @@ from datetime import datetime
 from typing import NamedTuple, Optional
 
 import dagster._check as check
+from dagster._core.definitions.partitions.context import partition_loading_context
 from dagster._core.definitions.partitions.definition.partitions_definition import (
     PartitionsDefinition,
 )
@@ -66,15 +67,16 @@ class AllPartitionsSubset(
     ) -> Sequence[PartitionKeyRange]:
         check.param_invariant(current_time is None, "current_time")
         check.param_invariant(dynamic_partitions_store is None, "dynamic_partitions_store")
-        first_key = partitions_def.get_first_partition_key(
-            self.current_time, self.dynamic_partitions_store
-        )
-        last_key = partitions_def.get_last_partition_key(
-            self.current_time, self.dynamic_partitions_store
-        )
-        if first_key and last_key:
-            return [PartitionKeyRange(first_key, last_key)]
-        return []
+        with partition_loading_context(current_time, dynamic_partitions_store) as ctx:
+            first_key = partitions_def.get_first_partition_key(
+                ctx.effective_dt, ctx.dynamic_partitions_store
+            )
+            last_key = partitions_def.get_last_partition_key(
+                ctx.effective_dt, ctx.dynamic_partitions_store
+            )
+            if first_key and last_key:
+                return [PartitionKeyRange(first_key, last_key)]
+            return []
 
     def with_partition_keys(self, partition_keys: Iterable[str]) -> "AllPartitionsSubset":
         return self
