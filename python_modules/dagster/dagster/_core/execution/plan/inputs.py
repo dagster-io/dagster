@@ -112,7 +112,7 @@ class FromLoadableAsset(StepInputSource):
 
         asset_layer = step_context.job_def.asset_layer
 
-        input_asset_key = asset_layer.get_asset_key_for_node_input(
+        input_asset_key = input_def.hardcoded_asset_key or asset_layer.get_asset_key_for_node_input(
             step_context.node_handle, input_name=input_def.name
         )
         assert input_asset_key is not None

@@ -1270,3 +1270,41 @@ class OpExecutionContext(AbstractComputeExecutionContext):
         if ctx is None:
             raise DagsterInvariantViolationError("No current OpExecutionContext in scope.")
         return ctx.op_execution_context
+
+    def load_asset_value(
+        self,
+        asset_key: AssetKey,
+        *,
+        python_type: Optional[type] = None,
+        partition_key: Optional[str] = None,
+    ) -> Any:
+        """Loads the value of an asset by key.
+
+        Args:
+            asset_key (AssetKey): The key of the asset to load.
+            python_type (Optional[type]): The python type to load the asset as. This is what will
+                be returned inside `load_input` by `context.dagster_type.typing_type`.
+            partition_key (Optional[str]): The partition of the asset to load.
+
+        Example:
+            .. code-block:: python
+
+                @dg.asset(deps=[dg.AssetKey("upstream_asset")])
+                def my_asset(context: dg.AssetExecutionContext):
+                    return context.load_asset_value(dg.AssetKey("upstream_asset")) * 2
+        """
+        from dagster._core.storage.asset_value_loader import AssetValueLoader
+
+        loader = AssetValueLoader(
+            assets_defs_by_key={
+                asset_key: self._step_execution_context.job_def.asset_layer.get(
+                    asset_key
+                ).assets_def
+            },
+            instance=self.instance,
+        )
+        return loader.load_asset_value(
+            asset_key,
+            python_type=python_type,
+            partition_key=partition_key,
+        )
