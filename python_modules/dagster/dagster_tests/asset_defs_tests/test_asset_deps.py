@@ -2,6 +2,9 @@ import dagster as dg
 import pytest
 from dagster._check import ParameterCheckError
 from dagster._core.definitions.assets.definition.asset_dep import AssetDep
+from dagster._core.definitions.assets.definition.asset_spec import (
+    SYSTEM_METADATA_KEY_AUTO_CREATED_STUB_ASSET,
+)
 from dagster._core.types.dagster_type import DagsterTypeKind
 
 ### Tests for AssetDep
@@ -701,3 +704,42 @@ def test_duplicate_deps():
         )
         def conflicting_deps():
             return None
+
+
+def test_nonexistent_deps_creates_stub_asset():
+    does_not_exist = dg.AssetKey(["does_not_exist"])
+
+    @dg.asset(deps=[does_not_exist])
+    def the_asset():
+        return None
+
+    defs = dg.Definitions(assets=[the_asset])
+
+    asset_graph = defs.resolve_asset_graph()
+
+    assert asset_graph.get(the_asset.key).is_materializable
+    assert not asset_graph.get(does_not_exist).is_materializable
+    assert (
+        asset_graph.get(does_not_exist).metadata[SYSTEM_METADATA_KEY_AUTO_CREATED_STUB_ASSET]
+        is True
+    )
+
+
+def test_nonexistent_asset_check_deps_creates_stub_asset():
+    does_not_exist = dg.AssetKey(["does_not_exist"])
+
+    @dg.asset_check(asset=does_not_exist)
+    def the_asset_check():
+        return dg.AssetCheckResult(
+            passed=False,
+        )
+
+    defs = dg.Definitions(asset_checks=[the_asset_check])
+
+    asset_graph = defs.resolve_asset_graph()
+
+    assert not asset_graph.get(does_not_exist).is_materializable
+    assert (
+        asset_graph.get(does_not_exist).metadata[SYSTEM_METADATA_KEY_AUTO_CREATED_STUB_ASSET]
+        is True
+    )
