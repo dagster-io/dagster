@@ -9,12 +9,17 @@ from dagster._core.definitions.declarative_automation.legacy.valid_asset_subset 
     ValidAssetSubset,
 )
 from dagster._core.definitions.events import AssetKeyPartitionKey
+from dagster._core.definitions.partitions.context import (
+    PartitionLoadingContext,
+    partition_loading_context,
+)
 from dagster._core.definitions.partitions.subset import (
     AllPartitionsSubset,
     DefaultPartitionsSubset,
     TimeWindowPartitionsSubset,
 )
 from dagster._core.definitions.partitions.utils import PersistedTimeWindow
+from dagster._core.definitions.temporal_context import TemporalContext
 from dagster._core.definitions.timestamp import TimestampWithTimezone
 from dagster._time import create_datetime
 
@@ -46,9 +51,8 @@ def test_empty_subset_subset(partitions_def: Optional[dg.PartitionsDefinition]) 
 @pytest.mark.parametrize("partitions_def", partitions_defs)
 def test_all_subset(partitions_def: Optional[dg.PartitionsDefinition]) -> None:
     key = dg.AssetKey(["foo"])
-    all_subset = ValidAssetSubset.all(
-        key, partitions_def, DagsterInstance.ephemeral(), datetime.datetime.now()
-    )
+    with partition_loading_context(dynamic_partitions_store=DagsterInstance.ephemeral()):
+        all_subset = ValidAssetSubset.all(key, partitions_def)
     partition_keys = {None} if partitions_def is None else partitions_def.get_partition_keys()
     assert all_subset.size == len(partition_keys)
     for pk in partition_keys:
@@ -78,8 +82,13 @@ def test_all_subset(partitions_def: Optional[dg.PartitionsDefinition]) -> None:
         DefaultPartitionsSubset(subset={"a", "b", "c", "d", "e"}),
         AllPartitionsSubset(
             partitions_def=dg.DailyPartitionsDefinition("2020-01-01"),
-            dynamic_partitions_store=None,  # type: ignore
-            current_time=datetime.datetime(2020, 1, 20),
+            context=PartitionLoadingContext(
+                temporal_context=TemporalContext(
+                    effective_dt=datetime.datetime(2020, 1, 20),
+                    last_event_id=None,
+                ),
+                dynamic_partitions_store=DagsterInstance.ephemeral(),
+            ),
         ),
     ],
 )

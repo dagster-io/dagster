@@ -862,7 +862,6 @@ class TestPartitionStatusCache:
                 instance,
                 my_asset,
                 static_partitions_def,
-                instance,
                 last_planned_materialization_storage_id,
             )
             assert failed_subset.get_partition_keys() == set()
@@ -880,7 +879,6 @@ class TestPartitionStatusCache:
                 instance,
                 my_asset,
                 static_partitions_def,
-                instance,
                 last_planned_materialization_storage_id,
             )
             assert failed_subset.get_partition_keys() == set()

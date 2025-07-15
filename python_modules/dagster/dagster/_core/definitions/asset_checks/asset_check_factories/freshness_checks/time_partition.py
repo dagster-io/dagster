@@ -31,6 +31,7 @@ from dagster._core.definitions.metadata import (
     MetadataValue,
     TimestampMetadataValue,
 )
+from dagster._core.definitions.partitions.context import partition_loading_context
 from dagster._core.definitions.partitions.definition import TimeWindowPartitionsDefinition
 from dagster._core.execution.context.compute import AssetCheckExecutionContext
 from dagster._time import datetime_from_timestamp, get_current_timestamp
@@ -163,9 +164,10 @@ def _build_freshness_multi_check(
             deadline_in_partitions_def_tz = datetime_from_timestamp(
                 deadline.timestamp(), tz=partitions_def.timezone
             )
-            last_completed_time_window = check.not_none(
-                partitions_def.get_last_partition_window(current_time=deadline_in_partitions_def_tz)
-            )
+            with partition_loading_context(deadline_in_partitions_def_tz, context.instance):
+                last_completed_time_window = check.not_none(
+                    partitions_def.get_last_partition_window()
+                )
             expected_partition_key = partitions_def.get_partition_key_range_for_time_window(
                 last_completed_time_window
             ).start

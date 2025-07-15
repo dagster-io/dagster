@@ -37,6 +37,10 @@ from dagster._core.definitions.metadata import MetadataValue, RawMetadataValue, 
 from dagster._core.definitions.node_definition import NodeDefinition
 from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.op_selection import OpSelection, get_graph_subset
+from dagster._core.definitions.partitions.context import (
+    PartitionLoadingContext,
+    partition_loading_context,
+)
 from dagster._core.definitions.partitions.definition import (
     DynamicPartitionsDefinition,
     PartitionsDefinition,
@@ -744,11 +748,12 @@ class JobDefinition(IHasInternalInit):
             asset_selection=asset_selection,
         )
         if partition_key and ephemeral_job.partitions_def:
-            ephemeral_job.validate_partition_key(
-                partition_key=partition_key,
-                dynamic_partitions_store=instance,
-                selected_asset_keys=set(asset_selection),
-            )
+            with partition_loading_context(dynamic_partitions_store=instance) as ctx:
+                ephemeral_job.validate_partition_key(
+                    partition_key=partition_key,
+                    selected_asset_keys=set(asset_selection),
+                    context=ctx,
+                )
 
         wrapped_job = InMemoryJob(job_def=ephemeral_job)
 
@@ -844,16 +849,14 @@ class JobDefinition(IHasInternalInit):
     def validate_partition_key(
         self,
         partition_key: str,
-        dynamic_partitions_store: Optional["DynamicPartitionsStore"],
         selected_asset_keys: Optional[Iterable[AssetKey]],
+        context: PartitionLoadingContext,
     ) -> None:
         """Ensures that the given partition_key is a member of the PartitionsDefinition
         corresponding to every asset in the selection.
         """
         partitions_def = self._get_partitions_def(selected_asset_keys)
-        partitions_def.validate_partition_key(
-            partition_key, dynamic_partitions_store=dynamic_partitions_store
-        )
+        partitions_def.validate_partition_key(partition_key, context=context)
 
     def get_tags_for_partition_key(
         self, partition_key: str, selected_asset_keys: Optional[Iterable[AssetKey]]
@@ -1038,11 +1041,8 @@ class JobDefinition(IHasInternalInit):
                 " RunRequest(partition_key=...)"
             )
 
-        self.partitions_def.validate_partition_key(
-            partition_key,
-            current_time=current_time,
-            dynamic_partitions_store=dynamic_partitions_store,
-        )
+        with partition_loading_context(current_time, dynamic_partitions_store) as ctx:
+            self.partitions_def.validate_partition_key(partition_key, context=ctx)
 
         run_config = (
             run_config

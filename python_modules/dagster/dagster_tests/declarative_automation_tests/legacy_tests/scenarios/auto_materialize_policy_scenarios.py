@@ -213,12 +213,7 @@ auto_materialize_policy_scenarios = {
         current_time=create_datetime(year=2013, month=1, day=7, hour=4),
         expected_run_requests=[
             # with default scope, only the last partition is materialized
-            run_request(
-                asset_keys=["hourly"],
-                partition_key=hourly_partitions_def.get_last_partition_key(
-                    current_time=create_datetime(year=2013, month=1, day=7, hour=4)
-                ),
-            )
+            run_request(asset_keys=["hourly"], partition_key="2013-01-07-03:00")
         ],
     ),
     "auto_materialize_policy_hourly_to_daily_partitions_never_materialized": (
