@@ -244,7 +244,14 @@ class AssetGraph(BaseAssetGraph[AssetNode]):
         # definition was provided.
         all_referenced_asset_keys = {
             key for assets_def in assets_defs for key in assets_def.dependency_keys
-        }
+        }.union(
+            {
+                check_spec.key.asset_key
+                for assets_def in assets_defs
+                for check_spec in assets_def.node_check_specs_by_output_name.values()
+            }
+        )
+
         with disable_dagster_warnings():
             for key in all_referenced_asset_keys.difference(all_keys):
                 assets_defs.append(
