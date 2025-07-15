@@ -501,3 +501,85 @@ def test_dynamically_loading_assets_from_context_with_partition():
     result = global_asset_job.execute_in_process(partition_key="3")
     assert result.success
     assert result.output_for_node("the_downstream_asset") == 4
+
+
+def test_load_asset_value_with_python_type():
+    @dg.asset(io_manager_key="fs_io_manager")
+    def string_asset():
+        return "hello"
+
+    @dg.asset(io_manager_key="fs_io_manager")
+    def int_asset():
+        return 42
+
+    @dg.asset(io_manager_key="fs_io_manager", deps=[string_asset, int_asset])
+    def downstream_asset(context: AssetExecutionContext):
+        # Test with explicit python_type
+        string_value = context.load_asset_value(string_asset.key, python_type=str)
+        int_value = context.load_asset_value(int_asset.key, python_type=int)
+
+        assert isinstance(string_value, str)
+        assert isinstance(int_value, int)
+        return f"{string_value}_{int_value}"
+
+    defs = Definitions(
+        assets=[string_asset, int_asset, downstream_asset],
+        resources={"fs_io_manager": FilesystemIOManager()},
+    )
+    global_asset_job = defs.get_implicit_global_asset_job_def()
+
+    result = global_asset_job.execute_in_process()
+    assert result.success
+    assert result.output_for_node("downstream_asset") == "hello_42"
+
+
+def test_load_asset_value_raises_key_error():
+    @dg.asset(io_manager_key="fs_io_manager")
+    def source_asset():
+        return "data"
+
+    @dg.asset(io_manager_key="fs_io_manager", deps=[source_asset])
+    def downstream_asset(context: AssetExecutionContext):
+        # Test loading non-existent asset
+        with pytest.raises(KeyError) as exc_info:
+            context.load_asset_value(dg.AssetKey("non_existent_asset"))
+        assert "non_existent_asset" in str(exc_info.value)
+
+    defs = Definitions(
+        assets=[source_asset, downstream_asset],
+        resources={"fs_io_manager": FilesystemIOManager()},
+    )
+    global_asset_job = defs.get_implicit_global_asset_job_def()
+
+    result = global_asset_job.execute_in_process()
+    assert result.success
+
+
+def test_load_asset_value_with_complex_types():
+    @dg.asset(io_manager_key="fs_io_manager")
+    def list_asset():
+        return [1, 2, 3, 4, 5]
+
+    @dg.asset(io_manager_key="fs_io_manager")
+    def dict_asset():
+        return {"key1": "value1", "key2": "value2"}
+
+    @dg.asset(io_manager_key="fs_io_manager", deps=[list_asset, dict_asset])
+    def downstream_asset(context: AssetExecutionContext):
+        # Test with complex python types
+        list_value = context.load_asset_value(list_asset.key, python_type=list[int])
+        dict_value = context.load_asset_value(dict_asset.key, python_type=dict[str, str])
+
+        assert isinstance(list_value, list)
+        assert isinstance(dict_value, dict)
+        return len(list_value) + len(dict_value)
+
+    defs = Definitions(
+        assets=[list_asset, dict_asset, downstream_asset],
+        resources={"fs_io_manager": FilesystemIOManager()},
+    )
+    global_asset_job = defs.get_implicit_global_asset_job_def()
+
+    result = global_asset_job.execute_in_process()
+    assert result.success
+    assert result.output_for_node("downstream_asset") == 7  # 5 + 2

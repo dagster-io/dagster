@@ -1279,7 +1279,6 @@ class OpExecutionContext(AbstractComputeExecutionContext):
         *,
         python_type: Optional[type] = None,
         partition_key: Optional[str] = None,
-        metadata: Optional[dict[str, Any]] = None,
     ) -> Any:
         from dagster._core.definitions.input import InputDefinition
         from dagster._core.execution.plan.plan import FromLoadableAsset
@@ -1293,7 +1292,6 @@ class OpExecutionContext(AbstractComputeExecutionContext):
                 dagster_type=resolve_dagster_type(python_type),
                 asset_key=asset_key,
                 asset_partitions={partition_key} if partition_key else None,
-                metadata=metadata,
             ),
         ):
             if isinstance(event_or_input_value, DagsterEvent):

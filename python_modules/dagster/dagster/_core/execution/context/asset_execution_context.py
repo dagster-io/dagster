@@ -604,11 +604,9 @@ class AssetExecutionContext:
         *,
         python_type: Optional[type] = None,
         partition_key: Optional[str] = None,
-        metadata: Optional[dict[str, Any]] = None,
     ) -> Any:
         return self.op_execution_context.load_asset_value(
             asset_key=asset_key,
             python_type=python_type,
             partition_key=partition_key,
-            metadata=metadata,
         )
