@@ -12,6 +12,7 @@ from dagster_shared.error import DagsterError
 
 import dagster._check as check
 from dagster._core.definitions.instigation_logger import InstigationLogger
+from dagster._core.definitions.partitions.context import partition_loading_context
 from dagster._core.errors import DagsterCodeLocationLoadError, DagsterUserCodeUnreachableError
 from dagster._core.execution.asset_backfill import execute_asset_backfill_iteration
 from dagster._core.execution.backfill import (
@@ -23,7 +24,7 @@ from dagster._core.execution.backfill import (
 from dagster._core.execution.job_backfill import execute_job_backfill_iteration
 from dagster._core.workspace.context import IWorkspaceProcessContext
 from dagster._daemon.utils import DaemonErrorCapture
-from dagster._time import get_current_datetime, get_current_timestamp
+from dagster._time import datetime_from_timestamp, get_current_datetime, get_current_timestamp
 from dagster._utils import return_as_list
 from dagster._utils.error import SerializableErrorInfo
 
@@ -165,24 +166,28 @@ def execute_backfill_iteration_with_instigation_logger(
             logging.LoggerAdapter(_logger, extra={"backfill_id": backfill.backfill_id}),
         )
         try:
-            if backfill.is_asset_backfill:
-                asyncio.run(
-                    execute_asset_backfill_iteration(
+            with partition_loading_context(
+                effective_dt=datetime_from_timestamp(backfill.backfill_timestamp),
+                dynamic_partitions_store=instance,
+            ):
+                if backfill.is_asset_backfill:
+                    asyncio.run(
+                        execute_asset_backfill_iteration(
+                            backfill,
+                            backfill_logger,
+                            workspace_process_context,
+                            instance,
+                        )
+                    )
+                else:
+                    execute_job_backfill_iteration(
                         backfill,
                         backfill_logger,
                         workspace_process_context,
+                        debug_crash_flags,
                         instance,
+                        submit_threadpool_executor,
                     )
-                )
-            else:
-                execute_job_backfill_iteration(
-                    backfill,
-                    backfill_logger,
-                    workspace_process_context,
-                    debug_crash_flags,
-                    instance,
-                    submit_threadpool_executor,
-                )
         except Exception as e:
             backfill = check.not_none(instance.get_backfill(backfill.backfill_id))
             if (
