@@ -1279,6 +1279,21 @@ class OpExecutionContext(AbstractComputeExecutionContext):
         python_type: Optional[type] = None,
         partition_key: Optional[str] = None,
     ) -> Any:
+        """Loads the value of an asset by key.
+
+        Args:
+            asset_key (AssetKey): The key of the asset to load.
+            python_type (Optional[type]): The python type to load the asset as. This is what will
+                be returned inside `load_input` by `context.dagster_type.typing_type`.
+            partition_key (Optional[str]): The partition of the asset to load.
+
+        Example:
+            .. code-block:: python
+
+                @dg.asset(deps=[dg.AssetKey("upstream_asset")])
+                def my_asset(context: dg.AssetExecutionContext):
+                    return context.load_asset_value(dg.AssetKey("upstream_asset")) * 2
+        """
         from dagster._core.storage.asset_value_loader import AssetValueLoader
 
         loader = AssetValueLoader(
