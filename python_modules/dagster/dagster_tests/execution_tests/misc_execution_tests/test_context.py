@@ -9,6 +9,9 @@ from dagster import (
     OpExecutionContext,
 )
 from dagster._check import CheckError
+from dagster._core.definitions.definitions_class import Definitions
+from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
+from dagster._core.storage.fs_io_manager import FilesystemIOManager
 
 
 def test_op_execution_context():
@@ -449,3 +452,52 @@ def test_graph_multi_asset_out_from_spec_deps() -> None:
         )
         def no_annotation_asset():
             return layered_op(inner_op()), layered_op(inner_op())
+
+
+def test_dynamically_loading_assets_from_context():
+    @dg.asset(io_manager_key="fs_io_manager")
+    def the_asset():
+        return 5
+
+    @dg.asset(io_manager_key="fs_io_manager", deps=[the_asset])
+    def the_downstream_asset(context: AssetExecutionContext):
+        return context.load_asset_value(the_asset.key) + 1
+
+    defs = Definitions(
+        assets=[the_asset, the_downstream_asset],
+        resources={"fs_io_manager": FilesystemIOManager()},
+    )
+    global_asset_job = defs.get_implicit_global_asset_job_def()
+
+    result = global_asset_job.execute_in_process()
+    assert result.success
+    assert result.output_for_node("the_downstream_asset") == 6
+
+
+def test_dynamically_loading_assets_from_context_with_partition():
+    static_partition = StaticPartitionsDefinition(["1", "2", "3"])
+
+    @dg.asset(
+        io_manager_key="fs_io_manager",
+        partitions_def=static_partition,
+    )
+    def the_asset(context: AssetExecutionContext):
+        return int(context.partition_key)
+
+    @dg.asset(io_manager_key="fs_io_manager", deps=[the_asset], partitions_def=static_partition)
+    def the_downstream_asset(context: AssetExecutionContext):
+        return context.load_asset_value(the_asset.key, partition_key=context.partition_key) + 1
+
+    defs = Definitions(
+        assets=[the_asset, the_downstream_asset],
+        resources={"fs_io_manager": FilesystemIOManager()},
+    )
+    global_asset_job = defs.get_implicit_global_asset_job_def()
+
+    result = global_asset_job.execute_in_process(partition_key="1")
+    assert result.success
+    assert result.output_for_node("the_downstream_asset") == 2
+
+    result = global_asset_job.execute_in_process(partition_key="3")
+    assert result.success
+    assert result.output_for_node("the_downstream_asset") == 4
