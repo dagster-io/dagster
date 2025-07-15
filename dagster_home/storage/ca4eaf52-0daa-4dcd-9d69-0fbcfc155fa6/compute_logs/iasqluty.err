@@ -1,0 +1,14 @@
+[32m2025-07-15 19:34:48 +0000[0m - dagster - [34mDEBUG[0m - __ASSET_JOB - ca4eaf52-0daa-4dcd-9d69-0fbcfc155fa6 - 30144 - LOGS_CAPTURED - Started capturing logs in process (pid: 30144).
+[32m2025-07-15 19:34:48 +0000[0m - dagster - [34mDEBUG[0m - __ASSET_JOB - ca4eaf52-0daa-4dcd-9d69-0fbcfc155fa6 - 30144 - my_test_asset - STEP_START - Started execution of step "my_test_asset".
+[32m2025-07-15 19:34:48 +0000[0m - dagster - [34mINFO[0m - __ASSET_JOB - ca4eaf52-0daa-4dcd-9d69-0fbcfc155fa6 - my_test_asset - This is an info log message
+[32m2025-07-15 19:34:48.382[0m | [33m[1mWARNING [0m | [36mmy_module[0m:[36mmy_test_asset[0m:[36m63[0m - [33m[1mThis Logger ===LOGURU=== is a warning log message[0m
+2025-07-15 19:34:48.382 | WARNING  | my_module:my_test_asset:63 - This Logger ===LOGURU=== is a warning log message
+[32m2025-07-15 19:34:48 +0000[0m - dagster - [34mWARNING[0m - __ASSET_JOB - ca4eaf52-0daa-4dcd-9d69-0fbcfc155fa6 - my_test_asset - This Logger ===LOGURU=== is a warning log message
+[32m2025-07-15 19:34:48 +0000[0m - dagster - [34mERROR[0m - [31m__ASSET_JOB - ca4eaf52-0daa-4dcd-9d69-0fbcfc155fa6 - my_test_asset - This is an error log message[0m
+[32m2025-07-15 19:34:48.397[0m | [34m[1mDEBUG   [0m | [36mmy_module[0m:[36mmy_test_asset[0m:[36m65[0m - [34m[1mmy_test_asset completed without fatal issues.[0m
+[32m2025-07-15 19:34:48 +0000[0m - dagster - [34mDEBUG[0m - __ASSET_JOB - ca4eaf52-0daa-4dcd-9d69-0fbcfc155fa6 - my_test_asset - my_test_asset completed without fatal issues.
+[32m2025-07-15 19:34:48 +0000[0m - dagster - [34mDEBUG[0m - __ASSET_JOB - ca4eaf52-0daa-4dcd-9d69-0fbcfc155fa6 - 30144 - my_test_asset - STEP_OUTPUT - Yielded output "result" of type "Any". (Type check passed).
+[32m2025-07-15 19:34:48 +0000[0m - dagster - [34mDEBUG[0m - __ASSET_JOB - ca4eaf52-0daa-4dcd-9d69-0fbcfc155fa6 - my_test_asset - Writing file at: /workspaces/dagster/dagster_home/artifacts/storage/my_test_asset using PickledObjectFilesystemIOManager...
+[32m2025-07-15 19:34:48 +0000[0m - dagster - [34mDEBUG[0m - __ASSET_JOB - ca4eaf52-0daa-4dcd-9d69-0fbcfc155fa6 - 30144 - my_test_asset - ASSET_MATERIALIZATION - Materialized value my_test_asset.
+[32m2025-07-15 19:34:48 +0000[0m - dagster - [34mDEBUG[0m - __ASSET_JOB - ca4eaf52-0daa-4dcd-9d69-0fbcfc155fa6 - 30144 - my_test_asset - HANDLED_OUTPUT - Handled output "result" using IO manager "io_manager"
+[32m2025-07-15 19:34:48 +0000[0m - dagster - [34mDEBUG[0m - __ASSET_JOB - ca4eaf52-0daa-4dcd-9d69-0fbcfc155fa6 - 30144 - my_test_asset - STEP_SUCCESS - Finished execution of step "my_test_asset" in 139ms.
