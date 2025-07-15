@@ -32,7 +32,7 @@ export type WorkspaceRepositorySensor = WorkspaceSensorFragment;
 export type WorkspaceRepositorySchedule = WorkspaceScheduleFragment;
 export type WorkspaceRepositoryLocationNode = WorkspaceLocationNodeFragment;
 
-interface WorkspaceState {
+export interface WorkspaceState {
   locationEntries: WorkspaceLocationNodeFragment[];
   locationStatuses: Record<string, LocationStatusEntryFragment>;
   loadingNonAssets: boolean;

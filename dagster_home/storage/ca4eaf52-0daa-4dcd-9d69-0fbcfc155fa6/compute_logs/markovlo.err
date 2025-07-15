@@ -1,0 +1,13 @@
+[32m2025-07-15 19:34:46 +0000[0m - dagster - [34mDEBUG[0m - __ASSET_JOB - ca4eaf52-0daa-4dcd-9d69-0fbcfc155fa6 - 30015 - LOGS_CAPTURED - Started capturing logs in process (pid: 30015).
+[32m2025-07-15 19:34:46 +0000[0m - dagster - [34mDEBUG[0m - __ASSET_JOB - ca4eaf52-0daa-4dcd-9d69-0fbcfc155fa6 - 30015 - my_asset - STEP_START - Started execution of step "my_asset".
+[32m2025-07-15 19:34:46.066[0m | [34m[1mDEBUG   [0m | [36mmy_module[0m:[36mmy_asset[0m:[36m37[0m - [34m[1mmy_asset starting execution.[0m
+[32m2025-07-15 19:34:46 +0000[0m - dagster - [34mDEBUG[0m - __ASSET_JOB - ca4eaf52-0daa-4dcd-9d69-0fbcfc155fa6 - my_asset - my_asset starting execution.
+[32m2025-07-15 19:34:46.072[0m | [1mINFO    [0m | [36mmy_module[0m:[36mmy_asset[0m:[36m38[0m - [1mHello TEAM_TURTLES![0m
+[32m2025-07-15 19:34:46 +0000[0m - dagster - [34mINFO[0m - __ASSET_JOB - ca4eaf52-0daa-4dcd-9d69-0fbcfc155fa6 - my_asset - Hello TEAM_TURTLES!
+[32m2025-07-15 19:34:46.081[0m | [34m[1mDEBUG   [0m | [36mmy_module[0m:[36mmy_asset[0m:[36m39[0m - [34m[1mmy_asset finished execution.[0m
+[32m2025-07-15 19:34:46 +0000[0m - dagster - [34mDEBUG[0m - __ASSET_JOB - ca4eaf52-0daa-4dcd-9d69-0fbcfc155fa6 - my_asset - my_asset finished execution.
+[32m2025-07-15 19:34:46 +0000[0m - dagster - [34mDEBUG[0m - __ASSET_JOB - ca4eaf52-0daa-4dcd-9d69-0fbcfc155fa6 - 30015 - my_asset - STEP_OUTPUT - Yielded output "result" of type "Any". (Type check passed).
+[32m2025-07-15 19:34:46 +0000[0m - dagster - [34mDEBUG[0m - __ASSET_JOB - ca4eaf52-0daa-4dcd-9d69-0fbcfc155fa6 - my_asset - Writing file at: /workspaces/dagster/dagster_home/artifacts/storage/my_asset using PickledObjectFilesystemIOManager...
+[32m2025-07-15 19:34:46 +0000[0m - dagster - [34mDEBUG[0m - __ASSET_JOB - ca4eaf52-0daa-4dcd-9d69-0fbcfc155fa6 - 30015 - my_asset - ASSET_MATERIALIZATION - Materialized value my_asset.
+[32m2025-07-15 19:34:46 +0000[0m - dagster - [34mDEBUG[0m - __ASSET_JOB - ca4eaf52-0daa-4dcd-9d69-0fbcfc155fa6 - 30015 - my_asset - HANDLED_OUTPUT - Handled output "result" using IO manager "io_manager"
+[32m2025-07-15 19:34:46 +0000[0m - dagster - [34mDEBUG[0m - __ASSET_JOB - ca4eaf52-0daa-4dcd-9d69-0fbcfc155fa6 - 30015 - my_asset - STEP_SUCCESS - Finished execution of step "my_asset" in 177ms.

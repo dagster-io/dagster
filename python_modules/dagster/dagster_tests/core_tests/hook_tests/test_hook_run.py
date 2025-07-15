@@ -1,12 +1,9 @@
 from collections import defaultdict
 
+import dagster as dg
 import pytest
-from dagster import DynamicOut, DynamicOutput, Int, Out, Output, graph, job, op, resource
-from dagster._core.definitions import failure_hook, success_hook
 from dagster._core.definitions.decorators.hook_decorator import event_list_hook
-from dagster._core.definitions.events import Failure, HookExecutionResult
-from dagster._core.definitions.metadata import TextMetadataValue
-from dagster._core.errors import DagsterInvalidDefinitionError
+from dagster._core.definitions.events import HookExecutionResult
 from dagster._core.execution.context.compute import OpExecutionContext
 
 
@@ -14,7 +11,7 @@ class SomeUserException(Exception):
     pass
 
 
-@resource
+@dg.resource
 def resource_a(_init_context):
     return 1
 
@@ -28,11 +25,11 @@ def test_hook_on_op_instance():
         assert context.resources.resource_a == 1
         return HookExecutionResult("a_hook")
 
-    @op
+    @dg.op
     def a_op(_):
         pass
 
-    @job(resource_defs={"resource_a": resource_a})
+    @dg.job(resource_defs={"resource_a": resource_a})
     def a_job():
         a_op.with_hooks(hook_defs={a_hook})()
         a_op.alias("op_with_hook").with_hooks(hook_defs={a_hook})()
@@ -61,29 +58,29 @@ def test_hook_accumulation():
         called_hook_to_step_keys[context.hook_def.name].add(context.step_key)
         return HookExecutionResult("graph_1_hook")
 
-    @op
+    @dg.op
     def op_1(_):
         return 1
 
-    @op
+    @dg.op
     def op_2(_, num):
         return num
 
-    @op
+    @dg.op
     def op_3(_):
         return 1
 
-    @graph
+    @dg.graph
     def graph_1():
         return op_2(op_1.with_hooks({op_1_hook})())
 
-    @graph
+    @dg.graph
     def graph_2():
         op_3()
         return graph_1.with_hooks({graph_1_hook})()
 
     @job_hook
-    @job
+    @dg.job
     def a_job():
         graph_2()
 
@@ -113,22 +110,22 @@ def test_hook_on_graph_instance():
         called_hook_to_step_keys[context.hook_def.name].add(context.step_key)
         return HookExecutionResult("hook_a_generic")
 
-    @op
+    @dg.op
     def two(_):
         return 1
 
-    @op
+    @dg.op
     def add_one(_, num):
         return num + 1
 
-    @graph
+    @dg.graph
     def add_two():
         adder_1 = add_one.alias("adder_1")
         adder_2 = add_one.alias("adder_2")
 
         return adder_2(adder_1(two()))
 
-    @job
+    @dg.job
     def a_job():
         add_two.with_hooks({hook_a_generic})()
 
@@ -143,20 +140,20 @@ def test_hook_on_graph_instance():
 def test_success_hook_on_op_instance():
     called_hook_to_ops = defaultdict(set)
 
-    @success_hook(required_resource_keys={"resource_a"})
+    @dg.success_hook(required_resource_keys={"resource_a"})
     def a_hook(context):
         called_hook_to_ops[context.hook_def.name].add(context.op.name)
         assert context.resources.resource_a == 1
 
-    @op
+    @dg.op
     def a_op(_):
         pass
 
-    @op
+    @dg.op
     def failed_op(_):
         raise SomeUserException()
 
-    @job(resource_defs={"resource_a": resource_a})
+    @dg.job(resource_defs={"resource_a": resource_a})
     def a_job():
         a_op.with_hooks(hook_defs={a_hook})()
         a_op.alias("op_with_hook").with_hooks(hook_defs={a_hook})()
@@ -171,20 +168,20 @@ def test_success_hook_on_op_instance():
 def test_success_hook_on_op_instance_subset():
     called_hook_to_ops = defaultdict(set)
 
-    @success_hook(required_resource_keys={"resource_a"})
+    @dg.success_hook(required_resource_keys={"resource_a"})
     def a_hook(context):
         called_hook_to_ops[context.hook_def.name].add(context.op.name)
         assert context.resources.resource_a == 1
 
-    @op
+    @dg.op
     def a_op(_):
         pass
 
-    @op
+    @dg.op
     def failed_op(_):
         raise SomeUserException()
 
-    @job(resource_defs={"resource_a": resource_a})
+    @dg.job(resource_defs={"resource_a": resource_a})
     def a_job():
         a_op.with_hooks(hook_defs={a_hook})()
         a_op.alias("op_with_hook").with_hooks(hook_defs={a_hook})()
@@ -199,20 +196,20 @@ def test_success_hook_on_op_instance_subset():
 def test_failure_hook_on_op_instance():
     called_hook_to_ops = defaultdict(set)
 
-    @failure_hook(required_resource_keys={"resource_a"})
+    @dg.failure_hook(required_resource_keys={"resource_a"})
     def a_hook(context):
         called_hook_to_ops[context.hook_def.name].add(context.op.name)
         assert context.resources.resource_a == 1
 
-    @op
+    @dg.op
     def failed_op(_):
         raise SomeUserException()
 
-    @op
+    @dg.op
     def a_succeeded_op(_):
         pass
 
-    @job(resource_defs={"resource_a": resource_a})
+    @dg.job(resource_defs={"resource_a": resource_a})
     def a_job():
         failed_op.with_hooks(hook_defs={a_hook})()
         failed_op.alias("op_with_hook").with_hooks(hook_defs={a_hook})()
@@ -227,24 +224,24 @@ def test_failure_hook_on_op_instance():
 def test_failure_hook_op_exception():
     called = {}
 
-    @failure_hook
+    @dg.failure_hook
     def a_hook(context):
         called[context.op.name] = context.op_exception
 
-    @op
+    @dg.op
     def a_op(_):
         pass
 
-    @op
+    @dg.op
     def user_code_error_op(_):
         raise SomeUserException()
 
-    @op
+    @dg.op
     def failure_op(_):
-        raise Failure()
+        raise dg.Failure()
 
     @a_hook
-    @job
+    @dg.job
     def a_job():
         a_op()
         user_code_error_op()
@@ -254,22 +251,22 @@ def test_failure_hook_op_exception():
     assert not result.success
     assert "a_op" not in called
     assert isinstance(called.get("user_code_error_op"), SomeUserException)
-    assert isinstance(called.get("failure_op"), Failure)
+    assert isinstance(called.get("failure_op"), dg.Failure)
 
 
 def test_none_op_exception_access():
     called = {}
 
-    @success_hook
+    @dg.success_hook
     def a_hook(context):
         called[context.op.name] = context.op_exception
 
-    @op
+    @dg.op
     def a_op(_):
         pass
 
     @a_hook
-    @job
+    @dg.job
     def a_job():
         a_op()
 
@@ -281,38 +278,38 @@ def test_none_op_exception_access():
 def test_op_outputs_access():
     called = {}
 
-    @success_hook
+    @dg.success_hook
     def my_success_hook(context):
         called[context.step_key] = context.op_output_values
 
-    @failure_hook
+    @dg.failure_hook
     def my_failure_hook(context):
         called[context.step_key] = context.op_output_values
 
-    @op(out={"one": Out(), "two": Out(), "three": Out()})
+    @dg.op(out={"one": dg.Out(), "two": dg.Out(), "three": dg.Out()})
     def a_op(_):
-        yield Output(1, "one")
-        yield Output(2, "two")
-        yield Output(3, "three")
+        yield dg.Output(1, "one")
+        yield dg.Output(2, "two")
+        yield dg.Output(3, "three")
 
-    @op(out={"one": Out(), "two": Out()})
+    @dg.op(out={"one": dg.Out(), "two": dg.Out()})
     def failed_op(_):
-        yield Output(1, "one")
+        yield dg.Output(1, "one")
         raise SomeUserException()
-        yield Output(3, "two")
+        yield dg.Output(3, "two")
 
-    @op(out=DynamicOut())
+    @dg.op(out=dg.DynamicOut())
     def dynamic_op(_):
-        yield DynamicOutput(1, mapping_key="mapping_1")
-        yield DynamicOutput(2, mapping_key="mapping_2")
+        yield dg.DynamicOutput(1, mapping_key="mapping_1")
+        yield dg.DynamicOutput(2, mapping_key="mapping_2")
 
-    @op
+    @dg.op
     def echo(_, x):
         return x
 
     @my_success_hook
     @my_failure_hook
-    @job
+    @dg.job
     def a_job():
         a_op()
         failed_op()
@@ -331,23 +328,23 @@ def test_op_metadata_access():
     """Test that HookContext op_output_metadata is successfully populated upon both Output(value, metadata) and context.add_output_metadata(metadata) calls."""
     called = {}
 
-    @success_hook
+    @dg.success_hook
     def my_success_hook(context):
         called[context.step_key] = context.op_output_metadata
 
-    @op(out={"one": Out(), "two": Out(), "three": Out()})
+    @dg.op(out={"one": dg.Out(), "two": dg.Out(), "three": dg.Out()})
     def output_metadata_op(_):
-        yield Output(1, "one", metadata={"foo": "bar"})
-        yield Output(2, "two", metadata={"baz": "qux"})
-        yield Output(3, "three", metadata={"quux": "quuz"})
+        yield dg.Output(1, "one", metadata={"foo": "bar"})
+        yield dg.Output(2, "two", metadata={"baz": "qux"})
+        yield dg.Output(3, "three", metadata={"quux": "quuz"})
 
-    @op()
+    @dg.op()
     def context_metadata_op(context: OpExecutionContext):
         context.add_output_metadata(metadata={"foo": "bar"})
-        yield Output(value=1)
+        yield dg.Output(value=1)
 
     @my_success_hook
-    @job
+    @dg.job
     def metadata_job():
         output_metadata_op()
         context_metadata_op()
@@ -355,11 +352,13 @@ def test_op_metadata_access():
     result = metadata_job.execute_in_process(raise_on_error=False)
 
     assert result.success
-    assert called.get("context_metadata_op") == {"result": {"foo": TextMetadataValue(text="bar")}}
+    assert called.get("context_metadata_op") == {
+        "result": {"foo": dg.TextMetadataValue(text="bar")}
+    }
     assert called.get("output_metadata_op") == {
-        "one": {"foo": TextMetadataValue(text="bar")},
-        "two": {"baz": TextMetadataValue(text="qux")},
-        "three": {"quux": TextMetadataValue(text="quuz")},
+        "one": {"foo": dg.TextMetadataValue(text="bar")},
+        "two": {"baz": dg.TextMetadataValue(text="qux")},
+        "three": {"quux": dg.TextMetadataValue(text="quuz")},
     }
 
 
@@ -376,19 +375,19 @@ def test_hook_on_job_def():
         called_hook_to_ops[context.hook_def.name].add(context.op.name)
         return HookExecutionResult("hook_b_generic")
 
-    @op
+    @dg.op
     def op_a(_):
         pass
 
-    @op
+    @dg.op
     def op_b(_):
         pass
 
-    @op
+    @dg.op
     def op_c(_):
         pass
 
-    @job(hooks={hook_b_generic})
+    @dg.job(hooks={hook_b_generic})
     def a_job():
         op_a()
         op_b()
@@ -411,22 +410,22 @@ def test_hook_on_job_def_with_graphs():
         called_hook_to_step_keys[context.hook_def.name].add(context.step_key)
         return HookExecutionResult("hook_a_generic")
 
-    @op
+    @dg.op
     def two(_):
         return 1
 
-    @op
+    @dg.op
     def add_one(_, num):
         return num + 1
 
-    @graph
+    @dg.graph
     def add_two():
         adder_1 = add_one.alias("adder_1")
         adder_2 = add_one.alias("adder_2")
 
         return adder_2(adder_1(two()))
 
-    @job
+    @dg.job
     def a_job():
         add_two()
 
@@ -450,30 +449,30 @@ def test_hook_decorate_job_def():
         called_hook_to_ops[context.hook_def.name].add(context.op.name)
         return HookExecutionResult("hook_a_generic")
 
-    @success_hook
+    @dg.success_hook
     def hook_b_success(context):
         called_hook_to_ops[context.hook_def.name].add(context.op.name)
 
-    @failure_hook
+    @dg.failure_hook
     def hook_c_failure(context):
         called_hook_to_ops[context.hook_def.name].add(context.op.name)
 
-    @op
+    @dg.op
     def op_a(_):
         pass
 
-    @op
+    @dg.op
     def op_b(_):
         pass
 
-    @op
+    @dg.op
     def failed_op(_):
         raise SomeUserException()
 
     @hook_c_failure
     @hook_b_success
     @hook_a_generic
-    @job
+    @dg.job
     def a_job():
         op_a()
         failed_op()
@@ -501,28 +500,28 @@ def test_hook_on_job_def_and_op_instance():
         called_hook_to_ops[context.hook_def.name].add(context.op.name)
         return HookExecutionResult("hook_a_generic")
 
-    @success_hook
+    @dg.success_hook
     def hook_b_success(context):
         called_hook_to_ops[context.hook_def.name].add(context.op.name)
 
-    @failure_hook
+    @dg.failure_hook
     def hook_c_failure(context):
         called_hook_to_ops[context.hook_def.name].add(context.op.name)
 
-    @op
+    @dg.op
     def op_a(_):
         pass
 
-    @op
+    @dg.op
     def op_b(_):
         pass
 
-    @op
+    @dg.op
     def failed_op(_):
         raise SomeUserException()
 
     @hook_a_generic
-    @job
+    @dg.job
     def a_job():
         op_a.with_hooks({hook_b_success})()
         failed_op.with_hooks({hook_c_failure})()
@@ -555,11 +554,11 @@ def test_hook_context_config_schema():
         assert context.op_config == {"config_1": 1}
         return HookExecutionResult("a_hook")
 
-    @op(config_schema={"config_1": Int})
+    @dg.op(config_schema={"config_1": dg.Int})
     def a_op(_):
         pass
 
-    @job
+    @dg.job
     def a_job():
         a_op.with_hooks(hook_defs={a_hook})()
 
@@ -574,30 +573,30 @@ def test_hook_resource_mismatch():
         assert context.resources.resource_a == 1
         return HookExecutionResult("a_hook")
 
-    @op
+    @dg.op
     def a_op(_):
         pass
 
     with pytest.raises(
-        DagsterInvalidDefinitionError,
+        dg.DagsterInvalidDefinitionError,
         match=(
             "resource with key 'b' required by hook 'a_hook' attached to job '_' was not provided"
         ),
     ):
 
         @a_hook
-        @job(resource_defs={"a": resource_a})
+        @dg.job(resource_defs={"a": resource_a})
         def _():
             a_op()
 
     with pytest.raises(
-        DagsterInvalidDefinitionError,
+        dg.DagsterInvalidDefinitionError,
         match=(
             "resource with key 'b' required by hook 'a_hook' attached to op 'a_op' was not provided"
         ),
     ):
 
-        @job(resource_defs={"a": resource_a})
+        @dg.job(resource_defs={"a": resource_a})
         def _():
             a_op.with_hooks({a_hook})()
 
@@ -610,16 +609,16 @@ def test_hook_subjob():
         called_hook_to_ops[context.hook_def.name].add(context.op.name)
         return HookExecutionResult("hook_a_generic")
 
-    @op
+    @dg.op
     def op_a(_):
         pass
 
-    @op
+    @dg.op
     def op_b(_):
         pass
 
     @hook_a_generic
-    @job
+    @dg.job
     def a_job():
         op_a()
         op_b()
@@ -639,16 +638,16 @@ def test_hook_subjob():
 def test_hook_ops():
     called_hook_to_ops = defaultdict(set)
 
-    @success_hook
+    @dg.success_hook
     def my_hook(context):
         called_hook_to_ops[context.hook_def.name].add(context.op.name)
         return HookExecutionResult("my_hook")
 
-    @op
+    @dg.op
     def a_op(_):
         pass
 
-    @graph
+    @dg.graph
     def a_graph():
         a_op.with_hooks(hook_defs={my_hook})()
         a_op.alias("op_with_hook").with_hooks(hook_defs={my_hook})()
@@ -662,31 +661,31 @@ def test_hook_ops():
 def test_hook_graph():
     called_hook_to_ops = defaultdict(set)
 
-    @success_hook
+    @dg.success_hook
     def a_hook(context):
         called_hook_to_ops[context.hook_def.name].add(context.op.name)
         return HookExecutionResult("a_hook")
 
-    @success_hook
+    @dg.success_hook
     def b_hook(context):
         called_hook_to_ops[context.hook_def.name].add(context.op.name)
         return HookExecutionResult("a_hook")
 
-    @op
+    @dg.op
     def a_op(_):
         pass
 
-    @op
+    @dg.op
     def b_op(_):
         pass
 
     @a_hook
-    @graph
+    @dg.graph
     def sub_graph():
         a_op()
 
     @b_hook
-    @graph
+    @dg.graph
     def super_graph():
         sub_graph()
         b_op()
@@ -707,17 +706,17 @@ def test_hook_graph():
 def test_hook_on_job():
     called_hook_to_ops = defaultdict(set)
 
-    @success_hook
+    @dg.success_hook
     def a_hook(context):
         called_hook_to_ops[context.hook_def.name].add(context.op.name)
         return HookExecutionResult("a_hook")
 
-    @op
+    @dg.op
     def basic():
         return 5
 
     @a_hook
-    @job
+    @dg.job
     def hooked_job():
         basic()
         basic()

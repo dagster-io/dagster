@@ -3,29 +3,7 @@ from collections.abc import Set
 
 import dagster as dg
 import pytest
-from dagster import (
-    AssetCheckEvaluation,
-    AssetCheckKey,
-    AssetCheckResult,
-    AssetCheckSpec,
-    AssetKey,
-    AssetMaterialization,
-    AssetSelection,
-    AssetSpec,
-    AutomationCondition,
-    AutomationContext,
-    AutomationResult,
-    DagsterInstance,
-    Definitions,
-    MaterializeResult,
-    Output,
-    asset,
-    asset_check,
-    evaluate_automation_conditions,
-    job,
-    materialize,
-    op,
-)
+from dagster import AssetSelection, AutomationCondition, AutomationContext, DagsterInstance
 
 from dagster_tests.declarative_automation_tests.scenario_utils.automation_condition_scenario import (
     AutomationConditionScenarioState,
@@ -36,38 +14,38 @@ from dagster_tests.declarative_automation_tests.scenario_utils.scenario_specs im
 from dagster_tests.declarative_automation_tests.scenario_utils.scenario_state import ScenarioSpec
 
 one_asset_two_checks = ScenarioSpec(
-    asset_specs=[AssetSpec("A")],
+    asset_specs=[dg.AssetSpec("A")],
     check_specs=[
-        AssetCheckSpec("a1", asset="A", blocking=True),
-        AssetCheckSpec("a2", asset="A"),
+        dg.AssetCheckSpec("a1", asset="A", blocking=True),
+        dg.AssetCheckSpec("a2", asset="A"),
     ],
 )
 downstream_of_check = ScenarioSpec(
     asset_specs=[
-        AssetSpec("A"),
-        AssetSpec("B"),
-        AssetSpec("C", deps=["A"]),
-        AssetSpec("D", deps=["B"]),
+        dg.AssetSpec("A"),
+        dg.AssetSpec("B"),
+        dg.AssetSpec("C", deps=["A"]),
+        dg.AssetSpec("D", deps=["B"]),
     ],
-    check_specs=[AssetCheckSpec("check", asset="A")],
+    check_specs=[dg.AssetCheckSpec("check", asset="A")],
 )
 
 
 def get_hardcoded_condition():
     true_set = set()
 
-    class HardcodedCondition(AutomationCondition):
+    class HardcodedCondition(dg.AutomationCondition):
         @property
         def description(self) -> str:
             return "..."
 
-        def evaluate(self, context: AutomationContext) -> AutomationResult:
+        def evaluate(self, context: AutomationContext) -> dg.AutomationResult:
             true_subset = (
                 context.asset_graph_view.get_full_subset(key=context.key)
                 if context.key in true_set
                 else context.asset_graph_view.get_empty_subset(key=context.key)
             )
-            return AutomationResult(context, true_subset=true_subset)
+            return dg.AutomationResult(context, true_subset=true_subset)
 
     return HardcodedCondition(), true_set
 
@@ -90,14 +68,14 @@ async def test_check_operators_partitioned(is_any: bool, blocking_only: bool) ->
     state, result = await state.evaluate("A")
     assert result.true_subset.size == 0
 
-    true_set.add(AssetCheckKey(AssetKey("A"), "a1"))
+    true_set.add(dg.AssetCheckKey(dg.AssetKey("A"), "a1"))
     state, result = await state.evaluate("A")
     if is_any:
         assert result.true_subset.size == 2
     else:
         assert result.true_subset.size == (2 if blocking_only else 0)
 
-    true_set.add(AssetCheckKey(AssetKey("A"), "a2"))
+    true_set.add(dg.AssetCheckKey(dg.AssetKey("A"), "a2"))
     state, result = await state.evaluate("A")
     if is_any:
         assert result.true_subset.size == 2
@@ -129,33 +107,33 @@ async def test_any_checks_match_basic() -> None:
 
 @pytest.mark.parametrize("real_check", [True, False])
 def test_all_deps_blocking_checks_passed_condition(real_check: bool) -> None:
-    @asset
+    @dg.asset
     def A() -> None: ...
 
-    @asset(deps=[A], automation_condition=AutomationCondition.all_deps_blocking_checks_passed())
+    @dg.asset(deps=[A], automation_condition=AutomationCondition.all_deps_blocking_checks_passed())
     def B() -> None: ...
 
-    @asset_check(asset=A, blocking=True)
-    def blocking1(context) -> AssetCheckResult:
+    @dg.asset_check(asset=A, blocking=True)
+    def blocking1(context) -> dg.AssetCheckResult:
         passed = "passed" in context.run.tags
-        return AssetCheckResult(passed=passed)
+        return dg.AssetCheckResult(passed=passed)
 
-    @asset_check(asset=A, blocking=True)
-    def blocking2(context) -> AssetCheckResult:
+    @dg.asset_check(asset=A, blocking=True)
+    def blocking2(context) -> dg.AssetCheckResult:
         passed = "passed" in context.run.tags
-        return AssetCheckResult(passed=passed)
+        return dg.AssetCheckResult(passed=passed)
 
-    @asset_check(asset=A, blocking=False)
-    def nonblocking1(context) -> AssetCheckResult:
+    @dg.asset_check(asset=A, blocking=False)
+    def nonblocking1(context) -> dg.AssetCheckResult:
         passed = "passed" in context.run.tags
-        return AssetCheckResult(passed=passed)
+        return dg.AssetCheckResult(passed=passed)
 
-    @asset_check(asset=B, blocking=True)
-    def blocking3(context) -> AssetCheckResult:
+    @dg.asset_check(asset=B, blocking=True)
+    def blocking3(context) -> dg.AssetCheckResult:
         passed = "passed" in context.run.tags
-        return AssetCheckResult(passed=passed)
+        return dg.AssetCheckResult(passed=passed)
 
-    def _emit_check(checks: Set[AssetCheckKey], passed: bool):
+    def _emit_check(checks: Set[dg.AssetCheckKey], passed: bool):
         if real_check:
             defs.resolve_implicit_global_asset_job_def().get_subset(
                 asset_check_selection=checks
@@ -164,113 +142,115 @@ def test_all_deps_blocking_checks_passed_condition(real_check: bool) -> None:
             )
         else:
 
-            @op
+            @dg.op
             def emit():
                 for check in checks:
-                    yield AssetCheckEvaluation(
+                    yield dg.AssetCheckEvaluation(
                         asset_key=check.asset_key, check_name=check.name, passed=passed
                     )
-                yield Output(None)
+                yield dg.Output(None)
 
-            @job
+            @dg.job
             def emit_job():
                 emit()
 
             emit_job.execute_in_process(instance=instance)
 
-    defs = Definitions(assets=[A, B], asset_checks=[blocking1, blocking2, blocking3, nonblocking1])
+    defs = dg.Definitions(
+        assets=[A, B], asset_checks=[blocking1, blocking2, blocking3, nonblocking1]
+    )
     instance = DagsterInstance.ephemeral()
 
     # no checks evaluated
-    result = evaluate_automation_conditions(defs=defs, instance=instance)
+    result = dg.evaluate_automation_conditions(defs=defs, instance=instance)
     assert result.total_requested == 0
 
     # blocking1 passes, still not all of them
     _emit_check({blocking1.check_key}, True)
-    result = evaluate_automation_conditions(defs=defs, instance=instance, cursor=result.cursor)
+    result = dg.evaluate_automation_conditions(defs=defs, instance=instance, cursor=result.cursor)
     assert result.total_requested == 0
 
     # blocking2 passes, now all have passed
     _emit_check({blocking2.check_key}, True)
-    result = evaluate_automation_conditions(defs=defs, instance=instance, cursor=result.cursor)
+    result = dg.evaluate_automation_conditions(defs=defs, instance=instance, cursor=result.cursor)
     assert result.total_requested == 1
 
     # blocking3 fails, no impact (as it's not on a dep)
     _emit_check({blocking3.check_key}, False)
-    result = evaluate_automation_conditions(defs=defs, instance=instance, cursor=result.cursor)
+    result = dg.evaluate_automation_conditions(defs=defs, instance=instance, cursor=result.cursor)
     assert result.total_requested == 1
 
     # nonblocking1 fails, no impact (as it's non-blocking)
     _emit_check({nonblocking1.check_key}, False)
-    result = evaluate_automation_conditions(defs=defs, instance=instance, cursor=result.cursor)
+    result = dg.evaluate_automation_conditions(defs=defs, instance=instance, cursor=result.cursor)
     assert result.total_requested == 1
 
     # now A gets rematerialized, blocking checks haven't been executed yet
-    instance.report_runless_asset_event(AssetMaterialization("A"))
+    instance.report_runless_asset_event(dg.AssetMaterialization("A"))
 
     # in sqllite the check evaluation create_timestamp is only second-level precision
     time.sleep(1)
-    result = evaluate_automation_conditions(defs=defs, instance=instance, cursor=result.cursor)
+    result = dg.evaluate_automation_conditions(defs=defs, instance=instance, cursor=result.cursor)
     assert result.total_requested == 0
 
     # blocking1 passes, but blocking2 fails
     _emit_check({blocking1.check_key}, True)
     _emit_check({blocking2.check_key}, False)
-    result = evaluate_automation_conditions(defs=defs, instance=instance, cursor=result.cursor)
+    result = dg.evaluate_automation_conditions(defs=defs, instance=instance, cursor=result.cursor)
     assert result.total_requested == 0
 
     # now blocking2 passes
 
     _emit_check({blocking2.check_key}, True)
-    result = evaluate_automation_conditions(defs=defs, instance=instance, cursor=result.cursor)
+    result = dg.evaluate_automation_conditions(defs=defs, instance=instance, cursor=result.cursor)
     assert result.total_requested == 1
 
 
 def test_blocking_checks_with_eager() -> None:
     cond = AutomationCondition.eager() & AutomationCondition.all_deps_blocking_checks_passed()
 
-    @asset
+    @dg.asset
     def root() -> None: ...
 
-    @asset(
+    @dg.asset(
         deps=[root],
         automation_condition=cond,
-        check_specs=[AssetCheckSpec("x", asset="A", blocking=True)],
+        check_specs=[dg.AssetCheckSpec("x", asset="A", blocking=True)],
     )
-    def A() -> MaterializeResult:
-        return MaterializeResult(check_results=[AssetCheckResult(passed=True)])
+    def A() -> dg.MaterializeResult:
+        return dg.MaterializeResult(check_results=[dg.AssetCheckResult(passed=True)])
 
-    @asset(deps=[A], automation_condition=cond)
+    @dg.asset(deps=[A], automation_condition=cond)
     def B() -> None: ...
 
-    defs = Definitions(assets=[root, A, B])
+    defs = dg.Definitions(assets=[root, A, B])
     instance = DagsterInstance.ephemeral()
 
     # nothing to do yet
-    result = evaluate_automation_conditions(defs=defs, instance=instance)
+    result = dg.evaluate_automation_conditions(defs=defs, instance=instance)
     assert result.total_requested == 0
 
     # root is materialized, should kick off a run of both A and B
-    instance.report_runless_asset_event(AssetMaterialization("root"))
-    result = evaluate_automation_conditions(defs=defs, instance=instance, cursor=result.cursor)
+    instance.report_runless_asset_event(dg.AssetMaterialization("root"))
+    result = dg.evaluate_automation_conditions(defs=defs, instance=instance, cursor=result.cursor)
     assert result.total_requested == 2
 
     # don't launch again
-    result = evaluate_automation_conditions(defs=defs, instance=instance, cursor=result.cursor)
+    result = dg.evaluate_automation_conditions(defs=defs, instance=instance, cursor=result.cursor)
     assert result.total_requested == 0
 
     # A is materialized in a vacuum (technically impossible), don't kick off
-    instance.report_runless_asset_event(AssetMaterialization("A"))
-    result = evaluate_automation_conditions(defs=defs, instance=instance, cursor=result.cursor)
+    instance.report_runless_asset_event(dg.AssetMaterialization("A"))
+    result = dg.evaluate_automation_conditions(defs=defs, instance=instance, cursor=result.cursor)
     assert result.total_requested == 0
 
     # A is now materialized with its check, do kick off B
-    materialize([A], instance=instance)
-    result = evaluate_automation_conditions(defs=defs, instance=instance, cursor=result.cursor)
+    dg.materialize([A], instance=instance)
+    result = dg.evaluate_automation_conditions(defs=defs, instance=instance, cursor=result.cursor)
     assert result.total_requested == 1
 
     # don't launch again
-    result = evaluate_automation_conditions(defs=defs, instance=instance, cursor=result.cursor)
+    result = dg.evaluate_automation_conditions(defs=defs, instance=instance, cursor=result.cursor)
     assert result.total_requested == 0
 
 
@@ -279,59 +259,59 @@ def test_blocking_checks_with_eager() -> None:
     [
         AutomationCondition.any_deps_match(
             AutomationCondition.any_checks_match(AutomationCondition.check_failed()).allow(
-                AssetSelection.checks(AssetCheckKey(AssetKey("A"), "allow_check"))
+                AssetSelection.checks(dg.AssetCheckKey(dg.AssetKey("A"), "allow_check"))
             ),
         ),
         AutomationCondition.any_deps_match(
             AutomationCondition.any_checks_match(AutomationCondition.check_failed()).ignore(
-                AssetSelection.checks(AssetCheckKey(AssetKey("A"), "ignore_check"))
+                AssetSelection.checks(dg.AssetCheckKey(dg.AssetKey("A"), "ignore_check"))
             ),
         ),
     ],
 )
 def test_check_selection(condition: AutomationCondition) -> None:
-    @asset
+    @dg.asset
     def A() -> None: ...
 
-    @asset_check(asset=A)
-    def ignore_check(context) -> AssetCheckResult:
+    @dg.asset_check(asset=A)
+    def ignore_check(context) -> dg.AssetCheckResult:
         passed = "passed" in context.run.tags
-        return AssetCheckResult(passed=passed)
+        return dg.AssetCheckResult(passed=passed)
 
-    @asset_check(asset=A)
-    def allow_check(context) -> AssetCheckResult:
+    @dg.asset_check(asset=A)
+    def allow_check(context) -> dg.AssetCheckResult:
         passed = "passed" in context.run.tags
-        return AssetCheckResult(passed=passed)
+        return dg.AssetCheckResult(passed=passed)
 
-    @asset(deps=[A], automation_condition=condition)
+    @dg.asset(deps=[A], automation_condition=condition)
     def B() -> None: ...
 
-    defs = Definitions(assets=[A, B], asset_checks=[ignore_check, allow_check])
+    defs = dg.Definitions(assets=[A, B], asset_checks=[ignore_check, allow_check])
     instance = DagsterInstance.ephemeral()
 
     # no checks evaluated
-    result = evaluate_automation_conditions(defs=defs, instance=instance)
+    result = dg.evaluate_automation_conditions(defs=defs, instance=instance)
     assert result.total_requested == 0
 
     # ignore_check fails, but it's ignored
     defs.resolve_implicit_global_asset_job_def().get_subset(
         asset_check_selection={ignore_check.check_key}
     ).execute_in_process(instance=instance)
-    result = evaluate_automation_conditions(defs=defs, instance=instance, cursor=result.cursor)
+    result = dg.evaluate_automation_conditions(defs=defs, instance=instance, cursor=result.cursor)
     assert result.total_requested == 0
 
     # allow_check fails, not ignored
     defs.resolve_implicit_global_asset_job_def().get_subset(
         asset_check_selection={allow_check.check_key}
     ).execute_in_process(instance=instance, raise_on_error=False)
-    result = evaluate_automation_conditions(defs=defs, instance=instance, cursor=result.cursor)
+    result = dg.evaluate_automation_conditions(defs=defs, instance=instance, cursor=result.cursor)
     assert result.total_requested == 1
 
     # allow_check passes, now back to normal
     defs.resolve_implicit_global_asset_job_def().get_subset(
         asset_check_selection={allow_check.check_key}
     ).execute_in_process(tags={"passed": ""}, instance=instance)
-    result = evaluate_automation_conditions(defs=defs, instance=instance, cursor=result.cursor)
+    result = dg.evaluate_automation_conditions(defs=defs, instance=instance, cursor=result.cursor)
     assert result.total_requested == 0
 
 

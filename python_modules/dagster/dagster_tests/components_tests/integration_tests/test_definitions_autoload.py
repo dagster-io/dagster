@@ -1,10 +1,10 @@
 import importlib
+import textwrap
 from pathlib import Path
 from typing import Union
 
+import dagster as dg
 import pytest
-from dagster import AssetKey, load_defs, load_from_defs_folder
-from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._utils.env import environ
 from dagster.components.core.decl import (
     ComponentDecl,
@@ -12,14 +12,13 @@ from dagster.components.core.decl import (
     DefsFolderDecl,
     YamlFileDecl,
 )
-from dagster.components.core.defs_module import (
-    ComponentPath,
-    CompositeYamlComponent,
-    DefsFolderComponent,
+from dagster.components.core.defs_module import ComponentPath, CompositeYamlComponent
+from dagster.components.core.tree import (
+    ComponentTree,
+    ComponentTreeException,
+    LegacyAutoloadingComponentTree,
 )
-from dagster.components.core.tree import ComponentTree, LegacyAutoloadingComponentTree
 from dagster_shared import check
-from pydantic import ValidationError
 
 from dagster_tests.components_tests.integration_tests.component_loader import (
     chdir as chdir,
@@ -88,8 +87,8 @@ def test_definitions_component_with_explicit_file_relative_imports(
     )
     defs = component_tree.build_defs()
     assert {spec.key for spec in defs.resolve_all_asset_specs()} == {
-        AssetKey("asset_in_some_file"),
-        AssetKey("asset_in_some_other_file"),
+        dg.AssetKey("asset_in_some_file"),
+        dg.AssetKey("asset_in_some_other_file"),
     }
 
 
@@ -112,8 +111,8 @@ def test_definitions_component_with_explicit_file_relative_imports_init(
     )
     defs = component_tree.build_defs()
     assert {spec.key for spec in defs.resolve_all_asset_specs()} == {
-        AssetKey("asset_in_init_file"),
-        AssetKey("asset_in_some_other_file"),
+        dg.AssetKey("asset_in_init_file"),
+        dg.AssetKey("asset_in_some_other_file"),
     }
 
 
@@ -138,38 +137,67 @@ def test_definitions_component_with_explicit_file_relative_imports_complex(
     )
     defs = component_tree.build_defs()
     assert {spec.key for spec in defs.resolve_all_asset_specs()} == {
-        AssetKey("asset_in_some_file"),
-        AssetKey("asset_in_submodule"),
+        dg.AssetKey("asset_in_some_file"),
+        dg.AssetKey("asset_in_submodule"),
     }
 
 
 def test_definitions_component_validation_error() -> None:
-    with pytest.raises(ValidationError) as e:
+    with pytest.raises(ComponentTreeException) as e:
         sync_load_test_component_defs("definitions/validation_error_file")
 
-    assert "defs.yaml:4" in str(e.value)
+    assert "└── definitions.py" in str(e.value)
+
+    underlying_validation_error = e.value.__cause__
+
+    assert "defs.yaml:4" in str(underlying_validation_error)
 
 
 def test_definitions_component_with_multiple_definitions_objects() -> None:
-    with pytest.raises(
-        DagsterInvalidDefinitionError, match="Found multiple Definitions objects in"
-    ):
+    with pytest.raises(ComponentTreeException) as e:
         sync_load_test_component_defs("definitions/definitions_object_multiple")
+
+    assert "my_defs.py (error)" in str(e.value)
+
+    underlying_validation_error = e.value.__cause__
+
+    assert "Found multiple Definitions objects in" in str(underlying_validation_error)
 
 
 @pytest.mark.parametrize("component_tree", ["definitions/single_file"], indirect=True)
 def test_autoload_single_file(component_tree: ComponentTree) -> None:
     defs = component_tree.build_defs()
-    assert {spec.key for spec in defs.resolve_all_asset_specs()} == {AssetKey("an_asset")}
+    assert {spec.key for spec in defs.resolve_all_asset_specs()} == {dg.AssetKey("an_asset")}
+    assert (
+        component_tree.to_string_representation()
+        == textwrap.dedent(
+            """
+        ├── __init__.py
+        └── single_file
+            └── some_file.py
+        """
+        ).strip()
+    )
 
 
 @pytest.mark.parametrize("component_tree", ["definitions/multiple_files"], indirect=True)
 def test_autoload_multiple_files(component_tree: ComponentTree) -> None:
     defs = component_tree.build_defs()
     assert {spec.key for spec in defs.resolve_all_asset_specs()} == {
-        AssetKey("asset_in_some_file"),
-        AssetKey("asset_in_other_file"),
+        dg.AssetKey("asset_in_some_file"),
+        dg.AssetKey("asset_in_other_file"),
     }
+    assert (
+        component_tree.to_string_representation()
+        == textwrap.dedent(
+            """
+        ├── __init__.py
+        └── multiple_files
+            ├── other_file.py
+            └── some_file.py
+        """
+        ).strip()
+    )
 
 
 @pytest.mark.parametrize("component_tree", ["definitions/empty"], indirect=True)
@@ -184,8 +212,8 @@ def test_autoload_empty(component_tree: ComponentTree) -> None:
 def test_autoload_definitions_object(component_tree: ComponentTree) -> None:
     defs = component_tree.build_defs()
     assert {spec.key for spec in defs.resolve_all_asset_specs()} == {
-        AssetKey("asset_in_some_file"),
-        AssetKey("asset_in_other_file"),
+        dg.AssetKey("asset_in_some_file"),
+        dg.AssetKey("asset_in_other_file"),
     }
 
 
@@ -213,50 +241,50 @@ def test_autoload_definitions_nested(component_tree: ComponentTree) -> None:
     )
     defs = component_tree.build_defs()
     assert {spec.key for spec in defs.resolve_all_asset_specs()} == {
-        AssetKey("top_level"),
-        AssetKey("defs_obj_inner"),
-        AssetKey("defs_obj_outer"),
-        AssetKey("innerest_defs"),
-        AssetKey("innerer"),
-        AssetKey("inner"),
-        AssetKey("in_loose_defs"),
-        AssetKey("in_init"),
+        dg.AssetKey("top_level"),
+        dg.AssetKey("defs_obj_inner"),
+        dg.AssetKey("defs_obj_outer"),
+        dg.AssetKey("innerest_defs"),
+        dg.AssetKey("innerer"),
+        dg.AssetKey("inner"),
+        dg.AssetKey("in_loose_defs"),
+        dg.AssetKey("in_init"),
     }
 
 
 def test_autoload_definitions_nested_with_config() -> None:
     ENV_VAL = "abc_xyz"
     tags_by_spec = {
-        AssetKey("top_level"): {
+        dg.AssetKey("top_level"): {
             "top_level_tag": "true",
         },
-        AssetKey("defs_obj_inner"): {
-            "top_level_tag": "true",
-            "defs_object_tag": "true",
-        },
-        AssetKey("defs_obj_outer"): {
+        dg.AssetKey("defs_obj_inner"): {
             "top_level_tag": "true",
             "defs_object_tag": "true",
         },
-        AssetKey("inner"): {
+        dg.AssetKey("defs_obj_outer"): {
+            "top_level_tag": "true",
+            "defs_object_tag": "true",
+        },
+        dg.AssetKey("inner"): {
             "top_level_tag": "true",
             "loose_defs_tag": "true",
         },
-        AssetKey("innerer"): {
+        dg.AssetKey("innerer"): {
             "top_level_tag": "true",
             "loose_defs_tag": "true",
         },
-        AssetKey("in_loose_defs"): {
+        dg.AssetKey("in_loose_defs"): {
             "top_level_tag": "true",
             "loose_defs_tag": "true",
         },
-        AssetKey("innerest_defs"): {
+        dg.AssetKey("innerest_defs"): {
             "top_level_tag": "true",
             "loose_defs_tag": "true",
             "env_tag": ENV_VAL,
             "another_level_tag": "true",
         },
-        AssetKey("in_init"): {
+        dg.AssetKey("in_init"): {
             "top_level_tag": "true",
             "loose_defs_tag": "true",
             "env_tag": ENV_VAL,
@@ -308,20 +336,20 @@ def test_ignored_empty_dir():
         )
 
         defs_root_yaml = check.inst(tree.load_root_component(), CompositeYamlComponent)
-        defs_root = check.inst(defs_root_yaml.components[0], DefsFolderComponent)
+        defs_root = check.inst(defs_root_yaml.components[0], dg.DefsFolderComponent)
         for comp in defs_root.iterate_components():
-            if isinstance(comp, DefsFolderComponent):
+            if isinstance(comp, dg.DefsFolderComponent):
                 assert comp.children
             if isinstance(comp, CompositeYamlComponent):
                 for child in comp.components:
-                    if isinstance(child, DefsFolderComponent):
+                    if isinstance(child, dg.DefsFolderComponent):
                         assert child.children
 
 
 @pytest.mark.parametrize("component_tree", ["definitions/backcompat_components"], indirect=True)
 def test_autoload_backcompat_components(component_tree: ComponentTree) -> None:
     defs = component_tree.build_defs()
-    assert {spec.key for spec in defs.resolve_all_asset_specs()} == {AssetKey("foo")}
+    assert {spec.key for spec in defs.resolve_all_asset_specs()} == {dg.AssetKey("foo")}
 
 
 @pytest.mark.parametrize(
@@ -330,30 +358,30 @@ def test_autoload_backcompat_components(component_tree: ComponentTree) -> None:
         (
             True,
             {
-                AssetKey("asset_in_definitions_py"),
-                AssetKey("asset_in_component_py"),
-                AssetKey("top_level"),
+                dg.AssetKey("asset_in_definitions_py"),
+                dg.AssetKey("asset_in_component_py"),
+                dg.AssetKey("top_level"),
             },
         ),
         (
             False,
             {
                 # asset_in_component_py is not included
-                AssetKey("asset_in_definitions_py"),
-                AssetKey("top_level"),
-                AssetKey("asset_in_inner"),
-                AssetKey("asset_only_in_asset_py_with_component_py"),
-                AssetKey("defs_obj_outer"),
-                AssetKey("not_included"),
+                dg.AssetKey("asset_in_definitions_py"),
+                dg.AssetKey("top_level"),
+                dg.AssetKey("asset_in_inner"),
+                dg.AssetKey("asset_only_in_asset_py_with_component_py"),
+                dg.AssetKey("defs_obj_outer"),
+                dg.AssetKey("not_included"),
             },
         ),
     ],
 )
 def test_autoload_definitions_new_flag(
-    terminate_autoloading_on_keyword_files: bool, expected_keys: set[AssetKey]
+    terminate_autoloading_on_keyword_files: bool, expected_keys: set[dg.AssetKey]
 ) -> None:
     if not terminate_autoloading_on_keyword_files:
-        defs = load_from_defs_folder(
+        defs = dg.load_from_defs_folder(
             project_root=Path(__file__).parent
             / "integration_test_defs"
             / "definitions"
@@ -364,7 +392,7 @@ def test_autoload_definitions_new_flag(
         module = importlib.import_module(
             "dagster_tests.components_tests.integration_tests.integration_test_defs.definitions.special_names_at_levels.special_names_at_levels"
         )
-        defs = load_defs(
+        defs = dg.load_defs(
             module,
             project_root=Path(__file__).parent,
         )

@@ -6,6 +6,7 @@ from traceback import TracebackException
 from typing import Any, Literal, Optional, Union
 
 import click
+import dagster_shared.check as check
 from dagster_dg_core.context import DgContext
 from dagster_shared.cli import PythonPointerOpts
 from dagster_shared.error import SerializableErrorInfo, remove_system_frames_from_error
@@ -25,8 +26,10 @@ from pydantic import ConfigDict, TypeAdapter, create_model
 from dagster._cli.utils import get_possibly_temporary_instance_for_cli
 from dagster._cli.workspace.cli_target import get_repository_python_origin_from_cli_opts
 from dagster._config.pythonic_config.resource import get_resource_type_name
-from dagster._core.definitions.asset_job import is_reserved_asset_job_name
 from dagster._core.definitions.asset_selection import AssetSelection
+from dagster._core.definitions.assets.job.asset_job import is_reserved_asset_job_name
+from dagster._core.definitions.metadata import CodeReferencesMetadataValue
+from dagster._core.definitions.metadata.source_code import LocalFileCodeReference
 from dagster._core.definitions.repository_definition.repository_definition import (
     RepositoryDefinition,
 )
@@ -107,14 +110,15 @@ def _load_defs_at_path(dg_context: DgContext, path: Optional[Path]) -> Repositor
     return defs.get_repository_def()
 
 
-IGNORE_METADATA_KEYS_LIST_DEFINITIONS = ["dagster/code_references"]
+def _tag_filter(tag_key: str) -> bool:
+    return not tag_key.startswith("dagster/kind")
 
 
 def list_definitions(
     dg_context: DgContext,
     path: Optional[Path] = None,
     asset_selection: Optional[str] = None,
-) -> list[DgDefinitionMetadata]:
+) -> DgDefinitionMetadata:
     with get_possibly_temporary_instance_for_cli() as instance:
         instance.inject_env_vars(dg_context.code_location_name)
 
@@ -142,8 +146,6 @@ def list_definitions(
             )
             sys.exit(1)
 
-        all_defs: list[DgDefinitionMetadata] = []
-
         asset_graph = repo_def.asset_graph
 
         asset_selection_obj = (
@@ -153,68 +155,133 @@ def list_definitions(
         selected_checks = (
             asset_selection_obj.resolve_checks(asset_graph) if asset_selection_obj else None
         )
+        assets = []
         for key in sorted(
             selected_assets or list(asset_graph.get_all_asset_keys()),
             key=lambda key: key.to_user_string(),
         ):
             node = asset_graph.get(key)
-            all_defs.append(
+            source = None
+            code_ref_metadata = check.opt_inst(
+                node.metadata.get("dagster/code_references"), CodeReferencesMetadataValue
+            )
+            if code_ref_metadata and code_ref_metadata.code_references:
+                source = next(
+                    (
+                        str(Path(ref.source).relative_to(dg_context.root_path))
+                        for ref in code_ref_metadata.code_references
+                        if isinstance(ref, LocalFileCodeReference)
+                    ),
+                    None,
+                )
+
+            assets.append(
                 DgAssetMetadata(
                     key=key.to_user_string(),
                     deps=sorted([k.to_user_string() for k in node.parent_keys]),
+                    owners=node.owners,
                     group=node.group_name,
                     kinds=sorted(list(node.kinds)),
                     description=node.description,
                     automation_condition=node.automation_condition.get_label()
                     if node.automation_condition
                     else None,
-                    tags=sorted(list(node.tags.items())),
-                    metadata=sorted(
-                        [
-                            (k, str(v))
-                            for k, v in node.metadata.items()
-                            if k not in IGNORE_METADATA_KEYS_LIST_DEFINITIONS
-                        ]
-                    ),
+                    tags=sorted(f'"{k}"="{v}"' for k, v in node.tags.items() if _tag_filter(k)),
                     is_executable=node.is_executable,
+                    source=source,
                 )
             )
+        checks = []
         for key in selected_checks if selected_checks is not None else asset_graph.asset_check_keys:
             node = asset_graph.get(key)
-            all_defs.append(
+            source = None
+            code_ref_metadata = check.opt_inst(
+                node.metadata.get("dagster/code_references"), CodeReferencesMetadataValue
+            )
+            if code_ref_metadata and code_ref_metadata.code_references:
+                source = code_ref_metadata.code_references[0].source
+
+            checks.append(
                 DgAssetCheckMetadata(
                     key=key.to_user_string(),
                     asset_key=key.asset_key.to_user_string(),
                     name=key.name,
                     additional_deps=sorted([k.to_user_string() for k in node.parent_entity_keys]),
                     description=node.description,
+                    source=source,
                 )
             )
-        # If we have an asset selection, we only want to return assets
-        if asset_selection:
-            return all_defs
 
+        jobs = []
         for job in repo_def.get_all_jobs():
             if not is_reserved_asset_job_name(job.name):
-                all_defs.append(DgJobMetadata(name=job.name, description=job.description))
+                source = None
+                code_ref_metadata = check.opt_inst(
+                    job.metadata.get("dagster/code_references"), CodeReferencesMetadataValue
+                )
+                if code_ref_metadata and code_ref_metadata.code_references:
+                    source = code_ref_metadata.code_references[0].source
+                jobs.append(
+                    DgJobMetadata(
+                        name=job.name,
+                        description=job.description,
+                        source=source,
+                    )
+                )
+
+        schedules = []
         for schedule in repo_def.schedule_defs:
             schedule_str = (
                 schedule.cron_schedule
                 if isinstance(schedule.cron_schedule, str)
                 else ", ".join(schedule.cron_schedule)
             )
-            all_defs.append(
+            source = None
+            code_ref_metadata = check.opt_inst(
+                schedule.metadata.get("dagster/code_references"), CodeReferencesMetadataValue
+            )
+            if code_ref_metadata and code_ref_metadata.code_references:
+                source = code_ref_metadata.code_references[0].source
+            schedules.append(
                 DgScheduleMetadata(
                     name=schedule.name,
                     cron_schedule=schedule_str,
+                    source=source,
                 )
             )
-        for sensor in repo_def.sensor_defs:
-            all_defs.append(DgSensorMetadata(name=sensor.name))
-        for name, resource in repo_def.get_top_level_resources().items():
-            all_defs.append(DgResourceMetadata(name=name, type=get_resource_type_name(resource)))
 
-        return all_defs
+        sensors = []
+        for sensor in repo_def.sensor_defs:
+            source = None
+            code_ref_metadata = check.opt_inst(
+                sensor.metadata.get("dagster/code_references"), CodeReferencesMetadataValue
+            )
+            if code_ref_metadata and code_ref_metadata.code_references:
+                source = code_ref_metadata.code_references[0].source
+            sensors.append(
+                DgSensorMetadata(
+                    name=sensor.name,
+                    source=source,
+                )
+            )
+
+        resources = []
+        for name, resource in repo_def.get_top_level_resources().items():
+            resources.append(
+                DgResourceMetadata(
+                    name=name,
+                    type=get_resource_type_name(resource),
+                )
+            )
+
+        return DgDefinitionMetadata(
+            assets=assets,
+            asset_checks=checks,
+            jobs=jobs,
+            schedules=schedules,
+            sensors=sensors,
+            resources=resources,
+        )
 
 
 # ########################

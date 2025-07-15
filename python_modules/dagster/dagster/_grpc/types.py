@@ -7,7 +7,7 @@ from dagster_shared.serdes.serdes import SetToSequenceFieldSerializer
 
 import dagster._check as check
 from dagster._core.code_pointer import CodePointer
-from dagster._core.definitions.asset_check_spec import AssetCheckKey
+from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.events import AssetKey
 from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.execution.retries import RetryMode

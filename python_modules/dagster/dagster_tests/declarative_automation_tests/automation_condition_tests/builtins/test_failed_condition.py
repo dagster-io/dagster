@@ -1,6 +1,6 @@
+import dagster as dg
 import pytest
 from dagster import AutomationCondition
-from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.events import AssetKeyPartitionKey
 
 from dagster_tests.declarative_automation_tests.scenario_utils.automation_condition_scenario import (
@@ -49,7 +49,7 @@ async def test_in_progress_static_partitioned() -> None:
     state, result = await state.evaluate("A")
     assert result.true_subset.size == 1
     assert result.true_subset.expensively_compute_asset_partitions() == {
-        AssetKeyPartitionKey(AssetKey("A"), "1")
+        AssetKeyPartitionKey(dg.AssetKey("A"), "1")
     }
 
     # now that partition succeeds

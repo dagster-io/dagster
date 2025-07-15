@@ -70,7 +70,7 @@ export const AssetsCatalogTable = ({
       },
     });
 
-  useBlockTraceUntilTrue('useAllAssets', !!assets?.length && !loading);
+  useBlockTraceUntilTrue('useAllAssets', !loading);
 
   const {displayPathForAsset, displayed} = useMemo(
     () =>

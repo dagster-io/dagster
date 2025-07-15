@@ -4,8 +4,8 @@ from typing import TYPE_CHECKING, cast
 import pytest
 import requests
 from dagster import Definitions
-from dagster._core.definitions.asset_spec import AssetSpec
-from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
+from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
 from dagster._core.definitions.run_request import SensorResult
 from dagster._core.definitions.sensor_definition import build_sensor_context
 from dagster._core.test_utils import instance_for_test
@@ -28,7 +28,7 @@ from kitchen_sink.airflow_instance import (
 from pytest_mock import MockFixture
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.assets import AssetsDefinition
+    from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
 
 
 @pytest.fixture

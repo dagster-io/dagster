@@ -1,5 +1,4 @@
-from dagster._core.definitions.materialize import materialize
-from dagster._core.definitions.metadata.metadata_value import TextMetadataValue
+import dagster as dg
 from dagster.components.lib.executable_component.script_utils import ScriptSpec
 from dagster.components.lib.executable_component.uv_run_component import UvRunComponent
 from dagster.components.testing import scaffold_defs_sandbox
@@ -47,14 +46,14 @@ def test_pipes_subprocess_script_hello_world() -> None:
                 },
             }
         ) as (component, defs):
-            assert isinstance(component, UvRunComponent)
+            assert isinstance(component, dg.UvRunComponent)
             assert isinstance(component.execution, ScriptSpec)
             assets_def = defs.get_assets_def("asset")
-            result = materialize([assets_def])
+            result = dg.materialize([assets_def])
             assert result.success
             mats = result.asset_materializations_for_node("op_name")
             assert len(mats) == 1
             assert next(iter(mats)).metadata == {
-                "arg": TextMetadataValue("hello"),
-                "pycowsay_module_name": TextMetadataValue("pycowsay"),
+                "arg": dg.TextMetadataValue("hello"),
+                "pycowsay_module_name": dg.TextMetadataValue("pycowsay"),
             }

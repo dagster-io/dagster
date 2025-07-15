@@ -353,5 +353,6 @@ class Component(ABC):
         from dagster.components.core.tree import ComponentTree
 
         return load_yaml_component_from_path(
-            context=context or ComponentTree.for_test().load_context, component_def_path=yaml_path
+            context=context or ComponentTree.for_test().load_context,
+            component_def_path=yaml_path,
         )

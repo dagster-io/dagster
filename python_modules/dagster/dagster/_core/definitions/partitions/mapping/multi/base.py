@@ -6,8 +6,9 @@ from datetime import datetime
 from typing import NamedTuple, Optional, Union, cast
 
 import dagster._check as check
-from dagster._core.definitions.partitions.definition.multi import MultiPartitionsDefinition
-from dagster._core.definitions.partitions.definition.partitions_definition import (
+from dagster._core.definitions.partitions.context import partition_loading_context
+from dagster._core.definitions.partitions.definition import (
+    MultiPartitionsDefinition,
     PartitionsDefinition,
 )
 from dagster._core.definitions.partitions.mapping.partition_mapping import (
@@ -50,8 +51,6 @@ class BaseMultiPartitionMapping(ABC):
         a_partitions_subset: PartitionsSubset,
         b_partitions_def: PartitionsDefinition,
         a_upstream_of_b: bool,
-        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
-        current_time: Optional[datetime] = None,
     ) -> Union[UpstreamPartitionsResult, PartitionsSubset]:
         """Given two partitions definitions a_partitions_def and b_partitions_def that have a dependency
         relationship (a_upstream_of_b is True if a_partitions_def is upstream of b_partitions_def),
@@ -121,8 +120,6 @@ class BaseMultiPartitionMapping(ABC):
                                 ),
                                 a_dimension_partitions_def,
                                 b_dimension_partitions_def,
-                                current_time=current_time,
-                                dynamic_partitions_store=dynamic_partitions_store,
                             ).get_partition_keys()
                         )
 
@@ -160,8 +157,6 @@ class BaseMultiPartitionMapping(ABC):
                                 ),
                                 a_dimension_partitions_def,
                                 b_dimension_partitions_def,
-                                current_time=current_time,
-                                dynamic_partitions_store=dynamic_partitions_store,
                             )
                         )
                         dep_b_keys_by_a_dim_and_key[a_dim_name][key] = list(
@@ -201,9 +196,7 @@ class BaseMultiPartitionMapping(ABC):
                     ]
                 ),
                 *[
-                    b_dimension_partitions_def_by_name[dim_name].get_partition_keys(
-                        dynamic_partitions_store=dynamic_partitions_store, current_time=current_time
-                    )
+                    b_dimension_partitions_def_by_name[dim_name].get_partition_keys()
                     for dim_name in unmapped_b_dim_names
                 ],
             ):
@@ -237,22 +230,21 @@ class BaseMultiPartitionMapping(ABC):
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> UpstreamPartitionsResult:
-        if downstream_partitions_subset is None:
-            check.failed("downstream asset is not partitioned")
+        with partition_loading_context(current_time, dynamic_partitions_store):
+            if downstream_partitions_subset is None:
+                check.failed("downstream asset is not partitioned")
 
-        result = self._get_dependency_partitions_subset(
-            check.not_none(downstream_partitions_def),
-            downstream_partitions_subset,
-            cast("MultiPartitionsDefinition", upstream_partitions_def),
-            a_upstream_of_b=False,
-            dynamic_partitions_store=dynamic_partitions_store,
-            current_time=current_time,
-        )
+            result = self._get_dependency_partitions_subset(
+                check.not_none(downstream_partitions_def),
+                downstream_partitions_subset,
+                cast("MultiPartitionsDefinition", upstream_partitions_def),
+                a_upstream_of_b=False,
+            )
 
-        if not isinstance(result, UpstreamPartitionsResult):
-            check.failed("Expected UpstreamPartitionsResult")
+            if not isinstance(result, UpstreamPartitionsResult):
+                check.failed("Expected UpstreamPartitionsResult")
 
-        return result
+            return result
 
     def get_downstream_partitions_for_partitions(
         self,
@@ -262,21 +254,21 @@ class BaseMultiPartitionMapping(ABC):
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> PartitionsSubset:
-        if upstream_partitions_subset is None:
-            check.failed("upstream asset is not partitioned")
+        with partition_loading_context(current_time, dynamic_partitions_store):
+            if upstream_partitions_subset is None:
+                check.failed("upstream asset is not partitioned")
 
-        result = self._get_dependency_partitions_subset(
-            upstream_partitions_def,
-            upstream_partitions_subset,
-            cast("MultiPartitionsDefinition", downstream_partitions_def),
-            a_upstream_of_b=True,
-            dynamic_partitions_store=dynamic_partitions_store,
-        )
+            result = self._get_dependency_partitions_subset(
+                upstream_partitions_def,
+                upstream_partitions_subset,
+                cast("MultiPartitionsDefinition", downstream_partitions_def),
+                a_upstream_of_b=True,
+            )
 
-        if isinstance(result, UpstreamPartitionsResult):
-            check.failed("Expected PartitionsSubset")
+            if isinstance(result, UpstreamPartitionsResult):
+                check.failed("Expected PartitionsSubset")
 
-        return result
+            return result
 
 
 @whitelist_for_serdes

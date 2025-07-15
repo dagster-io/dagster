@@ -181,7 +181,7 @@ class GCSComputeLogManager(TruncatingCloudStorageComputeLogManager, Configurable
         else:
             check.failed("Must pass in either `log_key` or `prefix` argument to delete_logs")
 
-    def download_url_for_type(self, log_key: Sequence[str], io_type: ComputeIOType):  # pyright: ignore[reportIncompatibleMethodOverride]
+    def download_url_for_type(self, log_key: Sequence[str], io_type: ComputeIOType):
         if not self.is_capture_complete(log_key):
             return None
 

@@ -1,3 +1,5 @@
+import dagster as dg
+
 """These tests are included here instead of in test_serdes, because the model_tests run on both
 Pydantic 1 and 2, while the general_tests do not.
 """
@@ -8,9 +10,7 @@ from dagster_shared.serdes.errors import SerializationError
 from dagster_shared.serdes.serdes import (
     WhitelistMap,
     _whitelist_for_serdes,
-    deserialize_value,
     pack_value,
-    serialize_value,
     unpack_value,
 )
 from pydantic import Field
@@ -29,8 +29,8 @@ def test_pydantic_alias():
     assert packed_o == {"__class__": "SomeDagsterModel", "id_alias": 5, "name": "fdsk"}
     assert unpack_value(packed_o, whitelist_map=test_env, as_type=SomeDagsterModel) == o
 
-    ser_o = serialize_value(o, whitelist_map=test_env)
-    assert deserialize_value(ser_o, whitelist_map=test_env) == o
+    ser_o = dg.serialize_value(o, whitelist_map=test_env)
+    assert dg.deserialize_value(ser_o, whitelist_map=test_env) == o
 
 
 def test_pydantic_alias_generator():
@@ -49,8 +49,8 @@ def test_pydantic_alias_generator():
     assert packed_o == {"__class__": "SomeDagsterModel", "id_alias": 5, "name_alias": "fdsk"}
     assert unpack_value(packed_o, whitelist_map=test_env, as_type=SomeDagsterModel) == o
 
-    ser_o = serialize_value(o, whitelist_map=test_env)
-    assert deserialize_value(ser_o, whitelist_map=test_env) == o
+    ser_o = dg.serialize_value(o, whitelist_map=test_env)
+    assert dg.deserialize_value(ser_o, whitelist_map=test_env) == o
 
 
 def test_pydantic_serialization_alias():
@@ -66,7 +66,7 @@ def test_pydantic_serialization_alias():
         SerializationError,
         match="Can't serialize pydantic models with serialization or validation aliases.",
     ):
-        serialize_value(o, whitelist_map=test_env)
+        dg.serialize_value(o, whitelist_map=test_env)
 
     with pytest.raises(
         SerializationError,
@@ -88,7 +88,7 @@ def test_pydantic_validation_alias():
         SerializationError,
         match="Can't serialize pydantic models with serialization or validation aliases.",
     ):
-        serialize_value(o, whitelist_map=test_env)
+        dg.serialize_value(o, whitelist_map=test_env)
 
     with pytest.raises(
         SerializationError,

@@ -146,26 +146,11 @@ class GraphQLServer(ABC, Generic[TRequestContext]):
                     status_code=status.HTTP_400_BAD_REQUEST,
                 )
 
-        captured_errors: list[Exception] = []
-        with ErrorCapture.watch(captured_errors.append):
-            result = await self.execute_graphql_request(
-                request=request,
-                query=query,
-                variables=variables,
-                operation_name=operation_name,
-            )
-
-        response_data: dict[str, Any] = {"data": result.data}
-
-        if result.errors:
-            response_data["errors"] = self.handle_graphql_errors(result.errors)
-
-        return JSONResponse(
-            response_data,
-            status_code=self._determine_status_code(
-                resolver_errors=result.errors,
-                captured_errors=captured_errors,
-            ),
+        return await self.execute_graphql_request(
+            request=request,
+            query=query,
+            variables=variables,
+            operation_name=operation_name,
         )
 
     async def graphql_ws_endpoint(self, websocket: WebSocket):
@@ -232,7 +217,7 @@ class GraphQLServer(ABC, Generic[TRequestContext]):
         query: str,
         variables: Optional[dict[str, Any]],
         operation_name: Optional[str],
-    ) -> ExecutionResult:
+    ) -> JSONResponse:
         # run each query in a separate thread, as much of the schema is sync/blocking
         # use execute_async to allow async resolvers to facilitate dataloader pattern
         return await run_in_threadpool(
@@ -249,7 +234,7 @@ class GraphQLServer(ABC, Generic[TRequestContext]):
         query: str,
         variables: Optional[dict[str, Any]],
         operation_name: Optional[str],
-    ) -> ExecutionResult:
+    ) -> JSONResponse:
         request_context = self.make_request_context(request)
         return run(
             self.gen_graphql_response(
@@ -266,13 +251,28 @@ class GraphQLServer(ABC, Generic[TRequestContext]):
         query: str,
         variables: Optional[dict[str, Any]],
         operation_name: Optional[str],
-    ) -> ExecutionResult:
-        return await self._graphql_schema.execute_async(
-            query,
-            variables=variables,
-            operation_name=operation_name,
-            context=request_context,
-            middleware=self._graphql_middleware,
+    ) -> JSONResponse:
+        captured_errors: list[Exception] = []
+        with ErrorCapture.watch(captured_errors.append):
+            gql_result = await self._graphql_schema.execute_async(
+                query,
+                variables=variables,
+                operation_name=operation_name,
+                context=request_context,
+                middleware=self._graphql_middleware,
+            )
+
+        response_data: dict[str, Any] = {"data": gql_result.data}
+
+        if gql_result.errors:
+            response_data["errors"] = self.handle_graphql_errors(gql_result.errors)
+
+        return JSONResponse(
+            response_data,
+            status_code=self._determine_status_code(
+                resolver_errors=gql_result.errors,
+                captured_errors=captured_errors,
+            ),
         )
 
     async def execute_graphql_subscription(

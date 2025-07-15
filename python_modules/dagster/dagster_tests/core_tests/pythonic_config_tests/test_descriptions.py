@@ -1,22 +1,21 @@
 from typing import Annotated
 
-from dagster import op
+import dagster as dg
 from dagster._config.config_type import ConfigTypeKind
-from dagster._config.pythonic_config import Config
 from pydantic import Field
 
 
 def test_new_config_descriptions_and_defaults():
-    class ANestedOpConfig(Config):
+    class ANestedOpConfig(dg.Config):
         an_int: Annotated[int, Field(description="An int")]
 
-    class AnOpConfig(Config):
+    class AnOpConfig(dg.Config):
         """Config for my new op."""
 
         a_string: str = Field(description="A string")
         nested: ANestedOpConfig = Field(description="A nested config")
 
-    @op
+    @dg.op
     def a_new_config_op(config: AnOpConfig):
         pass
 

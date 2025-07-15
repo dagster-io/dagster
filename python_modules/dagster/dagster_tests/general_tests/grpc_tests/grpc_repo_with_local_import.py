@@ -1,17 +1,17 @@
+import dagster as dg
 import dummy_local_file as dummy_local_file  # type: ignore
-from dagster import job, op, repository
 
 
-@op
+@dg.op
 def my_op():
     pass
 
 
-@job
+@dg.job
 def my_job():
     my_op()
 
 
-@repository
+@dg.repository
 def bar_repo():
     return [my_job]

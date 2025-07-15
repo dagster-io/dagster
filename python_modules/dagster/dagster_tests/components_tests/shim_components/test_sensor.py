@@ -1,4 +1,4 @@
-from dagster._core.definitions.sensor_definition import SensorDefinition
+import dagster as dg
 from dagster.components.lib.shim_components.sensor import SensorScaffolder
 
 from dagster_tests.components_tests.shim_components.shim_test_utils import (
@@ -18,7 +18,7 @@ def test_sensor_scaffolder():
     assert "SensorEvaluationContext" in code
 
     sensor_fn = execute_scaffolder_and_get_symbol(scaffolder, "my_sensor")
-    assert isinstance(sensor_fn, SensorDefinition)
+    assert isinstance(sensor_fn, dg.SensorDefinition)
     assert sensor_fn.name == "my_sensor"
 
 

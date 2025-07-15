@@ -4,20 +4,11 @@ from collections.abc import Generator, Iterator
 from contextlib import contextmanager
 from typing import Callable
 
+import dagster as dg
 import pytest
-from dagster import (
-    AssetKey,
-    AssetMaterialization,
-    DagsterEvent,
-    DagsterEventType,
-    DagsterInstance,
-    Definitions,
-    asset,
-)
+from dagster import AssetKey, DagsterEventType, DagsterInstance
 from dagster._core.definitions.freshness import FreshnessState, InternalFreshnessPolicy
 from dagster._core.events import StepMaterializationData
-from dagster._core.events.log import EventLogEntry
-from dagster._core.instance_for_test import instance_for_test
 from dagster._core.storage.dagster_run import make_new_run_id
 from dagster._core.test_utils import create_test_daemon_workspace_context, freeze_time
 from dagster._core.workspace.context import IWorkspaceProcessContext
@@ -40,17 +31,17 @@ def setup_remote_repo(
 
 def store_mat(instance: DagsterInstance, asset_key: AssetKey, dt: datetime.datetime):
     instance.store_event(
-        EventLogEntry(
+        dg.EventLogEntry(
             error_info=None,
             user_message="",
             level="debug",
             run_id=make_new_run_id(),
             timestamp=dt.timestamp(),
-            dagster_event=DagsterEvent(
+            dagster_event=dg.DagsterEvent(
                 DagsterEventType.ASSET_MATERIALIZATION.value,
                 "nonce",
                 event_specific_data=StepMaterializationData(
-                    materialization=AssetMaterialization(asset_key=asset_key),
+                    materialization=dg.AssetMaterialization(asset_key=asset_key),
                 ),
             ),
         )
@@ -64,7 +55,7 @@ def run_iter(daemon: FreshnessDaemon, context: IWorkspaceProcessContext):
 class FreshnessDaemonTests(ABC):
     @abstractmethod
     @pytest.fixture
-    def daemon_instance(self) -> Generator[DagsterInstance, None, None]: ...
+    def daemon_instance(self) -> Generator[dg.DagsterInstance, None, None]: ...
 
     @abstractmethod
     @pytest.fixture
@@ -89,7 +80,7 @@ class FreshnessDaemonTests(ABC):
     ):
         """Helper method to assert the freshness state of multiple assets."""
         for asset_key in asset_keys:
-            self._assert_freshness_state(instance, AssetKey(asset_key), expected_state)
+            self._assert_freshness_state(instance, dg.AssetKey(asset_key), expected_state)
 
     def _materialize_assets(
         self,
@@ -99,7 +90,7 @@ class FreshnessDaemonTests(ABC):
     ):
         """Helper method to materialize multiple assets at a given time."""
         for asset_key in asset_keys:
-            store_mat(instance, AssetKey(asset_key), materialize_time)
+            store_mat(instance, dg.AssetKey(asset_key), materialize_time)
 
     def test_iteration_no_freshness_policies(
         self,
@@ -108,16 +99,16 @@ class FreshnessDaemonTests(ABC):
     ):
         """Test that freshness daemon is no-op for assets with no freshness policies."""
 
-        def create_defs() -> Definitions:
-            @asset
+        def create_defs() -> dg.Definitions:
+            @dg.asset
             def asset_1():
                 return 1
 
-            @asset
+            @dg.asset
             def asset_2():
                 return 2
 
-            defs = Definitions(assets=[asset_1, asset_2])
+            defs = dg.Definitions(assets=[asset_1, asset_2])
 
             return defs
 
@@ -128,10 +119,10 @@ class FreshnessDaemonTests(ABC):
                 run_iter(freshness_daemon, workspace_context)
 
                 self._assert_freshness_state(
-                    daemon_instance, AssetKey("asset_1"), FreshnessState.NOT_APPLICABLE
+                    daemon_instance, dg.AssetKey("asset_1"), FreshnessState.NOT_APPLICABLE
                 )
                 self._assert_freshness_state(
-                    daemon_instance, AssetKey("asset_2"), FreshnessState.NOT_APPLICABLE
+                    daemon_instance, dg.AssetKey("asset_2"), FreshnessState.NOT_APPLICABLE
                 )
 
     def test_iteration_single_freshness_policy(
@@ -141,8 +132,8 @@ class FreshnessDaemonTests(ABC):
     ):
         """Test that freshness daemon evaluates freshness for a single asset."""
 
-        def create_defs() -> Definitions:
-            @asset(
+        def create_defs() -> dg.Definitions:
+            @dg.asset(
                 freshness_policy=InternalFreshnessPolicy.time_window(
                     fail_window=datetime.timedelta(hours=24),
                     warn_window=datetime.timedelta(hours=12),
@@ -151,11 +142,11 @@ class FreshnessDaemonTests(ABC):
             def asset_with_policy():
                 return 1
 
-            @asset
+            @dg.asset
             def asset_without_policy():
                 return 1
 
-            defs = Definitions(assets=[asset_with_policy, asset_without_policy])
+            defs = dg.Definitions(assets=[asset_with_policy, asset_without_policy])
 
             return defs
 
@@ -171,21 +162,23 @@ class FreshnessDaemonTests(ABC):
                 run_iter(freshness_daemon, workspace_context)
 
                 self._assert_freshness_state(
-                    daemon_instance, AssetKey("asset_with_policy"), FreshnessState.UNKNOWN
+                    daemon_instance, dg.AssetKey("asset_with_policy"), FreshnessState.UNKNOWN
                 )
 
                 self._assert_freshness_state(
-                    daemon_instance, AssetKey("asset_without_policy"), FreshnessState.NOT_APPLICABLE
+                    daemon_instance,
+                    dg.AssetKey("asset_without_policy"),
+                    FreshnessState.NOT_APPLICABLE,
                 )
 
             materialize_time = frozen_time + datetime.timedelta(seconds=1)
             with freeze_time(materialize_time):
-                store_mat(daemon_instance, AssetKey("asset_with_policy"), materialize_time)
+                store_mat(daemon_instance, dg.AssetKey("asset_with_policy"), materialize_time)
 
                 run_iter(freshness_daemon, workspace_context)
 
                 self._assert_freshness_state(
-                    daemon_instance, AssetKey("asset_with_policy"), FreshnessState.PASS
+                    daemon_instance, dg.AssetKey("asset_with_policy"), FreshnessState.PASS
                 )
 
             # Advance 12 hours and 1 second from start -> WARN
@@ -193,7 +186,7 @@ class FreshnessDaemonTests(ABC):
                 run_iter(freshness_daemon, workspace_context)
 
                 self._assert_freshness_state(
-                    daemon_instance, AssetKey("asset_with_policy"), FreshnessState.WARN
+                    daemon_instance, dg.AssetKey("asset_with_policy"), FreshnessState.WARN
                 )
 
             # Advance 24 hours and 1 second from start -> FAIL
@@ -201,7 +194,7 @@ class FreshnessDaemonTests(ABC):
                 run_iter(freshness_daemon, workspace_context)
 
                 self._assert_freshness_state(
-                    daemon_instance, AssetKey("asset_with_policy"), FreshnessState.FAIL
+                    daemon_instance, dg.AssetKey("asset_with_policy"), FreshnessState.FAIL
                 )
 
     def test_iteration_multiple_freshness_policies(
@@ -211,8 +204,8 @@ class FreshnessDaemonTests(ABC):
     ):
         """Test that freshness daemon evaluates freshness for multiple assets with different freshness policies."""
 
-        def create_defs() -> Definitions:
-            @asset(
+        def create_defs() -> dg.Definitions:
+            @dg.asset(
                 freshness_policy=InternalFreshnessPolicy.time_window(
                     fail_window=datetime.timedelta(minutes=60),
                     warn_window=datetime.timedelta(minutes=30),
@@ -221,7 +214,7 @@ class FreshnessDaemonTests(ABC):
             def asset_1():
                 return 1
 
-            @asset(
+            @dg.asset(
                 freshness_policy=InternalFreshnessPolicy.time_window(
                     fail_window=datetime.timedelta(minutes=120),
                     warn_window=datetime.timedelta(minutes=60),
@@ -230,7 +223,7 @@ class FreshnessDaemonTests(ABC):
             def asset_2():
                 return 2
 
-            @asset(
+            @dg.asset(
                 freshness_policy=InternalFreshnessPolicy.time_window(
                     fail_window=datetime.timedelta(minutes=30),
                     warn_window=datetime.timedelta(minutes=15),
@@ -239,7 +232,7 @@ class FreshnessDaemonTests(ABC):
             def asset_3():
                 return 3
 
-            defs = Definitions(assets=[asset_1, asset_2, asset_3])
+            defs = dg.Definitions(assets=[asset_1, asset_2, asset_3])
 
             return defs
 
@@ -273,7 +266,7 @@ class FreshnessDaemonTests(ABC):
                     daemon_instance, ["asset_1", "asset_2"], FreshnessState.PASS
                 )
                 self._assert_freshness_state(
-                    daemon_instance, AssetKey("asset_3"), FreshnessState.WARN
+                    daemon_instance, dg.AssetKey("asset_3"), FreshnessState.WARN
                 )
 
             # Advance 35 minutes - asset_1 should be WARN, asset_3 should be FAIL, asset_2 still PASS
@@ -281,13 +274,13 @@ class FreshnessDaemonTests(ABC):
                 run_iter(freshness_daemon, workspace_context)
 
                 self._assert_freshness_state(
-                    daemon_instance, AssetKey("asset_1"), FreshnessState.WARN
+                    daemon_instance, dg.AssetKey("asset_1"), FreshnessState.WARN
                 )
                 self._assert_freshness_state(
-                    daemon_instance, AssetKey("asset_2"), FreshnessState.PASS
+                    daemon_instance, dg.AssetKey("asset_2"), FreshnessState.PASS
                 )
                 self._assert_freshness_state(
-                    daemon_instance, AssetKey("asset_3"), FreshnessState.FAIL
+                    daemon_instance, dg.AssetKey("asset_3"), FreshnessState.FAIL
                 )
 
             # Advance 65 minutes - asset_1 should be FAIL, asset_2 should be WARN, asset_3 still FAIL
@@ -295,13 +288,13 @@ class FreshnessDaemonTests(ABC):
                 run_iter(freshness_daemon, workspace_context)
 
                 self._assert_freshness_state(
-                    daemon_instance, AssetKey("asset_1"), FreshnessState.FAIL
+                    daemon_instance, dg.AssetKey("asset_1"), FreshnessState.FAIL
                 )
                 self._assert_freshness_state(
-                    daemon_instance, AssetKey("asset_2"), FreshnessState.WARN
+                    daemon_instance, dg.AssetKey("asset_2"), FreshnessState.WARN
                 )
                 self._assert_freshness_state(
-                    daemon_instance, AssetKey("asset_3"), FreshnessState.FAIL
+                    daemon_instance, dg.AssetKey("asset_3"), FreshnessState.FAIL
                 )
 
             # Advance 125 minutes - all assets should be FAIL
@@ -317,8 +310,8 @@ class FreshnessDaemonTests(ABC):
     ):
         """Test that freshness daemon correctly evaluates freshness using the most recent materialization."""
 
-        def create_defs() -> Definitions:
-            @asset(
+        def create_defs() -> dg.Definitions:
+            @dg.asset(
                 freshness_policy=InternalFreshnessPolicy.time_window(
                     fail_window=datetime.timedelta(minutes=60),
                     warn_window=datetime.timedelta(minutes=30),
@@ -327,7 +320,7 @@ class FreshnessDaemonTests(ABC):
             def asset_with_multiple_materializations():
                 return 1
 
-            defs = Definitions(assets=[asset_with_multiple_materializations])
+            defs = dg.Definitions(assets=[asset_with_multiple_materializations])
 
             return defs
 
@@ -342,7 +335,7 @@ class FreshnessDaemonTests(ABC):
 
                 self._assert_freshness_state(
                     daemon_instance,
-                    AssetKey("asset_with_multiple_materializations"),
+                    dg.AssetKey("asset_with_multiple_materializations"),
                     FreshnessState.UNKNOWN,
                 )
 
@@ -350,14 +343,14 @@ class FreshnessDaemonTests(ABC):
             with freeze_time(first_materialize_time):
                 store_mat(
                     daemon_instance,
-                    AssetKey("asset_with_multiple_materializations"),
+                    dg.AssetKey("asset_with_multiple_materializations"),
                     first_materialize_time,
                 )
                 run_iter(freshness_daemon, workspace_context)
 
                 self._assert_freshness_state(
                     daemon_instance,
-                    AssetKey("asset_with_multiple_materializations"),
+                    dg.AssetKey("asset_with_multiple_materializations"),
                     FreshnessState.PASS,
                 )
 
@@ -367,7 +360,7 @@ class FreshnessDaemonTests(ABC):
 
                 self._assert_freshness_state(
                     daemon_instance,
-                    AssetKey("asset_with_multiple_materializations"),
+                    dg.AssetKey("asset_with_multiple_materializations"),
                     FreshnessState.WARN,
                 )
 
@@ -376,14 +369,14 @@ class FreshnessDaemonTests(ABC):
             with freeze_time(second_materialize_time):
                 store_mat(
                     daemon_instance,
-                    AssetKey("asset_with_multiple_materializations"),
+                    dg.AssetKey("asset_with_multiple_materializations"),
                     second_materialize_time,
                 )
                 run_iter(freshness_daemon, workspace_context)
 
                 self._assert_freshness_state(
                     daemon_instance,
-                    AssetKey("asset_with_multiple_materializations"),
+                    dg.AssetKey("asset_with_multiple_materializations"),
                     FreshnessState.PASS,
                 )
 
@@ -393,7 +386,7 @@ class FreshnessDaemonTests(ABC):
 
                 self._assert_freshness_state(
                     daemon_instance,
-                    AssetKey("asset_with_multiple_materializations"),
+                    dg.AssetKey("asset_with_multiple_materializations"),
                     FreshnessState.PASS,
                 )
 
@@ -403,7 +396,7 @@ class FreshnessDaemonTests(ABC):
 
                 self._assert_freshness_state(
                     daemon_instance,
-                    AssetKey("asset_with_multiple_materializations"),
+                    dg.AssetKey("asset_with_multiple_materializations"),
                     FreshnessState.WARN,
                 )
 
@@ -413,15 +406,15 @@ class FreshnessDaemonTests(ABC):
 
                 self._assert_freshness_state(
                     daemon_instance,
-                    AssetKey("asset_with_multiple_materializations"),
+                    dg.AssetKey("asset_with_multiple_materializations"),
                     FreshnessState.FAIL,
                 )
 
 
 class TestFreshnessDaemon(FreshnessDaemonTests):
     @pytest.fixture
-    def daemon_instance(self) -> Generator[DagsterInstance, None, None]:
-        with instance_for_test() as instance:
+    def daemon_instance(self) -> Generator[dg.DagsterInstance, None, None]:
+        with dg.instance_for_test() as instance:
             yield instance
 
     @pytest.fixture

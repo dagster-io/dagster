@@ -1,15 +1,15 @@
 import tempfile
 
+import dagster as dg
 import pytest
 from click.testing import CliRunner
 from dagster._cli.instance import get_concurrency, set_concurrency
-from dagster._core.instance_for_test import instance_for_test
 
 
 @pytest.fixture(name="instance_runner")
 def mock_instance_runner():
     with tempfile.TemporaryDirectory() as dagster_home_temp:
-        with instance_for_test(
+        with dg.instance_for_test(
             temp_dir=dagster_home_temp,
             overrides={
                 "event_log_storage": {

@@ -7,11 +7,11 @@ import threading
 import time
 from unittest import mock
 
+import dagster as dg
 import dagster._check as check
 import dagster_shared.seven as seven
 import pytest
 from dagster._core.errors import DagsterUserCodeUnreachableError
-from dagster._core.test_utils import instance_for_test
 from dagster._core.utils import FuturesAwareThreadPoolExecutor
 from dagster._grpc.client import DagsterGrpcClient, ephemeral_grpc_api_client
 from dagster._grpc.constants import GrpcServerCommand
@@ -65,7 +65,7 @@ def test_server_port_and_socket():
 
 @pytest.mark.skipif(seven.IS_WINDOWS, reason="Unix-only test")
 def test_server_socket():
-    with instance_for_test() as instance:
+    with dg.instance_for_test() as instance:
         with safe_tempfile_path() as skt:
             server_process = open_server_process(
                 instance.get_ref(), port=None, socket=skt, server_command=GrpcServerCommand.API_GRPC
@@ -83,7 +83,7 @@ def test_server_socket():
 
 @pytest.mark.skipif(seven.IS_WINDOWS, reason="Unix-only test")
 def test_process_killed_after_server_finished():
-    with instance_for_test() as instance:
+    with dg.instance_for_test() as instance:
         raw_process = None
         try:
             with GrpcServerProcess(instance_ref=instance.get_ref()) as server_process:
@@ -108,7 +108,7 @@ def test_process_killed_after_server_finished():
 
 
 def test_server_port():
-    with instance_for_test() as instance:
+    with dg.instance_for_test() as instance:
         port = find_free_port()
         server_process = open_server_process(
             instance.get_ref(), port=port, socket=None, server_command=GrpcServerCommand.API_GRPC
@@ -197,7 +197,7 @@ def test_get_server_id():
 
 def create_server_process():
     port = find_free_port()
-    with instance_for_test() as instance:
+    with dg.instance_for_test() as instance:
         server_process = open_server_process(
             instance.get_ref(), port=port, socket=None, server_command=GrpcServerCommand.API_GRPC
         )
@@ -207,7 +207,7 @@ def create_server_process():
 
 def test_fixed_server_id():
     port = find_free_port()
-    with instance_for_test() as instance:
+    with dg.instance_for_test() as instance:
         server_process = open_server_process(
             instance.get_ref(),
             port=port,
@@ -251,7 +251,7 @@ def test_detect_server_restart():
 
 
 def test_ping_metrics_retrieval():
-    with instance_for_test() as instance:
+    with dg.instance_for_test() as instance:
         port = find_free_port()
         server_process = open_server_process(
             instance.get_ref(),

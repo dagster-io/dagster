@@ -204,8 +204,8 @@ export const AssetNodeAutomationRowWithData = ({
       return (
         <AutomationConditionEvaluationLink definition={definition} automationData={automationData}>
           <EvaluationUserLabel
-            userLabel={automationData.automationCondition!.label!}
-            expandedLabel={automationData.automationCondition!.expandedLabel}
+            userLabel={automationData.automationCondition?.label ?? 'condition'}
+            expandedLabel={automationData.automationCondition?.expandedLabel ?? []}
             small
           />
         </AutomationConditionEvaluationLink>

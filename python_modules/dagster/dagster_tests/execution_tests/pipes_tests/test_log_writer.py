@@ -1,10 +1,10 @@
 import shutil
 from collections.abc import Iterator
 
+import dagster as dg
 import pytest
-from dagster import AssetExecutionContext, DagsterInstance, asset, materialize
+from dagster import AssetExecutionContext, DagsterInstance
 from dagster._core.pipes.subprocess import PipesSubprocessClient
-from dagster._core.pipes.utils import PipesTempFileMessageReader
 
 from dagster_tests.execution_tests.pipes_tests.utils import temp_script
 
@@ -35,11 +35,11 @@ def test_pipes_default_log_writer(
     capsys,
     external_script_default_log_writer,
 ):
-    message_reader = PipesTempFileMessageReader(
+    message_reader = dg.PipesTempFileMessageReader(
         include_stdio_in_messages=True,
     )
 
-    @asset
+    @dg.asset
     def foo(context: AssetExecutionContext, ext: PipesSubprocessClient):
         cmd = [_PYTHON_EXECUTABLE, external_script_default_log_writer]
         return ext.run(
@@ -47,10 +47,10 @@ def test_pipes_default_log_writer(
             context=context,
         ).get_results()
 
-    resource = PipesSubprocessClient(message_reader=message_reader, forward_stdio=False)
+    resource = dg.PipesSubprocessClient(message_reader=message_reader, forward_stdio=False)
 
     with DagsterInstance.ephemeral() as instance:
-        result = materialize(
+        result = dg.materialize(
             [foo], instance=instance, resources={"ext": resource}, raise_on_error=False
         )
 

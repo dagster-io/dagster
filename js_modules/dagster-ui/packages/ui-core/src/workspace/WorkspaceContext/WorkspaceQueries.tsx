@@ -45,6 +45,14 @@ export const WORKSPACE_SCHEDULE_FRAGMENT = gql`
   ${BASIC_INSTIGATION_STATE_FRAGMENT}
 `;
 
+export const WORKSPACE_PARTITION_SET_FRAGMENT = gql`
+  fragment WorkspacePartitionSet on PartitionSet {
+    id
+    name
+    pipelineName
+  }
+`;
+
 export const WORKSPACE_SENSOR_FRAGMENT = gql`
   fragment WorkspaceSensor on Sensor {
     id
@@ -86,9 +94,7 @@ export const PARTIAL_WORKSPACE_REPOSITORY_FRAGMENT = gql`
       ...WorkspaceSensor
     }
     partitionSets {
-      id
-      mode
-      pipelineName
+      ...WorkspacePartitionSet
     }
     allTopLevelResourceDetails {
       id
@@ -99,6 +105,7 @@ export const PARTIAL_WORKSPACE_REPOSITORY_FRAGMENT = gql`
   ${WORKSPACE_PIPELINE_FRAGMENT}
   ${WORKSPACE_SCHEDULE_FRAGMENT}
   ${WORKSPACE_SENSOR_FRAGMENT}
+  ${WORKSPACE_PARTITION_SET_FRAGMENT}
   ${REPOSITORY_INFO_FRAGMENT}
   ${RESOURCE_ENTRY_FRAGMENT}
 `;
@@ -183,11 +190,14 @@ export const WORKSPACE_REPOSITORY_ASSETS_FRAGMENT = gql`
       ...WorkspaceAsset
     }
     assetGroups {
-      id
-      groupName
+      ...WorkspaceAssetGroup
     }
   }
   ${WORKSPACE_ASSET_FRAGMENT}
+  fragment WorkspaceAssetGroup on AssetGroup {
+    id
+    groupName
+  }
 `;
 
 export const WORKSPACE_LOCATION_ASSETS_FRAGMENT = gql`

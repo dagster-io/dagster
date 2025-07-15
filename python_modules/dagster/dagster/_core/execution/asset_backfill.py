@@ -19,13 +19,18 @@ from dagster._core.asset_graph_view.serializable_entity_subset import (
     EntitySubsetValue,
     SerializableEntitySubset,
 )
-from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.asset_selection import KeysAssetSelection
+from dagster._core.definitions.assets.graph.asset_graph_subset import AssetGraphSubset
+from dagster._core.definitions.assets.graph.base_asset_graph import BaseAssetGraph, BaseAssetNode
+from dagster._core.definitions.assets.graph.remote_asset_graph import (
+    RemoteAssetGraph,
+    RemoteWorkspaceAssetGraph,
+)
 from dagster._core.definitions.automation_tick_evaluation_context import (
     build_run_requests_with_backfill_policies,
 )
-from dagster._core.definitions.base_asset_graph import BaseAssetGraph, BaseAssetNode
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
+from dagster._core.definitions.partitions.context import partition_loading_context
 from dagster._core.definitions.partitions.definition import (
     PartitionsDefinition,
     TimeWindowPartitionsDefinition,
@@ -36,7 +41,6 @@ from dagster._core.definitions.partitions.mapping import (
 )
 from dagster._core.definitions.partitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.partitions.subset import PartitionsSubset, TimeWindowPartitionsSubset
-from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph, RemoteWorkspaceAssetGraph
 from dagster._core.definitions.run_request import RunRequest
 from dagster._core.definitions.selector import PartitionsByAssetSelector
 from dagster._core.definitions.timestamp import TimestampWithTimezone
@@ -210,10 +214,8 @@ class AssetBackfillData(NamedTuple):
             for asset_key in initial_subset.asset_keys:
                 self_and_downstream = self_and_downstream | (
                     instance_queryer.asset_graph.bfs_filter_subsets(
-                        instance_queryer,
                         lambda asset_key, _: asset_key in self.target_subset,
                         initial_subset.filter_asset_keys({asset_key}),
-                        current_time=instance_queryer.evaluation_time,
                     )
                     & self.target_subset
                 )
@@ -490,7 +492,6 @@ class AssetBackfillData(NamedTuple):
                             start=partition_range.start,
                             end=partition_range.end,
                         ),
-                        dynamic_partitions_store=dynamic_partitions_store,
                     )
                     partitions_subsets_by_asset_key[asset_key] = partitions_subset
             elif partitions_def:
@@ -524,59 +525,59 @@ class AssetBackfillData(NamedTuple):
 
         backfill_start_datetime = datetime_from_timestamp(backfill_start_timestamp)
 
-        if all_partitions:
-            target_subset = AssetGraphSubset.from_asset_keys(
-                asset_selection,
-                asset_graph,
-                dynamic_partitions_store,
-                backfill_start_datetime,
-            )
-        elif partition_names is not None:
-            partitioned_asset_keys = {
-                asset_key
-                for asset_key in asset_selection
-                if asset_graph.get(asset_key).is_partitioned
-            }
+        with partition_loading_context(backfill_start_datetime, dynamic_partitions_store):
+            if all_partitions:
+                target_subset = AssetGraphSubset.from_asset_keys(asset_selection, asset_graph)
+            elif partition_names is not None:
+                partitioned_asset_keys = {
+                    asset_key
+                    for asset_key in asset_selection
+                    if asset_graph.get(asset_key).is_partitioned
+                }
 
-            root_partitioned_asset_keys = (
-                KeysAssetSelection(selected_keys=list(partitioned_asset_keys))
-                .sources()
-                .resolve(asset_graph)
-            )
-            root_partitions_defs = {
-                asset_graph.get(asset_key).partitions_def
-                for asset_key in root_partitioned_asset_keys
-            }
-            if len(root_partitions_defs) > 1:
-                raise DagsterBackfillFailedError(
-                    "All the assets at the root of the backfill must have the same"
-                    " PartitionsDefinition"
+                root_partitioned_asset_keys = (
+                    KeysAssetSelection(selected_keys=list(partitioned_asset_keys))
+                    .sources()
+                    .resolve(asset_graph)
+                )
+                root_partitions_defs = {
+                    asset_graph.get(asset_key).partitions_def
+                    for asset_key in root_partitioned_asset_keys
+                }
+                if len(root_partitions_defs) > 1:
+                    raise DagsterBackfillFailedError(
+                        "All the assets at the root of the backfill must have the same"
+                        " PartitionsDefinition"
+                    )
+
+                root_partitions_def = next(iter(root_partitions_defs))
+                if not root_partitions_def:
+                    raise DagsterBackfillFailedError(
+                        "If assets within the backfill have different partitionings, then root assets"
+                        " must be partitioned"
+                    )
+
+                root_partitions_subset = root_partitions_def.subset_with_partition_keys(
+                    partition_names
+                )
+                target_subset = AssetGraphSubset(
+                    non_partitioned_asset_keys=set(asset_selection) - partitioned_asset_keys,
+                )
+                for root_asset_key in root_partitioned_asset_keys:
+                    target_subset |= asset_graph.bfs_filter_subsets(
+                        lambda asset_key, _: asset_key in partitioned_asset_keys,
+                        AssetGraphSubset(
+                            partitions_subsets_by_asset_key={
+                                root_asset_key: root_partitions_subset
+                            },
+                        ),
+                    )
+            else:
+                check.failed(
+                    "Either partition_names must not be None or all_partitions must be True"
                 )
 
-            root_partitions_def = next(iter(root_partitions_defs))
-            if not root_partitions_def:
-                raise DagsterBackfillFailedError(
-                    "If assets within the backfill have different partitionings, then root assets"
-                    " must be partitioned"
-                )
-
-            root_partitions_subset = root_partitions_def.subset_with_partition_keys(partition_names)
-            target_subset = AssetGraphSubset(
-                non_partitioned_asset_keys=set(asset_selection) - partitioned_asset_keys,
-            )
-            for root_asset_key in root_partitioned_asset_keys:
-                target_subset |= asset_graph.bfs_filter_subsets(
-                    dynamic_partitions_store,
-                    lambda asset_key, _: asset_key in partitioned_asset_keys,
-                    AssetGraphSubset(
-                        partitions_subsets_by_asset_key={root_asset_key: root_partitions_subset},
-                    ),
-                    current_time=backfill_start_datetime,
-                )
-        else:
-            check.failed("Either partition_names must not be None or all_partitions must be True")
-
-        return cls.empty(target_subset, backfill_start_timestamp, dynamic_partitions_store)
+            return cls.empty(target_subset, backfill_start_timestamp, dynamic_partitions_store)
 
     @classmethod
     def from_asset_graph_subset(
@@ -592,26 +593,26 @@ class AssetBackfillData(NamedTuple):
         dynamic_partitions_store: DynamicPartitionsStore,
         asset_graph: BaseAssetGraph,
     ) -> str:
-        storage_dict = {
-            "requested_runs_for_target_roots": self.requested_runs_for_target_roots,
-            "serialized_target_subset": self.target_subset.to_storage_dict(
-                dynamic_partitions_store=dynamic_partitions_store,
-                asset_graph=asset_graph,
-            ),
-            "latest_storage_id": self.latest_storage_id,
-            "serialized_requested_subset": self.requested_subset.to_storage_dict(
-                dynamic_partitions_store=dynamic_partitions_store,
-                asset_graph=asset_graph,
-            ),
-            "serialized_materialized_subset": self.materialized_subset.to_storage_dict(
-                dynamic_partitions_store=dynamic_partitions_store,
-                asset_graph=asset_graph,
-            ),
-            "serialized_failed_subset": self.failed_and_downstream_subset.to_storage_dict(
-                dynamic_partitions_store=dynamic_partitions_store,
-                asset_graph=asset_graph,
-            ),
-        }
+        with partition_loading_context(
+            effective_dt=self.backfill_start_datetime,
+            dynamic_partitions_store=dynamic_partitions_store,
+        ):
+            storage_dict = {
+                "requested_runs_for_target_roots": self.requested_runs_for_target_roots,
+                "serialized_target_subset": self.target_subset.to_storage_dict(
+                    asset_graph=asset_graph
+                ),
+                "latest_storage_id": self.latest_storage_id,
+                "serialized_requested_subset": self.requested_subset.to_storage_dict(
+                    asset_graph=asset_graph
+                ),
+                "serialized_materialized_subset": self.materialized_subset.to_storage_dict(
+                    asset_graph=asset_graph
+                ),
+                "serialized_failed_subset": self.failed_and_downstream_subset.to_storage_dict(
+                    asset_graph=asset_graph
+                ),
+            }
         return json.dumps(storage_dict)
 
 
@@ -852,11 +853,7 @@ def _check_target_partitions_subset_is_valid(
         else:
             # Check that all target partitions still exist. If so, the backfill can continue.a
             existent_partitions_subset = (
-                partitions_def.subset_with_all_partitions(
-                    current_time=instance_queryer.evaluation_time,
-                    dynamic_partitions_store=instance_queryer,
-                )
-                & target_partitions_subset
+                partitions_def.subset_with_all_partitions() & target_partitions_subset
             )
             removed_partitions_subset = target_partitions_subset - existent_partitions_subset
             if len(removed_partitions_subset) > 0:
@@ -1434,6 +1431,23 @@ def execute_asset_backfill_iteration_inner(
     This is a generator so that we can return control to the daemon and let it heartbeat during
     expensive operations.
     """
+    # ensures that all partition operations use the same effective_dt and share a dynamic partition cache
+    with partition_loading_context(
+        effective_dt=asset_graph_view.effective_dt,
+        dynamic_partitions_store=asset_graph_view.get_inner_queryer_for_back_compat(),
+    ):
+        return _execute_asset_backfill_iteration_inner(
+            backfill_id, asset_backfill_data, asset_graph_view, backfill_start_timestamp, logger
+        )
+
+
+def _execute_asset_backfill_iteration_inner(
+    backfill_id: str,
+    asset_backfill_data: AssetBackfillData,
+    asset_graph_view: AssetGraphView,
+    backfill_start_timestamp: float,
+    logger: logging.Logger,
+) -> AssetBackfillIterationResult:
     instance_queryer = asset_graph_view.get_inner_queryer_for_back_compat()
     asset_graph: RemoteWorkspaceAssetGraph = cast(
         "RemoteWorkspaceAssetGraph", asset_graph_view.asset_graph
