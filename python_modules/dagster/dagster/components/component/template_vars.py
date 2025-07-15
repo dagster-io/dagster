@@ -39,9 +39,7 @@ def template_var(
 
     Functions decorated with @template_var can accept 0 or 1 parameters:
     - 0 parameters: Simple value generation or function factory
-    - 1 parameter: Receives ComponentDeclLoadContext for accessing component loading context. This
-      is for cases when the udf needs access to information about the project, such as its location
-      in the file system.
+    - 1 parameter: Receives ComponentDeclLoadContext for accessing component loading context. This is for cases when the udf needs access to information about the project, such as its location in the file system.
 
     Args:
         fn: The function to decorate as a template variable. If None, returns a decorator
