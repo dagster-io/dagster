@@ -1403,7 +1403,7 @@ def _asset_graph_subset_to_str(
     asset_graph: BaseAssetGraph,
 ) -> str:
     return_strs = []
-    asset_subsets = asset_graph_subset.iterate_asset_subsets(asset_graph)
+    asset_subsets = asset_graph_subset.iterate_asset_subsets()
 
     for subset in asset_subsets:
         if subset.is_partitioned:
