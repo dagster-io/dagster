@@ -123,4 +123,5 @@ export const unsupportedAttributeMessages = {
   column: 'column filtering is available in Dagster+',
   table_name: 'table_name filtering is available in Dagster+',
   changed_in_branch: 'changed_in_branch filtering is available in Dagster+ branch deployments',
+  status: 'status filtering is available in Dagster+',
 };
