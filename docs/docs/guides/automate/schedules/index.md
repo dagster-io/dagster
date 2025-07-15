@@ -24,14 +24,14 @@ A basic schedule is defined by a `JobDefinition` and a `cron_schedule` using the
 
 ## Run schedules in a different timezone
 
-By default, schedules without a timezone will run in Coordinated Universal Time (UTC). To run a schedule in a different timezone, set the `timezone` parameter:
+By default, schedules without a timezone will run in Coordinated Universal Time (UTC). To run a schedule in a different timezone, set the `execution_timezone` parameter:
 
 ```python
-daily_schedule = ScheduleDefinition(
+daily_schedule = dg.ScheduleDefinition(
     job=daily_refresh_job,
     cron_schedule="0 0 * * *",
     # highlight-next-line
-    timezone="America/Los_Angeles",
+    execution_timezone="America/Los_Angeles",
 )
 ```
 
