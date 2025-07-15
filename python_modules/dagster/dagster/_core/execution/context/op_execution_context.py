@@ -35,7 +35,6 @@ from dagster._core.execution.context.system import StepExecutionContext
 from dagster._core.instance import DagsterInstance
 from dagster._core.log_manager import DagsterLogManager
 from dagster._core.storage.dagster_run import DagsterRun
-from dagster._core.types.dagster_type import resolve_dagster_type
 from dagster._utils.forked_pdb import ForkedPdb
 
 
@@ -1280,24 +1279,18 @@ class OpExecutionContext(AbstractComputeExecutionContext):
         python_type: Optional[type] = None,
         partition_key: Optional[str] = None,
     ) -> Any:
-        from dagster._core.definitions.input import InputDefinition
-        from dagster._core.execution.plan.plan import FromLoadableAsset
+        from dagster._core.storage.asset_value_loader import AssetValueLoader
 
-        result = None
-        result_found = False
-        for event_or_input_value in FromLoadableAsset().load_input_object(
-            self._step_execution_context,
-            InputDefinition(
-                name=asset_key.to_user_string(),
-                dagster_type=resolve_dagster_type(python_type),
-                asset_key=asset_key,
-                asset_partitions={partition_key} if partition_key else None,
-            ),
-        ):
-            if isinstance(event_or_input_value, DagsterEvent):
-                self._events.append(event_or_input_value)
-            else:
-                result = event_or_input_value
-                result_found = True
-        check.invariant(result_found, "No value found for asset key")
-        return result
+        loader = AssetValueLoader(
+            assets_defs_by_key={
+                asset_key: self._step_execution_context.job_def.asset_layer.get(
+                    asset_key
+                ).assets_def
+            },
+            instance=self.instance,
+        )
+        return loader.load_asset_value(
+            asset_key,
+            python_type=python_type,
+            partition_key=partition_key,
+        )

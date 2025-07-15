@@ -1,3 +1,5 @@
+import tempfile
+
 import dagster as dg
 import dagster._check as check
 import pytest
@@ -583,3 +585,40 @@ def test_load_asset_value_with_complex_types():
     result = global_asset_job.execute_in_process()
     assert result.success
     assert result.output_for_node("downstream_asset") == 7  # 5 + 2
+
+
+def test_load_asset_value_multiple_upstream_partition_keys():
+    with tempfile.TemporaryDirectory() as temp_dir:
+        io_manager = FilesystemIOManager(base_dir=temp_dir)
+        partitions = StaticPartitionsDefinition(["2024-01-01", "2024-01-02", "2024-01-03"])
+
+        @dg.asset(io_manager_key="partitioned_io_manager", partitions_def=partitions)
+        def partitioned_source_asset(context: AssetExecutionContext):
+            assert context.has_partition_key
+            return int(context.partition_key.split("-")[-1])
+
+        @dg.asset(io_manager_key="partitioned_io_manager", deps=[partitioned_source_asset])
+        def downstream_asset(context: AssetExecutionContext):
+            return (
+                context.load_asset_value(partitioned_source_asset.key, partition_key="2024-01-01")
+                + context.load_asset_value(partitioned_source_asset.key, partition_key="2024-01-02")
+                + context.load_asset_value(partitioned_source_asset.key, partition_key="2024-01-03")
+            )
+
+        defs = Definitions(
+            assets=[partitioned_source_asset, downstream_asset],
+            resources={"partitioned_io_manager": io_manager},
+        )
+        global_asset_job = defs.get_implicit_global_asset_job_def()
+
+        # Materialize each partition
+        for partition_key in ["2024-01-01", "2024-01-02", "2024-01-03"]:
+            result = global_asset_job.execute_in_process(
+                partition_key=partition_key,
+                asset_selection=[partitioned_source_asset.key],
+            )
+            assert result.success
+
+        result = global_asset_job.execute_in_process(asset_selection=[downstream_asset.key])
+        assert result.success
+        assert result.output_for_node("downstream_asset") == 6
