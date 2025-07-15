@@ -1,16 +1,17 @@
 import os
 import sys
+import dagster as dg
+import logging 
 
 # Add the parent directory to Python path to find loguru_bridge
 parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if parent_dir not in sys.path:
     sys.path.insert(0, parent_dir)
 
+# Import after path modification
+from loguru import logger
 from loguru_bridge import dagster_context_sink, loguru_enabled
 
-from loguru import logger
-import logging
-import dagster as dg
 
 # Print configuration info (using environment variables now)
 print("Loguru configuration:")
@@ -64,7 +65,29 @@ def my_test_asset(context: dg.AssetExecutionContext):
         context.log.error("This is an error log message")
         logger.debug("my_test_asset completed without fatal issues.")
 
+@dg.asset
+def classic_logger_test(context: dg.AssetExecutionContext):
+    logger.add(dagster_context_sink(context), level="DEBUG", format="{message}")
+
+    py_logger = logging.getLogger("classic_logger")
+    py_logger.setLevel(logging.DEBUG)
+
+    # Dagster context.log zaten bridge'li olduğu için görünür olur
+    handler = logging.StreamHandler()
+    handler.setLevel(logging.DEBUG)
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    handler.setFormatter(formatter)
+    py_logger.addHandler(handler)
+
+    py_logger.debug("DEBUG log from classic Python logger")
+    py_logger.info("INFO log from classic Python logger")
+    py_logger.warning("WARNING log from classic Python logger")
+    py_logger.error("ERROR log from classic Python logger")
+    py_logger.critical("CRITICAL log from classic Python logger")
+
+    context.log.info("Finished classic_logger_test")
+
 # Dagster Definitions
 defs = dg.Definitions(
-    assets=[my_logger, my_asset, calculate_sum, greet, my_test_asset]
+    assets=[my_logger, my_asset, calculate_sum, greet, my_test_asset, classic_logger_test]
 )

@@ -1,0 +1,11 @@
+[32m2025-07-15 22:12:44 +0000[0m - dagster - [34mDEBUG[0m - __ASSET_JOB - 3c24a9a2-ad97-4f41-a451-b7183a6129e4 - 95987 - LOGS_CAPTURED - Started capturing logs in process (pid: 95987).
+[32m2025-07-15 22:12:44 +0000[0m - dagster - [34mDEBUG[0m - __ASSET_JOB - 3c24a9a2-ad97-4f41-a451-b7183a6129e4 - 95987 - greet - STEP_START - Started execution of step "greet".
+[32m2025-07-15 22:12:44.902[0m | [34m[1mDEBUG   [0m | [36mmy_module[0m:[36mgreet[0m:[36m54[0m - [34m[1mPreparing greeting message.[0m
+[32m2025-07-15 22:12:44 +0000[0m - dagster - [34mDEBUG[0m - __ASSET_JOB - 3c24a9a2-ad97-4f41-a451-b7183a6129e4 - greet - Preparing greeting message.
+[32m2025-07-15 22:12:44.926[0m | [1mINFO    [0m | [36mmy_module[0m:[36mgreet[0m:[36m56[0m - [1mGreetings from Dagster![0m
+[32m2025-07-15 22:12:44 +0000[0m - dagster - [34mINFO[0m - __ASSET_JOB - 3c24a9a2-ad97-4f41-a451-b7183a6129e4 - greet - Greetings from Dagster!
+[32m2025-07-15 22:12:44 +0000[0m - dagster - [34mDEBUG[0m - __ASSET_JOB - 3c24a9a2-ad97-4f41-a451-b7183a6129e4 - 95987 - greet - STEP_OUTPUT - Yielded output "result" of type "Any". (Type check passed).
+[32m2025-07-15 22:12:44 +0000[0m - dagster - [34mDEBUG[0m - __ASSET_JOB - 3c24a9a2-ad97-4f41-a451-b7183a6129e4 - greet - Writing file at: /workspaces/dagster/.tmp_dagster_home__riyp32_/storage/greet using PickledObjectFilesystemIOManager...
+[32m2025-07-15 22:12:45 +0000[0m - dagster - [34mDEBUG[0m - __ASSET_JOB - 3c24a9a2-ad97-4f41-a451-b7183a6129e4 - 95987 - greet - ASSET_MATERIALIZATION - Materialized value greet.
+[32m2025-07-15 22:12:45 +0000[0m - dagster - [34mDEBUG[0m - __ASSET_JOB - 3c24a9a2-ad97-4f41-a451-b7183a6129e4 - 95987 - greet - HANDLED_OUTPUT - Handled output "result" using IO manager "io_manager"
+[32m2025-07-15 22:12:45 +0000[0m - dagster - [34mDEBUG[0m - __ASSET_JOB - 3c24a9a2-ad97-4f41-a451-b7183a6129e4 - 95987 - greet - STEP_SUCCESS - Finished execution of step "greet" in 295ms.
