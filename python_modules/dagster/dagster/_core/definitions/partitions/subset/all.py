@@ -52,10 +52,7 @@ class AllPartitionsSubset(
         )
 
     def get_partition_keys_not_in_subset(
-        self,
-        partitions_def: PartitionsDefinition,
-        current_time: Optional[datetime] = None,
-        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
+        self, partitions_def: PartitionsDefinition
     ) -> Iterable[str]:
         return set()
 
