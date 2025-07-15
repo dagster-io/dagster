@@ -199,7 +199,6 @@ def _get_partition_set(
 def _subdivide_partition_key_range(
     partitions_def: PartitionsDefinition,
     partition_key_range: PartitionKeyRange,
-    instance: DagsterInstance,
     max_range_size: Optional[int],
 ) -> Sequence[PartitionKeyRange]:
     """Take a partition key range and subdivide it into smaller ranges of size max_range_size. This
@@ -209,9 +208,7 @@ def _subdivide_partition_key_range(
     if max_range_size is None:
         return [partition_key_range]
     else:
-        keys = partitions_def.get_partition_keys_in_range(
-            partition_key_range, dynamic_partitions_store=instance
-        )
+        keys = partitions_def.get_partition_keys_in_range(partition_key_range)
         chunks = [keys[i : i + max_range_size] for i in range(0, len(keys), max_range_size)]
         return [PartitionKeyRange(start=chunk[0], end=chunk[-1]) for chunk in chunks]
 
@@ -266,7 +263,6 @@ def _get_partitions_chunk(
                         start=run.tags[ASSET_PARTITION_RANGE_START_TAG],
                         end=run.tags[ASSET_PARTITION_RANGE_END_TAG],
                     ),
-                    instance,
                 )
             )
         elif run.tags.get(PARTITION_NAME_TAG):
@@ -288,14 +284,12 @@ def _get_partitions_chunk(
         ]
         partitions_def = partition_set.get_partitions_definition()
         partitions_subset = partitions_def.subset_with_partition_keys(to_submit)
-        partition_key_ranges = partitions_subset.get_partition_key_ranges(
-            partitions_def, dynamic_partitions_store=instance
-        )
+        partition_key_ranges = partitions_subset.get_partition_key_ranges(partitions_def)
         subdivided_ranges = [
             sr
             for r in partition_key_ranges
             for sr in _subdivide_partition_key_range(
-                partitions_def, r, instance, backfill_policy.max_partitions_per_run
+                partitions_def, r, backfill_policy.max_partitions_per_run
             )
         ]
         ranges_to_launch = subdivided_ranges[:chunk_size]

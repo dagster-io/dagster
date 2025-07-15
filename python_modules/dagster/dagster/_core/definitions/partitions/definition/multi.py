@@ -44,9 +44,6 @@ from dagster._core.types.pagination import PaginatedResults
 if TYPE_CHECKING:
     from dagster._core.definitions.partitions.subset.partitions_subset import PartitionsSubset
 
-if TYPE_CHECKING:
-    from dagster._core.definitions.partitions.subset.partitions_subset import PartitionsSubset
-
 ALLOWED_PARTITION_DIMENSION_TYPES = (
     StaticPartitionsDefinition,
     TimeWindowPartitionsDefinition,
@@ -143,7 +140,7 @@ class MultiPartitionsDefinition(PartitionsDefinition[MultiPartitionKey]):
         partition_key_range: PartitionKeyRange,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> Sequence[str]:
-        with partition_loading_context(dynamic_partitions_store=dynamic_partitions_store) as ctx:
+        with partition_loading_context(dynamic_partitions_store=dynamic_partitions_store):
             start: MultiPartitionKey = self.get_partition_key_from_str(partition_key_range.start)
             end: MultiPartitionKey = self.get_partition_key_from_str(partition_key_range.end)
 
@@ -153,7 +150,6 @@ class MultiPartitionsDefinition(PartitionsDefinition[MultiPartitionKey]):
                         start.keys_by_dimension[partition_dim.name],
                         end.keys_by_dimension[partition_dim.name],
                     ),
-                    dynamic_partitions_store=ctx.dynamic_partitions_store,
                 )
                 for partition_dim in self._partitions_defs
             ]

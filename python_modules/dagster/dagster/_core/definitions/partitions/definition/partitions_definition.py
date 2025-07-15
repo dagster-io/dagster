@@ -103,53 +103,32 @@ class PartitionsDefinition(ABC, Generic[T_str]):
             partition_keys = self.get_partition_keys()
             return partition_keys[0] if partition_keys else None
 
-    def get_subset_in_range(
-        self,
-        partition_key_range: PartitionKeyRange,
-        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
-    ) -> "PartitionsSubset":
-        with partition_loading_context(dynamic_partitions_store=dynamic_partitions_store) as ctx:
-            return self.empty_subset().with_partition_key_range(
-                partitions_def=self,
-                partition_key_range=partition_key_range,
-                dynamic_partitions_store=ctx.dynamic_partitions_store,
-            )
-
     def get_partition_keys_in_range(
-        self,
-        partition_key_range: PartitionKeyRange,
-        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
+        self, partition_key_range: PartitionKeyRange
     ) -> Sequence[T_str]:
-        with partition_loading_context(dynamic_partitions_store=dynamic_partitions_store) as ctx:
-            keys_exist = {
-                partition_key_range.start: self.has_partition_key(
-                    partition_key_range.start, dynamic_partitions_store=ctx.dynamic_partitions_store
-                ),
-                partition_key_range.end: self.has_partition_key(
-                    partition_key_range.end, dynamic_partitions_store=ctx.dynamic_partitions_store
-                ),
-            }
-            if not all(keys_exist.values()):
-                raise DagsterInvalidInvocationError(
-                    f"""Partition range {partition_key_range.start} to {partition_key_range.end} is
-                    not a valid range. Nonexistent partition keys:
-                    {list(key for key in keys_exist if keys_exist[key] is False)}"""
-                )
-
-            # in the simple case, simply return the single key in the range
-            if partition_key_range.start == partition_key_range.end:
-                return [cast("T_str", partition_key_range.start)]
-
-            # defer this call as it is potentially expensive
-            partition_keys = self.get_partition_keys(
-                dynamic_partitions_store=ctx.dynamic_partitions_store
+        keys_exist = {
+            partition_key_range.start: self.has_partition_key(partition_key_range.start),
+            partition_key_range.end: self.has_partition_key(partition_key_range.end),
+        }
+        if not all(keys_exist.values()):
+            raise DagsterInvalidInvocationError(
+                f"""Partition range {partition_key_range.start} to {partition_key_range.end} is
+                not a valid range. Nonexistent partition keys:
+                {list(key for key in keys_exist if keys_exist[key] is False)}"""
             )
-            return partition_keys[
-                partition_keys.index(partition_key_range.start) : partition_keys.index(
-                    partition_key_range.end
-                )
-                + 1
-            ]
+
+        # in the simple case, simply return the single key in the range
+        if partition_key_range.start == partition_key_range.end:
+            return [cast("T_str", partition_key_range.start)]
+
+        # defer this call as it is potentially expensive
+        partition_keys = self.get_partition_keys()
+        return partition_keys[
+            partition_keys.index(partition_key_range.start) : partition_keys.index(
+                partition_key_range.end
+            )
+            + 1
+        ]
 
     def empty_subset(self) -> "PartitionsSubset":
         return self.partitions_subset_class.create_empty_subset(self)

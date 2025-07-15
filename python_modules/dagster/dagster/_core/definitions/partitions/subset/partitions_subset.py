@@ -1,17 +1,14 @@
 from abc import ABC, abstractmethod
 from collections.abc import Iterable, Sequence
-from datetime import datetime
 from typing import Generic, Optional
 
 from typing_extensions import TypeVar
 
 from dagster._annotations import public
-from dagster._core.definitions.partitions.context import partition_loading_context
 from dagster._core.definitions.partitions.definition.partitions_definition import (
     PartitionsDefinition,
 )
 from dagster._core.definitions.partitions.partition_key_range import PartitionKeyRange
-from dagster._core.instance import DynamicPartitionsStore
 
 T_str = TypeVar("T_str", bound=str, default=str, covariant=True)
 
@@ -34,27 +31,18 @@ class PartitionsSubset(ABC, Generic[T_str]):
 
     @abstractmethod
     def get_partition_key_ranges(
-        self,
-        partitions_def: PartitionsDefinition,
-        current_time: Optional[datetime] = None,
-        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
+        self, partitions_def: PartitionsDefinition
     ) -> Sequence[PartitionKeyRange]: ...
 
     @abstractmethod
     def with_partition_keys(self, partition_keys: Iterable[str]) -> "PartitionsSubset[T_str]": ...
 
     def with_partition_key_range(
-        self,
-        partitions_def: PartitionsDefinition[T_str],
-        partition_key_range: PartitionKeyRange,
-        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
+        self, partitions_def: PartitionsDefinition[T_str], partition_key_range: PartitionKeyRange
     ) -> "PartitionsSubset[T_str]":
-        with partition_loading_context(dynamic_partitions_store=dynamic_partitions_store) as ctx:
-            return self.with_partition_keys(
-                partitions_def.get_partition_keys_in_range(
-                    partition_key_range, dynamic_partitions_store=ctx.dynamic_partitions_store
-                )
-            )
+        return self.with_partition_keys(
+            partitions_def.get_partition_keys_in_range(partition_key_range)
+        )
 
     def __or__(self, other: "PartitionsSubset") -> "PartitionsSubset":
         from dagster._core.definitions.partitions.subset.all import AllPartitionsSubset
