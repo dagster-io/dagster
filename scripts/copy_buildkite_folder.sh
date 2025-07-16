@@ -80,6 +80,11 @@ if [ -d "$BUILDKITE_FOLDER_GIT_REPO_DIR/.buildkite" ]; then
         cp -r "$BUILDKITE_FOLDER_GIT_REPO_DIR/.buildkite/scripts" "$REPO_ROOT/.buildkite/"
         echo "Copied scripts"
     fi
+
+    if [ -d "$BUILDKITE_FOLDER_GIT_REPO_DIR/.buildkite/buildkite_shared" ]; then
+        cp -r "$BUILDKITE_FOLDER_GIT_REPO_DIR/.buildkite/buildkite_shared" "$REPO_ROOT/.buildkite/dagster-buildkite"
+        echo "Copied shared"
+    fi
     
     echo "Successfully copied .buildkite folder to current repository"
 else
