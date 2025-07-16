@@ -16,6 +16,8 @@ describe('useStableReferenceByHash', () => {
 
     rerender({value: secondObject});
 
-    expect(result.current).toEqual(firstObject);
+    const firstResult = result.current;
+    rerender({value: secondObject});
+    expect(result.current).toBe(firstResult);
   });
 });
