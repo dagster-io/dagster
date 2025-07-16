@@ -123,7 +123,7 @@ def core_execute_in_process(
     with ephemeral_instance_if_missing(instance) as execute_instance:
         execution_plan = create_execution_plan(
             job,
-            execute_instance.get_ref(),
+            instance=execute_instance,
             run_config=run_config,
         )
 

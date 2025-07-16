@@ -1238,7 +1238,7 @@ class DagsterInstance(DynamicPartitionsStore):
         if not execution_plan:
             execution_plan = create_execution_plan(
                 job=job_def,
-                instance_ref=self.get_ref(),
+                instance=self,
                 run_config=run_config,
                 tags=tags,
                 repository_load_data=repository_load_data,

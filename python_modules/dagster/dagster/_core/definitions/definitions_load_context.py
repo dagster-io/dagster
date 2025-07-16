@@ -3,15 +3,13 @@ from abc import ABC, abstractmethod
 from collections.abc import Mapping, Sequence
 from enum import Enum
 from functools import cached_property
-from typing import TYPE_CHECKING, Any, ClassVar, Generic, Optional, TypeVar, cast
+from typing import TYPE_CHECKING, Any, ClassVar, Generic, Optional, TypeVar, Union, cast
 
-from dagster_shared import check
 from dagster_shared.serdes.serdes import PackableValue, deserialize_value, serialize_value
 
 from dagster._core.definitions.assets.definition.cacheable_assets_definition import (
     AssetsDefinitionCacheableData,
 )
-from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.metadata.metadata_value import (
     CodeLocationReconstructionMetadataValue,
 )
@@ -19,7 +17,9 @@ from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.instance import DagsterInstance
 
 if TYPE_CHECKING:
+    from dagster._core.definitions.definitions_class import Definitions
     from dagster._core.definitions.repository_definition import RepositoryLoadData
+    from dagster._core.instance.ref import InstanceRef
 
 
 class DefinitionsLoadType(Enum):
@@ -49,7 +49,7 @@ class DefinitionsLoadContext:
     """
 
     _instance: ClassVar[Optional["DefinitionsLoadContext"]] = None
-    _dagster_instance: ClassVar[Optional["DagsterInstance"]] = None
+    _dagster_instance: ClassVar[Optional[Union["DagsterInstance", "InstanceRef"]]] = None
 
     def __init__(
         self,
@@ -73,14 +73,21 @@ class DefinitionsLoadContext:
         cls._instance = instance
 
     @classmethod
-    def set_dagster_instance(cls, instance: "DagsterInstance") -> None:
+    def set_dagster_instance(cls, instance: Union["DagsterInstance", "InstanceRef"]) -> None:
         """Set the current DagsterInstance."""
         cls._dagster_instance = instance
 
     @classmethod
     def get_dagster_instance(cls) -> "DagsterInstance":
         """Get the current DagsterInstance."""
-        return check.not_none(cls._dagster_instance)
+        from dagster._core.instance.ref import InstanceRef
+
+        if isinstance(cls._dagster_instance, DagsterInstance):
+            return cls._dagster_instance
+        elif isinstance(cls._dagster_instance, InstanceRef):
+            return DagsterInstance.from_ref(cls._dagster_instance)
+        else:
+            raise ValueError("Invalid instance type")
 
     @classmethod
     def is_set(cls) -> bool:
@@ -186,7 +193,7 @@ class StateBackedDefinitionsLoader(ABC, Generic[TState]):
         ...
 
     @abstractmethod
-    def defs_from_state(self, state: TState) -> Definitions:
+    def defs_from_state(self, state: TState) -> "Definitions":
         """Subclasses must implement this method. It is invoked whenever the code location
         is loading, whether it be initializaton or reconstruction. In the case of
         intialization, it takes the result of fetch_backing state that just happened.
@@ -212,7 +219,7 @@ class StateBackedDefinitionsLoader(ABC, Generic[TState]):
 
         return state
 
-    def build_defs(self) -> Definitions:
+    def build_defs(self) -> "Definitions":
         state = self.get_or_fetch_state()
 
         return self.defs_from_state(state).with_reconstruction_metadata(

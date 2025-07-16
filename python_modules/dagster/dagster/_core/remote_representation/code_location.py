@@ -541,7 +541,7 @@ class InProcessCodeLocation(CodeLocation):
             run_config=run_config,
             step_keys_to_execute=step_keys_to_execute,
             known_state=known_state,
-            instance_ref=instance.get_ref(),
+            instance=self._instance,
         )
         return RemoteExecutionPlan(
             execution_plan_snapshot=snapshot_from_execution_plan(

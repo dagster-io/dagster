@@ -520,10 +520,10 @@ def get_external_execution_plan_snapshot(
     return snapshot_from_execution_plan(
         create_execution_plan(
             job_def,
+            instance=args.instance_ref or DagsterInstance.ephemeral(),
             run_config=args.run_config,
             step_keys_to_execute=args.step_keys_to_execute,
             known_state=args.known_state,
-            instance_ref=args.instance_ref,
             repository_load_data=repo_def.repository_load_data,
         ),
         args.job_snapshot_id,
