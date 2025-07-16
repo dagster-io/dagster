@@ -534,7 +534,7 @@ def _get_subsets_by_key(
 ) -> Mapping[dg.AssetKey, SerializableEntitySubset[dg.AssetKey]]:
     assert backfill.asset_backfill_data is not None
     target_subset = backfill.asset_backfill_data.target_subset
-    return {s.key: s for s in target_subset.iterate_asset_subsets(asset_graph)}
+    return {s.key: s for s in target_subset.iterate_asset_subsets()}
 
 
 @pytest.mark.parametrize("location", ["backfill_simple_user_code", "backfill_simple_non_user_code"])
