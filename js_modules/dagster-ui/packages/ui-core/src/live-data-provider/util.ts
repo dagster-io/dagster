@@ -1,5 +1,9 @@
 // How many assets to fetch at once
 const urlParams = new URLSearchParams(window.location.search);
+
+const urlLiveDataBatchSize = parseInt(urlParams.get('live-data-batch-size') ?? '0', 10);
+const urlLiveDataBatchThreads = parseInt(urlParams.get('live-data-parallel-fetches') ?? '0', 10);
+
 const liveDataBatchSize = parseInt(urlParams.get('live-data-batch-size') ?? '10', 10);
 const batchThreads = parseInt(urlParams.get('live-data-parallel-fetches') ?? '2', 10);
 
@@ -11,7 +15,7 @@ export const SUBSCRIPTION_MAX_POLL_RATE = 2 * 1000;
 
 export const threadIDToLimits = {
   ['AssetHealth' as string]: {
-    batchSize: 250,
-    parallelThreads: 4,
+    batchSize: urlLiveDataBatchSize ?? 250,
+    parallelThreads: urlLiveDataBatchThreads ?? 4,
   },
 };
