@@ -4,8 +4,8 @@ const urlParams = new URLSearchParams(window.location.search);
 const urlLiveDataBatchSize = parseInt(urlParams.get('live-data-batch-size') ?? '0', 10);
 const urlLiveDataBatchThreads = parseInt(urlParams.get('live-data-parallel-fetches') ?? '0', 10);
 
-const liveDataBatchSize = parseInt(urlParams.get('live-data-batch-size') ?? '10', 10);
-const batchThreads = parseInt(urlParams.get('live-data-parallel-fetches') ?? '2', 10);
+const liveDataBatchSize = urlLiveDataBatchSize ?? 10;
+const batchThreads = urlLiveDataBatchThreads ?? 2;
 
 export const BATCH_SIZE = isNaN(liveDataBatchSize) ? 10 : liveDataBatchSize;
 export const BATCH_PARALLEL_FETCHES = isNaN(batchThreads) ? 2 : batchThreads;
