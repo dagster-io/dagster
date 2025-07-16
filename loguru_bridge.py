@@ -2,6 +2,7 @@ from loguru import logger
 import logging
 import sys
 import os
+from functools import wraps
 
 class DagsterLogHandler(logging.Handler):
     def emit(self, record):
@@ -21,13 +22,13 @@ def get_loguru_config():
         "file_path": os.getenv("DAGSTER_LOGURU_FILE_PATH", "/tmp/dagster_loguru_output.log")
     }
 
-# Configure loguru
+# Configure loguru at module load
 logger.remove()
 logger.add(sys.stderr, level="DEBUG")
 logger.add(DagsterLogHandler(), level="DEBUG")
 logger.success("This is a SUCCESS from loguru_bridge.py")
 
-# Get configuration and conditionally add file logging
+# Conditionally add file logging
 config = get_loguru_config()
 if config.get("to_file", False):
     logger.add(
@@ -36,7 +37,7 @@ if config.get("to_file", False):
         format=config.get("format", "{message}")
     )
 
-# loguru_bridge.py
+# Used inside assets
 def dagster_context_sink(context):
     def sink_func(msg):
         record = msg.record
@@ -45,3 +46,10 @@ def dagster_context_sink(context):
         log_method(record["message"])
     return sink_func
 
+# Decorator that injects Loguru logger into the asset
+def with_loguru_logger(asset_fn):
+    @wraps(asset_fn)  # 👈 Bu satır çok kritik!
+    def wrapper(context, *args, **kwargs):
+        logger.add(dagster_context_sink(context), level="DEBUG")
+        return asset_fn(context, *args, **kwargs)
+    return wrapper

@@ -1,0 +1,15 @@
+[32m2025-07-16 17:46:38 +0000[0m - dagster - [34mDEBUG[0m - __ASSET_JOB - db6e6e46-82d1-4924-9d13-55710e92e30a - 85043 - LOGS_CAPTURED - Started capturing logs in process (pid: 85043).
+[32m2025-07-16 17:46:38 +0000[0m - dagster - [34mDEBUG[0m - __ASSET_JOB - db6e6e46-82d1-4924-9d13-55710e92e30a - 85043 - my_test_asset - STEP_START - Started execution of step "my_test_asset".
+[32m2025-07-16 17:46:38.650[0m | [33m[1mWARNING [0m | [36mmy_module[0m:[36mmy_test_asset[0m:[36m59[0m - [33m[1mThis is a warning log message[0m
+2025-07-16 17:46:38.650 | WARNING  | my_module:my_test_asset:59 - This is a warning log message
+[32m2025-07-16 17:46:38 +0000[0m - dagster - [34mWARNING[0m - __ASSET_JOB - db6e6e46-82d1-4924-9d13-55710e92e30a - my_test_asset - This is a warning log message
+[32m2025-07-16 17:46:38.670[0m | [31m[1mERROR   [0m | [36mmy_module[0m:[36mmy_test_asset[0m:[36m60[0m - [31m[1mThis is an error log message[0m
+2025-07-16 17:46:38.670 | ERROR    | my_module:my_test_asset:60 - This is an error log message
+[32m2025-07-16 17:46:38 +0000[0m - dagster - [34mERROR[0m - [31m__ASSET_JOB - db6e6e46-82d1-4924-9d13-55710e92e30a - my_test_asset - This is an error log message[0m
+[32m2025-07-16 17:46:38.682[0m | [34m[1mDEBUG   [0m | [36mmy_module[0m:[36mmy_test_asset[0m:[36m61[0m - [34m[1mmy_test_asset completed without fatal issues.[0m
+[32m2025-07-16 17:46:38 +0000[0m - dagster - [34mDEBUG[0m - __ASSET_JOB - db6e6e46-82d1-4924-9d13-55710e92e30a - my_test_asset - my_test_asset completed without fatal issues.
+[32m2025-07-16 17:46:38 +0000[0m - dagster - [34mDEBUG[0m - __ASSET_JOB - db6e6e46-82d1-4924-9d13-55710e92e30a - 85043 - my_test_asset - STEP_OUTPUT - Yielded output "result" of type "Any". (Type check passed).
+[32m2025-07-16 17:46:38 +0000[0m - dagster - [34mDEBUG[0m - __ASSET_JOB - db6e6e46-82d1-4924-9d13-55710e92e30a - my_test_asset - Writing file at: /workspaces/dagster/dagster_home/artifacts/storage/my_test_asset using PickledObjectFilesystemIOManager...
+[32m2025-07-16 17:46:38 +0000[0m - dagster - [34mDEBUG[0m - __ASSET_JOB - db6e6e46-82d1-4924-9d13-55710e92e30a - 85043 - my_test_asset - ASSET_MATERIALIZATION - Materialized value my_test_asset.
+[32m2025-07-16 17:46:38 +0000[0m - dagster - [34mDEBUG[0m - __ASSET_JOB - db6e6e46-82d1-4924-9d13-55710e92e30a - 85043 - my_test_asset - HANDLED_OUTPUT - Handled output "result" using IO manager "io_manager"
+[32m2025-07-16 17:46:38 +0000[0m - dagster - [34mDEBUG[0m - __ASSET_JOB - db6e6e46-82d1-4924-9d13-55710e92e30a - 85043 - my_test_asset - STEP_SUCCESS - Finished execution of step "my_test_asset" in 198ms.
