@@ -426,9 +426,7 @@ def test_launch_asset_backfill_all_partitions_asset_selection():
                 target_subset.get_partitions_subset(AssetKey("asset2")).get_partition_keys()
                 == all_partition_keys
             )
-            assert not target_subset.get_partitions_subset(
-                AssetKey("asset1"), asset_graph=repo.asset_graph
-            ).get_partition_keys()
+            assert AssetKey("asset1") not in target_subset.asset_keys
 
 
 def test_launch_asset_backfill_partitions_by_asset():

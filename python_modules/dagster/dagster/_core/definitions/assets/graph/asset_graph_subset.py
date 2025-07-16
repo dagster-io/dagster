@@ -77,19 +77,8 @@ class AssetGraphSubset(NamedTuple):
         else:
             return None
 
-    def get_partitions_subset(
-        self, asset_key: AssetKey, asset_graph: Optional[BaseAssetGraph] = None
-    ) -> PartitionsSubset:
-        if asset_graph:
-            partitions_def = asset_graph.get(asset_key).partitions_def
-            if partitions_def is None:
-                check.failed("Can only call get_partitions_subset on a partitioned asset")
-
-            return self.partitions_subsets_by_asset_key.get(
-                asset_key, partitions_def.empty_subset()
-            )
-        else:
-            return self.partitions_subsets_by_asset_key[asset_key]
+    def get_partitions_subset(self, asset_key: AssetKey) -> PartitionsSubset:
+        return self.partitions_subsets_by_asset_key[asset_key]
 
     def iterate_asset_partitions(self) -> Iterable[AssetKeyPartitionKey]:
         for (
