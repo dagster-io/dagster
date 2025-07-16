@@ -12,10 +12,8 @@ describe('useStableReferenceByHash', () => {
       initialProps: {value: firstObject},
     });
 
-    // Each hook should maintain its own reference
     expect(result.current).toEqual(firstObject);
 
-    // Test that references remain stable even when props change
     rerender({value: secondObject});
 
     expect(result.current).toEqual(firstObject);
