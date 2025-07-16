@@ -103,7 +103,7 @@ from dagster._time import datetime_from_timestamp
 from dagster._utils.error import SerializableErrorInfo
 from dagster._utils.warnings import suppress_dagster_warnings
 from dagster.components.core.defs_module import (
-    CompositeComponent,
+    CompositePyComponent,
     CompositeYamlComponent,
     DagsterDefsComponent,
     DefsFolderComponent,
@@ -1950,7 +1950,7 @@ class ComponentTreeSnap:
                 (
                     DefsFolderComponent,
                     CompositeYamlComponent,
-                    CompositeComponent,
+                    CompositePyComponent,
                     DagsterDefsComponent,
                 ),
             ):

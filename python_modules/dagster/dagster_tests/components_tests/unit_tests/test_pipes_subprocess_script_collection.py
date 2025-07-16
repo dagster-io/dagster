@@ -27,7 +27,8 @@ def test_load_from_path() -> None:
             │   └── component.py[foo]
             ├── multiple_definitions_calls
             │   └── defs.py
-            ├── script_python_decl/component.py
+            ├── script_python_decl
+            │   └── component.py
             ├── scripts
             │   ├── defs.yaml[0] (PythonScriptComponent)
             │   ├── defs.yaml[1] (PythonScriptComponent)
@@ -52,7 +53,8 @@ def test_load_from_path() -> None:
             │   └── component.py[foo] (loaded)
             ├── multiple_definitions_calls (loaded)
             │   └── defs.py (loaded)
-            ├── script_python_decl/component.py (loaded)
+            ├── script_python_decl (loaded)
+            │   └── component.py (loaded)
             ├── scripts (loaded)
             │   ├── defs.yaml[0] (PythonScriptComponent) (loaded)
             │   ├── defs.yaml[1] (PythonScriptComponent) (loaded)
@@ -101,7 +103,8 @@ def test_load_from_path() -> None:
             │   └── component.py[foo] (built)
             ├── multiple_definitions_calls (built)
             │   └── defs.py (built)
-            ├── script_python_decl/component.py (built)
+            ├── script_python_decl (built)
+            │   └── component.py (built)
             ├── scripts (built)
             │   ├── defs.yaml[0] (PythonScriptComponent) (built)
             │   ├── defs.yaml[1] (PythonScriptComponent) (built)
