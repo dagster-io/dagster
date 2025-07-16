@@ -505,6 +505,7 @@ def _execute_step_command_body(
 
         execution_plan = create_execution_plan(
             recon_job,
+            instance.get_ref(),
             run_config=dagster_run.run_config,
             step_keys_to_execute=args.step_keys_to_execute,
             known_state=args.known_state,

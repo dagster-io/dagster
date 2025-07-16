@@ -9,6 +9,7 @@ from multiprocessing.process import BaseProcess
 from typing import TYPE_CHECKING, Any, Optional
 
 from dagster import _check as check
+from dagster._core.definitions.definitions_load_context import DefinitionsLoadContext
 from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.definitions.reconstruct import ReconstructableJob
 from dagster._core.definitions.repository_definition import RepositoryLoadData
@@ -73,6 +74,8 @@ class MultiprocessExecutorChildProcessCommand(ChildProcessCommand):
     def execute(self) -> Iterator[DagsterEvent]:
         recon_job = self.recon_pipeline
         with DagsterInstance.from_ref(self.instance_ref) as instance:
+            DefinitionsLoadContext.set_dagster_instance(instance)
+
             done_event = threading.Event()
             start_termination_thread(self.term_event, done_event)
             try:
@@ -89,6 +92,7 @@ class MultiprocessExecutorChildProcessCommand(ChildProcessCommand):
                 )
                 execution_plan = create_execution_plan(
                     job=recon_job,
+                    instance_ref=instance.get_ref(),
                     run_config=self.run_config,
                     step_keys_to_execute=[self.step_key],
                     known_state=self.known_state,

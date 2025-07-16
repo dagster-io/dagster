@@ -195,6 +195,7 @@ def step_run_ref_to_step_context(
 
     execution_plan = create_execution_plan(
         job,
+        instance.get_ref(),
         step_run_ref.run_config,
         step_keys_to_execute=[step_run_ref.step_key],
         known_state=step_run_ref.known_state,

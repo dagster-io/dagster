@@ -1,9 +1,11 @@
+import tempfile
 from abc import ABC, abstractmethod
 from collections.abc import Mapping, Sequence
 from enum import Enum
 from functools import cached_property
 from typing import TYPE_CHECKING, Any, ClassVar, Generic, Optional, TypeVar, cast
 
+from dagster_shared import check
 from dagster_shared.serdes.serdes import PackableValue, deserialize_value, serialize_value
 
 from dagster._core.definitions.assets.definition.cacheable_assets_definition import (
@@ -14,6 +16,7 @@ from dagster._core.definitions.metadata.metadata_value import (
     CodeLocationReconstructionMetadataValue,
 )
 from dagster._core.errors import DagsterInvariantViolationError
+from dagster._core.instance import DagsterInstance
 
 if TYPE_CHECKING:
     from dagster._core.definitions.repository_definition import RepositoryLoadData
@@ -46,6 +49,7 @@ class DefinitionsLoadContext:
     """
 
     _instance: ClassVar[Optional["DefinitionsLoadContext"]] = None
+    _dagster_instance: ClassVar[Optional["DagsterInstance"]] = None
 
     def __init__(
         self,
@@ -67,6 +71,16 @@ class DefinitionsLoadContext:
     def set(cls, instance: "DefinitionsLoadContext") -> None:
         """Get the current DefinitionsLoadContext."""
         cls._instance = instance
+
+    @classmethod
+    def set_dagster_instance(cls, instance: "DagsterInstance") -> None:
+        """Set the current DagsterInstance."""
+        cls._dagster_instance = instance
+
+    @classmethod
+    def get_dagster_instance(cls) -> "DagsterInstance":
+        """Get the current DagsterInstance."""
+        return check.not_none(cls._dagster_instance)
 
     @classmethod
     def is_set(cls) -> bool:
@@ -204,3 +218,55 @@ class StateBackedDefinitionsLoader(ABC, Generic[TState]):
         return self.defs_from_state(state).with_reconstruction_metadata(
             {self.defs_key: serialize_value(state)}
         )
+
+
+from pathlib import Path
+
+
+class StateBacked:
+    @property
+    @abstractmethod
+    def _defs_key(self) -> str:
+        """The unique key for the definitions. Must be unique per code location."""
+        ...
+
+    def retrieve_state_to_path(self, path: Path, instance: DagsterInstance) -> None:
+        # if reconstruction, then we know the unique version identifier for the information in the blob store
+        # fetch from blob store using version identifier
+
+        # otherwise, fetch the version identifier from the blob store from the path
+        # then, fetch the definitions from the blob store using the version identifier
+        """Retrieves the state for this object to the specified path from the blob store."""
+        context = DefinitionsLoadContext.get()
+        version = (
+            cast("str", deserialize_value(context.reconstruction_metadata[self._defs_key]))
+            if (
+                context.load_type == DefinitionsLoadType.RECONSTRUCTION
+                and self._defs_key in context.reconstruction_metadata
+            )
+            else instance.run_storage.get_cursor_values({f"version_{self._defs_key}"}).get(
+                f"version_{self._defs_key}"
+            )
+        )
+        context.add_to_pending_reconstruction_metadata(self._defs_key, serialize_value(version))
+
+        state_from_blob_store = (
+            instance.run_storage.get_cursor_values({version}).get(version) if version else None
+        )
+        if state_from_blob_store:
+            path.write_bytes(state_from_blob_store.encode("utf-8"))
+
+    def build_state_and_store_in_blobstore(self, instance: DagsterInstance) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            path = Path(temp_dir) / "state.json"
+            version_id = self.build_state_to_path(path)
+
+            instance.run_storage.set_cursor_values({version_id: path.read_text()})
+            instance.run_storage.set_cursor_values({f"version_{self._defs_key}": version_id})
+
+    def build_state_to_path(self, path: Path) -> str:
+        """Build a state file at the specified path representing external state.
+
+        Returns a unique identifier for the state file, e.g. a SHA identifier.
+        """
+        raise NotImplementedError()
