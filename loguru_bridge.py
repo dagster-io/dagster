@@ -48,7 +48,7 @@ def dagster_context_sink(context):
 
 # Decorator that injects Loguru logger into the asset
 def with_loguru_logger(asset_fn):
-    @wraps(asset_fn)  # 👈 Bu satır çok kritik!
+    @wraps(asset_fn)  
     def wrapper(context, *args, **kwargs):
         logger.add(dagster_context_sink(context), level="DEBUG")
         return asset_fn(context, *args, **kwargs)
