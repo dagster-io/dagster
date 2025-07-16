@@ -10,7 +10,9 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 echo "Repository root: $REPO_ROOT"
 
 # Parse BUILDKITE_FOLDER_BRANCH from BUILDKITE_MESSAGE if available
-if [ -n "${BUILDKITE_MESSAGE:-}" ]; then
+# Skip parsing for master and release branches
+CURRENT_BRANCH="${BUILDKITE_BRANCH:-}"
+if [ -n "${BUILDKITE_MESSAGE:-}" ] && [ "$CURRENT_BRANCH" != "master" ] && [[ "$CURRENT_BRANCH" != release-* ]]; then
     # Extract BUILDKITE_FOLDER_BRANCH=value from BUILDKITE_MESSAGE (match everything up to closing bracket)
     GREP_RESULT=$(echo "$BUILDKITE_MESSAGE" | grep -o "BUILDKITE_FOLDER_BRANCH=[^]]*" || echo "")
     PARSED_BRANCH=$(echo "$GREP_RESULT" | cut -d= -f2 || echo "")

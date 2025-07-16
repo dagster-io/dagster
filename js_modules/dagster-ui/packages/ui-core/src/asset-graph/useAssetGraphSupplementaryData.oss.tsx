@@ -13,10 +13,20 @@ export const useAssetGraphSupplementaryData = (
   selection: string,
   nodes: WorkspaceAssetFragment[],
 ): {loading: boolean; data: SupplementaryInformation} => {
+  const needsAssetHealthData = useMemo(() => {
+    try {
+      const filters = parseExpression(selection);
+      return filters.some((filter) => filter.field === 'status');
+    } catch {
+      return false;
+    }
+  }, [selection]);
+
   const {liveDataByNode} = useAssetsHealthData({
     assetKeys: useMemo(() => nodes.map((node) => node.assetKey), [nodes]),
     thread: 'AssetGraphSupplementaryData', // Separate thread to avoid starving UI
     blockTrace: false,
+    skip: !needsAssetHealthData,
   });
 
   const loading = Object.keys(liveDataByNode).length !== nodes.length;
@@ -39,15 +49,6 @@ export const useAssetGraphSupplementaryData = (
       {} as Record<string, AssetKey[]>,
     );
   }, [liveDataByNode, loading]);
-
-  const needsAssetHealthData = useMemo(() => {
-    try {
-      const filters = parseExpression(selection);
-      return filters.some((filter) => filter.field === 'status');
-    } catch {
-      return false;
-    }
-  }, [selection]);
 
   const data = useStableReferenceByHash(assetsByStatus, true);
 
