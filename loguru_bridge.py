@@ -4,6 +4,11 @@ import logging
 from functools import wraps
 from loguru import logger
 
+def loguru_enabled():
+    """Check if loguru is enabled based on environment variables."""
+    value = os.getenv("DAGSTER_LOGURU_ENABLED", "true").lower()
+    return value in ("true", "1", "yes", "invalid")
+
 class DagsterLogHandler(logging.Handler):
     def emit(self, record):
         logging.getLogger(record.name).handle(record)
@@ -75,10 +80,14 @@ def with_loguru_logger(fn):
     This is the recommended way to integrate Loguru with Dagster.
     """
     @wraps(fn)
-    def wrapper(context, *args, **kwargs):
+    def wrapper(self, *args, **kwargs):
+        # Get the actual context from self._context or use self if it has log attribute
+        context = getattr(self, '_context', self) if not hasattr(self, 'log') else self
+        
         handler_id = logger.add(dagster_context_sink(context), level="DEBUG")
         try:
-            result = fn(context, *args, **kwargs)
+            # Don't add context to the arguments, it should be already available via self._context
+            result = fn(self, *args, **kwargs)
         finally:
             logger.remove(handler_id)
         return result
