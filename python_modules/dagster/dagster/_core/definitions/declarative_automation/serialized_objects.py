@@ -20,6 +20,7 @@ from dagster._core.definitions.asset_key import T_EntityKey
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.metadata import MetadataMapping, MetadataValue
 from dagster._core.definitions.partitions.subset import AllPartitionsSubset
+from dagster._core.definitions.partitions.subset.default import DefaultPartitionsSubset
 from dagster._record import record
 from dagster._time import datetime_from_timestamp
 
@@ -34,6 +35,8 @@ if TYPE_CHECKING:
 StructuredCursor = Union[str, SerializableEntitySubset, Sequence[SerializableEntitySubset]]
 T_StructuredCursor = TypeVar("T_StructuredCursor", bound=StructuredCursor)
 
+_MAX_PARTITIONS_FOR_SERIALIZATION = 1000
+
 
 @whitelist_for_serdes
 @record(checked=False)
@@ -47,10 +50,23 @@ def get_serializable_candidate_subset(
     candidate_subset: Union[SerializableEntitySubset, HistoricalAllPartitionsSubsetSentinel],
 ) -> Union[SerializableEntitySubset, HistoricalAllPartitionsSubsetSentinel]:
     """Do not serialize the candidate subset directly if it is an AllPartitionsSubset."""
-    if isinstance(candidate_subset, SerializableEntitySubset) and isinstance(
-        candidate_subset.value, AllPartitionsSubset
-    ):
-        return HistoricalAllPartitionsSubsetSentinel()
+    if isinstance(candidate_subset, SerializableEntitySubset):
+        if isinstance(candidate_subset.value, AllPartitionsSubset):
+            return HistoricalAllPartitionsSubsetSentinel()
+        elif (
+            isinstance(candidate_subset.value, DefaultPartitionsSubset)
+            and candidate_subset.size > _MAX_PARTITIONS_FOR_SERIALIZATION
+        ):
+            # for large candidate subsets that we cannot efficiently serialize,
+            # store an empty subset instead. we could also imagine storing a
+            # sentinel value similar to HistoricalAllPartitionsSubsetSentinel
+            # to indicate that this happened.
+            return SerializableEntitySubset(
+                key=candidate_subset.key,
+                value=DefaultPartitionsSubset(subset=set()),
+            )
+        else:
+            return candidate_subset
     return candidate_subset
 
 
