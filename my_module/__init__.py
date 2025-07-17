@@ -9,7 +9,7 @@ if parent_dir not in sys.path:
     sys.path.insert(0, parent_dir)
 
 # Import custom bridge tools
-from loguru_bridge import dagster_context_sink, loguru_enabled, with_loguru_logger
+from loguru_bridge import dagster_context_sink, with_loguru_logger
 
 # Log configuration info at module load
 print("Loguru configuration:")
