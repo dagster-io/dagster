@@ -8,7 +8,7 @@
   └── pythonic_components
       └── my_component.py
           ├── first
-          └── second
+          └── second (PyComponent)
   '''
 # ---
 # name: test_list_defs_complex_assets_succeeds
