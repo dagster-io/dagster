@@ -25,9 +25,9 @@ from dagster.components.core.decl import (
 )
 from dagster.components.core.defs_module import (
     ComponentPath,
-    CompositeComponent,
     CompositeYamlComponent,
     DefsFolderComponent,
+    PythonFileComponent,
 )
 from dagster.components.resolved.context import ResolutionContext
 from dagster.components.utils import get_path_from_module
@@ -285,7 +285,7 @@ class ComponentTree:
         """
         component = self.load_structural_component_at_path(defs_path)
         if (
-            isinstance(component, (CompositeYamlComponent, CompositeComponent))
+            isinstance(component, (CompositeYamlComponent, PythonFileComponent))
             and len(component.components) == 1
         ):
             component = (
