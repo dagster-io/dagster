@@ -264,7 +264,10 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
 
   const createdByValues = useMemo(
     () => [
-      tagToFilterValue(DagsterTag.Automaterialize, 'true'),
+      {
+        ...tagToFilterValue(DagsterTag.Automaterialize, 'true'),
+        final: true,
+      },
       ...[...sensorValues].sort((a, b) => COMMON_COLLATOR.compare(a.label, b.label)),
       ...[...scheduleValues].sort((a, b) => COMMON_COLLATOR.compare(a.label, b.label)),
       ...[...userValues].sort((a, b) => COMMON_COLLATOR.compare(a.label, b.label)),
