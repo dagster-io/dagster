@@ -1,23 +1,25 @@
-import os
-import sys
-import dagster as dg
-from loguru import logger
+# import os
+# import sys
+
 
 # Add the parent directory to Python path to find loguru_bridge
-parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-if parent_dir not in sys.path:
-    sys.path.insert(0, parent_dir)
+# parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+# if parent_dir not in sys.path:
+#     sys.path.insert(0, parent_dir)
 
 # Import custom bridge tools
-from loguru_bridge import dagster_context_sink, with_loguru_logger
+
 
 # Log configuration info at module load
-print("Loguru configuration:")
-print(f"  Enabled: {os.getenv('DAGSTER_LOGURU_ENABLED', 'true')}")
-print(f"  Log level: {os.getenv('DAGSTER_LOGURU_LOG_LEVEL', 'DEBUG')}")
-print(f"  To file: {os.getenv('DAGSTER_LOGURU_TO_FILE', 'true')}")
-print(f"  File path: {os.getenv('DAGSTER_LOGURU_FILE_PATH', '/tmp/dagster_loguru_output.log')}")
+# print("Loguru configuration:")
+# print(f"  Enabled: {os.getenv('DAGSTER_LOGURU_ENABLED', 'true')}")
+# print(f"  Log level: {os.getenv('DAGSTER_LOGURU_LOG_LEVEL', 'DEBUG')}")
+# print(f"  To file: {os.getenv('DAGSTER_LOGURU_TO_FILE', 'true')}")
+# print(f"  File path: {os.getenv('DAGSTER_LOGURU_FILE_PATH', '/tmp/dagster_loguru_output.log')}")
 
+import dagster as dg
+from loguru import logger
+from loguru_bridge import dagster_context_sink, with_loguru_logger
 
 @dg.asset
 @with_loguru_logger

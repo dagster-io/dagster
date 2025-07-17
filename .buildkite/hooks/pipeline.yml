@@ -1,0 +1,5 @@
+steps:
+  - label: ":windows: Tox Tests"
+    command:
+      - pip install tox uv
+      - tox -e py310-windows-api_tests
