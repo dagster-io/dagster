@@ -10,6 +10,9 @@ from dagster._core.definitions.declarative_automation.operators import (
     AndAutomationCondition,
     OrAutomationCondition,
 )
+from dagster._core.definitions.declarative_automation.serialized_objects import (
+    HistoricalAllPartitionsSubsetSentinel,
+)
 from dagster._core.remote_representation.external_data import RepositorySnap
 from dagster_shared.check import CheckError
 
@@ -328,4 +331,32 @@ def test_consolidate_automation_conditions(op, cond) -> None:
                 second_labeled_automation_condition,
             ]
         )
+    )
+
+
+def test_use_historical_all_partitions_subset_sentinel() -> None:
+    @dg.asset(partitions_def=dg.StaticPartitionsDefinition(["a", "b", "c"]))
+    def A(): ...
+
+    @dg.asset(
+        deps=[A],
+        automation_condition=~dg.AutomationCondition.any_deps_match(
+            dg.AutomationCondition.missing()
+        ),
+    )
+    def B(): ...
+
+    defs = dg.Definitions(assets=[A, B])
+    instance = dg.DagsterInstance.ephemeral()
+    result = dg.evaluate_automation_conditions(
+        defs=defs, instance=instance, evaluation_time=datetime.datetime(2024, 8, 16, 4, 35)
+    )
+    assert result.total_requested == 0
+    assert isinstance(
+        result.results[0]
+        .child_results[0]
+        .child_results[0]
+        .child_results[0]
+        .serializable_evaluation.candidate_subset,
+        HistoricalAllPartitionsSubsetSentinel,
     )
