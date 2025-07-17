@@ -4,7 +4,6 @@ import dagster as dg
 from dagster._annotations import preview, public
 from dagster._core.definitions.definitions_class import Definitions
 from dagster.components.core.context import ComponentLoadContext
-from dagster.components.lib.sql_component.sql_client import ISQLClient
 from pydantic import BaseModel, Field
 
 from dagster_snowflake.resources import SnowflakeResource
@@ -12,7 +11,7 @@ from dagster_snowflake.resources import SnowflakeResource
 
 @public
 @preview
-class SnowflakeConnectionComponent(dg.Component, dg.Resolvable, SnowflakeResource, ISQLClient):
+class SnowflakeConnectionComponent(dg.Component, dg.Resolvable, SnowflakeResource):
     """A component that represents a Snowflake connection."""
 
     resource_key: Annotated[
@@ -32,7 +31,3 @@ class SnowflakeConnectionComponent(dg.Component, dg.Resolvable, SnowflakeResourc
         return (
             Definitions(resources={self.resource_key: self}) if self.resource_key else Definitions()
         )
-
-    def connect_and_execute(self, sql: str) -> None:
-        with self.get_connection() as conn:
-            conn.cursor().execute(sql)

@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 
 
-class ISQLClient(ABC):
+class SQLClient(ABC):
     """An interface for a SQL client that can connect to a database and execute SQL queries."""
 
     @abstractmethod
