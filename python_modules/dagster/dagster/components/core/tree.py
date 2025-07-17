@@ -341,7 +341,7 @@ class ComponentTree:
             file_path = child_decl.path.file_path.relative_to(parent_path)
 
             if isinstance(child_decl, ComponentLoaderDecl):
-                name = child_decl.path.instance_key
+                name = str(child_decl.path.instance_key)
             elif isinstance(child_decl, YamlDecl):
                 file_path = file_path / "defs.yaml"
                 component_type = child_decl.component_cls.__name__
