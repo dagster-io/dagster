@@ -13,29 +13,36 @@ from dagster._core.execution.context.asset_check_execution_context import AssetC
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster.components.core.context import ComponentLoadContext
 from dagster.components.lib.executable_component.component import ExecutableComponent
+from dagster.components.resolved.base import Resolvable
 from dagster.components.resolved.core_models import OpSpec
-from dagster.components.resolved.model import Model, Resolver
+from dagster.components.resolved.model import Resolver
 
 
 @public
 @preview
-class SqlComponent(ExecutableComponent, Model, BaseModel, ABC):
+class SqlComponent(ExecutableComponent, Resolvable, ABC):
     """Base component which executes templated SQL. Subclasses
     implement instructions on where to load the SQL content from
     and how to execute it.
     """
 
-    execution: Optional[OpSpec] = None
+    connection: Annotated[
+        Annotated[
+            Any,
+            Resolver(lambda ctx, value: value, model_field_type=str),
+        ],
+        Field(description="The resource key to use for the Snowflake resource."),
+    ]
+    execution: Annotated[Optional[OpSpec], Field(default=None)] = None
 
     @abstractmethod
     def get_sql_content(self, context: AssetExecutionContext) -> str:
         """The SQL content to execute."""
         ...
 
-    @abstractmethod
     def execute(self, context: AssetExecutionContext) -> None:
-        """Execute the SQL content."""
-        ...
+        """Execute the SQL content using the Snowflake resource."""
+        self.connection.connect_and_execute(self.get_sql_content(context))
 
     @property
     def op_spec(self) -> OpSpec:
@@ -67,20 +74,18 @@ ResolvedSqlTemplate = Annotated[
 ]
 
 
-class TemplatedSqlComponentMixin:
-    """A component mixin that builds templated SQL from a string or file.
-    User-defined components can inherit from this mixin to incorporate behavior
-    of loading SQL from a string or file.
-    """
+class TemplatedSqlComponent(SqlComponent):
+    """A component which executes templated SQL from a string or file."""
 
     sql_template: Annotated[
         ResolvedSqlTemplate,
         Field(description="The SQL template to execute, either as a string or from a file."),
     ]
+
     sql_template_vars: Annotated[
         Optional[Mapping[str, Any]],
         Field(default=None, description="Template variables to pass to the SQL template."),
-    ]
+    ] = None
 
     def get_sql_content(self, context: AssetExecutionContext) -> str:
         template_str = self.sql_template
