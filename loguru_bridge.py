@@ -1,55 +1,86 @@
-from loguru import logger
-import logging
-import sys
 import os
+import sys
+import logging
 from functools import wraps
+from loguru import logger
 
 class DagsterLogHandler(logging.Handler):
     def emit(self, record):
         logging.getLogger(record.name).handle(record)
 
-def loguru_enabled():
-    """Check if loguru is enabled via environment variable"""
-    return os.getenv("DAGSTER_LOGURU_ENABLED", "true").lower() in ("true", "1", "yes")
-
-def get_loguru_config():
-    """Get loguru configuration from environment variables"""
-    return {
-        "enable_loguru": os.getenv("DAGSTER_LOGURU_ENABLED", "true").lower() in ("true", "1", "yes"),
-        "log_level": os.getenv("DAGSTER_LOGURU_LOG_LEVEL", "DEBUG"),
-        "format": os.getenv("DAGSTER_LOGURU_FORMAT", "{time} | {level} | {message}"),
-        "to_file": os.getenv("DAGSTER_LOGURU_TO_FILE", "true").lower() in ("true", "1", "yes"),
-        "file_path": os.getenv("DAGSTER_LOGURU_FILE_PATH", "/tmp/dagster_loguru_output.log")
-    }
-
-# Configure loguru at module load
-logger.remove()
-logger.add(sys.stderr, level="DEBUG")
-logger.add(DagsterLogHandler(), level="DEBUG")
-logger.success("This is a SUCCESS from loguru_bridge.py")
-
-# Conditionally add file logging
-config = get_loguru_config()
-if config.get("to_file", False):
-    logger.add(
-        config.get("file_path", "/tmp/dagster_loguru_output.log"),
-        level=config.get("log_level", "DEBUG"),
-        format=config.get("format", "{message}")
-    )
-
-# Used inside assets
 def dagster_context_sink(context):
+    """
+    A Loguru sink that correctly forwards records to the Dagster context logger.
+    It passes plain messages and relies on the Dagster UI for styling.
+    """
     def sink_func(msg):
         record = msg.record
-        level = record["level"].name.lower()
-        log_method = getattr(context.log, level, context.log.info)
-        log_method(record["message"])
+        level_name = record["level"].name
+        message = record["message"]
+
+        level_map = {
+            "TRACE": "debug",
+            "DEBUG": "debug",
+            "INFO": "info",
+            "SUCCESS": "info",     
+            "WARNING": "warning",
+            "ERROR": "error",
+            "CRITICAL": "critical",
+        }
+        
+        dagster_log_method_name = level_map.get(level_name, "info")
+        log_method = getattr(context.log, dagster_log_method_name)
+        log_method(message)
+
     return sink_func
 
-# Decorator that injects Loguru logger into the asset
-def with_loguru_logger(asset_fn):
-    @wraps(asset_fn)  
+class LoguruConfigurator:
+    def __init__(self):
+        self._sinks = {}
+        self.config = self._load_config()
+
+        if getattr(LoguruConfigurator, "_initialized", False):
+            return
+
+        self._setup_sinks()
+        LoguruConfigurator._initialized = True
+
+    def _load_config(self):
+        return {
+            "enabled": os.getenv("DAGSTER_LOGURU_ENABLED", "true").lower() in ("true", "1", "yes"),
+            "log_level": os.getenv("DAGSTER_LOGURU_LOG_LEVEL", "DEBUG"),
+            "format": os.getenv(
+                "DAGSTER_LOGURU_FORMAT",
+                "<green>{time:HH:mm:ss}</green> | <level>{level: <8}</level> | <cyan>{name}</cyan>:<cyan>{function}</cyan> - <level>{message}</level>"
+            ),
+        }
+
+    def _setup_sinks(self):
+        if not self.config["enabled"]:
+            return
+
+        logger.remove()
+        logger.add(
+            sys.stderr,
+            level=self.config["log_level"],
+            format=self.config["format"],
+            colorize=True,
+        )
+
+loguru_config = LoguruConfigurator()
+
+def with_loguru_logger(fn):
+    """
+    Decorator to add a Dagster context-aware sink for the duration of an asset's execution.
+    This is the recommended way to integrate Loguru with Dagster.
+    """
+    @wraps(fn)
     def wrapper(context, *args, **kwargs):
-        logger.add(dagster_context_sink(context), level="DEBUG")
-        return asset_fn(context, *args, **kwargs)
+        handler_id = logger.add(dagster_context_sink(context), level="DEBUG")
+        try:
+            result = fn(context, *args, **kwargs)
+        finally:
+            logger.remove(handler_id)
+        return result
+
     return wrapper
