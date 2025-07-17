@@ -19,7 +19,7 @@ from dagster.components.core.context import ComponentDeclLoadContext, ComponentL
 from dagster.components.core.decl import (
     ComponentDecl,
     ComponentLoaderDecl,
-    DagsterDefsDecl,
+    PythonFileDecl,
     YamlDecl,
     build_component_decl_from_context,
 )
@@ -379,19 +379,22 @@ class ComponentTree:
 
         total = len(decls)
         for idx, child_decl in enumerate(decls):
-            if isinstance(child_decl, DagsterDefsDecl) and hide_plain_defs:
+            if isinstance(child_decl, PythonFileDecl) and not child_decl.decls and hide_plain_defs:
                 continue
 
             component_type = None
             file_path = child_decl.path.file_path.relative_to(parent_path)
+
             if isinstance(child_decl, ComponentLoaderDecl):
-                file_path = file_path / "component.py"
-            if isinstance(child_decl, YamlDecl):
+                name = str(child_decl.path.instance_key)
+            elif isinstance(child_decl, YamlDecl):
                 file_path = file_path / "defs.yaml"
                 component_type = child_decl.component_cls.__name__
 
-            if child_decl.path.instance_key is not None and len(decls) > 1:
-                name = f"{file_path}[{child_decl.path.instance_key}]"
+                if child_decl.path.instance_key is not None and len(decls) > 1:
+                    name = f"{file_path}[{child_decl.path.instance_key}]"
+                else:
+                    name = str(file_path)
             else:
                 name = str(file_path)
 
@@ -432,7 +435,10 @@ class ComponentTree:
         if (
             hide_plain_defs
             and len(decls) > 0
-            and all(isinstance(child_decl, DagsterDefsDecl) for child_decl in decls)
+            and all(
+                isinstance(child_decl, PythonFileDecl) and not child_decl.decls
+                for child_decl in decls
+            )
         ):
             lines.append(f"{prefix}└── ...")
 

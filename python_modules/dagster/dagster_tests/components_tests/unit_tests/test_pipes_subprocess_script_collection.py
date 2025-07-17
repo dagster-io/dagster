@@ -1,5 +1,4 @@
 import importlib
-import textwrap
 from pathlib import Path
 
 import dagster as dg
@@ -8,62 +7,16 @@ from dagster.components.core.tree import LegacyAutoloadingComponentTree
 LOCATION_PATH = Path(__file__).parent.parent / "code_locations" / "python_script_location"
 
 
-def test_load_from_path() -> None:
+def test_load_from_path(snapshot) -> None:
     module = importlib.import_module(
         "dagster_tests.components_tests.code_locations.python_script_location.defs"
     )
     tree = LegacyAutoloadingComponentTree.from_module(
         defs_module=module, project_root=Path(__file__).parent
     )
-    assert (
-        tree.to_string_representation(include_load_and_build_status=True)
-        == textwrap.dedent(
-            """
-            ├── multiple_component_instances
-            │   ├── component.py[bar]
-            │   └── component.py[foo]
-            ├── multiple_component_instances_defs_py
-            │   ├── component.py[bar]
-            │   └── component.py[foo]
-            ├── multiple_definitions_calls
-            │   └── defs.py
-            ├── script_python_decl/component.py
-            ├── scripts
-            │   ├── defs.yaml[0] (PythonScriptComponent)
-            │   ├── defs.yaml[1] (PythonScriptComponent)
-            │   └── defs.yaml[2] (PythonScriptComponent)
-            └── triple_dash_scripts
-                ├── defs.yaml[0] (PythonScriptComponent)
-                ├── defs.yaml[1] (PythonScriptComponent)
-                └── defs.yaml[2] (PythonScriptComponent)
-            """
-        ).strip()
-    )
+    snapshot.assert_match(tree.to_string_representation(include_load_and_build_status=True))
     tree.load_root_component()
-    assert (
-        tree.to_string_representation(include_load_and_build_status=True)
-        == textwrap.dedent(
-            """
-            ├── multiple_component_instances (loaded)
-            │   ├── component.py[bar] (loaded)
-            │   └── component.py[foo] (loaded)
-            ├── multiple_component_instances_defs_py (loaded)
-            │   ├── component.py[bar] (loaded)
-            │   └── component.py[foo] (loaded)
-            ├── multiple_definitions_calls (loaded)
-            │   └── defs.py (loaded)
-            ├── script_python_decl/component.py (loaded)
-            ├── scripts (loaded)
-            │   ├── defs.yaml[0] (PythonScriptComponent) (loaded)
-            │   ├── defs.yaml[1] (PythonScriptComponent) (loaded)
-            │   └── defs.yaml[2] (PythonScriptComponent) (loaded)
-            └── triple_dash_scripts (loaded)
-                ├── defs.yaml[0] (PythonScriptComponent) (loaded)
-                ├── defs.yaml[1] (PythonScriptComponent) (loaded)
-                └── defs.yaml[2] (PythonScriptComponent) (loaded)
-            """
-        ).strip()
-    )
+    snapshot.assert_match(tree.to_string_representation(include_load_and_build_status=True))
 
     defs = tree.build_defs()
     assert defs.resolve_asset_graph().get_all_asset_keys() == {
@@ -89,30 +42,7 @@ def test_load_from_path() -> None:
     }
     assert defs.component_tree
 
-    assert (
-        tree.to_string_representation(include_load_and_build_status=True)
-        == textwrap.dedent(
-            """
-            ├── multiple_component_instances (built)
-            │   ├── component.py[bar] (built)
-            │   └── component.py[foo] (built)
-            ├── multiple_component_instances_defs_py (built)
-            │   ├── component.py[bar] (built)
-            │   └── component.py[foo] (built)
-            ├── multiple_definitions_calls (built)
-            │   └── defs.py (built)
-            ├── script_python_decl/component.py (built)
-            ├── scripts (built)
-            │   ├── defs.yaml[0] (PythonScriptComponent) (built)
-            │   ├── defs.yaml[1] (PythonScriptComponent) (built)
-            │   └── defs.yaml[2] (PythonScriptComponent) (built)
-            └── triple_dash_scripts (built)
-                ├── defs.yaml[0] (PythonScriptComponent) (built)
-                ├── defs.yaml[1] (PythonScriptComponent) (built)
-                └── defs.yaml[2] (PythonScriptComponent) (built)
-            """
-        ).strip()
-    )
+    snapshot.assert_match(tree.to_string_representation(include_load_and_build_status=True))
 
 
 def test_load_from_location_path() -> None:

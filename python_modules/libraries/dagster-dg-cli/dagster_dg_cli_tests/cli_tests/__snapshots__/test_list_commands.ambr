@@ -3,8 +3,12 @@
   '''
   ├── assets
   │   └── ...
-  └── my_function
-      └── defs.yaml (FunctionComponent)
+  ├── my_function
+  │   └── defs.yaml (FunctionComponent)
+  └── pythonic_components
+      └── my_component.py
+          ├── first
+          └── second
   '''
 # ---
 # name: test_list_defs_complex_assets_succeeds
