@@ -857,6 +857,11 @@ class Definitions(IHaveNew):
         asset_graph = self.resolve_asset_graph()
         return [asset_node.to_asset_spec() for asset_node in asset_graph.asset_nodes]
 
+    @public
+    def resolve_all_asset_keys(self) -> Sequence[AssetKey]:
+        """Returns an AssetKey object for every asset contained inside the resolved Definitions object."""
+        return [spec.key for spec in self.resolve_all_asset_specs()]
+
     @preview
     def with_reconstruction_metadata(self, reconstruction_metadata: Mapping[str, str]) -> Self:
         """Add reconstruction metadata to the Definitions object. This is typically used to cache data
