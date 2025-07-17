@@ -1,9 +1,7 @@
 from dagster_shared.libraries import DagsterLibraryRegistry
 
 from dagster_snowflake.components import (
-    BaseSnowflakeSqlComponent as BaseSnowflakeSqlComponent,
     SnowflakeConnectionComponent as SnowflakeConnectionComponent,
-    SnowflakeTemplatedSqlComponent as SnowflakeTemplatedSqlComponent,
 )
 from dagster_snowflake.ops import snowflake_op_for_query as snowflake_op_for_query
 from dagster_snowflake.resources import (
