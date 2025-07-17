@@ -13,6 +13,7 @@ from dagster._core.execution.context.asset_check_execution_context import AssetC
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster.components.core.context import ComponentLoadContext
 from dagster.components.lib.executable_component.component import ExecutableComponent
+from dagster.components.lib.sql_component.sql_client import SQLClient
 from dagster.components.resolved.base import Resolvable
 from dagster.components.resolved.core_models import OpSpec
 from dagster.components.resolved.model import Resolver
@@ -26,10 +27,13 @@ class SqlComponent(ExecutableComponent, Resolvable, ABC):
     and how to execute it.
     """
 
+    class Config:
+        arbitrary_types_allowed = True
+
     connection: Annotated[
         Annotated[
-            Any,
-            Resolver(lambda ctx, value: value, model_field_type=str),
+            SQLClient,
+            Resolver(lambda ctx, value: value, model_field_type=Any),  # type: ignore
         ],
         Field(description="The resource key to use for the Snowflake resource."),
     ]
