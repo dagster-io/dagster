@@ -40,7 +40,7 @@ class AllPartitionMapping(PartitionMapping, NamedTuple("_AllPartitionMapping", [
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> UpstreamPartitionsResult:
         with partition_loading_context(current_time, dynamic_partitions_store) as ctx:
-            if dynamic_partitions_store is not None and current_time is not None:
+            if ctx.dynamic_partitions_store is not None and ctx.effective_dt is not None:
                 partitions_subset = AllPartitionsSubset(
                     partitions_def=upstream_partitions_def, context=ctx
                 )
