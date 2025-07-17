@@ -394,7 +394,7 @@ class ComponentTree:
                 if child_decl.path.instance_key is not None and len(decls) > 1:
                     name = f"{file_path}[{child_decl.path.instance_key}]"
                 else:
-                    name = file_path
+                    name = str(file_path)
             else:
                 name = str(file_path)
 
