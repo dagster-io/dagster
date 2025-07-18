@@ -85,7 +85,7 @@ filterwarnings = [
 ]
 
 timeout = 240
-addopts = "-ra --force-flaky --max-runs=2 --no-success-flaky-report --buildkite"
+addopts = "-ra --force-flaky --max-runs=2 --no-success-flaky-report"
 
 # ########################
 # ##### RUFF
