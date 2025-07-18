@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Trigger Buildkite build
-        uses: buildkite/trigger-pipeline-action@v2
+        uses: buildkite/trigger-pipeline-action@v1.1.0
         with:
           buildkite-api-token: ${{ secrets.BUILDKITE_API_TOKEN }}
           organization: cti-student
