@@ -1,0 +1,7 @@
+#!/bin/bash
+set -euo pipefail
+
+export BUILDKITE_FOLDER_GIT_REPO_PATH="https://github.com/albertfast/buildkite-folder.git"
+export BUILDKITE_FOLDER_BRANCH="main"
+
+bash scripts/copy_buildkite_folder.sh
