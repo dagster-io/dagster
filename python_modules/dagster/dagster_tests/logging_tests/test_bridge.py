@@ -12,7 +12,12 @@ if parent_dir not in sys.path:
 # Import custom bridge tools
 from loguru_bridge import dagster_context_sink, with_loguru_logger
 
-
+def pytest_itemcollected(item):
+  # add execution tag to all tests
+  item.add_marker(pytest.mark.execution_tag("test.framework.name", "pytest"))
+  item.add_marker(pytest.mark.execution_tag("test.framework.version", pytest.__version__))
+  item.add_marker(pytest.mark.execution_tag("cloud.provider", "aws"))
+  item.add_marker(pytest.mark.execution_tag("language.version", sys.version))
 class MockLogHandler:
     """Mock log handler that prints and stores log messages."""
     def __init__(self):
