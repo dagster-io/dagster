@@ -77,7 +77,6 @@ executionEnvironments = [
 # ########################
 
 [tool.pytest.ini_options]
-addopts = "--buildkite"
 
 filterwarnings = [
   "ignore::DeprecationWarning",
@@ -86,7 +85,7 @@ filterwarnings = [
 ]
 
 timeout = 240
-addopts = "-ra --force-flaky --max-runs=2 --no-success-flaky-report"
+addopts = "-ra --force-flaky --max-runs=2 --no-success-flaky-report --buildkite"
 
 # ########################
 # ##### RUFF
