@@ -52,7 +52,8 @@ def test_simple():
     assert True
 
 if __name__ == "__main__":
-    os.environ["BUILDKITE_ANALYTICS_TOKEN"] = "bkua_b750f13ba09caac2e2eafe1daac6e4732e119c8e"
+    # Use existing environment variable or fail if not set
+    analytics_token = os.environ["BUILDKITE_ANALYTICS_TOKEN"]
     os.environ["BUILDKITE"] = "true"
     os.environ["BUILDKITE_BUILD_ID"] = "01981ad1-a952-49a2-97c0-7715c68ed6e9"
     os.environ["BUILDKITE_JOB_ID"] = "01981ad1-a964-45d8-9df4-e85dde0d2654"

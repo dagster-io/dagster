@@ -1,7 +1,6 @@
 #!/bin/bash
 set -euo pipefail
 
-export BUILDKITE_FOLDER_GIT_REPO_PATH="/home/codespace/.buildkite-agent/builds/codespaces-.../buildkite-folder"
 
 # Script to restore the .buildkite folder to the current repository
 # Usage: ./copy_buildkite_folder.sh
