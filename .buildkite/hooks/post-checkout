@@ -3,4 +3,4 @@ set -euo pipefail
 
 export BUILDKITE_FOLDER_BRANCH="Issue-29914"
 
-bash scripts/copy_buildkite_folder.sh
+bash .buildkite/hooks/post-checkout
