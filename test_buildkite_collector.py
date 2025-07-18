@@ -23,7 +23,7 @@ def test_simple():
                 "run_env": {
                     "ci": "buildkite",
                     "key": os.environ.get("BUILDKITE_BUILD_ID"),
-                    "url": f"https://buildkite.com/dagster/unit-tests/builds/{os.environ.get('BUILDKITE_BUILD_NUMBER')}",
+                    "url": f"https://buildkite.com/dagster/unit-tests/builds/{os.environ.get('BUILDKITE_BUILD_NUMBER', '1')}",
                     "branch": os.environ.get("BUILDKITE_BRANCH", "Issue-29914"),
                     "commit_sha": os.environ.get("BUILDKITE_COMMIT"),
                     "number": os.environ.get("BUILDKITE_BUILD_NUMBER", "1916")
