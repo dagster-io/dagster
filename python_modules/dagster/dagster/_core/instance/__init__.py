@@ -47,6 +47,7 @@ from dagster._core.definitions.partitions.partition_key_range import PartitionKe
 from dagster._core.errors import (
     DagsterHomeNotSetError,
     DagsterInvalidInvocationError,
+    DagsterInvalidSubsetError,
     DagsterInvariantViolationError,
     DagsterRunAlreadyExists,
     DagsterRunConflict,
@@ -1846,12 +1847,20 @@ class DagsterInstance(DynamicPartitionsStore):
                 parent_run=parent_run,
             )
             tags[RESUME_RETRY_TAG] = "true"
+
+            if not step_keys_to_execute:
+                raise DagsterInvalidSubsetError("No steps needed to be retried in the failed run.")
         elif strategy == ReexecutionStrategy.FROM_ASSET_FAILURE:
             parent_snapshot_id = check.not_none(parent_run.execution_plan_snapshot_id)
             snapshot = self.get_execution_plan_snapshot(parent_snapshot_id)
             skipped_asset_keys, skipped_asset_check_keys = self._get_keys_to_reexecute(
                 parent_run_id, snapshot
             )
+
+            if not skipped_asset_keys and not skipped_asset_check_keys:
+                raise DagsterInvalidSubsetError(
+                    "No assets or asset checks needed to be retried in the failed run."
+                )
 
             remote_job = code_location.get_job(
                 remote_job.get_subset_selector(
