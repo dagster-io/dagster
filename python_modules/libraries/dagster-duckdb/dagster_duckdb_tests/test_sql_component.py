@@ -1,14 +1,14 @@
 import importlib
-import os
 import tempfile
 from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
-from unittest import mock
 
+import duckdb
 import pytest
 import yaml
 from dagster import AssetKey, Definitions
+from dagster._check import check
 from dagster._core.definitions.materialize import materialize
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster._utils import alter_sys_path
@@ -20,12 +20,21 @@ from dagster.components.lib.sql_component.sql_component import SqlComponent
 def setup_duckdb_component_with_external_connection(
     execution_component_body: dict,
     connection_component_name: str = "sql_connection_component",
-) -> Iterator[Definitions]:
+) -> Iterator[tuple[Definitions, str]]:
     """Sets up a components project with a duckdb component using external connection."""
     with tempfile.TemporaryDirectory() as project_root_str:
         project_root = Path(project_root_str)
         defs_folder_path = project_root / "src" / "my_project" / "defs"
         defs_folder_path.mkdir(parents=True, exist_ok=True)
+
+        # Create a temporary DuckDB database file with test data
+        db_file = project_root / "test.duckdb"
+        conn = duckdb.connect(str(db_file))
+        conn.execute("CREATE TABLE IF NOT EXISTS test_table (id INTEGER, name VARCHAR, date DATE)")
+        conn.execute(
+            "INSERT INTO test_table VALUES (1, 'Alice', '2024-03-20'), (2, 'Bob', '2024-03-21')"
+        )
+        conn.close()
 
         # Create execution component
         execution_component_path = defs_folder_path / "sql_execution_component"
@@ -35,7 +44,7 @@ def setup_duckdb_component_with_external_connection(
         # Create connection component
         connection_body = {
             "type": "dagster_duckdb.DuckDBConnectionComponent",
-            "attributes": {"database": ":memory:", "connection_config": {}},
+            "attributes": {"database": str(db_file), "connection_config": {}},
         }
         connection_component_path = defs_folder_path / connection_component_name
         connection_component_path.mkdir(parents=True, exist_ok=True)
@@ -47,127 +56,124 @@ def setup_duckdb_component_with_external_connection(
                 project_root=Path(project_root),
             ).build_defs()
 
-            yield defs
+            yield defs, str(db_file)
 
 
-@mock.patch("duckdb.connect")
-def test_duckdb_sql_component(duckdb_connect):
+def test_duckdb_sql_component():
     """Test that the TemplatedSqlComponent correctly builds and executes SQL."""
-    mock_conn = mock.Mock()
-    mock_conn.execute = mock.Mock()
-    mock_conn.close = mock.Mock()
-    duckdb_connect.return_value = mock_conn
-
     execution_body = {
         "type": "dagster.TemplatedSqlComponent",
         "attributes": {
-            "sql_template": "SELECT * FROM test_table;",
-            "assets": [{"key": "test_table"}],
+            "sql_template": "INSERT INTO test_table (id, name, date) VALUES (3, 'Charlie', '2024-03-22')",
+            "assets": [{"key": "test_table_updated"}],
             "connection": "{{ load_component_at_path('sql_connection_component') }}",
         },
     }
 
     with setup_duckdb_component_with_external_connection(
         execution_component_body=execution_body,
-    ) as defs:
-        asset_key = AssetKey(["test_table"])
+    ) as (defs, db_path):
+        asset_key = AssetKey(["test_table_updated"])
         asset_def = defs.get_assets_def(asset_key)
         result = materialize(
             [asset_def],
         )
         assert result.success
-        duckdb_connect.assert_called_once_with(
-            database=":memory:",
-            read_only=False,
-            config={"custom_user_agent": "dagster"},
-        )
-        mock_conn.execute.assert_called_once_with("SELECT * FROM test_table;")
-        assert defs.resolve_asset_graph().get_all_asset_keys() == {AssetKey(["test_table"])}
+        assert defs.resolve_asset_graph().get_all_asset_keys() == {AssetKey(["test_table_updated"])}
+
+        conn = duckdb.connect(db_path)
+        try:
+            # Verify we now have 3 rows (original 2 + the new one)
+            rows = conn.execute("SELECT * FROM test_table ORDER BY id").fetchall()
+            assert len(rows) == 3
+            assert rows[0][1] == "Alice"
+            assert rows[1][1] == "Bob"
+            assert rows[2][1] == "Charlie"
+        finally:
+            conn.close()
 
 
 @pytest.mark.parametrize(
     "sql_template",
     [
-        "SELECT * FROM test_table WHERE date = '{{ date }}' LIMIT {{ limit }}",
-        None,  # This will trigger the file template test
+        "UPDATE test_table SET name = '{{ name_prefix }}' || name WHERE date = '{{ date }}'",
+        None,  # This will load from a file instead of a SQL literal
     ],
 )
-@mock.patch("duckdb.connect")
-def test_duckdb_sql_component_with_templates(duckdb_connect, sql_template):
+def test_duckdb_sql_component_with_templates(sql_template):
     """Test that the TemplatedSqlComponent correctly handles SQL templates from strings and files."""
-    mock_conn = mock.Mock()
-    mock_conn.execute = mock.Mock()
-    mock_conn.close = mock.Mock()
-    duckdb_connect.return_value = mock_conn
-
-    # If sql_template is None, create a temporary file with the template
     if sql_template is None:
         with tempfile.NamedTemporaryFile(mode="w", suffix=".sql", delete=False) as f:
-            f.write("SELECT * FROM test_table WHERE date = '{{ date }}' LIMIT {{ limit }}")
+            f.write(
+                "UPDATE test_table SET name = '{{ name_prefix }}' || name WHERE date = '{{ date }}'"
+            )
             sql_file_path = f.name
             sql_template = {"path": sql_file_path}
-
-    try:
-        execution_body = {
-            "type": "dagster.TemplatedSqlComponent",
-            "attributes": {
-                "sql_template": sql_template,
-                "assets": [{"key": "test_table"}],
-                "sql_template_vars": {
-                    "date": "2024-03-20",
-                    "limit": 100,
-                },
-                "connection": "{{ load_component_at_path('sql_connection_component') }}",
-            },
-        }
-        with setup_duckdb_component_with_external_connection(
-            execution_component_body=execution_body,
-        ) as defs:
-            asset_key = AssetKey(["test_table"])
-            asset_def = defs.get_assets_def(asset_key)
-            result = materialize(
-                [asset_def],
-            )
-            assert result.success
-            mock_conn.execute.assert_called_once_with(
-                "SELECT * FROM test_table WHERE date = '2024-03-20' LIMIT 100"
-            )
-            assert defs.resolve_asset_graph().get_all_asset_keys() == {AssetKey(["test_table"])}
-    finally:
-        # Clean up the temporary file if it was created
-        if isinstance(sql_template, dict) and "path" in sql_template:
-            os.unlink(sql_template["path"])
-
-
-@mock.patch("duckdb.connect")
-def test_duckdb_sql_component_with_execution(duckdb_connect):
-    """Test that the TemplatedSqlComponent correctly handles execution parameter with op description."""
-    mock_conn = mock.Mock()
-    mock_conn.execute = mock.Mock()
-    mock_conn.close = mock.Mock()
-    duckdb_connect.return_value = mock_conn
 
     execution_body = {
         "type": "dagster.TemplatedSqlComponent",
         "attributes": {
-            "sql_template": "SELECT * FROM test_table;",
-            "assets": [{"key": "test_table"}],
+            "sql_template": sql_template,
+            "assets": [{"key": "test_table_updated"}],
+            "sql_template_vars": {
+                "date": "2024-03-20",
+                "name_prefix": "Updated_",
+            },
+            "connection": "{{ load_component_at_path('sql_connection_component') }}",
+        },
+    }
+    with setup_duckdb_component_with_external_connection(
+        execution_component_body=execution_body,
+    ) as (defs, db_path):
+        asset_key = AssetKey(["test_table_updated"])
+        asset_def = defs.get_assets_def(asset_key)
+        result = materialize(
+            [asset_def],
+        )
+        assert result.success
+        assert defs.resolve_asset_graph().get_all_asset_keys() == {AssetKey(["test_table_updated"])}
+
+        # Verify that the UPDATE statement actually modified the data
+        conn = duckdb.connect(db_path)
+        try:
+            alice_row = check.not_none(
+                conn.execute("SELECT name FROM test_table WHERE id = 1").fetchone()
+            )
+            assert alice_row[0] == "Updated_Alice"
+        finally:
+            conn.close()
+
+
+def test_duckdb_sql_component_with_execution():
+    """Test that the TemplatedSqlComponent correctly handles execution parameter with op description."""
+    execution_body = {
+        "type": "dagster.TemplatedSqlComponent",
+        "attributes": {
+            "sql_template": "DELETE FROM test_table WHERE id = 2",
+            "assets": [{"key": "test_table_cleaned"}],
             "execution": {"description": "This is a test op description"},
             "connection": "{{ load_component_at_path('sql_connection_component') }}",
         },
     }
     with setup_duckdb_component_with_external_connection(
         execution_component_body=execution_body,
-    ) as defs:
-        asset_key = AssetKey(["test_table"])
+    ) as (defs, db_path):
+        asset_key = AssetKey(["test_table_cleaned"])
         asset_def = defs.get_assets_def(asset_key)
 
         # Verify the op description is set correctly
         assert asset_def.op.description == "This is a test op description"
 
-        # Materialize to actually execute the SQL
         result = materialize([asset_def])
         assert result.success
+
+        conn = duckdb.connect(db_path)
+        try:
+            rows = conn.execute("SELECT * FROM test_table ORDER BY id").fetchall()
+            assert len(rows) == 1
+            assert rows[0][1] == "Alice"
+        finally:
+            conn.close()
 
 
 class CreateTableComponent(SqlComponent):
@@ -180,39 +186,44 @@ class CreateTableComponent(SqlComponent):
         return f"CREATE TABLE IF NOT EXISTS {self.table_name} ({self.columns});"
 
 
-@mock.patch("duckdb.connect")
-def test_custom_duckdb_sql_component(duckdb_connect):
+def test_custom_duckdb_sql_component():
     """Test that a custom DuckDBSqlComponent subclass correctly builds and executes SQL."""
-    mock_conn = mock.Mock()
-    mock_conn.execute = mock.Mock()
-    mock_conn.close = mock.Mock()
-    duckdb_connect.return_value = mock_conn
-
     execution_body = {
         "type": "dagster_duckdb_tests.test_sql_component.CreateTableComponent",
         "attributes": {
-            "table_name": "test_table",
+            "table_name": "new_test_table",
             "columns": "id INTEGER PRIMARY KEY, name VARCHAR(100)",
-            "assets": [{"key": "test_table"}],
+            "assets": [{"key": "new_test_table"}],
             "connection": "{{ load_component_at_path('sql_connection_component') }}",
         },
     }
 
     with setup_duckdb_component_with_external_connection(
         execution_component_body=execution_body,
-    ) as defs:
-        asset_key = AssetKey(["test_table"])
+    ) as (defs, db_path):
+        asset_key = AssetKey(["new_test_table"])
         asset_def = defs.get_assets_def(asset_key)
         result = materialize(
             [asset_def],
         )
         assert result.success
-        duckdb_connect.assert_called_once_with(
-            database=":memory:",
-            read_only=False,
-            config={"custom_user_agent": "dagster"},
-        )
-        mock_conn.execute.assert_called_once_with(
-            "CREATE TABLE IF NOT EXISTS test_table (id INTEGER PRIMARY KEY, name VARCHAR(100));"
-        )
-        assert defs.resolve_asset_graph().get_all_asset_keys() == {AssetKey(["test_table"])}
+        assert defs.resolve_asset_graph().get_all_asset_keys() == {AssetKey(["new_test_table"])}
+
+        # Verify that the CREATE TABLE statement actually created the new table
+
+        # Connect to the database and verify the new table exists and has the correct schema
+        conn = duckdb.connect(db_path)
+        try:
+            result_rows = conn.execute("DESCRIBE new_test_table").fetchall()
+            column_info = {row[0]: row[1] for row in result_rows}
+            assert "id" in column_info
+            assert "name" in column_info
+            assert "INTEGER" in column_info["id"].upper()
+            assert "VARCHAR" in column_info["name"].upper()
+            conn.execute("INSERT INTO new_test_table (id, name) VALUES (999, 'test_user')")
+            query_result = check.not_none(
+                conn.execute("SELECT name FROM new_test_table WHERE id = 999").fetchone()
+            )
+            assert query_result[0] == "test_user"
+        finally:
+            conn.close()
