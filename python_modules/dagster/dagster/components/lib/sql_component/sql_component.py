@@ -4,7 +4,6 @@ from pathlib import Path
 from typing import Annotated, Any, Optional, Union
 
 from dagster_shared import check
-from jinja2 import Template
 from pydantic import BaseModel, Field
 
 from dagster._annotations import preview, public
@@ -92,6 +91,8 @@ class TemplatedSqlComponent(SqlComponent):
     ] = None
 
     def get_sql_content(self, context: AssetExecutionContext) -> str:
+        from jinja2 import Template
+
         template_str = self.sql_template
         if isinstance(template_str, SqlFile):
             template_str = Path(template_str.path).read_text()
