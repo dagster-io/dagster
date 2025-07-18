@@ -1184,6 +1184,7 @@ class AssetDaemon(DagsterDaemon):
                         },
                         title=f"Run for Declarative Automation evaluation ID {evaluation_id}",
                         description=None,
+                        run_config=run_request.run_config,
                     )
                 )
             return reserved_run_id, check.not_none(asset_graph_subset.asset_keys)

@@ -88,6 +88,7 @@ async def get_job_execution_data_from_run_request(
         asset_selection=run_request.asset_selection,
         asset_check_selection=run_request.asset_check_keys,
         op_selection=None,
+        run_config=run_request.run_config or {},
     )
 
     if pipeline_selector not in run_request_execution_data_cache:
@@ -193,7 +194,7 @@ async def _create_asset_run(
                 run_id=run_id,
                 resolved_op_selection=None,
                 op_selection=None,
-                run_config={},
+                run_config=run_request.run_config or {},
                 step_keys_to_execute=None,
                 tags=run_request.tags,
                 root_run_id=None,
@@ -245,7 +246,6 @@ async def submit_asset_run(
     submits the existing run. If the run does not exist, creates a new run and submits it, ensuring
     that the created run targets the given asset selection.
     """
-    check.invariant(not run_request.run_config, "Asset run requests have no custom run config")
     entity_keys: Sequence[EntityKey] = [
         *(run_request.asset_selection or []),
         *(run_request.asset_check_keys or []),

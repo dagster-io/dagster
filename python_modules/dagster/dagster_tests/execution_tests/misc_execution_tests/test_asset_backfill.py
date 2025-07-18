@@ -1614,6 +1614,7 @@ def execute_asset_backfill_iteration_consume_generator(
             ),
             backfill_start_timestamp=asset_backfill_data.backfill_start_timestamp,
             logger=logging.getLogger("fake_logger"),
+            run_config=None,
         )
         assert counter.counts().get("DagsterInstance.get_dynamic_partitions", 0) <= 1
         return result
