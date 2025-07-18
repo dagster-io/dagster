@@ -1,9 +1,0 @@
-[32m2025-07-16 17:46:35 +0000[0m - dagster - [34mDEBUG[0m - __ASSET_JOB - db6e6e46-82d1-4924-9d13-55710e92e30a - 84930 - LOGS_CAPTURED - Started capturing logs in process (pid: 84930).
-[32m2025-07-16 17:46:35 +0000[0m - dagster - [34mDEBUG[0m - __ASSET_JOB - db6e6e46-82d1-4924-9d13-55710e92e30a - 84930 - my_asset - STEP_START - Started execution of step "my_asset".
-[32m2025-07-16 17:46:35.740[0m | [1mINFO    [0m | [36mmy_module[0m:[36mmy_asset[0m:[36m35[0m - [1mHello TEAM_TURTLES![0m
-[32m2025-07-16 17:46:35 +0000[0m - dagster - [34mINFO[0m - __ASSET_JOB - db6e6e46-82d1-4924-9d13-55710e92e30a - my_asset - Hello TEAM_TURTLES!
-[32m2025-07-16 17:46:35 +0000[0m - dagster - [34mDEBUG[0m - __ASSET_JOB - db6e6e46-82d1-4924-9d13-55710e92e30a - 84930 - my_asset - STEP_OUTPUT - Yielded output "result" of type "Any". (Type check passed).
-[32m2025-07-16 17:46:35 +0000[0m - dagster - [34mDEBUG[0m - __ASSET_JOB - db6e6e46-82d1-4924-9d13-55710e92e30a - my_asset - Writing file at: /workspaces/dagster/dagster_home/artifacts/storage/my_asset using PickledObjectFilesystemIOManager...
-[32m2025-07-16 17:46:35 +0000[0m - dagster - [34mDEBUG[0m - __ASSET_JOB - db6e6e46-82d1-4924-9d13-55710e92e30a - 84930 - my_asset - ASSET_MATERIALIZATION - Materialized value my_asset.
-[32m2025-07-16 17:46:35 +0000[0m - dagster - [34mDEBUG[0m - __ASSET_JOB - db6e6e46-82d1-4924-9d13-55710e92e30a - 84930 - my_asset - HANDLED_OUTPUT - Handled output "result" using IO manager "io_manager"
-[32m2025-07-16 17:46:35 +0000[0m - dagster - [34mDEBUG[0m - __ASSET_JOB - db6e6e46-82d1-4924-9d13-55710e92e30a - 84930 - my_asset - STEP_SUCCESS - Finished execution of step "my_asset" in 185ms.

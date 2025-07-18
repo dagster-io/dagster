@@ -25,6 +25,8 @@ wheels/
 .installed.cfg
 *.egg
 
+/workspaces/dagster/dagster_home/
+/workspaces/dagster/my_module/
 # PyInstaller
 #  Usually these files are written by a python script from a template
 #  before PyInstaller builds the exe, so as to inject date/other infos into it.
