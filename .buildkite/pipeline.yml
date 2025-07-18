@@ -5,3 +5,5 @@ steps:
       - pytest -v
     agents:
       queue: "linux_ci_small"
+    env:
+      BUILDKITE_FOLDER_GIT_REPO_PATH: "git@github.com:albertfast/buildkite-folder.git"
