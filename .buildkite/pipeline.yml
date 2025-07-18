@@ -3,3 +3,5 @@ steps:
     command:
       - pip install -e .
       - pytest python_modules/dagster/dagster_tests/logging_tests/ -v --override-ini="addopts=loguru_bridge.py"
+    agents:
+      queue: "linux_ci_small"
