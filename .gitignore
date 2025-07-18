@@ -27,6 +27,11 @@ wheels/
 
 /workspaces/dagster/dagster_home/
 /workspaces/dagster/my_module/
+
+# Local development directories
+dagster_home/
+my_module/
+
 # PyInstaller
 #  Usually these files are written by a python script from a template
 #  before PyInstaller builds the exe, so as to inject date/other infos into it.
