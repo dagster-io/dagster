@@ -13,8 +13,7 @@ from dagster._core.definitions.materialize import materialize
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster._utils import alter_sys_path
 from dagster.components.core.tree import ComponentTree
-from dagster.components.lib.sql_component.sql_component import SqlComponent, TemplatedSqlComponent
-from dagster.components.testing import scaffold_defs_sandbox
+from dagster.components.lib.sql_component.sql_component import SqlComponent
 
 
 @contextmanager
@@ -36,10 +35,7 @@ def setup_duckdb_component_with_external_connection(
         # Create connection component
         connection_body = {
             "type": "dagster_duckdb.DuckDBConnectionComponent",
-            "attributes": {
-                "database": ":memory:",
-                "connection_config": {}
-            },
+            "attributes": {"database": ":memory:", "connection_config": {}},
         }
         connection_component_path = defs_folder_path / connection_component_name
         connection_component_path.mkdir(parents=True, exist_ok=True)
@@ -54,34 +50,8 @@ def setup_duckdb_component_with_external_connection(
             yield defs
 
 
-@contextmanager
-def setup_duckdb_component(
-    component_body: dict,
-) -> Iterator[tuple[TemplatedSqlComponent, Definitions]]:
-    """Sets up a components project with a duckdb component based on provided params."""
-    with scaffold_defs_sandbox(
-        component_cls=TemplatedSqlComponent,
-    ) as defs_sandbox:
-        with defs_sandbox.load(component_body=component_body) as (component, defs):
-            assert isinstance(component, TemplatedSqlComponent)
-            yield component, defs
-
-
-BASIC_DUCKDB_COMPONENT_BODY = {
-    "type": "dagster.TemplatedSqlComponent",
-    "attributes": {
-        "sql_template": "SELECT * FROM test_table;",
-        "assets": [{"key": "test_table"}],
-        "connection": {
-            "database": ":memory:",
-            "connection_config": {},
-        },
-    },
-}
-
-
 @mock.patch("duckdb.connect")
-def test_duckdb_sql_component2(duckdb_connect):
+def test_duckdb_sql_component(duckdb_connect):
     """Test that the TemplatedSqlComponent correctly builds and executes SQL."""
     mock_conn = mock.Mock()
     mock_conn.execute = mock.Mock()
@@ -112,9 +82,7 @@ def test_duckdb_sql_component2(duckdb_connect):
             config={"custom_user_agent": "dagster"},
         )
         mock_conn.execute.assert_called_once_with("SELECT * FROM test_table;")
-        assert defs.resolve_asset_graph().get_all_asset_keys() == {
-            AssetKey(["test_table"])
-        }
+        assert defs.resolve_asset_graph().get_all_asset_keys() == {AssetKey(["test_table"])}
 
 
 @pytest.mark.parametrize(
@@ -135,9 +103,7 @@ def test_duckdb_sql_component_with_templates(duckdb_connect, sql_template):
     # If sql_template is None, create a temporary file with the template
     if sql_template is None:
         with tempfile.NamedTemporaryFile(mode="w", suffix=".sql", delete=False) as f:
-            f.write(
-                "SELECT * FROM test_table WHERE date = '{{ date }}' LIMIT {{ limit }}"
-            )
+            f.write("SELECT * FROM test_table WHERE date = '{{ date }}' LIMIT {{ limit }}")
             sql_file_path = f.name
             sql_template = {"path": sql_file_path}
 
@@ -166,9 +132,7 @@ def test_duckdb_sql_component_with_templates(duckdb_connect, sql_template):
             mock_conn.execute.assert_called_once_with(
                 "SELECT * FROM test_table WHERE date = '2024-03-20' LIMIT 100"
             )
-            assert defs.resolve_asset_graph().get_all_asset_keys() == {
-                AssetKey(["test_table"])
-            }
+            assert defs.resolve_asset_graph().get_all_asset_keys() == {AssetKey(["test_table"])}
     finally:
         # Clean up the temporary file if it was created
         if isinstance(sql_template, dict) and "path" in sql_template:
@@ -251,6 +215,4 @@ def test_custom_duckdb_sql_component(duckdb_connect):
         mock_conn.execute.assert_called_once_with(
             "CREATE TABLE IF NOT EXISTS test_table (id INTEGER PRIMARY KEY, name VARCHAR(100));"
         )
-        assert defs.resolve_asset_graph().get_all_asset_keys() == {
-            AssetKey(["test_table"])
-        }
+        assert defs.resolve_asset_graph().get_all_asset_keys() == {AssetKey(["test_table"])}
