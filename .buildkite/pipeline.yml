@@ -2,6 +2,6 @@ steps:
   - label: ":test_tube: Run tests"
     command:
       - pip install -e .
-      - pytest python_modules/dagster/dagster_tests/logging_tests/ -v --override-ini="addopts=loguru_bridge.py"
+      - pytest -v
     agents:
       queue: "linux_ci_small"
