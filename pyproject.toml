@@ -23,9 +23,6 @@ include = [
   "scripts",
 ]
 
-[tool.pytest.ini_options]
-addopts = "--buildkite"
-
 # Unfortunately pyright does not offer a way to extend the default exclusions, so we have to
 # reiterate them here if we want to add anything else.
 exclude = [
@@ -80,6 +77,7 @@ executionEnvironments = [
 # ########################
 
 [tool.pytest.ini_options]
+addopts = "--buildkite"
 
 filterwarnings = [
   "ignore::DeprecationWarning",
