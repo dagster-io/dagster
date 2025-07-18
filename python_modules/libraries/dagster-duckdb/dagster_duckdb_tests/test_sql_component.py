@@ -8,12 +8,12 @@ import duckdb
 import pytest
 import yaml
 from dagster import AssetKey, Definitions
-from dagster._check import check
 from dagster._core.definitions.materialize import materialize
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster._utils import alter_sys_path
 from dagster.components.core.tree import ComponentTree
 from dagster.components.lib.sql_component.sql_component import SqlComponent
+from dagster_shared import check
 
 
 @contextmanager
