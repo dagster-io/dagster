@@ -1,6 +1,10 @@
 import os
 import pytest
 import requests
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 def test_buildkite_analytics_integration():
     print("Testing Buildkite Analytics Integration...")
@@ -50,6 +54,8 @@ def test_buildkite_analytics_integration():
             print(f"API Response Status: {response.status_code}")
             if response.status_code == 200:
                 print("Success! Test results uploaded to Buildkite Analytics")
+            elif response.status_code == 202:
+                print("Accepted! Test results uploaded and being processed by Buildkite Analytics")
             elif response.status_code == 401:
                 print("Unauthorized - Token may need to be associated with test suite")
             else:
