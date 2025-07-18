@@ -6,7 +6,7 @@ import time
 from collections.abc import Iterable, Mapping, Sequence
 from datetime import datetime
 from enum import Enum
-from typing import TYPE_CHECKING, NamedTuple, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, NamedTuple, Optional, Union, cast
 
 import dagster._check as check
 from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView, TemporalContext
@@ -1053,6 +1053,7 @@ async def execute_asset_backfill_iteration(
                 asset_graph_view=asset_graph_view,
                 backfill_start_timestamp=backfill.backfill_timestamp,
                 logger=logger,
+                run_config=backfill.run_config,
             )
 
             # Write the updated asset backfill data with in progress run requests before we launch anything, for idempotency
@@ -1425,6 +1426,7 @@ def execute_asset_backfill_iteration_inner(
     asset_graph_view: AssetGraphView,
     backfill_start_timestamp: float,
     logger: logging.Logger,
+    run_config: Optional[Mapping[str, Any]],
 ) -> AssetBackfillIterationResult:
     """Core logic of a backfill iteration. Has no side effects.
 
@@ -1440,7 +1442,12 @@ def execute_asset_backfill_iteration_inner(
         dynamic_partitions_store=asset_graph_view.get_inner_queryer_for_back_compat(),
     ):
         return _execute_asset_backfill_iteration_inner(
-            backfill_id, asset_backfill_data, asset_graph_view, backfill_start_timestamp, logger
+            backfill_id,
+            asset_backfill_data,
+            asset_graph_view,
+            backfill_start_timestamp,
+            logger,
+            run_config,
         )
 
 
@@ -1481,6 +1488,7 @@ def _execute_asset_backfill_iteration_inner(
     asset_graph_view: AssetGraphView,
     backfill_start_timestamp: float,
     logger: logging.Logger,
+    run_config: Optional[Mapping[str, Any]],
 ) -> AssetBackfillIterationResult:
     instance_queryer = asset_graph_view.get_inner_queryer_for_back_compat()
     asset_graph: RemoteWorkspaceAssetGraph = cast(
@@ -1587,11 +1595,14 @@ def _execute_asset_backfill_iteration_inner(
             f"The following assets were considered for materialization but not requested:\n\n{not_requested_str}"
         )
 
-    run_requests = build_run_requests_with_backfill_policies(
-        asset_partitions=asset_partitions_to_request,
-        asset_graph=asset_graph,
-        dynamic_partitions_store=instance_queryer,
-    )
+    run_requests = [
+        rr._replace(run_config=run_config)
+        for rr in build_run_requests_with_backfill_policies(
+            asset_partitions=asset_partitions_to_request,
+            asset_graph=asset_graph,
+            dynamic_partitions_store=instance_queryer,
+        )
+    ]
 
     if request_roots:
         check.invariant(
