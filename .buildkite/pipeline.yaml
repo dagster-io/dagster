@@ -10,6 +10,7 @@ steps:
       pip install -r requirements-dev.txt
       echo "--- Running pytest for loguru integration"
       pytest -vvs -c pytest-local.ini test_buildkite_collector.py
+      export $(cat .env | xargs)
     env:
       BUILDKITE_ANALYTICS_TOKEN: "${BUILDKITE_ANALYTICS_TOKEN}"
     agents:
