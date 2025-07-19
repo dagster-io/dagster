@@ -1,22 +1,22 @@
 steps:
-  - label: ":loguru: Loguru-Dagster Integration Test"
+  - label: ":test_tube: Dagster Logging Tests Suite"
     command: |
       echo "--- Setting up environment"
       echo "Working directory: $PWD"
       echo "Python version: $(python3 --version)"
-      echo "--- Loading environment variables"
+      echo "--- Loading environment variables from .env"
       if [ -f .env ]; then
         echo "Loading .env file..."
         export $(grep -v '^#' .env | xargs)
         echo "BUILDKITE_ANALYTICS_TOKEN loaded: ${BUILDKITE_ANALYTICS_TOKEN:0:10}..."
+        echo "BUILDKITE_PIPELINE_SLUG: ${BUILDKITE_PIPELINE_SLUG}"
       fi
       echo "--- Installing dagster and dependencies"
       pip install -e python_modules/dagster
-      pip install pytest loguru python-dotenv
-      echo "--- Running loguru integration tests"
-      pytest -v python_modules/dagster/dagster_tests/logging_tests/test_bridge.py -k "buildkite" || echo "Bridge tests completed"
-      echo "--- Running all loguru bridge tests"  
-      pytest -vvs python_modules/dagster/dagster_tests/logging_tests/test_loguru_bridge.py || echo "Loguru bridge tests completed"
+      pip install pytest loguru python-dotenv requests
+      echo "--- Running all logging tests (119 tests)"
+      pytest -v python_modules/dagster/dagster_tests/logging_tests/ --tb=short
+      echo "--- Completed all Dagster logging tests successfully"
     env:
       BUILDKITE: "true"
       BUILDKITE_ANALYTICS_TOKEN: "${DAGSTER_BUILDKITE_ANALYTICS_TOKEN}"
@@ -24,8 +24,63 @@ steps:
       BUILDKITE_JOB_ID: "${BUILDKITE_JOB_ID}"
       BUILDKITE_COMMIT: "${BUILDKITE_COMMIT}"
       BUILDKITE_BRANCH: "${BUILDKITE_BRANCH}"
-      BUILDKITE_ORGANIZATION_SLUG: "dagster"
-      BUILDKITE_PIPELINE_SLUG: "unit-tests"
+      BUILDKITE_ORGANIZATION_SLUG: "cti-student"
+      BUILDKITE_PIPELINE_SLUG: "harold-symons-dagster-tree-issue-29914"
+      BUILDKITE_BUILD_NUMBER: "${BUILDKITE_BUILD_NUMBER}"
+    agents:
+      queue: "public-default"
+
+  - label: ":loguru: Loguru Bridge Integration Test"
+    command: |
+      echo "--- Setting up loguru bridge test"
+      echo "Working directory: $PWD"
+      if [ -f .env ]; then
+        echo "Loading .env file..."
+        export $(grep -v '^#' .env | xargs)
+        echo "BUILDKITE_ANALYTICS_TOKEN loaded: ${BUILDKITE_ANALYTICS_TOKEN:0:10}..."
+      fi
+      pip install -e python_modules/dagster
+      pip install pytest loguru python-dotenv requests
+      echo "--- Running loguru bridge tests"
+      pytest -vvs python_modules/dagster/dagster_tests/logging_tests/test_bridge.py::test_buildkite_analytics_integration
+      pytest -vvs python_modules/dagster/dagster_tests/logging_tests/test_bridge.py::test_buildkite_environment_validation
+      pytest -vvs python_modules/dagster/dagster_tests/logging_tests/test_loguru_bridge.py
+      echo "--- Completed loguru bridge integration tests"
+    env:
+      BUILDKITE: "true"
+      BUILDKITE_ANALYTICS_TOKEN: "${DAGSTER_BUILDKITE_ANALYTICS_TOKEN}"
+      BUILDKITE_BUILD_ID: "${BUILDKITE_BUILD_ID}"
+      BUILDKITE_JOB_ID: "${BUILDKITE_JOB_ID}"
+      BUILDKITE_COMMIT: "${BUILDKITE_COMMIT}"
+      BUILDKITE_BRANCH: "${BUILDKITE_BRANCH}"
+      BUILDKITE_ORGANIZATION_SLUG: "cti-student"
+      BUILDKITE_PIPELINE_SLUG: "harold-symons-dagster-tree-issue-29914"
+      BUILDKITE_BUILD_NUMBER: "${BUILDKITE_BUILD_NUMBER}"
+    agents:
+      queue: "public-default"
+
+  - label: ":buildkite: Buildkite Analytics Integration Test"
+    command: |
+      echo "--- Testing Buildkite Analytics Integration"
+      if [ -f .env ]; then
+        echo "Loading .env file..."
+        export $(grep -v '^#' .env | xargs)
+        echo "BUILDKITE_ANALYTICS_TOKEN loaded: ${BUILDKITE_ANALYTICS_TOKEN:0:10}..."
+      fi
+      pip install -e python_modules/dagster
+      pip install pytest loguru python-dotenv requests
+      echo "--- Running Buildkite collector tests"
+      pytest -vvs python_modules/dagster/dagster_tests/logging_tests/test_buildkite_collector.py
+      echo "--- Completed Buildkite Analytics tests"
+    env:
+      BUILDKITE: "true"
+      BUILDKITE_ANALYTICS_TOKEN: "${DAGSTER_BUILDKITE_ANALYTICS_TOKEN}"
+      BUILDKITE_BUILD_ID: "${BUILDKITE_BUILD_ID}"
+      BUILDKITE_JOB_ID: "${BUILDKITE_JOB_ID}"
+      BUILDKITE_COMMIT: "${BUILDKITE_COMMIT}"
+      BUILDKITE_BRANCH: "${BUILDKITE_BRANCH}"
+      BUILDKITE_ORGANIZATION_SLUG: "cti-student"
+      BUILDKITE_PIPELINE_SLUG: "harold-symons-dagster-tree-issue-29914"
       BUILDKITE_BUILD_NUMBER: "${BUILDKITE_BUILD_NUMBER}"
     agents:
       queue: "public-default"
