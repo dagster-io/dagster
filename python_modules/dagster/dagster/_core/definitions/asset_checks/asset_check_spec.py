@@ -124,11 +124,17 @@ class AssetCheckSpec(IHaveNew, LegacyNamedTupleMixin):
         """Returns a string uniquely identifying the asset check, that uses only the characters
         allowed in a Python identifier.
         """
-        return f"{self.asset_key.to_python_identifier()}_{self.name}".replace(".", "_")
+        return self.key.to_python_identifier()
 
     @property
     def key(self) -> AssetCheckKey:
         return AssetCheckKey(self.asset_key, self.name)
+
+    @property
+    def deps(self) -> Iterable["AssetDep"]:
+        from dagster._core.definitions.assets.definition.asset_dep import AssetDep
+
+        return [AssetDep(self.asset_key), *self.additional_deps]
 
     def replace_key(self, key: AssetCheckKey) -> "AssetCheckSpec":
         return replace(self, asset_key=key.asset_key, name=key.name)

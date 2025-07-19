@@ -38,6 +38,7 @@ from dagster._core.definitions.utils import (
 )
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.storage.tags import KIND_PREFIX
+from dagster._core.types.dagster_type import resolve_dagster_type
 from dagster._record import IHaveNew, LegacyNamedTupleMixin, record_custom
 from dagster._utils.internal_init import IHasInternalInit
 from dagster._utils.tags import normalize_tags
@@ -306,6 +307,25 @@ class AssetSpec(IHasInternalInit, IHaveNew, LegacyNamedTupleMixin):
         """
         return self._replace(
             metadata={**self.metadata, SYSTEM_METADATA_KEY_IO_MANAGER_KEY: io_manager_key}
+        )
+
+    def with_dagster_type(self, dagster_type: Any) -> "AssetSpec":
+        """Returns a copy of this AssetSpec with an extra metadata value that dictates which
+        Dagster type to use to load the contents of this asset in downstream computations.
+
+        Args:
+            dagster_type (type): The runtime type of the asset. This will be used as the value for
+                the "dagster/dagster_type" metadata key. Must be possible to convert into a
+                valid DagsterType.
+
+        Returns:
+            AssetSpec
+        """
+        return self._replace(
+            metadata={
+                **self.metadata,
+                SYSTEM_METADATA_KEY_DAGSTER_TYPE: resolve_dagster_type(dagster_type),
+            }
         )
 
     @public

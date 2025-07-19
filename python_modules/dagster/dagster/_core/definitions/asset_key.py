@@ -247,6 +247,9 @@ class AssetCheckKey(NamedTuple):
     def replace_asset_key(self, asset_key: AssetKey) -> "AssetCheckKey":
         return AssetCheckKey(asset_key, self.name)
 
+    def to_python_identifier(self) -> str:
+        return f"{self.asset_key.to_python_identifier()}_{self.name}".replace(".", "_")
+
 
 EntityKey = Union[AssetKey, AssetCheckKey]
 T_EntityKey = TypeVar("T_EntityKey", AssetKey, AssetCheckKey, EntityKey)
