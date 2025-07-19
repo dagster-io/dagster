@@ -21,7 +21,7 @@ from dagster._core.definitions.asset_key import (
 )
 from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
 from dagster._core.definitions.assets.graph.asset_graph import AssetGraph
-from dagster._core.definitions.assets.graph.base_asset_graph import BaseAssetGraph, BaseAssetNode
+from dagster._core.definitions.assets.graph.base_asset_graph import BaseAssetGraph
 from dagster._core.definitions.resolved_asset_deps import resolve_similar_asset_names
 from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.errors import DagsterInvalidSubsetError
@@ -886,7 +886,7 @@ class MaterializableAssetSelection(ChainedAssetSelection):
         return {
             asset_key
             for asset_key in self.child.resolve_inner(asset_graph, allow_missing=allow_missing)
-            if cast("BaseAssetNode", asset_graph.get(asset_key)).is_materializable
+            if asset_key in asset_graph.materializable_asset_keys
         }
 
 
