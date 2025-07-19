@@ -1,5 +1,5 @@
 steps:
-  - block:  ":rocket: Are we ready?"
+  - block:  "Manual Approval for Loguru Test"
     prompt: "Approve to start loguru-dagster integration test suite"
     key: "loguru-manual-approval"
     blocked_state: failed
