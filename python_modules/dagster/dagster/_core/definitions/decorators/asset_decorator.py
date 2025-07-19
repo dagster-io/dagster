@@ -972,7 +972,7 @@ def graph_asset_no_defaults(
     partition_mappings = {
         input_name: asset_in.partition_mapping
         for input_name, asset_in in ins.items()
-        if asset_in.partition_mapping
+        if asset_in.partition_mapping is not None
     }
 
     check_specs_by_output_name = validate_and_assign_output_names_to_check_specs(
