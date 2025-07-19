@@ -1,7 +1,9 @@
 steps:
-  - block: "Unblock?"
+  - block:  ":rocket: Are we ready?"
+    prompt: "Approve to start loguru-dagster integration test suite"
+    key: "loguru-manual-approval"
+    blocked_state: failed
     if: build.pull_request.draft == "false"
-    blocked_state: passed
 
   - label: ":loguru: Loguru-Dagster Buildkite Test"
     command: |
@@ -14,3 +16,4 @@ steps:
       BUILDKITE_ANALYTICS_TOKEN: "${BUILDKITE_ANALYTICS_TOKEN}"
     agents:
       queue: "public-default"
+    depends_on: "loguru-manual-approval"
