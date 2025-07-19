@@ -62,7 +62,7 @@ With our resource defined, we need to update our asset code. Since all of our in
   language="python"
   startAfter="start_import_url_to_duckdb_with_resource"
   endBefore="end_import_url_to_duckdb_with_resource"
-  title="src/etl_tutorial/defs/assets/py"
+  title="src/etl_tutorial/defs/assets.py"
 />
 
 The `DuckDBResource` is designed to handle concurrent queries, so we no longer need the `serialize_duckdb_query` function. Now we can update the assets themselves. We will add `duckdb` as a parameter to each asset function. Within our Dagster project, the `DuckDBResource` will now be available which we can pass through to the `import_url_to_duckdb` function:
