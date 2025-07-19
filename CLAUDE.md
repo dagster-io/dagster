@@ -4,6 +4,7 @@
 
 - **Package Locations**: [.claude/python_packages.md](./.claude/python_packages.md) - Comprehensive list of all Python packages and their filesystem paths
 - **Development Workflow**: [.claude/dev_workflow.md](./.claude/dev_workflow.md) - Required post-edit procedures including `make ruff` execution
+- **Coding Conventions**: [.claude/coding_conventions.md](./.claude/coding_conventions.md) - Type annotations and code style conventions
 
 ## Environment Setup
 
