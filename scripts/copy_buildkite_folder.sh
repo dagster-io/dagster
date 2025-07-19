@@ -1,6 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
+
 # Script to restore the .buildkite folder to the current repository
 # Usage: ./copy_buildkite_folder.sh
 
@@ -8,6 +9,9 @@ echo "🔧 Setting up .buildkite folder from buildkite folder repository..."
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 echo "Repository root: $REPO_ROOT"
+
+# Set default buildkite folder repository path if not provided
+export BUILDKITE_FOLDER_GIT_REPO_PATH="${BUILDKITE_FOLDER_GIT_REPO_PATH:-https://github.com/dagster-io/buildkite-folder.git}"
 
 # Parse BUILDKITE_FOLDER_BRANCH from BUILDKITE_MESSAGE if available
 # Skip parsing for master and release branches
