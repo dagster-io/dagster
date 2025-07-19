@@ -8,6 +8,7 @@ Using Components
 
 .. autodecorator:: component_instance
 
+.. autodecorator:: template_var
 
 .. autoclass:: ComponentLoadContext
    :members:
