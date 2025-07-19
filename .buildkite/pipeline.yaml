@@ -13,4 +13,4 @@ steps:
     env:
       BUILDKITE_ANALYTICS_TOKEN: "${BUILDKITE_ANALYTICS_TOKEN}"
     agents:
-      queue: "public-default"
+      queue: "default"
