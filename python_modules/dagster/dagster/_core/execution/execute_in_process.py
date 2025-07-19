@@ -120,15 +120,15 @@ def core_execute_in_process(
 
     _check_top_level_inputs(job_def)
 
-    execution_plan = create_execution_plan(
-        job,
-        run_config=run_config,
-        instance_ref=instance.get_ref() if instance and instance.is_persistent else None,
-    )
-
-    output_capture: dict[StepOutputHandle, Any] = {}
-
     with ephemeral_instance_if_missing(instance) as execute_instance:
+        execution_plan = create_execution_plan(
+            job,
+            instance=execute_instance,
+            run_config=run_config,
+        )
+
+        output_capture: dict[StepOutputHandle, Any] = {}
+
         run = execute_instance.create_run_for_job(
             job_def=job_def,
             run_config=run_config,

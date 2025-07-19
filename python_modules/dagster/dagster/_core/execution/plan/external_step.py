@@ -195,12 +195,13 @@ def step_run_ref_to_step_context(
 
     execution_plan = create_execution_plan(
         job,
-        step_run_ref.run_config,
+        run_config=step_run_ref.run_config,
         step_keys_to_execute=[step_run_ref.step_key],
         known_state=step_run_ref.known_state,
         # we packaged repository_load_data onto the reconstructable job when creating the
         # StepRunRef, rather than putting it in a separate field
         repository_load_data=job.repository.repository_load_data,
+        instance=instance,
     )
 
     initialization_manager = PlanExecutionContextManager(

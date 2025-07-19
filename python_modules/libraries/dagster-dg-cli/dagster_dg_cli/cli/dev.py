@@ -166,6 +166,6 @@ def dev_command(
             live_data_poll_rate=str(live_data_poll_rate),
             use_legacy_code_server_behavior=False,
             shutdown_pipe=None,
-            verbose=False,
+            verbose=other_options.get("verbose", False),
             workspace_opts=WorkspaceOpts(workspace=[workspace_file]),
         )
