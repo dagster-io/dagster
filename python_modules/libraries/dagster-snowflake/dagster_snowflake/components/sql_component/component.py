@@ -1,24 +1,33 @@
-from typing import Annotated
+from typing import Annotated, Optional
 
-from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
-from dagster.components.base.sql_component import TemplatedSqlComponent
-from pydantic import Field
+import dagster as dg
+from dagster._annotations import preview, public
+from dagster._core.definitions.definitions_class import Definitions
+from dagster.components.core.context import ComponentLoadContext
+from pydantic import BaseModel, Field
 
 from dagster_snowflake.resources import SnowflakeResource
 
 
-class SnowflakeSqlComponent(TemplatedSqlComponent[SnowflakeResource]):
-    """A component that executes SQL from a file in Snowflake."""
+@public
+@preview
+class SnowflakeConnectionComponent(dg.Component, dg.Resolvable, SnowflakeResource):
+    """A component that represents a Snowflake connection."""
 
     resource_key: Annotated[
-        str, Field(description="The resource key to use for the Snowflake resource.")
-    ] = "snowflake"
+        Optional[str],
+        Field(
+            description="A resource key to expose this connection to use in other Dagster assets."
+        ),
+    ] = None
 
-    def execute(self, context: AssetExecutionContext, resource: SnowflakeResource) -> None:
-        """Execute the SQL content using the Snowflake resource."""
-        with resource.get_connection() as conn:
-            conn.cursor().execute(self.sql_content)
+    @classmethod
+    def load(
+        cls, attributes: Optional[BaseModel], context: "ComponentLoadContext"
+    ) -> "SnowflakeConnectionComponent":
+        return super().load(attributes, context)
 
-    @property
-    def resource_keys(self) -> set[str]:
-        return {self.resource_key}
+    def build_defs(self, context: ComponentLoadContext) -> Definitions:
+        return (
+            Definitions(resources={self.resource_key: self}) if self.resource_key else Definitions()
+        )
