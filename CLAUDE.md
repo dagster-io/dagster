@@ -1,8 +1,9 @@
 # Dagster Development Guide
 
-## Quick Package Lookup
+## Quick References
 
-When you need to find Python package locations, refer to [.claude/python_packages.md](./.claude/python_packages.md) for a comprehensive list of all packages and their filesystem paths organized by category.
+- **Package Locations**: [.claude/python_packages.md](./.claude/python_packages.md) - Comprehensive list of all Python packages and their filesystem paths
+- **Development Workflow**: [.claude/dev_workflow.md](./.claude/dev_workflow.md) - Required post-edit procedures including `make ruff` execution
 
 ## Environment Setup
 
