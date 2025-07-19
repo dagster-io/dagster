@@ -21,6 +21,7 @@ class JobSubsetSelector(IHaveNew):
     op_selection: Optional[Sequence[str]]
     asset_selection: Optional[AbstractSet[AssetKey]]
     asset_check_selection: Optional[AbstractSet[AssetCheckKey]]
+    run_config: Optional[Mapping[str, Any]]
 
     def __new__(
         cls,
@@ -30,6 +31,7 @@ class JobSubsetSelector(IHaveNew):
         op_selection: Optional[Sequence[str]],
         asset_selection: Optional[Iterable[AssetKey]] = None,
         asset_check_selection: Optional[Iterable[AssetCheckKey]] = None,
+        run_config: Optional[Mapping[str, Any]] = None,
     ):
         # coerce iterables to sets
         asset_selection = frozenset(asset_selection) if asset_selection else None
@@ -44,6 +46,7 @@ class JobSubsetSelector(IHaveNew):
             op_selection=op_selection,
             asset_selection=asset_selection,
             asset_check_selection=asset_check_selection,
+            run_config=run_config,
         )
 
     def to_graphql_input(self):
