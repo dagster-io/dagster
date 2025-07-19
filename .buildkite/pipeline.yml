@@ -1,0 +1,7 @@
+steps:
+  - label: ":test_tube: Run tests"
+    command:
+      - pip install -e .
+      - pytest -v
+    agents:
+      queue: "linux_ci_small"

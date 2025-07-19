@@ -1,0 +1,11 @@
+[32m2025-07-17 15:31:46 +0000[0m - dagster - [34mDEBUG[0m - __ASSET_JOB - e01b31fb-9fee-4906-9957-529a0d8d2a29 - 8908 - LOGS_CAPTURED - Started capturing logs in process (pid: 8908).
+[32m2025-07-17 15:31:46 +0000[0m - dagster - [34mDEBUG[0m - __ASSET_JOB - e01b31fb-9fee-4906-9957-529a0d8d2a29 - 8908 - calculate_sum - STEP_START - Started execution of step "calculate_sum".
+[32m15:31:46[0m | [34m[1mDEBUG   [0m | [36mmy_module[0m:[36mcalculate_sum[0m - [34m[1mAdding 3 + 7[0m
+[32m2025-07-17 15:31:46 +0000[0m - dagster - [34mDEBUG[0m - __ASSET_JOB - e01b31fb-9fee-4906-9957-529a0d8d2a29 - calculate_sum - Adding 3 + 7
+[32m15:31:46[0m | [32m[1mSUCCESS [0m | [36mmy_module[0m:[36mcalculate_sum[0m - [32m[1mResult is 10[0m
+[32m2025-07-17 15:31:47 +0000[0m - dagster - [34mINFO[0m - __ASSET_JOB - e01b31fb-9fee-4906-9957-529a0d8d2a29 - calculate_sum - Result is 10
+[32m2025-07-17 15:31:47 +0000[0m - dagster - [34mDEBUG[0m - __ASSET_JOB - e01b31fb-9fee-4906-9957-529a0d8d2a29 - 8908 - calculate_sum - STEP_OUTPUT - Yielded output "result" of type "Any". (Type check passed).
+[32m2025-07-17 15:31:47 +0000[0m - dagster - [34mDEBUG[0m - __ASSET_JOB - e01b31fb-9fee-4906-9957-529a0d8d2a29 - calculate_sum - Writing file at: /workspaces/dagster/.tmp_dagster_home_2r55nlnv/storage/calculate_sum using PickledObjectFilesystemIOManager...
+[32m2025-07-17 15:31:47 +0000[0m - dagster - [34mDEBUG[0m - __ASSET_JOB - e01b31fb-9fee-4906-9957-529a0d8d2a29 - 8908 - calculate_sum - ASSET_MATERIALIZATION - Materialized value calculate_sum.
+[32m2025-07-17 15:31:47 +0000[0m - dagster - [34mDEBUG[0m - __ASSET_JOB - e01b31fb-9fee-4906-9957-529a0d8d2a29 - 8908 - calculate_sum - HANDLED_OUTPUT - Handled output "result" using IO manager "io_manager"
+[32m2025-07-17 15:31:47 +0000[0m - dagster - [34mDEBUG[0m - __ASSET_JOB - e01b31fb-9fee-4906-9957-529a0d8d2a29 - 8908 - calculate_sum - STEP_SUCCESS - Finished execution of step "calculate_sum" in 417ms.

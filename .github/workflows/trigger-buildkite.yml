@@ -1,0 +1,18 @@
+# .github/workflows/trigger-buildkite.yml
+name: Trigger Buildkite
+
+on:
+  push:
+    branches: [Issue-29914]
+
+jobs:
+  trigger:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Buildkite build
+        uses: buildkite/trigger-pipeline-action@v2
+        with:
+          buildkite-api-token: ${{ secrets.BUILDKITE_API_TOKEN }}
+          organization: cti-student
+          pipeline: harold-symons-dagster-tree-issue-29914
+          branch: Issue-29914

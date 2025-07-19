@@ -1,0 +1,28 @@
+# /workspaces/dagster/dagster_home/dagster.yaml
+
+local_artifact_storage:
+  module: dagster._core.storage.root
+  class: LocalArtifactStorage
+  config:
+    base_dir: /workspaces/dagster/dagster_home/artifacts
+
+run_storage:
+  module: dagster._core.storage.runs
+  class: SqliteRunStorage
+  config:
+    base_dir: /workspaces/dagster/dagster_home/history
+
+event_log_storage:
+  module: dagster._core.storage.event_log
+  class: SqliteEventLogStorage
+  config:
+    base_dir: /workspaces/dagster/dagster_home/logs
+
+schedule_storage:
+  module: dagster._core.storage.schedules
+  class: SqliteScheduleStorage
+  config:
+    base_dir: /workspaces/dagster/dagster_home/schedules
+
+telemetry:
+  enabled: false

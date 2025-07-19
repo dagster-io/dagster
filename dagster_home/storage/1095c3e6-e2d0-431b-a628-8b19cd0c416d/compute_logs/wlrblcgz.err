@@ -1,0 +1,11 @@
+[32m2025-07-16 17:57:29 +0000[0m - dagster - [34mDEBUG[0m - __ASSET_JOB - 1095c3e6-e2d0-431b-a628-8b19cd0c416d - 103756 - LOGS_CAPTURED - Started capturing logs in process (pid: 103756).
+[32m2025-07-16 17:57:29 +0000[0m - dagster - [34mDEBUG[0m - __ASSET_JOB - 1095c3e6-e2d0-431b-a628-8b19cd0c416d - 103756 - calculate_sum - STEP_START - Started execution of step "calculate_sum".
+[32m2025-07-16 17:57:29.575[0m | [34m[1mDEBUG   [0m | [36mmy_module[0m:[36mcalculate_sum[0m:[36m42[0m - [34m[1mAdding 3 + 7[0m
+[32m2025-07-16 17:57:29 +0000[0m - dagster - [34mDEBUG[0m - __ASSET_JOB - 1095c3e6-e2d0-431b-a628-8b19cd0c416d - calculate_sum - Adding 3 + 7
+[32m2025-07-16 17:57:29.588[0m | [32m[1mSUCCESS [0m | [36mmy_module[0m:[36mcalculate_sum[0m:[36m44[0m - [32m[1mResult is 10[0m
+[32m2025-07-16 17:57:29 +0000[0m - dagster - [34mINFO[0m - __ASSET_JOB - 1095c3e6-e2d0-431b-a628-8b19cd0c416d - calculate_sum - Result is 10
+[32m2025-07-16 17:57:29 +0000[0m - dagster - [34mDEBUG[0m - __ASSET_JOB - 1095c3e6-e2d0-431b-a628-8b19cd0c416d - 103756 - calculate_sum - STEP_OUTPUT - Yielded output "result" of type "Any". (Type check passed).
+[32m2025-07-16 17:57:29 +0000[0m - dagster - [34mDEBUG[0m - __ASSET_JOB - 1095c3e6-e2d0-431b-a628-8b19cd0c416d - calculate_sum - Writing file at: /workspaces/dagster/dagster_home/artifacts/storage/calculate_sum using PickledObjectFilesystemIOManager...
+[32m2025-07-16 17:57:29 +0000[0m - dagster - [34mDEBUG[0m - __ASSET_JOB - 1095c3e6-e2d0-431b-a628-8b19cd0c416d - 103756 - calculate_sum - ASSET_MATERIALIZATION - Materialized value calculate_sum.
+[32m2025-07-16 17:57:29 +0000[0m - dagster - [34mDEBUG[0m - __ASSET_JOB - 1095c3e6-e2d0-431b-a628-8b19cd0c416d - 103756 - calculate_sum - HANDLED_OUTPUT - Handled output "result" using IO manager "io_manager"
+[32m2025-07-16 17:57:29 +0000[0m - dagster - [34mDEBUG[0m - __ASSET_JOB - 1095c3e6-e2d0-431b-a628-8b19cd0c416d - 103756 - calculate_sum - STEP_SUCCESS - Finished execution of step "calculate_sum" in 196ms.

@@ -1,0 +1,14 @@
+[32m2025-07-17 15:36:52 +0000[0m - dagster - [34mDEBUG[0m - __ASSET_JOB - ae18d194-be5e-43e9-b56b-9aa9c5c03aa9 - 15603 - LOGS_CAPTURED - Started capturing logs in process (pid: 15603).
+[32m2025-07-17 15:36:52 +0000[0m - dagster - [34mDEBUG[0m - __ASSET_JOB - ae18d194-be5e-43e9-b56b-9aa9c5c03aa9 - 15603 - classic_logger_test - STEP_START - Started execution of step "classic_logger_test".
+2025-07-17 15:36:52,406 - DEBUG - DEBUG from classic logger
+2025-07-17 15:36:52,406 - INFO - INFO from classic logger
+2025-07-17 15:36:52,406 - WARNING - WARNING from classic logger
+2025-07-17 15:36:52,406 - ERROR - ERROR from classic logger
+2025-07-17 15:36:52,406 - CRITICAL - CRITICAL from classic logger
+[32m15:36:52[0m | [1mINFO    [0m | [36mmy_module[0m:[36mclassic_logger_test[0m - [1mFinished classic_logger_test[0m
+[32m2025-07-17 15:36:52 +0000[0m - dagster - [34mINFO[0m - __ASSET_JOB - ae18d194-be5e-43e9-b56b-9aa9c5c03aa9 - classic_logger_test - Finished classic_logger_test
+[32m2025-07-17 15:36:52 +0000[0m - dagster - [34mDEBUG[0m - __ASSET_JOB - ae18d194-be5e-43e9-b56b-9aa9c5c03aa9 - 15603 - classic_logger_test - STEP_OUTPUT - Yielded output "result" of type "Any". (Type check passed).
+[32m2025-07-17 15:36:52 +0000[0m - dagster - [34mDEBUG[0m - __ASSET_JOB - ae18d194-be5e-43e9-b56b-9aa9c5c03aa9 - classic_logger_test - Writing file at: /workspaces/dagster/.tmp_dagster_home_2r55nlnv/storage/classic_logger_test using PickledObjectFilesystemIOManager...
+[32m2025-07-17 15:36:52 +0000[0m - dagster - [34mDEBUG[0m - __ASSET_JOB - ae18d194-be5e-43e9-b56b-9aa9c5c03aa9 - 15603 - classic_logger_test - ASSET_MATERIALIZATION - Materialized value classic_logger_test.
+[32m2025-07-17 15:36:52 +0000[0m - dagster - [34mDEBUG[0m - __ASSET_JOB - ae18d194-be5e-43e9-b56b-9aa9c5c03aa9 - 15603 - classic_logger_test - HANDLED_OUTPUT - Handled output "result" using IO manager "io_manager"
+[32m2025-07-17 15:36:52 +0000[0m - dagster - [34mDEBUG[0m - __ASSET_JOB - ae18d194-be5e-43e9-b56b-9aa9c5c03aa9 - 15603 - classic_logger_test - STEP_SUCCESS - Finished execution of step "classic_logger_test" in 325ms.
