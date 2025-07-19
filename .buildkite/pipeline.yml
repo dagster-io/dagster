@@ -2,28 +2,30 @@ steps:
   - label: ":loguru: Loguru-Dagster Integration Test"
     command: |
       echo "--- Setting up environment"
-      echo "Working directory: \$PWD"
-      echo "Python version: \$(python3 --version)"
+      echo "Working directory: $PWD"
+      echo "Python version: $(python3 --version)"
+      echo "--- Loading environment variables"
+      if [ -f .env ]; then
+        echo "Loading .env file..."
+        export $(grep -v '^#' .env | xargs)
+        echo "BUILDKITE_ANALYTICS_TOKEN loaded: ${BUILDKITE_ANALYTICS_TOKEN:0:10}..."
+      fi
       echo "--- Installing dagster and dependencies"
       pip install -e python_modules/dagster
-      pip install pytest loguru
+      pip install pytest loguru python-dotenv
       echo "--- Running loguru integration tests"
-      pytest -v python_modules/dagster/dagster_tests/logging_tests/test_bridge.py -k "buildkite" || echo "Tests completed with some issues"
-      echo "--- Running all loguru bridge tests"
-      pytest -v python_modules/dagster/dagster_tests/logging_tests/test_loguru_bridge.py || echo "Tests completed with some issues"
+      pytest -v python_modules/dagster/dagster_tests/logging_tests/test_bridge.py -k "buildkite" || echo "Bridge tests completed"
+      echo "--- Running all loguru bridge tests"  
+      pytest -vvs python_modules/dagster/dagster_tests/logging_tests/test_loguru_bridge.py || echo "Loguru bridge tests completed"
     env:
-      BUILDKITE_ANALYTICS_TOKEN: "\${DAGSTER_BUILDKITE_ANALYTICS_TOKEN}"
       BUILDKITE: "true"
-      BUILDKITE_BUILD_ID: "\${BUILDKITE_BUILD_ID}"
-      BUILDKITE_JOB_ID: "\${BUILDKITE_JOB_ID}"
-      BUILDKITE_COMMIT: "\${BUILDKITE_COMMIT}"
-      BUILDKITE_BRANCH: "\${BUILDKITE_BRANCH}"
+      BUILDKITE_ANALYTICS_TOKEN: "${DAGSTER_BUILDKITE_ANALYTICS_TOKEN}"
+      BUILDKITE_BUILD_ID: "${BUILDKITE_BUILD_ID}"
+      BUILDKITE_JOB_ID: "${BUILDKITE_JOB_ID}"
+      BUILDKITE_COMMIT: "${BUILDKITE_COMMIT}"
+      BUILDKITE_BRANCH: "${BUILDKITE_BRANCH}"
       BUILDKITE_ORGANIZATION_SLUG: "dagster"
       BUILDKITE_PIPELINE_SLUG: "unit-tests"
-      BUILDKITE_BUILD_NUMBER: "\${BUILDKITE_BUILD_NUMBER}"
+      BUILDKITE_BUILD_NUMBER: "${BUILDKITE_BUILD_NUMBER}"
     agents:
       queue: "public-default"
-    plugins:
-      - docker#v5.12.0:
-          image: "public.ecr.aws/docker/library/python:3.9"
-          workdir: /workdir

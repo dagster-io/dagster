@@ -12,10 +12,10 @@ except ImportError:
     # dotenv not available, skip loading .env file
     pass
 
-# Add the parent directory to Python path to find loguru_bridge
-parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-if parent_dir not in sys.path:
-    sys.path.insert(0, parent_dir)
+# Add the root directory to Python path to find loguru_bridge
+root_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))
+if root_dir not in sys.path:
+    sys.path.insert(0, root_dir)
 
 # Import custom bridge tools
 from loguru_bridge import dagster_context_sink, with_loguru_logger
