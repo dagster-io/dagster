@@ -1836,8 +1836,16 @@ def get_can_run_with_parent_subsets(
             ],
         )
 
-    parent_target_subset = target_subset.get_asset_subset(parent_asset_key, asset_graph)
-    candidate_target_subset = target_subset.get_asset_subset(candidate_asset_key, asset_graph)
+    parent_target_subset = (
+        target_subset.get_asset_subset(parent_asset_key)
+        or asset_graph_view.get_empty_subset(key=parent_asset_key).convert_to_serializable_subset()
+    )
+    candidate_target_subset = (
+        target_subset.get_asset_subset(candidate_asset_key)
+        or asset_graph_view.get_empty_subset(
+            key=candidate_asset_key
+        ).convert_to_serializable_subset()
+    )
 
     parent_being_requested_this_tick_subset = (
         asset_graph_view.get_entity_subset_from_asset_graph_subset(
