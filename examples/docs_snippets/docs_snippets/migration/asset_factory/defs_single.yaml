@@ -1,0 +1,7 @@
+type: my_project.components.asset_factory.AssetFactory
+
+attributes:
+  departments:
+    - engineering
+    - marketing
+    - sales
