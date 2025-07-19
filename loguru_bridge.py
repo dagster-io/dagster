@@ -7,7 +7,9 @@ from loguru import logger
 def loguru_enabled():
     """Check if loguru is enabled based on environment variables."""
     value = os.getenv("DAGSTER_LOGURU_ENABLED", "true").lower()
-    return value in ("true", "1", "yes")
+    if value in ("false", "0", "no"):
+        return False
+    return True  # Default to True for any other value, including invalid ones
 
 class DagsterLogHandler(logging.Handler):
     def emit(self, record):

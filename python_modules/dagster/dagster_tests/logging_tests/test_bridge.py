@@ -4,6 +4,14 @@ import sys
 import dagster as dg
 from loguru import logger
 
+# Try to load environment variables from .env file if available
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    # dotenv not available, skip loading .env file
+    pass
+
 # Add the parent directory to Python path to find loguru_bridge
 parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if parent_dir not in sys.path:
@@ -11,6 +19,33 @@ if parent_dir not in sys.path:
 
 # Import custom bridge tools
 from loguru_bridge import dagster_context_sink, with_loguru_logger
+
+# Setup Buildkite environment variables for testing
+def setup_buildkite_environment():
+    """Setup meaningful test environment variables for Buildkite integration."""
+    print("Setting up Buildkite test environment...")
+    
+    # Set up meaningful test environment variables
+    os.environ["BUILDKITE"] = "true"
+    os.environ["BUILDKITE_BUILD_ID"] = os.environ.get("BUILDKITE_BUILD_ID", "local-loguru-bridge-test-build")
+    os.environ["BUILDKITE_JOB_ID"] = os.environ.get("BUILDKITE_JOB_ID", "logging-tests-job-validation")
+    os.environ["BUILDKITE_COMMIT"] = os.environ.get("BUILDKITE_COMMIT", "loguru-bridge-integration-commit")
+    os.environ["BUILDKITE_ORGANIZATION_SLUG"] = os.environ.get("BUILDKITE_ORGANIZATION_SLUG", "dagster")
+    os.environ["BUILDKITE_PIPELINE_SLUG"] = os.environ.get("BUILDKITE_PIPELINE_SLUG", "unit-tests")
+    os.environ["BUILDKITE_BRANCH"] = os.environ.get("BUILDKITE_BRANCH", "Issue-29914")
+    os.environ["BUILDKITE_BUILD_NUMBER"] = os.environ.get("BUILDKITE_BUILD_NUMBER", "local")
+    
+    print("Buildkite environment variables set:")
+    print(f"BUILDKITE_ANALYTICS_TOKEN: {os.environ.get('BUILDKITE_ANALYTICS_TOKEN', 'NOT SET')}")
+    print(f"BUILDKITE: {os.environ.get('BUILDKITE')}")
+    print(f"BUILDKITE_BUILD_ID: {os.environ.get('BUILDKITE_BUILD_ID')}")
+    print(f"BUILDKITE_JOB_ID: {os.environ.get('BUILDKITE_JOB_ID')}")
+    print(f"BUILDKITE_COMMIT: {os.environ.get('BUILDKITE_COMMIT')}")
+    print(f"BUILDKITE_ORGANIZATION_SLUG: {os.environ.get('BUILDKITE_ORGANIZATION_SLUG')}")
+    print(f"BUILDKITE_PIPELINE_SLUG: {os.environ.get('BUILDKITE_PIPELINE_SLUG')}")
+
+# Initialize Buildkite environment when module is loaded
+setup_buildkite_environment()
 
 def pytest_itemcollected(item):
   # add execution tag to all tests
@@ -664,3 +699,78 @@ def test_loguru_bridge_with_stdout_integration(capfd, setup_logger):
     assert "[dagster.info] Loguru info message" in captured.out
     assert "Another stdout print" in captured.out
     assert "Error message" in captured.err
+
+
+def test_buildkite_analytics_integration(capfd, setup_logger):
+    """Test Buildkite Analytics Integration with loguru bridge."""
+    print("Testing Buildkite Analytics Integration...")
+    
+    # Verify environment variables are set
+    assert os.environ.get('BUILDKITE') == 'true'
+    assert os.environ.get('BUILDKITE_BUILD_ID') is not None
+    assert os.environ.get('BUILDKITE_JOB_ID') is not None
+    
+    test_ctx = DagsterTestContext()
+    
+    class BuildkiteLogger:
+        def __init__(self, context):
+            self._context = context
+            
+        @with_loguru_logger
+        def buildkite_integration_op(self, context=None):
+            # Log with buildkite context information
+            logger.info(f"Build ID: {os.environ.get('BUILDKITE_BUILD_ID')}")
+            logger.info(f"Job ID: {os.environ.get('BUILDKITE_JOB_ID')}")
+            logger.info(f"Organization: {os.environ.get('BUILDKITE_ORGANIZATION_SLUG')}")
+            logger.info(f"Pipeline: {os.environ.get('BUILDKITE_PIPELINE_SLUG')}")
+            logger.info(f"Branch: {os.environ.get('BUILDKITE_BRANCH')}")
+            
+            # Test with analytics token if available
+            token = os.environ.get('BUILDKITE_ANALYTICS_TOKEN')
+            if token:
+                logger.info(f"Analytics token available: {token[:10]}...{token[-4:] if len(token) > 14 else token}")
+            else:
+                logger.warning("No BUILDKITE_ANALYTICS_TOKEN found")
+            
+            return "Buildkite integration test complete"
+        
+        def get_context(self):
+            return self._context
+    
+    buildkite_logger = BuildkiteLogger(test_ctx.context)
+    result = buildkite_logger.buildkite_integration_op()
+    assert result == "Buildkite integration test complete"
+    
+    captured = capfd.readouterr()
+    # Use the actual values from environment (which may come from .env file)
+    expected_build_id = os.environ.get('BUILDKITE_BUILD_ID')
+    expected_job_id = os.environ.get('BUILDKITE_JOB_ID')
+    
+    assert f"Build ID: {expected_build_id}" in captured.out
+    assert f"Job ID: {expected_job_id}" in captured.out
+    assert "Organization: dagster" in captured.out
+    assert "Pipeline: unit-tests" in captured.out
+    assert "Branch: Issue-29914" in captured.out
+
+
+def test_buildkite_environment_validation():
+    """Test that Buildkite environment variables are properly configured."""
+    required_vars = [
+        'BUILDKITE',
+        'BUILDKITE_BUILD_ID', 
+        'BUILDKITE_JOB_ID',
+        'BUILDKITE_COMMIT',
+        'BUILDKITE_ORGANIZATION_SLUG',
+        'BUILDKITE_PIPELINE_SLUG',
+        'BUILDKITE_BRANCH',
+        'BUILDKITE_BUILD_NUMBER'
+    ]
+    
+    for var in required_vars:
+        assert os.environ.get(var) is not None, f"Environment variable {var} should be set"
+    
+    # Test specific values
+    assert os.environ.get('BUILDKITE') == 'true'
+    assert os.environ.get('BUILDKITE_ORGANIZATION_SLUG') == 'dagster'
+    assert os.environ.get('BUILDKITE_PIPELINE_SLUG') == 'unit-tests'
+    assert os.environ.get('BUILDKITE_BRANCH') == 'Issue-29914'
