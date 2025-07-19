@@ -65,9 +65,6 @@ export const RunRowTags = ({
       if (hideTags?.includes(tag.key)) {
         return;
       }
-      if (tag.key === DagsterTag.Partition) {
-        return;
-      }
       if (tag.pinned) {
         tags.push(tag);
       }
