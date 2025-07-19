@@ -126,7 +126,7 @@ The default limit for op execution within a run depends on which executor you ar
   title="src/<project_name>/defs/assets.py"
 />
 
-### Limit concurrent execution for all runs in a code location
+### Limit concurrent execution for all runs in a project
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/operate/managing_concurrency/limit_execution_code_location.py"
