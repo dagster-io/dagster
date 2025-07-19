@@ -8,7 +8,7 @@ steps:
   - label: ":loguru: Loguru-Dagster Buildkite Test"
     command: |
       echo "--- Installing loguru-dagster and test dependencies"
-      pip install -e .
+      pip install -e python_modules/dagster
       pip install -r requirements-dev.txt
       echo "--- Running pytest for loguru integration"
       pytest -vvs -c pytest-local.ini python_modules/dagster/dagster_tests/logging_tests/test_bridge.py -k "buildkite"
