@@ -209,7 +209,7 @@ def get_specified_env_var_deps(component_data: Mapping[str, Any]) -> set[str]:
 
 
 env_var_regex = re.compile(r"\{\{\s*env\(\s*['\"]([^'\"]+)['\"]\)\s*\}\}")
-env_var_regex_dot_notation = re.compile(r"\{\{\s*env\.([^'\"]+)\s*\}\}")
+env_var_regex_dot_notation = re.compile(r"\{\{\s*env\.([^'\"\s]+)\s*\}\}")
 
 
 def get_used_env_vars(data_structure: Union[Mapping[str, Any], Sequence[Any], Any]) -> set[str]:
