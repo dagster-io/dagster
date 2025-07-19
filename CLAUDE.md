@@ -1,5 +1,9 @@
 # Dagster Development Guide
 
+## Quick Package Lookup
+
+When you need to find Python package locations, refer to [.claude/python_packages.md](./.claude/python_packages.md) for a comprehensive list of all packages and their filesystem paths organized by category.
+
 ## Environment Setup
 
 See [docs/docs/about/contributing.md](docs/docs/about/contributing.md) for full setup instructions.
