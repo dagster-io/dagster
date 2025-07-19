@@ -110,11 +110,25 @@ To enable this feature, call <PyObject section="libraries" object="fivetran_even
   language="python"
 />
 
-### Load Fivetran asset for selected connectors
+### Load Fivetran assets for selected connectors
 
 To select a subset of Fivetran connectors for which your Fivetran assets will be loaded, you can use the <PyObject section="libraries" module="dagster_fivetran" object="ConnectorSelectorFn" /> callback and define your selection conditions.
 
 <CodeExample path="docs_snippets/docs_snippets/integrations/fivetran/select_fivetran_connectors.py" language="python" />
+
+
+### Load Fivetran assets using a snapshot
+
+Fivetran assets can be loaded using the snapshot of a Fivetran workspace, which allows organizations with large amounts of Fivetran data to speed up their deployment process.
+
+<CodeExample path="docs_snippets/docs_snippets/integrations/fivetran/fivetran_workspace_snapshot.py" language="python" />
+
+To capture the snapshot, the `dagster-fivetran snapshot` CLI can be used.
+
+```bash
+dagster-fivetran snapshot --python-module my_dagster_package --output-path snapshot.snap
+```
+
 
 ### Load Fivetran assets from multiple workspaces
 
