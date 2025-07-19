@@ -16,7 +16,7 @@ In this section, we'll demonstrate how to create a few asset jobs that target th
 
 <CodeExample path="docs_snippets/docs_snippets/guides/data-modeling/asset-jobs/asset-jobs.py" language="python" startAfter="start_marker_assets" endBefore="end_marker_assets" title="src/<project_name>/defs/assets.py" />
 
-To create an asset job, use the [`define_asset_job`](/api/dagster/assets#dagster.define_asset_job) method. An asset-based job is based on the assets the job targets and their dependencies.
+To create an asset job, use the <PyObject section="jobs" module="dagster" object="job" decorator /> decorator. An asset-based job is based on the assets the job targets and their dependencies.
 
 You can target one or multiple assets, or create multiple jobs that target overlapping sets of assets. In the following example, we have two jobs:
 
@@ -29,7 +29,9 @@ You can target one or multiple assets, or create multiple jobs that target overl
 
 Jobs are loaded automatically with [`dg`](/api/dg) and there is no need to explicity define a [`Definitions`](/api/dagster/definitions) object for them. If you include schedules or sensors, the [code location](/deployment/code-locations) will automatically include jobs that those schedules or sensors target.
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/assets/jobs_to_definitions.py" title="src/<project_name>/defs/assets.py"/>
+<CodeExample path="docs_snippets/docs_snippets/concepts/assets/jobs_to_definitions.py" python="python" startAfter="start_marker_job" endBefore="end_marker_job" title="src/<project_name>/defs/assets.py"/>
+
+<CodeExample path="docs_snippets/docs_snippets/concepts/assets/jobs_to_definitions.py" python="python" startAfter="start_marker_job_definition" endBefore="end_marker_job_definition" title="src/<project_name>/defs/jobs.py"/>
 
 ## Testing asset jobs
 
