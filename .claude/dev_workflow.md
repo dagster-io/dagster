@@ -12,14 +12,12 @@ After making any Python code changes, Claude must:
 
 2. **Fix any remaining issues**: If ruff reports errors that were not automatically fixed, Claude must manually correct them to the best of its ability
 
-3. **Verify success**: Ensure `make ruff` passes cleanly before considering the task complete
+3. **Verify success**: Ensure `make ruff` passes cleanly before considering the task complete.
 
-## what make ruff does
+## Style guidelines
 
 - **Formats code** using ruff formatter (replaces black)
-- **Sorts imports** according to project standards
-- **Lints code** and reports violations
-- **Auto-fixes** many issues automatically
+- **Sorts imports** combine imports, absolute imports only
 - **Enforces** 100-character line limit and other style rules
 
 ## common manual fixes needed
@@ -35,13 +33,6 @@ When ruff cannot auto-fix issues, Claude should address:
 
 ## workflow integration
 
-This process ensures:
-
-- **Consistent code style** across all contributions
-- **Clean git history** without formatting noise
-- **Adherence** to project standards
-- **Immediate feedback** on style violations
-
 ## example workflow
 
 ```bash
@@ -54,7 +45,3 @@ make ruff
 # 3. Run make ruff again
 # 4. Repeat until clean
 ```
-
-## critical reminder
-
-**Never consider a Python code task complete until `make ruff` passes without errors or warnings.**

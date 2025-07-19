@@ -2,8 +2,8 @@
 
 ## Quick References
 
-- **Package Locations**: [.claude/python_packages.md](./.claude/python_packages.md) - Comprehensive list of all Python packages and their filesystem paths
-- **Development Workflow**: [.claude/dev_workflow.md](./.claude/dev_workflow.md) - Required post-edit procedures including `make ruff` execution
+- **Package Locations**: [.claude/python_packages.md](./.claude/python_packages.md) - Comprehensive list of all Python packages and their filesystem paths. Use this to quickly find packages when the users requests it.
+- **Development Workflow**: [.claude/dev_workflow.md](./.claude/dev_workflow.md) - Documentation of developer workflows in the Dagster OSS repo. 
 - **Coding Conventions**: [.claude/coding_conventions.md](./.claude/coding_conventions.md) - Type annotations and code style conventions
 
 ## Environment Setup
@@ -38,8 +38,6 @@ make sanity_check          # Check for non-editable installs
 - **Python**: Core framework in `python_modules/dagster/`, libraries in `python_modules/libraries/`
 - **UI**: React/TypeScript in `js_modules/dagster-ui/`
 - **Docs**: Docusaurus in `docs/`
-- **Line width**: 100 characters
-- **Type checking**: Required for all Python code
 - **Testing**: pytest preferred, use tox for environment isolation
 
 ## UI Development
@@ -64,8 +62,4 @@ yarn build-api-docs          # Build API docs after .rst changes
 
 ## Code Style
 
-- Use ruff for formatting and import sorting
 - Follow Google-style docstrings
-- Import sorting: combine imports, absolute imports only
-- Type hints required for all Python code
-- Run `make ruff` before submitting PRs
