@@ -5,6 +5,7 @@
 After making any Python code changes, Claude must:
 
 1. **Run ruff formatting/linting**:
+
    ```bash
    make ruff
    ```
@@ -35,6 +36,7 @@ When ruff cannot auto-fix issues, Claude should address:
 ## workflow integration
 
 This process ensures:
+
 - **Consistent code style** across all contributions
 - **Clean git history** without formatting noise
 - **Adherence** to project standards
