@@ -9,7 +9,7 @@ steps:
       pip install -e .
       pip install -r requirements-dev.txt
       echo "--- Running pytest for loguru integration"
-      pytest -vvs -c pytest-local.ini test_buildkite_collector.py
+      pytest -vvs -c pytest-local.ini python_modules/dagster/dagster_tests/logging_tests/test_buildkite_collector.py
     env:
       BUILDKITE_ANALYTICS_TOKEN: "${BUILDKITE_ANALYTICS_TOKEN}"
     agents:
