@@ -1,10 +1,4 @@
 steps:
-  - block: "Manual Approval for Loguru Test"
-    prompt: "Approve to start loguru-dagster integration test suite"
-    key: "loguru-manual-approval"
-    blocked_state: failed
-    if: build.pull_request.draft == "false"
-
   - label: ":loguru: Loguru-Dagster Buildkite Test"
     command: |
       echo "--- Installing loguru-dagster and test dependencies"
@@ -16,4 +10,3 @@ steps:
       BUILDKITE_ANALYTICS_TOKEN: "${BUILDKITE_ANALYTICS_TOKEN}"
     agents:
       queue: "public-default"
-    depends_on: "loguru-manual-approval"
