@@ -1,0 +1,19 @@
+steps:
+  - block:  "Manual Approval for Loguru Test"
+    prompt: "Approve to start loguru-dagster integration test suite"
+    key: "loguru-manual-approval"
+    blocked_state: failed
+    if: build.pull_request.draft == "false"
+
+  - label: ":loguru: Loguru-Dagster Buildkite Test"
+    command: |
+      echo "--- Installing loguru-dagster and test dependencies"
+      pip install -e .
+      pip install -r requirements-dev.txt
+      echo "--- Running pytest for loguru integration"
+      pytest -vvs -c pytest-local.ini python_modules/dagster/dagster_tests/logging_tests/test_buildkite_collector.py
+    env:
+      BUILDKITE_ANALYTICS_TOKEN: "${BUILDKITE_ANALYTICS_TOKEN}"
+    agents:
+      queue: "public-default"
+    depends_on: "loguru-manual-approval"
