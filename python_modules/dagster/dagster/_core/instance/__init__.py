@@ -3687,3 +3687,6 @@ class DagsterInstance(DynamicPartitionsStore):
         self, asset_keys: Sequence[AssetKey]
     ) -> Optional[Mapping[AssetKey, Optional["AssetMaterializationHealthState"]]]:
         return None
+
+    def get_streamline_step_stats_for_run(self, run_id: str):
+        return None
