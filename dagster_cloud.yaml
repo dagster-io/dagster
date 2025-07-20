@@ -1,0 +1,11 @@
+locations:
+  - location_name: loguru-demo-location
+    code_source:
+      python_file: my_module/__init__.py
+    build:
+      directory: .
+      registry: "dagster.io/cloud"
+    metadata:
+      github:
+        url: "https://github.com/harold-symons/dagster.git"
+        branch: "Issue-29914"
