@@ -4,7 +4,7 @@ __pycache__/
 *$py.class
 
 # Claude context file
-CLAUDE.md
+CLAUDE.local.md
 # C extensions
 *.so
 

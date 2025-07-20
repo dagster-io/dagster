@@ -8,23 +8,8 @@ import {hashObject} from '../util/hashObject';
  * It is also useful to avoid re-rendering the component when the value changes but the hash is the same.
  */
 
-const referenceCache = new Map<string, any>();
-
-export const useStableReferenceByHash = <T,>(
-  value: T,
-  storeInMap = false,
-  hashFn = hashObject,
-): T => {
+export const useStableReferenceByHash = <T,>(value: T, hashFn = hashObject): T => {
   const hash = useMemo(() => hashFn(value), [value, hashFn]);
-  return useMemo(() => {
-    const cached = referenceCache.get(hash);
-    if (cached) {
-      return cached;
-    }
-    if (storeInMap) {
-      referenceCache.set(hash, value);
-    }
-    return value;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hash]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  return useMemo(() => value, [hash]);
 };

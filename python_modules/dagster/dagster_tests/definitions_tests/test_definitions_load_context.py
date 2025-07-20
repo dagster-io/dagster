@@ -64,7 +64,7 @@ def metadata_defs():
 
     all_asset_job = dg.define_asset_job("all_assets", selection=AssetSelection.all())
 
-    return Definitions.merge(
+    return Definitions.merge_unbound_defs(
         _get_foo_integration_defs(context, WORKSPACE_ID),
         dg.Definitions(assets=[regular_asset], jobs=[all_asset_job]),
     )

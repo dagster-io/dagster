@@ -1,15 +1,15 @@
-from collections.abc import Iterator, Mapping, Sequence
+from collections.abc import Iterator, Mapping
 from dataclasses import dataclass
 from functools import cached_property
 from pathlib import Path
-from types import ModuleType
-from typing import TYPE_CHECKING, Annotated, Any, Callable, Optional, Union, cast
+from typing import Annotated, Any, Callable, Optional, Union
 
 from dagster import Resolvable
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
+from dagster._utils.cached_method import cached_method
 from dagster.components.component.component import Component
 from dagster.components.core.context import ComponentLoadContext
 from dagster.components.core.tree import ComponentTree
@@ -20,20 +20,18 @@ from dagster.components.utils import TranslatorResolvingInfo
 from typing_extensions import TypeAlias
 
 from dagster_dbt.asset_decorator import dbt_assets
-from dagster_dbt.asset_utils import (
-    DBT_DEFAULT_EXCLUDE,
-    DBT_DEFAULT_SELECT,
-    get_asset_key_for_model,
-    get_node,
-)
+from dagster_dbt.asset_utils import DBT_DEFAULT_EXCLUDE, DBT_DEFAULT_SELECT, get_node
 from dagster_dbt.components.dbt_project.scaffolder import DbtProjectComponentScaffolder
 from dagster_dbt.core.resource import DbtCliResource
-from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator, DagsterDbtTranslatorSettings
+from dagster_dbt.dagster_dbt_translator import (
+    DagsterDbtTranslator,
+    DagsterDbtTranslatorSettings,
+    validate_translator,
+)
+from dagster_dbt.dbt_manifest import validate_manifest
 from dagster_dbt.dbt_manifest_asset_selection import DbtManifestAssetSelection
 from dagster_dbt.dbt_project import DbtProject
-
-if TYPE_CHECKING:
-    from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
+from dagster_dbt.utils import ASSET_RESOURCE_TYPES
 
 TranslationFn: TypeAlias = Callable[[AssetSpec, Mapping[str, Any]], AssetSpec]
 
@@ -246,36 +244,33 @@ class DbtProjectComponent(Component, Resolvable):
     def execute(self, context: AssetExecutionContext, dbt: DbtCliResource) -> Iterator:
         yield from dbt.cli(["build"], context=context).stream()
 
+    @cached_property
+    def _validated_manifest(self):
+        return validate_manifest(self.project.manifest_path)
 
-def get_asset_key_for_model_from_module(
-    context: ComponentLoadContext, dbt_component_module: ModuleType, model_name: str
-) -> AssetKey:
-    """Component-based version of dagster_dbt.get_asset_key_for_model. Returns the corresponding Dagster
-    asset key for a dbt model, seed, or snapshot, loaded from the passed component path.
+    @cached_property
+    def _validated_translator(self):
+        return validate_translator(self.translator)
 
-    Args:
-        dbt_component_module (ModuleType): The module that was used to load the dbt project.
-        model_name (str): The name of the dbt model, seed, or snapshot.
+    @cached_method
+    def asset_key_for_model(self, model_name: str) -> AssetKey:
+        dagster_dbt_translator = self._validated_translator
+        manifest = self._validated_manifest
 
-    Returns:
-        AssetKey: The corresponding Dagster asset key.
+        matching_model_ids = [
+            unique_id
+            for unique_id, value in manifest["nodes"].items()
+            if value["name"] == model_name and value["resource_type"] in ASSET_RESOURCE_TYPES
+        ]
 
-    Examples:
-        .. code-block:: python
+        if len(matching_model_ids) == 0:
+            raise KeyError(f"Could not find a dbt model, seed, or snapshot with name: {model_name}")
 
-            from dagster import asset
-            from dagster.components.components.dbt_project import get_asset_key_for_model_from_module
-            from dagster.components.core.component import ComponentLoadContext
-            from my_project.defs import dbt_component
-
-            ctx = ComponentLoadContext.get()
-
-            @asset(deps={get_asset_key_for_model_from_module(ctx, dbt_component, "customers")})
-            def cleaned_customers():
-                ...
-    """
-    defs = context.load_defs(dbt_component_module)
-    return get_asset_key_for_model(cast("Sequence[AssetsDefinition]", defs.assets), model_name)
+        return dagster_dbt_translator.get_asset_spec(
+            manifest,
+            next(iter(matching_model_ids)),
+            self.project,
+        ).key
 
 
 class ProxyDagsterDbtTranslator(DagsterDbtTranslator):

@@ -4,7 +4,7 @@ from contextlib import contextmanager
 from functools import cached_property
 from pathlib import Path
 from types import ModuleType
-from typing import Callable, Optional, Union
+from typing import Any, Callable, Optional, Union, overload
 from unittest import mock
 
 from dagster_shared import check
@@ -19,17 +19,33 @@ from dagster.components.core.context import ComponentDeclLoadContext, ComponentL
 from dagster.components.core.decl import (
     ComponentDecl,
     ComponentLoaderDecl,
-    DagsterDefsDecl,
+    PythonFileDecl,
     YamlDecl,
     build_component_decl_from_context,
 )
-from dagster.components.core.defs_module import ComponentPath, DefsFolderComponent
+from dagster.components.core.defs_module import (
+    ComponentPath,
+    CompositeYamlComponent,
+    DefsFolderComponent,
+    PythonFileComponent,
+)
 from dagster.components.resolved.context import ResolutionContext
 from dagster.components.utils import get_path_from_module
 
 PLUGIN_COMPONENT_TYPES_JSON_METADATA_KEY = "plugin_component_types_json"
 
 TComponent = TypeVar("TComponent", bound=Component)
+
+ResolvableToComponentPath = Union[Path, ComponentPath, str]
+
+
+def resolve_to_component_path(path: ResolvableToComponentPath) -> ComponentPath:
+    if isinstance(path, str):
+        return ComponentPath(file_path=Path(path), instance_key=None)
+    elif isinstance(path, Path):
+        return ComponentPath(file_path=path, instance_key=None)
+    else:
+        return path
 
 
 def _get_canonical_path_string(root_path: Path, path: Path) -> str:
@@ -40,11 +56,12 @@ def _get_canonical_path_string(root_path: Path, path: Path) -> str:
 
 
 def _get_canonical_component_path(
-    root_path: Path, path: Union[Path, ComponentPath]
+    root_path: Path, path: ResolvableToComponentPath
 ) -> tuple[str, Optional[Union[int, str]]]:
-    if isinstance(path, ComponentPath):
-        return _get_canonical_path_string(root_path, path.file_path), path.instance_key
-    return _get_canonical_path_string(root_path, path), None
+    resolved_path = resolve_to_component_path(path)
+    return _get_canonical_path_string(
+        root_path, resolved_path.file_path
+    ), resolved_path.instance_key
 
 
 @record
@@ -52,6 +69,9 @@ class ComponentWithContext:
     path: Path
     component: Component
     component_decl: ComponentDecl
+
+
+T = TypeVar("T", bound=Component)
 
 
 class ComponentTreeException(Exception):
@@ -69,6 +89,7 @@ class ComponentTree:
 
     defs_module: ModuleType
     project_root: Path
+    terminate_autoloading_on_keyword_files: Optional[bool] = None
 
     @contextmanager
     def augment_component_tree_exception(
@@ -157,7 +178,7 @@ class ComponentTree:
 
     @cached_method
     def load_root_component(self) -> Component:
-        return self.load_component_at_path(self.defs_module_path)
+        return self.load_structural_component_at_path(self.defs_module_path)
 
     @cached_method
     def build_defs(self) -> Definitions:
@@ -228,7 +249,7 @@ class ComponentTree:
             )
             return component.build_defs(clc)
 
-    def find_decl_at_path(self, defs_path: Union[Path, ComponentPath]) -> ComponentDecl:
+    def find_decl_at_path(self, defs_path: Union[Path, ComponentPath, str]) -> ComponentDecl:
         """Loads a component declaration from the given path.
 
         Args:
@@ -244,8 +265,44 @@ class ComponentTree:
             raise Exception(f"No component decl found for path {defs_path}")
         return component_decl_and_path[1]
 
-    def load_component_at_path(self, defs_path: Union[Path, ComponentPath]) -> Component:
+    @overload
+    def load_component_at_path(self, defs_path: Union[Path, ComponentPath, str]) -> Component: ...
+    @overload
+    def load_component_at_path(
+        self, defs_path: Union[Path, ComponentPath, str], expected_type: type[T]
+    ) -> T: ...
+
+    def load_component_at_path(
+        self, defs_path: Union[Path, ComponentPath, str], expected_type: Optional[type[T]] = None
+    ) -> Any:
         """Loads a component from the given path.
+
+        Args:
+            defs_path: Path to the component to load. If relative, resolves relative to the defs root.
+
+        Returns:
+            Component: The component loaded from the given path.
+        """
+        component = self.load_structural_component_at_path(defs_path)
+        if (
+            isinstance(component, (CompositeYamlComponent, PythonFileComponent))
+            and len(component.components) == 1
+        ):
+            component = (
+                component.components[0]
+                if isinstance(component, CompositeYamlComponent)
+                else next(iter(component.components.values()))
+            )
+        if expected_type and not isinstance(component, expected_type):
+            raise Exception(f"Component at path {defs_path} is not of type {expected_type}")
+
+        return component
+
+    def load_structural_component_at_path(
+        self, defs_path: Union[Path, ComponentPath, str]
+    ) -> Component:
+        """Loads a component from the given path, does not resolve e.g. CompositeYamlComponent to an underlying
+        component type.
 
         Args:
             defs_path: Path to the component to load. If relative, resolves relative to the defs root.
@@ -258,9 +315,10 @@ class ComponentTree:
         )
         if component is None:
             raise Exception(f"No component found for path {defs_path}")
+
         return component.component
 
-    def build_defs_at_path(self, defs_path: Union[Path, ComponentPath]) -> Definitions:
+    def build_defs_at_path(self, defs_path: Union[Path, ComponentPath, str]) -> Definitions:
         """Builds definitions from the given defs subdirectory. Currently
         does not incorporate postprocessing from parent defs modules.
 
@@ -321,19 +379,22 @@ class ComponentTree:
 
         total = len(decls)
         for idx, child_decl in enumerate(decls):
-            if isinstance(child_decl, DagsterDefsDecl) and hide_plain_defs:
+            if isinstance(child_decl, PythonFileDecl) and not child_decl.decls and hide_plain_defs:
                 continue
 
             component_type = None
             file_path = child_decl.path.file_path.relative_to(parent_path)
+
             if isinstance(child_decl, ComponentLoaderDecl):
-                file_path = file_path / "component.py"
-            if isinstance(child_decl, YamlDecl):
+                name = str(child_decl.path.instance_key)
+            elif isinstance(child_decl, YamlDecl):
                 file_path = file_path / "defs.yaml"
                 component_type = child_decl.component_cls.__name__
 
-            if child_decl.path.instance_key is not None and len(decls) > 1:
-                name = f"{file_path}[{child_decl.path.instance_key}]"
+                if child_decl.path.instance_key is not None and len(decls) > 1:
+                    name = f"{file_path}[{child_decl.path.instance_key}]"
+                else:
+                    name = str(file_path)
             else:
                 name = str(file_path)
 
@@ -374,7 +435,10 @@ class ComponentTree:
         if (
             hide_plain_defs
             and len(decls) > 0
-            and all(isinstance(child_decl, DagsterDefsDecl) for child_decl in decls)
+            and all(
+                isinstance(child_decl, PythonFileDecl) and not child_decl.decls
+                for child_decl in decls
+            )
         ):
             lines.append(f"{prefix}└── ...")
 

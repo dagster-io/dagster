@@ -50,7 +50,7 @@ export const useAssetGraphSupplementaryData = (
     );
   }, [liveDataByNode, loading]);
 
-  const data = useStableReferenceByHash(assetsByStatus, true);
+  const data = useStableReferenceByHash(assetsByStatus);
 
   return {
     loading: needsAssetHealthData && loading,
