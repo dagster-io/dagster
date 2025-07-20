@@ -66,12 +66,18 @@ class LoguruConfigurator:
         if not self.config["enabled"]:
             return
 
+        # Force colors for Docker and CI environments
+        os.environ["FORCE_COLOR"] = "1"
+        os.environ["TERM"] = os.environ.get("TERM", "xterm-256color")
+        
         logger.remove()
         logger.add(
             sys.stderr,
             level=self.config["log_level"],
             format=self.config["format"],
             colorize=True,
+            diagnose=True,  # Show more info for errors
+            enqueue=True,   # For thread safety
         )
 
 loguru_config = LoguruConfigurator()
