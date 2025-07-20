@@ -24,13 +24,15 @@ def parse_python_packages_md() -> dict[str, str]:
     packages = {}
     content = packages_file.read_text()
 
-    # Pattern to match: **package-name**: `/path/to/package`
+    # Pattern to match: **package-name**: `path/to/package`
     pattern = r"\*\*([^*]+)\*\*:\s*`([^`]+)`"
 
     for match in re.finditer(pattern, content):
         package_name = match.group(1).strip()
         package_path = match.group(2).strip()
-        packages[package_name] = package_path
+        # Convert relative path to absolute path for comparison
+        absolute_path = str(repo_root / package_path)
+        packages[package_name] = absolute_path
 
     return packages
 
@@ -127,13 +129,13 @@ def test_python_packages_md_format():
 
     assert len(matches) > 0, "No package entries found in expected format"
 
-    # Verify all paths are absolute and point to python_modules
+    # Verify all paths are relative and point to python_modules
     for match in matches:
         package_name = match.group(1)
         package_path = match.group(2)
 
-        assert package_path.startswith("/"), (
-            f"Path for {package_name} should be absolute: {package_path}"
+        assert not package_path.startswith("/"), (
+            f"Path for {package_name} should be relative, not absolute: {package_path}"
         )
         assert "python_modules" in package_path, (
             f"Path for {package_name} should contain 'python_modules': {package_path}"
