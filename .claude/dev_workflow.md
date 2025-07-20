@@ -47,4 +47,4 @@ make ruff
 
 ## Use Pytest
 
-* Always run pytest from the repository root and with the full path to the file being tested.
+- Always run pytest from the repository root and with the full path to the file being tested.
