@@ -1,0 +1,89 @@
+version: "3.8"
+
+services:
+  # Dagster Webserver
+  dagster_webserver:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    entrypoint:
+      - dagster-webserver
+      - -h
+      - "0.0.0.0"
+      - -p
+      - "3000"
+      - -w
+      - workspace.yaml
+    container_name: dagster_webserver
+    expose:
+      - "3000"
+    ports:
+      - "3000:3000"
+    environment:
+      DAGSTER_HOME: "/opt/dagster/dagster_home"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./dagster_home:/opt/dagster/dagster_home
+      - /tmp/io_manager_storage:/tmp/io_manager_storage
+    networks:
+      - dagster_network
+    depends_on:
+      - dagster_postgres
+
+  # Dagster Daemon
+  dagster_daemon:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    entrypoint:
+      - dagster-daemon
+      - run
+    container_name: dagster_daemon
+    restart: on-failure
+    environment:
+      DAGSTER_HOME: "/opt/dagster/dagster_home"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./dagster_home:/opt/dagster/dagster_home
+      - /tmp/io_manager_storage:/tmp/io_manager_storage
+    networks:
+      - dagster_network
+    depends_on:
+      - dagster_postgres
+
+  # Code Location
+  dagster_code:
+    build:
+      context: .
+      dockerfile: Dockerfile.code
+    container_name: dagster_code
+    restart: always
+    environment:
+      DAGSTER_CURRENT_IMAGE: "dagster_code"
+    volumes:
+      - ./my_module:/opt/dagster/app/my_module
+      - ./loguru_bridge.py:/opt/dagster/app/loguru_bridge.py
+    networks:
+      - dagster_network
+    expose:
+      - "4000"
+
+  # PostgreSQL Database
+  dagster_postgres:
+    image: postgres:13
+    container_name: dagster_postgres
+    environment:
+      POSTGRES_USER: postgres_user
+      POSTGRES_PASSWORD: postgres_password
+      POSTGRES_DB: postgres_db
+    volumes:
+      - dagster_postgres_data:/var/lib/postgresql/data
+    networks:
+      - dagster_network
+
+networks:
+  dagster_network:
+    external: true
+
+volumes:
+  dagster_postgres_data:

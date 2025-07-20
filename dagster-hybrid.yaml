@@ -1,5 +1,8 @@
+version: 1
 locations:
   - location_name: loguru-demo
-    image: harold-symons/dagster-loguru-demo:latest
     code_source:
       module_name: my_module
+    build:
+      directory: .
+      registry: dagster.io/cloud
