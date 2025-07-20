@@ -18,21 +18,30 @@ class DagsterLogHandler(logging.Handler):
 def dagster_context_sink(context):
     """
     A Loguru sink that correctly forwards records to the Dagster context logger.
-    It preserves ANSI color codes for Docker and CI environments.
+    Uses HTML-style formatting for Dagster UI and visible colors.
     """
     def sink_func(msg):
         record = msg.record
         level_name = record["level"].name
         
-        # Get colored message directly from loguru
-        colored_message = msg.message
+        # Get base message
+        message = record["message"]
         
-        # For colored console in Docker
-        if os.environ.get("DAGSTER_DOCKER_COLORED_LOGS_ENABLED", "true").lower() in ("true", "1", "yes"):
-            message = colored_message
-        else:
-            message = record["message"]
-
+        # Add HTML styling based on level
+        if level_name == "DEBUG":
+            message = f"<span style='color:#9370DB;font-weight:bold'>DEBUG:</span> {message}"
+        elif level_name == "INFO":
+            message = f"<span style='color:#3CB371;font-weight:bold'>INFO:</span> {message}"
+        elif level_name == "SUCCESS":
+            message = f"<span style='color:#00FF7F;font-weight:bold'>SUCCESS:</span> {message}"  
+        elif level_name == "WARNING":
+            message = f"<span style='color:#FFD700;font-weight:bold'>WARNING:</span> {message}"
+        elif level_name == "ERROR":
+            message = f"<span style='color:#FF6347;font-weight:bold'>ERROR:</span> {message}"
+        elif level_name == "CRITICAL":
+            message = f"<span style='color:#FF0000;font-weight:bold'>CRITICAL:</span> {message}"
+            
+        # Map Loguru levels to Dagster levels
         level_map = {
             "TRACE": "debug",
             "DEBUG": "debug",
@@ -74,29 +83,30 @@ class LoguruConfigurator:
         if not self.config["enabled"]:
             return
 
-        # Force colors for Docker and CI environments
-        os.environ["FORCE_COLOR"] = "1"
-        os.environ["TERM"] = os.environ.get("TERM", "xterm-256color")
-        os.environ["DAGSTER_DOCKER_COLORED_LOGS_ENABLED"] = "true"
-        os.environ["PYTHONUNBUFFERED"] = "1"  # Unbuffered output for Docker
+        # Use basic format for Docker/Dagster Cloud which will be HTML-enhanced
+        # by the dagster_context_sink
+        docker_format = "{message}"
         
-        # Enhanced format with bright colors for better visibility in Docker/CI
-        docker_format = os.getenv(
-            "DAGSTER_DOCKER_LOGURU_FORMAT",
-            "<bright_green>{time:HH:mm:ss}</bright_green> | <level>{level: <8}</level> | <bright_cyan>{name}</bright_cyan>:<bright_cyan>{function}</bright_cyan> - <level>{message}</level>"
-        )
+        # Use nice formatting for local development
+        local_format = "<green>{time:HH:mm:ss}</green> | <level>{level: <8}</level> | <cyan>{name}</cyan>:<cyan>{function}</cyan> - <level>{message}</level>"
+        
+        # Environment variables
+        os.environ["PYTHONUNBUFFERED"] = "1"
         
         logger.remove()
         
-        # Add normal stderr sink
+        # When in Docker/Cloud use plain format (will be HTML styled in sink)
+        # Otherwise use colorful format for local development
+        is_docker = os.environ.get("DAGSTER_CURRENT_IMAGE") is not None
+        format_str = docker_format if is_docker else local_format
+        
         logger.add(
             sys.stderr,
             level=self.config["log_level"],
-            format=self.config["format"] if not os.environ.get("DAGSTER_CURRENT_IMAGE") else docker_format,
-            colorize=True,
+            format=format_str,
+            colorize=not is_docker,  # Disable colorize for Docker
             diagnose=True,
             enqueue=True,
-            backtrace=True,
         )
 
 loguru_config = LoguruConfigurator()
