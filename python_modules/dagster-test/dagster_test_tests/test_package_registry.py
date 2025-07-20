@@ -57,9 +57,23 @@ def find_actual_packages() -> dict[str, str]:
         # Extract package name from directory name
         package_name = package_dir.name
 
-        # Skip if this is a nested test package, build artifact, or kitchen-sink directory
+        # Skip if this is a nested test package, build artifact, or internal package
+        skip_patterns = {
+            "_tests",
+            "build",
+            "kitchen-sink",
+            "__pycache__",
+            ".tox",
+            ".pytest_cache",
+            "dist",
+            ".git",
+        }
+
+        # Skip CI-specific build artifacts that appear in CI but not locally
+        ci_build_artifacts = {"cython", "limited_api", "plugin"}
+
         if any(
-            part.endswith("_tests") or part == "build" or part == "kitchen-sink"
+            part.endswith("_tests") or part in skip_patterns or part in ci_build_artifacts
             for part in package_dir.parts
         ):
             continue
