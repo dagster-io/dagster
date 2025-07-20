@@ -18,12 +18,20 @@ class DagsterLogHandler(logging.Handler):
 def dagster_context_sink(context):
     """
     A Loguru sink that correctly forwards records to the Dagster context logger.
-    It passes plain messages and relies on the Dagster UI for styling.
+    It preserves ANSI color codes for Docker and CI environments.
     """
     def sink_func(msg):
         record = msg.record
         level_name = record["level"].name
-        message = record["message"]
+        
+        # Get colored message directly from loguru
+        colored_message = msg.message
+        
+        # For colored console in Docker
+        if os.environ.get("DAGSTER_DOCKER_COLORED_LOGS_ENABLED", "true").lower() in ("true", "1", "yes"):
+            message = colored_message
+        else:
+            message = record["message"]
 
         level_map = {
             "TRACE": "debug",
@@ -69,15 +77,26 @@ class LoguruConfigurator:
         # Force colors for Docker and CI environments
         os.environ["FORCE_COLOR"] = "1"
         os.environ["TERM"] = os.environ.get("TERM", "xterm-256color")
+        os.environ["DAGSTER_DOCKER_COLORED_LOGS_ENABLED"] = "true"
+        os.environ["PYTHONUNBUFFERED"] = "1"  # Unbuffered output for Docker
+        
+        # Enhanced format with bright colors for better visibility in Docker/CI
+        docker_format = os.getenv(
+            "DAGSTER_DOCKER_LOGURU_FORMAT",
+            "<bright_green>{time:HH:mm:ss}</bright_green> | <level>{level: <8}</level> | <bright_cyan>{name}</bright_cyan>:<bright_cyan>{function}</bright_cyan> - <level>{message}</level>"
+        )
         
         logger.remove()
+        
+        # Add normal stderr sink
         logger.add(
             sys.stderr,
             level=self.config["log_level"],
-            format=self.config["format"],
+            format=self.config["format"] if not os.environ.get("DAGSTER_CURRENT_IMAGE") else docker_format,
             colorize=True,
-            diagnose=True,  # Show more info for errors
-            enqueue=True,   # For thread safety
+            diagnose=True,
+            enqueue=True,
+            backtrace=True,
         )
 
 loguru_config = LoguruConfigurator()
