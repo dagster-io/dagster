@@ -41,14 +41,18 @@ check_prettier:
 #NOTE: excludes symlinked md files
 	prettier `git ls-files \
 	'python_modules/*.yml' 'python_modules/*.yaml' 'helm/*.yml' 'helm/*.yaml' \
-	':!:helm/**/templates/*.yml' ':!:helm/**/templates/*.yaml' '*.md' ':!:docs/*.md' \
-	':!:README.md' ':!:CLAUDE.md' ':!:GEMINI.md'` --check
+	'*.md' '.claude/*.md' \
+	':!:docs/*.md' ':!:helm/**/templates/*.yml' ':!:helm/**/templates/*.yaml' \
+	':!:README.md' ':!:GEMINI.md'` \
+	--check
 
 prettier:
 	prettier `git ls-files \
 	'python_modules/*.yml' 'python_modules/*.yaml' 'helm/*.yml' 'helm/*.yaml' \
-	':!:helm/**/templates/*.yml' ':!:helm/**/templates/*.yaml' '*.md' '.claude/*.md' ':!:docs/*.md' \
-	':!:README.md' ':!:GEMINI.md'` --write
+	'*.md' '.claude/*.md' \
+	':!:docs/*.md' ':!:helm/**/templates/*.yml' ':!:helm/**/templates/*.yaml' \
+	':!:README.md' ':!:GEMINI.md'` \
+	--write
 
 install_dev_python_modules:
 	python scripts/install_dev_python_modules.py -q
