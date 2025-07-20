@@ -728,7 +728,7 @@ def test_buildkite_analytics_integration(capfd, setup_logger):
             # Test with analytics token if available
             token = os.environ.get('BUILDKITE_ANALYTICS_TOKEN')
             if token:
-                logger.info(f"Analytics token available: {token[:10]}...{token[-4:] if len(token) > 14 else token}")
+                logger.info("Analytics token is available and will be used for reporting")
             else:
                 logger.warning("No BUILDKITE_ANALYTICS_TOKEN found")
             
