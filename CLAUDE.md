@@ -1,5 +1,11 @@
 # Dagster Development Guide
 
+## Quick References
+
+- **Package Locations**: [.claude/python_packages.md](./.claude/python_packages.md) - Comprehensive list of all Python packages and their filesystem paths. **ALWAYS check this file first when looking for package locations.**
+- **Development Workflow**: [.claude/dev_workflow.md](./.claude/dev_workflow.md) - Documentation of developer workflows in the Dagster OSS repo.
+- **Coding Conventions**: [.claude/coding_conventions.md](./.claude/coding_conventions.md) - Type annotations and code style conventions. **ALWAYS check this before writing data structures - use @record instead of @dataclass.**
+
 ## Environment Setup
 
 See [docs/docs/about/contributing.md](docs/docs/about/contributing.md) for full setup instructions.
@@ -32,8 +38,6 @@ make sanity_check          # Check for non-editable installs
 - **Python**: Core framework in `python_modules/dagster/`, libraries in `python_modules/libraries/`
 - **UI**: React/TypeScript in `js_modules/dagster-ui/`
 - **Docs**: Docusaurus in `docs/`
-- **Line width**: 100 characters
-- **Type checking**: Required for all Python code
 - **Testing**: pytest preferred, use tox for environment isolation
 
 ## UI Development
@@ -58,8 +62,22 @@ yarn build-api-docs          # Build API docs after .rst changes
 
 ## Code Style
 
-- Use ruff for formatting and import sorting
 - Follow Google-style docstrings
-- Import sorting: combine imports, absolute imports only
-- Type hints required for all Python code
-- Run `make ruff` before submitting PRs
+- **ALWAYS use `@record` from `dagster_shared.record` for data structures, result objects, and immutable classes**
+- Only use `@dataclass` when mutability is specifically required
+
+## Code Quality Requirements
+
+- **MANDATORY**: After any code changes, ALWAYS run `make ruff` to format, lint, and autofix code
+- **MANDATORY**: If `make ruff` makes any changes, re-run tests to ensure everything still works
+- **MANDATORY**: Address any linting issues before considering a task complete
+- Never skip this step - code quality checks are essential for all contributions
+
+## Package Management
+
+- Always use uv instead of pip
+
+## Code searching
+
+- DO NOT search for Python code (.py files) inside of .tox folders. These are temporary environments and this will only cause confusion.
+- Always search for package dependencies in setup.py files only. This is the current source of truth for dependencies in this repository.
