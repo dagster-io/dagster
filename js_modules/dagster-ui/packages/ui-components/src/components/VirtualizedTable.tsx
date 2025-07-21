@@ -1,4 +1,5 @@
 import * as React from 'react';
+import {ReactNode} from 'react';
 import styled from 'styled-components';
 
 import {Box} from './Box';
@@ -66,3 +67,19 @@ export const Row = styled.div.attrs<RowProps>(({$height, $start}) => ({
   top: 0;
   overflow: hidden;
 `;
+
+export const DynamicWindow = ({children, start}: {children: ReactNode; start: number}) => {
+  return (
+    <div
+      style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        width: '100%',
+        transform: `translateY(${start}px)`,
+      }}
+    >
+      {children}
+    </div>
+  );
+};

@@ -1,4 +1,4 @@
-import {Tag, Tooltip} from '@dagster-io/ui-components';
+import {DynamicWindow, Tag, Tooltip} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import {useMemo, useRef} from 'react';
 
@@ -76,15 +76,7 @@ export const OverviewJobsTable = ({repos}: Props) => {
       <Container ref={parentRef}>
         {flagUseNewObserveUIs ? null : <VirtualizedJobHeader />}
         <Inner $totalHeight={totalHeight}>
-          <div
-            style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              width: '100%',
-              transform: `translateY(${items[0]?.start ?? 0}px)`,
-            }}
-          >
+          <DynamicWindow start={items[0]?.start ?? 0}>
             {items.map(({index, key}) => {
               const row: RowType = flattened[index]!;
               const type = row!.type;
@@ -136,7 +128,7 @@ export const OverviewJobsTable = ({repos}: Props) => {
                 />
               );
             })}
-          </div>
+          </DynamicWindow>
         </Inner>
       </Container>
     </div>
