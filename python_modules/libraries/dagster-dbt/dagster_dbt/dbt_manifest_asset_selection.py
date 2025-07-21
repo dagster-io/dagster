@@ -20,7 +20,7 @@ from dagster_dbt.asset_utils import (
 )
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator
 from dagster_dbt.dbt_manifest import DbtManifestParam, validate_manifest
-from dagster_dbt.utils import ASSET_RESOURCE_TYPES, select_unique_ids_from_manifest
+from dagster_dbt.utils import ASSET_RESOURCE_TYPES, select_unique_ids
 
 
 @record
@@ -99,11 +99,12 @@ class DbtManifestAssetSelection(AssetSelection):
         self, asset_graph: BaseAssetGraph, allow_missing: bool = False
     ) -> AbstractSet[AssetKey]:
         keys = set()
-        for unique_id in select_unique_ids_from_manifest(
+        for unique_id in select_unique_ids(
             select=self.select,
             exclude=self.exclude,
             selector=self.selector,
             manifest_json=self.manifest,
+            project=None,
         ):
             dbt_resource_props = get_node(self.manifest, unique_id)
             is_dbt_asset = dbt_resource_props["resource_type"] in ASSET_RESOURCE_TYPES
@@ -122,11 +123,12 @@ class DbtManifestAssetSelection(AssetSelection):
             return set()
 
         keys = set()
-        for unique_id in select_unique_ids_from_manifest(
+        for unique_id in select_unique_ids(
             select=self.select,
             exclude=self.exclude,
             selector=self.selector,
             manifest_json=self.manifest,
+            project=None,
         ):
             asset_check_key = get_asset_check_key_for_test(
                 self.manifest,
