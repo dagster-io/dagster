@@ -18,7 +18,12 @@ class SnowflakeConnectionComponentBase(dg.Component, dg.Resolvable, dg.Model, SQ
 
     @cached_property
     def _snowflake_resource(self) -> SnowflakeResource:
-        return SnowflakeResource(**self.__dict__)
+        return SnowflakeResource(
+            **{
+                (field.alias or field_name): getattr(self, field_name)
+                for field_name, field in self.__class__.model_fields.items()
+            }
+        )
 
     def connect_and_execute(self, sql: str) -> None:
         """Connect to the SQL database and execute the SQL query."""
@@ -33,7 +38,7 @@ def _copy_fields_to_model(
 ) -> None:
     """Given two models, creates a copy of the second model with the fields of the first model."""
     field_definitions: dict[str, tuple[type, Any]] = {
-        (field.alias or field_name): (cast("type", field.annotation), field.default)
+        field_name: (cast("type", field.annotation), field)
         for field_name, field in copy_from.model_fields.items()
     }
 
