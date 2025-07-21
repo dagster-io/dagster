@@ -28,7 +28,11 @@ from dagster._utils.cached_method import cached_method
 from pydantic import Field, PrivateAttr
 from tableauserverclient.server.endpoint.auth_endpoint import Auth
 
-from dagster_tableau.asset_utils import create_data_source_asset_event, create_view_asset_event
+from dagster_tableau.asset_utils import (
+    create_data_source_asset_event,
+    create_view_asset_event,
+    create_view_asset_observation,
+)
 from dagster_tableau.translator import (
     DagsterTableauTranslator,
     TableauContentData,
@@ -661,24 +665,6 @@ class BaseTableauWorkspace(ConfigurableResource):
                     client.refresh_and_poll_data_source(refreshable_data_source_id)
                 )
 
-            # If a sheet depends on a refreshed data source, then its workbook is considered refreshed
-            refreshed_workbook_ids = set()
-            for spec in specs:
-                if TableauTagSet.extract(spec.tags).asset_type == "sheet":
-                    for dep in spec.deps:
-                        # Only materializable data sources are included in materializable asset specs,
-                        # so we must verify for None values - data sources that are external specs are not available here.
-                        dep_spec = assets_def.specs_by_key.get(dep.asset_key)
-                        if (
-                            dep_spec
-                            and TableauMetadataSet.extract(dep_spec.metadata).id
-                            in refreshed_data_source_ids
-                        ):
-                            refreshed_workbook_ids.add(
-                                TableauViewMetadataSet.extract(spec.metadata).workbook_id
-                            )
-                            break
-
             data_source_specs = [
                 spec
                 for spec in specs
@@ -706,21 +692,19 @@ class BaseTableauWorkspace(ConfigurableResource):
                 )
 
             for spec in sheet_source_specs:
-                yield from create_view_asset_event(
+                yield from create_view_asset_observation(
                     view=client.get_view(
                         check.inst(TableauMetadataSet.extract(spec.metadata).id, str)
                     ),
                     spec=spec,
-                    refreshed_workbook_ids=refreshed_workbook_ids,
                 )
 
             for spec in dashboards_source_specs:
-                yield from create_view_asset_event(
+                yield from create_view_asset_observation(
                     view=client.get_view(
                         check.inst(TableauMetadataSet.extract(spec.metadata).id, str)
                     ),
                     spec=spec,
-                    refreshed_workbook_ids=refreshed_workbook_ids,
                 )
 
 
