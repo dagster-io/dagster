@@ -11,6 +11,7 @@ from dagster._core.definitions.metadata import (
     MetadataValue,
     normalize_metadata,
 )
+from dagster._core.definitions.partitions.subset import PartitionsSubset
 from dagster._core.execution.plan.handle import UnresolvedStepHandle
 from dagster._core.execution.plan.objects import TypeCheckData
 from dagster._serdes import whitelist_for_serdes
@@ -29,6 +30,7 @@ class StepOutputProperties(
             ("is_asset_partitioned", bool),
             ("asset_check_key", Optional[AssetCheckKey]),
             ("asset_execution_type", Optional[AssetExecutionType]),
+            ("partitions_subset", Optional[PartitionsSubset]),
         ],
     )
 ):
@@ -42,6 +44,7 @@ class StepOutputProperties(
         is_asset_partitioned: bool = False,
         asset_check_key: Optional[AssetCheckKey] = None,
         asset_execution_type: Optional[AssetExecutionType] = None,
+        partitions_subset: Optional[PartitionsSubset] = None,
     ):
         return super().__new__(
             cls,
@@ -53,6 +56,7 @@ class StepOutputProperties(
             check.bool_param(is_asset_partitioned, "is_asset_partitioned"),
             check.opt_inst_param(asset_check_key, "asset_check_key", AssetCheckKey),
             check.opt_inst_param(asset_execution_type, "asset_execution_type", AssetExecutionType),
+            check.opt_inst_param(partitions_subset, "partitions_subset", PartitionsSubset),
         )
 
 
