@@ -73,22 +73,6 @@ def setup_snowflake_component(
             yield component, defs
 
 
-BASIC_SNOWFLAKE_COMPONENT_BODY = {
-    "type": "dagster.TemplatedSqlComponent",
-    "attributes": {
-        "sql_template": "SELECT * FROM MY_TABLE;",
-        "assets": [{"key": "TESTDB/TESTSCHEMA/TEST_TABLE"}],
-        "connection": {
-            "account": "test_account",
-            "user": "test_user",
-            "password": "test_password",
-            "database": "TESTDB",
-            "schema": "TESTSCHEMA",
-        },
-    },
-}
-
-
 @mock.patch("snowflake.connector.connect", new_callable=create_mock_connector)
 def test_snowflake_sql_component2(snowflake_connect):
     """Test that the TemplatedSqlComponent correctly builds and executes SQL."""

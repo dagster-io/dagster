@@ -1,33 +1,54 @@
-from typing import Annotated, Optional
+from functools import cached_property
+from typing import Any, cast
 
 import dagster as dg
 from dagster._annotations import preview, public
 from dagster._core.definitions.definitions_class import Definitions
 from dagster.components.core.context import ComponentLoadContext
-from pydantic import BaseModel, Field
+from dagster.components.lib.sql_component.sql_client import SQLClient
+from pydantic import BaseModel, create_model
 
 from dagster_snowflake.resources import SnowflakeResource
 
 
 @public
 @preview
-class SnowflakeConnectionComponent(dg.Component, dg.Resolvable, SnowflakeResource):
+class SnowflakeConnectionComponentBase(dg.Component, dg.Resolvable, dg.Model, SQLClient):
     """A component that represents a Snowflake connection."""
 
-    resource_key: Annotated[
-        Optional[str],
-        Field(
-            description="A resource key to expose this connection to use in other Dagster assets."
-        ),
-    ] = None
+    @cached_property
+    def _snowflake_resource(self) -> SnowflakeResource:
+        return SnowflakeResource(**self.__dict__)
 
-    @classmethod
-    def load(
-        cls, attributes: Optional[BaseModel], context: "ComponentLoadContext"
-    ) -> "SnowflakeConnectionComponent":
-        return super().load(attributes, context)
+    def connect_and_execute(self, sql: str) -> None:
+        """Connect to the SQL database and execute the SQL query."""
+        return self._snowflake_resource.connect_and_execute(sql)
 
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
-        return (
-            Definitions(resources={self.resource_key: self}) if self.resource_key else Definitions()
-        )
+        return Definitions()
+
+
+def _copy_fields_to_model(
+    copy_from: type[BaseModel], copy_to: type[BaseModel], new_model_cls_name: str
+) -> None:
+    """Given two models, creates a copy of the second model with the fields of the first model."""
+    field_definitions: dict[str, tuple[type, Any]] = {
+        (field.alias or field_name): (cast("type", field.annotation), field.default)
+        for field_name, field in copy_from.model_fields.items()
+    }
+
+    return create_model(
+        new_model_cls_name,
+        __base__=copy_to,
+        __doc__=copy_to.__doc__,
+        **field_definitions,  # type: ignore
+    )
+
+
+SnowflakeConnectionComponent = public(preview)(
+    _copy_fields_to_model(
+        copy_from=SnowflakeResource,
+        copy_to=SnowflakeConnectionComponentBase,
+        new_model_cls_name="SnowflakeConnectionComponent",
+    )
+)

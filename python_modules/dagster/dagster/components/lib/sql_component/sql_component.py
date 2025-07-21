@@ -22,19 +22,19 @@ from dagster.components.resolved.model import Resolver
 @preview
 class SqlComponent(ExecutableComponent, Resolvable, ABC):
     """Base component which executes templated SQL. Subclasses
-    implement instructions on where to load the SQL content from
-    and how to execute it.
+    implement instructions on where to load the SQL content from.
     """
 
     class Config:
+        # Necessary to allow connection to be a SQLClient, which is an ABC
         arbitrary_types_allowed = True
 
     connection: Annotated[
         Annotated[
             SQLClient,
-            Resolver(lambda ctx, value: value, model_field_type=Any),  # type: ignore
+            Resolver(lambda ctx, value: value, model_field_type=str),
         ],
-        Field(description="The resource key to use for the Snowflake resource."),
+        Field(description="The SQL connection to use for executing the SQL content."),
     ]
     execution: Annotated[Optional[OpSpec], Field(default=None)] = None
 
@@ -78,7 +78,9 @@ ResolvedSqlTemplate = Annotated[
 
 
 class TemplatedSqlComponent(SqlComponent):
-    """A component which executes templated SQL from a string or file."""
+    """Executes templated SQL from a string or file using Jinja2 against the
+    supplied SQL connection.
+    """
 
     sql_template: Annotated[
         ResolvedSqlTemplate,
@@ -91,6 +93,7 @@ class TemplatedSqlComponent(SqlComponent):
     ] = None
 
     def get_sql_content(self, context: AssetExecutionContext) -> str:
+        # Slow import, we do it here to avoid importing jinja2 when `dagster` is imported
         from jinja2 import Template
 
         template_str = self.sql_template
