@@ -11,8 +11,9 @@ from pydantic import BaseModel, ConfigDict, TypeAdapter
 
 import dagster._check as check
 from dagster._annotations import public
-from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
 from dagster._core.definitions.definitions_class import Definitions
+from dagster._core.definitions.metadata import ArbitraryMetadataMapping
+from dagster._core.definitions.metadata.metadata_value import ObjectMetadataValue
 from dagster._core.definitions.metadata.source_code import (
     CodeReferencesMetadataSet,
     CodeReferencesMetadataValue,
@@ -57,14 +58,14 @@ class ComponentFileModel(BaseModel):
     post_processing: Optional[Mapping[str, Any]] = None
 
 
-def _add_defs_yaml_code_reference_to_spec(
+def _add_defs_yaml_metadata(
     component_yaml_path: Path,
     load_context: ComponentLoadContext,
     component: Component,
     source_position: SourcePosition,
-    asset_spec: AssetSpec,
-) -> AssetSpec:
-    existing_references_meta = CodeReferencesMetadataSet.extract(asset_spec.metadata)
+    metadata: ArbitraryMetadataMapping,
+) -> ArbitraryMetadataMapping:
+    existing_references_meta = CodeReferencesMetadataSet.extract(metadata)
 
     references = (
         existing_references_meta.code_references.code_references
@@ -75,18 +76,29 @@ def _add_defs_yaml_code_reference_to_spec(
         component_yaml_path, source_position, load_context
     )
 
-    return asset_spec.merge_attributes(
-        metadata={
-            **CodeReferencesMetadataSet(
-                code_references=CodeReferencesMetadataValue(
-                    code_references=[
-                        *references,
-                        *references_to_add,
-                    ],
-                )
-            ),
-        }
-    )
+    return {
+        **metadata,
+        **CodeReferencesMetadataSet(
+            code_references=CodeReferencesMetadataValue(
+                code_references=[
+                    *references,
+                    *references_to_add,
+                ],
+            )
+        ),
+        "dagster/component_origin": ObjectMetadataValue(component),
+        # maybe ComponentPath.get_relative_key too
+    }
+
+
+def _add_defs_py_metadata(
+    component: Component,
+    metadata: ArbitraryMetadataMapping,
+):
+    return {
+        **metadata,
+        "dagster/component_origin": ObjectMetadataValue(component),
+    }
 
 
 class CompositeYamlComponent(Component):
@@ -117,17 +129,14 @@ class CompositeYamlComponent(Component):
         ):
             defs_list.append(
                 post_process_defs(
-                    context.build_defs_at_path(
-                        component_decl.path
-                    ).permissive_map_resolved_asset_specs(
-                        func=lambda spec: _add_defs_yaml_code_reference_to_spec(
+                    context.build_defs_at_path(component_decl.path).with_definition_metadata_update(
+                        lambda metadata: _add_defs_yaml_metadata(
                             component_yaml_path=component_yaml,
                             load_context=context,
                             component=component,
                             source_position=source_position,
-                            asset_spec=spec,
-                        ),
-                        selection=None,
+                            metadata=metadata,
+                        )
                     ),
                     list(asset_post_processors),
                 )
@@ -351,6 +360,8 @@ class PythonFileComponent(Component):
     components: Mapping[str, Component]
 
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
+        from dagster.components.core.decl import PythonFileDecl
+
         module = context.load_defs_relative_python_module(self.path)
 
         def_objects = check.is_list(
@@ -382,10 +393,16 @@ class PythonFileComponent(Component):
         if len(lazy_def_objects) > 1:
             return Definitions.merge(*[lazy_def(context) for lazy_def in lazy_def_objects])
 
+        decl = check.inst(context.component_decl, PythonFileDecl)
         return Definitions.merge(
             *[
-                context.build_defs_at_path(child_decl.path)
-                for child_decl in context.component_decl.iterate_child_component_decls()
+                context.build_defs_at_path(child_decl.path).with_definition_metadata_update(
+                    lambda metadata: _add_defs_py_metadata(
+                        component=self.components[attr],
+                        metadata=metadata,
+                    )
+                )
+                for attr, child_decl in decl.decls.items()
             ],
             load_definitions_from_module(module),
         )
