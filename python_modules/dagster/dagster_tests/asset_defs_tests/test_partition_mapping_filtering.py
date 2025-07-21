@@ -1,4 +1,5 @@
-from dagster import asset, AssetIn, AllPartitionMapping
+from dagster import AllPartitionMapping, AssetIn, asset
+
 
 def test_partition_mapping_not_filtered_due_to_len_zero():
     @asset(ins={"upstream": AssetIn(partition_mapping=AllPartitionMapping())})
