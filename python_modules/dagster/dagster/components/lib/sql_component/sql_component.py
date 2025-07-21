@@ -78,9 +78,7 @@ ResolvedSqlTemplate = Annotated[
 
 
 class TemplatedSqlComponent(SqlComponent):
-    """Executes templated SQL from a string or file using Jinja2 against the
-    supplied SQL connection.
-    """
+    """A component which executes templated SQL from a string or file."""
 
     sql_template: Annotated[
         ResolvedSqlTemplate,
