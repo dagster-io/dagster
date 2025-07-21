@@ -93,6 +93,7 @@ EXCLUDED_FILES = {
     f"{snippets_folder}/sigma/filtering-sigma-assets.py",
     f"{snippets_folder}/sigma/multiple-sigma-organizations.py",
     f"{snippets_folder}/sigma/representing-sigma-assets.py",
+    f"{snippets_folder}/sigma/sigma_organization_snapshot.py",
     f"{snippets_folder}/sling/customize_upstream_dependencies.py",
     f"{snippets_folder}/sling/define_downstream_dependencies.py",
     f"{snippets_folder}/sling/sling_dagster_translator.py",
