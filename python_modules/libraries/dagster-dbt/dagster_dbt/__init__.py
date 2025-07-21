@@ -56,10 +56,11 @@ from typing import Any, Final, Tuple  # noqa: F401, UP035
 from dagster._annotations import deprecated
 from dagster._utils.warnings import deprecation_warning
 from dagster_shared.libraries import DagsterLibraryRegistry
-from dbt.version import __version__ as __dbt_version__
+
+from dagster_dbt.compat import DBT_VERSION
 
 DagsterLibraryRegistry.register("dagster-dbt", __version__)
-DagsterLibraryRegistry.register("dbt-core", __dbt_version__, is_dagster_package=False)
+DagsterLibraryRegistry.register("dbt-core", DBT_VERSION.version, is_dagster_package=False)
 
 
 _DEPRECATED: Final[Mapping[str, tuple[str, str, str]]] = {
