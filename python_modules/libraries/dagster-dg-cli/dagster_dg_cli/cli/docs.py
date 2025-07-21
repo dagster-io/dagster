@@ -146,3 +146,63 @@ def build_docs_command(
 
         Path(output_dir).mkdir(parents=True, exist_ok=True)
         shutil.copytree(ACTIVE_DOCS_DIR / "out", output_dir, dirs_exist_ok=True)
+
+
+@docs_group.command(
+    name="component",
+    cls=DgClickCommand,
+)
+@click.argument("component_type", type=str)
+@click.option(
+    "--json",
+    "output_json",
+    is_flag=True,
+    default=False,
+    help="Output as JSON.",
+)
+@dg_path_options
+@dg_global_options
+@cli_telemetry_wrapper
+def component_docs_command(
+    component_type: str,
+    target_path: Path,
+    output_json: bool,
+    **global_options: object,
+) -> None:
+    """View docs for a specific component type directly."""
+    cli_config = normalize_cli_config(global_options, click.get_current_context())
+    dg_context = DgContext.from_file_discovery_and_command_line_config(target_path, cli_config)
+    registry = EnvRegistry.from_dg_context(dg_context)
+
+    component_key = EnvRegistryKey.from_typename(component_type)
+    if not component_key or not registry.has(component_key):
+        registered_components = [
+            c[1].key.to_typename() for c in registry.items() if c[1].is_component
+        ]
+        registered_str = "\n  * ".join(registered_components)
+        exit_with_error(
+            f"Component type `{component_type}` not found. Registered components:\n  * {registered_str}",
+            do_format=False,
+        )
+
+    entry = registry.get(component_key)
+
+    if output_json:
+        component_data = entry.get_feature_data("component")
+        blob = {
+            "type": component_key.to_typename(),
+            "description": entry.description,
+            "owners": entry.owners,
+            "tags": entry.tags,
+            "schema": component_data.schema if component_data and component_data.schema else {},
+        }
+        click.echo(json.dumps(blob, indent=2))
+        return
+
+    docs = f"""
+Type: {component_key.to_typename()}
+Description: {entry.description}
+    """
+    docs += f"\nOwners: {entry.owners}" if entry.owners else ""
+    docs += f"\nTags: {entry.tags}" if entry.tags else ""
+    click.echo(docs)

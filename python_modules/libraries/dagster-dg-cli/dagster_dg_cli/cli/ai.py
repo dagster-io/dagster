@@ -82,9 +82,7 @@ dg check defs # Validate definitions by loading them fully (slower)
 
 # Scaffolding
 dg scaffold defs <component type> # Create an instance of a Component type. Available types found via `dg list components`.
-dg scaffold defs dagster.asset # Create asset
-dg scaffold defs dagster.job # Create job
-dg scaffold defs dagster.schedule # Create schedule
+dg scaffold defs dagster.<asset|job|schedule|sensor> # Create a new definition of a given type.
 dg scaffold component <name> # Create a new custom Component type
 
 # Searching
@@ -92,6 +90,7 @@ dg list defs # Show project definitions
 dg list defs --assets <asset selection> # Show selected asset definitions
 dg list component-tree # Show the component tree
 dg list components # Show available component types
+dg docs component <component type> # Show documentation for a component type
 ```
 * The `dg` CLI will be effective in accomplishing tasks. Use --help to better understand how to use commands.
 * Prefer `dg list defs` over searching the files system when looking for Dagster definitions.
