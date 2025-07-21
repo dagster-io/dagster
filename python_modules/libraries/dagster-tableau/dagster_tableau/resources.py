@@ -20,6 +20,7 @@ from dagster import (
     Output,
     _check as check,
     get_dagster_logger,
+    AssetObservation,
 )
 from dagster._annotations import beta, beta_param, superseded
 from dagster._core.definitions.definitions_load_context import StateBackedDefinitionsLoader
@@ -642,7 +643,7 @@ class BaseTableauWorkspace(ConfigurableResource):
 
     def refresh_and_poll(
         self, context: AssetExecutionContext
-    ) -> Iterator[Union[Output, ObserveResult]]:
+    ) -> Iterator[Union[Output, ObserveResult, AssetObservation]]:
         """Executes a refresh and poll process to materialize Tableau assets,
         including data sources with extracts, views and workbooks.
         This method can only be used in the context of an asset execution.
