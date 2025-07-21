@@ -169,6 +169,8 @@ def create_run_for_test(
     op_selection=None,
     asset_graph=None,
 ):
+    from unittest import mock
+
     return instance.create_run(
         job_name=job_name,
         run_id=run_id,
@@ -187,7 +189,7 @@ def create_run_for_test(
         asset_selection=asset_selection,
         asset_check_selection=asset_check_selection,
         op_selection=op_selection,
-        asset_graph=asset_graph,
+        asset_graph=asset_graph or mock.MagicMock(),
     )
 
 
