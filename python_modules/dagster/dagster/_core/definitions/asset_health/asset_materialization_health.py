@@ -45,6 +45,12 @@ class MinimalAssetMaterializationHealthState:
         else:
             return AssetHealthStatus.HEALTHY
 
+    @property
+    def partitions_def(self) -> Optional[PartitionsDefinition]:
+        if self.partitions_snap is None:
+            return None
+        return self.partitions_snap.get_partitions_definition()
+
     @classmethod
     def from_asset_materialization_health_state(
         cls,
