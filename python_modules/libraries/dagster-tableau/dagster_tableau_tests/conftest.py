@@ -268,14 +268,14 @@ def refresh_workbook_fixture(workbook_id, job_id):
 
 
 @pytest.fixture(name="refresh_data_source", autouse=True)
-def refresh_data_source_fixture(embedded_data_source_id, job_id):
+def refresh_data_source_fixture(job_id):
     with patch(
         "dagster_tableau.resources.BaseTableauClient.refresh_data_source"
     ) as mocked_function:
         type(mocked_function.return_value).id = PropertyMock(return_value=job_id)
         type(mocked_function.return_value).finish_code = PropertyMock(return_value=-1)
         type(mocked_function.return_value).datasource_id = PropertyMock(
-            return_value=embedded_data_source_id
+            return_value=TEST_DATA_SOURCE_HIDDEN_SHEET_ID
         )
         yield mocked_function
 
