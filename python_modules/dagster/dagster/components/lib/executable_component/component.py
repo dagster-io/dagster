@@ -7,9 +7,9 @@ from dagster_shared import check
 from pydantic import BaseModel
 
 from dagster._config.field import Field
-from dagster._core.definitions.asset_check_result import AssetCheckResult
-from dagster._core.definitions.asset_checks import AssetChecksDefinition
-from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.asset_checks.asset_check_result import AssetCheckResult
+from dagster._core.definitions.asset_checks.asset_checks_definition import AssetChecksDefinition
+from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
 from dagster._core.definitions.decorators.asset_check_decorator import multi_asset_check
 from dagster._core.definitions.decorators.asset_decorator import multi_asset
 from dagster._core.definitions.definitions_class import Definitions

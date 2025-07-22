@@ -6,11 +6,20 @@ from dagster import (
     AssetKey,
     _check as check,
 )
-from dagster._core.definitions.asset_graph_differ import AssetDefinitionChangeType, AssetGraphDiffer
 from dagster._core.definitions.asset_health.asset_freshness_health import (
     get_freshness_status_and_metadata,
 )
-from dagster._core.definitions.asset_spec import SYSTEM_METADATA_KEY_AUTO_CREATED_STUB_ASSET
+from dagster._core.definitions.assets.definition.asset_spec import (
+    SYSTEM_METADATA_KEY_AUTO_CREATED_STUB_ASSET,
+)
+from dagster._core.definitions.assets.graph.asset_graph_differ import (
+    AssetDefinitionChangeType,
+    AssetGraphDiffer,
+)
+from dagster._core.definitions.assets.graph.remote_asset_graph import (
+    RemoteAssetNode,
+    RemoteWorkspaceAssetNode,
+)
 from dagster._core.definitions.data_version import (
     NULL_DATA_VERSION,
     StaleCauseCategory,
@@ -19,10 +28,12 @@ from dagster._core.definitions.data_version import (
 from dagster._core.definitions.declarative_automation.serialized_objects import (
     AutomationConditionSnapshot,
 )
-from dagster._core.definitions.partitions.context import PartitionLoadingContext
+from dagster._core.definitions.partitions.context import (
+    PartitionLoadingContext,
+    partition_loading_context,
+)
 from dagster._core.definitions.partitions.definition import PartitionsDefinition
 from dagster._core.definitions.partitions.mapping import PartitionMapping
-from dagster._core.definitions.remote_asset_graph import RemoteAssetNode, RemoteWorkspaceAssetNode
 from dagster._core.definitions.selector import JobSelector
 from dagster._core.definitions.sensor_definition import SensorType
 from dagster._core.definitions.temporal_context import TemporalContext
@@ -69,7 +80,6 @@ from dagster_graphql.schema.asset_checks import (
     GrapheneAssetChecks,
     GrapheneAssetChecksOrError,
 )
-from dagster_graphql.schema.asset_health import GrapheneAssetHealth
 from dagster_graphql.schema.auto_materialize_asset_evaluations import (
     GrapheneAutoMaterializeAssetEvaluationRecord,
 )
@@ -237,7 +247,6 @@ class GrapheneMaterializationUpstreamDataVersion(graphene.ObjectType):
 
 class GrapheneAssetNode(graphene.ObjectType):
     # NOTE: properties/resolvers are listed alphabetically
-    assetHealth = graphene.Field(GrapheneAssetHealth)
     assetKey = graphene.NonNull(GrapheneAssetKey)
     assetMaterializations = graphene.Field(
         non_null_list(GrapheneMaterializationEvent),
@@ -533,14 +542,6 @@ class GrapheneAssetNode(graphene.ObjectType):
     @property
     def is_executable(self) -> bool:
         return self._asset_node_snap.is_executable
-
-    def resolve_assetHealth(self, graphene_info: ResolveInfo) -> Optional[GrapheneAssetHealth]:
-        if not graphene_info.context.instance.dagster_asset_health_queries_supported():
-            return None
-        return GrapheneAssetHealth(
-            asset_key=self.assetKey,
-            dynamic_partitions_loader=graphene_info.context.dynamic_partitions_loader,
-        )
 
     def resolve_hasMaterializePermission(
         self,
@@ -1125,31 +1126,32 @@ class GrapheneAssetNode(graphene.ObjectType):
     ) -> Optional[GraphenePartitionStats]:
         partitions_snap = self._asset_node_snap.partitions
         if partitions_snap:
-            (
-                materialized_partition_subset,
-                failed_partition_subset,
-                in_progress_subset,
-            ) = regenerate_and_check_partition_subsets(
-                graphene_info.context,
-                self._asset_node_snap,
-                graphene_info.context.dynamic_partitions_loader,
-            )
+            with partition_loading_context(
+                dynamic_partitions_store=graphene_info.context.dynamic_partitions_loader
+            ):
+                (
+                    materialized_partition_subset,
+                    failed_partition_subset,
+                    in_progress_subset,
+                ) = regenerate_and_check_partition_subsets(
+                    graphene_info.context,
+                    self._asset_node_snap,
+                    graphene_info.context.dynamic_partitions_loader,
+                )
 
-            failed_or_in_progress_subset = failed_partition_subset | in_progress_subset
-            failed_and_not_in_progress_subset = failed_partition_subset - in_progress_subset
+                failed_or_in_progress_subset = failed_partition_subset | in_progress_subset
+                failed_and_not_in_progress_subset = failed_partition_subset - in_progress_subset
 
-            materialized_and_not_failed_or_in_progress_subset = (
-                materialized_partition_subset - failed_or_in_progress_subset
-            )
+                materialized_and_not_failed_or_in_progress_subset = (
+                    materialized_partition_subset - failed_or_in_progress_subset
+                )
 
-            return GraphenePartitionStats(
-                numMaterialized=len(materialized_and_not_failed_or_in_progress_subset),
-                numPartitions=partitions_snap.get_partitions_definition().get_num_partitions(
-                    dynamic_partitions_store=graphene_info.context.dynamic_partitions_loader
-                ),
-                numFailed=len(failed_and_not_in_progress_subset),
-                numMaterializing=len(in_progress_subset),
-            )
+                return GraphenePartitionStats(
+                    numMaterialized=len(materialized_and_not_failed_or_in_progress_subset),
+                    numPartitions=partitions_snap.get_partitions_definition().get_num_partitions(),
+                    numFailed=len(failed_and_not_in_progress_subset),
+                    numMaterializing=len(in_progress_subset),
+                )
         else:
             return None
 

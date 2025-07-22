@@ -152,6 +152,7 @@ export const indexedDBAsyncMemoize = <R, U extends (...args: any[]) => Promise<R
   hashFn?: (...args: Parameters<U>) => any,
 ): U & {
   isCached: (...args: Parameters<U>) => Promise<boolean>;
+  clearEntry: (...args: Parameters<U>) => Promise<void>;
 } => {
   let lru: ReturnType<typeof cache<R>> | undefined;
   try {
@@ -163,9 +164,9 @@ export const indexedDBAsyncMemoize = <R, U extends (...args: any[]) => Promise<R
 
   const hashToPromise: Record<string, Promise<R>> = {};
 
-  const genHashKey = async (...args: Parameters<U>) => {
+  const genHashKey = weakMapMemoize(async (...args: Parameters<U>) => {
     return hashFn ? hashFn(...args) : hashObject(args);
-  };
+  });
 
   const ret = weakMapMemoize(async (...args: Parameters<U>) => {
     return new Promise<R>(async (resolve, reject) => {
@@ -190,6 +191,7 @@ export const indexedDBAsyncMemoize = <R, U extends (...args: any[]) => Promise<R
               delete hashToPromise[hashKey];
             }
           } catch (e) {
+            delete hashToPromise[hashKey];
             rej(e);
           }
         });
@@ -198,6 +200,7 @@ export const indexedDBAsyncMemoize = <R, U extends (...args: any[]) => Promise<R
         const result = await hashToPromise[hashKey]!;
         resolve(result);
       } catch (e) {
+        delete hashToPromise[hashKey];
         reject(e);
       }
     });
@@ -208,6 +211,14 @@ export const indexedDBAsyncMemoize = <R, U extends (...args: any[]) => Promise<R
       return false;
     }
     return await lru.has(hashKey);
+  };
+  ret.clearEntry = async (...args: Parameters<U>) => {
+    if (!lru) {
+      return;
+    }
+    const hashKey = await genHashKey(...args);
+    delete hashToPromise[hashKey];
+    await lru.delete(hashKey);
   };
   return ret;
 };

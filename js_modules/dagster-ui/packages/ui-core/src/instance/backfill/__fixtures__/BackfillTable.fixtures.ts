@@ -127,56 +127,54 @@ export const BackfillTableFragmentFailedErrorStatus: MockedResponse<SingleBackfi
   },
 };
 
-export const BackfillTableFragmentCompletedAssetJob: BackfillTableFragment = buildPartitionBackfill(
-  {
-    id: 'pwgcpiwc',
-    status: BulkActionStatus.COMPLETED,
-    isValidSerialization: true,
-    numPartitions: 11,
-    hasCancelPermission: true,
-    hasResumePermission: true,
-    timestamp: 1674660450.942305,
-    isAssetBackfill: true,
-    partitionSetName: 'asset_job_partition_set',
-    partitionSet: buildPartitionSet({
-      id: '74c11a15d5d213176c83a7a71b50be0318103d8b',
-      name: 'asset_job_partition_set',
-      mode: 'default',
-      pipelineName: 'asset_job',
-      repositoryOrigin: buildRepositoryOrigin({
-        id: 'c22d9677b8089be89b1e014b9de34284962f83a7',
-        repositoryName: 'repo',
-        repositoryLocationName: 'test.py',
-      }),
+export const BackfillTableFragmentCompletedAssetJob = buildPartitionBackfill({
+  id: 'pwgcpiwc',
+  status: BulkActionStatus.COMPLETED,
+  isValidSerialization: true,
+  numPartitions: 11,
+  hasCancelPermission: true,
+  hasResumePermission: true,
+  timestamp: 1674660450.942305,
+  isAssetBackfill: true,
+  partitionSetName: 'asset_job_partition_set',
+  partitionSet: buildPartitionSet({
+    id: '74c11a15d5d213176c83a7a71b50be0318103d8b',
+    name: 'asset_job_partition_set',
+    mode: 'default',
+    pipelineName: 'asset_job',
+    repositoryOrigin: buildRepositoryOrigin({
+      id: 'c22d9677b8089be89b1e014b9de34284962f83a7',
+      repositoryName: 'repo',
+      repositoryLocationName: 'test.py',
     }),
-    error: null,
-    partitionNames: [
-      'TN|2023-01-24',
-      'VA|2023-01-24',
-      'GA|2023-01-24',
-      'KY|2023-01-24',
-      'PA|2023-01-24',
-      'NC|2023-01-24',
-      'SC|2023-01-24',
-      'FL|2023-01-24',
-      'OH|2023-01-24',
-      'IL|2023-01-24',
-      'WV|2023-01-24',
-    ],
-    assetSelection: [
-      buildAssetKey({
-        path: ['multipartitioned_asset'],
-      }),
-    ],
-    tags: [
-      {
-        __typename: 'PipelineTag',
-        key: DagsterTag.User,
-        value: 'user@dagsterlabs.com',
-      },
-    ],
-  },
-);
+  }),
+  error: null,
+  partitionNames: [
+    'TN|2023-01-24',
+    'VA|2023-01-24',
+    'GA|2023-01-24',
+    'KY|2023-01-24',
+    'PA|2023-01-24',
+    'NC|2023-01-24',
+    'SC|2023-01-24',
+    'FL|2023-01-24',
+    'OH|2023-01-24',
+    'IL|2023-01-24',
+    'WV|2023-01-24',
+  ],
+  assetSelection: [
+    buildAssetKey({
+      path: ['multipartitioned_asset'],
+    }),
+  ],
+  tags: [
+    {
+      __typename: 'PipelineTag',
+      key: DagsterTag.User,
+      value: 'user@dagsterlabs.com',
+    },
+  ],
+});
 
 export const BackfillTableFragmentCompletedAssetJobStatus: MockedResponse<SingleBackfillQuery> = {
   request: {

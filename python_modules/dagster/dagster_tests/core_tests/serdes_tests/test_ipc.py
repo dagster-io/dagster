@@ -4,8 +4,9 @@ import sys
 import time
 from contextlib import ExitStack
 
+import dagster as dg
 import pytest
-from dagster._utils import file_relative_path, process_is_alive, safe_tempfile_path
+from dagster._utils import process_is_alive, safe_tempfile_path
 from dagster_shared.ipc import (
     interrupt_ipc_subprocess,
     interrupt_ipc_subprocess_pid,
@@ -57,7 +58,7 @@ def test_interrupt_ipc_subprocess():
             sleepy_process = open_ipc_subprocess(
                 [
                     sys.executable,
-                    file_relative_path(__file__, "subprocess_with_interrupt_support.py"),
+                    dg.file_relative_path(__file__, "subprocess_with_interrupt_support.py"),
                     started_sentinel,
                     interrupt_sentinel,
                 ]
@@ -75,7 +76,7 @@ def test_interrupt_ipc_subprocess_by_pid():
             sleepy_process = open_ipc_subprocess(
                 [
                     sys.executable,
-                    file_relative_path(__file__, "subprocess_with_interrupt_support.py"),
+                    dg.file_relative_path(__file__, "subprocess_with_interrupt_support.py"),
                     started_sentinel,
                     interrupt_sentinel,
                 ]
@@ -98,7 +99,7 @@ def test_interrupt_ipc_subprocess_grandchild():
         child_process = open_ipc_subprocess(
             [
                 sys.executable,
-                file_relative_path(__file__, "parent_subprocess_with_interrupt_support.py"),
+                dg.file_relative_path(__file__, "parent_subprocess_with_interrupt_support.py"),
                 child_opened_sentinel,
                 parent_interrupt_sentinel,
                 child_started_sentinel,
@@ -127,7 +128,7 @@ def test_interrupt_compute_log_tail_child(
         child_process = open_ipc_subprocess(
             [
                 sys.executable,
-                file_relative_path(__file__, "compute_log_subprocess.py"),
+                dg.file_relative_path(__file__, "compute_log_subprocess.py"),
                 stdout_pids_file,
                 stderr_pids_file,
                 opened_sentinel,
@@ -185,7 +186,7 @@ def test_segfault_compute_log_tail(
             child_process = open_ipc_subprocess(
                 [
                     sys.executable,
-                    file_relative_path(__file__, "compute_log_subprocess_segfault.py"),
+                    dg.file_relative_path(__file__, "compute_log_subprocess_segfault.py"),
                     stdout_pids_file,
                     stderr_pids_file,
                 ]
@@ -226,14 +227,14 @@ def test_segfault_compute_log_tail(
 
 def test_input_signal_hang():
     please_dont_hang = open_ipc_subprocess(
-        [sys.executable, file_relative_path(__file__, "import_readline.py")],
+        [sys.executable, dg.file_relative_path(__file__, "import_readline.py")],
     )
     please_dont_hang.communicate(timeout=10)
 
 
 def test_pdb_works():
     please_dont_hang = open_ipc_subprocess(
-        [sys.executable, file_relative_path(__file__, "run_pdb.py")],
+        [sys.executable, dg.file_relative_path(__file__, "run_pdb.py")],
         stdin=subprocess.PIPE,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
@@ -260,7 +261,7 @@ def test_interrupt_compute_log_tail_grandchild(
         parent_process = open_ipc_subprocess(
             [
                 sys.executable,
-                file_relative_path(__file__, "parent_compute_log_subprocess.py"),
+                dg.file_relative_path(__file__, "parent_compute_log_subprocess.py"),
                 child_opened_sentinel,
                 parent_interrupt_sentinel,
                 child_started_sentinel,

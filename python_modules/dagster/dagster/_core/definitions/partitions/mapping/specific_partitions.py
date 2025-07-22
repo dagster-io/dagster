@@ -3,9 +3,8 @@ from datetime import datetime
 from typing import NamedTuple, Optional
 
 from dagster._annotations import PublicAttr
-from dagster._core.definitions.partitions.definition.partitions_definition import (
-    PartitionsDefinition,
-)
+from dagster._core.definitions.partitions.context import partition_loading_context
+from dagster._core.definitions.partitions.definition import PartitionsDefinition
 from dagster._core.definitions.partitions.mapping.partition_mapping import (
     PartitionMapping,
     UpstreamPartitionsResult,
@@ -57,12 +56,13 @@ class SpecificPartitionsPartitionMapping(
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> UpstreamPartitionsResult:
-        return UpstreamPartitionsResult(
-            partitions_subset=upstream_partitions_def.subset_with_partition_keys(
-                self.partition_keys
-            ),
-            required_but_nonexistent_subset=upstream_partitions_def.empty_subset(),
-        )
+        with partition_loading_context(current_time, dynamic_partitions_store):
+            return UpstreamPartitionsResult(
+                partitions_subset=upstream_partitions_def.subset_with_partition_keys(
+                    self.partition_keys
+                ),
+                required_but_nonexistent_subset=upstream_partitions_def.empty_subset(),
+            )
 
     def get_downstream_partitions_for_partitions(
         self,
@@ -72,13 +72,12 @@ class SpecificPartitionsPartitionMapping(
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> PartitionsSubset:
-        # if any of the partition keys in this partition mapping are contained within the upstream
-        # partitions subset, then all partitions of the downstream asset are dependencies
-        if any(key in upstream_partitions_subset for key in self.partition_keys):
-            return downstream_partitions_def.subset_with_all_partitions(
-                dynamic_partitions_store=dynamic_partitions_store
-            )
-        return downstream_partitions_def.empty_subset()
+        with partition_loading_context(current_time, dynamic_partitions_store):
+            # if any of the partition keys in this partition mapping are contained within the upstream
+            # partitions subset, then all partitions of the downstream asset are dependencies
+            if any(key in upstream_partitions_subset for key in self.partition_keys):
+                return downstream_partitions_def.subset_with_all_partitions()
+            return downstream_partitions_def.empty_subset()
 
     @property
     def description(self) -> str:

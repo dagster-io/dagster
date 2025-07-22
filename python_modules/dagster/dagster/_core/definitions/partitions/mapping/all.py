@@ -2,6 +2,7 @@ from datetime import datetime
 from typing import NamedTuple, Optional
 
 import dagster._check as check
+from dagster._core.definitions.partitions.context import partition_loading_context
 from dagster._core.definitions.partitions.definition.partitions_definition import (
     PartitionsDefinition,
 )
@@ -38,20 +39,17 @@ class AllPartitionMapping(PartitionMapping, NamedTuple("_AllPartitionMapping", [
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> UpstreamPartitionsResult:
-        if dynamic_partitions_store is not None and current_time is not None:
-            partitions_subset = AllPartitionsSubset(
-                partitions_def=upstream_partitions_def,
-                dynamic_partitions_store=dynamic_partitions_store,
-                current_time=current_time,
+        with partition_loading_context(current_time, dynamic_partitions_store) as ctx:
+            if ctx.dynamic_partitions_store is not None and ctx.effective_dt is not None:
+                partitions_subset = AllPartitionsSubset(
+                    partitions_def=upstream_partitions_def, context=ctx
+                )
+            else:
+                partitions_subset = upstream_partitions_def.subset_with_all_partitions()
+            return UpstreamPartitionsResult(
+                partitions_subset=partitions_subset,
+                required_but_nonexistent_subset=upstream_partitions_def.empty_subset(),
             )
-        else:
-            partitions_subset = upstream_partitions_def.subset_with_all_partitions(
-                current_time=current_time, dynamic_partitions_store=dynamic_partitions_store
-            )
-        return UpstreamPartitionsResult(
-            partitions_subset=partitions_subset,
-            required_but_nonexistent_subset=upstream_partitions_def.empty_subset(),
-        )
 
     def get_downstream_partitions_for_partitions(
         self,
@@ -61,15 +59,14 @@ class AllPartitionMapping(PartitionMapping, NamedTuple("_AllPartitionMapping", [
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> PartitionsSubset:
-        if upstream_partitions_subset is None:
-            check.failed("upstream asset is not partitioned")
+        with partition_loading_context(current_time, dynamic_partitions_store):
+            if upstream_partitions_subset is None:
+                check.failed("upstream asset is not partitioned")
 
-        if len(upstream_partitions_subset) == 0:
-            return downstream_partitions_def.empty_subset()
+            if len(upstream_partitions_subset) == 0:
+                return downstream_partitions_def.empty_subset()
 
-        return downstream_partitions_def.subset_with_all_partitions(
-            current_time=current_time, dynamic_partitions_store=dynamic_partitions_store
-        )
+            return downstream_partitions_def.subset_with_all_partitions()
 
     @property
     def description(self) -> str:

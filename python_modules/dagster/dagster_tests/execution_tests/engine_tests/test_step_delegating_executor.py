@@ -4,27 +4,15 @@ import tempfile
 import threading
 import time
 
+import dagster as dg
 import pytest
-from dagster import (
-    AssetKey,
-    AssetsDefinition,
-    asset,
-    define_asset_job,
-    executor,
-    job,
-    op,
-    reconstructable,
-    repository,
-)
-from dagster._config import Permissive
-from dagster._core.definitions.cacheable_assets import (
+from dagster import AssetsDefinition
+from dagster._core.definitions.assets.definition.cacheable_assets_definition import (
     AssetsDefinitionCacheableData,
     CacheableAssetsDefinition,
 )
-from dagster._core.definitions.executor_definition import multiple_process_executor_requirements
 from dagster._core.definitions.reconstruct import ReconstructableJob, ReconstructableRepository
 from dagster._core.events import DagsterEventType
-from dagster._core.execution.api import ReexecutionOptions, execute_job
 from dagster._core.execution.retries import RetryMode
 from dagster._core.executor.step_delegating import (
     CheckStepHealthResult,
@@ -32,7 +20,7 @@ from dagster._core.executor.step_delegating import (
     StepHandler,
 )
 from dagster._core.instance import DagsterInstance
-from dagster._core.test_utils import environ, instance_for_test
+from dagster._core.test_utils import environ
 from dagster._utils.merger import merge_dicts
 from dagster._utils.test.definitions import scoped_definitions_load_context
 from dagster.components.definitions import lazy_repository
@@ -94,10 +82,10 @@ class TestStepHandler(StepHandler):
             p.wait(timeout=5)
 
 
-@executor(
+@dg.executor(
     name="test_step_delegating_executor",
-    requirements=multiple_process_executor_requirements(),
-    config_schema=Permissive(),
+    requirements=dg.multiple_process_executor_requirements(),
+    config_schema=dg.Permissive(),
 )
 def test_step_delegating_executor(exc_init):
     return StepDelegatingExecutor(
@@ -106,17 +94,17 @@ def test_step_delegating_executor(exc_init):
     )
 
 
-@op
+@dg.op
 def bar_op(_):
     return "bar"
 
 
-@op(tags={"foo": "bar"})
+@dg.op(tags={"foo": "bar"})
 def baz_op(_, bar):
     return bar * 2
 
 
-@job(executor_def=test_step_delegating_executor)
+@dg.job(executor_def=test_step_delegating_executor)
 def foo_job():
     baz_op(bar_op())
     bar_op()
@@ -124,9 +112,9 @@ def foo_job():
 
 def test_execute():
     TestStepHandler.reset()
-    with instance_for_test() as instance:
-        result = execute_job(
-            reconstructable(foo_job),
+    with dg.instance_for_test() as instance:
+        result = dg.execute_job(
+            dg.reconstructable(foo_job),
             instance=instance,
             run_config={"execution": {"config": {}}},
         )
@@ -146,7 +134,7 @@ def test_execute():
 
 def test_execute_with_tailer_offset():
     TestStepHandler.reset()
-    with instance_for_test() as instance:
+    with dg.instance_for_test() as instance:
         with environ(
             {
                 "DAGSTER_EXECUTOR_POP_EVENTS_OFFSET": "100000",
@@ -154,8 +142,8 @@ def test_execute_with_tailer_offset():
                 "DAGSTER_STEP_DELEGATING_EXECUTOR_SLEEP_SECONDS": "0.001",
             }
         ):
-            result = execute_job(
-                reconstructable(foo_job),
+            result = dg.execute_job(
+                dg.reconstructable(foo_job),
                 instance=instance,
                 run_config={"execution": {"config": {}}},
             )
@@ -177,9 +165,9 @@ def test_skip_execute():
     from dagster_tests.execution_tests.engine_tests.test_jobs import define_dynamic_skipping_job
 
     TestStepHandler.reset()
-    with instance_for_test() as instance:
-        result = execute_job(
-            reconstructable(define_dynamic_skipping_job),
+    with dg.instance_for_test() as instance:
+        result = dg.execute_job(
+            dg.reconstructable(define_dynamic_skipping_job),
             instance=instance,
         )
         TestStepHandler.wait_for_processes()
@@ -191,9 +179,9 @@ def test_dynamic_execute():
     from dagster_tests.execution_tests.engine_tests.test_jobs import define_dynamic_job
 
     TestStepHandler.reset()
-    with instance_for_test() as instance:
-        result = execute_job(
-            reconstructable(define_dynamic_job),
+    with dg.instance_for_test() as instance:
+        result = dg.execute_job(
+            dg.reconstructable(define_dynamic_job),
             instance=instance,
         )
         TestStepHandler.wait_for_processes()
@@ -215,9 +203,9 @@ def test_skipping():
     from dagster_tests.execution_tests.engine_tests.test_jobs import define_skpping_job
 
     TestStepHandler.reset()
-    with instance_for_test() as instance:
-        result = execute_job(
-            reconstructable(define_skpping_job),
+    with dg.instance_for_test() as instance:
+        result = dg.execute_job(
+            dg.reconstructable(define_skpping_job),
             instance=instance,
         )
         TestStepHandler.wait_for_processes()
@@ -227,9 +215,9 @@ def test_skipping():
 
 def test_execute_intervals():
     TestStepHandler.reset()
-    with instance_for_test() as instance:
-        result = execute_job(
-            reconstructable(foo_job),
+    with dg.instance_for_test() as instance:
+        result = dg.execute_job(
+            dg.reconstructable(foo_job),
             instance=instance,
             run_config={"execution": {"config": {"check_step_health_interval_seconds": 60}}},
         )
@@ -242,9 +230,9 @@ def test_execute_intervals():
     assert TestStepHandler.check_step_health_count == 0
 
     TestStepHandler.reset()
-    with instance_for_test() as instance:
-        result = execute_job(
-            reconstructable(foo_job),
+    with dg.instance_for_test() as instance:
+        result = dg.execute_job(
+            dg.reconstructable(foo_job),
             instance=instance,
             run_config={"execution": {"config": {"check_step_health_interval_seconds": 0}}},
         )
@@ -259,12 +247,12 @@ def test_execute_intervals():
     # assert TestStepHandler.check_step_health_count >= 3
 
 
-@op(tags={"database": "tiny"})
+@dg.op(tags={"database": "tiny"})
 def slow_op(_):
     time.sleep(2)
 
 
-@job(executor_def=test_step_delegating_executor)
+@dg.job(executor_def=test_step_delegating_executor)
 def three_op_job():
     for i in range(3):
         slow_op.alias(f"slow_op_{i}")()
@@ -272,9 +260,9 @@ def three_op_job():
 
 def test_max_concurrent():
     TestStepHandler.reset()
-    with instance_for_test() as instance:
-        result = execute_job(
-            reconstructable(three_op_job),
+    with dg.instance_for_test() as instance:
+        result = dg.execute_job(
+            dg.reconstructable(three_op_job),
             instance=instance,
             run_config={"execution": {"config": {"max_concurrent": 1}}},
         )
@@ -296,9 +284,9 @@ def test_max_concurrent():
 
 def test_tag_concurrency_limits():
     TestStepHandler.reset()
-    with instance_for_test() as instance:
-        with execute_job(
-            reconstructable(three_op_job),
+    with dg.instance_for_test() as instance:
+        with dg.execute_job(
+            dg.reconstructable(three_op_job),
             instance=instance,
             run_config={
                 "execution": {
@@ -327,10 +315,10 @@ def test_tag_concurrency_limits():
                     active_step = None
 
 
-@executor(
+@dg.executor(
     name="test_step_delegating_executor_verify_step",
-    requirements=multiple_process_executor_requirements(),
-    config_schema=Permissive(),
+    requirements=dg.multiple_process_executor_requirements(),
+    config_schema=dg.Permissive(),
 )
 def test_step_delegating_executor_verify_step(exc_init):
     return StepDelegatingExecutor(
@@ -344,7 +332,7 @@ def test_step_delegating_executor_verify_step(exc_init):
     )
 
 
-@job(executor_def=test_step_delegating_executor_verify_step)
+@dg.job(executor_def=test_step_delegating_executor_verify_step)
 def foo_job_verify_step():
     baz_op(bar_op())
     bar_op()
@@ -352,9 +340,9 @@ def foo_job_verify_step():
 
 def test_execute_verify_step():
     TestStepHandler.reset()
-    with instance_for_test() as instance:
-        result = execute_job(
-            reconstructable(foo_job_verify_step),
+    with dg.instance_for_test() as instance:
+        result = dg.execute_job(
+            dg.reconstructable(foo_job_verify_step),
             instance=instance,
             run_config={"execution": {"config": {}}},
         )
@@ -372,7 +360,7 @@ def test_execute_verify_step():
 
 def test_execute_using_repository_data():
     TestStepHandler.reset()
-    with instance_for_test() as instance:
+    with dg.instance_for_test() as instance:
         recon_repo = ReconstructableRepository.for_module(
             "dagster_tests.execution_tests.engine_tests.test_step_delegating_executor",
             fn_name="cacheable_asset_defs",
@@ -381,7 +369,7 @@ def test_execute_using_repository_data():
         recon_job = ReconstructableJob(repository=recon_repo, job_name="all_asset_job")
 
         with scoped_definitions_load_context():
-            with execute_job(
+            with dg.execute_job(
                 recon_job,
                 instance=instance,
             ) as result:
@@ -402,9 +390,9 @@ def test_execute_using_repository_data():
                 assert result.success
                 parent_run_id = result.run_id
 
-            with execute_job(
+            with dg.execute_job(
                 recon_job,
-                reexecution_options=ReexecutionOptions(parent_run_id=parent_run_id),
+                reexecution_options=dg.ReexecutionOptions(parent_run_id=parent_run_id),
                 instance=instance,
             ) as result:
                 TestStepHandler.wait_for_processes()
@@ -426,7 +414,9 @@ def test_execute_using_repository_data():
 
 
 class MyCacheableAssetsDefinition(CacheableAssetsDefinition):
-    _cacheable_data = AssetsDefinitionCacheableData(keys_by_output_name={"result": AssetKey("foo")})
+    _cacheable_data = AssetsDefinitionCacheableData(
+        keys_by_output_name={"result": dg.AssetKey("foo")}
+    )
 
     def compute_cacheable_data(self):
         # used for tracking how many times this function gets called over an execution
@@ -445,7 +435,7 @@ class MyCacheableAssetsDefinition(CacheableAssetsDefinition):
         num_called = int(instance.run_storage.get_cursor_values({kvs_key}).get(kvs_key, "0"))
         instance.run_storage.set_cursor_values({kvs_key: str(num_called + 1)})
 
-        @op
+        @dg.op
         def _op():
             return 1
 
@@ -456,13 +446,13 @@ class MyCacheableAssetsDefinition(CacheableAssetsDefinition):
 
 @lazy_repository
 def cacheable_asset_defs():
-    @asset
+    @dg.asset
     def bar(foo):
         return foo + 1
 
-    @repository(default_executor_def=test_step_delegating_executor)
+    @dg.repository(default_executor_def=test_step_delegating_executor)
     def repo():
-        return [bar, MyCacheableAssetsDefinition("foo"), define_asset_job("all_asset_job")]
+        return [bar, MyCacheableAssetsDefinition("foo"), dg.define_asset_job("all_asset_job")]
 
     return repo
 
@@ -496,26 +486,26 @@ def test_dynamic_failure_retry(job_fn, config_fn):
     assert_expected_failure_behavior(job_fn, config_fn)
 
 
-@op(pool="foo")
+@dg.op(pool="foo")
 def simple_op(context):
     time.sleep(0.1)
     foo_info = context.instance.event_log_storage.get_concurrency_info("foo")
     return {"active": foo_info.active_slot_count, "pending": foo_info.pending_step_count}
 
 
-@job(executor_def=test_step_delegating_executor)
+@dg.job(executor_def=test_step_delegating_executor)
 def simple_job():
     simple_op()
 
 
-@op(pool="foo")
+@dg.op(pool="foo")
 def simple_legacy_op(context):
     time.sleep(0.1)
     foo_info = context.instance.event_log_storage.get_concurrency_info("foo")
     return {"active": foo_info.active_slot_count, "pending": foo_info.pending_step_count}
 
 
-@job(executor_def=test_step_delegating_executor)
+@dg.job(executor_def=test_step_delegating_executor)
 def simple_legacy_job():
     simple_legacy_op()
 
@@ -523,7 +513,7 @@ def simple_legacy_job():
 def test_blocked_concurrency_limits():
     TestStepHandler.reset()
     with tempfile.TemporaryDirectory() as temp_dir:
-        with instance_for_test(
+        with dg.instance_for_test(
             temp_dir=temp_dir,
             overrides={
                 "event_log_storage": {
@@ -546,7 +536,7 @@ def test_blocked_concurrency_limits():
             threading.Thread(
                 target=_unblock_concurrency_key, args=(instance, TIMEOUT), daemon=True
             ).start()
-            with execute_job(reconstructable(simple_job), instance=instance) as result:
+            with dg.execute_job(dg.reconstructable(simple_job), instance=instance) as result:
                 TestStepHandler.wait_for_processes()
                 assert result.success
                 assert any(
@@ -564,7 +554,7 @@ def test_blocked_concurrency_limits():
 def test_blocked_concurrency_limits_legacy_keys():
     TestStepHandler.reset()
     with tempfile.TemporaryDirectory() as temp_dir:
-        with instance_for_test(
+        with dg.instance_for_test(
             temp_dir=temp_dir,
             overrides={
                 "event_log_storage": {
@@ -587,7 +577,7 @@ def test_blocked_concurrency_limits_legacy_keys():
             threading.Thread(
                 target=_unblock_concurrency_key, args=(instance, TIMEOUT), daemon=True
             ).start()
-            with execute_job(reconstructable(simple_job), instance=instance) as result:
+            with dg.execute_job(dg.reconstructable(simple_job), instance=instance) as result:
                 TestStepHandler.wait_for_processes()
                 assert result.success
                 assert any(

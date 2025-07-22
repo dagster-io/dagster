@@ -5,7 +5,7 @@ from typing import Annotated, Any, Literal, Optional, Union
 
 from dagster import Component, ComponentLoadContext, Resolvable
 from dagster._core.definitions.asset_key import AssetKey
-from dagster._core.definitions.asset_spec import (
+from dagster._core.definitions.assets.definition.asset_spec import (
     SYSTEM_METADATA_KEY_AUTO_CREATED_STUB_ASSET,
     AssetSpec,
 )
@@ -281,7 +281,7 @@ def apply_mappings(defs: Definitions, mappings: Sequence[AirflowDagMapping]) -> 
             return spec.merge_attributes(metadata={handle.metadata_key: [handle.as_dict]})
         return spec
 
-    return Definitions.merge(
+    return Definitions.merge_unbound_defs(
         defs.map_resolved_asset_specs(func=spec_mapper), Definitions(assets=additional_assets)
     )
 

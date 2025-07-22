@@ -10,7 +10,7 @@ from dagster._config.field_utils import EnvVar
 from dagster._core.code_pointer import CodePointer
 from dagster._core.definitions import materialize
 from dagster._core.definitions.asset_key import AssetKey
-from dagster._core.definitions.asset_spec import AssetSpec
+from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
 from dagster._core.definitions.reconstruct import initialize_repository_def_from_pointer
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext

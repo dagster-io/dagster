@@ -4,8 +4,8 @@ from typing import Any, Optional, cast
 import dagster._check as check
 import graphene
 from dagster import AssetCheckKey
+from dagster._core.definitions.assets.graph.remote_asset_graph import RemoteAssetGraph
 from dagster._core.definitions.events import AssetKey
-from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
 from dagster._core.definitions.selector import (
     InstigatorSelector,
     RepositorySelector,

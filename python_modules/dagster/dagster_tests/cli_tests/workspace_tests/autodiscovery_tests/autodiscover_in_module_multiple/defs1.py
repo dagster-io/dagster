@@ -1,3 +1,3 @@
-from dagster import Definitions
+import dagster as dg
 
-defs1 = Definitions()
+defs1 = dg.Definitions()

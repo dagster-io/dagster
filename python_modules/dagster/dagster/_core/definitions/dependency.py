@@ -34,7 +34,7 @@ from dagster._record import record
 from dagster._utils.tags import normalize_tags
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.asset_layer import AssetLayer
+    from dagster._core.definitions.assets.job.asset_layer import AssetLayer
     from dagster._core.definitions.composition import MappedInputPlaceholder
     from dagster._core.definitions.graph_definition import GraphDefinition
     from dagster._core.definitions.node_definition import NodeDefinition

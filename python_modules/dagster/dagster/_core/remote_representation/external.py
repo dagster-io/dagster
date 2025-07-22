@@ -11,8 +11,8 @@ from dagster_shared.error import DagsterError
 import dagster._check as check
 from dagster import AssetSelection
 from dagster._config.snap import ConfigFieldSnap, ConfigSchemaSnapshot
-from dagster._core.definitions.asset_check_spec import AssetCheckKey
-from dagster._core.definitions.asset_job import IMPLICIT_ASSET_JOB_NAME
+from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey
+from dagster._core.definitions.assets.job.asset_job import IMPLICIT_ASSET_JOB_NAME
 from dagster._core.definitions.automation_condition_sensor_definition import (
     DEFAULT_AUTOMATION_CONDITION_SENSOR_NAME,
 )
@@ -82,7 +82,7 @@ from dagster._utils.cached_method import cached_method
 from dagster._utils.schedules import schedule_execution_time_iterator
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.remote_asset_graph import RemoteRepositoryAssetGraph
+    from dagster._core.definitions.assets.graph.remote_asset_graph import RemoteRepositoryAssetGraph
     from dagster._core.scheduler.instigation import InstigatorState
     from dagster._core.snap.execution_plan_snapshot import ExecutionStepSnap
     from dagster._core.workspace.context import BaseWorkspaceRequestContext
@@ -347,7 +347,9 @@ class RemoteRepository:
     @cached_property
     def asset_graph(self) -> "RemoteRepositoryAssetGraph":
         """Returns a repository scoped RemoteAssetGraph."""
-        from dagster._core.definitions.remote_asset_graph import RemoteRepositoryAssetGraph
+        from dagster._core.definitions.assets.graph.remote_asset_graph import (
+            RemoteRepositoryAssetGraph,
+        )
 
         return RemoteRepositoryAssetGraph.build(self)
 

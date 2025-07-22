@@ -4,13 +4,13 @@ from typing import Any
 import pytest
 from dagster import AssetKey
 from dagster._check import CheckError
-from dagster._core.definitions.asset_check_factories.utils import (
+from dagster._core.definitions.asset_checks.asset_check_factories.utils import (
     DEADLINE_CRON_PARAM_KEY,
     FRESHNESS_PARAMS_METADATA_KEY,
     LOWER_BOUND_DELTA_PARAM_KEY,
     TIMEZONE_PARAM_KEY,
 )
-from dagster._core.definitions.asset_check_spec import AssetCheckKey
+from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.metadata.metadata_value import JsonMetadataValue
 from dagster._core.definitions.partitions.definition import DailyPartitionsDefinition
 from dagster_dbt.asset_decorator import dbt_assets

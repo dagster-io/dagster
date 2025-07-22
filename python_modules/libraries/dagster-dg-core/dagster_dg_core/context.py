@@ -42,7 +42,6 @@ from dagster_dg_core.utils import (
     has_toml_node,
     msg_with_potential_paths,
     set_toml_node,
-    validate_dagster_availability,
 )
 from dagster_dg_core.utils.warnings import emit_warning
 
@@ -177,23 +176,10 @@ class DgContext:
     ) -> Self:
         context = cls.from_file_discovery_and_command_line_config(path, command_line_config)
 
-        # Commands that operate on a component library need to be run (a) with dagster
-        # available; (b) in a component library context.
-        validate_dagster_availability()
+        # Commands that operate on a component library need to be run in a component library context.
 
         if not context.has_registry_module_entry_point and not context.is_project:
             exit_with_error(NOT_COMPONENT_LIBRARY_ERROR_MESSAGE)
-        return context
-
-    @classmethod
-    def for_defined_registry_environment(
-        cls, path: Path, command_line_config: DgRawCliConfig
-    ) -> Self:
-        context = cls.from_file_discovery_and_command_line_config(path, command_line_config)
-
-        # Commands that access the component registry need to be run with dagster
-        # available.
-        validate_dagster_availability()
         return context
 
     @classmethod
@@ -422,8 +408,8 @@ class DgContext:
     def get_component_instance_module_name(self, name: str) -> str:
         return f"{self.defs_module_name}.{name}"
 
-    def has_folder_at_defs_path(self, defs_path: str) -> bool:
-        return (self.defs_path / defs_path).is_dir()
+    def has_object_at_defs_path(self, defs_path: str) -> bool:
+        return (self.defs_path / defs_path).exists()
 
     @property
     def target_args(self) -> Mapping[str, str]:

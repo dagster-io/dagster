@@ -5,7 +5,7 @@ from dagster_shared.serdes import deserialize_value, serialize_value, whitelist_
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, public
-from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluation
+from dagster._core.definitions.asset_checks.asset_check_evaluation import AssetCheckEvaluation
 from dagster._core.definitions.events import AssetMaterialization, AssetObservation
 from dagster._core.definitions.logger_definition import LoggerDefinition
 from dagster._core.events import DagsterEvent, DagsterEventType

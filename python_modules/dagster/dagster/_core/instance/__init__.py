@@ -32,7 +32,7 @@ from typing_extensions import Protocol, Self, TypeAlias, TypeVar, runtime_checka
 
 import dagster._check as check
 from dagster._annotations import deprecated, public
-from dagster._core.definitions.asset_check_evaluation import (
+from dagster._core.definitions.asset_checks.asset_check_evaluation import (
     AssetCheckEvaluation,
     AssetCheckEvaluationPlanned,
 )
@@ -47,6 +47,7 @@ from dagster._core.definitions.partitions.partition_key_range import PartitionKe
 from dagster._core.errors import (
     DagsterHomeNotSetError,
     DagsterInvalidInvocationError,
+    DagsterInvalidSubsetError,
     DagsterInvariantViolationError,
     DagsterRunAlreadyExists,
     DagsterRunConflict,
@@ -113,7 +114,7 @@ RUNLESS_JOB_NAME = ""
 
 if TYPE_CHECKING:
     from dagster._core.debug import DebugRunPayload
-    from dagster._core.definitions.asset_check_spec import AssetCheckKey
+    from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey
     from dagster._core.definitions.asset_health.asset_check_health import AssetCheckHealthState
     from dagster._core.definitions.asset_health.asset_freshness_health import (
         AssetFreshnessHealthState,
@@ -122,7 +123,7 @@ if TYPE_CHECKING:
         AssetMaterializationHealthState,
     )
     from dagster._core.definitions.asset_key import EntityKey
-    from dagster._core.definitions.base_asset_graph import BaseAssetGraph
+    from dagster._core.definitions.assets.graph.base_asset_graph import BaseAssetGraph
     from dagster._core.definitions.job_definition import JobDefinition
     from dagster._core.definitions.partitions.definition import PartitionsDefinition
     from dagster._core.definitions.repository_definition.repository_definition import (
@@ -1418,8 +1419,9 @@ class DagsterInstance(DynamicPartitionsStore):
         job_name: str,
         step: "ExecutionStepSnap",
         output: "ExecutionStepOutputSnap",
-        asset_graph: Optional["BaseAssetGraph"],
+        asset_graph: "BaseAssetGraph",
     ) -> None:
+        from dagster._core.definitions.partitions.context import partition_loading_context
         from dagster._core.definitions.partitions.definition import DynamicPartitionsDefinition
         from dagster._core.events import AssetMaterializationPlannedData, DagsterEvent
 
@@ -1445,12 +1447,6 @@ class DagsterInstance(DynamicPartitionsStore):
                     f" {ASSET_PARTITION_RANGE_END_TAG} set without the other"
                 )
 
-            if asset_graph is None:
-                raise DagsterInvariantViolationError(
-                    "Must provide asset_graph to create_run when creating "
-                    "a run with a partition range."
-                )
-
             partitions_def = asset_graph.get(asset_key).partitions_def
             if (
                 isinstance(partitions_def, DynamicPartitionsDefinition)
@@ -1461,19 +1457,18 @@ class DagsterInstance(DynamicPartitionsStore):
                 )
 
             if partitions_def is not None:
-                if self.event_log_storage.supports_partition_subset_in_asset_materialization_planned_events:
-                    partitions_subset = partitions_def.subset_with_partition_keys(
-                        partitions_def.get_partition_keys_in_range(
+                with partition_loading_context(dynamic_partitions_store=self):
+                    if self.event_log_storage.supports_partition_subset_in_asset_materialization_planned_events:
+                        partitions_subset = partitions_def.subset_with_partition_keys(
+                            partitions_def.get_partition_keys_in_range(
+                                PartitionKeyRange(partition_range_start, partition_range_end),
+                            )
+                        ).to_serializable_subset()
+                        individual_partitions = []
+                    else:
+                        individual_partitions = partitions_def.get_partition_keys_in_range(
                             PartitionKeyRange(partition_range_start, partition_range_end),
-                            dynamic_partitions_store=self,
                         )
-                    ).to_serializable_subset()
-                    individual_partitions = []
-                else:
-                    individual_partitions = partitions_def.get_partition_keys_in_range(
-                        PartitionKeyRange(partition_range_start, partition_range_end),
-                        dynamic_partitions_store=self,
-                    )
         elif check.not_none(output.properties).is_asset_partitioned and partition_tag:
             individual_partitions = [partition_tag]
 
@@ -1516,7 +1511,7 @@ class DagsterInstance(DynamicPartitionsStore):
         self,
         dagster_run: DagsterRun,
         execution_plan_snapshot: "ExecutionPlanSnapshot",
-        asset_graph: Optional["BaseAssetGraph"],
+        asset_graph: "BaseAssetGraph",
     ) -> None:
         from dagster._core.events import DagsterEvent, DagsterEventType
 
@@ -1573,7 +1568,7 @@ class DagsterInstance(DynamicPartitionsStore):
         op_selection: Optional[Sequence[str]],
         remote_job_origin: Optional["RemoteJobOrigin"],
         job_code_origin: Optional[JobPythonOrigin],
-        asset_graph: Optional["BaseAssetGraph"],
+        asset_graph: "BaseAssetGraph",
     ) -> DagsterRun:
         from dagster._core.definitions.asset_key import AssetCheckKey
         from dagster._core.remote_representation.origin import RemoteJobOrigin
@@ -1724,7 +1719,7 @@ class DagsterInstance(DynamicPartitionsStore):
         An asset check key will be included if it was planned but not executed in the original run,
         or if it was associated with an asset that will be re-executed.
         """
-        from dagster._core.definitions.asset_check_spec import AssetCheckKey
+        from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey
         from dagster._core.events import (
             AssetCheckEvaluation,
             DagsterEventType,
@@ -1846,12 +1841,20 @@ class DagsterInstance(DynamicPartitionsStore):
                 parent_run=parent_run,
             )
             tags[RESUME_RETRY_TAG] = "true"
+
+            if not step_keys_to_execute:
+                raise DagsterInvalidSubsetError("No steps needed to be retried in the failed run.")
         elif strategy == ReexecutionStrategy.FROM_ASSET_FAILURE:
             parent_snapshot_id = check.not_none(parent_run.execution_plan_snapshot_id)
             snapshot = self.get_execution_plan_snapshot(parent_snapshot_id)
             skipped_asset_keys, skipped_asset_check_keys = self._get_keys_to_reexecute(
                 parent_run_id, snapshot
             )
+
+            if not skipped_asset_keys and not skipped_asset_check_keys:
+                raise DagsterInvalidSubsetError(
+                    "No assets or asset checks needed to be retried in the failed run."
+                )
 
             remote_job = code_location.get_job(
                 remote_job.get_subset_selector(

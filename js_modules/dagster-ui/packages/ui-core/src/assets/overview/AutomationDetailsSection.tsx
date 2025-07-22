@@ -76,8 +76,8 @@ export const AutomationDetailsSection = ({
       label: 'Automation condition',
       children: assetNode?.automationCondition?.label ? (
         <EvaluationUserLabel
-          userLabel={assetNode?.automationCondition.label}
-          expandedLabel={assetNode?.automationCondition.expandedLabel}
+          userLabel={assetNode.automationCondition.label}
+          expandedLabel={assetNode.automationCondition.expandedLabel}
         />
       ) : null,
     },

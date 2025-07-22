@@ -11,9 +11,9 @@ from dagster._annotations import deprecated, public
 from dagster._config import Field, Shape, StringSource
 from dagster._config.config_type import ConfigType
 from dagster._config.validate import validate_config
-from dagster._core.definitions.asset_check_spec import AssetCheckKey
-from dagster._core.definitions.asset_layer import AssetLayer
+from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.asset_selection import AssetSelection
+from dagster._core.definitions.assets.job.asset_layer import AssetLayer
 from dagster._core.definitions.backfill_policy import BackfillPolicy, resolve_backfill_policy
 from dagster._core.definitions.config import ConfigMapping
 from dagster._core.definitions.dependency import (
@@ -37,6 +37,10 @@ from dagster._core.definitions.metadata import MetadataValue, RawMetadataValue, 
 from dagster._core.definitions.node_definition import NodeDefinition
 from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.op_selection import OpSelection, get_graph_subset
+from dagster._core.definitions.partitions.context import (
+    PartitionLoadingContext,
+    partition_loading_context,
+)
 from dagster._core.definitions.partitions.definition import (
     DynamicPartitionsDefinition,
     PartitionsDefinition,
@@ -73,7 +77,7 @@ from dagster._utils.tags import normalize_tags
 
 if TYPE_CHECKING:
     from dagster._config.snap import ConfigSchemaSnapshot
-    from dagster._core.definitions.assets import AssetsDefinition
+    from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
     from dagster._core.definitions.run_config import RunConfig
     from dagster._core.definitions.run_config_schema import RunConfigSchema
     from dagster._core.execution.execute_in_process_result import ExecuteInProcessResult
@@ -744,11 +748,12 @@ class JobDefinition(IHasInternalInit):
             asset_selection=asset_selection,
         )
         if partition_key and ephemeral_job.partitions_def:
-            ephemeral_job.validate_partition_key(
-                partition_key=partition_key,
-                dynamic_partitions_store=instance,
-                selected_asset_keys=set(asset_selection),
-            )
+            with partition_loading_context(dynamic_partitions_store=instance) as ctx:
+                ephemeral_job.validate_partition_key(
+                    partition_key=partition_key,
+                    selected_asset_keys=set(asset_selection),
+                    context=ctx,
+                )
 
         wrapped_job = InMemoryJob(job_def=ephemeral_job)
 
@@ -844,16 +849,14 @@ class JobDefinition(IHasInternalInit):
     def validate_partition_key(
         self,
         partition_key: str,
-        dynamic_partitions_store: Optional["DynamicPartitionsStore"],
         selected_asset_keys: Optional[Iterable[AssetKey]],
+        context: PartitionLoadingContext,
     ) -> None:
         """Ensures that the given partition_key is a member of the PartitionsDefinition
         corresponding to every asset in the selection.
         """
         partitions_def = self._get_partitions_def(selected_asset_keys)
-        partitions_def.validate_partition_key(
-            partition_key, dynamic_partitions_store=dynamic_partitions_store
-        )
+        partitions_def.validate_partition_key(partition_key, context=context)
 
     def get_tags_for_partition_key(
         self, partition_key: str, selected_asset_keys: Optional[Iterable[AssetKey]]
@@ -919,7 +922,10 @@ class JobDefinition(IHasInternalInit):
     def _get_job_def_for_asset_selection(
         self, selection_data: AssetSelectionData
     ) -> "JobDefinition":
-        from dagster._core.definitions.asset_job import build_asset_job, get_asset_graph_for_job
+        from dagster._core.definitions.assets.job.asset_job import (
+            build_asset_job,
+            get_asset_graph_for_job,
+        )
 
         # If a non-null check selection is provided, use that. Otherwise the selection will resolve
         # to all checks matching a selected asset by default.
@@ -1035,11 +1041,8 @@ class JobDefinition(IHasInternalInit):
                 " RunRequest(partition_key=...)"
             )
 
-        self.partitions_def.validate_partition_key(
-            partition_key,
-            current_time=current_time,
-            dynamic_partitions_store=dynamic_partitions_store,
-        )
+        with partition_loading_context(current_time, dynamic_partitions_store) as ctx:
+            self.partitions_def.validate_partition_key(partition_key, context=ctx)
 
         run_config = (
             run_config
@@ -1336,7 +1339,7 @@ def _infer_asset_layer_from_source_asset_deps(job_graph_def: GraphDefinition) ->
     """For non-asset jobs that have some inputs that are fed from assets, constructs an
     AssetLayer that includes these assets as loadables.
     """
-    from dagster._core.definitions.asset_graph import AssetGraph
+    from dagster._core.definitions.assets.graph.asset_graph import AssetGraph
 
     keys_by_input_handle: dict[NodeInputHandle, AssetKey] = {}
     assets_defs_by_key: dict[AssetKey, AssetsDefinition] = {}

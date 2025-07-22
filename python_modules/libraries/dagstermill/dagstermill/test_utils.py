@@ -10,7 +10,7 @@ from dagster._core.test_utils import instance_for_test
 def get_path(materialization_event):
     for value in materialization_event.event_specific_data.materialization.metadata.values():
         if isinstance(value, (PathMetadataValue, NotebookMetadataValue)):
-            return value.path
+            return value.value
 
 
 def cleanup_result_notebook(result):

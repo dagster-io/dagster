@@ -19,6 +19,7 @@ import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import {useRouteMatch} from 'react-router-dom';
 import {useSetRecoilState} from 'recoil';
 import {CreateCatalogViewButton} from 'shared/assets/CreateCatalogViewButton.oss';
+import {useCatalogExtraDropdownOptions} from 'shared/assets/catalog/useCatalogExtraDropdownOptions.oss';
 import {AssetCatalogInsights} from 'shared/assets/insights/AssetCatalogInsights.oss';
 import {useFavoriteAssets} from 'shared/assets/useFavoriteAssets.oss';
 
@@ -51,7 +52,7 @@ import {AssetTableFragment} from '../types/AssetTableFragment.types';
 
 export const AssetCatalogTableV2 = React.memo(() => {
   const {assets, loading: assetsLoading, error} = useAllAssets();
-  useBlockTraceUntilTrue('useAllAssets', !!assets?.length && !assetsLoading);
+  useBlockTraceUntilTrue('useAllAssets', !assetsLoading);
   const trackEvent = useTrackEvent();
 
   const {favorites, loading: favoritesLoading} = useFavoriteAssets();
@@ -343,17 +344,13 @@ const Table = React.memo(
   }: TableProps) => {
     const scope = useMemo(() => {
       const list = (assets ?? []).filter((a): a is AssetWithDefinition => !!a.definition);
-      if (checkedDisplayKeys.size === 0 || !assets) {
-        return {
-          all: list.map((a) => ({...a.definition, assetKey: a.key})),
-        };
-      }
-
       const selected = list.filter((a) => checkedDisplayKeys.has(JSON.stringify(a.key.path)));
       return {
         selected: selected.map((a) => ({...a.definition, assetKey: a.key})),
       };
     }, [assets, checkedDisplayKeys]);
+
+    const extraDropdownOptions = useCatalogExtraDropdownOptions({scope});
 
     return (
       <>
@@ -425,7 +422,10 @@ const Table = React.memo(
               {loading ? (
                 <Skeleton $width={300} $height={21} />
               ) : (
-                <LaunchAssetExecutionButton scope={scope} />
+                <LaunchAssetExecutionButton
+                  scope={scope}
+                  additionalDropdownOptions={extraDropdownOptions}
+                />
               )}
             </Box>
           </Box>

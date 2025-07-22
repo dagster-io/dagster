@@ -1,0 +1,3 @@
+dg scaffold defs dagster.PythonScriptComponent my_python_script
+
+Creating defs at /.../my-project/src/my_project/defs/my_python_script.

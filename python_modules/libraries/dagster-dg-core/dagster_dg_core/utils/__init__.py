@@ -661,13 +661,6 @@ def _get_new_container_node(
     return [] if isinstance(representative_key, int) else {}
 
 
-def validate_dagster_availability() -> None:
-    try:
-        import dagster  # noqa
-    except ImportError:
-        raise Exception("dagster package must be installed to run this command.")
-
-
 @contextlib.contextmanager
 def capture_stdout() -> Iterator[TextIO]:
     """Capture stdout and return it as a string."""

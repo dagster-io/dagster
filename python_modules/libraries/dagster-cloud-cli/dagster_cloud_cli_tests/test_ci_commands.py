@@ -4,7 +4,12 @@ import tempfile
 from contextlib import contextmanager
 
 import pytest
+from dagster_cloud_cli.commands.ci import (
+    DEFAULT_HYBRID_AGENT_HEARTBEAT_TIMEOUT,
+    DEFAULT_SERVERLESS_AGENT_HEARTBEAT_TIMEOUT,
+)
 from dagster_cloud_cli.entrypoint import app
+from dagster_cloud_cli.gql import DagsterPlusDeploymentAgentType
 from dagster_cloud_cli.types import CliEventTags
 from dagster_cloud_cli.utils import DEFAULT_PYTHON_VERSION
 from typer.testing import CliRunner
@@ -28,6 +33,14 @@ locations:
     - location_name: d
       code_source:
           autoload_defs_module_name: autoload_me
+"""
+
+AGENT_QUEUE_DAGSTER_CLOUD_YAML = """
+locations:
+    - location_name: a
+      code_source:
+          package_name: a
+      agent_queue: my-agent-queue
 """
 
 
@@ -249,6 +262,31 @@ def initialized_runner(deployment_name, monkeypatch):
             yield runner
 
 
+@pytest.fixture
+def initialized_agent_queue_runner(deployment_name, monkeypatch):
+    monkeypatch.setenv("DAGSTER_CLOUD_ORGANIZATION", "some-org")
+    monkeypatch.setenv("DAGSTER_CLOUD_API_TOKEN", "some-org:some-token")
+    with tempfile.TemporaryDirectory():
+        with with_dagster_yaml(AGENT_QUEUE_DAGSTER_CLOUD_YAML) as project_dir:
+            statedir = os.path.join(project_dir, "tmp")
+            monkeypatch.setenv("DAGSTER_BUILD_STATEDIR", statedir)
+
+            runner = CliRunner()
+
+            result = runner.invoke(
+                app,
+                [
+                    "ci",
+                    "init",
+                    f"--project-dir={project_dir}",
+                    f"--deployment={deployment_name}",
+                    "--commit-hash=hash-4354",
+                ],
+            )
+            assert not result.exit_code, result.output
+            yield runner
+
+
 def get_locations(runner):
     result = runner.invoke(app, ["ci", "status"])
     assert not result.exit_code
@@ -369,7 +407,10 @@ def test_ci_deploy_docker(
     deploy_code_locations = mocker.patch("dagster_cloud_cli.gql.deploy_code_locations")
     wait_for_load = mocker.patch("dagster_cloud_cli.commands.ci.wait_for_load")
     mark_cli_event = mocker.patch("dagster_cloud_cli.gql.mark_cli_event", return_value=True)
-
+    mocker.patch(
+        "dagster_cloud_cli.gql.fetch_agent_type",
+        return_value=DagsterPlusDeploymentAgentType.SERVERLESS,
+    )
     initialized_runner.invoke(app, ["ci", "locations-deselect", "a", "d"])
     result = initialized_runner.invoke(app, ["ci", "build"])
     assert not result.exit_code, result.output
@@ -464,6 +505,68 @@ def test_ci_set_build_output(initialized_runner: CliRunner):
     assert c_location["build_output"]["image"] == "example.com/some-image-name:1234"
 
 
+def test_ci_deploy_docker_hybrid(
+    mocker, monkeypatch, deployment_name: str, initialized_runner: CliRunner
+) -> None:
+    monkeypatch.setenv("DAGSTER_CLOUD_API_TOKEN", "fake-token")
+    mocker.patch(
+        "dagster_cloud_cli.commands.ci.utils.get_registry_info",
+        return_value={"registry_url": "example.com/image-registry"},
+    )
+    mocker.patch("dagster_cloud_cli.docker_utils.build_image", return_value=0)
+    mocker.patch("dagster_cloud_cli.docker_utils.upload_image", return_value=0)
+    deploy_code_locations = mocker.patch("dagster_cloud_cli.gql.deploy_code_locations")
+    wait_for_load = mocker.patch("dagster_cloud_cli.commands.ci.wait_for_load")
+    mocker.patch("dagster_cloud_cli.gql.mark_cli_event", return_value=True)
+    mocker.patch(
+        "dagster_cloud_cli.gql.fetch_agent_type",
+        return_value=DagsterPlusDeploymentAgentType.HYBRID,
+    )
+    result = initialized_runner.invoke(app, ["ci", "build"])
+    assert not result.exit_code, result.output
+    result = initialized_runner.invoke(app, ["ci", "deploy"])
+    assert not result.exit_code, result.output
+
+    assert len(deploy_code_locations.call_args_list) == 1
+    assert len(wait_for_load.call_args_list) == 1
+
+    assert (
+        wait_for_load.call_args_list[0][1]["agent_heartbeat_timeout"]
+        == DEFAULT_HYBRID_AGENT_HEARTBEAT_TIMEOUT
+    )
+
+
+def test_ci_deploy_docker_serverless_agent_queue(
+    mocker, monkeypatch, deployment_name: str, initialized_agent_queue_runner: CliRunner
+) -> None:
+    monkeypatch.setenv("DAGSTER_CLOUD_API_TOKEN", "fake-token")
+    mocker.patch(
+        "dagster_cloud_cli.commands.ci.utils.get_registry_info",
+        return_value={"registry_url": "example.com/image-registry"},
+    )
+    mocker.patch("dagster_cloud_cli.docker_utils.build_image", return_value=0)
+    mocker.patch("dagster_cloud_cli.docker_utils.upload_image", return_value=0)
+    deploy_code_locations = mocker.patch("dagster_cloud_cli.gql.deploy_code_locations")
+    wait_for_load = mocker.patch("dagster_cloud_cli.commands.ci.wait_for_load")
+    mocker.patch("dagster_cloud_cli.gql.mark_cli_event", return_value=True)
+    mocker.patch(
+        "dagster_cloud_cli.gql.fetch_agent_type",
+        return_value=DagsterPlusDeploymentAgentType.SERVERLESS,
+    )
+    result = initialized_agent_queue_runner.invoke(app, ["ci", "build"])
+    assert not result.exit_code, result.output
+    result = initialized_agent_queue_runner.invoke(app, ["ci", "deploy"])
+    assert not result.exit_code, result.output
+
+    assert len(deploy_code_locations.call_args_list) == 1
+    assert len(wait_for_load.call_args_list) == 1
+
+    assert (
+        wait_for_load.call_args_list[0][1]["agent_heartbeat_timeout"]
+        == DEFAULT_HYBRID_AGENT_HEARTBEAT_TIMEOUT
+    )
+
+
 def test_ci_deploy_pex(
     mocker, monkeypatch, deployment_name: str, initialized_runner: CliRunner
 ) -> None:
@@ -474,6 +577,11 @@ def test_ci_deploy_pex(
     )
     deploy_code_locations = mocker.patch("dagster_cloud_cli.gql.deploy_code_locations")
     wait_for_load = mocker.patch("dagster_cloud_cli.commands.ci.wait_for_load")
+
+    mocker.patch(
+        "dagster_cloud_cli.gql.fetch_agent_type",
+        return_value=DagsterPlusDeploymentAgentType.SERVERLESS,
+    )
 
     initialized_runner.invoke(app, ["ci", "locations-deselect", "a"])
     result = initialized_runner.invoke(
@@ -496,6 +604,11 @@ def test_ci_deploy_pex(
 
     assert len(deploy_code_locations.call_args_list) == 1
     assert len(wait_for_load.call_args_list) == 1
+
+    assert (
+        wait_for_load.call_args_list[0][1]["agent_heartbeat_timeout"]
+        == DEFAULT_SERVERLESS_AGENT_HEARTBEAT_TIMEOUT
+    )
 
     (gql_shim, locations_document), _ = deploy_code_locations.call_args_list[0]
     assert sorted(locations_document["locations"], key=lambda x: x["location_name"]) == [
