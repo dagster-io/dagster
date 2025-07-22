@@ -1,4 +1,10 @@
-import {RunStatus, RunsFeedView, buildPipelineTag, buildRun} from '../../graphql/types';
+import {
+  RunStatus,
+  RunsFeedView,
+  buildPartitionBackfill,
+  buildPipelineTag,
+  buildRun,
+} from '../../graphql/types';
 import {BackfillTableFragmentCompletedAssetJob} from '../../instance/backfill/__fixtures__/BackfillTable.fixtures';
 import {buildQueryMock} from '../../testing/mocking';
 import {DagsterTag} from '../RunTag';
@@ -55,7 +61,18 @@ export const RunsFeedRootMockBackfill = buildQueryMock<
       __typename: 'RunsFeedConnection',
       cursor: '',
       hasMore: false,
-      results: [BackfillTableFragmentCompletedAssetJob],
+      results: [
+        addStatusToPartitionBackfill(
+          buildPartitionBackfill(BackfillTableFragmentCompletedAssetJob),
+        ),
+      ],
     },
   },
 });
+
+function addStatusToPartitionBackfill(backfill: ReturnType<typeof buildPartitionBackfill>) {
+  return {
+    ...backfill,
+    backfillStatus: backfill.status,
+  };
+}

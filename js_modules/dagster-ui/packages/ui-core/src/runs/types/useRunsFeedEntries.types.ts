@@ -98,4 +98,5 @@ export type RunsFeedRootQuery = {
       };
 };
 
-export const RunsFeedRootQueryVersion = '595b8ee4f5fa5b704053ff7a3c36b8af752935c61e35b39bc75b541d5322d043';
+export const RunsFeedRootQueryVersion =
+  '595b8ee4f5fa5b704053ff7a3c36b8af752935c61e35b39bc75b541d5322d043';
