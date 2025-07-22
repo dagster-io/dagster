@@ -30,7 +30,7 @@ import {Context, useRenderChartTooltip} from './renderChartTooltip';
 import {useRGBColorsForTheme} from '../../app/useRGBColorsForTheme';
 import {TooltipCard} from '../../insights/InsightsChartShared';
 import {formatDuration} from '../../ui/formatDuration';
-import {numberFormatter} from '../../ui/formatters';
+import {numberFormatter, numberFormatterWithMaxFractionDigits} from '../../ui/formatters';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, Legend);
 
@@ -98,7 +98,7 @@ export const AssetCatalogTopAssetsChart = React.memo(
                   <Subheading>{d?.label}</Subheading>
                 </Box>
                 <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
-                  <Mono>{numberFormatter.format(value)}</Mono>
+                  <Mono>{numberFormatterWithMaxFractionDigits(2).format(value)}</Mono>
                   <Body>{unit}</Body>
                 </Box>
               </Box>

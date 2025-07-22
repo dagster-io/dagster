@@ -30,7 +30,7 @@ import {TooltipCard} from '../../insights/InsightsChartShared';
 import {formatMetric} from '../../insights/formatMetric';
 import {ReportingUnitType} from '../../insights/types';
 import {formatDuration} from '../../ui/formatDuration';
-import {numberFormatter, percentFormatter} from '../../ui/formatters';
+import {numberFormatterWithMaxFractionDigits, percentFormatter} from '../../ui/formatters';
 import {useFormatDateTime} from '../../ui/useFormatDateTime';
 
 ChartJS.register(LineElement, CategoryScale, LinearScale, PointElement, Tooltip);
@@ -328,7 +328,9 @@ export const AssetCatalogInsightsLineChart = React.memo(
         <Box flex={{direction: 'column', justifyContent: 'space-between'}}>
           <div className={styles.chartCount}>
             {metrics.currentPeriod.aggregateValue
-              ? numberFormatter.format(Math.round(currentPeriodDisplayValueAndUnit.value))
+              ? numberFormatterWithMaxFractionDigits(2).format(
+                  currentPeriodDisplayValueAndUnit.value,
+                )
               : 0}
             <Body color={Colors.textDefault()}>{currentPeriodDisplayValueAndUnit.unit}</Body>
           </div>
@@ -338,7 +340,9 @@ export const AssetCatalogInsightsLineChart = React.memo(
           >
             <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
               {metrics.prevPeriod.aggregateValue
-                ? numberFormatter.format(Math.round(prevPeriodDisplayValueAndUnit.value))
+                ? numberFormatterWithMaxFractionDigits(2).format(
+                    prevPeriodDisplayValueAndUnit.value,
+                  )
                 : 0}
               <span> previous period</span>
             </Box>

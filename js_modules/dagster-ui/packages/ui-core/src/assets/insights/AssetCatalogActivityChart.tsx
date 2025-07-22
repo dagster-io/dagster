@@ -16,7 +16,7 @@ import styles from './AssetCatalogInsights.module.css';
 import {AssetCatalogMetricNames} from './AssetCatalogMetricUtils';
 import {TooltipCard} from '../../insights/InsightsChartShared';
 import {formatDuration} from '../../ui/formatDuration';
-import {numberFormatter} from '../../ui/formatters';
+import {numberFormatterWithMaxFractionDigits} from '../../ui/formatters';
 import {useFormatDateTime} from '../../ui/useFormatDateTime';
 
 type MetricsDialogData = {
@@ -162,7 +162,7 @@ const ActivityChartRow = React.memo(
                         flex={{direction: 'row', alignItems: 'center', gap: 4}}
                         padding={{horizontal: 12, vertical: 8}}
                       >
-                        <Mono>{numberFormatter.format(displayValue)}</Mono>
+                        <Mono>{numberFormatterWithMaxFractionDigits(2).format(displayValue)}</Mono>
                         <Body color={Colors.textLight()}>{displayUnit}</Body>
                       </Box>
                       {value > 0 ? (
