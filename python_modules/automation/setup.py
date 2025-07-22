@@ -23,6 +23,7 @@ setup(
         "pytablereader",
         "requests",
         "twine>=1.15.0",
+        "sphinx",
         "virtualenv>=20.27.0",
         "urllib3",
     ],
