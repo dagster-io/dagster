@@ -1,0 +1,46 @@
+name: Test Buildkite (Mock)
+
+on:
+  push:
+    branches: [Issue-29914]
+
+jobs:
+  test-trigger:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Mock Buildkite trigger (no authentication)
+        run: |
+          echo "🧪 MOCK MODE - Testing workflow logic without authentication"
+          echo "Organization: dagster"
+          echo "Pipeline: unit-tests" 
+          echo "Branch: ${{ github.ref_name }}"
+          echo "Commit: ${{ github.sha }}"
+          echo "Commit Message: ${{ github.event.head_commit.message }}"
+          
+          echo ""
+          echo "📋 Secrets Status:"
+          echo "BUILDKITE_API_ACCESS_TOKEN: $(if [ -n '${{ secrets.BUILDKITE_API_ACCESS_TOKEN }}' ]; then echo '✅ Set'; else echo '❌ Missing'; fi)"
+          echo "BUILDKITE_ANALYTICS_TOKEN: $(if [ -n '${{ secrets.BUILDKITE_ANALYTICS_TOKEN }}' ]; then echo '✅ Set'; else echo '❌ Missing'; fi)"
+          echo "BUILDKITE_WEBHOOK_URL: $(if [ -n '${{ secrets.BUILDKITE_WEBHOOK_URL }}' ]; then echo '✅ Set'; else echo '❌ Missing'; fi)"
+          
+          echo ""
+          echo "🔧 Would execute this API call:"
+          echo "curl -X POST 'https://api.buildkite.com/v2/organizations/dagster/pipelines/unit-tests/builds'"
+          echo "  -H 'Authorization: Bearer [BUILDKITE_API_ACCESS_TOKEN]'"
+          echo "  -H 'Content-Type: application/json'"
+          echo "  -d '{\"commit\": \"${{ github.sha }}\", \"branch\": \"${{ github.ref_name }}\", \"message\": \"Triggered from GitHub Actions - ${{ github.event.head_commit.message }}\"}'"
+          
+          echo ""
+          echo "📝 JSON Payload Preview:"
+          echo '{'
+          echo "  \"commit\": \"${{ github.sha }}\","
+          echo "  \"branch\": \"${{ github.ref_name }}\","
+          echo "  \"message\": \"Triggered from GitHub Actions - ${{ github.event.head_commit.message }}\""
+          echo '}'
+          
+          echo ""
+          echo "✅ Workflow logic test complete!"
+          echo "ℹ️  To enable actual Buildkite triggering, repository owner needs to add secrets"
