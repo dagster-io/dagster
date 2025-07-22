@@ -3,13 +3,13 @@ import os
 
 import structlog
 
+from dagster._core.definitions.assets.graph.remote_asset_graph import BaseAssetNode
 from dagster._core.definitions.freshness import (
     FreshnessState,
     FreshnessStateChange,
     FreshnessStateRecord,
 )
 from dagster._core.definitions.freshness_evaluator import FRESHNESS_EVALUATORS_BY_POLICY_TYPE
-from dagster._core.definitions.remote_asset_graph import BaseAssetNode
 from dagster._core.workspace.context import IWorkspaceProcessContext, LoadingContext
 from dagster._daemon.daemon import IntervalDaemon
 from dagster._time import get_current_timestamp

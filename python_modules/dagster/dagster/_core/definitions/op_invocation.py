@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Any, NamedTuple, TypeVar, Union, cast
 
 import dagster._check as check
 from dagster._core.decorator_utils import get_function_params
-from dagster._core.definitions.asset_check_result import AssetCheckResult
+from dagster._core.definitions.asset_checks.asset_check_result import AssetCheckResult
 from dagster._core.definitions.events import (
     AssetKey,
     AssetMaterialization,
@@ -22,7 +22,7 @@ from dagster._core.errors import (
 )
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.assets import AssetsDefinition
+    from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
     from dagster._core.definitions.composition import PendingNodeInvocation
     from dagster._core.definitions.decorators.op_decorator import DecoratedOpFunction
     from dagster._core.definitions.op_definition import OpDefinition
@@ -109,7 +109,7 @@ def direct_invocation_result(
     **kwargs,
 ) -> Any:
     from dagster._config.pythonic_config import Config
-    from dagster._core.definitions.assets import AssetsDefinition
+    from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
     from dagster._core.definitions.composition import PendingNodeInvocation
     from dagster._core.definitions.decorators.op_decorator import DecoratedOpFunction
     from dagster._core.definitions.op_definition import OpDefinition

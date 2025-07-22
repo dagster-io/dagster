@@ -4,14 +4,13 @@ from pathlib import Path
 
 import dagster as dg
 import duckdb
-from dagster import Component, ComponentLoadContext, Model, Resolvable
-from dagster.components.resolved.core_models import ResolvedAssetSpec
+from dagster import ComponentLoadContext
 
 
-class DuckDbComponent(Component, Model, Resolvable):
+class DuckDbComponent(dg.Component, dg.Model, dg.Resolvable):
     """A component that allows you to write SQL without learning dbt or Dagster's concepts."""
 
-    assets: Sequence[ResolvedAssetSpec]
+    assets: Sequence[dg.ResolvedAssetSpec]
     sql_file: str
 
     def build_defs(self, context: ComponentLoadContext) -> dg.Definitions:

@@ -23,7 +23,7 @@ from dagster import (
     with_resources,
 )
 from dagster._config.pythonic_config import Config
-from dagster._core.definitions.asset_graph import AssetGraph
+from dagster._core.definitions.assets.graph.asset_graph import AssetGraph
 from dagster._core.definitions.utils import DEFAULT_OUTPUT
 from dagster._utils import PICKLE_PROTOCOL, file_relative_path
 

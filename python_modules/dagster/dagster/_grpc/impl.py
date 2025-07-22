@@ -12,7 +12,7 @@ from dagster_shared.serdes import whitelist_for_serdes
 
 import dagster._check as check
 from dagster._core.definitions import ScheduleEvaluationContext
-from dagster._core.definitions.asset_check_spec import AssetCheckKey
+from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.partitions.definition import (

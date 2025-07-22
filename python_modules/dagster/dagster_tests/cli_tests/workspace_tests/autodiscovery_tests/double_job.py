@@ -1,11 +1,11 @@
-from dagster import job
+import dagster as dg
 
 
-@job
+@dg.job
 def pipe_one():
     pass
 
 
-@job
+@dg.job
 def pipe_two():
     pass

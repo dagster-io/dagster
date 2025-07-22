@@ -1,24 +1,24 @@
 import re
 
+import dagster as dg
 import pytest
-from dagster import AssetCheckSpec, AssetKey, SourceAsset, asset
 
 
 def test_coerce_asset_key():
-    assert AssetCheckSpec(asset="foo", name="check1").asset_key == AssetKey("foo")
+    assert dg.AssetCheckSpec(asset="foo", name="check1").asset_key == dg.AssetKey("foo")
 
 
 def test_asset_def():
-    @asset
+    @dg.asset
     def foo(): ...
 
-    assert AssetCheckSpec(asset=foo, name="check1").asset_key == AssetKey("foo")
+    assert dg.AssetCheckSpec(asset=foo, name="check1").asset_key == dg.AssetKey("foo")
 
 
 def test_source_asset():
-    foo = SourceAsset("foo")
+    foo = dg.SourceAsset("foo")
 
-    assert AssetCheckSpec(asset=foo, name="check1").asset_key == AssetKey("foo")
+    assert dg.AssetCheckSpec(asset=foo, name="check1").asset_key == dg.AssetKey("foo")
 
 
 def test_additional_deps():
@@ -28,7 +28,7 @@ def test_additional_deps():
             'Asset check check1 for asset ["foo"] cannot have an additional dependency on asset ["foo"].'
         ),
     ):
-        AssetCheckSpec(asset="foo", name="check1", additional_deps=["foo"])
+        dg.AssetCheckSpec(asset="foo", name="check1", additional_deps=["foo"])
 
 
 def test_unserializable_metadata():
@@ -36,4 +36,6 @@ def test_unserializable_metadata():
 
     obj = SomeObject()
 
-    assert AssetCheckSpec(asset="foo", name="check1", metadata={"foo": obj}).metadata["foo"] == obj
+    assert (
+        dg.AssetCheckSpec(asset="foo", name="check1", metadata={"foo": obj}).metadata["foo"] == obj
+    )

@@ -6,13 +6,7 @@ import click
 from dagster_dg_core.config import normalize_cli_config
 from dagster_dg_core.context import DgContext
 from dagster_dg_core.shared_options import dg_global_options, dg_path_options
-from dagster_dg_core.utils import (
-    DgClickCommand,
-    DgClickGroup,
-    exit_with_error,
-    pushd,
-    validate_dagster_availability,
-)
+from dagster_dg_core.utils import DgClickCommand, DgClickGroup, exit_with_error, pushd
 from dagster_dg_core.utils.telemetry import cli_telemetry_wrapper
 
 from dagster_dg_cli.cli.utils import create_temp_workspace_file
@@ -134,8 +128,6 @@ def check_definitions_command(
 
     cli_config = normalize_cli_config(global_options, context)
     dg_context = DgContext.for_workspace_or_project_environment(target_path, cli_config)
-
-    validate_dagster_availability()
 
     if check_yaml is True and not dg_context.is_project:
         exit_with_error("--check-yaml is not currently supported in a workspace context")

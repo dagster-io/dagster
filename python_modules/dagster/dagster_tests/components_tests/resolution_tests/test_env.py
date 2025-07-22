@@ -1,9 +1,9 @@
 import os
 from dataclasses import dataclass
 
+import dagster as dg
 import pytest
 from dagster._utils.env import environ
-from dagster.components.resolved.base import Resolvable
 from dagster.components.resolved.errors import ResolutionException
 
 
@@ -11,7 +11,7 @@ def test_env():
     with environ({"MY_ENV_VAR": "my_value"}):
 
         @dataclass
-        class MyNewThing(Resolvable):
+        class MyNewThing(dg.Resolvable):
             name: str
 
         assert (
@@ -26,7 +26,7 @@ def test_env_dot_access():
     with environ({"MY_ENV_VAR": "my_value"}):
 
         @dataclass
-        class MyNewThing(Resolvable):
+        class MyNewThing(dg.Resolvable):
             name: str
 
         assert (
@@ -42,7 +42,7 @@ def test_env_with_and_without_default():
         del os.environ["MY_ENV_VAR"]
 
     @dataclass
-    class MyNewThing(Resolvable):
+    class MyNewThing(dg.Resolvable):
         name: str
 
     with pytest.raises(
@@ -68,7 +68,7 @@ def test_env_indexing():
     with environ({"MY_ENV_VAR": "my_value"}):
 
         @dataclass
-        class MyNewThing(Resolvable):
+        class MyNewThing(dg.Resolvable):
             name: str
 
         with pytest.raises(

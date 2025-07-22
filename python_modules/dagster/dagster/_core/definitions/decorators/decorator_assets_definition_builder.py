@@ -2,28 +2,28 @@ from collections import Counter
 from collections.abc import Iterable, Mapping, Sequence
 from functools import cached_property
 from inspect import Parameter
-from typing import AbstractSet, Any, Callable, NamedTuple, Optional, cast  # noqa: UP035
+from typing import AbstractSet, Any, Callable, NamedTuple, Optional  # noqa: UP035
 
 import dagster._check as check
 from dagster._config.config_schema import UserConfigSchema
 from dagster._core.decorator_utils import get_function_params, get_valid_name_permutations
-from dagster._core.definitions.asset_check_spec import AssetCheckSpec
-from dagster._core.definitions.asset_dep import AssetDep
-from dagster._core.definitions.asset_in import AssetIn
+from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckSpec
 from dagster._core.definitions.asset_key import AssetKey
-from dagster._core.definitions.asset_out import AssetOut
-from dagster._core.definitions.asset_spec import (
+from dagster._core.definitions.assets.definition.asset_dep import AssetDep
+from dagster._core.definitions.assets.definition.asset_spec import (
     SYSTEM_METADATA_KEY_DAGSTER_TYPE,
     SYSTEM_METADATA_KEY_IO_MANAGER_KEY,
     AssetExecutionType,
     AssetSpec,
 )
-from dagster._core.definitions.assets import (
+from dagster._core.definitions.assets.definition.assets_definition import (
     ASSET_SUBSET_INPUT_PREFIX,
     AssetsDefinition,
     get_partition_mappings_from_deps,
     stringify_asset_key_to_input_name,
 )
+from dagster._core.definitions.assets.job.asset_in import AssetIn
+from dagster._core.definitions.assets.job.asset_out import AssetOut
 from dagster._core.definitions.backfill_policy import BackfillPolicy
 from dagster._core.definitions.decorators.op_decorator import _Op
 from dagster._core.definitions.hook_definition import HookDefinition
@@ -82,73 +82,75 @@ def validate_can_coexist(asset_in: AssetIn, asset_dep: AssetDep) -> None:
 
 def build_and_validate_named_ins(
     fn: Callable[..., Any],
-    asset_ins: Mapping[str, AssetIn],
     deps: Optional[Iterable[AssetDep]],
+    passed_asset_ins: Mapping[str, AssetIn],
 ) -> Mapping[AssetKey, "NamedIn"]:
     """Creates a mapping from AssetKey to (name of input, In object)."""
-    deps_by_key = {dep.asset_key: dep for dep in deps} if deps else {}
-    ins_by_asset_key = {
-        asset_in.key if asset_in.key else AssetKey.from_coercible(input_name): asset_in
-        for input_name, asset_in in asset_ins.items()
-    }
-    shared_keys_between_ins_and_deps = set(ins_by_asset_key.keys()) & set(deps_by_key.keys())
-    if shared_keys_between_ins_and_deps:
-        for shared_key in shared_keys_between_ins_and_deps:
-            validate_can_coexist(ins_by_asset_key[shared_key], deps_by_key[shared_key])
-
     deps = check.opt_iterable_param(deps, "deps", AssetDep)
 
-    new_input_args = get_function_params_without_context_or_config_or_resources(fn)
+    asset_input_params = get_function_params_without_context_or_config_or_resources(fn)
 
-    non_var_input_param_names = [
-        param.name for param in new_input_args if param.kind == Parameter.POSITIONAL_OR_KEYWORD
+    # e.g. def fn(a, b, *, c)
+    single_asset_input_params = [
+        param for param in asset_input_params if param.kind == Parameter.POSITIONAL_OR_KEYWORD
     ]
-    has_kwargs = any(param.kind == Parameter.VAR_KEYWORD for param in new_input_args)
+    single_asset_input_param_names = {param.name for param in single_asset_input_params}
+    # e.g. def fn(**kwargs)
+    has_var_kwargs = any(param.kind == Parameter.VAR_KEYWORD for param in asset_input_params)
 
-    all_input_names = set(non_var_input_param_names) | asset_ins.keys()
-
-    if not has_kwargs:
-        for in_key, asset_in in asset_ins.items():
-            if in_key not in non_var_input_param_names and (
-                not isinstance(asset_in.dagster_type, DagsterType)
-                or not asset_in.dagster_type.is_nothing
-            ):
-                raise DagsterInvalidDefinitionError(
-                    f"Key '{in_key}' in provided ins dict does not correspond to any of the names "
-                    "of the arguments to the decorated function"
-                )
-
-    named_ins_by_asset_key: dict[AssetKey, NamedIn] = {}
-    for input_name in all_input_names:
-        asset_key = None
-
-        if input_name in asset_ins:
-            asset_key = asset_ins[input_name].key
-            metadata = asset_ins[input_name].metadata or {}
-            key_prefix = asset_ins[input_name].key_prefix
-            input_manager_key = asset_ins[input_name].input_manager_key
-            dagster_type = asset_ins[input_name].dagster_type
-        else:
-            metadata = {}
-            key_prefix = None
-            input_manager_key = None
-            dagster_type = NoValueSentinel
-
-        asset_key = asset_key or AssetKey(list(filter(None, [*(key_prefix or []), input_name])))
-
-        named_ins_by_asset_key[asset_key] = NamedIn(
-            input_name.replace("-", "_"),
-            In(metadata=metadata, input_manager_key=input_manager_key, dagster_type=dagster_type),
-        )
-
-    for dep in deps:
-        if dep.asset_key not in named_ins_by_asset_key:
-            named_ins_by_asset_key[dep.asset_key] = NamedIn(
-                stringify_asset_key_to_input_name(dep.asset_key),
-                In(cast("type", Nothing)),
+    # validate that all passed_asset_ins reference valid input names
+    for input_name, asset_in in passed_asset_ins.items():
+        if not (
+            # function has non-definite kwargs
+            has_var_kwargs
+            # input name matches an existing param name
+            or input_name in single_asset_input_param_names
+            # input is not passed through params at all
+            or (isinstance(asset_in.dagster_type, DagsterType) and asset_in.dagster_type.is_nothing)
+        ):
+            raise DagsterInvalidDefinitionError(
+                f"Key '{input_name}' in provided ins dict does not correspond to any of the names "
+                "of the arguments to the decorated function"
             )
 
-    return named_ins_by_asset_key
+    # get a mapping from AssetKey to respective AssetDep / AssetIn
+    asset_ins_by_key = {
+        asset_in.resolve_key(input_name): asset_in
+        for input_name, asset_in in passed_asset_ins.items()
+    }
+
+    # if a key is referenced as both an AssetDep and an AssetIn, validate that they are compatible
+    for dep in deps:
+        if dep.asset_key in asset_ins_by_key:
+            validate_can_coexist(asset_ins_by_key[dep.asset_key], dep)
+
+    # create a default AssetIn for each input name, then override with any explicitly passed AssetIns
+    asset_ins_by_input_name: dict[str, AssetIn] = {
+        **{input_name: AssetIn() for input_name in single_asset_input_param_names},
+        **passed_asset_ins,
+    }
+
+    # find the set of asset keys that are currently referenced as an AssetIn, then add AssetIns for
+    # any deps that are not referenced
+    asset_in_asset_keys = {
+        asset_in.resolve_key(input_name) for input_name, asset_in in asset_ins_by_input_name.items()
+    }
+    for dep in deps:
+        if dep.asset_key not in asset_in_asset_keys:
+            input_name = stringify_asset_key_to_input_name(dep.asset_key)
+            asset_ins_by_input_name[input_name] = AssetIn(key=dep.asset_key, dagster_type=Nothing)
+
+    return {
+        asset_in.resolve_key(input_name): NamedIn(
+            input_name.replace("-", "_"),
+            In(
+                metadata=asset_in.metadata,
+                input_manager_key=asset_in.input_manager_key,
+                dagster_type=asset_in.dagster_type,
+            ),
+        )
+        for input_name, asset_in in asset_ins_by_input_name.items()
+    }
 
 
 def build_named_outs(asset_outs: Mapping[str, AssetOut]) -> Mapping[AssetKey, "NamedOut"]:
@@ -377,7 +379,7 @@ class DecoratorAssetsDefinitionBuilder:
 
         # get which asset keys have inputs set
         named_ins_by_asset_key = build_and_validate_named_ins(
-            fn, asset_in_map, deps=upstream_deps.values()
+            fn, upstream_deps.values(), asset_in_map
         )
         # We expect that asset_ins are a subset of asset_deps. The reason we do not check this in
         # `build_and_validate_named_ins` is because in other decorator pathways, we allow for argument-based
@@ -420,8 +422,8 @@ class DecoratorAssetsDefinitionBuilder:
         )
         named_ins_by_asset_key = build_and_validate_named_ins(
             fn,
+            upstream_asset_deps or set(),
             asset_in_map,
-            deps=upstream_asset_deps or set(),
         )
         named_outs_by_asset_key = build_named_outs(asset_out_map)
 

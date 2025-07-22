@@ -3,8 +3,8 @@ from pathlib import Path
 from typing import Optional
 
 from dagster import AssetKey, AssetSpec, multi_asset
-from dagster._core.definitions.asset_checks import AssetChecksDefinition
-from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.asset_checks.asset_checks_definition import AssetChecksDefinition
+from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationCondition,
 )

@@ -1,11 +1,11 @@
-from dagster import graph
+import dagster as dg
 
 
-@graph
+@dg.graph
 def graph_one():
     pass
 
 
-@graph
+@dg.graph
 def graph_two():
     pass

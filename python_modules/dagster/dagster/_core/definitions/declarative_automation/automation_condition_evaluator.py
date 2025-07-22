@@ -9,7 +9,7 @@ from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView, Temp
 from dagster._core.asset_graph_view.entity_subset import EntitySubset
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
 from dagster._core.definitions.asset_key import EntityKey
-from dagster._core.definitions.base_asset_graph import BaseAssetGraph, BaseAssetNode
+from dagster._core.definitions.assets.graph.base_asset_graph import BaseAssetGraph, BaseAssetNode
 from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationCondition,
@@ -17,6 +17,7 @@ from dagster._core.definitions.declarative_automation.automation_condition impor
 )
 from dagster._core.definitions.declarative_automation.automation_context import AutomationContext
 from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.partitions.context import partition_loading_context
 from dagster._core.instance import DagsterInstance
 from dagster._time import get_current_datetime
 
@@ -107,6 +108,14 @@ class AutomationConditionEvaluator:
         return asyncio.run(self.async_evaluate())
 
     async def async_evaluate(
+        self,
+    ) -> tuple[Sequence[AutomationResult], Sequence[EntitySubset[EntityKey]]]:
+        with partition_loading_context(
+            effective_dt=self.evaluation_time, dynamic_partitions_store=self.instance_queryer
+        ):
+            return await self._async_evaluate()
+
+    async def _async_evaluate(
         self,
     ) -> tuple[Sequence[AutomationResult], Sequence[EntitySubset[EntityKey]]]:
         self.prefetch()

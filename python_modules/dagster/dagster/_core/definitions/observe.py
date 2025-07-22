@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, Any, Optional, Union
 
 import dagster._check as check
 from dagster._core.definitions.asset_selection import AssetSelection
-from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job

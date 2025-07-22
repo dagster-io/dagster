@@ -8,8 +8,8 @@ from typing import TYPE_CHECKING, Any, Callable, Optional, Union
 import pytest
 import yaml
 from dagster import AssetKey
-from dagster._core.definitions.asset_spec import AssetSpec
-from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
+from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.events import AssetMaterialization
 from dagster._core.definitions.materialize import materialize
@@ -35,7 +35,7 @@ ensure_dagster_tests_import()
 from dagster_tests.components_tests.utils import build_component_defs_for_test
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.assets import AssetsDefinition
+    from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
 
 STUB_LOCATION_PATH = Path(__file__).parent / "code_locations" / "sling_location"
 STUB_LOCATION_PATH_LEGACY = Path(__file__).parent / "code_locations" / "sling_location_legacy"

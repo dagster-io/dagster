@@ -1,5 +1,5 @@
+import dagster as dg
 import dagster._check as check
-from dagster._core.events import DagsterEvent
 from dagster._core.events.utils import filter_dagster_events_from_cli_logs
 from dagster._core.execution.plan.objects import StepSuccessData
 
@@ -59,7 +59,7 @@ def test_filter_dagster_events_from_cli_logs():
     assert len(res) == 7
 
     last_event = res[-1]
-    check.inst(last_event, DagsterEvent)
+    check.inst(last_event, dg.DagsterEvent)
     check.inst(last_event.event_specific_data, StepSuccessData)
 
 
@@ -74,7 +74,7 @@ def test_filter_dagster_events_from_cli_logs_coalesce():
     assert len(res) == 1
 
     event = res[0]
-    check.inst(event, DagsterEvent)
+    check.inst(event, dg.DagsterEvent)
     check.inst(event.event_specific_data, StepSuccessData)
 
 

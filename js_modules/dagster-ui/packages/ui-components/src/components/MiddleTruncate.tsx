@@ -13,7 +13,9 @@ import {calculateMiddleTruncation} from './calculateMiddleTruncation';
 import styles from './css/MiddleTruncate.module.css';
 
 interface Props {
-  text: string;
+  // `null` should not happen, but we've seen it sneak through with `!` usage and crash the page,
+  // so we'll guard against it.
+  text: string | null;
   showTitle?: boolean;
 }
 
@@ -40,35 +42,41 @@ const useWidth = (target: RefObject<HTMLDivElement>) => {
  * When the DOM element resizes, the measurement and calculation steps will occur again.
  */
 export const MiddleTruncate = memo(({text, showTitle = true}: Props) => {
+  const textString = text ?? '';
+
   // An element that renders the full text into the container, for the purpose of
   // measuring the maximum available/necessary width for our truncated string.
   const measure = useRef<HTMLDivElement>(null);
   const width = useWidth(measure);
-  const [truncatedText, setTruncatedText] = useState(text);
+  const [truncatedText, setTruncatedText] = useState(textString);
 
   useLayoutEffect(() => {
     if (measure.current) {
       const font = getComputedStyle(measure.current).font;
-      const result = calculateMiddleTruncatedText({font, width, text});
-      setTruncatedText(result ?? text);
+      const result = calculateMiddleTruncatedText({font, width, text: textString});
+      setTruncatedText(result ?? textString);
     }
-  }, [text, width]);
+  }, [textString, width]);
 
   // Copy the full text, not just the truncated version shown in the DOM.
   const handleCopy = useCallback(
     (e: ClipboardEvent<HTMLDivElement>) => {
       e.preventDefault();
       const clipboardAPI = navigator.clipboard;
-      clipboardAPI.writeText(text);
+      clipboardAPI.writeText(textString);
     },
-    [text],
+    [textString],
   );
 
   return (
-    <div className={styles.container} onCopy={handleCopy} title={showTitle ? text : undefined}>
+    <div
+      className={styles.container}
+      onCopy={handleCopy}
+      title={showTitle ? textString : undefined}
+    >
       <span>{truncatedText}</span>
       <div ref={measure} className={styles.measure}>
-        {text}
+        {textString}
       </div>
     </div>
   );

@@ -6,7 +6,9 @@ from typing import TYPE_CHECKING, Any, ClassVar, Generic, Optional, TypeVar, cas
 
 from dagster_shared.serdes.serdes import PackableValue, deserialize_value, serialize_value
 
-from dagster._core.definitions.cacheable_assets import AssetsDefinitionCacheableData
+from dagster._core.definitions.assets.definition.cacheable_assets_definition import (
+    AssetsDefinitionCacheableData,
+)
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.metadata.metadata_value import (
     CodeLocationReconstructionMetadataValue,

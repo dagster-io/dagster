@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Any, ContextManager, Optional, Union, cast  # 
 
 import dagster._check as check
 from dagster._annotations import deprecated, deprecated_param, public
-from dagster._core.definitions.asset_spec import AssetSpec
+from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
 from dagster._core.definitions.events import (
     AssetKey,
     AssetMaterialization,
@@ -16,6 +16,7 @@ from dagster._core.definitions.metadata import (
     MetadataValue,
     RawMetadataValue,
 )
+from dagster._core.definitions.partitions.context import partition_loading_context
 from dagster._core.definitions.partitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.partitions.utils import TimeWindow
 from dagster._core.errors import DagsterInvalidMetadata, DagsterInvariantViolationError
@@ -484,10 +485,10 @@ class OutputContext:
                 "For more details: https://github.com/dagster-io/dagster/issues/7900"
             )
 
-        return self.asset_partitions_def.get_partition_keys_in_range(
-            self.step_context.asset_partition_key_range_for_output(self.name),
-            dynamic_partitions_store=self.step_context.instance,
-        )
+        with partition_loading_context(dynamic_partitions_store=self.step_context.instance):
+            return self.asset_partitions_def.get_partition_keys_in_range(
+                self.step_context.asset_partition_key_range_for_output(self.name),
+            )
 
     @public
     @property

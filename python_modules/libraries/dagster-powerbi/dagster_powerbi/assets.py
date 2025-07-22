@@ -5,8 +5,8 @@ from dagster import (
     multi_asset,
 )
 from dagster._annotations import beta
-from dagster._core.definitions.asset_spec import AssetSpec
-from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
+from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 
 from dagster_powerbi.translator import PowerBIMetadataSet, PowerBITagSet

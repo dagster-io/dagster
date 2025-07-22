@@ -7,7 +7,7 @@ from typing_extensions import TypeAlias, get_args, get_origin
 import dagster._check as check
 from dagster._annotations import deprecated, deprecated_param, public
 from dagster._config.config_schema import UserConfigSchema
-from dagster._core.definitions.asset_check_result import AssetCheckResult
+from dagster._core.definitions.asset_checks.asset_check_result import AssetCheckResult
 from dagster._core.definitions.definition_config_schema import (
     IDefinitionConfigSchema,
     convert_user_facing_definition_config_schema,
@@ -39,7 +39,7 @@ from dagster._utils import IHasInternalInit
 from dagster._utils.warnings import normalize_renamed_param
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.asset_layer import AssetLayer
+    from dagster._core.definitions.assets.job.asset_layer import AssetLayer
     from dagster._core.definitions.composition import PendingNodeInvocation
     from dagster._core.definitions.decorators.op_decorator import DecoratedOpFunction
 

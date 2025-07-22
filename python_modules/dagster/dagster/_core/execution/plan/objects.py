@@ -9,7 +9,11 @@ from dagster._core.definitions.metadata import (
     normalize_metadata,
 )
 from dagster._serdes import whitelist_for_serdes
-from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
+from dagster._utils.error import (
+    SerializableErrorInfo,
+    serializable_error_info_from_exc_info,
+    truncate_event_error_info,
+)
 from dagster._utils.types import ExcInfo
 
 if TYPE_CHECKING:
@@ -94,7 +98,9 @@ class StepFailureData(
     def __new__(cls, error, user_failure_data, error_source=None):
         return super().__new__(
             cls,
-            error=check.opt_inst_param(error, "error", SerializableErrorInfo),
+            error=truncate_event_error_info(
+                check.opt_inst_param(error, "error", SerializableErrorInfo)
+            ),
             user_failure_data=check.opt_inst_param(
                 user_failure_data, "user_failure_data", UserFailureData
             ),
@@ -155,7 +161,11 @@ class StepRetryData(
     def __new__(cls, error, seconds_to_wait=None):
         return super().__new__(
             cls,
-            error=check.opt_inst_param(error, "error", SerializableErrorInfo),
+            error=check.not_none(
+                truncate_event_error_info(
+                    check.opt_inst_param(error, "error", SerializableErrorInfo)
+                )
+            ),
             seconds_to_wait=check.opt_numeric_param(seconds_to_wait, "seconds_to_wait"),
         )
 

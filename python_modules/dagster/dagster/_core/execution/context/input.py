@@ -6,11 +6,12 @@ import dagster._check as check
 from dagster._annotations import deprecated, deprecated_param, public
 from dagster._core.definitions.events import AssetKey, AssetObservation, CoercibleToAssetKey
 from dagster._core.definitions.metadata import ArbitraryMetadataMapping, MetadataValue
+from dagster._core.definitions.partitions.context import partition_loading_context
 from dagster._core.definitions.partitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.partitions.subset import PartitionsSubset
 from dagster._core.definitions.partitions.utils import TimeWindow
 from dagster._core.errors import DagsterInvariantViolationError
-from dagster._core.instance import DagsterInstance, DynamicPartitionsStore
+from dagster._core.instance import DagsterInstance
 from dagster._utils.warnings import normalize_renamed_param
 
 if TYPE_CHECKING:
@@ -369,9 +370,7 @@ class InputContext:
                 "Tried to access asset_partition_key_range, but the asset is not partitioned.",
             )
 
-        partition_key_ranges = subset.get_partition_key_ranges(
-            self.asset_partitions_def, dynamic_partitions_store=self.instance
-        )
+        partition_key_ranges = subset.get_partition_key_ranges(self.asset_partitions_def)
         if len(partition_key_ranges) != 1:
             check.failed(
                 "Tried to access asset_partition_key_range, but there are "
@@ -625,9 +624,10 @@ def build_input_context(
         asset_partitions_def, "asset_partitions_def", PartitionsDefinition
     )
     if asset_partitions_def and asset_partition_key_range:
-        asset_partitions_subset = asset_partitions_def.empty_subset().with_partition_key_range(
-            asset_partitions_def, asset_partition_key_range, dynamic_partitions_store=instance
-        )
+        with partition_loading_context(dynamic_partitions_store=instance):
+            asset_partitions_subset = asset_partitions_def.empty_subset().with_partition_key_range(
+                asset_partitions_def, asset_partition_key_range
+            )
     elif asset_partition_key_range:
         asset_partitions_subset = KeyRangeNoPartitionsDefPartitionsSubset(asset_partition_key_range)
     else:
@@ -660,10 +660,7 @@ class KeyRangeNoPartitionsDefPartitionsSubset(PartitionsSubset):
         self._key_range = key_range
 
     def get_partition_keys_not_in_subset(
-        self,
-        partitions_def: "PartitionsDefinition",
-        current_time: Optional[datetime] = None,
-        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
+        self, partitions_def: "PartitionsDefinition"
     ) -> Iterable[str]:
         raise NotImplementedError()
 
@@ -674,10 +671,7 @@ class KeyRangeNoPartitionsDefPartitionsSubset(PartitionsSubset):
             raise NotImplementedError()
 
     def get_partition_key_ranges(
-        self,
-        partitions_def: "PartitionsDefinition",
-        current_time: Optional[datetime] = None,
-        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
+        self, partitions_def: "PartitionsDefinition"
     ) -> Sequence[PartitionKeyRange]:
         return [self._key_range]
 
@@ -685,9 +679,7 @@ class KeyRangeNoPartitionsDefPartitionsSubset(PartitionsSubset):
         raise NotImplementedError()
 
     def with_partition_key_range(  # pyright: ignore[reportIncompatibleMethodOverride]
-        self,
-        partition_key_range: PartitionKeyRange,
-        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
+        self, partition_key_range: PartitionKeyRange
     ) -> "PartitionsSubset":
         raise NotImplementedError()
 

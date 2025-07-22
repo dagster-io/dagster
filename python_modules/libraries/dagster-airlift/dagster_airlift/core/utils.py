@@ -7,7 +7,9 @@ from dagster import (
     SourceAsset,
     _check as check,
 )
-from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
+from dagster._core.definitions.assets.definition.cacheable_assets_definition import (
+    CacheableAssetsDefinition,
+)
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.utils import VALID_NAME_REGEX

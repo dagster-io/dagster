@@ -5,8 +5,8 @@ from types import ModuleType
 from typing import Union
 
 from dagster._core.definitions.asset_key import AssetKey
-from dagster._core.definitions.asset_spec import AssetSpec
-from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
+from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
 from dagster._core.definitions.source_asset import SourceAsset
 
 

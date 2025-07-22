@@ -37,7 +37,7 @@ def test_queue_from_schedule_and_sensor(instance, foo_example_workspace, foo_exa
     instance.start_sensor(remote_sensor)
 
     with start_daemon(timeout=180, workspace_file=file_relative_path(__file__, "repo.py")):
-        run = create_run(instance, remote_job)
+        run = create_run(instance, remote_job, asset_graph=foo_example_workspace.asset_graph)
         instance.submit_run(run.run_id, foo_example_workspace)
 
         runs = [
@@ -67,7 +67,7 @@ def test_queued_runs(instance, foo_example_workspace, foo_example_repo):
     with start_daemon(workspace_file=file_relative_path(__file__, "repo.py")):
         remote_job = foo_example_repo.get_full_job("foo_job")
 
-        run = create_run(instance, remote_job)
+        run = create_run(instance, remote_job, asset_graph=foo_example_workspace.asset_graph)
 
         instance.submit_run(run.run_id, foo_example_workspace)
 

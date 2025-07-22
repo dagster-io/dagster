@@ -1,9 +1,8 @@
 import datetime
 import multiprocessing
 
+import dagster as dg
 import pytest
-from dagster import instance_for_test
-from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.instance.ref import InstanceRef
 from dagster._core.instance_for_test import cleanup_test_instance
 from dagster._core.scheduler.instigation import TickStatus
@@ -66,7 +65,7 @@ def test_failure_recovery(crash_location: str, terminate: bool) -> None:
         assert len(sensors) == 1
         selector_id, origin_id = sensors[0].selector_id, sensors[0].get_remote_origin_id()
 
-    with instance_for_test() as instance:
+    with dg.instance_for_test() as instance:
         try:
             # run a tick that is destined to fail
             evaluation_time_1 = datetime.datetime(2024, 8, 16, 1, 35)
@@ -139,7 +138,7 @@ def test_failure_recovery(crash_location: str, terminate: bool) -> None:
             # the evaluations for each asset should have been updated
             assert instance.schedule_storage
             for i in range(5):
-                key = AssetKey(f"a{i}")
+                key = dg.AssetKey(f"a{i}")
                 evaluations = instance.schedule_storage.get_auto_materialize_asset_evaluations(
                     key=key, limit=100
                 )

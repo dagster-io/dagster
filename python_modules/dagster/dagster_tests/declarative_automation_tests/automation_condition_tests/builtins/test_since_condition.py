@@ -2,7 +2,6 @@ import datetime
 
 import dagster as dg
 import pytest
-from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.declarative_automation.operators import SinceCondition
 from dagster._core.definitions.declarative_automation.operators.since_operator import (
     SinceConditionData,
@@ -33,38 +32,38 @@ async def test_since_condition_unpartitioned() -> None:
     assert result.true_subset.size == 0
 
     # primary becomes true, but reference has never been true
-    true_set_primary.add(AssetKeyPartitionKey(AssetKey("A")))
+    true_set_primary.add(AssetKeyPartitionKey(dg.AssetKey("A")))
     state, result = await state.evaluate("A")
     assert result.true_subset.size == 1
-    true_set_primary.remove(AssetKeyPartitionKey(AssetKey("A")))
+    true_set_primary.remove(AssetKeyPartitionKey(dg.AssetKey("A")))
 
     # reference becomes true, and it's after primary
-    true_set_reference.add(AssetKeyPartitionKey(AssetKey("A")))
+    true_set_reference.add(AssetKeyPartitionKey(dg.AssetKey("A")))
     state, result = await state.evaluate("A")
     assert result.true_subset.size == 0
-    true_set_reference.remove(AssetKeyPartitionKey(AssetKey("A")))
+    true_set_reference.remove(AssetKeyPartitionKey(dg.AssetKey("A")))
 
     # primary becomes true again, and it's since reference has become true
-    true_set_primary.add(AssetKeyPartitionKey(AssetKey("A")))
+    true_set_primary.add(AssetKeyPartitionKey(dg.AssetKey("A")))
     state, result = await state.evaluate("A")
     assert result.true_subset.size == 1
-    true_set_primary.remove(AssetKeyPartitionKey(AssetKey("A")))
+    true_set_primary.remove(AssetKeyPartitionKey(dg.AssetKey("A")))
 
     # remains true on the neprimaryt evaluation
     state, result = await state.evaluate("A")
     assert result.true_subset.size == 1
 
     # primary becomes true again, still doesn't change anything
-    true_set_primary.add(AssetKeyPartitionKey(AssetKey("A")))
+    true_set_primary.add(AssetKeyPartitionKey(dg.AssetKey("A")))
     state, result = await state.evaluate("A")
     assert result.true_subset.size == 1
-    true_set_primary.remove(AssetKeyPartitionKey(AssetKey("A")))
+    true_set_primary.remove(AssetKeyPartitionKey(dg.AssetKey("A")))
 
     # now reference becomes true again
-    true_set_reference.add(AssetKeyPartitionKey(AssetKey("A")))
+    true_set_reference.add(AssetKeyPartitionKey(dg.AssetKey("A")))
     state, result = await state.evaluate("A")
     assert result.true_subset.size == 0
-    true_set_reference.remove(AssetKeyPartitionKey(AssetKey("A")))
+    true_set_reference.remove(AssetKeyPartitionKey(dg.AssetKey("A")))
 
     # remains false on the neprimaryt evaluation
     state, result = await state.evaluate("A")
@@ -78,7 +77,7 @@ def test_since_condition() -> None:
     trigger_condition, true_set_trigger = get_hardcoded_condition()
     reset_condition, true_set_reset = get_hardcoded_condition()
     condition = trigger_condition.since(reset_condition)
-    apk = AssetKeyPartitionKey(AssetKey("a"))
+    apk = AssetKeyPartitionKey(dg.AssetKey("a"))
 
     @dg.asset(automation_condition=condition)
     def a(): ...

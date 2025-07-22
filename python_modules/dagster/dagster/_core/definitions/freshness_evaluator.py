@@ -5,7 +5,7 @@ from abc import ABC, abstractmethod
 import structlog
 
 import dagster._check as check
-from dagster._core.definitions.base_asset_graph import BaseAssetNode
+from dagster._core.definitions.assets.graph.base_asset_graph import BaseAssetNode
 from dagster._core.definitions.freshness import (
     CronFreshnessPolicy,
     FreshnessState,

@@ -2,27 +2,24 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Annotated, Literal, Optional, Union
 
+import dagster as dg
 import pytest
-from dagster import Component
-from dagster._core.definitions.definitions_class import Definitions
 from dagster.components.core.context import ComponentLoadContext
-from dagster.components.resolved.base import Model, Resolvable
 from dagster.components.resolved.errors import ResolutionException
-from dagster.components.resolved.model import Resolver
 
 from dagster_tests.components_tests.utils import load_component_for_test
 
 
-class MyModel(Model):
+class MyModel(dg.Model):
     foo: str
 
 
 def test_nested_resolvable():
-    class ResolvableComponent(Component, Resolvable, Model):
+    class ResolvableComponent(dg.Component, dg.Resolvable, dg.Model):
         thing: MyModel
 
-        def build_defs(self, context: ComponentLoadContext) -> Definitions:
-            return Definitions()
+        def build_defs(self, context: ComponentLoadContext) -> dg.Definitions:
+            return dg.Definitions()
 
     c = load_component_for_test(
         ResolvableComponent,
@@ -34,18 +31,18 @@ thing:
     assert c.thing.foo
 
     @dataclass
-    class ResolveFromComponent(Component, Resolvable):
+    class ResolveFromComponent(dg.Component, dg.Resolvable):
         thing: MyModel
         num: Annotated[
             int,
-            Resolver(
+            dg.Resolver(
                 lambda _, v: int(v),
                 model_field_type=str,
             ),
         ]
 
-        def build_defs(self, context: ComponentLoadContext) -> Definitions:
-            return Definitions()
+        def build_defs(self, context: ComponentLoadContext) -> dg.Definitions:
+            return dg.Definitions()
 
     c = load_component_for_test(
         ResolveFromComponent,
@@ -58,18 +55,18 @@ thing:
     assert c.thing.foo
 
     @dataclass
-    class ResolveFromListComponent(Component, Resolvable):
+    class ResolveFromListComponent(dg.Component, dg.Resolvable):
         thing: Optional[list[MyModel]]
         num: Annotated[
             int,
-            Resolver(
+            dg.Resolver(
                 lambda _, v: int(v),
                 model_field_type=str,
             ),
         ]
 
-        def build_defs(self, context: ComponentLoadContext) -> Definitions:
-            return Definitions()
+        def build_defs(self, context: ComponentLoadContext) -> dg.Definitions:
+            return dg.Definitions()
 
     c = load_component_for_test(
         ResolveFromListComponent,
@@ -85,17 +82,17 @@ thing:
 
 
 def test_class():
-    class ResolveFromComponent(Component, Resolvable):
+    class ResolveFromComponent(dg.Component, dg.Resolvable):
         def __init__(
             self,
             thing: MyModel,
-            num: Annotated[int, Resolver(lambda _, v: int(v), model_field_type=str)],
+            num: Annotated[int, dg.Resolver(lambda _, v: int(v), model_field_type=str)],
         ):
             self.thing = thing
             self.num = num
 
-        def build_defs(self, context: ComponentLoadContext) -> Definitions:
-            return Definitions()
+        def build_defs(self, context: ComponentLoadContext) -> dg.Definitions:
+            return dg.Definitions()
 
     c = load_component_for_test(
         ResolveFromComponent,
@@ -110,18 +107,18 @@ thing:
 
 
 def test_union_resolvable():
-    class FooModel(Model):
+    class FooModel(dg.Model):
         foo: str
 
-    class BarModel(Model):
+    class BarModel(dg.Model):
         bar: str
 
     @dataclass
-    class ResolveFromListComponent(Component, Resolvable):
+    class ResolveFromListComponent(dg.Component, dg.Resolvable):
         thing: Union[FooModel, BarModel]
 
-        def build_defs(self, context: ComponentLoadContext) -> Definitions:
-            return Definitions()
+        def build_defs(self, context: ComponentLoadContext) -> dg.Definitions:
+            return dg.Definitions()
 
     c = ResolveFromListComponent.resolve_from_yaml(
         """
@@ -143,19 +140,19 @@ thing:
 
 
 def test_union_resolvable_complex():
-    class FooModel(Model):
+    class FooModel(dg.Model):
         foo: str
 
     # Test a nested model, in a sequence, with a custom resolver
-    class NumModel(Model, Resolvable):
-        num: Annotated[int, Resolver(lambda _, v: int(v), model_field_type=str)]
+    class NumModel(dg.Model, dg.Resolvable):
+        num: Annotated[int, dg.Resolver(lambda _, v: int(v), model_field_type=str)]
 
     @dataclass
-    class ResolveFromListComponent(Component, Resolvable):
+    class ResolveFromListComponent(dg.Component, dg.Resolvable):
         thing: Union[FooModel, Sequence[NumModel]]
 
-        def build_defs(self, context: ComponentLoadContext) -> Definitions:
-            return Definitions()
+        def build_defs(self, context: ComponentLoadContext) -> dg.Definitions:
+            return dg.Definitions()
 
     c = load_component_for_test(
         ResolveFromListComponent,
@@ -182,20 +179,20 @@ thing:
 
 
 def test_union_resolvable_discriminator():
-    class FooModel(Model):
+    class FooModel(dg.Model):
         type: Literal["foo"] = "foo"
         value: str
 
-    class BarModel(Model):
+    class BarModel(dg.Model):
         type: Literal["bar"] = "bar"
         value: str
 
     @dataclass
-    class ResolveFromUnionComponent(Component, Resolvable):
+    class ResolveFromUnionComponent(dg.Component, dg.Resolvable):
         thing: Union[FooModel, BarModel]
 
-        def build_defs(self, context: ComponentLoadContext) -> Definitions:
-            return Definitions()
+        def build_defs(self, context: ComponentLoadContext) -> dg.Definitions:
+            return dg.Definitions()
 
     c = load_component_for_test(
         ResolveFromUnionComponent,
@@ -229,29 +226,29 @@ def test_union_nested_custom_resolver():
         def __init__(self, bar: str):
             self.bar = bar
 
-    class FooModel(Model):
+    class FooModel(dg.Model):
         foo: str
 
-    class BarModel(Model):
+    class BarModel(dg.Model):
         bar: str
 
     # We nest complex custom resolvers in the union
     # Under the hood, this will choose the resolver whose model_field_type matches the input model type
     @dataclass
-    class ResolveUnionResolversComponent(Component, Resolvable):
+    class ResolveUnionResolversComponent(dg.Component, dg.Resolvable):
         thing: Union[
             Annotated[
                 FooNonModel,
-                Resolver(lambda _, v: FooNonModel(foo=v.foo), model_field_type=FooModel),
+                dg.Resolver(lambda _, v: FooNonModel(foo=v.foo), model_field_type=FooModel),
             ],
             Annotated[
                 BarNonModel,
-                Resolver(lambda _, v: BarNonModel(bar=v.bar), model_field_type=BarModel),
+                dg.Resolver(lambda _, v: BarNonModel(bar=v.bar), model_field_type=BarModel),
             ],
         ]
 
-        def build_defs(self, context: ComponentLoadContext) -> Definitions:
-            return Definitions()
+        def build_defs(self, context: ComponentLoadContext) -> dg.Definitions:
+            return dg.Definitions()
 
     c = ResolveUnionResolversComponent.resolve_from_yaml(
         """
@@ -285,27 +282,27 @@ def test_union_nested_custom_resolver_no_match():
         def __init__(self, bar: str):
             self.bar = bar
 
-    class FooModel(Model):
+    class FooModel(dg.Model):
         foo: str
 
-    class BarModel(Model):
+    class BarModel(dg.Model):
         bar: str
 
     @dataclass
-    class ResolveUnionResolversComponent(Component, Resolvable):
+    class ResolveUnionResolversComponent(dg.Component, dg.Resolvable):
         thing: Union[
             Annotated[
                 FooNonModel,
-                Resolver(lambda _, v: _raise_exc(), model_field_type=FooModel),
+                dg.Resolver(lambda _, v: _raise_exc(), model_field_type=FooModel),
             ],
             Annotated[
                 BarNonModel,
-                Resolver(lambda _, v: _raise_exc(), model_field_type=BarModel),
+                dg.Resolver(lambda _, v: _raise_exc(), model_field_type=BarModel),
             ],
         ]
 
-        def build_defs(self, context: ComponentLoadContext) -> Definitions:
-            return Definitions()
+        def build_defs(self, context: ComponentLoadContext) -> dg.Definitions:
+            return dg.Definitions()
 
     with pytest.raises(
         ResolutionException,

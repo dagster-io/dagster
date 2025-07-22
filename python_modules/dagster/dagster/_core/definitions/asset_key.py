@@ -16,7 +16,7 @@ ASSET_KEY_DELIMITER = "/"
 ASSET_KEY_ESCAPE_CHARACTER = "\\"
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.assets import AssetsDefinition
+    from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
     from dagster._core.definitions.source_asset import SourceAsset
 
 
@@ -157,7 +157,7 @@ class AssetKey(IHaveNew):
     def from_coercible_or_definition(
         arg: Union["CoercibleToAssetKey", "AssetsDefinition", "SourceAsset"],
     ) -> "AssetKey":
-        from dagster._core.definitions.assets import AssetsDefinition
+        from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
         from dagster._core.definitions.source_asset import SourceAsset
 
         if isinstance(arg, AssetsDefinition):
@@ -260,7 +260,7 @@ def entity_key_from_db_string(db_string: str) -> EntityKey:
 def asset_keys_from_defs_and_coercibles(
     assets: Sequence[Union["AssetsDefinition", CoercibleToAssetKey]],
 ) -> Sequence[AssetKey]:
-    from dagster._core.definitions.assets import AssetsDefinition
+    from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
 
     result: list[AssetKey] = []
     for el in assets:

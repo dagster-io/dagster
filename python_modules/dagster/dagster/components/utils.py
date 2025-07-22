@@ -14,7 +14,7 @@ from dagster_shared.error import DagsterError
 from pydantic import BaseModel
 
 from dagster import _check as check
-from dagster._core.definitions.asset_spec import AssetSpec
+from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
 from dagster.components.resolved.context import ResolutionContext
 from dagster.components.resolved.core_models import (
     AssetAttributesModel,

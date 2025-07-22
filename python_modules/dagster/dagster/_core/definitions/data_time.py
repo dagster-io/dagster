@@ -20,7 +20,7 @@ from dagster_shared.utils.hash import make_hashable
 
 import dagster._check as check
 from dagster._core.definitions.asset_selection import KeysAssetSelection
-from dagster._core.definitions.base_asset_graph import BaseAssetGraph
+from dagster._core.definitions.assets.graph.base_asset_graph import BaseAssetGraph
 from dagster._core.definitions.data_version import (
     DATA_VERSION_TAG,
     DataVersion,
@@ -85,9 +85,7 @@ class CachingDataTimeResolver:
         partition_subset = partitions_def.empty_subset().with_partition_keys(
             partition_key
             for partition_key in self._instance_queryer.get_materialized_partitions(asset_key)
-            if partitions_def.has_partition_key(
-                partition_key, current_time=self._instance_queryer.evaluation_time
-            )
+            if partitions_def.has_partition_key(partition_key)
         )
 
         if not isinstance(partition_subset, TimeWindowPartitionsSubset):
@@ -125,9 +123,7 @@ class CachingDataTimeResolver:
         net_new_partitions = {
             partition_key
             for partition_key in (partitions - prev_partitions)
-            if partitions_def.has_partition_key(
-                partition_key, current_time=self._instance_queryer.evaluation_time
-            )
+            if partitions_def.has_partition_key(partition_key)
         }
 
         # there are new materializations, but they don't fill any new partitions

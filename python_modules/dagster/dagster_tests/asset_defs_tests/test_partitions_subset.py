@@ -1,29 +1,28 @@
 from typing import cast
-from unittest.mock import Mock
+from unittest.mock import MagicMock
 
+import dagster as dg
 import pytest
+from dagster._core.definitions.partitions.context import partition_loading_context
 from dagster._core.definitions.partitions.definition import (
     DailyPartitionsDefinition,
-    HourlyPartitionsDefinition,
     MultiPartitionsDefinition,
     StaticPartitionsDefinition,
-    TimeWindowPartitionsDefinition,
 )
-from dagster._core.definitions.partitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.partitions.subset import (
     AllPartitionsSubset,
     DefaultPartitionsSubset,
     TimeWindowPartitionsSubset,
 )
-from dagster._core.definitions.partitions.utils import MultiPartitionKey, PersistedTimeWindow
+from dagster._core.definitions.partitions.utils import PersistedTimeWindow
 from dagster._core.errors import DagsterInvalidDeserializationVersionError
 from dagster._core.test_utils import freeze_time
 from dagster._serdes import deserialize_value, serialize_value
-from dagster._time import create_datetime, get_current_datetime
+from dagster._time import create_datetime
 
 
 def test_default_subset_cannot_deserialize_invalid_version():
-    static_partitions_def = StaticPartitionsDefinition(["a", "b", "c", "d"])
+    static_partitions_def = dg.StaticPartitionsDefinition(["a", "b", "c", "d"])
     serialized_subset = (
         static_partitions_def.empty_subset().with_partition_keys(["a", "c", "d"]).serialize()
     )
@@ -42,7 +41,7 @@ def test_default_subset_cannot_deserialize_invalid_version():
 
 
 def test_static_partitions_subset_backwards_compat():
-    partitions = StaticPartitionsDefinition(["foo", "bar", "baz", "qux"])
+    partitions = dg.StaticPartitionsDefinition(["foo", "bar", "baz", "qux"])
     serialization = '["baz", "foo"]'
 
     deserialized = partitions.deserialize_subset(serialization)
@@ -50,7 +49,7 @@ def test_static_partitions_subset_backwards_compat():
 
 
 def test_static_partitions_subset_current_version_serialization():
-    partitions = StaticPartitionsDefinition(["foo", "bar", "baz", "qux"])
+    partitions = dg.StaticPartitionsDefinition(["foo", "bar", "baz", "qux"])
     serialization = partitions.empty_subset().with_partition_keys(["foo", "baz"]).serialize()
     deserialized = partitions.deserialize_subset(serialization)
     assert deserialized.get_partition_keys() == {"baz", "foo"}
@@ -61,7 +60,7 @@ def test_static_partitions_subset_current_version_serialization():
 
 
 def test_time_window_subset_cannot_deserialize_invalid_version():
-    daily_partitions_def = DailyPartitionsDefinition(start_date="2023-01-01")
+    daily_partitions_def = dg.DailyPartitionsDefinition(start_date="2023-01-01")
     serialized_subset = (
         daily_partitions_def.empty_subset().with_partition_keys(["2023-01-02"]).serialize()
     )
@@ -77,9 +76,9 @@ def test_time_window_subset_cannot_deserialize_invalid_version():
         NewSerializationVersionSubset.from_serialized(daily_partitions_def, serialized_subset)
 
 
-time_window_partitions = DailyPartitionsDefinition(start_date="2021-05-05")
-static_partitions = StaticPartitionsDefinition(["a", "b", "c"])
-composite = MultiPartitionsDefinition({"date": time_window_partitions, "abc": static_partitions})
+time_window_partitions = dg.DailyPartitionsDefinition(start_date="2021-05-05")
+static_partitions = dg.StaticPartitionsDefinition(["a", "b", "c"])
+composite = dg.MultiPartitionsDefinition({"date": time_window_partitions, "abc": static_partitions})
 
 
 def test_get_subset_type():
@@ -96,14 +95,14 @@ def test_empty_subsets():
 @pytest.mark.parametrize(
     "partitions_def",
     [
-        (DailyPartitionsDefinition("2023-01-01", timezone="America/New_York")),
-        (DailyPartitionsDefinition("2023-01-01")),
+        (dg.DailyPartitionsDefinition("2023-01-01", timezone="America/New_York")),
+        (dg.DailyPartitionsDefinition("2023-01-01")),
     ],
 )
 def test_time_window_partitions_subset_serialization_deserialization(
     partitions_def: DailyPartitionsDefinition,
 ):
-    time_window_partitions_def = TimeWindowPartitionsDefinition(
+    time_window_partitions_def = dg.TimeWindowPartitionsDefinition(
         start=partitions_def.start,
         end=partitions_def.end,
         cron_schedule="0 0 * * *",
@@ -118,8 +117,8 @@ def test_time_window_partitions_subset_serialization_deserialization(
         ).with_partition_keys(["2023-01-01"]),
     )
 
-    deserialized = deserialize_value(
-        serialize_value(cast("TimeWindowPartitionsSubset", subset)), TimeWindowPartitionsSubset
+    deserialized = dg.deserialize_value(
+        dg.serialize_value(cast("TimeWindowPartitionsSubset", subset)), TimeWindowPartitionsSubset
     )
     assert deserialized == subset
     assert deserialized.get_partition_keys() == ["2023-01-01"]
@@ -130,8 +129,8 @@ def test_time_window_partitions_subset_serialization_deserialization(
 
 
 def test_time_window_partitions_subset_num_partitions_serialization():
-    daily_partitions_def = DailyPartitionsDefinition("2023-01-01")
-    time_partitions_def = TimeWindowPartitionsDefinition(
+    daily_partitions_def = dg.DailyPartitionsDefinition("2023-01-01")
+    time_partitions_def = dg.TimeWindowPartitionsDefinition(
         start=daily_partitions_def.start,
         end=daily_partitions_def.end,
         cron_schedule="0 0 * * *",
@@ -148,32 +147,36 @@ def test_time_window_partitions_subset_num_partitions_serialization():
     subset = TimeWindowPartitionsSubset(
         time_partitions_def, num_partitions=None, included_time_windows=[tw]
     )
-    deserialized = deserialize_value(serialize_value(subset), TimeWindowPartitionsSubset)
+    deserialized = dg.deserialize_value(dg.serialize_value(subset), TimeWindowPartitionsSubset)
     assert deserialized._asdict()["num_partitions"] is not None
 
 
 def test_all_partitions_subset_static_partitions_def() -> None:
     static_partitions_def = StaticPartitionsDefinition(["a", "b", "c", "d"])
-    all_subset = AllPartitionsSubset(static_partitions_def, Mock(), get_current_datetime())
-    assert len(all_subset) == 4
-    assert set(all_subset.get_partition_keys()) == {"a", "b", "c", "d"}
-    assert all_subset == AllPartitionsSubset(static_partitions_def, Mock(), get_current_datetime())
+    with partition_loading_context(dynamic_partitions_store=MagicMock()) as ctx:
+        all_subset = AllPartitionsSubset(static_partitions_def, ctx)
+        assert len(all_subset) == 4
+        assert set(all_subset.get_partition_keys()) == {"a", "b", "c", "d"}
+        assert all_subset == AllPartitionsSubset(static_partitions_def, ctx)
 
-    abc_subset = DefaultPartitionsSubset({"a", "b", "c"})
-    assert all_subset & abc_subset == abc_subset
-    assert all_subset | abc_subset == all_subset
-    assert all_subset - abc_subset == DefaultPartitionsSubset({"d"})
-    assert abc_subset - all_subset == DefaultPartitionsSubset(set())
+        abc_subset = DefaultPartitionsSubset({"a", "b", "c"})
+        assert all_subset & abc_subset == abc_subset
+        assert all_subset | abc_subset == all_subset
+        assert all_subset - abc_subset == DefaultPartitionsSubset({"d"})
+        assert abc_subset - all_subset == DefaultPartitionsSubset(set())
 
-    round_trip_subset = deserialize_value(serialize_value(all_subset.to_serializable_subset()))  # type: ignore
-    assert isinstance(round_trip_subset, DefaultPartitionsSubset)
-    assert set(round_trip_subset.get_partition_keys()) == set(all_subset.get_partition_keys())
+        round_trip_subset = deserialize_value(serialize_value(all_subset.to_serializable_subset()))
+        assert isinstance(round_trip_subset, DefaultPartitionsSubset)
+        assert set(round_trip_subset.get_partition_keys()) == set(all_subset.get_partition_keys())
 
 
 def test_all_partitions_subset_time_window_partitions_def() -> None:
-    with freeze_time(create_datetime(2020, 1, 6, hour=10)):
+    with (
+        freeze_time(create_datetime(2020, 1, 6, hour=10)),
+        partition_loading_context(dynamic_partitions_store=MagicMock()) as ctx,
+    ):
         time_window_partitions_def = DailyPartitionsDefinition(start_date="2020-01-01")
-        all_subset = AllPartitionsSubset(time_window_partitions_def, Mock(), get_current_datetime())
+        all_subset = AllPartitionsSubset(time_window_partitions_def, ctx)
         assert len(all_subset) == 5
         assert set(all_subset.get_partition_keys()) == {
             "2020-01-01",
@@ -182,9 +185,7 @@ def test_all_partitions_subset_time_window_partitions_def() -> None:
             "2020-01-04",
             "2020-01-05",
         }
-        assert all_subset == AllPartitionsSubset(
-            time_window_partitions_def, Mock(), get_current_datetime()
-        )
+        assert all_subset == AllPartitionsSubset(time_window_partitions_def, ctx)
 
         subset = time_window_partitions_def.subset_with_partition_keys(
             {"2020-01-01", "2020-01-02", "2020-01-03"}
@@ -196,15 +197,17 @@ def test_all_partitions_subset_time_window_partitions_def() -> None:
         )
         assert subset - all_subset == time_window_partitions_def.empty_subset()
 
-        round_trip_subset = deserialize_value(serialize_value(all_subset.to_serializable_subset()))  # type: ignore
+        round_trip_subset = deserialize_value(serialize_value(all_subset.to_serializable_subset()))
         assert isinstance(round_trip_subset, TimeWindowPartitionsSubset)
         assert set(round_trip_subset.get_partition_keys()) == set(all_subset.get_partition_keys())
 
 
 def test_partitions_set_short_circuiting() -> None:
-    static_partitions_def = StaticPartitionsDefinition(["a", "b", "c", "d"])
+    static_partitions_def = dg.StaticPartitionsDefinition(["a", "b", "c", "d"])
     default_ps = DefaultPartitionsSubset({"a", "b", "c"})
-    all_ps = AllPartitionsSubset(static_partitions_def, Mock(), get_current_datetime())
+
+    with partition_loading_context(dynamic_partitions_store=MagicMock()) as ctx:
+        all_ps = AllPartitionsSubset(static_partitions_def, ctx)
 
     # Test short-circuiting of |. Returns the same AllPartionsSubset
     or_result = default_ps | all_ps
@@ -221,42 +224,42 @@ def test_partitions_set_short_circuiting() -> None:
 def test_multi_partition_subset_to_range_conversion():
     # Test that converting from a list of partitions keys to a subset, to a list of ranges, and back to
     # a list of partition keys for MultiPartitionsDefinitions does not lose any partitions.
-    color_partition = StaticPartitionsDefinition(["red", "yellow", "blue"])
-    number_partition = StaticPartitionsDefinition(["1", "2", "3", "4"])
-    multi_partitions_def = MultiPartitionsDefinition(
+    color_partition = dg.StaticPartitionsDefinition(["red", "yellow", "blue"])
+    number_partition = dg.StaticPartitionsDefinition(["1", "2", "3", "4"])
+    multi_partitions_def = dg.MultiPartitionsDefinition(
         {
             "color": color_partition,
             "number": number_partition,
         }
     )
     target_partitions = [
-        MultiPartitionKey({"number": "1", "color": "red"}),
-        MultiPartitionKey({"number": "2", "color": "red"}),
-        MultiPartitionKey({"number": "4", "color": "red"}),
-        MultiPartitionKey({"number": "1", "color": "blue"}),
-        MultiPartitionKey({"number": "2", "color": "blue"}),
-        MultiPartitionKey({"number": "1", "color": "yellow"}),
-        MultiPartitionKey({"number": "2", "color": "yellow"}),
-        MultiPartitionKey({"number": "3", "color": "yellow"}),
+        dg.MultiPartitionKey({"number": "1", "color": "red"}),
+        dg.MultiPartitionKey({"number": "2", "color": "red"}),
+        dg.MultiPartitionKey({"number": "4", "color": "red"}),
+        dg.MultiPartitionKey({"number": "1", "color": "blue"}),
+        dg.MultiPartitionKey({"number": "2", "color": "blue"}),
+        dg.MultiPartitionKey({"number": "1", "color": "yellow"}),
+        dg.MultiPartitionKey({"number": "2", "color": "yellow"}),
+        dg.MultiPartitionKey({"number": "3", "color": "yellow"}),
     ]
     # getting ranges from subsets for a multi partition definition contructs ranges for each
     # key of the dimension with the fewest unique values
     expected_ranges = [
-        PartitionKeyRange(
-            start=MultiPartitionKey({"color": "red", "number": "1"}),
-            end=MultiPartitionKey({"color": "red", "number": "2"}),
+        dg.PartitionKeyRange(
+            start=dg.MultiPartitionKey({"color": "red", "number": "1"}),
+            end=dg.MultiPartitionKey({"color": "red", "number": "2"}),
         ),
-        PartitionKeyRange(
-            start=MultiPartitionKey({"color": "red", "number": "4"}),
-            end=MultiPartitionKey({"color": "red", "number": "4"}),
+        dg.PartitionKeyRange(
+            start=dg.MultiPartitionKey({"color": "red", "number": "4"}),
+            end=dg.MultiPartitionKey({"color": "red", "number": "4"}),
         ),
-        PartitionKeyRange(
-            start=MultiPartitionKey({"color": "blue", "number": "1"}),
-            end=MultiPartitionKey({"color": "blue", "number": "2"}),
+        dg.PartitionKeyRange(
+            start=dg.MultiPartitionKey({"color": "blue", "number": "1"}),
+            end=dg.MultiPartitionKey({"color": "blue", "number": "2"}),
         ),
-        PartitionKeyRange(
-            start=MultiPartitionKey({"color": "yellow", "number": "1"}),
-            end=MultiPartitionKey({"color": "yellow", "number": "3"}),
+        dg.PartitionKeyRange(
+            start=dg.MultiPartitionKey({"color": "yellow", "number": "1"}),
+            end=dg.MultiPartitionKey({"color": "yellow", "number": "3"}),
         ),
     ]
     partition_subset = multi_partitions_def.subset_with_partition_keys(target_partitions)
@@ -274,9 +277,9 @@ def test_multi_partition_subset_to_range_conversion():
 def test_multi_partition_subset_to_range_conversion_grouping_choices():
     # Test that converting from a list of partitions keys to a subset, to a list of ranges, and back to
     # a list of partition keys for MultiPartitionsDefinitions does not lose any partitions.
-    color_partition = StaticPartitionsDefinition(["red", "yellow", "blue"])
-    number_partition = StaticPartitionsDefinition(["1", "2", "3", "4"])
-    multi_partitions_def = MultiPartitionsDefinition(
+    color_partition = dg.StaticPartitionsDefinition(["red", "yellow", "blue"])
+    number_partition = dg.StaticPartitionsDefinition(["1", "2", "3", "4"])
+    multi_partitions_def = dg.MultiPartitionsDefinition(
         {
             "color": color_partition,
             "number": number_partition,
@@ -286,16 +289,16 @@ def test_multi_partition_subset_to_range_conversion_grouping_choices():
     # we expect the grouping to happen by the dimension with the fewest unique values
     # in this case number
     group_by_number_target_partitions = [
-        MultiPartitionKey({"number": "1", "color": "red"}),
-        MultiPartitionKey({"number": "1", "color": "yellow"}),
-        MultiPartitionKey({"number": "1", "color": "blue"}),
+        dg.MultiPartitionKey({"number": "1", "color": "red"}),
+        dg.MultiPartitionKey({"number": "1", "color": "yellow"}),
+        dg.MultiPartitionKey({"number": "1", "color": "blue"}),
     ]
     # getting ranges from subsets for a multi partition definition contructs ranges for each
     # key of the primary dimension
     expected_ranges = [
-        PartitionKeyRange(
-            start=MultiPartitionKey({"color": "red", "number": "1"}),
-            end=MultiPartitionKey({"color": "blue", "number": "1"}),
+        dg.PartitionKeyRange(
+            start=dg.MultiPartitionKey({"color": "red", "number": "1"}),
+            end=dg.MultiPartitionKey({"color": "blue", "number": "1"}),
         ),
     ]
     partition_subset = multi_partitions_def.subset_with_partition_keys(
@@ -314,25 +317,25 @@ def test_multi_partition_subset_to_range_conversion_grouping_choices():
     # we expect the grouping to happen by the dimension with the fewest unique values
     # in this case color
     group_by_color_target_partitions = [
-        MultiPartitionKey({"number": "1", "color": "red"}),
-        MultiPartitionKey({"number": "2", "color": "red"}),
-        MultiPartitionKey({"number": "3", "color": "red"}),
-        MultiPartitionKey({"number": "1", "color": "blue"}),
-        MultiPartitionKey({"number": "2", "color": "blue"}),
-        MultiPartitionKey({"number": "4", "color": "blue"}),
+        dg.MultiPartitionKey({"number": "1", "color": "red"}),
+        dg.MultiPartitionKey({"number": "2", "color": "red"}),
+        dg.MultiPartitionKey({"number": "3", "color": "red"}),
+        dg.MultiPartitionKey({"number": "1", "color": "blue"}),
+        dg.MultiPartitionKey({"number": "2", "color": "blue"}),
+        dg.MultiPartitionKey({"number": "4", "color": "blue"}),
     ]
     expected_ranges = [
-        PartitionKeyRange(
-            start=MultiPartitionKey({"color": "red", "number": "1"}),
-            end=MultiPartitionKey({"color": "red", "number": "3"}),
+        dg.PartitionKeyRange(
+            start=dg.MultiPartitionKey({"color": "red", "number": "1"}),
+            end=dg.MultiPartitionKey({"color": "red", "number": "3"}),
         ),
-        PartitionKeyRange(
-            start=MultiPartitionKey({"color": "blue", "number": "1"}),
-            end=MultiPartitionKey({"color": "blue", "number": "2"}),
+        dg.PartitionKeyRange(
+            start=dg.MultiPartitionKey({"color": "blue", "number": "1"}),
+            end=dg.MultiPartitionKey({"color": "blue", "number": "2"}),
         ),
-        PartitionKeyRange(
-            start=MultiPartitionKey({"color": "blue", "number": "4"}),
-            end=MultiPartitionKey({"color": "blue", "number": "4"}),
+        dg.PartitionKeyRange(
+            start=dg.MultiPartitionKey({"color": "blue", "number": "4"}),
+            end=dg.MultiPartitionKey({"color": "blue", "number": "4"}),
         ),
     ]
     partition_subset = multi_partitions_def.subset_with_partition_keys(
@@ -352,11 +355,11 @@ def test_multi_partition_subset_to_range_conversion_grouping_choices():
 def test_multi_partition_subset_to_range_conversion_time_partition():
     # Test that converting from a list of partitions keys to a subset, to a list of ranges, and back to
     # a list of partition keys for MultiPartitionsDefinitions does not lose any partitions.
-    color_partition = StaticPartitionsDefinition(["red", "yellow", "blue"])
-    hour_partition = HourlyPartitionsDefinition(
+    color_partition = dg.StaticPartitionsDefinition(["red", "yellow", "blue"])
+    hour_partition = dg.HourlyPartitionsDefinition(
         start_date="2023-01-01-00:00", end_date="2025-01-01-01:00"
     )
-    multi_partitions_def = MultiPartitionsDefinition(
+    multi_partitions_def = dg.MultiPartitionsDefinition(
         {
             "a_date": hour_partition,  # prefix with a so that it is the primary dimension
             "color": color_partition,
@@ -366,16 +369,16 @@ def test_multi_partition_subset_to_range_conversion_time_partition():
     # we expect the grouping to happen by the dimension with the fewest unique values
     # in this case a_date
     group_by_hour_target_partitions = [
-        MultiPartitionKey({"a_date": "2023-01-01-00:00", "color": "red"}),
-        MultiPartitionKey({"a_date": "2023-01-01-00:00", "color": "yellow"}),
-        MultiPartitionKey({"a_date": "2023-01-01-00:00", "color": "blue"}),
+        dg.MultiPartitionKey({"a_date": "2023-01-01-00:00", "color": "red"}),
+        dg.MultiPartitionKey({"a_date": "2023-01-01-00:00", "color": "yellow"}),
+        dg.MultiPartitionKey({"a_date": "2023-01-01-00:00", "color": "blue"}),
     ]
     # getting ranges from subsets for a multi partition definition contructs ranges for each
     # key of the primary dimension
     expected_ranges = [
-        PartitionKeyRange(
-            start=MultiPartitionKey({"color": "red", "a_date": "2023-01-01-00:00"}),
-            end=MultiPartitionKey({"color": "blue", "a_date": "2023-01-01-00:00"}),
+        dg.PartitionKeyRange(
+            start=dg.MultiPartitionKey({"color": "red", "a_date": "2023-01-01-00:00"}),
+            end=dg.MultiPartitionKey({"color": "blue", "a_date": "2023-01-01-00:00"}),
         ),
     ]
     partition_subset = multi_partitions_def.subset_with_partition_keys(
@@ -399,9 +402,9 @@ def test_multi_partition_subset_to_range_conversion_time_partition():
         )
     )
     expected_ranges = [
-        PartitionKeyRange(
-            start=MultiPartitionKey({"color": "red", "a_date": "2023-01-01-00:00"}),
-            end=MultiPartitionKey({"color": "red", "a_date": "2025-01-01-00:00"}),
+        dg.PartitionKeyRange(
+            start=dg.MultiPartitionKey({"color": "red", "a_date": "2023-01-01-00:00"}),
+            end=dg.MultiPartitionKey({"color": "red", "a_date": "2025-01-01-00:00"}),
         ),
     ]
     partition_subset = multi_partitions_def.subset_with_partition_keys(

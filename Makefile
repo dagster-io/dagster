@@ -38,17 +38,21 @@ check_ruff:
 	ruff format --check .
 
 check_prettier:
-#NOTE:  excludes README.md because it's a symlink
+#NOTE: excludes symlinked md files
 	prettier `git ls-files \
 	'python_modules/*.yml' 'python_modules/*.yaml' 'helm/*.yml' 'helm/*.yaml' \
-	':!:helm/**/templates/*.yml' ':!:helm/**/templates/*.yaml' '*.md' ':!:docs/*.md' \
-	':!:README.md'` --check
+	'*.md' '.claude/*.md' \
+	':!:docs/*.md' ':!:helm/**/templates/*.yml' ':!:helm/**/templates/*.yaml' \
+	':!:README.md' ':!:GEMINI.md'` \
+	--check
 
 prettier:
 	prettier `git ls-files \
 	'python_modules/*.yml' 'python_modules/*.yaml' 'helm/*.yml' 'helm/*.yaml' \
-	':!:helm/**/templates/*.yml' ':!:helm/**/templates/*.yaml' '*.md' ':!:docs/*.md' \
-	':!:README.md'` --write
+	'*.md' '.claude/*.md' \
+	':!:docs/*.md' ':!:helm/**/templates/*.yml' ':!:helm/**/templates/*.yaml' \
+	':!:README.md' ':!:GEMINI.md'` \
+	--write
 
 install_dev_python_modules:
 	python scripts/install_dev_python_modules.py -q

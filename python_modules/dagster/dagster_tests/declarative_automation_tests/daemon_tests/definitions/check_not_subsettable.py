@@ -1,7 +1,6 @@
 from collections.abc import Iterator
 
 import dagster as dg
-from dagster._core.definitions.asset_check_spec import AssetCheckSpec
 
 any_dep_newly_updated = dg.AutomationCondition.any_deps_match(
     dg.AutomationCondition.newly_updated() | dg.AutomationCondition.will_be_requested()
@@ -9,7 +8,7 @@ any_dep_newly_updated = dg.AutomationCondition.any_deps_match(
 
 
 @dg.asset(
-    check_specs=[AssetCheckSpec(asset="unpartitioned", name="row_count")],
+    check_specs=[dg.AssetCheckSpec(asset="unpartitioned", name="row_count")],
     automation_condition=dg.AutomationCondition.missing(),
 )
 def unpartitioned() -> dg.MaterializeResult:
@@ -18,8 +17,8 @@ def unpartitioned() -> dg.MaterializeResult:
 
 @dg.asset(
     check_specs=[
-        AssetCheckSpec(asset="static", name="c1"),
-        AssetCheckSpec(asset="static", name="c2"),
+        dg.AssetCheckSpec(asset="static", name="c1"),
+        dg.AssetCheckSpec(asset="static", name="c2"),
     ],
     automation_condition=dg.AutomationCondition.missing(),
     partitions_def=dg.StaticPartitionsDefinition(["a"]),
