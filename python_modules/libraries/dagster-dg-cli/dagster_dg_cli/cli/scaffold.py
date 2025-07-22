@@ -1,3 +1,4 @@
+import json
 import subprocess
 import sys
 import textwrap
@@ -41,6 +42,7 @@ from dagster_shared.plus.config import DagsterPlusCliConfig
 from dagster_shared.serdes.objects import EnvRegistryKey, EnvRegistryObjectSnap
 from dagster_shared.seven import load_module_object
 
+from dagster_dg_cli.cli.ai import VALIDATION_CHUNK, start_cli_agent_session
 from dagster_dg_cli.cli.plus.constants import DgPlusAgentPlatform, DgPlusAgentType
 from dagster_dg_cli.scaffold import (
     ScaffoldFormatOptions,
@@ -175,6 +177,7 @@ class ScaffoldDefsGroup(DgClickGroup):
             # json_params will not be present in the key_value_params if no scaffold properties
             # are defined.
             json_scaffolder_params = other_opts.pop("json_params", None)
+            ai = other_opts.pop("ai", False)
 
             # format option is only present if we are dealing with a component. Otherewise we
             # default to python for decorator scaffolding. Default is YAML (set by option) for
@@ -196,16 +199,24 @@ class ScaffoldDefsGroup(DgClickGroup):
                 key_value_scaffolder_params,
                 scaffolder_format,
                 json_scaffolder_params,
+                ai,
             )
 
         if obj.is_component:
-            scaffold_command.params.append(
-                click.Option(
-                    ["--format"],
-                    type=click.Choice(["yaml", "python"], case_sensitive=False),
-                    default="yaml",
-                    help="Format of the component configuration (yaml or python)",
-                )
+            scaffold_command.params.extend(
+                [
+                    click.Option(
+                        ["--format"],
+                        type=click.Choice(["yaml", "python"], case_sensitive=False),
+                        default="yaml",
+                        help="Format of the component configuration (yaml or python)",
+                    ),
+                    click.Option(
+                        ["--ai"],
+                        is_flag=True,
+                        help="[Experimental] Start a CLI agent session for filling out the scaffolded component.",
+                    ),
+                ]
             )
 
         # If there are defined scaffold properties, add them to the command. Also only add
@@ -907,7 +918,8 @@ def _core_scaffold(
     defs_path: str,
     key_value_params: Mapping[str, Any],
     scaffold_format: ScaffoldFormatOptions,
-    json_params: Optional[Mapping[str, Any]] = None,
+    json_params: Optional[Mapping[str, Any]],
+    ai: bool,
 ) -> None:
     from dagster.components.core.package_entry import is_scaffoldable_object_key
     from pydantic import ValidationError
@@ -938,13 +950,21 @@ def _core_scaffold(
         scaffold_params = None
 
     try:
+        target_path = Path(dg_context.defs_path) / defs_path
         scaffold_registry_object(
-            Path(dg_context.defs_path) / defs_path,
+            target_path,
             object_key.to_typename(),
             scaffold_params,
             dg_context,
             scaffold_format,
         )
+        if ai:
+            _start_scaffolded_component_session(
+                dg_context=dg_context,
+                target_path=target_path,
+                component_key=object_key,
+                scaffold_format=scaffold_format,
+            )
     except ValidationError as e:
         exit_with_error(
             (
@@ -1026,3 +1046,53 @@ def _parse_component_name(dg_context: DgContext, name: str) -> tuple[str, str]:
             name,
         )
     return module_name, class_name
+
+
+def _start_scaffolded_component_session(
+    dg_context: DgContext,
+    target_path: Path,
+    component_key: EnvRegistryKey,
+    scaffold_format: ScaffoldFormatOptions,
+) -> None:
+    registry = EnvRegistry.from_dg_context(dg_context)
+    entry = registry.get(component_key)
+    component_data = entry.get_feature_data("component")
+
+    component_type_name = component_key.to_typename()
+    component_type_description = entry.description
+    component_type_schema = (
+        component_data.schema if component_data and component_data.schema else {}
+    )
+
+    if scaffold_format == "yaml" and component_type_schema:
+        yaml_section = f"""
+The jsonschema for the `attributes` key in the `defs.yaml` file is:
+```json
+{json.dumps(component_type_schema, indent=2)}
+```
+"""
+    else:
+        yaml_section = ""
+
+    start_cli_agent_session(f"""
+This CLI agent session was started via the Dagster CLI `dg`.
+The goal is to assist the user in filling out a freshly scaffolded Component.
+A Dagster Component is an abstraction for creating Dagster Definitions.
+
+The new component instance of type `{component_type_name}` has been scaffolded in to `{target_path}`.
+
+`{component_type_name}`:
+{component_type_description}
+
+{yaml_section}
+
+# Tools
+```bash
+{VALIDATION_CHUNK}
+```
+
+# Plan
+1. Read the scaffolded files in `{target_path}`
+2. Ask the user for details to help fill out required information.
+3. Use validation tools to ensure the user's input is valid.
+    """)

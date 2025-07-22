@@ -14,6 +14,12 @@ from dagster_dg_core.utils.telemetry import cli_telemetry_wrapper
 from rich.console import Console
 from rich.prompt import Prompt
 
+VALIDATION_CHUNK = """
+## Validation
+dg check yaml # Validate yaml files according to their schema (fast)
+dg check defs # Validate definitions by loading them fully (slower)
+"""
+
 
 def _context_prompt(dg_context: DgContext):
     return f"""
@@ -75,32 +81,33 @@ The defs path is `{dg_context.defs_path}`. Dagster definitions are defined via y
 # `dg` Dagster CLI
 The `dg` CLI is a tool for managing Dagster projects and workspaces.
 
-## Essential Commands
+# Essential Commands
 
 ```bash
-# Validation
-dg check yaml # Validate yaml files according to their schema (fast)
-dg check defs # Validate definitions by loading them fully (slower)
+{VALIDATION_CHUNK}
 
-# Scaffolding
+## Scaffolding
 dg scaffold defs <component type> # Create an instance of a Component type. Available types found via `dg list components`.
-dg scaffold defs dagster.<asset|job|schedule|sensor> # Create a new definition of a given type.
+dg scaffold defs dagster.asset # Create asset
+dg scaffold defs dagster.job # Create job
+dg scaffold defs dagster.schedule # Create schedule
 dg scaffold component <name> # Create a new custom Component type
 
-# Searching
+## Searching
 dg list defs # Show project definitions
 dg list defs --assets <asset selection> # Show selected asset definitions
 dg list component-tree # Show the component tree
 dg list components # Show available component types
-dg docs component <component type> # Show documentation for a component type
 ```
+
+# Tips
 * The `dg` CLI will be effective in accomplishing tasks. Use --help to better understand how to use commands.
 * Prefer `dg list defs` over searching the files system when looking for Dagster definitions.
 * Use the --json flag to get structured output.
     """
 
 
-def _find_claude(dg_context: DgContext) -> Optional[list[str]]:
+def _find_claude() -> Optional[list[str]]:
     try:  # on PATH
         subprocess.run(
             ["claude", "--version"],
@@ -126,7 +133,7 @@ def _find_claude(dg_context: DgContext) -> Optional[list[str]]:
     return None
 
 
-def _find_codex(dg_context: DgContext) -> Optional[list[str]]:
+def _find_codex() -> Optional[list[str]]:
     try:  # on PATH
         subprocess.run(
             ["codex", "--version"],
@@ -154,13 +161,18 @@ def ai_command(
     cli_config = normalize_cli_config(other_options, click.get_current_context())
     dg_context = DgContext.for_workspace_or_project_environment(target_path, cli_config)
 
+    prompt = _context_prompt(dg_context)
+    start_cli_agent_session(prompt)
+
+
+def start_cli_agent_session(prompt: str) -> None:
     console = Console()
     console.print("WARNING: This feature is under active development.")
     console.print("Features and behavior may change significantly in future versions.\n")
     console.print("Checking for supported CLI agent...\n")
 
-    claude_cmd = _find_claude(dg_context)
-    codex_cmd = _find_codex(dg_context)
+    claude_cmd = _find_claude()
+    codex_cmd = _find_codex()
 
     available_agents = []
     agent_map = {}
@@ -195,6 +207,6 @@ def ai_command(
 
     console.print(f"Starting {cli_name} session with context...\n")
     subprocess.run(
-        cli_cmd + [_context_prompt(dg_context)],
+        cli_cmd + [prompt],
         check=False,
     )
