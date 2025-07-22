@@ -25,11 +25,9 @@ if __name__ == "__main__":
 
 
 def test_pipes_subprocess_script_hello_world() -> None:
-    with scaffold_defs_sandbox(component_cls=UvRunComponent) as sandbox:
-        execute_path = sandbox.defs_folder_path / "script.py"
-        execute_path.write_text(SCRIPT_CONTENT)
-
-        with sandbox.load(
+    with scaffold_defs_sandbox() as sandbox:
+        component_path = sandbox.scaffold_component_and_update_defs_file(
+            component_cls=UvRunComponent,
             component_body={
                 "type": "dagster.UvRunComponent",
                 "attributes": {
@@ -44,8 +42,12 @@ def test_pipes_subprocess_script_hello_world() -> None:
                         }
                     ],
                 },
-            }
-        ) as (component, defs):
+            },
+        )
+        execute_path = component_path / "script.py"
+        execute_path.write_text(SCRIPT_CONTENT)
+
+        with sandbox.load_component_and_build_defs_at_path(component_path=component_path) as (component, defs):
             assert isinstance(component, dg.UvRunComponent)
             assert isinstance(component.execution, ScriptSpec)
             assets_def = defs.get_assets_def("asset")

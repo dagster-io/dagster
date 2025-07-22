@@ -1,9 +1,7 @@
-import importlib
 import os
 import tempfile
 from collections.abc import Iterator
 from contextlib import contextmanager
-from pathlib import Path
 from unittest import mock
 
 import pytest
@@ -11,10 +9,9 @@ import yaml
 from dagster import AssetKey, Definitions
 from dagster._core.definitions.materialize import materialize
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
-from dagster._utils import alter_sys_path
-from dagster.components.core.tree import ComponentTree
 from dagster.components.lib.sql_component.sql_component import SqlComponent, TemplatedSqlComponent
 from dagster.components.testing import scaffold_defs_sandbox
+from dagster_snowflake.components.sql_component.component import SnowflakeConnectionComponent
 from dagster_snowflake.constants import SNOWFLAKE_PARTNER_CONNECTION_IDENTIFIER
 
 from dagster_snowflake_tests.utils import create_mock_connector
@@ -26,14 +23,10 @@ def setup_snowflake_component_with_external_connection(
     connection_component_name: str = "sql_connection_component",
 ) -> Iterator[Definitions]:
     """Sets up a components project with a snowflake component using external connection."""
-    with tempfile.TemporaryDirectory() as project_root_str:
-        project_root = Path(project_root_str)
-        defs_folder_path = project_root / "src" / "my_project" / "defs"
-        defs_folder_path.mkdir(parents=True, exist_ok=True)
-
-        # Create execution component
-        execution_component_path = defs_folder_path / "sql_execution_component"
-        execution_component_path.mkdir(parents=True, exist_ok=True)
+    with scaffold_defs_sandbox() as sandbox:
+        execution_component_path = sandbox.scaffold_component(
+            component_cls=SqlComponent, component_path="sql_execution_component"
+        )
         (execution_component_path / "defs.yaml").write_text(yaml.dump(execution_component_body))
 
         # Create connection component
@@ -47,16 +40,13 @@ def setup_snowflake_component_with_external_connection(
                 "schema": "TESTSCHEMA",
             },
         }
-        connection_component_path = defs_folder_path / connection_component_name
-        connection_component_path.mkdir(parents=True, exist_ok=True)
+        connection_component_path = sandbox.scaffold_component(
+            component_cls=SnowflakeConnectionComponent,
+            component_path=connection_component_name,
+        )
         (connection_component_path / "defs.yaml").write_text(yaml.dump(connection_body))
 
-        with alter_sys_path(to_add=[str(project_root / "src")], to_remove=[]):
-            defs = ComponentTree(
-                defs_module=importlib.import_module("my_project.defs"),
-                project_root=Path(project_root),
-            ).build_defs()
-
+        with sandbox.build_all_defs() as defs:
             yield defs
 
 
@@ -65,10 +55,10 @@ def setup_snowflake_component(
     component_body: dict,
 ) -> Iterator[tuple[TemplatedSqlComponent, Definitions]]:
     """Sets up a components project with a snowflake component based on provided params."""
-    with scaffold_defs_sandbox(
-        component_cls=TemplatedSqlComponent,
-    ) as defs_sandbox:
-        with defs_sandbox.load(component_body=component_body) as (component, defs):
+    with scaffold_defs_sandbox() as defs_sandbox:
+        with defs_sandbox.scaffold_load_and_build_defs(
+            component_cls=TemplatedSqlComponent, component_body=component_body
+        ) as (component, defs):
             assert isinstance(component, TemplatedSqlComponent)
             yield component, defs
 

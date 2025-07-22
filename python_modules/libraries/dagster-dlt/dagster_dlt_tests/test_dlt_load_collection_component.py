@@ -44,19 +44,24 @@ def setup_dlt_component(
 ) -> Iterator[tuple[DltLoadCollectionComponent, Definitions]]:
     """Sets up a components project with a dlt component based on provided params."""
     with scaffold_defs_sandbox(
-        component_cls=DltLoadCollectionComponent,
-        scaffold_params={"source": "github", "destination": "snowflake"},
-        component_path="ingest",
         project_name=project_name,
     ) as defs_sandbox:
-        with pushd(str(defs_sandbox.defs_folder_path)):
+        component_path = defs_sandbox.scaffold_component_and_update_defs_file(
+            component_cls=DltLoadCollectionComponent,
+            component_path="ingest",
+            component_body=component_body,
+        )
+        with pushd(str(component_path)):
             setup_dlt_sources()
 
-        Path(defs_sandbox.defs_folder_path / "load.py").write_text(
+        Path(component_path / "load.py").write_text(
             textwrap.dedent("\n".join(inspect.getsource(load_py_contents).split("\n")[1:]))
         )
 
-        with defs_sandbox.load(component_body=component_body) as (component, defs):
+        with defs_sandbox.load_component_and_build_defs_at_path(component_path=component_path) as (
+            component,
+            defs,
+        ):
             assert isinstance(component, DltLoadCollectionComponent)
             yield component, defs
 
@@ -254,12 +259,16 @@ def test_python_interface(dlt_pipeline: Pipeline):
 
 
 def test_scaffold_bare_component() -> None:
-    with scaffold_defs_sandbox(component_cls=DltLoadCollectionComponent) as defs_sandbox:
-        assert defs_sandbox.defs_folder_path.exists()
-        assert (defs_sandbox.defs_folder_path / "defs.yaml").exists()
-        assert (defs_sandbox.defs_folder_path / "loads.py").exists()
+    with scaffold_defs_sandbox() as defs_sandbox:
+        component_path = defs_sandbox.scaffold_component(component_cls=DltLoadCollectionComponent)
+        assert component_path.exists()
+        assert (component_path / "defs.yaml").exists()
+        assert (component_path / "loads.py").exists()
 
-        with defs_sandbox.load() as (component, defs):
+        with defs_sandbox.load_component_and_build_defs_at_path(component_path=component_path) as (
+            component,
+            defs,
+        ):
             assert isinstance(component, DltLoadCollectionComponent)
             assert len(component.loads) == 1
             assert defs.resolve_asset_graph().get_all_asset_keys() == {
@@ -277,17 +286,21 @@ def test_scaffold_bare_component() -> None:
 )
 def test_scaffold_component_with_source_and_destination(source: str, destination: str) -> None:
     with (
-        scaffold_defs_sandbox(
-            component_cls=DltLoadCollectionComponent,
-            scaffold_params={"source": source, "destination": destination},
-        ) as defs_sandbox,
+        scaffold_defs_sandbox() as defs_sandbox,
         environ({"SOURCES__ACCESS_TOKEN": "fake"}),
     ):
-        assert defs_sandbox.defs_folder_path.exists()
-        assert (defs_sandbox.defs_folder_path / "defs.yaml").exists()
-        assert (defs_sandbox.defs_folder_path / "loads.py").exists()
+        component_path = defs_sandbox.scaffold_component(
+            component_cls=DltLoadCollectionComponent,
+            scaffold_params={"source": source, "destination": destination},
+        )
+        assert component_path.exists()
+        assert (component_path / "defs.yaml").exists()
+        assert (component_path / "loads.py").exists()
 
-        with defs_sandbox.load() as (component, defs):
+        with defs_sandbox.load_component_and_build_defs_at_path(component_path=component_path) as (
+            component,
+            defs,
+        ):
             assert isinstance(component, DltLoadCollectionComponent)
             # scaffolder generates a silly sample load right now because the complex parsing logic is flaky
             assert len(component.loads) == 1

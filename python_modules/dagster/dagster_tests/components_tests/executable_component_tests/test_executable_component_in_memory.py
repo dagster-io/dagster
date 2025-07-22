@@ -186,17 +186,16 @@ def test_local_import() -> None:
         def execute_fn_to_copy(context):
             return dg.MaterializeResult(metadata={"foo": "bar"})
 
-    with scaffold_defs_sandbox(component_cls=FunctionComponent) as sandbox:
-        execute_path = sandbox.defs_folder_path / "execute.py"
-        copy_code_to_file(code_to_copy, execute_path)
-
-        with sandbox.load(
+    with scaffold_defs_sandbox() as sandbox:
+        component_path = sandbox.scaffold_component_and_update_defs_file(
+            component_cls=FunctionComponent,
+            component_path="function_component",
             component_body={
-                "type": "dagster.components.lib.executable_component.function_component.FunctionComponent",
+                "type": "dagster.FunctionComponent",
                 "attributes": {
                     "execution": {
                         "name": "op_name",
-                        "fn": ".execute.execute_fn_to_copy",
+                        "fn": ".function_component.execute.execute_fn_to_copy",
                     },
                     "assets": [
                         {
@@ -204,8 +203,15 @@ def test_local_import() -> None:
                         }
                     ],
                 },
-            }
-        ) as (component, defs):
+            },
+        )
+        execute_path = component_path / "execute.py"
+        copy_code_to_file(code_to_copy, execute_path)
+
+        with sandbox.load_component_and_build_defs_at_path(component_path=component_path) as (
+            component,
+            defs,
+        ):
             assert isinstance(component, dg.FunctionComponent)
             assert isinstance(component.execution, FunctionSpec)
             assert component.execution.fn.__name__ == "execute_fn_to_copy"
