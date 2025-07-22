@@ -12,6 +12,7 @@ import requests
 import tableauserverclient as TSC
 from dagster import (
     AssetExecutionContext,
+    AssetObservation,
     AssetSpec,
     ConfigurableResource,
     Definitions,
@@ -20,7 +21,6 @@ from dagster import (
     Output,
     _check as check,
     get_dagster_logger,
-    AssetObservation,
 )
 from dagster._annotations import beta, beta_param, superseded
 from dagster._core.definitions.definitions_load_context import StateBackedDefinitionsLoader

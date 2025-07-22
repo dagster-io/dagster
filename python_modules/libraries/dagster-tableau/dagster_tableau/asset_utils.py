@@ -124,7 +124,7 @@ def create_data_source_asset_event(
 def create_view_asset_observation(
     view: TSC.ViewItem,
     spec: AssetSpec,
-) -> Iterator[Union[AssetObservation]]:
+) -> Iterator[AssetObservation]:
     asset_key = spec.key
     yield from create_asset_observation(
         asset_key=asset_key, data=view, additional_metadata={"workbook_id": view.workbook_id}
