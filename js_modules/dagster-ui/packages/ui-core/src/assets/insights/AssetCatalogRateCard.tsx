@@ -3,7 +3,7 @@ import React from 'react';
 
 import styles from './AssetCatalogRateCard.module.css';
 import {formatDuration, unitToShortLabel} from '../../ui/formatDuration';
-import {percentFormatter} from '../../ui/formatters';
+import {numberFormatter, percentFormatter} from '../../ui/formatters';
 
 export interface AssetCatalogRateCardProps {
   title: string;
@@ -57,8 +57,8 @@ function formatValues(
   const prevValueAndUnit = formatDuration(prevValue, {unit})[0];
 
   return {
-    currValueString: `${currValueAndUnit.value} ${unitToShortLabel[currValueAndUnit.unit]}`,
-    prevValueString: `${prevValueAndUnit.value} ${unitToShortLabel[prevValueAndUnit.unit]}`,
+    currValueString: `${numberFormatter.format(currValueAndUnit.value)} ${unitToShortLabel[currValueAndUnit.unit]}`,
+    prevValueString: `${numberFormatter.format(prevValueAndUnit.value)} ${unitToShortLabel[prevValueAndUnit.unit]}`,
     absDeltaString: percentFormatter.format(absDelta),
     hasNegativeDelta,
   };

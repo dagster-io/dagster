@@ -1,8 +1,8 @@
 interface DurationOptions {
   /** Maximum value before the next unit is displayed */
   maxValueBeforeNextUnit?: Record<UnitType, number>;
-  /** Number of significant digits to display (1 or 2) */
-  significantDigits?: 1 | 2;
+  /** Number of significant units to display (1 or 2) */
+  significantUnits?: 1 | 2;
   /** Whether the input is in seconds (default: false, assumes milliseconds) */
   unit?: 'seconds' | 'milliseconds';
 }
@@ -78,7 +78,7 @@ export function formatDuration(
 ): NonEmptyArray<DurationPart> {
   const {
     maxValueBeforeNextUnit = defaultMaxValueBeforeNextUnit,
-    significantDigits = 1,
+    significantUnits = 1,
     unit = 'milliseconds',
   } = options;
 
@@ -103,12 +103,14 @@ export function formatDuration(
   let bestUnit: [number, UnitType, PluralUnitType] | null = null;
   let bestValue = 0;
 
+  const roundFn = significantUnits > 1 ? Math.floor : (x: number) => x;
+
   if (remainingMs > DAY_MS) {
     let violatingUnitIndex = -1;
 
     for (let i = 0; i < UNITS.length; i++) {
       const [unitMs, singular] = UNITS[i]!;
-      const value = Math.floor(remainingMs / unitMs);
+      const value = roundFn(remainingMs / unitMs);
       const threshold = maxValueBeforeNextUnit[singular];
       if (value >= threshold) {
         violatingUnitIndex = i;
@@ -121,7 +123,7 @@ export function formatDuration(
         const nextLargerUnit = UNITS[violatingUnitIndex - 1]!;
         if (nextLargerUnit) {
           const [unitMs, singular, plural] = nextLargerUnit;
-          const value = Math.floor(remainingMs / unitMs);
+          const value = roundFn(remainingMs / unitMs);
           if (value >= 1) {
             bestUnit = [unitMs, singular, plural];
             bestValue = value;
@@ -133,7 +135,7 @@ export function formatDuration(
 
   if (!bestUnit) {
     for (const [unitMs, singular, plural] of UNITS) {
-      const value = Math.floor(remainingMs / unitMs);
+      const value = roundFn(remainingMs / unitMs);
       if (value >= 1) {
         bestUnit = [unitMs, singular, plural];
         bestValue = value;
@@ -152,14 +154,15 @@ export function formatDuration(
 
     remainingMs -= bestValue * unitMs;
 
-    // If we need more significant digits and have remaining time
-    if (significantDigits > 1 && remainingMs > 0) {
+    // If we need more significant units and have remaining time
+    if (significantUnits > 1 && remainingMs > 0) {
       for (const [unitMs, singular, plural] of UNITS) {
         if (unitMs >= bestUnit[0]) {
           continue;
         } // Skip same or larger units
 
-        const value = Math.floor(remainingMs / unitMs);
+        const roundFn = parts.length - 1 === significantUnits ? (x: number) => x : Math.floor;
+        const value = roundFn(remainingMs / unitMs);
         if (value > 0) {
           parts.push({
             value,
