@@ -157,7 +157,7 @@ def cacheable_asset_defs_asset_decorator_with_context():
         assets=[my_tableau_assets],
         jobs=[
             define_asset_job("all_asset_job"),
-            define_asset_job("subset_asset_job", selection="embedded_superstore_datasource"),
+            define_asset_job("subset_asset_job", selection="hidden_sheet_datasource"),
         ],
         resources={"tableau": resource},
     )
@@ -324,8 +324,8 @@ def test_load_assets_workspace_data_refreshable_data_sources(
         assert get_job.call_count == 0
         assert cancel_job.call_count == 0
 
-        # 3 Tableau external assets and 3 Tableau materializable assets
-        assert len(init_repository_def.assets_defs_by_key) == 3 + 3
+        # 4 Tableau external assets and 2 Tableau materializable assets
+        assert len(init_repository_def.assets_defs_by_key) == 4 + 2
 
         repository_load_data = init_repository_def.repository_load_data
 
@@ -334,7 +334,7 @@ def test_load_assets_workspace_data_refreshable_data_sources(
             pointer,
             repository_load_data,
         )
-        assert len(recon_repository_def.assets_defs_by_key) == 3 + 3
+        assert len(recon_repository_def.assets_defs_by_key) == 4 + 2
 
         # no additional calls after a fresh load
         assert sign_in.call_count == 1
@@ -372,7 +372,7 @@ def test_load_assets_workspace_data_refreshable_data_sources(
         asset_materializations = [
             event for event in events if event.event_type == DagsterEventType.ASSET_MATERIALIZATION
         ]
-        assert len(asset_materializations) == 5
+        assert len(asset_materializations) == 4
 
         # 3 calls to create the defs + 8 calls to materialize the Tableau assets
         # with 1 data source to refresh, 2 sheets and 1 dashboard
@@ -380,7 +380,7 @@ def test_load_assets_workspace_data_refreshable_data_sources(
         assert get_workbooks.call_count == 1
         assert get_workbook.call_count == 1
         assert get_view.call_count == 3
-        assert get_data_source.call_count == 2
+        assert get_data_source.call_count == 1
         assert refresh_data_source.call_count == 1
         assert get_job.call_count == 2
         # The finish_code of the mocked get_job is 0, so no cancel_job is not called
@@ -518,7 +518,7 @@ def test_load_assets_workspace_data_translator(
 @pytest.mark.parametrize(
     "job_name, expected_asset_materializations, expected_asset_observations",
     [
-        ("all_asset_job", 2, 3),
+        ("all_asset_job", 1, 3),
         ("subset_asset_job", 1, 0),
     ],
     ids=[
@@ -550,7 +550,7 @@ def test_load_assets_workspace_asset_decorator_with_context(
         )
 
         # 4 Tableau materializable assets
-        assert len(repository_def.assets_defs_by_key) == 5
+        assert len(repository_def.assets_defs_by_key) == 4
 
         repository_load_data = repository_def.repository_load_data
 
