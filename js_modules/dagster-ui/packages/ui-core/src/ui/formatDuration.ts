@@ -74,27 +74,27 @@ export function formatDuration(duration: number, options: DurationOptions = {}):
   }
 
   const parts: DurationPart[] = [];
-  let remainingMs = Math.abs(ms);
+  let remainingMs = ms;
 
   let bestUnit: [number, UnitType, PluralUnitType] | null = null;
   let bestValue = 0;
 
   if (remainingMs > DAY_MS) {
-    let violatingUnit: [number, UnitType, PluralUnitType] | null = null;
+    let violatingUnitIndex = -1;
 
-    for (const [unitMs, singular, plural] of UNITS) {
+    for (let i = 0; i < UNITS.length; i++) {
+      const [unitMs, singular] = UNITS[i]!;
       const value = Math.floor(remainingMs / unitMs);
       const threshold = maxValueBeforeNextUnit[singular];
       if (value >= threshold) {
-        violatingUnit = [unitMs, singular, plural];
-        break; // Take the first (largest) violating unit
+        violatingUnitIndex = i;
+        break;
       }
     }
 
-    if (violatingUnit) {
-      const violatingUnitIndex = UNITS.findIndex(([unitMs]) => unitMs === violatingUnit[0]);
+    if (violatingUnitIndex !== -1) {
       if (violatingUnitIndex > 0) {
-        const nextLargerUnit = UNITS[violatingUnitIndex - 1];
+        const nextLargerUnit = UNITS[violatingUnitIndex - 1]!;
         if (nextLargerUnit) {
           const [unitMs, singular, plural] = nextLargerUnit;
           const value = Math.floor(remainingMs / unitMs);
