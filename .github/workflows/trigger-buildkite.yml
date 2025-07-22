@@ -1,8 +1,10 @@
 name: Trigger Buildkite
 
 on:
-  push:
-    branches: [Issue-29914]
+  # Temporarily disabled - Buildkite should auto-trigger via GitHub webhook
+  # push:
+  #   branches: [Issue-29914]
+  workflow_dispatch:  # Only allow manual trigger
 
 jobs:
   trigger:
