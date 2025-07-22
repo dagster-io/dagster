@@ -190,3 +190,6 @@ exponent.txt
 
 # google cloud storage emulater
 .cloudstorage/
+
+Dockerfile
+docker-compose.yml

@@ -1,0 +1,8 @@
+.git/
+**/.tox/
+**/__pycache__/
+**/*.egg-info/
+**/node_modules/
+**/*.pyc
+**/.next/
+**/venv/
