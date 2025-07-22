@@ -40,6 +40,7 @@ const UNITS: Array<[number, UnitType, PluralUnitType]> = [
 const YEAR_MS = 365 * 24 * 60 * 60 * 1000;
 const MONTH_MS = 30 * 24 * 60 * 60 * 1000;
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+const DAY_MS = 24 * 60 * 60 * 1000;
 
 /**
  * Converts a duration in milliseconds or seconds to a human-readable format
@@ -80,12 +81,7 @@ export function formatDuration(duration: number, options: DurationOptions = {}):
   let bestUnit: [number, UnitType, PluralUnitType] | null = null;
   let bestValue = 0;
 
-  // Only apply the 4-digit rule for larger durations (> 1 day)
-  // For smaller durations, use simple natural selection
-  const dayMs = 24 * 60 * 60 * 1000;
-
-  if (remainingMs > dayMs) {
-    // For larger durations, check if ANY unit would violate the 4-digit rule
+  if (remainingMs > DAY_MS) {
     let violatingUnit: [number, UnitType, PluralUnitType] | null = null;
 
     for (const [unitMs, singular, plural] of UNITS) {
@@ -113,7 +109,6 @@ export function formatDuration(duration: number, options: DurationOptions = {}):
     }
   }
 
-  // If we didn't handle the 4-digit rule case above, use normal natural selection
   if (!bestUnit) {
     for (const [unitMs, singular, plural] of UNITS) {
       const value = Math.floor(remainingMs / unitMs);

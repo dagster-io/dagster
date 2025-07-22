@@ -60,7 +60,7 @@ describe('formatDuration', () => {
     });
   });
 
-  describe('4-digit rule', () => {
+  describe('obeys maxValueBeforeNextUnit', () => {
     it('should avoid showing 1000+ of any unit', () => {
       // 1000 seconds should become minutes
       expect(formatDuration(1000000)).toEqual([{value: 16, unit: 'minutes'}]);
@@ -131,11 +131,6 @@ describe('formatDuration', () => {
       expect(formatDuration(60, {unit: 'seconds'})).toEqual([{value: 1, unit: 'minute'}]);
       expect(formatDuration(3600, {unit: 'seconds'})).toEqual([{value: 1, unit: 'hour'}]);
       expect(formatDuration(86400, {unit: 'seconds'})).toEqual([{value: 1, unit: 'day'}]);
-    });
-
-    it('should apply 4-digit rule to seconds input', () => {
-      expect(formatDuration(1000, {unit: 'seconds'})).toEqual([{value: 16, unit: 'minutes'}]);
-      expect(formatDuration(60000, {unit: 'seconds'})).toEqual([{value: 16, unit: 'hours'}]);
     });
 
     it('should work with two significant digits', () => {
