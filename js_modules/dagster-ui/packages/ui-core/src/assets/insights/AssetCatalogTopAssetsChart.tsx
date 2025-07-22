@@ -80,7 +80,7 @@ export const AssetCatalogTopAssetsChart = React.memo(
           const {tooltip} = context;
           const d = tooltip.dataPoints[0];
 
-          const {value, unit} = useMemo(() => {
+          const {value, unit} = (() => {
             const typeLower = unitType.toLowerCase();
             if (d && (typeLower === 'milliseconds' || typeLower === 'seconds')) {
               const [result] = formatDuration(d.raw as number, {
@@ -90,7 +90,7 @@ export const AssetCatalogTopAssetsChart = React.memo(
               return {value: result.value, unit: result.unit};
             }
             return {value: d?.raw as number, unit: unitType};
-          }, [unitType, d]);
+          })();
           return (
             <TooltipCard>
               <Box flex={{direction: 'column', gap: 4}} padding={{vertical: 8, horizontal: 12}}>
@@ -98,7 +98,7 @@ export const AssetCatalogTopAssetsChart = React.memo(
                   <Subheading>{d?.label}</Subheading>
                 </Box>
                 <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
-                  <Mono>{value == undefined ? null : numberFormatter.format(value)}</Mono>
+                  <Mono>{numberFormatter.format(value)}</Mono>
                   <Body>{unit}</Body>
                 </Box>
               </Box>
