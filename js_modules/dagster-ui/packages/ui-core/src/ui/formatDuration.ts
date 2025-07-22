@@ -26,21 +26,24 @@ interface DurationPart {
   unit: UnitType | PluralUnitType;
 }
 
-const UNITS: Array<[number, UnitType, PluralUnitType]> = [
-  [365 * 24 * 60 * 60 * 1000, 'year', 'years'],
-  [30 * 24 * 60 * 60 * 1000, 'month', 'months'],
-  [7 * 24 * 60 * 60 * 1000, 'week', 'weeks'],
-  [24 * 60 * 60 * 1000, 'day', 'days'],
-  [60 * 60 * 1000, 'hour', 'hours'],
-  [60 * 1000, 'minute', 'minutes'],
-  [1000, 'second', 'seconds'],
-  [1, 'millisecond', 'milliseconds'],
-];
-
 const YEAR_MS = 365 * 24 * 60 * 60 * 1000;
 const MONTH_MS = 30 * 24 * 60 * 60 * 1000;
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 const DAY_MS = 24 * 60 * 60 * 1000;
+const HOUR_MS = 60 * 60 * 1000;
+const MINUTE_MS = 60 * 1000;
+const SECOND_MS = 1000;
+
+const UNITS: Array<[number, UnitType, PluralUnitType]> = [
+  [YEAR_MS, 'year', 'years'],
+  [MONTH_MS, 'month', 'months'],
+  [WEEK_MS, 'week', 'weeks'],
+  [DAY_MS, 'day', 'days'],
+  [HOUR_MS, 'hour', 'hours'],
+  [MINUTE_MS, 'minute', 'minutes'],
+  [SECOND_MS, 'second', 'seconds'],
+  [1, 'millisecond', 'milliseconds'],
+];
 
 /**
  * Converts a duration in milliseconds or seconds to a human-readable format
