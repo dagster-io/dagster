@@ -29,6 +29,7 @@
 | `csharp`              | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-csharp-color.svg" width={20} height={20} />                         |
 | `cube`                | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-cube-color.svg" width={20} height={20} />                           |
 | `dask`                | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-dask-color.svg" width={20} height={20} />                           |
+| `databento`           | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-databento-color.svg" width={20} height={20} />                      |
 | `databricks`          | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-databricks-color.svg" width={20} height={20} />                     |
 | `datadog`             | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-datadog-color.svg" width={20} height={20} />                        |
 | `datahub`             | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-datahub-color.svg" width={20} height={20} />                        |
