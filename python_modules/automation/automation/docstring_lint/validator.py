@@ -110,11 +110,35 @@ class SymbolInfo:
         file_path = None
         line_number = None
 
-        # Try to get source location
+        # Try to get source location - prefer the module where the symbol is defined
         try:
-            file_path = inspect.getfile(symbol)
-            line_number = inspect.getsourcelines(symbol)[1]
-        except (OSError, TypeError):
+            if module:
+                # Try to import the module and get the file from there
+                import importlib
+
+                mod = importlib.import_module(module)
+                if hasattr(mod, name):
+                    actual_symbol = getattr(mod, name)
+                    if actual_symbol is symbol:
+                        # This is the actual definition location
+                        file_path = inspect.getfile(mod)
+                        try:
+                            line_number = inspect.getsourcelines(symbol)[1]
+                        except (OSError, TypeError):
+                            pass
+                    else:
+                        # Fall back to inspect methods
+                        file_path = inspect.getfile(symbol)
+                        line_number = inspect.getsourcelines(symbol)[1]
+                else:
+                    # Fall back to inspect methods
+                    file_path = inspect.getfile(symbol)
+                    line_number = inspect.getsourcelines(symbol)[1]
+            else:
+                # No module info, fall back to inspect methods
+                file_path = inspect.getfile(symbol)
+                line_number = inspect.getsourcelines(symbol)[1]
+        except (OSError, TypeError, ImportError):
             pass
 
         return SymbolInfo(
@@ -218,7 +242,7 @@ class DocstringValidator:
         return result
 
     def validate_symbol_docstring(self, dotted_path: str) -> ValidationResult:
-        """Validate the docstring of a Python symbol by importing it.
+        """Validate the docstring of a Python symbol.
 
         Args:
             dotted_path: The dotted path to the symbol (e.g., 'dagster.asset')
@@ -229,8 +253,13 @@ class DocstringValidator:
         result = ValidationResult.create(dotted_path)
 
         try:
-            symbol = self._import_symbol(dotted_path)
-            docstring = inspect.getdoc(symbol)
+            # Try file-based reading first (most accurate for current file state)
+            docstring = self._read_docstring_from_file(dotted_path)
+
+            if not docstring:
+                # Fall back to import-based reading
+                symbol = self._import_symbol(dotted_path)
+                docstring = inspect.getdoc(symbol)
 
             if not docstring:
                 return result.with_warning("Symbol has no docstring")
@@ -240,13 +269,33 @@ class DocstringValidator:
         except (ImportError, AttributeError) as e:
             return result.with_error(f"Failed to import symbol: {e}").with_parsing_failed()
 
-    def _import_symbol(self, dotted_path: str) -> Any:
+    def _import_symbol(self, dotted_path: str, reload_module: bool = False) -> Any:
         """Import a symbol from a dotted path."""
         parts = dotted_path.split(".")
 
         for i in range(len(parts), 0, -1):
             module_path = ".".join(parts[:i])
             try:
+                module = importlib.import_module(module_path)
+
+                # Reload the module to pick up file changes
+                if reload_module:
+                    # First get the symbol to find which module actually defines it
+                    if i == len(parts):
+                        target_module = module
+                    else:
+                        symbol = module
+                        for attr_name in parts[i:]:
+                            symbol = getattr(symbol, attr_name)
+
+                        # Get the module that actually defines this symbol
+                        if hasattr(symbol, "__module__"):
+                            actual_module_name = symbol.__module__
+                            if actual_module_name and actual_module_name in sys.modules:
+                                target_module = sys.modules[actual_module_name]
+                                importlib.reload(target_module)
+
+                # Re-import after potential reload
                 module = importlib.import_module(module_path)
 
                 if i == len(parts):
@@ -262,6 +311,77 @@ class DocstringValidator:
                 continue
 
         raise ImportError(f"Could not import symbol '{dotted_path}'")
+
+    def _read_docstring_from_file(self, dotted_path: str) -> Optional[str]:
+        """Read docstring directly from source file."""
+        try:
+            # First resolve the symbol to get its source location
+            symbol_info = SymbolImporter.import_symbol(dotted_path)
+
+            if not symbol_info.file_path or not symbol_info.line_number:
+                return None
+
+            # Read the source file and extract the docstring
+            import ast
+
+            with open(symbol_info.file_path, encoding="utf-8") as f:
+                source_code = f.read()
+
+            # Parse the AST to find the function and its docstring
+            tree = ast.parse(source_code)
+
+            # Look for the function definition
+            function_name = symbol_info.name
+            candidates = []
+
+            # Find all functions with the matching name
+            for node in ast.walk(tree):
+                if isinstance(node, ast.FunctionDef) and node.name == function_name:
+                    candidates.append(node)
+
+            # If we have candidates, pick the one closest to the expected line number
+            # or the last one (which is usually the main implementation)
+            target_node = None
+            if candidates:
+                if len(candidates) == 1:
+                    target_node = candidates[0]
+                else:
+                    # Pick the candidate closest to the expected line number
+                    target_node = min(
+                        candidates, key=lambda n: abs(n.lineno - symbol_info.line_number)
+                    )
+
+            if target_node:
+                # Check if the function has a docstring
+                if (
+                    target_node.body
+                    and isinstance(target_node.body[0], ast.Expr)
+                    and isinstance(target_node.body[0].value, (ast.Str, ast.Constant))
+                ):
+                    # Extract docstring value
+                    docstring_node = target_node.body[0].value
+                    raw_docstring = None
+                    if isinstance(docstring_node, ast.Str):
+                        raw_docstring = docstring_node.s
+                    elif isinstance(docstring_node, ast.Constant) and isinstance(
+                        docstring_node.value, str
+                    ):
+                        raw_docstring = docstring_node.value
+
+                    if raw_docstring:
+                        # Apply the same normalization that inspect.getdoc() does
+                        # Create a dummy object to use inspect.getdoc() normalization
+                        class DummyWithDocstring:
+                            pass
+
+                        DummyWithDocstring.__doc__ = raw_docstring
+                        return inspect.getdoc(DummyWithDocstring)
+
+            return None
+
+        except Exception:
+            # Fall back to None if file reading fails
+            return None
 
     def _extract_line_number(self, warning_line: str) -> Optional[int]:
         """Extract line number from a docutils warning message."""

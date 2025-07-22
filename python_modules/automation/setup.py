@@ -27,6 +27,7 @@ setup(
         "sphinx",
         "virtualenv>=20.27.0",
         "urllib3",
+        "watchdog",
     ],
     extras_require={
         "buildkite": [
