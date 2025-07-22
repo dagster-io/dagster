@@ -73,7 +73,7 @@ The next step is to define the information the component will need when it is us
     <CodeExample
       path="docs_snippets/docs_snippets/guides/components/shell-script-component/with-config-schema.py"
       language="python"
-      title="components/shell_command.py"
+      title="src/my_project/components/shell_command.py"
     />
 
     :::info
@@ -90,7 +90,7 @@ The next step is to define the information the component will need when it is us
     <CodeExample
       path="docs_snippets/docs_snippets/guides/components/shell-script-component/with-config-schema-pythonic.py"
       language="python"
-      title="components/shell_command.py"
+      title="src/my_project/components/shell_command.py"
     />
 
     :::info
@@ -125,14 +125,14 @@ You can optionally include metadata for your component by overriding the `get_sp
     <CodeExample
       path="docs_snippets/docs_snippets/guides/components/shell-script-component/with-config-schema-meta.py"
       language="python"
-      title="components/shell_command.py"
+      title="src/my_project/components/shell_command.py"
     />
   </TabItem>
   <TabItem value="pythonic" label="Pythonic interface">
     <CodeExample
       path="docs_snippets/docs_snippets/guides/components/shell-script-component/with-config-schema-meta-pythonic.py"
       language="python"
-      title="components/shell_command.py"
+      title="src/my_project/components/shell_command.py"
     />
   </TabItem>
 </Tabs>
@@ -156,14 +156,14 @@ The `@multi_asset` decorator is used to provide the flexibility of assigning mul
     <CodeExample
       path="docs_snippets/docs_snippets/guides/components/shell-script-component/with-build-defs.py"
       language="python"
-      title="components/shell_command.py"
+      title="src/my_project/components/shell_command.py"
     />
   </TabItem>
   <TabItem value="pythonic" label="Pythonic interface">
     <CodeExample
       path="docs_snippets/docs_snippets/guides/components/shell-script-component/with-build-defs-pythonic.py"
       language="python"
-      title="components/shell_command.py"
+      title="src/my_project/components/shell_command.py"
     />
   </TabItem>
 </Tabs>
