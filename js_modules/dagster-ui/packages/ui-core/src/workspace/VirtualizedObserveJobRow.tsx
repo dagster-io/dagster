@@ -106,6 +106,19 @@ export const VirtualizedObserveJobRow = forwardRef(
               ) : null,
             },
             {
+              key: 'runs',
+              control: (
+                <Box padding={{horizontal: 8}}>
+                  <RunStatusPezList
+                    jobName={name}
+                    runs={[...latestRuns].reverse()}
+                    fade
+                    forceCount={5}
+                  />
+                </Box>
+              ),
+            },
+            {
               key: 'schedules',
               control:
                 schedules.length > 0 ? (
@@ -139,19 +152,6 @@ export const VirtualizedObserveJobRow = forwardRef(
                     <AutomationButton type="none" />
                   </Tooltip>
                 ) : null,
-            },
-            {
-              key: 'runs',
-              control: (
-                <Box padding={{horizontal: 8}}>
-                  <RunStatusPezList
-                    jobName={name}
-                    runs={[...latestRuns].reverse()}
-                    fade
-                    forceCount={5}
-                  />
-                </Box>
-              ),
             },
             {
               key: 'menu',
