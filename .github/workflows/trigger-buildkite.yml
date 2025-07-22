@@ -30,11 +30,7 @@ jobs:
             -X POST "https://api.buildkite.com/v2/organizations/dagster/pipelines/unit-tests/builds" \
             -H "Authorization: Bearer ${{ secrets.BUILDKITE_API_ACCESS_TOKEN }}" \
             -H "Content-Type: application/json" \
-            -d '{
-              "commit": "${{ github.sha }}",
-              "branch": "${{ github.ref_name }}",
-              "message": "Triggered from GitHub Actions - ${{ github.event.head_commit.message }}"
-            }')
+            -d "{\"commit\": \"${{ github.sha }}\", \"branch\": \"${{ github.ref_name }}\", \"message\": \"Triggered from GitHub Actions - ${{ github.event.head_commit.message }}\"}")
           
           echo "HTTP Status Code: $response"
           echo "Response Body:"
@@ -51,13 +47,7 @@ jobs:
             if [ -n "${{ secrets.BUILDKITE_WEBHOOK_URL }}" ]; then
               curl -X POST "${{ secrets.BUILDKITE_WEBHOOK_URL }}" \
                 -H "Content-Type: application/json" \
-                -d '{
-                  "ref": "refs/heads/${{ github.ref_name }}",
-                  "after": "${{ github.sha }}",
-                  "repository": {
-                    "clone_url": "${{ github.server_url }}/${{ github.repository }}.git"
-                  }
-                }'
+                -d "{\"ref\": \"refs/heads/${{ github.ref_name }}\", \"after\": \"${{ github.sha }}\", \"repository\": {\"clone_url\": \"${{ github.server_url }}/${{ github.repository }}.git\"}}"
             fi
           fi
         env:
