@@ -9,9 +9,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Trigger Buildkite build
-        uses: buildkite/trigger-pipeline-action@v1.1.0
-        with:
-          BUILDKITE_API_ACCESS_TOKEN: ${{ secrets.BUILDKITE_API_ACCESS_TOKEN }}
-          organization: cti-student
-          pipeline: harold-symons-dagster-tree-issue-29914
-          branch: Issue-29914
+        run: |
+          curl -X POST "https://api.buildkite.com/v2/organizations/dagster/pipelines/unit-tests/builds" \
+            -H "Authorization: Bearer ${{ secrets.BUILDKITE_API_ACCESS_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "commit": "${{ github.sha }}",
+              "branch": "${{ github.ref_name }}",
+              "message": "Triggered from GitHub Actions - ${{ github.event.head_commit.message }}"
+            }'
+        env:
+          BUILDKITE_ANALYTICS_TOKEN: ${{ secrets.BUILDKITE_ANALYTICS_TOKEN }}
