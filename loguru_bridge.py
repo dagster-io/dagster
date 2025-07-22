@@ -3,130 +3,95 @@ import sys
 import logging
 from functools import wraps
 from loguru import logger
+import threading
 
-def loguru_enabled():
-    """Check if loguru is enabled based on environment variables."""
-    value = os.getenv("DAGSTER_LOGURU_ENABLED", "true").lower()
-    if value in ("false", "0", "no"):
-        return False
-    return True  # Default to True for any other value, including invalid ones
-
-class DagsterLogHandler(logging.Handler):
+# Redirect all standard Python logging (used by Dagster internals) to Loguru
+class InterceptHandler(logging.Handler):
     def emit(self, record):
-        logging.getLogger(record.name).handle(record)
+        try:
+            # Get Loguru level
+            level = logger.level(record.levelname).name
+        except ValueError:
+            level = record.levelno
+        # Find the real caller so logs point to the right source
+        frame, depth = logging.currentframe(), 2
+        while frame and frame.f_code.co_filename == logging.__file__:
+            frame = frame.f_back
+            depth += 1
+        logger.opt(depth=depth, exception=record.exc_info).log(level, record.getMessage())
 
-def dagster_context_sink(context):
-    """
-    A Loguru sink that correctly forwards records to the Dagster context logger.
-    Uses HTML-style formatting for Dagster UI and visible colors.
-    """
-    def sink_func(msg):
-        record = msg.record
-        level_name = record["level"].name
-        
-        # Get base message
-        message = record["message"]
-        
-        # Add HTML styling based on level
-        if level_name == "DEBUG":
-            message = f"<span style='color:#9370DB;font-weight:bold'>DEBUG:</span> {message}"
-        elif level_name == "INFO":
-            message = f"<span style='color:#3CB371;font-weight:bold'>INFO:</span> {message}"
-        elif level_name == "SUCCESS":
-            message = f"<span style='color:#00FF7F;font-weight:bold'>SUCCESS:</span> {message}"  
-        elif level_name == "WARNING":
-            message = f"<span style='color:#FFD700;font-weight:bold'>WARNING:</span> {message}"
-        elif level_name == "ERROR":
-            message = f"<span style='color:#FF6347;font-weight:bold'>ERROR:</span> {message}"
-        elif level_name == "CRITICAL":
-            message = f"<span style='color:#FF0000;font-weight:bold'>CRITICAL:</span> {message}"
-            
-        # Map Loguru levels to Dagster levels
-        level_map = {
-            "TRACE": "debug",
-            "DEBUG": "debug",
-            "INFO": "info",
-            "SUCCESS": "info",     
-            "WARNING": "warning",
-            "ERROR": "error",
-            "CRITICAL": "critical",
-        }
-        
-        dagster_log_method_name = level_map.get(level_name, "info")
-        log_method = getattr(context.log, dagster_log_method_name)
-        log_method(message)
+# Replace Python's root logger handlers with Loguru interception
+logging.basicConfig(handlers=[InterceptHandler()], level=0)
 
-    return sink_func
-
+# Configure Loguru: pick up env vars for level/format/color
 class LoguruConfigurator:
-    def __init__(self):
-        self._sinks = {}
-        self.config = self._load_config()
-
+    def __init__(self, enable_terminal_sink=True):
         if getattr(LoguruConfigurator, "_initialized", False):
             return
-
-        self._setup_sinks()
+        self.config = self._load_config()
+        if enable_terminal_sink:
+            self._setup_sinks()
         LoguruConfigurator._initialized = True
 
     def _load_config(self):
         return {
             "enabled": os.getenv("DAGSTER_LOGURU_ENABLED", "true").lower() in ("true", "1", "yes"),
             "log_level": os.getenv("DAGSTER_LOGURU_LOG_LEVEL", "DEBUG"),
-            "format": os.getenv(
-                "DAGSTER_LOGURU_FORMAT",
-                "<green>{time:HH:mm:ss}</green> | <level>{level: <8}</level> | <cyan>{name}</cyan>:<cyan>{function}</cyan> - <level>{message}</level>"
-            ),
+            "format": os.getenv("DAGSTER_LOGURU_FORMAT",
+                                "<green>{time:HH:mm:ss}</green> | <level>{level: <8}</level> | "
+                                "<cyan>{name}</cyan>:<cyan>{function}</cyan> - <level>{message}</level>"),
         }
 
     def _setup_sinks(self):
         if not self.config["enabled"]:
             return
-
-        # Use basic format for Docker/Dagster Cloud which will be HTML-enhanced
-        # by the dagster_context_sink
-        docker_format = "{message}"
-        
-        # Use nice formatting for local development
-        local_format = "<green>{time:HH:mm:ss}</green> | <level>{level: <8}</level> | <cyan>{name}</cyan>:<cyan>{function}</cyan> - <level>{message}</level>"
-        
-        # Environment variables
-        os.environ["PYTHONUNBUFFERED"] = "1"
-        
+        # Remove existing sinks, add our colored stderr sink
         logger.remove()
-        
-        # When in Docker/Cloud use plain format (will be HTML styled in sink)
-        # Otherwise use colorful format for local development
-        is_docker = os.environ.get("DAGSTER_CURRENT_IMAGE") is not None
-        format_str = docker_format if is_docker else local_format
-        
-        logger.add(
-            sys.stderr,
-            level=self.config["log_level"],
-            format=format_str,
-            colorize=not is_docker,  # Disable colorize for Docker
-            diagnose=True,
-            enqueue=True,
-        )
+        logger.add(sys.stderr, level=self.config["log_level"], format=self.config["format"], colorize=True)
 
-loguru_config = LoguruConfigurator()
+loguru_config = None
+log_state = threading.local()
+log_state.in_dagster_sink = False
 
+# Decorator: Replace context.log methods with Loguru, so context.log.info(...) uses Loguru
 def with_loguru_logger(fn):
-    """
-    Decorator to add a Dagster context-aware sink for the duration of an asset's execution.
-    This is the recommended way to integrate Loguru with Dagster.
-    """
     @wraps(fn)
-    def wrapper(self, *args, **kwargs):
-        # Get the actual context from self._context or use self if it has log attribute
-        context = getattr(self, '_context', self) if not hasattr(self, 'log') else self
-        
-        handler_id = logger.add(dagster_context_sink(context), level="DEBUG")
+    def wrapper(*args, **kwargs):
+        global loguru_config
+        if not loguru_config:
+            loguru_config = LoguruConfigurator(enable_terminal_sink=False)
+
+        context = kwargs.get("context", None)
+        if context is None and args and hasattr(args[0], "log"):
+            context = args[0]
+        if not (context and hasattr(context, "log")):
+            return fn(*args, **kwargs)
+
+        # Save original context.log methods
+        original_log_methods = {}
+        for name in ["debug", "info", "warning", "error", "critical"]:
+            original_log_methods[name] = getattr(context.log, name)
+
+        # Replace context.log methods with Loguru proxies
+        def make_proxy(level):
+            def proxy_fn(msg):
+                logger.opt(depth=1).log(level, msg)
+            return proxy_fn
+
+        for name, lvl in {
+            "debug": "DEBUG",
+            "info": "INFO",
+            "warning": "WARNING",
+            "error": "ERROR",
+            "critical": "CRITICAL"
+        }.items():
+            setattr(context.log, name, make_proxy(lvl))
+
         try:
-            # Don't add context to the arguments, it should be already available via self._context
-            result = fn(self, *args, **kwargs)
+            return fn(*args, **kwargs)
         finally:
-            logger.remove(handler_id)
-        return result
+            # Restore original context.log methods after execution
+            for name, orig in original_log_methods.items():
+                setattr(context.log, name, orig)
 
     return wrapper

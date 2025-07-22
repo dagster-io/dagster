@@ -113,9 +113,3 @@ def pytest_runtest_setup(item):
 
     except StopIteration:
         pass
-    
-    extras_require={
-        "dev": [
-            "buildkite-test-collector"
-        ]
-    }

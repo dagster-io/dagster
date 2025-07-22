@@ -1,8 +1,0 @@
-version: 1
-locations:
-  - location_name: loguru-demo
-    code_source:
-      module_name: my_module
-    build:
-      directory: .
-      registry: dagster.io/cloud

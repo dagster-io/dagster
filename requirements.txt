@@ -1,3 +1,0 @@
-dagster==1.11.2
-dagster-docker
-loguru
