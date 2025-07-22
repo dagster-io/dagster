@@ -67,20 +67,15 @@ export function formatDuration(duration: number, options: DurationOptions = {}):
   }
 
   // Special case: Check if duration represents exactly 1 year, 1 month, or 1 week
-  if (ms === YEAR_MS) {
-    return [{value: 1, unit: 'year'}];
-  }
-  if (ms === MONTH_MS) {
-    return [{value: 1, unit: 'month'}];
-  }
-  if (ms === WEEK_MS) {
-    return [{value: 1, unit: 'week'}];
+  for (const [unitMs, singular] of UNITS) {
+    if (ms === unitMs) {
+      return [{value: 1, unit: singular}];
+    }
   }
 
   const parts: DurationPart[] = [];
   let remainingMs = Math.abs(ms);
 
-  // Find the best unit using a simple approach with targeted 4-digit rule
   let bestUnit: [number, UnitType, PluralUnitType] | null = null;
   let bestValue = 0;
 
