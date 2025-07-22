@@ -1419,7 +1419,7 @@ class DagsterInstance(DynamicPartitionsStore):
         job_name: str,
         step: "ExecutionStepSnap",
         output: "ExecutionStepOutputSnap",
-        asset_graph: Optional["BaseAssetGraph"],
+        asset_graph: "BaseAssetGraph",
     ) -> None:
         from dagster._core.definitions.partitions.context import partition_loading_context
         from dagster._core.definitions.partitions.definition import DynamicPartitionsDefinition
@@ -1445,12 +1445,6 @@ class DagsterInstance(DynamicPartitionsStore):
                 raise DagsterInvariantViolationError(
                     f"Cannot have {ASSET_PARTITION_RANGE_START_TAG} or"
                     f" {ASSET_PARTITION_RANGE_END_TAG} set without the other"
-                )
-
-            if asset_graph is None:
-                raise DagsterInvariantViolationError(
-                    "Must provide asset_graph to create_run when creating "
-                    "a run with a partition range."
                 )
 
             partitions_def = asset_graph.get(asset_key).partitions_def
@@ -1517,7 +1511,7 @@ class DagsterInstance(DynamicPartitionsStore):
         self,
         dagster_run: DagsterRun,
         execution_plan_snapshot: "ExecutionPlanSnapshot",
-        asset_graph: Optional["BaseAssetGraph"],
+        asset_graph: "BaseAssetGraph",
     ) -> None:
         from dagster._core.events import DagsterEvent, DagsterEventType
 
@@ -1574,7 +1568,7 @@ class DagsterInstance(DynamicPartitionsStore):
         op_selection: Optional[Sequence[str]],
         remote_job_origin: Optional["RemoteJobOrigin"],
         job_code_origin: Optional[JobPythonOrigin],
-        asset_graph: Optional["BaseAssetGraph"],
+        asset_graph: "BaseAssetGraph",
     ) -> DagsterRun:
         from dagster._core.definitions.asset_key import AssetCheckKey
         from dagster._core.remote_representation.origin import RemoteJobOrigin
