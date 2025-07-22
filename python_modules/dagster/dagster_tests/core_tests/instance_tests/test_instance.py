@@ -16,6 +16,7 @@ from dagster import (
 )
 from dagster._check import CheckError
 from dagster._cli.utils import get_instance_for_cli
+from dagster._core.definitions.assets.definition.asset_spec import AssetExecutionType
 from dagster._core.errors import DagsterHomeNotSetError
 from dagster._core.execution.api import create_execution_plan
 from dagster._core.instance import DagsterInstance, InstanceRef
@@ -327,6 +328,54 @@ def test_submit_run():
 
             assert len(instance.run_coordinator.queue()) == 1  # pyright: ignore[reportAttributeAccessIssue]
             assert instance.run_coordinator.queue()[0].run_id == run.run_id  # pyright: ignore[reportAttributeAccessIssue]
+
+
+def test_create_run_without_asset_execution_type_on_snapshot():
+    # verify that even runs created on older versions of dagster still store the
+    # execution type on the execution plan snapshot
+    with dg.instance_for_test() as instance:
+        execution_plan = create_execution_plan(noop_asset_job)
+
+        ep_snapshot = snapshot_from_execution_plan(
+            execution_plan, noop_asset_job.get_job_snapshot_id()
+        )
+
+        # simulate legacy snapshot with no execution type
+        ep_snapshot = ep_snapshot._replace(
+            steps=[
+                step._replace(
+                    outputs=[
+                        output._replace(
+                            properties=check.not_none(output.properties)._replace(
+                                asset_execution_type=None
+                            )
+                        )
+                        for output in step.outputs
+                    ]
+                )
+                for step in ep_snapshot.steps
+            ]
+        )
+
+        run = create_run_for_test(
+            instance=instance,
+            job_name="foo",
+            execution_plan_snapshot=ep_snapshot,
+            job_snapshot=noop_asset_job.get_job_snapshot(),
+            tags={ASSET_PARTITION_RANGE_START_TAG: "bar", ASSET_PARTITION_RANGE_END_TAG: "foo"},
+            asset_graph=noop_asset_job.asset_layer.asset_graph,
+        )
+
+        assert run.execution_plan_snapshot_id is not None
+
+        stored_snapshot = instance.get_execution_plan_snapshot(run.execution_plan_snapshot_id)
+
+        assert all(
+            check.not_none(output.properties).asset_execution_type
+            == AssetExecutionType.MATERIALIZATION
+            for step in stored_snapshot.steps
+            for output in step.outputs
+        )
 
 
 def test_create_run_with_asset_partitions():
