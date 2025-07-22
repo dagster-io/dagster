@@ -1,10 +1,8 @@
 name: Trigger Buildkite
 
 on:
-  # Temporarily disabled - Buildkite should auto-trigger via GitHub webhook
-  # push:
-  #   branches: [Issue-29914]
-  workflow_dispatch:  # Only allow manual trigger
+  push:
+    branches: [Issue-29914]
 
 jobs:
   trigger:
@@ -21,35 +19,10 @@ jobs:
           echo "Branch: ${{ github.ref_name }}"
           echo "Commit: ${{ github.sha }}"
           
-          # Debug secrets
-          echo "Checking secrets availability..."
-          if [ -z "${{ secrets.BUILDKITE_API_ACCESS_TOKEN }}" ]; then
-            echo "❌ BUILDKITE_API_ACCESS_TOKEN is not set in GitHub Secrets"
-            echo "Please add it in: Repository Settings → Secrets and variables → Actions"
-            exit 1
-          else
-            echo "✅ BUILDKITE_API_ACCESS_TOKEN is available"
-          fi
-          
-          if [ -z "${{ secrets.BUILDKITE_ANALYTICS_TOKEN }}" ]; then
-            echo "⚠️  BUILDKITE_ANALYTICS_TOKEN is not set in GitHub Secrets"
-          else
-            echo "✅ BUILDKITE_ANALYTICS_TOKEN is available"
-          fi
-          
-          # Test API access
+          # First, let's check if we can access the API
           echo "Testing API access..."
-          user_response=$(curl -s -H "Authorization: Bearer ${{ secrets.BUILDKITE_API_ACCESS_TOKEN }}" \
-            "https://api.buildkite.com/v2/user")
-          
-          if echo "$user_response" | grep -q "Authentication required"; then
-            echo "❌ Invalid API token"
-            echo "Response: $user_response"
-            exit 1
-          else
-            echo "✅ API access successful"
-            echo "User info: $user_response"
-          fi
+          curl -s -H "Authorization: Bearer ${{ secrets.BUILDKITE_API_ACCESS_TOKEN }}" \
+            "https://api.buildkite.com/v2/user" || echo "API access failed"
           
           # Try to trigger the build
           echo "Attempting to trigger build..."
@@ -57,7 +30,11 @@ jobs:
             -X POST "https://api.buildkite.com/v2/organizations/dagster/pipelines/unit-tests/builds" \
             -H "Authorization: Bearer ${{ secrets.BUILDKITE_API_ACCESS_TOKEN }}" \
             -H "Content-Type: application/json" \
-            -d "{\"commit\": \"${{ github.sha }}\", \"branch\": \"${{ github.ref_name }}\", \"message\": \"Triggered from GitHub Actions - ${{ github.event.head_commit.message }}\"}")
+            -d '{
+              "commit": "${{ github.sha }}",
+              "branch": "${{ github.ref_name }}",
+              "message": "Triggered from GitHub Actions - ${{ github.event.head_commit.message }}"
+            }')
           
           echo "HTTP Status Code: $response"
           echo "Response Body:"
@@ -68,6 +45,20 @@ jobs:
             echo "✅ Build triggered successfully!"
           else
             echo "❌ Failed to trigger build"
+            echo "Trying alternative webhook method..."
+            
+            # Alternative: Use webhook if available
+            if [ -n "${{ secrets.BUILDKITE_WEBHOOK_URL }}" ]; then
+              curl -X POST "${{ secrets.BUILDKITE_WEBHOOK_URL }}" \
+                -H "Content-Type: application/json" \
+                -d '{
+                  "ref": "refs/heads/${{ github.ref_name }}",
+                  "after": "${{ github.sha }}",
+                  "repository": {
+                    "clone_url": "${{ github.server_url }}/${{ github.repository }}.git"
+                  }
+                }'
+            fi
           fi
         env:
           BUILDKITE_ANALYTICS_TOKEN: ${{ secrets.BUILDKITE_ANALYTICS_TOKEN }}
