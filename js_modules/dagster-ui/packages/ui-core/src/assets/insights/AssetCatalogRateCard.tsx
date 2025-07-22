@@ -2,6 +2,7 @@ import {BodyLarge, Box, Colors, Icon, Spinner} from '@dagster-io/ui-components';
 import React from 'react';
 
 import styles from './AssetCatalogRateCard.module.css';
+import {formatDuration, unitToShortLabel} from '../../ui/formatDuration';
 import {percentFormatter} from '../../ui/formatters';
 
 export interface AssetCatalogRateCardProps {
@@ -25,11 +26,6 @@ function pctChange(x: number, y: number): number {
   }
   return -(1 - y / x);
 }
-
-const secondsFormatter = new Intl.NumberFormat(navigator.language, {
-  style: 'unit',
-  unit: 'second',
-});
 
 function formatValues(
   valueOrNull: number | null,
@@ -57,9 +53,12 @@ function formatValues(
     };
   }
 
+  const currValueAndUnit = formatDuration(value, {unit})[0];
+  const prevValueAndUnit = formatDuration(prevValue, {unit})[0];
+
   return {
-    currValueString: secondsFormatter.format(value),
-    prevValueString: secondsFormatter.format(prevValue),
+    currValueString: `${currValueAndUnit.value} ${unitToShortLabel[currValueAndUnit.unit]}`,
+    prevValueString: `${prevValueAndUnit.value} ${unitToShortLabel[prevValueAndUnit.unit]}`,
     absDeltaString: percentFormatter.format(absDelta),
     hasNegativeDelta,
   };

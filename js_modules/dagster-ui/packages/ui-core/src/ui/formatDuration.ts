@@ -45,13 +45,35 @@ const UNITS: Array<[number, UnitType, PluralUnitType]> = [
   [1, 'millisecond', 'milliseconds'],
 ];
 
+export const unitToShortLabel: Record<UnitType | PluralUnitType, string> = {
+  year: 'yr',
+  years: 'yr',
+  month: 'mo',
+  months: 'mo',
+  week: 'wk',
+  weeks: 'wk',
+  day: 'day',
+  days: 'day',
+  hour: 'hr',
+  hours: 'hr',
+  minute: 'min',
+  minutes: 'min',
+  second: 'sec',
+  seconds: 'sec',
+  millisecond: 'ms',
+  milliseconds: 'ms',
+};
+
 /**
  * Converts a duration in milliseconds or seconds to a human-readable format
  * @param duration - The duration in milliseconds (default) or seconds
  * @param options - Configuration options
  * @returns Human-readable duration string
  */
-export function formatDuration(duration: number, options: DurationOptions = {}): DurationPart[] {
+export function formatDuration(
+  duration: number,
+  options: DurationOptions = {},
+): [DurationPart] | [DurationPart, DurationPart] {
   const {
     maxValueBeforeNextUnit = defaultMaxValueBeforeNextUnit,
     significantDigits = 1,
