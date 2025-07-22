@@ -20,7 +20,7 @@ def test_buildkite_analytics_integration():
     print("\nTesting Direct Buildkite Analytics API Integration...")
     token = os.environ.get('BUILDKITE_ANALYTICS_TOKEN')
     if token:
-        print(f"Using Analytics Token: {token[:10]}...{token[-4:] if len(token) > 14 else token}")
+        print("Using Analytics Token: [TOKEN REDACTED]")
         headers = {'Authorization': f'Token token="{token}"', 'Content-Type': 'application/json'}
         try:
             # Sample test result payload for loguru bridge validation
@@ -89,7 +89,7 @@ if __name__ == "__main__":
     os.environ["BUILDKITE_PIPELINE_SLUG"] = "unit-tests"
     
     print("Running pytest with local configuration...")
-    exit_code = pytest.main(["-vvs", "-c", "pytest-local.ini", "test_buildkite_collector.py"])
+    exit_code = pytest.main(["-vvs", "test_buildkite_collector.py"]) 
     print(f"Test completed with exit code: {exit_code}")
     
     if exit_code == 0:
