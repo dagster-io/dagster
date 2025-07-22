@@ -5,6 +5,7 @@
 - **Package Locations**: [.claude/python_packages.md](./.claude/python_packages.md) - Comprehensive list of all Python packages and their filesystem paths. **ALWAYS check this file first when looking for package locations.**
 - **Development Workflow**: [.claude/dev_workflow.md](./.claude/dev_workflow.md) - Documentation of developer workflows in the Dagster OSS repo.
 - **Coding Conventions**: [.claude/coding_conventions.md](./.claude/coding_conventions.md) - Type annotations and code style conventions. **ALWAYS check this before writing data structures - use @record instead of @dataclass.**
+- **CRITICAL**: After ANY Python code changes, ALWAYS run `make ruff` - this is mandatory and must never be skipped.
 
 ## Environment Setup
 
@@ -17,8 +18,8 @@ make dev_install  # Full development environment setup
 ## Essential Commands
 
 ```bash
-# Code quality
-make ruff                    # Format, lint, and autofix code
+# Code quality - RUN AFTER EVERY PYTHON EDIT
+make ruff                    # Format, lint, and autofix code - MANDATORY AFTER ANY CODE CHANGES
 make pyright                # Type checking (slow first run)
 make quick_pyright          # Type check only changed files
 
