@@ -64,6 +64,8 @@ export const unitToShortLabel: Record<UnitType | PluralUnitType, string> = {
   milliseconds: 'ms',
 };
 
+type NonEmptyArray<T> = [T, ...T[]];
+
 /**
  * Converts a duration in milliseconds or seconds to a human-readable format
  * @param duration - The duration in milliseconds (default) or seconds
@@ -73,7 +75,7 @@ export const unitToShortLabel: Record<UnitType | PluralUnitType, string> = {
 export function formatDuration(
   duration: number,
   options: DurationOptions = {},
-): [DurationPart] | [DurationPart, DurationPart] {
+): NonEmptyArray<DurationPart> {
   const {
     maxValueBeforeNextUnit = defaultMaxValueBeforeNextUnit,
     significantDigits = 1,
@@ -172,5 +174,5 @@ export function formatDuration(
     return [{value: 0, unit: 'milliseconds'}];
   }
 
-  return parts as [DurationPart] | [DurationPart, DurationPart];
+  return parts as NonEmptyArray<DurationPart>;
 }
