@@ -172,8 +172,8 @@ def test_translator_spec(
             if "workbook" in spec.key.path[0] and "dashboard" in spec.key.path[1]
         )
         assert dashboard_asset_spec.key.path == ["test_workbook", "dashboard", "dashboard_sales"]
-        assert dashboard_asset_spec.deps[0].asset_key.path == ["test_workbook", "sheet", "sales"]
-        assert dashboard_asset_spec.deps[1].asset_key.path == ["hidden_sheet_datasource"]
+        assert list(dashboard_asset_spec.deps)[0].asset_key.path == ["test_workbook", "sheet", "sales"]
+        assert list(dashboard_asset_spec.deps)[1].asset_key.path == ["hidden_sheet_datasource"]
 
         iter_data_source = iter(spec for spec in all_assets if "datasource" in spec.key.path[0])
         published_data_source_asset_spec = next(iter_data_source)
