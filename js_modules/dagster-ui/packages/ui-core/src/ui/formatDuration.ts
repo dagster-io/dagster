@@ -1,6 +1,6 @@
 interface DurationOptions {
-  /** Number of digits before the next unit is displayed */
-  digitsBeforeNextUnit?: number;
+  /** Maximum value before the next unit is displayed */
+  maxValueBeforeNextUnit?: Record<UnitType, number>;
   /** Number of significant digits to display (1 or 2) */
   significantDigits?: 1 | 2;
   /** Whether the input is in seconds (default: false, assumes milliseconds) */
@@ -9,6 +9,17 @@ interface DurationOptions {
 
 type UnitType = 'year' | 'month' | 'week' | 'day' | 'hour' | 'minute' | 'second' | 'millisecond';
 type PluralUnitType = `${UnitType}s`;
+
+const defaultMaxValueBeforeNextUnit: Record<UnitType, number> = {
+  year: Infinity,
+  month: 24,
+  week: 8,
+  day: 14,
+  hour: 48,
+  minute: 120,
+  second: 120,
+  millisecond: 500,
+};
 
 interface DurationPart {
   value: number;
@@ -26,6 +37,10 @@ const UNITS: Array<[number, UnitType, PluralUnitType]> = [
   [1, 'millisecond', 'milliseconds'],
 ];
 
+const YEAR_MS = 365 * 24 * 60 * 60 * 1000;
+const MONTH_MS = 30 * 24 * 60 * 60 * 1000;
+const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+
 /**
  * Converts a duration in milliseconds or seconds to a human-readable format
  * @param duration - The duration in milliseconds (default) or seconds
@@ -33,7 +48,11 @@ const UNITS: Array<[number, UnitType, PluralUnitType]> = [
  * @returns Human-readable duration string
  */
 export function formatDuration(duration: number, options: DurationOptions = {}): DurationPart[] {
-  const {digitsBeforeNextUnit = 2, significantDigits = 1, unit = 'milliseconds'} = options;
+  const {
+    maxValueBeforeNextUnit = defaultMaxValueBeforeNextUnit,
+    significantDigits = 1,
+    unit = 'milliseconds',
+  } = options;
 
   // Convert to milliseconds if input is in seconds
   const ms = unit === 'seconds' ? duration * 1000 : duration;
@@ -44,19 +63,14 @@ export function formatDuration(duration: number, options: DurationOptions = {}):
   }
 
   // Special case: Check if duration represents exactly 1 year, 1 month, or 1 week
-  // If so, force it to be displayed in days
-  const yearMs = 365 * 24 * 60 * 60 * 1000;
-  const monthMs = 30 * 24 * 60 * 60 * 1000;
-  const weekMs = 7 * 24 * 60 * 60 * 1000;
-
-  if (ms === yearMs) {
-    return [{value: 365, unit: 'days'}];
+  if (ms === YEAR_MS) {
+    return [{value: 1, unit: 'year'}];
   }
-  if (ms === monthMs) {
-    return [{value: 30, unit: 'days'}];
+  if (ms === MONTH_MS) {
+    return [{value: 1, unit: 'month'}];
   }
-  if (ms === weekMs) {
-    return [{value: 7, unit: 'days'}];
+  if (ms === WEEK_MS) {
+    return [{value: 1, unit: 'week'}];
   }
 
   const parts: DurationPart[] = [];
@@ -65,7 +79,6 @@ export function formatDuration(duration: number, options: DurationOptions = {}):
   // Find the best unit using a simple approach with targeted 4-digit rule
   let bestUnit: [number, UnitType, PluralUnitType] | null = null;
   let bestValue = 0;
-  const threshold = 10 ** digitsBeforeNextUnit;
 
   // Only apply the 4-digit rule for larger durations (> 1 day)
   // For smaller durations, use simple natural selection
@@ -77,13 +90,13 @@ export function formatDuration(duration: number, options: DurationOptions = {}):
 
     for (const [unitMs, singular, plural] of UNITS) {
       const value = Math.floor(remainingMs / unitMs);
+      const threshold = maxValueBeforeNextUnit[singular];
       if (value >= threshold) {
         violatingUnit = [unitMs, singular, plural];
         break; // Take the first (largest) violating unit
       }
     }
 
-    // If any unit violates the 4-digit rule, use the next larger unit
     if (violatingUnit) {
       const violatingUnitIndex = UNITS.findIndex(([unitMs]) => unitMs === violatingUnit[0]);
       if (violatingUnitIndex > 0) {

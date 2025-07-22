@@ -37,26 +37,26 @@ describe('formatDuration', () => {
 
     it('should format days correctly', () => {
       expect(formatDuration(86400000)).toEqual([{value: 1, unit: 'day'}]);
-      expect(formatDuration(172800000)).toEqual([{value: 48, unit: 'hours'}]);
-      expect(formatDuration(604800000)).toEqual([{value: 7, unit: 'days'}]);
+      expect(formatDuration(172800000)).toEqual([{value: 2, unit: 'days'}]);
+      expect(formatDuration(604800000)).toEqual([{value: 1, unit: 'week'}]);
     });
 
     it('should format weeks correctly', () => {
-      expect(formatDuration(604800000)).toEqual([{value: 7, unit: 'days'}]); // Should prefer days over 1 week
-      expect(formatDuration(1209600000)).toEqual([{value: 14, unit: 'days'}]);
-      expect(formatDuration(2419200000)).toEqual([{value: 28, unit: 'days'}]);
+      expect(formatDuration(604800000)).toEqual([{value: 1, unit: 'week'}]);
+      expect(formatDuration(1209600000)).toEqual([{value: 2, unit: 'weeks'}]);
+      expect(formatDuration(2419200000)).toEqual([{value: 4, unit: 'weeks'}]);
     });
 
     it('should format months correctly', () => {
-      expect(formatDuration(2592000000)).toEqual([{value: 30, unit: 'days'}]); // Should prefer days
-      expect(formatDuration(5184000000)).toEqual([{value: 60, unit: 'days'}]);
-      expect(formatDuration(7776000000)).toEqual([{value: 90, unit: 'days'}]);
+      expect(formatDuration(2592000000)).toEqual([{value: 1, unit: 'month'}]);
+      expect(formatDuration(5184000000)).toEqual([{value: 2, unit: 'months'}]);
+      expect(formatDuration(7776000000)).toEqual([{value: 3, unit: 'months'}]);
     });
 
     it('should format years correctly', () => {
-      expect(formatDuration(31536000000)).toEqual([{value: 365, unit: 'days'}]); // Should prefer days
-      expect(formatDuration(63072000000)).toEqual([{value: 24, unit: 'months'}]);
-      expect(formatDuration(94608000000)).toEqual([{value: 36, unit: 'months'}]);
+      expect(formatDuration(31536000000)).toEqual([{value: 1, unit: 'year'}]);
+      expect(formatDuration(63072000000)).toEqual([{value: 2, unit: 'years'}]);
+      expect(formatDuration(94608000000)).toEqual([{value: 3, unit: 'years'}]);
     });
   });
 
@@ -69,7 +69,7 @@ describe('formatDuration', () => {
       expect(formatDuration(60000000)).toEqual([{value: 16, unit: 'hours'}]);
 
       // 1000 hours should become days
-      expect(formatDuration(3600000000)).toEqual([{value: 41, unit: 'days'}]);
+      expect(formatDuration(3600000000)).toEqual([{value: 5, unit: 'weeks'}]);
     });
   });
 
