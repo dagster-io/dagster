@@ -1,0 +1,148 @@
+interface DurationOptions {
+  /** Number of digits before the next unit is displayed */
+  digitsBeforeNextUnit?: number;
+  /** Number of significant digits to display (1 or 2) */
+  significantDigits?: 1 | 2;
+  /** Whether the input is in seconds (default: false, assumes milliseconds) */
+  unit?: 'seconds' | 'milliseconds';
+}
+
+type UnitType = 'year' | 'month' | 'week' | 'day' | 'hour' | 'minute' | 'second' | 'millisecond';
+type PluralUnitType = `${UnitType}s`;
+
+interface DurationPart {
+  value: number;
+  unit: UnitType | PluralUnitType;
+}
+
+const UNITS: Array<[number, UnitType, PluralUnitType]> = [
+  [365 * 24 * 60 * 60 * 1000, 'year', 'years'],
+  [30 * 24 * 60 * 60 * 1000, 'month', 'months'],
+  [7 * 24 * 60 * 60 * 1000, 'week', 'weeks'],
+  [24 * 60 * 60 * 1000, 'day', 'days'],
+  [60 * 60 * 1000, 'hour', 'hours'],
+  [60 * 1000, 'minute', 'minutes'],
+  [1000, 'second', 'seconds'],
+  [1, 'millisecond', 'milliseconds'],
+];
+
+/**
+ * Converts a duration in milliseconds or seconds to a human-readable format
+ * @param duration - The duration in milliseconds (default) or seconds
+ * @param options - Configuration options
+ * @returns Human-readable duration string
+ */
+export function formatDuration(duration: number, options: DurationOptions = {}): DurationPart[] {
+  const {digitsBeforeNextUnit = 2, significantDigits = 1, unit = 'milliseconds'} = options;
+
+  // Convert to milliseconds if input is in seconds
+  const ms = unit === 'seconds' ? duration * 1000 : duration;
+
+  // Handle edge cases
+  if (ms <= 0) {
+    return [{value: 0, unit: 'milliseconds'}];
+  }
+
+  // Special case: Check if duration represents exactly 1 year, 1 month, or 1 week
+  // If so, force it to be displayed in days
+  const yearMs = 365 * 24 * 60 * 60 * 1000;
+  const monthMs = 30 * 24 * 60 * 60 * 1000;
+  const weekMs = 7 * 24 * 60 * 60 * 1000;
+
+  if (ms === yearMs) {
+    return [{value: 365, unit: 'days'}];
+  }
+  if (ms === monthMs) {
+    return [{value: 30, unit: 'days'}];
+  }
+  if (ms === weekMs) {
+    return [{value: 7, unit: 'days'}];
+  }
+
+  const parts: DurationPart[] = [];
+  let remainingMs = Math.abs(ms);
+
+  // Find the best unit using a simple approach with targeted 4-digit rule
+  let bestUnit: [number, UnitType, PluralUnitType] | null = null;
+  let bestValue = 0;
+  const threshold = 10 ** digitsBeforeNextUnit;
+
+  // Only apply the 4-digit rule for larger durations (> 1 day)
+  // For smaller durations, use simple natural selection
+  const dayMs = 24 * 60 * 60 * 1000;
+
+  if (remainingMs > dayMs) {
+    // For larger durations, check if ANY unit would violate the 4-digit rule
+    let violatingUnit: [number, UnitType, PluralUnitType] | null = null;
+
+    for (const [unitMs, singular, plural] of UNITS) {
+      const value = Math.floor(remainingMs / unitMs);
+      if (value >= threshold) {
+        violatingUnit = [unitMs, singular, plural];
+        break; // Take the first (largest) violating unit
+      }
+    }
+
+    // If any unit violates the 4-digit rule, use the next larger unit
+    if (violatingUnit) {
+      const violatingUnitIndex = UNITS.findIndex(([unitMs]) => unitMs === violatingUnit[0]);
+      if (violatingUnitIndex > 0) {
+        const nextLargerUnit = UNITS[violatingUnitIndex - 1];
+        if (nextLargerUnit) {
+          const [unitMs, singular, plural] = nextLargerUnit;
+          const value = Math.floor(remainingMs / unitMs);
+          if (value >= 1) {
+            bestUnit = [unitMs, singular, plural];
+            bestValue = value;
+          }
+        }
+      }
+    }
+  }
+
+  // If we didn't handle the 4-digit rule case above, use normal natural selection
+  if (!bestUnit) {
+    for (const [unitMs, singular, plural] of UNITS) {
+      const value = Math.floor(remainingMs / unitMs);
+      if (value >= 1) {
+        bestUnit = [unitMs, singular, plural];
+        bestValue = value;
+        break;
+      }
+    }
+  }
+
+  // Use the selected unit
+  if (bestUnit && bestValue > 0) {
+    const [unitMs, singular, plural] = bestUnit;
+    parts.push({
+      value: bestValue,
+      unit: bestValue === 1 ? singular : plural,
+    });
+
+    remainingMs -= bestValue * unitMs;
+
+    // If we need more significant digits and have remaining time
+    if (significantDigits > 1 && remainingMs > 0) {
+      for (const [unitMs, singular, plural] of UNITS) {
+        if (unitMs >= bestUnit[0]) {
+          continue;
+        } // Skip same or larger units
+
+        const value = Math.floor(remainingMs / unitMs);
+        if (value > 0) {
+          parts.push({
+            value,
+            unit: value === 1 ? singular : plural,
+          });
+          break;
+        }
+      }
+    }
+  } else {
+    // Fallback: if no parts were found, return 0 milliseconds
+    return [{value: 0, unit: 'milliseconds'}];
+  }
+
+  return parts;
+}
