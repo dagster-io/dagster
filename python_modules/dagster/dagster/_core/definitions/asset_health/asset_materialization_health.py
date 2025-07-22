@@ -64,12 +64,6 @@ class MinimalAssetMaterializationHealthState(LoadableBy[AssetKey]):
             partitions_snap=asset_materialization_health_state.partitions_snap,
         )
 
-    @property
-    def partitions_def(self) -> Optional[PartitionsDefinition]:
-        if self.partitions_snap is None:
-            return None
-        return self.partitions_snap.get_partitions_definition()
-
     @classmethod
     def _blocking_batch_load(
         cls, keys: Iterable[AssetKey], context: LoadingContext
@@ -131,19 +125,6 @@ class AssetMaterializationHealthState(LoadableBy[AssetKey]):
             return AssetHealthStatus.DEGRADED
         else:
             return AssetHealthStatus.HEALTHY
-
-    @classmethod
-    def _blocking_batch_load(
-        cls, keys: Iterable[AssetKey], context: LoadingContext
-    ) -> Iterable[Optional["AssetMaterializationHealthState"]]:
-        asset_materialization_health_states = (
-            context.instance.get_asset_materialization_health_state_for_assets(list(keys))
-        )
-
-        if asset_materialization_health_states is None:
-            return [None for _ in keys]
-        else:
-            return [asset_materialization_health_states.get(key) for key in keys]
 
     @classmethod
     async def compute_for_asset(
@@ -242,6 +223,19 @@ class AssetMaterializationHealthState(LoadableBy[AssetKey]):
             latest_terminal_run_id=latest_terminal_run_id,
             latest_materialization_timestamp=latest_materialization_timestamp,
         )
+
+    @classmethod
+    def _blocking_batch_load(
+        cls, keys: Iterable[AssetKey], context: LoadingContext
+    ) -> Iterable[Optional["AssetMaterializationHealthState"]]:
+        asset_materialization_health_states = (
+            context.instance.get_asset_materialization_health_state_for_assets(list(keys))
+        )
+
+        if asset_materialization_health_states is None:
+            return [None for _ in keys]
+        else:
+            return [asset_materialization_health_states.get(key) for key in keys]
 
 
 async def _get_is_currently_failed_and_latest_terminal_run_id(
