@@ -336,6 +336,19 @@ async def get_materialization_status_and_metadata(
     asset_materialization_health_state = await MinimalAssetMaterializationHealthState.gen(
         context, asset_key
     )
+    if asset_materialization_health_state is None:
+        # if the minimal health stat does not exist, try fetching the full health state. It's possible that
+        # deserializing the full health state is non-performant since it contains a serialized entity subset, which
+        # is why we only fetch it if the minimal health state does not exist.
+        slow_deserialize_asset_materialization_health_state = (
+            await AssetMaterializationHealthState.gen(context, asset_key)
+        )
+        if slow_deserialize_asset_materialization_health_state is not None:
+            asset_materialization_health_state = (
+                MinimalAssetMaterializationHealthState.from_asset_materialization_health_state(
+                    slow_deserialize_asset_materialization_health_state
+                )
+            )
     # captures streamline disabled or consumer state doesn't exist
     if asset_materialization_health_state is None:
         if context.instance.streamline_read_asset_health_required():
@@ -371,14 +384,13 @@ async def get_materialization_status_and_metadata(
                 return AssetHealthStatus.HEALTHY, None
             return AssetHealthStatus.UNKNOWN, None
 
-        big_materialization_health_state = await AssetMaterializationHealthState.compute_for_asset(
-            asset_key,
-            node_snap.partitions_def,
-            context,
-        )
         asset_materialization_health_state = (
             MinimalAssetMaterializationHealthState.from_asset_materialization_health_state(
-                big_materialization_health_state
+                await AssetMaterializationHealthState.compute_for_asset(
+                    asset_key,
+                    node_snap.partitions_def,
+                    context,
+                )
             )
         )
 
