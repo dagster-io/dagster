@@ -260,3 +260,17 @@ def test_build_docs_success_matches_graphql():
 
             finally:
                 assert_projects_loaded_and_exit({"foo-bar"}, port, dev_process)
+
+
+def test_docs_component_type_json():
+    with (
+        ProxyRunner.test() as runner,
+        isolated_example_project_foo_bar(
+            runner,
+            in_workspace=False,
+        ),
+    ):
+        result = runner.invoke("docs", "component", "dagster.FunctionComponent", "--json")
+        assert_runner_result(result)
+        output_json = json.loads(result.output)
+        assert output_json["type"] == "dagster.FunctionComponent"
