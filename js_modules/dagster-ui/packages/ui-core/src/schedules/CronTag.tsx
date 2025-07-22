@@ -14,9 +14,43 @@ interface Props {
 
 export const CronTag = (props: Props) => {
   const {cronSchedule, executionTimezone} = props;
+  const {withHumanTimezone, withExecutionTimezone} = useCronInformation(
+    cronSchedule,
+    executionTimezone,
+  );
+
+  const tooltipContent = (
+    <MetadataTable
+      rows={[
+        {key: 'Cron value', value: <CaptionMono>{cronSchedule}</CaptionMono>},
+        {key: 'Your time', value: <span>{withHumanTimezone}</span>},
+      ]}
+    />
+  );
+
+  return (
+    <Container>
+      <Tooltip content={tooltipContent} placement="top">
+        <Tag icon="schedule">{withExecutionTimezone}</Tag>
+      </Tooltip>
+    </Container>
+  );
+};
+
+export const useCronInformation = (
+  cronSchedule: string | null,
+  executionTimezone: string | null,
+) => {
   const {
     timezone: [storedTimezone],
   } = useContext(TimeContext);
+
+  if (!cronSchedule) {
+    return {
+      withHumanTimezone: null,
+      withExecutionTimezone: null,
+    };
+  }
 
   const longTimezoneName = executionTimezone || 'UTC';
   const humanStringWithExecutionTimezone = humanCronString(cronSchedule, {longTimezoneName});
@@ -31,22 +65,10 @@ export const CronTag = (props: Props) => {
     tzOffset,
   });
 
-  const tooltipContent = (
-    <MetadataTable
-      rows={[
-        {key: 'Cron value', value: <CaptionMono>{cronSchedule}</CaptionMono>},
-        {key: 'Your time', value: <span>{humanStringWithUserTimezone}</span>},
-      ]}
-    />
-  );
-
-  return (
-    <Container>
-      <Tooltip content={tooltipContent} placement="top">
-        <Tag icon="schedule">{humanStringWithExecutionTimezone}</Tag>
-      </Tooltip>
-    </Container>
-  );
+  return {
+    withHumanTimezone: humanStringWithUserTimezone,
+    withExecutionTimezone: humanStringWithExecutionTimezone,
+  };
 };
 
 const Container = styled.div`
