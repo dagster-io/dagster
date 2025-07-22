@@ -311,9 +311,11 @@ export const AssetCatalogInsightsLineChart = React.memo(
     }
 
     const currentPeriodDisplayValueAndUnit = getDisplayValueAndUnit(
-      metrics.currentPeriod.aggregateValue,
+      metrics.currentPeriod.aggregateValue ?? 0,
     );
-    const prevPeriodDisplayValueAndUnit = getDisplayValueAndUnit(metrics.prevPeriod.aggregateValue);
+    const prevPeriodDisplayValueAndUnit = getDisplayValueAndUnit(
+      metrics.prevPeriod.aggregateValue ?? 0,
+    );
 
     return (
       <div className={styles.chartContainer}>

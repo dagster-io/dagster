@@ -29,8 +29,8 @@ import styles from './AssetCatalogTopAssetsChart.module.css';
 import {Context, useRenderChartTooltip} from './renderChartTooltip';
 import {useRGBColorsForTheme} from '../../app/useRGBColorsForTheme';
 import {TooltipCard} from '../../insights/InsightsChartShared';
-import {numberFormatter} from '../../ui/formatters';
 import {formatDuration} from '../../ui/formatDuration';
+import {numberFormatter} from '../../ui/formatters';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, Legend);
 

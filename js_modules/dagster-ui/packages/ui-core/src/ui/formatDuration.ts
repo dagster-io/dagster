@@ -172,5 +172,5 @@ export function formatDuration(
     return [{value: 0, unit: 'milliseconds'}];
   }
 
-  return parts;
+  return parts as [DurationPart] | [DurationPart, DurationPart];
 }
