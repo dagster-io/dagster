@@ -2,9 +2,12 @@ import {Box, Row, Tag, Tooltip} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import * as React from 'react';
 
+import {ObserveAutomationScheduleRow} from './ObserveAutomationScheduleRow';
+import {ObserveAutomationSensorRow} from './ObserveAutomationSensorRow';
 import {VirtualizedAutomationHeader} from './VirtualizedAutomationRow';
 import {VirtualizedAutomationScheduleRow} from './VirtualizedAutomationScheduleRow';
 import {VirtualizedAutomationSensorRow} from './VirtualizedAutomationSensorRow';
+import {useFeatureFlags} from '../app/Flags';
 import {COMMON_COLLATOR} from '../app/Util';
 import {OVERVIEW_COLLAPSED_KEY} from '../overview/OverviewExpansionKey';
 import {makeAutomationKey} from '../sensors/makeSensorKey';
@@ -39,6 +42,7 @@ export const AutomationsTable = ({
   checkedKeys,
   onToggleCheckFactory,
 }: Props) => {
+  const {flagUseNewObserveUIs} = useFeatureFlags();
   const parentRef = React.useRef<HTMLDivElement | null>(null);
   const allKeys = React.useMemo(
     () => repos.map(({repoAddress}) => repoAddressAsHumanString(repoAddress)),
@@ -97,7 +101,7 @@ export const AutomationsTable = ({
   return (
     <div style={{overflow: 'hidden'}}>
       <Container ref={parentRef}>
-        <VirtualizedAutomationHeader checkbox={headerCheckbox} />
+        {flagUseNewObserveUIs ? null : <VirtualizedAutomationHeader checkbox={headerCheckbox} />}
         <Inner $totalHeight={totalHeight}>
           {items.map(({index, key, size, start}) => {
             const row: RowType = flattened[index]!;
@@ -107,7 +111,6 @@ export const AutomationsTable = ({
                 <Row $height={size} $start={start} key={key}>
                   <DynamicRepoRow
                     repoAddress={row.repoAddress}
-                    key={key}
                     ref={rowVirtualizer.measureElement}
                     index={index}
                     onToggle={onToggle}
@@ -143,10 +146,25 @@ export const AutomationsTable = ({
 
             if (type === 'sensor') {
               const sensorKey = makeAutomationKey(row.repoAddress, row.sensor);
+              if (flagUseNewObserveUIs) {
+                return (
+                  <Row $height={size} $start={start} key={key}>
+                    <ObserveAutomationSensorRow
+                      key={key}
+                      index={index}
+                      ref={rowVirtualizer.measureElement}
+                      name={row.sensor}
+                      checked={checkedKeys.has(sensorKey)}
+                      onToggleChecked={onToggleCheckFactory(sensorKey)}
+                      repoAddress={row.repoAddress}
+                    />
+                  </Row>
+                );
+              }
+
               return (
                 <Row $height={size} $start={start} key={key}>
                   <VirtualizedAutomationSensorRow
-                    key={key}
                     index={index}
                     ref={rowVirtualizer.measureElement}
                     name={row.sensor}
@@ -160,6 +178,23 @@ export const AutomationsTable = ({
 
             if (type === 'schedule') {
               const scheduleKey = makeAutomationKey(row.repoAddress, row.schedule);
+
+              if (flagUseNewObserveUIs) {
+                return (
+                  <Row $height={size} $start={start} key={key}>
+                    <ObserveAutomationScheduleRow
+                      key={key}
+                      index={index}
+                      ref={rowVirtualizer.measureElement}
+                      name={row.schedule}
+                      checked={checkedKeys.has(scheduleKey)}
+                      onToggleChecked={onToggleCheckFactory(scheduleKey)}
+                      repoAddress={row.repoAddress}
+                    />
+                  </Row>
+                );
+              }
+
               return (
                 <Row $height={size} $start={start} key={key}>
                   <VirtualizedAutomationScheduleRow
