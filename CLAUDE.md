@@ -81,3 +81,7 @@ yarn build-api-docs          # Build API docs after .rst changes
 
 - DO NOT search for Python code (.py files) inside of .tox folders. These are temporary environments and this will only cause confusion.
 - Always search for package dependencies in setup.py files only. This is the current source of truth for dependencies in this repository.
+
+## Linting and Code Style
+
+- In CLI scripts, use `# noqa: T201` to mark print statements as OK to use since CLIs require printing to stdout
