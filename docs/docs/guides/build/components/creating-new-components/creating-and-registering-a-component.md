@@ -29,13 +29,19 @@ First, use the [`dg scaffold component`](/api/dg/dg-cli#dg-scaffold) command to 
 
         <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/shell-script-component/generated/1-dg-scaffold-shell-command.txt" />
 
-        This will add a new file to the `components` directory of your Dagster project that contains the basic structure for the new component. The `ShellCommand` class inherits from <PyObject section="components" module="dagster" object="Model" />, in addition to <PyObject section="components" module="dagster" object="Component" /> and <PyObject section="components" module="dagster" object="Resolvable" />. `Model` is used to implement a YAML interface for the component:
+        This will add a new file to the `components` directory of your Dagster project that contains the basic structure for the new component. The `ShellCommand` class inherits from <PyObject section="components" module="dagster" object="Model" />, in addition to <PyObject section="components" module="dagster" object="Component" /> and <PyObject section="components" module="dagster" object="Resolvable" />. `Model` is used to implement a YAML interface for the component.
 
         <CodeExample
           path="docs_snippets/docs_snippets/guides/components/shell-script-component/generated/2-shell-command-empty.py"
           language="python"
           title="src/my_project/components/shell_command.py"
         />
+
+        :::info
+
+        `Model` makes the class that inherits from it (in this case, `ShellCommand`) into a [Pydantic model](https://docs.pydantic.dev/latest/concepts/models/).
+
+        :::
     </TabItem>
     <TabItem value="pythonic" label="Pythonic interface">
         <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/shell-script-component/1-dg-scaffold-shell-command-no-model.txt" />
