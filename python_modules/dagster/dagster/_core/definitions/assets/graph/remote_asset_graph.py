@@ -86,6 +86,10 @@ class RemoteAssetNode(BaseAssetNode, ABC):
         return self.resolve_to_singular_repo_scoped_node().asset_node_snap.metadata
 
     @property
+    def execution_type(self) -> AssetExecutionType:
+        return self.resolve_to_singular_repo_scoped_node().asset_node_snap.execution_type
+
+    @property
     def pools(self) -> Optional[set[str]]:
         return self.resolve_to_singular_repo_scoped_node().pools
 

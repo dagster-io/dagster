@@ -38,6 +38,7 @@ from dagster._core.utils import toposort
 from dagster._utils.cached_method import cached_method
 
 if TYPE_CHECKING:
+    from dagster._core.definitions.assets.definition.asset_spec import AssetExecutionType
     from dagster._core.definitions.assets.graph.asset_graph_subset import AssetGraphSubset
     from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
     from dagster._core.definitions.declarative_automation.automation_condition import (
@@ -126,6 +127,10 @@ class BaseAssetNode(BaseEntityNode[AssetKey]):
     @property
     @abstractmethod
     def is_executable(self) -> bool: ...
+
+    @property
+    @abstractmethod
+    def execution_type(self) -> "AssetExecutionType": ...
 
     @property
     @abstractmethod
