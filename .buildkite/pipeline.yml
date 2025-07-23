@@ -22,9 +22,10 @@ steps:
     command: |
       cd /workspaces/dagster
       source venv/bin/activate
+      rm -rf /tmp/test_scaffold 
       mkdir -p /tmp/test_scaffold
       cd /tmp/test_scaffold
-      python -m dagster project scaffold --name test_project2
-      test -f test_project2/definitions.py && echo "✅ definitions.py created"
+      python -m dagster project scaffold --name test_project
+      test -f test_project/definitions.py && echo "✅ definitions.py created"
     agents:
       queue: "default"
