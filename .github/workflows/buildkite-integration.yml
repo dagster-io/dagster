@@ -1,0 +1,33 @@
+name: BuildKite Integration
+
+on:
+  push:
+    branches:
+      - issue-31069
+      - install-buildkite-test-analytics
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  trigger-buildkite:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Trigger BuildKite Pipeline
+        uses: buildkite/trigger-pipeline-action@v1.2.0
+        with:
+          buildkite-api-access-token: ${{ secrets.BUILDKITE_API_TOKEN }}
+          pipeline: "minimal-definitions"
+          branch: ${{ github.ref_name }}
+          commit: ${{ github.sha }}
+          message: "Triggered from GitHub Actions"
+          build-env-vars: >-
+            {
+              "GITHUB_ACTOR": "${{ github.actor }}",
+              "GITHUB_REPOSITORY": "${{ github.repository }}",
+              "GITHUB_SHA": "${{ github.sha }}",
+              "GITHUB_REF": "${{ github.ref }}"
+            }
