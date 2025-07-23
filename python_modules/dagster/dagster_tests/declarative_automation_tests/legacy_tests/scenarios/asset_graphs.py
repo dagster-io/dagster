@@ -56,6 +56,7 @@ self_dependant_asset_with_single_run_backfill_policy = [
     )
 ]
 
+
 root_assets_different_partitions_same_downstream = [
     asset_def("root1", partitions_def=two_partitions_partitions_def),
     asset_def("root2", partitions_def=other_two_partitions_partitions_def),
@@ -94,6 +95,30 @@ one_parent_starts_later_and_nonexistent_upstream_partitions_not_allowed = [
         deps=["asset1", "asset2"],
     ),
 ]
+
+
+# parent and child have the same partitions definition, grandparent and other_parent have differing
+# partitions definitions
+matching_partitions_with_different_subsets = [
+    asset_def("grandparent", partitions_def=dg.DailyPartitionsDefinition("2021-01-01")),
+    asset_def(
+        "parent",
+        partitions_def=dg.DailyPartitionsDefinition("2023-01-01"),
+        deps={
+            "grandparent": dg.TimeWindowPartitionMapping(),
+        },
+    ),
+    asset_def("other_parent", partitions_def=dg.DailyPartitionsDefinition("2022-02-01")),
+    asset_def(
+        "child",
+        partitions_def=dg.DailyPartitionsDefinition("2023-01-01"),
+        deps={
+            "parent": dg.TimeWindowPartitionMapping(),
+            "other_parent": dg.TimeWindowPartitionMapping(),
+        },
+    ),
+]
+
 
 one_parent_starts_later_and_nonexistent_upstream_partitions_allowed = [
     asset_def("asset1", partitions_def=dg.HourlyPartitionsDefinition("2023-01-01-03:00")),
