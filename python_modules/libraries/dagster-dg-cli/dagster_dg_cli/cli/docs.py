@@ -73,7 +73,21 @@ def serve_docs_command(
         with yaspin(text="Verifying docs dependencies", color="blue") as spinner:
             yes = subprocess.Popen(["yes", "y"], stdout=subprocess.PIPE)
             try:
-                subprocess.check_output(["yarn", "install"], stdin=yes.stdout)
+                result = subprocess.run(
+                    ["yarn", "install"],
+                    stdin=yes.stdout,
+                    capture_output=True,
+                    text=True,
+                    check=False,
+                )
+                if result.returncode != 0:
+                    spinner.fail("✗")
+                    error_msg = "yarn install failed"
+                    if result.stderr.strip():
+                        error_msg += f":\n{result.stderr.strip()}"
+                    if result.stdout.strip():
+                        error_msg += f"\n{result.stdout.strip()}"
+                    exit_with_error(error_msg)
             finally:
                 yes.terminate()
             spinner.ok("✓")
@@ -134,14 +148,36 @@ def build_docs_command(
         with yaspin(text="Verifying docs dependencies", color="blue") as spinner:
             yes = subprocess.Popen(["yes", "y"], stdout=subprocess.PIPE)
             try:
-                subprocess.check_output(["yarn", "install"], stdin=yes.stdout)
+                result = subprocess.run(
+                    ["yarn", "install"],
+                    stdin=yes.stdout,
+                    capture_output=True,
+                    text=True,
+                    check=False,
+                )
+                if result.returncode != 0:
+                    spinner.fail("✗")
+                    error_msg = "yarn install failed"
+                    if result.stderr.strip():
+                        error_msg += f":\n{result.stderr.strip()}"
+                    if result.stdout.strip():
+                        error_msg += f"\n{result.stdout.strip()}"
+                    exit_with_error(error_msg)
             finally:
                 yes.terminate()
             spinner.ok("✓")
 
         with yaspin(text="Building docs", color="blue") as spinner:
             spinner.start()
-            subprocess.check_output(["yarn", "build"])
+            result = subprocess.run(["yarn", "build"], capture_output=True, text=True, check=False)
+            if result.returncode != 0:
+                spinner.fail("✗")
+                error_msg = "yarn build failed"
+                if result.stderr.strip():
+                    error_msg += f":\n{result.stderr.strip()}"
+                if result.stdout.strip():
+                    error_msg += f"\n{result.stdout.strip()}"
+                exit_with_error(error_msg)
             spinner.ok("✓")
 
         Path(output_dir).mkdir(parents=True, exist_ok=True)
