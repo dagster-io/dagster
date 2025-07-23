@@ -991,3 +991,16 @@ def test_aliases() -> None:
     d = {"test": "test"}
     result = echo_job.execute_in_process(resources={"my_resource": ConfigWithAlias(alias_name=d)})
     assert result.output_for_node("echo_config") == d
+
+def test_permissive_extra_field_via_dot():
+    class ExtraConfig(PermissiveConfig):
+        foo: int
+
+    conf = ExtraConfig(foo=10, bar="hello", baz=[1, 2, 3])
+    assert conf.foo == 10
+    assert conf.bar == "hello"
+    assert conf.baz == [1, 2, 3]
+    # confirm it’s in dict and convert_to_config_dictionary
+    expected = {"foo": 10, "bar": "hello", "baz": [1, 2, 3]}
+    assert conf.dict() == expected
+    assert conf._convert_to_config_dictionary() == expected
