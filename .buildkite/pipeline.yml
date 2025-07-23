@@ -6,7 +6,7 @@ steps:
     command: |
       python -m venv venv
       source venv/bin/activate
-      pip install -e ".[dev]"
+      pip install -e "python_modules/dagster[dev]"
       pytest -v python_modules/dagster/dagster_tests/cli_tests/test_project_commands.py
     agents:
       queue: "default"
@@ -24,7 +24,7 @@ steps:
     command: |
       python -m venv venv
       source venv/bin/activate
-      pip install -e ".[dev]"
+      pip install -e "python_modules/dagster[dev]"
       mkdir -p /tmp/test_scaffold
       cd /tmp/test_scaffold
       python -m dagster project scaffold --name test_project
