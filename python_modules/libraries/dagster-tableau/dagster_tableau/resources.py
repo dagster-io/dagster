@@ -3,6 +3,7 @@ import logging
 import time
 import uuid
 from abc import abstractmethod
+from collections import defaultdict
 from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from typing import Optional, Union
@@ -335,6 +336,7 @@ class BaseTableauClient:
                 projectLuid
                 sheets {
                   luid
+                  id
                   name
                   createdAt
                   updatedAt
@@ -386,6 +388,7 @@ class BaseTableauClient:
                   path
                   sheets {
                     luid
+                    id
                   }
                 }
               }
@@ -522,8 +525,12 @@ class BaseTableauWorkspace(ConfigurableResource):
                     )
                 )
 
+                # We keep track of data source IDs for each sheet to augment the dashboard data.
+                # Hidden sheets don't have LUIDs, so we use metadata IDs as keys.
+                data_source_ids_by_sheet_metadata_id = defaultdict(set)
                 for sheet_data in workbook_data["sheets"]:
                     sheet_id = sheet_data["luid"]
+                    sheet_metadata_id = sheet_data["id"]
                     if sheet_id:
                         augmented_sheet_data = {**sheet_data, "workbook": {"luid": workbook_id}}
                         sheets.append(
@@ -534,8 +541,10 @@ class BaseTableauWorkspace(ConfigurableResource):
                         )
                     """
                     Lineage formation depends on the availability of published data sources.
-                    If published data sources are available (i.e., parentPublishedDatasources exists and is not empty), it means you can form the lineage by using the luid of those published sources.
-                    If the published data sources are missing, you create assets for embedded data sources by using their id.
+                    If published data sources are available (i.e., parentPublishedDatasources exists and is not empty), 
+                    it means you can form the lineage by using the luid of those published sources.
+                    If the published data sources are missing, 
+                    you create assets for embedded data sources by using their id.
                     """
                     for embedded_data_source_data in sheet_data.get(
                         "parentEmbeddedDatasources", []
@@ -545,6 +554,9 @@ class BaseTableauWorkspace(ConfigurableResource):
                         )
                         for published_data_source_data in published_data_source_list:
                             data_source_id = published_data_source_data["luid"]
+                            data_source_ids_by_sheet_metadata_id[sheet_metadata_id].add(
+                                data_source_id
+                            )
                             if data_source_id and data_source_id not in data_source_ids:
                                 data_source_ids.add(data_source_id)
                                 augmented_published_data_source_data = {
@@ -561,6 +573,9 @@ class BaseTableauWorkspace(ConfigurableResource):
                             """While creating TableauWorkspaceData luid is mandatory for all TableauContentData
                             and in case of embedded_data_source its missing hence we are using its id as luid"""
                             data_source_id = embedded_data_source_data["id"]
+                            data_source_ids_by_sheet_metadata_id[sheet_metadata_id].add(
+                                data_source_id
+                            )
                             if data_source_id and data_source_id not in data_source_ids:
                                 data_source_ids.add(data_source_id)
                                 embedded_data_source_data["luid"] = data_source_id
@@ -579,9 +594,23 @@ class BaseTableauWorkspace(ConfigurableResource):
                 for dashboard_data in workbook_data["dashboards"]:
                     dashboard_id = dashboard_data["luid"]
                     if dashboard_id:
+                        dashboard_upstream_sheets = dashboard_data.get("sheets", [])
+                        # Sheets for which LUID is null are hidden sheets
+                        hidden_sheet_metadata_ids = {
+                            sheet["id"] for sheet in dashboard_upstream_sheets if not sheet["luid"]
+                        }
+                        dashboard_upstream_data_source_ids = set()
+                        for hidden_sheet_metadata_id in hidden_sheet_metadata_ids:
+                            dashboard_upstream_data_source_ids.update(
+                                data_source_ids_by_sheet_metadata_id.get(
+                                    hidden_sheet_metadata_id, []
+                                )
+                            )
+
                         augmented_dashboard_data = {
                             **dashboard_data,
                             "workbook": {"luid": workbook_id},
+                            "data_source_ids": list(dashboard_upstream_data_source_ids),
                         }
                         dashboards.append(
                             TableauContentData(
