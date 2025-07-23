@@ -76,10 +76,8 @@ class TestKnownValidSymbols:
 
         # All symbols should have valid docstrings
         assert result.is_valid(), (
-
             f"Symbol {symbol_path} should have valid docstring but got errors: {result.errors}. "
             f"If this is a known issue, add it to SYMBOL_EXCLUDE_LIST."
-
         )
 
         # Log warnings for awareness
