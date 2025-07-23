@@ -56,7 +56,7 @@ class TestKnownValidSymbols:
         2. The docstring has valid RST/Google-style formatting (unless in skip list)
         3. No syntax errors that would break documentation builds
 
-        Symbols with known docstring issues are maintained in SYMBOLS_WITH_KNOWN_DOCSTRING_ISSUES
+        Symbols with known docstring issues are maintained in SYMBOL_EXCLUDE_LIST
         and should be addressed in separate PRs.
 
         Args:
