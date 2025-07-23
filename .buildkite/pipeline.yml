@@ -1,18 +1,37 @@
 steps:
-  - label: ":python: Simple test"
+  - label: ":test_tube: CLI Test"
     command: |
-      # Create a venv and install packages
       python -m venv venv
       source venv/bin/activate
-      pip install dagster dagster-webserver create-dagster dagster-dg-cli loguru dagster-cloud pytest ruff==0.11.5 uv dagster_shared --upgrade pip
-      
-      # Test scaffolding a new project
-      mkdir -p /tmp/test_project
-      cd /tmp/test_project
-      python -m dagster project scaffold --name myproject
-      
-      # Verify that the template contains @definitions and load_from_defs_folder
-      grep -q "@definitions" myproject/myproject/definitions.py
-      grep -q "load_from_defs_folder" myproject/myproject/definitions.py
-      
-      echo "✅ Success! Template contains required functionality."
+      pip install --upgrade pip
+      pip install -e python_modules/libraries/dagster-shared
+      pip install -e python_modules/dagster[dev]
+      pytest -v python_modules/dagster/dagster_tests/cli_tests/test_project_commands.py
+    agents:
+      queue: "default"
+
+  - label: ":mag: Ruff Format Check"
+    command: |
+      python -m venv venv
+      source venv/bin/activate
+      pip install ruff
+      ruff check python_modules/dagster/dagster/_generate/templates/
+    agents:
+      queue: "default"
+
+  - label: ":gear: Scaffold Definition Template"
+    command: |
+      python -m venv venv
+      source venv/bin/activate
+      pip install --upgrade pip
+      pip install -e python_modules/libraries/dagster-shared
+      pip install -e python_modules/dagster[dev]
+      mkdir -p /tmp/test_scaffold
+      cd /tmp/test_scaffold
+      python -m dagster project scaffold --name test_project
+      cat test_project/test_project/definitions.py
+      grep -q "@definitions" test_project/test_project/definitions.py && \
+      grep -q "load_from_defs_folder" test_project/test_project/definitions.py && \
+      echo "✅ Template validation successful!"
+    agents:
+      queue: "default"
