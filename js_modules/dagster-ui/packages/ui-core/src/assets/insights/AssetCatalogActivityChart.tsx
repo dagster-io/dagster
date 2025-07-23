@@ -15,7 +15,8 @@ import React from 'react';
 import styles from './AssetCatalogInsights.module.css';
 import {AssetCatalogMetricNames} from './AssetCatalogMetricUtils';
 import {TooltipCard} from '../../insights/InsightsChartShared';
-import {numberFormatter} from '../../ui/formatters';
+import {formatDuration} from '../../ui/formatDuration';
+import {numberFormatterWithMaxFractionDigits} from '../../ui/formatters';
 import {useFormatDateTime} from '../../ui/useFormatDateTime';
 
 type MetricsDialogData = {
@@ -129,6 +130,14 @@ const ActivityChartRow = React.memo(
               return <div key={index} />;
             }
             const opacity = value / (max || 1);
+
+            const {value: displayValue, unit: displayUnit} = (() => {
+              const unitLower = unit.toLowerCase();
+              if (unitLower === 'seconds' || unitLower === 'milliseconds') {
+                return formatDuration(value, {unit: unitLower})[0];
+              }
+              return {value, unit};
+            })();
             return (
               <Popover
                 key={index}
@@ -153,8 +162,8 @@ const ActivityChartRow = React.memo(
                         flex={{direction: 'row', alignItems: 'center', gap: 4}}
                         padding={{horizontal: 12, vertical: 8}}
                       >
-                        <Mono>{numberFormatter.format(value)}</Mono>
-                        <Body color={Colors.textLight()}>{unit}</Body>
+                        <Mono>{numberFormatterWithMaxFractionDigits(2).format(displayValue)}</Mono>
+                        <Body color={Colors.textLight()}>{displayUnit}</Body>
                       </Box>
                       {value > 0 ? (
                         <Box padding={{horizontal: 12, vertical: 8}} border="top">

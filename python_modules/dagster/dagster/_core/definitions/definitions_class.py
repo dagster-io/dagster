@@ -731,6 +731,22 @@ class Definitions(IHaveNew):
         """
         defs.get_repository_def().validate_loadable()
 
+    @staticmethod
+    def merge_unbound_defs(*def_sets: "Definitions") -> "Definitions":
+        """Merges multiple Definitions objects into a single Definitions object.
+
+        Asserts that input Definitions objects have not yet had their asset graphs resolved,
+        intended for internal use-cases to safeguard against unnecessarily resolving subgraphs.
+        """
+        for i, def_set in enumerate(def_sets):
+            check.invariant(
+                not def_set.has_resolved_repository_def(),
+                f"Definitions object {i} has previously been resolved."
+                " merge_unbound_defs should only be used on definitions that have not been resolved.",
+            )
+
+        return Definitions.merge(*def_sets)
+
     @public
     @staticmethod
     def merge(*def_sets: "Definitions") -> "Definitions":
@@ -812,10 +828,6 @@ class Definitions(IHaveNew):
 
                 component_tree = def_set.component_tree
 
-            check.invariant(
-                not def_set.has_resolved_repository_def(),
-                "Definitions object should have been resolved",
-            )
         return Definitions(
             assets=assets,
             schedules=schedules,
@@ -844,6 +856,11 @@ class Definitions(IHaveNew):
         """Returns an AssetSpec object for every asset contained inside the resolved Definitions object."""
         asset_graph = self.resolve_asset_graph()
         return [asset_node.to_asset_spec() for asset_node in asset_graph.asset_nodes]
+
+    @public
+    def resolve_all_asset_keys(self) -> Sequence[AssetKey]:
+        """Returns an AssetKey object for every asset contained inside the resolved Definitions object."""
+        return [spec.key for spec in self.resolve_all_asset_specs()]
 
     @preview
     def with_reconstruction_metadata(self, reconstruction_metadata: Mapping[str, str]) -> Self:

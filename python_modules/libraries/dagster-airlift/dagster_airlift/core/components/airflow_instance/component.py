@@ -281,7 +281,7 @@ def apply_mappings(defs: Definitions, mappings: Sequence[AirflowDagMapping]) -> 
             return spec.merge_attributes(metadata={handle.metadata_key: [handle.as_dict]})
         return spec
 
-    return Definitions.merge(
+    return Definitions.merge_unbound_defs(
         defs.map_resolved_asset_specs(func=spec_mapper), Definitions(assets=additional_assets)
     )
 

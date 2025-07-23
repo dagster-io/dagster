@@ -106,3 +106,14 @@ def test_with_attributes():
 
     assert updated.metadata["foo"] == dg.TextMetadataValue("baz")
     assert updated.metadata["four"] == dg.IntMetadataValue(4)
+
+    name_sensor = dg.SensorDefinition(job_name="foo", evaluation_fn=fn)
+    updated_name_sensor = name_sensor.with_attributes(metadata={"foo": "bar"})
+    assert updated_name_sensor.metadata["foo"] == dg.TextMetadataValue("bar")
+
+    assert updated_name_sensor.targets == name_sensor.targets
+
+    empty_sensor = dg.SensorDefinition(evaluation_fn=fn)
+    updated_empty_sensor = empty_sensor.with_attributes(metadata={"foo": "bar"})
+    assert updated_empty_sensor.metadata["foo"] == dg.TextMetadataValue("bar")
+    assert updated_empty_sensor.targets == empty_sensor.targets

@@ -108,8 +108,8 @@ export function useAssetsHealthData({
   const result = AssetHealthData.useLiveData(keys, thread, skip);
   useBlockTraceUntilTrue(
     'useAssetsHealthData',
-    !loading &&
-      (skip || !blockTrace || !!(Object.keys(result.liveDataByNode).length === assetKeys.length)),
+    !loading && (!blockTrace || !!(Object.keys(result.liveDataByNode).length === assetKeys.length)),
+    {skip},
   );
   return result;
 }

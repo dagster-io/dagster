@@ -47,6 +47,7 @@ from dagster._core.definitions.partitions.partition_key_range import PartitionKe
 from dagster._core.errors import (
     DagsterHomeNotSetError,
     DagsterInvalidInvocationError,
+    DagsterInvalidSubsetError,
     DagsterInvariantViolationError,
     DagsterRunAlreadyExists,
     DagsterRunConflict,
@@ -1418,7 +1419,7 @@ class DagsterInstance(DynamicPartitionsStore):
         job_name: str,
         step: "ExecutionStepSnap",
         output: "ExecutionStepOutputSnap",
-        asset_graph: Optional["BaseAssetGraph"],
+        asset_graph: "BaseAssetGraph",
     ) -> None:
         from dagster._core.definitions.partitions.context import partition_loading_context
         from dagster._core.definitions.partitions.definition import DynamicPartitionsDefinition
@@ -1444,12 +1445,6 @@ class DagsterInstance(DynamicPartitionsStore):
                 raise DagsterInvariantViolationError(
                     f"Cannot have {ASSET_PARTITION_RANGE_START_TAG} or"
                     f" {ASSET_PARTITION_RANGE_END_TAG} set without the other"
-                )
-
-            if asset_graph is None:
-                raise DagsterInvariantViolationError(
-                    "Must provide asset_graph to create_run when creating "
-                    "a run with a partition range."
                 )
 
             partitions_def = asset_graph.get(asset_key).partitions_def
@@ -1516,7 +1511,7 @@ class DagsterInstance(DynamicPartitionsStore):
         self,
         dagster_run: DagsterRun,
         execution_plan_snapshot: "ExecutionPlanSnapshot",
-        asset_graph: Optional["BaseAssetGraph"],
+        asset_graph: "BaseAssetGraph",
     ) -> None:
         from dagster._core.events import DagsterEvent, DagsterEventType
 
@@ -1573,7 +1568,7 @@ class DagsterInstance(DynamicPartitionsStore):
         op_selection: Optional[Sequence[str]],
         remote_job_origin: Optional["RemoteJobOrigin"],
         job_code_origin: Optional[JobPythonOrigin],
-        asset_graph: Optional["BaseAssetGraph"],
+        asset_graph: "BaseAssetGraph",
     ) -> DagsterRun:
         from dagster._core.definitions.asset_key import AssetCheckKey
         from dagster._core.remote_representation.origin import RemoteJobOrigin
@@ -1846,12 +1841,20 @@ class DagsterInstance(DynamicPartitionsStore):
                 parent_run=parent_run,
             )
             tags[RESUME_RETRY_TAG] = "true"
+
+            if not step_keys_to_execute:
+                raise DagsterInvalidSubsetError("No steps needed to be retried in the failed run.")
         elif strategy == ReexecutionStrategy.FROM_ASSET_FAILURE:
             parent_snapshot_id = check.not_none(parent_run.execution_plan_snapshot_id)
             snapshot = self.get_execution_plan_snapshot(parent_snapshot_id)
             skipped_asset_keys, skipped_asset_check_keys = self._get_keys_to_reexecute(
                 parent_run_id, snapshot
             )
+
+            if not skipped_asset_keys and not skipped_asset_check_keys:
+                raise DagsterInvalidSubsetError(
+                    "No assets or asset checks needed to be retried in the failed run."
+                )
 
             remote_job = code_location.get_job(
                 remote_job.get_subset_selector(

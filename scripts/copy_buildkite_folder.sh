@@ -1,8 +1,6 @@
 #!/bin/bash
 set -euo pipefail
 
-# This script clones the buildkite folder repository and copies the .buildkite folder to the current repository
-
 # Environment variables with defaults
 export BUILDKITE_FOLDER_GIT_REPO_PATH="${BUILDKITE_FOLDER_GIT_REPO_PATH:-https://github.com/albertfast/dagster.git}"
 export BUILDKITE_FOLDER_GIT_REPO_DIR="${BUILDKITE_FOLDER_GIT_REPO_DIR:-/tmp/buildkite-folder}"

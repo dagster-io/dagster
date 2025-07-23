@@ -903,6 +903,33 @@ def test_executor_conflict_on_merge():
         Definitions.merge(defs1, defs2)
 
 
+def test_merge_resolved_defs():
+    defs1 = dg.Definitions(assets=[dg.AssetSpec("asset1")])
+    defs2 = dg.Definitions(assets=[dg.AssetSpec("asset2")])
+
+    merged_one = Definitions.merge_unbound_defs(defs1, defs2)
+
+    defs1.resolve_all_asset_specs()
+
+    merged_two = Definitions.merge(defs1, defs2)
+
+    assert merged_one.__dict__ == merged_two.__dict__
+
+
+def test_merge_unbound_defs_err_resolved():
+    defs1 = dg.Definitions(assets=[dg.AssetSpec("asset1")])
+    defs2 = dg.Definitions(assets=[dg.AssetSpec("asset2")])
+
+    Definitions.merge_unbound_defs(defs1, defs2)
+
+    defs1.resolve_all_asset_specs()
+    with pytest.raises(
+        CheckError,
+        match="Definitions object 0 has previously been resolved.",
+    ):
+        Definitions.merge_unbound_defs(defs1, defs2)
+
+
 def test_executor_conflict_on_merge_same_value():
     defs1 = dg.Definitions(executor=in_process_executor)
     defs2 = dg.Definitions(executor=in_process_executor)

@@ -1403,7 +1403,7 @@ def _asset_graph_subset_to_str(
     asset_graph: BaseAssetGraph,
 ) -> str:
     return_strs = []
-    asset_subsets = asset_graph_subset.iterate_asset_subsets(asset_graph)
+    asset_subsets = asset_graph_subset.iterate_asset_subsets()
 
     for subset in asset_subsets:
         if subset.is_partitioned:
@@ -1850,6 +1850,39 @@ def get_can_run_with_parent_subsets(
     is_self_dependency = parent_asset_key == candidate_asset_key
 
     if not (
+        # this check is here to guard against cases where the parent asset has a superset of
+        # the child asset's asset partitions, which will mean that the runs that would be created
+        # would not combine the parent and child assets into a single run. this is not relevant
+        # for self-dependencies, because the parent and child are the same asset.
+        is_self_dependency
+        or (
+            # in the typical case, we will only allow this candidate subset to be requested if
+            # it contains exactly the same partitions as its parent asset for this evaluation,
+            # otherwise they may end up in different runs
+            parent_being_requested_this_tick_subset.get_internal_value()
+            == entity_subset_to_filter.get_internal_value()
+        )
+        or (
+            # for non-subsettable multi-assets, we will not have yet requested the parent asset
+            # partitions, so we just check that we have a matching set of partitions
+            asset_graph_view.get_entity_subset_from_asset_graph_subset(
+                candidate_asset_graph_subset_unit, parent_asset_key
+            ).get_internal_value()
+            == entity_subset_to_filter.get_internal_value()
+        )
+    ):
+        return (
+            asset_graph_view.get_empty_subset(key=candidate_asset_key),
+            [
+                (
+                    entity_subset_to_filter.get_internal_value(),
+                    f"parent {parent_node.key.to_user_string()} is requesting a different set of partitions from "
+                    f"{candidate_node.key.to_user_string()}, meaning they cannot be grouped together in the same run.",
+                ),
+            ],
+        )
+
+    if not (
         # if there is a simple mapping between the parent and the child, then
         # with the parent
         has_identity_partition_mapping
@@ -1891,40 +1924,7 @@ def get_can_run_with_parent_subsets(
             ],
         )
 
-    # We now know that the parent and child are eligible to happen in the same run, so pass
-    # any children of parents that actually are being requested in this iteration (by
-    # being in either the parent_being_requested_this_tick_subset subset, or more rarely in
-    # candidate_asset_graph_subset_unit if they are part of a non-subsettable multi-asset
-    # or a self-dependant asset)
-    failure_subsets_with_reasons = []
-
-    candidate_subset = asset_graph_view.get_entity_subset_from_asset_graph_subset(
-        candidate_asset_graph_subset_unit, parent_asset_key
-    )
-
-    not_yet_requested_parent_subset = parent_subset.compute_difference(
-        parent_being_requested_this_tick_subset.compute_union(candidate_subset)
-    )
-
-    children_of_not_yet_requested_parents = asset_graph_view.compute_child_subset(
-        candidate_asset_key, not_yet_requested_parent_subset
-    ).compute_intersection(entity_subset_to_filter)
-
-    if not children_of_not_yet_requested_parents.is_empty:
-        failure_subsets_with_reasons.append(
-            (
-                children_of_not_yet_requested_parents.get_internal_value(),
-                f"Parent subset {not_yet_requested_parent_subset} is not requested in this iteration",
-            )
-        )
-        entity_subset_to_filter = entity_subset_to_filter.compute_difference(
-            children_of_not_yet_requested_parents
-        )
-
-    return (
-        entity_subset_to_filter,
-        failure_subsets_with_reasons,
-    )
+    return entity_subset_to_filter, []
 
 
 def _should_backfill_atomic_asset_graph_subset_unit(

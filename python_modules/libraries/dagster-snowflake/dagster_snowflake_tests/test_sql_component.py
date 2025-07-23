@@ -43,7 +43,7 @@ def test_snowflake_sql_component(snowflake_connect):
     with setup_snowflake_component(
         component_body=BASIC_SNOWFLAKE_COMPONENT_BODY,
     ) as (component, defs):
-        defs_with_resource = Definitions.merge(
+        defs_with_resource = Definitions.merge_unbound_defs(
             defs,
             Definitions(
                 resources={
@@ -113,7 +113,7 @@ def test_snowflake_sql_component_with_templates(snowflake_connect, sql_template)
         with setup_snowflake_component(
             component_body=component_body,
         ) as (component, defs):
-            defs_with_resource = Definitions.merge(
+            defs_with_resource = Definitions.merge_unbound_defs(
                 defs,
                 Definitions(
                     resources={
@@ -170,7 +170,7 @@ def test_snowflake_sql_component_with_execution(snowflake_connect):
     with setup_snowflake_component(
         component_body=component_body,
     ) as (component, defs):
-        defs_with_resource = Definitions.merge(
+        defs_with_resource = Definitions.merge_unbound_defs(
             defs,
             Definitions(
                 resources={

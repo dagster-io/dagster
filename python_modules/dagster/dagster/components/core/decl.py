@@ -26,10 +26,9 @@ from dagster.components.core.defs_module import (
     EXPLICITLY_IGNORED_GLOB_PATTERNS,
     ComponentFileModel,
     ComponentPath,
-    CompositeComponent,
     CompositeYamlComponent,
-    DagsterDefsComponent,
     DefsFolderComponent,
+    PythonFileComponent,
     asset_post_processor_list_from_post_processing_dict,
     context_with_injected_scope,
     find_defs_or_component_yaml,
@@ -80,19 +79,20 @@ class ComponentLoaderDecl(ComponentDecl[Component]):
 
 
 @record
-class CompositePythonDecl(ComponentDecl[CompositeComponent]):
-    """Declaration of a Python CompositeComponent, corresponding to a Python file with one or more
-    ComponentLoaderDecls.
+class PythonFileDecl(ComponentDecl[PythonFileComponent]):
+    """Declaration of a PythonFileComponent, corresponding to a Python file with zero or more
+    ComponentLoaderDecls and zero or more plain Dagster defs.
     """
 
     decls: Mapping[str, ComponentLoaderDecl]
 
-    def _load_component(self) -> "CompositeComponent":
-        return CompositeComponent(
+    def _load_component(self) -> "PythonFileComponent":
+        return PythonFileComponent(
             components={
-                attr: self.context.load_component_at_path(decl.path)
+                attr: self.context.load_structural_component_at_path(decl.path)
                 for attr, decl in self.decls.items()
-            }
+            },
+            path=self.path.file_path,
         )
 
     def iterate_child_component_decls(self) -> Iterator["ComponentDecl"]:
@@ -224,7 +224,9 @@ class YamlFileDecl(ComponentDecl[CompositeYamlComponent]):
 
     def _load_component(self) -> "CompositeYamlComponent":
         return CompositeYamlComponent(
-            components=[self.context.load_component_at_path(decl.path) for decl in self.decls],
+            components=[
+                self.context.load_structural_component_at_path(decl.path) for decl in self.decls
+            ],
             source_positions=self.source_positions,
             asset_post_processor_lists=[
                 decl.get_asset_post_processor_lists() for decl in self.decls
@@ -233,12 +235,6 @@ class YamlFileDecl(ComponentDecl[CompositeYamlComponent]):
 
     def iterate_child_component_decls(self) -> Iterator["ComponentDecl"]:
         yield from self.decls
-
-
-@record
-class DagsterDefsDecl(ComponentDecl[DagsterDefsComponent]):
-    def _load_component(self) -> DagsterDefsComponent:
-        return DagsterDefsComponent(path=self.path.file_path)
 
 
 @record
@@ -261,7 +257,7 @@ class DefsFolderDecl(YamlBackedComponentDecl[DefsFolderComponent]):
         return DefsFolderComponent(
             path=self.path.file_path,
             children={
-                subpath: self.context.load_component_at_path(decl.path)
+                subpath: self.context.load_structural_component_at_path(decl.path)
                 for subpath, decl in self.children.items()
             },
         )
@@ -279,25 +275,19 @@ def build_component_decl_from_context(context: ComponentDeclLoadContext) -> Opti
     # yaml component
     if find_defs_or_component_yaml(context.path):
         return build_component_decl_from_yaml_file_backcompat(context)
-    # pythonic component
-    elif (
-        context.terminate_autoloading_on_keyword_files and (context.path / "component.py").exists()
-    ):
-        return build_component_decl_from_python_file(context)
     # defs
     elif (
         context.terminate_autoloading_on_keyword_files
         and (context.path / "definitions.py").exists()
+        and not (context.path / "component.py").exists()
     ):
-        return DagsterDefsDecl(
+        return PythonFileDecl(
             context=context,
             path=ComponentPath(file_path=context.path / "definitions.py", instance_key=None),
+            decls={},
         )
     elif context.path.suffix == ".py":
-        return DagsterDefsDecl(
-            context=context,
-            path=ComponentPath(file_path=context.path, instance_key=None),
-        )
+        return build_component_decl_from_python_file(context)
     # folder
     elif context.path.is_dir():
         children = build_component_decls_from_directory_items(context, None)
@@ -335,33 +325,24 @@ def build_component_decls_from_directory_items(
 
 def build_component_decl_from_python_file(
     context: ComponentDeclLoadContext,
-) -> Union[ComponentLoaderDecl, CompositePythonDecl]:
+) -> Union[ComponentLoaderDecl, PythonFileDecl]:
     # backcompat for component.yaml
-    component_def_path = context.path / "component.py"
+    component_def_path = context.path
     module = context.load_defs_relative_python_module(component_def_path)
     component_loaders = list(inspect.getmembers(module, is_component_loader))
-    if len(component_loaders) == 0:
-        raise DagsterInvalidDefinitionError("No component nodes found in module")
-    elif len(component_loaders) == 1:
-        _, component_loader = component_loaders[0]
-        return ComponentLoaderDecl(
-            context=context,
-            component_node_fn=component_loader,
-            path=ComponentPath(file_path=context.path, instance_key=None),
-        )
-    else:
-        return CompositePythonDecl(
-            path=ComponentPath(file_path=context.path, instance_key=None),
-            context=context,
-            decls={
-                attr: ComponentLoaderDecl(
-                    context=context,
-                    component_node_fn=component_loader,
-                    path=ComponentPath(file_path=context.path, instance_key=attr),
-                )
-                for attr, component_loader in component_loaders
-            },
-        )
+
+    return PythonFileDecl(
+        path=ComponentPath(file_path=context.path, instance_key=None),
+        context=context,
+        decls={
+            attr: ComponentLoaderDecl(
+                context=context,
+                component_node_fn=component_loader,
+                path=ComponentPath(file_path=context.path, instance_key=attr),
+            )
+            for attr, component_loader in component_loaders
+        },
+    )
 
 
 def build_component_decl_from_yaml_file_backcompat(
