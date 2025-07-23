@@ -1,25 +1,24 @@
+import importlib
+import json
 import shutil
 import sys
+import tempfile
+from collections.abc import Iterator
+from contextlib import contextmanager
+from dataclasses import dataclass
 from pathlib import Path
+from typing import Any, Optional, Union
 
 import yaml
 from dagster_shared import check
 
 from dagster._annotations import deprecated
-
-"""Testing utilities for components."""
-
-import json
-import tempfile
-from collections.abc import Iterator
-from contextlib import contextmanager
-from dataclasses import dataclass
-from typing import Any, Optional, Union
-
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._utils import alter_sys_path
 from dagster.components.component.component import Component
 from dagster.components.component_scaffolding import scaffold_object
+from dagster.components.core.defs_module import CompositeYamlComponent, get_component
+from dagster.components.core.tree import ComponentTree
 from dagster.components.scaffold.scaffold import ScaffoldFormatOptions
 
 
@@ -80,11 +79,6 @@ class DefsPathSandbox:
 
     @contextmanager
     def load_all(self) -> Iterator[list[tuple[Component, Definitions]]]:
-        from dagster.components.testing.utils import (
-            get_all_components_defs_from_defs_path,
-            get_module_path,
-        )
-
         with alter_sys_path(to_add=[str(self.project_root / "src")], to_remove=[]):
             module_path = get_module_path(
                 defs_module_name=f"{self.project_name}.defs", defs_path=self.component_path
@@ -201,3 +195,121 @@ def scaffold_defs_sandbox(
             component_path=Path(component_path),
             component_format=scaffold_format,
         )
+
+
+@deprecated(
+    breaking_version="2.0.0",
+)
+def get_module_path(defs_module_name: str, component_path: Path):
+    component_module_path = str(component_path).replace("/", ".")
+    return f"{defs_module_name}.{component_module_path}"
+
+
+def flatten_components(parent_component: Optional[Component]) -> list[Component]:
+    if isinstance(parent_component, CompositeYamlComponent):
+        return list(parent_component.components)
+    elif isinstance(parent_component, Component):
+        return [parent_component]
+    else:
+        return []
+
+
+@deprecated(
+    breaking_version="2.0.0",
+    additional_warn_text="Use dagster.component_tree_for_project instead.",
+)
+def get_component_defs_within_project(
+    *,
+    project_root: Union[str, Path],
+    component_path: Union[str, Path],
+    instance_key: int = 0,
+) -> tuple[Component, Definitions]:
+    """Get the component defs for a component within a project. This only works if dagster_dg_core is installed.
+
+    Args:
+        project_root: The root of the project.
+        component_path: The path to the component.
+
+    Returns:
+        A tuple of the component and its definitions.
+    """
+    all_component_defs = get_all_components_defs_within_project(
+        project_root=project_root, component_path=component_path
+    )
+    return all_component_defs[instance_key][0], all_component_defs[instance_key][1]
+
+
+@deprecated(
+    breaking_version="2.0.0",
+    additional_warn_text="Use dagster.component_tree_for_project instead.",
+)
+def get_all_components_defs_within_project(
+    *,
+    project_root: Union[str, Path],
+    component_path: Union[str, Path],
+) -> list[tuple[Component, Definitions]]:
+    """Get all the component defs for a component within a project. This only works if dagster_dg_core is installed.
+
+    Args:
+        project_root: The root of the project.
+        component_path: The path to the component.
+
+    Returns:
+        A list of tuples of the component and its definitions.
+    """
+    try:
+        from dagster_dg_core.config import discover_config_file
+        from dagster_dg_core.context import DgContext
+    except ImportError:
+        raise Exception(
+            "dagster_dg_core is not installed. Please install it to use default project_name and defs module from pyproject.toml or dg.toml."
+        )
+
+    project_root = Path(project_root)
+    component_path = Path(component_path)
+
+    dg_context = DgContext.from_file_discovery_and_command_line_config(
+        path=check.not_none(discover_config_file(project_root), "No project config file found."),
+        command_line_config={},
+    )
+
+    return get_all_components_defs_from_defs_path(
+        module_path=get_module_path(dg_context.defs_module_name, component_path),
+        project_root=project_root,
+    )
+
+
+@deprecated(
+    breaking_version="2.0.0",
+    additional_warn_text="Use dagster.component_tree_for_project instead.",
+)
+def get_all_components_defs_from_defs_path(
+    *,
+    module_path: str,
+    project_root: Union[str, Path],
+) -> list[tuple[Component, Definitions]]:
+    module = importlib.import_module(module_path)
+    context = ComponentTree(
+        defs_module=module,
+        project_root=Path(project_root),
+    ).load_context
+    components = flatten_components(get_component(context))
+    return [(component, component.build_defs(context)) for component in components]
+
+
+@deprecated(
+    breaking_version="2.0.0",
+    additional_warn_text="Use dagster.component_tree_for_project instead.",
+)
+def get_component_defs_from_defs_path(
+    *, module_path: str, project_root: Union[str, Path]
+) -> tuple[Component, Definitions]:
+    components = get_all_components_defs_from_defs_path(
+        project_root=project_root,
+        module_path=module_path,
+    )
+    check.invariant(
+        len(components) == 1,
+        "Only one component is supported. To get all components use get_all_components_defs_from_defs_path.",
+    )
+    return components[0]

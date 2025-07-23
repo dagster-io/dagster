@@ -118,6 +118,22 @@ def load_from_defs_folder(*, project_root: Path) -> Definitions:
                 return dg.load_from_defs_folder(project_root=project_path)
 
     """
+    return component_tree_for_project(project_root=project_root).build_defs()
+
+
+@public
+@suppress_dagster_warnings
+def component_tree_for_project(*, project_root: Path) -> ComponentTree:
+    """Constructs a ComponentTree object by automatically discovering and loading all Dagster
+    definitions from a project's defs folder structure.
+
+    Args:
+        project_root (Path): The absolute path to the dg project root directory. This should be the directory containing the project's configuration file (dg.toml or pyproject.toml with [tool.dg] section).
+
+    Returns:
+        ComponentTree: A ComponentTree object enabling loading components and building their definitions.
+
+    """
     root_config_path = locate_dg_config_in_folder(project_root)
     toml_config = load_toml_as_dict(
         check.not_none(
@@ -141,9 +157,7 @@ def load_from_defs_folder(*, project_root: Path) -> Definitions:
 
     defs_module = importlib.import_module(defs_module_name)
 
-    return load_defs(
-        defs_module, project_root=project_root, terminate_autoloading_on_keyword_files=False
-    )
+    return ComponentTree.from_module(defs_module=defs_module, project_root=project_root)
 
 
 # Public method so optional Nones are fine
