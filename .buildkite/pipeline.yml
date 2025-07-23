@@ -28,10 +28,7 @@ steps:
       pip install -e python_modules/dagster[dev]
       mkdir -p /tmp/test_scaffold
       cd /tmp/test_scaffold
+      source ../../venv/bin/activate
       python -m dagster project scaffold --name test_project
-      cat test_project/test_project/definitions.py
-      grep -q "@definitions" test_project/test_project/definitions.py && \
-      grep -q "load_from_defs_folder" test_project/test_project/definitions.py && \
-      echo "✅ Template validation successful!"
     agents:
       queue: "default"

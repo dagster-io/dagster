@@ -21,10 +21,10 @@ jobs:
         uses: buildkite/trigger-pipeline-action@v1.2.0
         with:
           buildkite-api-access-token: ${{ secrets.BUILDKITE_API_TOKEN }}
-          pipeline: "minimal-definitions"
+          pipeline: "issue-31069-test"
           branch: ${{ github.ref_name }}
           commit: ${{ github.sha }}
-          message: "Triggered from GitHub Actions"
+          message: "Using local pipeline.yml"
           build-env-vars: >-
             {
               "GITHUB_ACTOR": "${{ github.actor }}",
