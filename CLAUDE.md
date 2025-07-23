@@ -93,4 +93,4 @@ yarn build-api-docs          # Build API docs after .rst changes
 
 ## Import Guidelines
 
-- Prefer imports at the top-level of a module rather than in the body of functions or other scopes, unless there is a compelling reasoning like conditional inclusion or performance.
+- Use top-level imports unless you need conditional imports or have performance concerns requiring lazy loading
