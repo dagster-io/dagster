@@ -139,6 +139,19 @@ def _find_codex(dg_context: DgContext) -> Optional[list[str]]:
     return None
 
 
+def _find_gemini(dg_context: DgContext) -> Optional[list[str]]:
+    try:  # on PATH
+        subprocess.run(
+            ["gemini", "--version"],
+            check=False,
+        )
+        return ["gemini", "--prompt-interactive"]
+    except FileNotFoundError:
+        pass
+
+    return None
+
+
 @click.command(
     name="ai",
     cls=DgClickCommand,
@@ -161,7 +174,7 @@ def ai_command(
 
     claude_cmd = _find_claude(dg_context)
     codex_cmd = _find_codex(dg_context)
-
+    gemini_cmd = _find_gemini(dg_context)
     available_agents = []
     agent_map = {}
 
@@ -171,14 +184,16 @@ def ai_command(
     if codex_cmd:
         available_agents.append("codex")
         agent_map["codex"] = codex_cmd
+    if gemini_cmd:
+        available_agents.append("gemini")
+        agent_map["gemini"] = gemini_cmd
 
     if not available_agents:
         console.print("No supported CLI agent found.")
         console.print("Currently supported agents:")
         console.print("  - Claude Code: https://github.com/anthropics/claude-code")
         console.print("  - OpenAI Codex: https://github.com/openai/codex")
-        # TODO: add gemini once there is a way to start a session with a prompt
-        # at time of writing --prompt evals and exits
+        console.print("  - Google Gemini: https://github.com/google-gemini/gemini-cli")
         sys.exit(1)
 
     # If multiple agents are available, let user choose
