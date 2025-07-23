@@ -80,7 +80,7 @@ class DefsPathSandbox:
 
     @contextmanager
     def load_all(self) -> Iterator[list[tuple[Component, Definitions]]]:
-        from dagster.components.testing import (
+        from dagster.components.testing.utils import (
             get_all_components_defs_from_defs_path,
             get_module_path,
         )
@@ -177,7 +177,7 @@ def scaffold_defs_sandbox(
                 assert isinstance(component, MyComponent)
                 assert defs.get_asset_def("different_asset_key").key == AssetKey("different_asset_key")
     """
-    from dagster.components.testing import get_original_module_name, random_importable_name
+    from dagster.components.testing.utils import get_original_module_name, random_importable_name
 
     project_name = project_name or random_importable_name()
     component_path = component_path or random_importable_name()
