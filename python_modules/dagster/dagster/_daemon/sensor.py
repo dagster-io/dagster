@@ -8,7 +8,7 @@ from collections.abc import Sequence
 from concurrent.futures import Future, ThreadPoolExecutor
 from contextlib import AbstractContextManager
 from types import TracebackType
-from typing import TYPE_CHECKING, Callable, NamedTuple, Optional, Union, cast
+from typing import TYPE_CHECKING, Callable, Optional, Union, cast
 
 import dagster_shared.seven as seven
 from dagster_shared.error import DagsterError
@@ -26,7 +26,6 @@ from dagster._core.definitions.dynamic_partitions_request import (
     DeleteDynamicPartitionsRequest,
 )
 from dagster._core.definitions.run_request import DagsterRunReaction, InstigatorType, RunRequest
-from dagster._core.definitions.selector import JobSubsetSelector
 from dagster._core.definitions.sensor_definition import DefaultSensorStatus, SensorType
 from dagster._core.errors import (
     DagsterCodeLocationLoadError,
@@ -34,10 +33,16 @@ from dagster._core.errors import (
     DagsterUserCodeUnreachableError,
 )
 from dagster._core.execution.backfill import PartitionBackfill
+from dagster._core.execution.submit_instigator_runs import (
+    BackfillSubmission,
+    SkippedSensorRun,
+    SubmitRunRequestResult,
+    fetch_existing_runs_for_instigator,
+    get_code_location_for_instigator,
+    submit_instigator_run_request,
+)
 from dagster._core.instance import DagsterInstance
-from dagster._core.remote_representation.code_location import CodeLocation
-from dagster._core.remote_representation.external import RemoteJob, RemoteSensor
-from dagster._core.remote_representation.external_data import TargetSnap
+from dagster._core.remote_representation.external import RemoteSensor
 from dagster._core.scheduler.instigation import (
     DynamicPartitionsRequestResult,
     InstigatorState,
@@ -47,9 +52,8 @@ from dagster._core.scheduler.instigation import (
     TickData,
     TickStatus,
 )
-from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus, RunsFilter
-from dagster._core.storage.tags import RUN_KEY_TAG, SENSOR_NAME_TAG
-from dagster._core.telemetry import SENSOR_RUN_CREATED, hash_name, log_action
+from dagster._core.storage.dagster_run import DagsterRun
+from dagster._core.storage.tags import SENSOR_NAME_TAG
 from dagster._core.utils import make_new_backfill_id, make_new_run_id
 from dagster._core.workspace.context import IWorkspaceProcessContext
 from dagster._daemon.utils import DaemonErrorCapture
@@ -61,7 +65,6 @@ from dagster._utils import (
     check_for_debug_crash,
     return_as_list,
 )
-from dagster._utils.error import SerializableErrorInfo
 from dagster._utils.merger import merge_dicts
 
 if TYPE_CHECKING:
@@ -94,19 +97,6 @@ def default_elapsed_instrumentation(
 
 class DagsterSensorDaemonError(DagsterError):
     """Error when running the SensorDaemon."""
-
-
-class SkippedSensorRun(NamedTuple):
-    """Placeholder for runs that are skipped during the run_key idempotence check."""
-
-    run_key: Optional[str]
-    existing_run: DagsterRun
-
-
-class BackfillSubmission(NamedTuple):
-    """Placeholder for launched backfills."""
-
-    backfill_id: str
 
 
 class SensorLaunchContext(AbstractContextManager):
@@ -691,73 +681,6 @@ def mark_sensor_state_for_tick(
     )
 
 
-class SubmitRunRequestResult(NamedTuple):
-    run_key: Optional[str]
-    error_info: Optional[SerializableErrorInfo]
-    run: Union[SkippedSensorRun, DagsterRun, BackfillSubmission]
-
-
-def _submit_run_request(
-    run_id: str,
-    run_request: RunRequest,
-    workspace_process_context: IWorkspaceProcessContext,
-    remote_sensor: RemoteSensor,
-    existing_runs_by_key,
-    logger,
-    sensor_debug_crash_flags,
-) -> SubmitRunRequestResult:
-    instance = workspace_process_context.instance
-
-    sensor_origin = remote_sensor.get_remote_origin()
-
-    target_data: TargetSnap = check.not_none(remote_sensor.get_target(run_request.job_name))
-
-    # reload the code_location on each submission, request_context derived data can become out date
-    # * non-threaded: if number of serial submissions is too many
-    # * threaded: if thread sits pending in pool too long
-    code_location = _get_code_location_for_sensor(workspace_process_context, remote_sensor)
-    job_subset_selector = JobSubsetSelector(
-        location_name=code_location.name,
-        repository_name=sensor_origin.repository_origin.repository_name,
-        job_name=target_data.job_name,
-        op_selection=target_data.op_selection,
-        asset_selection=run_request.asset_selection,
-        asset_check_selection=run_request.asset_check_keys,
-    )
-    remote_job = code_location.get_job(job_subset_selector)
-    run = _get_or_create_sensor_run(
-        logger,
-        instance,
-        code_location,
-        remote_sensor,
-        remote_job,
-        run_id,
-        run_request,
-        target_data,
-        existing_runs_by_key,
-    )
-
-    if isinstance(run, SkippedSensorRun):
-        return SubmitRunRequestResult(run_key=run_request.run_key, error_info=None, run=run)
-
-    check_for_debug_crash(sensor_debug_crash_flags, "RUN_CREATED")
-
-    error_info = None
-    try:
-        logger.info(f"Launching run for {remote_sensor.name}")
-        instance.submit_run(run.run_id, workspace_process_context.create_request_context())
-        logger.info(f"Completed launch of run {run.run_id} for {remote_sensor.name}")
-    except Exception:
-        error_info = DaemonErrorCapture.process_exception(
-            exc_info=sys.exc_info(),
-            logger=logger,
-            log_message=f"Run {run.run_id} created successfully but failed to launch",
-        )
-
-    check_for_debug_crash(sensor_debug_crash_flags, "RUN_LAUNCHED")
-    return SubmitRunRequestResult(run_key=run_request.run_key, error_info=error_info, run=run)
-
-
 def _resume_tick(
     workspace_process_context: IWorkspaceProcessContext,
     context: SensorLaunchContext,
@@ -801,16 +724,6 @@ def _resume_tick(
         context.update_state(TickStatus.SUCCESS, cursor=context.tick.cursor)
 
 
-def _get_code_location_for_sensor(
-    workspace_process_context: IWorkspaceProcessContext,
-    remote_sensor: RemoteSensor,
-) -> CodeLocation:
-    sensor_origin = remote_sensor.get_remote_origin()
-    return workspace_process_context.create_request_context().get_code_location(
-        sensor_origin.repository_origin.code_location_origin.location_name
-    )
-
-
 def _evaluate_sensor(
     workspace_process_context: IWorkspaceProcessContext,
     context: SensorLaunchContext,
@@ -830,7 +743,7 @@ def _evaluate_sensor(
         )
 
     context.logger.info(f"Checking for new runs for sensor: {remote_sensor.name}")
-    code_location = _get_code_location_for_sensor(workspace_process_context, remote_sensor)
+    code_location = get_code_location_for_instigator(workspace_process_context, remote_sensor)
     repository_handle = remote_sensor.handle.repository_handle
     instigator_data = _sensor_instigator_data(state)
 
@@ -1135,8 +1048,11 @@ def _submit_run_requests(
         raw_run_ids_with_requests,
         has_evaluations=len(automation_condition_evaluations) > 0,
     )
-    existing_runs_by_key = _fetch_existing_runs(
-        instance, remote_sensor, [request for _, request in resolved_run_ids_with_requests]
+    existing_runs_by_key = fetch_existing_runs_for_instigator(
+        instance=instance,
+        remote_instigator=remote_sensor,
+        run_requests=[request for _, request in resolved_run_ids_with_requests],
+        additional_tags={SENSOR_NAME_TAG: remote_sensor.name},
     )
     check_after_runs_num = instance.get_tick_termination_check_interval()
 
@@ -1147,14 +1063,16 @@ def _submit_run_requests(
         if run_request.requires_backfill_daemon():
             return _submit_backfill_request(run_id, run_request, instance)
         else:
-            return _submit_run_request(
-                run_id,
-                run_request,
-                workspace_process_context,
-                remote_sensor,
-                existing_runs_by_key,
-                context.logger,
-                sensor_debug_crash_flags,
+            return submit_instigator_run_request(
+                run_id=run_id,
+                run_request=run_request,
+                workspace_process_context=workspace_process_context,
+                remote_instigator=remote_sensor,
+                target_data=check.not_none(remote_sensor.get_target(run_request.job_name)),
+                existing_runs_by_key=existing_runs_by_key,
+                logger=context.logger,
+                debug_crash_flags=sensor_debug_crash_flags,
+                additional_tags=DagsterRun.tags_for_sensor(remote_sensor),
             )
 
     if submit_threadpool_executor:
@@ -1270,162 +1188,4 @@ def get_elapsed(state: InstigatorState) -> Optional[float]:
     return get_current_timestamp() - max(
         instigator_data.last_tick_timestamp or 0,
         instigator_data.last_tick_start_timestamp or 0,
-    )
-
-
-def _fetch_existing_runs(
-    instance: DagsterInstance,
-    remote_sensor: RemoteSensor,
-    run_requests: Sequence[RunRequest],
-) -> dict[str, DagsterRun]:
-    run_keys = [run_request.run_key for run_request in run_requests if run_request.run_key]
-
-    if not run_keys:
-        return {}
-
-    # fetch runs from the DB with only the run key tag
-    # note: while possible to filter more at DB level with tags - it is avoided here due to observed
-    # perf problems
-    runs_with_run_keys: list[DagsterRun] = []
-    for run_key in run_keys:
-        # do serial fetching, which has better perf than a single query with an IN clause, due to
-        # how the query planner does the runs/run_tags join
-        runs_with_run_keys.extend(
-            instance.get_runs(filters=RunsFilter(tags={RUN_KEY_TAG: run_key}))
-        )
-
-    # filter down to runs with run_key that match the sensor name and its namespace (repository)
-    valid_runs: list[DagsterRun] = []
-    for run in runs_with_run_keys:
-        # if the run doesn't have a set origin, just match on sensor name
-        if run.remote_job_origin is None and run.tags.get(SENSOR_NAME_TAG) == remote_sensor.name:
-            valid_runs.append(run)
-        # otherwise prevent the same named sensor across repos from effecting each other
-        elif (
-            run.remote_job_origin is not None
-            and run.remote_job_origin.repository_origin.get_selector()
-            == remote_sensor.get_remote_origin().repository_origin.get_selector()
-            and run.tags.get(SENSOR_NAME_TAG) == remote_sensor.name
-        ):
-            valid_runs.append(run)
-
-    existing_runs: dict[str, DagsterRun] = {}
-    for run in valid_runs:
-        tags = run.tags or {}
-        # Guaranteed to have non-null run key because the source set of runs is `runs_with_run_keys`
-        # above.
-        run_key = check.not_none(tags.get(RUN_KEY_TAG))
-        existing_runs[run_key] = run
-
-    return existing_runs
-
-
-def _get_or_create_sensor_run(
-    logger: logging.Logger,
-    instance: DagsterInstance,
-    code_location: CodeLocation,
-    remote_sensor: RemoteSensor,
-    remote_job: RemoteJob,
-    run_id: str,
-    run_request: RunRequest,
-    target_data: TargetSnap,
-    existing_runs_by_key: dict[str, DagsterRun],
-) -> Union[DagsterRun, SkippedSensorRun]:
-    run_key = run_request.run_key
-    run = (run_key and existing_runs_by_key.get(run_key)) or instance.get_run_by_id(run_id)
-
-    if run:
-        if run.status != DagsterRunStatus.NOT_STARTED:
-            # A run already exists and was launched for this run key, but the daemon must have
-            # crashed before the tick could be updated
-            return SkippedSensorRun(run_key=run_request.run_key, existing_run=run)
-        else:
-            logger.info(
-                f"Run {run.run_id} already created with the run key "
-                f"`{run_key}` for {remote_sensor.name}"
-            )
-            return run
-
-    logger.info(f"Creating new run for {remote_sensor.name}")
-
-    run = _create_sensor_run(
-        instance, code_location, remote_sensor, remote_job, run_id, run_request, target_data
-    )
-
-    # Make sure that runs from the same tick are also unique by run key
-    if run_key:
-        existing_runs_by_key[run_key] = run
-    return run
-
-
-def _create_sensor_run(
-    instance: DagsterInstance,
-    code_location: CodeLocation,
-    remote_sensor: RemoteSensor,
-    remote_job: RemoteJob,
-    run_id: str,
-    run_request: RunRequest,
-    target_data: TargetSnap,
-) -> DagsterRun:
-    from dagster._daemon.daemon import get_telemetry_daemon_session_id
-
-    remote_execution_plan = code_location.get_execution_plan(
-        remote_job,
-        run_request.run_config,
-        step_keys_to_execute=None,
-        known_state=None,
-        instance=instance,
-    )
-    execution_plan_snapshot = remote_execution_plan.execution_plan_snapshot
-
-    tags = {
-        **(remote_job.run_tags or {}),
-        **run_request.tags,
-        # this gets applied in the sensor definition too, but we apply it here for backcompat
-        # with sensors before the tag was added to the sensor definition
-        **DagsterRun.tags_for_sensor(remote_sensor),
-    }
-    if run_request.run_key:
-        tags[RUN_KEY_TAG] = run_request.run_key
-
-    log_action(
-        instance,
-        SENSOR_RUN_CREATED,
-        metadata={
-            "DAEMON_SESSION_ID": get_telemetry_daemon_session_id(),
-            "SENSOR_NAME_HASH": hash_name(remote_sensor.name),
-            "pipeline_name_hash": hash_name(remote_job.name),
-            "repo_hash": hash_name(code_location.name),
-        },
-    )
-
-    return instance.create_run(
-        job_name=target_data.job_name,
-        run_id=run_id,
-        run_config=run_request.run_config,
-        resolved_op_selection=remote_job.resolved_op_selection,
-        step_keys_to_execute=None,
-        status=DagsterRunStatus.NOT_STARTED,
-        op_selection=target_data.op_selection,
-        root_run_id=None,
-        parent_run_id=None,
-        tags=tags,
-        job_snapshot=remote_job.job_snapshot,
-        execution_plan_snapshot=execution_plan_snapshot,
-        parent_job_snapshot=remote_job.parent_job_snapshot,
-        remote_job_origin=remote_job.get_remote_origin(),
-        job_code_origin=remote_job.get_python_origin(),
-        asset_selection=(
-            frozenset(run_request.asset_selection)
-            if run_request.asset_selection is not None
-            else None
-        ),
-        asset_check_selection=(
-            frozenset(run_request.asset_check_keys)
-            if run_request.asset_check_keys is not None
-            else None
-        ),
-        asset_graph=code_location.get_repository(
-            remote_job.repository_handle.repository_name
-        ).asset_graph,
     )
