@@ -577,6 +577,22 @@ class DocstringValidator:
                 f"Check that you have a blank line after the directive declaration."
             )
 
+        # Check for section header issues that cause indentation errors
+        if "Unexpected indentation" in warning_line:
+            return (
+                "Unexpected indentation. This often indicates a malformed section header. "
+                "Check that section headers like 'Args:', 'Returns:', 'Raises:' are formatted correctly "
+                "and that content under them is properly indented."
+            )
+
+        # Check for block quote issues that often follow section header problems
+        if "Block quote ends without a blank line" in warning_line:
+            return (
+                "Block quote ends without a blank line. This often follows a malformed section header. "
+                "Ensure section headers like 'Args:', 'Returns:' end with a colon and are followed by "
+                "properly indented content."
+            )
+
         # Return original message if no enhancement applies
         return warning_line
 
@@ -598,7 +614,7 @@ class DocstringValidator:
         for i, line in enumerate(lines, 1):
             stripped = line.strip()
 
-            # Use regex to identify potential section headers
+            # First, use regex to identify potential section headers
             if SECTION_HEADER_PATTERN.match(stripped):
                 # Skip if it's already in our allowed list
                 if stripped in ALLOWED_SECTION_HEADERS:
@@ -634,6 +650,57 @@ class DocstringValidator:
                             f"Invalid section header: '{stripped}'. Did you mean '{possible_match}'?",
                             i,
                         )
+
+            # Enhanced section header validation - check for malformed headers
+            for section in ALLOWED_SECTION_HEADERS:
+                section_base = section.rstrip(":")
+
+                # Check for missing colon
+                if stripped == section_base and section != section_base:
+                    result = result.with_error(
+                        f"Malformed section header: '{stripped}' is missing colon (should be '{section}')",
+                        i,
+                    )
+
+                # Check for incorrect capitalization or spacing
+                elif section_base.lower() in stripped.lower() and section not in stripped:
+                    # More specific detection for common mistakes
+                    if stripped.lower() == section.lower():
+                        result = result.with_error(
+                            f"Malformed section header: '{stripped}' has incorrect capitalization (should be '{section}')",
+                            i,
+                        )
+                    elif stripped.lower().replace(" ", "") == section.lower().replace(" ", ""):
+                        result = result.with_error(
+                            f"Malformed section header: '{stripped}' has incorrect spacing (should be '{section}')",
+                            i,
+                        )
+                    else:
+                        result = result.with_warning(
+                            f"Possible malformed section header: '{stripped}' (should be '{section}')",
+                            i,
+                        )
+
+            # Check for completely garbled section headers (like "Argsjdkfjdkjfdk:")
+            if ":" in stripped and len(stripped) > 4:
+                # Look for patterns that might be corrupted section headers
+                for section in ALLOWED_SECTION_HEADERS:
+                    section_base = section.rstrip(":")
+                    # If the line contains the section name but with extra characters
+                    if (
+                        section_base.lower() in stripped.lower()
+                        and stripped.lower() != section.lower()
+                        and len(stripped) > len(section) + 3
+                    ):  # Allow some variance
+                        # Check if this looks like a corrupted section header
+                        if stripped.endswith(":") and not any(
+                            section in stripped for section in ALLOWED_SECTION_HEADERS
+                        ):
+                            result = result.with_error(
+                                f"Corrupted section header detected: '{stripped}' (possibly should be '{section}')",
+                                i,
+                            )
+                            break
 
         return result
 
