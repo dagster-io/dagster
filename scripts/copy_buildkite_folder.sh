@@ -20,7 +20,15 @@ if [ ! -d "$BUILDKITE_FOLDER_GIT_REPO_DIR" ]; then
 fi
 
 # Copy the .buildkite folder to the current repository
-mkdir -p "$DAGSTER_GIT_REPO_DIR/.buildkite"
-cp -r "$BUILDKITE_FOLDER_GIT_REPO_DIR/.buildkite"/* "$DAGSTER_GIT_REPO_DIR/.buildkite/"
+
+if [ -d "$BUILDKITE_FOLDER_GIT_REPO_DIR/.buildkite" ]; then
+  mkdir -p "$DAGSTER_GIT_REPO_DIR/.buildkite"
+  cp -r "$BUILDKITE_FOLDER_GIT_REPO_DIR/.buildkite"/* "$DAGSTER_GIT_REPO_DIR/.buildkite/"
+  echo "✅ Successfully copied .buildkite folder"
+else
+  echo "❌ Error: .buildkite directory not found in the cloned repository"
+  exit 1
+fi
+
 
 echo "✅ Successfully set up .buildkite folder"
