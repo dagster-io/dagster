@@ -401,6 +401,7 @@ class DocstringValidator:
             "py:attr",
             "py:mod",
             "py:data",
+            "py:obj",
             "func",
             "class",
             "meth",
@@ -425,6 +426,8 @@ class DocstringValidator:
             "versionadded",
             "versionchanged",
             "deprecated",
+            "seealso",
+            "attribute",
         ]
 
         # Check for "Unknown interpreted text role" messages
