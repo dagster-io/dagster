@@ -1,4 +1,4 @@
-name: Buildkite Integration
+name: BuildKite Integration
 
 on:
   push:
@@ -7,48 +7,44 @@ on:
 jobs:
   trigger:
     runs-on: ubuntu-latest
+
     steps:
-      - name: 📥 Checkout code
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: 🚀 Trigger Buildkite pipeline
+      - name: Trigger Buildkite build
         env:
-          BUILDKITE_API_ACCESS_TOKEN: ${{ secrets.BUILDKITE_API_ACCESS_TOKEN }}  # 🛡️ MUST be set in GitHub Secrets!
-          BUILDKITE_ANALYTICS_TOKEN: ${{ secrets.BUILDKITE_ANALYTICS_TOKEN }}    # Optional
+          BUILDKITE_API_ACCESS_TOKEN: ${{ secrets.BUILDKITE_API_ACCESS_TOKEN }}
         run: |
-          echo "🔧 Starting Buildkite pipeline trigger..."
-          echo "Org: dagster"
+          echo "🚀 Triggering Buildkite pipeline..."
+          echo "Organization: dagster"
           echo "Pipeline: unit-tests"
           echo "Branch: ${{ github.ref_name }}"
           echo "Commit: ${{ github.sha }}"
 
-          # Test API access first
-          echo "🌐 Testing API access..."
-          test_status=$(curl -s -o /dev/null -w "%{http_code}" \
-            -H "Authorization: Bearer $BUILDKITE_API_ACCESS_TOKEN" \
-            "https://api.buildkite.com/v2/user")
-          
-          if [ "$test_status" != "200" ]; then
-            echo "❌ API access failed (status $test_status)"
+          echo "🔐 Validating API token..."
+          curl -s -H "Authorization: Bearer $BUILDKITE_API_ACCESS_TOKEN" \
+               https://api.buildkite.com/v2/user || {
+            echo "❌ API token invalid or unauthorized."
             exit 1
-          else
-            echo "✅ API token is valid."
-          fi
+          }
+          echo "✅ API token is valid."
 
-          # Trigger build
           echo "📤 Sending build trigger request..."
+
+          read -r -d '' PAYLOAD <<EOF
+          {
+            "commit": "${{ github.sha }}",
+            "branch": "${{ github.ref_name }}",
+            "message": "Triggered from GitHub Actions - ${{ github.event.head_commit.message }}"
+          }
+EOF
+
           response=$(curl -s -w "%{http_code}" -o response.json \
             -X POST "https://api.buildkite.com/v2/organizations/dagster/pipelines/unit-tests/builds" \
             -H "Authorization: Bearer $BUILDKITE_API_ACCESS_TOKEN" \
             -H "Content-Type: application/json" \
-            -d @- << EOF
-            {
-              "commit": "${{ github.sha }}",
-              "branch": "${{ github.ref_name }}",
-              "message": "Triggered from GitHub Actions - ${{ github.event.head_commit.message }}"
-            }
-EOF
-          )
+            -d "$PAYLOAD")
 
           echo "🔁 Response HTTP Code: $response"
           echo "📩 Response JSON:"
@@ -57,14 +53,15 @@ EOF
           if [ "$response" = "201" ] || [ "$response" = "200" ]; then
             echo "✅ Build triggered successfully!"
           else
-            echo "⚠️ Primary trigger failed. Trying fallback webhook..."
-            
+            echo "❌ Primary trigger failed."
+
             if [ -n "${{ secrets.BUILDKITE_WEBHOOK_URL }}" ]; then
+              echo "🌐 Trying fallback webhook..."
               curl -X POST "${{ secrets.BUILDKITE_WEBHOOK_URL }}" \
                 -H "Content-Type: application/json" \
                 -d "{\"ref\": \"refs/heads/${{ github.ref_name }}\", \"after\": \"${{ github.sha }}\", \"repository\": {\"clone_url\": \"${{ github.server_url }}/${{ github.repository }}.git\"}}"
             else
-              echo "❌ No fallback webhook available. Build failed."
+              echo "⚠️ No fallback webhook URL provided."
               exit 1
             fi
           fi
