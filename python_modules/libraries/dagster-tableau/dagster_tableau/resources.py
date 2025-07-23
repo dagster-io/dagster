@@ -136,7 +136,7 @@ class BaseTableauClient:
     @superseded(additional_warn_text="Use `refresh_and_poll` on the tableau resource instead.")
     def refresh_and_materialize_workbooks(
         self, specs: Sequence[AssetSpec], refreshable_workbook_ids: Optional[Sequence[str]]
-    ) -> Iterator[Union[Output, ObserveResult]]:
+    ) -> Iterator[Union[AssetObservation, Output]]:
         """Refreshes workbooks for the given workbook IDs and materializes workbook views given the asset specs."""
         refreshed_workbook_ids = set()
         for refreshable_workbook_id in refreshable_workbook_ids or []:
@@ -165,7 +165,7 @@ class BaseTableauClient:
     @superseded(additional_warn_text="Use `refresh_and_poll` on the tableau resource instead.")
     def refresh_and_materialize(
         self, specs: Sequence[AssetSpec], refreshable_data_source_ids: Optional[Sequence[str]]
-    ) -> Iterator[Union[Output, ObserveResult]]:
+    ) -> Iterator[Union[AssetObservation, Output]]:
         """Refreshes data sources for the given data source IDs and materializes Tableau assets given the asset specs.
         Only data sources with extracts can be refreshed.
         """
