@@ -8,6 +8,6 @@
     "build_pull_request_base_branch_changed": false,
     "build_tags": false,
     "filter_enabled": true,
-    "filter_condition": "build.branch == 'issue-31069' || build.branch == 'install-buildkite-test-analytics' || build.branch == 'master'"
+    "filter_condition": "build.branch == 'Issue-31069' || build.branch == 'install-buildkite-test-analytics' || build.branch == 'master'"
   }
 }

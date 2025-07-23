@@ -1,13 +1,11 @@
 steps:
   - label: ":test_tube: CLI Test"
     command: |
-      cd /workspaces/dagster  # Dagster köküne git
+      cd /workspaces/dagster 
       python -m venv venv
       source venv/bin/activate
       pip install --upgrade pip
-      pip install -e python_modules/libraries/dagster-shared
-      pip install -e python_modules/dagster[dev]
-      pytest -v python_modules/dagster/dagster_tests/cli_tests/test_project_commands.py
+      python -m pytest -v python_modules/dagster/dagster_tests/cli_tests/test_project_commands.py -v --override-ini="addopts="
     agents:
       queue: "default"
 
