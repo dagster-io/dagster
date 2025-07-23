@@ -481,11 +481,14 @@ def test_matching_partitions_with_different_subsets():
     assets_by_repo_name = {"repo": matching_partitions_with_different_subsets}
     asset_graph = get_asset_graph(assets_by_repo_name)
 
+    # target a subset that results in different subsets being excluded from parent
+    # and child (the parts of parent that are downstream of grandparent get filtered out,
+    # and the parts of child that are downstream of other_parent get filtered out)
     target_asset_graph_subset = AssetGraphSubset(
         partitions_subsets_by_asset_key={
             AssetKey(["grandparent"]): asset_graph.get(
                 AssetKey(["grandparent"])
-            ).partitions_def.get_partition_subset_in_time_window(
+            ).partitions_def.get_partition_subset_in_time_window(  # type: ignore
                 TimeWindow(
                     start=create_datetime(2023, 1, 1),
                     end=create_datetime(2023, 1, 2),
@@ -493,7 +496,7 @@ def test_matching_partitions_with_different_subsets():
             ),
             AssetKey(["parent"]): asset_graph.get(
                 AssetKey(["parent"])
-            ).partitions_def.get_partition_subset_in_time_window(
+            ).partitions_def.get_partition_subset_in_time_window(  # type: ignore
                 TimeWindow(
                     start=create_datetime(2023, 1, 1),
                     end=create_datetime(2023, 1, 10),
@@ -501,7 +504,7 @@ def test_matching_partitions_with_different_subsets():
             ),
             AssetKey(["child"]): asset_graph.get(
                 AssetKey(["child"])
-            ).partitions_def.get_partition_subset_in_time_window(
+            ).partitions_def.get_partition_subset_in_time_window(  # type: ignore
                 TimeWindow(
                     start=create_datetime(2023, 1, 1),
                     end=create_datetime(2023, 1, 10),
@@ -509,7 +512,7 @@ def test_matching_partitions_with_different_subsets():
             ),
             AssetKey(["other_parent"]): asset_graph.get(
                 AssetKey(["other_parent"])
-            ).partitions_def.get_partition_subset_in_time_window(
+            ).partitions_def.get_partition_subset_in_time_window(  # type: ignore
                 TimeWindow(
                     start=create_datetime(2023, 1, 9),
                     end=create_datetime(2023, 1, 10),
@@ -530,14 +533,14 @@ def test_matching_partitions_with_different_subsets():
             backfill_id, asset_backfill_data, asset_graph, instance, assets_by_repo_name
         )
         # doesn't try to materialize child yet, even though it has the same targeted
-        # subset as parent, becasue different subsets are eligible on the first iteration
-        # and cannot be grouped together into a run
+        # subset as parent, because different subsets of parent and child are eligible
+        # on the first iteration and thus cannot be grouped together into a run
         assert asset_backfill_data.requested_subset == AssetGraphSubset(
             non_partitioned_asset_keys=set(),
             partitions_subsets_by_asset_key={
                 AssetKey(["grandparent"]): asset_graph.get(
                     AssetKey(["grandparent"])
-                ).partitions_def.get_partition_subset_in_time_window(
+                ).partitions_def.get_partition_subset_in_time_window(  # type: ignore
                     TimeWindow(
                         start=create_datetime(2023, 1, 1),
                         end=create_datetime(2023, 1, 2),
@@ -545,7 +548,7 @@ def test_matching_partitions_with_different_subsets():
                 ),
                 AssetKey(["parent"]): asset_graph.get(
                     AssetKey(["parent"])
-                ).partitions_def.get_partition_subset_in_time_window(
+                ).partitions_def.get_partition_subset_in_time_window(  # type: ignore
                     TimeWindow(
                         start=create_datetime(2023, 1, 2),
                         end=create_datetime(2023, 1, 10),
@@ -553,7 +556,7 @@ def test_matching_partitions_with_different_subsets():
                 ),
                 AssetKey(["other_parent"]): asset_graph.get(
                     AssetKey(["other_parent"])
-                ).partitions_def.get_partition_subset_in_time_window(
+                ).partitions_def.get_partition_subset_in_time_window(  # type: ignore
                     TimeWindow(
                         start=create_datetime(2023, 1, 9),
                         end=create_datetime(2023, 1, 10),

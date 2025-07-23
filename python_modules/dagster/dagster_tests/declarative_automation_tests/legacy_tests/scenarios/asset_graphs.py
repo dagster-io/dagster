@@ -97,8 +97,10 @@ one_parent_starts_later_and_nonexistent_upstream_partitions_not_allowed = [
 ]
 
 
+# parent and child have the same partitions definition, grandparent and other_parent have differing
+# partitions definitions
 matching_partitions_with_different_subsets = [
-    asset_def("grandparent", partitions_def=dg.HourlyPartitionsDefinition("2023-01-01-00:00")),
+    asset_def("grandparent", partitions_def=dg.DailyPartitionsDefinition("2021-01-01")),
     asset_def(
         "parent",
         partitions_def=dg.DailyPartitionsDefinition("2023-01-01"),
