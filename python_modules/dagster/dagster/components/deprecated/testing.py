@@ -3,8 +3,9 @@ import sys
 from pathlib import Path
 
 import yaml
-from dagster._annotations import deprecated
 from dagster_shared import check
+
+from dagster._annotations import deprecated
 
 """Testing utilities for components."""
 
