@@ -4,10 +4,22 @@
 steps:
   - label: ":python: Run tests"
     command: |
+      echo "Current working directory: $(pwd)"
+      echo "Directory contents: $(ls -la)"
       python -m venv venv
       source venv/bin/activate
-      pip install -e ".[dev]"
-      pytest -v python_modules/dagster/dagster_tests/cli_tests/test_project_commands.py
+      pip install --upgrade pip
+      # Make sure we're in the repository root
+      if [ -f "python_modules/dagster/setup.py" ]; then
+        echo "✅ Found dagster setup.py, installing dependencies..."
+        pip install -e "python_modules/libraries/dagster-shared"
+        pip install -e "python_modules/dagster[dev]"
+        pytest -v python_modules/dagster/dagster_tests/cli_tests/test_project_commands.py
+      else
+        echo "❌ Cannot find dagster setup.py, current directory structure:"
+        find . -name "setup.py" -o -name "pyproject.toml" | head -10
+        exit 1
+      fi
     agents:
       queue: "default"
 
@@ -22,16 +34,27 @@ steps:
       
   - label: ":dagster: Manual test scaffolding"
     command: |
+      echo "Current working directory: $(pwd)"
       python -m venv venv
       source venv/bin/activate
-      pip install -e ".[dev]"
-      mkdir -p /tmp/test_scaffold
-      cd /tmp/test_scaffold
-      python -m dagster project scaffold --name test_project
-      cat test_project/test_project/definitions.py
-      # Verify template contains the @definitions and load_from_defs_folder
-      grep -q "@definitions" test_project/test_project/definitions.py && \
-      grep -q "load_from_defs_folder" test_project/test_project/definitions.py && \
-      echo "✅ Template validation successful!"
+      pip install --upgrade pip
+      # Make sure we're in the repository root
+      if [ -f "python_modules/dagster/setup.py" ]; then
+        echo "✅ Found dagster setup.py, installing dependencies..."
+        pip install -e "python_modules/libraries/dagster-shared"
+        pip install -e "python_modules/dagster[dev]"
+        mkdir -p /tmp/test_scaffold
+        cd /tmp/test_scaffold
+        python -m dagster project scaffold --name test_project
+        cat test_project/test_project/definitions.py
+        # Verify template contains the @definitions and load_from_defs_folder
+        grep -q "@definitions" test_project/test_project/definitions.py && \
+        grep -q "load_from_defs_folder" test_project/test_project/definitions.py && \
+        echo "✅ Template validation successful!"
+      else
+        echo "❌ Cannot find dagster setup.py, current directory structure:"
+        find . -name "setup.py" -o -name "pyproject.toml" | head -10
+        exit 1
+      fi
     agents:
       queue: "default"
