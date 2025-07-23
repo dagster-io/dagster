@@ -1,3 +1,5 @@
+"""trigger build."""
+
 from enum import Enum
 
 
