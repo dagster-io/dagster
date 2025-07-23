@@ -1,6 +1,3 @@
-# Minimal pipeline for testing issue-31069
-# Tests the implementation of boilerplate definitions.py with @definitions and load_from_defs_folder
-
 steps:
   - label: ":python: Simple test"
     command: |
@@ -19,5 +16,3 @@ steps:
       grep -q "load_from_defs_folder" myproject/myproject/definitions.py
       
       echo "✅ Success! Template contains required functionality."
-    agents:
-      queue: "default"
