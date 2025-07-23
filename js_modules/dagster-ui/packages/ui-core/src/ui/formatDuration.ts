@@ -53,7 +53,7 @@ export const unitToShortLabel: Record<UnitType | PluralUnitType, string> = {
   week: 'wk',
   weeks: 'wk',
   day: 'day',
-  days: 'day',
+  days: 'days',
   hour: 'hr',
   hours: 'hr',
   minute: 'min',
