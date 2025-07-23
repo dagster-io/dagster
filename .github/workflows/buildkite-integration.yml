@@ -27,7 +27,7 @@ jobs:
 
           # Trigger build request
           response=$(curl -s -w "%{http_code}" -o response.json \
-            -X POST "https://buildkite.com/dagster/unit-tests/builds?branch=albertfast%3AIssue-31069" \
+            -X POST "https://api.buildkite.com/v2/organizations/issue-31069/pipelines/minimal-definitions/builds" \
             -H "Authorization: Bearer $BUILDKITE_API_ACCESS_TOKEN" \
             -H "Content-Type: application/json" \
             -d @- <<EOF
