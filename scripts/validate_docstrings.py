@@ -13,12 +13,6 @@ This script now uses the automation.docstring_lint package for the core function
 """
 
 import sys
-from pathlib import Path
-
-# Add python modules to path to access automation package
-DAGSTER_ROOT = Path(__file__).parent.parent
-PYTHON_MODULES_PATH = DAGSTER_ROOT / "python_modules"
-sys.path.insert(0, str(PYTHON_MODULES_PATH / "automation"))
 
 from automation.docstring_lint.cli import main
 

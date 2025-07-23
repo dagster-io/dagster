@@ -27,21 +27,6 @@ SPHINX_EXT_PATH = DAGSTER_ROOT / "docs" / "sphinx" / "_ext"
 if SPHINX_EXT_PATH.exists() and str(SPHINX_EXT_PATH) not in sys.path:
     sys.path.insert(0, str(SPHINX_EXT_PATH))
 
-# Add python modules to path like the actual Sphinx build does
-PYTHON_MODULES_PATH = DAGSTER_ROOT / "python_modules"
-if PYTHON_MODULES_PATH.exists():
-    for folder in PYTHON_MODULES_PATH.iterdir():
-        if folder.is_dir() and folder.name != "dagster-test":
-            if str(folder) not in sys.path:
-                sys.path.insert(0, str(folder))
-
-LIBRARIES_PATH = PYTHON_MODULES_PATH / "libraries"
-if LIBRARIES_PATH.exists():
-    for folder in LIBRARIES_PATH.iterdir():
-        if folder.is_dir() and folder.name != "dagster-test":
-            if str(folder) not in sys.path:
-                sys.path.insert(0, str(folder))
-
 
 @record
 class ValidationResult:
