@@ -1,0 +1,27 @@
+set -euo pipefail
+
+export DAGSTER_GIT_REPO_DIR=/workdir
+
+if [ -z "${PYTEST_CURRENT_TEST:-}" ]; then
+  . ./.buildkite/buildkite-shared/buildkite_shared/scripts/docker_prune.sh
+fi
+
+export COMMAND_START_TIME="$(date +%s)"
+export STEP_SPAN_ID="$(echo $BUILDKITE_LABEL | sum | cut -f 1 -d \  )"
+
+# Route test and step analytics to the correct project
+export PIPELINE_NAME=${BUILDKITE_PIPELINE_NAME:-"unknown"}
+case "$PIPELINE_NAME" in
+    ":dagster: Dagster")
+        export BUILDKITE_STEP_ANALYTICS_TOKEN=$DAGSTER_BUILDKITE_STEP_ANALYTICS_TOKEN
+        export BUILDKITE_ANALYTICS_TOKEN=$DAGSTER_BUILDKITE_TEST_ANALYTICS_TOKEN
+        export BUILDKITE_TEST_SUITE_SLUG=$DAGSTER_BUILDKITE_TEST_SUITE_SLUG
+        export BUILDKITE_STEP_SUITE_SLUG=$DAGSTER_BUILDKITE_STEP_SUITE_SLUG
+        ;;
+
+    *)
+        echo "Unsupported pipeline: $PIPELINE_NAME - not setting analytics token"
+        ;;
+esac
+
+

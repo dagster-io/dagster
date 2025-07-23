@@ -36,6 +36,10 @@ exclude = [
   "**/build",
 ]
 
+extraPaths = [
+  ".buildkite/buildkite-shared"
+]
+
 # These two settings point pyright to a python environment to resolve imports against. This virtual
 # environment is defined in the `pyright` tox environment in the tox section below-- that
 # environment must be built before pyright can run correctly.
@@ -111,7 +115,6 @@ extend-exclude = [
   "*/_vendored/*",
   "*/snapshots/*",
   "python_modules/libraries/dagstermill/dagstermill_tests/notebooks/cli_test_scaffold.ipynb",
-  ".buildkite/",
 ]
 
 # Codebase-wide default line length. Override in package-specific pyproject.toml where a different
@@ -312,3 +315,5 @@ exclude = ["examples/docs_snippets/docs_snippets/guides/etl/transform-dbt/dbt_de
 
 [tool.dagster]
 module_name = "dagster_test.toys.repo"
+
+
