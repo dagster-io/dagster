@@ -5,6 +5,7 @@ from typing import Any, Union
 import tableauserverclient as TSC
 from dagster import (
     AssetKey,
+    AssetObservation,
     AssetSpec,
     ObserveResult,
     Output,
@@ -120,6 +121,16 @@ def create_data_source_asset_event(
         )
 
 
+def create_view_asset_observation(
+    view: TSC.ViewItem,
+    spec: AssetSpec,
+) -> Iterator[AssetObservation]:
+    asset_key = spec.key
+    yield from create_asset_observation(
+        asset_key=asset_key, data=view, additional_metadata={"workbook_id": view.workbook_id}
+    )
+
+
 def create_asset_output(
     asset_key: AssetKey,
     data: Union[TSC.DatasourceItem, TSC.ViewItem],
@@ -145,6 +156,24 @@ def create_asset_observe_result(
     additional_metadata: Mapping[str, Any],
 ) -> Iterator[ObserveResult]:
     yield ObserveResult(
+        asset_key=asset_key,
+        metadata={
+            **additional_metadata,
+            "owner_id": data.owner_id,
+            "name": data.name,
+            "contentUrl": data.content_url,
+            "createdAt": data.created_at.strftime("%Y-%m-%dT%H:%M:%S") if data.created_at else None,
+            "updatedAt": data.updated_at.strftime("%Y-%m-%dT%H:%M:%S") if data.updated_at else None,
+        },
+    )
+
+
+def create_asset_observation(
+    asset_key: AssetKey,
+    data: Union[TSC.DatasourceItem, TSC.ViewItem],
+    additional_metadata: Mapping[str, Any],
+) -> Iterator[AssetObservation]:
+    yield AssetObservation(
         asset_key=asset_key,
         metadata={
             **additional_metadata,

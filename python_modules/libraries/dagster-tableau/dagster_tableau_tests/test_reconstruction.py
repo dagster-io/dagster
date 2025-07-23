@@ -516,10 +516,10 @@ def test_load_assets_workspace_data_translator(
 
 
 @pytest.mark.parametrize(
-    "job_name, expected_asset_materializations",
+    "job_name, expected_asset_materializations, expected_asset_observations",
     [
-        ("all_asset_job", 4),
-        ("subset_asset_job", 1),
+        ("all_asset_job", 1, 3),
+        ("subset_asset_job", 1, 0),
     ],
     ids=[
         "all_asset_job",
@@ -529,6 +529,7 @@ def test_load_assets_workspace_data_translator(
 def test_load_assets_workspace_asset_decorator_with_context(
     job_name: str,
     expected_asset_materializations: int,
+    expected_asset_observations: int,
     sign_in: MagicMock,
     get_workbooks: MagicMock,
     get_workbook: MagicMock,
@@ -580,3 +581,8 @@ def test_load_assets_workspace_asset_decorator_with_context(
             event for event in events if event.event_type == DagsterEventType.ASSET_MATERIALIZATION
         ]
         assert len(asset_materializations) == expected_asset_materializations
+
+        asset_observations = [
+            event for event in events if event.event_type == DagsterEventType.ASSET_OBSERVATION
+        ]
+        assert len(asset_observations) == expected_asset_observations
