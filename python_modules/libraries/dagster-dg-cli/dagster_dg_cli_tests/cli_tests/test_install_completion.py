@@ -8,6 +8,9 @@ from dagster_dg_core_tests.utils import ProxyRunner, assert_runner_result
 # because it modifies the home folder. Therefore we mock the actual installation routine here and
 # just ensure that the command executes and prints the correct output.
 def test_install_completion():
+    import os
+
+    print(os.environ.keys())
     shell, _ = shellingham.detect_shell()
     with ProxyRunner.test() as runner, runner.isolated_filesystem():
         with patch("typer._completion_shared.install") as mock_install:
