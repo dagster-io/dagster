@@ -123,7 +123,10 @@ if TYPE_CHECKING:
         AssetMaterializationHealthState,
     )
     from dagster._core.definitions.asset_key import EntityKey
-    from dagster._core.definitions.assets.graph.base_asset_graph import BaseAssetGraph
+    from dagster._core.definitions.assets.graph.base_asset_graph import (
+        BaseAssetGraph,
+        BaseAssetNode,
+    )
     from dagster._core.definitions.job_definition import JobDefinition
     from dagster._core.definitions.partitions.definition import PartitionsDefinition
     from dagster._core.definitions.repository_definition.repository_definition import (
@@ -1288,6 +1291,7 @@ class DagsterInstance(DynamicPartitionsStore):
         op_selection: Optional[Sequence[str]] = None,
         remote_job_origin: Optional["RemoteJobOrigin"] = None,
         job_code_origin: Optional[JobPythonOrigin] = None,
+        asset_graph: Optional["BaseAssetGraph[BaseAssetNode]"] = None,
     ) -> DagsterRun:
         # https://github.com/dagster-io/dagster/issues/2403
         if tags and IS_AIRFLOW_INGEST_PIPELINE_STR in tags:
@@ -1309,6 +1313,34 @@ class DagsterInstance(DynamicPartitionsStore):
             if job_snapshot
             else None
         )
+
+        # ensure that all asset outputs list their execution type, even if the snapshot was
+        # created on an older version before it was being set
+        if execution_plan_snapshot and asset_graph:
+            adjusted_steps = []
+            for step in execution_plan_snapshot.steps:
+                adjusted_outputs = []
+                for output in step.outputs:
+                    asset_key = output.properties.asset_key if output.properties else None
+                    adjusted_output = output
+
+                    if (
+                        output.properties is not None
+                        and asset_key
+                        and asset_graph.has(asset_key)
+                        and output.properties.asset_execution_type is None
+                    ):
+                        adjusted_output = output._replace(
+                            properties=output.properties._replace(
+                                asset_execution_type=asset_graph.get(asset_key).execution_type
+                            )
+                        )
+
+                    adjusted_outputs.append(adjusted_output)
+
+                adjusted_steps.append(step._replace(outputs=adjusted_outputs))
+
+            execution_plan_snapshot = execution_plan_snapshot._replace(steps=adjusted_steps)
 
         execution_plan_snapshot_id = (
             self._ensure_persisted_execution_plan_snapshot(
@@ -1419,7 +1451,7 @@ class DagsterInstance(DynamicPartitionsStore):
         job_name: str,
         step: "ExecutionStepSnap",
         output: "ExecutionStepOutputSnap",
-        asset_graph: "BaseAssetGraph",
+        asset_graph: "BaseAssetGraph[BaseAssetNode]",
     ) -> None:
         from dagster._core.definitions.partitions.context import partition_loading_context
         from dagster._core.definitions.partitions.definition import DynamicPartitionsDefinition
@@ -1698,6 +1730,7 @@ class DagsterInstance(DynamicPartitionsStore):
             parent_job_snapshot=parent_job_snapshot,
             remote_job_origin=remote_job_origin,
             job_code_origin=job_code_origin,
+            asset_graph=asset_graph,
         )
 
         dagster_run = self._run_storage.add_run(dagster_run)
