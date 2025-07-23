@@ -1,0 +1,61 @@
+name: Trigger Buildkite
+
+on:
+  push:
+    branches: [Issue-31069]
+
+jobs:
+  trigger:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Trigger Buildkite build
+        run: |
+          echo "Triggering Buildkite pipeline..."
+          echo "Organization: dagster"
+          echo "Pipeline: unit-tests" 
+          echo "Branch: ${{ github.ref_name }}"
+          echo "Commit: ${{ github.sha }}"
+          
+          # First, let's check if we can access the API
+          echo "Testing API access..."
+          curl -s -H "Authorization: Bearer ${{ secrets.BUILDKITE_API_ACCESS_TOKEN }}" \
+            "https://api.buildkite.com/v2/user" || echo "API access failed"
+          
+          # Try to trigger the build
+          echo "Attempting to trigger build..."
+          response=$(curl -s -w "%{http_code}" -o response.json \
+            -X POST "https://api.buildkite.com/v2/organizations/dagster/pipelines/unit-tests/builds" \
+            -H "Authorization: Bearer ${{ secrets.BUILDKITE_API_ACCESS_TOKEN }}" \
+            -H "Content-Type: application/json" \
+                -d @- << EOF
+            {  
+            "commit": "${{ github.sha }}",  
+            "branch": "${{ github.ref_name }}",  
+            "message": "Triggered from GitHub Actions - ${{ github.event.head_commit.message }}"  
+            }  
+            EOF  
+            )
+          
+          echo "HTTP Status Code: $response"
+          echo "Response Body:"
+          cat response.json
+          
+          # Check if successful
+          if [ "$response" = "201" ] || [ "$response" = "200" ]; then
+            echo "✅ Build triggered successfully!"
+          else
+            echo "❌ Failed to trigger build"
+            echo "Trying alternative webhook method..."
+            
+            # Alternative: Use webhook if available
+            if [ -n "${{ secrets.BUILDKITE_WEBHOOK_URL }}" ]; then
+              curl -X POST "${{ secrets.BUILDKITE_WEBHOOK_URL }}" \
+                -H "Content-Type: application/json" \
+                -d "{\"ref\": \"refs/heads/${{ github.ref_name }}\", \"after\": \"${{ github.sha }}\", \"repository\": {\"clone_url\": \"${{ github.server_url }}/${{ github.repository }}.git\"}}"
+            fi
+          fi
+        env:
+          BUILDKITE_ANALYTICS_TOKEN: ${{ secrets.BUILDKITE_ANALYTICS_TOKEN }}
