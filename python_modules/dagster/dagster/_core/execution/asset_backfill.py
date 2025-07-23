@@ -1677,27 +1677,25 @@ def _should_backfill_atomic_asset_subset_unit(
             )
         ).compute_intersection(entity_subset_to_filter)
 
-        not_waiting_for_parent_subset = entity_subset_to_filter.compute_difference(
-            possibly_waiting_for_parent_subset
-        )
-
         if not possibly_waiting_for_parent_subset.is_empty:
-            can_run_with_parent_subset, parent_failure_subsets_with_reasons = (
-                get_can_run_with_parent_subsets(
-                    targeted_but_not_materialized_parent_subset,
-                    possibly_waiting_for_parent_subset,
-                    asset_graph_view,
-                    target_subset,
-                    asset_graph_subset_matched_so_far,
-                    candidate_asset_graph_subset_unit,
+            cant_run_with_parent_reason = _get_cant_run_with_parent_reason(
+                targeted_but_not_materialized_parent_subset,
+                possibly_waiting_for_parent_subset,
+                asset_graph_view,
+                target_subset,
+                asset_graph_subset_matched_so_far,
+                candidate_asset_graph_subset_unit,
+            )
+            if cant_run_with_parent_reason is not None:
+                entity_subset_to_filter = entity_subset_to_filter.compute_difference(
+                    possibly_waiting_for_parent_subset
                 )
-            )
-            if parent_failure_subsets_with_reasons:
-                failure_subsets_with_reasons.extend(parent_failure_subsets_with_reasons)
-
-            entity_subset_to_filter = not_waiting_for_parent_subset.compute_union(
-                can_run_with_parent_subset
-            )
+                failure_subsets_with_reasons.append(
+                    (
+                        possibly_waiting_for_parent_subset.get_internal_value(),
+                        cant_run_with_parent_reason,
+                    )
+                )
 
             is_self_dependency = parent_key == asset_key
 
@@ -1764,14 +1762,14 @@ def _should_backfill_atomic_asset_subset_unit(
     )
 
 
-def get_can_run_with_parent_subsets(
+def _get_cant_run_with_parent_reason(
     parent_subset: EntitySubset[AssetKey],
     entity_subset_to_filter: EntitySubset[AssetKey],
     asset_graph_view: AssetGraphView,
     target_subset: AssetGraphSubset,
     asset_graph_subset_matched_so_far: AssetGraphSubset,
     candidate_asset_graph_subset_unit: AssetGraphSubset,
-) -> tuple[EntitySubset[AssetKey], Iterable[tuple[EntitySubsetValue, str]]]:
+) -> Optional[str]:
     candidate_asset_key = entity_subset_to_filter.key
     parent_asset_key = parent_subset.key
 
@@ -1802,39 +1800,16 @@ def get_can_run_with_parent_subsets(
         )
     )
     if parent_node.backfill_policy != candidate_node.backfill_policy:
-        return (
-            asset_graph_view.get_empty_subset(key=candidate_asset_key),
-            [
-                (
-                    entity_subset_to_filter.get_internal_value(),
-                    f"parent {parent_node.key.to_user_string()} and {candidate_node.key.to_user_string()} have different backfill policies so they cannot be materialized in the same run. {candidate_node.key.to_user_string()} can be materialized once {parent_node.key} is materialized.",
-                )
-            ],
-        )
+        return f"parent {parent_node.key.to_user_string()} and {candidate_node.key.to_user_string()} have different backfill policies so they cannot be materialized in the same run. {candidate_node.key.to_user_string()} can be materialized once {parent_node.key} is materialized."
+
     if (
         parent_node.resolve_to_singular_repo_scoped_node().repository_handle
         != candidate_node.resolve_to_singular_repo_scoped_node().repository_handle
     ):
-        return (
-            asset_graph_view.get_empty_subset(key=candidate_asset_key),
-            [
-                (
-                    entity_subset_to_filter.get_internal_value(),
-                    f"parent {parent_node.key.to_user_string()} and {candidate_node.key.to_user_string()} are in different code locations so they cannot be materialized in the same run. {candidate_node.key.to_user_string()} can be materialized once {parent_node.key.to_user_string()} is materialized.",
-                )
-            ],
-        )
+        return f"parent {parent_node.key.to_user_string()} and {candidate_node.key.to_user_string()} are in different code locations so they cannot be materialized in the same run. {candidate_node.key.to_user_string()} can be materialized once {parent_node.key.to_user_string()} is materialized."
 
     if parent_node.partitions_def != candidate_node.partitions_def:
-        return (
-            asset_graph_view.get_empty_subset(key=candidate_asset_key),
-            [
-                (
-                    entity_subset_to_filter.get_internal_value(),
-                    f"parent {parent_node.key.to_user_string()} and {candidate_node.key.to_user_string()} have different partitions definitions so they cannot be materialized in the same run. {candidate_node.key.to_user_string()} can be materialized once {parent_node.key.to_user_string()} is materialized.",
-                )
-            ],
-        )
+        return f"parent {parent_node.key.to_user_string()} and {candidate_node.key.to_user_string()} have different partitions definitions so they cannot be materialized in the same run. {candidate_node.key.to_user_string()} can be materialized once {parent_node.key.to_user_string()} is materialized."
 
     parent_target_subset = target_subset.get_asset_subset(parent_asset_key, asset_graph)
     candidate_target_subset = target_subset.get_asset_subset(candidate_asset_key, asset_graph)
@@ -1872,14 +1847,8 @@ def get_can_run_with_parent_subsets(
         )
     ):
         return (
-            asset_graph_view.get_empty_subset(key=candidate_asset_key),
-            [
-                (
-                    entity_subset_to_filter.get_internal_value(),
-                    f"parent {parent_node.key.to_user_string()} is requesting a different set of partitions from "
-                    f"{candidate_node.key.to_user_string()}, meaning they cannot be grouped together in the same run.",
-                ),
-            ],
+            f"parent {parent_node.key.to_user_string()} is requesting a different set of partitions from "
+            f"{candidate_node.key.to_user_string()}, meaning they cannot be grouped together in the same run."
         )
 
     if not (
@@ -1914,17 +1883,9 @@ def get_can_run_with_parent_subsets(
             "a backfill policy, and that backfill policy size limit is not exceeded by adding "
             f"{candidate_node.key.to_user_string()} to the run. {candidate_node.key.to_user_string()} can be materialized once {parent_node.key.to_user_string()} is materialized."
         )
-        return (
-            asset_graph_view.get_empty_subset(key=candidate_asset_key),
-            [
-                (
-                    entity_subset_to_filter.get_internal_value(),
-                    failed_reason,
-                )
-            ],
-        )
+        return failed_reason
 
-    return entity_subset_to_filter, []
+    return None
 
 
 def _should_backfill_atomic_asset_graph_subset_unit(
