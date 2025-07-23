@@ -317,8 +317,8 @@ def test_parse_asset_specs(
                 specs=all_assets, include_data_sources_with_extracts=True
             )
         )
-        assert len(external_asset_specs) == 1
-        assert len(materializable_asset_specs) == 5
+        assert len(external_asset_specs) == 2
+        assert len(materializable_asset_specs) == 4
 
 
 @responses.activate

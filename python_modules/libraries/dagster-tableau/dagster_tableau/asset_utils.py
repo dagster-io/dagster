@@ -51,7 +51,7 @@ def parse_tableau_external_and_materializable_asset_specs(
     Args:
         specs (Sequence[AssetSpec]): The asset specs of the assets in the Tableau workspace.
         include_data_sources_with_extracts (bool):
-            Whether to include data sources with extracts in materializable assets.
+            Whether to include published data sources with extracts in materializable assets.
 
     Returns:
         ParsedTableauAssetSpecs: A named tuple representing the parsed Tableau asset specs
@@ -61,12 +61,17 @@ def parse_tableau_external_and_materializable_asset_specs(
         spec for spec in specs if TableauTagSet.extract(spec.tags).asset_type == "data_source"
     ]
 
-    extract_asset_specs, non_extract_asset_specs = [], []
+    materializable_data_source_asset_specs, non_materializable_data_source_asset_specs = [], []
     for spec in data_source_asset_specs:
-        if TableauDataSourceMetadataSet.extract(spec.metadata).has_extracts:
-            extract_asset_specs.append(spec)
+        # Embedded data sources with extract can't be refreshed using the "Update Data Source Now" endpoint
+        # https://help.tableau.com/current/api/rest_api/en-us/REST/rest_api_ref_data_sources.htm#update_data_source_now
+        if (
+            TableauDataSourceMetadataSet.extract(spec.metadata).has_extracts
+            and TableauDataSourceMetadataSet.extract(spec.metadata).is_published
+        ):
+            materializable_data_source_asset_specs.append(spec)
         else:
-            non_extract_asset_specs.append(spec)
+            non_materializable_data_source_asset_specs.append(spec)
 
     view_asset_specs = [
         spec
@@ -75,10 +80,12 @@ def parse_tableau_external_and_materializable_asset_specs(
     ]
 
     external_asset_specs = (
-        non_extract_asset_specs if include_data_sources_with_extracts else data_source_asset_specs
+        non_materializable_data_source_asset_specs
+        if include_data_sources_with_extracts
+        else data_source_asset_specs
     )
     materializable_asset_specs = (
-        extract_asset_specs + view_asset_specs
+        materializable_data_source_asset_specs + view_asset_specs
         if include_data_sources_with_extracts
         else view_asset_specs
     )
