@@ -18,6 +18,7 @@ setup(
     install_requires=[
         "autoflake",
         "boto3",
+        "click",
         "packaging>=20.9",
         "pandas",
         "pytablereader",

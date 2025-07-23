@@ -1,37 +1,34 @@
 """Command-line interface for docstring validation."""
 
-import argparse
 import sys
+
+import click
 
 from automation.docstring_lint.validator import DocstringValidator, SymbolImporter
 
 
-def main() -> int:
-    """Main entry point for the docstring validation CLI."""
-    parser = argparse.ArgumentParser(
-        description="Validate Python docstrings using Sphinx parsing pipeline"
-    )
-    parser.add_argument(
-        "symbol_path", help="Dotted path to the Python symbol (e.g., 'dagster.asset')"
-    )
-    parser.add_argument("--verbose", "-v", action="store_true", help="Enable verbose output")
-    parser.add_argument(
-        "--all-public",
-        action="store_true",
-        help="Validate all public symbols in the specified module",
-    )
+@click.command()
+@click.argument("symbol_path")
+@click.option("--verbose", "-v", is_flag=True, help="Enable verbose output")
+@click.option(
+    "--all-public",
+    is_flag=True,
+    help="Validate all public symbols in the specified module",
+)
+def main(symbol_path: str, verbose: bool, all_public: bool) -> int:
+    """Validate Python docstrings using Sphinx parsing pipeline.
 
-    args = parser.parse_args()
-
+    SYMBOL_PATH: Dotted path to the Python symbol (e.g., 'dagster.asset')
+    """
     # Core use case - validate single docstring efficiently
     validator = DocstringValidator()
 
     try:
-        if args.all_public:
+        if all_public:
             # Batch validation mode
             importer = SymbolImporter()
-            symbols = importer.get_all_public_symbols(args.symbol_path)
-            print(f"Validating {len(symbols)} public symbols in {args.symbol_path}\n")  # noqa: T201
+            symbols = importer.get_all_public_symbols(symbol_path)
+            print(f"Validating {len(symbols)} public symbols in {symbol_path}\n")  # noqa: T201
 
             total_errors = 0
             total_warnings = 0
@@ -59,9 +56,9 @@ def main() -> int:
 
         else:
             # Single symbol validation (core use case)
-            result = validator.validate_symbol_docstring(args.symbol_path)
+            result = validator.validate_symbol_docstring(symbol_path)
 
-            print(f"Validating docstring for: {args.symbol_path}")  # noqa: T201
+            print(f"Validating docstring for: {symbol_path}")  # noqa: T201
 
             if result.has_errors():
                 print("\nERRORS:")  # noqa: T201
@@ -84,7 +81,7 @@ def main() -> int:
 
     except Exception as e:
         print(f"Error: {e}")  # noqa: T201
-        if args.verbose:
+        if verbose:
             import traceback
 
             traceback.print_exc()

@@ -86,3 +86,7 @@ yarn build-api-docs          # Build API docs after .rst changes
 ## Linting and Code Style
 
 - In CLI scripts, use `# noqa: T201` to mark print statements as OK to use since CLIs require printing to stdout
+
+## CLI Development Guidelines
+
+- Note that click MUST be used to building cli tools
