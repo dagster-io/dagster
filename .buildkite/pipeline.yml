@@ -1,18 +1,19 @@
 steps:
   - label: ":test_tube: CLI Test"
     command: |
+      cd /workspaces/dagster  # Dagster köküne git
       python -m venv venv
       source venv/bin/activate
       pip install --upgrade pip
       pip install -e python_modules/libraries/dagster-shared
-      pip install -e python_modules/dagster
-      python -m pytest -v python_modules/dagster/dagster_tests/core_test -v --override-ini="addopts="
+      pip install -e python_modules/dagster[dev]
+      pytest -v python_modules/dagster/dagster_tests/cli_tests/test_project_commands.py
     agents:
       queue: "default"
 
   - label: ":mag: Ruff Format Check"
     command: |
-      python -m venv venv
+      cd /workspaces/dagster
       source venv/bin/activate
       pip install ruff
       ruff check python_modules/dagster/dagster/_generate/templates/
@@ -21,14 +22,11 @@ steps:
 
   - label: ":gear: Scaffold Definition Template"
     command: |
-      python -m venv venv
+      cd /workspaces/dagster
       source venv/bin/activate
-      pip install --upgrade pip
-      pip install -e python_modules/libraries/dagster-shared
-      pip install -e python_modules/dagster[dev]
       mkdir -p /tmp/test_scaffold
       cd /tmp/test_scaffold
-      source ../../venv/bin/activate
       python -m dagster project scaffold --name test_project
+      test -f test_project/definitions.py && echo "✅ definitions.py created"
     agents:
       queue: "default"
