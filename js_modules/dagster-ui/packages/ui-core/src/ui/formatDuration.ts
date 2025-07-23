@@ -1,8 +1,8 @@
 interface DurationOptions {
   /** Maximum value before the next unit is displayed */
   maxValueBeforeNextUnit?: Record<UnitType, number>;
-  /** Number of significant digits to display (1 or 2) */
-  significantDigits?: 1 | 2;
+  /** Number of significant units to display (1 or 2) */
+  significantUnits?: 1 | 2;
   /** Whether the input is in seconds (default: false, assumes milliseconds) */
   unit?: 'seconds' | 'milliseconds';
 }
@@ -45,16 +45,40 @@ const UNITS: Array<[number, UnitType, PluralUnitType]> = [
   [1, 'millisecond', 'milliseconds'],
 ];
 
+export const unitToShortLabel: Record<UnitType | PluralUnitType, string> = {
+  year: 'yr',
+  years: 'yr',
+  month: 'mo',
+  months: 'mo',
+  week: 'wk',
+  weeks: 'wk',
+  day: 'day',
+  days: 'day',
+  hour: 'hr',
+  hours: 'hr',
+  minute: 'min',
+  minutes: 'min',
+  second: 'sec',
+  seconds: 'sec',
+  millisecond: 'ms',
+  milliseconds: 'ms',
+};
+
+type NonEmptyArray<T> = [T, ...T[]];
+
 /**
  * Converts a duration in milliseconds or seconds to a human-readable format
  * @param duration - The duration in milliseconds (default) or seconds
  * @param options - Configuration options
  * @returns Human-readable duration string
  */
-export function formatDuration(duration: number, options: DurationOptions = {}): DurationPart[] {
+export function formatDuration(
+  duration: number,
+  options: DurationOptions = {},
+): NonEmptyArray<DurationPart> {
   const {
     maxValueBeforeNextUnit = defaultMaxValueBeforeNextUnit,
-    significantDigits = 1,
+    significantUnits = 1,
     unit = 'milliseconds',
   } = options;
 
@@ -79,12 +103,14 @@ export function formatDuration(duration: number, options: DurationOptions = {}):
   let bestUnit: [number, UnitType, PluralUnitType] | null = null;
   let bestValue = 0;
 
+  const roundFn = significantUnits > 1 ? Math.floor : (x: number) => x;
+
   if (remainingMs > DAY_MS) {
     let violatingUnitIndex = -1;
 
     for (let i = 0; i < UNITS.length; i++) {
       const [unitMs, singular] = UNITS[i]!;
-      const value = Math.floor(remainingMs / unitMs);
+      const value = roundFn(remainingMs / unitMs);
       const threshold = maxValueBeforeNextUnit[singular];
       if (value >= threshold) {
         violatingUnitIndex = i;
@@ -97,7 +123,7 @@ export function formatDuration(duration: number, options: DurationOptions = {}):
         const nextLargerUnit = UNITS[violatingUnitIndex - 1]!;
         if (nextLargerUnit) {
           const [unitMs, singular, plural] = nextLargerUnit;
-          const value = Math.floor(remainingMs / unitMs);
+          const value = roundFn(remainingMs / unitMs);
           if (value >= 1) {
             bestUnit = [unitMs, singular, plural];
             bestValue = value;
@@ -109,7 +135,7 @@ export function formatDuration(duration: number, options: DurationOptions = {}):
 
   if (!bestUnit) {
     for (const [unitMs, singular, plural] of UNITS) {
-      const value = Math.floor(remainingMs / unitMs);
+      const value = roundFn(remainingMs / unitMs);
       if (value >= 1) {
         bestUnit = [unitMs, singular, plural];
         bestValue = value;
@@ -128,14 +154,15 @@ export function formatDuration(duration: number, options: DurationOptions = {}):
 
     remainingMs -= bestValue * unitMs;
 
-    // If we need more significant digits and have remaining time
-    if (significantDigits > 1 && remainingMs > 0) {
+    // If we need more significant units and have remaining time
+    if (significantUnits > 1 && remainingMs > 0) {
       for (const [unitMs, singular, plural] of UNITS) {
         if (unitMs >= bestUnit[0]) {
           continue;
         } // Skip same or larger units
 
-        const value = Math.floor(remainingMs / unitMs);
+        const roundFn = parts.length - 1 === significantUnits ? (x: number) => x : Math.floor;
+        const value = roundFn(remainingMs / unitMs);
         if (value > 0) {
           parts.push({
             value,
@@ -150,5 +177,5 @@ export function formatDuration(duration: number, options: DurationOptions = {}):
     return [{value: 0, unit: 'milliseconds'}];
   }
 
-  return parts;
+  return parts as NonEmptyArray<DurationPart>;
 }
