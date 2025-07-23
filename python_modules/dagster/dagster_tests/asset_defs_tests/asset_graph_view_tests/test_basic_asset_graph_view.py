@@ -76,6 +76,53 @@ def test_upstream_non_existent_partitions():
         assert required_but_nonexistent_subset.is_empty
 
 
+def test_upstream_allow_non_existent_partitions():
+    xy = dg.StaticPartitionsDefinition(["x", "y"])
+    zx = dg.StaticPartitionsDefinition(["z", "x"])
+
+    @dg.asset(partitions_def=xy)
+    def up_asset() -> None: ...
+
+    @dg.asset(
+        deps=[
+            dg.AssetDep(
+                up_asset,
+                partition_mapping=dg.IdentityPartitionMapping(
+                    allow_nonexistent_upstream_partitions=True
+                ),
+            )
+        ],
+        partitions_def=zx,
+    )
+    def down_asset(): ...
+
+    defs = dg.Definitions([up_asset, down_asset])
+
+    with DagsterInstance.ephemeral() as instance:
+        asset_graph_view = AssetGraphView.for_test(defs, instance)
+        down_subset = asset_graph_view.get_full_subset(key=down_asset.key)
+        assert down_subset.expensively_compute_partition_keys() == {"x", "z"}
+
+        parent_subset, required_but_nonexistent_subset = (
+            asset_graph_view.compute_parent_subset_and_required_but_nonexistent_subset(
+                parent_key=up_asset.key, subset=down_subset
+            )
+        )
+
+        assert parent_subset.expensively_compute_partition_keys() == {"x"}
+        assert required_but_nonexistent_subset.expensively_compute_partition_keys() == set()
+
+        # Mapping onto an empty subset is empty
+        empty_down_subset = asset_graph_view.get_empty_subset(key=down_asset.key)
+        parent_subset, required_but_nonexistent_subset = (
+            asset_graph_view.compute_parent_subset_and_required_but_nonexistent_subset(
+                parent_key=up_asset.key, subset=empty_down_subset
+            )
+        )
+        assert parent_subset.is_empty
+        assert required_but_nonexistent_subset.is_empty
+
+
 current_partitions_def = dg.DailyPartitionsDefinition(start_date="2022-01-01")
 
 

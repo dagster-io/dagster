@@ -1,7 +1,9 @@
 from datetime import datetime
 from typing import NamedTuple, Optional
+from typing_extensions import Self
 
 import dagster._check as check
+from dagster._annotations import PublicAttr, beta_param
 from dagster._core.definitions.partitions.context import partition_loading_context
 from dagster._core.definitions.partitions.definition import PartitionsDefinition
 from dagster._core.definitions.partitions.mapping.partition_mapping import (
@@ -16,10 +18,31 @@ from dagster._serdes import whitelist_for_serdes
 
 
 @whitelist_for_serdes
-class IdentityPartitionMapping(PartitionMapping, NamedTuple("_IdentityPartitionMapping", [])):
+@beta_param(param="allow_nonexistent_upstream_partitions")
+class IdentityPartitionMapping(
+    PartitionMapping,
+    NamedTuple(
+        "_IdentityPartitionMapping",
+        [
+            (
+                "allow_nonexistent_upstream_partitions",
+                PublicAttr[bool],
+            )
+        ],
+    ),
+):
     """Expects that the upstream and downstream assets are partitioned in the same way, and maps
     partitions in the downstream asset to the same partition in the upstream asset.
     """
+
+    def __new__(cls, allow_nonexistent_upstream_partitions: bool = False) -> Self:
+        return super().__new__(cls, allow_nonexistent_upstream_partitions)
+
+    def __init__(self, allow_nonexistent_upstream_partitions: bool = False):
+        check.bool_param(
+            allow_nonexistent_upstream_partitions,
+            "allow_nonexistent_upstream_partitions",
+        )
 
     def validate_partition_mapping(
         self,
@@ -55,13 +78,20 @@ class IdentityPartitionMapping(PartitionMapping, NamedTuple("_IdentityPartitionM
             upstream_partition_keys = set(upstream_partitions_def.get_partition_keys())
             downstream_partition_keys = set(downstream_partitions_subset.get_partition_keys())
 
+            required_but_nonexistent_subset = upstream_partitions_def.empty_subset()
+            if not self.allow_nonexistent_upstream_partitions:
+                diff_partition_subset = DefaultPartitionsSubset(
+                    downstream_partition_keys - upstream_partition_keys
+                )
+                required_but_nonexistent_subset = (
+                    required_but_nonexistent_subset | diff_partition_subset
+                )
+
             return UpstreamPartitionsResult(
                 partitions_subset=upstream_partitions_def.subset_with_partition_keys(
                     list(upstream_partition_keys & downstream_partition_keys)
                 ),
-                required_but_nonexistent_subset=DefaultPartitionsSubset(
-                    downstream_partition_keys - upstream_partition_keys,
-                ),
+                required_but_nonexistent_subset=required_but_nonexistent_subset,
             )
 
     def get_downstream_partitions_for_partitions(
