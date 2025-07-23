@@ -29,7 +29,10 @@ def test_pipes_subprocess_script_hello_world() -> None:
         execute_path = component_path / "script.py"
         execute_path.write_text("print('hello world')")
 
-        with sandbox.load_component_and_build_defs_at_path(component_path=component_path) as (component, defs):
+        with sandbox.load_component_and_build_defs_at_path(component_path=component_path) as (
+            component,
+            defs,
+        ):
             assert isinstance(component, dg.PythonScriptComponent)
             assert isinstance(component.execution, ScriptSpec)
             assets_def = defs.get_assets_def("asset")
@@ -67,7 +70,10 @@ def test_pipes_subprocess_script_with_custom_materialize_result() -> None:
         execute_path = component_path / "op_name.py"
         copy_code_to_file(code_to_copy, execute_path)
 
-        with sandbox.load_component_and_build_defs_at_path(component_path=component_path) as (component, defs):
+        with sandbox.load_component_and_build_defs_at_path(component_path=component_path) as (
+            component,
+            defs,
+        ):
             assert isinstance(component, dg.PythonScriptComponent)
             assert isinstance(component.execution, ScriptSpec)
             assets_def = defs.get_assets_def("asset")
@@ -98,7 +104,10 @@ def test_pipes_subprocess_script_with_name_override() -> None:
                 },
             },
         )
-        with sandbox.load_component_and_build_defs_at_path(component_path=component_path) as (component, defs):
+        with sandbox.load_component_and_build_defs_at_path(component_path=component_path) as (
+            component,
+            defs,
+        ):
             assert defs.get_assets_def("asset").op.name == "op_name_override"
 
 
@@ -136,13 +145,14 @@ def test_pipes_subprocess_script_with_checks_only() -> None:
         execute_path = component_path / "only_checks.py"
         copy_code_to_file(code_to_copy, execute_path)
 
-        with sandbox.load_component_and_build_defs_at_path(component_path=component_path) as (component, defs):
+        with sandbox.load_component_and_build_defs_at_path(component_path=component_path) as (
+            component,
+            defs,
+        ):
             assert isinstance(component, dg.PythonScriptComponent)
             assert isinstance(component.execution, ScriptSpec)
-            asset_check_key = dg.AssetCheckKey(dg.AssetKey("asset"), "check_name")
-            asset_check_key = dg.AssetCheckKey(dg.AssetKey("asset"), "check_name")
-            # The definition is created as a checks definition, access it directly
-            check_def = defs.asset_checks[0]
+            assert defs.asset_checks
+            check_def = next(iter(defs.asset_checks))
             result = dg.materialize([check_def], selection=AssetSelection.all_asset_checks())
             assert result.success
             assert check_def.op.name == "only_checks"
@@ -194,8 +204,11 @@ def test_pipes_subprocess_with_args() -> None:
         copy_code_to_file(op_name_contents, execute_path)
         template_vars_path = component_path / "template_vars.py"
         copy_code_to_file(template_vars_content, template_vars_path)
-        
-        with sandbox.load_component_and_build_defs_at_path(component_path=component_path) as (component, defs):
+
+        with sandbox.load_component_and_build_defs_at_path(component_path=component_path) as (
+            component,
+            defs,
+        ):
             assert isinstance(component, dg.PythonScriptComponent)
             assert isinstance(component.execution, ScriptSpec)
             assert component.execution.args == ["arg_value"]
@@ -237,8 +250,11 @@ def test_pipes_subprocess_with_inline_str() -> None:
         )
         execute_path = component_path / "op_name.py"
         copy_code_to_file(op_name_contents, execute_path)
-        
-        with sandbox.load_component_and_build_defs_at_path(component_path=component_path) as (component, defs):
+
+        with sandbox.load_component_and_build_defs_at_path(component_path=component_path) as (
+            component,
+            defs,
+        ):
             assert isinstance(component, dg.PythonScriptComponent)
             assert isinstance(component.execution, ScriptSpec)
             assert component.execution.args == "arg_value"

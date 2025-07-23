@@ -47,7 +47,10 @@ def test_pipes_subprocess_script_hello_world() -> None:
         execute_path = component_path / "script.py"
         execute_path.write_text(SCRIPT_CONTENT)
 
-        with sandbox.load_component_and_build_defs_at_path(component_path=component_path) as (component, defs):
+        with sandbox.load_component_and_build_defs_at_path(component_path=component_path) as (
+            component,
+            defs,
+        ):
             assert isinstance(component, dg.UvRunComponent)
             assert isinstance(component.execution, ScriptSpec)
             assets_def = defs.get_assets_def("asset")

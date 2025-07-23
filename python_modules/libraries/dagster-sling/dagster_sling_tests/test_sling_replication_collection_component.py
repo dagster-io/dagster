@@ -71,7 +71,7 @@ def temp_sling_component_instance(
             defs_sandbox.defs_folder_path / "ingest",
         )
         shutil.copy(STUB_LOCATION_PATH / "input.csv", defs_sandbox.defs_folder_path / "input.csv")
-        
+
         component_path = defs_sandbox.defs_folder_path / "ingest"
 
         # update the replication yaml to reference a CSV file in the tempdir
@@ -94,7 +94,10 @@ def temp_sling_component_instance(
                     f"{defs_sandbox.defs_folder_path}/duckdb"
                 )
 
-        with defs_sandbox.load_component_and_build_defs_at_path(component_path=component_path) as (component, defs):
+        with defs_sandbox.load_component_and_build_defs_at_path(component_path=component_path) as (
+            component,
+            defs,
+        ):
             assert isinstance(component, SlingReplicationCollectionComponent)
             yield component, defs
 
@@ -243,7 +246,9 @@ class TestSlingTranslation(TestTranslation):
 
 def test_scaffold_sling():
     with scaffold_defs_sandbox() as defs_sandbox:
-        component_path = defs_sandbox.scaffold_component(component_cls=SlingReplicationCollectionComponent)
+        component_path = defs_sandbox.scaffold_component(
+            component_cls=SlingReplicationCollectionComponent
+        )
         assert (component_path / "defs.yaml").exists()
         assert (component_path / "replication.yaml").exists()
 
@@ -265,7 +270,9 @@ def test_spec_is_available_in_scope() -> None:
 
 def test_asset_post_processors_deprecation_error() -> None:
     with scaffold_defs_sandbox() as defs_sandbox:
-        component_path = defs_sandbox.scaffold_component(component_cls=SlingReplicationCollectionComponent)
+        component_path = defs_sandbox.scaffold_component(
+            component_cls=SlingReplicationCollectionComponent
+        )
         with environ({"HOME": str(component_path), "SOME_PASSWORD": "password"}):
             shutil.copytree(
                 STUB_LOCATION_PATH / "defs" / "ingest",
@@ -277,14 +284,10 @@ def test_asset_post_processors_deprecation_error() -> None:
             with _modify_yaml(component_path / "replication.yaml") as data:
                 if "<PLACEHOLDER>" in data["streams"]:
                     placeholder_data = data["streams"].pop("<PLACEHOLDER>")
-                    data["streams"][f"file://{component_path}/input.csv"] = (
-                        placeholder_data
-                    )
+                    data["streams"][f"file://{component_path}/input.csv"] = placeholder_data
 
             with _modify_yaml(component_path / "defs.yaml") as data:
-                data["attributes"]["connections"]["DUCKDB"]["instance"] = (
-                    f"{component_path}/duckdb"
-                )
+                data["attributes"]["connections"]["DUCKDB"]["instance"] = f"{component_path}/duckdb"
                 # Modify defs.yaml to include the deprecated asset_post_processors field
                 data["attributes"]["asset_post_processors"] = [
                     {"target": "*", "attributes": {"group_name": "test_group"}}
@@ -294,8 +297,8 @@ def test_asset_post_processors_deprecation_error() -> None:
                 with defs_sandbox.build_all_defs():
                     pass
 
-            error_message = str(exc_info.value)
-            assert "The asset_post_processors field is deprecated" in error_message
+            parent_error_message = str(exc_info.value.__cause__)
+            assert "The asset_post_processors field is deprecated" in parent_error_message
 
 
 def map_spec(spec: AssetSpec) -> AssetSpec:

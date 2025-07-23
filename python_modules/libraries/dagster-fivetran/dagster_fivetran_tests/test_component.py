@@ -36,10 +36,11 @@ def setup_fivetran_component(
     component_body: dict[str, Any],
 ) -> Iterator[tuple[FivetranAccountComponent, Definitions]]:
     """Sets up a components project with a fivetran component based on provided params."""
-    with scaffold_defs_sandbox(
-        component_cls=FivetranAccountComponent,
-    ) as defs_sandbox:
-        with defs_sandbox.load(component_body=component_body) as (component, defs):
+    with scaffold_defs_sandbox() as defs_sandbox:
+        with defs_sandbox.scaffold_load_and_build_defs(
+            component_cls=FivetranAccountComponent,
+            component_body=component_body,
+        ) as (component, defs):
             assert isinstance(component, FivetranAccountComponent)
             yield component, defs
 
@@ -211,16 +212,17 @@ class TestFivetranTranslation(TestTranslation):
     ids=["no_params", "all_params", "just_account_id", "just_credentials"],
 )
 def test_scaffold_component_with_params(scaffold_params: dict):
-    with scaffold_defs_sandbox(
-        component_cls=FivetranAccountComponent,
-        scaffold_params=scaffold_params,
-    ) as instance_folder:
-        defs_yaml_path = instance_folder.defs_folder_path / "defs.yaml"
-        assert defs_yaml_path.exists()
-        assert {
-            k: v
-            for k, v in yaml.safe_load(defs_yaml_path.read_text())["attributes"][
-                "workspace"
-            ].items()
-            if v is not None
-        } == scaffold_params
+    with scaffold_defs_sandbox() as defs_sandbox:
+        with defs_sandbox.scaffold_component(
+            component_cls=FivetranAccountComponent,
+            scaffold_params=scaffold_params,
+        ) as component_path:
+            defs_yaml_path = component_path / "defs.yaml"
+            assert defs_yaml_path.exists()
+            assert {
+                k: v
+                for k, v in yaml.safe_load(defs_yaml_path.read_text())["attributes"][
+                    "workspace"
+                ].items()
+                if v is not None
+            } == scaffold_params

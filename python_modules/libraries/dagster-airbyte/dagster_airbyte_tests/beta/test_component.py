@@ -51,8 +51,11 @@ def setup_airbyte_component(
     component_body: dict[str, Any],
 ) -> Iterator[tuple[AirbyteCloudWorkspaceComponent, Definitions]]:
     """Sets up a components project with an airbyte component based on provided params."""
-    with scaffold_defs_sandbox(component_cls=AirbyteCloudWorkspaceComponent) as defs_sandbox:
-        with defs_sandbox.load(component_body=component_body) as (component, defs):
+    with scaffold_defs_sandbox() as defs_sandbox:
+        with defs_sandbox.scaffold_load_and_build_defs(
+            component_cls=AirbyteCloudWorkspaceComponent,
+            component_body=component_body,
+        ) as (component, defs):
             assert isinstance(component, AirbyteCloudWorkspaceComponent)
             yield component, defs
 
