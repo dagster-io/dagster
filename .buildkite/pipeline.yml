@@ -4,7 +4,7 @@ steps:
       cd /workspaces/dagster 
       python -m venv venv
       source venv/bin/activate
-      pip install --upgrade pip
+      pip install pytest --upgrade pip
       python -m pytest -v python_modules/dagster/dagster_tests/cli_tests/test_project_commands.py -v --override-ini="addopts="
     agents:
       queue: "default"
