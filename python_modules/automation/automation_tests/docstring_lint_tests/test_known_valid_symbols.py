@@ -37,6 +37,8 @@ SYMBOL_EXCLUDE_LIST = {
     # Invalid section headers that need to be fixed
     "dagster.ExecuteInProcessResult",  # Invalid section header: "This object is returned by:" should be restructured
     "dagster.asset_check",  # Invalid section header: "Example with a DataFrame Output:" should be "Examples:"
+    # Non-standard section header formatting (uses bold/italic formatting)
+    "dagster.file_relative_path",  # Uses "**Examples**:" instead of "Examples:"
 }
 
 
