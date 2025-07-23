@@ -4,12 +4,12 @@ from dagster.components.lib.executable_component.python_script_component import 
     PythonScriptComponent,
     ScriptSpec,
 )
-from dagster.components.testing import copy_code_to_file, scaffold_defs_sandbox
+from dagster.components.testing import copy_code_to_file, temp_components_sandbox
 
 
 def test_pipes_subprocess_script_hello_world() -> None:
-    with scaffold_defs_sandbox() as sandbox:
-        component_path = sandbox.scaffold_component_and_update_defs_file(
+    with temp_components_sandbox() as sandbox:
+        component_path = sandbox.scaffold_component(
             component_cls=PythonScriptComponent,
             component_body={
                 "type": "dagster.PythonScriptComponent",
@@ -50,8 +50,8 @@ def test_pipes_subprocess_script_with_custom_materialize_result() -> None:
             with open_dagster_pipes() as context:
                 context.report_asset_materialization(metadata={"foo": "bar"})
 
-    with scaffold_defs_sandbox() as sandbox:
-        component_path = sandbox.scaffold_component_and_update_defs_file(
+    with temp_components_sandbox() as sandbox:
+        component_path = sandbox.scaffold_component(
             component_cls=PythonScriptComponent,
             component_body={
                 "type": "dagster.PythonScriptComponent",
@@ -86,8 +86,8 @@ def test_pipes_subprocess_script_with_custom_materialize_result() -> None:
 
 
 def test_pipes_subprocess_script_with_name_override() -> None:
-    with scaffold_defs_sandbox() as sandbox:
-        component_path = sandbox.scaffold_component_and_update_defs_file(
+    with temp_components_sandbox() as sandbox:
+        component_path = sandbox.scaffold_component(
             component_cls=PythonScriptComponent,
             component_body={
                 "type": "dagster.PythonScriptComponent",
@@ -123,8 +123,8 @@ def test_pipes_subprocess_script_with_checks_only() -> None:
                     passed=True,
                 )
 
-    with scaffold_defs_sandbox() as sandbox:
-        component_path = sandbox.scaffold_component_and_update_defs_file(
+    with temp_components_sandbox() as sandbox:
+        component_path = sandbox.scaffold_component(
             component_cls=PythonScriptComponent,
             component_body={
                 "type": "dagster.PythonScriptComponent",
@@ -181,8 +181,8 @@ def test_pipes_subprocess_with_args() -> None:
         def arg_list():
             return ["arg_value"]
 
-    with scaffold_defs_sandbox() as sandbox:
-        component_path = sandbox.scaffold_component_and_update_defs_file(
+    with temp_components_sandbox() as sandbox:
+        component_path = sandbox.scaffold_component(
             component_cls=PythonScriptComponent,
             component_body={
                 "type": "dagster.PythonScriptComponent",
@@ -230,8 +230,8 @@ def test_pipes_subprocess_with_inline_str() -> None:
             with open_dagster_pipes() as context:
                 context.report_asset_materialization(metadata={"arg": sys.argv[1]})
 
-    with scaffold_defs_sandbox() as sandbox:
-        component_path = sandbox.scaffold_component_and_update_defs_file(
+    with temp_components_sandbox() as sandbox:
+        component_path = sandbox.scaffold_component(
             component_cls=PythonScriptComponent,
             component_body={
                 "type": "dagster.PythonScriptComponent",

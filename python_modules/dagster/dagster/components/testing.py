@@ -37,6 +37,7 @@ from dagster.components.core.defs_module import (
     get_component,
     load_yaml_component_from_path,
 )
+from dagster.components.deprecated.testing import scaffold_defs_sandbox as scaffold_defs_sandbox
 
 # Unfortunate hack - we only use this util in pytest tests, we just drop in a no-op
 # implementation if pytest is not installed.
@@ -220,7 +221,7 @@ class DefsSandbox:
             yield component, defs
 
     @contextmanager
-    def scaffold_load_and_build_defs(
+    def scaffold_load_and_build_component_defs(
         self,
         component_cls: type,
         component_body: dict[str, Any],
@@ -268,6 +269,7 @@ class DefsSandbox:
         component_path: Optional[Union[Path, str]] = None,
         scaffold_params: Optional[dict[str, Any]] = None,
         scaffold_format: ScaffoldFormatOptions = "yaml",
+        component_body: Optional[dict[str, Any]] = None,
     ) -> Path:
         """Scaffolds a component into the defs folder.
 
@@ -276,6 +278,7 @@ class DefsSandbox:
             component_path: The path to the component. (defaults to a random name)
             scaffold_params: The parameters to pass to the scaffolder.
             scaffold_format: The format to use for scaffolding.
+            component_body: The body of the component to update the defs.yaml file with.
 
         Returns:
             The path to the component.
@@ -297,46 +300,8 @@ class DefsSandbox:
             scaffold_format=scaffold_format,
             project_root=self.project_root,
         )
-        return component_path
-
-    def scaffold_component_and_update_defs_file(
-        self,
-        component_cls: Any,
-        component_path: Optional[Union[Path, str]] = None,
-        scaffold_params: Optional[dict[str, Any]] = None,
-        scaffold_format: ScaffoldFormatOptions = "yaml",
-        component_body: Optional[dict[str, Any]] = None,
-    ) -> Path:
-        """Scaffolds a component and updates the defs.yaml file with the provided component_body.
-
-        Args:
-            component_cls: The component class to scaffold.
-            component_path: The path to the component. (defaults to a random name)
-            scaffold_params: The parameters to pass to the scaffolder.
-            scaffold_format: The format to use for scaffolding.
-            component_body: The body of the component to update the defs.yaml file with.
-
-        Returns:
-            The path to the component.
-
-
-        Example:
-
-        .. code-block:: python
-
-            with scaffold_defs_sandbox() as sandbox:
-                component_path = sandbox.scaffold_component_and_update_defs_file(
-                    component_cls=MyComponent,
-                    component_body={"type": "my_library.MyComponent", "attributes": {"asset_key": "different_asset_key"}},
-                )
-        """
-        component_path = self.scaffold_component(
-            component_path=component_path,
-            component_cls=component_cls,
-            scaffold_params=scaffold_params,
-            scaffold_format=scaffold_format,
-        )
-        (component_path / "defs.yaml").write_text(yaml.safe_dump(component_body))
+        if component_body:
+            (component_path / "defs.yaml").write_text(yaml.safe_dump(component_body))
         return component_path
 
     @contextmanager
@@ -469,7 +434,7 @@ def get_component_defs_from_defs_path(
 
 
 @contextmanager
-def scaffold_defs_sandbox(
+def temp_components_sandbox(
     *,
     project_name: Optional[str] = None,
 ) -> Iterator[DefsSandbox]:

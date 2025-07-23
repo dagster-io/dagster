@@ -13,7 +13,7 @@ from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._utils.env import environ
 from dagster.components.core.tree import ComponentTree
-from dagster.components.testing import TestTranslation, scaffold_defs_sandbox
+from dagster.components.testing import TestTranslation, temp_components_sandbox
 from dagster_fivetran.components.workspace_component.component import FivetranAccountComponent
 from dagster_fivetran.resources import FivetranWorkspace
 from dagster_fivetran.translator import FivetranConnector
@@ -36,8 +36,8 @@ def setup_fivetran_component(
     component_body: dict[str, Any],
 ) -> Iterator[tuple[FivetranAccountComponent, Definitions]]:
     """Sets up a components project with a fivetran component based on provided params."""
-    with scaffold_defs_sandbox() as defs_sandbox:
-        with defs_sandbox.scaffold_load_and_build_defs(
+    with temp_components_sandbox() as defs_sandbox:
+        with defs_sandbox.scaffold_load_and_build_component_defs(
             component_cls=FivetranAccountComponent,
             component_body=component_body,
         ) as (component, defs):
@@ -212,7 +212,7 @@ class TestFivetranTranslation(TestTranslation):
     ids=["no_params", "all_params", "just_account_id", "just_credentials"],
 )
 def test_scaffold_component_with_params(scaffold_params: dict):
-    with scaffold_defs_sandbox() as defs_sandbox:
+    with temp_components_sandbox() as defs_sandbox:
         with defs_sandbox.scaffold_component(
             component_cls=FivetranAccountComponent,
             scaffold_params=scaffold_params,

@@ -11,7 +11,7 @@ from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.test_utils import ensure_dagster_tests_import
 from dagster._utils import alter_sys_path
-from dagster.components.testing import scaffold_defs_sandbox
+from dagster.components.testing import temp_components_sandbox
 from dagster_dg_core.utils import ensure_dagster_dg_tests_import
 from dagster_powerbi import PowerBIWorkspaceComponent
 
@@ -36,8 +36,8 @@ def setup_powerbi_component(
     component_body: dict[str, Any],
 ) -> Iterator[tuple[PowerBIWorkspaceComponent, Definitions]]:
     """Sets up a components project with a powerbi component based on provided params."""
-    with scaffold_defs_sandbox() as defs_sandbox:
-        with defs_sandbox.scaffold_load_and_build_defs(
+    with temp_components_sandbox() as defs_sandbox:
+        with defs_sandbox.scaffold_load_and_build_component_defs(
             component_cls=PowerBIWorkspaceComponent,
             component_body=component_body,
         ) as (
