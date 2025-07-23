@@ -30,6 +30,63 @@ DO_FILTER_OUT_SPHINX_ROLE_WARNINGS = True
 # Examples: "Args:", "Example usage:", "See Also:" but not "http://", "def function():", etc.
 SECTION_HEADER_PATTERN = re.compile(r"^[A-Z][A-Za-z\s]{2,30}:$")
 
+# All section headers currently used in the Dagster codebase
+# Based on analysis of all public symbols
+ALLOWED_SECTION_HEADERS = {
+    # Standard Google-style sections
+    "Args:",
+    "Arguments:",
+    "Parameters:",
+    "Returns:",
+    "Return:",
+    "Yields:",
+    "Yield:",
+    "Raises:",
+    "Examples:",
+    "Example:",
+    "Note:",
+    "Notes:",
+    "Warning:",
+    "Warnings:",
+    "See Also:",
+    "Attributes:",
+    # Dagster-specific sections that are commonly used
+    "Example usage:",
+    "Example definition:",
+    "Definitions:",
+    # Common example section variations
+    "For example:",
+    "For example::",  # RST code block style
+    "Example enumeration:",
+}
+
+
+def extract_section_headers_from_docstring(docstring: str) -> list[str]:
+    """Extract all potential section headers from a docstring.
+
+    Uses the same regex pattern as the main validation logic to identify
+    lines that could be section headers.
+
+    Args:
+        docstring: The docstring text to analyze
+
+    Returns:
+        List of potential section header strings found in the docstring
+    """
+    if not docstring:
+        return []
+
+    headers = []
+    lines = docstring.split("\n")
+
+    for line in lines:
+        stripped = line.strip()
+        if SECTION_HEADER_PATTERN.match(stripped):
+            headers.append(stripped)
+
+    return headers
+
+
 # Setup paths to match Dagster's Sphinx configuration
 DAGSTER_ROOT = Path(__file__).parent.parent.parent.parent.parent
 SPHINX_EXT_PATH = DAGSTER_ROOT / "docs" / "sphinx" / "_ext"
@@ -538,48 +595,18 @@ class DocstringValidator:
         """Check basic docstring structure issues."""
         lines = docstring.split("\n")
 
-        # All section headers currently used in the Dagster codebase
-        # Based on analysis of all public symbols
-        allowed_sections = {
-            # Standard Google-style sections
-            "Args:",
-            "Arguments:",
-            "Parameters:",
-            "Returns:",
-            "Return:",
-            "Yields:",
-            "Yield:",
-            "Raises:",
-            "Examples:",
-            "Example:",
-            "Note:",
-            "Notes:",
-            "Warning:",
-            "Warnings:",
-            "See Also:",
-            "Attributes:",
-            # Dagster-specific sections that are commonly used
-            "Example usage:",
-            "Example definition:",
-            "Definitions:",
-            # Common example section variations
-            "For example:",
-            "For example::",  # RST code block style
-            "Example enumeration:",
-        }
-
         for i, line in enumerate(lines, 1):
             stripped = line.strip()
 
             # Use regex to identify potential section headers
             if SECTION_HEADER_PATTERN.match(stripped):
                 # Skip if it's already in our allowed list
-                if stripped in allowed_sections:
+                if stripped in ALLOWED_SECTION_HEADERS:
                     continue
 
                 # Check for case-insensitive exact matches (wrong case)
                 exact_case_match = None
-                for section in allowed_sections:
+                for section in ALLOWED_SECTION_HEADERS:
                     if stripped.lower() == section.lower():
                         exact_case_match = section
                         break
@@ -592,7 +619,7 @@ class DocstringValidator:
                 else:
                     # Check for obvious corruptions of known sections using simple string containment
                     possible_match = None
-                    for section in allowed_sections:
+                    for section in ALLOWED_SECTION_HEADERS:
                         section_base = section[:-1].lower()  # Remove colon, lowercase
                         stripped_base = stripped[:-1].lower()  # Remove colon, lowercase
 
@@ -633,7 +660,11 @@ class SymbolImporter:
         # Try progressively longer module paths until we find one that imports
         for i in range(len(parts), 0, -1):
             module_path = ".".join(parts[:i])
-            module = importlib.import_module(module_path)
+            try:
+                module = importlib.import_module(module_path)
+            except ImportError:
+                # This module path doesn't exist, try the next shorter one
+                continue
 
             # If we imported the entire path as a module, return the module itself
             if i == len(parts):

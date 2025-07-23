@@ -4,7 +4,14 @@ This test scans all public symbols to find section headers (lines ending with ':
 and reports which ones are not in our current whitelist.
 """
 
+# Get the actual docstring
 from collections import Counter
+
+from automation.docstring_lint.validator import (
+    ALLOWED_SECTION_HEADERS,
+    SymbolImporter,
+    extract_section_headers_from_docstring,
+)
 
 from automation_tests.docstring_lint_tests.test_known_valid_symbols import (
     _get_all_dagster_public_symbols,
@@ -13,25 +20,8 @@ from automation_tests.docstring_lint_tests.test_known_valid_symbols import (
 
 def test_discover_section_headers():
     """Discover all section headers used in public Dagster docstrings."""
-    # Current whitelist
-    whitelisted_sections = {
-        "Args:",
-        "Arguments:",
-        "Parameters:",
-        "Returns:",
-        "Return:",
-        "Yields:",
-        "Yield:",
-        "Raises:",
-        "Examples:",
-        "Example:",
-        "Note:",
-        "Notes:",
-        "Warning:",
-        "Warnings:",
-        "See Also:",
-        "Attributes:",
-    }
+    # Use the shared whitelist from the main validation code
+    whitelisted_sections = ALLOWED_SECTION_HEADERS
 
     # Collect all section headers from the codebase
     section_headers = Counter()
@@ -42,44 +32,29 @@ def test_discover_section_headers():
 
     for symbol_path in symbols:
         try:
-            # Get the actual docstring
-            try:
-                from automation.docstring_lint.validator import SymbolImporter
-
-                symbol_info = SymbolImporter.import_symbol(symbol_path)
-                docstring = symbol_info.docstring
-            except:
-                continue
+            symbol_info = SymbolImporter.import_symbol(symbol_path)
+            docstring = symbol_info.docstring
 
             if not docstring:
                 continue
 
-            # Look for potential section headers
+            # Use the shared utility function to extract section headers
+            headers = extract_section_headers_from_docstring(docstring)
+
+            # Count each header found and track locations for reporting
             lines = docstring.split("\n")
-            for line_num, line in enumerate(lines, 1):
-                stripped = line.strip()
+            for header in headers:
+                section_headers[header] += 1
 
-                # Look for lines that end with ':' and could be section headers
-                if stripped.endswith(":") and len(stripped) > 1:
-                    # Filter out obvious non-section headers
-                    if (
-                        (
-                            not stripped.startswith("http")
-                            and not stripped.startswith("//")
-                            and not stripped.startswith("def ")
-                            and not stripped.startswith("class ")
-                            and "(" not in stripped  # Skip field docs like "field (type):"
-                            and len(stripped) < 50  # Reasonable length limit
-                            and not stripped[0].islower()
-                        )
-                        or stripped[0].isupper()  # Must start with letter
-                    ):
-                        section_headers[stripped] += 1
-
-                        if stripped not in symbols_with_headers:
-                            symbols_with_headers[stripped] = []
-                        symbols_with_headers[stripped].append(f"{symbol_path}:{line_num}")
-        except:
+                # Find the line number for this header
+                for line_num, line in enumerate(lines, 1):
+                    if line.strip() == header:
+                        if header not in symbols_with_headers:
+                            symbols_with_headers[header] = []
+                        symbols_with_headers[header].append(f"{symbol_path}:{line_num}")
+                        break
+        except Exception:
+            # Skip symbols that can't be imported or analyzed
             continue
 
     # Print results
