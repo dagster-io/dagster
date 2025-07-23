@@ -6,7 +6,7 @@ from typing import Callable, Optional, Union, cast
 from dagster import AssetsDefinition, AssetSpec, Definitions
 from dagster._annotations import beta
 from dagster._core.definitions.asset_key import AssetKey
-from dagster._core.definitions.asset_spec import map_asset_specs
+from dagster._core.definitions.assets.definition.asset_spec import map_asset_specs
 from dagster._core.definitions.definitions_load_context import StateBackedDefinitionsLoader
 from dagster._core.definitions.external_asset import external_asset_from_spec
 from dagster._core.definitions.sensor_definition import DefaultSensorStatus

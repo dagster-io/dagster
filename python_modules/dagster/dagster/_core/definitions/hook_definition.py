@@ -72,7 +72,7 @@ class HookDefinition(
                     foo(bar())
 
         """
-        from dagster._core.definitions.assets import AssetsDefinition
+        from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
         from dagster._core.definitions.graph_definition import GraphDefinition
         from dagster._core.definitions.hook_invocation import hook_invocation_result
         from dagster._core.definitions.job_definition import JobDefinition

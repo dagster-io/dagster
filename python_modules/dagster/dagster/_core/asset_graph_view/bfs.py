@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Callable, NamedTuple
 import dagster._check as check
 from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView
 from dagster._core.asset_graph_view.serializable_entity_subset import SerializableEntitySubset
-from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
+from dagster._core.definitions.assets.graph.asset_graph_subset import AssetGraphSubset
 
 if TYPE_CHECKING:
     from dagster._core.asset_graph_view.entity_subset import EntitySubset

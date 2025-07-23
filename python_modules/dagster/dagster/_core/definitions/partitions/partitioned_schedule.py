@@ -8,6 +8,7 @@ import dagster._check as check
 from dagster._core.definitions.decorators.schedule_decorator import schedule
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.metadata import RawMetadataMapping
+from dagster._core.definitions.partitions.context import partition_loading_context
 from dagster._core.definitions.partitions.definition.multi import MultiPartitionsDefinition
 from dagster._core.definitions.partitions.definition.partitions_definition import (
     PartitionsDefinition,
@@ -219,52 +220,36 @@ def _get_schedule_evaluation_fn(
 ) -> Callable[[ScheduleEvaluationContext], Union[SkipReason, RunRequest, RunRequestIterator]]:
     def schedule_fn(context):
         # Run for the latest partition. Prior partitions will have been handled by prior ticks.
-        if isinstance(partitions_def, TimeWindowPartitionsDefinition):
-            partition_key = partitions_def.get_last_partition_key(context.scheduled_execution_time)
-            if partition_key is None:
-                return SkipReason("The job's PartitionsDefinition has no partitions")
+        with partition_loading_context(
+            effective_dt=context._scheduled_execution_time,  # noqa
+            dynamic_partitions_store=context.instance if context.instance_ref is not None else None,
+        ):
+            if isinstance(partitions_def, TimeWindowPartitionsDefinition):
+                partition_key = partitions_def.get_last_partition_key()
+                if partition_key is None:
+                    return SkipReason("The job's PartitionsDefinition has no partitions")
 
-            return job.run_request_for_partition(
-                partition_key=partition_key,
-                run_key=partition_key,
-                tags=tags,
-                current_time=context.scheduled_execution_time,
-            )
-        if isinstance(partitions_def, StaticPartitionsDefinition):
-            return [
-                job.run_request_for_partition(
-                    partition_key=key,
-                    run_key=key,
-                    tags=tags,
-                    current_time=context.scheduled_execution_time,
+                return job.run_request_for_partition(
+                    partition_key=partition_key, run_key=partition_key, tags=tags
                 )
-                for key in partitions_def.get_partition_keys(
-                    current_time=context.scheduled_execution_time
-                )
-            ]
-        else:
-            check.invariant(isinstance(partitions_def, MultiPartitionsDefinition))
-            time_window_dimension = partitions_def.time_window_dimension  # pyright: ignore[reportAttributeAccessIssue]
-            partition_key = time_window_dimension.partitions_def.get_last_partition_key(
-                context.scheduled_execution_time
-            )
-            if partition_key is None:
-                return SkipReason("The job's PartitionsDefinition has no partitions")
+            if isinstance(partitions_def, StaticPartitionsDefinition):
+                return [
+                    job.run_request_for_partition(partition_key=key, run_key=key, tags=tags)
+                    for key in partitions_def.get_partition_keys()
+                ]
+            else:
+                check.invariant(isinstance(partitions_def, MultiPartitionsDefinition))
+                time_window_dimension = partitions_def.time_window_dimension  # pyright: ignore[reportAttributeAccessIssue]
+                partition_key = time_window_dimension.partitions_def.get_last_partition_key()
+                if partition_key is None:
+                    return SkipReason("The job's PartitionsDefinition has no partitions")
 
-            return [
-                job.run_request_for_partition(
-                    partition_key=key,
-                    run_key=key,
-                    tags=tags,
-                    current_time=context.scheduled_execution_time,
-                    dynamic_partitions_store=context.instance if context.instance_ref else None,
-                )
-                for key in partitions_def.get_multipartition_keys_with_dimension_value(  # pyright: ignore[reportAttributeAccessIssue]
-                    time_window_dimension.name,
-                    partition_key,
-                    dynamic_partitions_store=context.instance if context.instance_ref else None,
-                )
-            ]
+                return [
+                    job.run_request_for_partition(partition_key=key, run_key=key, tags=tags)
+                    for key in partitions_def.get_multipartition_keys_with_dimension_value(  # pyright: ignore[reportAttributeAccessIssue]
+                        time_window_dimension.name, partition_key
+                    )
+                ]
 
     return schedule_fn  # pyright: ignore[reportReturnType]
 

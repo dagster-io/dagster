@@ -125,6 +125,17 @@ def run_monitoring_namespace(cluster_provider, pytestconfig, should_cleanup):
         kube_api.delete_namespace(name=namespace)  # pyright: ignore[reportPossiblyUnboundVariable]
 
 
+@contextmanager
+def ignore_k8s_object_does_not_exist():
+    try:
+        yield
+    except kubernetes.client.rest.ApiException as e:
+        if e.status == 404:
+            pass
+        else:
+            raise
+
+
 @pytest.fixture(scope="session")
 def configmaps(namespace, should_cleanup):
     print(
@@ -161,9 +172,16 @@ def configmaps(namespace, should_cleanup):
     yield
 
     if should_cleanup:
-        kube_api.delete_namespaced_config_map(name=TEST_CONFIGMAP_NAME, namespace=namespace)
-        kube_api.delete_namespaced_config_map(name=TEST_OTHER_CONFIGMAP_NAME, namespace=namespace)
-        kube_api.delete_namespaced_config_map(name=TEST_OTHER_CONFIGMAP_NAME, namespace=namespace)
+        with ignore_k8s_object_does_not_exist():
+            kube_api.delete_namespaced_config_map(name=TEST_CONFIGMAP_NAME, namespace=namespace)
+        with ignore_k8s_object_does_not_exist():
+            kube_api.delete_namespaced_config_map(
+                name=TEST_OTHER_CONFIGMAP_NAME, namespace=namespace
+            )
+        with ignore_k8s_object_does_not_exist():
+            kube_api.delete_namespaced_config_map(
+                name=TEST_VOLUME_CONFIGMAP_NAME, namespace=namespace
+            )
 
 
 @pytest.fixture(scope="session")

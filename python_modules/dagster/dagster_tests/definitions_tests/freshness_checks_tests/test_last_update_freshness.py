@@ -1,24 +1,15 @@
 # pyright: reportPrivateImportUsage=false
-
 import datetime
 import json
 
+import dagster as dg
 import pytest
-from dagster import asset
 from dagster._check import CheckError
-from dagster._core.definitions.asset_check_factories.freshness_checks.last_update import (
-    build_last_update_freshness_checks,
-)
-from dagster._core.definitions.asset_check_factories.utils import (
+from dagster._core.definitions.asset_checks.asset_check_factories.utils import (
     unique_id_from_asset_and_check_keys,
 )
-from dagster._core.definitions.asset_check_spec import AssetCheckSeverity
-from dagster._core.definitions.asset_checks import AssetChecksDefinition
+from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckSeverity
 from dagster._core.definitions.asset_selection import AssetChecksForAssetKeysSelection
-from dagster._core.definitions.definitions_class import Definitions
-from dagster._core.definitions.metadata import JsonMetadataValue, TimestampMetadataValue
-from dagster._core.definitions.source_asset import SourceAsset
-from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
 from dagster._core.instance import DagsterInstance
 from dagster._core.test_utils import freeze_time
 from dagster._time import create_datetime
@@ -32,11 +23,11 @@ from dagster_tests.definitions_tests.freshness_checks_tests.conftest import (
 
 
 def test_params() -> None:
-    @asset
+    @dg.asset
     def my_asset():
         pass
 
-    check = build_last_update_freshness_checks(
+    check = dg.build_last_update_freshness_checks(
         assets=[my_asset], lower_bound_delta=datetime.timedelta(minutes=10)
     )[0]
     assert (
@@ -46,10 +37,10 @@ def test_params() -> None:
     check_specs = list(check.check_specs)
     assert len(check_specs) == 1
 
-    assert isinstance(check, AssetChecksDefinition)
+    assert isinstance(check, dg.AssetChecksDefinition)
     assert next(iter(check.check_keys)).asset_key == my_asset.key
     assert next(iter(check_specs)).metadata == {
-        "dagster/freshness_params": JsonMetadataValue(
+        "dagster/freshness_params": dg.JsonMetadataValue(
             {
                 "lower_bound_delta_seconds": 600,
                 "timezone": "UTC",
@@ -58,30 +49,30 @@ def test_params() -> None:
     }
     assert not next(iter(check_specs)).blocking
 
-    blocking_check = build_last_update_freshness_checks(
+    blocking_check = dg.build_last_update_freshness_checks(
         assets=[my_asset], lower_bound_delta=datetime.timedelta(minutes=10), blocking=True
     )[0]
 
     assert next(iter(blocking_check.check_specs)).blocking
 
-    @asset
+    @dg.asset
     def other_asset():
         pass
 
-    other_check = build_last_update_freshness_checks(
+    other_check = dg.build_last_update_freshness_checks(
         assets=[other_asset], lower_bound_delta=datetime.timedelta(minutes=10)
     )[0]
-    assert isinstance(other_check, AssetChecksDefinition)
+    assert isinstance(other_check, dg.AssetChecksDefinition)
     assert check.node_def.name != other_check.node_def.name
 
-    check = build_last_update_freshness_checks(
+    check = dg.build_last_update_freshness_checks(
         assets=[my_asset],
         deadline_cron="0 0 * * *",
         lower_bound_delta=datetime.timedelta(minutes=10),
     )[0]
-    assert isinstance(check, AssetChecksDefinition)
+    assert isinstance(check, dg.AssetChecksDefinition)
     assert next(iter(check.check_specs)).metadata == {
-        "dagster/freshness_params": JsonMetadataValue(
+        "dagster/freshness_params": dg.JsonMetadataValue(
             {
                 "lower_bound_delta_seconds": 600,
                 "deadline_cron": "0 0 * * *",
@@ -90,51 +81,51 @@ def test_params() -> None:
         )
     }
 
-    check = build_last_update_freshness_checks(
+    check = dg.build_last_update_freshness_checks(
         assets=[my_asset.key], lower_bound_delta=datetime.timedelta(minutes=10)
     )[0]
-    assert isinstance(check, AssetChecksDefinition)
+    assert isinstance(check, dg.AssetChecksDefinition)
     assert next(iter(check.check_keys)).asset_key == my_asset.key
 
-    src_asset = SourceAsset("source_asset")
-    check = build_last_update_freshness_checks(
+    src_asset = dg.SourceAsset("source_asset")
+    check = dg.build_last_update_freshness_checks(
         assets=[src_asset], lower_bound_delta=datetime.timedelta(minutes=10)
     )[0]
-    assert isinstance(check, AssetChecksDefinition)
+    assert isinstance(check, dg.AssetChecksDefinition)
     assert next(iter(check.check_keys)).asset_key == src_asset.key
 
-    check = build_last_update_freshness_checks(
+    check = dg.build_last_update_freshness_checks(
         assets=[my_asset, src_asset], lower_bound_delta=datetime.timedelta(minutes=10)
     )[0]
-    assert isinstance(check, AssetChecksDefinition)
+    assert isinstance(check, dg.AssetChecksDefinition)
     assert {check_key.asset_key for check_key in check.check_keys} == {my_asset.key, src_asset.key}
 
     with pytest.raises(Exception, match="Found duplicate assets"):
-        build_last_update_freshness_checks(
+        dg.build_last_update_freshness_checks(
             assets=[my_asset, my_asset], lower_bound_delta=datetime.timedelta(minutes=10)
         )
 
     with pytest.raises(CheckError, match="Invalid cron string."):
-        build_last_update_freshness_checks(
+        dg.build_last_update_freshness_checks(
             assets=[my_asset],
             deadline_cron="very invalid",
             lower_bound_delta=datetime.timedelta(minutes=10),
         )
 
-    check = build_last_update_freshness_checks(
+    check = dg.build_last_update_freshness_checks(
         assets=[my_asset],
         lower_bound_delta=datetime.timedelta(minutes=10),
         deadline_cron="0 0 * * *",
         timezone="UTC",
     )[0]
-    assert isinstance(check, AssetChecksDefinition)
+    assert isinstance(check, dg.AssetChecksDefinition)
     assert next(iter(check.check_keys)).asset_key == my_asset.key
 
-    check_multiple_assets = build_last_update_freshness_checks(
+    check_multiple_assets = dg.build_last_update_freshness_checks(
         assets=[my_asset, other_asset],
         lower_bound_delta=datetime.timedelta(minutes=10),
     )[0]
-    check_multiple_assets_switched_order = build_last_update_freshness_checks(
+    check_multiple_assets_switched_order = dg.build_last_update_freshness_checks(
         assets=[other_asset, my_asset],
         lower_bound_delta=datetime.timedelta(minutes=10),
     )[0]
@@ -153,7 +144,7 @@ def test_params() -> None:
 def test_different_event_types(use_materialization: bool, instance: DagsterInstance) -> None:
     """Test that the freshness check works with different event types."""
 
-    @asset
+    @dg.asset
     def my_asset():
         pass
 
@@ -165,7 +156,7 @@ def test_different_event_types(use_materialization: bool, instance: DagsterInsta
     ):
         add_new_event(instance, my_asset.key, is_materialization=use_materialization)
     with freeze_time(start_time):
-        check = build_last_update_freshness_checks(
+        check = dg.build_last_update_freshness_checks(
             assets=[my_asset],
             lower_bound_delta=lower_bound_delta,
         )[0]
@@ -175,7 +166,7 @@ def test_different_event_types(use_materialization: bool, instance: DagsterInsta
 def test_materialization_override_timestamp(instance: DagsterInstance) -> None:
     """Test that the materialization timestamp can be overridden."""
 
-    @asset
+    @dg.asset
     def my_asset():
         pass
 
@@ -190,7 +181,7 @@ def test_materialization_override_timestamp(instance: DagsterInstance) -> None:
             is_materialization=True,
             override_timestamp=(start_time - datetime.timedelta(minutes=11)).timestamp(),
         )
-        check = build_last_update_freshness_checks(
+        check = dg.build_last_update_freshness_checks(
             assets=[my_asset],
             lower_bound_delta=lower_bound_delta,
         )[0]
@@ -200,7 +191,7 @@ def test_materialization_override_timestamp(instance: DagsterInstance) -> None:
 def test_materialization_and_observation(instance: DagsterInstance) -> None:
     """Test that freshness check works when latest event is an observation, but it has no last_updated_time."""
 
-    @asset
+    @dg.asset
     def my_asset():
         pass
 
@@ -216,7 +207,7 @@ def test_materialization_and_observation(instance: DagsterInstance) -> None:
 
     with freeze_time(start_time):
         # Check data freshness, and expect it to pass.
-        check = build_last_update_freshness_checks(
+        check = dg.build_last_update_freshness_checks(
             assets=[my_asset],
             lower_bound_delta=lower_bound_delta,
         )[0]
@@ -224,14 +215,14 @@ def test_materialization_and_observation(instance: DagsterInstance) -> None:
 
 
 def test_observation_descriptions(instance: DagsterInstance) -> None:
-    @asset
+    @dg.asset
     def my_asset():
         pass
 
     start_time = create_datetime(2021, 1, 1, 1, 0, 0)
     lower_bound_delta = datetime.timedelta(minutes=10)
 
-    check = build_last_update_freshness_checks(
+    check = dg.build_last_update_freshness_checks(
         assets=[my_asset],
         lower_bound_delta=lower_bound_delta,
     )[0]
@@ -291,7 +282,7 @@ def test_check_result_cron(
 ) -> None:
     """Move time forward and backward, with a freshness check parameterized with a cron, and ensure that the check passes and fails as expected."""
 
-    @asset
+    @dg.asset
     def my_asset():
         pass
 
@@ -300,7 +291,7 @@ def test_check_result_cron(
     timezone = "UTC"
     lower_bound_delta = datetime.timedelta(minutes=10)
 
-    check = build_last_update_freshness_checks(
+    check = dg.build_last_update_freshness_checks(
         assets=[my_asset],
         deadline_cron=deadline_cron,
         lower_bound_delta=lower_bound_delta,
@@ -318,19 +309,19 @@ def test_check_result_cron(
             False,
             description_match="Asset has never been observed/materialized.",
             metadata_match={
-                "dagster/freshness_params": JsonMetadataValue(
+                "dagster/freshness_params": dg.JsonMetadataValue(
                     {
                         "deadline_cron": deadline_cron,
                         "timezone": timezone,
                         "lower_bound_delta_seconds": lower_bound_delta.total_seconds(),
                     }
                 ),
-                "dagster/freshness_lower_bound_timestamp": TimestampMetadataValue(
+                "dagster/freshness_lower_bound_timestamp": dg.TimestampMetadataValue(
                     value=(
                         create_datetime(2021, 1, 1, 0, 0, 0) - datetime.timedelta(minutes=10)
                     ).timestamp()
                 ),
-                "dagster/latest_cron_tick_timestamp": TimestampMetadataValue(
+                "dagster/latest_cron_tick_timestamp": dg.TimestampMetadataValue(
                     value=create_datetime(2021, 1, 1, 0, 0, 0).timestamp()
                 ),
             },
@@ -356,23 +347,23 @@ def test_check_result_cron(
             True,
             description_match="Asset is currently fresh.",
             metadata_match={
-                "dagster/freshness_params": JsonMetadataValue(
+                "dagster/freshness_params": dg.JsonMetadataValue(
                     {
                         "deadline_cron": deadline_cron,
                         "timezone": timezone,
                         "lower_bound_delta_seconds": lower_bound_delta.total_seconds(),
                     }
                 ),
-                "dagster/last_updated_timestamp": TimestampMetadataValue(
+                "dagster/last_updated_timestamp": dg.TimestampMetadataValue(
                     value=(lower_bound + datetime.timedelta(minutes=1)).timestamp()
                 ),
-                "dagster/latest_cron_tick_timestamp": TimestampMetadataValue(
+                "dagster/latest_cron_tick_timestamp": dg.TimestampMetadataValue(
                     value=create_datetime(2021, 1, 1, 0, 0, 0).timestamp()
                 ),
-                "dagster/freshness_lower_bound_timestamp": TimestampMetadataValue(
+                "dagster/freshness_lower_bound_timestamp": dg.TimestampMetadataValue(
                     value=lower_bound.timestamp()
                 ),
-                "dagster/fresh_until_timestamp": TimestampMetadataValue(
+                "dagster/fresh_until_timestamp": dg.TimestampMetadataValue(
                     value=create_datetime(2021, 1, 2, 0, 0, 0).timestamp()
                 ),
             },
@@ -403,14 +394,14 @@ def test_check_result_bound_only(
     lower_bound_delta, and ensure that the check passes and fails as expected.
     """
 
-    @asset
+    @dg.asset
     def my_asset():
         pass
 
     start_time = create_datetime(2021, 1, 1, 1, 0, 0)
     lower_bound_delta = datetime.timedelta(minutes=10)
 
-    check = build_last_update_freshness_checks(
+    check = dg.build_last_update_freshness_checks(
         assets=[my_asset],
         lower_bound_delta=lower_bound_delta,
     )[0]
@@ -426,13 +417,13 @@ def test_check_result_bound_only(
             False,
             description_match="Asset has never been observed/materialized.",
             metadata_match={
-                "dagster/freshness_params": JsonMetadataValue(
+                "dagster/freshness_params": dg.JsonMetadataValue(
                     {
                         "lower_bound_delta_seconds": 600,
                         "timezone": "UTC",
                     }
                 ),
-                "dagster/freshness_lower_bound_timestamp": TimestampMetadataValue(
+                "dagster/freshness_lower_bound_timestamp": dg.TimestampMetadataValue(
                     (start_time - datetime.timedelta(minutes=10)).timestamp()
                 ),
             },
@@ -459,19 +450,19 @@ def test_check_result_bound_only(
             True,
             description_match="Asset is currently fresh.",
             metadata_match={
-                "dagster/freshness_params": JsonMetadataValue(
+                "dagster/freshness_params": dg.JsonMetadataValue(
                     {
                         "lower_bound_delta_seconds": 600,
                         "timezone": "UTC",
                     }
                 ),
-                "dagster/fresh_until_timestamp": TimestampMetadataValue(
+                "dagster/fresh_until_timestamp": dg.TimestampMetadataValue(
                     value=update_time.timestamp() + 600
                 ),
-                "dagster/last_updated_timestamp": TimestampMetadataValue(
+                "dagster/last_updated_timestamp": dg.TimestampMetadataValue(
                     value=update_time.timestamp()
                 ),
-                "dagster/freshness_lower_bound_timestamp": TimestampMetadataValue(
+                "dagster/freshness_lower_bound_timestamp": dg.TimestampMetadataValue(
                     value=lower_bound.timestamp()
                 ),
             },
@@ -483,22 +474,22 @@ def test_subset_freshness_checks(instance: DagsterInstance):
     on a subset of assets.
     """
 
-    @asset
+    @dg.asset
     def my_asset():
         pass
 
-    @asset
+    @dg.asset
     def my_other_asset():
         pass
 
-    check = build_last_update_freshness_checks(
+    check = dg.build_last_update_freshness_checks(
         assets=[my_asset, my_other_asset],
         lower_bound_delta=datetime.timedelta(minutes=10),
     )[0]
-    single_check_job = define_asset_job(
+    single_check_job = dg.define_asset_job(
         "the_job", selection=AssetChecksForAssetKeysSelection(selected_asset_keys=[my_asset.key])
     )
-    defs = Definitions(
+    defs = dg.Definitions(
         assets=[my_asset, my_other_asset], asset_checks=[check], jobs=[single_check_job]
     )
     job_def = defs.resolve_job_def("the_job")

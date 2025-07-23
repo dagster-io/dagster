@@ -6,13 +6,13 @@ from typing_extensions import TypeAlias
 from dagster import _check as check
 from dagster._config import UserConfigSchema
 from dagster._core.decorator_utils import format_docstring_for_description
-from dagster._core.definitions.asset_check_result import AssetCheckResult
-from dagster._core.definitions.asset_check_spec import AssetCheckSpec
-from dagster._core.definitions.asset_checks import AssetChecksDefinition
-from dagster._core.definitions.asset_dep import AssetDep, CoercibleToAssetDep
-from dagster._core.definitions.asset_in import AssetIn, CoercibleToAssetIn
+from dagster._core.definitions.asset_checks.asset_check_result import AssetCheckResult
+from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckSpec
+from dagster._core.definitions.asset_checks.asset_checks_definition import AssetChecksDefinition
 from dagster._core.definitions.asset_key import AssetCheckKey
-from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.assets.definition.asset_dep import AssetDep, CoercibleToAssetDep
+from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
+from dagster._core.definitions.assets.job.asset_in import AssetIn, CoercibleToAssetIn
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationCondition,
 )
@@ -91,8 +91,8 @@ def _build_asset_check_named_ins(
 
     return build_and_validate_named_ins(
         fn=fn,
-        asset_ins=all_ins,
         deps=all_deps.values(),
+        passed_asset_ins=all_ins,
     )
 
 
@@ -366,12 +366,12 @@ def multi_asset_check(
 
         named_ins_by_asset_key = build_and_validate_named_ins(
             fn=fn,
-            asset_ins={
+            deps=all_deps_by_key.values(),
+            passed_asset_ins={
                 inp_name: AssetIn.from_coercible(coercible) for inp_name, coercible in ins.items()
             }
             if ins
             else {},
-            deps=all_deps_by_key.values(),
         )
         validate_named_ins_subset_of_deps(named_ins_by_asset_key, all_deps_by_key)
 

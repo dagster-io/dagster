@@ -24,7 +24,7 @@ from dagster import (
 )
 from dagster._annotations import beta, public, superseded
 from dagster._config.pythonic_config import infer_schema_from_config_class
-from dagster._core.definitions.asset_spec import AssetSpec
+from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
 from dagster._core.definitions.definitions_load_context import StateBackedDefinitionsLoader
 from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from dagster._record import record

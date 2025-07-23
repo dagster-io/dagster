@@ -13,7 +13,7 @@ from dagster_shared import check
 from dagster_shared.merger import deep_merge_dicts
 
 from dagster._core.definitions.asset_key import AssetKey
-from dagster._core.definitions.asset_spec import AssetSpec
+from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
 from dagster._core.definitions.partitions.definition import StaticPartitionsDefinition
 from dagster.components.core.tree import ComponentTree
 

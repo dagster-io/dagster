@@ -8,6 +8,7 @@ on:
   pull_request:
     branches:
       - master
+      - issue-31069
 
 jobs:
   trigger-buildkite:

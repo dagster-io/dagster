@@ -22,7 +22,7 @@ from dagster import (
 )
 from dagster._annotations import beta, deprecated_param
 from dagster._core.definitions import AssetsDefinition, multi_asset
-from dagster._core.definitions.cacheable_assets import (
+from dagster._core.definitions.assets.definition.cacheable_assets_definition import (
     AssetsDefinitionCacheableData,
     CacheableAssetsDefinition,
 )

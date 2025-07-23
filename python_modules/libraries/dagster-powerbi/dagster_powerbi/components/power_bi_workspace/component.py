@@ -4,8 +4,8 @@ from typing import Annotated, Any, Callable, Optional, Union
 
 import dagster as dg
 from dagster._core.definitions.asset_key import CoercibleToAssetKeyPrefix
-from dagster._core.definitions.asset_spec import AssetSpec
-from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
+from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
 from dagster._core.definitions.decorators.asset_decorator import multi_asset
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster.components import Component, ComponentLoadContext, Model, Resolvable, Resolver

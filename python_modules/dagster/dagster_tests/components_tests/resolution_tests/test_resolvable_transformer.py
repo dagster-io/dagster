@@ -3,26 +3,9 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Optional
 
-from dagster import Resolvable
-from dagster._core.definitions.asset_dep import AssetDep
-from dagster._core.definitions.asset_key import AssetKey
-from dagster._core.definitions.asset_spec import AssetSpec
-from dagster._core.definitions.declarative_automation.automation_condition import (
-    AutomationCondition,
-)
-from dagster._core.definitions.partitions.definition import (
-    DailyPartitionsDefinition,
-    HourlyPartitionsDefinition,
-    StaticPartitionsDefinition,
-    TimeWindowPartitionsDefinition,
-    WeeklyPartitionsDefinition,
-)
+import dagster as dg
 from dagster.components.resolved.context import ResolutionContext
-from dagster.components.resolved.core_models import (
-    AssetSpecKwargs,
-    ResolvedAssetSpec,
-    resolve_asset_spec,
-)
+from dagster.components.resolved.core_models import AssetSpecKwargs, resolve_asset_spec
 
 
 def test_asset_spec():
@@ -35,7 +18,7 @@ def test_asset_spec():
         context=ResolutionContext.default(),
     )
 
-    assert asset_spec.key == AssetKey("asset_key")
+    assert asset_spec.key == dg.AssetKey("asset_key")
 
     kitchen_sink_model = AssetSpecKwargs.model()(
         key="kitchen_sink",
@@ -62,10 +45,10 @@ def test_asset_spec():
         context=ResolutionContext.default(),
     )
 
-    assert kitchen_sink_spec.key == AssetKey("kitchen_sink")
+    assert kitchen_sink_spec.key == dg.AssetKey("kitchen_sink")
     assert kitchen_sink_spec.deps == [
-        AssetDep(asset=AssetKey(["upstream"])),
-        AssetDep(asset=AssetKey(["prefixed", "upstream"])),
+        dg.AssetDep(asset=dg.AssetKey(["upstream"])),
+        dg.AssetDep(asset=dg.AssetKey(["prefixed", "upstream"])),
     ]
     assert kitchen_sink_spec.description == "A kitchen sink"
     assert kitchen_sink_spec.metadata == {"key": "value"}
@@ -75,10 +58,10 @@ def test_asset_spec():
     assert kitchen_sink_spec.owners == ["owner@owner.com"]
     assert kitchen_sink_spec.tags == {"tag": "value", "dagster/kind/kind": ""}
     assert kitchen_sink_spec.kinds == {"kind"}
-    assert isinstance(kitchen_sink_spec.automation_condition, AutomationCondition)
+    assert isinstance(kitchen_sink_spec.automation_condition, dg.AutomationCondition)
     assert kitchen_sink_spec.automation_condition.get_label() == "eager"
     partitions_def = kitchen_sink_spec.partitions_def
-    assert isinstance(partitions_def, DailyPartitionsDefinition)
+    assert isinstance(partitions_def, dg.DailyPartitionsDefinition)
     assert partitions_def.start == datetime.datetime(
         year=2021, month=1, day=1, tzinfo=datetime.timezone(datetime.timedelta(hours=-5))
     )
@@ -98,7 +81,7 @@ def test_asset_spec_daily_partitions_def():
     )
 
     spec = resolve_asset_spec(model=model, context=ResolutionContext.default())
-    assert isinstance(spec.partitions_def, DailyPartitionsDefinition)
+    assert isinstance(spec.partitions_def, dg.DailyPartitionsDefinition)
     assert spec.partitions_def.start == datetime.datetime(
         year=2021, month=1, day=1, tzinfo=datetime.timezone.utc
     )
@@ -120,7 +103,7 @@ def test_asset_spec_hourly_partitions_def():
     )
 
     spec = resolve_asset_spec(model=model, context=ResolutionContext.default())
-    assert isinstance(spec.partitions_def, HourlyPartitionsDefinition)
+    assert isinstance(spec.partitions_def, dg.HourlyPartitionsDefinition)
     assert spec.partitions_def.start == datetime.datetime(
         year=2021, month=1, day=1, hour=0, tzinfo=datetime.timezone.utc
     )
@@ -140,7 +123,7 @@ def test_asset_spec_weekly_partitions_def():
     )
 
     spec = resolve_asset_spec(model=model, context=ResolutionContext.default())
-    assert isinstance(spec.partitions_def, WeeklyPartitionsDefinition)
+    assert isinstance(spec.partitions_def, dg.WeeklyPartitionsDefinition)
     assert spec.partitions_def.start == datetime.datetime(
         year=2021, month=1, day=1, tzinfo=datetime.timezone.utc
     )
@@ -159,7 +142,7 @@ def test_asset_spec_time_window_partitions_def():
     )
 
     spec = resolve_asset_spec(model=model, context=ResolutionContext.default())
-    assert isinstance(spec.partitions_def, TimeWindowPartitionsDefinition)
+    assert isinstance(spec.partitions_def, dg.TimeWindowPartitionsDefinition)
     assert spec.partitions_def.start == datetime.datetime(
         year=2021, month=1, day=1, tzinfo=datetime.timezone.utc
     )
@@ -177,17 +160,17 @@ def test_asset_spec_static_partitions_def():
     )
 
     spec = resolve_asset_spec(model=model, context=ResolutionContext.default())
-    assert isinstance(spec.partitions_def, StaticPartitionsDefinition)
+    assert isinstance(spec.partitions_def, dg.StaticPartitionsDefinition)
     assert spec.partitions_def.get_partition_keys() == ["a", "b", "c"]
 
 
 def test_resolved_asset_spec() -> None:
     @dataclass
-    class SomeObject(Resolvable):
-        spec: ResolvedAssetSpec
-        maybe_spec: Optional[ResolvedAssetSpec]
-        specs: Sequence[ResolvedAssetSpec]
-        maybe_specs: Optional[Sequence[ResolvedAssetSpec]]
+    class SomeObject(dg.Resolvable):
+        spec: dg.ResolvedAssetSpec
+        maybe_spec: Optional[dg.ResolvedAssetSpec]
+        specs: Sequence[dg.ResolvedAssetSpec]
+        maybe_specs: Optional[Sequence[dg.ResolvedAssetSpec]]
 
     some_object = SomeObject.resolve_from_model(
         context=ResolutionContext.default(),
@@ -202,4 +185,4 @@ def test_resolved_asset_spec() -> None:
         ),
     )
 
-    assert some_object.specs == [AssetSpec(key="asset1"), AssetSpec(key="asset2")]
+    assert some_object.specs == [dg.AssetSpec(key="asset1"), dg.AssetSpec(key="asset2")]

@@ -5,7 +5,7 @@ from dagster_shared import record
 from dagster_shared.serdes import whitelist_for_serdes
 
 import dagster._check as check
-from dagster._core.definitions.asset_check_spec import AssetCheckSeverity
+from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckSeverity
 from dagster._core.definitions.asset_health.asset_health import AssetHealthStatus
 from dagster._core.definitions.asset_key import AssetCheckKey, AssetKey
 from dagster._core.loader import LoadableBy, LoadingContext

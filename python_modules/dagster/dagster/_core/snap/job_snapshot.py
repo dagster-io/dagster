@@ -25,7 +25,7 @@ from dagster._config import (
     Shape,
     get_builtin_scalar_by_name,
 )
-from dagster._core.definitions.asset_check_spec import AssetCheckKey
+from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.metadata import (

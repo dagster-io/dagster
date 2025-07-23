@@ -4,7 +4,9 @@ from typing import Any, Callable, Optional, Union, cast
 import dagster._check as check
 from dagster import AssetKey
 from dagster._annotations import beta, deprecated, public
-from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
+from dagster._core.definitions.assets.definition.cacheable_assets_definition import (
+    CacheableAssetsDefinition,
+)
 from dagster._core.definitions.events import CoercibleToAssetKeyPrefix
 from dagster._core.definitions.freshness_policy import LegacyFreshnessPolicy
 from dagster._core.definitions.resource_definition import ResourceDefinition

@@ -279,6 +279,38 @@ def test_list_registry_modules_aliases(alias: str):
 
 
 # ########################
+# ##### COMPONENT TREE
+# ########################
+
+
+def test_list_component_tree_succeeds(snapshot):
+    project_kwargs: dict[str, Any] = {"use_editable_dagster": True}
+    with (
+        ProxyRunner.test() as runner,
+        isolated_example_project_foo_bar(
+            runner,
+            in_workspace=False,
+            **project_kwargs,
+            uv_sync=True,
+        ) as project_dir,
+    ):
+        with activate_venv(project_dir / ".venv"):
+            result = subprocess.run(
+                ["dg", "scaffold", "defs", "dagster.FunctionComponent", "my_function"],
+                check=True,
+            )
+
+            # touch plain python file
+            Path("src/foo_bar/defs/assets").mkdir(parents=True, exist_ok=True)
+            Path("src/foo_bar/defs/assets/asset.py").touch()
+
+            result = subprocess.run(
+                ["dg", "list", "component-tree"], check=True, capture_output=True
+            )
+            snapshot.assert_match(result.stdout.decode("utf-8").strip())
+
+
+# ########################
 # ##### DEFS
 # ########################
 

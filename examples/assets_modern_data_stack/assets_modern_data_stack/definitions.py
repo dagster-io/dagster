@@ -1,11 +1,9 @@
 from dagster import (
     Definitions,
     ScheduleDefinition,
+    build_sensor_for_freshness_checks,
     define_asset_job,
     load_assets_from_package_module,
-)
-from dagster._core.definitions.asset_check_factories.freshness_checks.sensor import (
-    build_sensor_for_freshness_checks,
 )
 from dagster_airbyte import AirbyteResource
 

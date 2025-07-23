@@ -38,7 +38,7 @@ from dagster import (
 )
 from dagster._config import Array, Field
 from dagster._core.definitions.asset_selection import CoercibleToAssetSelection
-from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
 from dagster._core.definitions.decorators import op
 from dagster._core.definitions.decorators.graph_decorator import graph
 from dagster._core.definitions.definitions_class import Definitions

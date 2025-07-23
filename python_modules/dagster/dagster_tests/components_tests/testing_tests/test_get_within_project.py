@@ -1,12 +1,12 @@
 from pathlib import Path
 
-from dagster.components.testing import get_all_components_defs_within_project
+import dagster as dg
 from dagster_test.components.simple_asset import SimpleAssetComponent
 
 
 def test_get_component_defs_in_dagster_test() -> None:
     project_root = Path(__file__).parent.parent.parent.parent.parent / "dagster-test"
-    component_defs = get_all_components_defs_within_project(
+    component_defs = dg.get_all_components_defs_within_project(
         project_root=project_root,
         component_path=Path("composites/yaml"),
     )

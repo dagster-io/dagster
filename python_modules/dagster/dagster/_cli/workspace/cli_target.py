@@ -16,7 +16,11 @@ import dagster._check as check
 from dagster import __version__ as dagster_version
 from dagster._cli.utils import has_pyproject_dagster_block, serialize_sorted_quoted
 from dagster._core.code_pointer import AutoloadDefsModuleCodePointer, CodePointer
+from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.reconstruct import repository_def_from_target_def
+from dagster._core.definitions.repository_definition.valid_definitions import (
+    SINGLETON_REPOSITORY_NAME,
+)
 from dagster._core.instance import DagsterInstance
 from dagster._core.origin import DEFAULT_DAGSTER_ENTRY_POINT, RepositoryPythonOrigin
 from dagster._core.remote_representation.code_location import CodeLocation
@@ -42,6 +46,7 @@ from dagster._core.workspace.load_target import (
 from dagster._grpc.utils import get_loadable_targets
 from dagster._record import record
 from dagster._utils.error import serializable_error_info_from_exc_info
+from dagster.components.definitions import LazyDefinitions
 
 logger = logging.getLogger("dagster")
 WORKSPACE_TARGET_WARNING = (
@@ -444,6 +449,12 @@ def _generate_run_config_option(name: str, command_name: str) -> ClickOption:
     )
 
 
+def _get_name_from_target_def(target_def: object) -> str:
+    if isinstance(target_def, (Definitions, LazyDefinitions)):
+        return SINGLETON_REPOSITORY_NAME
+    return check.not_none(repository_def_from_target_def(target_def)).name
+
+
 def _get_code_pointer_dict_from_python_pointer_opts(
     params: PythonPointerOpts,
 ) -> Mapping[str, CodePointer]:
@@ -460,7 +471,7 @@ def _get_code_pointer_dict_from_python_pointer_opts(
     # repository_name -> code_pointer
     code_pointer_dict: dict[str, CodePointer] = {}
     for loadable_target in loadable_targets:
-        repo_def = check.not_none(repository_def_from_target_def(loadable_target.target_definition))
+        name = _get_name_from_target_def(loadable_target.target_definition)
         if params.python_file:
             code_pointer = CodePointer.from_python_file(
                 params.python_file, loadable_target.attribute, working_directory
@@ -481,7 +492,7 @@ def _get_code_pointer_dict_from_python_pointer_opts(
         else:
             check.failed("Must specify a Python file or module name")
 
-        code_pointer_dict[repo_def.name] = code_pointer
+        code_pointer_dict[name] = code_pointer
 
     return code_pointer_dict
 

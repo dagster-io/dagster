@@ -1,4 +1,12 @@
 # serializer version: 1
+# name: test_list_component_tree_succeeds
+  '''
+  ├── assets
+  │   └── ...
+  └── my_function
+      └── defs.yaml (FunctionComponent)
+  '''
+# ---
 # name: test_list_defs_complex_assets_succeeds
   '''
   ┏━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
@@ -69,45 +77,61 @@
 # ---
 # name: test_list_defs_succeeds[True]
   '''
-  [
-      {
-          "key": "my_asset_1",
-          "deps": [],
-          "kinds": [],
-          "group": "default",
-          "description": null,
-          "automation_condition": null,
-          "tags": [],
-          "metadata": [],
-          "is_executable": true
-      },
-      {
-          "key": "my_asset_2",
-          "deps": [],
-          "kinds": [],
-          "group": "default",
-          "description": null,
-          "automation_condition": null,
-          "tags": [],
-          "metadata": [],
-          "is_executable": true
-      },
-      {
-          "name": "my_job",
-          "description": null
-      },
-      {
-          "name": "my_schedule",
-          "cron_schedule": "@daily"
-      },
-      {
-          "name": "my_sensor"
-      },
-      {
-          "name": "my_resource",
-          "type": "foo_bar.defs.mydefs.definitions.MyResource"
-      }
-  ]
+  {
+      "assets": [
+          {
+              "key": "my_asset_1",
+              "deps": [],
+              "kinds": [],
+              "group": "default",
+              "description": null,
+              "automation_condition": null,
+              "tags": [],
+              "is_executable": true,
+              "source": "src/foo_bar/defs/mydefs/defs.yaml:1",
+              "owners": []
+          },
+          {
+              "key": "my_asset_2",
+              "deps": [],
+              "kinds": [],
+              "group": "default",
+              "description": null,
+              "automation_condition": null,
+              "tags": [],
+              "is_executable": true,
+              "source": "src/foo_bar/defs/mydefs/defs.yaml:1",
+              "owners": []
+          }
+      ],
+      "asset_checks": [],
+      "jobs": [
+          {
+              "name": "my_job",
+              "description": null,
+              "source": null
+          }
+      ],
+      "resources": [
+          {
+              "name": "my_resource",
+              "type": "foo_bar.defs.mydefs.definitions.MyResource"
+          }
+      ],
+      "schedules": [
+          {
+              "name": "my_schedule",
+              "cron_schedule": "@daily",
+              "source": null
+          }
+      ],
+      "sensors": [
+          {
+              "name": "my_sensor",
+              "source": null
+          }
+      ]
+  }
   '''
 # ---
 # name: test_list_defs_with_env_file_succeeds

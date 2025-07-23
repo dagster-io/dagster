@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, AbstractSet, NamedTuple, Optional, Union  # no
 
 import dagster._check as check
 from dagster._core.assets import AssetDetails
-from dagster._core.definitions.asset_check_spec import AssetCheckKey
+from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.data_version import DATA_VERSION_TAG
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.freshness import FreshnessStateRecord

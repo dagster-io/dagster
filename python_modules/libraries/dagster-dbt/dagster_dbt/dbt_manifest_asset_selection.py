@@ -6,8 +6,8 @@ from dagster import (
     AssetSelection,
     _check as check,
 )
-from dagster._core.definitions.asset_check_spec import AssetCheckKey
-from dagster._core.definitions.base_asset_graph import BaseAssetGraph
+from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey
+from dagster._core.definitions.assets.graph.base_asset_graph import BaseAssetGraph
 from dagster._record import record
 
 from dagster_dbt.asset_utils import (

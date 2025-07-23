@@ -110,7 +110,7 @@ const AssetSelectionSummaryTileWithHealthStatus = React.memo(
         >
           <div className={styles.header}>
             <div>{icon}</div>
-            <div className={styles.title} style={{color: Colors.textLight()}}>
+            <div className={styles.title}>
               <MiddleTruncate text={label} />
             </div>
           </div>

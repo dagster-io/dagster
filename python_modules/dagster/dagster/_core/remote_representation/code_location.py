@@ -11,8 +11,8 @@ from dagster_shared.libraries import DagsterLibraryRegistry
 import dagster._check as check
 from dagster._check import checked
 from dagster._core.code_pointer import CodePointer
-from dagster._core.definitions.asset_job import IMPLICIT_ASSET_JOB_NAME
 from dagster._core.definitions.asset_key import AssetKey
+from dagster._core.definitions.assets.job.asset_job import IMPLICIT_ASSET_JOB_NAME
 from dagster._core.definitions.reconstruct import ReconstructableJob, ReconstructableRepository
 from dagster._core.definitions.repository_definition import RepositoryDefinition
 from dagster._core.definitions.selector import JobSubsetSelector

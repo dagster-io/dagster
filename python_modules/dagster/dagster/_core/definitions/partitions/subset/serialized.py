@@ -4,7 +4,6 @@ from dagster._core.definitions.partitions.definition.partitions_definition impor
     PartitionsDefinition,
 )
 from dagster._core.definitions.partitions.subset.partitions_subset import PartitionsSubset
-from dagster._core.instance import DynamicPartitionsStore
 from dagster._serdes import whitelist_for_serdes
 
 
@@ -15,17 +14,10 @@ class SerializedPartitionsSubset(NamedTuple):
     serialized_partitions_def_class_name: str
 
     @classmethod
-    def from_subset(
-        cls,
-        subset: PartitionsSubset,
-        partitions_def: PartitionsDefinition,
-        dynamic_partitions_store: DynamicPartitionsStore,
-    ):
+    def from_subset(cls, subset: PartitionsSubset, partitions_def: PartitionsDefinition):
         return cls(
             serialized_subset=subset.serialize(),
-            serialized_partitions_def_unique_id=partitions_def.get_serializable_unique_identifier(
-                dynamic_partitions_store
-            ),
+            serialized_partitions_def_unique_id=partitions_def.get_serializable_unique_identifier(),
             serialized_partitions_def_class_name=partitions_def.__class__.__name__,
         )
 

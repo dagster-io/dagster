@@ -1,23 +1,9 @@
 import re
 from unittest import mock
 
+import dagster as dg
 import pytest
-from dagster import (
-    DagsterInstance,
-    HookContext,
-    build_hook_context,
-    failure_hook,
-    op,
-    resource,
-    success_hook,
-)
 from dagster._core.definitions.decorators.hook_decorator import event_list_hook
-from dagster._core.errors import (
-    DagsterInvalidDefinitionError,
-    DagsterInvalidInvocationError,
-    DagsterInvariantViolationError,
-)
-from dagster._core.instance_for_test import instance_for_test
 
 
 def test_event_list_hook_invocation():
@@ -25,27 +11,29 @@ def test_event_list_hook_invocation():
 
     @event_list_hook
     def basic_event_list_hook(context, event_list):
-        assert isinstance(context, HookContext)
+        assert isinstance(context, dg.HookContext)
         for event in event_list:
             if event.is_step_success:
                 entered.append("yes")
 
-    basic_event_list_hook(build_hook_context(), [mock.MagicMock(is_step_success=True)])
+    basic_event_list_hook(dg.build_hook_context(), [mock.MagicMock(is_step_success=True)])
     assert entered == ["yes"]
     entered = []
 
-    basic_event_list_hook(build_hook_context(), event_list=[mock.MagicMock(is_step_success=True)])
+    basic_event_list_hook(
+        dg.build_hook_context(), event_list=[mock.MagicMock(is_step_success=True)]
+    )
     assert entered == ["yes"]
 
     entered = []
 
     basic_event_list_hook(
-        context=build_hook_context(), event_list=[mock.MagicMock(is_step_success=True)]
+        context=dg.build_hook_context(), event_list=[mock.MagicMock(is_step_success=True)]
     )
     assert entered == ["yes"]
 
     with pytest.raises(
-        DagsterInvalidInvocationError,
+        dg.DagsterInvalidInvocationError,
         match=(
             "Decorated function expects two parameters, context and event_list, but 0 were"
             " provided."
@@ -54,7 +42,7 @@ def test_event_list_hook_invocation():
         basic_event_list_hook()
 
     with pytest.raises(
-        DagsterInvalidInvocationError,
+        dg.DagsterInvalidInvocationError,
         match=(
             "Decorated function expects two parameters, context and event_list, but 1 were"
             " provided."
@@ -63,7 +51,7 @@ def test_event_list_hook_invocation():
         basic_event_list_hook(event_list=[])
 
     with pytest.raises(
-        DagsterInvalidInvocationError,
+        dg.DagsterInvalidInvocationError,
         match=(
             "Decorated function expects two parameters, context and event_list, but 1 were"
             " provided."
@@ -72,7 +60,7 @@ def test_event_list_hook_invocation():
         basic_event_list_hook(context=None)
 
     with pytest.raises(
-        DagsterInvalidInvocationError,
+        dg.DagsterInvalidInvocationError,
         match=(
             "Decorated function expects two parameters, context and event_list, but 1 were"
             " provided."
@@ -81,17 +69,17 @@ def test_event_list_hook_invocation():
         basic_event_list_hook(None)
 
     with pytest.raises(
-        DagsterInvalidInvocationError, match="Could not find expected argument 'context'."
+        dg.DagsterInvalidInvocationError, match="Could not find expected argument 'context'."
     ):
         basic_event_list_hook(foo=None, event_list=[])
 
     with pytest.raises(
-        DagsterInvalidInvocationError, match="Could not find expected argument 'event_list'."
+        dg.DagsterInvalidInvocationError, match="Could not find expected argument 'event_list'."
     ):
         basic_event_list_hook(context=None, bar=[])
 
 
-@pytest.mark.parametrize("hook_decorator", [success_hook, failure_hook])
+@pytest.mark.parametrize("hook_decorator", [dg.success_hook, dg.failure_hook])
 def test_context_hook_invocation(hook_decorator):
     entered = []
 
@@ -103,28 +91,28 @@ def test_context_hook_invocation(hook_decorator):
     assert entered == ["yes"]
 
     entered = []
-    my_hook(build_hook_context())
+    my_hook(dg.build_hook_context())
     assert entered == ["yes"]
 
     entered = []
-    my_hook(_=build_hook_context())
+    my_hook(_=dg.build_hook_context())
     assert entered == ["yes"]
 
     with pytest.raises(
-        DagsterInvalidInvocationError,
+        dg.DagsterInvalidInvocationError,
         match="Decorated function expects one parameter, _, but 0 were provided.",
     ):
         my_hook()  # pyright: ignore[reportCallIssue]
 
     with pytest.raises(
-        DagsterInvalidInvocationError, match="Could not find expected argument '_'."
+        dg.DagsterInvalidInvocationError, match="Could not find expected argument '_'."
     ):
         my_hook(foo=None)  # pyright: ignore[reportCallIssue]
 
 
 @pytest.mark.parametrize(
     "hook_decorator,is_event_list_hook",
-    [(success_hook, False), (failure_hook, False), (event_list_hook, True)],
+    [(dg.success_hook, False), (dg.failure_hook, False), (event_list_hook, True)],
 )
 def test_success_hook_with_resources(hook_decorator, is_event_list_hook):
     decorator = hook_decorator(required_resource_keys={"foo", "bar"})
@@ -143,17 +131,17 @@ def test_success_hook_with_resources(hook_decorator, is_event_list_hook):
 
         hook = decorator(my_hook_reqs_resources)
 
-    @resource
+    @dg.resource
     def bar_resource(_):
         return "bar"
 
     if is_event_list_hook:
-        hook(build_hook_context(resources={"foo": "foo", "bar": bar_resource}), None)
+        hook(dg.build_hook_context(resources={"foo": "foo", "bar": bar_resource}), None)
     else:
-        hook(build_hook_context(resources={"foo": "foo", "bar": bar_resource}))
+        hook(dg.build_hook_context(resources={"foo": "foo", "bar": bar_resource}))
 
     with pytest.raises(
-        DagsterInvalidDefinitionError,
+        dg.DagsterInvalidDefinitionError,
         match="resource with key 'bar' required by hook 'my_hook_reqs_resources'  was not provided",
     ):
         if is_event_list_hook:
@@ -164,12 +152,12 @@ def test_success_hook_with_resources(hook_decorator, is_event_list_hook):
 
 @pytest.mark.parametrize(
     "hook_decorator,is_event_list_hook",
-    [(success_hook, False), (failure_hook, False), (event_list_hook, True)],
+    [(dg.success_hook, False), (dg.failure_hook, False), (event_list_hook, True)],
 )
 def test_success_hook_cm_resource(hook_decorator, is_event_list_hook):
     entered = []
 
-    @resource
+    @dg.resource
     def cm_resource(_):
         try:
             entered.append("try")
@@ -193,7 +181,7 @@ def test_success_hook_cm_resource(hook_decorator, is_event_list_hook):
 
         hook = decorator(my_hook_cm_resource_2)
 
-    with build_hook_context(resources={"cm": cm_resource}) as context:
+    with dg.build_hook_context(resources={"cm": cm_resource}) as context:
         if is_event_list_hook:
             hook(context, None)
         else:
@@ -202,7 +190,7 @@ def test_success_hook_cm_resource(hook_decorator, is_event_list_hook):
     assert entered == ["try", "finally"]
 
     with pytest.raises(
-        DagsterInvariantViolationError,
+        dg.DagsterInvariantViolationError,
         match=re.escape(
             "At least one provided resource is a generator, but attempting to access resources "
             "outside of context manager scope. You can use the following syntax to open a context "
@@ -210,51 +198,51 @@ def test_success_hook_cm_resource(hook_decorator, is_event_list_hook):
         ),
     ):
         if is_event_list_hook:
-            hook(build_hook_context(resources={"cm": cm_resource}), None)
+            hook(dg.build_hook_context(resources={"cm": cm_resource}), None)
         else:
-            hook(build_hook_context(resources={"cm": cm_resource}))
+            hook(dg.build_hook_context(resources={"cm": cm_resource}))
 
 
 def test_hook_invocation_with_op():
-    @success_hook
+    @dg.success_hook
     def basic_hook(context):
         assert context.op.name == "foo"
         assert len(context.op.graph_definition.nodes) == 1
 
-    @op
+    @dg.op
     def foo():
         pass
 
-    @op
+    @dg.op
     def not_foo():
         pass
 
-    basic_hook(build_hook_context(op=foo))
-    basic_hook(build_hook_context(op=not_foo.alias("foo")))
+    basic_hook(dg.build_hook_context(op=foo))
+    basic_hook(dg.build_hook_context(op=not_foo.alias("foo")))
 
 
 def test_properties_on_hook_context():
-    @success_hook
+    @dg.success_hook
     def basic_hook(context):
         assert isinstance(context.job_name, str)
         assert isinstance(context.run_id, str)
         assert isinstance(context.op_exception, BaseException)
-        assert isinstance(context.instance, DagsterInstance)
+        assert isinstance(context.instance, dg.DagsterInstance)
 
-    error = DagsterInvariantViolationError("blah")
+    error = dg.DagsterInvariantViolationError("blah")
 
     with pytest.raises(
-        DagsterInvariantViolationError,
+        dg.DagsterInvariantViolationError,
         match=(
             "Tried to access the HookContext instance, but no instance was provided to"
             " `build_hook_context`."
         ),
     ):
-        basic_hook(build_hook_context(run_id="blah", job_name="blah", op_exception=error))
+        basic_hook(dg.build_hook_context(run_id="blah", job_name="blah", op_exception=error))
 
-    with instance_for_test() as instance:
+    with dg.instance_for_test() as instance:
         basic_hook(
-            build_hook_context(
+            dg.build_hook_context(
                 run_id="blah", job_name="blah", op_exception=error, instance=instance
             )
         )

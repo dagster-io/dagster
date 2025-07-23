@@ -1,13 +1,13 @@
 from typing import Optional
 
+import dagster as dg
 from click.testing import CliRunner
 from dagster._cli.asset import asset_list_command
-from dagster._utils import file_relative_path
 
 
 def invoke_list(select: Optional[str] = None, partition: Optional[str] = None):
     runner = CliRunner()
-    options = ["-f", file_relative_path(__file__, "assets.py")]
+    options = ["-f", dg.file_relative_path(__file__, "assets.py")]
     if select:
         options.extend(["--select", select])
     return runner.invoke(asset_list_command, options)

@@ -9,7 +9,7 @@ import boto3
 import botocore
 import pytest
 from dagster import asset, materialize
-from dagster._core.definitions.asset_check_spec import AssetCheckKey, AssetCheckSpec
+from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey, AssetCheckSpec
 from dagster._core.definitions.data_version import (
     DATA_VERSION_IS_USER_PROVIDED_TAG,
     DATA_VERSION_TAG,

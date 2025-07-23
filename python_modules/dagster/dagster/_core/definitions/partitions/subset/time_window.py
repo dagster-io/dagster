@@ -8,6 +8,7 @@ from dagster_shared.serdes import NamedTupleSerializer
 
 import dagster._check as check
 from dagster._annotations import public
+from dagster._core.definitions.partitions.context import partition_loading_context
 from dagster._core.definitions.partitions.definition.partitions_definition import (
     PartitionsDefinition,
 )
@@ -122,8 +123,8 @@ class TimeWindowPartitionsSubset(
             TimeWindowPartitionsDefinition,
             "Provided subset must reference a TimeWindowPartitionsDefinition",
         )
-        first_window = partitions_def.get_first_partition_window(subset.current_time)
-        last_window = partitions_def.get_last_partition_window(subset.current_time)
+        first_window = partitions_def.get_first_partition_window()
+        last_window = partitions_def.get_last_partition_window()
         return TimeWindowPartitionsSubset(
             partitions_def=partitions_def,
             included_time_windows=[
@@ -185,19 +186,12 @@ class TimeWindowPartitionsSubset(
             for time_window in time_windows
         )
 
-    def _get_partition_time_windows_not_in_subset(
-        self,
-        current_time: Optional[datetime] = None,
-    ) -> Sequence[PersistedTimeWindow]:
+    def _get_partition_time_windows_not_in_subset(self) -> Sequence[PersistedTimeWindow]:
         """Returns a list of partition time windows that are not in the subset.
         Each time window is a single partition.
         """
-        first_tw = cast(
-            "TimeWindowPartitionsDefinition", self.partitions_def
-        ).get_first_partition_window(current_time=current_time)
-        last_tw = cast(
-            "TimeWindowPartitionsDefinition", self.partitions_def
-        ).get_last_partition_window(current_time=current_time)
+        first_tw = self.partitions_def.get_first_partition_window()
+        last_tw = self.partitions_def.get_last_partition_window()
 
         if not first_tw or not last_tw:
             # no partitions
@@ -258,18 +252,11 @@ class TimeWindowPartitionsSubset(
         return time_windows
 
     def get_partition_keys_not_in_subset(
-        self,
-        partitions_def: PartitionsDefinition,
-        current_time: Optional[datetime] = None,
-        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
+        self, partitions_def: PartitionsDefinition
     ) -> Iterable[str]:
         partition_keys: list[str] = []
-        for tw in self._get_partition_time_windows_not_in_subset(current_time):
-            partition_keys.extend(
-                cast(
-                    "TimeWindowPartitionsDefinition", self.partitions_def
-                ).get_partition_keys_in_time_window(tw)
-            )
+        for tw in self._get_partition_time_windows_not_in_subset():
+            partition_keys.extend(self.partitions_def.get_partition_keys_in_time_window(tw))
         return partition_keys
 
     def get_partition_key_ranges(
@@ -279,14 +266,13 @@ class TimeWindowPartitionsSubset(
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
         respect_bounds: bool = True,
     ) -> Sequence[PartitionKeyRange]:
-        return [
-            cast(
-                "TimeWindowPartitionsDefinition", self.partitions_def
-            ).get_partition_key_range_for_time_window(
-                window.to_public_time_window(), respect_bounds=respect_bounds
-            )
-            for window in self.included_time_windows
-        ]
+        with partition_loading_context(current_time, dynamic_partitions_store):
+            return [
+                self.partitions_def.get_partition_key_range_for_time_window(
+                    window.to_public_time_window(), respect_bounds=respect_bounds
+                )
+                for window in self.included_time_windows
+            ]
 
     def _add_partitions_to_time_windows(
         self,
