@@ -90,3 +90,7 @@ yarn build-api-docs          # Build API docs after .rst changes
 ## CLI Development Guidelines
 
 - Note that click MUST be used to building cli tools
+
+## Import Guidelines
+
+- Prefer imports at the top-level of a module rather than in the body of functions or other scopes, unless there is a compelling reasoning like conditional inclusion or performance.
