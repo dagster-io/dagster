@@ -7,11 +7,7 @@ steps:
       # Create a venv and install packages
       python -m venv venv
       source venv/bin/activate
-      pip install --upgrade pip
-      
-      # Install dagster from the correct subdirectory
-      cd python_modules/dagster
-      pip install -e "."
+      pip install dagster dagster-webserver create-dagster dagster-dg-cli loguru dagster-cloud pytest ruff==0.11.5 uv dagster_shared --upgrade pip
       
       # Test scaffolding a new project
       mkdir -p /tmp/test_project
