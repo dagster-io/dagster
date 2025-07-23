@@ -1,27 +1,28 @@
 #!/bin/bash
-set -euo pipefail
 
-# Set default values for required variables
-export BUILDKITE_FOLDER_GIT_REPO_PATH="${BUILDKITE_FOLDER_GIT_REPO_PATH:-https://github.com/albertfast/dagster.git}"
-export BUILDKITE_FOLDER_GIT_REPO_DIR="${BUILDKITE_FOLDER_GIT_REPO_DIR:-/tmp/buildkite-folder}"
-export DAGSTER_GIT_REPO_DIR=${DAGSTER_GIT_REPO_DIR:-/workdir}
-
-echo "🔧 Setting up .buildkite folder from buildkite folder repository..."
-echo "Repository root: $PWD"
-echo "BUILDKITE_FOLDER_GIT_REPO_DIR = $BUILDKITE_FOLDER_GIT_REPO_DIR"
-echo "BUILDKITE_FOLDER_GIT_REPO_PATH = $BUILDKITE_FOLDER_GIT_REPO_PATH"
-
-# Use the existing script if available
-if [ -f "scripts/copy_buildkite_folder.sh" ]; then
-    bash scripts/copy_buildkite_folder.sh
-    exit 0
-fi
-
-# Simple implementation as fallback
-# No need to clone again if we already have the files in place
-if [ -f ".buildkite/pipeline.yml" ]; then
-    echo "✅ .buildkite folder already exists, skipping clone."
-    exit 0
-fi
-
+# Ensure the .buildkite directory exists
 mkdir -p .buildkite
+
+# Fallback: If pipeline.yml is missing, clone it from a fallback repo
+if [ ! -f ".buildkite/pipeline.yml" ]; then
+  echo "⚠️  .buildkite/pipeline.yml not found"
+  echo "📥 Cloning fallback buildkite config from $BUILDKITE_FOLDER_GIT_REPO_PATH ..."
+
+  # Clone only the latest commit
+  git clone --depth=1 "$BUILDKITE_FOLDER_GIT_REPO_PATH" /tmp/buildkite-temp || {
+    echo "❌ Failed to clone fallback repo!"
+    exit 1
+  }
+
+  # Copy contents if .buildkite exists in the fallback repo
+  if [ -d /tmp/buildkite-temp/.buildkite ]; then
+    cp -r /tmp/buildkite-temp/.buildkite/* .buildkite/
+    echo "✅ .buildkite contents restored from fallback repo"
+  else
+    echo "❌ .buildkite folder not found in fallback repo"
+    exit 1
+  fi
+
+  # Clean up
+  rm -rf /tmp/buildkite-temp
+fi
