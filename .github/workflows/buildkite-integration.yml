@@ -32,13 +32,15 @@ jobs:
 
           echo "📤 Sending build trigger request..."
 
-          read -r -d '' PAYLOAD <<EOF
+          PAYLOAD=$(cat <<EOF
           {
             "commit": "${{ github.sha }}",
             "branch": "${{ github.ref_name }}",
             "message": "Triggered from GitHub Actions - ${{ github.event.head_commit.message }}"
           }
           EOF
+          )
+
           response=$(curl -s -w "%{http_code}" -o response.json \
             -X POST "https://api.buildkite.com/v2/organizations/dagster/pipelines/unit-tests/builds" \
             -H "Authorization: Bearer $BUILDKITE_API_ACCESS_TOKEN" \
