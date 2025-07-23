@@ -18,21 +18,32 @@ from automation.docstring_lint.watcher import DocstringFileWatcher
 @click.option(
     "--all-public",
     is_flag=True,
-    help="Validate all public symbols in the specified module",
+    help="Validate all top-level exported symbols in the specified module",
+)
+@click.option(
+    "--public-methods",
+    is_flag=True,
+    help="Validate all @public-annotated methods on top-level exported classes in the specified module",
 )
 @click.option(
     "--watch",
     is_flag=True,
     help="Watch the file containing the symbol for changes and re-validate automatically",
 )
-def main(symbol_path: str, verbose: bool, all_public: bool, watch: bool) -> int:
+def main(
+    symbol_path: str, verbose: bool, all_public: bool, public_methods: bool, watch: bool
+) -> int:
     """Validate Python docstrings using Sphinx parsing pipeline.
 
     SYMBOL_PATH: Dotted path to the Python symbol (e.g., 'dagster.asset')
     """
     # Validate argument combinations
-    if watch and all_public:
-        click.echo("Error: --watch cannot be used with --all-public", err=True)
+    if watch and (all_public or public_methods):
+        click.echo("Error: --watch cannot be used with --all-public or --public-methods", err=True)
+        return 1
+
+    if all_public and public_methods:
+        click.echo("Error: --all-public and --public-methods cannot be used together", err=True)
         return 1
 
     # Core use case - validate single docstring efficiently
@@ -42,10 +53,9 @@ def main(symbol_path: str, verbose: bool, all_public: bool, watch: bool) -> int:
         if watch:
             return _run_watch_mode(symbol_path, validator, verbose)
         elif all_public:
-            # Batch validation mode
-            importer = SymbolImporter()
-            symbols = importer.get_all_public_symbols(symbol_path)
-            print(f"Validating {len(symbols)} public symbols in {symbol_path}\n")  # noqa: T201
+            # Batch validation mode for all top-level exported symbols
+            symbols = SymbolImporter.get_all_exported_symbols(symbol_path)
+            print(f"Validating {len(symbols)} top-level exported symbols in {symbol_path}\n")  # noqa: T201
 
             total_errors = 0
             total_warnings = 0
@@ -57,6 +67,37 @@ def main(symbol_path: str, verbose: bool, all_public: bool, watch: bool) -> int:
 
                 if result.has_errors() or result.has_warnings():
                     print(f"--- {symbol_info.dotted_path} ---")  # noqa: T201
+
+                    for error in result.errors:
+                        print(f"  ERROR: {error}")  # noqa: T201
+                        total_errors += 1
+
+                    for warning in result.warnings:
+                        print(f"  WARNING: {warning}")  # noqa: T201
+                        total_warnings += 1
+
+                    print()  # noqa: T201
+
+            print(f"Summary: {total_errors} errors, {total_warnings} warnings")  # noqa: T201
+            return 1 if total_errors > 0 else 0
+
+        elif public_methods:
+            # Batch validation mode for @public-annotated methods on top-level exported classes
+            methods = SymbolImporter.get_all_public_annotated_methods(symbol_path)
+            print(  # noqa: T201
+                f"Validating {len(methods)} @public-annotated methods on top-level exported classes in {symbol_path}\n"
+            )
+
+            total_errors = 0
+            total_warnings = 0
+
+            for method_info in methods:
+                result = validator.validate_docstring_text(
+                    method_info.docstring or "", method_info.dotted_path
+                )
+
+                if result.has_errors() or result.has_warnings():
+                    print(f"--- {method_info.dotted_path} ---")  # noqa: T201
 
                     for error in result.errors:
                         print(f"  ERROR: {error}")  # noqa: T201
@@ -111,8 +152,7 @@ def _run_watch_mode(symbol_path: str, validator: DocstringValidator, verbose: bo
 
     # First, resolve the symbol to get its file path
     try:
-        importer = SymbolImporter()
-        symbol_info = importer.import_symbol(symbol_path)
+        symbol_info = SymbolImporter.import_symbol(symbol_path)
 
         if not symbol_info.file_path:
             print(f"Error: Cannot determine source file for symbol '{symbol_path}'")  # noqa: T201

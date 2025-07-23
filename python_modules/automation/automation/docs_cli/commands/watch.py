@@ -22,8 +22,7 @@ def _resolve_symbol_file_path(symbol_path: str, verbose: bool) -> Path:
     Raises:
         Exception: If symbol cannot be resolved or file doesn't exist
     """
-    importer = SymbolImporter()
-    symbol_info = importer.import_symbol(symbol_path)
+    symbol_info = SymbolImporter.import_symbol(symbol_path)
 
     if not symbol_info.file_path:
         raise Exception(f"Cannot determine source file for symbol '{symbol_path}'")

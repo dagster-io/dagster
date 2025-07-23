@@ -16,8 +16,7 @@ def _list_package_symbols(package: str) -> None:
     Raises:
         ImportError: If the package cannot be imported
     """
-    importer = SymbolImporter()
-    symbols = importer.get_all_public_symbols(package)
+    symbols = SymbolImporter.get_all_public_symbols(package)
 
     for symbol_info in symbols:
         click.echo(symbol_info.dotted_path)

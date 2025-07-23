@@ -49,8 +49,7 @@ def _validate_package_symbols(validator: DocstringValidator, package: str) -> in
     Returns:
         0 if validation succeeded, 1 if there were errors
     """
-    importer = SymbolImporter()
-    symbols = importer.get_all_public_symbols(package)
+    symbols = SymbolImporter.get_all_public_symbols(package)
     click.echo(f"Validating {len(symbols)} public symbols in {package}\n")
 
     total_errors = 0

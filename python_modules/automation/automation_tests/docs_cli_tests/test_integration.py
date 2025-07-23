@@ -24,12 +24,10 @@ class TestMainCLIIntegration:
 
     def test_main_ls_symbols_integration(self):
         """Test complete ls symbols command through main CLI."""
-        result = self.runner.invoke(
-            main, ["ls", "symbols", "--package", "automation.docstring_lint"]
-        )
+        result = self.runner.invoke(main, ["ls", "symbols", "--package", "dagster"])
 
         assert result.exit_code == 0
-        assert "automation.docstring_lint.DocstringValidator" in result.output
+        assert "dagster.Component" in result.output
 
     def test_main_check_docstrings_symbol_integration(self):
         """Test complete check docstrings command through main CLI."""
@@ -103,9 +101,8 @@ class TestRealDagsterSymbols:
     @pytest.mark.parametrize(
         "package",
         [
-            "dagster._core.errors",
+            "dagster._core.definitions",
             "dagster._core.types",
-            "automation.docstring_lint",
         ],
     )
     def test_check_docstrings_smaller_packages(self, package):
@@ -130,17 +127,17 @@ class TestRealDagsterSymbols:
         assert len(lines) > 0
         assert all(line.startswith("dagster") for line in lines if line.strip())
 
-        # Should contain well-known dagster symbols
+        # Should contain some @public-decorated dagster symbols
         output = result.output
-        assert "dagster.asset" in output
-        assert "dagster.op" in output
-        assert "dagster.job" in output
+        assert "dagster.Component" in output
+        assert "dagster.ComponentLoadContext" in output
+        assert "dagster.definitions" in output
 
     @pytest.mark.parametrize(
         "package",
         [
-            "dagster._core",
-            "automation.docstring_lint",
+            "dagster._core.definitions",
+            "dagster._core.types",
         ],
     )
     def test_ls_symbols_other_packages(self, package):
@@ -150,10 +147,10 @@ class TestRealDagsterSymbols:
         # Should complete successfully
         assert result.exit_code == 0
 
-        # Should have some output (at least one symbol)
-        lines = result.output.strip().split("\n")
-        assert len(lines) > 0
-        assert all(line.startswith(package) for line in lines if line.strip())
+        # Output may be empty for packages with no @public symbols, which is valid
+        lines = [line for line in result.output.strip().split("\n") if line.strip()]
+        if len(lines) > 0:
+            assert all(line.startswith(package) for line in lines)
 
 
 class TestErrorHandling:
