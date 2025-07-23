@@ -1,10 +1,12 @@
 import os
+
 import pytest
 import requests
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
 load_dotenv()
+
 
 def test_buildkite_analytics_integration():
     print("Testing Buildkite Analytics Integration...")
@@ -15,13 +17,13 @@ def test_buildkite_analytics_integration():
     print(f"BUILDKITE_COMMIT: {os.environ.get('BUILDKITE_COMMIT')}")
     print(f"BUILDKITE_ORGANIZATION_SLUG: {os.environ.get('BUILDKITE_ORGANIZATION_SLUG')}")
     print(f"BUILDKITE_PIPELINE_SLUG: {os.environ.get('BUILDKITE_PIPELINE_SLUG')}")
-    
+
     # Direct API Integration Test
     print("\nTesting Direct Buildkite Analytics API Integration...")
-    token = os.environ.get('BUILDKITE_ANALYTICS_TOKEN')
+    token = os.environ.get("BUILDKITE_ANALYTICS_TOKEN")
     if token:
         print("Using Analytics Token: [TOKEN REDACTED]")
-        headers = {'Authorization': f'Token token="{token}"', 'Content-Type': 'application/json'}
+        headers = {"Authorization": f'Token token="{token}"', "Content-Type": "application/json"}
         try:
             # Sample test result payload for loguru bridge validation
             payload = {
@@ -32,7 +34,7 @@ def test_buildkite_analytics_integration():
                     "url": f"https://buildkite.com/dagster/unit-tests/builds/{os.environ.get('BUILDKITE_BUILD_NUMBER', 'local-test')}",
                     "branch": os.environ.get("BUILDKITE_BRANCH", "Issue-29914-loguru-bridge"),
                     "commit_sha": os.environ.get("BUILDKITE_COMMIT"),
-                    "number": os.environ.get("BUILDKITE_BUILD_NUMBER", "local-validation")
+                    "number": os.environ.get("BUILDKITE_BUILD_NUMBER", "local-validation"),
                 },
                 "data": [
                     {
@@ -41,16 +43,16 @@ def test_buildkite_analytics_integration():
                         "name": "Buildkite Analytics Integration Test",
                         "location": "test_buildkite_collector.py::test_buildkite_analytics_integration",
                         "result": "passed",
-                        "history": {"section": "loguru_bridge_buildkite_integration"}
+                        "history": {"section": "loguru_bridge_buildkite_integration"},
                     }
-                ]
+                ],
             }
-            
+
             # POST to Buildkite Analytics API
             print("Sending test results to Buildkite Analytics API...")
-            response = requests.post('https://analytics-api.buildkite.com/v1/uploads', 
-                                   json=payload,
-                                   headers=headers)
+            response = requests.post(
+                "https://analytics-api.buildkite.com/v1/uploads", json=payload, headers=headers
+            )
             print(f"API Response Status: {response.status_code}")
             if response.status_code == 200:
                 print("Success! Test results uploaded to Buildkite Analytics")
@@ -65,21 +67,22 @@ def test_buildkite_analytics_integration():
             print(f"API Integration Error: {e}")
     else:
         print("No BUILDKITE_ANALYTICS_TOKEN found - skipping API test")
-    
+
     assert True
+
 
 if __name__ == "__main__":
     print("Starting Buildkite Analytics Integration Test...")
-    
+
     # Validate required environment variable
     analytics_token = os.environ.get("BUILDKITE_ANALYTICS_TOKEN")
     if not analytics_token:
         print("ERROR: BUILDKITE_ANALYTICS_TOKEN environment variable must be set")
         print("Usage: export BUILDKITE_ANALYTICS_TOKEN='your_token_here'")
         exit(1)
-    
+
     print("Analytics token found - setting up test environment...")
-    
+
     # Set up meaningful test environment variables
     os.environ["BUILDKITE"] = "true"
     os.environ["BUILDKITE_BUILD_ID"] = "local-loguru-bridge-test-build"
@@ -87,11 +90,11 @@ if __name__ == "__main__":
     os.environ["BUILDKITE_COMMIT"] = "loguru-bridge-integration-commit"
     os.environ["BUILDKITE_ORGANIZATION_SLUG"] = "dagster"
     os.environ["BUILDKITE_PIPELINE_SLUG"] = "unit-tests"
-    
+
     print("Running pytest with local configuration...")
-    exit_code = pytest.main(["-vvs", "test_buildkite_collector.py"]) 
+    exit_code = pytest.main(["-vvs", "test_buildkite_collector.py"])
     print(f"Test completed with exit code: {exit_code}")
-    
+
     if exit_code == 0:
         print("All tests passed successfully!")
     else:

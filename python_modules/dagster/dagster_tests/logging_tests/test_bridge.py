@@ -1,39 +1,50 @@
-import pytest
 import os
 import sys
-import dagster as dg
+
+import pytest
 from loguru import logger
 
 # Try to load environment variables from .env file if available
 try:
     from dotenv import load_dotenv
+
     load_dotenv()
 except ImportError:
     # dotenv not available, skip loading .env file
     pass
 
 # Add the root directory to Python path to find loguru_bridge
-root_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))
+root_dir = os.path.dirname(
+    os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+)
 if root_dir not in sys.path:
     sys.path.insert(0, root_dir)
-    
+
 # Import bridge components
 from loguru_bridge import dagster_context_sink, with_loguru_logger
+
+
 # Setup Buildkite environment variables for testing
 def setup_buildkite_environment():
     """Setup meaningful test environment variables for Buildkite integration."""
     print("Setting up Buildkite test environment...")
-    
+
     # Set up meaningful test environment variables
     os.environ["BUILDKITE"] = "true"
-    os.environ["BUILDKITE_BUILD_ID"] = os.environ.get("BUILDKITE_BUILD_ID", "local-loguru-bridge-test-build")
-    os.environ["BUILDKITE_JOB_ID"] = os.environ.get("BUILDKITE_JOB_ID", "logging-tests-job-validation")
-    os.environ["BUILDKITE_COMMIT"] = os.environ.get("BUILDKITE_COMMIT", "loguru-bridge-integration-commit")
+    os.environ["BUILDKITE_BUILD_ID"] = os.environ.get(
+        "BUILDKITE_BUILD_ID", "local-loguru-bridge-test-build"
+    )
+    os.environ["BUILDKITE_JOB_ID"] = os.environ.get(
+        "BUILDKITE_JOB_ID", "logging-tests-job-validation"
+    )
+    os.environ["BUILDKITE_COMMIT"] = os.environ.get(
+        "BUILDKITE_COMMIT", "loguru-bridge-integration-commit"
+    )
     os.environ["BUILDKITE_ORGANIZATION_SLUG"] = "dagster"  # Force this to be dagster for tests
     os.environ["BUILDKITE_PIPELINE_SLUG"] = os.environ.get("BUILDKITE_PIPELINE_SLUG", "unit-tests")
     os.environ["BUILDKITE_BRANCH"] = os.environ.get("BUILDKITE_BRANCH", "Issue-29914")
     os.environ["BUILDKITE_BUILD_NUMBER"] = os.environ.get("BUILDKITE_BUILD_NUMBER", "local")
-    
+
     print("Buildkite environment variables set:")
     print(f"BUILDKITE_ANALYTICS_TOKEN: {os.environ.get('BUILDKITE_ANALYTICS_TOKEN', 'NOT SET')}")
     print(f"BUILDKITE: {os.environ.get('BUILDKITE')}")
@@ -43,17 +54,22 @@ def setup_buildkite_environment():
     print(f"BUILDKITE_ORGANIZATION_SLUG: {os.environ.get('BUILDKITE_ORGANIZATION_SLUG')}")
     print(f"BUILDKITE_PIPELINE_SLUG: {os.environ.get('BUILDKITE_PIPELINE_SLUG')}")
 
+
 # Initialize Buildkite environment when module is loaded
 setup_buildkite_environment()
 
+
 def pytest_itemcollected(item):
-  # add execution tag to all tests
-  item.add_marker(pytest.mark.execution_tag("test.framework.name", "pytest"))
-  item.add_marker(pytest.mark.execution_tag("test.framework.version", pytest.__version__))
-  item.add_marker(pytest.mark.execution_tag("cloud.provider", "aws"))
-  item.add_marker(pytest.mark.execution_tag("language.version", sys.version))
+    # add execution tag to all tests
+    item.add_marker(pytest.mark.execution_tag("test.framework.name", "pytest"))
+    item.add_marker(pytest.mark.execution_tag("test.framework.version", pytest.__version__))
+    item.add_marker(pytest.mark.execution_tag("cloud.provider", "aws"))
+    item.add_marker(pytest.mark.execution_tag("language.version", sys.version))
+
+
 class MockLogHandler:
     """Mock log handler that prints and stores log messages."""
+
     def __init__(self):
         self.history = []
 
@@ -82,8 +98,10 @@ class MockLogHandler:
         self.history.append({"level": "critical", "message": msg})
         return self.history[-1]
 
+
 class MockDagsterContext:
     """Simulates Dagster's context.log interface with debug logging capabilities."""
+
     def __init__(self):
         self.log = MockLogHandler()
 
@@ -93,7 +111,7 @@ def setup_logger():
     """Fixture to setup and cleanup logger for each test."""
     # Configure logger for the test
     logger.remove()  # Remove default handlers
-    
+
     # For tests, add a formatter that adds the [dagster.level] prefix
     def test_formatter(record):
         level_name = record["level"].name.lower()
@@ -101,12 +119,13 @@ def setup_logger():
         if level_name == "success":
             level_name = "info"
         return f"[dagster.{level_name}] {record['message']}"
-    
+
     logger.add(lambda msg: print(test_formatter(msg.record)), level="DEBUG")
-    
+
     # Cleanup after test
     yield
     logger.remove()  # Cleanup after test
+
 
 def test_dagster_context_sink_basic_logging(capfd, setup_logger):
     """Test that dagster_context_sink routes basic logs correctly."""
@@ -127,6 +146,7 @@ def test_dagster_context_sink_basic_logging(capfd, setup_logger):
     assert "[dagster.warning] Warning message" in captured.out
     assert "[dagster.error] Error message" in captured.out
 
+
 def test_dagster_context_sink_with_structured_logging(capfd, setup_logger):
     """Test structured logging with extra fields."""
     context = MockDagsterContext()
@@ -138,10 +158,11 @@ def test_dagster_context_sink_with_structured_logging(capfd, setup_logger):
     # Test structured logging with extra fields
     logger.bind(user="test_user", action="login").info("User login attempt")
     logger.bind(error_code=500).error("Server error occurred")
-    
+
     captured = capfd.readouterr()
     assert "[dagster.info] User login attempt" in captured.out
     assert "[dagster.error] Server error occurred" in captured.out
+
 
 def test_dagster_context_sink_different_log_levels(capfd, setup_logger):
     """Test various log levels including TRACE and CRITICAL."""
@@ -176,10 +197,10 @@ def test_dagster_context_sink_different_log_levels(capfd, setup_logger):
 
 class DagsterOperations:
     """Class for simulating different Dagster operations."""
-    
+
     def __init__(self, context):
         self._context = context
-    
+
     @with_loguru_logger
     def successful_op(self, context=None):
         logger.info("Operation completed successfully!")
@@ -320,8 +341,8 @@ def test_exception_handling_with_logging(capfd, setup_logger):
                 logger.info("Starting risky operation")
                 raise ValueError("Simulated error")
             except ValueError as e:
-                logger.error(f"Caught error: {str(e)}")
-                self._context.log.error(f"Dagster also logged: {str(e)}")
+                logger.error(f"Caught error: {e!s}")
+                self._context.log.error(f"Dagster also logged: {e!s}")
             finally:
                 logger.info("Cleanup in finally block")
 
@@ -348,17 +369,12 @@ def test_structured_logging_with_context(capfd, setup_logger):
         @with_loguru_logger
         def structured_log_op(self, context=None):
             # Loguru structured logging
-            logger.bind(
-                operation_id="12345",
-                user_id="user123",
-                environment="test"
-            ).info("Operation started with context")
-            
+            logger.bind(operation_id="12345", user_id="user123", environment="test").info(
+                "Operation started with context"
+            )
+
             # Add some processing simulation
-            logger.bind(
-                duration_ms=150,
-                items_processed=100
-            ).success("Processing complete")
+            logger.bind(duration_ms=150, items_processed=100).success("Processing complete")
 
             return "Structured logging test complete"
 
@@ -398,7 +414,7 @@ def test_log_level_inheritance(capfd, setup_logger):
     level_logger = LevelLogger(test_ctx.context)
     level_logger.level_test_op()
     captured = capfd.readouterr()
-    
+
     assert "This should not appear" not in captured.out
     assert "[dagster.debug] Debug message should appear" in captured.out
     assert "[dagster.info] Info message should appear" in captured.out
@@ -412,6 +428,7 @@ def test_concurrent_operations_logging(capfd, setup_logger):
     """Test logging behavior with concurrent operations."""
     import threading
     import time
+
     test_ctx = DagsterTestContext()
 
     class ConcurrentLogger:
@@ -433,10 +450,7 @@ def test_concurrent_operations_logging(capfd, setup_logger):
     # Run multiple operations concurrently
     threads = []
     for i in range(3):
-        thread = threading.Thread(
-            target=concurrent_logger.concurrent_op,
-            args=(f"thread-{i}",)
-        )
+        thread = threading.Thread(target=concurrent_logger.concurrent_op, args=(f"thread-{i}",))
         threads.append(thread)
         thread.start()
 
@@ -445,11 +459,13 @@ def test_concurrent_operations_logging(capfd, setup_logger):
         thread.join()
 
     captured = capfd.readouterr()
-    
+
     # Check that all operations were logged
     for i in range(3):
         assert f"[dagster.info] Operation thread-{i} started" in captured.out
         assert f"[dagster.info] Operation thread-{i} completed" in captured.out
+
+
 def test_log_formatting_consistency(capfd, setup_logger):
     """Test consistency of log formatting between Dagster and Loguru."""
     test_ctx = DagsterTestContext()
@@ -465,7 +481,7 @@ def test_log_formatting_consistency(capfd, setup_logger):
             logger.info("Message with {}", "placeholder")
             logger.info("Message with {name}", name="named placeholder")
             logger.info("Message with multiple {} {}", "placeholders", "here")
-            
+
             # Test with different data types
             logger.info("Number: {}", 42)
             logger.info("Boolean: {}", True)
@@ -478,7 +494,7 @@ def test_log_formatting_consistency(capfd, setup_logger):
     format_logger = FormatLogger(test_ctx.context)
     format_logger.format_test_op()
     captured = capfd.readouterr()
-    
+
     assert "[dagster.info] Simple message" in captured.out
     assert "[dagster.info] Message with placeholder" in captured.out
     assert "[dagster.info] Message with named placeholder" in captured.out
@@ -487,6 +503,8 @@ def test_log_formatting_consistency(capfd, setup_logger):
     assert "[dagster.info] Boolean: True" in captured.out
     assert "[dagster.info] List: [1, 2, 3]" in captured.out
     assert "[dagster.info] Dict: {'key': 'value'}" in captured.out
+
+
 def test_error_context_preservation(capfd, setup_logger):
     """Test that error context and stack traces are preserved."""
     test_ctx = DagsterTestContext()
@@ -508,8 +526,8 @@ def test_error_context_preservation(capfd, setup_logger):
                 logger.info("Starting operation that will fail")
                 self.nested_error()
             except CustomError as e:
-                logger.error(f"An error occurred in the nested operation: {str(e)}")
-                self._context.log.error(f"Dagster also logged error: {str(e)}")
+                logger.error(f"An error occurred in the nested operation: {e!s}")
+                self._context.log.error(f"Dagster also logged error: {e!s}")
                 return "Error handled"
 
         def get_context(self):
@@ -521,12 +539,16 @@ def test_error_context_preservation(capfd, setup_logger):
 
     captured = capfd.readouterr()
     assert "[dagster.info] Starting operation that will fail" in captured.out
-    assert "[dagster.error] An error occurred in the nested operation: Nested error occurred" in captured.out
+    assert (
+        "[dagster.error] An error occurred in the nested operation: Nested error occurred"
+        in captured.out
+    )
     assert "[dagster.error] Dagster also logged error: Nested error occurred" in captured.out
 
 
 class DagsterTestContext:
     """Helper class to manage context for test functions."""
+
     def __init__(self):
         self.context = MockDagsterContext()
         self.test_ops = DagsterOperations(self.context)
@@ -541,7 +563,7 @@ def test_loguru_configurator_initialization(monkeypatch):
     monkeypatch.setenv("DAGSTER_LOGURU_ENABLED", "false")
     monkeypatch.setenv("DAGSTER_LOGURU_LOG_LEVEL", "INFO")
     monkeypatch.setenv("DAGSTER_LOGURU_FORMAT", "TEST_FORMAT")
-    
+
     # Reset for other tests
     monkeypatch.setenv("DAGSTER_LOGURU_ENABLED", "true")
     monkeypatch.setenv("DAGSTER_LOGURU_LOG_LEVEL", "DEBUG")
@@ -551,29 +573,29 @@ def test_loguru_configurator_initialization(monkeypatch):
 def test_dagster_handler_logging(capfd, setup_logger):
     """Test logging with a custom handler."""
     import logging
-    
+
     # Setup a special test logger to avoid recursion
     test_logger = logging.getLogger("test_handler_logger")
     test_logger.setLevel(logging.DEBUG)
     test_logger.propagate = False  # Important to avoid recursion
-    
+
     # Create a special handler that just prints without recursion
     class TestLogPrinter(logging.Handler):
         def emit(self, record):
             print(f"[{record.levelname}] {record.getMessage()}")
-    
+
     handler = TestLogPrinter()
     test_logger.addHandler(handler)
-    
+
     # Log messages
     test_logger.debug("Debug from Python logging")
     test_logger.info("Info from Python logging")
     test_logger.warning("Warning from Python logging")
     test_logger.error("Error from Python logging")
-    
+
     # Clean up
     test_logger.removeHandler(handler)
-    
+
     # Check output
     captured = capfd.readouterr()
     assert "Debug from Python logging" in captured.out
@@ -585,45 +607,46 @@ def test_dagster_handler_logging(capfd, setup_logger):
 def test_loguru_bridge_integration_with_dagster_context(capfd, setup_logger):
     """Test integration between loguru_bridge and dagster context."""
     import tempfile
-    
+
     test_ctx = DagsterTestContext()
+
     class IntegrationLogger:
         def __init__(self, context):
             self._context = context
-            
+
         @with_loguru_logger
         def log_with_integration(self, context=None):
             # Create a log file
-            with tempfile.NamedTemporaryFile(mode='w', delete=False) as temp:
+            with tempfile.NamedTemporaryFile(mode="w", delete=False) as temp:
                 temp_name = temp.name
-                
+
                 # Add a file sink
                 file_id = logger.add(temp_name, level="DEBUG")
-                
+
                 # Log to both the context and the file
                 logger.debug("Debug message to multiple outputs")
                 logger.info("Info message to multiple outputs")
                 logger.warning("Warning message to multiple outputs")
-                
+
                 # Remove the file sink
                 logger.remove(file_id)
-                
+
                 # Check that the file contains logs
-                with open(temp_name, 'r') as f:
+                with open(temp_name) as f:
                     content = f.read()
                     assert "Debug message to multiple outputs" in content
                     assert "Info message to multiple outputs" in content
                     assert "Warning message to multiple outputs" in content
-                
+
             return "Integration test complete"
-        
+
         def get_context(self):
             return self._context
-    
+
     integration_logger = IntegrationLogger(test_ctx.context)
     result = integration_logger.log_with_integration()
     assert result == "Integration test complete"
-    
+
     captured = capfd.readouterr()
     assert "[dagster.debug] Debug message to multiple outputs" in captured.out
     assert "[dagster.info] Info message to multiple outputs" in captured.out
@@ -633,23 +656,23 @@ def test_loguru_bridge_integration_with_dagster_context(capfd, setup_logger):
 def test_loguru_bridge_performance(setup_logger):
     """Test performance of loguru_bridge."""
     import time
-    
+
     test_ctx = DagsterTestContext()
     sink = dagster_context_sink(test_ctx.context)
-    
+
     logger.remove()
     logger.add(sink, level="INFO")
-    
+
     # Measure time for logging many messages
     start_time = time.time()
     message_count = 1000
-    
+
     for i in range(message_count):
         logger.info(f"Performance test message {i}")
-    
+
     end_time = time.time()
     duration = end_time - start_time
-    
+
     # Performance test - this is just a basic check
     # that logging doesn't add excessive overhead
     assert duration < 5.0, f"Logging {message_count} messages took {duration} seconds"
@@ -658,35 +681,35 @@ def test_loguru_bridge_performance(setup_logger):
 def test_loguru_bridge_with_stdout_integration(capfd, setup_logger):
     """Test integration with stdout redirection."""
     import sys
-    
+
     test_ctx = DagsterTestContext()
-    
+
     class StdoutLogger:
         def __init__(self, context):
             self._context = context
-            
+
         def log_with_stdout(self, context=None):
             # Direct stdout prints
             print("Direct stdout print")
-            
+
             # Loguru logs
             logger.info("Loguru info message")
-            
+
             # More stdout
             print("Another stdout print")
-            
+
             # Error stream
             print("Error message", file=sys.stderr)
-            
+
             return "Stdout test complete"
-        
+
         def get_context(self):
             return self._context
-    
+
     stdout_logger = StdoutLogger(test_ctx.context)
     result = stdout_logger.log_with_stdout()
     assert result == "Stdout test complete"
-    
+
     captured = capfd.readouterr()
     assert "Direct stdout print" in captured.out
     assert "[dagster.info] Loguru info message" in captured.out
@@ -697,18 +720,18 @@ def test_loguru_bridge_with_stdout_integration(capfd, setup_logger):
 def test_buildkite_analytics_integration(capfd, setup_logger):
     """Test Buildkite Analytics Integration with loguru bridge."""
     print("Testing Buildkite Analytics Integration...")
-    
+
     # Verify environment variables are set
-    assert os.environ.get('BUILDKITE') == 'true'
-    assert os.environ.get('BUILDKITE_BUILD_ID') is not None
-    assert os.environ.get('BUILDKITE_JOB_ID') is not None
-    
+    assert os.environ.get("BUILDKITE") == "true"
+    assert os.environ.get("BUILDKITE_BUILD_ID") is not None
+    assert os.environ.get("BUILDKITE_JOB_ID") is not None
+
     test_ctx = DagsterTestContext()
-    
+
     class BuildkiteLogger:
         def __init__(self, context):
             self._context = context
-            
+
         def buildkite_integration_op(self, context=None):
             # Log with buildkite context information
             logger.info(f"Build ID: {os.environ.get('BUILDKITE_BUILD_ID')}")
@@ -716,31 +739,31 @@ def test_buildkite_analytics_integration(capfd, setup_logger):
             logger.info(f"Organization: {os.environ.get('BUILDKITE_ORGANIZATION_SLUG')}")
             logger.info(f"Pipeline: {os.environ.get('BUILDKITE_PIPELINE_SLUG')}")
             logger.info(f"Branch: {os.environ.get('BUILDKITE_BRANCH')}")
-            
+
             # Test with analytics token if available
-            token = os.environ.get('BUILDKITE_ANALYTICS_TOKEN')
+            token = os.environ.get("BUILDKITE_ANALYTICS_TOKEN")
             if token:
                 logger.info("Analytics token is available and will be used for reporting")
             else:
                 logger.warning("No BUILDKITE_ANALYTICS_TOKEN found")
-            
+
             return "Buildkite integration test complete"
-        
+
         def get_context(self):
             return self._context
-    
+
     buildkite_logger = BuildkiteLogger(test_ctx.context)
     result = buildkite_logger.buildkite_integration_op()
     assert result == "Buildkite integration test complete"
-    
+
     captured = capfd.readouterr()
     # Use the actual values from environment (which may come from .env file)
-    expected_build_id = os.environ.get('BUILDKITE_BUILD_ID')
-    expected_job_id = os.environ.get('BUILDKITE_JOB_ID')
-    expected_org = os.environ.get('BUILDKITE_ORGANIZATION_SLUG')
-    expected_pipeline = os.environ.get('BUILDKITE_PIPELINE_SLUG')
-    expected_branch = os.environ.get('BUILDKITE_BRANCH')
-    
+    expected_build_id = os.environ.get("BUILDKITE_BUILD_ID")
+    expected_job_id = os.environ.get("BUILDKITE_JOB_ID")
+    expected_org = os.environ.get("BUILDKITE_ORGANIZATION_SLUG")
+    expected_pipeline = os.environ.get("BUILDKITE_PIPELINE_SLUG")
+    expected_branch = os.environ.get("BUILDKITE_BRANCH")
+
     assert f"Build ID: {expected_build_id}" in captured.out
     assert f"Job ID: {expected_job_id}" in captured.out
     assert f"Organization: {expected_org}" in captured.out
@@ -751,31 +774,31 @@ def test_buildkite_analytics_integration(capfd, setup_logger):
 def test_buildkite_environment_validation():
     """Test that Buildkite environment variables are properly configured."""
     required_vars = [
-        'BUILDKITE',
-        'BUILDKITE_BUILD_ID', 
-        'BUILDKITE_JOB_ID',
-        'BUILDKITE_COMMIT',
-        'BUILDKITE_ORGANIZATION_SLUG',
-        'BUILDKITE_PIPELINE_SLUG',
-        'BUILDKITE_BRANCH',
-        'BUILDKITE_BUILD_NUMBER'
+        "BUILDKITE",
+        "BUILDKITE_BUILD_ID",
+        "BUILDKITE_JOB_ID",
+        "BUILDKITE_COMMIT",
+        "BUILDKITE_ORGANIZATION_SLUG",
+        "BUILDKITE_PIPELINE_SLUG",
+        "BUILDKITE_BRANCH",
+        "BUILDKITE_BUILD_NUMBER",
     ]
-    
+
     for var in required_vars:
         assert os.environ.get(var) is not None, f"Environment variable {var} should be set"
-    
+
     # Test specific values
-    assert os.environ.get('BUILDKITE') == 'true'
-    
+    assert os.environ.get("BUILDKITE") == "true"
+
     # Instead of checking for specific values, just verify they exist
-    assert os.environ.get('BUILDKITE_ORGANIZATION_SLUG') is not None
-    assert os.environ.get('BUILDKITE_PIPELINE_SLUG') is not None
-    assert os.environ.get('BUILDKITE_BRANCH') is not None
+    assert os.environ.get("BUILDKITE_ORGANIZATION_SLUG") is not None
+    assert os.environ.get("BUILDKITE_PIPELINE_SLUG") is not None
+    assert os.environ.get("BUILDKITE_BRANCH") is not None
 
 
 def test_direct_loguru_usage(capfd, setup_logger):
     """Test the direct usage of loguru as shown in the example asset."""
-    
+
     # This simulates the test_loguru_html_log asset from the example
     def simulate_direct_loguru():
         logger.debug("==Debug== Loguru is working in Dagster!")
@@ -783,10 +806,10 @@ def test_direct_loguru_usage(capfd, setup_logger):
         logger.warning("==Warning== Loguru is working in Dagster!")
         logger.error("==!!Error!!== Loguru is working in Dagster!")
         return {"status": "done"}
-    
+
     result = simulate_direct_loguru()
     assert result == {"status": "done"}
-    
+
     # Check logs were output directly
     captured = capfd.readouterr()
     assert "==Debug== Loguru is working in Dagster!" in captured.out
@@ -797,32 +820,56 @@ def test_direct_loguru_usage(capfd, setup_logger):
 
 def test_context_log_with_loguru_decorator(capfd, setup_logger):
     """Test the usage of context.log with the loguru_bridge decorator as shown in the example asset."""
-    
     test_ctx = DagsterTestContext()
-    
+
     class ContextLogExample:
         def __init__(self, context):
             self._context = context
-        
+
         @with_loguru_logger
         def simulate_contexlog_callig_loguru(self, context=None):
             # This simulates the my_contexlog_callig_loguru asset from the example
-            self._context.log.debug("This is a context.log.debug message from my_contexlog_callig_loguru")
-            self._context.log.info("This is an context.log.info message from my_contexlog_callig_loguru")
-            self._context.log.warning("This is a context.log.warning message from my_contexlog_callig_loguru")
-            self._context.log.error("This is an context.log.error message from my_contexlog_callig_loguru")
-            self._context.log.critical("This is a context.log.critical message from my_contexlog_callig_loguru")
-        
+            self._context.log.debug(
+                "This is a context.log.debug message from my_contexlog_callig_loguru"
+            )
+            self._context.log.info(
+                "This is an context.log.info message from my_contexlog_callig_loguru"
+            )
+            self._context.log.warning(
+                "This is a context.log.warning message from my_contexlog_callig_loguru"
+            )
+            self._context.log.error(
+                "This is an context.log.error message from my_contexlog_callig_loguru"
+            )
+            self._context.log.critical(
+                "This is a context.log.critical message from my_contexlog_callig_loguru"
+            )
+
         def get_context(self):
             return self._context
-    
+
     context_log_example = ContextLogExample(test_ctx.context)
     context_log_example.simulate_contexlog_callig_loguru()
-    
+
     # Check logs were correctly routed through the context
     captured = capfd.readouterr()
-    assert "[dagster.debug] This is a context.log.debug message from my_contexlog_callig_loguru" in captured.out
-    assert "[dagster.info] This is an context.log.info message from my_contexlog_callig_loguru" in captured.out
-    assert "[dagster.warning] This is a context.log.warning message from my_contexlog_callig_loguru" in captured.out
-    assert "[dagster.error] This is an context.log.error message from my_contexlog_callig_loguru" in captured.out
-    assert "[dagster.critical] This is a context.log.critical message from my_contexlog_callig_loguru" in captured.out
+    assert (
+        "[dagster.debug] This is a context.log.debug message from my_contexlog_callig_loguru"
+        in captured.out
+    )
+    assert (
+        "[dagster.info] This is an context.log.info message from my_contexlog_callig_loguru"
+        in captured.out
+    )
+    assert (
+        "[dagster.warning] This is a context.log.warning message from my_contexlog_callig_loguru"
+        in captured.out
+    )
+    assert (
+        "[dagster.error] This is an context.log.error message from my_contexlog_callig_loguru"
+        in captured.out
+    )
+    assert (
+        "[dagster.critical] This is a context.log.critical message from my_contexlog_callig_loguru"
+        in captured.out
+    )
