@@ -120,6 +120,23 @@ matching_partitions_with_different_subsets = [
 ]
 
 
+child_with_two_parents_with_identical_partitions = [
+    asset_def(
+        "parent_a",
+        partitions_def=dg.DailyPartitionsDefinition("2023-01-01"),
+    ),
+    asset_def("parent_b", partitions_def=dg.DailyPartitionsDefinition("2023-01-01")),
+    asset_def(
+        "child",
+        partitions_def=dg.DailyPartitionsDefinition("2023-01-01"),
+        deps={
+            "parent_a": dg.TimeWindowPartitionMapping(),
+            "parent_b": dg.TimeWindowPartitionMapping(),
+        },
+    ),
+]
+
+
 one_parent_starts_later_and_nonexistent_upstream_partitions_allowed = [
     asset_def("asset1", partitions_def=dg.HourlyPartitionsDefinition("2023-01-01-03:00")),
     asset_def("asset2", partitions_def=dg.HourlyPartitionsDefinition("2023-01-01-00:00")),
