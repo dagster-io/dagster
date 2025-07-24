@@ -376,3 +376,174 @@ def exports(check_all: bool, package: Optional[str]):
     except Exception as e:
         click.echo(f"Error: {e}", err=True)
         sys.exit(1)
+
+
+@check.command("exclude-lists")
+@click.option(
+    "--missing-public",
+    "check_missing_public",
+    is_flag=True,
+    help="Audit EXCLUDE_MISSING_PUBLIC list for symbols that now have @public decorators",
+)
+@click.option(
+    "--missing-rst",
+    "check_missing_rst",
+    is_flag=True,
+    help="Audit EXCLUDE_MISSING_RST list for symbols that now have RST documentation",
+)
+@click.option(
+    "--missing-export",
+    "check_missing_export",
+    is_flag=True,
+    help="Audit EXCLUDE_MISSING_EXPORT list for symbols that are now exported at top-level",
+)
+def exclude_lists(check_missing_public: bool, check_missing_rst: bool, check_missing_export: bool):
+    """Audit exclude lists to ensure entries are still necessary."""
+    if not any([check_missing_public, check_missing_rst, check_missing_export]):
+        click.echo("Error: Must specify at least one exclude list to check", err=True)
+        sys.exit(1)
+
+    dagster_root = _find_dagster_root()
+    if dagster_root is None:
+        click.echo("Error: Could not find dagster repository root", err=True)
+        sys.exit(1)
+
+    try:
+        validator = PublicApiValidator(dagster_root)
+        exit_codes = []
+
+        if check_missing_public:
+            exit_codes.append(_audit_exclude_missing_public(validator))
+
+        if check_missing_rst:
+            if exit_codes:  # Add separator if we already printed something
+                click.echo("\n" + "=" * 80 + "\n")
+            exit_codes.append(_audit_exclude_missing_rst(validator))
+
+        if check_missing_export:
+            if exit_codes:  # Add separator if we already printed something
+                click.echo("\n" + "=" * 80 + "\n")
+            exit_codes.append(_audit_exclude_missing_export(validator))
+
+        # Exit with 1 if any audit found issues, 0 otherwise
+        sys.exit(1 if any(exit_codes) else 0)
+
+    except Exception as e:
+        click.echo(f"Error: {e}", err=True)
+        sys.exit(1)
+
+
+def _audit_exclude_missing_public(validator: PublicApiValidator) -> int:
+    """Audit EXCLUDE_MISSING_PUBLIC list for symbols that now have @public decorators.
+
+    Returns:
+        0 if all entries are still valid, 1 if some entries can be removed
+    """
+    # Get all symbols that have @public decorators
+    public_symbols = validator.find_public_symbols(exclude_modules=EXCLUDE_MODULES_FROM_PUBLIC_SCAN)
+    public_lookup = {f"{sym.module_path}.{sym.symbol_name}" for sym in public_symbols}
+
+    # Check which symbols in EXCLUDE_MISSING_PUBLIC actually have @public decorators now
+    symbols_with_public = []
+    for symbol_path in EXCLUDE_MISSING_PUBLIC:
+        if symbol_path in public_lookup:
+            symbols_with_public.append(symbol_path)
+
+    if not symbols_with_public:
+        click.echo(
+            "✓ All entries in EXCLUDE_MISSING_PUBLIC are still valid (symbols still missing @public decorators)"
+        )
+        return 0
+
+    click.echo(
+        f"Found {len(symbols_with_public)} symbols in EXCLUDE_MISSING_PUBLIC that now have @public decorators:"
+    )
+    click.echo("These entries can be removed from the exclude list:")
+    click.echo()
+
+    for symbol_path in sorted(symbols_with_public):
+        click.echo(f"  {symbol_path}")
+
+    click.echo()
+    click.echo("To remove these entries, edit:")
+    click.echo("  python_modules/automation/automation/docstring_lint/exclude_lists.py")
+
+    return 1
+
+
+def _audit_exclude_missing_rst(validator: PublicApiValidator) -> int:
+    """Audit EXCLUDE_MISSING_RST list for symbols that now have RST documentation.
+
+    Returns:
+        0 if all entries are still valid, 1 if some entries can be removed
+    """
+    # Get all symbols documented in RST files
+    rst_symbols = validator.find_rst_documented_symbols(exclude_files=EXCLUDE_RST_FILES)
+    rst_lookup = {f"{sym.module_path}.{sym.symbol_name}" for sym in rst_symbols}
+
+    # Check which symbols in EXCLUDE_MISSING_RST actually have RST documentation now
+    symbols_with_rst = []
+    for symbol_path in EXCLUDE_MISSING_RST:
+        if symbol_path in rst_lookup:
+            symbols_with_rst.append(symbol_path)
+
+    if not symbols_with_rst:
+        click.echo(
+            "✓ All entries in EXCLUDE_MISSING_RST are still valid (symbols still missing RST documentation)"
+        )
+        return 0
+
+    click.echo(
+        f"Found {len(symbols_with_rst)} symbols in EXCLUDE_MISSING_RST that now have RST documentation:"
+    )
+    click.echo("These entries can be removed from the exclude list:")
+    click.echo()
+
+    for symbol_path in sorted(symbols_with_rst):
+        click.echo(f"  {symbol_path}")
+
+    click.echo()
+    click.echo("To remove these entries, edit:")
+    click.echo("  python_modules/automation/automation/docstring_lint/exclude_lists.py")
+
+    return 1
+
+
+def _audit_exclude_missing_export(validator: PublicApiValidator) -> int:
+    """Audit EXCLUDE_MISSING_EXPORT list for symbols that are now exported at top-level.
+
+    Returns:
+        0 if all entries are still valid, 1 if some entries can be removed
+    """
+    # Get all symbols that have @public decorators and check their export status
+    public_symbols = validator.find_public_symbols(exclude_modules=EXCLUDE_MODULES_FROM_PUBLIC_SCAN)
+    exported_lookup = {
+        f"{sym.module_path}.{sym.symbol_name}" for sym in public_symbols if sym.is_exported
+    }
+
+    # Check which symbols in EXCLUDE_MISSING_EXPORT are actually exported now
+    symbols_with_export = []
+    for symbol_path in EXCLUDE_MISSING_EXPORT:
+        if symbol_path in exported_lookup:
+            symbols_with_export.append(symbol_path)
+
+    if not symbols_with_export:
+        click.echo(
+            "✓ All entries in EXCLUDE_MISSING_EXPORT are still valid (symbols still not exported at top-level)"
+        )
+        return 0
+
+    click.echo(
+        f"Found {len(symbols_with_export)} symbols in EXCLUDE_MISSING_EXPORT that are now exported at top-level:"
+    )
+    click.echo("These entries can be removed from the exclude list:")
+    click.echo()
+
+    for symbol_path in sorted(symbols_with_export):
+        click.echo(f"  {symbol_path}")
+
+    click.echo()
+    click.echo("To remove these entries, edit:")
+    click.echo("  python_modules/automation/automation/docstring_lint/exclude_lists.py")
+
+    return 1
