@@ -217,16 +217,17 @@ class TestFivetranTranslation(TestTranslation):
 )
 def test_scaffold_component_with_params(scaffold_params: dict):
     with create_defs_folder_sandbox() as sandbox:
-        with sandbox.scaffold_component(
+        defs_path = sandbox.scaffold_component(
             component_cls=FivetranAccountComponent,
             scaffold_params=scaffold_params,
-        ) as defs_path:
-            defs_yaml_path = defs_path / "defs.yaml"
-            assert defs_yaml_path.exists()
-            assert {
-                k: v
-                for k, v in yaml.safe_load(defs_yaml_path.read_text())["attributes"][
-                    "workspace"
-                ].items()
-                if v is not None
-            } == scaffold_params
+        )
+
+        defs_yaml_path = defs_path / "defs.yaml"
+        assert defs_yaml_path.exists()
+        assert {
+            k: v
+            for k, v in yaml.safe_load(defs_yaml_path.read_text())["attributes"][
+                "workspace"
+            ].items()
+            if v is not None
+        } == scaffold_params
