@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dagster_shared"
+version = "0.1.0"
+description = "Dagster Shared Utilities"
+authors = [{name = "Dagster Team", email = "dev@dagster.io"}]
+dependencies = []
+
+[tool.setuptools]
+packages = [
+  "cli",
+  "plus",
+  "check",
+  "seven",
+  "serdes",
+  "record",
+  "scaffold",
+  "libraries",
+  "telemetry",
+  "yaml_utils",
+  "dagster_model"
+]
