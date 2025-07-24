@@ -10,7 +10,7 @@ from dagster.components.lib.executable_component.function_component import (
     FunctionComponent,
     FunctionSpec,
 )
-from dagster.components.testing import copy_code_to_file, temp_components_sandbox
+from dagster.components.testing import copy_code_to_file, defs_folder_sandbox
 
 
 def asset_in_component(
@@ -186,10 +186,10 @@ def test_local_import() -> None:
         def execute_fn_to_copy(context):
             return dg.MaterializeResult(metadata={"foo": "bar"})
 
-    with temp_components_sandbox() as sandbox:
+    with defs_folder_sandbox() as sandbox:
         component_path = sandbox.scaffold_component(
             component_cls=FunctionComponent,
-            component_path="function_component",
+            defs_path="function_component",
             component_body={
                 "type": "dagster.FunctionComponent",
                 "attributes": {
@@ -208,7 +208,7 @@ def test_local_import() -> None:
         execute_path = component_path / "execute.py"
         copy_code_to_file(code_to_copy, execute_path)
 
-        with sandbox.load_component_and_build_defs_at_path(component_path=component_path) as (
+        with sandbox.load_component_and_build_defs(defs_path=component_path) as (
             component,
             defs,
         ):

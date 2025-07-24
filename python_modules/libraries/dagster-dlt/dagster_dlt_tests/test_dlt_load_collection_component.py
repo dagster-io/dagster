@@ -17,7 +17,7 @@ from dagster._core.definitions.definitions_class import Definitions
 from dagster._utils import pushd
 from dagster._utils.env import environ
 from dagster.components.core.tree import ComponentTree
-from dagster.components.testing import TestTranslationBatched, temp_components_sandbox
+from dagster.components.testing import TestTranslationBatched, defs_folder_sandbox
 from dagster_dlt import DagsterDltResource, DltLoadCollectionComponent
 from dagster_dlt.components.dlt_load_collection.component import DltLoadSpecModel
 
@@ -43,22 +43,22 @@ def setup_dlt_component(
     project_name: Optional[str] = None,
 ) -> Iterator[tuple[DltLoadCollectionComponent, Definitions]]:
     """Sets up a components project with a dlt component based on provided params."""
-    with temp_components_sandbox(
+    with defs_folder_sandbox(
         project_name=project_name,
     ) as defs_sandbox:
-        component_path = defs_sandbox.scaffold_component(
+        defs_path = defs_sandbox.scaffold_component(
             component_cls=DltLoadCollectionComponent,
-            component_path="ingest",
+            defs_path="ingest",
             component_body=component_body,
         )
-        with pushd(str(component_path)):
+        with pushd(str(defs_path)):
             setup_dlt_sources()
 
-        Path(component_path / "load.py").write_text(
+        Path(defs_path / "load.py").write_text(
             textwrap.dedent("\n".join(inspect.getsource(load_py_contents).split("\n")[1:]))
         )
 
-        with defs_sandbox.load_component_and_build_defs_at_path(component_path=component_path) as (
+        with defs_sandbox.load_component_and_build_defs(defs_path=defs_path) as (
             component,
             defs,
         ):
@@ -259,13 +259,13 @@ def test_python_interface(dlt_pipeline: Pipeline):
 
 
 def test_scaffold_bare_component() -> None:
-    with temp_components_sandbox() as defs_sandbox:
-        component_path = defs_sandbox.scaffold_component(component_cls=DltLoadCollectionComponent)
-        assert component_path.exists()
-        assert (component_path / "defs.yaml").exists()
-        assert (component_path / "loads.py").exists()
+    with defs_folder_sandbox() as sandbox:
+        defs_path = sandbox.scaffold_component(component_cls=DltLoadCollectionComponent)
+        assert defs_path.exists()
+        assert (defs_path / "defs.yaml").exists()
+        assert (defs_path / "loads.py").exists()
 
-        with defs_sandbox.load_component_and_build_defs_at_path(component_path=component_path) as (
+        with sandbox.load_component_and_build_defs(defs_path=defs_path) as (
             component,
             defs,
         ):
@@ -286,18 +286,18 @@ def test_scaffold_bare_component() -> None:
 )
 def test_scaffold_component_with_source_and_destination(source: str, destination: str) -> None:
     with (
-        temp_components_sandbox() as defs_sandbox,
+        defs_folder_sandbox() as sandbox,
         environ({"SOURCES__ACCESS_TOKEN": "fake"}),
     ):
-        component_path = defs_sandbox.scaffold_component(
+        defs_path = sandbox.scaffold_component(
             component_cls=DltLoadCollectionComponent,
             scaffold_params={"source": source, "destination": destination},
         )
-        assert component_path.exists()
-        assert (component_path / "defs.yaml").exists()
-        assert (component_path / "loads.py").exists()
+        assert defs_path.exists()
+        assert (defs_path / "defs.yaml").exists()
+        assert (defs_path / "loads.py").exists()
 
-        with defs_sandbox.load_component_and_build_defs_at_path(component_path=component_path) as (
+        with sandbox.load_component_and_build_defs(defs_path=defs_path) as (
             component,
             defs,
         ):

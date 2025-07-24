@@ -153,7 +153,7 @@ def random_importable_name(length: int = 8) -> str:
 
 
 @dataclass
-class DefsSandbox:
+class DefsFolderSandbox:
     """A sandbox for testing components.
 
     This sandbox provides a number of utilities for scaffolding, modifying, and loading components
@@ -191,13 +191,13 @@ class DefsSandbox:
             yield tree.build_defs()
 
     @contextmanager
-    def load_component_and_build_defs_at_path(
-        self, component_path: Path
+    def load_component_and_build_defs(
+        self, defs_path: Path
     ) -> Iterator[tuple[Component, Definitions]]:
         """Loads a Component object at the given path and builds the corresponding Definitions.
 
         Args:
-            component_path: The path to the component to load.
+            defs_path: The path to the component to load.
 
         Returns:
             A tuple of the Component and Definitions objects.
@@ -207,8 +207,8 @@ class DefsSandbox:
         .. code-block:: python
 
             with scaffold_defs_sandbox() as sandbox:
-                component_path = sandbox.scaffold_component(component_cls=MyComponent)
-                with sandbox.load_component_and_build_defs_at_path(component_path=component_path) as (
+                defs_path = sandbox.scaffold_component(component_cls=MyComponent)
+                with sandbox.load_component_and_build_defs(defs_path=defs_path) as (
                     component,
                     defs,
                 ):
@@ -216,57 +216,14 @@ class DefsSandbox:
                     assert defs.get_asset_def("my_asset").key == AssetKey("my_asset")
         """
         with self.build_component_tree() as tree:
-            component = tree.load_component_at_path(component_path)
-            defs = tree.build_defs_at_path(component_path)
+            component = tree.load_component_at_path(defs_path)
+            defs = tree.build_defs_at_path(defs_path)
             yield component, defs
-
-    @contextmanager
-    def scaffold_load_and_build_component_defs(
-        self,
-        component_cls: type,
-        component_body: dict[str, Any],
-        component_path: Optional[Union[Path, str]] = None,
-    ) -> Iterator[tuple[Component, Definitions]]:
-        """Scaffolds a new component in the defs folder, populates the defs.yaml file with the provided component_body,
-        and then returns the loaded Component instance and corresponding Definitions.
-
-        Args:
-            component_cls: The component class to scaffold.
-            component_body: The body of the component to update the defs.yaml file with.
-            component_path: The path to the component. (defaults to a random name)
-
-        Returns:
-            A tuple of the Component and Definitions objects.
-
-        Example:
-
-        .. code-block:: python
-
-            with scaffold_defs_sandbox() as sandbox:
-                with sandbox.scaffold_load_and_build_defs(
-                    component_cls=MyComponent,
-                    component_body={"type": "my_library.MyComponent", "attributes": {"asset_key": "different_asset_key"}},
-                ) as (component, defs):
-                    assert isinstance(component, MyComponent)
-                    assert defs.get_asset_def("different_asset_key").key == AssetKey("different_asset_key")
-        """
-        component_path = self.scaffold_component(
-            component_cls=component_cls,
-            component_path=component_path,
-        )
-        with self.swap_defs_file(
-            defs_path=component_path / "defs.yaml", component_body=component_body
-        ):
-            with self.load_component_and_build_defs_at_path(component_path=component_path) as (
-                component,
-                defs,
-            ):
-                yield component, defs
 
     def scaffold_component(
         self,
         component_cls: Any,
-        component_path: Optional[Union[Path, str]] = None,
+        defs_path: Optional[Union[Path, str]] = None,
         scaffold_params: Optional[dict[str, Any]] = None,
         scaffold_format: ScaffoldFormatOptions = "yaml",
         component_body: Optional[dict[str, Any]] = None,
@@ -275,7 +232,7 @@ class DefsSandbox:
 
         Args:
             component_cls: The component class to scaffold.
-            component_path: The path to the component. (defaults to a random name)
+            defs_path: The path to the component. (defaults to a random name)
             scaffold_params: The parameters to pass to the scaffolder.
             scaffold_format: The format to use for scaffolding.
             component_body: The body of the component to update the defs.yaml file with.
@@ -288,21 +245,21 @@ class DefsSandbox:
         .. code-block:: python
 
             with scaffold_defs_sandbox() as sandbox:
-                component_path = sandbox.scaffold_component(component_cls=MyComponent)
-                assert (component_path / "defs.yaml").exists()
+                defs_path = sandbox.scaffold_component(component_cls=MyComponent)
+                assert (defs_path / "defs.yaml").exists()
         """
-        component_path = self.defs_folder_path / (component_path or random_importable_name())
+        defs_path = self.defs_folder_path / (defs_path or random_importable_name())
         typename = get_original_module_name(component_cls)
         scaffold_object(
-            path=component_path,
+            path=defs_path,
             typename=typename,
             json_params=json.dumps(scaffold_params) if scaffold_params else None,
             scaffold_format=scaffold_format,
             project_root=self.project_root,
         )
         if component_body:
-            (component_path / "defs.yaml").write_text(yaml.safe_dump(component_body))
-        return component_path
+            (defs_path / "defs.yaml").write_text(yaml.safe_dump(component_body))
+        return defs_path
 
     @contextmanager
     def swap_defs_file(self, defs_path: Path, component_body: Optional[dict[str, Any]]):
@@ -334,8 +291,8 @@ class DefsSandbox:
             shutil.rmtree(temp_dir)
 
 
-def get_module_path(defs_module_name: str, component_path: Path):
-    component_module_path = str(component_path).replace("/", ".")
+def get_module_path(defs_module_name: str, defs_path: Path):
+    component_module_path = str(defs_path).replace("/", ".")
     return f"{defs_module_name}.{component_module_path}"
 
 
@@ -434,18 +391,18 @@ def get_component_defs_from_defs_path(
 
 
 @contextmanager
-def temp_components_sandbox(
+def defs_folder_sandbox(
     *,
     project_name: Optional[str] = None,
-) -> Iterator[DefsSandbox]:
+) -> Iterator[DefsFolderSandbox]:
     """Create a lightweight sandbox to scaffold and instantiate components. Useful
     for those authoring component types.
 
     Scaffold defs sandbox creates a temporary project that mimics the defs folder portion
-    of a real dagster project. It then yields a DefsSandbox object which can be used to
+    of a real dagster project. It then yields a DefsFolderSandbox object which can be used to
     scaffold and load components.
 
-    DefsSandbox has a few properties useful for different types of tests:
+    DefsFolderSandbox has a few properties useful for different types of tests:
 
     * defs_folder_path: The absolute path to the defs folder. The user can inspect and
     load files from scaffolded components.
@@ -454,7 +411,7 @@ def temp_components_sandbox(
     * project_name: If not provided, a random name is generated.
 
     Once the sandbox is created the user has the option to load all definitions using the `load`
-    method on DefsSandbox, or the `load_component_at_path` mathod.
+    method on DefsFolderSandbox, or the `load_component_at_path` mathod.
 
     This sandbox does not provide complete environmental isolation, but does provide some isolation guarantees
     to do its best to isolate the test from and restore the environment after the test.
@@ -467,30 +424,26 @@ def temp_components_sandbox(
         project_name: Optional name for the project (default: random name).
 
     Returns:
-        Iterator[DefsSandbox]: A context manager that yields a DefsSandbox
+        Iterator[DefsFolderSandbox]: A context manager that yields a DefsFolderSandbox
 
     Example:
 
     .. code-block:: python
 
-        with scaffold_defs_sandbox(component_cls=MyComponent) as sandbox:
-            component_path = sandbox.scaffold_component(component_cls=MyComponent)
-            assert (component_path / "defs.yaml").exists()
-            assert (component_path / "my_component_config_file.yaml").exists()  # produced by MyComponentScaffolder
+        with scaffold_defs_sandbox() as sandbox:
+            defs_path = sandbox.scaffold_component(component_cls=MyComponent)
+            assert (defs_path / "defs.yaml").exists()
+            assert (defs_path / "my_component_config_file.yaml").exists()  # produced by MyComponentScaffolder
 
         with scaffold_defs_sandbox() as sandbox:
-            component_path = sandbox.scaffold_component(component_cls=MyComponent)
-            with sandbox.load_component_and_build_defs(component_path=component_path) as (component, defs):
+            defs_path = sandbox.scaffold_component(
+                component_cls=MyComponent,
+                component_body={"type": "MyComponent", "attributes": {"asset_key": "my_asset"}},
+            )
+            with sandbox.load_component_and_build_defs(defs_path=defs_path) as (component, defs):
                 assert isinstance(component, MyComponent)
                 assert defs.get_asset_def("my_asset").key == AssetKey("my_asset")
 
-        with scaffold_defs_sandbox() as sandbox:
-            with sandbox.create_load_and_build_defs(
-                component_cls=MyComponent,
-                component_body={"type": "MyComponent", "attributes": {"asset_key": "different_asset_key"}}
-            ) as (component, defs):
-                assert isinstance(component, MyComponent)
-                assert defs.get_asset_def("different_asset_key").key == AssetKey("different_asset_key")
     """
     project_name = project_name or random_importable_name()
 
@@ -498,7 +451,7 @@ def temp_components_sandbox(
         project_root = Path(project_root_str)
         defs_folder_path = project_root / "src" / project_name / "defs"
         defs_folder_path.mkdir(parents=True, exist_ok=True)
-        yield DefsSandbox(
+        yield DefsFolderSandbox(
             project_root=project_root,
             defs_folder_path=defs_folder_path,
             project_name=project_name,

@@ -9,7 +9,7 @@ from dagster import AssetKey, Definitions
 from dagster._core.definitions.materialize import materialize
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster.components.lib.sql_component.sql_component import SqlComponent, TemplatedSqlComponent
-from dagster.components.testing import temp_components_sandbox
+from dagster.components.testing import defs_folder_sandbox
 from dagster_snowflake.components.sql_component.component import SnowflakeConnectionComponent
 from dagster_snowflake.constants import SNOWFLAKE_PARTNER_CONNECTION_IDENTIFIER
 
@@ -22,16 +22,16 @@ def setup_snowflake_component_with_external_connection(
     connection_component_name: str = "sql_connection_component",
 ) -> Iterator[Definitions]:
     """Sets up a components project with a snowflake component using external connection."""
-    with temp_components_sandbox() as sandbox:
+    with defs_folder_sandbox() as sandbox:
         sandbox.scaffold_component(
             component_cls=SqlComponent,
-            component_path="sql_execution_component",
+            defs_path="sql_execution_component",
             component_body=execution_component_body,
         )
 
         sandbox.scaffold_component(
             component_cls=SnowflakeConnectionComponent,
-            component_path=connection_component_name,
+            defs_path=connection_component_name,
             component_body={
                 "type": "dagster_snowflake.SnowflakeConnectionComponent",
                 "attributes": {
@@ -53,10 +53,15 @@ def setup_snowflake_component(
     component_body: dict,
 ) -> Iterator[tuple[TemplatedSqlComponent, Definitions]]:
     """Sets up a components project with a snowflake component based on provided params."""
-    with temp_components_sandbox() as defs_sandbox:
-        with defs_sandbox.scaffold_load_and_build_component_defs(
-            component_cls=TemplatedSqlComponent, component_body=component_body
-        ) as (component, defs):
+    with defs_folder_sandbox() as sandbox:
+        defs_path = sandbox.scaffold_component(
+            component_cls=TemplatedSqlComponent,
+            component_body=component_body,
+        )
+        with sandbox.load_component_and_build_defs(defs_path=defs_path) as (
+            component,
+            defs,
+        ):
             assert isinstance(component, TemplatedSqlComponent)
             yield component, defs
 

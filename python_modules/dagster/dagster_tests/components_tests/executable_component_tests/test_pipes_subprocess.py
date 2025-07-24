@@ -4,12 +4,12 @@ from dagster.components.lib.executable_component.python_script_component import 
     PythonScriptComponent,
     ScriptSpec,
 )
-from dagster.components.testing import copy_code_to_file, temp_components_sandbox
+from dagster.components.testing import copy_code_to_file, defs_folder_sandbox
 
 
 def test_pipes_subprocess_script_hello_world() -> None:
-    with temp_components_sandbox() as sandbox:
-        component_path = sandbox.scaffold_component(
+    with defs_folder_sandbox() as sandbox:
+        defs_path = sandbox.scaffold_component(
             component_cls=PythonScriptComponent,
             component_body={
                 "type": "dagster.PythonScriptComponent",
@@ -26,10 +26,10 @@ def test_pipes_subprocess_script_hello_world() -> None:
                 },
             },
         )
-        execute_path = component_path / "script.py"
+        execute_path = defs_path / "script.py"
         execute_path.write_text("print('hello world')")
 
-        with sandbox.load_component_and_build_defs_at_path(component_path=component_path) as (
+        with sandbox.load_component_and_build_defs(defs_path=defs_path) as (
             component,
             defs,
         ):
@@ -50,8 +50,8 @@ def test_pipes_subprocess_script_with_custom_materialize_result() -> None:
             with open_dagster_pipes() as context:
                 context.report_asset_materialization(metadata={"foo": "bar"})
 
-    with temp_components_sandbox() as sandbox:
-        component_path = sandbox.scaffold_component(
+    with defs_folder_sandbox() as sandbox:
+        defs_path = sandbox.scaffold_component(
             component_cls=PythonScriptComponent,
             component_body={
                 "type": "dagster.PythonScriptComponent",
@@ -67,10 +67,10 @@ def test_pipes_subprocess_script_with_custom_materialize_result() -> None:
                 },
             },
         )
-        execute_path = component_path / "op_name.py"
+        execute_path = defs_path / "op_name.py"
         copy_code_to_file(code_to_copy, execute_path)
 
-        with sandbox.load_component_and_build_defs_at_path(component_path=component_path) as (
+        with sandbox.load_component_and_build_defs(defs_path=defs_path) as (
             component,
             defs,
         ):
@@ -86,8 +86,8 @@ def test_pipes_subprocess_script_with_custom_materialize_result() -> None:
 
 
 def test_pipes_subprocess_script_with_name_override() -> None:
-    with temp_components_sandbox() as sandbox:
-        component_path = sandbox.scaffold_component(
+    with defs_folder_sandbox() as sandbox:
+        defs_path = sandbox.scaffold_component(
             component_cls=PythonScriptComponent,
             component_body={
                 "type": "dagster.PythonScriptComponent",
@@ -104,7 +104,7 @@ def test_pipes_subprocess_script_with_name_override() -> None:
                 },
             },
         )
-        with sandbox.load_component_and_build_defs_at_path(component_path=component_path) as (
+        with sandbox.load_component_and_build_defs(defs_path=defs_path) as (
             component,
             defs,
         ):
@@ -123,8 +123,8 @@ def test_pipes_subprocess_script_with_checks_only() -> None:
                     passed=True,
                 )
 
-    with temp_components_sandbox() as sandbox:
-        component_path = sandbox.scaffold_component(
+    with defs_folder_sandbox() as sandbox:
+        defs_path = sandbox.scaffold_component(
             component_cls=PythonScriptComponent,
             component_body={
                 "type": "dagster.PythonScriptComponent",
@@ -142,10 +142,10 @@ def test_pipes_subprocess_script_with_checks_only() -> None:
                 },
             },
         )
-        execute_path = component_path / "only_checks.py"
+        execute_path = defs_path / "only_checks.py"
         copy_code_to_file(code_to_copy, execute_path)
 
-        with sandbox.load_component_and_build_defs_at_path(component_path=component_path) as (
+        with sandbox.load_component_and_build_defs(defs_path=defs_path) as (
             component,
             defs,
         ):
@@ -181,8 +181,8 @@ def test_pipes_subprocess_with_args() -> None:
         def arg_list():
             return ["arg_value"]
 
-    with temp_components_sandbox() as sandbox:
-        component_path = sandbox.scaffold_component(
+    with defs_folder_sandbox() as sandbox:
+        defs_path = sandbox.scaffold_component(
             component_cls=PythonScriptComponent,
             component_body={
                 "type": "dagster.PythonScriptComponent",
@@ -200,12 +200,12 @@ def test_pipes_subprocess_with_args() -> None:
                 "template_vars_module": ".template_vars",
             },
         )
-        execute_path = component_path / "op_name.py"
+        execute_path = defs_path / "op_name.py"
         copy_code_to_file(op_name_contents, execute_path)
-        template_vars_path = component_path / "template_vars.py"
+        template_vars_path = defs_path / "template_vars.py"
         copy_code_to_file(template_vars_content, template_vars_path)
 
-        with sandbox.load_component_and_build_defs_at_path(component_path=component_path) as (
+        with sandbox.load_component_and_build_defs(defs_path=defs_path) as (
             component,
             defs,
         ):
@@ -230,8 +230,8 @@ def test_pipes_subprocess_with_inline_str() -> None:
             with open_dagster_pipes() as context:
                 context.report_asset_materialization(metadata={"arg": sys.argv[1]})
 
-    with temp_components_sandbox() as sandbox:
-        component_path = sandbox.scaffold_component(
+    with defs_folder_sandbox() as sandbox:
+        defs_path = sandbox.scaffold_component(
             component_cls=PythonScriptComponent,
             component_body={
                 "type": "dagster.PythonScriptComponent",
@@ -248,10 +248,10 @@ def test_pipes_subprocess_with_inline_str() -> None:
                 },
             },
         )
-        execute_path = component_path / "op_name.py"
+        execute_path = defs_path / "op_name.py"
         copy_code_to_file(op_name_contents, execute_path)
 
-        with sandbox.load_component_and_build_defs_at_path(component_path=component_path) as (
+        with sandbox.load_component_and_build_defs(defs_path=defs_path) as (
             component,
             defs,
         ):

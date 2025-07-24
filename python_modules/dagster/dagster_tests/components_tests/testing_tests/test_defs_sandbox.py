@@ -4,19 +4,15 @@ from dagster.components.lib.executable_component.function_component import (
     FunctionComponent,
     FunctionSpec,
 )
-from dagster.components.testing import (
-    copy_code_to_file,
-    scaffold_defs_sandbox,
-    temp_components_sandbox,
-)
+from dagster.components.testing import copy_code_to_file, defs_folder_sandbox, scaffold_defs_sandbox
 
 
 def test_temp_sandbox() -> None:
-    with temp_components_sandbox(
+    with defs_folder_sandbox(
         project_name="nested_component_project",
     ) as sandbox:
-        component_path = sandbox.scaffold_component(
-            component_path="function_component",
+        defs_path = sandbox.scaffold_component(
+            defs_path="function_component",
             component_cls=FunctionComponent,
             component_body={
                 "type": "dagster.FunctionComponent",
@@ -40,9 +36,9 @@ def test_temp_sandbox() -> None:
             def execute_fn(context) -> dg.MaterializeResult:
                 return dg.MaterializeResult()
 
-        copy_code_to_file(code_to_copy, component_path / "execute.py")
+        copy_code_to_file(code_to_copy, defs_path / "execute.py")
 
-        with sandbox.load_component_and_build_defs_at_path(component_path=component_path) as (
+        with sandbox.load_component_and_build_defs(defs_path=defs_path) as (
             component,
             defs,
         ):

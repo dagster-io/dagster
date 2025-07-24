@@ -8,23 +8,23 @@ title: Testing your component
 
 After you [create a new component](/guides/build/components/creating-new-components/creating-and-registering-a-component), we recommend testing scaffolding and runtime execution with the Dagster framework utilities outlined below.
 
-### Setting up a sandbox with `temp_components_sandbox`
+### Setting up a sandbox with `defs_folder_sandbox`
 
-The function at the core of our testing workflows is `dagster.components.testing.temp_components_sandbox`. This context manager allows you to construct a temporary defs folder, which can be populated with components and loaded into Component objects or built into dagster Definitions just as they would be in a real Dagster project.
+The function at the core of our testing workflows is `dagster.components.testing.defs_folder_sandbox`. This context manager allows you to construct a temporary defs folder, which can be populated with components and loaded into Component objects or built into dagster Definitions just as they would be in a real Dagster project.
 
 The function signature is the following:
 
 ```python
 @contextmanager
-def temp_components_sandbox(
+def defs_folder_sandbox(
     *,
     project_name: Optional[str] = None,
-) -> Iterator[DefsSandbox]: ...
+) -> Iterator[DefsFolderSandbox]: ...
 ```
 
-### The `DefsSandbox` object
+### The `DefsFolderSandbox` object
 
-Once created, the `DefsSandbox` object provides a number of useful utilities for scaffolding and loading components.
+Once created, the `DefsFolderSandbox` object provides a number of useful utilities for scaffolding and loading components.
 
 #### Creating a component with `scaffold_component`
 
@@ -36,7 +36,7 @@ The signature is
 def scaffold_component(
     self,
     component_cls: Any,
-    component_path: Optional[Union[Path, str]] = None,
+    defs_path: Optional[Union[Path, str]] = None,
     scaffold_params: Optional[dict[str, Any]] = None,
     scaffold_format: ScaffoldFormatOptions = "yaml",
     component_body: Optional[dict[str, Any]] = None,
@@ -49,25 +49,25 @@ This can be used to verify the behavior of a custom scaffolder. Here is an examp
 
 ```python
 def test_scaffold_sling():
-    with temp_components_sandbox() as sandbox:
-        component_path = sandbox.scaffold_component(component_cls=SlingReplicationCollectionComponent)
-        assert (component_path / "defs.yaml").exists()
-        assert (component_path / "replication.yaml").exists()
+    with defs_folder_sandbox() as sandbox:
+        defs_path = sandbox.scaffold_component(component_cls=SlingReplicationCollectionComponent)
+        assert (defs_path / "defs.yaml").exists()
+        assert (defs_path / "replication.yaml").exists()
 ```
 
 For ease of use, the `component_body` argument can be used to replace the contents of the `defs.yaml` file after the component has been scaffolded.
 
-#### Loading and building definitions with `load_component_and_build_defs_at_path`
+#### Loading and building definitions with `load_component_and_build_defs`
 
-To test instantiation of a component, and to validate the definitions it produces, you can use the `load_component_and_build_defs_at_path` method, which loads an already-scaffolded component and builds the corresponding Definitions.
+To test instantiation of a component, and to validate the definitions it produces, you can use the `load_component_and_build_defs` method, which loads an already-scaffolded component and builds the corresponding Definitions.
 
 For example, the following is code from our tests of our [dlt component](/guides/build/components/integrations/dlt-component-tutorial). In this case, we ensure that the definitions have loaded, and that the correct asset keys have been created:
 
 ```python
 def test_dlt_component():
-    with temp_components_sandbox() as defs_sandbox:
-        component_path = defs_sandbox.scaffold_component(component_cls=DltLoadCollectionComponent)
-        with defs_sandbox.load_component_and_build_defs_at_path(component_path=component_path) as (
+    with defs_folder_sandbox() as sandbox:
+        defs_path = sandbox.scaffold_component(component_cls=DltLoadCollectionComponent)
+        with sandbox.load_component_and_build_defs(defs_path=defs_path) as (
             component,
             defs,
         ):
@@ -79,41 +79,16 @@ def test_dlt_component():
             }
 ```
 
-#### Scaffolding and building definitions in a single invocation with `scaffold_load_and_build_component_defs`
-
-The `DefsSandbox` object also provides a convenience method for creating a new component with custom `defs.yaml` contents and building the corresponding Definitions.
-This is the easiest way to test a fully configured component, such as the Fivetran component:
-
-```python
-def test_fivetran_component():
-    with temp_components_sandbox() as defs_sandbox:
-        with defs_sandbox.scaffold_load_and_build_component_defs(
-            component_cls=FivetranAccountComponent,
-            component_body={
-                "type": "dagster_fivetran.FivetranAccountComponent",
-                "attributes": {
-                    "workspace": {
-                        "api_key": "{{ env.FIVETRAN_API_KEY }}",
-                        "api_secret": "{{ env.FIVETRAN_API_SECRET }}",
-                        "account_id": "{{ env.FIVETRAN_ACCOUNT_ID }}",
-                    },
-                }
-            },
-        ) as (component, defs):
-            assert isinstance(component, FivetranAccountComponent)
-```
-
-
 #### Testing multiple components
 
 These utilities are also useful for testing multiple components in a single test. For example, testing the `TemplatedSqlComponent` with a Snowflake connection:
 
 ```python
 def test_snowflake_component():
-    with temp_components_sandbox() as sandbox:
+    with defs_folder_sandbox() as sandbox:
         sandbox.scaffold_component(
             component_cls=SqlComponent,
-            component_path="sql_execution_component",
+            defs_path="sql_execution_component",
             component_body={
                 "type": "dagster.TemplatedSqlComponent",
                 "attributes": {
@@ -126,7 +101,7 @@ def test_snowflake_component():
 
         sandbox.scaffold_component(
             component_cls=SnowflakeConnectionComponent,
-            component_path="sql_connection_component",
+            defs_path="sql_connection_component",
             component_body={
                 "type": "dagster_snowflake.SnowflakeConnectionComponent",
                 "attributes": {

@@ -1,7 +1,7 @@
 import dagster as dg
 from dagster.components.lib.executable_component.script_utils import ScriptSpec
 from dagster.components.lib.executable_component.uv_run_component import UvRunComponent
-from dagster.components.testing import temp_components_sandbox
+from dagster.components.testing import defs_folder_sandbox
 
 SCRIPT_CONTENT = """# /// script
 # dependencies = [
@@ -25,8 +25,8 @@ if __name__ == "__main__":
 
 
 def test_pipes_subprocess_script_hello_world() -> None:
-    with temp_components_sandbox() as sandbox:
-        component_path = sandbox.scaffold_component(
+    with defs_folder_sandbox() as sandbox:
+        defs_path = sandbox.scaffold_component(
             component_cls=UvRunComponent,
             component_body={
                 "type": "dagster.UvRunComponent",
@@ -44,10 +44,10 @@ def test_pipes_subprocess_script_hello_world() -> None:
                 },
             },
         )
-        execute_path = component_path / "script.py"
+        execute_path = defs_path / "script.py"
         execute_path.write_text(SCRIPT_CONTENT)
 
-        with sandbox.load_component_and_build_defs_at_path(component_path=component_path) as (
+        with sandbox.load_component_and_build_defs(defs_path=defs_path) as (
             component,
             defs,
         ):
