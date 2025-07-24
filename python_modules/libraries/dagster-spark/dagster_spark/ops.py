@@ -5,11 +5,13 @@ from dagster import (
     _check as check,
     op,
 )
+from dagster._annotations import public
 from dagster._core.storage.tags import COMPUTE_KIND_TAG
 
 from dagster_spark.configs import define_spark_config
 
 
+@public
 def create_spark_op(
     name, main_class, description=None, required_resource_keys=frozenset(["spark"])
 ):

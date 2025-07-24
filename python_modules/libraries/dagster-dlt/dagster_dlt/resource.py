@@ -26,6 +26,7 @@ from dagster_dlt.dlt_event_iterator import DltEventIterator, DltEventType
 from dagster_dlt.translator import DagsterDltTranslator, DltResourceTranslatorData
 
 
+@public
 class DagsterDltResource(ConfigurableResource):
     @classmethod
     def _is_dagster_maintained(cls) -> bool:

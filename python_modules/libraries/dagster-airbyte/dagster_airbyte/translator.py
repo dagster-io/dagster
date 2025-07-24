@@ -2,7 +2,7 @@ from collections.abc import Mapping, Sequence
 from enum import Enum
 from typing import Any, Optional
 
-from dagster._annotations import beta, deprecated
+from dagster._annotations import beta, deprecated, public
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
 from dagster._core.definitions.metadata.metadata_set import NamespacedMetadataSet, TableMetadataSet
@@ -202,6 +202,7 @@ class AirbyteMetadataSet(NamespacedMetadataSet):
         return "dagster-airbyte"
 
 
+@public
 @beta
 class DagsterAirbyteTranslator:
     """Translator class which converts a `AirbyteConnectionTableProps` object into AssetSpecs.

@@ -12,6 +12,7 @@ from dagster import (
     StringSource,
     _check as check,
 )
+from dagster._annotations import public
 from dagster._config.config_type import Noneable
 from dagster._core.storage.cloud_storage_compute_log_manager import (
     PollingComputeLogSubscriptionManager,
@@ -29,6 +30,7 @@ from typing_extensions import Self
 POLLING_INTERVAL = 5
 
 
+@public
 class S3ComputeLogManager(TruncatingCloudStorageComputeLogManager, ConfigurableClass):
     """Logs compute function stdout and stderr to S3.
 

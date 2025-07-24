@@ -48,6 +48,7 @@ if TYPE_CHECKING:
     from dagster_dbt.dbt_project import DbtProject
 
 
+@public
 @dataclass(frozen=True)
 class DagsterDbtTranslatorSettings(Resolvable):
     """Settings to enable Dagster features for your dbt project.
@@ -72,6 +73,7 @@ class DagsterDbtTranslatorSettings(Resolvable):
     enable_source_tests_as_checks: bool = False
 
 
+@public
 class DagsterDbtTranslator:
     """Holds a set of methods that derive Dagster asset definition metadata given a representation
     of a dbt resource (models, tests, sources, etc).

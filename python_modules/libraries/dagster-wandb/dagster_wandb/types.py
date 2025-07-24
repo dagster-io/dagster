@@ -1,6 +1,9 @@
 from typing import Any, TypedDict
 
+from dagster._annotations import public
 
+
+@public
 class SerializationModule(TypedDict, total=False):
     """W&B Artifacts IO Manager configuration of the serialization module. Useful for type checking."""
 

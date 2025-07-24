@@ -66,6 +66,7 @@ def _fetch_column_metadata(
     return metadata
 
 
+@public
 class FivetranEventIterator(Iterator[T]):
     """A wrapper around an iterator of Fivetran events which contains additional methods for
     post-processing the events, such as fetching column metadata.

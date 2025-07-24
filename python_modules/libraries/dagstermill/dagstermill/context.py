@@ -18,6 +18,7 @@ from dagster._core.log_manager import DagsterLogManager
 from dagster._core.system_config.objects import ResolvedRunConfig
 
 
+@public
 @beta
 class DagstermillExecutionContext(AbstractComputeExecutionContext):
     """Dagstermill-specific execution context.

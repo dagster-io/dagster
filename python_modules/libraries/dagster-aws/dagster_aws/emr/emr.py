@@ -29,6 +29,7 @@ import boto3
 import dagster
 import dagster._check as check
 from botocore.exceptions import WaiterError
+from dagster._annotations import public
 
 from dagster_aws.emr.types import EMR_CLUSTER_TERMINATED_STATES, EmrClusterState, EmrStepState
 from dagster_aws.utils.mrjob.utils import _boto3_now, _wrap_aws_client, strip_microseconds
@@ -42,6 +43,7 @@ _FALLBACK_SERVICE_ROLE = "EMR_DefaultRole"
 _FALLBACK_INSTANCE_PROFILE = "EMR_EC2_DefaultRole"
 
 
+@public
 class EmrError(Exception):
     pass
 

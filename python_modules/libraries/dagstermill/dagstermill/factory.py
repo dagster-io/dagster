@@ -346,6 +346,10 @@ def _make_dagstermill_compute_fn(
     return _t_fn
 
 
+from dagster._annotations import public
+
+
+@public
 @beta
 def define_dagstermill_op(
     name: str,

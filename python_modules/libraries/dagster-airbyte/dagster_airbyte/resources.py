@@ -1118,6 +1118,7 @@ class AirbyteCloudClient(DagsterModel):
         return AirbyteOutput(job_details=poll_job_details, connection_details=connection_details)
 
 
+@public
 @beta
 class AirbyteCloudWorkspace(ConfigurableResource):
     """This class represents a Airbyte Cloud workspace and provides utilities
@@ -1337,6 +1338,7 @@ class AirbyteCloudWorkspace(ConfigurableResource):
                 yield initialized
 
 
+@public
 @beta
 def load_airbyte_cloud_asset_specs(
     workspace: AirbyteCloudWorkspace,

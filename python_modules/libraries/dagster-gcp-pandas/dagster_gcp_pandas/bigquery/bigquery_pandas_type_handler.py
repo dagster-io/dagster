@@ -3,6 +3,7 @@ from typing import Optional
 
 import pandas as pd
 from dagster import InputContext, MetadataValue, OutputContext, TableColumn, TableSchema
+from dagster._annotations import public
 from dagster._core.definitions.metadata import TableMetadataSet
 from dagster._core.storage.db_io_manager import DbTypeHandler, TableSlice
 from dagster_gcp.bigquery.io_manager import (
@@ -12,6 +13,7 @@ from dagster_gcp.bigquery.io_manager import (
 )
 
 
+@public
 class BigQueryPandasTypeHandler(DbTypeHandler[pd.DataFrame]):
     """Plugin for the BigQuery I/O Manager that can store and load Pandas DataFrames as BigQuery tables.
 

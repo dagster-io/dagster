@@ -2,7 +2,7 @@ from collections.abc import Sequence
 from typing import TYPE_CHECKING, Optional, cast
 
 from dagster import AssetExecutionContext, AssetsDefinition, AssetSpec, multi_asset
-from dagster._annotations import beta, deprecated_param, superseded
+from dagster._annotations import beta, deprecated_param, public, superseded
 from dagster_shared import check
 
 if TYPE_CHECKING:
@@ -15,6 +15,7 @@ if TYPE_CHECKING:
     breaking_version="0.27",
     additional_warn_text="Use `refreshable_data_source_ids` instead.",
 )
+@public
 @beta
 def build_tableau_materializable_assets_definition(
     resource_key: str,

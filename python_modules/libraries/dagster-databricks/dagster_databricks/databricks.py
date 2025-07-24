@@ -30,6 +30,7 @@ from dagster_databricks.version import __version__
 DEFAULT_RUN_MAX_WAIT_TIME_SEC: Final = 24 * 60 * 60
 
 
+@public
 class DatabricksError(Exception):
     pass
 
@@ -226,6 +227,7 @@ class WorkspaceClientFactory:
         return host
 
 
+@public
 class DatabricksClient:
     """A thin wrapper over the Databricks REST API."""
 

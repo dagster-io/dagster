@@ -10,6 +10,7 @@ from dagster import (
     Output,
     _check as check,
 )
+from dagster._annotations import public
 
 from dagster_tableau.translator import (
     TableauDataSourceMetadataSet,
@@ -37,6 +38,7 @@ class ParsedTableauAssetSpecs(
         )
 
 
+@public
 def parse_tableau_external_and_materializable_asset_specs(
     specs: Sequence[AssetSpec],
     include_data_sources_with_extracts: bool = False,

@@ -3,11 +3,13 @@ from typing import Any, Optional
 
 import pandas as pd
 import pyarrow as pa
+from dagster._annotations import public
 from dagster._core.storage.db_io_manager import DbTypeHandler
 from dagster_deltalake.handler import DeltalakeBaseArrowTypeHandler, DeltaLakePyArrowTypeHandler
 from dagster_deltalake.io_manager import DeltaLakeIOManager
 
 
+@public
 class DeltaLakePandasTypeHandler(DeltalakeBaseArrowTypeHandler[pd.DataFrame]):
     def from_arrow(
         self, obj: pa.RecordBatchReader, target_type: type[pd.DataFrame]

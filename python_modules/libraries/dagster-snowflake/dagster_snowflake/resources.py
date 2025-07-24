@@ -583,6 +583,7 @@ class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext,
             conn.cursor().execute(sql)
 
 
+@public
 class SnowflakeConnection:
     """A connection to Snowflake that can execute queries. In general this class should not be
     directly instantiated, but rather used as a resource in an op or asset via the
@@ -823,6 +824,7 @@ def snowflake_resource(context) -> SnowflakeConnection:
     )
 
 
+@public
 def fetch_last_updated_timestamps(
     *,
     snowflake_connection: Union[SqlDbConnection, snowflake.connector.SnowflakeConnection],

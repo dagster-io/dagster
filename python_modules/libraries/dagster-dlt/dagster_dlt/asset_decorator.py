@@ -10,6 +10,7 @@ from dagster import (
     _check as check,
     multi_asset,
 )
+from dagster._annotations import public
 from dagster._core.errors import DagsterInvariantViolationError
 from dlt.extract.source import DltSource
 from dlt.pipeline.pipeline import Pipeline
@@ -18,6 +19,7 @@ from dagster_dlt.constants import META_KEY_PIPELINE, META_KEY_SOURCE, META_KEY_T
 from dagster_dlt.translator import DagsterDltTranslator, DltResourceTranslatorData
 
 
+@public
 def build_dlt_asset_specs(
     dlt_source: DltSource,
     dlt_pipeline: Pipeline,
@@ -53,6 +55,7 @@ def build_dlt_asset_specs(
     ]
 
 
+@public
 def dlt_assets(
     *,
     dlt_source: DltSource,

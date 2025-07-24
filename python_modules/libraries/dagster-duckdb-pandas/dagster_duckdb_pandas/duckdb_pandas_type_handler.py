@@ -3,11 +3,13 @@ from typing import Optional
 
 import pandas as pd
 from dagster import InputContext, MetadataValue, OutputContext, TableColumn, TableSchema
+from dagster._annotations import public
 from dagster._core.definitions.metadata import TableMetadataSet
 from dagster._core.storage.db_io_manager import DbTypeHandler, TableSlice
 from dagster_duckdb.io_manager import DuckDbClient, DuckDBIOManager, build_duckdb_io_manager
 
 
+@public
 class DuckDBPandasTypeHandler(DbTypeHandler[pd.DataFrame]):
     """Stores and loads Pandas DataFrames in DuckDB.
 

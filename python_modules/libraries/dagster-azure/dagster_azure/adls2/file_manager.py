@@ -4,6 +4,7 @@ from contextlib import contextmanager
 from typing import Any, Optional
 
 import dagster._check as check
+from dagster._annotations import public
 from dagster._core.storage.file_manager import (
     FileHandle,
     FileManager,
@@ -14,6 +15,7 @@ from dagster._core.storage.file_manager import (
 from dagster_azure.adls2.utils import DataLakeServiceClient
 
 
+@public
 class ADLS2FileHandle(FileHandle):
     """A reference to a file on ADLS2."""
 

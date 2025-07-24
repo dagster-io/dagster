@@ -10,6 +10,7 @@ from contextlib import ExitStack, contextmanager
 from typing import Any, Literal, Optional, TextIO, Union
 
 import dagster._check as check
+from dagster._annotations import public
 from dagster._core.definitions.metadata import RawMetadataMapping
 from dagster._core.definitions.resource_annotation import TreatAsResourceParam
 from dagster._core.errors import DagsterExecutionInterruptedError, DagsterPipesExecutionError
@@ -34,6 +35,7 @@ from databricks.sdk.service import files, jobs
 from pydantic import Field
 
 
+@public
 class PipesDatabricksClient(PipesClient, TreatAsResourceParam):
     """Pipes client for databricks.
 
@@ -319,6 +321,7 @@ def dbfs_tempdir(dbfs_client: files.DbfsAPI) -> Iterator[str]:
         dbfs_client.delete(tempdir, recursive=True)
 
 
+@public
 class PipesDbfsContextInjector(PipesContextInjector):
     """A context injector that injects context into a Databricks job by writing a JSON file to DBFS.
 
@@ -356,6 +359,7 @@ class PipesDbfsContextInjector(PipesContextInjector):
         )
 
 
+@public
 class PipesDbfsMessageReader(PipesBlobStoreMessageReader):
     """Message reader that reads messages by periodically reading message chunks from an
     automatically-generated temporary directory on DBFS.
@@ -427,6 +431,7 @@ class PipesDbfsMessageReader(PipesBlobStoreMessageReader):
         )
 
 
+@public
 class PipesDbfsLogReader(PipesChunkedLogReader):
     """Reader that reads a log file from DBFS.
 

@@ -28,6 +28,7 @@ from dagster import (
     define_asset_job,
     get_dagster_logger,
 )
+from dagster._annotations import public
 from dagster._core.definitions.assets.definition.asset_spec import SYSTEM_METADATA_KEY_DAGSTER_TYPE
 from dagster._core.definitions.metadata import TableMetadataSet
 from dagster._core.errors import DagsterInvalidPropertyError
@@ -65,6 +66,7 @@ DUPLICATE_ASSET_KEY_ERROR_MESSAGE = (
 logger = get_dagster_logger()
 
 
+@public
 def get_asset_key_for_model(dbt_assets: Sequence[AssetsDefinition], model_name: str) -> AssetKey:
     """Return the corresponding Dagster asset key for a dbt model, seed, or snapshot.
 
@@ -111,6 +113,7 @@ def get_asset_key_for_model(dbt_assets: Sequence[AssetsDefinition], model_name: 
     ).key
 
 
+@public
 def get_asset_keys_by_output_name_for_source(
     dbt_assets: Sequence[AssetsDefinition], source_name: str
 ) -> Mapping[str, AssetKey]:
@@ -168,6 +171,7 @@ def get_asset_keys_by_output_name_for_source(
     }
 
 
+@public
 def get_asset_key_for_source(dbt_assets: Sequence[AssetsDefinition], source_name: str) -> AssetKey:
     """Returns the corresponding Dagster asset key for a dbt source with a singular table.
 
@@ -207,6 +211,7 @@ def get_asset_key_for_source(dbt_assets: Sequence[AssetsDefinition], source_name
     return next(iter(asset_keys_by_output_name.values()))
 
 
+@public
 def build_dbt_asset_selection(
     dbt_assets: Sequence[AssetsDefinition],
     dbt_select: str = DBT_DEFAULT_SELECT,
@@ -293,6 +298,7 @@ def build_dbt_asset_selection(
     )
 
 
+@public
 def build_schedule_from_dbt_selection(
     dbt_assets: Sequence[AssetsDefinition],
     job_name: str,
@@ -488,6 +494,7 @@ def default_asset_key_fn(dbt_resource_props: Mapping[str, Any]) -> AssetKey:
     return AssetKey(components)
 
 
+@public
 def default_metadata_from_dbt_resource_props(
     dbt_resource_props: Mapping[str, Any],
 ) -> Mapping[str, Any]:
@@ -527,6 +534,7 @@ def default_metadata_from_dbt_resource_props(
     }
 
 
+@public
 def default_group_from_dbt_resource_props(dbt_resource_props: Mapping[str, Any]) -> Optional[str]:
     """Get the group name for a dbt node.
 
@@ -547,6 +555,7 @@ def default_group_from_dbt_resource_props(dbt_resource_props: Mapping[str, Any])
     return None
 
 
+@public
 def group_from_dbt_resource_props_fallback_to_directory(
     dbt_resource_props: Mapping[str, Any],
 ) -> Optional[str]:

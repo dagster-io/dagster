@@ -145,6 +145,10 @@ def enforce_max_records_limit(limit: int):
 SqlDbConnection: TypeAlias = Any
 
 
+from dagster._annotations import public
+
+
+@public
 class SqlEventLogStorage(EventLogStorage):
     """Base class for SQL backed event log storages.
 

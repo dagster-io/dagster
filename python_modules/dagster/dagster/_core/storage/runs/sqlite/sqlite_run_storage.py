@@ -43,6 +43,10 @@ if TYPE_CHECKING:
 MINIMUM_SQLITE_BUCKET_VERSION = [3, 25, 0]
 
 
+from dagster._annotations import public
+
+
+@public
 class SqliteRunStorage(SqlRunStorage, ConfigurableClass):
     """SQLite-backed run storage.
 

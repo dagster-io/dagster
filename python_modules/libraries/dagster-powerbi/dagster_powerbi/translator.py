@@ -8,7 +8,7 @@ from dagster import (
     UrlMetadataValue,
     _check as check,
 )
-from dagster._annotations import deprecated
+from dagster._annotations import deprecated, public
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
 from dagster._core.definitions.metadata.metadata_set import NamespacedMetadataSet, TableMetadataSet
@@ -169,6 +169,7 @@ def _build_table_metadata(table: dict[str, Any]) -> TableMetadataSet:
     )
 
 
+@public
 class DagsterPowerBITranslator:
     """Translator class which converts raw response data from the PowerBI API into AssetSpecs.
     Subclass this class to implement custom logic for each type of PowerBI content.

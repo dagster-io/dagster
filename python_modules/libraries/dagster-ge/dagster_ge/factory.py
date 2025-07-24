@@ -17,7 +17,7 @@ from dagster import (
     op,
     resource,
 )
-from dagster._annotations import beta
+from dagster._annotations import beta, public
 from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from dagster._core.execution.context.init import InitResourceContext
 from dagster._core.storage.tags import COMPUTE_KIND_TAG
@@ -51,6 +51,7 @@ def ge_data_context(context: InitResourceContext) -> GEContextResource:
     return GEContextResource.from_resource_context(context).get_data_context()
 
 
+@public
 @beta
 def ge_validation_op_factory(
     name: str,

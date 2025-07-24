@@ -19,6 +19,7 @@ from dagster_aws.pipes.context_injectors import PipesLambdaEventContextInjector
 from dagster_aws.pipes.message_readers import PipesLambdaLogsMessageReader
 
 
+@public
 class PipesLambdaClient(PipesClient, TreatAsResourceParam):
     """A pipes client for invoking AWS lambda.
 

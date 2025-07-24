@@ -1,9 +1,11 @@
 import dagster._check as check
+from dagster._annotations import public
 from google.cloud import storage
 
 MAX_KEYS = 1000
 
 
+@public
 def get_gcs_keys(bucket, prefix=None, since_key=None, gcs_session=None):
     """Return a list of updated keys in a GCS bucket.
 

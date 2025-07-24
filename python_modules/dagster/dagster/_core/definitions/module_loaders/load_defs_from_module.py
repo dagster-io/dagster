@@ -5,7 +5,7 @@ from types import ModuleType
 from typing import Any, Optional, Union
 
 import dagster._check as check
-from dagster._annotations import preview
+from dagster._annotations import preview, public
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.executor_definition import ExecutorDefinition
 from dagster._core.definitions.logger_definition import LoggerDefinition
@@ -14,6 +14,7 @@ from dagster._core.definitions.module_loaders.utils import find_modules_in_packa
 from dagster._core.executor.base import Executor
 
 
+@public
 @preview
 def load_definitions_from_modules(
     modules: Iterable[ModuleType],
@@ -46,6 +47,7 @@ def load_definitions_from_modules(
     )
 
 
+@public
 @preview
 def load_definitions_from_module(
     module: ModuleType,
@@ -75,6 +77,10 @@ def load_definitions_from_module(
     )
 
 
+from dagster._annotations import public
+
+
+@public
 @preview
 def load_definitions_from_current_module(
     resources: Optional[Mapping[str, Any]] = None,
@@ -107,6 +113,7 @@ def load_definitions_from_current_module(
     )
 
 
+@public
 @preview
 def load_definitions_from_package_module(
     package_module: ModuleType,
@@ -140,6 +147,7 @@ def load_definitions_from_package_module(
     )
 
 
+@public
 @preview
 def load_definitions_from_package_name(
     package_name: str,

@@ -3,7 +3,7 @@ from collections.abc import Iterator, Mapping
 from typing import TYPE_CHECKING, NamedTuple, Optional
 
 import dagster._check as check
-from dagster._annotations import superseded
+from dagster._annotations import public, superseded
 from dagster._core.definitions.reconstruct import ReconstructableJob
 from dagster._core.execution.retries import RetryMode
 from dagster._core.storage.dagster_run import DagsterRun
@@ -14,6 +14,7 @@ if TYPE_CHECKING:
     from dagster._core.execution.plan.state import KnownExecutionState
 
 
+@public
 class StepRunRef(
     NamedTuple(
         "_StepRunRef",
@@ -64,6 +65,10 @@ _step_launcher_supersession = superseded(
 )
 
 
+from dagster._annotations import public
+
+
+@public
 @_step_launcher_supersession
 class StepLauncher(ABC):
     """A StepLauncher is responsible for executing steps, either in-process or in an external process."""

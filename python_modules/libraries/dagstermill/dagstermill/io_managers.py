@@ -84,6 +84,10 @@ class LocalOutputNotebookIOManager(OutputNotebookIOManager):
             return file_obj.read()
 
 
+from dagster._annotations import public
+
+
+@public
 @beta
 class ConfigurableLocalOutputNotebookIOManager(ConfigurableIOManagerFactory):
     """Built-in IO Manager for handling output notebook."""

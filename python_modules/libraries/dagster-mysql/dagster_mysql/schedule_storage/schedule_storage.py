@@ -5,6 +5,7 @@ import dagster._check as check
 import sqlalchemy as db
 import sqlalchemy.dialects as db_dialects
 import sqlalchemy.pool as db_pool
+from dagster._annotations import public
 from dagster._config.config_schema import UserConfigSchema
 from dagster._core.definitions.asset_key import EntityKey
 from dagster._core.definitions.declarative_automation.serialized_objects import (
@@ -40,6 +41,7 @@ from dagster_mysql.utils import (
 MINIMUM_MYSQL_BATCH_VERSION = "8.0.0"
 
 
+@public
 class MySQLScheduleStorage(SqlScheduleStorage, ConfigurableClass):
     """MySQL-backed run storage.
 

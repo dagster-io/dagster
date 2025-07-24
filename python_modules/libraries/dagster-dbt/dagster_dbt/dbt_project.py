@@ -133,6 +133,7 @@ class DagsterDbtProjectPreparer(DbtProjectPreparer):
         )
 
 
+@public
 @record_custom
 class DbtProject(IHaveNew):
     """Representation of a dbt project and related settings that assist with managing the project preparation.

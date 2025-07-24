@@ -2,7 +2,7 @@ from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any, Callable, Optional, Union
 
 from dagster import DefaultSensorStatus
-from dagster._annotations import deprecated_param
+from dagster._annotations import deprecated_param, public
 from dagster._core.definitions import GraphDefinition, JobDefinition
 from dagster._core.definitions.run_status_sensor_definition import (
     RunFailureSensorContext,
@@ -88,6 +88,7 @@ def _default_failure_message_text_fn(context: RunFailureSensorContext) -> str:
     breaking_version="2.0",
     additional_warn_text="Use `monitor_all_code_locations` instead.",
 )
+@public
 def make_slack_on_run_failure_sensor(
     channel: str,
     slack_token: str,

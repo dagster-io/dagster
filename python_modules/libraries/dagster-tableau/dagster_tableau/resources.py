@@ -23,7 +23,7 @@ from dagster import (
     _check as check,
     get_dagster_logger,
 )
-from dagster._annotations import beta, beta_param, superseded
+from dagster._annotations import beta, beta_param, public, superseded
 from dagster._core.definitions.definitions_load_context import StateBackedDefinitionsLoader
 from dagster._record import record
 from dagster._utils.cached_method import cached_method
@@ -738,6 +738,7 @@ class BaseTableauWorkspace(ConfigurableResource):
                 )
 
 
+@public
 @beta
 @beta_param(param="workbook_selector_fn")
 def load_tableau_asset_specs(
@@ -765,6 +766,7 @@ def load_tableau_asset_specs(
     )
 
 
+@public
 @beta
 class TableauCloudWorkspace(BaseTableauWorkspace):
     """Represents a workspace in Tableau Cloud and provides utilities
@@ -784,6 +786,7 @@ class TableauCloudWorkspace(BaseTableauWorkspace):
         )
 
 
+@public
 @beta
 class TableauServerWorkspace(BaseTableauWorkspace):
     """Represents a workspace in Tableau Server and provides utilities

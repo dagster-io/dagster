@@ -5,7 +5,7 @@ from datetime import datetime
 from typing import NamedTuple, Optional, Union, cast
 
 import dagster._check as check
-from dagster._annotations import PublicAttr
+from dagster._annotations import PublicAttr, public
 from dagster._core.definitions.partitions.context import partition_loading_context
 from dagster._core.definitions.partitions.definition import PartitionsDefinition
 from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
@@ -20,6 +20,7 @@ from dagster._serdes import whitelist_for_serdes
 from dagster._utils.cached_method import cached_method
 
 
+@public
 @whitelist_for_serdes
 class StaticPartitionMapping(
     PartitionMapping,

@@ -182,7 +182,6 @@ class DefsFolderComponentYamlSchema(Resolvable): ...
 
 
 @public
-@public
 @dataclass
 class DefsFolderComponent(Component):
     """A component that represents a directory containing multiple Dagster definition modules.

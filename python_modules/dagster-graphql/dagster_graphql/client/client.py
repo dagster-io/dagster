@@ -35,6 +35,7 @@ from dagster_graphql.client.utils import (
 )
 
 
+@public
 class DagsterGraphQLClient:
     """Official Dagster Python Client for GraphQL.
 

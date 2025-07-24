@@ -3,7 +3,7 @@ from typing import Optional
 
 import polars as pl
 from dagster import InputContext, MetadataValue, OutputContext, TableColumn, TableSchema, io_manager
-from dagster._annotations import beta
+from dagster._annotations import beta, public
 from dagster._core.definitions.metadata import RawMetadataValue, TableMetadataSet
 from dagster._core.storage.db_io_manager import DbIOManager, DbTypeHandler, TableSlice
 from dagster_snowflake.snowflake_io_manager import SnowflakeDbClient, SnowflakeIOManager
@@ -20,6 +20,7 @@ def _table_exists(table_slice: TableSlice, connection):
     return len(tables) > 0
 
 
+@public
 @beta
 class SnowflakePolarsTypeHandler(DbTypeHandler[pl.DataFrame]):
     """Plugin for the Snowflake I/O Manager that can store and load Polars DataFrames as Snowflake tables.
@@ -135,6 +136,7 @@ class SnowflakePolarsTypeHandler(DbTypeHandler[pl.DataFrame]):
         return [pl.DataFrame]
 
 
+@public
 @beta
 class SnowflakePolarsIOManager(SnowflakeIOManager):
     """An I/O manager definition that reads inputs from and writes Polars DataFrames to Snowflake. When
@@ -237,6 +239,7 @@ class SnowflakePolarsIOManager(SnowflakeIOManager):
         return pl.DataFrame
 
 
+@public
 @beta
 @io_manager(config_schema=SnowflakePolarsIOManager.to_config_schema())
 def snowflake_polars_io_manager(init_context):

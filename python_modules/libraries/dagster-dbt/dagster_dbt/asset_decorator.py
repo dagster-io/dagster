@@ -10,6 +10,7 @@ from dagster import (
     TimeWindowPartitionsDefinition,
     multi_asset,
 )
+from dagster._symbol_annotations import public
 from dagster._utils.warnings import suppress_dagster_warnings
 
 from dagster_dbt.asset_utils import (
@@ -27,6 +28,7 @@ from dagster_dbt.dbt_project import DbtProject
 
 
 @suppress_dagster_warnings
+@public
 def dbt_assets(
     *,
     manifest: DbtManifestParam,

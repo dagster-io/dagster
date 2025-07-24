@@ -52,6 +52,7 @@ if TYPE_CHECKING:
         "end_ts": "end",
     }
 )
+@public
 class TimeWindowPartitionsDefinition(PartitionsDefinition, IHaveNew):
     r"""A set of partitions where each partition corresponds to a time window.
 

@@ -19,6 +19,7 @@ from dagster._core.instance import DynamicPartitionsStore
 from dagster._core.types.pagination import PaginatedResults
 
 
+@public
 class StaticPartitionsDefinition(PartitionsDefinition[str]):
     """A statically-defined set of partitions.
 

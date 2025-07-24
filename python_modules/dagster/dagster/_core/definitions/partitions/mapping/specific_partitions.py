@@ -2,7 +2,7 @@ from collections.abc import Sequence
 from datetime import datetime
 from typing import NamedTuple, Optional
 
-from dagster._annotations import PublicAttr
+from dagster._annotations import PublicAttr, public
 from dagster._core.definitions.partitions.context import partition_loading_context
 from dagster._core.definitions.partitions.definition import PartitionsDefinition
 from dagster._core.definitions.partitions.mapping.partition_mapping import (
@@ -14,6 +14,7 @@ from dagster._core.instance import DynamicPartitionsStore
 from dagster._serdes import whitelist_for_serdes
 
 
+@public
 @whitelist_for_serdes
 class SpecificPartitionsPartitionMapping(
     PartitionMapping,

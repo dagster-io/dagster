@@ -1,7 +1,10 @@
 from collections.abc import Mapping
 from typing import Any, NamedTuple
 
+from dagster._annotations import public
 
+
+@public
 class CensusOutput(
     NamedTuple(
         "_CensusOutput",

@@ -34,6 +34,10 @@ from dagster._utils import mkdir_p
 MINIMUM_SQLITE_BATCH_VERSION = "3.25.0"
 
 
+from dagster._annotations import public
+
+
+@public
 class SqliteScheduleStorage(SqlScheduleStorage, ConfigurableClass):
     """Local SQLite backed schedule storage."""
 

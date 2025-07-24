@@ -4,6 +4,7 @@ from typing import Optional
 import numpy as np
 import pandas as pd
 from dagster import InputContext, MetadataValue, OutputContext, TableColumn, TableSchema
+from dagster._annotations import public
 from dagster._core.definitions.metadata import RawMetadataValue, TableMetadataSet
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.storage.db_io_manager import DbTypeHandler, TableSlice
@@ -69,6 +70,7 @@ def _convert_string_to_timestamp(s: pd.Series) -> pd.Series:
         return s
 
 
+@public
 class SnowflakePandasTypeHandler(DbTypeHandler[pd.DataFrame]):
     """Plugin for the Snowflake I/O Manager that can store and load Pandas DataFrames as Snowflake tables.
 

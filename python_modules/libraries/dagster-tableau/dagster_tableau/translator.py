@@ -3,6 +3,7 @@ from enum import Enum
 from typing import Any, Callable, Literal, Optional
 
 from dagster import _check as check
+from dagster._annotations import public
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
 from dagster._core.definitions.metadata.metadata_set import NamespacedMetadataSet
@@ -215,6 +216,7 @@ class TableauDataSourceMetadataSet(TableauMetadataSet):
     workbook_id: Optional[str] = None
 
 
+@public
 class DagsterTableauTranslator:
     """Translator class which converts raw response data from the Tableau API into AssetSpecs.
     Subclass this class to implement custom logic for each type of Tableau content.

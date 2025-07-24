@@ -13,7 +13,7 @@ from dagster import (
     _check as check,
     resource,
 )
-from dagster._annotations import beta
+from dagster._annotations import beta, public
 from dagster._config.pythonic_config import ConfigurableResource
 from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from dagster._core.execution.context.init import InitResourceContext
@@ -45,6 +45,7 @@ def key_from_str(key_str):
     return result
 
 
+@public
 @beta
 class SSHResource(ConfigurableResource):
     """A Dagster resource for establishing SSH connections and performing remote file operations.

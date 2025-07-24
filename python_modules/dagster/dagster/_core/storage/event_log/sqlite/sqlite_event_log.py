@@ -66,6 +66,10 @@ if TYPE_CHECKING:
 INDEX_SHARD_NAME = "index"
 
 
+from dagster._annotations import public
+
+
+@public
 class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
     """SQLite-backed event log storage.
 

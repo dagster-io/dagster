@@ -60,6 +60,7 @@ def _dbt_packages_has_dagster_dbt(packages_file: Path) -> bool:
     return any(package.get("git") == DAGSTER_GITHUB_REPO_DBT_PACKAGE for package in packages)
 
 
+@public
 class DbtCliResource(ConfigurableResource):
     """A resource used to execute dbt CLI commands.
 

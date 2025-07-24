@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from typing import Callable, Optional, Union, cast
 
 from dagster import AssetsDefinition, AssetSpec, Definitions
-from dagster._annotations import beta
+from dagster._annotations import beta, public
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.assets.definition.asset_spec import map_asset_specs
 from dagster._core.definitions.definitions_load_context import StateBackedDefinitionsLoader
@@ -75,6 +75,7 @@ class AirflowInstanceDefsLoader(StateBackedDefinitionsLoader[SerializedAirflowDe
         )
 
 
+@public
 @beta
 def build_defs_from_airflow_instance(
     *,

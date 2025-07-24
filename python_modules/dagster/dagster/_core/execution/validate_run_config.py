@@ -2,11 +2,13 @@ from collections.abc import Mapping
 from typing import Any, Optional, Union
 
 import dagster._check as check
+from dagster._annotations import public
 from dagster._core.definitions import JobDefinition
 from dagster._core.definitions.run_config import RunConfig, convert_config_input
 from dagster._core.system_config.objects import ResolvedRunConfig
 
 
+@public
 def validate_run_config(
     job_def: JobDefinition,
     run_config: Optional[Union[Mapping[str, Any], RunConfig]] = None,

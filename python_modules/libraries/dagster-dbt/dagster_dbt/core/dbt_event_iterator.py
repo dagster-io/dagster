@@ -189,6 +189,7 @@ def _fetch_row_count_metadata(
         return None
 
 
+@public
 class DbtEventIterator(Iterator[T]):
     """A wrapper around an iterator of dbt events which contains additional methods for
     post-processing the events, such as fetching row counts for materialized tables.

@@ -1,6 +1,7 @@
 from typing import TYPE_CHECKING, Callable, Optional, Type, TypeVar, Union, overload
 
 import dagster._check as check
+from dagster._annotations import public
 from dagster._core.types.dagster_type import (
     PythonObjectDagsterType,
     make_python_type_usable_as_dagster_type,
@@ -12,6 +13,7 @@ if TYPE_CHECKING:
 T_Type = TypeVar("T_Type", bound=Type[object])
 
 
+@public
 @overload
 def usable_as_dagster_type(
     name: Optional[str] = ...,

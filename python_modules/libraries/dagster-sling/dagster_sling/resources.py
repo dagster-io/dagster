@@ -114,6 +114,7 @@ class SlingConnectionResource(PermissiveConfig):
     )
 
 
+@public
 class SlingResource(ConfigurableResource):
     """Resource for interacting with the Sling package. This resource can be used to run Sling replications.
 

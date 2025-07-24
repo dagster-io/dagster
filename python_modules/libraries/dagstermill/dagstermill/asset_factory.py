@@ -70,6 +70,10 @@ def _make_dagstermill_asset_compute_fn(
     return _t_fn
 
 
+from dagster._annotations import public
+
+
+@public
 @beta
 @beta_param(param="resource_defs")
 def define_dagstermill_asset(

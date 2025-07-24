@@ -340,6 +340,7 @@ def _build_gitlab_url(url: str, branch: str) -> str:
     return f"{url}/-/tree/{branch}"
 
 
+@public
 @beta
 def link_code_references_to_git(
     assets_defs: Sequence[
@@ -402,6 +403,7 @@ def link_code_references_to_git(
     ]
 
 
+@public
 @beta
 def with_source_code_references(
     assets_defs: Sequence[

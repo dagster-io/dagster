@@ -3,6 +3,7 @@ from typing import Optional
 
 import dagster._check as check
 from dagster import InputContext, MetadataValue, OutputContext, TableColumn, TableSchema
+from dagster._annotations import public
 from dagster._core.definitions.metadata import RawMetadataValue
 from dagster._core.storage.db_io_manager import DbTypeHandler, TableSlice
 from dagster_snowflake import SnowflakeIOManager, build_snowflake_io_manager
@@ -34,6 +35,7 @@ def _get_snowflake_options(config, table_slice: TableSlice) -> Mapping[str, str]
     return conf
 
 
+@public
 class SnowflakePySparkTypeHandler(DbTypeHandler[DataFrame]):
     """Plugin for the Snowflake I/O Manager that can store and load PySpark DataFrames as Snowflake tables.
 

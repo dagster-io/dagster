@@ -186,6 +186,10 @@ def normalize_group_name(group_name: Optional[str]) -> str:
     return group_name or DEFAULT_GROUP_NAME
 
 
+from dagster._annotations import public
+
+
+@public
 def config_from_files(config_files: Sequence[str]) -> Mapping[str, Any]:
     """Constructs run config from YAML files.
 
@@ -224,6 +228,7 @@ def config_from_files(config_files: Sequence[str]) -> Mapping[str, Any]:
     return check.is_dict(cast("dict[str, object]", run_config), key_type=str)
 
 
+@public
 def config_from_yaml_strings(yaml_strings: Sequence[str]) -> Mapping[str, Any]:
     """Static constructor for run configs from YAML strings.
 
@@ -249,6 +254,7 @@ def config_from_yaml_strings(yaml_strings: Sequence[str]) -> Mapping[str, Any]:
     return check.is_dict(cast("dict[str, object]", run_config), key_type=str)
 
 
+@public
 def config_from_pkg_resources(pkg_resource_defs: Sequence[tuple[str, str]]) -> Mapping[str, Any]:
     """Load a run config from a package resource, using :py:func:`pkg_resources.resource_string`.
 

@@ -15,7 +15,7 @@ from dagster import (
     StringSource,
     op,
 )
-from dagster._annotations import beta
+from dagster._annotations import beta, public
 from dagster._core.errors import DagsterExecutionInterruptedError
 from dagster._utils.merger import merge_dicts
 
@@ -135,6 +135,7 @@ K8S_JOB_OP_CONFIG = merge_dicts(
 )
 
 
+@public
 @beta
 def execute_k8s_job(
     context: OpExecutionContext,

@@ -25,6 +25,7 @@ if TYPE_CHECKING:
     from mypy_boto3_glue.type_defs import GetJobRunResponseTypeDef, StartJobRunRequestTypeDef
 
 
+@public
 class PipesGlueClient(PipesClient, TreatAsResourceParam):
     """A pipes client for invoking AWS Glue jobs.
 

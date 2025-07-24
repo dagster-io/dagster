@@ -34,6 +34,10 @@ FRESHNESS_SENSOR_DESCRIPTION = """
     """
 
 
+from dagster._annotations import public
+
+
+@public
 @beta
 def build_sensor_for_freshness_checks(
     *,

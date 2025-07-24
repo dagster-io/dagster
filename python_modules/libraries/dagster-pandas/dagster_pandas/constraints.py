@@ -10,7 +10,7 @@ from dagster import (
     TypeCheck,
     _check as check,
 )
-from dagster._annotations import beta
+from dagster._annotations import beta, public
 from pandas import DataFrame
 
 CONSTRAINT_METADATA_KEY: Final = "constraint_metadata"
@@ -294,6 +294,7 @@ class DataFrameConstraint(Constraint):
         raise NotImplementedError()
 
 
+@public
 @beta
 class StrictColumnsConstraint(DataFrameConstraint):
     """A dataframe constraint that validates column existence and ordering.
@@ -334,6 +335,7 @@ class StrictColumnsConstraint(DataFrameConstraint):
                 )
 
 
+@public
 @beta
 class RowCountConstraint(DataFrameConstraint):
     """A dataframe constraint that validates the expected count of rows.

@@ -2,6 +2,7 @@ import re
 from enum import Enum as PyEnum
 
 from dagster import Enum, EnumValue
+from dagster._annotations import public
 from dagster._config import ConfigScalar, ConfigScalarKind, PostProcessingError
 from google.cloud.bigquery.job import (
     CreateDisposition,
@@ -151,5 +152,6 @@ Table = _Table()
 Dataset = _Dataset()
 
 
+@public
 class BigQueryError(Exception):
     pass

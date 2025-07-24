@@ -7,6 +7,7 @@ from contextlib import contextmanager
 from typing import Optional
 
 import dagster._check as check
+from dagster._annotations import public
 from dagster._core.pipes.client import PipesContextInjector, PipesParams
 from dagster_pipes import PipesContextData
 from google.cloud.storage import Client as GCSClient
@@ -14,6 +15,7 @@ from google.cloud.storage import Client as GCSClient
 _CONTEXT_FILENAME = "context.json"
 
 
+@public
 class PipesGCSContextInjector(PipesContextInjector):
     """A context injector that injects context by writing to a temporary GCS location.
 

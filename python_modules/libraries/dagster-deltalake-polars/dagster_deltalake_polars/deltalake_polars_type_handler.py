@@ -5,6 +5,7 @@ import polars as pl
 import pyarrow as pa
 import pyarrow.dataset as ds
 from dagster import InputContext
+from dagster._annotations import public
 from dagster._core.storage.db_io_manager import DbTypeHandler, TableSlice
 from dagster_deltalake.handler import (
     DeltalakeBaseArrowTypeHandler,
@@ -16,6 +17,7 @@ from dagster_deltalake.io_manager import DeltaLakeIOManager, TableConnection
 PolarsTypes = Union[pl.DataFrame, pl.LazyFrame]
 
 
+@public
 class DeltaLakePolarsTypeHandler(DeltalakeBaseArrowTypeHandler[PolarsTypes]):
     def from_arrow(
         self,

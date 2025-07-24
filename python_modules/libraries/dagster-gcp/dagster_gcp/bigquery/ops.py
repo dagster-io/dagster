@@ -8,6 +8,7 @@ from dagster import (
     _check as check,
     op,
 )
+from dagster._annotations import public
 from dagster._core.storage.tags import COMPUTE_KIND_TAG
 from dagster_pandas import DataFrame
 from google.cloud.bigquery.encryption_configuration import EncryptionConfiguration
@@ -40,6 +41,7 @@ def _preprocess_config(cfg):
     return cfg
 
 
+@public
 def bq_op_for_queries(sql_queries):
     """Executes BigQuery SQL queries.
 
@@ -92,6 +94,7 @@ BIGQUERY_LOAD_CONFIG = define_bigquery_load_config()
     config_schema=BIGQUERY_LOAD_CONFIG,
     required_resource_keys={"bigquery"},
 )
+@public
 def import_gcs_paths_to_bq(context, paths):
     return _execute_load_in_source(context, paths, BigQueryLoadSource.GCS)
 
@@ -102,6 +105,7 @@ def import_gcs_paths_to_bq(context, paths):
     config_schema=BIGQUERY_LOAD_CONFIG,
     required_resource_keys={"bigquery"},
 )
+@public
 def import_df_to_bq(context, df):
     return _execute_load_in_source(context, df, BigQueryLoadSource.DataFrame)
 
@@ -112,6 +116,7 @@ def import_df_to_bq(context, df):
     config_schema=BIGQUERY_LOAD_CONFIG,
     required_resource_keys={"bigquery"},
 )
+@public
 def import_file_to_bq(context, path):
     return _execute_load_in_source(context, path, BigQueryLoadSource.File)
 
@@ -149,6 +154,7 @@ def _execute_load_in_source(context, source, source_name):
     config_schema=define_bigquery_create_dataset_config(),
     required_resource_keys={"bigquery"},
 )
+@public
 def bq_create_dataset(context):
     """BigQuery Create Dataset.
 
@@ -166,6 +172,7 @@ def bq_create_dataset(context):
     config_schema=define_bigquery_delete_dataset_config(),
     required_resource_keys={"bigquery"},
 )
+@public
 def bq_delete_dataset(context):
     """BigQuery Delete Dataset.
 

@@ -41,6 +41,7 @@ def _is_mapped_asset_spec(asset: AssetSpec) -> bool:
     )
 
 
+@public
 @beta
 @record
 class AirflowDefinitionsData:

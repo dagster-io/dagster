@@ -67,6 +67,7 @@ class LookerInstanceData:
         )
 
 
+@public
 @record
 class RequestStartPdtBuild:
     """A request to start a PDT build. See https://developers.looker.com/api/explorer/4.0/types/DerivedTable/RequestStartPdtBuild?sdk=py
@@ -89,6 +90,7 @@ class RequestStartPdtBuild:
     source: Optional[str] = None
 
 
+@public
 class LookerStructureType(Enum):
     VIEW = "view"
     EXPLORE = "explore"
@@ -101,6 +103,7 @@ class LookmlView:
     sql_table_name: Optional[str]
 
 
+@public
 @record
 class LookerStructureData:
     structure_type: LookerStructureType
@@ -130,6 +133,7 @@ class LookerApiTranslatorStructureData:
         return self.structure_data.base_url
 
 
+@public
 class DagsterLookerApiTranslator:
     @deprecated(
         breaking_version="1.10",

@@ -47,6 +47,10 @@ from dagster._utils import PrintFn
 T_NamedTuple = TypeVar("T_NamedTuple", bound=NamedTuple)
 
 
+from dagster._annotations import public
+
+
+@public
 class SqlScheduleStorage(ScheduleStorage):
     """Base class for SQL backed schedule storage."""
 

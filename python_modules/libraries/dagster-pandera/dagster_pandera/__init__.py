@@ -21,6 +21,7 @@ import pandera as pa
 # Currently assume pandas support (prefer pandera.pandas, fallback to main pandera for old versions)
 # TODO: pending alternative dataframe support
 import pandera.pandas as pa_pd
+from dagster._annotations import public
 
 # Try polars support
 try:
@@ -90,6 +91,7 @@ DagsterLibraryRegistry.register("dagster-pandera", __version__)
 # ########################
 
 
+@public
 @beta
 def pandera_schema_to_dagster_type(
     schema: Union[DagsterPanderaSchema, DagsterPanderaSchemaModel],

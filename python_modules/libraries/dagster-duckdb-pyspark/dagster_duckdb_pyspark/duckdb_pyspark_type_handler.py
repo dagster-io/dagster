@@ -5,6 +5,7 @@ import pyarrow as pa
 import pyspark
 import pyspark.sql
 from dagster import InputContext, MetadataValue, OutputContext, TableColumn, TableSchema
+from dagster._annotations import public
 from dagster._core.storage.db_io_manager import DbTypeHandler, TableSlice
 from dagster_duckdb.io_manager import DuckDbClient, DuckDBIOManager, build_duckdb_io_manager
 from pyspark.sql import SparkSession
@@ -18,6 +19,7 @@ def pyspark_df_to_arrow_table(df: pyspark.sql.DataFrame) -> pa.Table:
     return pa.Table.from_batches(df._collect_as_arrow())  # noqa: SLF001
 
 
+@public
 class DuckDBPySparkTypeHandler(DbTypeHandler[pyspark.sql.DataFrame]):
     """Stores PySpark DataFrames in DuckDB.
 

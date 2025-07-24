@@ -14,6 +14,7 @@ import boto3
 import dagster._check as check
 from botocore.exceptions import ClientError
 from dagster import DagsterInvariantViolationError
+from dagster._annotations import public
 from dagster._core.pipes.client import PipesLaunchedData, PipesMessageReader, PipesParams
 from dagster._core.pipes.context import PipesMessageHandler
 from dagster._core.pipes.utils import (
@@ -97,6 +98,7 @@ class PipesS3LogReader(PipesChunkedLogReader):
         return text[current_position:]
 
 
+@public
 class PipesS3MessageReader(PipesBlobStoreMessageReader):
     """Message reader that reads messages by periodically reading message chunks from a specified S3
     bucket.
@@ -341,6 +343,7 @@ class PipesCloudWatchLogReader(PipesLogReader):
         return self.thread is not None and self.thread.is_alive()
 
 
+@public
 class PipesCloudWatchMessageReader(PipesThreadedMessageReader):
     """Message reader that consumes AWS CloudWatch logs to read pipes messages."""
 

@@ -46,6 +46,7 @@ class InstigatorType(Enum):
     AUTO_MATERIALIZE = "AUTO_MATERIALIZE"
 
 
+@public
 @whitelist_for_serdes
 class SkipReason(NamedTuple("_SkipReason", [("skip_message", PublicAttr[Optional[str]])])):
     """Represents a skipped evaluation, where no runs are requested. May contain a message to indicate

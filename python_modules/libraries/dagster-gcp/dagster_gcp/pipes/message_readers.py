@@ -8,6 +8,7 @@ from contextlib import contextmanager
 from typing import IO, Callable, Optional
 
 import dagster._check as check
+from dagster._annotations import public
 from dagster._core.pipes.client import PipesParams
 from dagster._core.pipes.utils import (
     PipesBlobStoreMessageReader,
@@ -82,6 +83,7 @@ class PipesGCSLogReader(PipesChunkedLogReader):
         return text[current_position:]
 
 
+@public
 class PipesGCSMessageReader(PipesBlobStoreMessageReader):
     """Message reader that reads messages by periodically reading message chunks from a specified GCS
     bucket.

@@ -14,6 +14,7 @@ from dagster._core.log_manager import (
 )
 from dagster._core.utils import coerce_valid_log_level
 from dagster._serdes import pack_value
+from dagster._symbol_annotations.public import public
 from dagster._utils.log import create_console_logger
 
 if TYPE_CHECKING:
@@ -21,6 +22,7 @@ if TYPE_CHECKING:
     from dagster._core.instance import DagsterInstance
 
 
+@public
 @logger(
     Field(
         {
@@ -71,6 +73,7 @@ class JsonLogFormatter(logging.Formatter):
         return seven.json.dumps(dict_to_dump)
 
 
+@public
 @logger(
     Field(
         {

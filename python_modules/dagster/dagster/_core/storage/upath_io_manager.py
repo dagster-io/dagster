@@ -19,6 +19,10 @@ if TYPE_CHECKING:
     from upath import UPath
 
 
+from dagster._annotations import public
+
+
+@public
 class UPathIOManager(IOManager):
     """Abstract IOManager base class compatible with local and cloud storage via `universal-pathlib` and `fsspec`.
 

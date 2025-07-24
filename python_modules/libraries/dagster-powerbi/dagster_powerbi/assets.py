@@ -4,7 +4,7 @@ from dagster import (
     _check as check,
     multi_asset,
 )
-from dagster._annotations import beta
+from dagster._annotations import beta, public
 from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
 from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
@@ -15,6 +15,7 @@ if TYPE_CHECKING:
     from dagster_powerbi.resource import PowerBIWorkspace
 
 
+@public
 @beta
 def build_semantic_model_refresh_asset_definition(
     resource_key: str, spec: AssetSpec

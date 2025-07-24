@@ -160,6 +160,7 @@ class DailyPartitionsDefinition(TimeWindowPartitionsDefinition):
         )
 
 
+@public
 class WeeklyPartitionsDefinition(TimeWindowPartitionsDefinition):
     """Defines a set of weekly partitions.
 

@@ -3,11 +3,13 @@ from typing import Any, Callable, Optional
 from dagster import AssetsDefinition, multi_asset
 from dagster._annotations import beta
 from dagster._core.errors import DagsterInvariantViolationError
+from dagster._symbol_annotations.public import public
 
 from dagster_airbyte.resources import AirbyteCloudWorkspace
 from dagster_airbyte.translator import AirbyteMetadataSet, DagsterAirbyteTranslator
 
 
+@public
 @beta
 def airbyte_assets(
     *,

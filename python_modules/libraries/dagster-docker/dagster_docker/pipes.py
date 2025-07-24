@@ -8,6 +8,7 @@ from dagster import (
     OpExecutionContext,
     _check as check,
 )
+from dagster._annotations import public
 from dagster._core.definitions.resource_annotation import TreatAsResourceParam
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster._core.pipes.client import (
@@ -25,6 +26,7 @@ from dagster._core.pipes.utils import (
 from dagster_pipes import DagsterPipesError, PipesDefaultMessageWriter, PipesExtras, PipesParams
 
 
+@public
 class PipesDockerLogsMessageReader(PipesMessageReader):
     @contextmanager
     def read_messages(
@@ -55,6 +57,7 @@ class PipesDockerLogsMessageReader(PipesMessageReader):
         return "Attempted to read messages by extracting them from docker logs directly."
 
 
+@public
 class PipesDockerClient(PipesClient, TreatAsResourceParam):
     """A pipes client that runs external processes in docker containers.
 

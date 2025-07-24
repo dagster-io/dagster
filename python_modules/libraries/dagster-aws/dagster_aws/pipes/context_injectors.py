@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 
 import boto3
 import dagster._check as check
+from dagster._annotations import public
 from dagster._core.pipes.client import PipesContextInjector, PipesParams
 from dagster._core.pipes.utils import PipesEnvContextInjector
 
@@ -17,6 +18,7 @@ if TYPE_CHECKING:
 _CONTEXT_FILENAME = "context.json"
 
 
+@public
 class PipesS3ContextInjector(PipesContextInjector):
     """A context injector that injects context by writing to a temporary S3 location.
 
@@ -51,6 +53,7 @@ class PipesS3ContextInjector(PipesContextInjector):
         )
 
 
+@public
 class PipesLambdaEventContextInjector(PipesEnvContextInjector):
     """Injects context via AWS Lambda event input.
     Should be paired with :py:class`~dagster_pipes.PipesMappingParamsLoader` on the Lambda side.

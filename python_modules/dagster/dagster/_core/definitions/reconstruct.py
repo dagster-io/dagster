@@ -445,6 +445,7 @@ def reconstructable(target: Callable[..., "JobDefinition"]) -> ReconstructableJo
     return bootstrap_standalone_recon_job(pointer)
 
 
+@public
 def build_reconstructable_job(
     reconstructor_module_name: str,
     reconstructor_function_name: str,

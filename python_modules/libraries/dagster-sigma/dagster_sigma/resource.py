@@ -77,6 +77,7 @@ def validate_folder_path_input(folder_input: Optional[Sequence[Sequence[str]]], 
             )
 
 
+@public
 @record_custom
 class SigmaFilter(IHaveNew):
     """Filters the set of Sigma objects to fetch.
@@ -113,6 +114,7 @@ class SigmaFilter(IHaveNew):
         )
 
 
+@public
 class SigmaBaseUrl(str, Enum):
     """Enumeration of Sigma API base URLs for different cloud providers.
 
@@ -127,6 +129,7 @@ class SigmaBaseUrl(str, Enum):
     GCP = "https://api.sigmacomputing.com"
 
 
+@public
 class SigmaOrganization(ConfigurableResource):
     """Represents a workspace in Sigma and provides utilities
     to interact with the Sigma API.
@@ -720,6 +723,7 @@ class SigmaOrganization(ConfigurableResource):
         )
 
 
+@public
 @beta
 def load_sigma_asset_specs(
     organization: SigmaOrganization,

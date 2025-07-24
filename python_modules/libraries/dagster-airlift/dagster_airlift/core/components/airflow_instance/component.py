@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from typing import Annotated, Any, Literal, Optional, Union
 
 from dagster import Component, ComponentLoadContext, Resolvable
+from dagster._annotations import public
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.assets.definition.asset_spec import (
     SYSTEM_METADATA_KEY_AUTO_CREATED_STUB_ASSET,
@@ -189,6 +190,7 @@ ResolvedAirflowAuthBackend: TypeAlias = Annotated[
 ]
 
 
+@public
 @scaffold_with(AirflowInstanceScaffolder)
 @dataclass
 class AirflowInstanceComponent(Component, Resolvable):

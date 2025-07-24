@@ -25,6 +25,10 @@ if TYPE_CHECKING:
     from dagster._core.definitions.events import AssetMaterialization
 
 
+from dagster._annotations import public
+
+
+@public
 @beta
 def build_column_schema_change_checks(
     *,

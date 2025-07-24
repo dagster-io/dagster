@@ -38,6 +38,7 @@ logger = get_dagster_logger("dagster_looker")
 LOOKER_RECONSTRUCTION_METADATA_KEY_PREFIX = "dagster-looker/reconstruction_metadata"
 
 
+@public
 @record
 class LookerFilter:
     """Filters the set of Looker objects to fetch.
@@ -54,6 +55,7 @@ class LookerFilter:
     only_fetch_explores_used_in_dashboards: bool = False
 
 
+@public
 @beta
 class LookerResource(ConfigurableResource):
     """Represents a connection to a Looker instance and provides methods
@@ -122,6 +124,7 @@ class LookerResource(ConfigurableResource):
         )
 
 
+@public
 @beta
 def load_looker_asset_specs(
     looker_resource: LookerResource,

@@ -15,6 +15,7 @@ from dagster import (
     StringSource,
     _check as check,
 )
+from dagster._annotations import public
 from dagster._core.storage.cloud_storage_compute_log_manager import (
     PollingComputeLogSubscriptionManager,
     TruncatingCloudStorageComputeLogManager,
@@ -35,6 +36,7 @@ from typing_extensions import Self
 from dagster_azure.blob.utils import create_blob_client, generate_blob_sas
 
 
+@public
 class AzureBlobComputeLogManager(TruncatingCloudStorageComputeLogManager, ConfigurableClass):
     """Logs op compute function stdout and stderr to Azure Blob Storage.
 

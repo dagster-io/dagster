@@ -23,6 +23,7 @@ from typing import TYPE_CHECKING, Any, Callable, Optional
 from dagster_shared.error import DagsterError
 
 import dagster._check as check
+from dagster._symbol_annotations.public import public
 from dagster._utils.interrupts import raise_interrupts_as
 
 if TYPE_CHECKING:
@@ -243,6 +244,7 @@ def raise_execution_interrupts() -> Iterator[None]:
 
 
 @contextmanager
+@public
 def user_code_error_boundary(
     error_cls: type["DagsterUserCodeExecutionError"],
     msg_fn: Callable[[], str],

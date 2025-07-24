@@ -2,6 +2,7 @@ from collections.abc import Mapping, Sequence
 from typing import Any, Optional
 
 from dagster import InputContext, MetadataValue, OutputContext, TableColumn, TableSchema
+from dagster._annotations import public
 from dagster._core.definitions.metadata import RawMetadataValue
 from dagster._core.storage.db_io_manager import DbTypeHandler, TableSlice
 from dagster_gcp import BigQueryIOManager, build_bigquery_io_manager
@@ -28,6 +29,7 @@ def _get_bigquery_read_options(table_slice: TableSlice) -> Mapping[str, str]:
     return conf
 
 
+@public
 class BigQueryPySparkTypeHandler(DbTypeHandler[DataFrame]):
     """Plugin for the BigQuery I/O Manager that can store and load PySpark DataFrames as BigQuery tables.
 

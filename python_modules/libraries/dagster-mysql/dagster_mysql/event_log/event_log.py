@@ -5,6 +5,7 @@ import sqlalchemy as db
 import sqlalchemy.dialects as db_dialects
 import sqlalchemy.exc as db_exc
 import sqlalchemy.pool as db_pool
+from dagster._annotations import public
 from dagster._config.config_schema import UserConfigSchema
 from dagster._core.event_api import EventHandlerFn
 from dagster._core.events.log import EventLogEntry
@@ -37,6 +38,7 @@ from dagster_mysql.utils import (
 )
 
 
+@public
 class MySQLEventLogStorage(SqlEventLogStorage, ConfigurableClass):
     """MySQL-backed event log storage.
 

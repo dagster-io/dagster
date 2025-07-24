@@ -4,6 +4,7 @@ from contextlib import contextmanager
 from typing import Optional
 
 import dagster._check as check
+from dagster._annotations import public
 from dagster._core.storage.file_manager import (
     FileHandle,
     FileManager,
@@ -13,6 +14,7 @@ from dagster._core.storage.file_manager import (
 from google.cloud import storage
 
 
+@public
 class GCSFileHandle(FileHandle):
     """A reference to a file on GCS."""
 

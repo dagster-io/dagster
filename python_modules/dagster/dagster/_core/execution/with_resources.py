@@ -12,6 +12,10 @@ from dagster._utils.merger import merge_dicts
 T = TypeVar("T", bound=ResourceAddable)
 
 
+from dagster._annotations import public
+
+
+@public
 def with_resources(
     definitions: Iterable[T],
     resource_defs: Mapping[str, object],

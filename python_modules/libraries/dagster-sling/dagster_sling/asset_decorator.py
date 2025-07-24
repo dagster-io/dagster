@@ -9,6 +9,7 @@ from dagster import (
     _check as check,
     multi_asset,
 )
+from dagster._annotations import public
 from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
 from dagster._utils.merger import deep_merge_dicts
 from dagster._utils.security import non_secure_md5_hash_str
@@ -52,6 +53,7 @@ def streams_with_default_dagster_meta(
             yield {"name": name, "config": config}
 
 
+@public
 def sling_assets(
     *,
     replication_config: SlingReplicationParam,

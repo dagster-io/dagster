@@ -4,7 +4,7 @@ from typing import Any, Optional
 import docker
 import docker.errors
 from dagster import Field, In, Nothing, OpExecutionContext, StringSource, op
-from dagster._annotations import beta
+from dagster._annotations import beta, public
 from dagster._core.utils import parse_env_var
 from dagster_shared.serdes.utils import hash_str
 
@@ -73,6 +73,7 @@ def _create_container(
     )
 
 
+@public
 @beta
 def execute_docker_container(
     context: OpExecutionContext,

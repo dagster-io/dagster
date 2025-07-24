@@ -8,6 +8,7 @@ from dagster._utils.names import clean_name_lower_with_dots
 from dagster._utils.warnings import supersession_warning
 
 
+@public
 @dataclass
 class DagsterSlingTranslator:
     target_prefix: str = "target"

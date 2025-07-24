@@ -109,6 +109,7 @@ def to_seconds(dt: datetime) -> float:
         "https://docs.dagster.io/guides/build/external-resources/defining-resources"
     ),
 )
+@public
 class GithubClient:
     """A client for interacting with the GitHub API.
 

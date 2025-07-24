@@ -3,6 +3,7 @@ import uuid
 from contextlib import contextmanager
 
 import dagster._check as check
+from dagster._annotations import public
 from dagster._core.storage.file_manager import (
     FileHandle,
     FileManager,
@@ -11,6 +12,7 @@ from dagster._core.storage.file_manager import (
 )
 
 
+@public
 class S3FileHandle(FileHandle):
     """A reference to a file on S3."""
 

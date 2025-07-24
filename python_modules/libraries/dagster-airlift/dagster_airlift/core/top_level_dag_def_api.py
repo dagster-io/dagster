@@ -7,7 +7,7 @@ from dagster import (
     Definitions,
     _check as check,
 )
-from dagster._annotations import beta
+from dagster._annotations import beta, public
 
 from dagster_airlift.core.utils import metadata_for_dag_mapping, metadata_for_task_mapping
 
@@ -58,6 +58,7 @@ def assets_def_with_af_metadata(
     )
 
 
+@public
 @beta
 def assets_with_task_mappings(
     dag_id: str, task_mappings: Mapping[str, Iterable[Union[AssetsDefinition, AssetSpec]]]
@@ -105,6 +106,7 @@ def assets_with_task_mappings(
     return assets_list
 
 
+@public
 @beta
 def assets_with_dag_mappings(
     dag_mappings: Mapping[str, Iterable[Union[AssetsDefinition, AssetSpec]]],

@@ -1,4 +1,5 @@
 from dagster import OpExecutionContext, op
+from dagster._annotations import public
 from wandb.sdk.launch import launch, launch_add
 
 from dagster_wandb.launch.configs import launch_agent_config, launch_config
@@ -24,6 +25,7 @@ def raise_on_invalid_config(context: OpExecutionContext):
     required_resource_keys={"wandb_resource", "wandb_config"},
     config_schema=launch_agent_config(),
 )
+@public
 def run_launch_agent(context: OpExecutionContext):
     """It starts a Launch Agent and runs it as a long running process until stopped manually.
 
@@ -89,6 +91,7 @@ def run_launch_agent(context: OpExecutionContext):
     },
     config_schema=launch_config(),
 )
+@public
 def run_launch_job(context: OpExecutionContext):
     """Executes a Launch job.
 

@@ -2,6 +2,7 @@ import itertools
 import os
 
 import dagster._check as check
+from dagster._annotations import public
 
 from dagster_spark.types import SparkOpError
 
@@ -44,6 +45,7 @@ def format_for_cli(spark_conf_list):
     )
 
 
+@public
 def construct_spark_shell_command(
     application_jar,
     main_class,

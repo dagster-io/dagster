@@ -7,6 +7,7 @@ from typing import Any, Optional
 
 import requests
 from dagster import Failure, Field, StringSource, __version__, get_dagster_logger, resource
+from dagster._annotations import public
 from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from requests.auth import HTTPBasicAuth
 from requests.exceptions import RequestException
@@ -21,6 +22,7 @@ DEFAULT_POLL_INTERVAL = 10
 SYNC_RUN_STATUSES = {"completed", "failed", "queued", "skipped", "working"}
 
 
+@public
 class CensusResource:
     """This class exposes methods on top of the Census REST API."""
 

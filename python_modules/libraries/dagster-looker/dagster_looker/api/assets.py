@@ -2,7 +2,7 @@ from collections.abc import Sequence
 from typing import TYPE_CHECKING, Optional, Union, cast
 
 from dagster import AssetExecutionContext, AssetsDefinition, Failure, multi_asset
-from dagster._annotations import beta
+from dagster._annotations import beta, public
 from dagster._utils.warnings import deprecation_warning
 
 from dagster_looker.api.dagster_looker_api_translator import (
@@ -18,6 +18,7 @@ if TYPE_CHECKING:
     from dagster_looker.api.resource import LookerResource
 
 
+@public
 @beta
 def build_looker_pdt_assets_definitions(
     resource_key: str,

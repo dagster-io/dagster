@@ -181,6 +181,7 @@ class Output(Generic[T], EventWithMetadata):
         )
 
 
+@public
 class DynamicOutput(Generic[T]):
     """Variant of :py:class:`Output <dagster.Output>` used to support
     dynamic mapping & collect. Each ``DynamicOutput`` produced by an op represents
@@ -644,6 +645,7 @@ class ExpectationResult(
     storage_field_names={"metadata": "metadata_entries"},
     field_serializers={"metadata": MetadataFieldSerializer},
 )
+@public
 class TypeCheck(
     NamedTuple(
         "_TypeCheck",

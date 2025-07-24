@@ -86,6 +86,10 @@ class SnapshotType(Enum):
     EXECUTION_PLAN = "EXECUTION_PLAN"
 
 
+from dagster._annotations import public
+
+
+@public
 class SqlRunStorage(RunStorage):
     """Base class for SQL based run storages."""
 

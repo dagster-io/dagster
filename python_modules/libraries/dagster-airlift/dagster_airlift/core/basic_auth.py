@@ -1,9 +1,10 @@
 import requests
-from dagster._annotations import beta
+from dagster._annotations import beta, public
 
 from dagster_airlift.core.airflow_instance import AirflowAuthBackend
 
 
+@public
 @beta
 class AirflowBasicAuthBackend(AirflowAuthBackend):
     """A :py:class:`dagster_airlift.core.AirflowAuthBackend` that authenticates using basic auth.

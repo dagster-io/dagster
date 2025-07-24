@@ -6,6 +6,7 @@ from dagster import (
     AssetSelection,
     _check as check,
 )
+from dagster._annotations import public
 from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.assets.graph.base_asset_graph import BaseAssetGraph
 from dagster._record import record
@@ -23,6 +24,7 @@ from dagster_dbt.dbt_manifest import DbtManifestParam, validate_manifest
 from dagster_dbt.utils import ASSET_RESOURCE_TYPES, select_unique_ids_from_manifest
 
 
+@public
 @record
 class DbtManifestAssetSelection(AssetSelection):
     """Defines a selection of assets from a dbt manifest wrapper and a dbt selection string.

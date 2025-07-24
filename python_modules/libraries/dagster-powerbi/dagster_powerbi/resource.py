@@ -52,6 +52,7 @@ class PowerBICredentials(ConfigurableResource, abc.ABC):
     def api_token(self) -> str: ...
 
 
+@public
 class PowerBIToken(ConfigurableResource):
     """Authenticates with PowerBI directly using an API access token."""
 
@@ -61,6 +62,7 @@ class PowerBIToken(ConfigurableResource):
 MICROSOFT_LOGIN_URL = "https://login.microsoftonline.com/{tenant_id}/oauth2/token"
 
 
+@public
 class PowerBIServicePrincipal(ConfigurableResource):
     """Authenticates with PowerBI using a service principal."""
 
@@ -99,6 +101,7 @@ class PowerBIServicePrincipal(ConfigurableResource):
         return self._api_token
 
 
+@public
 class PowerBIWorkspace(ConfigurableResource):
     """Represents a workspace in PowerBI and provides utilities
     to interact with the PowerBI API.
@@ -389,6 +392,7 @@ class PowerBIWorkspace(ConfigurableResource):
         )
 
 
+@public
 @beta
 def load_powerbi_asset_specs(
     workspace: PowerBIWorkspace,

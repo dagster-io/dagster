@@ -2,7 +2,7 @@ from collections.abc import Iterable, Sequence
 from typing import Any, Union
 
 from dagster import _check as check
-from dagster._annotations import beta
+from dagster._annotations import beta, public
 from dagster._core.definitions.asset_checks.asset_check_factories.utils import (
     DEADLINE_CRON_PARAM_KEY,
     DEFAULT_FRESHNESS_SEVERITY,
@@ -42,6 +42,7 @@ from dagster._utils.schedules import (
 )
 
 
+@public
 @beta
 def build_time_partition_freshness_checks(
     *,

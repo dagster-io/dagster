@@ -17,6 +17,7 @@ from dagster_shared.utils.config import (
 )
 from typing_extensions import Self, TypeVar
 
+from dagster._annotations import public
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._utils.cached_method import cached_method
 from dagster.components.component.component import Component
@@ -86,6 +87,7 @@ class ComponentTreeException(Exception):
 @record(
     checked=False,  # cant handle ModuleType
 )
+@public
 class ComponentTree:
     """The hierarchy of Component instances defined in the project.
 

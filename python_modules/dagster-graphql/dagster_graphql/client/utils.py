@@ -1,6 +1,8 @@
 from enum import Enum
 from typing import Any, NamedTuple, Optional
 
+from dagster._annotations import public
+
 
 class DagsterGraphQLClientError(Exception):
     def __init__(self, *args, body=None):
@@ -8,6 +10,7 @@ class DagsterGraphQLClientError(Exception):
         self.body = body
 
 
+@public
 class ReloadRepositoryLocationStatus(Enum):
     """This enum describes the status of a GraphQL mutation to reload a Dagster repository location.
 
@@ -25,6 +28,7 @@ class ShutdownRepositoryLocationStatus(Enum):
     FAILURE = "FAILURE"
 
 
+@public
 class ReloadRepositoryLocationInfo(NamedTuple):
     """This class gives information about the result of reloading
     a Dagster repository location with a GraphQL mutation.
@@ -75,6 +79,7 @@ class JobInfo(NamedTuple):
         ]
 
 
+@public
 class InvalidOutputErrorInfo(NamedTuple):
     """This class gives information about an InvalidOutputError from submitting a pipeline for execution
     from GraphQL.

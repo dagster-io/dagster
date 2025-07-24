@@ -76,6 +76,10 @@ class UnresolvedPartitionedAssetScheduleDefinition:
         return copy(self, metadata=metadata)
 
 
+from dagster._annotations import public
+
+
+@public
 def build_schedule_from_partitioned_job(
     job: Union[JobDefinition, UnresolvedAssetJobDefinition],
     description: Optional[str] = None,

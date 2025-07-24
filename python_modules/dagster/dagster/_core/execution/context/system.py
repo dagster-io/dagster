@@ -407,6 +407,7 @@ def is_step_in_asset_graph_layer(step: ExecutionStep, job_def: JobDefinition) ->
     return False
 
 
+@public
 class StepExecutionContext(PlanExecutionContext, IStepContext):
     """Context for the execution of a step. Users should not instantiate this class directly.
 

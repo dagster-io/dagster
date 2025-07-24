@@ -11,6 +11,7 @@ from dagster import (
     StringSource,
     _check as check,
 )
+from dagster._annotations import public
 from dagster._config.config_type import Noneable
 from dagster._core.storage.cloud_storage_compute_log_manager import (
     PollingComputeLogSubscriptionManager,
@@ -27,6 +28,7 @@ from google.cloud import storage
 from typing_extensions import Self
 
 
+@public
 class GCSComputeLogManager(TruncatingCloudStorageComputeLogManager, ConfigurableClass):
     """Logs op compute function stdout and stderr to GCS.
 

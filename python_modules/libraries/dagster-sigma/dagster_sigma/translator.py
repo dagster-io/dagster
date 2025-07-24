@@ -1,7 +1,7 @@
 from typing import AbstractSet, Any, Optional, Union  # noqa: UP035
 
 from dagster import AssetKey, AssetSpec, MetadataValue, TableSchema
-from dagster._annotations import deprecated
+from dagster._annotations import deprecated, public
 from dagster._core.definitions.metadata.metadata_set import NamespacedMetadataSet, TableMetadataSet
 from dagster._core.definitions.metadata.metadata_value import (
     JsonMetadataValue,
@@ -42,6 +42,7 @@ class SigmaWorkbookMetadataSet(NamespacedMetadataSet):
         return "dagster_sigma"
 
 
+@public
 @whitelist_for_serdes
 @record
 class SigmaWorkbook:
@@ -59,6 +60,7 @@ class SigmaWorkbook:
     materialization_schedules: Optional[list[dict[str, Any]]]
 
 
+@public
 @whitelist_for_serdes
 @record
 class SigmaDataset:
@@ -155,6 +157,7 @@ class SigmaOrganizationData:
         return {_inode_from_url(table.properties["urlId"]): table for table in self.tables}
 
 
+@public
 class DagsterSigmaTranslator:
     """Translator class which converts raw response data from the Sigma API into AssetSpecs.
     Subclass this class to provide custom translation logic.

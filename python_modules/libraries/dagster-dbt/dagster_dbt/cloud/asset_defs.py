@@ -18,7 +18,7 @@ from dagster import (
     multi_asset,
     with_resources,
 )
-from dagster._annotations import beta, beta_param
+from dagster._annotations import beta, beta_param, public
 from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
 from dagster._core.definitions.assets.definition.cacheable_assets_definition import (
     AssetsDefinitionCacheableData,
@@ -536,6 +536,7 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
         return _assets
 
 
+@public
 @beta
 @beta_param(param="partitions_def")
 @beta_param(param="partition_key_to_vars_fn")

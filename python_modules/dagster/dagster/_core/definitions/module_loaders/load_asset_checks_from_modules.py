@@ -5,6 +5,7 @@ from types import ModuleType
 from typing import Optional
 
 import dagster._check as check
+from dagster._annotations import public
 from dagster._core.definitions.asset_checks.asset_checks_definition import AssetChecksDefinition
 from dagster._core.definitions.asset_key import (
     CoercibleToAssetKeyPrefix,
@@ -15,6 +16,7 @@ from dagster._core.definitions.module_loaders.object_list import ModuleScopedDag
 from dagster._core.definitions.module_loaders.utils import find_modules_in_package
 
 
+@public
 def load_asset_checks_from_modules(
     modules: Iterable[ModuleType],
     asset_key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
@@ -50,6 +52,10 @@ def load_asset_checks_from_modules(
     )
 
 
+from dagster._annotations import public
+
+
+@public
 def load_asset_checks_from_current_module(
     asset_key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
 ) -> Sequence[AssetChecksDefinition]:
@@ -77,6 +83,7 @@ def load_asset_checks_from_current_module(
     return load_asset_checks_from_modules([module], asset_key_prefix=asset_key_prefix)
 
 
+@public
 def load_asset_checks_from_package_module(
     package_module: ModuleType, asset_key_prefix: Optional[CoercibleToAssetKeyPrefix] = None
 ) -> Sequence[AssetChecksDefinition]:
@@ -102,6 +109,7 @@ def load_asset_checks_from_package_module(
     )
 
 
+@public
 def load_asset_checks_from_package_name(
     package_name: str, asset_key_prefix: Optional[CoercibleToAssetKeyPrefix] = None
 ) -> Sequence[AssetChecksDefinition]:

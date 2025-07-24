@@ -1,7 +1,7 @@
 from collections.abc import Sequence
 from typing import TypedDict, Union, cast
 
-from dagster._annotations import beta
+from dagster._annotations import beta, public
 from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
 from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
 from dagster._core.definitions.definitions_class import Definitions
@@ -14,6 +14,7 @@ from dagster_airlift.core.load_defs import replace_assets_in_defs
 from dagster_airlift.core.top_level_dag_def_api import spec_with_metadata
 
 
+@public
 @beta
 class TaskHandleDict(TypedDict):
     dag_id: str

@@ -7,11 +7,13 @@ Spark deployment contexts and configuration.
 """
 
 from dagster import Field, StringSource
+from dagster._annotations import public
 
 from dagster_spark.configs_spark import spark_config
 from dagster_spark.types import SparkDeployMode
 
 
+@public
 def define_spark_config():
     """Spark configuration.
 

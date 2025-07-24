@@ -68,6 +68,7 @@ def _get_relation_from_adapter(adapter: BaseAdapter, relation_key: RelationKey) 
     )
 
 
+@public
 @dataclass
 class DbtCliInvocation:
     """The representation of an invoked dbt command.

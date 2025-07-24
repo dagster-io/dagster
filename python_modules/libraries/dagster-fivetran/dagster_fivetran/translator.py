@@ -4,6 +4,7 @@ from enum import Enum
 from typing import Any, Callable, NamedTuple, Optional
 
 from dagster import Failure
+from dagster._annotations import public
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
 from dagster._core.definitions.metadata.metadata_set import NamespacedMetadataSet
@@ -306,6 +307,7 @@ class FivetranMetadataSet(NamespacedMetadataSet):
         return "dagster-fivetran"
 
 
+@public
 class DagsterFivetranTranslator:
     """Translator class which converts a `FivetranConnectorTableProps` object into AssetSpecs.
     Subclass this class to implement custom logic on how to translate Fivetran content into asset spec.

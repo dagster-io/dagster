@@ -3,6 +3,7 @@ from dagster import (
     _check as check,
     op,
 )
+from dagster._annotations import public
 from dagster._core.definitions.input import In
 from dagster._core.storage.tags import COMPUTE_KIND_TAG
 
@@ -41,6 +42,7 @@ def snowflake_solid_for_query(sql, parameters=None):
     return _core_create_snowflake_command(op, "solid", sql, parameters)
 
 
+@public
 def snowflake_op_for_query(sql, parameters=None):
     """This function is an op factory that constructs an op to execute a snowflake query.
 

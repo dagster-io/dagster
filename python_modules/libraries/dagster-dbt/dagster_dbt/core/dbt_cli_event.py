@@ -206,6 +206,7 @@ def _build_column_lineage_metadata(
         )
 
 
+@public
 @dataclass
 class DbtCliEventMessage:
     """The representation of a dbt CLI event.

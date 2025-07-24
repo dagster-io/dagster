@@ -21,6 +21,7 @@ class DltResourceTranslatorData:
         return self.pipeline.destination if self.pipeline else None
 
 
+@public
 @dataclass
 class DagsterDltTranslator:
     def get_asset_spec(self, data: DltResourceTranslatorData) -> AssetSpec:

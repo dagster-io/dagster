@@ -40,6 +40,8 @@ from typing import (  # noqa: UP035
     get_args,
 )
 
+from dagster._annotations import public
+
 if TYPE_CHECKING:
     from unittest.mock import MagicMock
 
@@ -236,6 +238,7 @@ def to_assey_key_path(asset_key: str) -> list[str]:
 _T = TypeVar("_T")
 
 
+@public
 class DagsterPipesError(Exception):
     pass
 
@@ -504,6 +507,7 @@ def _pipes_exc_from_tb(tb: TracebackException):
 # ########################
 
 
+@public
 class PipesContextLoader(ABC):
     @abstractmethod
     @contextmanager
@@ -553,6 +557,7 @@ class PipesLogWriter(ABC, Generic[T_LogChannel]):
         return {}
 
 
+@public
 class PipesMessageWriter(ABC, Generic[T_MessageChannel]):
     @abstractmethod
     @contextmanager
@@ -592,6 +597,7 @@ class PipesMessageWriter(ABC, Generic[T_MessageChannel]):
         return {}
 
 
+@public
 class PipesMessageWriterChannel(ABC):
     """Object that writes messages back to the Dagster orchestration process."""
 
@@ -604,6 +610,7 @@ class PipesMessageWriterChannel(ABC):
         """
 
 
+@public
 class PipesParamsLoader(ABC):
     """Object that loads params passed from the orchestration process by the context injector and
     message reader. These params are used to respectively bootstrap the
@@ -630,6 +637,7 @@ T_BlobStoreMessageWriterChannel = TypeVar(
 )
 
 
+@public
 class PipesBlobStoreMessageWriter(PipesMessageWriter[T_BlobStoreMessageWriterChannel]):
     INCLUDE_STDIO_IN_MESSAGES_KEY: str = "include_stdio_in_messages"
 
@@ -669,6 +677,7 @@ class PipesBlobStoreMessageWriter(PipesMessageWriter[T_BlobStoreMessageWriterCha
     def make_channel(self, params: PipesParams) -> T_BlobStoreMessageWriterChannel: ...
 
 
+@public
 class PipesBlobStoreMessageWriterChannel(PipesMessageWriterChannel):
     """Message writer channel that periodically uploads message chunks to some blob store endpoint."""
 
@@ -719,6 +728,7 @@ class PipesBlobStoreMessageWriterChannel(PipesMessageWriterChannel):
             time.sleep(1)
 
 
+@public
 class PipesBufferedFilesystemMessageWriterChannel(PipesBlobStoreMessageWriterChannel):
     """Message writer channel that periodically writes message chunks to an endpoint mounted on the filesystem.
 
@@ -741,6 +751,7 @@ class PipesBufferedFilesystemMessageWriterChannel(PipesBlobStoreMessageWriterCha
 # ########################
 
 
+@public
 class PipesDefaultContextLoader(PipesContextLoader):
     """Context loader that loads context data from either a file or directly from the provided params.
 
@@ -923,6 +934,7 @@ class PipesStdioLogWriterChannel(PipesLogWriterChannel):
         pass
 
 
+@public
 class PipesDefaultMessageWriter(PipesMessageWriter):
     """Message writer that writes messages to either a file or the stdout or stderr stream.
 
@@ -988,6 +1000,7 @@ class PipesDefaultMessageWriter(PipesMessageWriter):
             )
 
 
+@public
 class PipesFileMessageWriterChannel(PipesMessageWriterChannel):
     """Message writer channel that writes one message per line to a file."""
 
@@ -999,6 +1012,7 @@ class PipesFileMessageWriterChannel(PipesMessageWriterChannel):
             f.write(json.dumps(message) + "\n")
 
 
+@public
 class PipesStreamMessageWriterChannel(PipesMessageWriterChannel):
     """Message writer channel that writes one message per line to a `TextIO` stream."""
 
@@ -1079,6 +1093,7 @@ DAGSTER_PIPES_CONTEXT_ENV_VAR = "DAGSTER_PIPES_CONTEXT"
 DAGSTER_PIPES_MESSAGES_ENV_VAR = "DAGSTER_PIPES_MESSAGES"
 
 
+@public
 class PipesMappingParamsLoader(PipesParamsLoader):
     """Params loader that extracts params from a Mapping provided at init time."""
 
@@ -1098,6 +1113,7 @@ class PipesMappingParamsLoader(PipesParamsLoader):
         return decode_param(raw_value)
 
 
+@public
 class PipesEnvVarParamsLoader(PipesMappingParamsLoader):
     """Params loader that extracts params from environment variables."""
 
@@ -1125,6 +1141,7 @@ DAGSTER_PIPES_CLI_PARSER.add_argument(
 )
 
 
+@public
 class PipesCliArgsParamsLoader(PipesParamsLoader):
     """Params loader that extracts params from known CLI arguments."""
 
@@ -1191,6 +1208,7 @@ class PipesStdioFileLogWriter(PipesStdioLogWriter):
 # ########################
 
 
+@public
 class PipesS3ContextLoader(PipesContextLoader):
     """Context loader that reads context from a JSON file on S3.
 
@@ -1209,6 +1227,7 @@ class PipesS3ContextLoader(PipesContextLoader):
         yield json.loads(obj["Body"].read().decode("utf-8"))
 
 
+@public
 class PipesS3MessageWriter(PipesBlobStoreMessageWriter):
     """Message writer that writes messages by periodically writing message chunks to an S3 bucket.
 
@@ -1238,6 +1257,7 @@ class PipesS3MessageWriter(PipesBlobStoreMessageWriter):
         )
 
 
+@public
 class PipesS3MessageWriterChannel(PipesBlobStoreMessageWriterChannel):
     """Message writer channel for writing messages by periodically writing message chunks to an S3 bucket.
 
@@ -1271,6 +1291,7 @@ class PipesS3MessageWriterChannel(PipesBlobStoreMessageWriterChannel):
 # ########################
 
 
+@public
 class PipesGCSContextLoader(PipesContextLoader):
     """Context loader that reads context from a JSON file on GCS.
 
@@ -1289,6 +1310,7 @@ class PipesGCSContextLoader(PipesContextLoader):
         yield json.loads(obj.decode("utf-8"))
 
 
+@public
 class PipesGCSMessageWriter(PipesBlobStoreMessageWriter):
     """Message writer that writes messages by periodically writing message chunks to a GCS bucket.
 
@@ -1315,6 +1337,7 @@ class PipesGCSMessageWriter(PipesBlobStoreMessageWriter):
         )
 
 
+@public
 class PipesGCSMessageWriterChannel(PipesBlobStoreMessageWriterChannel):
     """Message writer channel for writing messages by periodically writing message chunks to a GCS bucket.
 
@@ -1345,6 +1368,7 @@ class PipesGCSMessageWriterChannel(PipesBlobStoreMessageWriterChannel):
 # ########################
 
 
+@public
 class PipesDbfsContextLoader(PipesContextLoader):
     """Context loader that reads context from a JSON file on DBFS."""
 
@@ -1356,6 +1380,7 @@ class PipesDbfsContextLoader(PipesContextLoader):
             yield json.load(f)
 
 
+@public
 class PipesDbfsMessageWriter(PipesBlobStoreMessageWriter):
     """Message writer that writes messages by periodically writing message chunks to a directory on DBFS."""
 
@@ -1417,6 +1442,7 @@ class PipesDbfsMessageWriter(PipesBlobStoreMessageWriter):
 # ########################
 
 
+@public
 def open_dagster_pipes(
     *,
     context_loader: Optional[PipesContextLoader] = None,
@@ -1459,6 +1485,7 @@ def open_dagster_pipes(
     return context
 
 
+@public
 class PipesContext:
     """The context for a Dagster Pipes process.
 

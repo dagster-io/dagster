@@ -9,6 +9,7 @@ from dagster import (
     _check as check,
     resource,
 )
+from dagster._annotations import public
 from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from google.cloud import bigquery
 from pydantic import Field
@@ -105,6 +106,7 @@ def bigquery_resource(context):
         yield client
 
 
+@public
 def fetch_last_updated_timestamps(
     *,
     client: bigquery.Client,

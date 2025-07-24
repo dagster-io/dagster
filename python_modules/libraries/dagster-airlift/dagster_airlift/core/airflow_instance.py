@@ -33,6 +33,7 @@ DEFAULT_DAG_LIST_LIMIT = 100
 SLEEP_SECONDS = 1
 
 
+@public
 @beta
 class AirflowAuthBackend(ABC):
     """An abstract class that represents an authentication backend for an Airflow instance.
@@ -53,6 +54,7 @@ class AirflowAuthBackend(ABC):
         raise NotImplementedError("This method must be implemented by subclasses.")
 
 
+@public
 @beta
 class AirflowInstance:
     """A class that represents a running Airflow Instance and provides methods for interacting with its REST API.

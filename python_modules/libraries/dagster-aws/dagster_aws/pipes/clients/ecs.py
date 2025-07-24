@@ -30,6 +30,7 @@ if TYPE_CHECKING:
     )
 
 
+@public
 class PipesECSClient(PipesClient, TreatAsResourceParam):
     """A pipes client for running AWS ECS tasks.
 

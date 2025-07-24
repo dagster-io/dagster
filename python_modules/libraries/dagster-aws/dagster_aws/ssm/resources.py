@@ -7,7 +7,7 @@ from dagster import (
     Field as LegacyDagsterField,
     resource,
 )
-from dagster._annotations import beta
+from dagster._annotations import beta, public
 from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from dagster._core.test_utils import environ
 from dagster._utils.merger import merge_dicts
@@ -135,6 +135,7 @@ def ssm_resource(context) -> "botocore.client.ssm":  # pyright: ignore (reportAt
     return SSMResource.from_resource_context(context).get_client()
 
 
+@public
 @beta
 class ParameterStoreTag(Config):
     key: str = Field(description="Tag key to search for.")

@@ -20,7 +20,7 @@ from dagster import (
     SourceAsset,
     _check as check,
 )
-from dagster._annotations import beta, deprecated_param
+from dagster._annotations import beta, deprecated_param, public
 from dagster._core.definitions import AssetsDefinition, multi_asset
 from dagster._core.definitions.assets.definition.cacheable_assets_definition import (
     AssetsDefinitionCacheableData,
@@ -251,6 +251,7 @@ def _build_airbyte_assets_from_metadata(
     return _assets
 
 
+@public
 @deprecated_param(param="legacy_freshness_policy", breaking_version="1.12.0")
 def build_airbyte_assets(
     connection_id: str,
@@ -901,6 +902,7 @@ class AirbyteYAMLCacheableAssetsDefinition(AirbyteCoreCacheableAssetsDefinition)
         return output_connections
 
 
+@public
 def load_assets_from_airbyte_instance(
     airbyte: Union[AirbyteResource, ResourceDefinition],
     workspace_id: Optional[str] = None,
@@ -1037,6 +1039,7 @@ def load_assets_from_airbyte_instance(
 # -----------------------
 
 
+@public
 @beta
 def build_airbyte_assets_definitions(
     *,

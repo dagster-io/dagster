@@ -172,6 +172,7 @@ def build_deps_for_looker_view(
     )
 
 
+@public
 @beta
 class DagsterLookerLkmlTranslator:
     """Holds a set of methods that derive Dagster asset definition metadata given a representation

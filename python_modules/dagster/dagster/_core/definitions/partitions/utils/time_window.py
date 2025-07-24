@@ -35,6 +35,10 @@ class TimeWindowCursor:
         return deserialize_value(base64.b64decode(cursor).decode("utf-8"), cls)
 
 
+from dagster._annotations import public
+
+
+@public
 class TimeWindow(NamedTuple):
     """An interval that is closed at the start and open at the end.
 

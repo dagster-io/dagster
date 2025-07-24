@@ -7,6 +7,7 @@ from dagster import (
     _check as check,
     op,
 )
+from dagster._annotations import public
 from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.storage.tags import COMPUTE_KIND_TAG
 from databricks.sdk.service import jobs
@@ -21,6 +22,7 @@ if TYPE_CHECKING:
     from dagster_databricks.databricks import DatabricksClient
 
 
+@public
 def create_databricks_run_now_op(
     databricks_job_id: int,
     databricks_job_configuration: Optional[dict] = None,
@@ -134,6 +136,7 @@ def create_databricks_run_now_op(
     return _databricks_run_now_op
 
 
+@public
 def create_databricks_submit_run_op(
     databricks_job_configuration: dict,
     poll_interval_seconds: float = DEFAULT_POLL_INTERVAL_SECONDS,

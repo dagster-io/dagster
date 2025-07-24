@@ -12,7 +12,7 @@ from dagster import (
     _check as check,
     dagster_type_loader,
 )
-from dagster._annotations import beta
+from dagster._annotations import beta, public
 from dagster._config import Selector
 from dagster._core.definitions.metadata import normalize_metadata
 from dagster._utils import dict_without_keys
@@ -135,6 +135,7 @@ def create_table_schema_metadata_from_dataframe(
     )
 
 
+@public
 @beta
 def create_dagster_pandas_dataframe_type(
     name,

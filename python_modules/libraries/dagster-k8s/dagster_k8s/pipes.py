@@ -71,6 +71,7 @@ DEFAULT_CONSUME_POD_LOGS_RETRIES = 5
 DEFAULT_DAGSTER_PIPES_K8S_CONSUME_POD_LOGS_REQUEST_TIMEOUT = 3600
 
 
+@public
 class PipesK8sPodLogsMessageReader(PipesMessageReader):
     """Message reader that reads messages from kubernetes pod logs."""
 
@@ -341,6 +342,7 @@ class PipesK8sPodLogsMessageReader(PipesMessageReader):
         return "Attempted to read messages by extracting them from kubernetes pod logs directly."
 
 
+@public
 class PipesK8sClient(PipesClient, TreatAsResourceParam):
     """A pipes client for launching kubernetes pods.
 
