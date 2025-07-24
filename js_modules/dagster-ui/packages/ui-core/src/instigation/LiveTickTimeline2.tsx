@@ -79,6 +79,7 @@ export const LiveTickTimeline = <T extends HistoryTickFragment | AssetDaemonTick
 
   const ticksToDisplay = useMemo(() => {
     return ticksReversed.map((tick, i) => {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const startX = getX(1000 * tick.timestamp!, viewport.width, minX, fullRange);
       const endTimestamp = isStuckStartedTick(tick, ticksReversed.length - i - 1)
         ? tick.timestamp
@@ -208,6 +209,7 @@ const TickTooltip = memo(
       }
     }, [tick, tickResultType]);
 
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const startTime = dayjs(1000 * tick.timestamp!);
     const endTime = dayjs(tick.endTimestamp ? 1000 * tick.endTimestamp : Date.now());
     const elapsedTime = startTime.to(endTime, true);

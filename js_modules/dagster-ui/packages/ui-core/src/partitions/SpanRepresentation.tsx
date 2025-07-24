@@ -23,6 +23,7 @@ export function stringForSpan(
   {startIdx, endIdx}: {startIdx: number; endIdx: number},
   all: string[],
 ) {
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   return startIdx === endIdx ? all[startIdx]! : `[${all[startIdx]!}...${all[endIdx]!}]`;
 }
 
@@ -36,7 +37,9 @@ export function allPartitionsRange({
   partitionKeys: string[];
 }): PartitionDimensionSelectionRange {
   return {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     start: {idx: 0, key: partitionKeys[0]!},
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     end: {idx: partitionKeys.length - 1, key: partitionKeys[partitionKeys.length - 1]!},
   };
 }
@@ -59,7 +62,9 @@ export function spanTextToSelectionsOrError(
     const rangeMatch = /^\[(.*)\.\.\.(.*)\]$/g.exec(term);
     if (rangeMatch) {
       const [, start, end] = rangeMatch;
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const allStartIdx = allPartitionKeys.indexOf(start!);
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const allEndIdx = allPartitionKeys.indexOf(end!);
       if (allStartIdx === -1 || allEndIdx === -1) {
         return new Error(`Could not find partitions for provided range: ${start}...${end}`);
@@ -68,7 +73,9 @@ export function spanTextToSelectionsOrError(
         allPartitionKeys.slice(allStartIdx, allEndIdx + 1),
       );
       result.selectedRanges.push({
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         start: {idx: allStartIdx, key: allPartitionKeys[allStartIdx]!},
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         end: {idx: allEndIdx, key: allPartitionKeys[allEndIdx]!},
       });
     } else if (term.includes('*')) {
@@ -78,7 +85,9 @@ export function spanTextToSelectionsOrError(
       const close = (end: number) => {
         result.selectedKeys = result.selectedKeys.concat(allPartitionKeys.slice(start, end + 1));
         result.selectedRanges.push({
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           start: {idx: start, key: allPartitionKeys[start]!},
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           end: {idx: end, key: allPartitionKeys[end]!},
         });
         start = -1;
@@ -86,6 +95,7 @@ export function spanTextToSelectionsOrError(
 
       // todo bengotow: Was this change correct??
       allPartitionKeys.forEach((key, idx) => {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         const match = key.startsWith(prefix!) && key.endsWith(suffix!);
         if (match && start === -1) {
           start = idx;

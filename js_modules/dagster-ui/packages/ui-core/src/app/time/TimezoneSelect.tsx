@@ -18,6 +18,7 @@ const extractOffset = (targetDate: Date, timeZone: string) => {
     timeZoneName: 'longOffset',
   });
   const [_, gmtOffset] = formatted.split(', ');
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const stripped = gmtOffset!.replace(/^GMT/, '').replace(/:/, '');
 
   // Already GMT.

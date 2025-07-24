@@ -95,6 +95,7 @@ class InvalidAttributeVisitor
 
     while (low <= high) {
       const mid = Math.floor((low + high) / 2);
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const error = this.sortedLintErrors[mid]!;
 
       if (error.to < from) {
@@ -113,6 +114,7 @@ class InvalidAttributeVisitor
     const attributeName = ctx.IDENTIFIER().text;
     if (!this.supportedAttributes.includes(attributeName)) {
       const from = ctx.start.startIndex;
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const to = ctx.stop!.stopIndex + 1;
 
       if (!this.hasOverlap(from, to)) {

@@ -162,13 +162,17 @@ const secondaryDataToSearchResults = (
     key: node.key,
     label: displayNameForAssetKey(node.key),
     description: `Asset in ${buildRepoPathForHuman(
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       node.definition!.repository.name,
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       node.definition!.repository.location.name,
     )}`,
     node,
     href: assetDetailsPathForKey(node.key),
     type: SearchResultType.Asset,
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     tags: node.definition!.tags,
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     kinds: node.definition!.kinds,
   }));
 

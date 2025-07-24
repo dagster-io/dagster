@@ -77,6 +77,7 @@ export const BackfillAssetPartitionsTable = ({
         {items.map(({index, key, size, start}) => (
           <VirtualizedBackfillPartitionsRow
             key={key}
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             asset={assetStatuses[index]!}
             backfill={backfill}
             height={size}

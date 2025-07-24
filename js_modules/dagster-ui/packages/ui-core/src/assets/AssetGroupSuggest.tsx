@@ -64,6 +64,7 @@ export const AssetGroupSuggest = ({
         ) : undefined,
       }}
       inputValueRenderer={() =>
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         value.length === 1 ? value[0]!.groupName : value.length > 1 ? `${value.length} groups` : ``
       }
       itemPredicate={(query, partition) =>

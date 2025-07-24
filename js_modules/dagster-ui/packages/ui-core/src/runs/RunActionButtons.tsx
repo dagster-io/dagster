@@ -155,6 +155,7 @@ export const RunActionButtons = (props: RunActionButtonsProps) => {
         <StepSelectionDescription selection={currentRunSelection} />
       </div>
     ),
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     onClick: () => reexecuteWithSelection(currentRunSelection!),
   };
 

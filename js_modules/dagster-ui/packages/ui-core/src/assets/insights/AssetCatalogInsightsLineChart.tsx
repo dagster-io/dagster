@@ -59,13 +59,15 @@ const getDataset = (
   formatDatetime: (date: Date, options: Intl.DateTimeFormatOptions) => string,
 ): ChartData<'line', (number | null)[], string> => {
   const start = metrics.timestamps.length
-    ? formatDatetime(new Date(metrics.timestamps[0]! * 1000), {
+    ? // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      formatDatetime(new Date(metrics.timestamps[0]! * 1000), {
         month: 'short',
         day: 'numeric',
       })
     : '';
   const end = metrics.timestamps.length
-    ? formatDatetime(new Date(metrics.timestamps[metrics.timestamps.length - 1]! * 1000), {
+    ? // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      formatDatetime(new Date(metrics.timestamps[metrics.timestamps.length - 1]! * 1000), {
         month: 'short',
         day: 'numeric',
       })
@@ -128,9 +130,12 @@ export const AssetCatalogInsightsLineChart = React.memo(
       useCallback(
         ({context}: {context: Context}) => {
           const {tooltip} = context;
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           const currentPeriodDataPoint = tooltip.dataPoints[0]!;
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           const prevPeriodDataPoint = tooltip.dataPoints[1]!;
           const date = formatDatetime(
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             new Date(metrics.timestamps[currentPeriodDataPoint.dataIndex]! * 1000),
             {
               month: 'short',
@@ -286,6 +291,7 @@ export const AssetCatalogInsightsLineChart = React.memo(
             }
           }
 
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           const before = metrics.timestamps[index]!;
           const after = before - timeSliceSeconds;
 

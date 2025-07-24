@@ -72,12 +72,14 @@ export const flattenEvaluations = ({evaluationNodes, rootUniqueId, expandedRecor
     if (evaluation.childUniqueIds && expandedRecords.has(evaluation.uniqueId)) {
       const parentCounter = counter;
       evaluation.childUniqueIds.forEach((childId) => {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         const child = recordsById[childId]!;
         append(child, parentCounter, depth + 1);
       });
     }
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   append(recordsById[rootUniqueId]!, null, 0);
 
   return all;
@@ -255,6 +257,7 @@ export const defaultExpanded = ({
     }
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const rootEvaluation = recordsById[rootUniqueId]!;
   expand(rootEvaluation, rootEvaluation.entityKey);
 

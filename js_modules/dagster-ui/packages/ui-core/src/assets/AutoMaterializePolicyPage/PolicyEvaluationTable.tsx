@@ -228,6 +228,7 @@ const NewPolicyEvaluationTable = ({
                 onClick={(e) => {
                   e?.stopPropagation();
                   pushHistory({
+                    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                     assetKeyPath: assetKey!.path,
                     assetCheckName: checkName,
                     evaluationID: lastEvaluationForEntityKey.evaluationId,
@@ -308,6 +309,7 @@ const NewPolicyEvaluationTable = ({
                 </td>
               ) : (
                 <td>
+                  {/* eslint-disable-next-line @typescript-eslint/no-non-null-assertion */}
                   <PolicyEvaluationStatusTag status={status!} />
                 </td>
               )}

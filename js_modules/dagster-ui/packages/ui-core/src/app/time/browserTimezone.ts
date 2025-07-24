@@ -21,6 +21,7 @@ export const timezoneAbbreviation = memoize((timeZone: string) => {
     timeZoneName: 'short',
   });
   const [_, abbreviation] = dateString.split(', ');
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   return abbreviation!;
 });
 export const automaticLabel = memoize(() => `Automatic (${browserTimezoneAbbreviation()})`);

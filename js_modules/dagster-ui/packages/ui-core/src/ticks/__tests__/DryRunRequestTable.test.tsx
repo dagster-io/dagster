@@ -35,6 +35,7 @@ describe('RunRequestTableTest', () => {
     render(<TestComponent />);
 
     runRequests.forEach((req) => {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       expect(screen.getByTestId(req.runKey!)).toBeVisible();
     });
   });
@@ -42,6 +43,7 @@ describe('RunRequestTableTest', () => {
   it('renders preview button and opens dialog on click', async () => {
     render(<TestComponent />);
 
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const previewButton = screen.getByTestId(`preview-${runRequests[0]!.runKey || ''}`);
     expect(previewButton).toBeVisible();
     previewButton.click();
