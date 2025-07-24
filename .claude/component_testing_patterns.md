@@ -1,6 +1,6 @@
 # Component Testing Patterns
 
-This document provides comprehensive guidance for testing Dagster components (classes that extend `dagster.Component`). These patterns are based on analysis of existing component tests throughout the Dagster codebase.
+This document provides comprehensive guidance for testing Dagster component **classes** (classes that extend `dagster.Component`). This guidance is for testing the behavior of new component types you are developing, not for testing specific component instances within a Dagster project. These patterns are based on analysis of existing component tests throughout the Dagster codebase.
 
 ## Core Testing Infrastructure
 
@@ -24,7 +24,7 @@ The sandbox provides:
 ### DefsFolderSandbox Methods
 
 #### `scaffold_component()`
-Creates a component in the sandbox using the component's scaffolder:
+Creates a component instance in the sandbox using the component class's scaffolder:
 
 ```python
 defs_path = sandbox.scaffold_component(
@@ -36,7 +36,7 @@ defs_path = sandbox.scaffold_component(
 ```
 
 #### `load_component_and_build_defs()`
-Loads and instantiates a component from a scaffolded path:
+Loads and instantiates a component instance from a scaffolded path:
 
 ```python
 with sandbox.load_component_and_build_defs(defs_path=defs_path) as (component, defs):
@@ -45,7 +45,7 @@ with sandbox.load_component_and_build_defs(defs_path=defs_path) as (component, d
 ```
 
 #### `build_all_defs()`
-Builds definitions for all components in the sandbox (useful for multi-component tests):
+Builds definitions for all component instances in the sandbox (useful for multi-component tests):
 
 ```python
 with sandbox.build_all_defs() as defs:
@@ -55,9 +55,9 @@ with sandbox.build_all_defs() as defs:
 
 ## Common Testing Patterns
 
-### 1. Basic Component Scaffolding Test
+### 1. Basic Component Class Scaffolding Test
 
-Test that your component's scaffolder works correctly:
+Test that your component class's scaffolder works correctly:
 
 ```python
 def test_scaffold_component():
@@ -67,9 +67,9 @@ def test_scaffold_component():
         assert (defs_path / "expected_file.yaml").exists()  # Component-specific files
 ```
 
-### 2. Component Loading and Asset Generation
+### 2. Component Class Loading and Asset Generation
 
-Test that your component loads and generates expected assets:
+Test that your component class loads correctly and generates expected assets:
 
 ```python
 def test_basic_component_load():
@@ -95,9 +95,9 @@ def test_basic_component_load():
             assert defs.resolve_asset_graph().get_all_asset_keys() == expected_keys
 ```
 
-### 3. Parameterized Component Testing
+### 3. Parameterized Component Class Testing
 
-Use pytest parameterization to test different configurations:
+Use pytest parameterization to test different configurations of your component class:
 
 ```python
 @pytest.mark.parametrize(
