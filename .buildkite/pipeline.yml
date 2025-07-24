@@ -15,7 +15,7 @@ steps:
     command: |
       python -m venv venv
       source venv/bin/activate
-      pip install ruff
+      pip install ruff==0.11.5
       ruff check python_modules/dagster/dagster/_generate/templates/
     agents:
       queue: "default"
