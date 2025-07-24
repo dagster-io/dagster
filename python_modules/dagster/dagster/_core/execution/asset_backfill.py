@@ -1441,6 +1441,28 @@ def execute_asset_backfill_iteration_inner(
         )
 
 
+def _get_candidate_asset_graph_subset(
+    asset_backfill_data: AssetBackfillData,
+    asset_graph_view: AssetGraphView,
+):
+    instance_queryer = asset_graph_view.get_inner_queryer_for_back_compat()
+    asset_graph: RemoteWorkspaceAssetGraph = cast(
+        "RemoteWorkspaceAssetGraph", asset_graph_view.asset_graph
+    )
+    parent_materialized_asset_partitions = set().union(
+        *(
+            instance_queryer.asset_partitions_with_newly_updated_parents_and_new_cursor(
+                latest_storage_id=asset_backfill_data.latest_storage_id,
+                child_asset_key=asset_key,
+            )[0]
+            for asset_key in asset_backfill_data.target_subset.asset_keys
+        )
+    )
+    return AssetGraphSubset.from_asset_partition_set(
+        parent_materialized_asset_partitions, asset_graph
+    )
+
+
 def _execute_asset_backfill_iteration_inner(
     backfill_id: str,
     asset_backfill_data: AssetBackfillData,
@@ -1489,17 +1511,9 @@ def _execute_asset_backfill_iteration_inner(
             else "No relevant assets materialized since last tick."
         )
 
-        parent_materialized_asset_partitions = set().union(
-            *(
-                instance_queryer.asset_partitions_with_newly_updated_parents_and_new_cursor(
-                    latest_storage_id=asset_backfill_data.latest_storage_id,
-                    child_asset_key=asset_key,
-                )[0]
-                for asset_key in asset_backfill_data.target_subset.asset_keys
-            )
-        )
-        candidate_asset_graph_subset = AssetGraphSubset.from_asset_partition_set(
-            parent_materialized_asset_partitions, asset_graph
+        candidate_asset_graph_subset = _get_candidate_asset_graph_subset(
+            asset_backfill_data,
+            asset_graph_view,
         )
 
         failed_and_downstream_subset = _get_failed_and_downstream_asset_graph_subset(
