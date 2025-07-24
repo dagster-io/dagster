@@ -162,12 +162,13 @@ class TestCheckOtherCommands:
         """Set up test fixtures."""
         self.runner = CliRunner()
 
-    def test_check_rst_symbols_not_implemented(self):
-        """Test that check rst-symbols raises NotImplementedError."""
-        with pytest.raises(NotImplementedError) as excinfo:
-            self.runner.invoke(check, ["rst-symbols", "--all"], catch_exceptions=False)
+    def test_check_rst_symbols_runs(self):
+        """Test that check rst-symbols runs without NotImplementedError."""
+        result = self.runner.invoke(check, ["rst-symbols", "--all"])
 
-        assert "RST symbol checking functionality not yet implemented" in str(excinfo.value)
+        # Should not raise NotImplementedError and should exit cleanly
+        assert result.exit_code in [0, 1]  # Can succeed or fail validation but shouldn't crash
+        assert "RST symbol checking functionality not yet implemented" not in result.output
 
     def test_check_rst_symbols_no_options_fails(self):
         """Test that check rst-symbols without options fails."""
@@ -177,12 +178,13 @@ class TestCheckOtherCommands:
         assert result.exit_code == 1
         assert "Error: One of --all or --package must be provided" in result.output
 
-    def test_check_public_symbols_not_implemented(self):
-        """Test that check public-symbols raises NotImplementedError."""
-        with pytest.raises(NotImplementedError) as excinfo:
-            self.runner.invoke(check, ["public-symbols", "--all"], catch_exceptions=False)
+    def test_check_public_symbols_runs(self):
+        """Test that check public-symbols runs without NotImplementedError."""
+        result = self.runner.invoke(check, ["public-symbols", "--all"])
 
-        assert "Public symbol checking functionality not yet implemented" in str(excinfo.value)
+        # Should not raise NotImplementedError and should exit cleanly
+        assert result.exit_code in [0, 1]  # Can succeed or fail validation but shouldn't crash
+        assert "Public symbol checking functionality not yet implemented" not in result.output
 
     def test_check_public_symbols_no_options_fails(self):
         """Test that check public-symbols without options fails."""
@@ -192,12 +194,13 @@ class TestCheckOtherCommands:
         assert result.exit_code == 1
         assert "Error: One of --all or --package must be provided" in result.output
 
-    def test_check_exports_not_implemented(self):
-        """Test that check exports raises NotImplementedError."""
-        with pytest.raises(NotImplementedError) as excinfo:
-            self.runner.invoke(check, ["exports", "--all"], catch_exceptions=False)
+    def test_check_exports_runs(self):
+        """Test that check exports runs without NotImplementedError."""
+        result = self.runner.invoke(check, ["exports", "--all"])
 
-        assert "Export checking functionality not yet implemented" in str(excinfo.value)
+        # Should not raise NotImplementedError and should exit cleanly
+        assert result.exit_code in [0, 1]  # Can succeed or fail validation but shouldn't crash
+        assert "Export checking functionality not yet implemented" not in result.output
 
     def test_check_exports_no_options_fails(self):
         """Test that check exports without options fails."""

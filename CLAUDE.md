@@ -94,3 +94,4 @@ yarn build-api-docs          # Build API docs after .rst changes
 ## Project Compatibility
 
 - Code must be compatible with Python version 3.9 and later
+- For CLI output, use `click.echo()` instead of `print()` - this ensures proper output handling in CLI contexts and testing

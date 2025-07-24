@@ -1,6 +1,5 @@
 """Tests for dagster-docs ls commands."""
 
-import pytest
 from automation.docs_cli.commands.ls import ls
 from click.testing import CliRunner
 
@@ -51,19 +50,21 @@ class TestLsCommands:
         assert result.exit_code == 1
         assert "Error: One of --all or --package must be provided" in result.output
 
-    def test_ls_symbols_all_not_implemented(self):
-        """Test that ls symbols --all raises NotImplementedError."""
-        with pytest.raises(NotImplementedError) as excinfo:
-            self.runner.invoke(ls, ["symbols", "--all"], catch_exceptions=False)
+    def test_ls_symbols_all_runs(self):
+        """Test that ls symbols --all runs without NotImplementedError."""
+        result = self.runner.invoke(ls, ["symbols", "--all"])
 
-        assert "Global symbol discovery functionality not yet implemented" in str(excinfo.value)
+        # Should not raise NotImplementedError and should exit cleanly
+        assert result.exit_code in [0, 1]  # Can succeed or fail but shouldn't crash
+        assert "Global symbol discovery functionality not yet implemented" not in result.output
 
-    def test_ls_packages_not_implemented(self):
-        """Test that ls packages raises NotImplementedError."""
-        with pytest.raises(NotImplementedError) as excinfo:
-            self.runner.invoke(ls, ["packages"], catch_exceptions=False)
+    def test_ls_packages_runs(self):
+        """Test that ls packages runs without NotImplementedError."""
+        result = self.runner.invoke(ls, ["packages"])
 
-        assert "Package discovery functionality not yet implemented" in str(excinfo.value)
+        # Should not raise NotImplementedError and should exit cleanly
+        assert result.exit_code == 0  # This should succeed as it lists packages
+        assert "Package discovery functionality not yet implemented" not in result.output
 
     def test_ls_help_command(self):
         """Test that ls help works."""

@@ -9,6 +9,7 @@ import click
 from automation.docstring_lint.changed_validator import ValidationConfig, validate_changed_files
 from automation.docstring_lint.file_discovery import git_changed_files
 from automation.docstring_lint.path_converters import dagster_path_converter
+from automation.docstring_lint.public_api_validator import PublicApiValidator
 from automation.docstring_lint.validator import DocstringValidator, SymbolImporter
 
 
@@ -75,6 +76,22 @@ def _validate_package_symbols(validator: DocstringValidator, package: str) -> in
 
     click.echo(f"Summary: {total_errors} errors, {total_warnings} warnings")
     return 1 if total_errors > 0 else 0
+
+
+def _find_dagster_root() -> Optional[Path]:
+    """Find the dagster repository root directory.
+
+    Returns:
+        Path to dagster root, or None if not found
+    """
+    root_path = Path.cwd()
+    while not (root_path / "python_modules").exists() and root_path != root_path.parent:
+        root_path = root_path.parent
+
+    if not (root_path / "python_modules").exists():
+        return None
+
+    return root_path
 
 
 def _find_git_root() -> Optional[Path]:
@@ -203,11 +220,38 @@ def rst_symbols(check_all: bool, package: Optional[str]):
         click.echo("Error: One of --all or --package must be provided", err=True)
         sys.exit(1)
 
-    # This functionality is not implemented in docstring_linter yet
-    raise NotImplementedError(
-        "RST symbol checking functionality not yet implemented. "
-        "This will be implemented in a future PR."
-    )
+    dagster_root = _find_dagster_root()
+    if dagster_root is None:
+        click.echo("Error: Could not find dagster repository root", err=True)
+        sys.exit(1)
+
+    try:
+        validator = PublicApiValidator(dagster_root)
+
+        # Get RST symbols
+        rst_symbols = validator.find_rst_documented_symbols()
+
+        # Get public symbols
+        public_symbols = validator.find_public_symbols()
+
+        # Validate that RST symbols have @public decorators
+        issues = validator.validate_rst_has_public(rst_symbols, public_symbols)
+
+        if not issues:
+            click.echo("✓ All RST documented symbols have @public decorators")
+            sys.exit(0)
+
+        click.echo(f"Found {len(issues)} issues:")
+        for issue in issues:
+            click.echo(
+                f"  {issue.issue_type}: {issue.module_path}.{issue.symbol_name} - {issue.details}"
+            )
+
+        sys.exit(1)
+
+    except Exception as e:
+        click.echo(f"Error: {e}", err=True)
+        sys.exit(1)
 
 
 @check.command("public-symbols")
@@ -220,11 +264,38 @@ def public_symbols(check_all: bool, package: Optional[str]):
         click.echo("Error: One of --all or --package must be provided", err=True)
         sys.exit(1)
 
-    # This functionality is not implemented in docstring_linter yet
-    raise NotImplementedError(
-        "Public symbol checking functionality not yet implemented. "
-        "This will be implemented in a future PR."
-    )
+    dagster_root = _find_dagster_root()
+    if dagster_root is None:
+        click.echo("Error: Could not find dagster repository root", err=True)
+        sys.exit(1)
+
+    try:
+        validator = PublicApiValidator(dagster_root)
+
+        # Get public symbols
+        public_symbols = validator.find_public_symbols()
+
+        # Get RST symbols
+        rst_symbols = validator.find_rst_documented_symbols()
+
+        # Validate that @public symbols are documented in RST
+        issues = validator.validate_public_in_rst(public_symbols, rst_symbols)
+
+        if not issues:
+            click.echo("✓ All @public symbols are documented in RST and exported top-level")
+            sys.exit(0)
+
+        click.echo(f"Found {len(issues)} issues:")
+        for issue in issues:
+            click.echo(
+                f"  {issue.issue_type}: {issue.module_path}.{issue.symbol_name} - {issue.details}"
+            )
+
+        sys.exit(1)
+
+    except Exception as e:
+        click.echo(f"Error: {e}", err=True)
+        sys.exit(1)
 
 
 @check.command()
@@ -237,8 +308,38 @@ def exports(check_all: bool, package: Optional[str]):
         click.echo("Error: One of --all or --package must be provided", err=True)
         sys.exit(1)
 
-    # This functionality is not implemented in docstring_linter yet
-    raise NotImplementedError(
-        "Export checking functionality not yet implemented. "
-        "This will be implemented in a future PR."
-    )
+    dagster_root = _find_dagster_root()
+    if dagster_root is None:
+        click.echo("Error: Could not find dagster repository root", err=True)
+        sys.exit(1)
+
+    try:
+        validator = PublicApiValidator(dagster_root)
+
+        # Get public symbols
+        public_symbols = validator.find_public_symbols()
+
+        # Get RST symbols
+        rst_symbols = validator.find_rst_documented_symbols()
+
+        # Validate both directions - @public -> RST and RST -> @public
+        public_issues = validator.validate_public_in_rst(public_symbols, rst_symbols)
+        rst_issues = validator.validate_rst_has_public(rst_symbols, public_symbols)
+
+        all_issues = public_issues + rst_issues
+
+        if not all_issues:
+            click.echo("✓ All exports are properly documented and decorated")
+            sys.exit(0)
+
+        click.echo(f"Found {len(all_issues)} issues:")
+        for issue in all_issues:
+            click.echo(
+                f"  {issue.issue_type}: {issue.module_path}.{issue.symbol_name} - {issue.details}"
+            )
+
+        sys.exit(1)
+
+    except Exception as e:
+        click.echo(f"Error: {e}", err=True)
+        sys.exit(1)
