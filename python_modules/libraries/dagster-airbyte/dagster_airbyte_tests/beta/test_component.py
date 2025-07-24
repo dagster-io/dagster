@@ -48,12 +48,12 @@ def setup_airbyte_ready_project() -> Iterator[None]:
 
 @contextmanager
 def setup_airbyte_component(
-    component_body: dict[str, Any],
+    defs_yaml_contents: dict[str, Any],
 ) -> Iterator[tuple[AirbyteCloudWorkspaceComponent, Definitions]]:
     """Sets up a components project with an airbyte component based on provided params."""
     with create_defs_folder_sandbox() as sandbox:
         defs_path = sandbox.scaffold_component(
-            component_cls=AirbyteCloudWorkspaceComponent, component_body=component_body
+            component_cls=AirbyteCloudWorkspaceComponent, defs_yaml_contents=defs_yaml_contents
         )
         with sandbox.load_component_and_build_defs(defs_path=defs_path) as (
             component,
@@ -87,7 +87,7 @@ def test_basic_component_load(
             }
         ),
         setup_airbyte_component(
-            component_body=BASIC_AIRBYTE_COMPONENT_BODY,
+            defs_yaml_contents=BASIC_AIRBYTE_COMPONENT_BODY,
         ) as (
             component,
             defs,
@@ -128,7 +128,7 @@ def test_basic_component_filter(
             }
         ),
         setup_airbyte_component(
-            component_body=deep_merge_dicts(
+            defs_yaml_contents=deep_merge_dicts(
                 BASIC_AIRBYTE_COMPONENT_BODY,
                 {"attributes": {"connection_selector": connection_selector}},
             ),
@@ -189,7 +189,7 @@ class TestAirbyteTranslation(TestTranslation):
                 }
             ),
             setup_airbyte_component(
-                component_body=body,
+                defs_yaml_contents=body,
             ) as (
                 component,
                 defs,

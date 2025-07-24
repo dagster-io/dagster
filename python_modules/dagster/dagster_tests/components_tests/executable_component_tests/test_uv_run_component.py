@@ -28,7 +28,7 @@ def test_pipes_subprocess_script_hello_world() -> None:
     with create_defs_folder_sandbox() as sandbox:
         defs_path = sandbox.scaffold_component(
             component_cls=UvRunComponent,
-            component_body={
+            defs_yaml_contents={
                 "type": "dagster.UvRunComponent",
                 "attributes": {
                     "execution": {

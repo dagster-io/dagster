@@ -226,7 +226,7 @@ class DefsFolderSandbox:
         defs_path: Optional[Union[Path, str]] = None,
         scaffold_params: Optional[dict[str, Any]] = None,
         scaffold_format: ScaffoldFormatOptions = "yaml",
-        component_body: Optional[dict[str, Any]] = None,
+        defs_yaml_contents: Optional[dict[str, Any]] = None,
     ) -> Path:
         """Scaffolds a component into the defs folder.
 
@@ -235,7 +235,7 @@ class DefsFolderSandbox:
             defs_path: The path to the component. (defaults to a random name)
             scaffold_params: The parameters to pass to the scaffolder.
             scaffold_format: The format to use for scaffolding.
-            component_body: The body of the component to update the defs.yaml file with.
+            defs_yaml_contents: The body of the component to update the defs.yaml file with.
 
         Returns:
             The path to the component.
@@ -257,12 +257,12 @@ class DefsFolderSandbox:
             scaffold_format=scaffold_format,
             project_root=self.project_root,
         )
-        if component_body:
-            (defs_path / "defs.yaml").write_text(yaml.safe_dump(component_body))
+        if defs_yaml_contents:
+            (defs_path / "defs.yaml").write_text(yaml.safe_dump(defs_yaml_contents))
         return defs_path
 
     @contextmanager
-    def swap_defs_file(self, defs_path: Path, component_body: Optional[dict[str, Any]]):
+    def swap_defs_file(self, defs_path: Path, defs_yaml_contents: Optional[dict[str, Any]]):
         check.invariant(
             defs_path.suffix == ".yaml",
             "Attributes are only supported for yaml components",
@@ -270,7 +270,7 @@ class DefsFolderSandbox:
         check.invariant(defs_path.exists(), "defs.yaml must exist")
 
         # no need to override there is no component body
-        if component_body is None:
+        if defs_yaml_contents is None:
             yield
             return
 
@@ -280,7 +280,7 @@ class DefsFolderSandbox:
         try:
             shutil.copy2(defs_path, temp_path)
 
-            defs_path.write_text(yaml.safe_dump(component_body))
+            defs_path.write_text(yaml.safe_dump(defs_yaml_contents))
 
             yield
 
@@ -438,7 +438,7 @@ def create_defs_folder_sandbox(
         with scaffold_defs_sandbox() as sandbox:
             defs_path = sandbox.scaffold_component(
                 component_cls=MyComponent,
-                component_body={"type": "MyComponent", "attributes": {"asset_key": "my_asset"}},
+                defs_yaml_contents={"type": "MyComponent", "attributes": {"asset_key": "my_asset"}},
             )
             with sandbox.load_component_and_build_defs(defs_path=defs_path) as (component, defs):
                 assert isinstance(component, MyComponent)

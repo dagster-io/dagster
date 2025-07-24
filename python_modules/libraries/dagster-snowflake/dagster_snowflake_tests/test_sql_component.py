@@ -26,13 +26,13 @@ def setup_snowflake_component_with_external_connection(
         sandbox.scaffold_component(
             component_cls=SqlComponent,
             defs_path="sql_execution_component",
-            component_body=execution_component_body,
+            defs_yaml_contents=execution_component_body,
         )
 
         sandbox.scaffold_component(
             component_cls=SnowflakeConnectionComponent,
             defs_path=connection_component_name,
-            component_body={
+            defs_yaml_contents={
                 "type": "dagster_snowflake.SnowflakeConnectionComponent",
                 "attributes": {
                     "account": "test_account",
@@ -56,7 +56,7 @@ def setup_snowflake_component(
     with create_defs_folder_sandbox() as sandbox:
         defs_path = sandbox.scaffold_component(
             component_cls=TemplatedSqlComponent,
-            component_body=component_body,
+            defs_yaml_contents=component_body,
         )
         with sandbox.load_component_and_build_defs(defs_path=defs_path) as (
             component,

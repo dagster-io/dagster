@@ -33,13 +33,13 @@ from dagster_fivetran_tests.conftest import (
 
 @contextmanager
 def setup_fivetran_component(
-    component_body: dict[str, Any],
+    defs_yaml_contents: dict[str, Any],
 ) -> Iterator[tuple[FivetranAccountComponent, Definitions]]:
     """Sets up a components project with a fivetran component based on provided params."""
     with create_defs_folder_sandbox() as sandbox:
         defs_path = sandbox.scaffold_component(
             component_cls=FivetranAccountComponent,
-            component_body=component_body,
+            defs_yaml_contents=defs_yaml_contents,
         )
         with sandbox.load_component_and_build_defs(defs_path=defs_path) as (
             component,
@@ -73,7 +73,7 @@ def test_basic_component_load(
             }
         ),
         setup_fivetran_component(
-            component_body=BASIC_FIVETRAN_COMPONENT_BODY,
+            defs_yaml_contents=BASIC_FIVETRAN_COMPONENT_BODY,
         ) as (
             component,
             defs,
@@ -128,7 +128,7 @@ def test_basic_component_filter(
             }
         ),
         setup_fivetran_component(
-            component_body=deep_merge_dicts(
+            defs_yaml_contents=deep_merge_dicts(
                 BASIC_FIVETRAN_COMPONENT_BODY,
                 {"attributes": {"connector_selector": connector_selector}},
             ),
@@ -191,7 +191,7 @@ class TestFivetranTranslation(TestTranslation):
                 }
             ),
             setup_fivetran_component(
-                component_body=body,
+                defs_yaml_contents=body,
             ) as (
                 component,
                 defs,

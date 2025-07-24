@@ -38,7 +38,7 @@ def dlt_init(source: str, dest: str) -> None:
 @contextmanager
 def setup_dlt_component(
     load_py_contents: Callable,
-    component_body: dict[str, Any],
+    defs_yaml_contents: dict[str, Any],
     setup_dlt_sources: Callable,
     project_name: Optional[str] = None,
 ) -> Iterator[tuple[DltLoadCollectionComponent, Definitions]]:
@@ -49,7 +49,7 @@ def setup_dlt_component(
         defs_path = defs_sandbox.scaffold_component(
             component_cls=DltLoadCollectionComponent,
             defs_path="ingest",
-            component_body=component_body,
+            defs_yaml_contents=defs_yaml_contents,
         )
         with pushd(str(defs_path)):
             setup_dlt_sources()
@@ -99,7 +99,7 @@ def test_basic_component_load() -> None:
         environ({"SOURCES__ACCESS_TOKEN": "fake"}),
         setup_dlt_component(
             load_py_contents=github_load,
-            component_body=BASIC_GITHUB_COMPONENT_BODY,
+            defs_yaml_contents=BASIC_GITHUB_COMPONENT_BODY,
             setup_dlt_sources=lambda: dlt_init("github", "snowflake"),
         ) as (
             component,
@@ -133,7 +133,7 @@ def test_component_load_abs_path_load_py() -> None:
         environ({"SOURCES__ACCESS_TOKEN": "fake"}),
         setup_dlt_component(
             load_py_contents=github_load,
-            component_body=GITHUB_COMPONENT_BODY_WITH_ABSOLUTE_PATH,
+            defs_yaml_contents=GITHUB_COMPONENT_BODY_WITH_ABSOLUTE_PATH,
             setup_dlt_sources=lambda: dlt_init("github", "snowflake"),
             project_name="foo_bar",
         ) as (
@@ -192,7 +192,7 @@ def test_component_load_multiple_pipelines() -> None:
         environ({"SOURCES__ACCESS_TOKEN": "fake"}),
         setup_dlt_component(
             load_py_contents=github_load_multiple_pipelines,
-            component_body=MULTIPLE_GITHUB_COMPONENT_BODY,
+            defs_yaml_contents=MULTIPLE_GITHUB_COMPONENT_BODY,
             setup_dlt_sources=lambda: dlt_init("github", "snowflake"),
         ) as (
             component,
@@ -224,7 +224,7 @@ class TestDltTranslation(TestTranslationBatched):
             environ({"SOURCES__ACCESS_TOKEN": "fake"}),
             setup_dlt_component(
                 load_py_contents=github_load,
-                component_body=body,
+                defs_yaml_contents=body,
                 setup_dlt_sources=lambda: dlt_init("github", "snowflake"),
             ) as (
                 component,

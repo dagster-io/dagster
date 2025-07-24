@@ -33,13 +33,13 @@ def setup_powerbi_ready_project() -> Iterator[None]:
 
 @contextmanager
 def setup_powerbi_component(
-    component_body: dict[str, Any],
+    defs_yaml_contents: dict[str, Any],
 ) -> Iterator[tuple[PowerBIWorkspaceComponent, Definitions]]:
     """Sets up a components project with a powerbi component based on provided params."""
     with create_defs_folder_sandbox() as sandbox:
         defs_path = sandbox.scaffold_component(
             component_cls=PowerBIWorkspaceComponent,
-            component_body=component_body,
+            defs_yaml_contents=defs_yaml_contents,
         )
         with sandbox.load_component_and_build_defs(defs_path=defs_path) as (
             component,
@@ -67,7 +67,7 @@ def test_basic_component_load(
 ) -> None:
     with (
         setup_powerbi_component(
-            component_body={
+            defs_yaml_contents={
                 "type": "dagster_powerbi.PowerBIWorkspaceComponent",
                 "attributes": {
                     "workspace": {
@@ -196,7 +196,7 @@ def test_translation(
         body["attributes"]["translation"] = attributes
         with (
             setup_powerbi_component(
-                component_body=body,
+                defs_yaml_contents=body,
             ) as (
                 component,
                 defs,
@@ -249,7 +249,7 @@ def test_per_content_type_translation(
     }
     with (
         setup_powerbi_component(
-            component_body=body,
+            defs_yaml_contents=body,
         ) as (
             component,
             defs,

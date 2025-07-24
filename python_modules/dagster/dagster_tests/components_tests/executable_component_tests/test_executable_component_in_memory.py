@@ -190,7 +190,7 @@ def test_local_import() -> None:
         component_path = sandbox.scaffold_component(
             component_cls=FunctionComponent,
             defs_path="function_component",
-            component_body={
+            defs_yaml_contents={
                 "type": "dagster.FunctionComponent",
                 "attributes": {
                     "execution": {

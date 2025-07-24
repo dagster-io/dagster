@@ -173,7 +173,7 @@ def scaffold_defs_sandbox(
                 assert defs.get_asset_def("my_asset").key == AssetKey("my_asset")
 
         with scaffold_defs_sandbox(component_cls=MyComponent) as sandbox:
-            with sandbox.load(component_body={"type": "MyComponent", "attributes": {"asset_key": "different_asset_key"}}) as (component, defs):
+            with sandbox.load(defs_yaml_contents={"type": "MyComponent", "attributes": {"asset_key": "different_asset_key"}}) as (component, defs):
                 assert isinstance(component, MyComponent)
                 assert defs.get_asset_def("different_asset_key").key == AssetKey("different_asset_key")
     """

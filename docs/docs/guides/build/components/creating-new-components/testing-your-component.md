@@ -89,7 +89,7 @@ def test_snowflake_component():
         sandbox.scaffold_component(
             component_cls=SqlComponent,
             defs_path="sql_execution_component",
-            component_body={
+            defs_yaml_contents={
                 "type": "dagster.TemplatedSqlComponent",
                 "attributes": {
                     "sql_template": "SELECT * FROM MY_TABLE;",
@@ -102,7 +102,7 @@ def test_snowflake_component():
         sandbox.scaffold_component(
             component_cls=SnowflakeConnectionComponent,
             defs_path="sql_connection_component",
-            component_body={
+            defs_yaml_contents={
                 "type": "dagster_snowflake.SnowflakeConnectionComponent",
                 "attributes": {
                     "account": "test_account",

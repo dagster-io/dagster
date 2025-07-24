@@ -18,7 +18,7 @@ def test_temp_sandbox() -> None:
         defs_path = sandbox.scaffold_component(
             defs_path="function_component",
             component_cls=FunctionComponent,
-            component_body={
+            defs_yaml_contents={
                 "type": "dagster.FunctionComponent",
                 "attributes": {
                     "execution": {
