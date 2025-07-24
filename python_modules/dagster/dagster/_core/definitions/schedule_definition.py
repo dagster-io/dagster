@@ -140,6 +140,7 @@ def get_or_create_schedule_context(
     return context
 
 
+@public
 class ScheduleEvaluationContext:
     """The context object available as the first argument to various functions defined on a :py:class:`dagster.ScheduleDefinition`.
 
@@ -375,6 +376,7 @@ class DecoratedScheduleFunction(NamedTuple):
     has_context_arg: bool
 
 
+@public
 def build_schedule_context(
     instance: Optional[DagsterInstance] = None,
     scheduled_execution_time: Optional[datetime] = None,
@@ -467,6 +469,7 @@ def validate_and_get_schedule_resource_dict(
     return {k: resources.original_resource_dict.get(k) for k in required_resource_keys}
 
 
+@public
 @deprecated_param(
     param="environment_vars",
     breaking_version="2.0",

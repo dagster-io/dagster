@@ -15,6 +15,7 @@ from dagster._core.log_manager import DagsterLogManager
 from dagster._core.storage.dagster_run import DagsterRun
 
 
+@public
 class InitResourceContext:
     """The context object available as the argument to the initialization function of a :py:class:`dagster.ResourceDefinition`.
 
@@ -254,6 +255,7 @@ class UnboundInitResourceContext(InitResourceContext):
         )
 
 
+@public
 def build_init_resource_context(
     config: Optional[Mapping[str, Any]] = None,
     resources: Optional[Mapping[str, Any]] = None,

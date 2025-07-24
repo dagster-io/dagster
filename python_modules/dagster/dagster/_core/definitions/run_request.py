@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, AbstractSet, Any, NamedTuple, Optional, Union 
 from dagster_shared.serdes import whitelist_for_serdes
 
 import dagster._check as check
-from dagster._annotations import PublicAttr
+from dagster._annotations import PublicAttr, public
 from dagster._core.definitions.asset_checks.asset_check_evaluation import AssetCheckEvaluation
 from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.asset_key import EntityKey
@@ -63,6 +63,7 @@ class SkipReason(NamedTuple("_SkipReason", [("skip_message", PublicAttr[Optional
         )
 
 
+@public
 @whitelist_for_serdes(kwargs_fields={"asset_graph_subset"})
 @record_custom
 class RunRequest(IHaveNew, LegacyNamedTupleMixin):
@@ -357,6 +358,7 @@ class DagsterRunReaction(
         )
 
 
+@public
 class SensorResult(
     NamedTuple(
         "_SensorResult",

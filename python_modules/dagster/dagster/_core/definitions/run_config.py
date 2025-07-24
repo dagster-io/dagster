@@ -602,6 +602,7 @@ def _convert_config_classes(configs: dict[str, Any]) -> dict[str, Any]:
     return _convert_config_classes_inner(configs)
 
 
+@public
 class RunConfig:
     """Container for all the configuration that can be passed to a run. Accepts Pythonic definitions
     for op and asset config and resources and converts them under the hood to the appropriate config dictionaries.

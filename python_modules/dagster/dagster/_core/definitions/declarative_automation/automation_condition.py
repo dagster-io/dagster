@@ -57,6 +57,7 @@ if TYPE_CHECKING:
 T_AutomationCondition = TypeVar("T_AutomationCondition", bound="AutomationCondition")
 
 
+@public
 class AutomationCondition(ABC, Generic[T_EntityKey]):
     """An AutomationCondition represents a condition of an asset that impacts whether it should be
     automatically executed. For example, you can have a condition which becomes true whenever the
@@ -758,6 +759,7 @@ class BuiltinAutomationCondition(AutomationCondition[T_EntityKey]):
         return copy(self, label=label)
 
 
+@public
 @hidden_param(param="subsets_with_metadata", breaking_version="", emit_runtime_warning=False)
 @hidden_param(param="structured_cursor", breaking_version="", emit_runtime_warning=False)
 @hidden_param(param="metadata", breaking_version="", emit_runtime_warning=False)

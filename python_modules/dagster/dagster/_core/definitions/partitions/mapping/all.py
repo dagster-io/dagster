@@ -2,6 +2,7 @@ from datetime import datetime
 from typing import NamedTuple, Optional
 
 import dagster._check as check
+from dagster._annotations import public
 from dagster._core.definitions.partitions.context import partition_loading_context
 from dagster._core.definitions.partitions.definition.partitions_definition import (
     PartitionsDefinition,
@@ -17,6 +18,7 @@ from dagster._serdes import whitelist_for_serdes
 
 
 @whitelist_for_serdes
+@public
 class AllPartitionMapping(PartitionMapping, NamedTuple("_AllPartitionMapping", [])):
     """Maps every partition in the downstream asset to every partition in the upstream asset.
 

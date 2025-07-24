@@ -25,6 +25,7 @@ from dagster._core.pipes.utils import (
 )
 
 
+@public
 class PipesSubprocessClient(PipesClient, TreatAsResourceParam):
     """A pipes client that runs a subprocess with the given command and environment.
 

@@ -29,6 +29,7 @@ def parse_asset_key_string(s: str) -> Sequence[str]:
     checked=False,
     field_to_new_mapping={"parts": "path"},
 )
+@public
 class AssetKey(IHaveNew):
     """Object representing the structure of an asset key.  Takes in a sanitized string, list of
     strings, or tuple of strings.
@@ -200,6 +201,7 @@ def key_prefix_from_coercible(key_prefix: CoercibleToAssetKeyPrefix) -> Sequence
         check.failed(f"Unexpected type for key_prefix: {type(key_prefix)}")
 
 
+@public
 @whitelist_for_serdes(old_storage_names={"AssetCheckHandle"})
 class AssetCheckKey(NamedTuple):
     """Check names are expected to be unique per-asset. Thus, this combination of asset key and

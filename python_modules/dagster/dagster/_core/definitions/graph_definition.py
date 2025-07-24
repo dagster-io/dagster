@@ -129,6 +129,7 @@ def create_adjacency_lists(
     breaking_version="2.0",
     additional_warn_text="Use `input_assets` instead.",
 )
+@public
 class GraphDefinition(NodeDefinition):
     """Defines a Dagster op graph.
 

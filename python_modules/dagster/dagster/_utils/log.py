@@ -12,7 +12,7 @@ import dagster_shared.seven as seven
 from typing_extensions import TypeAlias
 
 import dagster._check as check
-from dagster._annotations import deprecated
+from dagster._annotations import deprecated, public
 from dagster._core.definitions.logger_definition import LoggerDefinition, logger
 from dagster._core.utils import coerce_valid_log_level
 
@@ -135,6 +135,7 @@ def construct_single_handler_logger(
 BASE_DAGSTER_LOGGER = logging.getLogger(name="dagster")
 
 
+@public
 def get_dagster_logger(name: Optional[str] = None) -> logging.Logger:
     """Creates a python logger whose output messages will be captured and converted into Dagster log
     messages. This means they will have structured information such as the step_key, run_id, etc.

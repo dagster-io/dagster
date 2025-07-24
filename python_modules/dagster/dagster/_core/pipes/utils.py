@@ -25,6 +25,7 @@ from dagster import (
     OpExecutionContext,
     _check as check,
 )
+from dagster._annotations import public
 from dagster._core.errors import DagsterInvariantViolationError, DagsterPipesExecutionError
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster._core.pipes.client import PipesContextInjector, PipesLaunchedData, PipesMessageReader
@@ -42,6 +43,7 @@ _CONTEXT_INJECTOR_FILENAME = "context"
 _MESSAGE_READER_FILENAME = "messages"
 
 
+@public
 class PipesFileContextInjector(PipesContextInjector):
     """Context injector that injects context data into the external process by writing it to a
     specified file.
@@ -78,6 +80,7 @@ class PipesFileContextInjector(PipesContextInjector):
         return f"Attempted to inject context via file {self._path}"
 
 
+@public
 class PipesTempFileContextInjector(PipesContextInjector):
     """Context injector that injects context data into the external process by writing it to an
     automatically-generated temporary file.
@@ -105,6 +108,7 @@ class PipesTempFileContextInjector(PipesContextInjector):
         return "Attempted to inject context via a temporary file."
 
 
+@public
 class PipesEnvContextInjector(PipesContextInjector):
     """Context injector that injects context data into the external process by injecting it directly into the external process environment."""
 
@@ -129,6 +133,7 @@ class PipesEnvContextInjector(PipesContextInjector):
         return "Attempted to inject context directly, typically as an environment variable."
 
 
+@public
 class PipesFileMessageReader(PipesMessageReader):
     """Message reader that reads messages by tailing a specified file.
 
@@ -203,6 +208,7 @@ class PipesFileMessageReader(PipesMessageReader):
         return f"Attempted to read messages from file {self._path}."
 
 
+@public
 class PipesTempFileMessageReader(PipesMessageReader):
     """Message reader that reads messages by tailing an automatically-generated temporary file."""
 
@@ -521,6 +527,7 @@ class PipesThreadedMessageReader(PipesMessageReader):
                     log_reader.stop()
 
 
+@public
 class PipesBlobStoreMessageReader(PipesThreadedMessageReader):
     """Message reader that reads a sequence of message chunks written by an external process into a
     blob store such as S3, Azure blob storage, or GCS.
@@ -713,6 +720,7 @@ _FAIL_TO_YIELD_ERROR_MESSAGE = (
 )
 
 
+@public
 @contextmanager
 def open_pipes_session(
     context: Union[OpExecutionContext, AssetExecutionContext],

@@ -8,6 +8,7 @@ from dagster import (
     StringSource,
     _check as check,
 )
+from dagster._annotations import public
 from dagster._config.config_schema import UserConfigSchema
 from dagster._serdes import ConfigurableClass, ConfigurableClassData
 
@@ -16,6 +17,7 @@ class LocalArtifactStorageConfig(TypedDict):
     base_dir: str
 
 
+@public
 class LocalArtifactStorage(ConfigurableClass):
     def __init__(self, base_dir: str, inst_data: Optional[ConfigurableClassData] = None):
         self._base_dir = base_dir

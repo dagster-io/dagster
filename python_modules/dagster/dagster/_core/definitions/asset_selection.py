@@ -53,6 +53,7 @@ def is_coercible_to_asset_selection(
     )
 
 
+@public
 class AssetSelection(ABC):
     """An AssetSelection defines a query over a set of assets and asset checks, normally all that are defined in a project.
 

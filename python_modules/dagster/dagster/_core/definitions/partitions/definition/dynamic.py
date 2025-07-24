@@ -26,6 +26,7 @@ from dagster._core.types.pagination import PaginatedResults
     breaking_version="2.0",
     additional_warn_text="Provide partition definition name instead.",
 )
+@public
 class DynamicPartitionsDefinition(
     PartitionsDefinition,
     NamedTuple(

@@ -29,6 +29,7 @@ T_PartitionsDefinition = TypeVar(
 )
 
 
+@public
 @deprecated_param(
     param="run_config_for_partition_fn",
     breaking_version="2.0",

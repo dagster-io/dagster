@@ -4,6 +4,7 @@ from typing import Any, Callable, Optional, Union
 from typing_extensions import TypeAlias
 
 from dagster import _check as check
+from dagster._annotations import public
 from dagster._config import UserConfigSchema
 from dagster._core.decorator_utils import format_docstring_for_description
 from dagster._core.definitions.asset_checks.asset_check_result import AssetCheckResult
@@ -96,6 +97,7 @@ def _build_asset_check_named_ins(
     )
 
 
+@public
 def asset_check(
     *,
     asset: Union[CoercibleToAssetKey, AssetsDefinition, SourceAsset],
@@ -281,6 +283,7 @@ MultiAssetCheckFunctionReturn: TypeAlias = Iterable[AssetCheckResult]
 MultiAssetCheckFunction: TypeAlias = Callable[..., MultiAssetCheckFunctionReturn]
 
 
+@public
 def multi_asset_check(
     *,
     name: Optional[str] = None,
