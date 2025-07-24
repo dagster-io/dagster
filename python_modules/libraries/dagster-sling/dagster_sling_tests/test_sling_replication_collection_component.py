@@ -23,7 +23,11 @@ from dagster._core.instance_for_test import instance_for_test
 from dagster._core.test_utils import ensure_dagster_tests_import
 from dagster._utils.env import environ
 from dagster.components.resolved.core_models import AssetAttributesModel, OpSpec
-from dagster.components.testing import TestOpCustomization, TestTranslation, defs_folder_sandbox
+from dagster.components.testing import (
+    TestOpCustomization,
+    TestTranslation,
+    create_defs_folder_sandbox,
+)
 from dagster_shared import check
 from dagster_sling import SlingReplicationCollectionComponent, SlingResource
 from dagster_sling.components.sling_replication_collection.component import (
@@ -60,7 +64,7 @@ def temp_sling_component_instance(
     the proper temp path.
     """
     with (
-        defs_folder_sandbox() as sandbox,
+        create_defs_folder_sandbox() as sandbox,
         environ({"HOME": str(sandbox.defs_folder_path), "SOME_PASSWORD": "password"}),
     ):
         # Copy the entire component structure from the stub location
@@ -245,7 +249,7 @@ class TestSlingTranslation(TestTranslation):
 
 
 def test_scaffold_sling():
-    with defs_folder_sandbox() as sandbox:
+    with create_defs_folder_sandbox() as sandbox:
         defs_path = sandbox.scaffold_component(component_cls=SlingReplicationCollectionComponent)
         assert (defs_path / "defs.yaml").exists()
         assert (defs_path / "replication.yaml").exists()
@@ -267,7 +271,7 @@ def test_spec_is_available_in_scope() -> None:
 
 
 def test_asset_post_processors_deprecation_error() -> None:
-    with defs_folder_sandbox() as sandbox:
+    with create_defs_folder_sandbox() as sandbox:
         defs_path = sandbox.scaffold_component(component_cls=SlingReplicationCollectionComponent)
         with environ({"HOME": str(defs_path), "SOME_PASSWORD": "password"}):
             shutil.copytree(

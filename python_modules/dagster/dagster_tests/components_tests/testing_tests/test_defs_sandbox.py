@@ -4,11 +4,15 @@ from dagster.components.lib.executable_component.function_component import (
     FunctionComponent,
     FunctionSpec,
 )
-from dagster.components.testing import copy_code_to_file, defs_folder_sandbox, scaffold_defs_sandbox
+from dagster.components.testing import (
+    copy_code_to_file,
+    create_defs_folder_sandbox,
+    scaffold_defs_sandbox,
+)
 
 
 def test_temp_sandbox() -> None:
-    with defs_folder_sandbox(
+    with create_defs_folder_sandbox(
         project_name="nested_component_project",
     ) as sandbox:
         defs_path = sandbox.scaffold_component(

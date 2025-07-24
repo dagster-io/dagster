@@ -4,11 +4,11 @@ from dagster.components.lib.executable_component.python_script_component import 
     PythonScriptComponent,
     ScriptSpec,
 )
-from dagster.components.testing import copy_code_to_file, defs_folder_sandbox
+from dagster.components.testing import copy_code_to_file, create_defs_folder_sandbox
 
 
 def test_pipes_subprocess_script_hello_world() -> None:
-    with defs_folder_sandbox() as sandbox:
+    with create_defs_folder_sandbox() as sandbox:
         defs_path = sandbox.scaffold_component(
             component_cls=PythonScriptComponent,
             component_body={
@@ -50,7 +50,7 @@ def test_pipes_subprocess_script_with_custom_materialize_result() -> None:
             with open_dagster_pipes() as context:
                 context.report_asset_materialization(metadata={"foo": "bar"})
 
-    with defs_folder_sandbox() as sandbox:
+    with create_defs_folder_sandbox() as sandbox:
         defs_path = sandbox.scaffold_component(
             component_cls=PythonScriptComponent,
             component_body={
@@ -86,7 +86,7 @@ def test_pipes_subprocess_script_with_custom_materialize_result() -> None:
 
 
 def test_pipes_subprocess_script_with_name_override() -> None:
-    with defs_folder_sandbox() as sandbox:
+    with create_defs_folder_sandbox() as sandbox:
         defs_path = sandbox.scaffold_component(
             component_cls=PythonScriptComponent,
             component_body={
@@ -123,7 +123,7 @@ def test_pipes_subprocess_script_with_checks_only() -> None:
                     passed=True,
                 )
 
-    with defs_folder_sandbox() as sandbox:
+    with create_defs_folder_sandbox() as sandbox:
         defs_path = sandbox.scaffold_component(
             component_cls=PythonScriptComponent,
             component_body={
@@ -181,7 +181,7 @@ def test_pipes_subprocess_with_args() -> None:
         def arg_list():
             return ["arg_value"]
 
-    with defs_folder_sandbox() as sandbox:
+    with create_defs_folder_sandbox() as sandbox:
         defs_path = sandbox.scaffold_component(
             component_cls=PythonScriptComponent,
             component_body={
@@ -230,7 +230,7 @@ def test_pipes_subprocess_with_inline_str() -> None:
             with open_dagster_pipes() as context:
                 context.report_asset_materialization(metadata={"arg": sys.argv[1]})
 
-    with defs_folder_sandbox() as sandbox:
+    with create_defs_folder_sandbox() as sandbox:
         defs_path = sandbox.scaffold_component(
             component_cls=PythonScriptComponent,
             component_body={

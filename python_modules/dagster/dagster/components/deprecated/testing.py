@@ -102,7 +102,7 @@ class DefsPathSandbox:
 
 
 @deprecated(
-    additional_warn_text="Use dagster.components.testing.defs_folder_sandbox instead.",
+    additional_warn_text="Use dagster.components.testing.create_defs_folder_sandbox instead.",
     breaking_version="2.0.0",
 )
 @contextmanager

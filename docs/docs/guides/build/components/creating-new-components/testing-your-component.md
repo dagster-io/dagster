@@ -8,15 +8,15 @@ title: Testing your component
 
 After you [create a new component](/guides/build/components/creating-new-components/creating-and-registering-a-component), we recommend testing scaffolding and runtime execution with the Dagster framework utilities outlined below.
 
-### Setting up a sandbox with `defs_folder_sandbox`
+### Setting up a sandbox with `create_defs_folder_sandbox`
 
-The function at the core of our testing workflows is `dagster.components.testing.defs_folder_sandbox`. This context manager allows you to construct a temporary defs folder, which can be populated with components and loaded into Component objects or built into dagster Definitions just as they would be in a real Dagster project.
+The function at the core of our testing workflows is `dagster.components.testing.create_defs_folder_sandbox`. This context manager allows you to construct a temporary defs folder, which can be populated with components and loaded into Component objects or built into dagster Definitions just as they would be in a real Dagster project.
 
 The function signature is the following:
 
 ```python
 @contextmanager
-def defs_folder_sandbox(
+def create_defs_folder_sandbox(
     *,
     project_name: Optional[str] = None,
 ) -> Iterator[DefsFolderSandbox]: ...
@@ -49,7 +49,7 @@ This can be used to verify the behavior of a custom scaffolder. Here is an examp
 
 ```python
 def test_scaffold_sling():
-    with defs_folder_sandbox() as sandbox:
+    with create_defs_folder_sandbox() as sandbox:
         defs_path = sandbox.scaffold_component(component_cls=SlingReplicationCollectionComponent)
         assert (defs_path / "defs.yaml").exists()
         assert (defs_path / "replication.yaml").exists()
@@ -65,7 +65,7 @@ For example, the following is code from our tests of our [dlt component](/guides
 
 ```python
 def test_dlt_component():
-    with defs_folder_sandbox() as sandbox:
+    with create_defs_folder_sandbox() as sandbox:
         defs_path = sandbox.scaffold_component(component_cls=DltLoadCollectionComponent)
         with sandbox.load_component_and_build_defs(defs_path=defs_path) as (
             component,
@@ -85,7 +85,7 @@ These utilities are also useful for testing multiple components in a single test
 
 ```python
 def test_snowflake_component():
-    with defs_folder_sandbox() as sandbox:
+    with create_defs_folder_sandbox() as sandbox:
         sandbox.scaffold_component(
             component_cls=SqlComponent,
             defs_path="sql_execution_component",

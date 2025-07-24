@@ -15,7 +15,7 @@ from dagster._core.test_utils import ensure_dagster_tests_import
 from dagster._utils import alter_sys_path
 from dagster._utils.env import environ
 from dagster.components.core.tree import ComponentTree
-from dagster.components.testing import TestTranslation, defs_folder_sandbox
+from dagster.components.testing import TestTranslation, create_defs_folder_sandbox
 from dagster_airbyte.components.workspace_component.component import AirbyteCloudWorkspaceComponent
 from dagster_airbyte.resources import AirbyteCloudWorkspace
 from dagster_airbyte.translator import AirbyteConnection
@@ -51,7 +51,7 @@ def setup_airbyte_component(
     component_body: dict[str, Any],
 ) -> Iterator[tuple[AirbyteCloudWorkspaceComponent, Definitions]]:
     """Sets up a components project with an airbyte component based on provided params."""
-    with defs_folder_sandbox() as sandbox:
+    with create_defs_folder_sandbox() as sandbox:
         defs_path = sandbox.scaffold_component(
             component_cls=AirbyteCloudWorkspaceComponent, component_body=component_body
         )

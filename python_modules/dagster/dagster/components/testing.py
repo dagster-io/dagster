@@ -391,7 +391,7 @@ def get_component_defs_from_defs_path(
 
 
 @contextmanager
-def defs_folder_sandbox(
+def create_defs_folder_sandbox(
     *,
     project_name: Optional[str] = None,
 ) -> Iterator[DefsFolderSandbox]:

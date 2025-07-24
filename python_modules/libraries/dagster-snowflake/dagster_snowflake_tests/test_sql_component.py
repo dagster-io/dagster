@@ -9,7 +9,7 @@ from dagster import AssetKey, Definitions
 from dagster._core.definitions.materialize import materialize
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster.components.lib.sql_component.sql_component import SqlComponent, TemplatedSqlComponent
-from dagster.components.testing import defs_folder_sandbox
+from dagster.components.testing import create_defs_folder_sandbox
 from dagster_snowflake.components.sql_component.component import SnowflakeConnectionComponent
 from dagster_snowflake.constants import SNOWFLAKE_PARTNER_CONNECTION_IDENTIFIER
 
@@ -22,7 +22,7 @@ def setup_snowflake_component_with_external_connection(
     connection_component_name: str = "sql_connection_component",
 ) -> Iterator[Definitions]:
     """Sets up a components project with a snowflake component using external connection."""
-    with defs_folder_sandbox() as sandbox:
+    with create_defs_folder_sandbox() as sandbox:
         sandbox.scaffold_component(
             component_cls=SqlComponent,
             defs_path="sql_execution_component",
@@ -53,7 +53,7 @@ def setup_snowflake_component(
     component_body: dict,
 ) -> Iterator[tuple[TemplatedSqlComponent, Definitions]]:
     """Sets up a components project with a snowflake component based on provided params."""
-    with defs_folder_sandbox() as sandbox:
+    with create_defs_folder_sandbox() as sandbox:
         defs_path = sandbox.scaffold_component(
             component_cls=TemplatedSqlComponent,
             component_body=component_body,
