@@ -58,11 +58,7 @@ class AssetFreshnessHealthState(LoadableBy[AssetKey]):
         asset_freshness_health_states = (
             context.instance.get_asset_freshness_health_state_for_assets(list(keys))
         )
-
-        if asset_freshness_health_states is None:
-            return [None for _ in keys]
-        else:
-            return [asset_freshness_health_states.get(key) for key in keys]
+        return [asset_freshness_health_states.get(key) for key in keys]
 
 
 @whitelist_for_serdes
