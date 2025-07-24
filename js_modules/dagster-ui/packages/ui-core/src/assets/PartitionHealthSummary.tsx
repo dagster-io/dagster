@@ -1,11 +1,13 @@
 import {Box, Caption, Spinner} from '@dagster-io/ui-components';
-import {memo} from 'react';
+import {memo, useCallback} from 'react';
+import {useHistory} from 'react-router-dom';
 
 import {isTimeseriesDimension} from './MultipartitioningSupport';
 import {AssetKey} from './types';
 import {PartitionHealthData} from './usePartitionHealthData';
 import {LiveDataForNode, displayNameForAssetKey} from '../asset-graph/Utils';
 import {PartitionStatus} from '../partitions/PartitionStatus';
+import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 
 interface Props {
   assetKey: AssetKey;
@@ -19,6 +21,31 @@ export const PartitionHealthSummary = memo((props: Props) => {
   const assetData = data.find(
     (d) => JSON.stringify(d.assetKey.path) === JSON.stringify(assetKey.path),
   );
+  const history = useHistory();
+
+  const handlePartitionInteraction = useCallback((selectedPartitions: string[]) => {
+
+    if (selectedPartitions.length > 0) {
+      const firstPartition = selectedPartitions[0]!;
+      const lastPartition = selectedPartitions[selectedPartitions.length - 1]!;
+      
+      let defaultRange: string;
+      
+      if (selectedPartitions.length === 1) {
+        defaultRange = firstPartition;
+      } else {
+        defaultRange = `[${firstPartition}...${lastPartition}]`;
+      }
+
+      const queryParams: {view: string; default_range: string} = {
+        view: 'partitions',
+        default_range: defaultRange,
+      };
+
+      const assetPath = assetDetailsPathForKey(assetKey, queryParams);
+      history.push(assetPath);
+    }
+  }, [assetKey, history]);
 
   return (
     <div>
@@ -40,7 +67,9 @@ export const PartitionHealthSummary = memo((props: Props) => {
               small
               partitionNames={dimension.partitionKeys}
               splitPartitions={!isTimeseriesDimension(dimension)}
-              selected={undefined}
+              selected={[]}
+              onSelect={(selectedPartitions) => handlePartitionInteraction(selectedPartitions)}
+              onClick={(partitionName) => handlePartitionInteraction([partitionName])}
               health={{
                 ranges: assetData.rangesForSingleDimension(dimensionIdx, undefined),
               }}
