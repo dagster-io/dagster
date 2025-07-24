@@ -91,7 +91,7 @@ class AssetMaterializationHealthState(LoadableBy[AssetKey]):
     failed_subset: SerializableEntitySubset[AssetKey]
     partitions_snap: Optional[PartitionsSnap]
     latest_terminal_run_id: Optional[str]
-    latest_materialization_timestamp: Optional[float]
+    latest_materialization_timestamp: Optional[float] = None
 
     @property
     def partitions_def(self) -> Optional[PartitionsDefinition]:
