@@ -1,8 +1,10 @@
 """Core docstring validation logic using Sphinx parsing pipeline."""
 
+# Import the is_public function to check for @public decorator
 import importlib
 import inspect
 import io
+import re
 import sys
 import warnings
 from pathlib import Path
@@ -10,9 +12,12 @@ from typing import Any, Optional
 
 import docutils.core
 import docutils.utils
+from dagster._annotations import is_public
 from dagster_shared.record import record
 from sphinx.ext.napoleon import GoogleDocstring
 from sphinx.util.docutils import docutils_namespace
+
+from automation.docstring_lint.public_symbol_utils import get_public_methods_from_class
 
 # Filter out Sphinx role errors and warnings that are valid in the full Sphinx build context
 # but appear as errors in standalone docutils validation. These roles like :py:class:,
@@ -20,6 +25,67 @@ from sphinx.util.docutils import docutils_namespace
 # Sphinx extensions loaded, but docutils alone doesn't recognize them.
 # Set to False to see all role-related errors/warnings for debugging.
 DO_FILTER_OUT_SPHINX_ROLE_WARNINGS = True
+
+# Regex pattern for potential section headers: uppercase letter followed by letters/spaces, ending with colon
+# Examples: "Args:", "Example usage:", "See Also:" but not "http://", "def function():", etc.
+SECTION_HEADER_PATTERN = re.compile(r"^[A-Z][A-Za-z\s]{2,30}:$")
+
+# All section headers currently used in the Dagster codebase
+# Based on analysis of all public symbols
+ALLOWED_SECTION_HEADERS = {
+    # Standard Google-style sections
+    "Args:",
+    "Arguments:",
+    "Parameters:",
+    "Returns:",
+    "Return:",
+    "Yields:",
+    "Yield:",
+    "Raises:",
+    "Examples:",
+    "Example:",
+    "Note:",
+    "Notes:",
+    "Warning:",
+    "Warnings:",
+    "See Also:",
+    "Attributes:",
+    # Dagster-specific sections that are commonly used
+    "Example usage:",
+    "Example definition:",
+    "Definitions:",
+    # Common example section variations
+    "For example:",
+    "For example::",  # RST code block style
+    "Example enumeration:",
+}
+
+
+def extract_section_headers_from_docstring(docstring: str) -> list[str]:
+    """Extract all potential section headers from a docstring.
+
+    Uses the same regex pattern as the main validation logic to identify
+    lines that could be section headers.
+
+    Args:
+        docstring: The docstring text to analyze
+
+    Returns:
+        List of potential section header strings found in the docstring
+    """
+    if not docstring:
+        return []
+
+    headers = []
+    lines = docstring.split("\n")
+
+    for line in lines:
+        stripped = line.strip()
+        if SECTION_HEADER_PATTERN.match(stripped):
+            headers.append(stripped)
+
+    return headers
+
 
 # Setup paths to match Dagster's Sphinx configuration
 DAGSTER_ROOT = Path(__file__).parent.parent.parent.parent.parent
@@ -126,18 +192,19 @@ class SymbolInfo:
                             line_number = inspect.getsourcelines(symbol)[1]
                         except (OSError, TypeError):
                             pass
-                    else:
-                        # Fall back to inspect methods
-                        file_path = inspect.getfile(symbol)
-                        line_number = inspect.getsourcelines(symbol)[1]
-                else:
-                    # Fall back to inspect methods
-                    file_path = inspect.getfile(symbol)
-                    line_number = inspect.getsourcelines(symbol)[1]
-            else:
-                # No module info, fall back to inspect methods
-                file_path = inspect.getfile(symbol)
-                line_number = inspect.getsourcelines(symbol)[1]
+                        return SymbolInfo(
+                            symbol=symbol,
+                            dotted_path=dotted_path,
+                            name=name,
+                            module=module,
+                            docstring=docstring,
+                            file_path=file_path,
+                            line_number=line_number,
+                        )
+
+            # Single fallback: use inspect methods directly
+            file_path = inspect.getfile(symbol)
+            line_number = inspect.getsourcelines(symbol)[1]
         except (OSError, TypeError, ImportError):
             pass
 
@@ -528,30 +595,45 @@ class DocstringValidator:
         """Check basic docstring structure issues."""
         lines = docstring.split("\n")
 
-        # Check for common section headers
-        sections = [
-            "Args:",
-            "Arguments:",
-            "Parameters:",
-            "Returns:",
-            "Return:",
-            "Yields:",
-            "Yield:",
-            "Raises:",
-            "Examples:",
-            "Example:",
-        ]
-
         for i, line in enumerate(lines, 1):
             stripped = line.strip()
 
-            # Check for malformed section headers
-            for section in sections:
-                if section.lower() in stripped.lower() and section not in stripped:
-                    result = result.with_warning(
-                        f"Possible malformed section header: '{stripped}' (should be '{section}')",
+            # Use regex to identify potential section headers
+            if SECTION_HEADER_PATTERN.match(stripped):
+                # Skip if it's already in our allowed list
+                if stripped in ALLOWED_SECTION_HEADERS:
+                    continue
+
+                # Check for case-insensitive exact matches (wrong case)
+                exact_case_match = None
+                for section in ALLOWED_SECTION_HEADERS:
+                    if stripped.lower() == section.lower():
+                        exact_case_match = section
+                        break
+
+                if exact_case_match:
+                    result = result.with_error(
+                        f"Invalid section header: '{stripped}'. Did you mean '{exact_case_match}'?",
                         i,
                     )
+                else:
+                    # Check for obvious corruptions of known sections using simple string containment
+                    possible_match = None
+                    for section in ALLOWED_SECTION_HEADERS:
+                        section_base = section[:-1].lower()  # Remove colon, lowercase
+                        stripped_base = stripped[:-1].lower()  # Remove colon, lowercase
+
+                        # Check if the section name appears intact within the stripped version
+                        # This catches cases like "Argsdkjfkdjkfjd" containing "args"
+                        if len(section_base) >= 4 and section_base in stripped_base:
+                            possible_match = section
+                            break
+
+                    if possible_match:
+                        result = result.with_error(
+                            f"Invalid section header: '{stripped}'. Did you mean '{possible_match}'?",
+                            i,
+                        )
 
         return result
 
@@ -580,47 +662,101 @@ class SymbolImporter:
             module_path = ".".join(parts[:i])
             try:
                 module = importlib.import_module(module_path)
-
-                # If we imported the entire path as a module, return the module itself
-                if i == len(parts):
-                    return SymbolInfo.create(module, dotted_path)
-
-                # Otherwise, walk the remaining attribute path
-                symbol = module
-                for attr_name in parts[i:]:
-                    symbol = getattr(symbol, attr_name)
-
-                return SymbolInfo.create(symbol, dotted_path)
-
             except ImportError:
+                # This module path doesn't exist, try the next shorter one
                 continue
+
+            # If we imported the entire path as a module, return the module itself
+            if i == len(parts):
+                return SymbolInfo.create(module, dotted_path)
+
+            # Otherwise, walk the remaining attribute path
+            symbol = module
+            for attr_name in parts[i:]:
+                symbol = getattr(symbol, attr_name)
+
+            return SymbolInfo.create(symbol, dotted_path)
 
         raise ImportError(f"Could not import symbol '{dotted_path}'")
 
     @staticmethod
-    def get_all_public_symbols(module_path: str) -> list[SymbolInfo]:
-        """Get all public symbols from a module (those not starting with '_').
+    def get_all_exported_symbols(module_path: str) -> list[SymbolInfo]:
+        """Get all top-level exported symbols from a module (those not starting with '_').
 
         Args:
             module_path: The dotted path to the module
 
         Returns:
-            List of SymbolInfo objects for all public symbols
+            List of SymbolInfo objects for all top-level exported symbols
         """
-        try:
-            module = importlib.import_module(module_path)
-        except ImportError as e:
-            raise ImportError(f"Could not import module '{module_path}': {e}")
+        module = importlib.import_module(module_path)
 
         symbols = []
         for name in dir(module):
             if not name.startswith("_"):
-                try:
-                    symbol = getattr(module, name)
-                    full_path = f"{module_path}.{name}"
-                    symbols.append(SymbolInfo.create(symbol, full_path))
-                except Exception:
-                    # Skip symbols that can't be accessed
-                    continue
+                symbol = getattr(module, name)
+                full_path = f"{module_path}.{name}"
+                symbols.append(SymbolInfo.create(symbol, full_path))
 
         return symbols
+
+    @staticmethod
+    def get_all_public_annotated_methods(module_path: str) -> list[SymbolInfo]:
+        """Get all @public-annotated methods from top-level exported classes.
+
+        Args:
+            module_path: The dotted path to the module
+
+        Returns:
+            List of SymbolInfo objects for all @public-annotated methods on top-level exported classes
+        """
+        module = importlib.import_module(module_path)
+
+        methods = []
+        for name in dir(module):
+            if not name.startswith("_"):
+                symbol = getattr(module, name)
+                # Check if this symbol is a top-level exported class with @public annotation
+                if inspect.isclass(symbol) and is_public(symbol):
+                    # Get all @public-annotated methods from this top-level exported class
+                    class_dotted_path = f"{module_path}.{name}"
+                    method_paths = get_public_methods_from_class(symbol, class_dotted_path)
+
+                    for method_path in method_paths:
+                        # Extract method name and get the actual method object
+                        method_name = method_path.split(".")[-1]
+                        method = getattr(symbol, method_name)
+                        method_info = SymbolInfo.create(method, method_path)
+                        methods.append(method_info)
+
+        return methods
+
+    @staticmethod
+    def get_all_public_symbols(module_path: str) -> list[SymbolInfo]:
+        """Get all public symbols from a module (exported symbols marked @public + public-annotated methods).
+
+        Args:
+            module_path: The dotted path to the module
+
+        Returns:
+            List of SymbolInfo objects for all public symbols in the module.
+            Includes only top-level exported symbols that are marked with @public decorator
+            and all @public-annotated methods from @public classes.
+
+        Raises:
+            ImportError: If the module cannot be imported
+        """
+        public_symbols = []
+
+        # Get top-level exported symbols that are also marked with @public
+        exported_symbols = SymbolImporter.get_all_exported_symbols(module_path)
+        # Filter to only include symbols that are marked as @public
+        for symbol_info in exported_symbols:
+            if is_public(symbol_info.symbol):
+                public_symbols.append(symbol_info)
+
+        # Get all @public-annotated methods from @public classes
+        method_symbols = SymbolImporter.get_all_public_annotated_methods(module_path)
+        public_symbols.extend(method_symbols)
+
+        return public_symbols

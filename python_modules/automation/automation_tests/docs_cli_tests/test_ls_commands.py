@@ -18,11 +18,11 @@ class TestLsCommands:
         # Should complete successfully
         assert result.exit_code == 0
 
-        # Should contain some well-known dagster symbols
+        # Should contain some @public-decorated dagster symbols
         output = result.output
-        assert "dagster.asset" in output
-        assert "dagster.op" in output
-        assert "dagster.job" in output
+        assert "dagster.Component" in output
+        assert "dagster.ComponentLoadContext" in output
+        assert "dagster.definitions" in output
 
     def test_ls_symbols_with_package_dagster_core(self):
         """Test listing symbols from dagster._core subpackage."""
@@ -31,8 +31,9 @@ class TestLsCommands:
         # Should complete successfully
         assert result.exit_code == 0
 
-        # Should contain some symbols (exact content may vary)
-        assert len(result.output.strip()) > 0
+        # This subpackage may have no @public symbols, which is valid
+        # The test passes as long as the command doesn't error
+        assert result.exit_code == 0
 
     def test_ls_symbols_with_nonexistent_package(self):
         """Test listing symbols from nonexistent package should fail."""
