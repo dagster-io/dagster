@@ -24,6 +24,7 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+/workspaces/dagster/minimal-definitions
 
 # PyInstaller
 #  Usually these files are written by a python script from a template

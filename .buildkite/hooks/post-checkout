@@ -1,8 +1,28 @@
 #!/bin/bash
-set -euo pipefail
 
-export DAGSTER_GIT_REPO_DIR=/workdir
+# Ensure the .buildkite directory exists
+mkdir -p .buildkite
 
-bash scripts/copy_buildkite_folder.sh
+# Fallback: If pipeline.yml is missing, clone it from a fallback repo
+if [ ! -f ".buildkite/pipeline.yml" ]; then
+  echo "⚠️  .buildkite/pipeline.yml not found"
+  echo "📥 Cloning fallback buildkite config from $BUILDKITE_FOLDER_GIT_REPO_PATH ..."
 
+  # Clone only the latest commit
+  git clone --depth=1 "$BUILDKITE_FOLDER_GIT_REPO_PATH" /tmp/buildkite-temp || {
+    echo "❌ Failed to clone fallback repo!"
+    exit 1
+  }
 
+  # Copy contents if .buildkite exists in the fallback repo
+  if [ -d /tmp/buildkite-temp/.buildkite ]; then
+    cp -r /tmp/buildkite-temp/.buildkite/* .buildkite/
+    echo "✅ .buildkite contents restored from fallback repo"
+  else
+    echo "❌ .buildkite folder not found in fallback repo"
+    exit 1
+  fi
+
+  # Clean up
+  rm -rf /tmp/buildkite-temp
+fi
