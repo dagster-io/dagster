@@ -1,9 +1,12 @@
+
 name: Trigger Buildkite
-
 on:
-  push:
-    branches: [Issue-29914]
-
+  workflow_dispatch:  # Changed from push trigger to manual trigger
+    inputs:
+      reason:
+        description: 'Reason for manual trigger'
+        required: true
+        default: 'Manual test run'
 jobs:
   trigger:
     runs-on: ubuntu-latest
@@ -27,14 +30,14 @@ jobs:
           # Try to trigger the build
           echo "Attempting to trigger build..."
           response=$(curl -s -w "%{http_code}" -o response.json \
-            -X POST "https://api.buildkite.com/v2/organizations/dagster/pipelines/unit-tests/builds" \
+            -X POST "https://buildkite.com/cti-student/harold-symons-dagster-tree-issue-29914" \
             -H "Authorization: Bearer ${{ secrets.BUILDKITE_API_ACCESS_TOKEN }}" \
             -H "Content-Type: application/json" \
                 -d @- << EOF
             {  
             "commit": "${{ github.sha }}",  
             "branch": "${{ github.ref_name }}",  
-            "message": "Triggered from GitHub Actions - ${{ github.event.head_commit.message }}"  
+            "message": "Manually triggered from GitHub Actions - ${{ inputs.reason }}"  
             }  
             EOF  
             )

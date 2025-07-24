@@ -42,6 +42,8 @@ log_state = threading.local()
 log_state.in_dagster_sink = False
 def dagster_context_sink(context):
     """Create a Loguru sink that forwards messages to a Dagster context."""
+    log_state = threading.local()
+    log_state.in_dagster_sink = False
     def sink(message):
         if getattr(log_state, "in_dagster_sink", False):
             return

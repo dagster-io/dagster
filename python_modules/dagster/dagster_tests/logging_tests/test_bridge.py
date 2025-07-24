@@ -563,7 +563,13 @@ def test_loguru_configurator_initialization(monkeypatch):
     monkeypatch.setenv("DAGSTER_LOGURU_ENABLED", "false")
     monkeypatch.setenv("DAGSTER_LOGURU_LOG_LEVEL", "INFO")
     monkeypatch.setenv("DAGSTER_LOGURU_FORMAT", "TEST_FORMAT")
-
+    
+    # Create configurator and verify it loaded values from environment
+    configurator = LoguruConfigurator(enable_terminal_sink=False)
+    assert configurator.config["enabled"] is False
+    assert configurator.config["log_level"] == "INFO"
+    assert configurator.config["format"] == "TEST_FORMAT"
+    
     # Reset for other tests
     monkeypatch.setenv("DAGSTER_LOGURU_ENABLED", "true")
     monkeypatch.setenv("DAGSTER_LOGURU_LOG_LEVEL", "DEBUG")

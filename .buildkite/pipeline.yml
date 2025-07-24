@@ -12,6 +12,7 @@ steps:
   - label: ":mag: Ruff Format Check"
     command: |
       cd /workspaces/dagster
+      python -m venv venv  
       source venv/bin/activate
       pip install ruff==0.11.5
       ruff check python_modules/dagster/dagster/_generate/templates/
