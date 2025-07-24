@@ -2,9 +2,9 @@
 set -euo pipefail
 
 # Environment variables with defaults
-export BUILDKITE_FOLDER_GIT_REPO_PATH="${BUILDKITE_FOLDER_GIT_REPO_PATH:-https://github.com/albertfast/dagster.git}"
+export BUILDKITE_FOLDER_GIT_REPO_PATH="${BUILDKITE_FOLDER_GIT_REPO_PATH:-https://github.com/harold-symons/dagster.git}"
 export BUILDKITE_FOLDER_GIT_REPO_DIR="${BUILDKITE_FOLDER_GIT_REPO_DIR:-/tmp/buildkite-folder}"
-export BUILDKITE_FOLDER_GIT_REPO_BRANCH="${BUILDKITE_FOLDER_GIT_REPO_BRANCH:-Issue-31069}"
+export BUILDKITE_FOLDER_GIT_REPO_BRANCH="${BUILDKITE_FOLDER_GIT_REPO_BRANCH:-Issue-29914}"
 export DAGSTER_GIT_REPO_DIR="${DAGSTER_GIT_REPO_DIR:-/workspaces/dagster}"
 
 echo "🔧 Setting up .buildkite folder from fallback repo..."
