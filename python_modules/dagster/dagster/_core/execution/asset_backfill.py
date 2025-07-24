@@ -1405,7 +1405,7 @@ def _asset_graph_subset_to_str(
     return_strs = []
     asset_subsets = asset_graph_subset.iterate_asset_subsets()
 
-    for subset in asset_subsets:
+    for subset in sorted(asset_subsets, key=lambda x: x.key):
         if subset.is_partitioned:
             partitions_def = asset_graph.get(subset.key).partitions_def
             partition_ranges_str = _partition_subset_str(subset.subset_value, partitions_def)
@@ -1640,7 +1640,7 @@ def _should_backfill_atomic_asset_subset_unit(
         )
         entity_subset_to_filter = entity_subset_to_filter.compute_difference(requested_partitions)
 
-    for parent_key in asset_graph.get(asset_key).parent_keys:
+    for parent_key in sorted(asset_graph.get(asset_key).parent_keys):
         if entity_subset_to_filter.is_empty:
             break
 
@@ -1680,7 +1680,7 @@ def _should_backfill_atomic_asset_subset_unit(
         if not possibly_waiting_for_parent_subset.is_empty:
             cant_run_with_parent_reason = _get_cant_run_with_parent_reason(
                 targeted_but_not_materialized_parent_subset,
-                possibly_waiting_for_parent_subset,
+                entity_subset_to_filter,
                 asset_graph_view,
                 target_subset,
                 asset_graph_subset_matched_so_far,
