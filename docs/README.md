@@ -133,6 +133,7 @@ The primary mechanism for controlling what appears in documentation is manual cu
 - `.. autodecorator::` - Documents decorators (e.g., `@asset`, `@op`, `@job`)
 - `.. autofunction::` - Documents standalone functions
 - `.. autoclass::` - Documents classes
+- `.. click::` - Documents CLI commands from `click` commands and groups
 
 **Key characteristic**: These directives currently do not inspect the `@public` annotation system. If a symbol is explicitly listed in an RST file, it will be documented regardless of whether it has the `@public` annotation.
 
