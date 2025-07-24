@@ -152,7 +152,7 @@ def watch():
 @click.option("--changed", is_flag=True, help="Watches the files currently changed in git")
 @click.option("--symbol", help="Targets a particular symbol")
 @click.option("--verbose", "-v", is_flag=True, help="Enable verbose output")
-def docstring(changed: bool, symbol: Optional[str], verbose: bool):
+def docstrings(changed: bool, symbol: Optional[str], verbose: bool):
     """Watch docstring files for changes and validate them."""
     # Validate that exactly one option is provided
     if not changed and not symbol:
