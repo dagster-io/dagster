@@ -38,6 +38,7 @@ setup(
         "console_scripts": [
             "dagster-image = automation.docker.cli:main",
             "dagster-graphql-client = automation.graphql.python_client.cli:main",
+            "dagster-docs = automation.docs_cli:main",
         ]
     },
 )
