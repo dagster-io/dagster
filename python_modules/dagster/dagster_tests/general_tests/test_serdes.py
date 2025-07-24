@@ -1223,3 +1223,54 @@ def test_get_storage_name():
 
     with pytest.raises(CheckError):
         get_storage_name(Wat, whitelist_map=test_env)
+
+
+def test_get_storage_name_lazy():
+    test_env = WhitelistMap.create()
+
+    @_whitelist_for_serdes(whitelist_map=test_env, lazy_deserialization=True)
+    @record
+    class Foo: ...
+
+    assert get_storage_name(Foo, whitelist_map=test_env) == "Foo"
+
+    @_whitelist_for_serdes(whitelist_map=test_env, storage_name="Baz", lazy_deserialization=True)
+    @record
+    class Bar: ...
+
+    assert get_storage_name(Bar, whitelist_map=test_env) == "Baz"
+
+    @record
+    class Wat: ...
+
+    with pytest.raises(CheckError):
+        get_storage_name(Wat, whitelist_map=test_env)
+
+
+def test_lazy_packed_dict():
+    test_env = WhitelistMap.create()
+
+    @_whitelist_for_serdes(whitelist_map=test_env, lazy_deserialization=False)
+    @record
+    class BarNotLazy:
+        baz: str
+
+    @_whitelist_for_serdes(whitelist_map=test_env, lazy_deserialization=True)
+    @record
+    class Foo:
+        baz: BarNotLazy
+        baz2: BarNotLazy
+
+    bar_not_lazy = BarNotLazy(baz="baz")
+    bar_not_lazy_2 = BarNotLazy(baz="baz2")
+    foo = Foo(baz=bar_not_lazy, baz2=bar_not_lazy_2)
+
+    deserialized_foo = dg.deserialize_value(
+        dg.serialize_value(foo, whitelist_map=test_env), whitelist_map=test_env
+    )
+
+    assert deserialized_foo.baz.baz == "baz"  # type: ignore
+    assert deserialized_foo.baz2.baz == "baz2"  # type: ignore
+
+    assert bar_not_lazy == deserialized_foo.baz  # type: ignore
+    assert bar_not_lazy_2 == deserialized_foo.baz2  # type: ignore

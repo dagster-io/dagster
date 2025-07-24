@@ -92,6 +92,7 @@ PackableValue: TypeAlias = Union[
 UnpackedValue: TypeAlias = Union[
     Sequence["UnpackedValue"],
     Mapping[str, "UnpackedValue"],
+    "LazyPackedDict",
     str,
     int,
     float,
@@ -149,6 +150,7 @@ class WhitelistMap(NamedTuple):
     object_deserializers: dict[str, "ObjectSerializer"]
     enum_serializers: dict[str, "EnumSerializer"]
     object_type_map: dict[str, type]
+    lazy_types_set: set[str]
 
     def register_object(
         self,
@@ -163,6 +165,7 @@ class WhitelistMap(NamedTuple):
         skip_when_none_fields: Optional[AbstractSet[str]] = None,
         field_serializers: Optional[Mapping[str, type["FieldSerializer"]]] = None,
         kwargs_fields: Optional[AbstractSet[str]] = None,
+        lazy_deserialization: bool = False,
     ):
         """Register a model class in the whitelist map.
 
@@ -199,6 +202,9 @@ class WhitelistMap(NamedTuple):
 
         self.object_type_map[name] = serializer.klass
 
+        if lazy_deserialization:
+            self.lazy_types_set.add(storage_name or name)
+
     def register_enum(
         self,
         name: str,
@@ -226,6 +232,7 @@ class WhitelistMap(NamedTuple):
             object_deserializers={},
             enum_serializers={},
             object_type_map={},
+            lazy_types_set=set(),
         )
 
 
@@ -254,6 +261,7 @@ def whitelist_for_serdes(
     skip_when_none_fields: Optional[AbstractSet[str]] = ...,
     field_serializers: Optional[Mapping[str, type["FieldSerializer"]]] = None,
     kwargs_fields: Optional[AbstractSet[str]] = None,
+    lazy_deserialization: bool = False,
 ) -> Callable[[T_Type], T_Type]: ...
 
 
@@ -269,6 +277,7 @@ def whitelist_for_serdes(
     skip_when_none_fields: Optional[AbstractSet[str]] = None,
     field_serializers: Optional[Mapping[str, type["FieldSerializer"]]] = None,
     kwargs_fields: Optional[AbstractSet[str]] = None,
+    lazy_deserialization: bool = False,
 ) -> Union[T_Type, Callable[[T_Type], T_Type]]:
     """Decorator to whitelist an object (NamedTuple / dataclass / pydantic model) or
     Enum subclass to be serializable. Various arguments can be passed to alter
@@ -350,6 +359,7 @@ def whitelist_for_serdes(
             skip_when_none_fields=skip_when_none_fields,
             field_serializers=field_serializers,
             kwargs_fields=kwargs_fields,
+            lazy_deserialization=lazy_deserialization,
         )
 
 
@@ -364,8 +374,11 @@ def _whitelist_for_serdes(
     skip_when_none_fields: Optional[AbstractSet[str]] = None,
     field_serializers: Optional[Mapping[str, type["FieldSerializer"]]] = None,
     kwargs_fields: Optional[AbstractSet[str]] = None,
+    lazy_deserialization: bool = False,
 ) -> Callable[[T_Type], T_Type]:
     def __whitelist_for_serdes(klass: T_Type) -> T_Type:
+        if lazy_deserialization:
+            klass = lazy_deserialized(klass)
         if issubclass(klass, Enum) and (
             serializer is None or issubclass(serializer, EnumSerializer)
         ):
@@ -397,7 +410,9 @@ def _whitelist_for_serdes(
                 skip_when_none_fields=skip_when_none_fields,
                 field_serializers=field_serializers,
                 kwargs_fields=kwargs_fields,
+                lazy_deserialization=lazy_deserialization,
             )
+
             return klass  # type: ignore  # (NamedTuple quirk)
 
         elif is_dataclass(klass) and (
@@ -414,6 +429,7 @@ def _whitelist_for_serdes(
                 skip_when_empty_fields=skip_when_empty_fields,
                 skip_when_none_fields=skip_when_none_fields,
                 field_serializers=field_serializers,
+                lazy_deserialization=lazy_deserialization,
             )
             return klass  # type: ignore
         else:
@@ -434,8 +450,10 @@ def _whitelist_for_serdes(
                     skip_when_empty_fields=skip_when_empty_fields,
                     skip_when_none_fields=skip_when_none_fields,
                     field_serializers=field_serializers,
+                    kwargs_fields=kwargs_fields,
+                    lazy_deserialization=lazy_deserialization,
                 )
-                return klass  # type: ignore
+                return klass
             else:
                 raise SerdesUsageError(
                     f"Can not whitelist class {klass} for serializer {serializer}"
@@ -473,7 +491,10 @@ class UnpackContext:
         self.observed_unknown_serdes_values: set[UnknownSerdesValue] = set()
 
     def assert_no_unknown_values(self, obj: UnpackedValue) -> PackableValue:
-        if isinstance(obj, UnknownSerdesValue):
+        if isinstance(obj, _UnpackedSentinel):
+            # Don't unpack the sentinel now, it will be unpacked when accessed
+            pass
+        elif isinstance(obj, UnknownSerdesValue):
             raise DeserializationError(
                 f"{obj.message}\nThis error can occur due to version skew, verify processes are"
                 " running expected versions."
@@ -602,7 +623,12 @@ class ObjectSerializer(Serializer, Generic[T]):
                     elif context.observed_unknown_serdes_values:
                         unpacked[loaded_name] = context.assert_no_unknown_values(value)
                     else:
-                        unpacked[loaded_name] = value  # type: ignore # 2 hot 4 cast()
+                        actual_value = value
+                        # Handle _UnpackedSentinel objects by unpacking them
+                        if isinstance(value, _UnpackedSentinel):
+                            actual_value = value.get_value()
+
+                        unpacked[loaded_name] = actual_value  # type: ignore # 2 hot 4 cast()
 
                 else:
                     context.clear_ignored_unknown_values(value)
@@ -1101,6 +1127,166 @@ T_PackableValue = TypeVar("T_PackableValue", bound=PackableValue, default=Packab
 U_PackableValue = TypeVar("U_PackableValue", bound=PackableValue, default=PackableValue)
 
 
+def lazy_deserialized(cls: T_Type) -> T_Type:
+    class MetaWithLazyPackedDictInstanceCheck(type(cls)):
+        def __instancecheck__(self, instance):
+            if isinstance(instance, LazyPackedDict):
+                deserializer = instance.get_whitelist_map().object_deserializers.get(
+                    instance.get_klass_name()
+                )
+                if deserializer:
+                    return deserializer.klass.__name__ == cls.__name__
+                return False
+            return isinstance(instance, cls)
+
+    # Construct a *new class* with the new metaclass
+    return MetaWithLazyPackedDictInstanceCheck(
+        cls.__name__,  # type: ignore
+        (cls, *cls.__bases__),
+        dict(cls.__dict__),
+    )
+
+
+class _UnpackedSentinel:
+    """Sentinel object to mark items that haven't been unpacked yet."""
+
+    _cached_value: Optional[UnpackedValue] = None
+
+    def __init__(
+        self,
+        json_value: JsonSerializableValue,
+        whitelist_map: WhitelistMap,
+        context: UnpackContext,
+    ):
+        self.json_value = json_value
+        self._whitelist_map = whitelist_map
+        self._context = context
+
+    def get_value(self) -> UnpackedValue:
+        # Check if we already have the cached unpacked value
+        if self._cached_value is not None:
+            return self._cached_value
+
+        # Unpack and cache the value
+        unpacked_value = _unpack_value(self.json_value, self._whitelist_map, self._context)
+        self._cached_value = unpacked_value
+
+        # TODO Delete json_value safely
+
+        return unpacked_value
+
+
+class LazyPackedDict(dict):
+    """A dict that unpacks its values lazily on access."""
+
+    def __init__(
+        self,
+        klass_name: str,
+        json_dict: dict[str, JsonSerializableValue],
+        whitelist_map: WhitelistMap,
+        context: UnpackContext,
+    ):
+        self._whitelist_map = whitelist_map
+        self._context = context
+        self._klass_name = klass_name
+        self._json_dict = json_dict
+        self._is_fully_unpacked = False
+
+        self._sentinels = {
+            key: _UnpackedSentinel(value, whitelist_map, context) if key != "__class__" else value
+            for key, value in json_dict.items()
+        }
+
+        deserializer = whitelist_map.object_deserializers.get(self._klass_name)
+        if deserializer and hasattr(deserializer, "storage_field_names"):
+            # Add mappings from constructor param names to their storage field sentinels
+            for (
+                param_name,
+                storage_name,
+            ) in deserializer.storage_field_names.items():
+                if storage_name in self._sentinels:
+                    self._sentinels[param_name] = self._sentinels[storage_name]
+
+        super().__init__(self._sentinels)
+
+    def get_klass_name(self) -> str:
+        return self._klass_name
+
+    def get_whitelist_map(self) -> WhitelistMap:
+        return self._whitelist_map
+
+    def __getitem__(self, key):
+        if key == "__class__":
+            return self._klass_name
+
+        item = None
+        try:
+            item = super().__getitem__(key)
+        except KeyError:
+            pass
+        if item is None:
+            # If the item is None, it means the field is not present in the original JSON
+            # It's possible the NamedTuple has a default value for this field
+            # Lets just unpack the whole thing.
+            return self.unpacked_value.__getattribute__(key)
+        if isinstance(item, _UnpackedSentinel):
+            return item.get_value()
+        return item
+
+    def __getattr__(self, name):
+        try:
+            return self[name]  # delegate to __getitem__
+        except KeyError:
+            raise AttributeError(f"'{self.__class__.__name__}' object has no attribute '{name}'")
+
+    def __getattribute__(self, name):
+        # First try the normal attribute access
+        try:
+            value = super().__getattribute__(name)
+            # If it's a sentinel, unpack it
+            if isinstance(value, _UnpackedSentinel):
+                return value.get_value()
+            return value
+        except AttributeError:
+            # If normal attribute access fails, try dict access
+            try:
+                return self[name]
+            except KeyError:
+                raise AttributeError(
+                    f"'{self.__class__.__name__}' object has no attribute '{name}'"
+                )
+
+    @property
+    def unpacked_value(self) -> UnpackedValue:
+        if self._klass_name in self._whitelist_map.object_deserializers:
+            # Create a copy without __class__ for unpacking
+            unpacked_dict = {}
+            for k, v in self.items():
+                if k != "__class__":
+                    if isinstance(v, _UnpackedSentinel):
+                        unpacked_dict[k] = v.get_value()
+                    else:
+                        unpacked_dict[k] = v
+            deserializer = self._whitelist_map.object_deserializers[self._klass_name]
+            # Convert to actual object and compare
+            actual_object = deserializer.unpack(unpacked_dict, self._whitelist_map, self._context)
+
+            return actual_object
+        raise ValueError(f"No deserializer found for LazyPackedDict({self._klass_name})")
+
+    def __eq__(self, other):
+        # If we're comparing to another LazyPackedDict, compare the underlying data
+        if isinstance(other, LazyPackedDict):
+            return self.unpacked_value == other.unpacked_value
+        return self.unpacked_value == other
+
+    def __repr__(self):
+        return f"LazyPackedDict({self.unpacked_value.__repr__()})"
+
+    def __str__(self):
+        return f"LazyPackedDict({self.unpacked_value.__str__()})"
+
+
 @overload
 def deserialize_value(
     val: str,
@@ -1220,6 +1406,10 @@ def _unpack_object(val: dict, whitelist_map: WhitelistMap, context: UnpackContex
                     val,
                 )
             )
+
+        # Check if this class should use lazy deserialization (ProxyDict)
+        if klass_name in whitelist_map.lazy_types_set:
+            return LazyPackedDict(klass_name, val, whitelist_map, context)
 
         val.pop("__class__")
         deserializer = whitelist_map.object_deserializers[klass_name]
@@ -1424,6 +1614,17 @@ def _check_serdes_tuple_class_invariants(
 
 def _root(val: Any) -> str:
     return f"<root:{val.__class__.__name__}>"
+
+
+def get_storage_name_for_object(obj: Any, *, whitelist_map: WhitelistMap = _WHITELIST_MAP):
+    klass_name = obj.__class__.__name__
+    if isinstance(obj, LazyPackedDict):
+        return obj.get_klass_name()
+
+    if klass_name not in whitelist_map.object_serializers:
+        check.failed(f"{klass_name} is not a known serializable object type.")
+    ser = whitelist_map.object_serializers[klass_name]
+    return ser.get_storage_name()
 
 
 def get_storage_name(klass: type, *, whitelist_map: WhitelistMap = _WHITELIST_MAP):

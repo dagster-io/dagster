@@ -1717,6 +1717,7 @@ class ComponentTreeSnap:
         "pools",
         "component_tree",
     },
+    lazy_deserialization=True,
 )
 @record_custom
 class RepositorySnap(IHaveNew):
