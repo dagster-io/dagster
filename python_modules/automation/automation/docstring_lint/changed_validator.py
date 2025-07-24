@@ -5,6 +5,7 @@ import inspect
 from pathlib import Path
 from typing import Callable, Union
 
+import click
 from dagster._record import IHaveNew, record, record_custom
 
 from automation.docstring_lint.validator import DocstringValidator
@@ -199,16 +200,16 @@ def print_validation_results(
 
     for result in results:
         if result.has_errors() or result.has_warnings():
-            print(f"--- {result.symbol_info.symbol_path} ---")  # noqa: T201
+            click.echo(f"--- {result.symbol_info.symbol_path} ---")
 
             for error in result.errors:
-                print(f"  ERROR: {error}")  # noqa: T201
+                click.echo(f"  ERROR: {error}")
                 total_errors += 1
 
             for warning in result.warnings:
-                print(f"  WARNING: {warning}")  # noqa: T201
+                click.echo(f"  WARNING: {warning}")
                 total_warnings += 1
 
-            print()  # noqa: T201
+            click.echo()
 
     return total_errors, total_warnings
