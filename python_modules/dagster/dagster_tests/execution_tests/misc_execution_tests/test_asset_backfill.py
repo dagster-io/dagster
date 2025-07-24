@@ -569,6 +569,39 @@ def test_matching_partitions_with_different_subsets():
         asset_backfill_data = _single_backfill_iteration(
             backfill_id, asset_backfill_data, asset_graph, instance, assets_by_repo_name
         )
+        assert asset_backfill_data.requested_subset == AssetGraphSubset(
+            non_partitioned_asset_keys=set(),
+            partitions_subsets_by_asset_key={
+                AssetKey(["grandparent"]): asset_graph.get(
+                    AssetKey(["grandparent"])
+                ).partitions_def.get_partition_subset_in_time_window(  # type: ignore
+                    TimeWindow(
+                        start=create_datetime(2023, 1, 1),
+                        end=create_datetime(2023, 1, 2),
+                    )
+                ),
+                AssetKey(["parent"]): asset_graph.get(
+                    AssetKey(["parent"])
+                ).partitions_def.get_partition_subset_in_time_window(  # type: ignore
+                    TimeWindow(
+                        start=create_datetime(2023, 1, 1),
+                        end=create_datetime(2023, 1, 10),
+                    )
+                ),
+                AssetKey(["other_parent"]): asset_graph.get(
+                    AssetKey(["other_parent"])
+                ).partitions_def.get_partition_subset_in_time_window(  # type: ignore
+                    TimeWindow(
+                        start=create_datetime(2023, 1, 9),
+                        end=create_datetime(2023, 1, 10),
+                    ),
+                ),
+            },
+        )
+
+        asset_backfill_data = _single_backfill_iteration(
+            backfill_id, asset_backfill_data, asset_graph, instance, assets_by_repo_name
+        )
 
         assert asset_backfill_data.requested_subset == target_asset_graph_subset
 
