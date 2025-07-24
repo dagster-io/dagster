@@ -16,6 +16,7 @@
 - [dagster-k8s] Added the option to include `ownerReferences`s to k8s executor step jobs, ensuring that the step job and step pod are properly garbage collected if the run pod is deleted. These can be enabled by setting the `enable_owner_references` flag on the executor config.
 - [components] Added `dg list component-tree` command which can be used to visualize the component tree of a project.
 - [components] Added the ability to reference, load, and build defs for other components in the same project. In YAML, you may use the `load_component_at_path` and `build_defs_at_path` functions:
+
   ```yaml
   type: dagster.PythonScriptComponent
 
@@ -26,7 +27,7 @@
       - key: customers_export
         deps:
           - "{{ load_component_at_path('dbt_ingest').asset_key_for_model('customers') }}"
-   ```
+  ```
 
 ### Bugfixes
 
