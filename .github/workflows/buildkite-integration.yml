@@ -1,0 +1,51 @@
+name: Buildkite Integration
+
+on:
+  push:
+    branches: [Issue-29914]
+
+jobs:
+  trigger:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Trigger Buildkite build
+        env:
+          BUILDKITE_API_ACCESS_TOKEN: ${{ secrets.BUILDKITE_API_ACCESS_TOKEN }}
+        run: |
+          echo "🚀 Triggering Buildkite pipeline..."
+          echo "Branch: ${{ github.ref_name }} | Commit: ${{ github.sha }}"
+
+          # Check if API token is valid
+          curl -s -H "Authorization: Bearer $BUILDKITE_API_ACCESS_TOKEN" \
+            https://api.buildkite.com/v2/user || {
+            echo "❌ Invalid Buildkite API token"; exit 1;
+          }
+
+          # Trigger build request
+          response=$(curl -s -w "%{http_code}" -o response.json \
+            -X POST "https://api.buildkite.com/v2/organizations/cti-student/pipelines/harold-symons/dagster/tree/issue-29914/builds" \
+            -H "Authorization: Bearer $BUILDKITE_API_ACCESS_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d @- <<EOF
+          {
+            "commit": "${GITHUB_SHA}",
+            "branch": "${GITHUB_REF_NAME}",
+            "message": "Triggered from GitHub Actions"
+          }
+          EOF
+          )
+
+          echo "🔎 HTTP Status Code: $response"
+          echo "Response JSON:"
+          cat response.json
+
+          if [ "$response" = "201" ] || [ "$response" = "200" ]; then
+            echo "✅ Build triggered successfully!"
+          else
+            echo "❌ Failed to trigger build"
+            exit 1
+          fi
