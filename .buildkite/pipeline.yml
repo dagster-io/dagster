@@ -1,0 +1,37 @@
+# Pipeline for testing issue-31069
+# Tests the implementation of boilerplate definitions.py with @definitions and load_from_defs_folder
+
+steps:
+  - label: ":python: Run tests"
+    command: |
+      python -m venv venv
+      source venv/bin/activate
+      pip install -e ".[dev]"
+      pytest -v python_modules/dagster/dagster_tests/logging_tests/test_bridge.py
+    agents:
+      queue: "default"
+
+  - label: ":sparkles: Format check"
+    command: |
+      python -m venv venv
+      source venv/bin/activate
+      pip install ruff
+      ruff check python_modules/dagster/dagster/_generate/templates/
+    agents:
+      queue: "default"
+      
+  - label: ":dagster: Manual test scaffolding"
+    command: |
+      python -m venv venv
+      source venv/bin/activate
+      pip install -e ".[dev]"
+      mkdir -p /tmp/test_scaffold
+      cd /tmp/test_scaffold
+      python -m dagster project scaffold --name test_project
+      cat test_project/test_project/definitions.py
+      # Verify template contains the @definitions and load_from_defs_folder
+      grep -q "@definitions" test_project/test_project/definitions.py && \
+      grep -q "load_from_defs_folder" test_project/test_project/definitions.py && \
+      echo "✅ Template validation successful!"
+    agents:
+      queue: "default"
