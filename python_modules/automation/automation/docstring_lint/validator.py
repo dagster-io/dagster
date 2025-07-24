@@ -682,10 +682,13 @@ class DocstringValidator:
                             f"Malformed section header: '{stripped}' has incorrect spacing (should be '{section}')",
                             i,
                         )
-                    # Only flag as "possible malformed" if:
+                    # Only flag as "possible malformed" if the text ends with colon (indicating intent to be a section header)
+                    # AND either:
                     # 1. The stripped text is a single word (to avoid sentences), OR
                     # 2. The section header itself is multi-word (legitimate headers like "See Also:")
-                    elif " " not in stripped.rstrip(":") or " " in section.rstrip(":"):
+                    elif stripped.endswith(":") and (
+                        " " not in stripped.rstrip(":") or " " in section.rstrip(":")
+                    ):
                         result = result.with_warning(
                             f"Possible malformed section header: '{stripped}' (should be '{section}')",
                             i,
