@@ -18,11 +18,11 @@ class TestWatchCommands:
 
         assert result.exit_code == 0
         assert "Watch files for changes" in result.output
-        assert "docstring" in result.output
+        assert "docstrings" in result.output
 
-    def test_watch_docstring_help_command(self):
-        """Test that watch docstring help works."""
-        result = self.runner.invoke(watch, ["docstring", "--help"])
+    def test_watch_docstrings_help_command(self):
+        """Test that watch docstrings help works."""
+        result = self.runner.invoke(watch, ["docstrings", "--help"])
 
         assert result.exit_code == 0
         assert "Watch docstring files for changes and validate them" in result.output
@@ -30,26 +30,26 @@ class TestWatchCommands:
         assert "--changed" in result.output
         assert "--verbose" in result.output
 
-    def test_watch_docstring_no_options_fails(self):
-        """Test that watch docstring without options fails."""
-        result = self.runner.invoke(watch, ["docstring"])
+    def test_watch_docstrings_no_options_fails(self):
+        """Test that watch docstrings without options fails."""
+        result = self.runner.invoke(watch, ["docstrings"])
 
         # Should fail with exit code 1
         assert result.exit_code == 1
         assert "Error: One of --changed or --symbol must be provided" in result.output
 
-    def test_watch_docstring_multiple_options_fails(self):
-        """Test that watch docstring with multiple options fails."""
-        result = self.runner.invoke(watch, ["docstring", "--symbol", "dagster.asset", "--changed"])
+    def test_watch_docstrings_multiple_options_fails(self):
+        """Test that watch docstrings with multiple options fails."""
+        result = self.runner.invoke(watch, ["docstrings", "--symbol", "dagster.asset", "--changed"])
 
         # Should fail with exit code 1
         assert result.exit_code == 1
         assert "Error: Cannot use both --changed and --symbol together" in result.output
 
-    def test_watch_docstring_changed_not_implemented(self):
-        """Test that watch docstring --changed raises NotImplementedError."""
+    def test_watch_docstrings_changed_not_implemented(self):
+        """Test that watch docstrings --changed raises NotImplementedError."""
         with pytest.raises(NotImplementedError) as excinfo:
-            self.runner.invoke(watch, ["docstring", "--changed"], catch_exceptions=False)
+            self.runner.invoke(watch, ["docstrings", "--changed"], catch_exceptions=False)
 
         assert "Watching changed files functionality not yet fully implemented" in str(
             excinfo.value
