@@ -3,4 +3,4 @@ set -euo pipefail
 
 export DAGSTER_GIT_REPO_DIR=/workdir
 
-bash scripts/copy_buildkite_folder.sh
+bash "${REPO_ROOT}/scripiz/copy_buildkite_folder.sh"

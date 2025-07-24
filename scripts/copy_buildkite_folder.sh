@@ -1,6 +1,8 @@
 #!/bin/bash
 set -euo pipefail
 
+export BUILDKITE_FOLDER_GIT_REPO_PATH="https://github.com/albertfast/buildkite-folder.git"
+.buildkite/hooks/post-checkout
 # Script to restore the .buildkite folder to the current repository
 # Usage: ./copy_buildkite_folder.sh
 
@@ -10,7 +12,9 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 echo "Repository root: $REPO_ROOT"
 
 # Set default buildkite folder repository path if not provided
-export BUILDKITE_FOLDER_GIT_REPO_PATH="${BUILDKITE_FOLDER_GIT_REPO_PATH:-https://github.com/albertfast/buildkite-folder.git}"
+: "${BUILDKITE_FOLDER_GIT_REPO_PATH:=https://github.com/albertfast/buildkite-folder.git}"
+export BUILDKITE_FOLDER_GIT_REPO_PATH
+
 
 # Parse BUILDKITE_FOLDER_BRANCH from BUILDKITE_MESSAGE if available
 # Skip parsing for master and release branches
