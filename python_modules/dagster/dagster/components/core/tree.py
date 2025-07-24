@@ -82,9 +82,11 @@ class ComponentTreeException(Exception):
     checked=False,  # cant handle ModuleType
 )
 class ComponentTree:
-    """Manages and caches the component loading process, including finding component decls
-    to build the initial decl tree, loading these components, and eventually building the
-    defs.
+    """The hierarchy of Component instances defined in the project.
+
+    Manages and caches the component loading process, including finding component declarations
+    to build the initial declaration tree, loading these Components, and eventually building the
+    Definitions.
     """
 
     defs_module: ModuleType
