@@ -1,3 +1,4 @@
+import json
 from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
 from typing import Any, Optional
@@ -19,7 +20,6 @@ from pydantic import Field, PrivateAttr
 
 from dagster_omni.translator import (
     DagsterOmniTranslator,
-    DefaultOmniTranslator,
     OmniContentData,
     OmniContentType,
     OmniTranslatorData,
@@ -57,46 +57,27 @@ class OmniClient:
         json_data: Optional[dict[str, Any]] = None,
         timeout: int = 30,
     ) -> requests.Response:
-        """Make a request to the Omni API with proper error handling."""
-        url = urljoin(self.base_url, endpoint)
+        """Make a request to the Omni API."""
+        url = self.base_url + endpoint
 
-        try:
-            response = requests.request(
-                method=method,
-                url=url,
-                headers=self._get_headers(),
-                params=params,
-                json=json_data,
-                timeout=timeout,
-            )
-            response.raise_for_status()
-            return response
-        except requests.exceptions.RequestException as e:
-            self._logger.error(f"Omni API request failed: {e}")
-            raise
+        response = requests.request(
+            method=method,
+            url=url,
+            headers=self._get_headers(),
+            params=params,
+            json=json_data,
+            timeout=timeout,
+        )
+        response.raise_for_status()
+        return response
 
     def get_models(self) -> list[dict[str, Any]]:
         """Fetch all models from the workspace."""
         self._logger.info("Fetching models from Omni workspace")
 
-        models = []
-        offset = 0
-        limit = 100  # Pagination limit
-
-        while True:
-            response = self._make_request(
-                "GET", "/v1/models", params={"offset": offset, "limit": limit}
-            )
-
-            data = response.json()
-            batch = data.get("models", [])
-            models.extend(batch)
-
-            # Check if we have more data to fetch
-            if len(batch) < limit:
-                break
-
-            offset += limit
+        response = self._make_request("GET", "/v1/models")
+        data = response.json()
+        models = data.get("models", [])
 
         self._logger.info(f"Fetched {len(models)} models")
         return models
@@ -140,13 +121,7 @@ class OmniClient:
         )
         return response.json()
 
-    def get_documents(
-        self,
-        page_size: int = 100,
-        include_deleted: bool = False,
-        folder_id: Optional[str] = None,
-        user_id: Optional[str] = None,
-    ) -> list[dict[str, Any]]:
+    def get_documents(self) -> list[dict[str, Any]]:
         """Fetch documents from the workspace using the Documents API.
 
         Based on: https://docs.omni.co/docs/API/documents
@@ -154,37 +129,13 @@ class OmniClient:
         """
         self._logger.info("Fetching documents from Omni workspace")
 
-        documents = []
-        cursor = None
+        response = self._make_request("GET", "/v1/documents", params={"pageSize": 100})
+        data = response.json()
+        documents = data.get("records", [])
 
-        while True:
-            params = {
-                "pageSize": min(page_size, 100),  # API limit is 100
-                "include": "_count" + (",includeDeleted" if include_deleted else ""),
-            }
-
-            if cursor:
-                params["cursor"] = cursor
-            if folder_id:
-                params["folderId"] = folder_id
-            if user_id:
-                params["userId"] = user_id
-
-            response = self._make_request("GET", "/v1/documents", params=params)
-            data = response.json()
-
-            batch = data.get("records", [])
-            documents.extend(batch)
-
-            # Check pagination
-            page_info = data.get("pageInfo", {})
-            if not page_info.get("hasNextPage", False):
-                break
-
-            cursor = page_info.get("nextCursor")
-            if not cursor:
-                break
-
+        print(f"Fetched {len(documents)} documents")
+        print(json.dumps(documents, indent=2))
+        print("\n\n")
         self._logger.info(f"Fetched {len(documents)} documents")
         return documents
 
@@ -236,14 +187,14 @@ class OmniWorkspace(ConfigurableResource):
             all_content = []
 
             # Fetch models
-            models = client.get_models()
-            for model in models:
-                all_content.append(
-                    OmniContentData(
-                        content_type=OmniContentType.MODEL,
-                        properties=model,
-                    )
-                )
+            # models = client.get_models()
+            # for model in models:
+            #     all_content.append(
+            #         OmniContentData(
+            #             content_type=OmniContentType.MODEL,
+            #             properties=model,
+            #         )
+            #     )
 
             # Fetch documents (which represent workbooks/dashboards in Omni)
             documents = client.get_documents()
@@ -258,8 +209,12 @@ class OmniWorkspace(ConfigurableResource):
 
                 # Fetch queries for each document
                 try:
-                    document_queries = client.get_document_queries(document.get("identifier", ""))
+                    document_queries = []  # client.get_document_queries(document.get("identifier", ""))
                     for query in document_queries:
+                        # Skip if query is not a dictionary
+                        if not isinstance(query, dict):
+                            continue
+
                         # Add document context to query for lineage
                         query_with_context = {
                             **query,
@@ -274,10 +229,13 @@ class OmniWorkspace(ConfigurableResource):
                         )
                 except Exception as e:
                     # Log but don't fail the entire fetch if one document's queries fail
-                    self._logger.warning(
+                    logger = get_dagster_logger()
+                    logger.warning(
                         f"Failed to fetch queries for document {document.get('identifier', 'unknown')}: {e}"
                     )
                     continue
+            print("\n" * 10)
+            print(all_content)
 
             return OmniWorkspaceData.from_content_data(
                 workspace_url=self.workspace_url,
@@ -287,7 +245,7 @@ class OmniWorkspace(ConfigurableResource):
     def get_or_fetch_workspace_data(self) -> OmniWorkspaceData:
         """Get workspace data using the StateBackedDefinitionsLoader for caching."""
         return OmniWorkspaceDefsLoader(
-            workspace=self, translator=DefaultOmniTranslator()
+            workspace=self, translator=DagsterOmniTranslator()
         ).get_or_fetch_state()
 
     @cached_method
@@ -295,7 +253,7 @@ class OmniWorkspace(ConfigurableResource):
         self, dagster_omni_translator: Optional[DagsterOmniTranslator] = None
     ) -> Sequence[AssetSpec]:
         """Load asset specs for Omni content in the workspace."""
-        translator = dagster_omni_translator or DefaultOmniTranslator()
+        translator = dagster_omni_translator or DagsterOmniTranslator()
 
         with self.process_config_and_initialize_cm() as initialized_workspace:
             return check.is_list(

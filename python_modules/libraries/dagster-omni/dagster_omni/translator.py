@@ -1,12 +1,16 @@
-from abc import ABC, abstractmethod
 from collections.abc import Mapping, Sequence
 from enum import Enum
 from typing import Any
 
 from dagster import AssetKey, AssetSpec
 from dagster._record import record
+from dagster._utils.names import clean_name
+from dagster_shared.serdes.serdes import whitelist_for_serdes
+
+_clean_asset_name = clean_name
 
 
+@whitelist_for_serdes
 class OmniContentType(Enum):
     """Enumeration of Omni content types that can be represented as Dagster assets."""
 
@@ -15,6 +19,7 @@ class OmniContentType(Enum):
     QUERY = "query"
 
 
+@whitelist_for_serdes
 @record
 class OmniContentData:
     """Represents a single piece of Omni content with its properties."""
@@ -23,6 +28,7 @@ class OmniContentData:
     properties: Mapping[str, Any]
 
 
+@whitelist_for_serdes
 @record
 class OmniWorkspaceData:
     """Represents the data from an Omni workspace, containing all content organized by type."""
@@ -63,40 +69,22 @@ class OmniWorkspaceData:
 
 
 @record
-class OmniMetadataSet:
-    """Set of metadata values that can be associated with a Dagster asset spec."""
-
-    id: str
-    workspace_url: str
-
-    @classmethod
-    def extract(cls, metadata_by_key: Mapping[str, Any]) -> "OmniMetadataSet":
-        return cls(
-            id=metadata_by_key["dagster_omni/id"],
-            workspace_url=metadata_by_key["dagster_omni/workspace_url"],
-        )
-
-
-@record
-class OmniTagSet:
-    """Set of tag values that can be associated with a Dagster asset spec."""
-
-    asset_type: str
-
-    @classmethod
-    def extract(cls, tags_by_key: Mapping[str, str]) -> "OmniTagSet":
-        return cls(asset_type=tags_by_key["dagster_omni/asset_type"])
-
-
-@record
 class OmniTranslatorData:
     """Contains all the data needed for the translator to convert Omni content to Dagster asset specs."""
 
     content_data: OmniContentData
     workspace_data: OmniWorkspaceData
 
+    @property
+    def content_type(self) -> OmniContentType:
+        return self.content_data.content_type
 
-class DagsterOmniTranslator(ABC):
+    @property
+    def properties(self) -> Mapping[str, Any]:
+        return self.content_data.properties
+
+
+class DagsterOmniTranslator:
     """Translates Omni content into Dagster asset specs.
 
     This class can be subclassed to customize how Omni content is represented in Dagster.
@@ -104,166 +92,111 @@ class DagsterOmniTranslator(ABC):
 
     def get_asset_spec(self, data: OmniTranslatorData) -> AssetSpec:
         """Get the asset spec for a given piece of Omni content."""
-        content = data.content_data
-
-        if content.content_type == OmniContentType.MODEL:
-            return self.get_model_asset_spec(data)
-        elif content.content_type == OmniContentType.WORKBOOK:
-            return self.get_workbook_asset_spec(data)
-        elif content.content_type == OmniContentType.QUERY:
-            return self.get_query_asset_spec(data)
+        if data.content_type == OmniContentType.MODEL:
+            return self.get_model_spec(data)
+        elif data.content_type == OmniContentType.WORKBOOK:
+            return self.get_workbook_spec(data)
+        elif data.content_type == OmniContentType.QUERY:
+            return self.get_query_spec(data)
         else:
-            raise ValueError(f"Unknown content type: {content.content_type}")
+            raise ValueError(f"Unknown content type: {data.content_type}")
 
-    @abstractmethod
-    def get_model_asset_spec(self, data: OmniTranslatorData) -> AssetSpec:
+    def get_model_spec(self, data: OmniTranslatorData) -> AssetSpec:
         """Get the asset spec for an Omni model."""
-        ...
-
-    @abstractmethod
-    def get_workbook_asset_spec(self, data: OmniTranslatorData) -> AssetSpec:
-        """Get the asset spec for an Omni workbook."""
-        ...
-
-    @abstractmethod
-    def get_query_asset_spec(self, data: OmniTranslatorData) -> AssetSpec:
-        """Get the asset spec for an Omni query."""
-        ...
-
-    def get_asset_key(
-        self, content_type: OmniContentType, properties: Mapping[str, Any]
-    ) -> AssetKey:
-        """Get the asset key for a given piece of Omni content."""
+        properties = data.properties
         name = properties.get("name", "unknown")
-        # For documents, use 'identifier', for models use 'id'
+        content_id = properties.get("id") or properties.get("identifier") or "unknown"
+
+        return AssetSpec(
+            key=AssetKey(["omni", "model", _clean_asset_name(f"{name}_{content_id}")]),
+            description=f"Omni Model: {name}. Data model providing structured access to underlying data sources.",
+            metadata={
+                "dagster_omni/id": content_id,
+                "dagster_omni/workspace_url": data.workspace_data.workspace_url,
+                "dagster_omni/content_type": "model",
+                "dagster_omni/name": name,
+                **{
+                    f"dagster_omni/{k}": v
+                    for k, v in properties.items()
+                    if k in ["createdAt", "updatedAt", "description"]
+                },
+            },
+            tags={"dagster_omni/asset_type": "model"},
+            kinds={"omni", "model"},
+        )
+
+    def get_workbook_spec(self, data: OmniTranslatorData) -> AssetSpec:
+        """Get the asset spec for an Omni workbook."""
+        properties = data.properties
+        name = properties.get("name", "unknown")
         content_id = properties.get("identifier") or properties.get("id") or "unknown"
 
-        # Create hierarchical asset keys: omni/{content_type}/{name}
-        return AssetKey(["omni", content_type.value, f"{name}_{content_id}"])
-
-    def get_description(self, content_type: OmniContentType, properties: Mapping[str, Any]) -> str:
-        """Get a description for the Dagster asset."""
-        name = properties.get("name", "Unknown")
-        content_type_display = content_type.value.title()
-
-        base_description = f"Omni {content_type_display}: {name}"
-
-        # Add additional context based on content type
-        if content_type == OmniContentType.MODEL:
-            return f"{base_description}. Data model providing structured access to underlying data sources."
-        elif content_type == OmniContentType.WORKBOOK:
-            created_at = properties.get("createdAt", "")
-            created_info = f" (created {created_at})" if created_at else ""
-            return f"{base_description}. Analysis workbook containing queries and visualizations{created_info}."
-        elif content_type == OmniContentType.QUERY:
-            return f"{base_description}. Executable query that produces analytical results."
-
-        return base_description
-
-    def get_metadata(
-        self, content_type: OmniContentType, properties: Mapping[str, Any], workspace_url: str
-    ) -> Mapping[str, Any]:
-        """Get metadata for the Dagster asset."""
-        # For documents, use 'identifier', for models use 'id'
-        content_id = properties.get("identifier") or properties.get("id") or "unknown"
-
-        metadata = {
-            "dagster_omni/id": content_id,
-            "dagster_omni/workspace_url": workspace_url,
-            "dagster_omni/content_type": content_type.value,
-        }
-
-        # Add content-specific metadata
-        if "createdAt" in properties:
-            metadata["dagster_omni/created_at"] = properties["createdAt"]
-        if "updatedAt" in properties:
-            metadata["dagster_omni/updated_at"] = properties["updatedAt"]
-        if "name" in properties:
-            metadata["dagster_omni/name"] = properties["name"]
-
-        return metadata
-
-    def get_tags(
-        self, content_type: OmniContentType, properties: Mapping[str, Any]
-    ) -> Mapping[str, str]:
-        """Get tags for the Dagster asset."""
-        return {
-            "dagster_omni/asset_type": content_type.value,
-        }
-
-    def get_deps(self, data: OmniTranslatorData) -> Sequence[AssetKey]:
-        """Get dependencies for the asset based on Omni content relationships."""
-        content = data.content_data
-        workspace_data = data.workspace_data
+        # Build dependencies - workbooks can depend on models via connectionId
         deps = []
-
-        if content.content_type == OmniContentType.WORKBOOK:
-            # Documents (workbooks) can depend on models via connectionId
-            connection_id = content.properties.get("connectionId")
-            if connection_id:
-                # Look for models that use the same connection
-                for model_content in workspace_data.models_by_id.values():
-                    if model_content.properties.get("connectionId") == connection_id:
-                        deps.append(
-                            self.get_asset_key(OmniContentType.MODEL, model_content.properties)
-                        )
-
-        elif content.content_type == OmniContentType.QUERY:
-            # Queries depend on the workbook they belong to
-            workbook_id = content.properties.get("workbook_id")
-            if workbook_id and workbook_id in workspace_data.workbooks_by_id:
-                workbook_content = workspace_data.workbooks_by_id[workbook_id]
-                deps.append(
-                    self.get_asset_key(OmniContentType.WORKBOOK, workbook_content.properties)
-                )
-
-        return deps
-
-
-class DefaultOmniTranslator(DagsterOmniTranslator):
-    """Default implementation of the Omni translator."""
-
-    def get_model_asset_spec(self, data: OmniTranslatorData) -> AssetSpec:
-        content = data.content_data
-        properties = content.properties
-        workspace_data = data.workspace_data
+        connection_id = properties.get("connectionId")
+        if connection_id:
+            for model_content in data.workspace_data.models_by_id.values():
+                if model_content.properties.get("connectionId") == connection_id:
+                    model_name = model_content.properties.get("name", "unknown")
+                    model_id = (
+                        model_content.properties.get("id")
+                        or model_content.properties.get("identifier")
+                        or "unknown"
+                    )
+                    deps.append(
+                        AssetKey(["omni", "model", _clean_asset_name(f"{model_name}_{model_id}")])
+                    )
 
         return AssetSpec(
-            key=self.get_asset_key(OmniContentType.MODEL, properties),
-            description=self.get_description(OmniContentType.MODEL, properties),
-            metadata=self.get_metadata(
-                OmniContentType.MODEL, properties, workspace_data.workspace_url
-            ),
-            tags=self.get_tags(OmniContentType.MODEL, properties),
-            deps=self.get_deps(data),
+            key=AssetKey(["omni", "workbook", _clean_asset_name(f"{name}_{content_id}")]),
+            description=f"Omni Workbook: {name}. Analysis workbook containing queries and visualizations.",
+            metadata={
+                "dagster_omni/id": content_id,
+                "dagster_omni/workspace_url": data.workspace_data.workspace_url,
+                "dagster_omni/content_type": "workbook",
+                "dagster_omni/name": name,
+                **{
+                    f"dagster_omni/{k}": v
+                    for k, v in properties.items()
+                    if k in ["createdAt", "updatedAt", "scope", "folder"]
+                },
+            },
+            tags={"dagster_omni/asset_type": "workbook"},
+            kinds={"omni", "workbook"},
+            deps=deps,
         )
 
-    def get_workbook_asset_spec(self, data: OmniTranslatorData) -> AssetSpec:
-        content = data.content_data
-        properties = content.properties
-        workspace_data = data.workspace_data
+    def get_query_spec(self, data: OmniTranslatorData) -> AssetSpec:
+        """Get the asset spec for an Omni query."""
+        properties = data.properties
+        name = properties.get("name", "unknown")
+        content_id = properties.get("identifier") or properties.get("id") or "unknown"
+
+        # Build dependencies - queries depend on the workbook they belong to
+        deps = []
+        workbook_id = properties.get("workbook_id")
+        if workbook_id and workbook_id in data.workspace_data.workbooks_by_id:
+            workbook_content = data.workspace_data.workbooks_by_id[workbook_id]
+            workbook_name = workbook_content.properties.get("name", "unknown")
+            deps.append(
+                AssetKey(["omni", "workbook", _clean_asset_name(f"{workbook_name}_{workbook_id}")])
+            )
 
         return AssetSpec(
-            key=self.get_asset_key(OmniContentType.WORKBOOK, properties),
-            description=self.get_description(OmniContentType.WORKBOOK, properties),
-            metadata=self.get_metadata(
-                OmniContentType.WORKBOOK, properties, workspace_data.workspace_url
-            ),
-            tags=self.get_tags(OmniContentType.WORKBOOK, properties),
-            deps=self.get_deps(data),
-        )
-
-    def get_query_asset_spec(self, data: OmniTranslatorData) -> AssetSpec:
-        content = data.content_data
-        properties = content.properties
-        workspace_data = data.workspace_data
-
-        return AssetSpec(
-            key=self.get_asset_key(OmniContentType.QUERY, properties),
-            description=self.get_description(OmniContentType.QUERY, properties),
-            metadata=self.get_metadata(
-                OmniContentType.QUERY, properties, workspace_data.workspace_url
-            ),
-            tags=self.get_tags(OmniContentType.QUERY, properties),
-            deps=self.get_deps(data),
+            key=AssetKey(["omni", "query", _clean_asset_name(f"{name}_{content_id}")]),
+            description=f"Omni Query: {name}. Executable query that produces analytical results.",
+            metadata={
+                "dagster_omni/id": content_id,
+                "dagster_omni/workspace_url": data.workspace_data.workspace_url,
+                "dagster_omni/content_type": "query",
+                "dagster_omni/name": name,
+                **{
+                    f"dagster_omni/{k}": v
+                    for k, v in properties.items()
+                    if k in ["createdAt", "updatedAt", "workbook_name"]
+                },
+            },
+            tags={"dagster_omni/asset_type": "query"},
+            kinds={"omni", "query"},
+            deps=deps,
         )
