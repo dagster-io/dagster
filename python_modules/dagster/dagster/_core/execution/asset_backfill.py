@@ -1686,18 +1686,29 @@ def _should_backfill_atomic_asset_subset_unit(
                 asset_graph_subset_matched_so_far,
                 candidate_asset_graph_subset_unit,
             )
-            if cant_run_with_parent_reason is not None:
-                entity_subset_to_filter = entity_subset_to_filter.compute_difference(
-                    possibly_waiting_for_parent_subset
-                )
-                failure_subsets_with_reasons.append(
-                    (
-                        possibly_waiting_for_parent_subset.get_internal_value(),
-                        cant_run_with_parent_reason,
-                    )
-                )
-
             is_self_dependency = parent_key == asset_key
+
+            if cant_run_with_parent_reason is not None:
+                if is_self_dependency:
+                    entity_subset_to_filter = entity_subset_to_filter.compute_difference(
+                        possibly_waiting_for_parent_subset
+                    )
+                    failure_subsets_with_reasons.append(
+                        (
+                            possibly_waiting_for_parent_subset.get_internal_value(),
+                            cant_run_with_parent_reason,
+                        )
+                    )
+                else:
+                    entity_subset_to_filter = asset_graph_view.get_empty_subset(
+                        key=entity_subset_to_filter.key
+                    )
+                    failure_subsets_with_reasons.append(
+                        (
+                            entity_subset_to_filter.get_internal_value(),
+                            cant_run_with_parent_reason,
+                        )
+                    )
 
             if is_self_dependency:
                 self_dependent_node = asset_graph.get(asset_key)
