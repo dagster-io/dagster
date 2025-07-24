@@ -1,0 +1,13 @@
+{
+  "provider": "github",
+  "repository": "harold-symons/dagster",
+  "settings": {
+    "build_pull_requests": true,
+    "build_pull_request_ready_for_review": false,
+    "build_pull_request_labels_changed": false,
+    "build_pull_request_base_branch_changed": false,
+    "build_tags": false,
+    "filter_enabled": true,
+    "filter_condition": "build.branch == 'Issue-29914' || build.branch == 'master'"
+  }
+}
