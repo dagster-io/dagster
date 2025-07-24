@@ -370,8 +370,6 @@ EXCLUDE_MISSING_PUBLIC = {
     "dagster.reconstructable",
     "dagster.AssetExecutionContext",
     "dagster.OpExecutionContext",
-    "dagster.AssetCheckExecutionContext",
-    "dagster.TypeCheckContext",
     "dagster.materialize",
     "dagster.materialize_to_memory",
     "dagster.execute_job",

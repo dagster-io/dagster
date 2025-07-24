@@ -1311,6 +1311,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             return self.op.output_dict.keys()
 
 
+@public
 class TypeCheckContext:
     """The ``context`` object available to a type check function on a DagsterType."""
 
