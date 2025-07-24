@@ -1700,16 +1700,15 @@ def _should_backfill_atomic_asset_subset_unit(
                         )
                     )
                 else:
-                    entity_subset_to_filter = asset_graph_view.get_empty_subset(
-                        key=entity_subset_to_filter.key
-                    )
                     failure_subsets_with_reasons.append(
                         (
                             entity_subset_to_filter.get_internal_value(),
                             cant_run_with_parent_reason,
                         )
                     )
-
+                    entity_subset_to_filter = asset_graph_view.get_empty_subset(
+                        key=entity_subset_to_filter.key
+                    )
             if is_self_dependency:
                 self_dependent_node = asset_graph.get(asset_key)
                 # ensure that we don't produce more than max_partitions_per_run partitions
