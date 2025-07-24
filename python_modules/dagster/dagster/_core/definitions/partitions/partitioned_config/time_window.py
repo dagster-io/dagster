@@ -3,6 +3,7 @@ from datetime import datetime
 from typing import Any, Callable, Optional, Union
 
 import dagster._check as check
+from dagster._annotations import public
 from dagster._core.definitions.partitions.definition.time_window import (
     TimeWindowPartitionsDefinition,
 )
@@ -41,6 +42,7 @@ def wrap_time_window_run_config_fn(
     return _run_config_wrapper
 
 
+@public
 def hourly_partitioned_config(
     start_date: Union[datetime, str],
     minute_offset: int = 0,
@@ -115,6 +117,7 @@ def hourly_partitioned_config(
     return inner
 
 
+@public
 def daily_partitioned_config(
     start_date: Union[datetime, str],
     minute_offset: int = 0,
@@ -193,6 +196,7 @@ def daily_partitioned_config(
     return inner
 
 
+@public
 def weekly_partitioned_config(
     start_date: Union[datetime, str],
     minute_offset: int = 0,
@@ -276,6 +280,7 @@ def weekly_partitioned_config(
     return inner
 
 
+@public
 def monthly_partitioned_config(
     start_date: Union[datetime, str],
     minute_offset: int = 0,

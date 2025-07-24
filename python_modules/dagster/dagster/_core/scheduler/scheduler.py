@@ -7,6 +7,7 @@ from dagster_shared.error import DagsterError
 from typing_extensions import Self
 
 import dagster._check as check
+from dagster._annotations import public
 from dagster._config import Field, IntSource
 from dagster._core.definitions.run_request import InstigatorType
 from dagster._core.instance import DagsterInstance
@@ -59,6 +60,7 @@ class SchedulerDebugInfo(
         )
 
 
+@public
 class Scheduler(abc.ABC):
     """Abstract base class for a scheduler. This component is responsible for interfacing with
     an external system such as cron to ensure scheduled repeated execution according.

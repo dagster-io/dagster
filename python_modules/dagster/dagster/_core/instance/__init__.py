@@ -378,6 +378,7 @@ class DynamicPartitionsStore(Protocol):
         return generate_partition_key_based_definition_id(partition_keys)
 
 
+@public
 class DagsterInstance(DynamicPartitionsStore):
     """Core abstraction for managing Dagster's access to storage and other resources.
 

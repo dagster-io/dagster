@@ -4,7 +4,7 @@ from typing import Any, NamedTuple, Optional, TypeVar, Union
 from dagster_shared.error import DagsterError
 
 import dagster._check as check
-from dagster._annotations import PublicAttr, deprecated_param
+from dagster._annotations import PublicAttr, deprecated_param, public
 from dagster._core.definitions.inference import InferredOutputProps
 from dagster._core.definitions.input import NoValueSentinel
 from dagster._core.definitions.metadata import (
@@ -199,6 +199,7 @@ def _checked_inferred_type(inferred: Any) -> DagsterType:
         ) from e
 
 
+@public
 class DynamicOutputDefinition(OutputDefinition):
     """Variant of :py:class:`OutputDefinition <dagster.OutputDefinition>` for an
     output that will dynamically alter the graph at runtime.
@@ -250,6 +251,7 @@ class OutputPointer(NamedTuple("_OutputPointer", [("node_name", str), ("output_n
         )
 
 
+@public
 @deprecated_param(
     param="dagster_type",
     breaking_version="2.0",
@@ -318,6 +320,7 @@ class OutputMapping(NamedTuple):
         )
 
 
+@public
 class Out(
     NamedTuple(
         "_Out",
@@ -425,6 +428,7 @@ class Out(
         return False
 
 
+@public
 class DynamicOut(Out):
     """Variant of :py:class:`Out <dagster.Out>` for an output that will dynamically alter the graph at
     runtime.
@@ -490,6 +494,7 @@ class DynamicOut(Out):
         return True
 
 
+@public
 class GraphOut(NamedTuple("_GraphOut", [("description", PublicAttr[Optional[str]])])):
     """Represents information about the outputs that a graph maps.
 

@@ -1,8 +1,9 @@
 from typing import NamedTuple
 
-from dagster._annotations import PublicAttr
+from dagster._annotations import PublicAttr, public
 
 
+@public
 class PartitionKeyRange(NamedTuple):
     """Defines a range of partitions.
 

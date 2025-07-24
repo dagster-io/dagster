@@ -1345,6 +1345,7 @@ class TypeCheckContext:
         return self._log
 
 
+@public
 class DagsterTypeLoaderContext(StepExecutionContext):
     """The context object provided to a :py:class:`@dagster_type_loader <dagster_type_loader>`-decorated function during execution.
 

@@ -42,6 +42,7 @@ if TYPE_CHECKING:
 
 
 @whitelist_for_serdes(storage_name="PipelineRunStatus")
+@public
 class DagsterRunStatus(Enum):
     """The status of run execution."""
 
@@ -271,6 +272,7 @@ class DagsterRunSerializer(NamedTupleSerializer["DagsterRun"]):
         "resolved_op_selection": "solids_to_execute",
     },
 )
+@public
 class DagsterRun(
     NamedTuple(
         "_DagsterRun",
@@ -590,6 +592,7 @@ class DagsterRun(
         return {TICK_ID_TAG: tick_id, **automation_tags}
 
 
+@public
 @record_custom
 class RunsFilter(IHaveNew):
     """Defines a filter across job runs, for use when querying storage directly.
@@ -681,6 +684,7 @@ class TagBucket(NamedTuple):
     bucket_limit: Optional[int]
 
 
+@public
 class RunRecord(
     NamedTuple(
         "_RunRecord",

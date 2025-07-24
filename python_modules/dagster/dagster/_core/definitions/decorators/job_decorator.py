@@ -11,6 +11,7 @@ from typing import (  # noqa: UP035
 )
 
 import dagster._check as check
+from dagster._annotations import public
 from dagster._core.decorator_utils import format_docstring_for_description
 from dagster._core.definitions.config import ConfigMapping
 from dagster._core.definitions.graph_definition import GraphDefinition
@@ -144,6 +145,7 @@ def job(
 ) -> _Job: ...
 
 
+@public
 def job(
     compose_fn: Optional[Callable[..., Any]] = None,
     *,

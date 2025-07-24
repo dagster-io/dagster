@@ -324,6 +324,7 @@ class BindResourcesToJobs(list):
 
 
 @record_custom
+@public
 class Definitions(IHaveNew):
     """A set of definitions explicitly available and loadable by Dagster tools.
 

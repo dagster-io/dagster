@@ -25,6 +25,7 @@ if TYPE_CHECKING:
 T_str = TypeVar("T_str", bound=str, default=str, covariant=True)
 
 
+@public
 class PartitionsDefinition(ABC, Generic[T_str]):
     """Defines a set of partitions, which can be attached to a software-defined asset or job.
 

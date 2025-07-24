@@ -63,6 +63,7 @@ class UrlCodeReference(DagsterModel):
 CodeReference: TypeAlias = Union[LocalFileCodeReference, UrlCodeReference]
 
 
+@public
 @beta
 @whitelist_for_serdes
 class CodeReferencesMetadataValue(DagsterModel, MetadataValue["CodeReferencesMetadataValue"]):  # pyright: ignore[reportIncompatibleMethodOverride]
@@ -195,6 +196,7 @@ def _with_code_source_single_definition(
 
 
 @beta
+@public
 class FilePathMapping(ABC):
     """Base class which defines a file path mapping function. These functions are used to map local file paths
     to their corresponding paths in a source control repository.
@@ -218,6 +220,7 @@ class FilePathMapping(ABC):
         """
 
 
+@public
 @beta
 @dataclass
 class AnchorBasedFilePathMapping(FilePathMapping):

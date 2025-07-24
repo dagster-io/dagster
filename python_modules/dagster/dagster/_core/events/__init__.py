@@ -108,6 +108,7 @@ EventSpecificData = Union[
 ]
 
 
+@public
 class DagsterEventType(str, Enum):
     """The types of events that may be yielded by op and job execution."""
 
@@ -451,6 +452,7 @@ class DagsterEventBatchMetadata(NamedTuple):
         "job_name": "pipeline_name",
     },
 )
+@public
 class DagsterEvent(
     NamedTuple(
         "_DagsterEvent",

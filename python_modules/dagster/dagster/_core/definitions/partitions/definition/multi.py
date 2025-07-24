@@ -81,6 +81,7 @@ def _check_valid_partitions_dimensions(
                 )
 
 
+@public
 class MultiPartitionsDefinition(PartitionsDefinition[MultiPartitionKey]):
     """Takes the cross-product of partitions from two partitions definitions.
 

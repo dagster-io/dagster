@@ -13,6 +13,7 @@ from watchdog.events import PatternMatchingEventHandler
 from watchdog.observers import Observer
 
 import dagster._check as check
+from dagster._annotations import public
 from dagster._config import StringSource
 from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.storage.event_log.base import EventLogCursor
@@ -32,6 +33,7 @@ from dagster._utils import mkdir_p
 SQLITE_EVENT_LOG_FILENAME = "event_log"
 
 
+@public
 class ConsolidatedSqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
     """SQLite-backed consolidated event log storage intended for test cases only.
 
