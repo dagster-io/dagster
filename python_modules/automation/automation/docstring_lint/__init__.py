@@ -7,7 +7,6 @@ from automation.docstring_lint.exclude_lists import (
     EXCLUDE_MODULES_FROM_PUBLIC_SCAN,
     EXCLUDE_RST_FILES,
 )
-
 from automation.docstring_lint.public_api_validator import (
     PublicApiValidator,
     PublicSymbol,

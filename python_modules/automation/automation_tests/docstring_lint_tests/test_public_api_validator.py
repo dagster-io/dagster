@@ -3,19 +3,18 @@
 from pathlib import Path
 
 import pytest
-from automation.docstring_lint.public_api_validator import (
-    PublicApiValidator,
-    PublicSymbol,
-    RstSymbol,
-    ValidationIssue,
-)
-
 from automation.docstring_lint.exclude_lists import (
     EXCLUDE_MISSING_EXPORT,
     EXCLUDE_MISSING_PUBLIC,
     EXCLUDE_MISSING_RST,
     EXCLUDE_MODULES_FROM_PUBLIC_SCAN,
     EXCLUDE_RST_FILES,
+)
+from automation.docstring_lint.public_api_validator import (
+    PublicApiValidator,
+    PublicSymbol,
+    RstSymbol,
+    ValidationIssue,
 )
 
 # All exclude lists are now imported from exclude_lists.py
