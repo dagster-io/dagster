@@ -1,4 +1,4 @@
-import {Box, Row, Tag, Tooltip} from '@dagster-io/ui-components';
+import {Row} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import * as React from 'react';
 
@@ -117,28 +117,7 @@ export const AutomationsTable = ({
                     onToggleAll={onToggleAll}
                     expanded={expandedKeys.includes(repoAddressAsHumanString(row.repoAddress))}
                     showLocation={duplicateRepoNames.has(row.repoAddress.name)}
-                    rightElement={
-                      <Box flex={{direction: 'row', gap: 4}}>
-                        <Tooltip
-                          content={
-                            row.sensorCount === 1 ? '1 sensor' : `${row.sensorCount} sensors`
-                          }
-                          placement="top"
-                        >
-                          <Tag icon="sensors">{row.sensorCount}</Tag>
-                        </Tooltip>
-                        <Tooltip
-                          content={
-                            row.scheduleCount === 1
-                              ? '1 schedule'
-                              : `${row.scheduleCount} schedules`
-                          }
-                          placement="top"
-                        >
-                          <Tag icon="schedule">{row.scheduleCount}</Tag>
-                        </Tooltip>
-                      </Box>
-                    }
+                    rightElement={<></>}
                   />
                 </Row>
               );
