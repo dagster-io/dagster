@@ -1,5 +1,59 @@
 # Changelog
 
+## 1.11.3 (core) / 0.27.3 (libraries)
+
+### New
+
+- Introduced `AssetExecutionContext.load_asset_value`, which enables loading asset values from the IO manager dynamically rather than requiring asset values be loaded as parameters to the asset function. For example:
+  ```python
+  @dg.asset(deps=[the_asset])
+  def the_downstream_asset(context: dg.AssetExecutionContext):
+    return context.load_asset_value(dg.AssetKey("the_asset"))
+  ```
+- Expose asset_selection parameter for `submit_job_execution` function in DagsterGraphQLClient, thanks [@brunobbaraujo](https://github.com/brunobbaraujo)!
+- Large error stack traces from Dagster events will be automatically truncated if the message or stack trace exceeds 500kb. The exact value of the truncation can be overridden by setting the `DAGSTER_EVENT_ERROR_FIELD_SIZE_LIMIT` environment variable.
+- Added `databento`, `ax`, and `botorch` kind tags, thanks [@aleewen](https://github.com/aleewen) and [@CompRhys](https://github.com/CompRhys)!
+- [dagster-k8s] Added the option to include `ownerReferences`s to k8s executor step jobs, ensuring that the step job and step pod are properly garbage collected if the run pod is deleted. These can be enabled by setting the `enable_owner_references` flag on the executor config.
+- [components] Added `dg list component-tree` command which can be used to visualize the component tree of a project.
+- [components] Added the ability to reference, load, and build defs for other components in the same project. In YAML, you may use the `load_component_at_path` and `build_defs_at_path` functions:
+  ```yaml
+  type: dagster.PythonScriptComponent
+
+  attributes:
+    execution:
+      path: my_script.py
+    assets:
+      - key: customers_export
+        deps:
+          - "{{ load_component_at_path('dbt_ingest').asset_key_for_model('customers') }}"
+   ```
+
+### Bugfixes
+
+- [components] Python component instances are now properly loaded from ordinary Python files.
+- Fixed an issue that could cause asset backfills to request downstream partitions at the same time as their parent partitions in rare cases.
+- Fixed a bug that could cause `@graph_asset`s to not properly apply the `AllPartitionMapping` or `LastPartitionMapping` to dependencies, thanks [@BoLiuV5](https://github.com/BoLiuV5)!
+- Fixed a bug that could cause code locations to fail to load when a custom python AutomationCondition was used as the operand of `AutomationCondition.any_deps_match()` or `AutomationCondition.all_deps_match()`.
+- The `create-dagster` standalone executable now works on all Linux versions using glibc 2.17 or later.
+- [ui] Partition tags are now properly shown on the runs page, thanks [@HynekBlaha](https://github.com/HynekBlaha)!
+- [ui] Using the "Retry from Asset Failure" option when retrying a run that failed after materializing all of its assets will now correctly indicate that there is no work that needs to be retried.
+- [ui] The timeline tab on the Overview page now shows runs by sensor when they were launched by an automation condition sensor, instead of showing every row in the same "Automation condition" row.
+- [ui] Fixed an issue where filtering to an asset group on the lineage page did not apply the correct repository filter in code locations with multiple repositories.
+- [ui] Fixed an issue where asset checks referencing asset keys that did not exist in the asset graph did not appear in the Dagster UI.
+- [ui] Fixed occasional crashes of the asset graph on the asset lineage tab.
+- [dagster-dbt] The `@dbt_assets` decorator and associated APIs no longer error when parsing dbt projects that contain an owner with multiple emails.
+
+### Documentation
+
+- Fixed typos in the ELT pipeline tutorial, thanks [@aaronprice00](https://github.com/aaronprice00) and [@kevJ711](https://github.com/kevJ711)!
+- Fixed typos in components docs, thanks [@tintamarre](https://github.com/tintamarre)!
+- Fixed error in Sling docs, thanks [@nhuray](https://github.com/nhuray)!
+- Updated the `AutomationCondition.replace` type signature to provide callers more information about the returned `AutomationCondition`, thanks [@dschafer](https://github.com/dschafer)!
+
+### Dagster Plus
+
+- Catalog search now uses a similar syntax to the selection syntax for filtering by attribute (eg: `Code location: location` -> `code_location: location`.
+
 ## 1.11.2 (core) / 0.27.2 (libraries)
 
 ### New
