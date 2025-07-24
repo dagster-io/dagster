@@ -39,7 +39,7 @@ def scaffold_component(
     defs_path: Optional[Union[Path, str]] = None,
     scaffold_params: Optional[dict[str, Any]] = None,
     scaffold_format: ScaffoldFormatOptions = "yaml",
-    component_body: Optional[dict[str, Any]] = None,
+    defs_yaml_contents: Optional[dict[str, Any]] = None,
 ) -> Path: ...
 ```
 
@@ -55,7 +55,7 @@ def test_scaffold_sling():
         assert (defs_path / "replication.yaml").exists()
 ```
 
-For ease of use, the `component_body` argument can be used to replace the contents of the `defs.yaml` file after the component has been scaffolded.
+For ease of use, the `defs_yaml_contents` argument can be used to replace the contents of the `defs.yaml` file after the component has been scaffolded.
 
 #### Loading and building definitions with `load_component_and_build_defs`
 
