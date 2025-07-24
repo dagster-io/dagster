@@ -90,3 +90,7 @@ yarn build-api-docs          # Build API docs after .rst changes
 ## CLI Development Guidelines
 
 - Note that click MUST be used to building cli tools
+
+## Project Compatibility
+
+- Code must be compatible with Python version 3.9 and later
