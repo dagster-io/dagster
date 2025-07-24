@@ -576,7 +576,7 @@ def list_component_tree_command(
 
     from dagster.components.core.tree import ComponentTree
 
-    tree = ComponentTree.load(dg_context.root_path)
+    tree = ComponentTree.for_project(dg_context.root_path)
     output = tree.to_string_representation(hide_plain_defs=True)
 
     if output_file:

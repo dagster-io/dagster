@@ -216,7 +216,7 @@ def flatten_components(parent_component: Optional[Component]) -> list[Component]
 
 @deprecated(
     breaking_version="2.0.0",
-    additional_warn_text="Use dagster.component_tree_for_project instead.",
+    additional_warn_text="Use dagster.ComponentTree.for_project instead.",
 )
 def get_component_defs_within_project(
     *,
@@ -241,7 +241,7 @@ def get_component_defs_within_project(
 
 @deprecated(
     breaking_version="2.0.0",
-    additional_warn_text="Use dagster.component_tree_for_project instead.",
+    additional_warn_text="Use dagster.ComponentTree.for_project instead.",
 )
 def get_all_components_defs_within_project(
     *,
@@ -281,7 +281,7 @@ def get_all_components_defs_within_project(
 
 @deprecated(
     breaking_version="2.0.0",
-    additional_warn_text="Use dagster.component_tree_for_project instead.",
+    additional_warn_text="Use dagster.ComponentTree.for_project instead.",
 )
 def get_all_components_defs_from_defs_path(
     *,
@@ -299,7 +299,7 @@ def get_all_components_defs_from_defs_path(
 
 @deprecated(
     breaking_version="2.0.0",
-    additional_warn_text="Use dagster.component_tree_for_project instead.",
+    additional_warn_text="Use dagster.ComponentTree.for_project instead.",
 )
 def get_component_defs_from_defs_path(
     *, module_path: str, project_root: Union[str, Path]

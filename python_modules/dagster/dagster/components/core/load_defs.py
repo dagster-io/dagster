@@ -3,13 +3,7 @@ from pathlib import Path
 from types import ModuleType
 from typing import Optional
 
-from dagster_shared import check
 from dagster_shared.serdes.objects.package_entry import json_for_all_components
-from dagster_shared.utils.config import (
-    get_canonical_defs_module_name,
-    load_toml_as_dict,
-    locate_dg_config_in_folder,
-)
 
 from dagster._annotations import deprecated, public
 from dagster._core.definitions.definitions_class import Definitions
@@ -118,46 +112,7 @@ def load_from_defs_folder(*, project_root: Path) -> Definitions:
                 return dg.load_from_defs_folder(project_root=project_path)
 
     """
-    return component_tree_for_project(project_root=project_root).build_defs()
-
-
-@public
-@suppress_dagster_warnings
-def component_tree_for_project(*, project_root: Path) -> ComponentTree:
-    """Constructs a ComponentTree object by automatically discovering and loading all Dagster
-    definitions from a project's defs folder structure.
-
-    Args:
-        project_root (Path): The absolute path to the dg project root directory. This should be the directory containing the project's configuration file (dg.toml or pyproject.toml with [tool.dg] section).
-
-    Returns:
-        ComponentTree: A ComponentTree object enabling loading components and building their definitions.
-
-    """
-    root_config_path = locate_dg_config_in_folder(project_root)
-    toml_config = load_toml_as_dict(
-        check.not_none(
-            root_config_path,
-            additional_message=f"No config file found at project root {project_root}",
-        )
-    )
-
-    if root_config_path and root_config_path.stem == "dg":
-        project = toml_config.get("project", {})
-    else:
-        project = toml_config.get("tool", {}).get("dg", {}).get("project", {})
-
-    root_module_name = project.get("root_module")
-    defs_module_name = project.get("defs_module")
-    check.invariant(
-        defs_module_name or root_module_name,
-        f"Either defs_module or root_module must be set in the project config {root_config_path}",
-    )
-    defs_module_name = get_canonical_defs_module_name(defs_module_name, root_module_name)
-
-    defs_module = importlib.import_module(defs_module_name)
-
-    return ComponentTree.from_module(defs_module=defs_module, project_root=project_root)
+    return ComponentTree.for_project(project_root=project_root).build_defs()
 
 
 # Public method so optional Nones are fine

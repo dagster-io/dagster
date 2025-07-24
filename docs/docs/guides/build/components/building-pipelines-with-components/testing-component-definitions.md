@@ -6,7 +6,7 @@ sidebar_position: 600
 
 After creating components in your `defs` folder, you will want to test them. Dagster provides testing utilities that make testing components simple.
 
-The core function is `component_tree_for_project`, which supplies a `ComponentTree` object that can be used to load components and build their definitions.
+The core function is `ComponentTree.for_project`, which builds a `ComponentTree` object that can be used to load components and build their definitions.
 
 :::note
 
@@ -26,7 +26,7 @@ from pathlib import Path
 def my_project_component_defs(component_path) -> tuple[dg.Component, dg.Definitions]:
     # Project root is two parents up from the test file
     project_root = Path(__file__).parent.parent
-    tree = dg.component_tree_for_project(project_root=project_root)
+    tree = dg.ComponentTree.for_project(project_root=project_root)
     component = tree.load_component_at_path(component_path)
     defs = tree.build_defs_at_path(component_path)
     return component, defs
