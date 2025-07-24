@@ -53,11 +53,11 @@ def scaffold_component(
             f.write(
                 textwrap.dedent(
                     f"""
-                        from dagster import component, ComponentLoadContext
+                        import dagster as dg
                         from {module_path} import {class_name}
 
-                        @component_instance
-                        def load(context: ComponentLoadContext) -> {class_name}: ...
+                        @dg.component_instance
+                        def load(context: dg.ComponentLoadContext) -> {class_name}: ...
                 """
                 ).lstrip()
             )
