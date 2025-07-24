@@ -57,10 +57,16 @@ from dagster._annotations import deprecated
 from dagster._utils.warnings import deprecation_warning
 from dagster_shared.libraries import DagsterLibraryRegistry
 
-from dagster_dbt.compat import DBT_VERSION
+from dagster_dbt.compat import DBT_PYTHON_VERSION
 
 DagsterLibraryRegistry.register("dagster-dbt", __version__)
-DagsterLibraryRegistry.register("dbt-core", DBT_VERSION.version, is_dagster_package=False)
+
+if DBT_PYTHON_VERSION is not None:
+    DagsterLibraryRegistry.register(
+        "dbt-core", DBT_PYTHON_VERSION.base_version, is_dagster_package=False
+    )
+else:
+    DagsterLibraryRegistry.register("dbt-fusion", "unknown", is_dagster_package=False)
 
 
 _DEPRECATED: Final[Mapping[str, tuple[str, str, str]]] = {

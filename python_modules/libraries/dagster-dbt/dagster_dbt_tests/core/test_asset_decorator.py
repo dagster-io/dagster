@@ -47,9 +47,10 @@ from dagster_dbt.asset_utils import (
     DBT_DEFAULT_SELECT,
     DUPLICATE_ASSET_KEY_ERROR_MESSAGE,
 )
-from dagster_dbt.compat import DBT_VERSION
+from dagster_dbt.compat import DBT_PYTHON_VERSION
 from dagster_dbt.core.resource import DbtCliResource
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator, DagsterDbtTranslatorSettings
+from packaging import version
 
 from dagster_dbt_tests.dbt_projects import (
     test_dbt_alias_path,
@@ -1206,7 +1207,7 @@ def test_dbt_with_semantic_models_and_saved_queries(
 
 
 @pytest.mark.skipif(
-    DBT_VERSION.less_than("1.8.0"),
+    DBT_PYTHON_VERSION and DBT_PYTHON_VERSION < version.parse("1.8.0"),
     reason="dbt unit test support is only available in `dbt-core>=1.8.0`",
 )
 @pytest.mark.parametrize("select", ["fqn:*", "tag:test"])

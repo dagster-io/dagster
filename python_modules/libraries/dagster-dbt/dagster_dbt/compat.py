@@ -1,49 +1,15 @@
 from enum import Enum
-from functools import lru_cache
 from typing import TYPE_CHECKING, Any
 
-from dagster_shared.record import record
 from packaging import version
 from typing_extensions import TypeAlias
 
+try:
+    from dbt.version import __version__ as dbt_version
 
-@record
-class DbtVersion:
-    """Base class for representing the currently-installed dbt version."""
-
-    version: str
-
-    @property
-    def is_fusion(self) -> bool:
-        return self.version.startswith("2.")
-
-    @property
-    def is_core(self) -> bool:
-        return not self.is_fusion
-
-    def less_than(self, other: str) -> bool:
-        return version.parse(self.version) < version.parse(other)
-
-    def to_string(self) -> str:
-        if self.is_fusion:
-            return "fusion"
-        else:
-            return self.version
-
-
-@lru_cache
-def _get_dbt_version() -> DbtVersion:
-    try:
-        from dbt.version import __version__ as dbt_version
-
-        return DbtVersion(version=dbt_version)
-    except ImportError:
-        # for now, do not attempt to get a more-specific version
-        return DbtVersion(version="2.0.0")
-
-
-DBT_VERSION = _get_dbt_version()
-
+    DBT_PYTHON_VERSION = version.parse(dbt_version)
+except ImportError:
+    DBT_PYTHON_VERSION = None
 
 # Conditionally define types for various types we use from the dbt-core package
 if TYPE_CHECKING:
@@ -66,7 +32,7 @@ if TYPE_CHECKING:
     TestStatus: TypeAlias = _TestStatus
     REFABLE_NODE_TYPES: list[str] = []
 else:
-    if DBT_VERSION.is_core:
+    if DBT_PYTHON_VERSION is not None:
         from dbt.adapters.base.impl import (
             BaseAdapter as BaseAdapter,
             BaseColumn as BaseColumn,
@@ -75,7 +41,7 @@ else:
         from dbt.contracts.results import NodeStatus, TestStatus
         from dbt.node_types import NodeType as NodeType
 
-        if DBT_VERSION.less_than("1.8.0"):
+        if DBT_PYTHON_VERSION < version.parse("1.8.0"):
             from dbt.node_types import NodeType
 
             REFABLE_NODE_TYPES = NodeType.refable()
