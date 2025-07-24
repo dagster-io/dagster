@@ -24,23 +24,27 @@ export const PartitionHealthSummary = memo((props: Props) => {
   const history = useHistory();
 
   const handlePartitionInteraction = useCallback((selectedPartitions: string[]) => {
-
     if (selectedPartitions.length > 0) {
       const firstPartition = selectedPartitions[0]!;
       const lastPartition = selectedPartitions[selectedPartitions.length - 1]!;
-      
+
       let defaultRange: string;
-      
+      let queryParams: {view: string; default_range: string; partition?: string};
+
       if (selectedPartitions.length === 1) {
         defaultRange = firstPartition;
+        queryParams = {
+          view: 'partitions',
+          default_range: defaultRange,
+          partition: firstPartition,
+        };
       } else {
         defaultRange = `[${firstPartition}...${lastPartition}]`;
+        queryParams = {
+          view: 'partitions',
+          default_range: defaultRange,
+        };
       }
-
-      const queryParams: {view: string; default_range: string} = {
-        view: 'partitions',
-        default_range: defaultRange,
-      };
 
       const assetPath = assetDetailsPathForKey(assetKey, queryParams);
       history.push(assetPath);
