@@ -6,8 +6,9 @@ import dagster_shared.check as check
 import orjson
 from dagster import AssetKey
 from dagster._utils.names import clean_name_lower
+from packaging import version
 
-from dagster_dbt.compat import DBT_VERSION
+from dagster_dbt.compat import DBT_PYTHON_VERSION
 
 if TYPE_CHECKING:
     from dagster_dbt.core.resource import DbtProject
@@ -35,7 +36,7 @@ def select_unique_ids(
     manifest_json: Mapping[str, Any],
 ) -> AbstractSet[str]:
     """Given dbt selection paramters, return the unique ids of all resources that match that selection."""
-    if DBT_VERSION.is_core:
+    if DBT_PYTHON_VERSION is not None:
         return _select_unique_ids_from_manifest(select, exclude, selector, manifest_json)
     else:
         project = check.not_none(project, "project must be passed if dbt-core is not installed")
@@ -110,7 +111,7 @@ def _select_unique_ids_from_manifest(
             return _DictShim(ret) if isinstance(ret, dict) else ret
 
     unit_tests = {}
-    if not DBT_VERSION.less_than("1.8.0"):
+    if DBT_PYTHON_VERSION is not None and DBT_PYTHON_VERSION >= version.parse("1.8.0"):
         from dbt.contracts.graph.nodes import UnitTestDefinition
 
         unit_tests = (

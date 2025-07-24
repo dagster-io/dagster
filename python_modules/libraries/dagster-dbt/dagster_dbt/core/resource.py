@@ -1,9 +1,12 @@
 import os
+import re
 import shutil
 import uuid
 from argparse import ArgumentParser, Namespace
 from collections.abc import Sequence
+from functools import cached_property
 from pathlib import Path
+from subprocess import check_output
 from typing import Any, Optional, Union, cast
 
 import yaml
@@ -16,13 +19,14 @@ from dagster import (
 from dagster._annotations import public
 from dagster._core.execution.context.init import InitResourceContext
 from dagster._utils import pushd
+from packaging import version
 from pydantic import Field, ValidationInfo, field_validator, model_validator
 
 from dagster_dbt.asset_utils import (
     DBT_INDIRECT_SELECTION_ENV,
     get_updated_cli_invocation_params_for_context,
 )
-from dagster_dbt.compat import DBT_VERSION, BaseAdapter
+from dagster_dbt.compat import DBT_PYTHON_VERSION, BaseAdapter
 from dagster_dbt.core.dbt_cli_invocation import DbtCliInvocation, _get_dbt_target_path
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator, validate_opt_translator
 from dagster_dbt.dbt_manifest import DbtManifestParam, validate_manifest
@@ -302,10 +306,14 @@ class DbtCliResource(ConfigurableResource):
     @model_validator(mode="before")
     def validate_dbt_version(cls, values: dict[str, Any]) -> dict[str, Any]:
         """Validate that the dbt version is supported."""
-        if DBT_VERSION.less_than("1.7.0"):
+        if DBT_PYTHON_VERSION is None:
+            # dbt-core is not installed, so assume fusion is installed
+            return values
+
+        if DBT_PYTHON_VERSION < version.parse("1.7.0"):
             raise ValueError(
                 "To use `dagster_dbt.DbtCliResource`, you must use `dbt-core>=1.7.0` or dbt Fusion. Currently,"
-                f" you are using `dbt-core=={DBT_VERSION.version}`. Please install a compatible dbt engine."
+                f" you are using `dbt-core=={DBT_PYTHON_VERSION.base_version}`. Please install a compatible dbt engine."
             )
 
         return values
@@ -352,7 +360,7 @@ class DbtCliResource(ConfigurableResource):
         else:
             cli_vars = parse_cli_vars(var_args.vars)
 
-        if not DBT_VERSION.less_than("1.8.0"):
+        if DBT_PYTHON_VERSION >= version.parse("1.8.0"):
             from dbt_common.context import set_invocation_context
 
             set_invocation_context(os.environ.copy())
@@ -391,7 +399,7 @@ class DbtCliResource(ConfigurableResource):
                 with pushd(self.project_dir):
                     config.credentials.path = os.fspath(Path(config.credentials.path).absolute())
 
-        if DBT_VERSION.less_than("1.8.0"):
+        if DBT_PYTHON_VERSION < version.parse("1.8.0"):
             from dbt.events.functions import cleanup_event_logger  # type: ignore
         else:
             from dbt_common.events.event_manager_client import cleanup_event_logger
@@ -400,7 +408,7 @@ class DbtCliResource(ConfigurableResource):
 
         # reset adapters list in case we have instantiated an adapter before in this process
         reset_adapters()
-        if DBT_VERSION.less_than("1.8.0"):
+        if DBT_PYTHON_VERSION < version.parse("1.8.0"):
             register_adapter(config)  # type: ignore
         else:
             from dbt.adapters.protocol import MacroContextGeneratorCallable  # noqa: TC002
@@ -423,6 +431,19 @@ class DbtCliResource(ConfigurableResource):
         adapter = cast("BaseAdapter", get_adapter(config))
 
         return adapter
+
+    @cached_property
+    def _cli_version(self) -> version.Version:
+        """Gets the version of the currently-installed dbt executable.
+
+        This may differ from the version of the dbt-core package, most obviously if dbt-core is not
+        installed due to the fusion engine being used.
+        """
+        raw_output = check_output([self.dbt_executable, "--version"]).decode("utf-8").strip()
+        match = re.search(r"(\d+\.\d+\.\d+)", raw_output)
+        if not match:
+            raise ValueError(f"Could not parse dbt version from output: {raw_output}")
+        return version.parse(match.group(1))
 
     @public
     def get_defer_args(self) -> Sequence[str]:
@@ -659,9 +680,11 @@ class DbtCliResource(ConfigurableResource):
         if not target_path.is_absolute():
             target_path = project_dir.joinpath(target_path)
 
+        # run dbt --version to get the dbt core version
         adapter: Optional[BaseAdapter] = None
         with pushd(self.project_dir):
-            if DBT_VERSION.is_core:
+            # we do not need to initialize the adapter if we are using the fusion engine
+            if self._cli_version.major < 2:
                 try:
                     adapter = self._initialize_dbt_core_adapter(args)
                 except:
@@ -680,6 +703,7 @@ class DbtCliResource(ConfigurableResource):
                 raise_on_error=raise_on_error,
                 context=context,
                 adapter=adapter,
+                cli_version=self._cli_version,
             )
 
     def setup_for_execution(self, context: InitResourceContext) -> None:

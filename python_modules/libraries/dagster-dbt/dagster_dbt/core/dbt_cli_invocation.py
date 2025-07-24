@@ -23,9 +23,10 @@ from dagster import (
 )
 from dagster._annotations import public
 from dagster._core.errors import DagsterExecutionInterruptedError
+from packaging import version
 from typing_extensions import Literal
 
-from dagster_dbt.compat import BaseAdapter, BaseColumn, BaseRelation, DbtVersion
+from dagster_dbt.compat import BaseAdapter, BaseColumn, BaseRelation
 from dagster_dbt.core.dbt_cli_event import (
     DbtCliEventMessage,
     DbtCoreCliEventMessage,
@@ -90,6 +91,7 @@ class DbtCliInvocation:
     project_dir: Path
     target_path: Path
     raise_on_error: bool
+    cli_version: version.Version
     context: Optional[Union[OpExecutionContext, AssetExecutionContext]] = field(
         default=None, repr=False
     )
@@ -144,6 +146,7 @@ class DbtCliInvocation:
         raise_on_error: bool,
         context: Optional[Union[OpExecutionContext, AssetExecutionContext]],
         adapter: Optional[BaseAdapter],
+        cli_version: version.Version,
     ) -> "DbtCliInvocation":
         # Attempt to take advantage of partial parsing. If there is a `partial_parse.msgpack` in
         # in the target folder, then copy it to the dynamic target path.
@@ -186,6 +189,7 @@ class DbtCliInvocation:
             raise_on_error=raise_on_error,
             context=context,
             adapter=adapter,
+            cli_version=cli_version,
         )
         logger.info(f"Running dbt command: `{dbt_cli_invocation.dbt_command}`.")
 
@@ -329,7 +333,6 @@ class DbtCliInvocation:
         """
         event_history_metadata_by_unique_id: dict[str, dict[str, Any]] = {}
 
-        version: Optional[DbtVersion] = None
         for raw_event in self._stdout or self._stream_stdout():
             if isinstance(raw_event, str):
                 # If we can't parse the event, then just emit it as a raw log.
@@ -339,12 +342,7 @@ class DbtCliInvocation:
 
             unique_id: Optional[str] = raw_event["data"].get("node_info", {}).get("unique_id")
 
-            # Find the dbt version of the dbt CLI process by parsing the first event.
-            if version is None:
-                version_str = raw_event["data"]["version"].strip("=")
-                version = DbtVersion(version=version_str)
-
-            if version.is_core:
+            if self.cli_version.major < 2:
                 event = DbtCoreCliEventMessage(raw_event=raw_event, event_history_metadata={})
             else:
                 event = DbtFusionCliEventMessage(raw_event=raw_event, event_history_metadata={})

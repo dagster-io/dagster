@@ -1,4 +1,4 @@
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 from collections.abc import Iterator, Mapping, Sequence
 from dataclasses import InitVar, dataclass
 from functools import cached_property
@@ -214,7 +214,7 @@ def _build_column_lineage_metadata(
 
 
 @dataclass
-class DbtCliEventMessage:
+class DbtCliEventMessage(ABC):
     """The representation of a dbt CLI event.
 
     Args:
@@ -408,17 +408,20 @@ class DbtCliEventMessage:
             **({} if failure_count is None else {"dagster_dbt/failed_row_count": failure_count}),
         }
 
+    @abstractmethod
+    def _get_check_passed(self) -> bool: ...
+
+    @abstractmethod
+    def _get_check_severity(self) -> AssetCheckSeverity: ...
+
     def _get_check_properties(
         self, key: AssetCheckKey, manifest: Mapping[str, Any]
     ) -> CheckProperties:
-        node_status = self._get_node_status()
         return CheckProperties(
-            passed=node_status == TestStatus.Pass,
+            passed=self._get_check_passed(),
             asset_key=key.asset_key,
             check_name=key.name,
-            severity=AssetCheckSeverity.WARN
-            if node_status == TestStatus.Warn
-            else AssetCheckSeverity.ERROR,
+            severity=self._get_check_severity(),
             metadata=self._get_check_execution_metadata(manifest),
         )
 
@@ -576,6 +579,15 @@ class DbtCoreCliEventMessage(DbtCliEventMessage):
             "unit_test"
         )
 
+    def _get_check_passed(self) -> bool:
+        return self._get_node_status() == TestStatus.Pass
+
+    def _get_check_severity(self) -> AssetCheckSeverity:
+        node_status = self._get_node_status()
+        return (
+            AssetCheckSeverity.WARN if node_status == NodeStatus.Warn else AssetCheckSeverity.ERROR
+        )
+
 
 class DbtFusionCliEventMessage(DbtCliEventMessage):
     """Represents a dbt CLI event that was produced using the dbt Fusion engine."""
@@ -583,3 +595,12 @@ class DbtFusionCliEventMessage(DbtCliEventMessage):
     @property
     def is_result_event(self) -> bool:
         return self.raw_event["info"]["name"] == "NodeFinished"
+
+    def _get_check_passed(self) -> bool:
+        return self._get_node_status() == NodeStatus.Success
+
+    def _get_check_severity(self) -> AssetCheckSeverity:
+        node_status = self._get_node_status()
+        return (
+            AssetCheckSeverity.WARN if node_status == NodeStatus.Warn else AssetCheckSeverity.ERROR
+        )

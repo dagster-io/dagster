@@ -51,13 +51,18 @@ setup(
         "packaging",
     ],
     extras_require={
+        "test-bare": [
+            # used for dbtfusion tests that don't use adapters
+            "pytest-rerunfailures",
+            "pytest-order",
+        ],
         "test": [
             "pytest-rerunfailures",
             "pytest-order",
-            "dbt-duckdb<1.9.2",  # concurrency issues
             "dagster-duckdb",
             "dagster-duckdb-pandas",
-        ]
+            "dbt-duckdb<1.9.2",  # concurrency issues
+        ],
     },
     entry_points={
         "console_scripts": [
