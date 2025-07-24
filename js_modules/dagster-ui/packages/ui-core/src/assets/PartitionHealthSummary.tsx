@@ -35,8 +35,8 @@ export const PartitionHealthSummary = memo((props: Props) => {
         defaultRange = firstPartition;
         queryParams = {
           view: 'partitions',
-          default_range: defaultRange,
           partition: firstPartition,
+          default_range: defaultRange,
         };
       } else {
         defaultRange = `[${firstPartition}...${lastPartition}]`;
