@@ -1640,7 +1640,7 @@ def _should_backfill_atomic_asset_subset_unit(
         )
         entity_subset_to_filter = entity_subset_to_filter.compute_difference(requested_partitions)
 
-    for parent_key in asset_graph.get(asset_key).parent_keys:
+    for parent_key in sorted(asset_graph.get(asset_key).parent_keys):
         if entity_subset_to_filter.is_empty:
             break
 
