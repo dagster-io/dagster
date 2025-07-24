@@ -1,7 +1,7 @@
 import inspect
 from collections.abc import Mapping
 from dataclasses import dataclass
-from typing import Annotated, Any, Callable, Final, Optional, TypeVar, Union, overload
+from typing import Annotated, Any, Callable, Final, Optional, TypeVar, Union, cast, overload
 
 from typing_extensions import TypeAlias
 
@@ -46,10 +46,11 @@ def public(obj: T_Annotatable) -> T_Annotatable:
         # For classes, we need to use type.__setattr__ instead of object.__setattr__
         # This ensures the attribute is set directly on the class's __dict__
         type.__setattr__(obj, _PUBLIC_ATTR_NAME, True)
+        return cast("T_Annotatable", obj)
     else:
         target = _get_annotation_target(obj)
         setattr(target, _PUBLIC_ATTR_NAME, True)
-    return obj
+        return obj
 
 
 def is_public(obj: Annotatable) -> bool:
