@@ -32,10 +32,12 @@ class SnowflakeConnectionComponentBase(dg.Component, dg.Resolvable, dg.Model, SQ
         return Definitions()
 
 
-SnowflakeConnectionComponent = public(preview)(
+@public
+@preview
+class SnowflakeConnectionComponent(
     copy_fields_to_model(
         copy_from=SnowflakeResource,
         copy_to=SnowflakeConnectionComponentBase,
-        new_model_cls_name="SnowflakeConnectionComponent",
     )
-)
+):
+    pass

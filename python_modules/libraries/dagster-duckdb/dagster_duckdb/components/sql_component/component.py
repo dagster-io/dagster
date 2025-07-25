@@ -32,10 +32,12 @@ class DuckDBConnectionComponentBase(dg.Component, dg.Resolvable, dg.Model, SQLCl
         return Definitions()
 
 
-DuckDBConnectionComponent = public(preview)(
+@public
+@preview
+class DuckDBConnectionComponent(
     copy_fields_to_model(
         copy_from=DuckDBResource,
         copy_to=DuckDBConnectionComponentBase,
-        new_model_cls_name="DuckDBConnectionComponent",
     )
-)
+):
+    pass
