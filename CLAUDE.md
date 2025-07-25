@@ -77,6 +77,7 @@ yarn build-api-docs          # Build API docs after .rst changes
 ## Package Management
 
 - Always use uv instead of pip
+- **IMPORTANT**: When command line entry_points change in setup.py, you must reinstall the package using `uv pip install -e .` for the changes to take effect
 
 ## Code searching
 
