@@ -997,6 +997,8 @@ def test_permissive_extra_field_via_dot():
         foo: int
 
     conf = ExtraConfig(foo=10, bar="hello", baz=[1, 2, 3])
+    conf1 = ExtraConfig(foo=10, bar="hello", baz=[1, 2, 3])
+    assert conf == conf1  
     assert conf.foo == 10
     assert conf.bar == "hello"
     assert conf.baz == [1, 2, 3]
