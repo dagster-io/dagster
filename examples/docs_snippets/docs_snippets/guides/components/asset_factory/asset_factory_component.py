@@ -33,7 +33,6 @@ class AssetFactory(dg.Component, dg.Model, dg.Resolvable):
         for etl in self.etl_job:
             asset_key = f"etl_{etl.bucket}_{etl.target_object}".replace(".", "_")
 
-
             @dg.asset(name=asset_key)
             def _etl_asset(context, etl_config=etl):
                 with tempfile.TemporaryDirectory() as root:
@@ -60,7 +59,6 @@ class AssetFactory(dg.Component, dg.Model, dg.Resolvable):
                     )
 
             _assets.append(_etl_asset)
-
 
         _resources = {
             "s3": s3.S3Resource(
