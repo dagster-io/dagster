@@ -221,7 +221,7 @@ T_MetadataValue = TypeVar("T_MetadataValue", bound=MetadataValue, covariant=True
 @deprecated_param(
     param="entry_data", breaking_version="2.0", additional_warn_text="Use `value` instead."
 )
-@whitelist_for_serdes(storage_name="EventMetadataEntry", lazy_deserialization=True)
+@whitelist_for_serdes(storage_name="EventMetadataEntry")
 class MetadataEntry(
     NamedTuple(
         "_MetadataEntry",
