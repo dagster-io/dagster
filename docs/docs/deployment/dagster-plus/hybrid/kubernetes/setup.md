@@ -95,6 +95,8 @@ An exhaustive list of settings is available on the [Kubernetes agent configurati
 ```yaml
 # values.yaml
 dagsterCloud:
+  deployments: # can omit full deployments to serve only branch deployments in a new agent
+    - prod
   branchDeployment: true
 ```
 
