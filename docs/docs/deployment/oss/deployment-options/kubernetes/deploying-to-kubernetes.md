@@ -133,7 +133,7 @@ If you are following this guide on your local machine, you will also need to set
   title="Minimal changes to make to values.yaml"
 />
 
-In this example, the image `name` and `tag` are set to `iris_analysis` and `1` to match the image that was pushed in Step 1. To run the gPRC server, the path to the Dagster project needs to be specified, so `--python-file` and `/iris_analysis/definitions.py` are set for `dagsterApiGrpcArgs`.
+In this example, the image `repository` and `tag` are set to `iris_analysis` and `1` to match the image that was pushed in Step 1. To run the gPRC server, the path to the Dagster project needs to be specified, so `--python-file` and `/iris_analysis/definitions.py` are set for `dagsterApiGrpcArgs`.
 
 ## Step 5: Install the Helm chart
 
