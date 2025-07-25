@@ -31,19 +31,20 @@ class AssetFactory(dg.Component, dg.Model, dg.Resolvable):
         _assets = []
 
         for etl in self.etl_job:
-            asset_key = f"etl_{etl.bucket}_{etl.target}".replace(".", "_")
+            asset_key = f"etl_{etl.bucket}_{etl.target_object}".replace(".", "_")
+
 
             @dg.asset(name=asset_key)
-            def _etl_asset(context):
+            def _etl_asset(context, etl_config=etl):
                 with tempfile.TemporaryDirectory() as root:
-                    source_path = f"{root}/{etl.source_object}"
-                    target_path = f"{root}/{etl.target_object}"
+                    source_path = f"{root}/{etl_config.source_object}"
+                    target_path = f"{root}/{etl_config.target_object}"
 
                     # these steps could be split into separate assets, but
                     # for brevity we will keep them together.
                     # 1. extract
                     context.resources.s3.download_file(
-                        etl.bucket, etl.source_object, source_path
+                        etl_config.bucket, etl_config.source_object, source_path
                     )
 
                     # 2. transform
@@ -51,14 +52,15 @@ class AssetFactory(dg.Component, dg.Model, dg.Resolvable):
                     db.execute(
                         f"CREATE TABLE source AS SELECT * FROM read_csv('{source_path}');"
                     )
-                    db.query(etl.sql).to_csv(target_path)
+                    db.query(etl_config.sql).to_csv(target_path)
 
                     # 3. load
                     context.resources.s3.upload_file(
-                        etl.bucket, etl.target_object, target_path
+                        etl_config.bucket, etl_config.target_object, target_path
                     )
 
             _assets.append(_etl_asset)
+
 
         _resources = {
             "s3": s3.S3Resource(
