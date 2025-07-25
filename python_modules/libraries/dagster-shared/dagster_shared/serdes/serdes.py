@@ -1749,7 +1749,7 @@ class LazyDeserializationSentinel:
             only happens on first access, and subsequent calls return the cached result.
         """
         # Return cached value if already deserialized
-        if self._cached_deserialized_value is not None:
+        if self._cached_deserialized_value is not None or not self._serialized_json_value:
             return self._cached_deserialized_value
 
         # Perform deserialization and cache the result
@@ -1758,7 +1758,6 @@ class LazyDeserializationSentinel:
         )
         self._cached_deserialized_value = deserialized_value
 
-        # TODO: Consider cleaning up the serialized JSON data after deserialization
-        # to free memory, but be careful about circular references
+        del self._serialized_json_value
 
         return deserialized_value
