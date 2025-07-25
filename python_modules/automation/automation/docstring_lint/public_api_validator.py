@@ -7,6 +7,8 @@ from typing import Optional, Union
 
 from dagster_shared.record import record
 
+from automation.docstring_lint.public_packages import get_public_dagster_packages
+
 
 @record
 class PublicSymbol:
@@ -46,6 +48,20 @@ class PublicApiValidator:
         self.dagster_root = dagster_root
         self.python_modules_dir = dagster_root / "python_modules"
         self.rst_docs_dir = dagster_root / "docs" / "sphinx" / "sections" / "api" / "apidocs"
+        self._package_paths_cache: Optional[dict[str, Path]] = None
+
+    def _discover_packages(self) -> dict[str, Path]:
+        """Discover all available packages and their filesystem paths.
+
+        Returns:
+            Dict mapping package names (with underscores) to their filesystem paths
+        """
+        if self._package_paths_cache is not None:
+            return self._package_paths_cache
+
+        packages = get_public_dagster_packages(self.dagster_root)
+        self._package_paths_cache = {pkg.module_name: pkg.path for pkg in packages}
+        return self._package_paths_cache
 
     def find_public_symbols(self, exclude_modules: Optional[set[str]] = None) -> list[PublicSymbol]:
         """Find all symbols marked with @public decorator in dagster modules.
@@ -141,9 +157,14 @@ class PublicApiValidator:
                     # Check if this symbol is exported at top-level
                     is_exported = self._is_symbol_exported(module_path, node.name)
 
+                    # Use the exported module path if the symbol is exported
+                    exported_module_path = self._get_exported_module_path(
+                        module_path, node.name, is_exported
+                    )
+
                     public_symbols.append(
                         PublicSymbol(
-                            module_path=module_path,
+                            module_path=exported_module_path,
                             symbol_name=node.name,
                             symbol_type=symbol_type,
                             is_exported=is_exported,
@@ -178,60 +199,65 @@ class PublicApiValidator:
     def _is_symbol_exported(self, module_path: str, symbol_name: str) -> bool:
         """Check if a symbol is available as a top-level export."""
         try:
-            # Try to import the symbol from the top-level module
             if module_path.startswith("dagster."):
                 # Check if it's exported from main dagster module
-                return self._check_dagster_export(symbol_name)
+                return self._check_module_export("dagster", symbol_name)
             elif module_path.startswith("dagster_"):
                 # Check if it's exported from the library's top-level
                 lib_name = module_path.split(".")[0]
-                return self._check_library_export(lib_name, symbol_name)
+                return self._check_module_export(lib_name, symbol_name)
         except Exception:
             pass
         return False
 
-    def _check_dagster_export(self, symbol_name: str) -> bool:
-        """Check if symbol is exported from main dagster module."""
-        dagster_init = self.python_modules_dir / "dagster" / "dagster" / "__init__.py"
-        if not dagster_init.exists():
-            return False
+    def _get_exported_module_path(
+        self, internal_module_path: str, symbol_name: str, is_exported: bool
+    ) -> str:
+        """Get the canonical exported module path for a symbol.
 
+        If a symbol is exported to a top-level module (dagster or library),
+        use that as the canonical path instead of the internal implementation path.
+        """
+        if not is_exported:
+            return internal_module_path
+
+        # Check if it's exported from main dagster module
+        if internal_module_path.startswith("dagster.") and self._check_module_export(
+            "dagster", symbol_name
+        ):
+            return "dagster"
+
+        # Check if it's exported from a library top-level
+        elif internal_module_path.startswith("dagster_"):
+            lib_name = internal_module_path.split(".")[0]
+            if self._check_module_export(lib_name, symbol_name):
+                return lib_name
+
+        # Fallback to internal path if not clearly exported elsewhere
+        return internal_module_path
+
+    def _check_module_export(self, module_name: str, symbol_name: str) -> bool:
+        """Check if symbol is exported from the specified module using dynamic import."""
         try:
-            with open(dagster_init, encoding="utf-8") as f:
-                content = f.read()
+            import importlib
+            import sys
 
-            # Look for import patterns like "from x import symbol_name as symbol_name"
-            import_pattern = (
-                rf"from .* import .*{re.escape(symbol_name)}.*as {re.escape(symbol_name)}"
-            )
-            direct_pattern = rf"^{re.escape(symbol_name)} = "
+            # Use discovered packages to find the correct path
+            packages = self._discover_packages()
+            if module_name not in packages:
+                return False
 
-            return bool(
-                re.search(import_pattern, content, re.MULTILINE)
-                or re.search(direct_pattern, content, re.MULTILINE)
-            )
+            package_path = str(packages[module_name])
+
+            if package_path not in sys.path:
+                sys.path.insert(0, package_path)
+
+            # Import the module and check if symbol exists
+            module = importlib.import_module(module_name)
+            return hasattr(module, symbol_name)
+
         except Exception:
-            return False
-
-    def _check_library_export(self, lib_name: str, symbol_name: str) -> bool:
-        """Check if symbol is exported from a library's top-level."""
-        lib_init = (
-            self.python_modules_dir
-            / "libraries"
-            / lib_name.replace("_", "-")
-            / lib_name
-            / "__init__.py"
-        )
-        if not lib_init.exists():
-            return False
-
-        try:
-            with open(lib_init, encoding="utf-8") as f:
-                content = f.read()
-
-            # Look for the symbol in imports or __all__
-            return symbol_name in content
-        except Exception:
+            # Don't fall back to regex - fail the test to surface import issues
             return False
 
     def find_rst_documented_symbols(
