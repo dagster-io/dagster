@@ -104,6 +104,10 @@ def core_execute_run(
     check.inst_param(dagster_run, "dagster_run", DagsterRun)
     check.inst_param(instance, "instance", DagsterInstance)
 
+    from dagster._core.definitions.definitions_load_context import DefinitionsLoadContext
+
+    DefinitionsLoadContext.set_dagster_instance(instance)
+
     if inject_env_vars:
         try:
             location_name = (
@@ -517,10 +521,10 @@ def get_external_execution_plan_snapshot(
     return snapshot_from_execution_plan(
         create_execution_plan(
             job_def,
+            instance=args.instance_ref or DagsterInstance.ephemeral(),
             run_config=args.run_config,
             step_keys_to_execute=args.step_keys_to_execute,
             known_state=args.known_state,
-            instance_ref=args.instance_ref,
             repository_load_data=repo_def.repository_load_data,
         ),
         args.job_snapshot_id,

@@ -192,6 +192,10 @@ def dev_command_impl(
             get_possibly_temporary_instance_for_cli("dagster dev", logger=logger)
         )
 
+        from dagster._core.definitions.definitions_load_context import DefinitionsLoadContext
+
+        DefinitionsLoadContext.set_dagster_instance(instance)
+
         logger.info("Launching Dagster services...")
 
         with _optionally_create_temp_workspace(
