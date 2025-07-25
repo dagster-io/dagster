@@ -1,15 +1,15 @@
 import importlib
-from collections.abc import Iterator, Mapping, Sequence
+from collections.abc import Iterator, Sequence
 from dataclasses import dataclass
 from functools import cached_property
-from typing import TYPE_CHECKING, Annotated, Any, Callable, Optional
+from typing import TYPE_CHECKING, Annotated, Callable, Optional
 
 import dagster as dg
 from dagster import AssetKey, AssetSpec, Component, ComponentLoadContext, Resolvable, Resolver
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster.components.resolved.context import ResolutionContext
 from dagster.components.scaffold.scaffold import scaffold_with
-from dagster.components.utils.translation import TranslationFn, TranslatorResolvable
+from dagster.components.utils.translation import TranslationFn, TranslatorResolver
 from dlt import Pipeline
 from dlt.extract.source import DltSource
 
@@ -59,7 +59,7 @@ class ComponentDagsterDltTranslator(DagsterDltTranslator):
 
 
 @dataclass
-class DltLoadSpecModel(TranslatorResolvable[DltResourceTranslatorData]):
+class DltLoadSpecModel(Resolvable):
     """Represents a single dlt load, a combination of pipeline and source."""
 
     pipeline: Annotated[
@@ -73,12 +73,14 @@ class DltLoadSpecModel(TranslatorResolvable[DltResourceTranslatorData]):
             model_field_type=str,
         ),
     ]
-
-    @classmethod
-    def get_template_vars_for_translation(
-        cls, data: DltResourceTranslatorData
-    ) -> Mapping[str, Any]:
-        return {"resource": data.resource, "pipeline": data.pipeline}
+    translation: Optional[
+        Annotated[
+            TranslationFn[DltResourceTranslatorData],
+            TranslatorResolver[DltResourceTranslatorData](
+                lambda data: {"resource": data.resource, "pipeline": data.pipeline}
+            ),
+        ]
+    ] = None
 
     @cached_property
     def translator(self):

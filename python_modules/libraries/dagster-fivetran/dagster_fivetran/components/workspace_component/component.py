@@ -1,12 +1,12 @@
-from collections.abc import Mapping, Sequence
+from collections.abc import Sequence
 from functools import cached_property
-from typing import Annotated, Any, Callable, Optional, Union
+from typing import Annotated, Callable, Optional, Union
 
 import dagster as dg
 import pydantic
 from dagster._core.definitions.job_definition import default_job_io_manager
 from dagster.components.resolved.base import resolve_fields
-from dagster.components.utils.translation import TranslationFn, TranslatorResolvable
+from dagster.components.utils.translation import TranslationFn, TranslatorResolver
 from dagster_shared import check
 
 from dagster_fivetran.asset_defs import build_fivetran_assets_definitions
@@ -71,9 +71,7 @@ def resolve_connector_selector(
 
 
 @dg.scaffold_with(FivetranAccountComponentScaffolder)
-class FivetranAccountComponent(
-    dg.Component, dg.Model, TranslatorResolvable[FivetranConnectorTableProps]
-):
+class FivetranAccountComponent(dg.Component, dg.Model, dg.Resolvable):
     """Loads Fivetran connectors from a given Fivetran instance as Dagster assets.
     Materializing these assets will trigger a sync of the Fivetran connector, enabling
     you to schedule Fivetran syncs using Dagster.
@@ -96,16 +94,15 @@ class FivetranAccountComponent(
             ],
         ),
     ] = None
-
-    @classmethod
-    def get_template_vars_for_translation(
-        cls, data: FivetranConnectorTableProps
-    ) -> Mapping[str, Any]:
-        return {"props": data}
-
-    @classmethod
-    def get_translator_field_description(cls) -> Optional[str]:
-        return "Function used to translate Fivetran connector table properties into Dagster asset specs."
+    translation: Optional[
+        Annotated[
+            TranslationFn[FivetranConnectorTableProps],
+            TranslatorResolver(lambda data: {"props": data}),
+        ]
+    ] = pydantic.Field(
+        None,
+        description="Function used to translate Fivetran connector table properties into Dagster asset specs.",
+    )
 
     @cached_property
     def workspace_resource(self) -> FivetranWorkspace:

@@ -7,7 +7,6 @@ from typing_extensions import TypeAlias
 
 from dagster import _check as check
 from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
-from dagster.components.resolved.base import Resolvable
 from dagster.components.resolved.context import ResolutionContext
 from dagster.components.resolved.core_models import (
     AssetAttributesModel,
@@ -103,45 +102,13 @@ T = TypeVar("T")
 TranslationFn: TypeAlias = Callable[[AssetSpec, T], AssetSpec]
 
 
-class TranslatorResolvable(Resolvable, Generic[T]):
-    translation: Any = None  # Will be properly set up by __init_subclass__
-
-    def __init_subclass__(cls, **kwargs):
-        super().__init_subclass__(**kwargs)
-
-        # Each subclass gets its own resolver that calls the correct class methods
-        # We need to capture the class in a closure to avoid late binding issues
-        def make_resolver_func(target_cls):
-            return lambda context, model: target_cls.resolve_translation(context, model)
-
-        cls.__annotations__["translation"] = Optional[
-            Annotated[
-                TranslationFn[T],
-                Resolver(
-                    make_resolver_func(cls),
-                    inject_before_resolve=False,
-                    model_field_type=Union[str, AssetAttributesModel],
-                ),
-            ]
-        ]
-
-        # if cls.get_translator_field_description():
-        #     cls.__annotations__["translation"] = Field(
-        #         cls.__annotations__["translation"],
-        #         description=cls.get_translator_field_description(),
-        #     )
-
-    @classmethod
-    def get_template_vars_for_translation(cls, data: T) -> Mapping[str, Any]:
-        return {"data": data}
-
-    @classmethod
-    def get_translator_field_description(cls) -> Optional[str]:
-        return None
-
-    @classmethod
-    def resolve_translation(cls, context: ResolutionContext, model) -> TranslationFn[T]:
-        template_vars = cls.get_template_vars_for_translation(model)
+def _build_translation_fn(
+    template_vars_for_translation_fn: Callable[[T], Mapping[str, Any]],
+) -> Callable[[ResolutionContext, T], TranslationFn[T]]:
+    def resolve_translation(
+        context: ResolutionContext,
+        model,
+    ) -> TranslationFn[T]:
         info = TranslatorResolvingInfo(
             asset_attributes=model,
             resolution_context=context,
@@ -150,7 +117,49 @@ class TranslatorResolvable(Resolvable, Generic[T]):
         return lambda base_asset_spec, data: info.get_asset_spec(
             base_asset_spec,
             {
-                **template_vars,
+                **(template_vars_for_translation_fn(data)),
                 "spec": base_asset_spec,
             },
+        )
+
+    return resolve_translation
+
+
+ResolvedTranslationFn: TypeAlias = Optional[
+    Annotated[
+        TranslationFn[T],
+        Resolver(
+            _build_translation_fn(
+                template_vars_for_translation_fn=lambda data: {"data": data},
+            ),
+            model_field_type=Union[str, AssetAttributesModel],
+        ),
+    ]
+]
+
+
+class TranslatorResolver(Resolver, Generic[T]):
+    """Resolver which builds a TranslationFn from input AssetAttributesModel, injecting
+    the provided template vars into the resolution process.
+
+    Example:
+    ```python
+
+    class MyApiData(BaseModel):
+        name: str
+
+    class MyApiComponent(Component, Resolvable):
+        translation: Annotated[
+            TranslationFn[MyApiData],
+            TranslatorResolver[MyApiData](lambda data: {"name": data.name}),
+        ]
+    ```
+    """
+
+    def __init__(self, template_vars_for_translation_fn: Callable[[T], Mapping[str, Any]]):
+        super().__init__(
+            _build_translation_fn(
+                template_vars_for_translation_fn=template_vars_for_translation_fn
+            ),
+            model_field_type=Union[str, AssetAttributesModel],
         )

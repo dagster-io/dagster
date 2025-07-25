@@ -1,12 +1,12 @@
-from collections.abc import Mapping, Sequence
+from collections.abc import Sequence
 from functools import cached_property
-from typing import Annotated, Any, Callable, Optional, Union
+from typing import Annotated, Callable, Optional, Union
 
 import dagster as dg
 import pydantic
 from dagster._core.definitions.job_definition import default_job_io_manager
 from dagster.components.resolved.base import resolve_fields
-from dagster.components.utils.translation import TranslationFn, TranslatorResolvable
+from dagster.components.utils.translation import TranslationFn, TranslatorResolver
 from dagster_shared import check
 
 from dagster_airbyte.asset_defs import build_airbyte_assets_definitions
@@ -71,9 +71,7 @@ def resolve_connection_selector(
 
 
 @dg.scaffold_with(AirbyteCloudWorkspaceComponentScaffolder)
-class AirbyteCloudWorkspaceComponent(
-    dg.Component, dg.Model, TranslatorResolvable[AirbyteConnectionTableProps]
-):
+class AirbyteCloudWorkspaceComponent(dg.Component, dg.Model, dg.Resolvable):
     """Loads Airbyte Cloud connections from a given Airbyte Cloud workspace as Dagster assets.
     Materializing these assets will trigger a sync of the Airbyte Cloud connection, enabling
     you to schedule Airbyte Cloud syncs using Dagster.
@@ -97,16 +95,15 @@ class AirbyteCloudWorkspaceComponent(
             description="Function used to select Airbyte Cloud connections to pull into Dagster.",
         ),
     ] = None
-
-    @classmethod
-    def get_template_vars_for_translation(
-        cls, data: AirbyteConnectionTableProps
-    ) -> Mapping[str, Any]:
-        return {"props": data}
-
-    @classmethod
-    def get_translator_field_description(cls) -> Optional[str]:
-        return "Function used to translate Airbyte Cloud connection table properties into Dagster asset specs."
+    translation: Optional[
+        Annotated[
+            TranslationFn[AirbyteConnectionTableProps],
+            TranslatorResolver(template_vars_for_translation_fn=lambda data: {"props": data}),
+        ]
+    ] = pydantic.Field(
+        None,
+        description="Function used to translate Airbyte Cloud connection table properties into Dagster asset specs.",
+    )
 
     @cached_property
     def workspace_resource(self) -> AirbyteCloudWorkspace:

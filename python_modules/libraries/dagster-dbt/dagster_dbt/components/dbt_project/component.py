@@ -15,7 +15,7 @@ from dagster.components.core.tree import ComponentTree
 from dagster.components.resolved.core_models import OpSpec, ResolutionContext
 from dagster.components.resolved.model import Resolver
 from dagster.components.scaffold.scaffold import scaffold_with
-from dagster.components.utils.translation import TranslationFn, TranslatorResolvable
+from dagster.components.utils.translation import TranslationFn, TranslatorResolver
 
 from dagster_dbt.asset_decorator import dbt_assets
 from dagster_dbt.asset_utils import DBT_DEFAULT_EXCLUDE, DBT_DEFAULT_SELECT, get_node
@@ -79,7 +79,7 @@ def resolve_dbt_project(context: ResolutionContext, model) -> DbtProject:
 
 @scaffold_with(DbtProjectComponentScaffolder)
 @dataclass
-class DbtProjectComponent(Component, TranslatorResolvable[Mapping[str, Any]]):
+class DbtProjectComponent(Component, Resolvable):
     """Expose a DBT project to Dagster as a set of assets.
 
     This component assumes that you have already set up a dbt project. [Jaffle shop](https://github.com/dbt-labs/jaffle-shop) is their pre-existing
@@ -127,6 +127,10 @@ class DbtProjectComponent(Component, TranslatorResolvable[Mapping[str, Any]]):
             ],
         ),
     ] = None
+    translation: Annotated[
+        Optional[TranslationFn[Mapping[str, Any]]],
+        TranslatorResolver(lambda data: {"node": data}),
+    ] = None
     select: Annotated[
         str,
         Resolver.default(
@@ -158,14 +162,6 @@ class DbtProjectComponent(Component, TranslatorResolvable[Mapping[str, Any]]):
             description="Whether to prepare the dbt project every time in `dagster dev` or `dg` cli calls."
         ),
     ] = True
-
-    @classmethod
-    def get_template_vars_for_translation(cls, data: Mapping[str, Any]) -> Mapping[str, Any]:
-        return {"node": data}
-
-    @classmethod
-    def get_translator_field_description(cls) -> Optional[str]:
-        return "Function used to translate dbt nodes into Dagster asset specs."
 
     @cached_property
     def translator(self):
@@ -243,9 +239,7 @@ class DbtProjectComponent(Component, TranslatorResolvable[Mapping[str, Any]]):
 class ProxyDagsterDbtTranslator(DagsterDbtTranslator):
     # get_description conflicts on Component, so cant make it directly a translator
 
-    def __init__(
-        self, fn: TranslationFn[Mapping[str, Any]], settings: Optional[DagsterDbtTranslatorSettings]
-    ):
+    def __init__(self, fn: TranslationFn, settings: Optional[DagsterDbtTranslatorSettings]):
         self._fn = fn
         super().__init__(settings)
 

@@ -20,7 +20,7 @@ from dagster.components.core.context import ComponentLoadContext
 from dagster.components.resolved.context import ResolutionContext
 from dagster.components.resolved.core_models import AssetPostProcessor, OpSpec
 from dagster.components.scaffold.scaffold import scaffold_with
-from dagster.components.utils.translation import TranslationFn, TranslatorResolvable
+from dagster.components.utils.translation import TranslationFn, TranslatorResolver
 from dagster_shared.utils.warnings import deprecation_warning
 from pydantic import BaseModel, ConfigDict, Field
 from typing_extensions import TypeAlias
@@ -45,14 +45,16 @@ class ProxyDagsterSlingTranslator(DagsterSlingTranslator):
 
 
 @dataclass
-class SlingReplicationSpecModel(TranslatorResolvable[Mapping[str, Any]]):
+class SlingReplicationSpecModel(Resolvable):
     path: str
     op: Optional[OpSpec] = None
+    translation: Optional[
+        Annotated[
+            TranslationFn[Mapping[str, Any]],
+            TranslatorResolver(lambda data: {"stream_definition": data}),
+        ]
+    ] = None
     include_metadata: list[SlingMetadataAddons] = field(default_factory=list)
-
-    @classmethod
-    def get_template_vars_for_translation(cls, data: Mapping[str, Any]) -> Mapping[str, Any]:
-        return {"stream_definition": data}
 
     @cached_property
     def translator(self):
