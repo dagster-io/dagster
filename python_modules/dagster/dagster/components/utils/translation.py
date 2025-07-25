@@ -103,7 +103,7 @@ TranslationFn: TypeAlias = Callable[[AssetSpec, T], AssetSpec]
 
 
 def _build_translation_fn(
-    template_vars_for_translation_fn: Callable[[T], Mapping[str, Any]],
+    template_vars_for_resolving_translation_fn: Callable[[T], Mapping[str, Any]],
 ) -> Callable[[ResolutionContext, T], TranslationFn[T]]:
     def resolve_translation(
         context: ResolutionContext,
@@ -117,7 +117,7 @@ def _build_translation_fn(
         return lambda base_asset_spec, data: info.get_asset_spec(
             base_asset_spec,
             {
-                **(template_vars_for_translation_fn(data)),
+                **(template_vars_for_resolving_translation_fn(data)),
                 "spec": base_asset_spec,
             },
         )
@@ -125,7 +125,7 @@ def _build_translation_fn(
     return resolve_translation
 
 
-class TranslatorResolver(Resolver, Generic[T]):
+class TranslationFnResolver(Resolver, Generic[T]):
     """Resolver which builds a TranslationFn from input AssetAttributesModel, injecting
     the provided template vars into the resolution process.
 
@@ -138,15 +138,19 @@ class TranslatorResolver(Resolver, Generic[T]):
     class MyApiComponent(Component, Resolvable):
         translation: Annotated[
             TranslationFn[MyApiData],
-            TranslatorResolver[MyApiData](lambda data: {"name": data.name}),
+            TranslationFnResolver[MyApiData](
+                template_vars_for_resolving_translation_fn=lambda data: {"name": data.name}
+            ),
         ]
     ```
     """
 
-    def __init__(self, template_vars_for_translation_fn: Callable[[T], Mapping[str, Any]]):
+    def __init__(
+        self, template_vars_for_resolving_translation_fn: Callable[[T], Mapping[str, Any]]
+    ):
         super().__init__(
             _build_translation_fn(
-                template_vars_for_translation_fn=template_vars_for_translation_fn
+                template_vars_for_resolving_translation_fn=template_vars_for_resolving_translation_fn
             ),
             model_field_type=Union[str, AssetAttributesModel],
             inject_before_resolve=False,
@@ -158,6 +162,6 @@ class TranslatorResolver(Resolver, Generic[T]):
 ResolvedTranslationFn: TypeAlias = Optional[
     Annotated[
         TranslationFn[T],
-        TranslatorResolver[T](lambda data: {"data": data}),
+        TranslationFnResolver[T](lambda data: {"data": data}),
     ]
 ]

@@ -20,7 +20,7 @@ from dagster.components.core.context import ComponentLoadContext
 from dagster.components.resolved.context import ResolutionContext
 from dagster.components.resolved.core_models import AssetPostProcessor, OpSpec
 from dagster.components.scaffold.scaffold import scaffold_with
-from dagster.components.utils.translation import TranslationFn, TranslatorResolver
+from dagster.components.utils.translation import TranslationFn, TranslationFnResolver
 from dagster_shared.utils.warnings import deprecation_warning
 from pydantic import BaseModel, ConfigDict, Field
 from typing_extensions import TypeAlias
@@ -51,7 +51,9 @@ class SlingReplicationSpecModel(Resolvable):
     translation: Optional[
         Annotated[
             TranslationFn[Mapping[str, Any]],
-            TranslatorResolver(lambda data: {"stream_definition": data}),
+            TranslationFnResolver(
+                template_vars_for_resolving_translation_fn=lambda data: {"stream_definition": data}
+            ),
         ]
     ] = None
     include_metadata: list[SlingMetadataAddons] = field(default_factory=list)

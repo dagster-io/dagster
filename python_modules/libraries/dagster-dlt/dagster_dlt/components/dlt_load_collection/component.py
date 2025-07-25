@@ -9,7 +9,7 @@ from dagster import AssetKey, AssetSpec, Component, ComponentLoadContext, Resolv
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster.components.resolved.context import ResolutionContext
 from dagster.components.scaffold.scaffold import scaffold_with
-from dagster.components.utils.translation import TranslationFn, TranslatorResolver
+from dagster.components.utils.translation import TranslationFn, TranslationFnResolver
 from dlt import Pipeline
 from dlt.extract.source import DltSource
 
@@ -76,7 +76,7 @@ class DltLoadSpecModel(Resolvable):
     translation: Optional[
         Annotated[
             TranslationFn[DltResourceTranslatorData],
-            TranslatorResolver[DltResourceTranslatorData](
+            TranslationFnResolver[DltResourceTranslatorData](
                 lambda data: {"resource": data.resource, "pipeline": data.pipeline}
             ),
         ]

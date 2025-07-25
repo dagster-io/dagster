@@ -15,7 +15,7 @@ from dagster.components.core.tree import ComponentTree
 from dagster.components.resolved.core_models import OpSpec, ResolutionContext
 from dagster.components.resolved.model import Resolver
 from dagster.components.scaffold.scaffold import scaffold_with
-from dagster.components.utils.translation import TranslationFn, TranslatorResolver
+from dagster.components.utils.translation import TranslationFn, TranslationFnResolver
 
 from dagster_dbt.asset_decorator import dbt_assets
 from dagster_dbt.asset_utils import DBT_DEFAULT_EXCLUDE, DBT_DEFAULT_SELECT, get_node
@@ -129,7 +129,9 @@ class DbtProjectComponent(Component, Resolvable):
     ] = None
     translation: Annotated[
         Optional[TranslationFn[Mapping[str, Any]]],
-        TranslatorResolver(lambda data: {"node": data}),
+        TranslationFnResolver(
+            template_vars_for_resolving_translation_fn=lambda data: {"node": data}
+        ),
     ] = None
     select: Annotated[
         str,

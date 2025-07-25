@@ -6,7 +6,7 @@ import dagster as dg
 import pydantic
 from dagster._core.definitions.job_definition import default_job_io_manager
 from dagster.components.resolved.base import resolve_fields
-from dagster.components.utils.translation import TranslationFn, TranslatorResolver
+from dagster.components.utils.translation import TranslationFn, TranslationFnResolver
 from dagster_shared import check
 
 from dagster_fivetran.asset_defs import build_fivetran_assets_definitions
@@ -97,7 +97,9 @@ class FivetranAccountComponent(dg.Component, dg.Model, dg.Resolvable):
     translation: Optional[
         Annotated[
             TranslationFn[FivetranConnectorTableProps],
-            TranslatorResolver(lambda data: {"props": data}),
+            TranslationFnResolver(
+                template_vars_for_resolving_translation_fn=lambda data: {"props": data}
+            ),
         ]
     ] = pydantic.Field(
         None,
