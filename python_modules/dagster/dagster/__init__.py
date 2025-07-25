@@ -668,8 +668,13 @@ from dagster.components.core.load_defs import (
     load_defs as load_defs,
     load_from_defs_folder as load_from_defs_folder,
 )
+from dagster.components.core.tree import ComponentTree as ComponentTree
 from dagster.components.definitions import definitions as definitions
 from dagster.components.lib.shim_components.resources import resources as resources
+from dagster.components.lib.sql_component.sql_component import (
+    SqlComponent as SqlComponent,
+    TemplatedSqlComponent as TemplatedSqlComponent,
+)
 from dagster.components.resolved.base import Resolvable as Resolvable
 from dagster.components.resolved.context import ResolutionContext as ResolutionContext
 from dagster.components.resolved.core_models import (

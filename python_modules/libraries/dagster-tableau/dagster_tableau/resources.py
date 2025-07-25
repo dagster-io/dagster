@@ -3,6 +3,7 @@ import logging
 import time
 import uuid
 from abc import abstractmethod
+from collections import defaultdict
 from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from typing import Optional, Union
@@ -12,6 +13,7 @@ import requests
 import tableauserverclient as TSC
 from dagster import (
     AssetExecutionContext,
+    AssetObservation,
     AssetSpec,
     ConfigurableResource,
     Definitions,
@@ -28,7 +30,11 @@ from dagster._utils.cached_method import cached_method
 from pydantic import Field, PrivateAttr
 from tableauserverclient.server.endpoint.auth_endpoint import Auth
 
-from dagster_tableau.asset_utils import create_data_source_asset_event, create_view_asset_event
+from dagster_tableau.asset_utils import (
+    create_data_source_asset_event,
+    create_view_asset_event,
+    create_view_asset_observation,
+)
 from dagster_tableau.translator import (
     DagsterTableauTranslator,
     TableauContentData,
@@ -130,7 +136,7 @@ class BaseTableauClient:
     @superseded(additional_warn_text="Use `refresh_and_poll` on the tableau resource instead.")
     def refresh_and_materialize_workbooks(
         self, specs: Sequence[AssetSpec], refreshable_workbook_ids: Optional[Sequence[str]]
-    ) -> Iterator[Union[Output, ObserveResult]]:
+    ) -> Iterator[Union[AssetObservation, Output]]:
         """Refreshes workbooks for the given workbook IDs and materializes workbook views given the asset specs."""
         refreshed_workbook_ids = set()
         for refreshable_workbook_id in refreshable_workbook_ids or []:
@@ -159,7 +165,7 @@ class BaseTableauClient:
     @superseded(additional_warn_text="Use `refresh_and_poll` on the tableau resource instead.")
     def refresh_and_materialize(
         self, specs: Sequence[AssetSpec], refreshable_data_source_ids: Optional[Sequence[str]]
-    ) -> Iterator[Union[Output, ObserveResult]]:
+    ) -> Iterator[Union[AssetObservation, Output]]:
         """Refreshes data sources for the given data source IDs and materializes Tableau assets given the asset specs.
         Only data sources with extracts can be refreshed.
         """
@@ -330,6 +336,7 @@ class BaseTableauClient:
                 projectLuid
                 sheets {
                   luid
+                  id
                   name
                   createdAt
                   updatedAt
@@ -381,6 +388,7 @@ class BaseTableauClient:
                   path
                   sheets {
                     luid
+                    id
                   }
                 }
               }
@@ -517,8 +525,12 @@ class BaseTableauWorkspace(ConfigurableResource):
                     )
                 )
 
+                # We keep track of data source IDs for each sheet to augment the dashboard data.
+                # Hidden sheets don't have LUIDs, so we use metadata IDs as keys.
+                data_source_ids_by_sheet_metadata_id = defaultdict(set)
                 for sheet_data in workbook_data["sheets"]:
                     sheet_id = sheet_data["luid"]
+                    sheet_metadata_id = sheet_data["id"]
                     if sheet_id:
                         augmented_sheet_data = {**sheet_data, "workbook": {"luid": workbook_id}}
                         sheets.append(
@@ -529,8 +541,10 @@ class BaseTableauWorkspace(ConfigurableResource):
                         )
                     """
                     Lineage formation depends on the availability of published data sources.
-                    If published data sources are available (i.e., parentPublishedDatasources exists and is not empty), it means you can form the lineage by using the luid of those published sources.
-                    If the published data sources are missing, you create assets for embedded data sources by using their id.
+                    If published data sources are available (i.e., parentPublishedDatasources exists and is not empty), 
+                    it means you can form the lineage by using the luid of those published sources.
+                    If the published data sources are missing, 
+                    you create assets for embedded data sources by using their id.
                     """
                     for embedded_data_source_data in sheet_data.get(
                         "parentEmbeddedDatasources", []
@@ -540,6 +554,9 @@ class BaseTableauWorkspace(ConfigurableResource):
                         )
                         for published_data_source_data in published_data_source_list:
                             data_source_id = published_data_source_data["luid"]
+                            data_source_ids_by_sheet_metadata_id[sheet_metadata_id].add(
+                                data_source_id
+                            )
                             if data_source_id and data_source_id not in data_source_ids:
                                 data_source_ids.add(data_source_id)
                                 augmented_published_data_source_data = {
@@ -556,6 +573,9 @@ class BaseTableauWorkspace(ConfigurableResource):
                             """While creating TableauWorkspaceData luid is mandatory for all TableauContentData
                             and in case of embedded_data_source its missing hence we are using its id as luid"""
                             data_source_id = embedded_data_source_data["id"]
+                            data_source_ids_by_sheet_metadata_id[sheet_metadata_id].add(
+                                data_source_id
+                            )
                             if data_source_id and data_source_id not in data_source_ids:
                                 data_source_ids.add(data_source_id)
                                 embedded_data_source_data["luid"] = data_source_id
@@ -574,9 +594,23 @@ class BaseTableauWorkspace(ConfigurableResource):
                 for dashboard_data in workbook_data["dashboards"]:
                     dashboard_id = dashboard_data["luid"]
                     if dashboard_id:
+                        dashboard_upstream_sheets = dashboard_data.get("sheets", [])
+                        # Sheets for which LUID is null are hidden sheets
+                        hidden_sheet_metadata_ids = {
+                            sheet["id"] for sheet in dashboard_upstream_sheets if not sheet["luid"]
+                        }
+                        dashboard_upstream_data_source_ids = set()
+                        for hidden_sheet_metadata_id in hidden_sheet_metadata_ids:
+                            dashboard_upstream_data_source_ids.update(
+                                data_source_ids_by_sheet_metadata_id.get(
+                                    hidden_sheet_metadata_id, []
+                                )
+                            )
+
                         augmented_dashboard_data = {
                             **dashboard_data,
                             "workbook": {"luid": workbook_id},
+                            "data_source_ids": list(dashboard_upstream_data_source_ids),
                         }
                         dashboards.append(
                             TableauContentData(
@@ -638,7 +672,7 @@ class BaseTableauWorkspace(ConfigurableResource):
 
     def refresh_and_poll(
         self, context: AssetExecutionContext
-    ) -> Iterator[Union[Output, ObserveResult]]:
+    ) -> Iterator[Union[Output, ObserveResult, AssetObservation]]:
         """Executes a refresh and poll process to materialize Tableau assets,
         including data sources with extracts, views and workbooks.
         This method can only be used in the context of an asset execution.
@@ -660,24 +694,6 @@ class BaseTableauWorkspace(ConfigurableResource):
                 refreshed_data_source_ids.add(
                     client.refresh_and_poll_data_source(refreshable_data_source_id)
                 )
-
-            # If a sheet depends on a refreshed data source, then its workbook is considered refreshed
-            refreshed_workbook_ids = set()
-            for spec in specs:
-                if TableauTagSet.extract(spec.tags).asset_type == "sheet":
-                    for dep in spec.deps:
-                        # Only materializable data sources are included in materializable asset specs,
-                        # so we must verify for None values - data sources that are external specs are not available here.
-                        dep_spec = assets_def.specs_by_key.get(dep.asset_key)
-                        if (
-                            dep_spec
-                            and TableauMetadataSet.extract(dep_spec.metadata).id
-                            in refreshed_data_source_ids
-                        ):
-                            refreshed_workbook_ids.add(
-                                TableauViewMetadataSet.extract(spec.metadata).workbook_id
-                            )
-                            break
 
             data_source_specs = [
                 spec
@@ -706,21 +722,19 @@ class BaseTableauWorkspace(ConfigurableResource):
                 )
 
             for spec in sheet_source_specs:
-                yield from create_view_asset_event(
+                yield from create_view_asset_observation(
                     view=client.get_view(
                         check.inst(TableauMetadataSet.extract(spec.metadata).id, str)
                     ),
                     spec=spec,
-                    refreshed_workbook_ids=refreshed_workbook_ids,
                 )
 
             for spec in dashboards_source_specs:
-                yield from create_view_asset_event(
+                yield from create_view_asset_observation(
                     view=client.get_view(
                         check.inst(TableauMetadataSet.extract(spec.metadata).id, str)
                     ),
                     spec=spec,
-                    refreshed_workbook_ids=refreshed_workbook_ids,
                 )
 
 

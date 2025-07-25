@@ -1,39 +1,51 @@
 from abc import ABC, abstractmethod
 from collections.abc import Iterable, Mapping
 from pathlib import Path
-from typing import Annotated, Any, Generic, Optional, Union
+from typing import Annotated, Any, Optional, Union
 
 from dagster_shared import check
-from jinja2 import Template
 from pydantic import BaseModel, Field
-from typing_extensions import TypeVar
 
+from dagster._annotations import preview, public
 from dagster._core.definitions.result import MaterializeResult
 from dagster._core.execution.context.asset_check_execution_context import AssetCheckExecutionContext
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster.components.core.context import ComponentLoadContext
 from dagster.components.lib.executable_component.component import ExecutableComponent
+from dagster.components.lib.sql_component.sql_client import SQLClient
+from dagster.components.resolved.base import Resolvable
 from dagster.components.resolved.core_models import OpSpec
-from dagster.components.resolved.model import Model, Resolver
-
-T = TypeVar("T")
+from dagster.components.resolved.model import Resolver
 
 
-class SqlComponent(ExecutableComponent, Model, BaseModel, Generic[T], ABC):
-    """Base component which executes templated SQL."""
+@public
+@preview
+class SqlComponent(ExecutableComponent, Resolvable, ABC):
+    """Base component which executes templated SQL. Subclasses
+    implement instructions on where to load the SQL content from.
+    """
 
-    execution: Optional[OpSpec] = None
+    class Config:
+        # Necessary to allow connection to be a SQLClient, which is an ABC
+        arbitrary_types_allowed = True
 
-    @property
+    connection: Annotated[
+        Annotated[
+            SQLClient,
+            Resolver(lambda ctx, value: value, model_field_type=str),
+        ],
+        Field(description="The SQL connection to use for executing the SQL content."),
+    ]
+    execution: Annotated[Optional[OpSpec], Field(default=None)] = None
+
     @abstractmethod
-    def sql_content(self) -> str:
+    def get_sql_content(self, context: AssetExecutionContext) -> str:
         """The SQL content to execute."""
         ...
 
-    @abstractmethod
-    def execute(self, context: AssetExecutionContext, resource: T) -> None:
-        """Execute the SQL content."""
-        ...
+    def execute(self, context: AssetExecutionContext) -> None:
+        """Execute the SQL content using the Snowflake resource."""
+        self.connection.connect_and_execute(self.get_sql_content(context))
 
     @property
     def op_spec(self) -> OpSpec:
@@ -44,13 +56,7 @@ class SqlComponent(ExecutableComponent, Model, BaseModel, Generic[T], ABC):
         context: Union[AssetExecutionContext, AssetCheckExecutionContext],
         component_load_context: ComponentLoadContext,
     ) -> Iterable[MaterializeResult]:
-        check.invariant(
-            len(self.resource_keys) == 1, "SqlComponent must have exactly one resource key."
-        )
-        self.execute(
-            check.inst(context, AssetExecutionContext),
-            getattr(context.resources, next(iter(self.resource_keys))),
-        )
+        self.execute(check.inst(context, AssetExecutionContext))
         for asset in self.assets or []:
             yield MaterializeResult(asset_key=asset.key)
 
@@ -71,20 +77,23 @@ ResolvedSqlTemplate = Annotated[
 ]
 
 
-class TemplatedSqlComponent(SqlComponent[T], Generic[T]):
-    """A component that executes templated SQL from a string or file."""
+class TemplatedSqlComponent(SqlComponent):
+    """A component which executes templated SQL from a string or file."""
 
     sql_template: Annotated[
         ResolvedSqlTemplate,
         Field(description="The SQL template to execute, either as a string or from a file."),
     ]
+
     sql_template_vars: Annotated[
         Optional[Mapping[str, Any]],
         Field(default=None, description="Template variables to pass to the SQL template."),
-    ]
+    ] = None
 
-    @property
-    def sql_content(self) -> str:
+    def get_sql_content(self, context: AssetExecutionContext) -> str:
+        # Slow import, we do it here to avoid importing jinja2 when `dagster` is imported
+        from jinja2 import Template
+
         template_str = self.sql_template
         if isinstance(template_str, SqlFile):
             template_str = Path(template_str.path).read_text()

@@ -63,62 +63,91 @@ describe('formatDuration', () => {
   describe('obeys maxValueBeforeNextUnit', () => {
     it('should avoid showing 1000+ of any unit', () => {
       // 1000 seconds should become minutes
-      expect(formatDuration(1000000)).toEqual([{value: 16, unit: 'minutes'}]);
+      const result = formatDuration(1000000);
+      expect(result).toHaveLength(1);
+      expect(result[0].unit).toBe('minutes');
+      expect(result[0].value).toBeCloseTo(16.666666666666668, 10);
 
       // 1000 minutes should become hours
-      expect(formatDuration(60000000)).toEqual([{value: 16, unit: 'hours'}]);
+      const result2 = formatDuration(60000000);
+      expect(result2).toHaveLength(1);
+      expect(result2[0].unit).toBe('hours');
+      expect(result2[0].value).toBeCloseTo(16.666666666666668, 10);
 
       // 1000 hours should become days
-      expect(formatDuration(3600000000)).toEqual([{value: 5, unit: 'weeks'}]);
+      const result3 = formatDuration(3600000000);
+      expect(result3).toHaveLength(1);
+      expect(result3[0].unit).toBe('weeks');
+      expect(result3[0].value).toBeCloseTo(5.9523809523809526, 10);
     });
   });
 
   describe('single significant digit (default)', () => {
     it('should show only the largest unit', () => {
-      expect(formatDuration(1500)).toEqual([{value: 1, unit: 'second'}]);
-      expect(formatDuration(65000)).toEqual([{value: 1, unit: 'minute'}]);
-      expect(formatDuration(3665000)).toEqual([{value: 1, unit: 'hour'}]);
+      expect(formatDuration(1500)).toEqual([{value: 1.5, unit: 'seconds'}]);
+
+      const result = formatDuration(65000);
+      expect(result).toHaveLength(1);
+      expect(result[0].unit).toBe('minutes');
+      expect(result[0].value).toBeCloseTo(1.0833333333333333, 10);
+
+      const result2 = formatDuration(3665000);
+      expect(result2).toHaveLength(1);
+      expect(result2[0].unit).toBe('hours');
+      expect(result2[0].value).toBeCloseTo(1.0180555555555556, 10);
+
       expect(formatDuration(90000000)).toEqual([{value: 25, unit: 'hours'}]);
     });
 
     it('should round down to the nearest whole unit', () => {
-      expect(formatDuration(1999)).toEqual([{value: 1, unit: 'second'}]);
-      expect(formatDuration(119999)).toEqual([{value: 1, unit: 'minute'}]);
-      expect(formatDuration(7199999)).toEqual([{value: 1, unit: 'hour'}]);
+      const result = formatDuration(1999);
+      expect(result).toHaveLength(1);
+      expect(result[0].unit).toBe('seconds');
+      expect(result[0].value).toBeCloseTo(1.999, 10);
+
+      // Test structure and unit separately from the floating-point value
+      const result2 = formatDuration(119999);
+      expect(result2).toHaveLength(1);
+      expect(result2[0].unit).toBe('minutes');
+      expect(result2[0].value).toBeCloseTo(1.999983333333333, 10);
+
+      // Test floating-point hours value
+      const hoursResult = formatDuration(7199999);
+      expect(hoursResult).toHaveLength(1);
+      expect(hoursResult[0].unit).toBe('hours');
+      expect(hoursResult[0].value).toBeCloseTo(1.9999997222222223, 10);
     });
   });
 
   describe('two significant digits', () => {
     it('should show two units when remainder exists', () => {
-      expect(formatDuration(1500, {significantDigits: 2})).toEqual([
+      expect(formatDuration(1500, {significantUnits: 2})).toEqual([
         {value: 1, unit: 'second'},
         {value: 500, unit: 'milliseconds'},
       ]);
-      expect(formatDuration(65000, {significantDigits: 2})).toEqual([
+      expect(formatDuration(65000, {significantUnits: 2})).toEqual([
         {value: 1, unit: 'minute'},
         {value: 5, unit: 'seconds'},
       ]);
-      expect(formatDuration(3665000, {significantDigits: 2})).toEqual([
+      expect(formatDuration(3665000, {significantUnits: 2})).toEqual([
         {value: 1, unit: 'hour'},
         {value: 1, unit: 'minute'},
       ]);
-      expect(formatDuration(90000000, {significantDigits: 2})).toEqual([
-        {unit: 'hours', value: 25},
-      ]);
+      expect(formatDuration(90000000, {significantUnits: 2})).toEqual([{unit: 'hours', value: 25}]);
     });
 
     it('should show only one unit when no remainder', () => {
-      expect(formatDuration(1000, {significantDigits: 2})).toEqual([{value: 1, unit: 'second'}]);
-      expect(formatDuration(60000, {significantDigits: 2})).toEqual([{value: 1, unit: 'minute'}]);
-      expect(formatDuration(3600000, {significantDigits: 2})).toEqual([{value: 1, unit: 'hour'}]);
+      expect(formatDuration(1000, {significantUnits: 2})).toEqual([{value: 1, unit: 'second'}]);
+      expect(formatDuration(60000, {significantUnits: 2})).toEqual([{value: 1, unit: 'minute'}]);
+      expect(formatDuration(3600000, {significantUnits: 2})).toEqual([{value: 1, unit: 'hour'}]);
     });
 
     it('should handle complex durations', () => {
-      expect(formatDuration(3723000, {significantDigits: 2})).toEqual([
+      expect(formatDuration(3723000, {significantUnits: 2})).toEqual([
         {value: 1, unit: 'hour'},
         {value: 2, unit: 'minutes'},
       ]);
-      expect(formatDuration(93784000, {significantDigits: 2})).toEqual([
+      expect(formatDuration(93784000, {significantUnits: 2})).toEqual([
         {value: 26, unit: 'hours'},
         {value: 3, unit: 'minutes'},
       ]);
@@ -134,15 +163,15 @@ describe('formatDuration', () => {
     });
 
     it('should work with two significant digits', () => {
-      expect(formatDuration(1000, {unit: 'seconds', significantDigits: 2})).toEqual([
+      expect(formatDuration(1000, {unit: 'seconds', significantUnits: 2})).toEqual([
         {value: 16, unit: 'minutes'},
         {value: 40, unit: 'seconds'},
       ]);
-      expect(formatDuration(3665, {unit: 'seconds', significantDigits: 2})).toEqual([
+      expect(formatDuration(3665, {unit: 'seconds', significantUnits: 2})).toEqual([
         {value: 1, unit: 'hour'},
         {value: 1, unit: 'minute'},
       ]);
-      expect(formatDuration(90000, {unit: 'seconds', significantDigits: 2})).toEqual([
+      expect(formatDuration(90000, {unit: 'seconds', significantUnits: 2})).toEqual([
         {value: 25, unit: 'hours'},
       ]);
     });
@@ -155,12 +184,21 @@ describe('formatDuration', () => {
     });
 
     it('should handle very large values', () => {
-      expect(formatDuration(Number.MAX_SAFE_INTEGER)).toEqual([{value: 285616, unit: 'years'}]);
+      // Test floating-point years value
+      const largeResult = formatDuration(Number.MAX_SAFE_INTEGER);
+      expect(largeResult).toHaveLength(1);
+      expect(largeResult[0].unit).toBe('years');
+      expect(largeResult[0].value).toBeCloseTo(285616.41472415626, 10);
     });
 
     it('should handle fractional milliseconds by flooring', () => {
-      expect(formatDuration(1500.7)).toEqual([{value: 1, unit: 'second'}]);
-      expect(formatDuration(1500.7, {significantDigits: 2})).toEqual([
+      // Test floating-point seconds value
+      const fractionalResult = formatDuration(1500.7);
+      expect(fractionalResult).toHaveLength(1);
+      expect(fractionalResult[0].unit).toBe('seconds');
+      expect(fractionalResult[0].value).toBeCloseTo(1.5007000000000001, 10);
+
+      expect(formatDuration(1500.7, {significantUnits: 2})).toEqual([
         {value: 1, unit: 'second'},
         {value: 500, unit: 'milliseconds'},
       ]);
@@ -181,9 +219,13 @@ describe('formatDuration', () => {
       // API response time
       expect(formatDuration(247)).toEqual([{value: 247, unit: 'milliseconds'}]);
 
-      // Video duration
-      expect(formatDuration(215000)).toEqual([{value: 3, unit: 'minutes'}]);
-      expect(formatDuration(215000, {significantDigits: 2})).toEqual([
+      // Video duration - test floating-point minutes value
+      const videoResult = formatDuration(215000);
+      expect(videoResult).toHaveLength(1);
+      expect(videoResult[0].unit).toBe('minutes');
+      expect(videoResult[0].value).toBeCloseTo(3.5833333333333335, 10);
+
+      expect(formatDuration(215000, {significantUnits: 2})).toEqual([
         {value: 3, unit: 'minutes'},
         {value: 35, unit: 'seconds'},
       ]);
@@ -197,9 +239,13 @@ describe('formatDuration', () => {
       // Session timeout
       expect(formatDuration(1800, {unit: 'seconds'})).toEqual([{value: 30, unit: 'minutes'}]);
 
-      // Long-running job
-      expect(formatDuration(7532000)).toEqual([{value: 2, unit: 'hours'}]);
-      expect(formatDuration(7532000, {significantDigits: 2})).toEqual([
+      // Long-running job - test floating-point hours value
+      const jobResult = formatDuration(7532000);
+      expect(jobResult).toHaveLength(1);
+      expect(jobResult[0].unit).toBe('hours');
+      expect(jobResult[0].value).toBeCloseTo(2.0922222222222224, 10);
+
+      expect(formatDuration(7532000, {significantUnits: 2})).toEqual([
         {value: 2, unit: 'hours'},
         {value: 5, unit: 'minutes'},
       ]);

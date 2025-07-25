@@ -29,7 +29,8 @@ import styles from './AssetCatalogTopAssetsChart.module.css';
 import {Context, useRenderChartTooltip} from './renderChartTooltip';
 import {useRGBColorsForTheme} from '../../app/useRGBColorsForTheme';
 import {TooltipCard} from '../../insights/InsightsChartShared';
-import {numberFormatter} from '../../ui/formatters';
+import {formatDuration} from '../../ui/formatDuration';
+import {numberFormatter, numberFormatterWithMaxFractionDigits} from '../../ui/formatters';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, Legend);
 
@@ -78,6 +79,18 @@ export const AssetCatalogTopAssetsChart = React.memo(
         ({context}: {context: Context}) => {
           const {tooltip} = context;
           const d = tooltip.dataPoints[0];
+
+          const {value, unit} = (() => {
+            const typeLower = unitType.toLowerCase();
+            if (d && (typeLower === 'milliseconds' || typeLower === 'seconds')) {
+              const [result] = formatDuration(d.raw as number, {
+                unit: typeLower,
+              });
+
+              return {value: result.value, unit: result.unit};
+            }
+            return {value: d?.raw as number, unit: unitType};
+          })();
           return (
             <TooltipCard>
               <Box flex={{direction: 'column', gap: 4}} padding={{vertical: 8, horizontal: 12}}>
@@ -85,8 +98,8 @@ export const AssetCatalogTopAssetsChart = React.memo(
                   <Subheading>{d?.label}</Subheading>
                 </Box>
                 <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
-                  <Mono>{d?.formattedValue}</Mono>
-                  <Body>{unitType}</Body>
+                  <Mono>{numberFormatterWithMaxFractionDigits(2).format(value)}</Mono>
+                  <Body>{unit}</Body>
                 </Box>
               </Box>
             </TooltipCard>

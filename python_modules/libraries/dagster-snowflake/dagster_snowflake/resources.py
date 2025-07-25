@@ -19,6 +19,7 @@ from dagster._annotations import public
 from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from dagster._core.storage.event_log.sql_event_log import SqlDbConnection
 from dagster._utils.cached_method import cached_method
+from dagster.components.lib.sql_component.sql_client import SQLClient
 from pydantic import Field, model_validator, validator
 
 from dagster_snowflake.constants import (
@@ -40,7 +41,7 @@ except ImportError:
     raise
 
 
-class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext):
+class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext, SQLClient):
     """A resource for connecting to the Snowflake data warehouse.
 
     If connector configuration is not set, SnowflakeResource.get_connection() will return a
@@ -576,6 +577,10 @@ class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext)
             log=get_dagster_logger(),
             snowflake_connection_resource=self,
         )
+
+    def connect_and_execute(self, sql: str) -> None:
+        with self.get_connection() as conn:
+            conn.cursor().execute(sql)
 
 
 class SnowflakeConnection:

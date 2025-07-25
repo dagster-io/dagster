@@ -111,6 +111,7 @@ extend-exclude = [
   "*/_vendored/*",
   "*/snapshots/*",
   "python_modules/libraries/dagstermill/dagstermill_tests/notebooks/cli_test_scaffold.ipynb",
+  ".buildkite/",
 ]
 
 # Codebase-wide default line length. Override in package-specific pyproject.toml where a different

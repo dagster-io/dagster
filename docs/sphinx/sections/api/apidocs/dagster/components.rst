@@ -12,6 +12,9 @@ Using Components
 .. autoclass:: ComponentLoadContext
    :members:
 
+.. autoclass:: ComponentTree
+   :members:
+
 
 Building Components
 -------------------

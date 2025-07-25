@@ -1,6 +1,8 @@
 import os
+import sys
 
 import dagster._check as check
+import pytest
 from dagster import (
     ConfigurableResource,
     IOManagerDefinition,
@@ -14,11 +16,17 @@ from dagster._config.pythonic_config import (
     ConfigurableResourceFactory,
 )
 from dagster._core.storage.input_manager import InputManagerDefinition
-from dagster_duckdb import DuckDBIOManager
-from dagster_gcp import BigQueryIOManager
-from dagster_snowflake.snowflake_io_manager import SnowflakeIOManager
+
+# Import these only on Python < 3.12 due to compatibility issues
+if sys.version_info < (3, 12):
+    from dagster_duckdb import DuckDBIOManager
+    from dagster_gcp import BigQueryIOManager
+    from dagster_snowflake.snowflake_io_manager import SnowflakeIOManager
 
 
+@pytest.mark.skipif(
+    sys.version_info >= (3, 12), reason="Test dependencies not available on Python 3.12+"
+)
 def test_resource_telemetry():
     # assert that all Resources and I/O Managers have dagster_maintained=True (or are known exceptions)
 
@@ -49,11 +57,18 @@ def test_resource_telemetry():
         ConfigurableIOManager,
         ConfigurableLegacyIOManagerAdapter,
         ConfigurableIOManagerFactory,
-        # the base DB IO managers are set to False since users can instantiate their own versions
-        SnowflakeIOManager,
-        DuckDBIOManager,
-        BigQueryIOManager,
     ]
+
+    # Add DB IO managers to exceptions only if available (Python < 3.12)
+    if sys.version_info < (3, 12):
+        exceptions.extend(
+            [
+                # the base DB IO managers are set to False since users can instantiate their own versions
+                SnowflakeIOManager,
+                DuckDBIOManager,
+                BigQueryIOManager,
+            ]
+        )
 
     for library in libraries:
         package = __import__(library)
