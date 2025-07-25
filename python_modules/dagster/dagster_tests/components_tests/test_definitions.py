@@ -94,7 +94,7 @@ def test_definitions_decorator_with_context_using_context():
 def test_component_tree():
     dagster_test_path = Path(__file__).joinpath("../../../../dagster-test").resolve()
     assert dagster_test_path.exists()
-    defs = LegacyAutoloadingComponentTree.load(dagster_test_path).build_defs()
+    defs = LegacyAutoloadingComponentTree.for_project(dagster_test_path).build_defs()
 
     repo_def = defs.get_repository_def()
     asset = repo_def.asset_graph.get(dg.AssetKey("first_yaml"))
