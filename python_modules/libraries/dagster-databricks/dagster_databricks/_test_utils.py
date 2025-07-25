@@ -1,7 +1,6 @@
 import base64
 import inspect
 import os
-import io
 import subprocess
 import textwrap
 from collections.abc import Iterator
@@ -12,9 +11,9 @@ import dagster._check as check
 import pytest
 from databricks.sdk import WorkspaceClient
 from databricks.sdk.service import files
-from databricks.sdk.service.workspace import Language, ImportFormat
+from databricks.sdk.service.workspace import ImportFormat, Language
 
-from dagster_databricks.pipes import dbfs_tempdir, volumes_tempdir
+from dagster_databricks.pipes import dbfs_tempdir
 
 DAGSTER_PIPES_WHL_FILENAME = "dagster_pipes-1!0+dev-py3-none-any.whl"
 
@@ -54,6 +53,7 @@ def databricks_client() -> WorkspaceClient:
         host=os.environ["DATABRICKS_HOST"],
         token=os.environ["DATABRICKS_TOKEN"],
     )
+
 
 @pytest.fixture
 def databricks_notebook_folder_path() -> str:
@@ -116,7 +116,7 @@ def temp_notebook_script(
     else:
         check.failed("Unreachable")
 
-    content_b64 = base64.b64encode(source.encode('utf-8'))
+    content_b64 = base64.b64encode(source.encode("utf-8"))
     notebook_path = os.path.join(notebook_folder_path, "notebook")
     try:
         # Upload to workspace
@@ -125,7 +125,7 @@ def temp_notebook_script(
             content=content_b64,
             language=Language.PYTHON,
             format=ImportFormat.SOURCE,
-            overwrite=True
+            overwrite=True,
         )
         yield notebook_path
     finally:

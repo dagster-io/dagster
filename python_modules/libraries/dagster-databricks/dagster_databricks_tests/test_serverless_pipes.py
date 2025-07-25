@@ -7,7 +7,7 @@ from dagster import AssetExecutionContext, asset, materialize
 from dagster._core.errors import DagsterPipesExecutionError
 from dagster_databricks._test_utils import (
     databricks_client,  # noqa: F401
-    databricks_notebook_folder_path, # noqa: F401
+    databricks_notebook_folder_path,  # noqa: F401
     temp_notebook_script,
 )
 from dagster_databricks.pipes import PipesDatabricksServerlessClient
@@ -18,6 +18,7 @@ IS_BUILDKITE = os.getenv("BUILDKITE") is not None
 IS_WORKSPACE = os.getenv("DATABRICKS_HOST") is not None
 
 TEST_VOLUME_PATH = "/Volumes/workspace/default/databricks_serverless_pipes_test"
+
 
 def script_fn():
     import sys
@@ -82,7 +83,9 @@ def test_pipes_client(
     def number_x(context: AssetExecutionContext, pipes_client: PipesDatabricksServerlessClient):
         with ExitStack() as stack:
             script_path = stack.enter_context(
-                temp_notebook_script(databricks_client, databricks_notebook_folder_path, script_fn=script_fn)
+                temp_notebook_script(
+                    databricks_client, databricks_notebook_folder_path, script_fn=script_fn
+                )
             )
             task = make_submit_task(script_path)
             return pipes_client.run(
