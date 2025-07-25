@@ -1,12 +1,11 @@
 from functools import cached_property
-from typing import Any, cast
 
 import dagster as dg
 from dagster._annotations import preview, public
 from dagster._core.definitions.definitions_class import Definitions
 from dagster.components.core.context import ComponentLoadContext
 from dagster.components.lib.sql_component.sql_client import SQLClient
-from pydantic import BaseModel, create_model
+from dagster.components.utils import copy_fields_to_model
 
 from dagster_snowflake.resources import SnowflakeResource
 
@@ -33,25 +32,8 @@ class SnowflakeConnectionComponentBase(dg.Component, dg.Resolvable, dg.Model, SQ
         return Definitions()
 
 
-def _copy_fields_to_model(
-    copy_from: type[BaseModel], copy_to: type[BaseModel], new_model_cls_name: str
-) -> None:
-    """Given two models, creates a copy of the second model with the fields of the first model."""
-    field_definitions: dict[str, tuple[type, Any]] = {
-        field_name: (cast("type", field.annotation), field)
-        for field_name, field in copy_from.model_fields.items()
-    }
-
-    return create_model(
-        new_model_cls_name,
-        __base__=copy_to,
-        __doc__=copy_to.__doc__,
-        **field_definitions,  # type: ignore
-    )
-
-
 SnowflakeConnectionComponent = public(preview)(
-    _copy_fields_to_model(
+    copy_fields_to_model(
         copy_from=SnowflakeResource,
         copy_to=SnowflakeConnectionComponentBase,
         new_model_cls_name="SnowflakeConnectionComponent",

@@ -7,11 +7,11 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
 from types import ModuleType
-from typing import Any, TypeVar, Union
+from typing import Any, TypeVar, Union, cast
 
 import click
 from dagster_shared.error import DagsterError
-from pydantic import BaseModel
+from pydantic import BaseModel, create_model
 
 from dagster import _check as check
 from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
@@ -183,3 +183,20 @@ def get_path_from_module(module: ModuleType) -> Path:
         else None
     )
     return check.not_none(module_path, f"Module {module.__name__} has no filepath")
+
+
+def copy_fields_to_model(
+    copy_from: type[BaseModel], copy_to: type[BaseModel], new_model_cls_name: str
+) -> type[BaseModel]:
+    """Given two models, creates a copy of the second model with the fields of the first model."""
+    field_definitions: dict[str, tuple[type, Any]] = {
+        field_name: (cast("type", field.annotation), field)
+        for field_name, field in copy_from.model_fields.items()
+    }
+
+    return create_model(
+        new_model_cls_name,
+        __base__=copy_to,
+        __doc__=copy_to.__doc__,
+        **field_definitions,  # type: ignore
+    )

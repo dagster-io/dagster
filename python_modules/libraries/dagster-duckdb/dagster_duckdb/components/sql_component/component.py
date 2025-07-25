@@ -1,33 +1,41 @@
-from typing import Annotated, Optional
+from functools import cached_property
 
 import dagster as dg
 from dagster._annotations import preview, public
 from dagster._core.definitions.definitions_class import Definitions
 from dagster.components.core.context import ComponentLoadContext
-from pydantic import BaseModel, Field
+from dagster.components.lib.sql_component.sql_client import SQLClient
+from dagster.components.utils import copy_fields_to_model
 
 from dagster_duckdb.resource import DuckDBResource
 
 
 @public
 @preview
-class DuckDBConnectionComponent(dg.Component, dg.Resolvable, DuckDBResource):
+class DuckDBConnectionComponentBase(dg.Component, dg.Resolvable, dg.Model, SQLClient):
     """A component that represents a DuckDB connection."""
 
-    resource_key: Annotated[
-        Optional[str],
-        Field(
-            description="A resource key to expose this connection to use in other Dagster assets."
-        ),
-    ] = None
+    @cached_property
+    def _duckdb_resource(self) -> DuckDBResource:
+        return DuckDBResource(
+            **{
+                (field.alias or field_name): getattr(self, field_name)
+                for field_name, field in self.__class__.model_fields.items()
+            }
+        )
 
-    @classmethod
-    def load(
-        cls, attributes: Optional[BaseModel], context: "ComponentLoadContext"
-    ) -> "DuckDBConnectionComponent":
-        return super().load(attributes, context)
+    def connect_and_execute(self, sql: str) -> None:
+        """Connect to the SQL database and execute the SQL query."""
+        return self._duckdb_resource.connect_and_execute(sql)
 
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
-        return (
-            Definitions(resources={self.resource_key: self}) if self.resource_key else Definitions()
-        )
+        return Definitions()
+
+
+DuckDBConnectionComponent = public(preview)(
+    copy_fields_to_model(
+        copy_from=DuckDBResource,
+        copy_to=DuckDBConnectionComponentBase,
+        new_model_cls_name="DuckDBConnectionComponent",
+    )
+)
