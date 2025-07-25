@@ -3,7 +3,7 @@ import {memo, useCallback} from 'react';
 import {useHistory} from 'react-router-dom';
 
 import {isTimeseriesDimension} from './MultipartitioningSupport';
-import {AssetKey} from './types';
+import {AssetKey, AssetViewParams} from './types';
 import {PartitionHealthData} from './usePartitionHealthData';
 import {LiveDataForNode, displayNameForAssetKey} from '../asset-graph/Utils';
 import {PartitionStatus} from '../partitions/PartitionStatus';
@@ -29,7 +29,7 @@ export const PartitionHealthSummary = memo((props: Props) => {
       const lastPartition = selectedPartitions[selectedPartitions.length - 1]!;
 
       let defaultRange: string;
-      let queryParams: {view: string; default_range: string; partition?: string};
+      let queryParams: AssetViewParams;
 
       if (selectedPartitions.length === 1) {
         defaultRange = firstPartition;
@@ -42,6 +42,7 @@ export const PartitionHealthSummary = memo((props: Props) => {
         defaultRange = `[${firstPartition}...${lastPartition}]`;
         queryParams = {
           view: 'partitions',
+          partition: lastPartition,
           default_range: defaultRange,
         };
       }
