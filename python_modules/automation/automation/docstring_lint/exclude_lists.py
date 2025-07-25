@@ -39,8 +39,15 @@ EXCLUDE_MISSING_RST = {
     # Library resources
     "dagster_openai.resources.with_usage_metadata",
     "dagster_openai.resources.OpenAIResource",
-    "dagster_sling.resources.SlingMode",
+    "dagster_sling.SlingMode",
     "dagster_sling.resources.SlingConnectionResource",
+    # New public APIs missing RST documentation
+    "dagster.build_defs_for_component",
+    "dagster.ComponentTypeSpec",
+    "dagster.scaffold_with",
+    "dagster.ScaffoldRequest",
+    "dagster.Scaffolder",
+    "dagster.SqlComponent",
     # Library components
     "dagster_snowflake.components.sql_component.component.SnowflakeConnectionComponentBase",
 }
