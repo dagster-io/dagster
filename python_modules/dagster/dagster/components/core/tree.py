@@ -11,9 +11,9 @@ from dagster_shared import check
 from dagster_shared.record import record
 from dagster_shared.utils.cached_method import get_cached_method_cache, make_cached_method_cache_key
 from dagster_shared.utils.config import (
+    discover_config_file,
     get_canonical_defs_module_name,
     load_toml_as_dict,
-    locate_dg_config_in_folder,
 )
 from typing_extensions import Self, TypeVar
 
@@ -145,15 +145,21 @@ class ComponentTree:
         )
 
     @classmethod
-    def for_project(cls, project_root: Path) -> Self:
+    def for_project(cls, path_within_project: Path) -> Self:
         """Using the provided path, find the nearest parent python project and load the
         ComponentTree using its configuration.
+
+        Args:
+            path_within_project (Path): A path within a Dagster project.
+
+        Returns:
+            ComponentTree: The ComponentTree for the project.
         """
-        root_config_path = locate_dg_config_in_folder(project_root)
+        root_config_path = discover_config_file(path_within_project)
         toml_config = load_toml_as_dict(
             check.not_none(
                 root_config_path,
-                additional_message=f"No config file found at project root {project_root}",
+                additional_message=f"No config file found at project root {path_within_project}",
             )
         )
 
@@ -172,7 +178,7 @@ class ComponentTree:
 
         defs_module = importlib.import_module(defs_module_name)
 
-        return cls(defs_module=defs_module, project_root=project_root)
+        return cls(defs_module=defs_module, project_root=path_within_project)
 
     @cached_property
     def decl_load_context(self):

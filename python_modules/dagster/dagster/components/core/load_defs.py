@@ -112,7 +112,7 @@ def load_from_defs_folder(*, project_root: Path) -> Definitions:
                 return dg.load_from_defs_folder(project_root=project_path)
 
     """
-    return ComponentTree.for_project(project_root=project_root).build_defs()
+    return ComponentTree.for_project(path_within_project=project_root).build_defs()
 
 
 # Public method so optional Nones are fine

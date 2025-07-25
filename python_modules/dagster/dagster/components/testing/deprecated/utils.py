@@ -81,7 +81,7 @@ class DefsPathSandbox:
     def load_all(self) -> Iterator[list[tuple[Component, Definitions]]]:
         with alter_sys_path(to_add=[str(self.project_root / "src")], to_remove=[]):
             module_path = get_module_path(
-                defs_module_name=f"{self.project_name}.defs", defs_path=self.component_path
+                defs_module_name=f"{self.project_name}.defs", component_path=self.component_path
             )
             try:
                 yield get_all_components_defs_from_defs_path(
