@@ -29,7 +29,10 @@ class SnowflakeConnectionComponentBase(dg.Component, dg.Resolvable, dg.Model, SQ
         return self._snowflake_resource.connect_and_execute(sql)
 
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
-        return Definitions()
+        # Use path relative to defs folder to create resource key
+        relative_path = context.component_decl.path.file_path.relative_to(context.defs_module_path)
+        resource_key = relative_path.as_posix().replace("/", "__").replace("-", "_")
+        return Definitions(resources={resource_key: self._snowflake_resource})
 
 
 @public
@@ -37,7 +40,7 @@ class SnowflakeConnectionComponentBase(dg.Component, dg.Resolvable, dg.Model, SQ
 class SnowflakeConnectionComponent(
     copy_fields_to_model(
         copy_from=SnowflakeResource,
-        copy_to=dg.Model,
+        copy_to=SnowflakeConnectionComponentBase,
     )
 ):
     pass

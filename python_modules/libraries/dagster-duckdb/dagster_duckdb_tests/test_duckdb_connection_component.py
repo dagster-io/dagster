@@ -1,35 +1,30 @@
-import importlib
 import tempfile
 from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
+from typing import Union
 
 import duckdb
 import pytest
-import yaml
 from dagster import AssetKey, Definitions
 from dagster._core.definitions.materialize import materialize
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
-from dagster._utils import alter_sys_path
 from dagster.components.core.context import ComponentLoadContext
-from dagster.components.core.tree import ComponentTree
 from dagster.components.lib.sql_component.sql_component import SqlComponent
+from dagster.components.testing import create_defs_folder_sandbox
+from dagster_duckdb.components.sql_component.component import DuckDBConnectionComponent
 from dagster_shared import check
 
 
 @contextmanager
 def setup_duckdb_component_with_external_connection(
     execution_component_body: dict,
-    connection_component_name: str = "sql_connection_component",
+    connection_defs_path: Union[str, Path] = "sql_connection_component",
 ) -> Iterator[tuple[Definitions, str]]:
     """Sets up a components project with a duckdb component using external connection."""
     with tempfile.TemporaryDirectory() as project_root_str:
-        project_root = Path(project_root_str)
-        defs_folder_path = project_root / "src" / "my_project" / "defs"
-        defs_folder_path.mkdir(parents=True, exist_ok=True)
-
         # Create a temporary DuckDB database file with test data
-        db_file = project_root / "test.duckdb"
+        db_file = Path(project_root_str) / "test.duckdb"
         conn = duckdb.connect(str(db_file))
         conn.execute("CREATE TABLE IF NOT EXISTS test_table (id INTEGER, name VARCHAR, date DATE)")
         conn.execute(
@@ -37,27 +32,24 @@ def setup_duckdb_component_with_external_connection(
         )
         conn.close()
 
-        # Create execution component
-        execution_component_path = defs_folder_path / "sql_execution_component"
-        execution_component_path.mkdir(parents=True, exist_ok=True)
-        (execution_component_path / "defs.yaml").write_text(yaml.dump(execution_component_body))
+        with create_defs_folder_sandbox() as sandbox:
+            sandbox.scaffold_component(
+                component_cls=SqlComponent,
+                defs_path="sql_execution_component",
+                defs_yaml_contents=execution_component_body,
+            )
 
-        # Create connection component
-        connection_body = {
-            "type": "dagster_duckdb.DuckDBConnectionComponent",
-            "attributes": {"database": str(db_file), "connection_config": {}},
-        }
-        connection_component_path = defs_folder_path / connection_component_name
-        connection_component_path.mkdir(parents=True, exist_ok=True)
-        (connection_component_path / "defs.yaml").write_text(yaml.dump(connection_body))
+            sandbox.scaffold_component(
+                component_cls=DuckDBConnectionComponent,
+                defs_path=connection_defs_path,
+                defs_yaml_contents={
+                    "type": "dagster_duckdb.DuckDBConnectionComponent",
+                    "attributes": {"database": str(db_file), "connection_config": {}},
+                },
+            )
 
-        with alter_sys_path(to_add=[str(project_root / "src")], to_remove=[]):
-            defs = ComponentTree(
-                defs_module=importlib.import_module("my_project.defs"),
-                project_root=Path(project_root),
-            ).build_defs()
-
-            yield defs, str(db_file)
+            with sandbox.build_all_defs() as defs:
+                yield defs, str(db_file)
 
 
 def test_duckdb_sql_component():
@@ -230,3 +222,41 @@ def test_custom_duckdb_sql_component():
             assert query_result[0] == "test_user"
         finally:
             conn.close()
+
+
+@pytest.mark.parametrize(
+    "connection_defs_path,expected_resource_key",
+    [
+        ("sql_connection_component", "sql_connection_component"),
+        (Path("connections/duckdb"), "connections__duckdb"),
+        (Path("data/connections/primary-db"), "data__connections__primary_db"),
+    ],
+)
+def test_duckdb_connection_component_resource_key_from_path(
+    connection_defs_path, expected_resource_key
+):
+    """Test that resource keys are correctly generated from component paths."""
+    execution_body = {
+        "type": "dagster.TemplatedSqlComponent",
+        "attributes": {
+            "sql_template": "SELECT 1",
+            "assets": [{"key": "test_asset"}],
+            "connection": "{{ load_component_at_path('" + str(connection_defs_path) + "') }}",
+        },
+    }
+
+    with setup_duckdb_component_with_external_connection(
+        execution_component_body=execution_body,
+        connection_defs_path=connection_defs_path,
+    ) as (defs, _db_path):
+        # Check that the connection component resource is exposed with correct key
+        resources = defs.resources or {}
+
+        # Verify the expected resource key exists
+        assert expected_resource_key in resources
+
+        # Verify it's actually a DuckDBResource
+        resource_def = resources[expected_resource_key]
+        from dagster_duckdb.resource import DuckDBResource
+
+        assert isinstance(resource_def, DuckDBResource)

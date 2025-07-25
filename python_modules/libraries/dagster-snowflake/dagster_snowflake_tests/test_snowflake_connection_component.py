@@ -2,6 +2,8 @@ import os
 import tempfile
 from collections.abc import Iterator
 from contextlib import contextmanager
+from pathlib import Path
+from typing import Union
 from unittest import mock
 
 import pytest
@@ -20,7 +22,7 @@ from dagster_snowflake_tests.utils import create_mock_connector
 @contextmanager
 def setup_snowflake_component_with_external_connection(
     execution_component_body: dict,
-    connection_component_name: str = "sql_connection_component",
+    connection_defs_path: Union[str, Path] = "sql_connection_component",
 ) -> Iterator[Definitions]:
     """Sets up a components project with a snowflake component using external connection."""
     with create_defs_folder_sandbox() as sandbox:
@@ -32,7 +34,7 @@ def setup_snowflake_component_with_external_connection(
 
         sandbox.scaffold_component(
             component_cls=SnowflakeConnectionComponent,
-            defs_path=connection_component_name,
+            defs_path=connection_defs_path,
             defs_yaml_contents={
                 "type": "dagster_snowflake.SnowflakeConnectionComponent",
                 "attributes": {
@@ -230,3 +232,42 @@ def test_custom_snowflake_sql_component(snowflake_connect):
         assert defs.resolve_asset_graph().get_all_asset_keys() == {
             AssetKey(["TESTDB", "TESTSCHEMA", "EXTERNAL_TABLE"])
         }
+
+
+@pytest.mark.parametrize(
+    "connection_defs_path,expected_resource_key",
+    [
+        ("sql_connection_component", "sql_connection_component"),
+        (Path("connections/snowflake"), "connections__snowflake"),
+        (Path("data/connections/primary-db"), "data__connections__primary_db"),
+    ],
+)
+@mock.patch("snowflake.connector.connect", new_callable=create_mock_connector)
+def test_snowflake_connection_component_resource_key_from_path(
+    snowflake_connect, connection_defs_path, expected_resource_key
+):
+    """Test that resource keys are correctly generated from component paths."""
+    execution_body = {
+        "type": "dagster.TemplatedSqlComponent",
+        "attributes": {
+            "sql_template": "SELECT 1",
+            "assets": [{"key": "TESTDB/TESTSCHEMA/test_asset"}],
+            "connection": "{{ load_component_at_path('" + str(connection_defs_path) + "') }}",
+        },
+    }
+
+    with setup_snowflake_component_with_external_connection(
+        execution_component_body=execution_body,
+        connection_defs_path=connection_defs_path,
+    ) as defs:
+        # Check that the connection component resource is exposed with correct key
+        resources = defs.resources or {}
+
+        # Verify the expected resource key exists
+        assert expected_resource_key in resources
+
+        # Verify it's actually a SnowflakeResource
+        resource_def = resources[expected_resource_key]
+        from dagster_snowflake.resources import SnowflakeResource
+
+        assert isinstance(resource_def, SnowflakeResource)

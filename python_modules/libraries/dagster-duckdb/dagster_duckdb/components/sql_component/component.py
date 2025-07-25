@@ -29,7 +29,10 @@ class DuckDBConnectionComponentBase(dg.Component, dg.Resolvable, dg.Model, SQLCl
         return self._duckdb_resource.connect_and_execute(sql)
 
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
-        return Definitions()
+        # Use path relative to defs folder to create resource key
+        relative_path = context.component_decl.path.file_path.relative_to(context.defs_module_path)
+        resource_key = relative_path.as_posix().replace("/", "__").replace("-", "_")
+        return Definitions(resources={resource_key: self._duckdb_resource})
 
 
 @public
