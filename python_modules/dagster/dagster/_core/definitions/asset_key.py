@@ -45,7 +45,7 @@ class AssetKey(IHaveNew):
         AssetKey(["prefix", "asset1"])
         AssetKey(["prefix", "subprefix", "asset1"])
 
-    Args:
+    Argsz:
         path (Union[str, Sequence[str]]): String, list of strings, or tuple of strings.  A list of
             strings represent the hierarchical structure of the asset_key.
     """

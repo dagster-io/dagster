@@ -236,13 +236,19 @@ class DocstringValidator:
     """Core validator for processing single docstrings efficiently."""
 
     def validate_docstring_text(
-        self, docstring: str, symbol_path: str = "unknown"
+        self,
+        docstring: str,
+        symbol_path: str = "unknown",
+        docstring_start_line: Optional[int] = None,
     ) -> ValidationResult:
         """Validate a raw docstring text efficiently.
 
         Args:
             docstring: The docstring text to validate
             symbol_path: Path identifier for error reporting
+            docstring_start_line: Line number where the docstring starts in the source file.
+                If provided, line numbers in errors will be file-relative. If None,
+                line numbers will be docstring-relative.
 
         Returns:
             ValidationResult with any issues found
@@ -304,6 +310,9 @@ class DocstringValidator:
                                 continue
 
                             line_num = self._extract_line_number(line)
+                            # Convert to file-relative line number if docstring_start_line is provided
+                            if line_num and docstring_start_line:
+                                line_num = docstring_start_line + line_num - 1
                             enhanced_message = self._enhance_error_message(line)
 
                             # Upgrade certain warnings to errors
@@ -337,6 +346,9 @@ class DocstringValidator:
         result = ValidationResult.create(dotted_path)
 
         try:
+            # Get symbol info to determine docstring location
+            symbol_info = SymbolImporter.import_symbol(dotted_path)
+
             # Try file-based reading first (most accurate for current file state)
             docstring = self._read_docstring_from_file(dotted_path)
 
@@ -348,10 +360,62 @@ class DocstringValidator:
             if not docstring:
                 return result.with_warning("Symbol has no docstring")
 
-            return self.validate_docstring_text(docstring, dotted_path)
+            # Calculate docstring start line for file-relative error reporting
+            docstring_start_line = None
+            if symbol_info.line_number:
+                # The docstring typically starts 1 line after the symbol definition line
+                # For classes and functions, this is usually where the triple quotes begin
+                docstring_start_line = self._calculate_docstring_start_line(symbol_info)
+
+            return self.validate_docstring_text(docstring, dotted_path, docstring_start_line)
 
         except (ImportError, AttributeError) as e:
             return result.with_error(f"Failed to import symbol: {e}").with_parsing_failed()
+
+    def _calculate_docstring_start_line(self, symbol_info: SymbolInfo) -> Optional[int]:
+        """Calculate the line number where the docstring starts in the source file.
+
+        Args:
+            symbol_info: Information about the symbol including file path and line number
+
+        Returns:
+            Line number where the docstring starts, or None if it cannot be determined
+        """
+        if not symbol_info.file_path or not symbol_info.line_number:
+            return None
+
+        try:
+            import ast
+
+            with open(symbol_info.file_path, encoding="utf-8") as f:
+                source_code = f.read()
+
+            tree = ast.parse(source_code)
+
+            # Find the node that matches our symbol
+            target_node = None
+            for node in ast.walk(tree):
+                if isinstance(node, (ast.FunctionDef, ast.ClassDef, ast.AsyncFunctionDef)):
+                    if (
+                        node.name == symbol_info.name
+                        and abs(node.lineno - symbol_info.line_number) <= 10
+                    ):
+                        target_node = node
+                        break
+
+            if target_node and target_node.body:
+                first_stmt = target_node.body[0]
+                if isinstance(first_stmt, ast.Expr) and isinstance(
+                    first_stmt.value, (ast.Str, ast.Constant)
+                ):
+                    # The docstring starts at the line of the first statement
+                    return first_stmt.lineno
+
+            return None
+
+        except Exception:
+            # If we can't parse the file, fall back to None
+            return None
 
     def _import_symbol(self, dotted_path: str, reload_module: bool = False) -> Any:
         """Import a symbol from a dotted path."""
@@ -636,14 +700,23 @@ class DocstringValidator:
         return any(pattern in warning_line for pattern in redundant_patterns)
 
     def _check_docstring_structure(
-        self, docstring: str, result: ValidationResult
+        self, docstring: str, result: ValidationResult, docstring_start_line: Optional[int] = None
     ) -> ValidationResult:
-        """Check basic docstring structure issues."""
+        """Check basic docstring structure issues.
+
+        Args:
+            docstring: The docstring text to check
+            result: Current validation result to add errors/warnings to
+            docstring_start_line: Line number where docstring starts in source file.
+                If provided, reported line numbers will be file-relative.
+        """
         lines = docstring.split("\n")
         # Track which line numbers already have errors to avoid duplicate warnings
         lines_with_errors = set()
 
         for i, line in enumerate(lines, 1):
+            # Calculate file-relative line number if docstring_start_line is provided
+            file_line_number = docstring_start_line + i - 1 if docstring_start_line else i
             stripped = line.strip()
 
             # No formatting support for section headers - enforce consistent style
@@ -668,7 +741,7 @@ class DocstringValidator:
                 if exact_case_match:
                     result = result.with_error(
                         f"Invalid section header: '{stripped}'. Did you mean '{exact_case_match}'?",
-                        i,
+                        file_line_number,
                     )
                     lines_with_errors.add(i)
                 else:
@@ -687,7 +760,7 @@ class DocstringValidator:
                     if possible_match:
                         result = result.with_error(
                             f"Invalid section header: '{stripped}'. Did you mean '{possible_match}'?",
-                            i,
+                            file_line_number,
                         )
                         lines_with_errors.add(i)
 
@@ -695,20 +768,12 @@ class DocstringValidator:
             for section in ALLOWED_SECTION_HEADERS:
                 section_base = section.rstrip(":")
 
-                # Check for missing colon (case-insensitive)
-                if stripped.lower() == section_base.lower() and section != section_base:
-                    if stripped == section_base:
-                        # Exact match except for missing colon
-                        result = result.with_error(
-                            f"Malformed section header: '{stripped}' is missing colon (should be '{section}')",
-                            i,
-                        )
-                    else:
-                        # Case mismatch and missing colon
-                        result = result.with_error(
-                            f"Malformed section header: '{stripped}' is missing colon and has incorrect capitalization (should be '{section}')",
-                            i,
-                        )
+                # Check for missing colon
+                if stripped == section_base and section != section_base:
+                    result = result.with_error(
+                        f"Malformed section header: '{stripped}' is missing colon (should be '{section}')",
+                        file_line_number,
+                    )
                     lines_with_errors.add(i)
 
                 # Check for incorrect capitalization or spacing
@@ -717,13 +782,13 @@ class DocstringValidator:
                     if stripped.lower() == section.lower():
                         result = result.with_error(
                             f"Malformed section header: '{stripped}' has incorrect capitalization (should be '{section}')",
-                            i,
+                            file_line_number,
                         )
                         lines_with_errors.add(i)
                     elif stripped.lower().replace(" ", "") == section.lower().replace(" ", ""):
                         result = result.with_error(
                             f"Malformed section header: '{stripped}' has incorrect spacing (should be '{section}')",
-                            i,
+                            file_line_number,
                         )
                         lines_with_errors.add(i)
                     # Only flag as "possible malformed" if the text ends with colon (indicating intent to be a section header)
@@ -737,7 +802,7 @@ class DocstringValidator:
                     ):
                         result = result.with_warning(
                             f"Possible malformed section header: '{stripped}' (should be '{section}')",
-                            i,
+                            file_line_number,
                         )
 
             # Check for completely garbled section headers (like "Argsjdkfjdkjfdk:")
@@ -762,7 +827,7 @@ class DocstringValidator:
                             ):
                                 result = result.with_error(
                                     f"Corrupted section header detected: '{stripped}' (possibly should be '{section}')",
-                                    i,
+                                    file_line_number,
                                 )
                                 lines_with_errors.add(i)
                                 break
