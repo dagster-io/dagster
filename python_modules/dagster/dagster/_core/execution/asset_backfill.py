@@ -1405,7 +1405,7 @@ def _asset_graph_subset_to_str(
     return_strs = []
     asset_subsets = asset_graph_subset.iterate_asset_subsets()
 
-    for subset in asset_subsets:
+    for subset in sorted(asset_subsets, key=lambda x: x.key):
         if subset.is_partitioned:
             partitions_def = asset_graph.get(subset.key).partitions_def
             partition_ranges_str = _partition_subset_str(subset.subset_value, partitions_def)
@@ -1439,6 +1439,42 @@ def execute_asset_backfill_iteration_inner(
         return _execute_asset_backfill_iteration_inner(
             backfill_id, asset_backfill_data, asset_graph_view, backfill_start_timestamp, logger
         )
+
+
+def _get_candidate_asset_graph_subset(
+    asset_backfill_data: AssetBackfillData,
+    asset_graph_view: AssetGraphView,
+):
+    instance_queryer = asset_graph_view.get_inner_queryer_for_back_compat()
+    asset_graph: RemoteWorkspaceAssetGraph = cast(
+        "RemoteWorkspaceAssetGraph", asset_graph_view.asset_graph
+    )
+    parent_materialized_asset_partitions = set().union(
+        *(
+            instance_queryer.asset_partitions_with_newly_updated_parents_and_new_cursor(
+                latest_storage_id=asset_backfill_data.latest_storage_id,
+                child_asset_key=asset_key,
+            )[0]
+            for asset_key in asset_backfill_data.target_subset.asset_keys
+        )
+    )
+    asset_keys = {ap.asset_key for ap in parent_materialized_asset_partitions}
+    child_subsets = []
+    for asset_key in asset_keys:
+        child_subsets.append(
+            asset_backfill_data.target_subset.get_asset_subset(
+                asset_key, asset_graph
+            ).compute_difference(
+                asset_backfill_data.requested_subset.get_asset_subset(asset_key, asset_graph)
+            )
+        )
+
+    return AssetGraphSubset.from_entity_subsets(
+        [
+            asset_graph_view.get_subset_from_serializable_subset(child_subset)
+            for child_subset in child_subsets
+        ]
+    )
 
 
 def _execute_asset_backfill_iteration_inner(
@@ -1489,17 +1525,9 @@ def _execute_asset_backfill_iteration_inner(
             else "No relevant assets materialized since last tick."
         )
 
-        parent_materialized_asset_partitions = set().union(
-            *(
-                instance_queryer.asset_partitions_with_newly_updated_parents_and_new_cursor(
-                    latest_storage_id=asset_backfill_data.latest_storage_id,
-                    child_asset_key=asset_key,
-                )[0]
-                for asset_key in asset_backfill_data.target_subset.asset_keys
-            )
-        )
-        candidate_asset_graph_subset = AssetGraphSubset.from_asset_partition_set(
-            parent_materialized_asset_partitions, asset_graph
+        candidate_asset_graph_subset = _get_candidate_asset_graph_subset(
+            asset_backfill_data,
+            asset_graph_view,
         )
 
         failed_and_downstream_subset = _get_failed_and_downstream_asset_graph_subset(
@@ -1640,7 +1668,7 @@ def _should_backfill_atomic_asset_subset_unit(
         )
         entity_subset_to_filter = entity_subset_to_filter.compute_difference(requested_partitions)
 
-    for parent_key in asset_graph.get(asset_key).parent_keys:
+    for parent_key in sorted(asset_graph.get(asset_key).parent_keys):
         if entity_subset_to_filter.is_empty:
             break
 
@@ -1680,25 +1708,35 @@ def _should_backfill_atomic_asset_subset_unit(
         if not possibly_waiting_for_parent_subset.is_empty:
             cant_run_with_parent_reason = _get_cant_run_with_parent_reason(
                 targeted_but_not_materialized_parent_subset,
-                possibly_waiting_for_parent_subset,
+                entity_subset_to_filter,
                 asset_graph_view,
                 target_subset,
                 asset_graph_subset_matched_so_far,
                 candidate_asset_graph_subset_unit,
             )
-            if cant_run_with_parent_reason is not None:
-                entity_subset_to_filter = entity_subset_to_filter.compute_difference(
-                    possibly_waiting_for_parent_subset
-                )
-                failure_subsets_with_reasons.append(
-                    (
-                        possibly_waiting_for_parent_subset.get_internal_value(),
-                        cant_run_with_parent_reason,
-                    )
-                )
-
             is_self_dependency = parent_key == asset_key
 
+            if cant_run_with_parent_reason is not None:
+                if is_self_dependency:
+                    entity_subset_to_filter = entity_subset_to_filter.compute_difference(
+                        possibly_waiting_for_parent_subset
+                    )
+                    failure_subsets_with_reasons.append(
+                        (
+                            possibly_waiting_for_parent_subset.get_internal_value(),
+                            cant_run_with_parent_reason,
+                        )
+                    )
+                else:
+                    failure_subsets_with_reasons.append(
+                        (
+                            entity_subset_to_filter.get_internal_value(),
+                            cant_run_with_parent_reason,
+                        )
+                    )
+                    entity_subset_to_filter = asset_graph_view.get_empty_subset(
+                        key=entity_subset_to_filter.key
+                    )
             if is_self_dependency:
                 self_dependent_node = asset_graph.get(asset_key)
                 # ensure that we don't produce more than max_partitions_per_run partitions

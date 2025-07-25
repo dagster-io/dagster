@@ -4,6 +4,7 @@ import time
 from pathlib import Path
 from typing import Callable
 
+import click
 from watchdog.events import FileSystemEventHandler
 from watchdog.observers import Observer
 
@@ -30,17 +31,17 @@ class DocstringValidationHandler(FileSystemEventHandler):
     def _handle_file_event(self, event_path: Path, event_type: str) -> None:
         """Handle file system events for the target file."""
         if self.verbose:
-            print(f"[DEBUG] {event_type} event: {event_path}")  # noqa: T201
+            click.echo(f"[DEBUG] {event_type} event: {event_path}")
 
         if event_path == self.target_file:
             current_time = time.time()
             if current_time - self.last_validation_time > self.debounce_delay:
                 self.last_validation_time = current_time
                 if self.verbose:
-                    print(f"[DEBUG] Triggering validation for {event_path}")  # noqa: T201
+                    click.echo(f"[DEBUG] Triggering validation for {event_path}")
                 self.validation_callback()
             elif self.verbose:
-                print("[DEBUG] Skipping validation (debounced)")  # noqa: T201
+                click.echo("[DEBUG] Skipping validation (debounced)")
 
     def on_modified(self, event) -> None:
         """Handle file modification events."""

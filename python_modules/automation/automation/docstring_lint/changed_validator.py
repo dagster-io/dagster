@@ -5,6 +5,7 @@ import inspect
 from pathlib import Path
 from typing import Callable, Union
 
+import click
 from dagster._record import IHaveNew, record, record_custom
 
 from automation.docstring_lint.validator import DocstringValidator
@@ -36,7 +37,7 @@ class ValidationConfig(IHaveNew):
 
 @record
 class SymbolInfo:
-    """Information about a symbol with a docstring."""
+    """Information about a top-level exported symbol with a docstring."""
 
     symbol_path: str
     file_path: Path
@@ -45,7 +46,7 @@ class SymbolInfo:
 
 @record
 class ValidationResult:
-    """Result of validating a single symbol's docstring."""
+    """Result of validating a single exported symbol's docstring."""
 
     symbol_info: SymbolInfo
     errors: list[str]
@@ -61,7 +62,7 @@ class ValidationResult:
 
 
 def extract_symbols_from_file(file_path: Path, module_path: str) -> set[SymbolInfo]:
-    """Extract symbols with docstrings from a file using dynamic import."""
+    """Extract top-level exported symbols with docstrings from a file using dynamic import."""
     try:
         # Create a unique module name to avoid conflicts
         module_name = f"temp_module_{hash(str(file_path))}"
@@ -76,7 +77,7 @@ def extract_symbols_from_file(file_path: Path, module_path: str) -> set[SymbolIn
 
         symbols = set()
 
-        # Extract symbols using introspection
+        # Extract top-level exported symbols using introspection
         for name, obj in inspect.getmembers(module):
             if name.startswith("_"):
                 continue
@@ -139,7 +140,7 @@ def extract_symbols_from_file(file_path: Path, module_path: str) -> set[SymbolIn
 def validate_symbols(
     symbols: set[SymbolInfo], validator: DocstringValidator
 ) -> list[ValidationResult]:
-    """Validate docstrings for a set of symbols."""
+    """Validate docstrings for a set of top-level exported symbols."""
     results = []
 
     for symbol_info in symbols:
@@ -174,7 +175,7 @@ def validate_changed_files(
 
     all_symbols = set()
 
-    # Extract symbols from all changed files
+    # Extract top-level exported symbols from all changed files
     for file_path in changed_files:
         if not config.file_filter(file_path):
             continue
@@ -186,7 +187,7 @@ def validate_changed_files(
         symbols = extract_symbols_from_file(file_path, module_path)
         all_symbols.update(symbols)
 
-    # Validate all symbols
+    # Validate all exported symbols
     return validate_symbols(all_symbols, validator)
 
 
@@ -199,16 +200,16 @@ def print_validation_results(
 
     for result in results:
         if result.has_errors() or result.has_warnings():
-            print(f"--- {result.symbol_info.symbol_path} ---")  # noqa: T201
+            click.echo(f"--- {result.symbol_info.symbol_path} ---")
 
             for error in result.errors:
-                print(f"  ERROR: {error}")  # noqa: T201
+                click.echo(f"  ERROR: {error}")
                 total_errors += 1
 
             for warning in result.warnings:
-                print(f"  WARNING: {warning}")  # noqa: T201
+                click.echo(f"  WARNING: {warning}")
                 total_warnings += 1
 
-            print()  # noqa: T201
+            click.echo()
 
     return total_errors, total_warnings

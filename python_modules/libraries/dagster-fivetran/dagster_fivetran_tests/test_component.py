@@ -13,7 +13,7 @@ from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._utils.env import environ
 from dagster.components.core.tree import ComponentTree
-from dagster.components.testing import TestTranslation, scaffold_defs_sandbox
+from dagster.components.testing import TestTranslation, create_defs_folder_sandbox
 from dagster_fivetran.components.workspace_component.component import FivetranAccountComponent
 from dagster_fivetran.resources import FivetranWorkspace
 from dagster_fivetran.translator import FivetranConnector
@@ -33,13 +33,18 @@ from dagster_fivetran_tests.conftest import (
 
 @contextmanager
 def setup_fivetran_component(
-    component_body: dict[str, Any],
+    defs_yaml_contents: dict[str, Any],
 ) -> Iterator[tuple[FivetranAccountComponent, Definitions]]:
     """Sets up a components project with a fivetran component based on provided params."""
-    with scaffold_defs_sandbox(
-        component_cls=FivetranAccountComponent,
-    ) as defs_sandbox:
-        with defs_sandbox.load(component_body=component_body) as (component, defs):
+    with create_defs_folder_sandbox() as sandbox:
+        defs_path = sandbox.scaffold_component(
+            component_cls=FivetranAccountComponent,
+            defs_yaml_contents=defs_yaml_contents,
+        )
+        with sandbox.load_component_and_build_defs(defs_path=defs_path) as (
+            component,
+            defs,
+        ):
             assert isinstance(component, FivetranAccountComponent)
             yield component, defs
 
@@ -68,7 +73,7 @@ def test_basic_component_load(
             }
         ),
         setup_fivetran_component(
-            component_body=BASIC_FIVETRAN_COMPONENT_BODY,
+            defs_yaml_contents=BASIC_FIVETRAN_COMPONENT_BODY,
         ) as (
             component,
             defs,
@@ -123,7 +128,7 @@ def test_basic_component_filter(
             }
         ),
         setup_fivetran_component(
-            component_body=deep_merge_dicts(
+            defs_yaml_contents=deep_merge_dicts(
                 BASIC_FIVETRAN_COMPONENT_BODY,
                 {"attributes": {"connector_selector": connector_selector}},
             ),
@@ -186,7 +191,7 @@ class TestFivetranTranslation(TestTranslation):
                 }
             ),
             setup_fivetran_component(
-                component_body=body,
+                defs_yaml_contents=body,
             ) as (
                 component,
                 defs,
@@ -211,11 +216,13 @@ class TestFivetranTranslation(TestTranslation):
     ids=["no_params", "all_params", "just_account_id", "just_credentials"],
 )
 def test_scaffold_component_with_params(scaffold_params: dict):
-    with scaffold_defs_sandbox(
-        component_cls=FivetranAccountComponent,
-        scaffold_params=scaffold_params,
-    ) as instance_folder:
-        defs_yaml_path = instance_folder.defs_folder_path / "defs.yaml"
+    with create_defs_folder_sandbox() as sandbox:
+        defs_path = sandbox.scaffold_component(
+            component_cls=FivetranAccountComponent,
+            scaffold_params=scaffold_params,
+        )
+
+        defs_yaml_path = defs_path / "defs.yaml"
         assert defs_yaml_path.exists()
         assert {
             k: v

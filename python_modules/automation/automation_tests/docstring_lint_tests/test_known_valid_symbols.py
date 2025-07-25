@@ -1,16 +1,91 @@
 """Tests for symbols that are known to have valid docstrings.
 
-This test suite validates all the Dagster symbols that were tested during the
-development of the docstring validation tool and confirmed to render correctly
-on https://docs.dagster.io/api/dagster.
+This test suite validates all public symbols from the dagster package to ensure
+they have valid docstrings that render correctly in the documentation build.
 
-These tests serve as regression tests to ensure the validator doesn't produce
-false positives for docstrings that are known to work correctly in the full
-Sphinx build environment.
+These tests serve as comprehensive regression tests to ensure the validator
+doesn't produce false positives for any public API symbols.
 """
+
+import importlib
+import inspect
 
 import pytest
 from automation.docstring_lint.validator import DocstringValidator
+
+# Symbols with known docstring formatting issues that should be skipped until fixed
+# These symbols have docstring validation errors that need to be addressed in separate PRs
+SYMBOL_EXCLUDE_LIST = {
+    # Docstring formatting issues (indentation, etc.)
+    "dagster.ConfigurableLegacyIOManagerAdapter",  # Unexpected indentation errors
+    "dagster.FunctionComponent",  # Unexpected indentation errors
+    "dagster.JsonLogFormatter",  # Unexpected indentation errors
+    "dagster.PendingNodeInvocation",  # Unexpected indentation errors
+    # Import/module resolution issues (deprecated or aliased symbols)
+    "dagster.check_dagster_type",  # Module resolution error
+    "dagster.config_from_files",  # Module resolution error
+    "dagster.config_from_pkg_resources",  # Module resolution error
+    "dagster.config_from_yaml_strings",  # Module resolution error
+    "dagster.config_mapping",  # Module resolution error
+    "dagster.configured",  # Module resolution error
+    "dagster.scaffold_with",  # Module resolution error
+    # Components with YAML code snippets that should use .. code-block:: yaml instead
+    "dagster.Component",  # Contains literal YAML with "attributes:" that gets flagged as section header
+    "dagster.DefsFolderComponent",  # Contains literal YAML with "attributes:" that gets flagged as section header
+    "dagster.PythonScriptComponent",  # Contains literal YAML with "attributes:" that gets flagged as section header
+    "dagster.UvRunComponent",  # Contains literal YAML with "attributes:" that gets flagged as section header
+    # Invalid section headers that need to be fixed
+    "dagster.ExecuteInProcessResult",  # Invalid section header: "This object is returned by:" should be restructured
+    "dagster.asset_check",  # Invalid section header: "Example with a DataFrame Output:" should be "Examples:"
+    # Non-standard section header formatting (uses bold/italic formatting)
+    "dagster.file_relative_path",  # Uses "**Examples**:" instead of "Examples:"
+}
+
+
+def _get_all_dagster_public_symbols():
+    """Get all public symbols from the dagster package, excluding problematic imports."""
+    dagster_module = importlib.import_module("dagster")
+
+    # Symbols that should be excluded from testing (imports from other modules that cause issues)
+    EXCLUDED_SYMBOLS = {
+        "sys",  # Conflicts with built-in sys module, not actually part of Dagster's public API
+    }
+
+    public_symbols = []
+    for name in dir(dagster_module):
+        if not name.startswith("_") and name not in EXCLUDED_SYMBOLS:
+            public_symbols.append(name)
+
+    return [f"dagster.{name}" for name in sorted(public_symbols)]
+
+
+def _get_all_dagster_public_class_methods():
+    """Get all @public methods from @public classes in the dagster package."""
+    from automation.docstring_lint.public_symbol_utils import get_public_methods_from_class
+
+    dagster_module = importlib.import_module("dagster")
+
+    # Symbols that should be excluded from testing (imports from other modules that cause issues)
+    EXCLUDED_SYMBOLS = {
+        "sys",  # Conflicts with built-in sys module, not actually part of Dagster's public API
+    }
+
+    methods = []
+    for name in dir(dagster_module):
+        if not name.startswith("_") and name not in EXCLUDED_SYMBOLS:
+            try:
+                symbol = getattr(dagster_module, name)
+                # Only process classes (not functions, constants, etc.)
+                if inspect.isclass(symbol):
+                    # Get all @public methods from this class
+                    class_dotted_path = f"dagster.{name}"
+                    class_methods = get_public_methods_from_class(symbol, class_dotted_path)
+                    methods.extend(class_methods)
+            except Exception:
+                # Skip symbols that can't be accessed
+                continue
+
+    return sorted(methods)
 
 
 class TestKnownValidSymbols:
@@ -21,68 +96,42 @@ class TestKnownValidSymbols:
         """Provide a DocstringValidator instance for tests."""
         return DocstringValidator()
 
-    @pytest.mark.parametrize(
-        "symbol_path",
-        [
-            # Core decorators and functions
-            "dagster.asset",
-            "dagster.job",
-            "dagster.op",
-            "dagster.graph",
-            "dagster.resource",
-            "dagster.schedule",
-            "dagster.sensor",
-            "dagster.multi_asset",
-            # Core classes
-            "dagster.AssetKey",
-            "dagster.OpDefinition",
-            "dagster.JobDefinition",
-            "dagster.GraphDefinition",
-            "dagster.ResourceDefinition",
-            "dagster.DagsterInstance",
-            "dagster.AssetMaterialization",
-            "dagster.AssetObservation",
-            "dagster.Output",
-            "dagster.In",
-            "dagster.Out",
-            "dagster.Config",
-            "dagster.Field",
-            "dagster.RetryPolicy",
-            "dagster.RunRequest",
-            "dagster.SkipReason",
-            "dagster.Failure",
-            "dagster.HookContext",
-            # Context builders
-            "dagster.build_hook_context",
-            "dagster.build_op_context",
-        ],
-    )
-    def test_known_valid_symbol_docstrings(self, validator, symbol_path):
-        """Test that known valid symbols pass docstring validation.
+    @pytest.mark.parametrize("symbol_path", _get_all_dagster_public_symbols())
+    def test_all_public_symbol_docstrings(self, validator, symbol_path):
+        """Test that all public dagster symbols have valid docstrings.
 
-        These symbols have been manually verified to:
-        1. Render correctly on https://docs.dagster.io/api/dagster
-        2. Build successfully in the full Sphinx documentation build
-        3. Have properly formatted Google-style docstrings
+        This test validates every public symbol in the dagster package to ensure:
+        1. The symbol can be imported successfully
+        2. The docstring has valid RST/Google-style formatting (unless in skip list)
+        3. No syntax errors that would break documentation builds
+
+        Symbols with known docstring issues are maintained in SYMBOL_EXCLUDE_LIST
+        and should be addressed in separate PRs.
 
         Args:
             validator: DocstringValidator instance
             symbol_path: Dotted path to the symbol to test
         """
+        # Skip validation for symbols with known issues - check before validation
+        # to avoid import errors for symbols that are known to be problematic
+        if symbol_path in SYMBOL_EXCLUDE_LIST:
+            print(f"Skipping known problematic symbol: {symbol_path}")  # noqa: T201
+            return
+
         result = validator.validate_symbol_docstring(symbol_path)
 
-        # The symbol should be importable
+        # The symbol should be importable - this is the core requirement
         assert result.parsing_successful, f"Failed to parse {symbol_path}: {result.errors}"
 
-        # The symbol should have valid docstring syntax (no errors)
+        # All symbols should have valid docstrings
         assert result.is_valid(), (
-            f"Symbol {symbol_path} should have valid docstring but got errors: {result.errors}"
+            f"Symbol {symbol_path} should have valid docstring but got errors: {result.errors}. "
+            f"If this is a known issue, add it to SYMBOL_EXCLUDE_LIST."
         )
 
-        # We allow warnings (e.g., for missing docstrings on some symbols)
-        # but errors indicate real parsing issues that would break the docs build
+        # Log warnings for awareness
         if result.has_warnings():
-            print(f"Warnings for {symbol_path}: {result.warnings}")  # noqa: T201
+            print(f"Docstring warnings for {symbol_path}: {result.warnings}")  # noqa: T201
 
     def test_nonexistent_symbol_produces_error(self, validator):
         """Test that attempting to validate a non-existent symbol produces an error."""
@@ -107,6 +156,36 @@ class TestKnownValidSymbols:
 
         # Should still be considered valid (warnings don't fail validation)
         assert result.is_valid()
+
+    @pytest.mark.parametrize("method_path", _get_all_dagster_public_class_methods())
+    def test_all_public_class_method_docstrings(self, validator, method_path):
+        """Test that all @public methods on Dagster classes have valid docstrings.
+
+        This test validates every @public method on all classes in the dagster package to ensure:
+        1. The method can be imported successfully
+        2. The docstring has valid RST/Google-style formatting
+        3. No syntax errors that would break documentation builds
+
+        This provides comprehensive coverage of method docstrings across the entire Dagster codebase.
+
+        Args:
+            validator: DocstringValidator instance
+            method_path: Dotted path to the method to test (e.g., 'dagster.AssetExecutionContext.log')
+        """
+        result = validator.validate_symbol_docstring(method_path)
+
+        # The method should be importable - this is the core requirement
+        assert result.parsing_successful, f"Failed to parse {method_path}: {result.errors}"
+
+        # All @public methods should have valid docstrings
+        assert result.is_valid(), (
+            f"@public method {method_path} should have valid docstring but got errors: {result.errors}. "
+            f"Method docstrings must follow the same standards as top-level symbols."
+        )
+
+        # Log warnings for awareness
+        if result.has_warnings():
+            print(f"Docstring warnings for {method_path}: {result.warnings}")  # noqa: T201
 
 
 class TestDocstringTextValidation:
@@ -172,7 +251,7 @@ class TestDocstringTextValidation:
         """Test that docstrings using literalinclude directive are handled correctly."""
         docstring = '''"""Configuration for DagsterInstance.
 
-        Example configuration:
+        Examples:
 
         .. literalinclude:: ../config/dagster.yaml
            :caption: dagster.yaml

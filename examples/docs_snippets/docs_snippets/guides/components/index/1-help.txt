@@ -17,7 +17,6 @@ Usage: dg [OPTIONS] COMMAND [ARGS]...
 │ --verbose          Enable verbose output for debugging.                                                              │
 ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
 ╭─ Commands ───────────────────────────────────────────────────────────────────────────────────────────────────────────╮
-│ ai         [Experimental] Start a Dagster focused CLI agent session.                                                 │
 │ check      Commands for checking the integrity of your Dagster code.                                                 │
 │ dev        Start a local instance of Dagster.                                                                        │
 │ docs       Commands for generating docs from your Dagster code.                                                      │
