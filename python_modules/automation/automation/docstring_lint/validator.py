@@ -157,6 +157,25 @@ class ValidationResult:
 
 
 @record
+class FileContext:
+    """Context information about a symbol's location in a file."""
+
+    file_path: str
+    docstring_start_line: int  # Line number where the docstring starts in the file
+
+    def get_file_line_number(self, docstring_line: int) -> int:
+        """Convert a docstring-relative line number to a file-relative line number.
+
+        Args:
+            docstring_line: Line number relative to the docstring (1-based)
+
+        Returns:
+            Line number relative to the file
+        """
+        return self.docstring_start_line + docstring_line - 1
+
+
+@record
 class SymbolInfo:
     """Information about a Python symbol."""
 
@@ -228,13 +247,17 @@ class DocstringValidator:
     """Core validator for processing single docstrings efficiently."""
 
     def validate_docstring_text(
-        self, docstring: str, symbol_path: str = "unknown"
+        self,
+        docstring: str,
+        symbol_path: str = "unknown",
+        file_context: Optional["FileContext"] = None,
     ) -> ValidationResult:
         """Validate a raw docstring text efficiently.
 
         Args:
             docstring: The docstring text to validate
             symbol_path: Path identifier for error reporting
+            file_context: Optional file context for accurate line number reporting
 
         Returns:
             ValidationResult with any issues found
@@ -305,7 +328,7 @@ class DocstringValidator:
             result = result.with_error(f"RST validation failed: {e}")
 
         # 3. Basic docstring structure checks
-        result = self._check_docstring_structure(docstring, result)
+        result = self._check_docstring_structure(docstring, result, file_context)
 
         return result
 
@@ -322,17 +345,18 @@ class DocstringValidator:
 
         try:
             # Try file-based reading first (most accurate for current file state)
-            docstring = self._read_docstring_from_file(dotted_path)
+            docstring, file_context = self._read_docstring_with_context(dotted_path)
 
             if not docstring:
                 # Fall back to import-based reading
                 symbol = self._import_symbol(dotted_path)
                 docstring = inspect.getdoc(symbol)
+                file_context = None  # No file context for import-based reading
 
             if not docstring:
                 return result.with_warning("Symbol has no docstring")
 
-            return self.validate_docstring_text(docstring, dotted_path)
+            return self.validate_docstring_text(docstring, dotted_path, file_context)
 
         except (ImportError, AttributeError) as e:
             return result.with_error(f"Failed to import symbol: {e}").with_parsing_failed()
@@ -380,14 +404,16 @@ class DocstringValidator:
 
         raise ImportError(f"Could not import symbol '{dotted_path}'")
 
-    def _read_docstring_from_file(self, dotted_path: str) -> Optional[str]:
+    def _read_docstring_with_context(
+        self, dotted_path: str
+    ) -> tuple[Optional[str], Optional[FileContext]]:
         """Read docstring directly from source file."""
         try:
             # First resolve the symbol to get its source location
             symbol_info = SymbolImporter.import_symbol(dotted_path)
 
             if not symbol_info.file_path or not symbol_info.line_number:
-                return None
+                return None, None
 
             # Read the source file and extract the docstring
             import ast
@@ -402,9 +428,9 @@ class DocstringValidator:
             function_name = symbol_info.name
             candidates = []
 
-            # Find all functions with the matching name
+            # Find all functions and classes with the matching name
             for node in ast.walk(tree):
-                if isinstance(node, ast.FunctionDef) and node.name == function_name:
+                if isinstance(node, (ast.FunctionDef, ast.ClassDef)) and node.name == function_name:
                     candidates.append(node)
 
             # If we have candidates, pick the one closest to the expected line number
@@ -443,13 +469,28 @@ class DocstringValidator:
                             pass
 
                         DummyWithDocstring.__doc__ = raw_docstring
-                        return inspect.getdoc(DummyWithDocstring)
+                        normalized_docstring = inspect.getdoc(DummyWithDocstring)
 
-            return None
+                        # Create file context with the docstring start line
+                        # The docstring starts at the line after the function definition line
+                        docstring_start_line = docstring_node.lineno
+                        file_context = FileContext(
+                            file_path=symbol_info.file_path,
+                            docstring_start_line=docstring_start_line,
+                        )
+
+                        return normalized_docstring, file_context
+
+            return None, None
 
         except Exception:
             # Fall back to None if file reading fails
-            return None
+            return None, None
+
+    def _read_docstring_from_file(self, dotted_path: str) -> Optional[str]:
+        """Read docstring directly from source file (legacy method)."""
+        docstring, _ = self._read_docstring_with_context(dotted_path)
+        return docstring
 
     def _extract_line_number(self, warning_line: str) -> Optional[int]:
         """Extract line number from a docutils warning message."""
@@ -607,7 +648,7 @@ class DocstringValidator:
         return False
 
     def _check_docstring_structure(
-        self, docstring: str, result: ValidationResult
+        self, docstring: str, result: ValidationResult, file_context: Optional[FileContext] = None
     ) -> ValidationResult:
         """Check basic docstring structure issues."""
         lines = docstring.split("\n")
@@ -620,6 +661,9 @@ class DocstringValidator:
             # Check indentation first - only validate lines with minimal indentation (0-3 spaces)
             # to avoid matching code examples which are typically indented 4+ spaces
             leading_spaces = len(line) - len(line.lstrip())
+
+            # Calculate the actual line number (file-relative if context available, else docstring-relative)
+            actual_line_number = file_context.get_file_line_number(i) if file_context else i
 
             # First, use regex to identify potential section headers (check dedented line)
             if SECTION_HEADER_PATTERN.match(stripped) and leading_spaces <= 3:
@@ -637,7 +681,7 @@ class DocstringValidator:
                 if exact_case_match:
                     result = result.with_error(
                         f"Invalid section header: '{stripped}'. Did you mean '{exact_case_match}'?",
-                        i,
+                        actual_line_number,
                     )
                 else:
                     # Check for obvious corruptions of known sections using simple string containment
@@ -655,7 +699,7 @@ class DocstringValidator:
                     if possible_match:
                         result = result.with_error(
                             f"Invalid section header: '{stripped}'. Did you mean '{possible_match}'?",
-                            i,
+                            actual_line_number,
                         )
 
             # Enhanced section header validation - check for malformed headers
@@ -666,7 +710,7 @@ class DocstringValidator:
                 if stripped == section_base and section != section_base:
                     result = result.with_error(
                         f"Malformed section header: '{stripped}' is missing colon (should be '{section}')",
-                        i,
+                        actual_line_number,
                     )
 
                 # Check for incorrect capitalization or spacing
@@ -675,12 +719,12 @@ class DocstringValidator:
                     if stripped.lower() == section.lower():
                         result = result.with_error(
                             f"Malformed section header: '{stripped}' has incorrect capitalization (should be '{section}')",
-                            i,
+                            actual_line_number,
                         )
                     elif stripped.lower().replace(" ", "") == section.lower().replace(" ", ""):
                         result = result.with_error(
                             f"Malformed section header: '{stripped}' has incorrect spacing (should be '{section}')",
-                            i,
+                            actual_line_number,
                         )
                     # Only flag as "possible malformed" if the text ends with colon (indicating intent to be a section header)
                     # AND either:
@@ -691,7 +735,7 @@ class DocstringValidator:
                     ):
                         result = result.with_warning(
                             f"Possible malformed section header: '{stripped}' (should be '{section}')",
-                            i,
+                            actual_line_number,
                         )
 
             # Check for completely garbled section headers (like "Argsjdkfjdkjfdk:")
@@ -716,7 +760,7 @@ class DocstringValidator:
                             ):
                                 result = result.with_error(
                                     f"Corrupted section header detected: '{stripped}' (possibly should be '{section}')",
-                                    i,
+                                    actual_line_number,
                                 )
                                 break
 
