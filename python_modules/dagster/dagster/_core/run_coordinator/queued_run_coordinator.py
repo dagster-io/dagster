@@ -334,11 +334,12 @@ class QueuedRunCoordinator(RunCoordinator[T_DagsterInstance], ConfigurableClass)
             super().cancel_run(run.run_id)
 
     def submit_run(self, context: SubmitRunContext) -> DagsterRun:
-        queued_runs = self._get_queued_runs()
-        queued_runs_n = len(queued_runs)
-        if (queued_runs_n >= self.cancel_queue_at_length) and (self.cancel_queue_at_length != -1):
-            self._cancel_queue(queued_runs)
-            raise QueueTooLongFailure(queued_runs_n, self.cancel_queue_at_length)
+        if self.cancel_queue_at_length != -1:
+            queued_runs = self._get_queued_runs()
+            queued_runs_n = len(queued_runs)
+            if (queued_runs_n >= self.cancel_queue_at_length):
+                self._cancel_queue(queued_runs)
+                raise QueueTooLongFailure(queued_runs_n, self.cancel_queue_at_length)
 
         dagster_run = context.dagster_run
 
