@@ -378,7 +378,7 @@ def _whitelist_for_serdes(
 ) -> Callable[[T_Type], T_Type]:
     def __whitelist_for_serdes(klass: T_Type) -> T_Type:
         if lazy_deserialization:
-            klass = lazy_deserialized(klass)
+            klass = create_lazy_deserialization_metaclass(klass)
         if issubclass(klass, Enum) and (
             serializer is None or issubclass(serializer, EnumSerializer)
         ):
@@ -491,7 +491,7 @@ class UnpackContext:
         self.observed_unknown_serdes_values: set[UnknownSerdesValue] = set()
 
     def assert_no_unknown_values(self, obj: UnpackedValue) -> PackableValue:
-        if isinstance(obj, _UnpackedSentinel):
+        if isinstance(obj, LazyDeserializationSentinel):
             # Don't unpack the sentinel now, it will be unpacked when accessed
             pass
         elif isinstance(obj, UnknownSerdesValue):
@@ -624,8 +624,8 @@ class ObjectSerializer(Serializer, Generic[T]):
                         unpacked[loaded_name] = context.assert_no_unknown_values(value)
                     else:
                         actual_value = value
-                        # Handle _UnpackedSentinel objects by unpacking them
-                        if isinstance(value, _UnpackedSentinel):
+                        # Handle LazyDeserializationSentinel objects by unpacking them
+                        if isinstance(value, LazyDeserializationSentinel):
                             actual_value = value.get_value()
 
                         unpacked[loaded_name] = actual_value  # type: ignore # 2 hot 4 cast()
@@ -1127,124 +1127,118 @@ T_PackableValue = TypeVar("T_PackableValue", bound=PackableValue, default=Packab
 U_PackableValue = TypeVar("U_PackableValue", bound=PackableValue, default=PackableValue)
 
 
-def lazy_deserialized(cls: T_Type) -> T_Type:
-    class MetaWithLazyPackedDictInstanceCheck(type(cls)):
-        def __instancecheck__(self, instance):
-            if isinstance(instance, LazyPackedDict):
-                deserializer = instance.get_whitelist_map().object_deserializers.get(
-                    instance.get_klass_name()
-                )
-                if deserializer:
-                    return deserializer.klass.__name__ == cls.__name__
-                return False
-            return isinstance(instance, cls)
-
-    # Construct a *new class* with the new metaclass
-    return MetaWithLazyPackedDictInstanceCheck(
-        cls.__name__,  # type: ignore
-        (cls, *cls.__bases__),
-        dict(cls.__dict__),
-    )
-
-
-class _UnpackedSentinel:
-    """Sentinel object to mark items that haven't been unpacked yet."""
-
-    _cached_value: Optional[UnpackedValue] = None
-
-    def __init__(
-        self,
-        json_value: JsonSerializableValue,
-        whitelist_map: WhitelistMap,
-        context: UnpackContext,
-    ):
-        self.json_value = json_value
-        self._whitelist_map = whitelist_map
-        self._context = context
-
-    def get_value(self) -> UnpackedValue:
-        # Check if we already have the cached unpacked value
-        if self._cached_value is not None:
-            return self._cached_value
-
-        # Unpack and cache the value
-        unpacked_value = _unpack_value(self.json_value, self._whitelist_map, self._context)
-        self._cached_value = unpacked_value
-
-        # TODO Delete json_value safely
-
-        return unpacked_value
-
-
 class LazyPackedDict(dict):
-    """A dict that unpacks its values lazily on access."""
+    """A dictionary-like object that provides lazy deserialization of its values.
+
+    This class acts as a proxy for a serialized object, only deserializing
+    individual fields when they are accessed. This is particularly useful for
+    large objects where only a subset of fields are typically accessed.
+
+    The class maintains the original JSON structure internally and creates
+    LazyDeserializationSentinel objects for each field that needs deserialization.
+
+    Attributes:
+        _whitelist_map: Serialization configuration for deserializing values
+        _unpack_context: Context for tracking deserialization state
+        _class_name: The name of the class this dict represents
+        _original_json_dict: The original JSON data before any deserialization
+        _field_sentinels: Dictionary mapping field names to their lazy sentinels
+    """
 
     def __init__(
         self,
-        klass_name: str,
-        json_dict: dict[str, JsonSerializableValue],
+        class_name: str,
+        original_json_dict: dict[str, JsonSerializableValue],
         whitelist_map: WhitelistMap,
-        context: UnpackContext,
+        unpack_context: UnpackContext,
     ):
         self._whitelist_map = whitelist_map
-        self._context = context
-        self._klass_name = klass_name
-        self._json_dict = json_dict
-        self._is_fully_unpacked = False
+        self._unpack_context = unpack_context
+        self._class_name = class_name
+        self._original_json_dict = original_json_dict
 
-        self._sentinels = {
-            key: _UnpackedSentinel(value, whitelist_map, context) if key != "__class__" else value
-            for key, value in json_dict.items()
+        # Create sentinels for all fields except the class identifier
+        self._field_sentinels = {
+            key: (
+                LazyDeserializationSentinel(value, whitelist_map, unpack_context)
+                if key != "__class__"
+                else value
+            )
+            for key, value in original_json_dict.items()
         }
 
-        deserializer = whitelist_map.object_deserializers.get(self._klass_name)
+        # Handle field name mappings (e.g., constructor params vs storage field names)
+        deserializer = whitelist_map.object_deserializers.get(self._class_name)
         if deserializer and hasattr(deserializer, "storage_field_names"):
-            # Add mappings from constructor param names to their storage field sentinels
+            # Map constructor parameter names to their storage field sentinels
             for (
                 param_name,
                 storage_name,
             ) in deserializer.storage_field_names.items():
-                if storage_name in self._sentinels:
-                    self._sentinels[param_name] = self._sentinels[storage_name]
+                if storage_name in self._field_sentinels:
+                    self._field_sentinels[param_name] = self._field_sentinels[storage_name]
 
-        super().__init__(self._sentinels)
+        # Initialize the dict with the sentinels
+        super().__init__(self._field_sentinels)
 
-    def get_klass_name(self) -> str:
-        return self._klass_name
+    def get_class_name(self) -> str:
+        """Returns the name of the class this dict represents."""
+        return self._class_name
 
     def get_whitelist_map(self) -> WhitelistMap:
+        """Returns the serialization configuration used for deserialization."""
         return self._whitelist_map
 
     def __getitem__(self, key):
-        if key == "__class__":
-            return self._klass_name
+        """Retrieves a value, deserializing it if it's a lazy sentinel.
 
-        item = None
+        Args:
+            key: The field name to retrieve
+
+        Returns:
+            The deserialized value for the field
+
+        Raises:
+            KeyError: If the field doesn't exist
+        """
+        if key == "__class__":
+            return self._class_name
+
+        # Try to get the item from the underlying dict
         try:
             item = super().__getitem__(key)
         except KeyError:
-            pass
-        if item is None:
-            # If the item is None, it means the field is not present in the original JSON
-            # It's possible the NamedTuple has a default value for this field
-            # Lets just unpack the whole thing.
-            return self.unpacked_value.__getattribute__(key)
-        if isinstance(item, _UnpackedSentinel):
+            # If the field is missing, it might be a NamedTuple with default values
+            # In that case, we need to fully deserialize the object to access the field
+            return self.deserialized_value.__getattribute__(key)
+
+        # If the item is a sentinel, deserialize it on first access
+        if isinstance(item, LazyDeserializationSentinel):
             return item.get_value()
         return item
 
     def __getattr__(self, name):
+        """Provides attribute-style access to dict values.
+
+        This allows the LazyPackedDict to be used as if it were the actual object,
+        with attribute access delegating to dictionary access.
+        """
         try:
-            return self[name]  # delegate to __getitem__
+            return self[name]  # Delegate to __getitem__
         except KeyError:
             raise AttributeError(f"'{self.__class__.__name__}' object has no attribute '{name}'")
 
     def __getattribute__(self, name):
-        # First try the normal attribute access
+        """Handles attribute access, deserializing sentinels as needed.
+
+        This method ensures that any attribute access (including to internal attributes)
+        properly deserializes lazy sentinels when encountered.
+        """
+        # First try normal attribute access
         try:
             value = super().__getattribute__(name)
-            # If it's a sentinel, unpack it
-            if isinstance(value, _UnpackedSentinel):
+            # If it's a sentinel, deserialize it
+            if isinstance(value, LazyDeserializationSentinel):
                 return value.get_value()
             return value
         except AttributeError:
@@ -1257,34 +1251,55 @@ class LazyPackedDict(dict):
                 )
 
     @property
-    def unpacked_value(self) -> UnpackedValue:
-        if self._klass_name in self._whitelist_map.object_deserializers:
-            # Create a copy without __class__ for unpacking
-            unpacked_dict = {}
-            for k, v in self.items():
-                if k != "__class__":
-                    if isinstance(v, _UnpackedSentinel):
-                        unpacked_dict[k] = v.get_value()
-                    else:
-                        unpacked_dict[k] = v
-            deserializer = self._whitelist_map.object_deserializers[self._klass_name]
-            # Convert to actual object and compare
-            actual_object = deserializer.unpack(unpacked_dict, self._whitelist_map, self._context)
+    def deserialized_value(self) -> UnpackedValue:
+        """Fully deserializes the object represented by this dict.
 
-            return actual_object
-        raise ValueError(f"No deserializer found for LazyPackedDict({self._klass_name})")
+        This method is called when we need to access a field that doesn't exist
+        in the serialized data (e.g., NamedTuple fields with default values).
+
+        Returns:
+            The fully deserialized object
+
+        Raises:
+            ValueError: If no deserializer is found for this class
+        """
+        if self._class_name not in self._whitelist_map.object_deserializers:
+            raise ValueError(f"No deserializer found for LazyPackedDict({self._class_name})")
+
+        # Create a dict with all sentinels deserialized
+        deserialized_dict = {}
+        for key, value in self.items():
+            if key != "__class__":
+                if isinstance(value, LazyDeserializationSentinel):
+                    deserialized_dict[key] = value.get_value()
+                else:
+                    deserialized_dict[key] = value
+
+        deserializer = self._whitelist_map.object_deserializers[self._class_name]
+        # Convert to actual object and compare
+        return cast(
+            "UnpackedValue",
+            deserializer.unpack(deserialized_dict, self._whitelist_map, self._unpack_context),
+        )
 
     def __eq__(self, other):
-        # If we're comparing to another LazyPackedDict, compare the underlying data
+        """Compares this LazyPackedDict with another object for equality.
+
+        When comparing with another LazyPackedDict, compares the underlying
+        deserialized objects. When comparing with other types, compares
+        against the fully deserialized object.
+        """
         if isinstance(other, LazyPackedDict):
-            return self.unpacked_value == other.unpacked_value
-        return self.unpacked_value == other
+            return self.deserialized_value == other.deserialized_value
+        return self.deserialized_value == other
 
     def __repr__(self):
-        return f"LazyPackedDict({self.unpacked_value.__repr__()})"
+        """Returns a string representation showing the deserialized object."""
+        return f"LazyPackedDict({self.deserialized_value.__repr__()})"
 
     def __str__(self):
-        return f"LazyPackedDict({self.unpacked_value.__str__()})"
+        """Returns a string representation showing the deserialized object."""
+        return f"LazyPackedDict({self.deserialized_value.__str__()})"
 
 
 @overload
@@ -1397,6 +1412,12 @@ class UnknownSerdesValue:
 
 
 def _unpack_object(val: dict, whitelist_map: WhitelistMap, context: UnpackContext) -> UnpackedValue:
+    """Unpacks a JSON object into a Python object, with support for lazy deserialization.
+
+    This function handles the deserialization of objects. For classes marked with
+    lazy_deserialization=True, it returns a LazyPackedDict instead of immediately
+    deserializing the entire object.
+    """
     if "__class__" in val:
         klass_name = val["__class__"]
         if klass_name not in whitelist_map.object_deserializers:
@@ -1619,12 +1640,12 @@ def _root(val: Any) -> str:
 def get_storage_name_for_object(obj: Any, *, whitelist_map: WhitelistMap = _WHITELIST_MAP):
     klass_name = obj.__class__.__name__
     if isinstance(obj, LazyPackedDict):
-        return obj.get_klass_name()
+        return obj.get_class_name()
 
     if klass_name not in whitelist_map.object_serializers:
         check.failed(f"{klass_name} is not a known serializable object type.")
-    ser = whitelist_map.object_serializers[klass_name]
-    return ser.get_storage_name()
+    serializer = whitelist_map.object_serializers[klass_name]
+    return serializer.get_storage_name()
 
 
 def get_storage_name(klass: type, *, whitelist_map: WhitelistMap = _WHITELIST_MAP):
@@ -1656,3 +1677,88 @@ def get_prefix_for_a_serialized(klass: type, *, whitelist_map=_WHITELIST_MAP):
     of the passed type.
     """
     return f'{_OBJECT_START} "{get_storage_name(klass, whitelist_map=whitelist_map)}"'
+
+
+def create_lazy_deserialization_metaclass(cls: T_Type) -> T_Type:
+    """Creates a metaclass that enables lazy deserialization for a class.
+
+    This metaclass modifies the `isinstance` behavior to recognize LazyPackedDict
+    instances as instances of the original class, enabling transparent lazy loading.
+
+    Args:
+        cls: The class to wrap with lazy deserialization support
+
+    Returns:
+        A new class with the same interface but enhanced isinstance behavior
+    """
+
+    class LazyDeserializationMetaclass(type(cls)):
+        def __instancecheck__(self, instance):
+            # Handle LazyPackedDict instances by checking if they represent this class
+            if isinstance(instance, LazyPackedDict):
+                deserializer = instance.get_whitelist_map().object_deserializers.get(
+                    instance.get_class_name()
+                )
+                if deserializer:
+                    return deserializer.klass.__name__ == cls.__name__
+                return False
+            return isinstance(instance, cls)
+
+    # Create a new class with the enhanced metaclass
+    return LazyDeserializationMetaclass(
+        cls.__name__,  # type: ignore
+        (cls, *cls.__bases__),
+        dict(cls.__dict__),
+    )
+
+
+class LazyDeserializationSentinel:
+    """A sentinel object that delays deserialization until the value is actually accessed.
+
+    This class wraps serialized JSON data and only deserializes it when explicitly
+    requested via get_value(). This enables lazy loading of complex nested objects
+    to improve performance when only a subset of fields are accessed.
+
+    Attributes:
+        _cached_deserialized_value: The deserialized value, cached after first access
+        _serialized_json_value: The original JSON data that needs to be deserialized
+        _whitelist_map: The serialization configuration for deserializing the value
+        _unpack_context: Context for tracking deserialization state and errors
+    """
+
+    _cached_deserialized_value: Optional[UnpackedValue] = None
+
+    def __init__(
+        self,
+        serialized_json_value: JsonSerializableValue,
+        whitelist_map: WhitelistMap,
+        unpack_context: UnpackContext,
+    ):
+        self._serialized_json_value = serialized_json_value
+        self._whitelist_map = whitelist_map
+        self._unpack_context = unpack_context
+
+    def get_value(self) -> UnpackedValue:
+        """Deserializes and returns the cached value, or deserializes and caches if needed.
+
+        Returns:
+            The deserialized value
+
+        Note:
+            This method implements lazy evaluation - the actual deserialization
+            only happens on first access, and subsequent calls return the cached result.
+        """
+        # Return cached value if already deserialized
+        if self._cached_deserialized_value is not None:
+            return self._cached_deserialized_value
+
+        # Perform deserialization and cache the result
+        deserialized_value = _unpack_value(
+            self._serialized_json_value, self._whitelist_map, self._unpack_context
+        )
+        self._cached_deserialized_value = deserialized_value
+
+        # TODO: Consider cleaning up the serialized JSON data after deserialization
+        # to free memory, but be careful about circular references
+
+        return deserialized_value
