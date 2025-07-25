@@ -12,10 +12,10 @@ class DaemonHeartbeatSerializer(NamedTupleSerializer["DaemonHeartbeat"]):
     def before_unpack(self, context, unpacked_dict):
         # Previously daemon types were enums, now they are strings. If we find a packed enum,
         # just extract the name, which is the string we want.
-        daemon_type = unpacked_dict.get("daemon_type")
-        if isinstance(daemon_type, UnknownSerdesValue):
-            unpacked_dict["daemon_type"] = daemon_type.value["__enum__"].split(".")[-1]  # pyright: ignore[reportCallIssue, reportOptionalMemberAccess,reportAttributeAccessIssue,reportOptionalCall]
-            context.clear_ignored_unknown_values(daemon_type)
+        if isinstance(unpacked_dict.get("daemon_type"), UnknownSerdesValue):
+            unknown = unpacked_dict["daemon_type"]
+            unpacked_dict["daemon_type"] = unknown.value["__enum__"].split(".")[-1]  # pyright: ignore
+            context.clear_ignored_unknown_values(unknown)
         if unpacked_dict.get("error"):
             unpacked_dict["errors"] = [unpacked_dict["error"]]
             del unpacked_dict["error"]
