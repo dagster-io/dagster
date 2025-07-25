@@ -3,9 +3,9 @@ from typing import AbstractSet, Any, Callable, Optional, Union, overload  # noqa
 
 import dagster._check as check
 from dagster._annotations import beta, beta_param, hidden_param
-from dagster._core.definitions.asset_check_spec import AssetCheckSpec
-from dagster._core.definitions.asset_spec import AssetExecutionType, AssetSpec
-from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckSpec
+from dagster._core.definitions.assets.definition.asset_spec import AssetExecutionType, AssetSpec
+from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationCondition,
 )

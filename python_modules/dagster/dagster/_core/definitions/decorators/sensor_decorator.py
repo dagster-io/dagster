@@ -26,7 +26,7 @@ from dagster._core.definitions.target import ExecutableDefinition
 from dagster._core.errors import DagsterInvariantViolationError
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.assets import AssetsDefinition
+    from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
     from dagster._core.definitions.job_definition import JobDefinition
     from dagster._core.definitions.unresolved_asset_job_definition import (
         UnresolvedAssetJobDefinition,

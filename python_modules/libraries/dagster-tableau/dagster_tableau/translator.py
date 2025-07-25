@@ -4,7 +4,7 @@ from typing import Any, Callable, Literal, Optional
 
 from dagster import _check as check
 from dagster._core.definitions.asset_key import AssetKey
-from dagster._core.definitions.asset_spec import AssetSpec
+from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
 from dagster._core.definitions.metadata.metadata_set import NamespacedMetadataSet
 from dagster._core.definitions.tags.tag_set import NamespacedTagSet
 from dagster._record import record
@@ -211,6 +211,8 @@ class TableauViewMetadataSet(TableauMetadataSet):
 
 class TableauDataSourceMetadataSet(TableauMetadataSet):
     has_extracts: bool = False
+    is_published: bool
+    workbook_id: Optional[str] = None
 
 
 class DagsterTableauTranslator:
@@ -280,6 +282,20 @@ class DagsterTableauTranslator:
             for sheet_id in sheet_ids
         ]
 
+        dashboard_upstream_data_source_ids = data.properties.get("data_source_ids", [])
+
+        data_source_keys = [
+            self.get_asset_spec(
+                TableauTranslatorData(
+                    content_data=data.workspace_data.data_sources_by_id[data_source_id],
+                    workspace_data=data.workspace_data,
+                )
+            ).key
+            for data_source_id in dashboard_upstream_data_source_ids
+        ]
+
+        upstream_keys = sheet_keys + data_source_keys
+
         workbook_id = data.properties["workbook"]["luid"]
         workbook_data = data.workspace_data.workbooks_by_id[workbook_id]
         asset_key = AssetKey(
@@ -292,7 +308,7 @@ class DagsterTableauTranslator:
 
         return AssetSpec(
             key=asset_key,
-            deps=sheet_keys if sheet_keys else None,
+            deps=upstream_keys if upstream_keys else None,
             tags={"dagster/storage_kind": "tableau", **TableauTagSet(asset_type="dashboard")},
             metadata={
                 **TableauViewMetadataSet(
@@ -310,7 +326,12 @@ class DagsterTableauTranslator:
             tags={"dagster/storage_kind": "tableau", **TableauTagSet(asset_type="data_source")},
             metadata={
                 **TableauDataSourceMetadataSet(
-                    id=data.properties["luid"], has_extracts=data.properties["hasExtracts"]
+                    id=data.properties["luid"],
+                    has_extracts=data.properties["hasExtracts"],
+                    is_published=data.properties["isPublished"],
+                    workbook_id=data.properties["workbook"]["luid"]
+                    if not data.properties["isPublished"]
+                    else None,
                 )
             },
         )

@@ -1,6 +1,5 @@
 import json
 from collections.abc import Iterable, Sequence, Set
-from datetime import datetime
 from typing import NamedTuple, Optional
 
 import dagster._check as check
@@ -10,7 +9,6 @@ from dagster._core.definitions.partitions.definition.partitions_definition impor
 from dagster._core.definitions.partitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.partitions.subset.partitions_subset import PartitionsSubset
 from dagster._core.errors import DagsterInvalidDeserializationVersionError
-from dagster._core.instance import DynamicPartitionsStore
 from dagster._serdes import whitelist_for_serdes
 
 
@@ -31,16 +29,9 @@ class DefaultPartitionsSubset(
         return super().__new__(cls, subset or set())
 
     def get_partition_keys_not_in_subset(
-        self,
-        partitions_def: PartitionsDefinition,
-        current_time: Optional[datetime] = None,
-        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
+        self, partitions_def: PartitionsDefinition
     ) -> Iterable[str]:
-        return set(
-            partitions_def.get_partition_keys(
-                current_time=current_time, dynamic_partitions_store=dynamic_partitions_store
-            )
-        ) - set(self.subset)
+        return set(partitions_def.get_partition_keys()) - set(self.subset)
 
     def get_partition_keys(self) -> Iterable[str]:
         return self.subset
@@ -64,10 +55,7 @@ class DefaultPartitionsSubset(
         return result
 
     def get_partition_key_ranges(
-        self,
-        partitions_def: PartitionsDefinition,
-        current_time: Optional[datetime] = None,
-        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
+        self, partitions_def: PartitionsDefinition
     ) -> Sequence[PartitionKeyRange]:
         from dagster._core.definitions.partitions.definition.multi import MultiPartitionsDefinition
 
@@ -108,16 +96,12 @@ class DefaultPartitionsSubset(
                 keys = partitions_def.get_multipartition_keys_with_dimension_value(
                     dimension_name=grouping_dimension.name,
                     dimension_partition_key=grouping_key,
-                    current_time=current_time,
-                    dynamic_partitions_store=dynamic_partitions_store,
                 )
                 results.extend(self.get_ranges_for_keys(keys))
             return results
 
         else:
-            partition_keys = partitions_def.get_partition_keys(
-                current_time, dynamic_partitions_store=dynamic_partitions_store
-            )
+            partition_keys = partitions_def.get_partition_keys()
 
             return self.get_ranges_for_keys(partition_keys)
 

@@ -29,7 +29,8 @@ import {useRGBColorsForTheme} from '../../app/useRGBColorsForTheme';
 import {TooltipCard} from '../../insights/InsightsChartShared';
 import {formatMetric} from '../../insights/formatMetric';
 import {ReportingUnitType} from '../../insights/types';
-import {numberFormatter, percentFormatter} from '../../ui/formatters';
+import {formatDuration} from '../../ui/formatDuration';
+import {numberFormatterWithMaxFractionDigits, percentFormatter} from '../../ui/formatters';
 import {useFormatDateTime} from '../../ui/useFormatDateTime';
 
 ChartJS.register(LineElement, CategoryScale, LinearScale, PointElement, Tooltip);
@@ -302,6 +303,20 @@ export const AssetCatalogInsightsLineChart = React.memo(
       }
     };
 
+    function getDisplayValueAndUnit(value: number) {
+      if (unitType === ReportingUnitType.TIME_MS) {
+        return formatDuration(value, {unit: 'milliseconds'})[0];
+      }
+      return {value, unit: unitTypeToLabel[unitType]};
+    }
+
+    const currentPeriodDisplayValueAndUnit = getDisplayValueAndUnit(
+      metrics.currentPeriod.aggregateValue ?? 0,
+    );
+    const prevPeriodDisplayValueAndUnit = getDisplayValueAndUnit(
+      metrics.prevPeriod.aggregateValue ?? 0,
+    );
+
     return (
       <div className={styles.chartContainer}>
         <div className={styles.chartHeader}>
@@ -313,9 +328,11 @@ export const AssetCatalogInsightsLineChart = React.memo(
         <Box flex={{direction: 'column', justifyContent: 'space-between'}}>
           <div className={styles.chartCount}>
             {metrics.currentPeriod.aggregateValue
-              ? numberFormatter.format(Math.round(metrics.currentPeriod.aggregateValue))
+              ? numberFormatterWithMaxFractionDigits(2).format(
+                  currentPeriodDisplayValueAndUnit.value,
+                )
               : 0}
-            <Body color={Colors.textDefault()}>{unitTypeToLabel[unitType]}</Body>
+            <Body color={Colors.textDefault()}>{currentPeriodDisplayValueAndUnit.unit}</Body>
           </div>
           <Box
             className={styles.chartChange}
@@ -323,7 +340,9 @@ export const AssetCatalogInsightsLineChart = React.memo(
           >
             <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
               {metrics.prevPeriod.aggregateValue
-                ? numberFormatter.format(Math.round(metrics.prevPeriod.aggregateValue))
+                ? numberFormatterWithMaxFractionDigits(2).format(
+                    prevPeriodDisplayValueAndUnit.value,
+                  )
                 : 0}
               <span> previous period</span>
             </Box>

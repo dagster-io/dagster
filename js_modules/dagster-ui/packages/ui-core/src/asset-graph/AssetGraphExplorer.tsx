@@ -46,8 +46,6 @@ import {
 } from './Utils';
 import {assetKeyTokensInRange} from './assetKeyTokensInRange';
 import {AssetGraphLayout, GroupLayout} from './layout';
-import {AssetGraphExplorerSidebar} from './sidebar/Sidebar';
-import {AssetGraphQueryItem} from './types';
 import {AssetGraphFetchScope, useAssetGraphData, useFullAssetGraphData} from './useAssetGraphData';
 import {AssetLocation, useFindAssetLocation} from './useFindAssetLocation';
 import {useFullScreen, useFullScreenAllowedView} from '../app/AppTopNav/AppTopNavContext';
@@ -79,7 +77,10 @@ import {SyntaxError} from '../selection/CustomErrorListener';
 import {IndeterminateLoadingBar} from '../ui/IndeterminateLoadingBar';
 import {LoadingSpinner} from '../ui/Loading';
 import {isIframe} from '../util/isIframe';
+import {AssetGraphExplorerSidebar} from './sidebar/Sidebar';
+import {AssetGraphQueryItem} from './types';
 import {WorkspaceAssetFragment} from '../workspace/WorkspaceContext/types/WorkspaceQueries.types';
+import {buildRepoPathForHuman} from '../workspace/buildRepoAddress';
 
 type AssetNode = WorkspaceAssetFragment;
 
@@ -447,9 +448,11 @@ const AssetGraphExplorerWithData = ({
   );
 
   const onFilterToGroup = (group: AssetGroup | GroupLayout) => {
-    onChangeAssetSelection(
-      `group:"${group.groupName}" and code_location:"${group.repositoryLocationName}"`,
+    const codeLocationFilter = buildRepoPathForHuman(
+      group.repositoryName,
+      group.repositoryLocationName,
     );
+    onChangeAssetSelection(`group:"${group.groupName}" and code_location:"${codeLocationFilter}"`);
   };
 
   const svgViewport = layout ? (

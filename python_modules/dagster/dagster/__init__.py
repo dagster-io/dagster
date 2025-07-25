@@ -120,42 +120,46 @@ from dagster._config.source import (
     StringSource as StringSource,
 )
 from dagster._core.definitions import AssetCheckResult as AssetCheckResult
-from dagster._core.definitions.asset_check_evaluation import (
+from dagster._core.definitions.asset_checks.asset_check_evaluation import (
     AssetCheckEvaluation as AssetCheckEvaluation,
 )
-from dagster._core.definitions.asset_check_factories.freshness_checks.last_update import (
+from dagster._core.definitions.asset_checks.asset_check_factories.freshness_checks.last_update import (
     build_last_update_freshness_checks as build_last_update_freshness_checks,
 )
-from dagster._core.definitions.asset_check_factories.freshness_checks.sensor import (
+from dagster._core.definitions.asset_checks.asset_check_factories.freshness_checks.sensor import (
     build_sensor_for_freshness_checks as build_sensor_for_freshness_checks,
 )
-from dagster._core.definitions.asset_check_factories.freshness_checks.time_partition import (
+from dagster._core.definitions.asset_checks.asset_check_factories.freshness_checks.time_partition import (
     build_time_partition_freshness_checks as build_time_partition_freshness_checks,
 )
-from dagster._core.definitions.asset_check_factories.metadata_bounds_checks import (
+from dagster._core.definitions.asset_checks.asset_check_factories.metadata_bounds_checks import (
     build_metadata_bounds_checks as build_metadata_bounds_checks,
 )
-from dagster._core.definitions.asset_check_factories.schema_change_checks import (
+from dagster._core.definitions.asset_checks.asset_check_factories.schema_change_checks import (
     build_column_schema_change_checks as build_column_schema_change_checks,
 )
-from dagster._core.definitions.asset_check_spec import (
+from dagster._core.definitions.asset_checks.asset_check_spec import (
     AssetCheckKey as AssetCheckKey,
     AssetCheckSeverity as AssetCheckSeverity,
     AssetCheckSpec as AssetCheckSpec,
 )
-from dagster._core.definitions.asset_checks import AssetChecksDefinition as AssetChecksDefinition
-from dagster._core.definitions.asset_dep import AssetDep as AssetDep
-from dagster._core.definitions.asset_in import AssetIn as AssetIn
-from dagster._core.definitions.asset_out import AssetOut as AssetOut
+from dagster._core.definitions.asset_checks.asset_checks_definition import (
+    AssetChecksDefinition as AssetChecksDefinition,
+)
 from dagster._core.definitions.asset_selection import AssetSelection as AssetSelection
 from dagster._core.definitions.asset_sensor_definition import (
     AssetSensorDefinition as AssetSensorDefinition,
 )
-from dagster._core.definitions.asset_spec import (
+from dagster._core.definitions.assets.definition.asset_dep import AssetDep as AssetDep
+from dagster._core.definitions.assets.definition.asset_spec import (
     AssetSpec as AssetSpec,
     map_asset_specs as map_asset_specs,
 )
-from dagster._core.definitions.assets import AssetsDefinition as AssetsDefinition
+from dagster._core.definitions.assets.definition.assets_definition import (
+    AssetsDefinition as AssetsDefinition,
+)
+from dagster._core.definitions.assets.job.asset_in import AssetIn as AssetIn
+from dagster._core.definitions.assets.job.asset_out import AssetOut as AssetOut
 from dagster._core.definitions.auto_materialize_policy import (
     AutoMaterializePolicy as AutoMaterializePolicy,
 )
@@ -664,8 +668,13 @@ from dagster.components.core.load_defs import (
     load_defs as load_defs,
     load_from_defs_folder as load_from_defs_folder,
 )
+from dagster.components.core.tree import ComponentTree as ComponentTree
 from dagster.components.definitions import definitions as definitions
 from dagster.components.lib.shim_components.resources import resources as resources
+from dagster.components.lib.sql_component.sql_component import (
+    SqlComponent as SqlComponent,
+    TemplatedSqlComponent as TemplatedSqlComponent,
+)
 from dagster.components.resolved.base import Resolvable as Resolvable
 from dagster.components.resolved.context import ResolutionContext as ResolutionContext
 from dagster.components.resolved.core_models import (
@@ -684,9 +693,8 @@ from dagster.components.scaffold.scaffold import (
     ScaffoldRequest as ScaffoldRequest,
     scaffold_with as scaffold_with,
 )
-from dagster.components.testing import (
+from dagster.components.testing.utils import (
     component_defs as component_defs,
-    defs_from_component_yaml_path as defs_from_component_yaml_path,
     get_all_components_defs_within_project as get_all_components_defs_within_project,
     get_component_defs_within_project as get_component_defs_within_project,
 )

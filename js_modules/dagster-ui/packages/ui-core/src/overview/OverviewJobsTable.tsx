@@ -1,4 +1,3 @@
-import {Tag, Tooltip} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import {useMemo, useRef} from 'react';
 
@@ -100,14 +99,7 @@ export const OverviewJobsTable = ({repos}: Props) => {
                     onToggleAll={onToggleAll}
                     expanded={expandedKeys.includes(repoAddressAsHumanString(row.repoAddress))}
                     showLocation={duplicateRepoNames.has(row.repoAddress.name)}
-                    rightElement={
-                      <Tooltip
-                        content={row.jobCount === 1 ? '1 job' : `${row.jobCount} jobs`}
-                        placement="top"
-                      >
-                        <Tag>{row.jobCount}</Tag>
-                      </Tooltip>
-                    }
+                    rightElement={<></>}
                   />
                 );
               }

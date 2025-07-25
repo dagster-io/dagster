@@ -22,7 +22,7 @@ export const LaunchpadSetupRoot = (props: {repoAddress: RepoAddress}) => {
     loading,
   } = usePermissionsForLocation(repoAddress.location);
 
-  useBlockTraceUntilTrue('Permissions', loading);
+  useBlockTraceUntilTrue('Permissions', !loading);
 
   const {repoPath, pipelinePath} = useParams<{repoPath: string; pipelinePath: string}>();
   if (loading) {

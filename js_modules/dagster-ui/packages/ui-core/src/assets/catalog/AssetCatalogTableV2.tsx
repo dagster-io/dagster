@@ -52,7 +52,7 @@ import {AssetTableFragment} from '../types/AssetTableFragment.types';
 
 export const AssetCatalogTableV2 = React.memo(() => {
   const {assets, loading: assetsLoading, error} = useAllAssets();
-  useBlockTraceUntilTrue('useAllAssets', !!assets?.length && !assetsLoading);
+  useBlockTraceUntilTrue('useAllAssets', !assetsLoading);
   const trackEvent = useTrackEvent();
 
   const {favorites, loading: favoritesLoading} = useFavoriteAssets();
@@ -344,12 +344,6 @@ const Table = React.memo(
   }: TableProps) => {
     const scope = useMemo(() => {
       const list = (assets ?? []).filter((a): a is AssetWithDefinition => !!a.definition);
-      if (checkedDisplayKeys.size === 0 || !assets) {
-        return {
-          all: list.map((a) => ({...a.definition, assetKey: a.key})),
-        };
-      }
-
       const selected = list.filter((a) => checkedDisplayKeys.has(JSON.stringify(a.key.path)));
       return {
         selected: selected.map((a) => ({...a.definition, assetKey: a.key})),

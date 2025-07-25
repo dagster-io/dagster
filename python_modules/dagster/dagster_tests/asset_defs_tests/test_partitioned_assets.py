@@ -14,7 +14,7 @@ from dagster import (
     PartitionsDefinition,
 )
 from dagster._check import CheckError
-from dagster._core.definitions.asset_graph import AssetGraph
+from dagster._core.definitions.assets.graph.asset_graph import AssetGraph
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.partitions.partition_key_range import PartitionKeyRange
 from dagster._core.events import DagsterEventType

@@ -2,7 +2,7 @@ import string
 import time
 
 import dagster as dg
-from dagster._core.definitions.asset_graph import AssetGraph
+from dagster._core.definitions.assets.graph.asset_graph import AssetGraph
 from dagster._core.definitions.metadata.metadata_value import MetadataValue
 from dagster._core.storage.tags import EXTERNAL_JOB_SOURCE_TAG_KEY
 

@@ -101,12 +101,14 @@ def test_launch_assets() -> None:
 
             result = subprocess.run(
                 ["dg", "launch", "--assets", "my_asset_1"],
-                check=True,
+                check=False,
                 capture_output=True,
+                text=True,
             )
 
-            assert "Started execution of run for" in result.stderr.decode("utf-8")
-            assert "RUN_SUCCESS" in result.stderr.decode("utf-8")
+            assert result.returncode == 0, result.stderr
+            assert "Started execution of run for" in result.stderr
+            assert "RUN_SUCCESS" in result.stderr
 
             result = subprocess.run(
                 ["dg", "launch", "--assets", "my_asset_2", "--partition", "2024-02-03"],

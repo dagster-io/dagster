@@ -4,16 +4,20 @@ from typing import AbstractSet, Any, Callable, NamedTuple, Optional, Union, over
 import dagster._check as check
 from dagster._annotations import beta_param, hidden_param, only_allow_hidden_params_in_kwargs
 from dagster._config.config_schema import UserConfigSchema
-from dagster._core.definitions.asset_check_spec import AssetCheckSpec
-from dagster._core.definitions.asset_dep import (
+from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckSpec
+from dagster._core.definitions.assets.definition.asset_dep import (
     AssetDep,
     CoercibleToAssetDep,
     coerce_to_deps_and_check_duplicates,
 )
-from dagster._core.definitions.asset_in import AssetIn
-from dagster._core.definitions.asset_out import AssetOut
-from dagster._core.definitions.asset_spec import AssetExecutionType, AssetSpec, validate_kind_tags
-from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.assets.definition.asset_spec import (
+    AssetExecutionType,
+    AssetSpec,
+    validate_kind_tags,
+)
+from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
+from dagster._core.definitions.assets.job.asset_in import AssetIn
+from dagster._core.definitions.assets.job.asset_out import AssetOut
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.backfill_policy import BackfillPolicy, BackfillPolicyType
 from dagster._core.definitions.config import ConfigMapping
@@ -968,7 +972,7 @@ def graph_asset_no_defaults(
     partition_mappings = {
         input_name: asset_in.partition_mapping
         for input_name, asset_in in ins.items()
-        if asset_in.partition_mapping
+        if asset_in.partition_mapping is not None
     }
 
     check_specs_by_output_name = validate_and_assign_output_names_to_check_specs(

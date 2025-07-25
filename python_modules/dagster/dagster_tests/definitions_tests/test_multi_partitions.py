@@ -6,8 +6,11 @@ import dagster as dg
 import pytest
 from dagster import AssetExecutionContext
 from dagster._check import CheckError
-from dagster._core.definitions.asset_graph import AssetGraph
-from dagster._core.definitions.partitions.context import PartitionLoadingContext
+from dagster._core.definitions.assets.graph.asset_graph import AssetGraph
+from dagster._core.definitions.partitions.context import (
+    PartitionLoadingContext,
+    partition_loading_context,
+)
 from dagster._core.definitions.partitions.utils import get_time_partitions_def
 from dagster._core.definitions.temporal_context import TemporalContext
 from dagster._core.storage.tags import get_multidimensional_partition_tag
@@ -261,9 +264,10 @@ def test_multipartitions_subset_addition(initial, added):
 
     assert initial_subset.get_partition_keys() == set(initial_subset_keys)
     assert added_subset.get_partition_keys() == set(added_subset_keys + initial_subset_keys)
-    assert added_subset.get_partition_keys_not_in_subset(
-        multipartitions_def, current_time=current_day
-    ) == set(expected_keys_not_in_updated_subset)
+    with partition_loading_context(effective_dt=current_day):
+        assert added_subset.get_partition_keys_not_in_subset(multipartitions_def) == set(
+            expected_keys_not_in_updated_subset
+        )
 
 
 def test_asset_partition_key_is_multipartition_key():
@@ -310,28 +314,28 @@ def test_keys_with_dimension_value():
         }
     )
 
-    assert multipartitions_def.get_multipartition_keys_with_dimension_value(
-        "static", "a", current_time=datetime(year=2015, month=1, day=5)
-    ) == [
-        dg.MultiPartitionKey({"static": val[0], "date": val[1]})
-        for val in [
-            ("a", "2015-01-01"),
-            ("a", "2015-01-02"),
-            ("a", "2015-01-03"),
-            ("a", "2015-01-04"),
+    with partition_loading_context(effective_dt=datetime(year=2015, month=1, day=5)):
+        assert multipartitions_def.get_multipartition_keys_with_dimension_value("static", "a") == [
+            dg.MultiPartitionKey({"static": val[0], "date": val[1]})
+            for val in [
+                ("a", "2015-01-01"),
+                ("a", "2015-01-02"),
+                ("a", "2015-01-03"),
+                ("a", "2015-01-04"),
+            ]
         ]
-    ]
-    assert multipartitions_def.get_multipartition_keys_with_dimension_value(
-        "date", "2015-01-01", current_time=datetime(year=2015, month=1, day=5)
-    ) == [
-        dg.MultiPartitionKey({"static": val[0], "date": val[1]})
-        for val in [
-            ("a", "2015-01-01"),
-            ("b", "2015-01-01"),
-            ("c", "2015-01-01"),
-            ("d", "2015-01-01"),
+    with partition_loading_context(effective_dt=datetime(year=2015, month=1, day=5)):
+        assert multipartitions_def.get_multipartition_keys_with_dimension_value(
+            "date", "2015-01-01"
+        ) == [
+            dg.MultiPartitionKey({"static": val[0], "date": val[1]})
+            for val in [
+                ("a", "2015-01-01"),
+                ("b", "2015-01-01"),
+                ("c", "2015-01-01"),
+                ("d", "2015-01-01"),
+            ]
         ]
-    ]
 
 
 def test_keys_with_dimension_value_with_dynamic():
@@ -347,35 +351,38 @@ def test_keys_with_dimension_value_with_dynamic():
     with dg.instance_for_test() as instance:
         instance.add_dynamic_partitions(dynamic_partitions_def.name, ["a", "b", "c", "d"])  # pyright: ignore[reportArgumentType]
 
-        assert multipartitions_def.get_multipartition_keys_with_dimension_value(
-            dimension_name="dynamic",
-            dimension_partition_key="a",
-            dynamic_partitions_store=instance,
-            current_time=datetime(year=2015, month=1, day=5),
-        ) == [
-            dg.MultiPartitionKey({"dynamic": val[0], "date": val[1]})
-            for val in [
-                ("a", "2015-01-01"),
-                ("a", "2015-01-02"),
-                ("a", "2015-01-03"),
-                ("a", "2015-01-04"),
+        with partition_loading_context(
+            effective_dt=datetime(year=2015, month=1, day=5), dynamic_partitions_store=instance
+        ):
+            assert multipartitions_def.get_multipartition_keys_with_dimension_value(
+                dimension_name="dynamic",
+                dimension_partition_key="a",
+            ) == [
+                dg.MultiPartitionKey({"dynamic": val[0], "date": val[1]})
+                for val in [
+                    ("a", "2015-01-01"),
+                    ("a", "2015-01-02"),
+                    ("a", "2015-01-03"),
+                    ("a", "2015-01-04"),
+                ]
             ]
-        ]
 
-        assert multipartitions_def.get_multipartition_keys_with_dimension_value(
-            dimension_name="date",
-            dimension_partition_key="2015-01-01",
+        with partition_loading_context(
+            effective_dt=datetime(year=2015, month=1, day=5),
             dynamic_partitions_store=instance,
-            current_time=datetime(year=2015, month=1, day=5),
-        ) == [
-            dg.MultiPartitionKey({"dynamic": val[0], "date": val[1]})
-            for val in [
-                ("a", "2015-01-01"),
-                ("b", "2015-01-01"),
-                ("c", "2015-01-01"),
-                ("d", "2015-01-01"),
+        ):
+            assert multipartitions_def.get_multipartition_keys_with_dimension_value(
+                dimension_name="date",
+                dimension_partition_key="2015-01-01",
+            ) == [
+                dg.MultiPartitionKey({"dynamic": val[0], "date": val[1]})
+                for val in [
+                    ("a", "2015-01-01"),
+                    ("b", "2015-01-01"),
+                    ("c", "2015-01-01"),
+                    ("d", "2015-01-01"),
+                ]
             ]
-        ]
 
 
 def test_keys_with_dimension_value_with_dynamic_without_instance():
@@ -389,11 +396,10 @@ def test_keys_with_dimension_value_with_dynamic_without_instance():
     )
 
     with pytest.raises(CheckError):
-        multipartitions_def.get_multipartition_keys_with_dimension_value(
-            dimension_name="date",
-            dimension_partition_key="2015-01-01",
-            current_time=datetime(year=2015, month=1, day=5),
-        )
+        with partition_loading_context(effective_dt=datetime(year=2015, month=1, day=5)):
+            multipartitions_def.get_multipartition_keys_with_dimension_value(
+                dimension_name="date", dimension_partition_key="2015-01-01"
+            )
 
 
 def test_get_num_partitions():

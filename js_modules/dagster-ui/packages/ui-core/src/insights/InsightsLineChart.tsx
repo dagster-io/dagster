@@ -261,10 +261,10 @@ export const InsightsLineChart = (props: Props) => {
           },
           title: {
             display: true,
-            color: rgbColors[Colors.textLighter()],
+            color: textLighterRGB,
           },
           ticks: {
-            color: rgbColors[Colors.textLighter()],
+            color: textLighterRGB,
             font: {
               size: 12,
               family: FontFamily.monospace,
@@ -281,9 +281,13 @@ export const InsightsLineChart = (props: Props) => {
         },
         yCount,
         yCost,
+        // Disable the default y axis.
+        y: {
+          display: false,
+        },
       },
     };
-  }, [rgbColors, yCount, yCost, onHover, renderTooltipFn, formatDateTime]);
+  }, [textLighterRGB, yCount, yCost, onHover, renderTooltipFn, formatDateTime]);
 
   const emptyContent = () => {
     const anyDatapoints = Object.keys(datapoints).length > 0;

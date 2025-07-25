@@ -4,6 +4,7 @@ from collections.abc import Sequence
 import dagster as dg
 import pytest
 from dagster._check import CheckError
+from dagster._core.definitions.partitions.context import partition_loading_context
 from dagster._core.test_utils import get_paginated_partition_keys
 
 
@@ -89,7 +90,10 @@ def test_unique_identifier():
         == dg.StaticPartitionsDefinition(["a", "b", "c"]).get_serializable_unique_identifier()
     )
 
-    with dg.instance_for_test() as instance:
+    with (
+        dg.instance_for_test() as instance,
+        partition_loading_context(dynamic_partitions_store=instance),
+    ):
         dynamic_def = dg.DynamicPartitionsDefinition(name="foo")
         identifier1 = dynamic_def.get_serializable_unique_identifier(
             dynamic_partitions_store=instance
@@ -103,11 +107,9 @@ def test_unique_identifier():
         multipartitions_def = dg.MultiPartitionsDefinition(
             {"a": dg.StaticPartitionsDefinition(["a", "b", "c"]), "b": dynamic_dimension_def}
         )
-        serializable_unique_id = multipartitions_def.get_serializable_unique_identifier(instance)
+        serializable_unique_id = multipartitions_def.get_serializable_unique_identifier()
         instance.add_dynamic_partitions(dynamic_dimension_def.name, ["apple"])  # pyright: ignore[reportArgumentType]
-        assert serializable_unique_id != multipartitions_def.get_serializable_unique_identifier(
-            instance
-        )
+        assert serializable_unique_id != multipartitions_def.get_serializable_unique_identifier()
 
     assert (
         dg.MultiPartitionsDefinition(

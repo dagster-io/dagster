@@ -23,11 +23,11 @@ from dagster import (
 )
 from dagster._check import CheckError
 from dagster._core.assets import AssetDetails
-from dagster._core.definitions.asset_check_evaluation import (
+from dagster._core.definitions.asset_checks.asset_check_evaluation import (
     AssetCheckEvaluationPlanned,
     AssetCheckEvaluationTargetMaterializationData,
 )
-from dagster._core.definitions.asset_check_spec import AssetCheckSeverity
+from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckSeverity
 from dagster._core.definitions.data_version import (
     _OLD_DATA_VERSION_TAG,
     _OLD_INPUT_DATA_VERSION_TAG_PREFIX,
@@ -44,6 +44,7 @@ from dagster._core.definitions.events import (
     AssetMaterializationFailureType,
 )
 from dagster._core.definitions.job_base import InMemoryJob
+from dagster._core.definitions.partitions.context import partition_loading_context
 from dagster._core.definitions.partitions.subset import AllPartitionsSubset
 from dagster._core.event_api import EventLogCursor
 from dagster._core.events import (
@@ -3823,11 +3824,8 @@ class TestEventLogStorage:
         run_id_1 = make_new_run_id()
 
         partitions_def = dg.DailyPartitionsDefinition("2023-01-01")
-        partitions_subset = AllPartitionsSubset(
-            partitions_def=partitions_def,
-            dynamic_partitions_store=instance,
-            current_time=get_current_datetime(),
-        )
+        with partition_loading_context(dynamic_partitions_store=instance) as ctx:
+            partitions_subset = AllPartitionsSubset(partitions_def=partitions_def, context=ctx)
 
         with create_and_delete_test_runs(instance, [run_id_1]):
             with pytest.raises(

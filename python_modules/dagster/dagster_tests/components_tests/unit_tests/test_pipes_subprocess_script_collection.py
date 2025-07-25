@@ -2,16 +2,23 @@ import importlib
 from pathlib import Path
 
 import dagster as dg
+from dagster.components.core.tree import LegacyAutoloadingComponentTree
 
 LOCATION_PATH = Path(__file__).parent.parent / "code_locations" / "python_script_location"
 
 
-def test_load_from_path() -> None:
+def test_load_from_path(snapshot) -> None:
     module = importlib.import_module(
         "dagster_tests.components_tests.code_locations.python_script_location.defs"
     )
-    defs = dg.load_defs(module, project_root=Path(__file__).parent)
+    tree = LegacyAutoloadingComponentTree.from_module(
+        defs_module=module, project_root=Path(__file__).parent
+    )
+    snapshot.assert_match(tree.to_string_representation(include_load_and_build_status=True))
+    tree.load_root_component()
+    snapshot.assert_match(tree.to_string_representation(include_load_and_build_status=True))
 
+    defs = tree.build_defs()
     assert defs.resolve_asset_graph().get_all_asset_keys() == {
         dg.AssetKey("a"),
         dg.AssetKey("b"),
@@ -34,6 +41,8 @@ def test_load_from_path() -> None:
         dg.AssetKey("from_defs_two"),
     }
     assert defs.component_tree
+
+    snapshot.assert_match(tree.to_string_representation(include_load_and_build_status=True))
 
 
 def test_load_from_location_path() -> None:

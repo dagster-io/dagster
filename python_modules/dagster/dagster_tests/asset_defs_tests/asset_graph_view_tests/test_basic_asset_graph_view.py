@@ -3,15 +3,16 @@ from typing import cast
 import dagster as dg
 import pytest
 from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView
-from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
+from dagster._core.definitions.assets.graph.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.events import AssetKeyPartitionKey
+from dagster._core.definitions.partitions.context import partition_loading_context
 from dagster._core.definitions.partitions.subset import (
     AllPartitionsSubset,
     TimeWindowPartitionsSubset,
 )
 from dagster._core.definitions.partitions.utils import PersistedTimeWindow
 from dagster._core.instance import DagsterInstance
-from dagster._time import create_datetime, get_current_datetime
+from dagster._time import create_datetime
 from dagster._utils.partitions import DEFAULT_DATE_FORMAT
 from dagster_shared.check import CheckError
 
@@ -208,15 +209,10 @@ def test_all_partitions_subset_changes():
     def asset1(): ...
 
     defs = dg.Definitions([asset1])
-    effective_dt = get_current_datetime()
-    with DagsterInstance.ephemeral() as instance:
-        asset_graph_view = AssetGraphView.for_test(defs, instance, effective_dt)
+    with DagsterInstance.ephemeral() as instance, partition_loading_context(None, instance) as ctx:
+        asset_graph_view = AssetGraphView.for_test(defs, instance, ctx.effective_dt)
 
-        stored_partitions_subset = AllPartitionsSubset(
-            current_partitions_def,
-            dynamic_partitions_store=instance,
-            current_time=asset_graph_view.effective_dt,
-        )
+        stored_partitions_subset = AllPartitionsSubset(current_partitions_def, ctx)
         assert (
             asset_graph_view.get_entity_subset_from_asset_graph_subset(
                 AssetGraphSubset(
@@ -232,11 +228,7 @@ def test_all_partitions_subset_changes():
         # fails if the underlying partitions def for an AllPartitionsSubset changes at all
 
         old_partitions_def = dg.StaticPartitionsDefinition(["FOO", "BAR", "BAZ"])
-        old_partitions_subset = AllPartitionsSubset(
-            old_partitions_def,
-            dynamic_partitions_store=instance,
-            current_time=asset_graph_view.effective_dt,
-        )
+        old_partitions_subset = AllPartitionsSubset(old_partitions_def, ctx)
 
         with pytest.raises(
             CheckError,

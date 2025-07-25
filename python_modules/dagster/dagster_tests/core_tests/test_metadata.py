@@ -3,8 +3,11 @@ import pytest
 from dagster import MetadataValue, TableSchema
 from dagster._core.definitions.metadata.metadata_value import (
     CodeLocationReconstructionMetadataValue,
+    ObjectMetadataValue,
+    TimestampMetadataValue,
 )
 from dagster_shared.check import CheckError
+from dagster_shared.record import copy
 
 
 def test_op_instance_tags():
@@ -120,3 +123,30 @@ def test_serdes_json_metadata():
     s = dg.serialize_value(val)
     val_2 = dg.deserialize_value(s, dg.JsonMetadataValue)
     assert val_2 == val
+
+
+def test_instance_metadata_value():
+    class Foo:
+        pass
+
+    assert ObjectMetadataValue("foo").class_name == "foo"
+    assert ObjectMetadataValue("foo").instance is None
+
+    v = ObjectMetadataValue(Foo())
+    assert v.class_name == "Foo"
+    assert v.instance is not None
+
+    v2 = copy(v)
+    assert v2.class_name == "Foo"
+    assert v2.instance is not None
+
+    v3 = dg.deserialize_value(dg.serialize_value(v), ObjectMetadataValue)
+    assert v3.class_name == "Foo"
+    assert v3.instance is None  # instance lost in serialization
+
+
+def test_serialized_time_entry():
+    assert dg.deserialize_value(
+        '{"__class__": "TimestampMetadataValue", "value": 1752171695.0141509}',
+        TimestampMetadataValue,
+    )

@@ -108,7 +108,7 @@ class FivetranAccountComponent(dg.Component, dg.Model, dg.Resolvable):
         FivetranWorkspace,
         dg.Resolver(
             lambda context, model: FivetranWorkspace(
-                **resolve_fields(model, FivetranWorkspace, context)  # type: ignore
+                **resolve_fields(model, FivetranWorkspace, context)
             )
         ),
     ]

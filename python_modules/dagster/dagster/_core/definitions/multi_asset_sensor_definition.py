@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Callable, NamedTuple, Optional, Union, cast
 import dagster._check as check
 from dagster._annotations import deprecated_param, public, superseded
 from dagster._core.definitions.asset_selection import AssetSelection
-from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.metadata import RawMetadataMapping
 from dagster._core.definitions.partitions.definition import PartitionsDefinition

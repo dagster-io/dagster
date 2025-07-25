@@ -13,7 +13,7 @@ from dagster import (
     PartitionsDefinition,
 )
 from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView
-from dagster._core.definitions.asset_graph import AssetGraph
+from dagster._core.definitions.assets.graph.asset_graph import AssetGraph
 from dagster._core.definitions.events import AssetKeyPartitionKey
 from dagster._core.definitions.partitions.mapping import UpstreamPartitionsResult
 from dagster._core.definitions.partitions.subset import DefaultPartitionsSubset, PartitionsSubset

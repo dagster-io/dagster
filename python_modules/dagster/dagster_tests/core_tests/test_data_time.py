@@ -8,7 +8,7 @@ import dagster as dg
 import pytest
 from dagster import AssetSelection, DagsterEventType, DagsterInstance
 from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView, TemporalContext
-from dagster._core.definitions.asset_graph import AssetGraph
+from dagster._core.definitions.assets.graph.asset_graph import AssetGraph
 from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.events import AssetKeyPartitionKey
 from dagster._core.definitions.observe import observe

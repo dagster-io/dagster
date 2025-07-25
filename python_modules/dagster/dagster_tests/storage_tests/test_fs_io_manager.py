@@ -8,7 +8,7 @@ from typing import Optional
 import dagster as dg
 import pytest
 from dagster import AssetsDefinition, DagsterInstance, MetadataValue, PartitionsDefinition
-from dagster._core.definitions.asset_graph import AssetGraph
+from dagster._core.definitions.assets.graph.asset_graph import AssetGraph
 from dagster._core.definitions.partitions.mapping import UpstreamPartitionsResult
 from dagster._core.definitions.partitions.subset import PartitionsSubset
 from dagster._core.instance import DynamicPartitionsStore

@@ -2,7 +2,7 @@ from typing import AbstractSet  # noqa: UP035
 
 import dagster as dg
 from dagster import AssetSelection
-from dagster._core.definitions.base_asset_graph import BaseAssetGraph
+from dagster._core.definitions.assets.graph.base_asset_graph import BaseAssetGraph
 from dagster._core.remote_representation.external_data import SensorSnap
 
 

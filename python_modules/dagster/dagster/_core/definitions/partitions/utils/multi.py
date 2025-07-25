@@ -4,7 +4,10 @@ from collections.abc import Mapping
 from typing import TYPE_CHECKING, NamedTuple, Optional, cast
 
 import dagster._check as check
-from dagster._core.definitions.partitions.context import PartitionLoadingContext
+from dagster._core.definitions.partitions.context import (
+    PartitionLoadingContext,
+    partition_loading_context,
+)
 from dagster._core.storage.tags import (
     MULTIDIMENSIONAL_PARTITION_PREFIX,
     get_multidimensional_partition_tag,
@@ -238,15 +241,16 @@ class MultiDimensionalPartitionKeyIterator:
         cursor: MultiPartitionCursor,
         ascending: bool,
     ):
-        self._ascending = ascending
-        self._dimension_names = [dim.name for dim in partition_defs]
-        self._dimension_keys = self._initialize_dimension_keys(context, partition_defs)
-        if cursor and cursor.last_seen_key:
-            self._last_seen_state = self._initialize_state_to_last_seen_key(
-                self._dimension_keys, ascending, cursor.last_seen_key
-            )
-        else:
-            self._last_seen_state = None
+        with partition_loading_context(new_ctx=context):
+            self._ascending = ascending
+            self._dimension_names = [dim.name for dim in partition_defs]
+            self._dimension_keys = self._initialize_dimension_keys(partition_defs)
+            if cursor and cursor.last_seen_key:
+                self._last_seen_state = self._initialize_state_to_last_seen_key(
+                    self._dimension_keys, ascending, cursor.last_seen_key
+                )
+            else:
+                self._last_seen_state = None
 
     def __iter__(self):
         return self
@@ -296,13 +300,10 @@ class MultiDimensionalPartitionKeyIterator:
         )
         return MultiPartitionCursor(last_seen_key=last_partition_key)
 
-    def _initialize_dimension_keys(self, context, partition_defs):
+    def _initialize_dimension_keys(self, partition_defs):
         dimension_keys = {}
         for dimension in partition_defs:
-            dimension_keys[dimension.name] = dimension.partitions_def.get_partition_keys(
-                current_time=context.temporal_context.effective_dt,
-                dynamic_partitions_store=context.dynamic_partitions_store,
-            )
+            dimension_keys[dimension.name] = dimension.partitions_def.get_partition_keys()
 
         return dimension_keys
 

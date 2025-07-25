@@ -11,7 +11,7 @@ from dagster._core.errors import DagsterInvariantViolationError
 from dagster._utils.tags import normalize_tags
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.asset_layer import AssetLayer
+    from dagster._core.definitions.assets.job.asset_layer import AssetLayer
     from dagster._core.definitions.composition import PendingNodeInvocation
     from dagster._core.definitions.dependency import NodeHandle, NodeInputHandle, NodeOutputHandle
     from dagster._core.definitions.input import InputDefinition

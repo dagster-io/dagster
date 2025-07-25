@@ -11,7 +11,7 @@ import dagster._check as check
 import pytest
 from dagster._core.asset_graph_view.serializable_entity_subset import SerializableEntitySubset
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
-from dagster._core.definitions.base_asset_graph import BaseAssetGraph
+from dagster._core.definitions.assets.graph.base_asset_graph import BaseAssetGraph
 from dagster._core.definitions.sensor_definition import SensorType
 from dagster._core.execution.backfill import PartitionBackfill
 from dagster._core.instance import DagsterInstance
@@ -534,7 +534,7 @@ def _get_subsets_by_key(
 ) -> Mapping[dg.AssetKey, SerializableEntitySubset[dg.AssetKey]]:
     assert backfill.asset_backfill_data is not None
     target_subset = backfill.asset_backfill_data.target_subset
-    return {s.key: s for s in target_subset.iterate_asset_subsets(asset_graph)}
+    return {s.key: s for s in target_subset.iterate_asset_subsets()}
 
 
 @pytest.mark.parametrize("location", ["backfill_simple_user_code", "backfill_simple_non_user_code"])

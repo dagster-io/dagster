@@ -1,8 +1,9 @@
 from unittest.mock import MagicMock
 
+import pytest
 from dagster import AssetExecutionContext
 from dagster._core.code_pointer import CodePointer
-from dagster._core.definitions.asset_spec import AssetSpec
+from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.reconstruct import (
     ReconstructableJob,
@@ -154,7 +155,10 @@ def cacheable_asset_defs_asset_decorator_with_context():
 
     return Definitions(
         assets=[my_tableau_assets],
-        jobs=[define_asset_job("all_asset_job")],
+        jobs=[
+            define_asset_job("all_asset_job"),
+            define_asset_job("subset_asset_job", selection="hidden_sheet_datasource"),
+        ],
         resources={"tableau": resource},
     )
 
@@ -219,8 +223,8 @@ def test_load_assets_workspace_data_refreshable_workbooks(
         assert get_job.call_count == 0
         assert cancel_job.call_count == 0
 
-        # 2 Tableau external assets and 3 Tableau materializable assets
-        assert len(init_repository_def.assets_defs_by_key) == 2 + 3
+        # 3 Tableau external assets and 3 Tableau materializable assets
+        assert len(init_repository_def.assets_defs_by_key) == 3 + 3
 
         repository_load_data = init_repository_def.repository_load_data
 
@@ -229,7 +233,7 @@ def test_load_assets_workspace_data_refreshable_workbooks(
             pointer,
             repository_load_data,
         )
-        assert len(recon_repository_def.assets_defs_by_key) == 2 + 3
+        assert len(recon_repository_def.assets_defs_by_key) == 3 + 3
 
         # no additional calls after a fresh load
         assert sign_in.call_count == 1
@@ -320,8 +324,8 @@ def test_load_assets_workspace_data_refreshable_data_sources(
         assert get_job.call_count == 0
         assert cancel_job.call_count == 0
 
-        # 2 Tableau external assets and 3 Tableau materializable assets
-        assert len(init_repository_def.assets_defs_by_key) == 2 + 3
+        # 4 Tableau external assets and 2 Tableau materializable assets
+        assert len(init_repository_def.assets_defs_by_key) == 4 + 2
 
         repository_load_data = init_repository_def.repository_load_data
 
@@ -330,7 +334,7 @@ def test_load_assets_workspace_data_refreshable_data_sources(
             pointer,
             repository_load_data,
         )
-        assert len(recon_repository_def.assets_defs_by_key) == 2 + 3
+        assert len(recon_repository_def.assets_defs_by_key) == 4 + 2
 
         # no additional calls after a fresh load
         assert sign_in.call_count == 1
@@ -423,8 +427,8 @@ def test_load_assets_workspace_data(
         assert get_job.call_count == 0
         assert cancel_job.call_count == 0
 
-        # 2 Tableau external assets and 3 Tableau materializable assets
-        assert len(init_repository_def.assets_defs_by_key) == 2 + 3
+        # 3 Tableau external assets and 3 Tableau materializable assets
+        assert len(init_repository_def.assets_defs_by_key) == 3 + 3
 
         repository_load_data = init_repository_def.repository_load_data
 
@@ -433,7 +437,7 @@ def test_load_assets_workspace_data(
             pointer,
             repository_load_data,
         )
-        assert len(recon_repository_def.assets_defs_by_key) == 2 + 3
+        assert len(recon_repository_def.assets_defs_by_key) == 3 + 3
 
         # no additional calls after a fresh load
         assert sign_in.call_count == 1
@@ -505,13 +509,27 @@ def test_load_assets_workspace_data_translator(
             )
         )
 
-        assert len(repository_def.assets_defs_by_key) == 5
+        assert len(repository_def.assets_defs_by_key) == 6
         assert all(
             key.path[0] == "my_prefix" for key in repository_def.assets_defs_by_key.keys()
         ), repository_def.assets_defs_by_key
 
 
+@pytest.mark.parametrize(
+    "job_name, expected_asset_materializations, expected_asset_observations",
+    [
+        ("all_asset_job", 1, 3),
+        ("subset_asset_job", 1, 0),
+    ],
+    ids=[
+        "all_asset_job",
+        "subset_asset_job",
+    ],
+)
 def test_load_assets_workspace_asset_decorator_with_context(
+    job_name: str,
+    expected_asset_materializations: int,
+    expected_asset_observations: int,
     sign_in: MagicMock,
     get_workbooks: MagicMock,
     get_workbook: MagicMock,
@@ -537,10 +555,10 @@ def test_load_assets_workspace_asset_decorator_with_context(
         repository_load_data = repository_def.repository_load_data
 
         # testing the job that materializes the tableau assets
-        job_def = repository_def.get_job("all_asset_job")
+        job_def = repository_def.get_job(job_name)
         recon_job = ReconstructableJob(
             repository=ReconstructableRepository(pointer),
-            job_name="all_asset_job",
+            job_name=job_name,
         )
 
         execution_plan = create_execution_plan(recon_job, repository_load_data=repository_load_data)
@@ -562,4 +580,9 @@ def test_load_assets_workspace_asset_decorator_with_context(
         asset_materializations = [
             event for event in events if event.event_type == DagsterEventType.ASSET_MATERIALIZATION
         ]
-        assert len(asset_materializations) == 4
+        assert len(asset_materializations) == expected_asset_materializations
+
+        asset_observations = [
+            event for event in events if event.event_type == DagsterEventType.ASSET_OBSERVATION
+        ]
+        assert len(asset_observations) == expected_asset_observations

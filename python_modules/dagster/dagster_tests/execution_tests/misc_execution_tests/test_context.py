@@ -1,3 +1,5 @@
+import tempfile
+
 import dagster as dg
 import dagster._check as check
 import pytest
@@ -9,6 +11,9 @@ from dagster import (
     OpExecutionContext,
 )
 from dagster._check import CheckError
+from dagster._core.definitions.definitions_class import Definitions
+from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
+from dagster._core.storage.fs_io_manager import FilesystemIOManager
 
 
 def test_op_execution_context():
@@ -449,3 +454,171 @@ def test_graph_multi_asset_out_from_spec_deps() -> None:
         )
         def no_annotation_asset():
             return layered_op(inner_op()), layered_op(inner_op())
+
+
+def test_dynamically_loading_assets_from_context():
+    @dg.asset(io_manager_key="fs_io_manager")
+    def the_asset():
+        return 5
+
+    @dg.asset(io_manager_key="fs_io_manager", deps=[the_asset])
+    def the_downstream_asset(context: AssetExecutionContext):
+        return context.load_asset_value(the_asset.key) + 1
+
+    defs = Definitions(
+        assets=[the_asset, the_downstream_asset],
+        resources={"fs_io_manager": FilesystemIOManager()},
+    )
+    global_asset_job = defs.get_implicit_global_asset_job_def()
+
+    result = global_asset_job.execute_in_process()
+    assert result.success
+    assert result.output_for_node("the_downstream_asset") == 6
+
+
+def test_dynamically_loading_assets_from_context_with_partition():
+    static_partition = StaticPartitionsDefinition(["1", "2", "3"])
+
+    @dg.asset(
+        io_manager_key="fs_io_manager",
+        partitions_def=static_partition,
+    )
+    def the_asset(context: AssetExecutionContext):
+        return int(context.partition_key)
+
+    @dg.asset(io_manager_key="fs_io_manager", deps=[the_asset], partitions_def=static_partition)
+    def the_downstream_asset(context: AssetExecutionContext):
+        return context.load_asset_value(the_asset.key, partition_key=context.partition_key) + 1
+
+    defs = Definitions(
+        assets=[the_asset, the_downstream_asset],
+        resources={"fs_io_manager": FilesystemIOManager()},
+    )
+    global_asset_job = defs.get_implicit_global_asset_job_def()
+
+    result = global_asset_job.execute_in_process(partition_key="1")
+    assert result.success
+    assert result.output_for_node("the_downstream_asset") == 2
+
+    result = global_asset_job.execute_in_process(partition_key="3")
+    assert result.success
+    assert result.output_for_node("the_downstream_asset") == 4
+
+
+def test_load_asset_value_with_python_type():
+    @dg.asset(io_manager_key="fs_io_manager")
+    def string_asset():
+        return "hello"
+
+    @dg.asset(io_manager_key="fs_io_manager")
+    def int_asset():
+        return 42
+
+    @dg.asset(io_manager_key="fs_io_manager", deps=[string_asset, int_asset])
+    def downstream_asset(context: AssetExecutionContext):
+        # Test with explicit python_type
+        string_value = context.load_asset_value(string_asset.key, python_type=str)
+        int_value = context.load_asset_value(int_asset.key, python_type=int)
+
+        assert isinstance(string_value, str)
+        assert isinstance(int_value, int)
+        return f"{string_value}_{int_value}"
+
+    defs = Definitions(
+        assets=[string_asset, int_asset, downstream_asset],
+        resources={"fs_io_manager": FilesystemIOManager()},
+    )
+    global_asset_job = defs.get_implicit_global_asset_job_def()
+
+    result = global_asset_job.execute_in_process()
+    assert result.success
+    assert result.output_for_node("downstream_asset") == "hello_42"
+
+
+def test_load_asset_value_raises_key_error():
+    @dg.asset(io_manager_key="fs_io_manager")
+    def source_asset():
+        return "data"
+
+    @dg.asset(io_manager_key="fs_io_manager", deps=[source_asset])
+    def downstream_asset(context: AssetExecutionContext):
+        # Test loading non-existent asset
+        with pytest.raises(KeyError) as exc_info:
+            context.load_asset_value(dg.AssetKey("non_existent_asset"))
+        assert "non_existent_asset" in str(exc_info.value)
+
+    defs = Definitions(
+        assets=[source_asset, downstream_asset],
+        resources={"fs_io_manager": FilesystemIOManager()},
+    )
+    global_asset_job = defs.get_implicit_global_asset_job_def()
+
+    result = global_asset_job.execute_in_process()
+    assert result.success
+
+
+def test_load_asset_value_with_complex_types():
+    @dg.asset(io_manager_key="fs_io_manager")
+    def list_asset():
+        return [1, 2, 3, 4, 5]
+
+    @dg.asset(io_manager_key="fs_io_manager")
+    def dict_asset():
+        return {"key1": "value1", "key2": "value2"}
+
+    @dg.asset(io_manager_key="fs_io_manager", deps=[list_asset, dict_asset])
+    def downstream_asset(context: AssetExecutionContext):
+        # Test with complex python types
+        list_value = context.load_asset_value(list_asset.key, python_type=list[int])
+        dict_value = context.load_asset_value(dict_asset.key, python_type=dict[str, str])
+
+        assert isinstance(list_value, list)
+        assert isinstance(dict_value, dict)
+        return len(list_value) + len(dict_value)
+
+    defs = Definitions(
+        assets=[list_asset, dict_asset, downstream_asset],
+        resources={"fs_io_manager": FilesystemIOManager()},
+    )
+    global_asset_job = defs.get_implicit_global_asset_job_def()
+
+    result = global_asset_job.execute_in_process()
+    assert result.success
+    assert result.output_for_node("downstream_asset") == 7  # 5 + 2
+
+
+def test_load_asset_value_multiple_upstream_partition_keys():
+    with tempfile.TemporaryDirectory() as temp_dir:
+        io_manager = FilesystemIOManager(base_dir=temp_dir)
+        partitions = StaticPartitionsDefinition(["2024-01-01", "2024-01-02", "2024-01-03"])
+
+        @dg.asset(io_manager_key="partitioned_io_manager", partitions_def=partitions)
+        def partitioned_source_asset(context: AssetExecutionContext):
+            assert context.has_partition_key
+            return int(context.partition_key.split("-")[-1])
+
+        @dg.asset(io_manager_key="partitioned_io_manager", deps=[partitioned_source_asset])
+        def downstream_asset(context: AssetExecutionContext):
+            return (
+                context.load_asset_value(partitioned_source_asset.key, partition_key="2024-01-01")
+                + context.load_asset_value(partitioned_source_asset.key, partition_key="2024-01-02")
+                + context.load_asset_value(partitioned_source_asset.key, partition_key="2024-01-03")
+            )
+
+        defs = Definitions(
+            assets=[partitioned_source_asset, downstream_asset],
+            resources={"partitioned_io_manager": io_manager},
+        )
+        global_asset_job = defs.get_implicit_global_asset_job_def()
+
+        # Materialize each partition
+        for partition_key in ["2024-01-01", "2024-01-02", "2024-01-03"]:
+            result = global_asset_job.execute_in_process(
+                partition_key=partition_key,
+                asset_selection=[partitioned_source_asset.key],
+            )
+            assert result.success
+
+        result = global_asset_job.execute_in_process(asset_selection=[downstream_asset.key])
+        assert result.success
+        assert result.output_for_node("downstream_asset") == 6

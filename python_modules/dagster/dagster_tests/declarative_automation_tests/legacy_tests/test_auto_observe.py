@@ -6,12 +6,12 @@ from typing import AbstractSet  # noqa: UP035
 import dagster as dg
 from dagster import DagsterInstance
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
-from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_selection import AssetSelection
+from dagster._core.definitions.assets.graph.asset_graph import AssetGraph
+from dagster._core.definitions.assets.graph.base_asset_graph import BaseAssetGraph
 from dagster._core.definitions.automation_tick_evaluation_context import (
     AutomationTickEvaluationContext,
 )
-from dagster._core.definitions.base_asset_graph import BaseAssetGraph
 from dagster._core.definitions.external_asset import create_external_asset_from_source_asset
 from pytest import fixture
 

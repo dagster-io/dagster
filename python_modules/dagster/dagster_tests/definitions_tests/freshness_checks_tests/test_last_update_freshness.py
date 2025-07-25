@@ -5,10 +5,10 @@ import json
 import dagster as dg
 import pytest
 from dagster._check import CheckError
-from dagster._core.definitions.asset_check_factories.utils import (
+from dagster._core.definitions.asset_checks.asset_check_factories.utils import (
     unique_id_from_asset_and_check_keys,
 )
-from dagster._core.definitions.asset_check_spec import AssetCheckSeverity
+from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckSeverity
 from dagster._core.definitions.asset_selection import AssetChecksForAssetKeysSelection
 from dagster._core.instance import DagsterInstance
 from dagster._core.test_utils import freeze_time

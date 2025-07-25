@@ -8,7 +8,9 @@ from dagster import AssetKey
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
+    from dagster._core.definitions.assets.definition.cacheable_assets_definition import (
+        CacheableAssetsDefinition,
+    )
 
 get_unique_asset_identifier = lambda a: (
     a.node_def.name if isinstance(a, dg.AssetsDefinition) else a.key

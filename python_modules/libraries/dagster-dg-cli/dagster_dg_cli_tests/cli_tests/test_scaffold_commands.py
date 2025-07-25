@@ -644,6 +644,20 @@ def test_scaffold_defs_asset() -> None:
         assert not Path("src/foo_bar/defs/assets/defs.yaml").exists()
 
 
+def test_scaffold_defs_asset_already_exists_fails() -> None:
+    with (
+        ProxyRunner.test() as runner,
+        isolated_example_project_foo_bar(runner),
+    ):
+        result = runner.invoke("scaffold", "defs", "dagster.asset", "assets/foo.py")
+        assert_runner_result(result)
+
+        # invoke again, should fail with nice error message
+        result = runner.invoke("scaffold", "defs", "dagster.asset", "assets/foo.py")
+        assert_runner_result(result, exit_0=False)
+        assert "already exists" in result.output
+
+
 def test_scaffold_defs_asset_check_with_key() -> None:
     with (
         ProxyRunner.test() as runner,

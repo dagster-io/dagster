@@ -3,7 +3,7 @@ import time
 import dagster as dg
 import pytest
 from dagster import AssetKey, BackfillPolicy, DagsterEventType, PartitionsDefinition
-from dagster._core.definitions.asset_graph import AssetGraph
+from dagster._core.definitions.assets.graph.asset_graph import AssetGraph
 from dagster._core.events import AssetMaterializationPlannedData, StepMaterializationData
 from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.storage.partition_status_cache import (
@@ -862,7 +862,6 @@ class TestPartitionStatusCache:
                 instance,
                 my_asset,
                 static_partitions_def,
-                instance,
                 last_planned_materialization_storage_id,
             )
             assert failed_subset.get_partition_keys() == set()
@@ -880,7 +879,6 @@ class TestPartitionStatusCache:
                 instance,
                 my_asset,
                 static_partitions_def,
-                instance,
                 last_planned_materialization_storage_id,
             )
             assert failed_subset.get_partition_keys() == set()

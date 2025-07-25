@@ -5,14 +5,20 @@ from unittest.mock import MagicMock
 import pytest
 import responses
 from dagster._config.field_utils import EnvVar
-from dagster._core.definitions.asset_spec import AssetSpec
+from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
 from dagster._core.test_utils import environ
 from dagster_shared.check import CheckError
 from dagster_tableau import TableauCloudWorkspace, TableauServerWorkspace, load_tableau_asset_specs
 from dagster_tableau.asset_utils import parse_tableau_external_and_materializable_asset_specs
 from dagster_tableau.translator import DagsterTableauTranslator, TableauTranslatorData
 
-from dagster_tableau_tests.conftest import TEST_PROJECT_ID, TEST_PROJECT_NAME, TEST_WORKBOOK_ID
+from dagster_tableau_tests.conftest import (
+    TEST_DATA_SOURCE_ID,
+    TEST_EMBEDDED_DATA_SOURCE_ID,
+    TEST_PROJECT_ID,
+    TEST_PROJECT_NAME,
+    TEST_WORKBOOK_ID,
+)
 
 
 @responses.activate
@@ -53,7 +59,7 @@ def test_fetch_tableau_workspace_data(
     assert len(actual_workspace_data.workbooks_by_id) == 1
     assert len(actual_workspace_data.sheets_by_id) == 2
     assert len(actual_workspace_data.dashboards_by_id) == 1
-    assert len(actual_workspace_data.data_sources_by_id) == 2
+    assert len(actual_workspace_data.data_sources_by_id) == 3
 
 
 @responses.activate
@@ -148,25 +154,49 @@ def test_translator_spec(
         all_assets = load_tableau_asset_specs(resource)
         all_assets_keys = [asset.key for asset in all_assets]
 
-        # 2 sheet, 1 dashboard and 2 data source as external assets
-        assert len(all_assets) == 5
-        assert len(all_assets_keys) == 5
+        # 2 sheet, 1 dashboard and 3 data source as external assets
+        assert len(all_assets) == 6
+        assert len(all_assets_keys) == 6
 
         # Sanity check outputs, translator tests cover details here
-        sheet_asset_key = next(
-            key for key in all_assets_keys if "workbook" in key.path[0] and "sheet" in key.path[1]
+        sheet_asset_spec = next(
+            spec
+            for spec in all_assets
+            if "workbook" in spec.key.path[0] and "sheet" in spec.key.path[1]
         )
-        assert sheet_asset_key.path == ["test_workbook", "sheet", "sales"]
+        assert sheet_asset_spec.key.path == ["test_workbook", "sheet", "sales"]
 
-        dashboard_asset_key = next(
-            key
-            for key in all_assets_keys
-            if "workbook" in key.path[0] and "dashboard" in key.path[1]
+        dashboard_asset_spec = next(
+            spec
+            for spec in all_assets
+            if "workbook" in spec.key.path[0] and "dashboard" in spec.key.path[1]
         )
-        assert dashboard_asset_key.path == ["test_workbook", "dashboard", "dashboard_sales"]
+        assert dashboard_asset_spec.key.path == ["test_workbook", "dashboard", "dashboard_sales"]
+        asset_deps_iter = iter(dashboard_asset_spec.deps)
+        assert next(asset_deps_iter).asset_key.path == [
+            "test_workbook",
+            "sheet",
+            "sales",
+        ]
+        assert next(asset_deps_iter).asset_key.path == ["hidden_sheet_datasource"]
 
-        data_source_asset_key = next(key for key in all_assets_keys if "datasource" in key.path[0])
-        assert data_source_asset_key.path == ["superstore_datasource"]
+        iter_data_source = iter(spec for spec in all_assets if "datasource" in spec.key.path[0])
+        published_data_source_asset_spec = next(iter_data_source)
+        assert published_data_source_asset_spec.key.path == ["superstore_datasource"]
+        assert published_data_source_asset_spec.metadata == {
+            "dagster-tableau/id": TEST_DATA_SOURCE_ID,
+            "dagster-tableau/has_extracts": False,
+            "dagster-tableau/is_published": True,
+        }
+
+        embedded_data_source_asset_spec = next(iter_data_source)
+        assert embedded_data_source_asset_spec.key.path == ["embedded_superstore_datasource"]
+        assert embedded_data_source_asset_spec.metadata == {
+            "dagster-tableau/id": TEST_EMBEDDED_DATA_SOURCE_ID,
+            "dagster-tableau/has_extracts": True,
+            "dagster-tableau/is_published": False,
+            "dagster-tableau/workbook_id": TEST_WORKBOOK_ID,
+        }
 
 
 class MyCustomTranslator(DagsterTableauTranslator):
@@ -278,7 +308,7 @@ def test_parse_asset_specs(
                 specs=all_assets, include_data_sources_with_extracts=False
             )
         )
-        assert len(external_asset_specs) == 2
+        assert len(external_asset_specs) == 3
         assert len(materializable_asset_specs) == 3
 
         # Data source with extracts are considered as materializable assets
@@ -287,7 +317,7 @@ def test_parse_asset_specs(
                 specs=all_assets, include_data_sources_with_extracts=True
             )
         )
-        assert len(external_asset_specs) == 1
+        assert len(external_asset_specs) == 2
         assert len(materializable_asset_specs) == 4
 
 

@@ -11,9 +11,11 @@ partnerlink:
 sidebar_position: 1000
 ---
 
-import Superseded from '@site/docs/partials/\_Superseded.md';
+:::warning
 
-<Superseded />
+This feature is considered superseded. While it is still available, it is no longer the best practice. For more information, see the [API lifecycle stages documentation](/api/api-lifecycle/api-lifecycle-stages).
+
+:::
 
 <p>{frontMatter.description}</p>
 

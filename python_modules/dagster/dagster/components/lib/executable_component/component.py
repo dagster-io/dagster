@@ -4,12 +4,11 @@ from functools import cached_property
 from typing import Any, Optional, TypeVar, Union
 
 from dagster_shared import check
-from pydantic import BaseModel
 
 from dagster._config.field import Field
-from dagster._core.definitions.asset_check_result import AssetCheckResult
-from dagster._core.definitions.asset_checks import AssetChecksDefinition
-from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.asset_checks.asset_check_result import AssetCheckResult
+from dagster._core.definitions.asset_checks.asset_checks_definition import AssetChecksDefinition
+from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
 from dagster._core.definitions.decorators.asset_check_decorator import multi_asset_check
 from dagster._core.definitions.decorators.asset_decorator import multi_asset
 from dagster._core.definitions.definitions_class import Definitions
@@ -43,7 +42,7 @@ def to_iterable(
         check.failed(f"Expected a {of_type}, got {type(result).__name__}")
 
 
-class ExecutableComponent(Component, Resolvable, Model, BaseModel, ABC):
+class ExecutableComponent(Component, Resolvable, Model, ABC):
     """Executable Component represents an executable node in the asset graph.
 
     It is comprised of an execute_fn, which is can be specified as a fully

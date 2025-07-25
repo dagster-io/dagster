@@ -1,3 +1,5 @@
-from dagster_snowflake.components.sql_component.component import SnowflakeSqlComponent
+from dagster_snowflake.components.sql_component.component import SnowflakeConnectionComponent
 
-__all__ = ["SnowflakeSqlComponent"]
+__all__ = [
+    "SnowflakeConnectionComponent",
+]

@@ -14,6 +14,8 @@ dg list components
 │ dagster.PythonScriptComponent │ Represents a Python script, alongside the set of assets and asset checks that it is  │
 │                               │ responsible for executing.                                                           │
 ├───────────────────────────────┼──────────────────────────────────────────────────────────────────────────────────────┤
+│ dagster.TemplatedSqlComponent │ A component which executes templated SQL from a string or file.                      │
+├───────────────────────────────┼──────────────────────────────────────────────────────────────────────────────────────┤
 │ dagster.UvRunComponent        │ Represents a Python script, alongside the set of assets or asset checks that it is   │
 │                               │ responsible for executing.                                                           │
 └───────────────────────────────┴──────────────────────────────────────────────────────────────────────────────────────┘

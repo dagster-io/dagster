@@ -4,10 +4,9 @@ from typing import NamedTuple, Optional, cast
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, beta_param
-from dagster._core.definitions.partitions.definition.partitions_definition import (
+from dagster._core.definitions.partitions.context import partition_loading_context
+from dagster._core.definitions.partitions.definition import (
     PartitionsDefinition,
-)
-from dagster._core.definitions.partitions.definition.time_window import (
     TimeWindowPartitionsDefinition,
 )
 from dagster._core.definitions.partitions.mapping.partition_mapping import (
@@ -158,21 +157,21 @@ class TimeWindowPartitionMapping(
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> UpstreamPartitionsResult:
-        return self._map_partitions(
-            from_partitions_def=self._validated_input_partitions_def(
-                "downstream_partitions_def", downstream_partitions_def
-            ),
-            to_partitions_def=self._validated_input_partitions_def(
-                "upstream_partitions_def", upstream_partitions_def
-            ),
-            from_partitions_subset=self._validated_input_partitions_subset(
-                "downstream_partitions_subset", downstream_partitions_subset
-            ),
-            start_offset=self.start_offset,
-            end_offset=self.end_offset,
-            current_time=current_time,
-            mapping_downstream_to_upstream=True,
-        )
+        with partition_loading_context(current_time, dynamic_partitions_store):
+            return self._map_partitions(
+                from_partitions_def=self._validated_input_partitions_def(
+                    "downstream_partitions_def", downstream_partitions_def
+                ),
+                to_partitions_def=self._validated_input_partitions_def(
+                    "upstream_partitions_def", upstream_partitions_def
+                ),
+                from_partitions_subset=self._validated_input_partitions_subset(
+                    "downstream_partitions_subset", downstream_partitions_subset
+                ),
+                start_offset=self.start_offset,
+                end_offset=self.end_offset,
+                mapping_downstream_to_upstream=True,
+            )
 
     def validate_partition_mapping(
         self,
@@ -212,21 +211,21 @@ class TimeWindowPartitionMapping(
         Filters for partitions that exist at the given current_time, fetching the current time
         if not provided.
         """
-        return self._map_partitions(
-            from_partitions_def=self._validated_input_partitions_def(
-                "upstream_partitions_def", upstream_partitions_def
-            ),
-            to_partitions_def=self._validated_input_partitions_def(
-                "downstream_partitions_def", downstream_partitions_def
-            ),
-            from_partitions_subset=self._validated_input_partitions_subset(
-                "upstream_partitions_subset", upstream_partitions_subset
-            ),
-            end_offset=-self.start_offset,
-            start_offset=-self.end_offset,
-            current_time=current_time,
-            mapping_downstream_to_upstream=False,
-        ).partitions_subset
+        with partition_loading_context(current_time, dynamic_partitions_store):
+            return self._map_partitions(
+                from_partitions_def=self._validated_input_partitions_def(
+                    "upstream_partitions_def", upstream_partitions_def
+                ),
+                to_partitions_def=self._validated_input_partitions_def(
+                    "downstream_partitions_def", downstream_partitions_def
+                ),
+                from_partitions_subset=self._validated_input_partitions_subset(
+                    "upstream_partitions_subset", upstream_partitions_subset
+                ),
+                end_offset=-self.start_offset,
+                start_offset=-self.end_offset,
+                mapping_downstream_to_upstream=False,
+            ).partitions_subset
 
     def _merge_time_windows(self, time_windows: Sequence[TimeWindow]) -> Sequence[TimeWindow]:
         """Takes a list of potentially-overlapping TimeWindows and merges any overlapping windows."""
@@ -255,7 +254,6 @@ class TimeWindowPartitionMapping(
         from_partitions_subset: TimeWindowPartitionsSubset,
         start_offset: int,
         end_offset: int,
-        current_time: Optional[datetime],
         mapping_downstream_to_upstream: bool,
     ) -> UpstreamPartitionsResult:
         """Maps the partitions in from_partitions_subset to partitions in to_partitions_def.
@@ -290,13 +288,12 @@ class TimeWindowPartitionMapping(
             from_partitions_subset=from_partitions_subset,
             start_offset=start_offset,
             end_offset=end_offset,
-            current_time=current_time,
         )
         if result is not None:
             return result
 
-        first_window = to_partitions_def.get_first_partition_window(current_time=current_time)
-        last_window = to_partitions_def.get_last_partition_window(current_time=current_time)
+        first_window = to_partitions_def.get_first_partition_window()
+        last_window = to_partitions_def.get_last_partition_window()
         full_window = (
             TimeWindow(first_window.start, last_window.end)
             if first_window is not None and last_window is not None
@@ -421,7 +418,6 @@ class TimeWindowPartitionMapping(
         from_partitions_subset: TimeWindowPartitionsSubset,
         start_offset: int,
         end_offset: int,
-        current_time: Optional[datetime],
     ) -> Optional[UpstreamPartitionsResult]:
         """The main partition-mapping logic relies heavily on expensive cron iteration operations.
 
@@ -466,8 +462,8 @@ class TimeWindowPartitionMapping(
             )
 
         # Daily to hourly
-        from_last_partition_window = from_partitions_def.get_last_partition_window(current_time)
-        to_last_partition_window = to_partitions_def.get_last_partition_window(current_time)
+        from_last_partition_window = from_partitions_def.get_last_partition_window()
+        to_last_partition_window = to_partitions_def.get_last_partition_window()
         if (
             from_partitions_def.is_basic_daily
             and to_partitions_def.is_basic_hourly

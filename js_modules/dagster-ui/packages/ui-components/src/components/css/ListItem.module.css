@@ -11,6 +11,12 @@
   width: 100%;
   overflow: hidden;
   padding-left: var(--spacing-left);
+
+  /**
+   * Ensure that we avoid subpixel rendering problems by setting the height explicitly.
+   * Tanstack rounds off subpixels, so we can end up cutting off contents in the row item.
+   */
+  height: 100%;
 }
 
 .listItem:hover {
@@ -20,7 +26,8 @@
     inset 0 1px 0 0 var(--color-keyline-default);
 }
 
-.listItem:has(+ .listItem:hover) {
+/* If the next sibling row is hovered, remove the box shadow of this row to avoid double keylines */
+*:has(> .listItem):has(+ * > .listItem:hover) .listItem {
   box-shadow: none;
 }
 

@@ -1,12 +1,12 @@
 import time
 
 from dagster import AssetKey, DagsterEvent, DagsterEventType
-from dagster._core.definitions.asset_check_evaluation import (
+from dagster._core.definitions.asset_checks.asset_check_evaluation import (
     AssetCheckEvaluation,
     AssetCheckEvaluationPlanned,
     AssetCheckEvaluationTargetMaterializationData,
 )
-from dagster._core.definitions.asset_check_spec import AssetCheckSeverity
+from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckSeverity
 from dagster._core.definitions.events import AssetMaterialization
 from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.event_api import EventLogRecord

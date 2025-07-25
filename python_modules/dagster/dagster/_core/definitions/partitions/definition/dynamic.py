@@ -8,7 +8,10 @@ from dagster._core.definitions.dynamic_partitions_request import (
     AddDynamicPartitionsRequest,
     DeleteDynamicPartitionsRequest,
 )
-from dagster._core.definitions.partitions.context import PartitionLoadingContext
+from dagster._core.definitions.partitions.context import (
+    PartitionLoadingContext,
+    partition_loading_context,
+)
 from dagster._core.definitions.partitions.definition.partitions_definition import (
     PartitionsDefinition,
 )
@@ -151,29 +154,25 @@ class DynamicPartitionsDefinition(
         Returns:
             Sequence[str]
         """
-        if self.partition_fn:
-            partitions = self.partition_fn(current_time)
-            if all(isinstance(partition, Partition) for partition in partitions):
-                return [partition.name for partition in partitions]  # type: ignore  # (illegible conditional)
+        with partition_loading_context(current_time, dynamic_partitions_store) as ctx:
+            if self.partition_fn:
+                partitions = self.partition_fn(current_time)
+                if all(isinstance(partition, Partition) for partition in partitions):
+                    return [partition.name for partition in partitions]  # type: ignore  # (illegible conditional)
+                else:
+                    return partitions  # type: ignore  # (illegible conditional)
             else:
-                return partitions  # type: ignore  # (illegible conditional)
-        else:
-            check.opt_inst_param(
-                dynamic_partitions_store, "dynamic_partitions_store", DynamicPartitionsStore
-            )
-
-            dynamic_partitions_store = self._ensure_dynamic_partitions_store(
-                dynamic_partitions_store
-            )
-            return dynamic_partitions_store.get_dynamic_partitions(
-                partitions_def_name=self._validated_name()
-            )
+                return self._ensure_dynamic_partitions_store(
+                    ctx.dynamic_partitions_store
+                ).get_dynamic_partitions(partitions_def_name=self._validated_name())
 
     def get_serializable_unique_identifier(
         self, dynamic_partitions_store: Optional[DynamicPartitionsStore] = None
     ) -> str:
-        dynamic_partitions_store = self._ensure_dynamic_partitions_store(dynamic_partitions_store)
-        return dynamic_partitions_store.get_dynamic_partitions_definition_id(self._validated_name())
+        with partition_loading_context(dynamic_partitions_store=dynamic_partitions_store) as ctx:
+            return self._ensure_dynamic_partitions_store(
+                ctx.dynamic_partitions_store
+            ).get_dynamic_partitions_definition_id(self._validated_name())
 
     def get_paginated_partition_keys(
         self,
@@ -182,14 +181,11 @@ class DynamicPartitionsDefinition(
         ascending: bool,
         cursor: Optional[str] = None,
     ) -> PaginatedResults[str]:
-        current_time = context.temporal_context.effective_dt
-        dynamic_partitions_store = context.dynamic_partitions_store
-        partition_keys = self.get_partition_keys(
-            current_time=current_time, dynamic_partitions_store=dynamic_partitions_store
-        )
-        return PaginatedResults.create_from_sequence(
-            partition_keys, limit=limit, ascending=ascending, cursor=cursor
-        )
+        with partition_loading_context(new_ctx=context):
+            partition_keys = self.get_partition_keys()
+            return PaginatedResults.create_from_sequence(
+                partition_keys, limit=limit, ascending=ascending, cursor=cursor
+            )
 
     def has_partition_key(
         self,
@@ -197,21 +193,22 @@ class DynamicPartitionsDefinition(
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> bool:
-        if self.partition_fn:
-            return partition_key in self.get_partition_keys(current_time)
-        else:
-            if dynamic_partitions_store is None:
-                check.failed(
-                    "The instance is not available to load partitions. You may be seeing this error"
-                    " when using dynamic partitions with a version of dagster-webserver or"
-                    " dagster-cloud that is older than 1.1.18. The other possibility is that an"
-                    " internal framework error where a dynamic partitions store was not properly"
-                    " threaded down a call stack."
-                )
+        with partition_loading_context(current_time, dynamic_partitions_store) as ctx:
+            if self.partition_fn:
+                return partition_key in self.get_partition_keys()
+            else:
+                if ctx.dynamic_partitions_store is None:
+                    check.failed(
+                        "The instance is not available to load partitions. You may be seeing this error"
+                        " when using dynamic partitions with a version of dagster-webserver or"
+                        " dagster-cloud that is older than 1.1.18. The other possibility is that an"
+                        " internal framework error where a dynamic partitions store was not properly"
+                        " threaded down a call stack."
+                    )
 
-            return dynamic_partitions_store.has_dynamic_partition(
-                partitions_def_name=self._validated_name(), partition_key=partition_key
-            )
+                return ctx.dynamic_partitions_store.has_dynamic_partition(
+                    partitions_def_name=self._validated_name(), partition_key=partition_key
+                )
 
     def build_add_request(self, partition_keys: Sequence[str]) -> AddDynamicPartitionsRequest:
         check.sequence_param(partition_keys, "partition_keys", of_type=str)

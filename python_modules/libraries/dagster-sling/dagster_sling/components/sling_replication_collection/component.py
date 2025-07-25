@@ -6,8 +6,8 @@ from pathlib import Path
 from typing import Annotated, Any, Callable, Literal, Optional, Union
 
 from dagster import Resolvable, Resolver
-from dagster._core.definitions.asset_spec import AssetSpec
-from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
+from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.events import AssetMaterialization
 from dagster._core.definitions.metadata.source_code import (
@@ -152,7 +152,7 @@ class SlingReplicationCollectionComponent(Component, Resolvable):
     [Sling](https://slingdata.io/) is a Powerful Data Integration tool enabling seamless ELT
     operations as well as quality checks across files, databases, and storage systems.
 
-    dg scaffold dagster_sling.SlingReplicationCollectionComponent {component_path} to get started.
+    dg scaffold dagster_sling.SlingReplicationCollectionComponent {defs_path} to get started.
 
     This will create a defs.yaml as well as a `replication.yaml` which is a Sling-specific configuration
     file. See Sling's [documentation](https://docs.slingdata.io/concepts/replication#overview) on `replication.yaml`.

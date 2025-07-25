@@ -3,8 +3,8 @@ from typing import AbstractSet, Any, Optional  # noqa: UP035
 
 import dagster._check as check
 from dagster._annotations import deprecated, public
-from dagster._core.definitions.asset_check_spec import AssetCheckKey
-from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey
+from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
 from dagster._core.definitions.data_version import DataProvenance, DataVersion
 from dagster._core.definitions.dependency import Node, NodeHandle
 from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey, UserEvent
@@ -596,3 +596,17 @@ class AssetExecutionContext:
     @_copy_docs_from_op_execution_context
     def set_requires_typed_event_stream(self, *, error_message: Optional[str] = None) -> None:
         self.op_execution_context.set_requires_typed_event_stream(error_message=error_message)
+
+    @_copy_docs_from_op_execution_context
+    def load_asset_value(
+        self,
+        asset_key: AssetKey,
+        *,
+        python_type: Optional[type] = None,
+        partition_key: Optional[str] = None,
+    ) -> Any:
+        return self.op_execution_context.load_asset_value(
+            asset_key=asset_key,
+            python_type=python_type,
+            partition_key=partition_key,
+        )

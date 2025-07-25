@@ -194,7 +194,7 @@ EDITABLE_DAGSTER_DEV_DEPENDENCIES = [
 
 PYPI_DAGSTER_DEV_DEPENDENCIES = [
     "dagster-webserver",
-    "dagster-dg-cli[local]",
+    "dagster-dg-cli",
 ]
 
 

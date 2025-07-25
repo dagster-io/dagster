@@ -267,9 +267,15 @@ class Component(ABC):
     @classmethod
     def load(cls, attributes: Optional[BaseModel], context: "ComponentLoadContext") -> Self:
         if issubclass(cls, Resolvable):
+            context_with_injected_scope = context.with_rendering_scope(
+                {
+                    "load_component_at_path": context.component_tree.load_component_at_path,
+                    "build_defs_at_path": context.component_tree.build_defs_at_path,
+                }
+            )
             return (
                 cls.resolve_from_model(
-                    context.resolution_context.at_path("attributes"),
+                    context_with_injected_scope.resolution_context.at_path("attributes"),
                     attributes,
                 )
                 if attributes
@@ -353,5 +359,6 @@ class Component(ABC):
         from dagster.components.core.tree import ComponentTree
 
         return load_yaml_component_from_path(
-            context=context or ComponentTree.for_test().load_context, component_def_path=yaml_path
+            context=context or ComponentTree.for_test().load_context,
+            component_def_path=yaml_path,
         )

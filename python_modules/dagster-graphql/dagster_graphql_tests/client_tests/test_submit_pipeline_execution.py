@@ -1,5 +1,6 @@
 import pytest
 from dagster import Config, DagsterInvalidDefinitionError, RunConfig
+from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.utils import make_new_run_id
 from dagster_graphql import DagsterGraphQLClientError, InvalidOutputErrorInfo
 
@@ -63,9 +64,33 @@ def test_job_subset_success(mock_client: MockClient):
         "bar",
         repository_location_name="baz",
         repository_name="quuz",
-        op_selection=[""],
+        op_selection=["foobar"],
     )
     assert actual_run_id == EXPECTED_RUN_ID
+    # Check if the op_selection argument is properly passed to the GraphQL query
+    execute_call_args = mock_client.mock_gql_client.execute.call_args
+    selector = execute_call_args[1]["variable_values"]["executionParams"]["selector"]
+    assert selector["solidSelection"] == ["foobar"]
+
+
+@python_client_test_suite
+def test_job_asset_subset_success(mock_client: MockClient):
+    mock_client.mock_gql_client.execute.return_value = launch_job_success_response
+    actual_run_id = mock_client.python_client.submit_job_execution(
+        "bar",
+        repository_location_name="baz",
+        repository_name="quuz",
+        asset_selection=[["foo", "bar"], "quux"],
+    )
+    assert actual_run_id == EXPECTED_RUN_ID
+    # Check if the asset_selection argument is properly passed to the GraphQL query
+    execute_call_args = mock_client.mock_gql_client.execute.call_args
+    selector = execute_call_args[1]["variable_values"]["executionParams"]["selector"]
+    assert "assetSelection" in selector
+    assert selector["assetSelection"] == [
+        AssetKey(["foo", "bar"]).to_graphql_input(),
+        AssetKey(["quux"]).to_graphql_input(),
+    ]
 
 
 @python_client_test_suite

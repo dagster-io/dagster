@@ -6,9 +6,8 @@ from typing import NamedTuple, Optional, Union, cast
 
 import dagster._check as check
 from dagster._annotations import PublicAttr
-from dagster._core.definitions.partitions.definition.partitions_definition import (
-    PartitionsDefinition,
-)
+from dagster._core.definitions.partitions.context import partition_loading_context
+from dagster._core.definitions.partitions.definition import PartitionsDefinition
 from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
 from dagster._core.definitions.partitions.mapping.partition_mapping import (
     PartitionMapping,
@@ -130,13 +129,14 @@ class StaticPartitionMapping(
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> PartitionsSubset:
-        self._check_downstream(downstream_partitions_def=downstream_partitions_def)
+        with partition_loading_context(current_time, dynamic_partitions_store):
+            self._check_downstream(downstream_partitions_def=downstream_partitions_def)
 
-        downstream_subset = downstream_partitions_def.empty_subset()
-        downstream_keys = set()
-        for key in upstream_partitions_subset.get_partition_keys():
-            downstream_keys.update(self._mapping[key])
-        return downstream_subset.with_partition_keys(downstream_keys)
+            downstream_subset = downstream_partitions_def.empty_subset()
+            downstream_keys = set()
+            for key in upstream_partitions_subset.get_partition_keys():
+                downstream_keys.update(self._mapping[key])
+            return downstream_subset.with_partition_keys(downstream_keys)
 
     def get_upstream_mapped_partitions_result_for_partitions(  # pyright: ignore[reportIncompatibleMethodOverride]
         self,
@@ -146,23 +146,24 @@ class StaticPartitionMapping(
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> UpstreamPartitionsResult:
-        self._check_upstream(upstream_partitions_def=upstream_partitions_def)
+        with partition_loading_context(current_time, dynamic_partitions_store):
+            self._check_upstream(upstream_partitions_def=upstream_partitions_def)
 
-        upstream_subset = upstream_partitions_def.empty_subset()
-        if downstream_partitions_subset is None:
+            upstream_subset = upstream_partitions_def.empty_subset()
+            if downstream_partitions_subset is None:
+                return UpstreamPartitionsResult(
+                    partitions_subset=upstream_subset,
+                    required_but_nonexistent_subset=upstream_partitions_def.empty_subset(),
+                )
+
+            upstream_keys = set()
+            for key in downstream_partitions_subset.get_partition_keys():
+                upstream_keys.update(self._inverse_mapping[key])
+
             return UpstreamPartitionsResult(
-                partitions_subset=upstream_subset,
+                partitions_subset=upstream_subset.with_partition_keys(upstream_keys),
                 required_but_nonexistent_subset=upstream_partitions_def.empty_subset(),
             )
-
-        upstream_keys = set()
-        for key in downstream_partitions_subset.get_partition_keys():
-            upstream_keys.update(self._inverse_mapping[key])
-
-        return UpstreamPartitionsResult(
-            partitions_subset=upstream_subset.with_partition_keys(upstream_keys),
-            required_but_nonexistent_subset=upstream_partitions_def.empty_subset(),
-        )
 
     @property
     def description(self) -> str:

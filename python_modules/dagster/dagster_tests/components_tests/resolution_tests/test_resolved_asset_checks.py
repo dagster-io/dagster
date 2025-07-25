@@ -1,5 +1,5 @@
 import dagster as dg
-from dagster._core.definitions.asset_check_spec import AssetCheckSpec as AssetCheckSpec
+from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckSpec as AssetCheckSpec
 from dagster_shared.record import record
 
 

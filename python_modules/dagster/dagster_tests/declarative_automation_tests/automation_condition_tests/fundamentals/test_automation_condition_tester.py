@@ -3,7 +3,7 @@ import datetime
 import dagster as dg
 import pytest
 from dagster import AssetSelection, AutomationCondition
-from dagster._core.definitions.asset_spec import AssetExecutionType
+from dagster._core.definitions.assets.definition.asset_spec import AssetExecutionType
 from dagster._core.instance import DagsterInstance
 
 
