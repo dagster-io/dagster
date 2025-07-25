@@ -1015,6 +1015,7 @@ def _create_scheduler_run(
         run_config,
         step_keys_to_execute=None,
         known_state=None,
+        instance=instance,
     )
     execution_plan_snapshot = remote_execution_plan.execution_plan_snapshot
 
