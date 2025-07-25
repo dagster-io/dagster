@@ -537,6 +537,7 @@ def _reexecute_job(
             )
             execution_plan = create_execution_plan(
                 job_arg,
+                instance,
                 run_config,
                 step_keys_to_execute=step_keys,
                 known_state=known_state,
@@ -658,9 +659,9 @@ def _get_execution_plan_from_run(
 
     return create_execution_plan(
         job,
+        instance,
         run_config=dagster_run.run_config,
         step_keys_to_execute=dagster_run.step_keys_to_execute,
-        instance_ref=instance.get_ref() if instance.is_persistent else None,
         tags=dagster_run.tags,
         repository_load_data=(
             execution_plan_snapshot.repository_load_data if execution_plan_snapshot else None
@@ -673,13 +674,17 @@ def _get_execution_plan_from_run(
 
 def create_execution_plan(
     job: Union[IJob, JobDefinition],
+    instance: Union[DagsterInstance, InstanceRef],
     run_config: Optional[Mapping[str, object]] = None,
     step_keys_to_execute: Optional[Sequence[str]] = None,
     known_state: Optional[KnownExecutionState] = None,
-    instance_ref: Optional[InstanceRef] = None,
     tags: Optional[Mapping[str, str]] = None,
     repository_load_data: Optional[RepositoryLoadData] = None,
 ) -> ExecutionPlan:
+    from dagster._core.definitions.definitions_load_context import DefinitionsLoadContext
+
+    DefinitionsLoadContext.set_dagster_instance(instance)
+
     if isinstance(job, IJob):
         # If you have repository_load_data, make sure to use it when building plan
         if isinstance(job, ReconstructableJob) and repository_load_data is not None:
@@ -690,7 +695,6 @@ def create_execution_plan(
 
     run_config = check.opt_mapping_param(run_config, "run_config", key_type=str)
     check.opt_nullable_sequence_param(step_keys_to_execute, "step_keys_to_execute", of_type=str)
-    check.opt_inst_param(instance_ref, "instance_ref", InstanceRef)
     tags = check.opt_mapping_param(tags, "tags", key_type=str, value_type=str)
     known_state = check.opt_inst_param(
         known_state,
@@ -709,7 +713,9 @@ def create_execution_plan(
         resolved_run_config,
         step_keys_to_execute=step_keys_to_execute,
         known_state=known_state,
-        instance_ref=instance_ref,
+        instance_ref=instance
+        if isinstance(instance, InstanceRef)
+        else (instance.get_ref() if instance.is_persistent else None),
         tags=tags,
         repository_load_data=repository_load_data,
     )
@@ -933,12 +939,14 @@ def _resolve_reexecute_step_selection(
 
     parent_plan = create_execution_plan(
         job,
+        instance,
         parent_dagster_run.run_config,
         known_state=state,
     )
     step_keys_to_execute = parse_step_selection(parent_plan.get_all_step_deps(), step_selection)
     return create_execution_plan(
         job,
+        instance,
         run_config,
         step_keys_to_execute=list(step_keys_to_execute),
         known_state=state.update_for_step_selection(step_keys_to_execute),
