@@ -9,6 +9,7 @@ from collections import defaultdict
 from collections.abc import Iterable, Mapping, Sequence
 from datetime import datetime
 from enum import Enum
+from pathlib import Path
 from tempfile import TemporaryDirectory
 from types import TracebackType
 from typing import (  # noqa: UP035
@@ -786,6 +787,53 @@ class DagsterInstance(DynamicPartitionsStore):
             sort_keys=False,
         )
 
+    def get_latest_state_version_for_defs(self, defs_key: str) -> Optional[str]:
+        """Returns the saved state version for the given defs key, if it exists.
+
+        Args:
+            defs_key (str): The key of the defs to retrieve the state for.
+
+        Returns:
+            Optional[str]: The saved state version for the given defs key, if it exists.
+        """
+        return self.run_storage.get_cursor_values({f"version_{defs_key}"}).get(
+            f"version_{defs_key}"
+        )
+
+    def load_state_file(self, defs_key: str, version: str, file_path: Path) -> bool:
+        """Loads the state file for the given defs key and version into the given file path.
+
+        Args:
+            defs_key (str): The key of the defs to retrieve the state for.
+            version (str): The version of the state to retrieve.
+            file_path (Path): The path to write the state to.
+
+        Returns:
+            bool: True if the state was loaded, False otherwise.
+        """
+        state_from_blob_store = (
+            self.run_storage.get_cursor_values({f"{defs_key}_{version}"}).get(
+                f"{defs_key}_{version}"
+            )
+            if version
+            else None
+        )
+        if state_from_blob_store:
+            file_path.write_bytes(state_from_blob_store.encode("utf-8"))
+            return True
+        return False
+
+    def persist_state_from_file(self, defs_key: str, version: str, file_path: Path) -> None:
+        """Persists the defs state stored at `file_path` to persistent storage.
+
+        Args:
+            defs_key (str): The key of the defs to persist the state for.
+            version (str): The version of the state to persist.
+            file_path (Path): The path to the state to persist.
+        """
+        self.run_storage.set_cursor_values({f"{defs_key}_{version}": file_path.read_text()})
+        self.run_storage.set_cursor_values({f"version_{defs_key}": version})
+
     @property
     def run_storage(self) -> "RunStorage":
         return self._run_storage
@@ -1243,8 +1291,8 @@ class DagsterInstance(DynamicPartitionsStore):
         if not execution_plan:
             execution_plan = create_execution_plan(
                 job=job_def,
+                instance=self,
                 run_config=run_config,
-                instance_ref=self.get_ref() if self.is_persistent else None,
                 tags=tags,
                 repository_load_data=repository_load_data,
             )
