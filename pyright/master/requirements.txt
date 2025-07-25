@@ -117,6 +117,7 @@ apache-airflow>2.7
 types-sqlalchemy==1.4.53.34
 fastapi>=0.115.6 # producing a bizarrely early version of fastapi without this
 
+loguru
 ### EXAMPLES
 
 # -e examples/assets_dbt_python # it includes dagster-cloud
