@@ -198,7 +198,7 @@ class RefreshExternalTableComponent(SqlComponent):
 def test_custom_snowflake_sql_component(snowflake_connect):
     """Test that a custom SnowflakeSqlComponent subclass correctly builds and executes SQL."""
     execution_body = {
-        "type": "dagster_snowflake_tests.test_sql_component.RefreshExternalTableComponent",
+        "type": "dagster_snowflake_tests.test_snowflake_connection_component.RefreshExternalTableComponent",
         "attributes": {
             "table_name": "TESTDB.TESTSCHEMA.EXTERNAL_TABLE",
             "assets": [{"key": "TESTDB/TESTSCHEMA/EXTERNAL_TABLE"}],

@@ -11,6 +11,7 @@ from dagster import AssetKey, Definitions
 from dagster._core.definitions.materialize import materialize
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster._utils import alter_sys_path
+from dagster.components.core.context import ComponentLoadContext
 from dagster.components.core.tree import ComponentTree
 from dagster.components.lib.sql_component.sql_component import SqlComponent
 from dagster_shared import check
@@ -182,14 +183,16 @@ class CreateTableComponent(SqlComponent):
     table_name: str
     columns: str
 
-    def get_sql_content(self, context: AssetExecutionContext) -> str:
+    def get_sql_content(
+        self, context: AssetExecutionContext, component_load_context: ComponentLoadContext
+    ) -> str:
         return f"CREATE TABLE IF NOT EXISTS {self.table_name} ({self.columns});"
 
 
 def test_custom_duckdb_sql_component():
     """Test that a custom DuckDBSqlComponent subclass correctly builds and executes SQL."""
     execution_body = {
-        "type": "dagster_duckdb_tests.test_sql_component.CreateTableComponent",
+        "type": "dagster_duckdb_tests.test_duckdb_connection_component.CreateTableComponent",
         "attributes": {
             "table_name": "new_test_table",
             "columns": "id INTEGER PRIMARY KEY, name VARCHAR(100)",
