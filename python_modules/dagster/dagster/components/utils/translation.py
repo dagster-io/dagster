@@ -125,19 +125,6 @@ def _build_translation_fn(
     return resolve_translation
 
 
-ResolvedTranslationFn: TypeAlias = Optional[
-    Annotated[
-        TranslationFn[T],
-        Resolver(
-            _build_translation_fn(
-                template_vars_for_translation_fn=lambda data: {"data": data},
-            ),
-            model_field_type=Union[str, AssetAttributesModel],
-        ),
-    ]
-]
-
-
 class TranslatorResolver(Resolver, Generic[T]):
     """Resolver which builds a TranslationFn from input AssetAttributesModel, injecting
     the provided template vars into the resolution process.
@@ -163,3 +150,13 @@ class TranslatorResolver(Resolver, Generic[T]):
             ),
             model_field_type=Union[str, AssetAttributesModel],
         )
+
+
+# Common case of a TranslationFn that takes a single underlying entity and passes it through
+# as a template var called "data".
+ResolvedTranslationFn: TypeAlias = Optional[
+    Annotated[
+        TranslationFn[T],
+        TranslatorResolver[T](lambda data: {"data": data}),
+    ]
+]
