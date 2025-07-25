@@ -117,22 +117,30 @@ class ValidationResult:
     def with_error(self, message: str, line_number: Optional[int] = None) -> "ValidationResult":
         """Return a new ValidationResult with an additional error message."""
         location = f" (line {line_number})" if line_number else ""
-        return ValidationResult(
-            symbol_path=self.symbol_path,
-            errors=self.errors + [f"{message}{location}"],
-            warnings=self.warnings,
-            parsing_successful=self.parsing_successful,
-        )
+        full_message = f"{message}{location}"
+        # Avoid duplicates
+        if full_message not in self.errors:
+            return ValidationResult(
+                symbol_path=self.symbol_path,
+                errors=self.errors + [full_message],
+                warnings=self.warnings,
+                parsing_successful=self.parsing_successful,
+            )
+        return self
 
     def with_warning(self, message: str, line_number: Optional[int] = None) -> "ValidationResult":
         """Return a new ValidationResult with an additional warning message."""
         location = f" (line {line_number})" if line_number else ""
-        return ValidationResult(
-            symbol_path=self.symbol_path,
-            errors=self.errors,
-            warnings=self.warnings + [f"{message}{location}"],
-            parsing_successful=self.parsing_successful,
-        )
+        full_message = f"{message}{location}"
+        # Avoid duplicates
+        if full_message not in self.warnings:
+            return ValidationResult(
+                symbol_path=self.symbol_path,
+                errors=self.errors,
+                warnings=self.warnings + [full_message],
+                parsing_successful=self.parsing_successful,
+            )
+        return self
 
     def with_parsing_failed(self) -> "ValidationResult":
         """Return a new ValidationResult with parsing marked as failed."""
@@ -253,7 +261,10 @@ class DocstringValidator:
         except Exception as e:
             return result.with_error(f"Napoleon processing failed: {e}").with_parsing_failed()
 
-        # 2. RST syntax validation on the processed content
+        # 2. Basic docstring structure checks (run first to identify specific issues)
+        result = self._check_docstring_structure(docstring, result)
+
+        # 3. RST syntax validation on the processed content
         try:
             warning_stream = io.StringIO()
             settings = {
@@ -275,13 +286,21 @@ class DocstringValidator:
                     # We enhanced the message, use it as a single error
                     result = result.with_error(f"RST syntax: {enhanced_full_text}")
                 else:
-                    # Process line by line as before
+                    # Process line by line, but suppress redundant warnings if we have specific errors
+                    has_specific_section_errors = any(
+                        "Invalid section header:" in error for error in result.errors
+                    )
+
                     for line in warnings_text.strip().split("\n"):
                         if line.strip():
                             # Skip Sphinx role issues if filtering is enabled
                             if DO_FILTER_OUT_SPHINX_ROLE_WARNINGS and self._is_sphinx_role_issue(
                                 line
                             ):
+                                continue
+
+                            # Skip redundant RST warnings if we already have specific section header errors
+                            if has_specific_section_errors and self._is_redundant_rst_warning(line):
                                 continue
 
                             line_num = self._extract_line_number(line)
@@ -303,9 +322,6 @@ class DocstringValidator:
 
         except Exception as e:
             result = result.with_error(f"RST validation failed: {e}")
-
-        # 3. Basic docstring structure checks
-        result = self._check_docstring_structure(docstring, result)
 
         return result
 
@@ -606,11 +622,26 @@ class DocstringValidator:
         # Add other warning patterns that should be errors here
         return False
 
+    def _is_redundant_rst_warning(self, warning_line: str) -> bool:
+        """Check if an RST warning is redundant when we already have specific section header errors."""
+        # If we have specific section header errors, we don't need generic RST warnings
+        # about indentation, block quotes, etc. that might be caused by the same underlying issue
+        redundant_patterns = [
+            "Unexpected indentation",
+            "Block quote ends without a blank line",
+            "Blank line required after",
+            "Definition list ends without a blank line",
+        ]
+
+        return any(pattern in warning_line for pattern in redundant_patterns)
+
     def _check_docstring_structure(
         self, docstring: str, result: ValidationResult
     ) -> ValidationResult:
         """Check basic docstring structure issues."""
         lines = docstring.split("\n")
+        # Track which line numbers already have errors to avoid duplicate warnings
+        lines_with_errors = set()
 
         for i, line in enumerate(lines, 1):
             stripped = line.strip()
@@ -639,6 +670,7 @@ class DocstringValidator:
                         f"Invalid section header: '{stripped}'. Did you mean '{exact_case_match}'?",
                         i,
                     )
+                    lines_with_errors.add(i)
                 else:
                     # Check for obvious corruptions of known sections using simple string containment
                     possible_match = None
@@ -657,17 +689,27 @@ class DocstringValidator:
                             f"Invalid section header: '{stripped}'. Did you mean '{possible_match}'?",
                             i,
                         )
+                        lines_with_errors.add(i)
 
             # Enhanced section header validation - check for malformed headers
             for section in ALLOWED_SECTION_HEADERS:
                 section_base = section.rstrip(":")
 
-                # Check for missing colon
-                if stripped == section_base and section != section_base:
-                    result = result.with_error(
-                        f"Malformed section header: '{stripped}' is missing colon (should be '{section}')",
-                        i,
-                    )
+                # Check for missing colon (case-insensitive)
+                if stripped.lower() == section_base.lower() and section != section_base:
+                    if stripped == section_base:
+                        # Exact match except for missing colon
+                        result = result.with_error(
+                            f"Malformed section header: '{stripped}' is missing colon (should be '{section}')",
+                            i,
+                        )
+                    else:
+                        # Case mismatch and missing colon
+                        result = result.with_error(
+                            f"Malformed section header: '{stripped}' is missing colon and has incorrect capitalization (should be '{section}')",
+                            i,
+                        )
+                    lines_with_errors.add(i)
 
                 # Check for incorrect capitalization or spacing
                 elif section_base.lower() in stripped.lower() and section not in stripped:
@@ -677,15 +719,22 @@ class DocstringValidator:
                             f"Malformed section header: '{stripped}' has incorrect capitalization (should be '{section}')",
                             i,
                         )
+                        lines_with_errors.add(i)
                     elif stripped.lower().replace(" ", "") == section.lower().replace(" ", ""):
                         result = result.with_error(
                             f"Malformed section header: '{stripped}' has incorrect spacing (should be '{section}')",
                             i,
                         )
-                    # Only flag as "possible malformed" if:
+                        lines_with_errors.add(i)
+                    # Only flag as "possible malformed" if the text ends with colon (indicating intent to be a section header)
+                    # AND either:
                     # 1. The stripped text is a single word (to avoid sentences), OR
                     # 2. The section header itself is multi-word (legitimate headers like "See Also:")
-                    elif " " not in stripped.rstrip(":") or " " in section.rstrip(":"):
+                    elif (
+                        stripped.endswith(":")
+                        and (" " not in stripped.rstrip(":") or " " in section.rstrip(":"))
+                        and i not in lines_with_errors
+                    ):
                         result = result.with_warning(
                             f"Possible malformed section header: '{stripped}' (should be '{section}')",
                             i,
@@ -715,6 +764,7 @@ class DocstringValidator:
                                     f"Corrupted section header detected: '{stripped}' (possibly should be '{section}')",
                                     i,
                                 )
+                                lines_with_errors.add(i)
                                 break
 
         return result

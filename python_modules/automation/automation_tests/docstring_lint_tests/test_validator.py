@@ -189,3 +189,77 @@ class TestDocstringValidator:
         # Should not have errors because Sphinx roles are filtered out
         assert not result.has_errors()
         assert result.is_valid()
+
+    def test_no_false_positive_for_words_ending_with_period(self):
+        """Test that words ending with period (like 'returned.') don't trigger section header warnings."""
+        validator = DocstringValidator()
+        docstring = '''"""Function that explains return behavior.
+
+        Args:
+            output_required: Whether the function will always materialize an asset.
+                If False, the function can conditionally not yield a result. 
+                Note that you must use yield rather than return. return will not respect
+                this setting and will always produce an asset materialization, even if None is
+                returned.
+        """'''
+        result = validator.validate_docstring_text(docstring, "test.symbol")
+
+        # Should not have warnings/errors about 'returned.' being a malformed section header
+        # Check that no warnings contain section header related messages
+        section_header_warnings = [
+            w
+            for w in result.warnings
+            if "malformed section header" in w.lower()
+            or "possible malformed section header" in w.lower()
+        ]
+        section_header_errors = [
+            e
+            for e in result.errors
+            if "malformed section header" in e.lower()
+            or "possible malformed section header" in e.lower()
+        ]
+
+        assert not section_header_warnings, (
+            f"Unexpected section header warnings: {section_header_warnings}"
+        )
+        assert not section_header_errors, (
+            f"Unexpected section header errors: {section_header_errors}"
+        )
+        assert result.is_valid()
+
+    def test_validates_fix_for_dagster_asset_specific_case(self):
+        """Test the specific case from dagster.asset that was causing the false positive."""
+        validator = DocstringValidator()
+        # This is the exact text pattern that was causing the issue
+        docstring = '''"""Function with similar pattern to dagster.asset.
+
+        Args:
+            output_required: Whether the function will always materialize an asset.
+                Defaults to True. If False, the function can conditionally not yield a result.
+                If no result is yielded, no output will be materialized to storage and downstream
+                assets will not be materialized. Note that for output_required to work at all, you
+                must use yield in your asset logic rather than return. return will not respect
+                this setting and will always produce an asset materialization, even if None is
+                returned.
+        """'''
+        result = validator.validate_docstring_text(docstring, "test.symbol")
+
+        # The specific fix: should not flag "returned." as a malformed section header
+        section_header_warnings = [
+            w
+            for w in result.warnings
+            if "malformed section header" in w.lower() and "returned" in w.lower()
+        ]
+        section_header_errors = [
+            e
+            for e in result.errors
+            if "malformed section header" in e.lower() and "returned" in e.lower()
+        ]
+
+        assert not section_header_warnings, (
+            f"Should not flag 'returned.' as malformed: {section_header_warnings}"
+        )
+        assert not section_header_errors, (
+            f"Should not flag 'returned.' as malformed: {section_header_errors}"
+        )
+        assert result.is_valid()
