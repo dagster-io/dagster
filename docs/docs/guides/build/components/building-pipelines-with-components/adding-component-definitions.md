@@ -65,7 +65,9 @@ To scaffold a component definition formatted in Python instead of YAML, you can 
 dg scaffold defs dagster_dbt.DbtProjectComponent jdbt --project-path dbt/jdbt --format python
 ```
 
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/python-components/tree.txt" title="component.py" />
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/python-components/tree.txt" />
+
+<CodeExample path="docs_snippets/docs_snippets/guides/components/python-components/python-component.py" title="component.py" language="python" />
 
 ## Configuration
 
