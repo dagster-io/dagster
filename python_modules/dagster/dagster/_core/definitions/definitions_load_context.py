@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from collections.abc import Mapping, Sequence
 from enum import Enum
 from functools import cached_property
-from typing import TYPE_CHECKING, Any, ClassVar, Generic, Optional, TypeVar, cast
+from typing import TYPE_CHECKING, Any, ClassVar, Generic, Optional, TypeVar, Union, cast
 
 from dagster_shared.serdes.serdes import PackableValue, deserialize_value, serialize_value
 
@@ -17,6 +17,8 @@ from dagster._core.errors import DagsterInvariantViolationError
 
 if TYPE_CHECKING:
     from dagster._core.definitions.repository_definition import RepositoryLoadData
+    from dagster._core.instance import DagsterInstance
+    from dagster._core.instance.ref import InstanceRef
 
 
 class DefinitionsLoadType(Enum):
@@ -47,6 +49,8 @@ class DefinitionsLoadContext:
 
     _instance: ClassVar[Optional["DefinitionsLoadContext"]] = None
 
+    _dagster_instance: ClassVar[Optional[Union["DagsterInstance", "InstanceRef"]]] = None
+
     def __init__(
         self,
         load_type: DefinitionsLoadType,
@@ -62,6 +66,24 @@ class DefinitionsLoadContext:
         context is assumed to be initialization.
         """
         return DefinitionsLoadContext._instance or cls(load_type=DefinitionsLoadType.INITIALIZATION)
+
+    @classmethod
+    def set_dagster_instance(cls, instance: Union["DagsterInstance", "InstanceRef"]) -> None:
+        """Set the current DagsterInstance."""
+        cls._dagster_instance = instance
+
+    @classmethod
+    def get_dagster_instance(cls) -> "DagsterInstance":
+        """Get the current DagsterInstance."""
+        from dagster._core.instance import DagsterInstance
+        from dagster._core.instance.ref import InstanceRef
+
+        if isinstance(cls._dagster_instance, DagsterInstance):
+            return cls._dagster_instance
+        elif isinstance(cls._dagster_instance, InstanceRef):
+            return DagsterInstance.from_ref(cls._dagster_instance)
+        else:
+            raise ValueError("Invalid instance type", cls._dagster_instance)
 
     @classmethod
     def set(cls, instance: "DefinitionsLoadContext") -> None:
