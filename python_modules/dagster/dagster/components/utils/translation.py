@@ -129,20 +129,30 @@ class TranslationFnResolver(Resolver, Generic[T]):
     """Resolver which builds a TranslationFn from input AssetAttributesModel, injecting
     the provided template vars into the resolution process.
 
+    This is useful to expose nested fields within the input data as template vars.
+
     Example:
-    ```python
+    .. code-block:: python
 
-    class MyApiData(BaseModel):
-        name: str
+        class MyApiData(BaseModel):
+            name: str
 
-    class MyApiComponent(Component, Resolvable):
-        translation: Annotated[
-            TranslationFn[MyApiData],
-            TranslationFnResolver[MyApiData](
-                template_vars_for_resolving_translation_fn=lambda data: {"name": data.name}
-            ),
-        ]
-    ```
+        class MyApiComponent(Component, Resolvable):
+            translation: Annotated[
+                TranslationFn[MyApiData],
+                TranslationFnResolver[MyApiData](
+                    template_vars_for_resolving_translation_fn=lambda data: {"name": data.name}
+                ),
+            ]
+
+    .. code-block:: yaml
+
+        type: my_module.MyApiComponent
+
+        attributes:
+            translation:
+                key: {{ name }}
+
     """
 
     def __init__(
