@@ -12,6 +12,7 @@ from typing import (  # noqa: UP035
 )
 
 import dagster._check as check
+from dagster._annotations import public
 from dagster._core.decorator_utils import get_function_params, validate_expected_params
 from dagster._core.definitions.events import HookExecutionResult
 from dagster._core.definitions.hook_definition import HookDefinition
@@ -148,6 +149,7 @@ def success_hook(
 ) -> Callable[[SuccessOrFailureHookFn], HookDefinition]: ...
 
 
+@public
 def success_hook(
     hook_fn: Optional[SuccessOrFailureHookFn] = None,
     *,
@@ -220,6 +222,7 @@ def failure_hook(
 ) -> Callable[[SuccessOrFailureHookFn], HookDefinition]: ...
 
 
+@public
 def failure_hook(
     name: Optional[Union[SuccessOrFailureHookFn, str]] = None,
     required_resource_keys: Optional[AbstractSet[str]] = None,

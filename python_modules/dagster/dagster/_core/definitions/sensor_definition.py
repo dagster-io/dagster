@@ -106,6 +106,7 @@ DEFAULT_SENSOR_DAEMON_INTERVAL = 30
     breaking_version="2.0",
     additional_warn_text="Use `last_tick_completion_time` instead.",
 )
+@public
 class SensorEvaluationContext:
     """The context object available as the argument to the evaluation function of a :py:class:`dagster.SensorDefinition`.
 
@@ -554,6 +555,7 @@ def split_run_requests(
     return run_requests_for_backfill_daemon, run_requests_for_single_runs
 
 
+@public
 class SensorDefinition(IHasInternalInit):
     """Define a sensor that initiates a set of runs based on some external state.
 
@@ -1260,6 +1262,7 @@ def wrap_sensor_evaluation(
     return _wrapped_fn
 
 
+@public
 def build_sensor_context(
     instance: Optional[DagsterInstance] = None,
     cursor: Optional[str] = None,

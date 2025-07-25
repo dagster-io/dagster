@@ -2,7 +2,12 @@ from collections.abc import Iterable, Mapping, Sequence
 from typing import AbstractSet, Any, Callable, NamedTuple, Optional, Union, overload  # noqa: UP035
 
 import dagster._check as check
-from dagster._annotations import beta_param, hidden_param, only_allow_hidden_params_in_kwargs
+from dagster._annotations import (
+    beta_param,
+    hidden_param,
+    only_allow_hidden_params_in_kwargs,
+    public,
+)
 from dagster._config.config_schema import UserConfigSchema
 from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckSpec
 from dagster._core.definitions.assets.definition.asset_dep import (
@@ -140,6 +145,7 @@ def _validate_hidden_non_argument_dep_param(
     breaking_version="1.12.0",
     additional_warn_text="use freshness checks instead.",
 )
+@public
 @hidden_param(
     param="compute_kind",
     emit_runtime_warning=False,
@@ -573,6 +579,7 @@ def create_assets_def_from_fn_and_decorator_args(
     # does this actually need to be set?
     breaking_version="",
 )
+@public
 def multi_asset(
     *,
     outs: Optional[Mapping[str, AssetOut]] = None,
@@ -789,6 +796,7 @@ def graph_asset(
     breaking_version="1.10.0",
     additional_warn_text="use `automation_condition` instead",
 )
+@public
 def graph_asset(
     compose_fn: Optional[Callable] = None,
     *,
@@ -1025,6 +1033,7 @@ def graph_asset_no_defaults(
     )
 
 
+@public
 def graph_multi_asset(
     *,
     outs: Mapping[str, AssetOut],

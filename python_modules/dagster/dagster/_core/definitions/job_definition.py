@@ -89,6 +89,7 @@ if TYPE_CHECKING:
 DEFAULT_EXECUTOR_DEF = multi_or_in_process_executor
 
 
+@public
 class JobDefinition(IHasInternalInit):
     """Defines a Dagster job."""
 

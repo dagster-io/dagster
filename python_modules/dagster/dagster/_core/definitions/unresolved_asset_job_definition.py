@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, AbstractSet, Any, Optional, Union  # noqa: UP0
 from dagster_shared.record import IHaveNew, record_custom, replace
 
 import dagster._check as check
-from dagster._annotations import deprecated, deprecated_param
+from dagster._annotations import deprecated, deprecated_param, public
 from dagster._core.definitions import AssetKey
 from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.assets.job.asset_job import build_asset_job, get_asset_graph_for_job
@@ -238,6 +238,7 @@ class UnresolvedAssetJobDefinition(IHaveNew):
     breaking_version="2.0.0",
     additional_warn_text="Partitioning is inferred from the selected assets, so setting this is redundant.",
 )
+@public
 def define_asset_job(
     name: str,
     selection: Optional["CoercibleToAssetSelection"] = None,

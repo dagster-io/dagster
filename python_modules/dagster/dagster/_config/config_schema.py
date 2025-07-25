@@ -3,6 +3,8 @@ from typing import TYPE_CHECKING, Any, Union
 
 from typing_extensions import TypeAlias
 
+from dagster._annotations import public
+
 if TYPE_CHECKING:
     from dagster._config import ConfigType, Field
 
@@ -23,6 +25,7 @@ UserConfigSchema: TypeAlias = Union[
 ]
 
 
+@public
 class ConfigSchema:
     """Placeholder type for config schemas.
 

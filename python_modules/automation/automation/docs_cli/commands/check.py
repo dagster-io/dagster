@@ -7,6 +7,13 @@ from typing import Optional
 import click
 
 from automation.docstring_lint.changed_validator import ValidationConfig, validate_changed_files
+from automation.docstring_lint.exclude_lists import (
+    EXCLUDE_MISSING_EXPORT,
+    EXCLUDE_MISSING_PUBLIC,
+    EXCLUDE_MISSING_RST,
+    EXCLUDE_MODULES_FROM_PUBLIC_SCAN,
+    EXCLUDE_RST_FILES,
+)
 from automation.docstring_lint.file_discovery import git_changed_files
 from automation.docstring_lint.path_converters import dagster_path_converter
 from automation.docstring_lint.public_api_validator import PublicApiValidator
@@ -210,7 +217,9 @@ def docstrings(changed: bool, symbol: Optional[str], check_all: bool, package: O
 
 
 @check.command("rst-symbols")
-@click.option("--all", "check_all", is_flag=True, help="Check all docstrings")
+@click.option(
+    "--all", "check_all", is_flag=True, help="Check all RST symbols (with exclude lists applied)"
+)
 @click.option("--package", help="Filter down to a particular package")
 def rst_symbols(check_all: bool, package: Optional[str]):
     """Check that all symbols in the .rst files have corresponding top-level exports in libraries marked with @public."""
@@ -227,14 +236,18 @@ def rst_symbols(check_all: bool, package: Optional[str]):
     try:
         validator = PublicApiValidator(dagster_root)
 
-        # Get RST symbols
-        rst_symbols = validator.find_rst_documented_symbols()
+        # Get RST symbols with exclude files applied
+        rst_symbols = validator.find_rst_documented_symbols(exclude_files=EXCLUDE_RST_FILES)
 
-        # Get public symbols
-        public_symbols = validator.find_public_symbols()
+        # Get public symbols with exclude modules applied
+        public_symbols = validator.find_public_symbols(
+            exclude_modules=EXCLUDE_MODULES_FROM_PUBLIC_SCAN
+        )
 
-        # Validate that RST symbols have @public decorators
-        issues = validator.validate_rst_has_public(rst_symbols, public_symbols)
+        # Validate that RST symbols have @public decorators with exclude list applied
+        issues = validator.validate_rst_has_public(
+            rst_symbols, public_symbols, exclude_symbols=EXCLUDE_MISSING_PUBLIC
+        )
 
         if not issues:
             click.echo("✓ All RST documented symbols have @public decorators")
@@ -254,7 +267,12 @@ def rst_symbols(check_all: bool, package: Optional[str]):
 
 
 @check.command("public-symbols")
-@click.option("--all", "check_all", is_flag=True, help="Check all docstrings")
+@click.option(
+    "--all",
+    "check_all",
+    is_flag=True,
+    help="Check all @public symbols (with exclude lists applied)",
+)
 @click.option("--package", help="Filter down to a particular package")
 def public_symbols(check_all: bool, package: Optional[str]):
     """Check that all public classes and functions in the codebase have corresponding entries in .rst files and are exported top-level in their respective package."""
@@ -271,14 +289,20 @@ def public_symbols(check_all: bool, package: Optional[str]):
     try:
         validator = PublicApiValidator(dagster_root)
 
-        # Get public symbols
-        public_symbols = validator.find_public_symbols()
+        # Get public symbols with exclude modules applied
+        public_symbols = validator.find_public_symbols(
+            exclude_modules=EXCLUDE_MODULES_FROM_PUBLIC_SCAN
+        )
 
-        # Get RST symbols
-        rst_symbols = validator.find_rst_documented_symbols()
+        # Get RST symbols with exclude files applied
+        rst_symbols = validator.find_rst_documented_symbols(exclude_files=EXCLUDE_RST_FILES)
 
-        # Validate that @public symbols are documented in RST
-        issues = validator.validate_public_in_rst(public_symbols, rst_symbols)
+        # Validate that @public symbols are documented in RST with exclude lists applied
+        issues = validator.validate_public_in_rst(
+            public_symbols,
+            rst_symbols,
+            exclude_symbols=EXCLUDE_MISSING_RST.union(EXCLUDE_MISSING_EXPORT),
+        )
 
         if not issues:
             click.echo("✓ All @public symbols are documented in RST and exported top-level")
@@ -298,7 +322,9 @@ def public_symbols(check_all: bool, package: Optional[str]):
 
 
 @check.command()
-@click.option("--all", "check_all", is_flag=True, help="Check all docstrings")
+@click.option(
+    "--all", "check_all", is_flag=True, help="Check all exports (with exclude lists applied)"
+)
 @click.option("--package", help="Filter down to a particular package")
 def exports(check_all: bool, package: Optional[str]):
     """Check that top-level exports in packages have public decorators and entries in .rst."""
@@ -315,15 +341,23 @@ def exports(check_all: bool, package: Optional[str]):
     try:
         validator = PublicApiValidator(dagster_root)
 
-        # Get public symbols
-        public_symbols = validator.find_public_symbols()
+        # Get public symbols with exclude modules applied
+        public_symbols = validator.find_public_symbols(
+            exclude_modules=EXCLUDE_MODULES_FROM_PUBLIC_SCAN
+        )
 
-        # Get RST symbols
-        rst_symbols = validator.find_rst_documented_symbols()
+        # Get RST symbols with exclude files applied
+        rst_symbols = validator.find_rst_documented_symbols(exclude_files=EXCLUDE_RST_FILES)
 
-        # Validate both directions - @public -> RST and RST -> @public
-        public_issues = validator.validate_public_in_rst(public_symbols, rst_symbols)
-        rst_issues = validator.validate_rst_has_public(rst_symbols, public_symbols)
+        # Validate both directions with exclude lists applied
+        public_issues = validator.validate_public_in_rst(
+            public_symbols,
+            rst_symbols,
+            exclude_symbols=EXCLUDE_MISSING_RST.union(EXCLUDE_MISSING_EXPORT),
+        )
+        rst_issues = validator.validate_rst_has_public(
+            rst_symbols, public_symbols, exclude_symbols=EXCLUDE_MISSING_PUBLIC
+        )
 
         all_issues = public_issues + rst_issues
 

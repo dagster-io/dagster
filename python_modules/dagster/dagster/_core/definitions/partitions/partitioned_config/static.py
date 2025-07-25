@@ -2,7 +2,7 @@ from collections.abc import Mapping, Sequence
 from typing import Callable, Optional
 
 import dagster._check as check
-from dagster._annotations import deprecated_param
+from dagster._annotations import deprecated_param, public
 from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
 from dagster._core.definitions.partitions.partitioned_config import (
     PartitionConfigFn,
@@ -11,6 +11,7 @@ from dagster._core.definitions.partitions.partitioned_config import (
 from dagster._utils.warnings import normalize_renamed_param
 
 
+@public
 @deprecated_param(
     param="tags_for_partition_fn",
     breaking_version="2.0",

@@ -2,7 +2,7 @@ from collections.abc import Mapping, Sequence
 from typing import NamedTuple, Optional, cast
 
 import dagster._check as check
-from dagster._annotations import beta
+from dagster._annotations import beta, public
 from dagster._core.definitions.partitions.definition.multi import MultiPartitionsDefinition
 from dagster._core.definitions.partitions.definition.partitions_definition import (
     PartitionsDefinition,
@@ -18,6 +18,7 @@ from dagster._serdes import whitelist_for_serdes
 
 @beta
 @whitelist_for_serdes
+@public
 class MultiPartitionMapping(
     BaseMultiPartitionMapping,
     PartitionMapping,

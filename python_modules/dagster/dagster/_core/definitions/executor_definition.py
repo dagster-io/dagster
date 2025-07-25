@@ -62,6 +62,7 @@ ExecutorCreationFunction: TypeAlias = Callable[["InitExecutorContext"], "Executo
 ExecutorRequirementsFunction: TypeAlias = Callable[[ExecutorConfig], Sequence[ExecutorRequirement]]
 
 
+@public
 class ExecutorDefinition(NamedConfigurableDefinition):
     """An executor is responsible for executing the steps of a job.
 
@@ -208,6 +209,7 @@ def executor(
 ) -> "_ExecutorDecoratorCallable": ...
 
 
+@public
 def executor(
     name: Union[ExecutorCreationFunction, Optional[str]] = None,
     config_schema: Optional[UserConfigSchema] = None,

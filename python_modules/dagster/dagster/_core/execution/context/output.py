@@ -38,6 +38,7 @@ if TYPE_CHECKING:
 RUN_ID_PLACEHOLDER = "__EPHEMERAL_RUN_ID"
 
 
+@public
 @deprecated_param(
     param="metadata",
     breaking_version="2.0",
@@ -813,6 +814,7 @@ def get_output_context(
     )
 
 
+@public
 @deprecated_param(
     param="metadata",
     breaking_version="2.0",

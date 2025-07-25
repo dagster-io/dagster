@@ -15,6 +15,7 @@ from pydantic import BaseModel, ConfigDict
 from typing_extensions import TypeVar
 
 import dagster._check as check
+from dagster._annotations import public
 from dagster._config import (
     Field as DagsterField,
     Shape,
@@ -151,6 +152,7 @@ def ensure_env_vars_set_post_init(set_value: T, input_value: Any) -> T:
     return set_value
 
 
+@public
 class Config(MakeConfigCacheable, metaclass=BaseConfigMeta):
     """Base class for Dagster configuration models, used to specify config schema for
     ops and assets. Subclasses :py:class:`pydantic.BaseModel`.
@@ -368,6 +370,7 @@ def _config_value_to_dict_representation(field: Optional[ModelFieldCompat], valu
     return value
 
 
+@public
 class PermissiveConfig(Config):
     """Subclass of :py:class:`Config` that allows arbitrary extra fields. This is useful for
     config classes which may have open-ended inputs.

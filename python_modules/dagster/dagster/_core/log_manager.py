@@ -5,6 +5,7 @@ from collections.abc import Mapping, Sequence
 from typing import TYPE_CHECKING, Any, Final, Optional, TypedDict, Union, cast
 
 import dagster._check as check
+from dagster._annotations import public
 from dagster._core.utils import coerce_valid_log_level, make_new_run_id
 from dagster._utils.log import get_dagster_logger
 
@@ -278,6 +279,7 @@ class DagsterLogHandler(logging.Handler):
             self._local_thread_context.should_capture = True
 
 
+@public
 class DagsterLogManager(logging.Logger):
     """Centralized dispatch for logging from user code.
 

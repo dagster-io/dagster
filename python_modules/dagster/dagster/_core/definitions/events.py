@@ -91,6 +91,7 @@ T = TypeVar("T")
 
 
 @beta_param(param="data_version")
+@public
 class Output(Generic[T], EventWithMetadata):
     """Event corresponding to one of an op's outputs.
 
@@ -363,6 +364,7 @@ class AssetMaterializationFailure(EventWithMetadata, IHaveNew):
     storage_field_names={"metadata": "metadata_entries"},
     field_serializers={"metadata": MetadataFieldSerializer},
 )
+@public
 class AssetObservation(
     NamedTuple(
         "_AssetObservation",
@@ -460,6 +462,7 @@ class AssetMaterializationSerializer(NamedTupleSerializer):
     storage_field_names={"metadata": "metadata_entries"},
     field_serializers={"metadata": MetadataFieldSerializer},
 )
+@public
 class AssetMaterialization(
     NamedTuple(
         "_AssetMaterialization",
@@ -589,6 +592,7 @@ class AssetMaterialization(
     storage_field_names={"metadata": "metadata_entries"},
     field_serializers={"metadata": MetadataFieldSerializer},
 )
+@public
 class ExpectationResult(
     NamedTuple(
         "_ExpectationResult",
@@ -686,6 +690,7 @@ class TypeCheck(
         )
 
 
+@public
 class Failure(Exception):
     """Event indicating op failure.
 
@@ -718,6 +723,7 @@ class Failure(Exception):
         self.allow_retries = check.opt_bool_param(allow_retries, "allow_retries", True)
 
 
+@public
 class RetryRequested(Exception):
     """An exception to raise from an op to indicate that it should be retried.
 
