@@ -100,3 +100,7 @@ yarn build-api-docs          # Build API docs after .rst changes
 ## Import Guidelines
 
 - Use top-level imports unless you need conditional imports or have performance concerns requiring lazy loading
+
+## Development Best Practices
+
+- ALWAYS run make ruff and make quick_pyright from repository root directory

@@ -5,19 +5,15 @@ malformed section headers in docstrings, ensuring that users get clear,
 actionable feedback about common formatting mistakes.
 """
 
-import pytest
-from automation.dagster_docs.validator import DocstringValidator
+from automation.dagster_docs.validator import validate_docstring_text
 
 
 class TestEnhancedSectionHeaderDetection:
     """Test enhanced detection of malformed section headers."""
 
-    @pytest.fixture
-    def validator(self):
-        """Provide a DocstringValidator instance for tests."""
-        return DocstringValidator()
+    # Using function-based validation approach
 
-    def test_missing_colon_detection(self, validator):
+    def test_missing_colon_detection(self):
         """Test detection of section headers missing colons."""
         docstring = '''"""Function with missing colon in section header.
 
@@ -28,7 +24,7 @@ class TestEnhancedSectionHeaderDetection:
         Returns
             Description of return value
         """'''
-        result = validator.validate_docstring_text(docstring, "test.function")
+        result = validate_docstring_text(docstring, "test.function")
 
         # Should detect missing colons as errors
         assert result.has_errors()
@@ -38,7 +34,7 @@ class TestEnhancedSectionHeaderDetection:
             "Malformed section header: 'Returns' is missing colon (should be 'Returns:')" in errors
         )
 
-    def test_incorrect_capitalization_detection(self, validator):
+    def test_incorrect_capitalization_detection(self):
         """Test detection of incorrectly capitalized section headers."""
         docstring = '''"""Function with incorrect capitalization.
 
@@ -51,7 +47,7 @@ class TestEnhancedSectionHeaderDetection:
         raises:
             ValueError: When something goes wrong
         """'''
-        result = validator.validate_docstring_text(docstring, "test.function")
+        result = validate_docstring_text(docstring, "test.function")
 
         # Should detect capitalization errors
         assert result.has_errors()
@@ -69,7 +65,7 @@ class TestEnhancedSectionHeaderDetection:
             in errors
         )
 
-    def test_incorrect_spacing_detection(self, validator):
+    def test_incorrect_spacing_detection(self):
         """Test detection of section headers with incorrect spacing."""
         docstring = '''"""Function with spacing issues in headers.
 
@@ -79,7 +75,7 @@ class TestEnhancedSectionHeaderDetection:
         Returns:
             Description of return value
         """'''
-        result = validator.validate_docstring_text(docstring, "test.function")
+        result = validate_docstring_text(docstring, "test.function")
 
         # Should detect spacing issues
         assert result.has_errors()
@@ -88,7 +84,7 @@ class TestEnhancedSectionHeaderDetection:
             "Malformed section header: 'Args :' has incorrect spacing (should be 'Args:')" in errors
         )
 
-    def test_corrupted_section_header_detection(self, validator):
+    def test_corrupted_section_header_detection(self):
         """Test detection of completely corrupted section headers."""
         docstring = '''"""Function with corrupted section header.
 
@@ -99,7 +95,7 @@ Argsjdkfjdkjfdk:
 Returns:
     Description of return value
 """'''
-        result = validator.validate_docstring_text(docstring, "test.function")
+        result = validate_docstring_text(docstring, "test.function")
 
         # Should detect corrupted header
         assert result.has_errors()
@@ -109,7 +105,7 @@ Returns:
             in errors
         )
 
-    def test_multiple_header_errors(self, validator):
+    def test_multiple_header_errors(self):
         """Test detection of multiple different header errors in one docstring."""
         docstring = '''"""Function with multiple header errors.
 
@@ -122,7 +118,7 @@ RETURNS:
 Examplesjdkfjdk:
     Corrupted header above
 """'''
-        result = validator.validate_docstring_text(docstring, "test.function")
+        result = validate_docstring_text(docstring, "test.function")
 
         # Should detect all three types of errors (some might be warnings)
         assert result.has_errors() or result.has_warnings()
@@ -131,7 +127,7 @@ Examplesjdkfjdk:
         assert "incorrect capitalization" in all_messages or "RETURNS:" in all_messages
         assert "Corrupted section header" in all_messages
 
-    def test_all_standard_section_headers(self, validator):
+    def test_all_standard_section_headers(self):
         """Test that all standard section headers are recognized when malformed."""
         test_cases = [
             ("args:", "Args:"),
@@ -156,13 +152,13 @@ Examplesjdkfjdk:
             {malformed}
                 content: Description
             """'''
-            result = validator.validate_docstring_text(docstring, "test.function")
+            result = validate_docstring_text(docstring, "test.function")
 
             assert result.has_errors(), f"Should detect error in '{malformed}'"
             errors = " ".join(result.errors)
             assert f"has incorrect capitalization (should be '{correct}')" in errors
 
-    def test_valid_section_headers_pass(self, validator):
+    def test_valid_section_headers_pass(self):
         """Test that correctly formatted section headers don't trigger errors."""
         docstring = '''"""Function with all correctly formatted headers.
 
@@ -186,7 +182,7 @@ Examplesjdkfjdk:
         See Also:
             other_function: Related function
         """'''
-        result = validator.validate_docstring_text(docstring, "test.function")
+        result = validate_docstring_text(docstring, "test.function")
 
         # Should not have any section header errors
         if result.has_errors():
@@ -200,12 +196,9 @@ Examplesjdkfjdk:
 class TestEnhancedRSTErrorMessages:
     """Test enhanced RST error messages for common issues."""
 
-    @pytest.fixture
-    def validator(self):
-        """Provide a DocstringValidator instance for tests."""
-        return DocstringValidator()
+    # Using function-based validation approach
 
-    def test_unexpected_indentation_message_enhancement(self, validator):
+    def test_unexpected_indentation_message_enhancement(self):
         """Test that unexpected indentation errors get enhanced messages."""
         # Create a docstring that will cause unexpected indentation due to missing colon
         docstring = '''"""Function causing unexpected indentation.
@@ -214,7 +207,7 @@ class TestEnhancedRSTErrorMessages:
         param1: This line will cause unexpected indentation error
             param2: Description
         """'''
-        result = validator.validate_docstring_text(docstring, "test.function")
+        result = validate_docstring_text(docstring, "test.function")
 
         # Should have both the enhanced RST message and section header error
         assert result.has_errors()
@@ -234,7 +227,7 @@ class TestEnhancedRSTErrorMessages:
             f"Should have enhanced indentation message, got: {result.errors}"
         )
 
-    def test_block_quote_error_message_enhancement(self, validator):
+    def test_block_quote_error_message_enhancement(self):
         """Test that block quote errors get enhanced messages when they occur."""
         # Test that the enhancement logic exists by triggering a known block quote error
         # This docstring should trigger RST issues
@@ -246,7 +239,7 @@ class TestEnhancedRSTErrorMessages:
         
         Some text that might break RST parsing
         """'''
-        result = validator.validate_docstring_text(docstring, "test.function")
+        result = validate_docstring_text(docstring, "test.function")
 
         # The exact errors/warnings depend on RST parsing, but if we get any,
         # verify the enhancement logic would work by checking message content
@@ -271,7 +264,7 @@ class TestEnhancedRSTErrorMessages:
             f"Expected enhanced messages or valid parsing, got: {all_messages}"
         )
 
-    def test_code_block_error_enhancement_still_works(self, validator):
+    def test_code_block_error_enhancement_still_works(self):
         """Test that existing code block error enhancement logic exists."""
         # Test a simple docstring with proper structure to verify enhancement logic exists
         docstring = '''"""Function that tests code block enhancement capability.
@@ -282,7 +275,7 @@ class TestEnhancedRSTErrorMessages:
             >>> example_function()
             'result'
         """'''
-        result = validator.validate_docstring_text(docstring, "test.function")
+        result = validate_docstring_text(docstring, "test.function")
 
         # This test verifies that the code runs without errors - the enhancement
         # logic is present in the codebase even if not triggered by this example
@@ -295,12 +288,9 @@ class TestEnhancedRSTErrorMessages:
 class TestSectionHeaderEdgeCases:
     """Test edge cases and boundary conditions for section header detection."""
 
-    @pytest.fixture
-    def validator(self):
-        """Provide a DocstringValidator instance for tests."""
-        return DocstringValidator()
+    # Using function-based validation approach
 
-    def test_short_corrupted_headers_ignored(self, validator):
+    def test_short_corrupted_headers_ignored(self):
         """Test that very short corrupted headers don't trigger false positives."""
         docstring = '''"""Function with short text that shouldn't be flagged.
 
@@ -310,7 +300,7 @@ class TestSectionHeaderEdgeCases:
         Args:
             param1: Real parameter
         """'''
-        result = validator.validate_docstring_text(docstring, "test.function")
+        result = validate_docstring_text(docstring, "test.function")
 
         # Should not flag the short A: and B: lines as corrupted headers
         if result.has_errors():
@@ -318,7 +308,7 @@ class TestSectionHeaderEdgeCases:
             assert "Corrupted section header detected: 'A:'" not in errors
             assert "Corrupted section header detected: 'B:'" not in errors
 
-    def test_headers_within_code_blocks_ignored(self, validator):
+    def test_headers_within_code_blocks_ignored(self):
         """Test that headers within code examples don't trigger false positives."""
         docstring = """Function with code examples containing headers.
 
@@ -335,7 +325,7 @@ class TestSectionHeaderEdgeCases:
                     example_param: This is in a code example
                 '''
         """
-        result = validator.validate_docstring_text(docstring, "test.function")
+        result = validate_docstring_text(docstring, "test.function")
 
         # Should not flag the Args: within the code example
         # (Note: This is a complex case and might still trigger warnings,
@@ -344,7 +334,7 @@ class TestSectionHeaderEdgeCases:
         # Just verify it runs without crashing
         assert result is not None
 
-    def test_multiple_colons_in_line(self, validator):
+    def test_multiple_colons_in_line(self):
         """Test handling of lines with multiple colons."""
         docstring = '''"""Function with multiple colons in content.
 
@@ -355,7 +345,7 @@ class TestSectionHeaderEdgeCases:
         Returns:
             Dictionary with keys like {'status': 'success', 'time': '12:30:45'}
         """'''
-        result = validator.validate_docstring_text(docstring, "test.function")
+        result = validate_docstring_text(docstring, "test.function")
 
         # Should not flag content lines with multiple colons as section headers
         if result.has_errors():
@@ -363,7 +353,7 @@ class TestSectionHeaderEdgeCases:
             assert "http://example.com:8080/path" not in errors
             assert "HH:MM:SS" not in errors
 
-    def test_case_sensitivity_boundaries(self, validator):
+    def test_case_sensitivity_boundaries(self):
         """Test case sensitivity edge cases."""
         docstring = '''"""Function testing case sensitivity.
 
@@ -373,7 +363,7 @@ class TestSectionHeaderEdgeCases:
         ArGs:
             param2: Mixed case version
         """'''
-        result = validator.validate_docstring_text(docstring, "test.function")
+        result = validate_docstring_text(docstring, "test.function")
 
         # Should detect both as capitalization errors
         assert result.has_errors()
@@ -382,7 +372,7 @@ class TestSectionHeaderEdgeCases:
         # Should suggest the correct format
         assert "should be 'Args:'" in errors
 
-    def test_whitespace_variants(self, validator):
+    def test_whitespace_variants(self):
         """Test various whitespace issues in section headers."""
         docstring = '''"""Function with whitespace issues.
 
@@ -395,7 +385,7 @@ class TestSectionHeaderEdgeCases:
         Args: \t
             param3: Whitespace after colon
         """'''
-        result = validator.validate_docstring_text(docstring, "test.function")
+        result = validate_docstring_text(docstring, "test.function")
 
         # The validator should handle these gracefully
         # Some whitespace issues might be flagged, others might be acceptable

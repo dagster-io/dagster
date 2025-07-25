@@ -1,19 +1,15 @@
 """Tests for method docstring validation focusing on parameter handling."""
 
-import pytest
-from automation.dagster_docs.validator import DocstringValidator
+from automation.dagster_docs.validator import validate_docstring_text
 from dagster._annotations import public
 
 
 class TestMethodDocstringValidation:
     """Test that method docstrings are validated correctly and self/cls parameters are handled properly."""
 
-    @pytest.fixture
-    def validator(self):
-        """Provide a DocstringValidator instance for tests."""
-        return DocstringValidator()
+    # Using function-based validation approach
 
-    def test_instance_method_docstring_validation(self, validator):
+    def test_instance_method_docstring_validation(self):
         """Test that instance method docstrings are validated correctly."""
 
         @public
@@ -45,20 +41,20 @@ class TestMethodDocstringValidation:
                 pass
 
         # Test valid instance method docstring (doesn't document 'self')
-        result = validator.validate_docstring_text(
-            TestClass.process_data.__doc__, "TestClass.process_data"
+        result = validate_docstring_text(
+            TestClass.process_data.__doc__ or "", "TestClass.process_data"
         )
         assert result.is_valid(), f"Instance method should have valid docstring: {result.errors}"
         assert result.parsing_successful
 
         # Test that documenting 'self' is handled gracefully (not flagged as RST error)
-        result_with_self = validator.validate_docstring_text(
-            TestClass.bad_method_with_self.__doc__, "TestClass.bad_method_with_self"
+        result_with_self = validate_docstring_text(
+            TestClass.bad_method_with_self.__doc__ or "", "TestClass.bad_method_with_self"
         )
         # Should parse successfully even though it's bad style
         assert result_with_self.parsing_successful
 
-    def test_static_method_docstring_validation(self, validator):
+    def test_static_method_docstring_validation(self):
         """Test that static method docstrings are validated correctly."""
 
         @public
@@ -77,13 +73,13 @@ class TestMethodDocstringValidation:
                 """
                 pass
 
-        result = validator.validate_docstring_text(
-            TestClass.validate_email.__doc__, "TestClass.validate_email"
+        result = validate_docstring_text(
+            TestClass.validate_email.__doc__ or "", "TestClass.validate_email"
         )
         assert result.is_valid(), f"Static method should have valid docstring: {result.errors}"
         assert result.parsing_successful
 
-    def test_class_method_docstring_validation(self, validator):
+    def test_class_method_docstring_validation(self):
         """Test that class method docstrings are validated correctly."""
 
         @public
@@ -117,20 +113,20 @@ class TestMethodDocstringValidation:
                 pass
 
         # Valid class method docstring (doesn't document 'cls')
-        result = validator.validate_docstring_text(
-            TestClass.from_config.__doc__, "TestClass.from_config"
+        result = validate_docstring_text(
+            TestClass.from_config.__doc__ or "", "TestClass.from_config"
         )
         assert result.is_valid(), f"Class method should have valid docstring: {result.errors}"
         assert result.parsing_successful
 
         # Test that documenting 'cls' is handled gracefully
-        result_with_cls = validator.validate_docstring_text(
-            TestClass.bad_method_with_cls.__doc__, "TestClass.bad_method_with_cls"
+        result_with_cls = validate_docstring_text(
+            TestClass.bad_method_with_cls.__doc__ or "", "TestClass.bad_method_with_cls"
         )
         # Should parse successfully even though it's bad style
         assert result_with_cls.parsing_successful
 
-    def test_property_docstring_validation(self, validator):
+    def test_property_docstring_validation(self):
         """Test that property docstrings are validated correctly."""
 
         @public
@@ -145,11 +141,11 @@ class TestMethodDocstringValidation:
                 """
                 return "active"
 
-        result = validator.validate_docstring_text(TestClass.status.__doc__, "TestClass.status")
+        result = validate_docstring_text(TestClass.status.__doc__ or "", "TestClass.status")
         assert result.is_valid(), f"Property should have valid docstring: {result.errors}"
         assert result.parsing_successful
 
-    def test_docstring_formatting_errors(self, validator):
+    def test_docstring_formatting_errors(self):
         """Test that common docstring formatting errors are detected."""
 
         @public
@@ -180,20 +176,22 @@ class TestMethodDocstringValidation:
                 pass
 
         # Test an error that we know the validator catches - invalid section header
-        result = validator.validate_docstring_text(
-            TestClass.method_with_invalid_section.__doc__, "TestClass.method_with_invalid_section"
+        result = validate_docstring_text(
+            TestClass.method_with_invalid_section.__doc__ or "",
+            "TestClass.method_with_invalid_section",
         )
         # This should either have warnings/errors or be parsing successfully
         assert result.parsing_successful  # At minimum should parse
 
         # Missing indentation in parameters
-        result = validator.validate_docstring_text(
-            TestClass.method_with_bad_indentation.__doc__, "TestClass.method_with_bad_indentation"
+        result = validate_docstring_text(
+            TestClass.method_with_bad_indentation.__doc__ or "",
+            "TestClass.method_with_bad_indentation",
         )
         # This may or may not be flagged depending on RST parser behavior
         assert result.parsing_successful  # At minimum should parse
 
-    def test_edge_case_docstrings(self, validator):
+    def test_edge_case_docstrings(self):
         """Test edge cases with docstrings."""
 
         @public
@@ -214,28 +212,26 @@ class TestMethodDocstringValidation:
                 pass
 
         # Empty docstring should produce warning but not error
-        result_empty = validator.validate_docstring_text(
-            TestClass.empty_method.__doc__, "TestClass.empty_method"
+        result_empty = validate_docstring_text(
+            TestClass.empty_method.__doc__ or "", "TestClass.empty_method"
         )
         assert result_empty.has_warnings()
         assert "No docstring found" in str(result_empty.warnings)
         assert result_empty.is_valid()  # Empty is valid, just warned
 
         # Minimal but valid docstring
-        result_minimal = validator.validate_docstring_text(
-            TestClass.helper.__doc__, "TestClass.helper"
-        )
+        result_minimal = validate_docstring_text(TestClass.helper.__doc__ or "", "TestClass.helper")
         assert result_minimal.is_valid()
         assert not result_minimal.has_errors()
 
         # Whitespace-only docstring
-        result_whitespace = validator.validate_docstring_text(
-            TestClass.whitespace_method.__doc__, "TestClass.whitespace_method"
+        result_whitespace = validate_docstring_text(
+            TestClass.whitespace_method.__doc__ or "", "TestClass.whitespace_method"
         )
         assert result_whitespace.has_warnings()
         assert "No docstring found" in str(result_whitespace.warnings)
 
-    def test_complex_valid_docstring(self, validator):
+    def test_complex_valid_docstring(self):
         """Test that complex but valid docstrings are handled correctly."""
 
         @public
@@ -280,8 +276,8 @@ class TestMethodDocstringValidation:
                 """
                 pass
 
-        result = validator.validate_docstring_text(
-            TestClass.execute_pipeline.__doc__, "TestClass.execute_pipeline"
+        result = validate_docstring_text(
+            TestClass.execute_pipeline.__doc__ or "", "TestClass.execute_pipeline"
         )
         # Should be valid despite complexity
         assert result.is_valid() or not result.has_errors(), (
@@ -289,7 +285,7 @@ class TestMethodDocstringValidation:
         )
         assert result.parsing_successful
 
-    def test_mixed_method_types_in_single_class(self, validator):
+    def test_mixed_method_types_in_single_class(self):
         """Test a class with all different types of methods."""
 
         @public
@@ -344,12 +340,12 @@ class TestMethodDocstringValidation:
 
         # Test that all method types validate correctly
         methods_to_test = [
-            (MixedMethodClass.instance_method.__doc__, "MixedMethodClass.instance_method"),
-            (MixedMethodClass.utility_function.__doc__, "MixedMethodClass.utility_function"),
-            (MixedMethodClass.factory_method.__doc__, "MixedMethodClass.factory_method"),
-            (MixedMethodClass.computed_value.__doc__, "MixedMethodClass.computed_value"),
+            (MixedMethodClass.instance_method.__doc__ or "", "MixedMethodClass.instance_method"),
+            (MixedMethodClass.utility_function.__doc__ or "", "MixedMethodClass.utility_function"),
+            (MixedMethodClass.factory_method.__doc__ or "", "MixedMethodClass.factory_method"),
+            (MixedMethodClass.computed_value.__doc__ or "", "MixedMethodClass.computed_value"),
         ]
 
         for docstring, method_name in methods_to_test:
-            result = validator.validate_docstring_text(docstring, method_name)
+            result = validate_docstring_text(docstring, method_name)
             assert result.is_valid(), f"{method_name} should have valid docstring: {result.errors}"

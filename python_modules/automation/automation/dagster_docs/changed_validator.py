@@ -8,7 +8,7 @@ from typing import Callable, Union
 import click
 from dagster._record import IHaveNew, record, record_custom
 
-from automation.dagster_docs.validator import DocstringValidator
+from automation.dagster_docs.validator import validate_symbol_docstring
 
 
 @record_custom
@@ -137,15 +137,13 @@ def extract_symbols_from_file(file_path: Path, module_path: str) -> set[SymbolIn
         return set()
 
 
-def validate_symbols(
-    symbols: set[SymbolInfo], validator: DocstringValidator
-) -> list[ValidationResult]:
+def validate_symbols(symbols: set[SymbolInfo]) -> list[ValidationResult]:
     """Validate docstrings for a set of top-level exported symbols."""
     results = []
 
     for symbol_info in symbols:
         try:
-            validation_result = validator.validate_symbol_docstring(symbol_info.symbol_path)
+            validation_result = validate_symbol_docstring(symbol_info.symbol_path)
 
             result = ValidationResult(
                 symbol_info=symbol_info,
@@ -167,12 +165,8 @@ def validate_symbols(
 def validate_changed_files(
     changed_files: list[Path],
     config: ValidationConfig,
-    validator: Union[DocstringValidator, None] = None,
 ) -> list[ValidationResult]:
     """Validate docstrings in a list of changed files."""
-    if validator is None:
-        validator = DocstringValidator()
-
     all_symbols = set()
 
     # Extract top-level exported symbols from all changed files
@@ -188,7 +182,7 @@ def validate_changed_files(
         all_symbols.update(symbols)
 
     # Validate all exported symbols
-    return validate_symbols(all_symbols, validator)
+    return validate_symbols(all_symbols)
 
 
 def print_validation_results(

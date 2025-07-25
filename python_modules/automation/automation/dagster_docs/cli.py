@@ -8,7 +8,11 @@ from pathlib import Path
 
 import click
 
-from automation.dagster_docs.validator import DocstringValidator, SymbolImporter
+from automation.dagster_docs.validator import (
+    SymbolImporter,
+    validate_docstring_text,
+    validate_symbol_docstring,
+)
 from automation.dagster_docs.watcher import DocstringFileWatcher
 
 
@@ -47,11 +51,11 @@ def main(
         return 1
 
     # Core use case - validate single docstring efficiently
-    validator = DocstringValidator()
+    # Function-based validation approach
 
     try:
         if watch:
-            return _run_watch_mode(symbol_path, validator, verbose)
+            return _run_watch_mode(symbol_path, verbose)
         elif all_public:
             # Batch validation mode for all top-level exported symbols
             symbols = SymbolImporter.get_all_exported_symbols(symbol_path)
@@ -61,7 +65,7 @@ def main(
             total_warnings = 0
 
             for symbol_info in symbols:
-                result = validator.validate_docstring_text(
+                result = validate_docstring_text(
                     symbol_info.docstring or "", symbol_info.dotted_path
                 )
 
@@ -92,7 +96,7 @@ def main(
             total_warnings = 0
 
             for method_info in methods:
-                result = validator.validate_docstring_text(
+                result = validate_docstring_text(
                     method_info.docstring or "", method_info.dotted_path
                 )
 
@@ -114,7 +118,7 @@ def main(
 
         else:
             # Single symbol validation (core use case)
-            result = validator.validate_symbol_docstring(symbol_path)
+            result = validate_symbol_docstring(symbol_path)
 
             click.echo(f"Validating docstring for: {symbol_path}")
 
@@ -146,7 +150,7 @@ def main(
         return 1
 
 
-def _run_watch_mode(symbol_path: str, validator: DocstringValidator, verbose: bool) -> int:
+def _run_watch_mode(symbol_path: str, verbose: bool) -> int:
     """Run the validation in watch mode, monitoring file changes."""
     click.echo(f"Setting up watch mode for symbol: {symbol_path}")
 
@@ -182,7 +186,7 @@ def _run_watch_mode(symbol_path: str, validator: DocstringValidator, verbose: bo
         click.echo(f"[{timestamp}] File changed, validating {symbol_path}...")
 
         try:
-            result = validator.validate_symbol_docstring(symbol_path)
+            result = validate_symbol_docstring(symbol_path)
 
             if result.has_errors():
                 click.echo("ERRORS:")

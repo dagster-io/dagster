@@ -14,7 +14,12 @@ from automation.dagster_docs.public_api_validator import (
     RstSymbol,
     ValidationIssue,
 )
-from automation.dagster_docs.validator import DocstringValidator, SymbolInfo, ValidationResult
+from automation.dagster_docs.validator import (
+    SymbolInfo,
+    ValidationResult,
+    validate_docstring_text,
+    validate_symbol_docstring,
+)
 
 __all__ = [
     "EXCLUDE_MISSING_EXPORT",
@@ -22,7 +27,6 @@ __all__ = [
     "EXCLUDE_MISSING_RST",
     "EXCLUDE_MODULES_FROM_PUBLIC_SCAN",
     "EXCLUDE_RST_FILES",
-    "DocstringValidator",
     "PublicApiValidator",
     "PublicSymbol",
     "RstSymbol",
@@ -30,4 +34,6 @@ __all__ = [
     "ValidationIssue",
     "ValidationResult",
     "main",
+    "validate_docstring_text",
+    "validate_symbol_docstring",
 ]
