@@ -129,19 +129,25 @@ class RemoteRepository:
 
         self._handle = check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
 
-        self._asset_jobs: dict[str, list[AssetNodeSnap]] = {}
-        for asset_node in repository_snap.asset_nodes:
-            for job_name in asset_node.job_names:
-                self._asset_jobs.setdefault(job_name, []).append(asset_node)
-
-        self._asset_check_jobs: dict[str, list[AssetCheckNodeSnap]] = {}
-        for asset_check_node_snap in repository_snap.asset_check_nodes or []:
-            for job_name in asset_check_node_snap.job_names:
-                self._asset_check_jobs.setdefault(job_name, []).append(asset_check_node_snap)
-
         # memoize job instances to share instances
         self._memo_lock: RLock = RLock()
         self._cached_jobs: dict[str, RemoteJob] = {}
+
+    @property
+    def _asset_jobs(self) -> dict[str, list[AssetNodeSnap]]:
+        mapping = {}
+        for asset_node in self.repository_snap.asset_nodes:
+            for job_name in asset_node.job_names:
+                mapping.setdefault(job_name, []).append(asset_node)
+        return mapping
+
+    @property
+    def _asset_check_jobs(self) -> dict[str, list[AssetCheckNodeSnap]]:
+        mapping = {}
+        for asset_check_node_snap in self.repository_snap.asset_check_nodes or []:
+            for job_name in asset_check_node_snap.job_names:
+                mapping.setdefault(job_name, []).append(asset_check_node_snap)
+        return mapping
 
     @property
     def name(self) -> str:

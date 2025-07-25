@@ -626,7 +626,7 @@ class ObjectSerializer(Serializer, Generic[T]):
                         actual_value = value
                         # Handle LazyDeserializationSentinel objects by unpacking them
                         if isinstance(value, LazyDeserializationSentinel):
-                            actual_value = value.get_value()
+                            actual_value = value.value
 
                         unpacked[loaded_name] = actual_value  # type: ignore # 2 hot 4 cast()
 
@@ -1214,7 +1214,8 @@ class LazyPackedDict(dict):
 
         # If the item is a sentinel, deserialize it on first access
         if isinstance(item, LazyDeserializationSentinel):
-            return item.get_value()
+            # print(f"deserializing sentinel {self._class_name} for key", key)
+            return item.value
         return item
 
     def __getattr__(self, name):
@@ -1239,7 +1240,7 @@ class LazyPackedDict(dict):
             value = super().__getattribute__(name)
             # If it's a sentinel, deserialize it
             if isinstance(value, LazyDeserializationSentinel):
-                return value.get_value()
+                return value.value
             return value
         except AttributeError:
             # If normal attribute access fails, try dict access
@@ -1250,7 +1251,7 @@ class LazyPackedDict(dict):
                     f"'{self.__class__.__name__}' object has no attribute '{name}'"
                 )
 
-    @property
+    @cached_property
     def deserialized_value(self) -> UnpackedValue:
         """Fully deserializes the object represented by this dict.
 
@@ -1263,6 +1264,7 @@ class LazyPackedDict(dict):
         Raises:
             ValueError: If no deserializer is found for this class
         """
+        # print("!!!full deserialization of lazy packed dict", self._class_name)
         if self._class_name not in self._whitelist_map.object_deserializers:
             raise ValueError(f"No deserializer found for LazyPackedDict({self._class_name})")
 
@@ -1271,7 +1273,7 @@ class LazyPackedDict(dict):
         for key, value in self.items():
             if key != "__class__":
                 if isinstance(value, LazyDeserializationSentinel):
-                    deserialized_dict[key] = value.get_value()
+                    deserialized_dict[key] = value.value
                 else:
                     deserialized_dict[key] = value
 
@@ -1738,7 +1740,8 @@ class LazyDeserializationSentinel:
         self._whitelist_map = whitelist_map
         self._unpack_context = unpack_context
 
-    def get_value(self) -> UnpackedValue:
+    @cached_property
+    def value(self) -> UnpackedValue:
         """Deserializes and returns the cached value, or deserializes and caches if needed.
 
         Returns:
@@ -1758,7 +1761,7 @@ class LazyDeserializationSentinel:
         )
         self._cached_deserialized_value = deserialized_value
 
-        # TODO: Consider cleaning up the serialized JSON data after deserialization
-        # to free memory, but be careful about circular references
+        # Free up memory
+        del self._serialized_json_value
 
         return deserialized_value
