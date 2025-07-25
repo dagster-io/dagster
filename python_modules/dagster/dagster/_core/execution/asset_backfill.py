@@ -1532,10 +1532,8 @@ def _execute_asset_backfill_iteration_inner(
             backfill_id,
             updated_materialized_subset,
         )
-        candidate_asset_graph_subset = _get_candidate_asset_graph_subset(
-            asset_backfill_data,
-            asset_graph_view,
-            failed_asset_graph_subset,
+        candidate_asset_graph_subset = (
+            asset_backfill_data.target_subset - asset_backfill_data.requested_subset
         )
 
         failed_and_downstream_subset = _get_failed_and_downstream_asset_graph_subset(
