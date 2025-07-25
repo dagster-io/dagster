@@ -1332,13 +1332,8 @@ def _get_failed_and_downstream_asset_graph_subset(
     asset_backfill_data: AssetBackfillData,
     asset_graph_view: AssetGraphView,
     materialized_subset: AssetGraphSubset,
+    failed_asset_graph_subset: AssetGraphSubset,
 ) -> AssetGraphSubset:
-    failed_asset_graph_subset = _get_failed_asset_graph_subset(
-        asset_graph_view,
-        backfill_id,
-        materialized_subset,
-    )
-
     failed_and_downstream_subset = bfs_filter_asset_graph_view(
         asset_graph_view,
         lambda candidate_asset_graph_subset, _: (
@@ -1444,6 +1439,7 @@ def execute_asset_backfill_iteration_inner(
 def _get_candidate_asset_graph_subset(
     asset_backfill_data: AssetBackfillData,
     asset_graph_view: AssetGraphView,
+    failed_asset_graph_subset: AssetGraphSubset,
 ):
     instance_queryer = asset_graph_view.get_inner_queryer_for_back_compat()
     asset_graph: RemoteWorkspaceAssetGraph = cast(
@@ -1458,9 +1454,15 @@ def _get_candidate_asset_graph_subset(
             for asset_key in asset_backfill_data.target_subset.asset_keys
         )
     )
-    asset_keys = {ap.asset_key for ap in parent_materialized_asset_partitions}
+    parent_materialized_keys = {ap.asset_key for ap in parent_materialized_asset_partitions}
+
+    failed_keys = failed_asset_graph_subset.asset_keys
+    parent_failed_keys = set().union(
+        *(asset_graph_view.asset_graph.get(k).child_keys for k in failed_keys)
+    )
+
     child_subsets = []
-    for asset_key in asset_keys:
+    for asset_key in parent_materialized_keys | parent_failed_keys:
         child_subsets.append(
             asset_backfill_data.target_subset.get_asset_subset(
                 asset_key, asset_graph
@@ -1525,9 +1527,15 @@ def _execute_asset_backfill_iteration_inner(
             else "No relevant assets materialized since last tick."
         )
 
+        failed_asset_graph_subset = _get_failed_asset_graph_subset(
+            asset_graph_view,
+            backfill_id,
+            updated_materialized_subset,
+        )
         candidate_asset_graph_subset = _get_candidate_asset_graph_subset(
             asset_backfill_data,
             asset_graph_view,
+            failed_asset_graph_subset,
         )
 
         failed_and_downstream_subset = _get_failed_and_downstream_asset_graph_subset(
@@ -1535,6 +1543,7 @@ def _execute_asset_backfill_iteration_inner(
             asset_backfill_data,
             asset_graph_view,
             updated_materialized_subset,
+            failed_asset_graph_subset,
         )
 
     asset_subset_to_request, not_requested_and_reasons = bfs_filter_asset_graph_view(
