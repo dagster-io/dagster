@@ -1,14 +1,13 @@
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from functools import cached_property
-from typing import Annotated, Callable, Optional, Union
+from typing import Annotated, Any, Callable, Optional, Union
 
 import dagster as dg
 import pydantic
 from dagster._core.definitions.job_definition import default_job_io_manager
 from dagster.components.resolved.base import resolve_fields
-from dagster.components.utils import TranslatorResolvingInfo
+from dagster.components.utils.translation import TranslationFn, TranslatorResolvable
 from dagster_shared import check
-from typing_extensions import TypeAlias
 
 from dagster_fivetran.asset_defs import build_fivetran_assets_definitions
 from dagster_fivetran.components.workspace_component.scaffolder import (
@@ -22,34 +21,8 @@ from dagster_fivetran.translator import (
 )
 
 
-def resolve_translation(context: dg.ResolutionContext, model):
-    info = TranslatorResolvingInfo(
-        "props",
-        asset_attributes=model,
-        resolution_context=context,
-        model_key="translation",
-    )
-    return lambda base_asset_spec, props: info.get_asset_spec(
-        base_asset_spec,
-        {
-            "props": props,
-            "spec": base_asset_spec,
-        },
-    )
-
-
-TranslationFn: TypeAlias = Callable[[dg.AssetSpec, FivetranConnectorTableProps], dg.AssetSpec]
-ResolvedTranslationFn: TypeAlias = Annotated[
-    TranslationFn,
-    dg.Resolver(
-        resolve_translation,
-        model_field_type=Union[str, dg.AssetAttributesModel],
-    ),
-]
-
-
 class ProxyDagsterFivetranTranslator(DagsterFivetranTranslator):
-    def __init__(self, fn: TranslationFn):
+    def __init__(self, fn: TranslationFn[FivetranConnectorTableProps]):
         self.fn = fn
 
     def get_asset_spec(self, props: FivetranConnectorTableProps) -> dg.AssetSpec:
@@ -98,7 +71,9 @@ def resolve_connector_selector(
 
 
 @dg.scaffold_with(FivetranAccountComponentScaffolder)
-class FivetranAccountComponent(dg.Component, dg.Model, dg.Resolvable):
+class FivetranAccountComponent(
+    dg.Component, dg.Model, TranslatorResolvable[FivetranConnectorTableProps]
+):
     """Loads Fivetran connectors from a given Fivetran instance as Dagster assets.
     Materializing these assets will trigger a sync of the Fivetran connector, enabling
     you to schedule Fivetran syncs using Dagster.
@@ -121,10 +96,16 @@ class FivetranAccountComponent(dg.Component, dg.Model, dg.Resolvable):
             ],
         ),
     ] = None
-    translation: Optional[ResolvedTranslationFn] = pydantic.Field(
-        None,
-        description="Function used to translate Fivetran connector table properties into Dagster asset specs.",
-    )
+
+    @classmethod
+    def get_template_vars_for_translation(
+        cls, data: FivetranConnectorTableProps
+    ) -> Mapping[str, Any]:
+        return {"props": data}
+
+    @classmethod
+    def get_translator_field_description(cls) -> Optional[str]:
+        return "Function used to translate Fivetran connector table properties into Dagster asset specs."
 
     @cached_property
     def workspace_resource(self) -> FivetranWorkspace:

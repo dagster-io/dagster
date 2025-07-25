@@ -142,7 +142,6 @@ def test_load_attributes(python, expected) -> None:
 def test_prefixing():
     prefix = ["sweet_prefix"]
     translated = TranslatorResolvingInfo(
-        obj_name="",
         resolution_context=ResolutionContext.default(),
         asset_attributes=dg.AssetAttributesModel(
             key_prefix=prefix,
@@ -155,7 +154,6 @@ def test_prefixing():
 def test_key_set():
     spec = dg.AssetSpec("a")
     translated = TranslatorResolvingInfo(
-        obj_name="",
         resolution_context=ResolutionContext.default(),
         asset_attributes=dg.AssetAttributesModel(
             key="{{ spec.key.to_user_string() + '_key' }}",
@@ -169,7 +167,6 @@ def test_key_and_prefix():
     prefix = ["sweet_prefix"]
     spec = dg.AssetSpec("a")
     translated = TranslatorResolvingInfo(
-        obj_name="",
         resolution_context=ResolutionContext.default(),
         asset_attributes=dg.AssetAttributesModel(
             key="{{ spec.key.to_user_string() + '_key' }}",

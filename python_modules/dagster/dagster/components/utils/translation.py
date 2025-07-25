@@ -1,70 +1,25 @@
-import importlib.util
-import subprocess
-import sys
-import textwrap
-from collections.abc import Iterator, Mapping
-from contextlib import contextmanager
+from collections.abc import Mapping
 from dataclasses import dataclass
-from pathlib import Path
-from types import ModuleType
-from typing import Any, TypeVar, Union
+from typing import Annotated, Any, Callable, Generic, Optional, TypeVar, Union
 
-import click
-from dagster_shared.error import DagsterError
 from pydantic import BaseModel
+from typing_extensions import TypeAlias
 
 from dagster import _check as check
 from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
+from dagster.components.resolved.base import Resolvable
 from dagster.components.resolved.context import ResolutionContext
 from dagster.components.resolved.core_models import (
     AssetAttributesModel,
     resolve_asset_spec_update_kwargs_to_mapping,
 )
-
-T = TypeVar("T")
-
-
-def exit_with_error(error_message: str) -> None:
-    click.echo(click.style(error_message, fg="red"))
-    sys.exit(1)
-
-
-def format_error_message(message: str) -> str:
-    # width=10000 unwraps any hardwrapping
-    dedented = textwrap.dedent(message).strip()
-    paragraphs = [textwrap.fill(p, width=10000) for p in dedented.split("\n\n")]
-    return "\n\n".join(paragraphs)
-
-
-# Temporarily places a path at the front of sys.path, ensuring that any modules in that path are
-# importable.
-@contextmanager
-def ensure_loadable_path(path: Path) -> Iterator[None]:
-    orig_path = sys.path.copy()
-    sys.path.insert(0, str(path))
-    try:
-        yield
-    finally:
-        sys.path = orig_path
-
-
-def get_path_for_package(package_name: str) -> str:
-    spec = importlib.util.find_spec(package_name)
-    if not spec:
-        raise DagsterError(f"Cannot find package: {package_name}")
-    # file_path = spec.origin
-    submodule_search_locations = spec.submodule_search_locations
-    if not submodule_search_locations:
-        raise DagsterError(f"Package does not have any locations for submodules: {package_name}")
-    return submodule_search_locations[0]
-
+from dagster.components.resolved.model import Resolver
 
 TRANSLATOR_MERGE_ATTRIBUTES = {"metadata", "tags"}
 
 
 @dataclass
 class TranslatorResolvingInfo:
-    obj_name: str
     asset_attributes: Union[str, BaseModel]
     resolution_context: ResolutionContext
     model_key: str = "asset_attributes"
@@ -143,43 +98,59 @@ class TranslatorResolvingInfo:
         )
 
 
-# ########################
-# ##### PLATFORM
-# ########################
+T = TypeVar("T")
+
+TranslationFn: TypeAlias = Callable[[AssetSpec, T], AssetSpec]
 
 
-def is_windows() -> bool:
-    return sys.platform == "win32"
+class TranslatorResolvable(Resolvable, Generic[T]):
+    translation: Any = None  # Will be properly set up by __init_subclass__
 
+    def __init_subclass__(cls, **kwargs):
+        super().__init_subclass__(**kwargs)
 
-def is_macos() -> bool:
-    return sys.platform == "darwin"
+        # Each subclass gets its own resolver that calls the correct class methods
+        # We need to capture the class in a closure to avoid late binding issues
+        def make_resolver_func(target_cls):
+            return lambda context, model: target_cls.resolve_translation(context, model)
 
+        cls.__annotations__["translation"] = Optional[
+            Annotated[
+                TranslationFn[T],
+                Resolver(
+                    make_resolver_func(cls),
+                    inject_before_resolve=False,
+                    model_field_type=Union[str, AssetAttributesModel],
+                ),
+            ]
+        ]
 
-# ########################
-# ##### VENV
-# ########################
+        # if cls.get_translator_field_description():
+        #     cls.__annotations__["translation"] = Field(
+        #         cls.__annotations__["translation"],
+        #         description=cls.get_translator_field_description(),
+        #     )
 
+    @classmethod
+    def get_template_vars_for_translation(cls, data: T) -> Mapping[str, Any]:
+        return {"data": data}
 
-def get_venv_executable(venv_dir: Path, executable: str = "python") -> Path:
-    if is_windows():
-        return venv_dir / "Scripts" / f"{executable}.exe"
-    else:
-        return venv_dir / "bin" / executable
+    @classmethod
+    def get_translator_field_description(cls) -> Optional[str]:
+        return None
 
-
-def install_to_venv(venv_dir: Path, install_args: list[str]) -> None:
-    executable = get_venv_executable(venv_dir)
-    command = ["uv", "pip", "install", "--python", str(executable), *install_args]
-    subprocess.run(command, check=True)
-
-
-def get_path_from_module(module: ModuleType) -> Path:
-    module_path = (
-        Path(module.__file__).parent
-        if module.__file__
-        else Path(module.__path__[0])
-        if module.__path__
-        else None
-    )
-    return check.not_none(module_path, f"Module {module.__name__} has no filepath")
+    @classmethod
+    def resolve_translation(cls, context: ResolutionContext, model) -> TranslationFn[T]:
+        template_vars = cls.get_template_vars_for_translation(model)
+        info = TranslatorResolvingInfo(
+            asset_attributes=model,
+            resolution_context=context,
+            model_key="translation",
+        )
+        return lambda base_asset_spec, data: info.get_asset_spec(
+            base_asset_spec,
+            {
+                **template_vars,
+                "spec": base_asset_spec,
+            },
+        )
