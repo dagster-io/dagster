@@ -1,6 +1,7 @@
 import base64
 import inspect
 import os
+import io
 import subprocess
 import textwrap
 from collections.abc import Iterator
@@ -11,8 +12,9 @@ import dagster._check as check
 import pytest
 from databricks.sdk import WorkspaceClient
 from databricks.sdk.service import files
+from databricks.sdk.service.workspace import Language, ImportFormat
 
-from dagster_databricks.pipes import dbfs_tempdir
+from dagster_databricks.pipes import dbfs_tempdir, volumes_tempdir
 
 DAGSTER_PIPES_WHL_FILENAME = "dagster_pipes-1!0+dev-py3-none-any.whl"
 
@@ -53,6 +55,10 @@ def databricks_client() -> WorkspaceClient:
         token=os.environ["DATABRICKS_TOKEN"],
     )
 
+@pytest.fixture
+def databricks_notebook_folder_path() -> str:
+    return os.environ["DATABRICKS_NOTEBOOK_FOLDER_PATH"]
+
 
 @contextmanager
 def temp_dbfs_script(
@@ -87,3 +93,40 @@ def temp_dbfs_script(
             yield dbfs_path
         finally:
             dbfs_client.delete(dbfs_path, recursive=False)
+
+
+@contextmanager
+def temp_notebook_script(
+    client: WorkspaceClient,
+    notebook_folder_path: str,
+    *,
+    script_fn: Optional[Callable[[], Any]] = None,
+    script_file: Optional[str] = None,
+) -> Iterator[str]:
+    # drop the signature line
+    if script_fn is None and script_file is None:
+        raise ValueError("Must provide either script_fn or script_file")
+    elif script_fn is not None and script_file is not None:
+        raise ValueError("Must provide only one of script_fn or script_file")
+    elif script_fn is not None:
+        source = textwrap.dedent(inspect.getsource(script_fn).split("\n", 1)[1])
+    elif script_file is not None:
+        with open(script_file, "rb") as f:
+            source = f.read().decode("utf-8")
+    else:
+        check.failed("Unreachable")
+
+    content_b64 = base64.b64encode(source.encode('utf-8'))
+    notebook_path = os.path.join(notebook_folder_path, "notebook")
+    try:
+        # Upload to workspace
+        client.workspace.upload(
+            path=notebook_path,
+            content=content_b64,
+            language=Language.PYTHON,
+            format=ImportFormat.SOURCE,
+            overwrite=True
+        )
+        yield notebook_path
+    finally:
+        client.workspace.delete(notebook_path)

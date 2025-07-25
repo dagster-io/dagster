@@ -705,7 +705,7 @@ def volumes_tempdir(files_client: files.FilesAPI, volume_path: str) -> Iterator[
     try:
         yield tempdir
     finally:
-        # delete_volume_directory_recursive(files_client, tempdir)
+        delete_volume_directory_recursive(files_client, tempdir)
         pass
 
 
