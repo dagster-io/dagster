@@ -186,7 +186,34 @@ def get_path_from_module(module: ModuleType) -> Path:
 
 
 def copy_fields_to_model(copy_from: type[BaseModel], copy_to: type[BaseModel]) -> type[BaseModel]:
-    """Given two models, creates a copy of the second model with the fields of the first model."""
+    """Given two models, creates a copy of the second model with the fields of the first model.
+
+    Args:
+        copy_from (type[BaseModel]): The model to copy the fields from.
+        copy_to (type[BaseModel]): The model to copy the fields to.
+
+    Returns:
+        type[BaseModel]: A new model which subclasses the `copy_to` model and has
+        the fields of the `copy_from` model.
+
+    Example:
+        ```python
+            class MyModel(BaseModel):
+                field1: int = 5
+                field2: str = "hello"
+
+            class MyBaseModel(BaseModel):
+                ...
+
+            class MyModelWithMyBaseModel(copy_fields_to_model(MyModel, MyBaseModel)):
+                ...
+
+            assert isinstance(MyModelWithMyBaseModel, MyBaseModel)
+            assert MyModelWithMyBaseModel.field1 == 5
+            assert MyModelWithMyBaseModel.field2 == "hello"
+    ```
+
+    """
     field_definitions: dict[str, tuple[type, Any]] = {
         field_name: (cast("type", field.annotation), field)
         for field_name, field in copy_from.model_fields.items()

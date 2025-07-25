@@ -37,7 +37,7 @@ class SnowflakeConnectionComponentBase(dg.Component, dg.Resolvable, dg.Model, SQ
 class SnowflakeConnectionComponent(
     copy_fields_to_model(
         copy_from=SnowflakeResource,
-        copy_to=SnowflakeConnectionComponentBase,
+        copy_to=dg.Model,
     )
 ):
     pass
