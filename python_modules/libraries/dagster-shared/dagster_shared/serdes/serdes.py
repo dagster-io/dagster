@@ -1210,7 +1210,7 @@ class LazyPackedDict(dict):
         except KeyError:
             # If the field is missing, it might be a NamedTuple with default values
             # In that case, we need to fully deserialize the object to access the field
-            return self.deserialized_value.__getattribute__(key)
+            item = self.deserialized_value.__getattribute__(key)
 
         # If the item is a sentinel, deserialize it on first access
         if isinstance(item, LazyDeserializationSentinel):
@@ -1264,7 +1264,6 @@ class LazyPackedDict(dict):
         Raises:
             ValueError: If no deserializer is found for this class
         """
-        # print("!!!full deserialization of lazy packed dict", self._class_name)
         if self._class_name not in self._whitelist_map.object_deserializers:
             raise ValueError(f"No deserializer found for LazyPackedDict({self._class_name})")
 
