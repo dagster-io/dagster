@@ -13,14 +13,13 @@ from dagster._core.execution.context.asset_execution_context import AssetExecuti
 from dagster.components.core.context import ComponentLoadContext
 from dagster.components.lib.executable_component.component import ExecutableComponent
 from dagster.components.lib.sql_component.sql_client import SQLClient
-from dagster.components.resolved.base import Resolvable
 from dagster.components.resolved.core_models import OpSpec
 from dagster.components.resolved.model import Resolver
 
 
 @public
 @preview
-class SqlComponent(ExecutableComponent, Resolvable, ABC):
+class SqlComponent(ExecutableComponent, ABC):
     """Base component which executes templated SQL. Subclasses
     implement instructions on where to load the SQL content from.
     """
@@ -39,13 +38,17 @@ class SqlComponent(ExecutableComponent, Resolvable, ABC):
     execution: Annotated[Optional[OpSpec], Field(default=None)] = None
 
     @abstractmethod
-    def get_sql_content(self, context: AssetExecutionContext) -> str:
+    def get_sql_content(
+        self, context: AssetExecutionContext, component_load_context: ComponentLoadContext
+    ) -> str:
         """The SQL content to execute."""
         ...
 
-    def execute(self, context: AssetExecutionContext) -> None:
+    def execute(
+        self, context: AssetExecutionContext, component_load_context: ComponentLoadContext
+    ) -> None:
         """Execute the SQL content using the Snowflake resource."""
-        self.connection.connect_and_execute(self.get_sql_content(context))
+        self.connection.connect_and_execute(self.get_sql_content(context, component_load_context))
 
     @property
     def op_spec(self) -> OpSpec:
@@ -56,7 +59,10 @@ class SqlComponent(ExecutableComponent, Resolvable, ABC):
         context: Union[AssetExecutionContext, AssetCheckExecutionContext],
         component_load_context: ComponentLoadContext,
     ) -> Iterable[MaterializeResult]:
-        self.execute(check.inst(context, AssetExecutionContext))
+        self.execute(
+            check.inst(context, AssetExecutionContext),
+            component_load_context,
+        )
         for asset in self.assets or []:
             yield MaterializeResult(asset_key=asset.key)
 
@@ -90,13 +96,16 @@ class TemplatedSqlComponent(SqlComponent):
         Field(default=None, description="Template variables to pass to the SQL template."),
     ] = None
 
-    def get_sql_content(self, context: AssetExecutionContext) -> str:
+    def get_sql_content(
+        self, context: AssetExecutionContext, component_load_context: ComponentLoadContext
+    ) -> str:
         # Slow import, we do it here to avoid importing jinja2 when `dagster` is imported
+
         from jinja2 import Template
 
         template_str = self.sql_template
         if isinstance(template_str, SqlFile):
-            template_str = Path(template_str.path).read_text()
+            template_str = (component_load_context.path / Path(template_str.path)).read_text()
 
         template = Template(template_str)
         return template.render(**(self.sql_template_vars or {}))
