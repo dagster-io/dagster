@@ -261,6 +261,9 @@ class Config(MakeConfigCacheable, metaclass=BaseConfigMeta):
                 if key not in model_fields(self.__class__):
                     object.__setattr__(self, key, value)
 
+'''
+This is done to support dot-access for unexpected or undeclared fields.
+'''
         self.__dict__ = ensure_env_vars_set_post_init(self.__dict__, modified_data_by_field_key)
 
     def _convert_to_config_dictionary(self) -> Mapping[str, Any]:
