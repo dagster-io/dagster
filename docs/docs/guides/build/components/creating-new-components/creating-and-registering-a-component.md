@@ -44,12 +44,12 @@ First, use the [`dg scaffold component`](/api/dg/dg-cli#dg-scaffold) command to 
         :::
     </TabItem>
     <TabItem value="pythonic" label="Pythonic interface">
-        <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/shell-script-component/1-dg-scaffold-shell-command-no-model.txt" />
+        <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/shell-script-component/pythonic/1-dg-scaffold-shell-command-no-model.txt" />
 
         This will add a new file to the `components` directory of your Dagster project that contains the basic structure for the new component. Since this component only needs a Python interface, the `ShellCommand` class does not inherit from <PyObject section="components" module="dagster" object="Model" />, and an empty `__init__` method is included:
 
         <CodeExample
-          path="docs_snippets/docs_snippets/guides/components/shell-script-component/2-shell-command-empty-no-model-init.py"
+          path="docs_snippets/docs_snippets/guides/components/shell-script-component/pythonic/2-shell-command-empty-no-model-init.py"
           language="python"
           title="src/my_project/components/shell_command.py"
         />
@@ -58,7 +58,7 @@ First, use the [`dg scaffold component`](/api/dg/dg-cli#dg-scaffold) command to 
 
         You can also use [`@dataclasses.dataclass`](https://docs.python.org/3/library/dataclasses.html#dataclasses.dataclass) to implement the `__init__` method:
 
-        <CodeExample path="docs_snippets/docs_snippets/guides/components/shell-script-component/2-shell-command-empty-no-model-dataclass.py" language="python" title="src/my_project/components/shell_command.py" />
+        <CodeExample path="docs_snippets/docs_snippets/guides/components/shell-script-component/pythonic/2-shell-command-empty-no-model-dataclass.py" language="python" title="src/my_project/components/shell_command.py" />
 
         :::
     </TabItem>

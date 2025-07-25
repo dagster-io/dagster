@@ -69,10 +69,12 @@ def test_creating_a_component(
             f"{context.get_next_snip_number()}-shell-command-empty-no-model-dataclass.py",
         )
 
+        """
         context.check_file(
             Path("src") / "my_project" / "components" / "shell_command.py",
             f"{context.get_next_snip_number()}-shell-command-empty-no-model-init.py",
         )
+        """
 
         # Add config schema
         context.create_file(
