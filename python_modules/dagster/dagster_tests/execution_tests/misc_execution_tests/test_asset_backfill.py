@@ -264,6 +264,7 @@ def _single_backfill_iteration(
     asset_graph: RemoteWorkspaceAssetGraph,
     instance,
     assets_by_repo_name,
+    fail_idxs: Optional[set[int]] = None,
 ) -> AssetBackfillData:
     result = execute_asset_backfill_iteration_consume_generator(
         backfill_id, backfill_data, asset_graph, instance
@@ -271,7 +272,7 @@ def _single_backfill_iteration(
 
     backfill_data = result.backfill_data
 
-    for run_request in result.run_requests:
+    for idx, run_request in enumerate(result.run_requests):
         asset_keys = run_request.asset_selection
         assert asset_keys is not None
 
@@ -284,7 +285,7 @@ def _single_backfill_iteration(
             asset_keys=asset_keys,
             partition_key=run_request.partition_key,
             instance=instance,
-            failed_asset_keys=[],
+            failed_asset_keys=asset_keys if idx in (fail_idxs or set()) else [],
             tags={**run_request.tags, BACKFILL_ID_TAG: backfill_id},
         )
 
@@ -604,6 +605,146 @@ def test_matching_partitions_with_different_subsets():
         )
 
         assert asset_backfill_data.requested_subset == target_asset_graph_subset
+
+
+def test_matching_partitions_with_different_subsets_failure():
+    assets_by_repo_name = {"repo": matching_partitions_with_different_subsets}
+    asset_graph = get_asset_graph(assets_by_repo_name)
+
+    # target a subset that results in different subsets being excluded from parent
+    # and child (the parts of parent that are downstream of grandparent get filtered out,
+    # and the parts of child that are downstream of other_parent get filtered out)
+    target_asset_graph_subset = AssetGraphSubset(
+        partitions_subsets_by_asset_key={
+            AssetKey(["grandparent"]): asset_graph.get(
+                AssetKey(["grandparent"])
+            ).partitions_def.get_partition_subset_in_time_window(  # type: ignore
+                TimeWindow(
+                    start=create_datetime(2023, 1, 1),
+                    end=create_datetime(2023, 1, 2),
+                )
+            ),
+            AssetKey(["parent"]): asset_graph.get(
+                AssetKey(["parent"])
+            ).partitions_def.get_partition_subset_in_time_window(  # type: ignore
+                TimeWindow(
+                    start=create_datetime(2023, 1, 1),
+                    end=create_datetime(2023, 1, 10),
+                )
+            ),
+            AssetKey(["child"]): asset_graph.get(
+                AssetKey(["child"])
+            ).partitions_def.get_partition_subset_in_time_window(  # type: ignore
+                TimeWindow(
+                    start=create_datetime(2023, 1, 1),
+                    end=create_datetime(2023, 1, 10),
+                )
+            ),
+            AssetKey(["other_parent"]): asset_graph.get(
+                AssetKey(["other_parent"])
+            ).partitions_def.get_partition_subset_in_time_window(  # type: ignore
+                TimeWindow(
+                    start=create_datetime(2023, 1, 9),
+                    end=create_datetime(2023, 1, 10),
+                )
+            ),
+        },
+        non_partitioned_asset_keys=set(),
+    )
+    with DagsterInstance.ephemeral() as instance:
+        backfill_id = "matching_partitions_with_different_requested_subsets"
+
+        asset_backfill_data = AssetBackfillData.from_asset_graph_subset(
+            asset_graph_subset=target_asset_graph_subset,
+            dynamic_partitions_store=instance,
+            backfill_start_timestamp=create_datetime(2023, 1, 12, 0, 0, 0).timestamp(),
+        )
+        asset_backfill_data = _single_backfill_iteration(
+            backfill_id, asset_backfill_data, asset_graph, instance, assets_by_repo_name
+        )
+        # doesn't try to materialize child yet, even though it has the same targeted
+        # subset as parent, because different subsets of parent and child are eligible
+        # on the first iteration and thus cannot be grouped together into a run
+        assert asset_backfill_data.requested_subset == AssetGraphSubset(
+            non_partitioned_asset_keys=set(),
+            partitions_subsets_by_asset_key={
+                AssetKey(["grandparent"]): asset_graph.get(
+                    AssetKey(["grandparent"])
+                ).partitions_def.get_partition_subset_in_time_window(  # type: ignore
+                    TimeWindow(
+                        start=create_datetime(2023, 1, 1),
+                        end=create_datetime(2023, 1, 2),
+                    )
+                ),
+                AssetKey(["parent"]): asset_graph.get(
+                    AssetKey(["parent"])
+                ).partitions_def.get_partition_subset_in_time_window(  # type: ignore
+                    TimeWindow(
+                        start=create_datetime(2023, 1, 2),
+                        end=create_datetime(2023, 1, 10),
+                    )
+                ),
+                AssetKey(["other_parent"]): asset_graph.get(
+                    AssetKey(["other_parent"])
+                ).partitions_def.get_partition_subset_in_time_window(  # type: ignore
+                    TimeWindow(
+                        start=create_datetime(2023, 1, 9),
+                        end=create_datetime(2023, 1, 10),
+                    ),
+                ),
+            },
+        )
+
+        asset_backfill_data = _single_backfill_iteration(
+            backfill_id,
+            asset_backfill_data,
+            asset_graph,
+            instance,
+            assets_by_repo_name,
+            # one of the parent runs fail
+            fail_idxs={0},
+        )
+        assert asset_backfill_data.requested_subset == AssetGraphSubset(
+            non_partitioned_asset_keys=set(),
+            partitions_subsets_by_asset_key={
+                AssetKey(["grandparent"]): asset_graph.get(
+                    AssetKey(["grandparent"])
+                ).partitions_def.get_partition_subset_in_time_window(  # type: ignore
+                    TimeWindow(
+                        start=create_datetime(2023, 1, 1),
+                        end=create_datetime(2023, 1, 2),
+                    )
+                ),
+                AssetKey(["parent"]): asset_graph.get(
+                    AssetKey(["parent"])
+                ).partitions_def.get_partition_subset_in_time_window(  # type: ignore
+                    TimeWindow(
+                        start=create_datetime(2023, 1, 1),
+                        end=create_datetime(2023, 1, 10),
+                    )
+                ),
+                AssetKey(["other_parent"]): asset_graph.get(
+                    AssetKey(["other_parent"])
+                ).partitions_def.get_partition_subset_in_time_window(  # type: ignore
+                    TimeWindow(
+                        start=create_datetime(2023, 1, 9),
+                        end=create_datetime(2023, 1, 10),
+                    ),
+                ),
+            },
+        )
+
+        # do another iteration after one of the parents fails
+        asset_backfill_data = _single_backfill_iteration(
+            backfill_id, asset_backfill_data, asset_graph, instance, assets_by_repo_name
+        )
+
+        # not all things were requested because some upstreams failed
+        assert asset_backfill_data.requested_subset != target_asset_graph_subset
+        # but everythin was either requested or failed
+        assert (
+            asset_backfill_data.requested_subset | asset_backfill_data.failed_and_downstream_subset
+        ) == target_asset_graph_subset
 
 
 def test_child_with_two_parents_with_identical_partitions_same_subsets():
