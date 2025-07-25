@@ -1412,6 +1412,37 @@ class PipesDbfsMessageWriter(PipesBlobStoreMessageWriter):
             return {}
 
 
+# #################################################################
+# ##### IO - Unity Catalog Volumes (Databricks Serverless)
+# #################################################################
+
+
+class PipesUnityCatalogVolumesContextLoader(PipesContextLoader):
+    """Context loader that reads context from a JSON file on Unity Catalog Volumes."""
+
+    @contextmanager
+    def load_context(self, params: PipesParams) -> Iterator[PipesContextData]:
+        path = _assert_env_param_type(params, "path", str, self.__class__)
+        with open(path) as f:
+            yield json.load(f)
+
+
+class PipesUnityCatalogVolumesMessageWriter(PipesBlobStoreMessageWriter):
+    """Message writer that writes messages by periodically writing message chunks
+    to a directory on Unity Catalog Volumes.
+    """
+
+    def make_channel(
+        self,
+        params: PipesParams,
+    ) -> "PipesBufferedFilesystemMessageWriterChannel":
+        path = _assert_env_param_type(params, "path", str, self.__class__)
+        return PipesBufferedFilesystemMessageWriterChannel(
+            path=path,
+            interval=self.interval,
+        )
+
+
 # ########################
 # ##### CONTEXT
 # ########################
