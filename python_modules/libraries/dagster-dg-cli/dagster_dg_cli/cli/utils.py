@@ -1,4 +1,6 @@
 import json
+import os
+import re
 import subprocess
 import tempfile
 from collections.abc import Iterator, Mapping
@@ -93,8 +95,8 @@ def configure_editor_command(
 # ########################
 
 MCP_CONFIG = {
-    "command": "uv",
-    "args": ["tool", "run", "--from", "dagster-dg-cli", "dg", "mcp", "serve"],
+    "command": "dg",
+    "args": ["mcp", "serve"],
 }
 
 
@@ -106,11 +108,42 @@ def _inject_into_mcp_config_json(path: Path) -> None:
     path.write_text(json.dumps(contents, indent=2))
 
 
+def _find_claude() -> Optional[str]:
+    try:
+        subprocess.run(["claude", "--version"], check=False)
+        return "claude"
+    except FileNotFoundError:
+        pass
+
+    try:  # check for alias (auto-updating version recommends registering an alias instead of putting on PATH)
+        result = subprocess.run(
+            [os.getenv("SHELL", "bash"), "-ic", "type claude"],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        path_match = re.search(r"(/[^\s`\']+)", result.stdout)
+        if path_match:
+            return path_match.group(1)
+    except FileNotFoundError:
+        pass
+
+    return None
+
+
 @utils_group.command(name="configure-mcp", cls=DgClickCommand, hidden=True)
 @dg_global_options
 @cli_telemetry_wrapper
 @click.argument(
-    "mcp_client", type=click.Choice(["claude-desktop", "cursor", "claude-code", "vscode"])
+    "mcp_client",
+    type=click.Choice(
+        [
+            "claude-desktop",
+            "cursor",
+            "claude-code",
+            "vscode",
+        ]
+    ),
 )
 def configure_mcp_command(
     mcp_client: str,
@@ -126,9 +159,19 @@ def configure_mcp_command(
         dg_context = DgContext.for_project_environment(Path.cwd(), cli_config)
         _inject_into_mcp_config_json(dg_context.root_path / ".vscode" / "mcp.json")
     elif mcp_client == "claude-code":
-        subprocess.run(["claude", "mcp", "remove", "dagster-dg-cli"], check=False)
+        claude_cmd = _find_claude()
+        if not claude_cmd:
+            exit_with_error(
+                "Could not find claude code. Please install it from https://github.com/anthropics/claude-code"
+            )
         subprocess.run(
-            ["claude", "mcp", "add-json", "dagster-dg-cli", json.dumps(MCP_CONFIG)], check=True
+            [claude_cmd, "mcp", "remove", "dagster-dg-cli"],
+            check=False,
+            capture_output=True,
+        )
+        subprocess.run(
+            [claude_cmd, "mcp", "add-json", "dagster-dg-cli", json.dumps(MCP_CONFIG)],
+            check=True,
         )
 
 

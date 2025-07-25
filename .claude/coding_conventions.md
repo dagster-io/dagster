@@ -30,6 +30,19 @@
     - Mutability is required
     - Working with external libraries that expect dataclasses
 
+### Naming Conventions for @record Methods
+
+- **Use `with_*` naming for methods that return new instances with additional data**
+  - ✅ `result.with_error("message")` - Returns new ValidationResult with added error
+  - ✅ `result.with_warning("message")` - Returns new ValidationResult with added warning
+  - ✅ `result.with_parsing_failed()` - Returns new ValidationResult with failed parsing state
+  - ❌ `result.add_error("message")` - Confusing, sounds like it mutates the object
+  - ❌ `result.append_warning("message")` - Implies mutation rather than returning new instance
+- **Rationale**: The `with_*` convention makes it clear that:
+  1. The method returns a new instance (immutable pattern)
+  2. The original object is not modified
+  3. The new instance includes the specified addition/change
+
 ## Other conventions
 
 - Do not use `print` unless specifically requested. They are illegal in the code base unless mark with "# noqa: T201" on the same line.

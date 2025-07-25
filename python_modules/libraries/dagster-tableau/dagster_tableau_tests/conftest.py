@@ -15,6 +15,7 @@ FAKE_POD_NAME = "fake_pod_name"
 
 TEST_DATA_SOURCE_ID = "0f5660c7-2b05-4ff0-90ce-3199226956c6"
 TEST_EMBEDDED_DATA_SOURCE_ID = "1f5660c7-3b05-5ff0-90ce-4199226956c6"
+TEST_DATA_SOURCE_HIDDEN_SHEET_ID = "test_data_source_hidden_sheet_id"
 
 TEST_WORKBOOK_ID = "b75fc023-a7ca-4115-857b-4342028640d0"
 TEST_PROJECT_NAME = "test_project_name"
@@ -36,8 +37,17 @@ SAMPLE_EMBEDDED_DATA_SOURCE = {
     "workbook": {"luid": TEST_WORKBOOK_ID},
 }
 
+SAMPLE_DATA_SOURCE_HIDDEN_SHEET = {
+    "luid": TEST_DATA_SOURCE_HIDDEN_SHEET_ID,
+    "name": "Hidden Sheet Datasource",
+    "hasExtracts": True,
+    "isPublished": True,
+}
+
+
 SAMPLE_SHEET = {
     "luid": "ae8a5f27-8b2f-44e9-aec3-94fe6c638f4f",
+    "id": "sample_sheet_1_metadata_id",
     "name": "Sales",
     "createdAt": "2024-09-05T21:33:26Z",
     "updatedAt": "2024-09-13T00:15:23Z",
@@ -56,6 +66,7 @@ SAMPLE_SHEET = {
 
 SAMPLE_SHEET_2 = {
     "luid": "be8a5f27-9b2f-54e9-bec3-84fe6c638f4f",
+    "id": "sample_sheet_2_metadata_id",
     "name": "Account",
     "createdAt": "2024-09-06T22:33:26Z",
     "updatedAt": "2024-09-14T01:15:23Z",
@@ -66,9 +77,26 @@ SAMPLE_SHEET_2 = {
     "workbook": {"luid": TEST_WORKBOOK_ID},
 }
 
-SHEET_LIST = []
-SHEET_LIST += [SAMPLE_SHEET]
-SHEET_LIST += [SAMPLE_SHEET_2]
+SAMPLE_HIDDEN_SHEET = {
+    "luid": None,
+    "id": "sample_hidden_sheet_metadata_id",
+    "name": "hidden",
+    "createdAt": "2024-09-06T22:33:26Z",
+    "updatedAt": "2024-09-14T01:15:23Z",
+    "path": "TestWorkbook/Account",
+    "parentEmbeddedDatasources": [
+        {
+            "parentPublishedDatasources": [
+                {
+                    **SAMPLE_DATA_SOURCE_HIDDEN_SHEET,
+                }
+            ]
+        }
+    ],
+    "workbook": {"luid": TEST_WORKBOOK_ID},
+}
+
+SHEET_LIST = [SAMPLE_SHEET, SAMPLE_SHEET_2, SAMPLE_HIDDEN_SHEET]
 
 SAMPLE_DASHBOARD = {
     "luid": "c9bf8403-5daf-427a-b3d6-2ce9bed7798f",
@@ -76,7 +104,16 @@ SAMPLE_DASHBOARD = {
     "createdAt": "2024-09-06T14:38:42Z",
     "updatedAt": "2024-09-13T00:15:23Z",
     "path": "TestWorkbook/Dashboard_Sales",
-    "sheets": [{"luid": "ae8a5f27-8b2f-44e9-aec3-94fe6c638f4f"}],
+    "sheets": [
+        {
+            "luid": "ae8a5f27-8b2f-44e9-aec3-94fe6c638f4f",
+            "id": "sample_sheet_1_metadata_id",
+        },
+        {
+            "luid": None,
+            "id": "sample_hidden_sheet_metadata_id",
+        },
+    ],
     "workbook": {"luid": TEST_WORKBOOK_ID},
 }
 
@@ -210,13 +247,13 @@ def get_data_source_fixture(build_data_source_item):
 
 
 @pytest.fixture(name="get_job", autouse=True)
-def get_job_fixture(embedded_data_source_id, workbook_id, job_id):
+def get_job_fixture(workbook_id, job_id):
     with patch("dagster_tableau.resources.BaseTableauClient.get_job") as mocked_function:
         type(mocked_function.return_value).id = PropertyMock(return_value=job_id)
         type(mocked_function.return_value).finish_code = PropertyMock(return_value=0)
         type(mocked_function.return_value).workbook_id = PropertyMock(return_value=workbook_id)
         type(mocked_function.return_value).datasource_id = PropertyMock(
-            return_value=embedded_data_source_id
+            return_value=TEST_DATA_SOURCE_HIDDEN_SHEET_ID
         )
         yield mocked_function
 
@@ -231,14 +268,14 @@ def refresh_workbook_fixture(workbook_id, job_id):
 
 
 @pytest.fixture(name="refresh_data_source", autouse=True)
-def refresh_data_source_fixture(embedded_data_source_id, job_id):
+def refresh_data_source_fixture(job_id):
     with patch(
         "dagster_tableau.resources.BaseTableauClient.refresh_data_source"
     ) as mocked_function:
         type(mocked_function.return_value).id = PropertyMock(return_value=job_id)
         type(mocked_function.return_value).finish_code = PropertyMock(return_value=-1)
         type(mocked_function.return_value).datasource_id = PropertyMock(
-            return_value=embedded_data_source_id
+            return_value=TEST_DATA_SOURCE_HIDDEN_SHEET_ID
         )
         yield mocked_function
 

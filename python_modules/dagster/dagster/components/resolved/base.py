@@ -358,22 +358,31 @@ def _get_init_kwargs(
 
 def resolve_fields(
     model: BaseModel,
-    resolved_cls: type[Resolvable],
+    resolved_cls: type,
     context: "ResolutionContext",
 ) -> Mapping[str, Any]:
     """Returns a mapping of field names to resolved values for those fields."""
+    alias_name_by_field_name = {
+        field_name: (
+            annotation_info.field_info.alias
+            if annotation_info.field_info and annotation_info.field_info.alias
+            else field_name
+        )
+        for field_name, annotation_info in _get_annotations(resolved_cls).items()
+    }
     field_resolvers = {
-        field_name: _get_resolver(annotation_info.type, field_name)
+        (field_name): _get_resolver(annotation_info.type, field_name)
         for field_name, annotation_info in _get_annotations(resolved_cls).items()
     }
 
-    return {
+    out = {
         field_name: resolver.execute(context=context, model=model, field_name=field_name)
         for field_name, resolver in field_resolvers.items()
         # filter out unset fields to trigger defaults
         if (resolver.model_field_name or field_name) in model.model_dump(exclude_unset=True)
         and getattr(model, resolver.model_field_name or field_name) != _Unset
     }
+    return {alias_name_by_field_name[k]: v for k, v in out.items()}
 
 
 T = TypeVar("T")

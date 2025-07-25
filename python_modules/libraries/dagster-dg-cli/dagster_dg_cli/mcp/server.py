@@ -69,7 +69,6 @@ async def scaffold_dagster_component_help(
     return _subprocess(
         [
             "dg",
-            "--verbose",
             "scaffold",
             "defs",
             component_type,
@@ -99,7 +98,6 @@ async def scaffold_dagster_component(
     return _subprocess(
         [
             "dg",
-            "--verbose",
             "scaffold",
             "defs",
             component_type,
@@ -126,7 +124,6 @@ async def inspect_component_type(project_path: str, component_type: str) -> str:
     return _subprocess(
         [
             "dg",
-            "--verbose",
             "utils",
             "inspect-component",
             component_type,
@@ -150,7 +147,6 @@ async def check_dagster_defs_yaml(project_path: str) -> str:
     return _subprocess(
         [
             "dg",
-            "--verbose",
             "check",
             "yaml",
         ],
@@ -173,7 +169,6 @@ async def check_dagster_definitions(project_path: str) -> str:
     return _subprocess(
         [
             "dg",
-            "--verbose",
             "check",
             "defs",
         ],
@@ -196,7 +191,6 @@ async def list_dagster_definitions(project_path: str) -> str:
     return _subprocess(
         [
             "dg",
-            "--verbose",
             "list",
             "defs",
             "--json",

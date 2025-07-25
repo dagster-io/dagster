@@ -5,8 +5,8 @@ from typing import Any, Union
 import tableauserverclient as TSC
 from dagster import (
     AssetKey,
+    AssetObservation,
     AssetSpec,
-    ObserveResult,
     Output,
     _check as check,
 )
@@ -50,7 +50,7 @@ def parse_tableau_external_and_materializable_asset_specs(
     Args:
         specs (Sequence[AssetSpec]): The asset specs of the assets in the Tableau workspace.
         include_data_sources_with_extracts (bool):
-            Whether to include data sources with extracts in materializable assets.
+            Whether to include published data sources with extracts in materializable assets.
 
     Returns:
         ParsedTableauAssetSpecs: A named tuple representing the parsed Tableau asset specs
@@ -60,12 +60,17 @@ def parse_tableau_external_and_materializable_asset_specs(
         spec for spec in specs if TableauTagSet.extract(spec.tags).asset_type == "data_source"
     ]
 
-    extract_asset_specs, non_extract_asset_specs = [], []
+    materializable_data_source_asset_specs, non_materializable_data_source_asset_specs = [], []
     for spec in data_source_asset_specs:
-        if TableauDataSourceMetadataSet.extract(spec.metadata).has_extracts:
-            extract_asset_specs.append(spec)
+        # Embedded data sources with extract can't be refreshed using the "Update Data Source Now" endpoint
+        # https://help.tableau.com/current/api/rest_api/en-us/REST/rest_api_ref_data_sources.htm#update_data_source_now
+        if (
+            TableauDataSourceMetadataSet.extract(spec.metadata).has_extracts
+            and TableauDataSourceMetadataSet.extract(spec.metadata).is_published
+        ):
+            materializable_data_source_asset_specs.append(spec)
         else:
-            non_extract_asset_specs.append(spec)
+            non_materializable_data_source_asset_specs.append(spec)
 
     view_asset_specs = [
         spec
@@ -74,10 +79,12 @@ def parse_tableau_external_and_materializable_asset_specs(
     ]
 
     external_asset_specs = (
-        non_extract_asset_specs if include_data_sources_with_extracts else data_source_asset_specs
+        non_materializable_data_source_asset_specs
+        if include_data_sources_with_extracts
+        else data_source_asset_specs
     )
     materializable_asset_specs = (
-        extract_asset_specs + view_asset_specs
+        materializable_data_source_asset_specs + view_asset_specs
         if include_data_sources_with_extracts
         else view_asset_specs
     )
@@ -90,7 +97,7 @@ def parse_tableau_external_and_materializable_asset_specs(
 
 def create_view_asset_event(
     view: TSC.ViewItem, spec: AssetSpec, refreshed_workbook_ids: Set[str]
-) -> Iterator[Union[ObserveResult, Output]]:
+) -> Iterator[Union[AssetObservation, Output]]:
     asset_key = spec.key
     workbook_id = TableauViewMetadataSet.extract(spec.metadata).workbook_id
 
@@ -99,14 +106,14 @@ def create_view_asset_event(
             asset_key=asset_key, data=view, additional_metadata={"workbook_id": view.workbook_id}
         )
     else:
-        yield from create_asset_observe_result(
+        yield from create_asset_observation(
             asset_key=asset_key, data=view, additional_metadata={"workbook_id": view.workbook_id}
         )
 
 
 def create_data_source_asset_event(
     data_source: TSC.DatasourceItem, spec: AssetSpec, refreshed_data_source_ids: Set[str]
-) -> Iterator[Union[ObserveResult, Output]]:
+) -> Iterator[Union[AssetObservation, Output]]:
     asset_key = spec.key
     data_source_id = TableauDataSourceMetadataSet.extract(spec.metadata).id
 
@@ -115,9 +122,19 @@ def create_data_source_asset_event(
             asset_key=asset_key, data=data_source, additional_metadata={"id": data_source.id}
         )
     else:
-        yield from create_asset_observe_result(
+        yield from create_asset_observation(
             asset_key=asset_key, data=data_source, additional_metadata={"id": data_source.id}
         )
+
+
+def create_view_asset_observation(
+    view: TSC.ViewItem,
+    spec: AssetSpec,
+) -> Iterator[AssetObservation]:
+    asset_key = spec.key
+    yield from create_asset_observation(
+        asset_key=asset_key, data=view, additional_metadata={"workbook_id": view.workbook_id}
+    )
 
 
 def create_asset_output(
@@ -139,12 +156,12 @@ def create_asset_output(
     )
 
 
-def create_asset_observe_result(
+def create_asset_observation(
     asset_key: AssetKey,
     data: Union[TSC.DatasourceItem, TSC.ViewItem],
     additional_metadata: Mapping[str, Any],
-) -> Iterator[ObserveResult]:
-    yield ObserveResult(
+) -> Iterator[AssetObservation]:
+    yield AssetObservation(
         asset_key=asset_key,
         metadata={
             **additional_metadata,
