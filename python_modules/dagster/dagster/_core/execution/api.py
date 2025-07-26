@@ -28,6 +28,7 @@ from dagster._core.execution.retries import RetryMode
 from dagster._core.instance import DagsterInstance, InstanceRef
 from dagster._core.selector import parse_step_selection
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
+from dagster._core.storage.state_store import StateStore
 from dagster._core.system_config.objects import ResolvedRunConfig
 from dagster._core.telemetry import log_dagster_event, log_repo_stats, telemetry_wrapper
 from dagster._utils.error import serializable_error_info_from_exc_info
@@ -681,9 +682,9 @@ def create_execution_plan(
     tags: Optional[Mapping[str, str]] = None,
     repository_load_data: Optional[RepositoryLoadData] = None,
 ) -> ExecutionPlan:
-    from dagster._core.definitions.definitions_load_context import DefinitionsLoadContext
-
-    DefinitionsLoadContext.set_dagster_instance(instance)
+    StateStore.set_current(
+        DagsterInstance.from_ref(instance) if isinstance(instance, InstanceRef) else instance
+    )
 
     if isinstance(job, IJob):
         # If you have repository_load_data, make sure to use it when building plan

@@ -76,6 +76,7 @@ from dagster._core.storage.dagster_run import (
     TagBucket,
     assets_are_externally_managed,
 )
+from dagster._core.storage.state_store import StateStore
 from dagster._core.storage.tags import (
     ASSET_PARTITION_RANGE_END_TAG,
     ASSET_PARTITION_RANGE_START_TAG,
@@ -380,7 +381,7 @@ class DynamicPartitionsStore(Protocol):
 
 
 @public
-class DagsterInstance(DynamicPartitionsStore):
+class DagsterInstance(DynamicPartitionsStore, StateStore):
     """Core abstraction for managing Dagster's access to storage and other resources.
 
     Use DagsterInstance.get() to grab the current DagsterInstance which will load based on
