@@ -192,4 +192,7 @@ exponent.txt
 .cloudstorage/
 
 Dockerfile
+Dockerfile.agent
 docker-compose.yml
+
+entrypoint.sh

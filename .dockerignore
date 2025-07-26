@@ -1,3 +1,5 @@
+# .dockerignore
+
 .git/
 **/.tox/
 **/__pycache__/
@@ -6,3 +8,7 @@
 **/*.pyc
 **/.next/
 **/venv/
+.env*
+!.env.example
+Dockerfile*
+docker-compose.yml
