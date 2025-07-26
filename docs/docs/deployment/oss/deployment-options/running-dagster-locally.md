@@ -21,7 +21,7 @@ For a refresher on how to set up a Dagster project, follow our [Recommended Dags
 
 <Tabs>
   <TabItem value="module" label="From a module">
-    Dagster can load Python modules as code locations.
+    Dagster can load Python modules as projects.
     <CodeExample path="docs_snippets/docs_snippets/guides/tbd/definitions.py" language="python" title="my_module/__init__.py" />
     We can use the `-m` argument to supply the name of the module to start a Dagster instance loaded with our definitions:
     ```shell
@@ -35,7 +35,7 @@ For a refresher on how to set up a Dagster project, follow our [Recommended Dags
 
   </TabItem>
   <TabItem value="file" label="From a file">
-    Dagster can load a file directly as a code location.
+    Dagster can load a file directly as a project.
     <CodeExample path="docs_snippets/docs_snippets/guides/tbd/definitions.py" language="python" title="definitions.py" />
     Given the preceding file, we can use the `-f` argument to supply the name of the file to start a Dagster instance loaded with our definitions:
     ```shell

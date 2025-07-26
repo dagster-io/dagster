@@ -131,6 +131,6 @@ To successfully run your ECS agent, you'll need to have the following IAM roles 
 
 Now that you've got your agent running, what's next?
 
-- **If you're getting Dagster+ set up**, the next step is to [add a code location](/deployment/code-locations) using the agent.
+- **If you're getting Dagster+ set up**, the next step is to [add a project](/deployment/code-locations) using the agent.
 
 - **If you're ready to load your Dagster code**, refer to the [Adding Code to Dagster+](/deployment/code-locations) guide for more info.

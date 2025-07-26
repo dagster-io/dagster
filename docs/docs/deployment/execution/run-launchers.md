@@ -20,7 +20,7 @@ The core abstraction in the launch process is the _run launcher_, which is confi
 
 ## Built-in run launchers
 
-The simplest run launcher is the built-in run launcher, <PyObject section="internals" module="dagster._core.launcher" object="DefaultRunLauncher" />. This run launcher spawns a new process per run on the same node as the job's code location.
+The simplest run launcher is the built-in run launcher, <PyObject section="internals" module="dagster._core.launcher" object="DefaultRunLauncher" />. This run launcher spawns a new process per run on the same node as the job's project.
 
 Other run launchers include:
 

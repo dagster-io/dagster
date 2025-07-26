@@ -37,7 +37,7 @@ For more information on integrations available as Dagster components, see the [i
 
 ### Viewing component documentation
 
-To see automatically generated documentation for all components in your environment, you can run `dg dev` to start the webserver and navigate to the `Docs` tab for your project's code location:
+To see automatically generated documentation for all components in your environment, you can run `dg dev` to start the webserver and navigate to the `Docs` tab for your project's project:
 
 <CliInvocationExample contents="dg dev" />
 

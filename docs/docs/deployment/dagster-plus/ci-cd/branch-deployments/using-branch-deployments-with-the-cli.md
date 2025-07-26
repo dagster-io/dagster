@@ -203,7 +203,7 @@ After the above has occurred:
        --git-url "${GIT_URL}"
    ```
 
-   Refer to the [Code location guide](/deployment/code-locations) for more info on how a location's details are specified.
+   Refer to the [Project guide](/deployment/code-locations) for more info on how a location's details are specified.
 
 ## Step 4: Access the branch deployment
 

@@ -37,19 +37,19 @@ The next step is to verify that the UI is using the latest version of your Dagst
 <TabItem value="Local webserver or Dagster OSS">
 
 1. In the UI, click **Settings** in the top navigation.
-2. In the **Code locations** tab, click **Reload definitions** near the top right corner of the page.
+2. In the **Projects** tab, click **Reload definitions** near the top right corner of the page.
 
 </TabItem>
 <TabItem value="Dagster+">
 
 1. In the UI, click **Deployment** in the top navigation.
-2. In the **Code locations** tab, locate the code location that contains the schedule definition.
+2. In the **Projects** tab, locate the project that contains the schedule definition.
 3. Click **Redeploy**.
 
 </TabItem>
 </Tabs>
 
-**If the code location can't be loaded** - for example, due to a syntax error - it will have a **Status** of **Failed**. Click the **View error** link in this column to view the error message.
+**If the project can't be loaded** - for example, due to a syntax error - it will have a **Status** of **Failed**. Click the **View error** link in this column to view the error message.
 
 ## Step 5: Verify your dagster-daemon setup
 

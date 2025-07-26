@@ -19,7 +19,7 @@ To get started with a Hybrid deployment, you'll need to:
 
 1. Create a [Dagster+ organization](https://dagster.cloud/signup)
 2. [Install a Dagster+ Hybrid agent](#dagster-hybrid-agents)
-3. [Add a code location](/deployment/code-locations), typically using a Git repository and CI/CD
+3. [Add a project](/deployment/code-locations), typically using a Git repository and CI/CD
 
 ## Dagster+ Hybrid agents
 
@@ -38,11 +38,11 @@ If you're not sure which agent to use, we recommend the [Dagster+ Kubernetes age
 
 ## What you'll see in your environment
 
-### Code location servers
+### Project servers
 
-Dagster+ runs your Dagster projects through code locations. To add a code location, see the [code locations documentation](/deployment/code-locations).
+Dagster+ runs your Dagster projects through projects. To add a project, see the [projects documentation](/deployment/code-locations).
 
-When you inform Dagster+ about a new code location, we enqueue instructions for your agent to launch a new code server. The agent uses your container image to launch a code server that interacts with your Dagster definitions. The agent will run one long-standing code server for each code location. Once the code server is running, the agent will send Dagster+ metadata about your Dagster definitions that Dagster+ uses to make orchestration decisions.
+When you inform Dagster+ about a new project, we enqueue instructions for your agent to launch a new code server. The agent uses your container image to launch a code server that interacts with your Dagster definitions. The agent will run one long-standing code server for each project. Once the code server is running, the agent will send Dagster+ metadata about your Dagster definitions that Dagster+ uses to make orchestration decisions.
 
 ### Runs
 

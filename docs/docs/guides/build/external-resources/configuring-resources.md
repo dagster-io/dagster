@@ -20,7 +20,7 @@ To use environment variables, pass an <PyObject section="resources" module="dags
 
 :::note
 
-**What about `os.getenv()`?** When `os.getenv()` is used, the value of the variable is retrieved when Dagster loads the code location. Using `EnvVar` not only tells Dagster to retrieve the value at runtime, but also not to display the value in the UI.
+**What about `os.getenv()`?** When `os.getenv()` is used, the value of the variable is retrieved when Dagster loads the project. Using `EnvVar` not only tells Dagster to retrieve the value at runtime, but also not to display the value in the UI.
 
 <!-- Lives in /next/components/includes/EnvVarsBenefits.mdx -->
 

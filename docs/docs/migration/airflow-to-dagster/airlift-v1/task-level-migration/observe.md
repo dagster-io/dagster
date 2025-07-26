@@ -8,13 +8,13 @@ import UseAirliftComponent from '@site/docs/partials/\_UseAirliftComponent.md';
 
 <UseAirliftComponent />
 
-In the previous step, "[Peer the Airflow instance with a Dagster code location](/migration/airflow-to-dagster/airlift-v1/task-level-migration/peer)", we connected the example Airflow instance to a Dagster code location.
+In the previous step, "[Peer the Airflow instance with a Dagster project](/migration/airflow-to-dagster/airlift-v1/task-level-migration/peer)", we connected the example Airflow instance to a Dagster project.
 
 The next step is to represent the Airflow workflows more richly by observing the data assets that are produced by the Airflow tasks. Similar to the peering step, this step does not require any changes to Airflow code.
 
 ## Create asset specs for Airflow tasks
 
-In order to observe the assets produced by the Airflow tasks in this tutorial, you will need to define the relevant assets in the Dagster code location.
+In order to observe the assets produced by the Airflow tasks in this tutorial, you will need to define the relevant assets in the Dagster project.
 
 In this example, there are three sequential tasks:
 
