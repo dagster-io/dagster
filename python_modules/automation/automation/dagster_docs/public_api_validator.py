@@ -1,4 +1,19 @@
-"""Utilities for validating consistency between @public decorators and RST documentation."""
+"""Utilities for validating consistency between @public decorators and RST documentation.
+
+This module enforces a three-way consistency requirement:
+1. @public decorated symbols MUST be documented in RST files
+2. @public decorated symbols MUST be exported at top-level
+3. RST documented symbols MUST have @public decorators
+
+The system uses AST parsing to find @public decorators and regex parsing to find RST autodoc
+directives, then validates consistency across all three layers.
+
+Key validation methods:
+- find_public_symbols(): AST parsing to discover @public decorated symbols
+- find_rst_documented_symbols(): Regex parsing of RST files for autodoc directives
+- validate_public_in_rst(): Check @public symbols have RST docs
+- validate_rst_has_public(): Check RST symbols have @public decorators
+"""
 
 import ast
 import re
@@ -12,13 +27,18 @@ from automation.dagster_docs.public_packages import get_public_dagster_packages
 
 @record
 class PublicSymbol:
-    """Information about a symbol marked with @public decorator."""
+    """Information about a symbol marked with @public decorator.
 
-    module_path: str
-    symbol_name: str
-    symbol_type: str  # 'class', 'function', 'method', 'property'
-    is_exported: bool  # Whether it's available as top-level export
-    source_file: str
+    Note: module_path uses the canonical exported path when possible.
+    For example, a symbol defined in dagster._core.definitions.asset_definition
+    but exported as dagster.AssetDefinition will have module_path="dagster".
+    """
+
+    module_path: str  # Canonical module path (e.g., "dagster" or "dagster_aws")
+    symbol_name: str  # Symbol name (e.g., "asset", "AssetDefinition")
+    symbol_type: str  # "class", "function", "method", "property"
+    is_exported: bool  # Available at top-level import
+    source_file: str  # File path where symbol is defined
 
 
 @record
@@ -33,16 +53,31 @@ class RstSymbol:
 
 @record
 class ValidationIssue:
-    """Represents a validation issue found during public API checking."""
+    """Represents a validation issue found during public API checking.
 
-    issue_type: str  # 'missing_rst', 'missing_public', 'missing_export'
-    symbol_name: str
-    module_path: str
-    details: str
+    Issue types:
+    - 'missing_rst': Symbol has @public decorator but no RST documentation
+    - 'missing_public': Symbol is documented in RST but missing @public decorator
+    - 'missing_export': Symbol has @public decorator but not exported at top-level
+    """
+
+    issue_type: str  # Issue category (see above)
+    symbol_name: str  # Name of the problematic symbol
+    module_path: str  # Module where symbol should be accessible
+    details: str  # Human-readable description of the issue
 
 
 class PublicApiValidator:
-    """Validates consistency between @public decorators and RST documentation."""
+    """Validates consistency between @public decorators and RST documentation.
+
+    This class orchestrates the complex three-way validation by:
+    1. Scanning Python files with AST parsing to find @public decorated symbols
+    2. Parsing RST files with regex to find Sphinx autodoc directives
+    3. Checking export status by dynamic module imports
+    4. Cross-referencing all three to find inconsistencies
+
+    The validation respects exclude lists for incremental migration.
+    """
 
     def __init__(self, dagster_root: Path):
         self.dagster_root = dagster_root
