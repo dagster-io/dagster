@@ -1,5 +1,8 @@
 from dagster_shared.libraries import DagsterLibraryRegistry
 
+from dagster_duckdb.components.sql_component import (
+    DuckDBConnectionComponent as DuckDBConnectionComponent,
+)
 from dagster_duckdb.io_manager import (
     DuckDBIOManager as DuckDBIOManager,
     build_duckdb_io_manager as build_duckdb_io_manager,

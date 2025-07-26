@@ -4,11 +4,12 @@ from typing import Any
 import duckdb
 from dagster import ConfigurableResource
 from dagster._utils.backoff import backoff
+from dagster.components.lib.sql_component.sql_client import SQLClient
 from packaging.version import Version
 from pydantic import Field
 
 
-class DuckDBResource(ConfigurableResource):
+class DuckDBResource(ConfigurableResource, SQLClient):
     """Resource for interacting with a DuckDB database.
 
     Examples:
@@ -73,3 +74,8 @@ class DuckDBResource(ConfigurableResource):
         yield conn
 
         conn.close()
+
+    def connect_and_execute(self, sql: str) -> None:
+        """Connect to the DuckDB database and execute the SQL query."""
+        with self.get_connection() as conn:
+            conn.execute(sql)

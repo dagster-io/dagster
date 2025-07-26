@@ -7,17 +7,17 @@ from dagster.components.core.context import ComponentLoadContext
 from dagster.components.lib.sql_component.sql_client import SQLClient
 from dagster.components.utils import copy_fields_to_model
 
-from dagster_snowflake.resources import SnowflakeResource
+from dagster_duckdb.resource import DuckDBResource
 
 
 @public
 @preview
-class SnowflakeConnectionComponentBase(dg.Component, dg.Resolvable, dg.Model, SQLClient):
-    """A component that represents a Snowflake connection."""
+class DuckDBConnectionComponentBase(dg.Component, dg.Resolvable, dg.Model, SQLClient):
+    """A component that represents a DuckDB connection."""
 
     @cached_property
-    def _snowflake_resource(self) -> SnowflakeResource:
-        return SnowflakeResource(
+    def _duckdb_resource(self) -> DuckDBResource:
+        return DuckDBResource(
             **{
                 (field.alias or field_name): getattr(self, field_name)
                 for field_name, field in self.__class__.model_fields.items()
@@ -26,21 +26,21 @@ class SnowflakeConnectionComponentBase(dg.Component, dg.Resolvable, dg.Model, SQ
 
     def connect_and_execute(self, sql: str) -> None:
         """Connect to the SQL database and execute the SQL query."""
-        return self._snowflake_resource.connect_and_execute(sql)
+        return self._duckdb_resource.connect_and_execute(sql)
 
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
         # Use path relative to defs folder to create resource key
         relative_path = context.component_decl.path.file_path.relative_to(context.defs_module_path)
         resource_key = relative_path.as_posix().replace("/", "__").replace("-", "_")
-        return Definitions(resources={resource_key: self._snowflake_resource})
+        return Definitions(resources={resource_key: self._duckdb_resource})
 
 
 @public
 @preview
-class SnowflakeConnectionComponent(
+class DuckDBConnectionComponent(
     copy_fields_to_model(
-        copy_from=SnowflakeResource,
-        copy_to=SnowflakeConnectionComponentBase,
+        copy_from=DuckDBResource,
+        copy_to=DuckDBConnectionComponentBase,
     )
 ):
     pass
