@@ -49,6 +49,8 @@ class ValidationContext:
     docstring: str
     symbol_path: str
     processed_rst: Optional[str] = None
+    file_path: Optional[str] = None
+    docstring_start_line: Optional[int] = None
 
     def with_processed_rst(self, rst: str) -> "ValidationContext":
         """Return a new context with processed RST content."""
@@ -56,6 +58,8 @@ class ValidationContext:
             docstring=self.docstring,
             symbol_path=self.symbol_path,
             processed_rst=rst,
+            file_path=self.file_path,
+            docstring_start_line=self.docstring_start_line,
         )
 
 
@@ -78,9 +82,14 @@ class ValidationResult:
             parsing_successful=True,
         )
 
-    def with_error(self, message: str, line_number: Optional[int] = None) -> "ValidationResult":
+    def with_error(
+        self,
+        message: str,
+        line_number: Optional[int] = None,
+        context: Optional["ValidationContext"] = None,
+    ) -> "ValidationResult":
         """Return a new ValidationResult with an additional error message."""
-        location = f" (line {line_number})" if line_number else ""
+        location = self._format_location(line_number, context)
         full_message = f"{message}{location}"
         # Avoid duplicates
         if full_message not in self.errors:
@@ -92,9 +101,14 @@ class ValidationResult:
             )
         return self
 
-    def with_warning(self, message: str, line_number: Optional[int] = None) -> "ValidationResult":
+    def with_warning(
+        self,
+        message: str,
+        line_number: Optional[int] = None,
+        context: Optional["ValidationContext"] = None,
+    ) -> "ValidationResult":
         """Return a new ValidationResult with an additional warning message."""
-        location = f" (line {line_number})" if line_number else ""
+        location = self._format_location(line_number, context)
         full_message = f"{message}{location}"
         # Avoid duplicates
         if full_message not in self.warnings:
@@ -105,6 +119,32 @@ class ValidationResult:
                 parsing_successful=self.parsing_successful,
             )
         return self
+
+    def _format_location(
+        self, line_number: Optional[int], context: Optional["ValidationContext"]
+    ) -> str:
+        """Format location information for error messages."""
+        if line_number is None:
+            return ""
+
+        # Calculate file-relative line number if we have context information
+        file_line = line_number
+        filename = None
+        if context:
+            if context.docstring_start_line is not None:
+                # Convert docstring-relative line number to file-relative
+                file_line = context.docstring_start_line + line_number - 1
+            if context.file_path:
+                from pathlib import Path
+
+                filename = Path(context.file_path).name
+
+        location_parts = []
+        if filename:
+            location_parts.append(filename)
+        location_parts.append(f"line {file_line}")
+
+        return f" ({':'.join(location_parts)})"
 
     def with_parsing_failed(self) -> "ValidationResult":
         """Return a new ValidationResult with parsing marked as failed."""

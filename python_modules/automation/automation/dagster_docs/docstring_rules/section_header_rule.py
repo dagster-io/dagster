@@ -75,6 +75,7 @@ def validate_section_headers(
                 result = result.with_error(
                     f"Invalid section header: '{stripped}'. Did you mean '{exact_case_match}'?",
                     i,
+                    context,
                 )
                 lines_with_errors.add(i)
             else:
@@ -94,6 +95,7 @@ def validate_section_headers(
                     result = result.with_error(
                         f"Invalid section header: '{stripped}'. Did you mean '{possible_match}'?",
                         i,
+                        context,
                     )
                     lines_with_errors.add(i)
 
@@ -108,12 +110,14 @@ def validate_section_headers(
                     result = result.with_error(
                         f"Malformed section header: '{stripped}' is missing colon (should be '{section}')",
                         i,
+                        context,
                     )
                 else:
                     # Case mismatch and missing colon
                     result = result.with_error(
                         f"Malformed section header: '{stripped}' is missing colon and has incorrect capitalization (should be '{section}')",
                         i,
+                        context,
                     )
                 lines_with_errors.add(i)
 
@@ -124,12 +128,14 @@ def validate_section_headers(
                     result = result.with_error(
                         f"Malformed section header: '{stripped}' has incorrect capitalization (should be '{section}')",
                         i,
+                        context,
                     )
                     lines_with_errors.add(i)
                 elif stripped.lower().replace(" ", "") == section.lower().replace(" ", ""):
                     result = result.with_error(
                         f"Malformed section header: '{stripped}' has incorrect spacing (should be '{section}')",
                         i,
+                        context,
                     )
                     lines_with_errors.add(i)
                 # Only flag as "possible malformed" if the text ends with colon (indicating intent to be a section header)
@@ -144,6 +150,7 @@ def validate_section_headers(
                     result = result.with_warning(
                         f"Possible malformed section header: '{stripped}' (should be '{section}')",
                         i,
+                        context,
                     )
 
         # Check for completely garbled section headers (like "Argsjdkfjdkjfdk:")
@@ -168,6 +175,7 @@ def validate_section_headers(
                             result = result.with_error(
                                 f"Corrupted section header detected: '{stripped}' (possibly should be '{section}')",
                                 i,
+                                context,
                             )
                             lines_with_errors.add(i)
                             break
