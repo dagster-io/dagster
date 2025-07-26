@@ -52,6 +52,7 @@ from dagster._core.remote_representation.external_data import (
 from dagster._core.remote_representation.origin import CodeLocationOrigin
 from dagster._core.snap.execution_plan_snapshot import snapshot_from_execution_plan
 from dagster._core.storage.dagster_run import DagsterRun
+from dagster._core.storage.state_store import StateStore
 from dagster._grpc.types import ExecuteExternalJobArgs, ExecutionPlanSnapshotArgs
 from dagster._serdes import deserialize_value
 from dagster._time import datetime_from_timestamp
@@ -104,9 +105,7 @@ def core_execute_run(
     check.inst_param(dagster_run, "dagster_run", DagsterRun)
     check.inst_param(instance, "instance", DagsterInstance)
 
-    from dagster._core.definitions.definitions_load_context import DefinitionsLoadContext
-
-    DefinitionsLoadContext.set_dagster_instance(instance)
+    StateStore.set_current(instance)
 
     if inject_env_vars:
         try:

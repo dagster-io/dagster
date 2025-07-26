@@ -51,6 +51,7 @@ from dagster._core.remote_representation.external_data import (
 )
 from dagster._core.remote_representation.origin import RemoteRepositoryOrigin
 from dagster._core.snap.execution_plan_snapshot import ExecutionPlanSnapshotErrorData
+from dagster._core.storage.state_store import StateStore
 from dagster._core.types.loadable_target_origin import (
     LoadableTargetOrigin,
     enter_loadable_target_origin_load_context,
@@ -431,7 +432,7 @@ class DagsterApiServer(DagsterApiServicer):
 
         instance = self._exit_stack.enter_context(get_instance_for_cli(instance_ref=instance_ref))
 
-        DefinitionsLoadContext.set_dagster_instance(instance)
+        StateStore.set_current(instance)
 
         try:
             if inject_env_vars_from_instance:
