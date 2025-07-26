@@ -60,6 +60,7 @@ import doris from './kindtag-images/tool-doris-color.svg';
 import doubao from './kindtag-images/tool-doubao-color.svg';
 import druid from './kindtag-images/tool-druid-color.svg';
 import duckdb from './kindtag-images/tool-duckdb-color.svg';
+import ducklake from './kindtag-images/tool-ducklake-color.svg';
 import elasticsearch from './kindtag-images/tool-elasticsearch-color.svg';
 import evidence from './kindtag-images/tool-evidence.svg';
 import exasol from './kindtag-images/tool-exasol-color.svg';
@@ -249,6 +250,7 @@ export type KnownTagType =
   | 'pyspark'
   | 'spark'
   | 'duckdb'
+  | 'ducklake'
   | 'tensorflow'
   | 'teradata'
   | 'treasuredata'
@@ -532,6 +534,10 @@ export const KNOWN_TAGS: Record<KnownTagType, KnownTag> = {
   duckdb: {
     icon: duckdb,
     content: 'DuckDB',
+  },
+  ducklake: {
+    icon: ducklake,
+    content: 'DuckLake',
   },
   tensorflow: {
     icon: tensorflow,
