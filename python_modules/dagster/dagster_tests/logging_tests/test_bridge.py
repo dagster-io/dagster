@@ -7,6 +7,9 @@ import threading
 import time
 
 import pytest
+
+# Import bridge components and the class needed for testing
+from dagster._core.loguru_bridge import LoguruConfigurator, dagster_context_sink, with_loguru_logger
 from loguru import logger
 
 # Try to load environment variables from .env file if available
@@ -23,9 +26,6 @@ root_dir = os.path.dirname(
 )
 if root_dir not in sys.path:
     sys.path.insert(0, root_dir)
-
-# Import bridge components and the class needed for testing
-from loguru_bridge import LoguruConfigurator, dagster_context_sink, with_loguru_logger
 
 
 def setup_buildkite_environment():

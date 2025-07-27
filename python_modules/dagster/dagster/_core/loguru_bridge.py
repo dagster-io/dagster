@@ -3,6 +3,7 @@ import os
 import sys
 import threading
 from functools import wraps
+from typing import Any
 
 from loguru import logger
 
@@ -24,40 +25,65 @@ logging.basicConfig(handlers=[InterceptHandler()], level=0)
 
 
 class LoguruConfigurator:
-    config = None
+    """Configures the final output sink for Loguru.
+    This version provides a rich default configuration that can be optionally
+    overridden by environment variables for advanced users.
+    """
 
-    def __init__(self, enable_terminal_sink=True):
-        self.config = self._load_config()
-        LoguruConfigurator.config = self.config
+    config: dict[str, Any]
+
+    def __init__(self, enable_terminal_sink: bool = True):
+        """Initializes the Loguru configuration. A singleton pattern is used
+        to ensure this setup runs only once.
+        """
+        # This singleton pattern prevents re-running the configuration in the same process.
         if getattr(LoguruConfigurator, "_initialized", False):
             return
+
+        self.config = self._load_config()
         if enable_terminal_sink:
             self._setup_sinks()
+
+        # Mark as initialized to prevent re-setup.
         LoguruConfigurator._initialized = True
 
-    def _load_config(self):
+    def _load_config(self) -> dict[str, Any]:
+        """Loads configuration, using sensible defaults that can be
+        overridden by environment variables.
+        """
+        # Define a rich, informative default format for logs.
+        default_format = (
+            "<green>{time:HH:mm:ss}</green> | <level>{level: <8}</level> | "
+            "<cyan>{name}:{function}:{line}</cyan> - <level>{message}</level>"
+        )
+
         return {
+            # Defaults to 'true', but can be disabled by setting DAGSTER_LOGURU_ENABLED=false.
             "enabled": os.getenv("DAGSTER_LOGURU_ENABLED", "true").lower() in ("true", "1", "yes"),
+            # Defaults to 'DEBUG' level, but can be overridden by DAGSTER_LOGURU_LOG_LEVEL.
             "log_level": os.getenv("DAGSTER_LOGURU_LOG_LEVEL", "DEBUG"),
-            "format": os.getenv(
-                "DAGSTER_LOGURU_FORMAT",
-                "<green>{time:HH:mm:ss}</green> | <level>{level: <8}</level> | "
-                "<cyan>{name}</cyan>:<cyan>{function}</cyan> - <level>{message}</level>",
-            ),
+            # Defaults to the rich format above, but can be overridden by DAGSTER_LOGURU_FORMAT.
+            "format": os.getenv("DAGSTER_LOGURU_FORMAT", default_format),
         }
 
-    def _setup_sinks(self):
-        if not self.config["enabled"]:
+    def _setup_sinks(self) -> None:
+        """Sets up the final Loguru sink for console output (stderr).
+        This is the sink that will display logs in the terminal and Dagster UI.
+        """
+        if not self.config.get("enabled", False):
             return
-        logger.remove()
+
+        logger.remove()  # Remove any pre-existing sinks to ensure a clean setup.
         logger.add(
-            sys.stderr, level=self.config["log_level"], format=self.config["format"], colorize=True
+            sys.stderr,
+            level=self.config["log_level"],
+            format=self.config["format"],
+            colorize=True,  # Always enable colorization; Loguru handles non-TTY cases.
         )
 
 
-loguru_config = None
-log_state = threading.local()
-log_state.in_dagster_sink = False
+# This ensures that the logging system is ready as soon as the bridge is used.
+loguru_config = LoguruConfigurator()
 
 
 def dagster_context_sink(context):

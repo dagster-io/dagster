@@ -1,10 +1,8 @@
 .git/
+**/.tox/
 **/__pycache__/
 **/*.egg-info/
-*.egg-info
 **/node_modules/
-**/.tox/
+**/*.pyc
 **/.next/
-venv/
-*.pyc
-*.log
+**/venv/
