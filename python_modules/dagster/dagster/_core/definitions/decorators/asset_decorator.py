@@ -313,6 +313,15 @@ def asset(
 
     only_allow_hidden_params_in_kwargs(asset, kwargs)
 
+    if io_manager_key:
+        if metadata:
+            metadata = dict(metadata)
+        else:
+            metadata = dict()
+
+        if "io_manager_key" not in metadata:
+            metadata["io_manager_key"] = io_manager_key
+
     args = AssetDecoratorArgs(
         name=name,
         key_prefix=key_prefix,
