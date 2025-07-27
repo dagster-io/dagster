@@ -1,8 +1,6 @@
 #!/bin/bash
 set -euo pipefail
 
-REPO_ROOT="${REPO_ROOT:-$(git rev-parse --show-toplevel)}"
-export REPO_ROOT
+export DAGSTER_GIT_REPO_DIR=/workdir
 
-echo "✅ Detected repo root: $REPO_ROOT"
-cd "$REPO_ROOT"
+bash scripts/copy_buildkite_folder.sh
