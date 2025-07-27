@@ -1661,6 +1661,13 @@ def _should_backfill_atomic_asset_subset_unit(
         # Similar to above, only include a failure reason for 'interesting' failure reasons
         entity_subset_to_filter = entity_subset_to_filter.compute_difference(requested_partitions)
 
+    has_any_parent_being_requested_this_tick = any(
+        not asset_graph_view.get_entity_subset_from_asset_graph_subset(
+            asset_graph_subset_matched_so_far, parent_key
+        ).is_empty
+        for parent_key in asset_graph.get(asset_key).parent_keys
+    )
+
     for parent_key in sorted(asset_graph.get(asset_key).parent_keys):
         if entity_subset_to_filter.is_empty:
             break
@@ -1698,13 +1705,19 @@ def _should_backfill_atomic_asset_subset_unit(
             )
         ).compute_intersection(entity_subset_to_filter)
 
+        parent_being_requested_this_tick_subset = (
+            asset_graph_view.get_entity_subset_from_asset_graph_subset(
+                asset_graph_subset_matched_so_far, parent_key
+            )
+        )
+
         if not possibly_waiting_for_parent_subset.is_empty:
             cant_run_with_parent_reason = _get_cant_run_with_parent_reason(
                 targeted_but_not_materialized_parent_subset,
                 entity_subset_to_filter,
                 asset_graph_view,
                 target_subset,
-                asset_graph_subset_matched_so_far,
+                parent_being_requested_this_tick_subset,
                 candidate_asset_graph_subset_unit,
                 parent_materialized_subset,
                 logger,
@@ -1712,17 +1725,14 @@ def _should_backfill_atomic_asset_subset_unit(
             is_self_dependency = parent_key == asset_key
 
             if cant_run_with_parent_reason is not None:
-                if is_self_dependency:
-                    entity_subset_to_filter = entity_subset_to_filter.compute_difference(
-                        possibly_waiting_for_parent_subset
-                    )
-                    failure_subsets_with_reasons.append(
-                        (
-                            possibly_waiting_for_parent_subset.get_internal_value(),
-                            cant_run_with_parent_reason,
-                        )
-                    )
-                else:
+                # if any parents are also being requested this tick and there is any reason to
+                # believe that any parent can't be materialized with its child subset, then filter out
+                # the whole child subset for now, to ensure that the parent and child aren't submitted
+                # with different subsets which would incorrectly launch them in different runs
+                # despite the child depending on the parent. Otherwise, we can just filter out the
+                # specific ineligible child keys (to ensure that they aren't required before
+                # their parents materialize)
+                if not is_self_dependency and has_any_parent_being_requested_this_tick:
                     failure_subsets_with_reasons.append(
                         (
                             entity_subset_to_filter.get_internal_value(),
@@ -1732,6 +1742,17 @@ def _should_backfill_atomic_asset_subset_unit(
                     entity_subset_to_filter = asset_graph_view.get_empty_subset(
                         key=entity_subset_to_filter.key
                     )
+                else:
+                    entity_subset_to_filter = entity_subset_to_filter.compute_difference(
+                        possibly_waiting_for_parent_subset
+                    )
+                    failure_subsets_with_reasons.append(
+                        (
+                            possibly_waiting_for_parent_subset.get_internal_value(),
+                            cant_run_with_parent_reason,
+                        )
+                    )
+
             if is_self_dependency:
                 self_dependent_node = asset_graph.get(asset_key)
                 # ensure that we don't produce more than max_partitions_per_run partitions
@@ -1792,7 +1813,7 @@ def _get_cant_run_with_parent_reason(
     entity_subset_to_filter: EntitySubset[AssetKey],
     asset_graph_view: AssetGraphView,
     target_subset: AssetGraphSubset,
-    asset_graph_subset_matched_so_far: AssetGraphSubset,
+    parent_being_requested_this_tick_subset: EntitySubset[AssetKey],
     candidate_asset_graph_subset_unit: AssetGraphSubset,
     parent_materialized_subset: EntitySubset[AssetKey],
     logger: logging.Logger,
@@ -1840,12 +1861,6 @@ def _get_cant_run_with_parent_reason(
 
     parent_target_subset = target_subset.get_asset_subset(parent_asset_key, asset_graph)
     candidate_target_subset = target_subset.get_asset_subset(candidate_asset_key, asset_graph)
-
-    parent_being_requested_this_tick_subset = (
-        asset_graph_view.get_entity_subset_from_asset_graph_subset(
-            asset_graph_subset_matched_so_far, parent_asset_key
-        )
-    )
 
     num_parent_partitions_being_requested_this_tick = parent_being_requested_this_tick_subset.size
 
