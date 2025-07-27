@@ -1,0 +1,7 @@
+dg plus login
+
+Opening browser...
+Authorized for organization hooli
+
+Available deployments: prod
+Select a default deployment [prod]:
