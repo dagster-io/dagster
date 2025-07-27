@@ -1,14 +1,10 @@
-# .dockerignore
-
 .git/
-**/.tox/
 **/__pycache__/
 **/*.egg-info/
+*.egg-info
 **/node_modules/
-**/*.pyc
+**/.tox/
 **/.next/
-**/venv/
-.env*
-!.env.example
-Dockerfile*
-docker-compose.yml
+venv/
+*.pyc
+*.log
