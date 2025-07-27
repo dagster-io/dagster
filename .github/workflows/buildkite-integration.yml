@@ -2,7 +2,7 @@ name: Buildkite Integration
 
 on:
   push:
-    branches: [Issue-31069]
+    branches: [issue-31069]
 
 jobs:
   trigger:
