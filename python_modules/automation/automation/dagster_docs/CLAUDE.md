@@ -67,6 +67,7 @@ The system uses a functional validation pipeline:
 ### Public API System
 
 The system enforces a three-way consistency requirement:
+
 - `@public` decorated symbols MUST be documented in RST files
 - `@public` decorated symbols MUST be exported at top-level
 - RST documented symbols MUST have `@public` decorators
@@ -74,8 +75,9 @@ The system enforces a three-way consistency requirement:
 ### Exclude Lists
 
 During incremental migration, exclude lists in `exclude_lists.py` allow temporary exceptions:
+
 - `EXCLUDE_MISSING_RST`: Symbols with `@public` but no RST docs
-- `EXCLUDE_MISSING_PUBLIC`: RST symbols without `@public` decorators  
+- `EXCLUDE_MISSING_PUBLIC`: RST symbols without `@public` decorators
 - `EXCLUDE_MISSING_EXPORT`: `@public` symbols not exported at top-level
 
 ## Common Workflows
@@ -140,6 +142,6 @@ dagster-docs check docstrings --changed
 ## Further Reading
 
 - **[Architecture Overview](docs/architecture.md)** - System design and component relationships
-- **[CLI Reference](docs/cli-reference.md)** - Complete command documentation  
+- **[CLI Reference](docs/cli-reference.md)** - Complete command documentation
 - **[Troubleshooting](docs/troubleshooting.md)** - Error solutions and debugging
 - **[Exclude Lists](docs/exclude-lists.md)** - Managing incremental migration

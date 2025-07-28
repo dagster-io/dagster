@@ -51,7 +51,7 @@ dagster-docs dagster.asset --verbose
 # Validate all public symbols in dagster module
 dagster-docs dagster --all-public
 
-# Validate all @public methods in dagster module  
+# Validate all @public methods in dagster module
 dagster-docs dagster --public-methods
 
 # Watch mode for development
@@ -90,12 +90,14 @@ dagster-docs check docstrings [OPTIONS]
 ```
 
 **Options (exactly one required):**
+
 - `--changed`: Validate docstrings in changed files only
 - `--symbol SYMBOL`: Validate specific symbol (e.g., 'dagster.asset')
 - `--all`: Check all docstrings (not implemented yet)
 - `--package PACKAGE`: Validate all public symbols in package
 
 **Examples:**
+
 ```bash
 # Check changed files only
 dagster-docs check docstrings --changed
@@ -116,10 +118,12 @@ dagster-docs check rst-symbols [OPTIONS]
 ```
 
 **Options (one required):**
+
 - `--all`: Check all RST symbols (with exclude lists applied)
 - `--package PACKAGE`: Filter to a particular package
 
 **Examples:**
+
 ```bash
 # Check all RST symbols
 dagster-docs check rst-symbols --all
@@ -137,15 +141,17 @@ dagster-docs check public-symbols [OPTIONS]
 ```
 
 **Options (one required):**
+
 - `--all`: Check all @public symbols (with exclude lists applied)
 - `--package PACKAGE`: Filter to a particular package
 
 **Examples:**
+
 ```bash
 # Check all @public symbols
 dagster-docs check public-symbols --all
 
-# Check specific package  
+# Check specific package
 dagster-docs check public-symbols --package dagster
 ```
 
@@ -158,10 +164,12 @@ dagster-docs check exports [OPTIONS]
 ```
 
 **Options (one required):**
+
 - `--all`: Check all exports (with exclude lists applied)
 - `--package PACKAGE`: Filter to a particular package
 
 **Examples:**
+
 ```bash
 # Check all exports bidirectionally
 dagster-docs check exports --all
@@ -179,11 +187,13 @@ dagster-docs check exclude-lists [OPTIONS]
 ```
 
 **Options (at least one required):**
+
 - `--missing-public`: Audit EXCLUDE_MISSING_PUBLIC for symbols that now have @public decorators
-- `--missing-rst`: Audit EXCLUDE_MISSING_RST for symbols that now have RST documentation  
+- `--missing-rst`: Audit EXCLUDE_MISSING_RST for symbols that now have RST documentation
 - `--missing-export`: Audit EXCLUDE_MISSING_EXPORT for symbols that are now exported at top-level
 
 **Examples:**
+
 ```bash
 # Audit all exclude lists
 dagster-docs check exclude-lists --missing-public --missing-rst --missing-export
@@ -227,7 +237,7 @@ ERRORS:
   - Section header 'Args:' not followed by blank line
   - Invalid RST syntax on line 15
 
-WARNINGS:  
+WARNINGS:
   - No docstring found
 
 ✗ Docstring validation failed

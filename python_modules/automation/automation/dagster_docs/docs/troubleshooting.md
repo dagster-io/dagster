@@ -9,6 +9,7 @@
 **Problem**: Symbol doesn't exist or has been moved/renamed.
 
 **Solution**:
+
 ```bash
 # Verify symbol exists
 python -c "from dagster import nonexistent"  # Should fail
@@ -25,6 +26,7 @@ dagster-docs dagster._core.definitions.asset.asset
 **Problem**: Running `--changed` option outside git repository.
 
 **Solution**:
+
 ```bash
 # Ensure you're in Dagster repository root
 cd /path/to/dagster
@@ -39,6 +41,7 @@ dagster-docs check docstrings --symbol dagster.asset
 **Problem**: Commands can't locate `python_modules/` directory.
 
 **Solution**:
+
 ```bash
 # Run from Dagster repository root
 cd /path/to/dagster
@@ -56,16 +59,18 @@ ls -la
 **Problem**: Docstring contains syntax that breaks Google-style parsing.
 
 **Error Example**:
+
 ```
 ERROR: Napoleon processing failed: Unexpected character at line 5
 ```
 
 **Solution**:
+
 ```python
 # BAD: Malformed Google-style section
 def bad_function():
     """Function with bad docstring.
-    
+
     Args
         param: Description  # Missing colon after Args
     """
@@ -73,7 +78,7 @@ def bad_function():
 # GOOD: Properly formatted section
 def good_function():
     """Function with good docstring.
-    
+
     Args:
         param: Description
     """
@@ -84,18 +89,20 @@ def good_function():
 **Problem**: Missing blank line after RST directive.
 
 **Error Example**:
+
 ```
 ERROR: RST syntax: Error in "code-block" directive: missing blank line after directive
 ```
 
 **Solution**:
+
 ```python
 def fix_code_block():
     """Function with code example.
-    
+
     Example:
         .. code-block:: python
-        
+
             # Need blank line above this code
             result = my_function()
     """
@@ -106,13 +113,14 @@ def fix_code_block():
 **Problem**: Incorrect capitalization in section headers.
 
 **Solution**:
+
 ```python
 def fix_capitalization():
     """Function with proper section headers.
-    
+
     Args:    # Not: args:, Arguments:, or ARGS:
         param: Description
-        
+
     Returns: # Not: returns:, Return, or RETURNS:
         Result description
     """
@@ -125,13 +133,16 @@ def fix_capitalization():
 **Problem**: Symbol has `@public` decorator but no RST documentation.
 
 **Solution**:
+
 1. **Add RST documentation**:
+
    ```rst
    # In docs/sphinx/sections/api/apidocs/dagster.rst
    .. autofunction:: dagster.my_symbol
    ```
 
 2. **Or remove @public decorator** if not truly public:
+
    ```python
    # Remove @public if internal-only
    def internal_function():
@@ -152,10 +163,12 @@ def fix_capitalization():
 **Problem**: Symbol is documented but lacks `@public` decorator.
 
 **Solution**:
+
 1. **Add @public decorator**:
+
    ```python
    from dagster._annotations import public
-   
+
    @public
    def my_function():
        pass
@@ -172,11 +185,13 @@ def fix_capitalization():
 **Problem**: Symbol has `@public` decorator but isn't exported in `__init__.py`.
 
 **Solution**:
+
 1. **Add to top-level exports**:
+
    ```python
    # In dagster/__init__.py or library/__init__.py
    from ._core.my_module import my_symbol
-   
+
    __all__ = [
        # ... existing exports
        "my_symbol",
@@ -192,6 +207,7 @@ def fix_capitalization():
 **Problem**: File watcher not triggering on file modifications.
 
 **Debugging**:
+
 ```bash
 # Enable verbose mode to see file events
 dagster-docs dagster.asset --watch --verbose
@@ -203,6 +219,7 @@ ls -la /path/to/watched/file.py
 ```
 
 **Solution**:
+
 - Ensure file is being saved properly
 - Try different text editor (some editors use atomic writes)
 - Check file system permissions
@@ -212,6 +229,7 @@ ls -la /path/to/watched/file.py
 **Problem**: File changes break imports or syntax.
 
 **Solution**:
+
 - Fix syntax errors in the modified file
 - Ensure imports are still valid after changes
 - Check that symbol still exists at expected location
@@ -223,6 +241,7 @@ ls -la /path/to/watched/file.py
 **Problem**: Large codebase takes long time to validate.
 
 **Solutions**:
+
 ```bash
 # Use more targeted validation
 dagster-docs check docstrings --changed  # Instead of --all
@@ -239,6 +258,7 @@ dagster-docs dagster.asset  # Instead of full package
 **Problem**: System runs out of memory on large validation.
 
 **Solution**:
+
 - Use package-specific validation instead of `--all`
 - Increase system memory if possible
 - Consider validating libraries separately
@@ -250,6 +270,7 @@ dagster-docs dagster.asset  # Instead of full package
 **Problem**: Cannot read files or directories.
 
 **Solution**:
+
 ```bash
 # Check file permissions
 ls -la python_modules/dagster/
@@ -266,6 +287,7 @@ lsof python_modules/dagster/file.py
 **Problem**: RST files reference non-existent files.
 
 **Solution**:
+
 ```bash
 # Check RST file structure
 ls docs/sphinx/sections/api/apidocs/
@@ -296,7 +318,7 @@ from automation.dagster_docs.docstring_rules.base import ValidationContext, Vali
 # Create test context
 context = ValidationContext(
     docstring="Test docstring with args: section",
-    symbol_path="test.symbol", 
+    symbol_path="test.symbol",
     processed_rst="Processed content"
 )
 
@@ -333,10 +355,10 @@ from sphinx.ext.napoleon import GoogleDocstring
 from sphinx.util.docutils import docutils_namespace
 
 docstring = """Test function.
-    
+
 Args:
     param: Parameter description
-    
+
 Returns:
     Result description
 """
@@ -385,20 +407,20 @@ for node in ast.walk(tree):
 
 ### Common Error Patterns
 
-| Error Pattern | Meaning | Solution |
-|---------------|---------|----------|
-| `Could not import symbol` | Symbol doesn't exist or moved | Verify symbol path, check spelling |
-| `Napoleon processing failed` | Invalid Google-style docstring | Fix docstring format |
-| `RST syntax: Error in directive` | Missing blank lines in RST | Add blank line after directives |
-| `Invalid section header` | Wrong capitalization/format | Use proper case: `Args:`, `Returns:` |
-| `missing_rst` | @public symbol not in RST | Add RST docs or remove @public |
-| `missing_public` | RST symbol missing @public | Add @public decorator |
-| `missing_export` | @public symbol not exported | Add to __init__.py exports |
+| Error Pattern                    | Meaning                        | Solution                             |
+| -------------------------------- | ------------------------------ | ------------------------------------ |
+| `Could not import symbol`        | Symbol doesn't exist or moved  | Verify symbol path, check spelling   |
+| `Napoleon processing failed`     | Invalid Google-style docstring | Fix docstring format                 |
+| `RST syntax: Error in directive` | Missing blank lines in RST     | Add blank line after directives      |
+| `Invalid section header`         | Wrong capitalization/format    | Use proper case: `Args:`, `Returns:` |
+| `missing_rst`                    | @public symbol not in RST      | Add RST docs or remove @public       |
+| `missing_public`                 | RST symbol missing @public     | Add @public decorator                |
+| `missing_export`                 | @public symbol not exported    | Add to **init**.py exports           |
 
 ### Exit Codes
 
 - **0**: Success, no issues found
-- **1**: Validation errors or issues found  
+- **1**: Validation errors or issues found
 - **2**: Usage error, invalid arguments, or system error
 
 ## Getting Help
@@ -409,7 +431,7 @@ for node in ast.walk(tree):
 # Check system state
 python -c "import automation.dagster_docs; print('Module loads successfully')"
 
-# Test basic functionality  
+# Test basic functionality
 dagster-docs --help
 
 # Verify environment
