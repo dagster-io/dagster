@@ -24,7 +24,7 @@
     },
     {
       "source": "/guides/dagster-pipes/:path*",
-      "destination": "/guides/build/external-pipelines/"
+      "destination": "/guides/build/external-pipelines"
     },
     {
       "source": "/_apidocs/libraries/:path*",
@@ -132,22 +132,22 @@
     },
     {
       "source": "/sections/api/apidocs/:path*/",
-      "destination": "/api/",
+      "destination": "/api",
       "permanent": false
     },
     {
       "source": "/sections/api/apidocs/:path*",
-      "destination": "/api/",
+      "destination": "/api",
       "permanent": false
     },
     {
       "source": "/docs/apidocs/:path*",
-      "destination": "/api/",
+      "destination": "/api",
       "permanent": false
     },
     {
       "source": "/master/_apidocs/:path*",
-      "destination": "/api/",
+      "destination": "/api",
       "permanent": false
     },
     {
@@ -276,7 +276,7 @@
     },
     {
       "source": "/examples/materializations",
-      "destination": "/guides/build/assets/"
+      "destination": "/guides/build/assets"
     },
     {
       "source": "/examples/conditional_execution",
@@ -288,7 +288,7 @@
     },
     {
       "source": "/examples/dbt_example",
-      "destination": "/integrations/libraries/dbt/"
+      "destination": "/integrations/libraries/dbt"
     },
     {
       "source": "/examples/dep_dsl",
@@ -348,7 +348,7 @@
     },
     {
       "source": "/deployment/custom-infra/airflow",
-      "destination": "/deployment/oss/deployment-options/"
+      "destination": "/deployment/oss/deployment-options"
     },
     {
       "source": "/concepts/executors",
@@ -356,7 +356,7 @@
     },
     {
       "source": "/concepts/resources-legacy",
-      "destination": "/guides/build/external-resources/"
+      "destination": "/guides/build/external-resources"
     },
     {
       "source": "/integrations/pyspark",
@@ -369,91 +369,91 @@
     },
     {
       "source": "/tutorial/introduction",
-      "destination": "/etl-pipeline-tutorial/"
+      "destination": "/etl-pipeline-tutorial"
     },
     {
       "source": "/tutorial/setup",
-      "destination": "/etl-pipeline-tutorial/"
+      "destination": "/etl-pipeline-tutorial"
     },
     {
       "source": "/tutorial/writing-your-first-asset",
-      "destination": "/etl-pipeline-tutorial/"
+      "destination": "/etl-pipeline-tutorial"
     },
     {
       "source": "/tutorial/building-an-asset-graph",
-      "destination": "/etl-pipeline-tutorial/"
+      "destination": "/etl-pipeline-tutorial"
     },
     {
       "source": "/tutorial/scheduling-your-pipeline",
-      "destination": "/etl-pipeline-tutorial/"
+      "destination": "/etl-pipeline-tutorial"
     },
     {
       "source": "/tutorial/connecting-to-external-services",
-      "destination": "/etl-pipeline-tutorial/"
+      "destination": "/etl-pipeline-tutorial"
     },
     {
       "source": "/tutorial/intro-tutorial/single-op-job",
-      "destination": "/etl-pipeline-tutorial/"
+      "destination": "/etl-pipeline-tutorial"
     },
     {
       "source": "/tutorial/intro-tutorial/single-solid-pipeline",
-      "destination": "/etl-pipeline-tutorial/"
+      "destination": "/etl-pipeline-tutorial"
     },
     {
       "source": "/tutorial/intro-tutorial/connecting-ops",
-      "destination": "/etl-pipeline-tutorial/"
+      "destination": "/etl-pipeline-tutorial"
     },
     {
       "source": "/tutorial/intro-tutorial/connecting-solids",
-      "destination": "/etl-pipeline-tutorial/"
+      "destination": "/etl-pipeline-tutorial"
     },
     {
       "source": "/tutorial/intro-tutorial/testable",
-      "destination": "/etl-pipeline-tutorial/"
+      "destination": "/etl-pipeline-tutorial"
     },
     {
       "source": "/tutorial/intro-tutorial/configuring-solids",
-      "destination": "/etl-pipeline-tutorial/"
+      "destination": "/etl-pipeline-tutorial"
     },
     {
       "source": "/tutorial/advanced-tutorial/configuring-solids",
-      "destination": "/etl-pipeline-tutorial/"
+      "destination": "/etl-pipeline-tutorial"
     },
     {
       "source": "/tutorial/advanced-tutorial/configuring-ops",
-      "destination": "/etl-pipeline-tutorial/"
+      "destination": "/etl-pipeline-tutorial"
     },
     {
       "source": "/tutorial/advanced-tutorial/pipelines",
-      "destination": "/etl-pipeline-tutorial/"
+      "destination": "/etl-pipeline-tutorial"
     },
     {
       "source": "/tutorial/advanced-tutorial/types",
-      "destination": "/etl-pipeline-tutorial/"
+      "destination": "/etl-pipeline-tutorial"
     },
     {
       "source": "/tutorial/advanced-tutorial/resources",
-      "destination": "/etl-pipeline-tutorial/"
+      "destination": "/etl-pipeline-tutorial"
     },
     {
       "source": "/tutorial/advanced-tutorial/repositories",
-      "destination": "/etl-pipeline-tutorial/"
+      "destination": "/etl-pipeline-tutorial"
     },
     {
       "source": "/tutorial/advanced-tutorial/scheduling",
-      "destination": "/etl-pipeline-tutorial/"
+      "destination": "/etl-pipeline-tutorial"
     },
     {
       "source": "/tutorial/advanced-tutorial/materializations",
-      "destination": "/etl-pipeline-tutorial/"
+      "destination": "/etl-pipeline-tutorial"
     },
     {
       "source": "/concepts/solids-pipelines/solids",
-      "destination": "/guides/build/assets/"
+      "destination": "/guides/build/assets"
     },
     {
       "source": "/concepts/solids-pipelines/pipelines",
-      "destination": "/guides/build/assets/"
+      "destination": "/guides/build/assets"
     },
     {
       "source": "/concepts/ops-jobs-graphs/jobs-graphs",
@@ -461,23 +461,23 @@
     },
     {
       "source": "/concepts/solids-pipelines/pipeline-execution",
-      "destination": "/guides/build/assets/"
+      "destination": "/guides/build/assets"
     },
     {
       "source": "/concepts/solids-pipelines/composite-solids",
-      "destination": "/guides/build/assets/"
+      "destination": "/guides/build/assets"
     },
     {
       "source": "/concepts/solids-pipelines/solid-events",
-      "destination": "/guides/build/assets/"
+      "destination": "/guides/build/assets"
     },
     {
       "source": "/concepts/solids-pipelines/solid-hooks",
-      "destination": "/guides/build/assets/"
+      "destination": "/guides/build/assets"
     },
     {
       "source": "/concepts/modes-resources",
-      "destination": "/guides/build/external-resources/"
+      "destination": "/guides/build/external-resources"
     },
     {
       "source": "/deployment/guides/ecs",
@@ -490,7 +490,7 @@
     },
     {
       "source": "/tutorial/assets",
-      "destination": "/guides/build/assets/"
+      "destination": "/guides/build/assets"
     },
     {
       "source": "/tutorial/ops-jobs/connecting-ops",
@@ -506,7 +506,7 @@
     },
     {
       "source": "/guides/dagster/scheduling-assets",
-      "destination": "/guides/automate/"
+      "destination": "/guides/automate"
     },
     {
       "source": "/integrations/dbt/using-dbt-with-dagster/part-one",
@@ -530,11 +530,11 @@
     },
     {
       "source": "/tutorial/managing-your-own-io",
-      "destination": "/guides/build/io-managers/"
+      "destination": "/guides/build/io-managers"
     },
     {
       "source": "/concepts/assets/asset-materializations",
-      "destination": "/guides/build/assets/"
+      "destination": "/guides/build/assets"
     },
     {
       "source": "/getting-started/releases",
@@ -550,23 +550,23 @@
     },
     {
       "source": "/concepts/ops-jobs-graphs/metadata-tags",
-      "destination": "/guides/build/assets/metadata-and-tags/"
+      "destination": "/guides/build/assets/metadata-and-tags"
     },
     {
       "source": "/dagster-plus/managing-deployments/managing-deployments",
-      "destination": "/deployment/dagster-plus/management/"
+      "destination": "/deployment/dagster-plus/management"
     },
     {
       "source": "/dagster-plus/managing-deployments/setting-up-alerts",
-      "destination": "/guides/monitor/alerts/"
+      "destination": "/guides/monitor/alerts"
     },
     {
       "source": "/dagster-plus/managing-deployments/dagster-cloud-cli",
-      "destination": "/deployment/dagster-plus/management/dagster-cloud-cli/"
+      "destination": "/deployment/dagster-plus/management/dagster-cloud-cli"
     },
     {
       "source": "/dagster-plus/developing-testing/code-locations",
-      "destination": "/deployment/code-locations/"
+      "destination": "/deployment/code-locations"
     },
     {
       "source": "/migration/version-migration",
@@ -585,24 +585,24 @@
       "destination": "/migration/airflow-to-dagster"
     },
     {
-      "source": "/integrations/libraries/airlift/airflow-to-dagster/",
+      "source": "/integrations/libraries/airlift/airflow-to-dagster",
       "destination": "/migration/airflow-to-dagster"
     },
     {
       "source": "/integrations/libraries/airlift/airflow-to-dagster",
-      "destination": "/migration/airflow-to-dagster/"
+      "destination": "/migration/airflow-to-dagster"
     },
     {
       "source": "/integrations/libraries/airlift/federation-tutorial/",
-      "destination": "/migration/airflow-to-dagster/airlift-v1/federation/"
+      "destination": "/migration/airflow-to-dagster/airlift-v1/federation"
     },
     {
       "source": "/integrations/airlift/federation-tutorial/overview",
-      "destination": "/migration/airflow-to-dagster/airlift-v1/federation/"
+      "destination": "/migration/airflow-to-dagster/airlift-v1/federation"
     },
     {
       "source": "/integrations/airlift/full_dag",
-      "destination": "/migration/airflow-to-dagster/airlift-v1/dag-level-migration/"
+      "destination": "/migration/airflow-to-dagster/airlift-v1/dag-level-migration"
     },
     {
       "source": "/integrations/airlift/operator-migration/kubernetes-pod-operator",
@@ -687,12 +687,12 @@
     },
     {
       "source": "/integrations/great-expectations",
-      "destination": "/integrations/libraries/",
+      "destination": "/integrations/libraries",
       "permanent": false
     },
     {
       "source": "/guides/dagster/airbyte-ingestion-as-code",
-      "destination": "/integrations/libraries/airbyte/",
+      "destination": "/integrations/libraries/airbyte",
       "permanent": false
     },
     {
@@ -726,7 +726,7 @@
     },
     {
       "source": "/tutorial",
-      "destination": "/etl-pipeline-tutorial/",
+      "destination": "/etl-pipeline-tutorial",
       "permanent": false
     },
     {
@@ -736,12 +736,12 @@
     },
     {
       "source": "/tutorials/:path*/",
-      "destination": "/examples/:path*/",
+      "destination": "/examples/:path*",
       "permanent": false
     },
     {
       "source": "/tutorials/",
-      "destination": "/examples/",
+      "destination": "/examples",
       "permanent": false
     },
     {
@@ -802,15 +802,15 @@
     },
     {
       "source": "/concepts/automation",
-      "destination": "/guides/automate/"
+      "destination": "/guides/automate"
     },
     {
       "source": "/concepts/automation/schedules",
-      "destination": "/guides/automate/schedules/"
+      "destination": "/guides/automate/schedules"
     },
     {
       "source": "/concepts/automation/schedules/automating-assets-schedules-jobs",
-      "destination": "/guides/automate/schedules/"
+      "destination": "/guides/automate/schedules"
     },
     {
       "source": "/concepts/automation/schedules/automating-ops-schedules-jobs",
@@ -818,7 +818,7 @@
     },
     {
       "source": "/concepts/automation/schedules/examples",
-      "destination": "/guides/automate/schedules/"
+      "destination": "/guides/automate/schedules"
     },
     {
       "source": "/concepts/automation/schedules/partitioned-schedules",
@@ -838,7 +838,7 @@
     },
     {
       "source": "/concepts/partitions-schedules-sensors/sensors",
-      "destination": "/guides/automate/sensors/"
+      "destination": "/guides/automate/sensors"
     },
     {
       "source": "/concepts/partitions-schedules-sensors/schedules",
@@ -866,7 +866,7 @@
     },
     {
       "source": "/concepts/partitions-schedules-sensors/partitions",
-      "destination": "/guides/build/partitions-and-backfills/"
+      "destination": "/guides/build/partitions-and-backfills"
     },
     {
       "source": "/concepts/partitions-schedules-sensors/partitioning-assets",
@@ -886,7 +886,7 @@
     },
     {
       "source": "/concepts/resources",
-      "destination": "/guides/build/external-resources/"
+      "destination": "/guides/build/external-resources"
     },
     {
       "source": "/concepts/configuration/config-schema",
@@ -922,11 +922,11 @@
     },
     {
       "source": "/concepts/logging",
-      "destination": "/guides/monitor/logging/"
+      "destination": "/guides/monitor/logging"
     },
     {
       "source": "/concepts/logging/loggers",
-      "destination": "/guides/monitor/logging/"
+      "destination": "/guides/monitor/logging"
     },
     {
       "source": "/concepts/logging/python-logging",
@@ -934,7 +934,7 @@
     },
     {
       "source": "/concepts/testing",
-      "destination": "/guides/test/"
+      "destination": "/guides/test"
     },
     {
       "source": "/concepts/ops-jobs-graphs/ops",
@@ -982,15 +982,15 @@
     },
     {
       "source": "/concepts/metadata-tags",
-      "destination": "/guides/build/assets/metadata-and-tags/"
+      "destination": "/guides/build/assets/metadata-and-tags"
     },
     {
       "source": "/concepts/metadata-tags/asset-metadata",
-      "destination": "/guides/build/assets/metadata-and-tags/"
+      "destination": "/guides/build/assets/metadata-and-tags"
     },
     {
       "source": "/concepts/metadata-tags/asset-metadata/column-level-lineage",
-      "destination": "/guides/build/assets/metadata-and-tags/"
+      "destination": "/guides/build/assets/metadata-and-tags"
     },
     {
       "source": "/concepts/metadata-tags/kind-tags",
@@ -998,7 +998,7 @@
     },
     {
       "source": "/concepts/metadata-tags/op-job-metadata",
-      "destination": "/guides/build/assets/metadata-and-tags/"
+      "destination": "/guides/build/assets/metadata-and-tags"
     },
     {
       "source": "/concepts/metadata-tags/tags",
@@ -1014,7 +1014,7 @@
     },
     {
       "source": "/concepts/dagster-pipes/subprocess",
-      "destination": "/guides/build/external-pipelines/using-dagster-pipes/"
+      "destination": "/guides/build/external-pipelines/using-dagster-pipes"
     },
     {
       "source": "/concepts/dagster-pipes/subprocess/create-subprocess-asset",
@@ -1091,15 +1091,15 @@
     },
     {
       "source": "/concepts/io-management/io-managers-legacy",
-      "destination": "/guides/build/io-managers/"
+      "destination": "/guides/build/io-managers"
     },
     {
       "source": "/concepts/io-management/io-managers",
-      "destination": "guides/build/io-managers/"
+      "destination": "guides/build/io-managers"
     },
     {
       "source": "/concepts/io-management/unconnected-inputs",
-      "destination": "/guides/build/io-managers/"
+      "destination": "/guides/build/io-managers"
     },
     {
       "source": "/concepts/types",
@@ -1111,7 +1111,7 @@
     },
     {
       "source": "/concepts/webserver/graphql",
-      "destination": "/guides/operate/graphql/"
+      "destination": "/guides/operate/graphql"
     },
     {
       "source": "/concepts/webserver/graphql-client",
@@ -1163,7 +1163,7 @@
     },
     {
       "source": "/dagster-plus/deployment/agents/docker",
-      "destination": "/deployment/dagster-plus/hybrid/docker/"
+      "destination": "/deployment/dagster-plus/hybrid/docker"
     },
     {
       "source": "/dagster-plus/deployment/agents/docker/configuring-running-docker-agent",
@@ -1175,7 +1175,7 @@
     },
     {
       "source": "/dagster-plus/deployment/agents/kubernetes",
-      "destination": "/deployment/dagster-plus/hybrid/kubernetes/"
+      "destination": "/deployment/dagster-plus/hybrid/kubernetes"
     },
     {
       "source": "/dagster-plus/deployment/agents/kubernetes/configuring-running-kubernetes-agent",
@@ -1191,7 +1191,7 @@
     },
     {
       "source": "/dagster-plus/deployment/azure/overview",
-      "destination": "/deployment/dagster-plus/hybrid/azure/"
+      "destination": "/deployment/dagster-plus/hybrid/azure"
     },
     {
       "source": "/dagster-plus/deployment/azure/aks-agent",
@@ -1279,7 +1279,7 @@
     },
     {
       "source": "/dagster-plus/managing-deployments/alerts",
-      "destination": "/guides/monitor/alerts/"
+      "destination": "/guides/monitor/alerts"
     },
     {
       "source": "/dagster-plus/managing-deployments/alerts/managing-alerts-in-ui",
@@ -1323,7 +1323,7 @@
     },
     {
       "source": "/dagster-plus/managing-deployments/code-locations",
-      "destination": "/deployment/code-locations/"
+      "destination": "/deployment/code-locations"
     },
     {
       "source": "/dagster-plus/managing-deployments/branch-deployments",
@@ -1391,7 +1391,7 @@
     },
     {
       "source": "/dagster-plus/managing-deployments/dagster-plus-cli",
-      "destination": "/deployment/dagster-plus/management/dagster-cloud-cli/"
+      "destination": "/deployment/dagster-plus/management/dagster-cloud-cli"
     },
     {
       "source": "/dagster-plus/references/ci-cd-file-reference",
@@ -1452,7 +1452,7 @@
     },
     {
       "source": "/deployment/guides/kubernetes",
-      "destination": "/deployment/oss/deployment-options/kubernetes/"
+      "destination": "/deployment/oss/deployment-options/kubernetes"
     },
     {
       "source": "/deployment/guides/kubernetes/deploying-with-helm",
@@ -1460,7 +1460,7 @@
     },
     {
       "source": "/deployment/guides/kubernetes/deploying-with-helm-advanced",
-      "destination": "/deployment/oss/deployment-options/kubernetes/"
+      "destination": "/deployment/oss/deployment-options/kubernetes"
     },
     {
       "source": "/deployment/guides/kubernetes/customizing-your-deployment",
@@ -1520,15 +1520,15 @@
     },
     {
       "source": "/guides/dagster/how-assets-relate-to-ops-and-graphs",
-      "destination": "/guides/build/assets/"
+      "destination": "/guides/build/assets"
     },
     {
       "source": "/guides/dagster/enriching-with-software-defined-assets",
-      "destination": "/guides/build/assets/"
+      "destination": "/guides/build/assets"
     },
     {
       "source": "/guides/dagster/software-defined-assets",
-      "destination": "/guides/build/assets/"
+      "destination": "/guides/build/assets"
     },
     {
       "source": "/guides/dagster/testing-assets",
@@ -1592,7 +1592,7 @@
     },
     {
       "source": "/guides/dagster/example_project",
-      "destination": "/etl-pipeline-tutorial/"
+      "destination": "/etl-pipeline-tutorial"
     },
     {
       "source": "/guides/experimental-features",
@@ -1608,7 +1608,7 @@
     },
     {
       "source": "/guides/dagster/dagster_type_factories",
-      "destination": "/guides/build/assets/"
+      "destination": "/guides/build/assets"
     },
     {
       "source": "/guides/dagster/asset-versioning-and-caching",
@@ -1616,7 +1616,7 @@
     },
     {
       "source": "/guides/dagster/code-references",
-      "destination": "/guides/build/assets/metadata-and-tags/"
+      "destination": "/guides/build/assets/metadata-and-tags"
     },
     {
       "source": "/guides/best-practices",
@@ -1624,12 +1624,12 @@
     },
     {
       "source": "/integrations",
-      "destination": "/integrations/libraries/",
+      "destination": "/integrations/libraries",
       "permanent": false
     },
     {
       "source": "/integrations/airbyte",
-      "destination": "/integrations/libraries/airbyte/",
+      "destination": "/integrations/libraries/airbyte",
       "permanent": false
     },
     {
@@ -1648,7 +1648,7 @@
     },
     {
       "source": "/integrations/dbt",
-      "destination": "/integrations/libraries/dbt/",
+      "destination": "/integrations/libraries/dbt",
       "permanent": false
     },
     {
@@ -1710,7 +1710,7 @@
     },
     {
       "source": "/integrations/deltalake",
-      "destination": "/integrations/libraries/deltalake/",
+      "destination": "/integrations/libraries/deltalake",
       "permanent": false
     },
     {
@@ -1723,7 +1723,7 @@
     },
     {
       "source": "/integrations/duckdb",
-      "destination": "/integrations/libraries/duckdb/",
+      "destination": "/integrations/libraries/duckdb",
       "permanent": false
     },
     {
@@ -1741,7 +1741,7 @@
     },
     {
       "source": "/integrations/embedded-elt/dlt",
-      "destination": "/integrations/libraries/dlt/"
+      "destination": "/integrations/libraries/dlt"
     },
     {
       "source": "/integrations/embedded-elt/sling",
@@ -1764,7 +1764,7 @@
     },
     {
       "source": "/integrations/bigquery",
-      "destination": "/integrations/libraries/gcp/bigquery/",
+      "destination": "/integrations/libraries/gcp/bigquery",
       "permanent": false
     },
     {
@@ -1777,7 +1777,7 @@
     },
     {
       "source": "/integrations/dagstermill",
-      "destination": "/integrations/libraries/jupyter/",
+      "destination": "/integrations/libraries/jupyter",
       "permanent": false
     },
     {
@@ -1790,32 +1790,32 @@
     },
     {
       "source": "/integrations/looker",
-      "destination": "/integrations/libraries/looker/",
+      "destination": "/integrations/libraries/looker",
       "permanent": false
     },
     {
       "source": "/integrations/openai",
-      "destination": "/integrations/libraries/openai/",
+      "destination": "/integrations/libraries/openai",
       "permanent": false
     },
     {
       "source": "/integrations/pandas",
-      "destination": "/integrations/libraries/pandas/",
+      "destination": "/integrations/libraries/pandas",
       "permanent": false
     },
     {
       "source": "/integrations/pandera",
-      "destination": "/integrations/libraries/pandera/",
+      "destination": "/integrations/libraries/pandera",
       "permanent": false
     },
     {
       "source": "/integrations/powerbi",
-      "destination": "/integrations/libraries/powerbi/",
+      "destination": "/integrations/libraries/powerbi",
       "permanent": false
     },
     {
       "source": "/integrations/sigma",
-      "destination": "/integrations/libraries/sigma/",
+      "destination": "/integrations/libraries/sigma",
       "permanent": false
     },
     {
@@ -1825,7 +1825,7 @@
     },
     {
       "source": "/integrations/snowflake",
-      "destination": "/integrations/libraries/snowflake/",
+      "destination": "/integrations/libraries/snowflake",
       "permanent": false
     },
     {
@@ -1877,11 +1877,11 @@
     },
     {
       "source": "/next/guides/build/components",
-      "destination": "/guides/build/components/"
+      "destination": "/guides/build/components"
     },
     {
       "source": "/next/guides/build/components/",
-      "destination": "/guides/build/components/"
+      "destination": "/guides/build/components"
     },
     {
       "source": "/next/guides/build/components/:path",
@@ -1894,7 +1894,7 @@
     },
     {
       "source": "/next/:path*/",
-      "destination": "/:path*/",
+      "destination": "/:path*",
       "permanent": false
     },
     {
@@ -2568,7 +2568,7 @@
     },
     {
       "source": "/_modules/dagster/_core/event_api",
-      "destination": "/api/dagster/"
+      "destination": "/api/dagster"
     },
     {
       "source": "/_modules/dagster/_core/events",
@@ -2576,7 +2576,7 @@
     },
     {
       "source": "/_modules/dagster/_core/events/log",
-      "destination": "/api/dagster/"
+      "destination": "/api/dagster"
     },
     {
       "source": "/_modules/dagster/_core/execution/api",
