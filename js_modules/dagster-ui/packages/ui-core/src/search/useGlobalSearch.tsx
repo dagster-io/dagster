@@ -14,7 +14,7 @@ import {AssetFilterSearchResultType, SearchResult, SearchResultType} from './typ
 import {displayNameForAssetKey, isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 import {AssetTableFragment} from '../assets/types/AssetTableFragment.types';
-import {useAllAssets} from '../assets/useAllAssets';
+import {useAllAssetsNodes} from '../assets/useAllAssets';
 import {buildTagString} from '../ui/tagAsString';
 import {WorkspaceContext, WorkspaceState} from '../workspace/WorkspaceContext/WorkspaceContext';
 import {assetOwnerAsString} from '../workspace/assetOwnerAsString';
@@ -281,7 +281,7 @@ export const useGlobalSearch = ({searchContext}: {searchContext: 'global' | 'cat
 
   const {locationEntries, loadingNonAssets} = useContext(WorkspaceContext);
 
-  const {assets, loading: assetsLoading} = useAllAssets();
+  const {assets, loading: assetsLoading} = useAllAssetsNodes();
 
   const consumeBufferEffect = useCallback(
     async (buffer: React.MutableRefObject<IndexBuffer | null>, search: WorkerSearchResult) => {
