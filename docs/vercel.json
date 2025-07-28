@@ -1095,7 +1095,7 @@
     },
     {
       "source": "/concepts/io-management/io-managers",
-      "destination": "guides/build/io-managers"
+      "destination": "/guides/build/io-managers"
     },
     {
       "source": "/concepts/io-management/unconnected-inputs",
