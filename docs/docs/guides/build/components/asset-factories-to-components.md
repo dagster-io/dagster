@@ -8,6 +8,12 @@ Data engineers often need to implement multiple similar workflows in data pipeli
 
 While factories are powerful and flexible, many patterns that use them can also be expressed using [components](/guides/build/components/). In this guide, we will implement the asset factory from the [asset factory creation guide](/guides/build/assets/creating-asset-factories) into a custom component.
 
+:::note Prerequisites
+
+Before scaffolding a custom component, you must either [create a components-ready Dagster project](/guides/build/projects/creating-a-new-project) or [migrate an existing project to `dg`](/guides/build/projects/moving-to-components/migrating-project).
+
+:::
+
 ## 1. Scaffold the custom component
 
 When creating a new custom component in Dagster, the first step is to scaffold the component using `dg`. This generates the necessary boilerplate code and file structure for you to implement and register the component:
