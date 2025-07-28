@@ -1546,6 +1546,12 @@ def _execute_asset_backfill_iteration_inner(
             failed_asset_graph_subset,
         )
 
+    logger.info(
+        f"Considering the following candidate subset:\n{_asset_graph_subset_to_str(candidate_asset_graph_subset, asset_graph)}"
+        if not candidate_asset_graph_subset.is_empty
+        else "Candidate subset is empty."
+    )
+
     asset_subset_to_request, not_requested_and_reasons = bfs_filter_asset_graph_view(
         asset_graph_view,
         lambda candidate_asset_graph_subset,
@@ -1640,12 +1646,7 @@ def _should_backfill_atomic_asset_subset_unit(
         )
     )
     if not failed_and_downstream_partitions.is_empty:
-        failure_subsets_with_reasons.append(
-            (
-                failed_and_downstream_partitions.get_internal_value(),
-                "Failed or is downstream of a failed asset",
-            )
-        )
+        # Similar to above, only include a failure reason for 'interesting' failure reasons
         entity_subset_to_filter = entity_subset_to_filter.compute_difference(
             failed_and_downstream_partitions
         )
@@ -1654,12 +1655,7 @@ def _should_backfill_atomic_asset_subset_unit(
         asset_graph_view.get_entity_subset_from_asset_graph_subset(materialized_subset, asset_key)
     )
     if not materialized_partitions.is_empty:
-        failure_subsets_with_reasons.append(
-            (
-                materialized_partitions.get_internal_value(),
-                "Already materialized by backfill",
-            )
-        )
+        # Similar to above, only include a failure reason for 'interesting' failure reasons
         entity_subset_to_filter = entity_subset_to_filter.compute_difference(
             materialized_partitions
         )
@@ -1669,12 +1665,7 @@ def _should_backfill_atomic_asset_subset_unit(
     )
 
     if not requested_partitions.is_empty:
-        failure_subsets_with_reasons.append(
-            (
-                requested_partitions.get_internal_value(),
-                "Already requested by backfill",
-            )
-        )
+        # Similar to above, only include a failure reason for 'interesting' failure reasons
         entity_subset_to_filter = entity_subset_to_filter.compute_difference(requested_partitions)
 
     for parent_key in sorted(asset_graph.get(asset_key).parent_keys):
