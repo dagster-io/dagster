@@ -20,9 +20,7 @@ class TestCheckHelperFunctions:
     def test_validate_single_symbol_success(self):
         """Test _validate_single_symbol with a valid symbol."""
         # Test with automation symbol that should be valid
-        result = _validate_single_symbol(
-            "automation.dagster_docs.validator.SymbolImporter"
-        )
+        result = _validate_single_symbol("automation.dagster_docs.validator.SymbolImporter")
 
         # Should return 0 for success
         assert result == 0
@@ -137,9 +135,7 @@ class TestWatchHelperFunctions:
     def test_resolve_symbol_file_path_verbose_mode(self):
         """Test _resolve_symbol_file_path in verbose mode."""
         # Should work the same way in verbose mode
-        result = _resolve_symbol_file_path(
-            "automation.dagster_docs.validator.SymbolImporter", True
-        )
+        result = _resolve_symbol_file_path("automation.dagster_docs.validator.SymbolImporter", True)
 
         assert isinstance(result, Path)
         assert result.exists()
