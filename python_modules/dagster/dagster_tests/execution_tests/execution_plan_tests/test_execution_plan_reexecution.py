@@ -86,7 +86,8 @@ def test_execution_plan_reexecution():
 
         execution_plan = create_execution_plan(
             dg.reconstructable(job_fn),
-            run_config,
+            instance,
+            run_config=run_config,
             known_state=known_state,
         )
 
@@ -158,7 +159,8 @@ def test_execution_plan_reexecution_with_in_memory():
 
         execution_plan = create_execution_plan(
             dg.reconstructable(define_addy_job_mem_io),
-            run_config,
+            instance,
+            run_config=run_config,
             known_state=known_state,
         )
 

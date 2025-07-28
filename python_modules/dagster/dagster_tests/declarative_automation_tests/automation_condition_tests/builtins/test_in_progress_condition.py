@@ -96,7 +96,7 @@ def test_unpartitioned() -> None:
     assert result.total_requested == 0
 
     # create an execution plan targeted at both A and B
-    execution_plan = create_execution_plan(job, run_config={})
+    execution_plan = create_execution_plan(job, instance, run_config={})
     instance.create_run_for_job(
         job_def=job,
         run_id=RUN_ID,

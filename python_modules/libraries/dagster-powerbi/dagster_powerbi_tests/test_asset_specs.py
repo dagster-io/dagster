@@ -334,7 +334,9 @@ def test_state_derived_defs(
         recon_repo = ReconstructableRepository.for_file(__file__, fn_name="state_derived_defs")
         recon_job = ReconstructableJob(repository=recon_repo, job_name="all_asset_job")
 
-        execution_plan = create_execution_plan(recon_job, repository_load_data=repository_load_data)
+        execution_plan = create_execution_plan(
+            recon_job, instance, repository_load_data=repository_load_data
+        )
 
         run = instance.create_run_for_job(job_def=job_def, execution_plan=execution_plan)
 

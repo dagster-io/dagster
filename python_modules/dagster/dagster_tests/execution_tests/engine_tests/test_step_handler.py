@@ -19,7 +19,7 @@ def foo_pipline():
 
 
 def _get_executor(instance, pipeline, executor_config=None):
-    return test_step_delegating_executor.executor_creation_fn(
+    return test_step_delegating_executor.executor_creation_fn(  # type: ignore
         dg.InitExecutorContext(
             job=pipeline,
             executor_def=test_step_delegating_executor,
