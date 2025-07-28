@@ -1,4 +1,5 @@
 # Byte-compiled / optimized / DLL files
+*.pyc
 __pycache__/
 *.py[cod]
 *$py.class
@@ -21,6 +22,8 @@ parts/
 sdist/
 var/
 wheels/
+.buildkite/
+scripts/
 *.egg-info/
 .installed.cfg
 *.egg
@@ -134,6 +137,12 @@ python_modules/dagster-webserver/yarn.lock
 python_modules/dagit/node_modules/
 python_modules/dagit/yarn.lock
 js_modules/dagit
+
+node_modules/
+package-lock.json
+yarn.lock
+
+.vscode/
 
 # Gatsby stuff
 docs/gatsby/**/node_modules/

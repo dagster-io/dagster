@@ -1,0 +1,12 @@
+{
+  "$schema": "https://aka.ms/codetour-schema",
+  "title": "Enter",
+  "steps": [
+    {
+      "file": "scripts/copy_buildkite_folder.sh",
+      "description": "resolve conflicts",
+      "line": 94
+    }
+  ],
+  "ref": "Issue-29914"
+}
