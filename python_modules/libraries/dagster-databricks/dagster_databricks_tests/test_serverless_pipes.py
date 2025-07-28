@@ -5,11 +5,7 @@ from typing import Any
 import pytest
 from dagster import AssetExecutionContext, asset, materialize
 from dagster._core.errors import DagsterPipesExecutionError
-from dagster_databricks._test_utils import (
-    databricks_client,  # noqa: F401
-    databricks_notebook_folder_path,  # noqa: F401
-    temp_notebook_script,
-)
+from dagster_databricks._test_utils import databricks_client, databricks_notebook_path  # noqa: F401
 from dagster_databricks.pipes import PipesDatabricksServerlessClient
 from databricks.sdk import WorkspaceClient
 from databricks.sdk.service import jobs
@@ -21,6 +17,9 @@ TEST_VOLUME_PATH = "/Volumes/workspace/default/databricks_serverless_pipes_test"
 
 
 def script_fn():
+    # The content of this script must be manually added to a Databricks notebook
+    # for which dagster-pipes has been added as a dependency.
+    # The path to the notebook must be set as the `DATABRICKS_NOTEBOOK_PATH` env var when running tests in this module.
     import sys
 
     from dagster_pipes import (
@@ -30,12 +29,10 @@ def script_fn():
         open_dagster_pipes,
     )
 
-    mock_widgets = {}
-
     with open_dagster_pipes(
-        params_loader=PipesDatabricksNotebookWidgetsParamsLoader(mock_widgets),
         context_loader=PipesUnityCatalogVolumesContextLoader(),
         message_writer=PipesUnityCatalogVolumesMessageWriter(),
+        params_loader=PipesDatabricksNotebookWidgetsParamsLoader(dbutils.widgets),  # noqa
     ) as context:
         multiplier = context.get_extra("multiplier")
         value = 2 * multiplier
@@ -77,22 +74,16 @@ def make_submit_task(
 @pytest.mark.skipif(not IS_WORKSPACE, reason="No DB workspace credentials found.")
 def test_pipes_client(
     databricks_client: WorkspaceClient,  # noqa: F811
-    databricks_notebook_folder_path: str,  # noqa: F811
+    databricks_notebook_path: str,  # noqa: F811
 ):
     @asset
     def number_x(context: AssetExecutionContext, pipes_client: PipesDatabricksServerlessClient):
-        with ExitStack() as stack:
-            script_path = stack.enter_context(
-                temp_notebook_script(
-                    databricks_client, databricks_notebook_folder_path, script_fn=script_fn
-                )
-            )
-            task = make_submit_task(script_path)
-            return pipes_client.run(
-                task=task,
-                context=context,
-                extras={"multiplier": 2, "storage_root": "fake"},
-            ).get_results()
+        task = make_submit_task(databricks_notebook_path)
+        return pipes_client.run(
+            task=task,
+            context=context,
+            extras={"multiplier": 2, "storage_root": "fake"},
+        ).get_results()
 
     result = materialize(
         [number_x],
