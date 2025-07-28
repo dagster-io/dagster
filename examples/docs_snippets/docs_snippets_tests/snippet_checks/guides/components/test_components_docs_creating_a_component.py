@@ -63,18 +63,11 @@ def test_creating_a_component(
             snippet_path=f"{context.get_next_snip_number()}-dg-scaffold-shell-command.txt",
         )
 
-        # Validate scaffolded files in both cases
+        # Validate scaffolded files
         context.check_file(
             Path("src") / "my_project" / "components" / "shell_command.py",
-            f"{context.get_next_snip_number()}-shell-command-empty-no-model-dataclass.py",
+            f"{context.get_next_snip_number()}-shell-command-empty.py",
         )
-
-        """
-        context.check_file(
-            Path("src") / "my_project" / "components" / "shell_command.py",
-            f"{context.get_next_snip_number()}-shell-command-empty-no-model-init.py",
-        )
-        """
 
         # Add config schema
         context.create_file(
