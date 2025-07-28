@@ -37,7 +37,7 @@ Now that we have a dbt project to work with, we need to install both the Dagster
 
 <CliInvocationExample contents="uv pip install dagster-dbt dbt-duckdb" />
 
-We still want our dbt project to be represented as assets in our graph, but we will define them in a slightly different way. In the previous step, we manually defined our assets by writing functions decorated with the <PyObject section="assets" module="dagster" object="asset" decorator />. This time ,we will use [components](/guides/build/components/), which are predefined ways to interact with common integrations or patterns. In this case, we will use the [dbt component](/guides/build/components/integrations/dbt-component-tutorial) to quickly turn our dbt project into assets.
+We still want our dbt project to be represented as assets in our graph, but we will define them in a slightly different way. In the previous step, we manually defined our assets by writing functions decorated with the <PyObject section="assets" module="dagster" object="asset" decorator />. This time ,we will use [components](/guides/build/components), which are predefined ways to interact with common integrations or patterns. In this case, we will use the [dbt component](/guides/build/components/integrations/dbt-component-tutorial) to quickly turn our dbt project into assets.
 
 The dbt component was installed when we installed the `dagster-dbt` library. This means we can now scaffold a dbt component definition with `dg scaffold defs` command:
 

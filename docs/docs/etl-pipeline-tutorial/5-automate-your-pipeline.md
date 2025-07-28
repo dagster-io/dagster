@@ -11,7 +11,7 @@ There are several ways to [automate assets ](/guides/automate) in Dagster. Dagst
 
 Cron-based schedules are common in data orchestration. They use time-based expressions to automatically trigger tasks at specified intervals, making them ideal for ETL pipelines that need to run consistently, such as hourly, daily, or monthly, to process and update data on a regular cadence. For our pipeline, assume that updated CSVs are uploaded at a specific time every day.
 
-While it is possible to define a standalone [schedule](/guides/automate/schedules/) object in Dagster, we can also add a schedule directly to the asset with [declarative automation](/guides/automate/declarative-automation) by including this schedule information within the <PyObject section="asset-checks" module="dagster" object="asset_check" decorator />. Now our assets will execute every day at midnight:
+While it is possible to define a standalone [schedule](/guides/automate/schedules) object in Dagster, we can also add a schedule directly to the asset with [declarative automation](/guides/automate/declarative-automation) by including this schedule information within the <PyObject section="asset-checks" module="dagster" object="asset_check" decorator />. Now our assets will execute every day at midnight:
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/src/etl_tutorial/defs/assets.py"
