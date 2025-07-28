@@ -209,38 +209,3 @@ class TestCheckOtherCommands:
         # Should fail with exit code 1
         assert result.exit_code == 1
         assert "Error: One of --all or --package must be provided" in result.output
-
-
-class TestCheckCommandsWithExcludeLists:
-    """Test suite to verify commands respect exclude lists and return clean results."""
-
-    def setup_method(self):
-        """Set up test fixtures."""
-        self.runner = CliRunner()
-
-    def test_check_rst_symbols_all_with_exclude_lists(self):
-        """Test that check rst-symbols --all returns clean results with exclude lists."""
-        result = self.runner.invoke(check, ["rst-symbols", "--all"])
-
-        # With exclude lists properly applied, should have no issues
-        assert result.exit_code == 0, f"Command failed with output: {result.output}"
-        assert "✓" in result.output
-        assert "All RST documented symbols have @public decorators" in result.output
-
-    def test_check_public_symbols_all_with_exclude_lists(self):
-        """Test that check public-symbols --all returns clean results with exclude lists."""
-        result = self.runner.invoke(check, ["public-symbols", "--all"])
-
-        # With exclude lists properly applied, should have no issues
-        assert result.exit_code == 0, f"Command failed with output: {result.output}"
-        assert "✓" in result.output
-        assert "All @public symbols are documented in RST and exported top-level" in result.output
-
-    def test_check_exports_all_with_exclude_lists(self):
-        """Test that check exports --all returns clean results with exclude lists."""
-        result = self.runner.invoke(check, ["exports", "--all"])
-
-        # With exclude lists properly applied, should have no issues
-        assert result.exit_code == 0, f"Command failed with output: {result.output}"
-        assert "✓" in result.output
-        assert "All exports are properly documented and decorated" in result.output

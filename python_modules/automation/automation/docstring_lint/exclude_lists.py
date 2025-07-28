@@ -2,9 +2,6 @@
 
 This file contains all the symbols that are known to have @public API inconsistencies.
 These lists allow incremental fixing while preventing new issues from being introduced.
-
-DO NOT EDIT THE EXCLUDE_MISSING_PUBLIC LIST BY HAND - it is generated automatically.
-To update it, run the generation script and replace the entire set.
 """
 
 # Symbols marked @public but not yet documented in RST files
@@ -104,18 +101,12 @@ EXCLUDE_MISSING_EXPORT = {
 }
 
 # Hardcoded list of all RST symbols missing @public decorators
-# Generated automatically - do not edit by hand
 EXCLUDE_MISSING_PUBLIC = {
     "dagster.BetaWarning",
-    "dagster.Component",
-    "dagster.ComponentLoadContext",
     "dagster.ComponentTree",
     "dagster.DefaultRunCoordinator",
     "dagster.PreviewWarning",
     "dagster.PreviewWarning",
-    "dagster.ResolutionContext",
-    "dagster.Resolvable",
-    "dagster.Resolver",
     "dagster.SkipReason",
     "dagster.SpecificPartitionsPartitionMapping",
     "dagster.SqlEventLogStorage",
@@ -144,13 +135,10 @@ EXCLUDE_MISSING_PUBLIC = {
     "dagster.build_sensor_for_freshness_checks",
     "dagster.build_time_partition_freshness_checks",
     "dagster.colored_console_logger",
-    "dagster.component_instance",
     "dagster.config_from_files",
     "dagster.config_from_pkg_resources",
     "dagster.config_from_yaml_strings",
     "dagster.configured",
-    "dagster.create_repository_using_definitions_args",
-    "dagster.definitions",
     "dagster.file_relative_path",
     "dagster.json_console_logger",
     "dagster.link_code_references_to_git",
@@ -167,7 +155,6 @@ EXCLUDE_MISSING_PUBLIC = {
     "dagster.load_definitions_from_modules",
     "dagster.load_definitions_from_package_module",
     "dagster.load_definitions_from_package_name",
-    "dagster.load_from_defs_folder",
     "dagster.usable_as_dagster_type",
     "dagster.user_code_error_boundary",
     "dagster.validate_run_config",
@@ -314,8 +301,6 @@ EXCLUDE_MISSING_PUBLIC = {
     "dagster_mysql.MySQLEventLogStorage",
     "dagster_mysql.MySQLRunStorage",
     "dagster_mysql.MySQLScheduleStorage",
-    "dagster_openai.OpenAIResource",
-    "dagster_openai.with_usage_metadata",
     "dagster_pandas.PandasColumn",
     "dagster_pandas.RowCountConstraint",
     "dagster_pandas.StrictColumnsConstraint",
@@ -365,7 +350,6 @@ EXCLUDE_MISSING_PUBLIC = {
     "dagster_sigma.load_sigma_asset_specs",
     "dagster_slack.make_slack_on_run_failure_sensor",
     "dagster_sling.DagsterSlingTranslator",
-    "dagster_sling.SlingConnectionResource",
     "dagster_sling.SlingResource",
     "dagster_sling.sling_assets",
     "dagster_snowflake.SnowflakeConnection",
@@ -420,7 +404,7 @@ EXCLUDE_MISSING_PUBLIC = {
     "dagster.Scheduler",
     "dagster.ScheduleStorage",
 }
-# Total: 309 symbols
+# Total: 297 symbols
 
 # Modules to exclude from @public scanning
 EXCLUDE_MODULES_FROM_PUBLIC_SCAN = set()
