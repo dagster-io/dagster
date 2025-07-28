@@ -9,7 +9,7 @@ import {
 } from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import React, {useRef} from 'react';
-import {Link, useHistory} from 'react-router-dom';
+import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
 import {
@@ -23,6 +23,7 @@ import {asAssetKeyInput} from '../../assets/asInput';
 import {assetDetailsPathForKey} from '../../assets/assetDetailsPathForKey';
 import {AssetViewParams} from '../../assets/types';
 import {AssetKey} from '../../graphql/types';
+import {useOpenInNewTab} from '../../hooks/useOpenInNewTab';
 import {
   failedStatuses,
   inProgressStatuses,
@@ -184,7 +185,7 @@ export const VirtualizedBackfillPartitionsRow = ({
   }
 
   const client = useApolloClient();
-  const history = useHistory();
+  const openInNewTab = useOpenInNewTab();
 
   const onShowAssetDetails = async (assetKey: AssetKey, isPartitioned: boolean) => {
     let params: AssetViewParams = {};
@@ -206,7 +207,7 @@ export const VirtualizedBackfillPartitionsRow = ({
         params = {default_range: data.ranges.map((r) => `[${r.start}...${r.end}]`).join(',')};
       }
     }
-    return history.push(assetDetailsPathForKey(assetKey, params));
+    return openInNewTab(assetDetailsPathForKey(assetKey, params));
   };
 
   return (
