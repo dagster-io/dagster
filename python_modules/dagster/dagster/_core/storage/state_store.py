@@ -2,8 +2,6 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import ClassVar, Optional
 
-import dagster._check as check
-
 
 class StateStore(ABC):
     """Interface for a state store that can be used to store and retrieve state for a given defs key.
@@ -58,6 +56,11 @@ class StateStore(ABC):
         cls._current = state_store
 
     @classmethod
-    def get_current(cls) -> "StateStore":
-        """Get the current StateStore."""
-        return check.not_none(cls._current)
+    def get_current(cls) -> Optional["StateStore"]:
+        """Get the current StateStore, if it has been set."""
+        from dagster._core.instance import DagsterInstance
+        from dagster._core.instance.ref import InstanceRef
+
+        if isinstance(cls._current, InstanceRef):
+            return DagsterInstance.from_ref(cls._current)
+        return cls._current

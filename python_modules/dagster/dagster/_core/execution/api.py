@@ -683,7 +683,7 @@ def create_execution_plan(
     repository_load_data: Optional[RepositoryLoadData] = None,
 ) -> ExecutionPlan:
     StateStore.set_current(
-        DagsterInstance.from_ref(instance) if isinstance(instance, InstanceRef) else instance
+        instance if isinstance(instance, DagsterInstance) else DagsterInstance.from_ref(instance)
     )
 
     if isinstance(job, IJob):

@@ -428,11 +428,10 @@ class DagsterApiServer(DagsterApiServicer):
 
         self._enable_metrics = check.bool_param(enable_metrics, "enable_metrics")
         self._server_threadpool_executor = server_threadpool_executor
-        from dagster._cli.utils import get_instance_for_cli
 
-        instance = self._exit_stack.enter_context(get_instance_for_cli(instance_ref=instance_ref))
-
-        StateStore.set_current(instance)
+        # first, set the current state store to the provided instance ref, if it exists
+        if instance_ref is not None:
+            StateStore.set_current(DagsterInstance.from_ref(instance_ref))
 
         try:
             if inject_env_vars_from_instance:
@@ -444,6 +443,9 @@ class DagsterApiServer(DagsterApiServicer):
                     get_instance_for_cli(instance_ref=instance_ref)
                 )
                 self._instance.inject_env_vars(location_name)
+                # This operation may give us a new instance if instance_ref was not set, so
+                # update to ensure that we have the correct StateStore set
+                StateStore.set_current(self._instance)
 
             self._loaded_repositories: Optional[LoadedRepositories] = LoadedRepositories(
                 loadable_target_origin,
