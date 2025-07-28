@@ -6,19 +6,15 @@ These tests ensure the validator catches issues that would break documentation
 builds or result in poor rendering.
 """
 
-import pytest
-from automation.dagster_docs.validator import DocstringValidator
+from automation.dagster_docs.validator import validate_docstring_text
 
 
 class TestSectionHeaderErrors:
     """Test detection of incorrect section headers."""
 
-    @pytest.fixture
-    def validator(self):
-        """Provide a DocstringValidator instance for tests."""
-        return DocstringValidator()
+    # Using function-based validation approach
 
-    def test_incorrect_section_capitalization(self, validator):
+    def test_incorrect_section_capitalization(self):
         """Test detection of incorrectly capitalized section headers."""
         docstring = '''"""Function with incorrect section capitalization.
 
@@ -30,14 +26,14 @@ class TestSectionHeaderErrors:
             Description of return value
         """'''
 
-        result = validator.validate_docstring_text(docstring, "test.function")
+        result = validate_docstring_text(docstring, "test.function")
 
         # Should detect malformed section headers
         assert result.has_warnings() or result.has_errors()
         messages = " ".join(result.warnings + result.errors).lower()
         assert "malformed section header" in messages or "rst syntax" in messages
 
-    def test_missing_colon_in_section_header(self, validator):
+    def test_missing_colon_in_section_header(self):
         """Test detection of section headers missing colons."""
         docstring = '''"""Function with missing colons in section headers.
 
@@ -48,12 +44,12 @@ class TestSectionHeaderErrors:
             Description of return value
         """'''
 
-        result = validator.validate_docstring_text(docstring, "test.function")
+        result = validate_docstring_text(docstring, "test.function")
 
         # Should detect RST syntax errors for malformed headers
         assert result.has_warnings() or result.has_errors()
 
-    def test_incorrect_section_names(self, validator):
+    def test_incorrect_section_names(self):
         """Test detection of common incorrect section names."""
         docstring = '''"""Function with incorrect section names.
 
@@ -67,14 +63,14 @@ class TestSectionHeaderErrors:
             ValueError: When something goes wrong
         """'''
 
-        result = validator.validate_docstring_text(docstring, "test.function")
+        result = validate_docstring_text(docstring, "test.function")
 
         # Should detect malformed section headers
         assert result.has_warnings() or result.has_errors()
         messages = " ".join(result.warnings + result.errors).lower()
         assert "malformed section header" in messages or "rst syntax" in messages
 
-    def test_double_colon_section_headers(self, validator):
+    def test_double_colon_section_headers(self):
         """Test detection of section headers with double colons."""
         docstring = '''"""Function with double colon section headers.
 
@@ -85,7 +81,7 @@ class TestSectionHeaderErrors:
             Description of return value
         """'''
 
-        result = validator.validate_docstring_text(docstring, "test.function")
+        result = validate_docstring_text(docstring, "test.function")
 
         # Should detect RST syntax issues
         assert result.has_warnings() or result.has_errors()
@@ -94,12 +90,9 @@ class TestSectionHeaderErrors:
 class TestIndentationErrors:
     """Test detection of incorrect indentation in docstrings."""
 
-    @pytest.fixture
-    def validator(self):
-        """Provide a DocstringValidator instance for tests."""
-        return DocstringValidator()
+    # Using function-based validation approach
 
-    def test_incorrect_parameter_indentation(self, validator):
+    def test_incorrect_parameter_indentation(self):
         """Test detection of incorrect parameter description indentation."""
         docstring = '''"""Function with incorrect parameter indentation.
 
@@ -111,12 +104,12 @@ class TestIndentationErrors:
             Correct indentation here
         """'''
 
-        result = validator.validate_docstring_text(docstring, "test.function")
+        result = validate_docstring_text(docstring, "test.function")
 
         # Should detect indentation issues in RST processing
         assert result.has_warnings() or result.has_errors()
 
-    def test_mixed_indentation_levels(self, validator):
+    def test_mixed_indentation_levels(self):
         """Test detection of mixed indentation levels."""
         docstring = '''"""Function with mixed indentation levels.
 
@@ -129,12 +122,12 @@ class TestIndentationErrors:
             Description of return value
         """'''
 
-        result = validator.validate_docstring_text(docstring, "test.function")
+        result = validate_docstring_text(docstring, "test.function")
 
         # Should detect indentation inconsistencies
         assert result.has_warnings() or result.has_errors()
 
-    def test_section_content_not_indented(self, validator):
+    def test_section_content_not_indented(self):
         """Test detection of section content that's not properly indented."""
         docstring = '''"""Function with section content not indented.
 
@@ -146,7 +139,7 @@ param2: This should also be indented
 The return description should be indented
         """'''
 
-        result = validator.validate_docstring_text(docstring, "test.function")
+        result = validate_docstring_text(docstring, "test.function")
 
         # Should detect indentation issues
         assert result.has_warnings() or result.has_errors()
@@ -155,12 +148,9 @@ The return description should be indented
 class TestParameterDescriptionErrors:
     """Test detection of malformed parameter descriptions."""
 
-    @pytest.fixture
-    def validator(self):
-        """Provide a DocstringValidator instance for tests."""
-        return DocstringValidator()
+    # Using function-based validation approach
 
-    def test_missing_parameter_descriptions(self, validator):
+    def test_missing_parameter_descriptions(self):
         """Test detection of parameters without descriptions."""
         docstring = '''"""Function with missing parameter descriptions.
 
@@ -173,13 +163,13 @@ class TestParameterDescriptionErrors:
             Description of return value
         """'''
 
-        result = validator.validate_docstring_text(docstring, "test.function")
+        result = validate_docstring_text(docstring, "test.function")
 
         # This might produce warnings but shouldn't break validation
         # The function should still be considered valid for RST syntax
         assert result.parsing_successful
 
-    def test_malformed_type_annotations(self, validator):
+    def test_malformed_type_annotations(self):
         """Test detection of malformed type annotations in parameters."""
         docstring = '''"""Function with malformed type annotations.
 
@@ -192,12 +182,12 @@ class TestParameterDescriptionErrors:
             Description of return value
         """'''
 
-        result = validator.validate_docstring_text(docstring, "test.function")
+        result = validate_docstring_text(docstring, "test.function")
 
         # Should detect RST syntax issues from malformed parentheses
         assert result.has_warnings() or result.has_errors()
 
-    def test_inconsistent_parameter_format(self, validator):
+    def test_inconsistent_parameter_format(self):
         """Test detection of inconsistent parameter formatting."""
         docstring = '''"""Function with inconsistent parameter formatting.
 
@@ -212,7 +202,7 @@ class TestParameterDescriptionErrors:
             Description of return value
         """'''
 
-        result = validator.validate_docstring_text(docstring, "test.function")
+        result = validate_docstring_text(docstring, "test.function")
 
         # Should still be valid RST but may have warnings about formatting
         assert result.parsing_successful
@@ -221,12 +211,9 @@ class TestParameterDescriptionErrors:
 class TestRSTSyntaxErrors:
     """Test detection of invalid RST syntax in docstrings."""
 
-    @pytest.fixture
-    def validator(self):
-        """Provide a DocstringValidator instance for tests."""
-        return DocstringValidator()
+    # Using function-based validation approach
 
-    def test_malformed_code_blocks(self, validator):
+    def test_malformed_code_blocks(self):
         """Test detection of malformed code blocks."""
         docstring = '''"""Function with malformed code blocks.
 
@@ -237,12 +224,12 @@ class TestRSTSyntaxErrors:
                     return "hello"
         """'''
 
-        result = validator.validate_docstring_text(docstring, "test.function")
+        result = validate_docstring_text(docstring, "test.function")
 
         # Should detect RST syntax error
         assert result.has_warnings() or result.has_errors()
 
-    def test_misspelled_directive_name(self, validator):
+    def test_misspelled_directive_name(self):
         """Test detection of misspelled directive names with correct syntax."""
         docstring = '''"""Function with misspelled directive name.
 
@@ -253,14 +240,14 @@ class TestRSTSyntaxErrors:
                     return "hello"
         """'''
 
-        result = validator.validate_docstring_text(docstring, "test.function")
+        result = validate_docstring_text(docstring, "test.function")
 
         # Should detect unknown directive error
         assert result.has_warnings() or result.has_errors()
         messages = " ".join(result.warnings + result.errors).lower()
         assert "unknown directive" in messages or "code-kjdfkdblock" in messages
 
-    def test_unmatched_backticks(self, validator):
+    def test_unmatched_backticks(self):
         """Test detection of unmatched backticks."""
         docstring = '''"""Function with unmatched backticks.
 
@@ -274,12 +261,12 @@ class TestRSTSyntaxErrors:
             A value with ``unmatched double backticks
         """'''
 
-        result = validator.validate_docstring_text(docstring, "test.function")
+        result = validate_docstring_text(docstring, "test.function")
 
         # Should detect RST markup errors
         assert result.has_warnings() or result.has_errors()
 
-    def test_malformed_lists(self, validator):
+    def test_malformed_lists(self):
         """Test detection of malformed lists."""
         docstring = '''"""Function with malformed lists.
 
@@ -299,12 +286,12 @@ class TestRSTSyntaxErrors:
             Description of return value
         """'''
 
-        result = validator.validate_docstring_text(docstring, "test.function")
+        result = validate_docstring_text(docstring, "test.function")
 
         # Should detect list formatting issues
         assert result.has_warnings() or result.has_errors()
 
-    def test_malformed_links(self, validator):
+    def test_malformed_links(self):
         """Test detection of malformed links and references."""
         docstring = '''"""Function with malformed links.
 
@@ -319,7 +306,7 @@ class TestRSTSyntaxErrors:
             Description of return value
         """'''
 
-        result = validator.validate_docstring_text(docstring, "test.function")
+        result = validate_docstring_text(docstring, "test.function")
 
         # Should detect link syntax errors
         assert result.has_warnings() or result.has_errors()
@@ -328,12 +315,9 @@ class TestRSTSyntaxErrors:
 class TestStructuralErrors:
     """Test detection of structural issues in docstrings."""
 
-    @pytest.fixture
-    def validator(self):
-        """Provide a DocstringValidator instance for tests."""
-        return DocstringValidator()
+    # Using function-based validation approach
 
-    def test_empty_sections(self, validator):
+    def test_empty_sections(self):
         """Test detection of empty sections."""
         docstring = '''"""Function with empty sections.
 
@@ -347,12 +331,12 @@ class TestStructuralErrors:
             # Yet another empty section
         """'''
 
-        result = validator.validate_docstring_text(docstring, "test.function")
+        result = validate_docstring_text(docstring, "test.function")
 
         # Should detect empty sections or comment-only content
         assert result.has_warnings() or result.has_errors()
 
-    def test_duplicate_sections(self, validator):
+    def test_duplicate_sections(self):
         """Test detection of duplicate sections."""
         docstring = '''"""Function with duplicate sections.
 
@@ -369,12 +353,12 @@ class TestStructuralErrors:
             Duplicate Returns section
         """'''
 
-        result = validator.validate_docstring_text(docstring, "test.function")
+        result = validate_docstring_text(docstring, "test.function")
 
         # Should detect duplicate section headers
         assert result.has_warnings() or result.has_errors()
 
-    def test_sections_in_wrong_order(self, validator):
+    def test_sections_in_wrong_order(self):
         """Test that unusual section ordering doesn't break parsing."""
         docstring = '''"""Function with sections in unusual order.
 
@@ -391,7 +375,7 @@ class TestStructuralErrors:
             Example shown at the end
         """'''
 
-        result = validator.validate_docstring_text(docstring, "test.function")
+        result = validate_docstring_text(docstring, "test.function")
 
         # Should still be valid RST (section order is not enforced by RST)
         assert result.parsing_successful
@@ -400,12 +384,9 @@ class TestStructuralErrors:
 class TestComplexErrorCombinations:
     """Test combinations of multiple errors in single docstrings."""
 
-    @pytest.fixture
-    def validator(self):
-        """Provide a DocstringValidator instance for tests."""
-        return DocstringValidator()
+    # Using function-based validation approach
 
-    def test_multiple_error_types(self, validator):
+    def test_multiple_error_types(self):
         """Test docstring with multiple types of errors."""
         docstring = '''"""Function with multiple errors.
 
@@ -421,7 +402,7 @@ class TestComplexErrorCombinations:
             ValueError: When `something goes wrong
         """'''
 
-        result = validator.validate_docstring_text(docstring, "test.function")
+        result = validate_docstring_text(docstring, "test.function")
 
         # Should detect multiple errors
         assert result.has_errors() or result.has_warnings()
@@ -430,7 +411,7 @@ class TestComplexErrorCombinations:
         total_issues = len(result.errors) + len(result.warnings)
         assert total_issues >= 2  # Should find multiple issues
 
-    def test_nested_formatting_errors(self, validator):
+    def test_nested_formatting_errors(self):
         """Test deeply nested formatting errors."""
         docstring = '''"""Function with nested formatting errors.
 
@@ -461,7 +442,7 @@ class TestComplexErrorCombinations:
             - Item with bad link `click here <>`_
         """'''
 
-        result = validator.validate_docstring_text(docstring, "test.function")
+        result = validate_docstring_text(docstring, "test.function")
 
         # Should detect multiple nested errors
         assert result.has_errors() or result.has_warnings()

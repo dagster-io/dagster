@@ -11,7 +11,7 @@ import importlib
 import inspect
 
 import pytest
-from automation.dagster_docs.validator import DocstringValidator
+from automation.dagster_docs.validator import validate_docstring_text, validate_symbol_docstring
 
 # Symbols with known docstring formatting issues that should be skipped until fixed
 # These symbols have docstring validation errors that need to be addressed in separate PRs
@@ -91,13 +91,10 @@ def _get_all_dagster_public_class_methods():
 class TestKnownValidSymbols:
     """Test symbols that are known to have valid docstrings."""
 
-    @pytest.fixture
-    def validator(self):
-        """Provide a DocstringValidator instance for tests."""
-        return DocstringValidator()
+    # Using function-based validation approach
 
     @pytest.mark.parametrize("symbol_path", _get_all_dagster_public_symbols())
-    def test_all_public_symbol_docstrings(self, validator, symbol_path):
+    def test_all_public_symbol_docstrings(self, symbol_path):
         """Test that all public dagster symbols have valid docstrings.
 
         This test validates every public symbol in the dagster package to ensure:
@@ -109,7 +106,6 @@ class TestKnownValidSymbols:
         and should be addressed in separate PRs.
 
         Args:
-            validator: DocstringValidator instance
             symbol_path: Dotted path to the symbol to test
         """
         # Skip validation for symbols with known issues - check before validation
@@ -118,7 +114,7 @@ class TestKnownValidSymbols:
             print(f"Skipping known problematic symbol: {symbol_path}")  # noqa: T201
             return
 
-        result = validator.validate_symbol_docstring(symbol_path)
+        result = validate_symbol_docstring(symbol_path)
 
         # The symbol should be importable - this is the core requirement
         assert result.parsing_successful, f"Failed to parse {symbol_path}: {result.errors}"
@@ -133,20 +129,20 @@ class TestKnownValidSymbols:
         if result.has_warnings():
             print(f"Docstring warnings for {symbol_path}: {result.warnings}")  # noqa: T201
 
-    def test_nonexistent_symbol_produces_error(self, validator):
+    def test_nonexistent_symbol_produces_error(self):
         """Test that attempting to validate a non-existent symbol produces an error."""
-        result = validator.validate_symbol_docstring("dagster.nonexistent_symbol_name")
+        result = validate_symbol_docstring("dagster.nonexistent_symbol_name")
 
         assert not result.parsing_successful
         assert result.has_errors()
         assert "Failed to import symbol" in result.errors[0]
         assert not result.is_valid()
 
-    def test_symbol_with_no_docstring(self, validator):
+    def test_symbol_with_no_docstring(self):
         """Test that symbols without docstrings produce warnings but are still valid."""
         # Most internal symbols don't have docstrings, which should produce a warning
         # but not an error (since missing docstrings don't break the docs build)
-        result = validator.validate_symbol_docstring("dagster._utils")  # Internal module
+        result = validate_symbol_docstring("dagster._utils")  # Internal module
 
         # Should be importable
         assert result.parsing_successful
@@ -158,7 +154,7 @@ class TestKnownValidSymbols:
         assert result.is_valid()
 
     @pytest.mark.parametrize("method_path", _get_all_dagster_public_class_methods())
-    def test_all_public_class_method_docstrings(self, validator, method_path):
+    def test_all_public_class_method_docstrings(self, method_path):
         """Test that all @public methods on Dagster classes have valid docstrings.
 
         This test validates every @public method on all classes in the dagster package to ensure:
@@ -169,10 +165,9 @@ class TestKnownValidSymbols:
         This provides comprehensive coverage of method docstrings across the entire Dagster codebase.
 
         Args:
-            validator: DocstringValidator instance
             method_path: Dotted path to the method to test (e.g., 'dagster.AssetExecutionContext.log')
         """
-        result = validator.validate_symbol_docstring(method_path)
+        result = validate_symbol_docstring(method_path)
 
         # The method should be importable - this is the core requirement
         assert result.parsing_successful, f"Failed to parse {method_path}: {result.errors}"
@@ -191,12 +186,9 @@ class TestKnownValidSymbols:
 class TestDocstringTextValidation:
     """Test validation of raw docstring text."""
 
-    @pytest.fixture
-    def validator(self):
-        """Provide a DocstringValidator instance for tests."""
-        return DocstringValidator()
+    # Using function-based validation approach
 
-    def test_valid_google_style_docstring(self, validator):
+    def test_valid_google_style_docstring(self):
         """Test that a well-formed Google-style docstring validates successfully."""
         docstring = '''"""Create a definition for how to compute an asset.
 
@@ -221,13 +213,13 @@ class TestDocstringTextValidation:
                     return 5
         """'''
 
-        result = validator.validate_docstring_text(docstring, "test.function")
+        result = validate_docstring_text(docstring, "test.function")
 
         assert result.is_valid()
         assert not result.has_errors()
         # May have warnings but that's OK for a valid docstring
 
-    def test_docstring_with_sphinx_roles(self, validator):
+    def test_docstring_with_sphinx_roles(self):
         """Test that docstrings using Sphinx roles are handled correctly."""
         docstring = '''"""A function that references other symbols.
 
@@ -241,13 +233,13 @@ class TestDocstringTextValidation:
             An instance of :py:class:`ReturnType`.
         """'''
 
-        result = validator.validate_docstring_text(docstring, "test.function")
+        result = validate_docstring_text(docstring, "test.function")
 
         # Should not have errors because Sphinx roles are filtered out
         assert result.is_valid()
         assert not result.has_errors()
 
-    def test_docstring_with_literalinclude_directive(self, validator):
+    def test_docstring_with_literalinclude_directive(self):
         """Test that docstrings using literalinclude directive are handled correctly."""
         docstring = '''"""Configuration for DagsterInstance.
 
@@ -260,7 +252,7 @@ class TestDocstringTextValidation:
         The configuration includes various settings.
         """'''
 
-        result = validator.validate_docstring_text(docstring, "test.class")
+        result = validate_docstring_text(docstring, "test.class")
 
         # Should not have errors because literalinclude directive is filtered out
         assert result.is_valid()

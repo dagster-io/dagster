@@ -1,6 +1,10 @@
 """Tests for the docstring validator core functionality."""
 
-from automation.dagster_docs.validator import DocstringValidator, ValidationResult
+from automation.dagster_docs.validator import (
+    ValidationResult,
+    validate_docstring_text,
+    validate_symbol_docstring,
+)
 
 
 class TestValidationResult:
@@ -101,8 +105,7 @@ class TestDocstringValidator:
     """Test DocstringValidator functionality."""
 
     def test_empty_docstring(self):
-        validator = DocstringValidator()
-        result = validator.validate_docstring_text("", "test.symbol")
+        result = validate_docstring_text("", "test.symbol")
 
         assert result.symbol_path == "test.symbol"
         assert result.has_warnings()
@@ -110,9 +113,8 @@ class TestDocstringValidator:
         assert result.is_valid()  # Empty docstring is valid (just warning)
 
     def test_simple_valid_docstring(self):
-        validator = DocstringValidator()
         docstring = "This is a simple docstring."
-        result = validator.validate_docstring_text(docstring, "test.symbol")
+        result = validate_docstring_text(docstring, "test.symbol")
 
         assert result.symbol_path == "test.symbol"
         assert not result.has_errors()
@@ -120,7 +122,6 @@ class TestDocstringValidator:
         assert result.is_valid()
 
     def test_google_style_docstring(self):
-        validator = DocstringValidator()
         docstring = '''"""Function with Google-style docstring.
 
         Args:
@@ -134,20 +135,19 @@ class TestDocstringValidator:
             >>> example_call()
             'result'
         """'''
-        result = validator.validate_docstring_text(docstring, "test.symbol")
+        result = validate_docstring_text(docstring, "test.symbol")
 
         assert result.symbol_path == "test.symbol"
         assert not result.has_errors()
         assert result.is_valid()
 
     def test_malformed_section_header(self):
-        validator = DocstringValidator()
         docstring = '''"""Function with malformed section header.
 
         arguments:  # Should be "Args:"
             param1: Description
         """'''
-        result = validator.validate_docstring_text(docstring, "test.symbol")
+        result = validate_docstring_text(docstring, "test.symbol")
 
         assert result.symbol_path == "test.symbol"
         assert result.has_warnings()
@@ -159,19 +159,15 @@ class TestDocstringValidator:
         assert result.is_valid()  # Warnings don't make it invalid
 
     def test_import_symbol_success(self):
-        validator = DocstringValidator()
-
         # Test importing a built-in symbol
-        result = validator.validate_symbol_docstring("builtins.len")
+        result = validate_symbol_docstring("builtins.len")
 
         assert result.symbol_path == "builtins.len"
         assert result.is_valid()  # len function should have a valid docstring
 
     def test_import_symbol_failure(self):
-        validator = DocstringValidator()
-
         # Test importing a non-existent symbol
-        result = validator.validate_symbol_docstring("nonexistent.module.symbol")
+        result = validate_symbol_docstring("nonexistent.module.symbol")
 
         assert result.symbol_path == "nonexistent.module.symbol"
         assert result.has_errors()
@@ -179,12 +175,11 @@ class TestDocstringValidator:
         assert not result.is_valid()
 
     def test_sphinx_role_filtering(self):
-        validator = DocstringValidator()
         docstring = '''"""Function using Sphinx roles.
 
         See :py:class:`SomeClass` and :func:`some_function`.
         """'''
-        result = validator.validate_docstring_text(docstring, "test.symbol")
+        result = validate_docstring_text(docstring, "test.symbol")
 
         # Should not have errors because Sphinx roles are filtered out
         assert not result.has_errors()
@@ -192,7 +187,6 @@ class TestDocstringValidator:
 
     def test_no_false_positive_for_words_ending_with_period(self):
         """Test that words ending with period (like 'returned.') don't trigger section header warnings."""
-        validator = DocstringValidator()
         docstring = '''"""Function that explains return behavior.
 
         Args:
@@ -202,7 +196,7 @@ class TestDocstringValidator:
                 this setting and will always produce an asset materialization, even if None is
                 returned.
         """'''
-        result = validator.validate_docstring_text(docstring, "test.symbol")
+        result = validate_docstring_text(docstring, "test.symbol")
 
         # Should not have warnings/errors about 'returned.' being a malformed section header
         # Check that no warnings contain section header related messages
@@ -229,7 +223,6 @@ class TestDocstringValidator:
 
     def test_validates_fix_for_dagster_asset_specific_case(self):
         """Test the specific case from dagster.asset that was causing the false positive."""
-        validator = DocstringValidator()
         # This is the exact text pattern that was causing the issue
         docstring = '''"""Function with similar pattern to dagster.asset.
 
@@ -242,7 +235,7 @@ class TestDocstringValidator:
                 this setting and will always produce an asset materialization, even if None is
                 returned.
         """'''
-        result = validator.validate_docstring_text(docstring, "test.symbol")
+        result = validate_docstring_text(docstring, "test.symbol")
 
         # The specific fix: should not flag "returned." as a malformed section header
         section_header_warnings = [

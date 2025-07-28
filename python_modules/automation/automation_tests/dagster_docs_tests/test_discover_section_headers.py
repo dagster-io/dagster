@@ -7,11 +7,8 @@ and reports which ones are not in our current whitelist.
 # Get the actual docstring
 from collections import Counter
 
-from automation.dagster_docs.validator import (
-    ALLOWED_SECTION_HEADERS,
-    SymbolImporter,
-    extract_section_headers_from_docstring,
-)
+from automation.dagster_docs.docstring_rules.section_header_rule import ALLOWED_SECTION_HEADERS
+from automation.dagster_docs.validator import SymbolImporter, extract_section_headers_from_docstring
 
 from automation_tests.dagster_docs_tests.test_known_valid_symbols import (
     _get_all_dagster_public_symbols,

@@ -2,6 +2,7 @@
 
 import tempfile
 from pathlib import Path
+from unittest.mock import patch
 
 from automation.dagster_docs.changed_validator import (
     SymbolInfo,
@@ -12,26 +13,7 @@ from automation.dagster_docs.changed_validator import (
     validate_symbols,
 )
 from automation.dagster_docs.path_converters import generic_path_converter
-from automation.dagster_docs.validator import (
-    DocstringValidator,
-    ValidationResult as ValidatorResult,
-)
-
-
-class MockValidator(DocstringValidator):
-    """Mock validator for testing."""
-
-    def __init__(self, errors=None, warnings=None):
-        self.errors = errors or []
-        self.warnings = warnings or []
-
-    def validate_symbol_docstring(self, dotted_path):
-        result = ValidatorResult.create(dotted_path)
-        for error in self.errors:
-            result = result.with_error(error)
-        for warning in self.warnings:
-            result = result.with_warning(warning)
-        return result
+from automation.dagster_docs.validator import ValidationResult as ValidatorResult
 
 
 class TestValidationConfig:
@@ -195,9 +177,13 @@ def good_function():
                 path_converter=generic_path_converter,
             )
 
-            # Mock validator that always passes
-            mock_validator = MockValidator()
-            results = validate_changed_files([test_file], config, mock_validator)
+            # Mock the validation function to always return success
+            mock_result = ValidatorResult.create("test_module.good_function")
+            with patch(
+                "automation.dagster_docs.changed_validator.validate_symbol_docstring",
+                return_value=mock_result,
+            ):
+                results = validate_changed_files([test_file], config)
 
             assert len(results) == 1
             assert results[0].symbol_info.symbol_path == "test_module.good_function"
@@ -220,8 +206,13 @@ def good_function():
                 path_converter=generic_path_converter,
             )
 
-            mock_validator = MockValidator()
-            results = validate_changed_files([py_file, txt_file], config, mock_validator)
+            # Mock the validation function to always return success
+            mock_result = ValidatorResult.create("test.func")
+            with patch(
+                "automation.dagster_docs.changed_validator.validate_symbol_docstring",
+                return_value=mock_result,
+            ):
+                results = validate_changed_files([py_file, txt_file], config)
 
             # Only the Python file should be processed
             assert len(results) == 1
@@ -243,8 +234,13 @@ def good_function():
                 path_converter=reject_all_converter,
             )
 
-            mock_validator = MockValidator()
-            results = validate_changed_files([test_file], config, mock_validator)
+            # Mock the validation function (though it shouldn't be called)
+            mock_result = ValidatorResult.create("test.func")
+            with patch(
+                "automation.dagster_docs.changed_validator.validate_symbol_docstring",
+                return_value=mock_result,
+            ):
+                results = validate_changed_files([test_file], config)
 
             # No files should be processed due to path converter rejection
             assert len(results) == 0
@@ -254,8 +250,15 @@ class TestValidateSymbols:
     def test_validation_with_errors(self):
         symbol_info = SymbolInfo(symbol_path="test.func", file_path=Path("/test.py"))
 
-        mock_validator = MockValidator(errors=["Test error"], warnings=["Test warning"])
-        results = validate_symbols({symbol_info}, mock_validator)
+        # Mock the validation function to return errors and warnings
+        mock_result = ValidatorResult.create("test.func")
+        mock_result = mock_result.with_error("Test error").with_warning("Test warning")
+
+        with patch(
+            "automation.dagster_docs.changed_validator.validate_symbol_docstring",
+            return_value=mock_result,
+        ):
+            results = validate_symbols({symbol_info})
 
         assert len(results) == 1
         result = results[0]
@@ -268,11 +271,12 @@ class TestValidateSymbols:
     def test_validation_exception_handling(self):
         symbol_info = SymbolInfo(symbol_path="test.func", file_path=Path("/test.py"))
 
-        class FailingMockValidator(DocstringValidator):
-            def validate_symbol_docstring(self, dotted_path):
-                raise ValueError("Validation failed")
-
-        results = validate_symbols({symbol_info}, FailingMockValidator())
+        # Mock the validation function to raise an exception
+        with patch(
+            "automation.dagster_docs.changed_validator.validate_symbol_docstring",
+            side_effect=ValueError("Validation failed"),
+        ):
+            results = validate_symbols({symbol_info})
 
         assert len(results) == 1
         result = results[0]

@@ -44,13 +44,13 @@ class TestCheckDocstringsCommands:
         """Test validating automation docstring validator symbol."""
         result = self.runner.invoke(
             check,
-            ["docstrings", "--symbol", "automation.dagster_docs.validator.DocstringValidator"],
+            ["docstrings", "--symbol", "automation.dagster_docs.validator.SymbolImporter"],
         )
 
         # Should complete successfully
         assert result.exit_code == 0
         assert (
-            "Validating docstring for: automation.dagster_docs.validator.DocstringValidator"
+            "Validating docstring for: automation.dagster_docs.validator.SymbolImporter"
             in result.output
         )
 

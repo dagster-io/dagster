@@ -12,7 +12,6 @@ from automation.dagster_docs.commands.check import (
 )
 from automation.dagster_docs.commands.ls import _list_package_symbols
 from automation.dagster_docs.commands.watch import _resolve_symbol_file_path
-from automation.dagster_docs.validator import DocstringValidator
 
 
 class TestCheckHelperFunctions:
@@ -20,42 +19,32 @@ class TestCheckHelperFunctions:
 
     def test_validate_single_symbol_success(self):
         """Test _validate_single_symbol with a valid symbol."""
-        validator = DocstringValidator()
-
         # Test with automation symbol that should be valid
-        result = _validate_single_symbol(
-            validator, "automation.dagster_docs.validator.DocstringValidator"
-        )
+        result = _validate_single_symbol("automation.dagster_docs.validator.SymbolImporter")
 
         # Should return 0 for success
         assert result == 0
 
     def test_validate_single_symbol_with_invalid_symbol(self):
         """Test _validate_single_symbol with invalid symbol."""
-        validator = DocstringValidator()
-
         # Should return non-zero exit code for nonexistent symbol (not raise exception)
         # The function handles the exception internally and returns an exit code
-        result = _validate_single_symbol(validator, "nonexistent.symbol")
+        result = _validate_single_symbol("nonexistent.symbol")
         assert result == 1  # Should return 1 for failure
 
     def test_validate_package_symbols_success(self):
         """Test _validate_package_symbols with a valid package."""
-        validator = DocstringValidator()
-
         # Test with automation package
-        result = _validate_package_symbols(validator, "automation.dagster_docs")
+        result = _validate_package_symbols("automation.dagster_docs")
 
         # Should return 0 or 1 (success or validation errors, but not crash)
         assert result in [0, 1]
 
     def test_validate_package_symbols_nonexistent_package(self):
         """Test _validate_package_symbols with nonexistent package."""
-        validator = DocstringValidator()
-
         # Should raise ImportError for nonexistent package
         with pytest.raises(ImportError):
-            _validate_package_symbols(validator, "nonexistent.package")
+            _validate_package_symbols("nonexistent.package")
 
     def test_find_git_root_current_repo(self):
         """Test _find_git_root in current repository (which should be a git repo)."""
@@ -89,9 +78,8 @@ class TestCheckHelperFunctions:
     def test_validate_changed_files_no_git_repo(self, mock_find_git_root):
         """Test _validate_changed_files when not in git repo."""
         mock_find_git_root.return_value = None
-        validator = DocstringValidator()
 
-        result = _validate_changed_files(validator)
+        result = _validate_changed_files()
 
         # Should return 2 for "not in git repo" error
         assert result == 2
@@ -102,9 +90,8 @@ class TestCheckHelperFunctions:
         """Test _validate_changed_files when no files are changed."""
         mock_find_git_root.return_value = Path("/fake/git/root")
         mock_git_changed_files.return_value = []
-        validator = DocstringValidator()
 
-        result = _validate_changed_files(validator)
+        result = _validate_changed_files()
 
         # Should return 0 for success when no changed files
         assert result == 0
@@ -132,7 +119,7 @@ class TestWatchHelperFunctions:
         """Test _resolve_symbol_file_path with valid symbol."""
         # Test with a symbol that should resolve successfully
         result = _resolve_symbol_file_path(
-            "automation.dagster_docs.validator.DocstringValidator", False
+            "automation.dagster_docs.validator.SymbolImporter", False
         )
 
         # Should return a Path object
@@ -148,9 +135,7 @@ class TestWatchHelperFunctions:
     def test_resolve_symbol_file_path_verbose_mode(self):
         """Test _resolve_symbol_file_path in verbose mode."""
         # Should work the same way in verbose mode
-        result = _resolve_symbol_file_path(
-            "automation.dagster_docs.validator.DocstringValidator", True
-        )
+        result = _resolve_symbol_file_path("automation.dagster_docs.validator.SymbolImporter", True)
 
         assert isinstance(result, Path)
         assert result.exists()

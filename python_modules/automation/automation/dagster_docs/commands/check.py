@@ -17,16 +17,20 @@ from automation.dagster_docs.exclude_lists import (
 from automation.dagster_docs.file_discovery import git_changed_files
 from automation.dagster_docs.path_converters import dagster_path_converter
 from automation.dagster_docs.public_api_validator import PublicApiValidator
-from automation.dagster_docs.validator import DocstringValidator, SymbolImporter
+from automation.dagster_docs.validator import (
+    SymbolImporter,
+    validate_docstring_text,
+    validate_symbol_docstring,
+)
 
 
-def _validate_single_symbol(validator: DocstringValidator, symbol: str) -> int:
+def _validate_single_symbol(symbol: str) -> int:
     """Validate a single symbol's docstring and output results.
 
     Returns:
         0 if validation succeeded, 1 if it failed
     """
-    result = validator.validate_symbol_docstring(symbol)
+    result = validate_symbol_docstring(symbol)
 
     click.echo(f"Validating docstring for: {symbol}")
 
@@ -50,7 +54,7 @@ def _validate_single_symbol(validator: DocstringValidator, symbol: str) -> int:
     return 0 if result.is_valid() else 1
 
 
-def _validate_package_symbols(validator: DocstringValidator, package: str) -> int:
+def _validate_package_symbols(package: str) -> int:
     """Validate all symbols in a package and output results.
 
     Returns:
@@ -63,9 +67,7 @@ def _validate_package_symbols(validator: DocstringValidator, package: str) -> in
     total_warnings = 0
 
     for symbol_info in symbols:
-        result = validator.validate_docstring_text(
-            symbol_info.docstring or "", symbol_info.dotted_path
-        )
+        result = validate_docstring_text(symbol_info.docstring or "", symbol_info.dotted_path)
 
         if result.has_errors() or result.has_warnings():
             click.echo(f"--- {symbol_info.dotted_path} ---")
@@ -116,7 +118,7 @@ def _find_git_root() -> Optional[Path]:
     return root_path
 
 
-def _validate_changed_files(validator: DocstringValidator) -> int:
+def _validate_changed_files() -> int:
     """Validate docstrings in changed files and output results.
 
     Returns:
@@ -137,7 +139,7 @@ def _validate_changed_files(validator: DocstringValidator) -> int:
         path_converter=dagster_path_converter,
     )
 
-    results = validate_changed_files(changed_files, config, validator)
+    results = validate_changed_files(changed_files, config)
 
     total_errors = 0
     total_warnings = 0
@@ -182,11 +184,11 @@ def docstrings(changed: bool, symbol: Optional[str], check_all: bool, package: O
         )
         sys.exit(1)
 
-    validator = DocstringValidator()
+    # Function-based validation approach
 
     if symbol:
         try:
-            exit_code = _validate_single_symbol(validator, symbol)
+            exit_code = _validate_single_symbol(symbol)
             sys.exit(exit_code)
         except Exception as e:
             click.echo(f"Error: {e}", err=True)
@@ -194,7 +196,7 @@ def docstrings(changed: bool, symbol: Optional[str], check_all: bool, package: O
 
     elif package:
         try:
-            exit_code = _validate_package_symbols(validator, package)
+            exit_code = _validate_package_symbols(package)
             sys.exit(exit_code)
         except ImportError as e:
             click.echo(f"Error: Could not import package '{package}': {e}", err=True)
@@ -202,7 +204,7 @@ def docstrings(changed: bool, symbol: Optional[str], check_all: bool, package: O
 
     elif changed:
         try:
-            exit_code = _validate_changed_files(validator)
+            exit_code = _validate_changed_files()
             sys.exit(exit_code)
         except Exception as e:
             click.echo(f"Error: {e}", err=True)

@@ -9,7 +9,7 @@ from typing import Optional
 
 import click
 
-from automation.dagster_docs.validator import DocstringValidator, SymbolImporter
+from automation.dagster_docs.validator import SymbolImporter, validate_symbol_docstring
 from automation.dagster_docs.watcher import DocstringFileWatcher
 
 
@@ -34,7 +34,7 @@ def _resolve_symbol_file_path(symbol_path: str, verbose: bool) -> Path:
     return target_file
 
 
-def _create_validation_callback(symbol_path: str, validator: DocstringValidator, verbose: bool):
+def _create_validation_callback(symbol_path: str, verbose: bool):
     """Create a validation callback function for file watching."""
 
     def validate_and_report() -> None:
@@ -42,7 +42,7 @@ def _create_validation_callback(symbol_path: str, validator: DocstringValidator,
         click.echo(f"[{timestamp}] File changed, validating {symbol_path}...")
 
         try:
-            result = validator.validate_symbol_docstring(symbol_path)
+            result = validate_symbol_docstring(symbol_path)
 
             if result.has_errors():
                 click.echo("ERRORS:")
@@ -97,7 +97,7 @@ def _run_file_watcher(watcher: DocstringFileWatcher, verbose: bool) -> None:
         time.sleep(1)
 
 
-def _run_symbol_watch_mode(symbol_path: str, validator: DocstringValidator, verbose: bool) -> int:
+def _run_symbol_watch_mode(symbol_path: str, verbose: bool) -> int:
     """Run the validation in watch mode for a specific symbol, monitoring file changes.
 
     Returns:
@@ -120,7 +120,7 @@ def _run_symbol_watch_mode(symbol_path: str, validator: DocstringValidator, verb
         return 1
 
     # Create validation callback and run initial validation
-    validate_and_report = _create_validation_callback(symbol_path, validator, verbose)
+    validate_and_report = _create_validation_callback(symbol_path, verbose)
     validate_and_report()
 
     # Setup file watcher and signal handlers
@@ -163,11 +163,11 @@ def docstrings(changed: bool, symbol: Optional[str], verbose: bool):
         click.echo("Error: Cannot use both --changed and --symbol together", err=True)
         sys.exit(1)
 
-    validator = DocstringValidator()
+    # Function-based validation approach
 
     if symbol:
         # Watch a specific symbol - reuse existing functionality
-        exit_code = _run_symbol_watch_mode(symbol, validator, verbose)
+        exit_code = _run_symbol_watch_mode(symbol, verbose)
         sys.exit(exit_code)
 
     elif changed:
