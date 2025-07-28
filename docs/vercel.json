@@ -2847,6 +2847,10 @@
       "destination": "/deployment/dagster-plus/full-deployments/deployment-settings-reference"
     },
     {
+      "source": "/dagster-cloud/insights",
+      "destination": "/guides/monitor/insights"
+    },
+    {
       "source": "/concepts/dagster-pipes/pyspark",
       "destination": "/guides/build/external-pipelines/pyspark-pipeline"
     },
