@@ -99,7 +99,7 @@ def _load_defs_at_path(dg_context: DgContext, path: Optional[Path]) -> Repositor
         repo_def = recon_repo.get_definition()
         return repo_def
 
-    tree = ComponentTree.load(dg_context.root_path)
+    tree = ComponentTree.for_project(dg_context.root_path)
 
     try:
         defs = tree.build_defs_at_path(path) if path else tree.build_defs()

@@ -43,6 +43,7 @@ def get_asset_sensor_param_names(fn: Callable[..., Any]) -> AssetSensorParamName
     )
 
 
+@public
 class AssetSensorDefinition(SensorDefinition):
     """Define an asset sensor that initiates a set of runs based on the materialization of a given
     asset.

@@ -15,7 +15,6 @@
 typeCheckingMode = "standard"
 
 include = [
-  ".buildkite/dagster-buildkite",
   "docs/sphinx/_ext/dagster-sphinx",
   "python_modules",
   "examples",
@@ -35,6 +34,10 @@ exclude = [
   ".git",
   "**/.venv*",
   "**/build",
+]
+
+extraPaths = [
+  ".buildkite/buildkite-shared"
 ]
 
 # These two settings point pyright to a python environment to resolve imports against. This virtual
@@ -312,3 +315,5 @@ exclude = ["examples/docs_snippets/docs_snippets/guides/etl/transform-dbt/dbt_de
 
 [tool.dagster]
 module_name = "dagster_test.toys.repo"
+
+

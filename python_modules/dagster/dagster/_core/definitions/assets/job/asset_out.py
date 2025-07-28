@@ -43,6 +43,7 @@ EMPTY_ASSET_KEY_SENTINEL = AssetKey([])
     breaking_version="1.10.0",
     additional_warn_text="use `automation_condition` instead",
 )
+@public
 class AssetOut:
     """Defines one of the assets produced by a :py:func:`@multi_asset <multi_asset>`.
 

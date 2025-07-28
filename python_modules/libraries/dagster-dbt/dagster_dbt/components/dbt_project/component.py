@@ -287,7 +287,7 @@ class ProxyDagsterDbtTranslator(DagsterDbtTranslator):
 
 
 def get_projects_from_dbt_component(components: Path) -> list[DbtProject]:
-    project_components = ComponentTree.load(components).get_all_components(
+    project_components = ComponentTree.for_project(components).get_all_components(
         of_type=DbtProjectComponent
     )
 

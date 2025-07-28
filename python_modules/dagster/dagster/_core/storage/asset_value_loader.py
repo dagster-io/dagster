@@ -26,6 +26,7 @@ if TYPE_CHECKING:
     from dagster._core.storage.io_manager import IOManager
 
 
+@public
 class AssetValueLoader:
     """Caches resource definitions that are used to load asset values across multiple load
     invocations.

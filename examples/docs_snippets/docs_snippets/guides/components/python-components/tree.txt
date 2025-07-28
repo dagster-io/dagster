@@ -2,8 +2,6 @@ cd src/hello_world && tree
 
 .
 ├── __init__.py
-├── __pycache__
-│   └── __init__.cpython-312.pyc
 ├── definitions.py
 ├── defs
 │   ├── __init__.py

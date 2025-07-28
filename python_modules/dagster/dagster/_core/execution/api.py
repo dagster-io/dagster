@@ -4,6 +4,7 @@ from contextlib import contextmanager
 from typing import AbstractSet, Any, Callable, NamedTuple, Optional, Union, cast  # noqa: UP035
 
 import dagster._check as check
+from dagster._annotations import public
 from dagster._core.definitions import IJob, JobDefinition
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.job_base import InMemoryJob
@@ -275,6 +276,7 @@ def ephemeral_instance_if_missing(
             yield ephemeral_instance
 
 
+@public
 class ReexecutionOptions(NamedTuple):
     """Reexecution options for python-based execution in Dagster.
 
@@ -313,6 +315,7 @@ class ReexecuteFromFailureOption(ReexecutionOptions):
     """Marker subclass used to calculate reexecution information later."""
 
 
+@public
 def execute_job(
     job: ReconstructableJob,
     instance: "DagsterInstance",

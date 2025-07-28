@@ -5,6 +5,7 @@ from functools import update_wrapper
 from typing import TYPE_CHECKING, Any, Callable, Optional, Union
 
 import dagster._check as check
+from dagster._annotations import public
 from dagster._core.definitions.asset_selection import AssetSelection, CoercibleToAssetSelection
 from dagster._core.definitions.asset_sensor_definition import AssetSensorDefinition
 from dagster._core.definitions.events import AssetKey
@@ -33,6 +34,7 @@ if TYPE_CHECKING:
     )
 
 
+@public
 def sensor(
     job_name: Optional[str] = None,
     *,
@@ -121,6 +123,7 @@ def sensor(
     return inner
 
 
+@public
 def asset_sensor(
     asset_key: AssetKey,
     *,
@@ -249,6 +252,7 @@ def asset_sensor(
     return inner
 
 
+@public
 def multi_asset_sensor(
     monitored_assets: Union[Sequence[AssetKey], AssetSelection],
     *,

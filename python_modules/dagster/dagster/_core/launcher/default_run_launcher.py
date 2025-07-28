@@ -6,6 +6,7 @@ import dagster_shared.seven as seven
 from typing_extensions import Self
 
 from dagster import _check as check
+from dagster._annotations import public
 from dagster._config.config_schema import UserConfigSchema
 from dagster._core.errors import (
     DagsterInvariantViolationError,
@@ -25,6 +26,7 @@ if TYPE_CHECKING:
 
 
 # note: this class is a top level export, so we defer many imports til use for performance
+@public
 class DefaultRunLauncher(RunLauncher, ConfigurableClass):
     """Launches runs against running GRPC servers."""
 

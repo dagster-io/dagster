@@ -8,7 +8,7 @@ from dagster_shared.seven import json
 from typing_extensions import TypeAlias
 
 import dagster._check as check
-from dagster._annotations import PublicAttr
+from dagster._annotations import PublicAttr, public
 from dagster._core.definitions.events import AssetKey, AssetMaterialization, AssetObservation
 from dagster._core.events import EVENT_TYPE_TO_PIPELINE_RUN_STATUS, DagsterEventType
 from dagster._core.events.log import EventLogEntry
@@ -63,6 +63,7 @@ class EventLogCursor(NamedTuple):
         return EventLogCursor(EventLogCursorType.STORAGE_ID, storage_id)
 
 
+@public
 class RunShardedEventsCursor(NamedTuple):
     """Pairs an id-based event log cursor with a timestamp-based run cursor, for improved
     performance on run-sharded event log storages (e.g. the default SqliteEventLogStorage). For
@@ -93,6 +94,7 @@ EventCursor: TypeAlias = Union[int, RunShardedEventsCursor]
 
 
 @whitelist_for_serdes
+@public
 class EventLogRecord(NamedTuple):
     """Internal representation of an event record, as stored in a
     :py:class:`~dagster._core.storage.event_log.EventLogStorage`.
@@ -158,6 +160,7 @@ class EventRecordsResult(NamedTuple):
 
 
 @whitelist_for_serdes
+@public
 class EventRecordsFilter(
     NamedTuple(
         "_EventRecordsFilter",

@@ -91,6 +91,7 @@ class AbstractComputeExecutionContext(ABC):
         """The parsed config specific to this op."""
 
 
+@public
 class OpExecutionContext(AbstractComputeExecutionContext):
     """The ``context`` object that can be made available as the first argument to the function
     used for computing an op or asset.

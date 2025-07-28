@@ -8,6 +8,7 @@ from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.execution.context.output import RUN_ID_PLACEHOLDER
 
 
+@public
 class InitLoggerContext:
     """The context object available as the argument to the initialization function of a :py:class:`dagster.LoggerDefinition`.
 

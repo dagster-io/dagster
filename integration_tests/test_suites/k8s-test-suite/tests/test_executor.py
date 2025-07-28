@@ -507,7 +507,7 @@ def test_k8s_executor_owner_references_garbage_collection(
         time.sleep(1)
 
     # Wait for the step job and pod to be garbage collected
-    timeout = datetime.timedelta(0, 60)
+    timeout = datetime.timedelta(0, 120)
     start_time = datetime.datetime.now()
     while True:
         assert datetime.datetime.now() < start_time + timeout, (

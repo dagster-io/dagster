@@ -10,6 +10,11 @@ from unittest import mock
 from dagster_shared import check
 from dagster_shared.record import record
 from dagster_shared.utils.cached_method import get_cached_method_cache, make_cached_method_cache_key
+from dagster_shared.utils.config import (
+    discover_config_file,
+    get_canonical_defs_module_name,
+    load_toml_as_dict,
+)
 from typing_extensions import Self, TypeVar
 
 from dagster._core.definitions.definitions_class import Definitions
@@ -82,9 +87,11 @@ class ComponentTreeException(Exception):
     checked=False,  # cant handle ModuleType
 )
 class ComponentTree:
-    """Manages and caches the component loading process, including finding component decls
-    to build the initial decl tree, loading these components, and eventually building the
-    defs.
+    """The hierarchy of Component instances defined in the project.
+
+    Manages and caches the component loading process, including finding component declarations
+    to build the initial declaration tree, loading these Components, and eventually building the
+    Definitions.
     """
 
     defs_module: ModuleType
@@ -138,21 +145,40 @@ class ComponentTree:
         )
 
     @classmethod
-    def load(cls, path_within_project: Path) -> Self:
+    def for_project(cls, path_within_project: Path) -> Self:
         """Using the provided path, find the nearest parent python project and load the
         ComponentTree using its configuration.
+
+        Args:
+            path_within_project (Path): A path within a Dagster project.
+
+        Returns:
+            ComponentTree: The ComponentTree for the project.
         """
-        from dagster_dg_core.context import DgContext
-
-        # replace with dagster_shared impl of path crawl and config resolution
-        dg_context = DgContext.for_project_environment(path_within_project, command_line_config={})
-
-        defs_module = importlib.import_module(dg_context.defs_module_name)
-
-        return cls(
-            defs_module=defs_module,
-            project_root=dg_context.root_path,
+        root_config_path = discover_config_file(path_within_project)
+        toml_config = load_toml_as_dict(
+            check.not_none(
+                root_config_path,
+                additional_message=f"No config file found at project root {path_within_project}",
+            )
         )
+
+        if root_config_path and root_config_path.stem == "dg":
+            project = toml_config.get("project", {})
+        else:
+            project = toml_config.get("tool", {}).get("dg", {}).get("project", {})
+
+        root_module_name = project.get("root_module")
+        defs_module_name = project.get("defs_module")
+        check.invariant(
+            defs_module_name or root_module_name,
+            f"Either defs_module or root_module must be set in the project config {root_config_path}",
+        )
+        defs_module_name = get_canonical_defs_module_name(defs_module_name, root_module_name)
+
+        defs_module = importlib.import_module(defs_module_name)
+
+        return cls(defs_module=defs_module, project_root=path_within_project)
 
     @cached_property
     def decl_load_context(self):

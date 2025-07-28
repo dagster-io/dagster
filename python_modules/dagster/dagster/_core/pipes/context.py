@@ -68,6 +68,7 @@ class PipesLaunchedData(TypedDict):
     extras: Mapping[str, Any]
 
 
+@public
 class PipesMessageHandler:
     """Class to process :py:obj:`PipesMessage` objects received from a pipes process.
 
@@ -240,6 +241,7 @@ class PipesMessageHandler:
         self._message_reader.on_launched(launched_payload)
 
 
+@public
 @dataclass
 class PipesSession:
     """Object representing a pipes session.

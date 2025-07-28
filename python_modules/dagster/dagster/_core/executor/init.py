@@ -2,11 +2,12 @@ from collections.abc import Mapping
 from typing import NamedTuple
 
 import dagster._check as check
-from dagster._annotations import PublicAttr
+from dagster._annotations import PublicAttr, public
 from dagster._core.definitions import ExecutorDefinition, IJob
 from dagster._core.instance import DagsterInstance
 
 
+@public
 class InitExecutorContext(
     NamedTuple(
         "InitExecutorContext",

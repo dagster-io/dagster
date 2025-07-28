@@ -1,0 +1,3 @@
+dg scaffold defs dagster.TemplatedSqlComponent daily_revenue
+
+Creating defs at /.../my-project/src/my_project/defs/daily_revenue.

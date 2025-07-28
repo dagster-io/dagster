@@ -13,6 +13,7 @@ from typing import (  # noqa: UP035
 from typing_extensions import TypeAlias, TypeGuard
 
 import dagster._check as check
+from dagster._annotations import public
 from dagster._core.decorator_utils import has_at_least_one_parameter
 from dagster._core.definitions.config import is_callable_valid_config_arg
 from dagster._core.definitions.definition_config_schema import (
@@ -31,6 +32,7 @@ InputLoadFn: TypeAlias = Union[
 ]
 
 
+@public
 class InputManager(ABC):
     """Base interface for classes that are responsible for loading solid inputs."""
 
@@ -55,6 +57,7 @@ class IInputManagerDefinition:
         """
 
 
+@public
 class InputManagerDefinition(ResourceDefinition, IInputManagerDefinition):
     """Definition of an input manager resource.
 
@@ -121,6 +124,7 @@ def input_manager(
 ) -> Callable[[InputLoadFn], InputManagerDefinition]: ...
 
 
+@public
 def input_manager(
     config_schema: Union[InputLoadFn, Optional[CoercableToConfigSchema]] = None,
     description: Optional[str] = None,

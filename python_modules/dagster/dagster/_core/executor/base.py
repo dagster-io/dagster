@@ -15,6 +15,7 @@ if TYPE_CHECKING:
     from dagster._core.execution.plan.state import KnownExecutionState
 
 
+@public
 class Executor(ABC):
     @public
     @abstractmethod

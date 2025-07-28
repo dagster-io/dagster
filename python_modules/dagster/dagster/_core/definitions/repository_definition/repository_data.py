@@ -41,6 +41,7 @@ T = TypeVar("T")
 Resolvable = Callable[[], T]
 
 
+@public
 class RepositoryData(ABC):
     """Users should usually rely on the :py:func:`@repository <repository>` decorator to create new
     repositories, which will in turn call the static constructors on this class. However, users may

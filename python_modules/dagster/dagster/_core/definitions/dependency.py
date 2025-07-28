@@ -45,6 +45,7 @@ T_DependencyKey = TypeVar("T_DependencyKey", str, "NodeInvocation")
 DependencyMapping: TypeAlias = Mapping[T_DependencyKey, Mapping[str, "IDependencyDefinition"]]
 
 
+@public
 class NodeInvocation(
     NamedTuple(
         "Node",
@@ -623,6 +624,7 @@ class IDependencyDefinition(ABC):
         """The result passed to the corresponding input will be a List made from different node outputs."""
 
 
+@public
 class DependencyDefinition(
     NamedTuple(
         "_DependencyDefinition", [("node", str), ("output", str), ("description", Optional[str])]
@@ -692,6 +694,7 @@ class DependencyDefinition(
         return [self]
 
 
+@public
 class MultiDependencyDefinition(
     NamedTuple(
         "_MultiDependencyDefinition",

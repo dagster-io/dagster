@@ -668,8 +668,13 @@ from dagster.components.core.load_defs import (
     load_defs as load_defs,
     load_from_defs_folder as load_from_defs_folder,
 )
+from dagster.components.core.tree import ComponentTree as ComponentTree
 from dagster.components.definitions import definitions as definitions
 from dagster.components.lib.shim_components.resources import resources as resources
+from dagster.components.lib.sql_component.sql_component import (
+    SqlComponent as SqlComponent,
+    TemplatedSqlComponent as TemplatedSqlComponent,
+)
 from dagster.components.resolved.base import Resolvable as Resolvable
 from dagster.components.resolved.context import ResolutionContext as ResolutionContext
 from dagster.components.resolved.core_models import (
@@ -689,11 +694,10 @@ from dagster.components.scaffold.scaffold import (
     scaffold_with as scaffold_with,
 )
 from dagster.components.testing import (
-    component_defs as component_defs,
-    defs_from_component_yaml_path as defs_from_component_yaml_path,
     get_all_components_defs_within_project as get_all_components_defs_within_project,
     get_component_defs_within_project as get_component_defs_within_project,
 )
+from dagster.components.testing.utils import component_defs as component_defs
 from dagster.version import __version__ as __version__
 
 DagsterLibraryRegistry.register("dagster", __version__)

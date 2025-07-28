@@ -108,7 +108,7 @@ class AirbyteCloudWorkspaceComponent(dg.Component, dg.Model, dg.Resolvable):
         AirbyteCloudWorkspace,
         dg.Resolver(
             lambda context, model: AirbyteCloudWorkspace(
-                **resolve_fields(model, AirbyteCloudWorkspace, context)  # type: ignore
+                **resolve_fields(model, AirbyteCloudWorkspace, context)
             )
         ),
     ]

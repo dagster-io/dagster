@@ -1,0 +1,92 @@
+#!/bin/sh
+set -eu
+
+if command -v buildevents >/dev/null 2>&1; then
+    echo "buildevents step $BUILDKITE_BUILD_ID $STEP_SPAN_ID $COMMAND_START_TIME $BUILDKITE_LABEL"
+    buildevents step "$BUILDKITE_BUILD_ID" "$STEP_SPAN_ID" "$COMMAND_START_TIME" "$BUILDKITE_LABEL"
+fi
+
+# Run step analytics if token is set
+if [ -n "${BUILDKITE_STEP_ANALYTICS_TOKEN:-}" ]; then
+
+    # Calculate timing information
+    END_TIME=$(date +%s)
+    DURATION=$((END_TIME - COMMAND_START_TIME))
+    
+    # Create deterministic UUID from pipeline components for caching
+    STEP_LABEL="${BUILDKITE_LABEL:-unknown-step}"
+
+    # Create cache key from components
+    CACHE_KEY="${PIPELINE_NAME}|${STEP_LABEL}|${BUILDKITE_JOB_ID:-unknown}|${BUILDKITE_RETRY_COUNT:-0}"
+    
+    # Generate deterministic UUID from cache key using MD5 hash
+    HASH=$(printf '%s' "$CACHE_KEY" | md5sum | awk '{print $1}')
+    TEST_ID=$(printf '%s\n' "$HASH" | sed -E 's/^(.{8})(.{4})(.{4})(.{4})(.{12})$/\1-\2-\3-\4-\5/')
+    
+    # Determine test result and failure reason
+    FAILURE_REASON=""
+    if [ "$BUILDKITE_COMMAND_EXIT_STATUS" = "0" ]; then
+        RESULT="passed"
+    else
+        RESULT="failed"
+        FAILURE_REASON=",
+        \"failure_reason\": \"Step failed with exit code ${BUILDKITE_COMMAND_EXIT_STATUS}\""
+    fi
+    
+    # Build JSON content
+    JSON_CONTENT="[{
+        \"id\": \"${TEST_ID}\",
+        \"name\": \"${STEP_LABEL}\",
+        \"result\": \"${RESULT}\",
+        \"history\": {
+            \"start_at\": ${COMMAND_START_TIME},
+            \"end_at\": ${END_TIME},
+            \"duration\": ${DURATION}
+        }${FAILURE_REASON}
+    }]"
+    
+    # Create the test results JSON file
+    echo "$JSON_CONTENT" > step-analytics-results.json
+    
+    if ! command -v curl >/dev/null 2>&1; then
+        echo "⚠️  curl not found - attempting to install..."
+        if command -v apk >/dev/null 2>&1; then
+            apk add --no-cache curl
+        elif command -v apt-get >/dev/null 2>&1; then
+            apt-get update && apt-get install -y curl
+        elif command -v yum >/dev/null 2>&1; then
+            yum install -y curl
+        elif command -v dnf >/dev/null 2>&1; then
+            dnf install -y curl
+        else
+            echo "❌ Cannot install curl - no supported package manager found"
+            echo "📝 Skipping step results reporting"
+            exit 0
+        fi
+    fi
+
+    # Upload to Buildkite Analytics
+    if curl \
+        -X POST \
+        -H "Authorization: Token token=\"$BUILDKITE_STEP_ANALYTICS_TOKEN\"" \
+        -F "data=@step-analytics-results.json" \
+        -F "format=json" \
+        -F "run_env[CI]=buildkite" \
+        -F "run_env[key]=${BUILDKITE_BUILD_ID:-}" \
+        -F "run_env[url]=${BUILDKITE_BUILD_URL:-}" \
+        -F "run_env[branch]=${BUILDKITE_BRANCH:-}" \
+        -F "run_env[commit_sha]=${BUILDKITE_COMMIT:-}" \
+        -F "run_env[number]=${BUILDKITE_BUILD_NUMBER:-}" \
+        -F "run_env[job_id]=${BUILDKITE_JOB_ID:-}" \
+        -F "run_env[message]=${BUILDKITE_MESSAGE:-}" \
+        https://analytics-api.buildkite.com/v1/uploads; then
+        echo "✅ Successfully uploaded step results to Buildkite Analytics"
+    else
+        echo "❌ Failed to upload step results to Buildkite Analytics"
+    fi
+    
+    # Clean up
+    rm -f step-analytics-results.json
+else
+    echo "📝 No analytics token set - skipping step results reporting"
+fi

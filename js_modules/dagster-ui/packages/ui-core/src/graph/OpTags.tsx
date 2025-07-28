@@ -42,6 +42,7 @@ import cplus from './kindtag-images/tool-cplus-color.svg';
 import csharp from './kindtag-images/tool-csharp-color.svg';
 import cube from './kindtag-images/tool-cube-color.svg';
 import dask from './kindtag-images/tool-dask-color.svg';
+import databento from './kindtag-images/tool-databento-color.svg';
 import databricks from './kindtag-images/tool-databricks-color.svg';
 import datadog from './kindtag-images/tool-datadog-color.svg';
 import datahub from './kindtag-images/tool-datahub-color.svg';
@@ -264,6 +265,7 @@ export type KnownTagType =
   | 'airliftmapped'
   | 'airtable'
   | 'omni'
+  | 'databento'
   | 'datadog'
   | 'postgres'
   | 'postgresql'
@@ -1385,6 +1387,10 @@ export const KNOWN_TAGS: Record<KnownTagType, KnownTag> = {
   botorch: {
     icon: botorch,
     content: 'BoTorch',
+  },
+  databento: {
+    icon: databento,
+    content: 'Databento',
   },
   expand: {color: '#D7A540', content: 'Expand'},
 };

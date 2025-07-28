@@ -46,6 +46,7 @@ if TYPE_CHECKING:
 OpComputeFunction: TypeAlias = Callable[..., Any]
 
 
+@public
 @deprecated_param(
     param="version",
     breaking_version="2.0",

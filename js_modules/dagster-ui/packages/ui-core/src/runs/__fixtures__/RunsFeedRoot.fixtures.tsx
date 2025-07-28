@@ -1,9 +1,17 @@
-import {RunsFeedView} from '../../graphql/types';
+import {
+  RunStatus,
+  RunsFeedView,
+  buildPartitionBackfill,
+  buildPipelineTag,
+  buildRun,
+} from '../../graphql/types';
+import {BackfillTableFragmentCompletedAssetJob} from '../../instance/backfill/__fixtures__/BackfillTable.fixtures';
 import {buildQueryMock} from '../../testing/mocking';
+import {DagsterTag} from '../RunTag';
 import {RunsFeedRootQuery, RunsFeedRootQueryVariables} from '../types/useRunsFeedEntries.types';
 import {RUNS_FEED_ROOT_QUERY} from '../useRunsFeedEntries';
 
-export const RunsFeedRootMock = buildQueryMock<RunsFeedRootQuery, RunsFeedRootQueryVariables>({
+export const RunsFeedRootMockRuns = buildQueryMock<RunsFeedRootQuery, RunsFeedRootQueryVariables>({
   query: RUNS_FEED_ROOT_QUERY,
   variables: {filter: {}, limit: 30, view: RunsFeedView.ROOTS},
   data: {
@@ -12,20 +20,59 @@ export const RunsFeedRootMock = buildQueryMock<RunsFeedRootQuery, RunsFeedRootQu
       cursor: 'iure',
       hasMore: false,
       results: [
-        // Apollo is stripping everything but __typename + id out of these objects,
-        // It seems generally confused because this is a vardic type (Run | PartitionBackfill)
-        // that also remaps the status property of backfills to `backfillStatus`.
-        //
-        // buildRun({
-        //   id: 'a0',
-        //   tags: [
-        //     buildPipelineTag({key: DagsterTag.Partition, value: '5'}),
-        //     buildPipelineTag({key: DagsterTag.Backfill, value: 'abc123'}),
-        //     buildPipelineTag({key: DagsterTag.SensorName, value: 's3_sensor'}),
-        //   ],
-        // }),
-        // {...buildPartitionBackfill({id: 'b1'}), backfillStatus: BulkActionStatus.REQUESTED},
+        // No backfill, non-partitioned
+        buildRun({
+          jobName: 'simple',
+          tags: [buildPipelineTag({key: DagsterTag.FromUI, value: 'true'})],
+          runStatus: RunStatus.SUCCESS,
+        }),
+        // No backfill, partitioned
+        buildRun({
+          jobName: 'partitioned',
+          tags: [
+            buildPipelineTag({key: DagsterTag.Partition, value: '2020-01-01'}),
+            buildPipelineTag({key: DagsterTag.FromUI, value: 'true'}),
+          ],
+          runStatus: RunStatus.SUCCESS,
+        }),
+        // Backfill, partitioned
+        buildRun({
+          jobName: 'backfill_partitioned',
+          tags: [
+            buildPipelineTag({key: DagsterTag.Backfill, value: 'abcd'}),
+            buildPipelineTag({key: DagsterTag.Partition, value: '2020-01-01'}),
+            buildPipelineTag({key: DagsterTag.FromUI, value: 'true'}),
+          ],
+          runStatus: RunStatus.SUCCESS,
+        }),
       ],
     },
   },
 });
+
+export const RunsFeedRootMockBackfill = buildQueryMock<
+  RunsFeedRootQuery,
+  RunsFeedRootQueryVariables
+>({
+  query: RUNS_FEED_ROOT_QUERY,
+  variables: {filter: {}, limit: 30, view: RunsFeedView.ROOTS},
+  data: {
+    runsFeedOrError: {
+      __typename: 'RunsFeedConnection',
+      cursor: '',
+      hasMore: false,
+      results: [
+        addStatusToPartitionBackfill(
+          buildPartitionBackfill(BackfillTableFragmentCompletedAssetJob),
+        ),
+      ],
+    },
+  },
+});
+
+function addStatusToPartitionBackfill(backfill: ReturnType<typeof buildPartitionBackfill>) {
+  return {
+    ...backfill,
+    backfillStatus: backfill.status,
+  };
+}
