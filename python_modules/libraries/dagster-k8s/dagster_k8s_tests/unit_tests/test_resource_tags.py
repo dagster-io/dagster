@@ -3,6 +3,7 @@ from dagster import DynamicOut, DynamicOutput, job, op
 from dagster._core.errors import DagsterInvalidConfigError
 from dagster._core.execution.api import create_execution_plan
 from dagster._core.execution.plan.state import KnownExecutionState
+from dagster._core.instance import DagsterInstance
 from dagster_k8s.job import (
     K8S_RESOURCE_REQUIREMENTS_KEY,
     USER_DEFINED_K8S_CONFIG_KEY,
@@ -105,10 +106,10 @@ def test_tags_to_plan():
             }
         )()
 
-    plan = create_execution_plan(k8s_ready)
+    plan = create_execution_plan(k8s_ready, DagsterInstance.ephemeral())
     step = next(iter(plan.step_dict.values()))
 
-    user_defined_k8s_config = get_user_defined_k8s_config(step.tags)  # pyright: ignore[reportArgumentType]
+    user_defined_k8s_config = get_user_defined_k8s_config(step.tags or {})
 
     assert user_defined_k8s_config.container_config
     assert user_defined_k8s_config.container_config["resources"]
@@ -162,10 +163,10 @@ def test_tags_to_dynamic_plan():
             emit.name: {"result": ["0", "1", "2"]},
         },
     )
-    plan = create_execution_plan(k8s_ready, known_state=known_state)
+    plan = create_execution_plan(k8s_ready, DagsterInstance.ephemeral(), known_state=known_state)
 
     emit_step = plan.get_step_by_key(emit.name)
-    user_defined_k8s_config = get_user_defined_k8s_config(emit_step.tags)  # pyright: ignore[reportArgumentType]
+    user_defined_k8s_config = get_user_defined_k8s_config(emit_step.tags or {})
 
     assert user_defined_k8s_config.container_config
     assert user_defined_k8s_config.container_config["resources"]
@@ -180,7 +181,7 @@ def test_tags_to_dynamic_plan():
     for mapping_key in range(3):
         multiply_inputs_step = plan.get_step_by_key(f"{multiply_inputs.name}[{mapping_key}]")
         dynamic_step_user_defined_k8s_config = get_user_defined_k8s_config(
-            multiply_inputs_step.tags  # pyright: ignore[reportArgumentType]
+            multiply_inputs_step.tags or {}
         )
 
         assert dynamic_step_user_defined_k8s_config.container_config

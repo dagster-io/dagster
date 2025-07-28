@@ -39,7 +39,7 @@ logger = logging.getLogger("dagster.test_auto_run_reexecution")
 def create_run(instance, **kwargs):
     with get_foo_job_handle(instance) as handle:
         execution_plan = create_execution_plan(
-            foo, step_keys_to_execute=kwargs.get("step_keys_to_execute")
+            foo, instance=instance, step_keys_to_execute=kwargs.get("step_keys_to_execute")
         )
         return create_run_for_test(
             instance,

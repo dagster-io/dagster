@@ -628,7 +628,7 @@ def test_resource_init_failure():
     assert DagsterEventType.PIPELINE_FAILURE.value in event_types
 
     instance = DagsterInstance.ephemeral()
-    execution_plan = create_execution_plan(the_job)
+    execution_plan = create_execution_plan(the_job, instance)
     dagster_run = instance.create_run_for_job(the_job, execution_plan=execution_plan)
 
     with pytest.raises(
