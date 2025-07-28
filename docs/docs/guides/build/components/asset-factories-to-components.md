@@ -6,19 +6,19 @@ sidebar_position: 200
 
 Data engineers often need to implement multiple similar workflows in data pipelines. To keep this code maintainable, many engineers use [asset factories](/guides/build/assets/creating-asset-factories) to generate Dagster objects based on configuration instead of defining each one manually.
 
-While factories are powerful and flexible, many patterns that use them can also be expressed using [components](/guides/build/components/). We will implement the asset factory from [asset factories](/guides/build/assets/creating-asset-factories) guide into a component. 
+While factories are powerful and flexible, many patterns that use them can also be expressed using [components](/guides/build/components/). In this guide, we will implement the asset factory from the [asset factory creation guide](/guides/build/assets/creating-asset-factories) into a custom component.
 
-### 1. Scaffold the component definition
+## 1. Scaffold the custom component
 
 When creating a new custom component in Dagster, the first step is to scaffold the component using `dg`. This generates the necessary boilerplate code and file structure for you to implement and register the component:
 
 <CliInvocationExample contents="dg scaffold component AssetFactory" />
 
-### 2. Define the component definition
+## 2. Define the component
 
-Next, we define the component. You should begin components by designing the interface. In the case of our asset factory, there is one set resource and one or more ETL assets that will be configure. Since there will be a number of ETL assets configured we need to define a `Model` that can be used in the component.
+Next, we will need to define the component. We recommend beginning new components by designing the interface. In the case of our asset factory, there is one set resource and one or more ETL assets that will be configured. Since there will be a number of ETL assets configured, we will need to define a `Model` that can be used in the component.
 
-Looking at the parameters of the `build_etl_job` factory we can see what needs to be in the model:
+Looking at the parameters of the `build_etl_job` factory, we can see what needs to be in the model:
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/components/asset_factory/asset_factory.py"
@@ -27,7 +27,7 @@ Looking at the parameters of the `build_etl_job` factory we can see what needs t
   endBefore="end_build_etl_job"
 />
 
-Within our component `asset_factory.py`, create a class that inherits from `dg.Model` with the attributes of the asset factory:
+Within the component code in `asset_factory.py`, we will create a class that inherits from `dg.Model` with the attributes of the asset factory:
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/components/asset_factory/asset_factory_component.py"
@@ -37,7 +37,7 @@ Within our component `asset_factory.py`, create a class that inherits from `dg.M
   endBefore="end_etl_job_model"
 />
 
-Next we can use that Model within the `AssetFactory` class. At the top of the class create attributes for `access_key_id` and  `secret_access_key`. These will be shared across the assets and only need to be set once. The `etl_job` attribute will be a list since it can be any number of assets:
+Next, we can use that Model within the `AssetFactory` class. At the top of the class, create attributes for `access_key_id` and  `secret_access_key`. These will be shared across the assets and only need to be set once. The `etl_job` attribute will be a list since it can be any number of assets:
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/components/asset_factory/asset_factory_component.py"
@@ -47,15 +47,15 @@ Next we can use that Model within the `AssetFactory` class. At the top of the cl
   endBefore="end_asset_factory_component"
 />
 
-Most of `AssetFactory` code will look similar to the asset factory. Though the <PyObject section="definitions" module="dagster" object="Definitions" />  object returned contains all of the assets that will be generated as well as the resource.
+Most of the new `AssetFactory` code will look similar to the code in the old asset factory, although the <PyObject section="definitions" module="dagster" object="Definitions" />  object returned contains all of the assets that will be generated, as well as the resource.
 
-### 3. Configure the component
+## 3. Use the component
 
-With the component registered, we can now use it in the project. The first step is to initialize the component:
+With the component created and registered, we can now use it in the project. The first step is to initialize the component:
 
 <CliInvocationExample contents="dg scaffold defs 'my_project.components.asset_factory.AssetFactory' asset_factory" />
 
-Next set the attributes of the component:
+Next, set the attributes of the component:
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/components/asset_factory/defs.yaml"
@@ -63,12 +63,12 @@ Next set the attributes of the component:
   title="src/<project_name>/defs/asset_factory/defs.yaml"
 />
 
-### 4. Viewing component assets
+## 4. Viewing component assets
 
-The assets generated by the initialized component behave the same as those created by the factory. You can view them in the command line:
+The assets generated by the initialized component behave the same as those created by the factory. You can view them on the command line:
 
 <CliInvocationExample contents="dg list defs" />
 
-Or interact with them in the Dagster UI by running `dg dev`.
+or interact with them in the Dagster UI by running `dg dev`:
 
 ![Asset factory DAG](/images/guides/labs/components/asset-factory.png)
