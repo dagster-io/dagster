@@ -1,5 +1,6 @@
 import dagster as dg
 import pytest
+from dagster import DagsterInstance
 from dagster._core.execution.api import create_execution_plan
 from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._utils.merger import merge_dicts
@@ -221,7 +222,7 @@ def test_tags():
             emit.name: {"result": ["0", "1", "2"]},
         },
     )
-    plan = create_execution_plan(dynamic_job, known_state=known_state)
+    plan = create_execution_plan(dynamic_job, DagsterInstance.ephemeral(), known_state=known_state)
 
     assert plan.get_step_by_key(emit.name).tags == {"first": "1"}
 

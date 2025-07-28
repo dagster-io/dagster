@@ -94,14 +94,14 @@ def test_gcs_pickle_io_manager_execution(gcs_bucket):
     }
 
     run_id = make_new_run_id()
+    instance = DagsterInstance.ephemeral()
 
     resolved_run_config = ResolvedRunConfig.build(inty_job, run_config=run_config)
-    execution_plan = create_execution_plan(inty_job, run_config)
+    execution_plan = create_execution_plan(inty_job, instance, run_config=run_config)
 
     assert execution_plan.get_step_by_key("return_one")
 
     step_keys = ["return_one"]
-    instance = DagsterInstance.ephemeral()
     dagster_run = DagsterRun(job_name=inty_job.name, run_id=run_id, run_config=run_config)
 
     return_one_step_events = list(
