@@ -52,7 +52,7 @@ class SlingReplicationSpecModel(Resolvable):
         Annotated[
             TranslationFn[Mapping[str, Any]],
             TranslationFnResolver(
-                template_vars_for_resolving_translation_fn=lambda data: {"stream_definition": data}
+                template_vars_for_translation_fn=lambda data: {"stream_definition": data}
             ),
         ]
     ] = None

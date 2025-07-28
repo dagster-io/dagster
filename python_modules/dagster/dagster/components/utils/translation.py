@@ -103,7 +103,7 @@ TranslationFn: TypeAlias = Callable[[AssetSpec, T], AssetSpec]
 
 
 def _build_translation_fn(
-    template_vars_for_resolving_translation_fn: Callable[[T], Mapping[str, Any]],
+    template_vars_for_translation_fn: Callable[[T], Mapping[str, Any]],
 ) -> Callable[[ResolutionContext, T], TranslationFn[T]]:
     def resolve_translation(
         context: ResolutionContext,
@@ -117,7 +117,7 @@ def _build_translation_fn(
         return lambda base_asset_spec, data: info.get_asset_spec(
             base_asset_spec,
             {
-                **(template_vars_for_resolving_translation_fn(data)),
+                **(template_vars_for_translation_fn(data)),
                 "spec": base_asset_spec,
             },
         )
@@ -141,7 +141,7 @@ class TranslationFnResolver(Resolver, Generic[T]):
             translation: Annotated[
                 TranslationFn[MyApiData],
                 TranslationFnResolver[MyApiData](
-                    template_vars_for_resolving_translation_fn=lambda data: {"name": data.name}
+                    template_vars_for_translation_fn=lambda data: {"name": data.name}
                 ),
             ]
 
@@ -155,12 +155,10 @@ class TranslationFnResolver(Resolver, Generic[T]):
 
     """
 
-    def __init__(
-        self, template_vars_for_resolving_translation_fn: Callable[[T], Mapping[str, Any]]
-    ):
+    def __init__(self, template_vars_for_translation_fn: Callable[[T], Mapping[str, Any]]):
         super().__init__(
             _build_translation_fn(
-                template_vars_for_resolving_translation_fn=template_vars_for_resolving_translation_fn
+                template_vars_for_translation_fn=template_vars_for_translation_fn
             ),
             model_field_type=Union[str, AssetAttributesModel],
             inject_before_resolve=False,

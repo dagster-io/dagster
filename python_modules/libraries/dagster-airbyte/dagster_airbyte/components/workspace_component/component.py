@@ -98,9 +98,7 @@ class AirbyteCloudWorkspaceComponent(dg.Component, dg.Model, dg.Resolvable):
     translation: Optional[
         Annotated[
             TranslationFn[AirbyteConnectionTableProps],
-            TranslationFnResolver(
-                template_vars_for_resolving_translation_fn=lambda data: {"props": data}
-            ),
+            TranslationFnResolver(template_vars_for_translation_fn=lambda data: {"props": data}),
         ]
     ] = pydantic.Field(
         None,

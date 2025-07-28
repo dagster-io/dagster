@@ -129,9 +129,7 @@ class DbtProjectComponent(Component, Resolvable):
     ] = None
     translation: Annotated[
         Optional[TranslationFn[Mapping[str, Any]]],
-        TranslationFnResolver(
-            template_vars_for_resolving_translation_fn=lambda data: {"node": data}
-        ),
+        TranslationFnResolver(template_vars_for_translation_fn=lambda data: {"node": data}),
     ] = None
     select: Annotated[
         str,
