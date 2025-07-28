@@ -1123,19 +1123,23 @@
     },
     {
       "source": "/dagster-plus/deployment/serverless",
-      "destination": "/deployment/dagster-plus/serverless/"
+      "destination": "/deployment/dagster-plus/serverless"
+    },
+    {
+      "source": "/deployment/dagster-plus/deployment/serverless",
+      "destination": "/deployment/dagster-plus/serverless"
     },
     {
       "source": "/dagster-plus/deployment/hybrid",
-      "destination": "/deployment/dagster-plus/hybrid/"
+      "destination": "/deployment/dagster-plus/hybrid"
     },
     {
       "source": "/dagster-plus/deployment/agents",
-      "destination": "/deployment/dagster-plus/hybrid/"
+      "destination": "/deployment/dagster-plus/hybrid"
     },
     {
       "source": "/dagster-plus/deployment/agents/amazon-ecs",
-      "destination": "/deployment/dagster-plus/hybrid/amazon-ecs/"
+      "destination": "/deployment/dagster-plus/hybrid/amazon-ecs"
     },
     {
       "source": "/dagster-plus/deployment/agents/amazon-ecs/creating-ecs-agent-new-vpc",
