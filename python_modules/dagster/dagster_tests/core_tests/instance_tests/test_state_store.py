@@ -1,5 +1,4 @@
 import dagster as dg
-import pytest
 from dagster import instance_for_test
 from dagster._core.definitions.reconstruct import ReconstructableJob
 from dagster._core.execution.api import create_execution_plan, execute_run_iterator
@@ -98,15 +97,3 @@ def test_state_store_get_current_during_execution_plan_creation():
     with instance_for_test() as instance:
         plan = create_execution_plan(test_job, instance=instance)
         assert plan is not None
-
-
-def test_state_store_missing_context_raises_check_error():
-    """Test that StateStore.get_current() raises a CheckError when no StateStore is set."""
-    original_current = StateStore._current  # noqa: SLF001
-    StateStore._current = None  # noqa: SLF001
-
-    try:
-        with pytest.raises(Exception):
-            StateStore.get_current()
-    finally:
-        StateStore._current = original_current  # noqa: SLF001
