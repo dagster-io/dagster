@@ -21,15 +21,18 @@ For this example, we'll create a `ShellCommand` component that executes a shell 
 
 ### 1. Scaffold the new component file
 
-First, use the [`dg scaffold component`](/api/dg/dg-cli#dg-scaffold) command to scaffold the `ShellCommand` component. You can scaffold a component with either a YAML or Pythonic interface.
+First, scaffold the `ShellCommand` component. You can scaffold a component with either a YAML or Pythonic interface.
 
 <Tabs groupId="interface">
     <TabItem value="yaml" label="YAML interface">
 
+      To scaffold a component with a YAML interface, use the `dg scaffold component` command:
 
         <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/shell-script-component/generated/1-dg-scaffold-shell-command.txt" />
 
-        This will add a new file to the `components` directory of your Dagster project that contains the basic structure for the new component. The `ShellCommand` class inherits from <PyObject section="components" module="dagster" object="Model" />, in addition to <PyObject section="components" module="dagster" object="Component" /> and <PyObject section="components" module="dagster" object="Resolvable" />. `Model` is used to implement a YAML interface for the component.
+        The above command will add a new file to the `components` directory of your Dagster project that contains the basic structure for the new component.
+        
+        The `ShellCommand` class inherits from <PyObject section="components" module="dagster" object="Model" />, <PyObject section="components" module="dagster" object="Component" /> and <PyObject section="components" module="dagster" object="Resolvable" />. `Model` is used to implement a YAML interface for the component, and makes the class that inherits from it (in this case, `ShellCommand`) into a [Pydantic model](https://docs.pydantic.dev/latest/concepts/models/):
 
         <CodeExample
           path="docs_snippets/docs_snippets/guides/components/shell-script-component/generated/2-shell-command-empty.py"
@@ -37,16 +40,15 @@ First, use the [`dg scaffold component`](/api/dg/dg-cli#dg-scaffold) command to 
           title="src/my_project/components/shell_command.py"
         />
 
-        :::info
-
-        `Model` makes the class that inherits from it (in this case, `ShellCommand`) into a [Pydantic model](https://docs.pydantic.dev/latest/concepts/models/).
-
-        :::
     </TabItem>
     <TabItem value="pythonic" label="Pythonic interface">
+        To scaffold a component with a Pythonic interface, use the `dg scaffold component` command with the `--no-model` flag:
+
         <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/shell-script-component/pythonic/1-dg-scaffold-shell-command-no-model.txt" />
 
-        This will add a new file to the `components` directory of your Dagster project that contains the basic structure for the new component. Since this component only needs a Python interface, the `ShellCommand` class does not inherit from <PyObject section="components" module="dagster" object="Model" />, and an empty `__init__` method is included:
+        The above command will add a new file to the `components` directory of your Dagster project that contains the basic structure for the new component.
+        
+        Since this component only needs a Python interface, the `ShellCommand` class does not inherit from <PyObject section="components" module="dagster" object="Model" />, and an empty `__init__` method is included:
 
         <CodeExample
           path="docs_snippets/docs_snippets/guides/components/shell-script-component/pythonic/2-shell-command-empty-no-model-init.py"
@@ -69,45 +71,37 @@ First, use the [`dg scaffold component`](/api/dg/dg-cli#dg-scaffold) command to 
 
 The next step is to define the information the component will need when it is used. The `ShellCommand` component will need the following information:
 
-- The path to the shell script to be run
-- The assets the shell script is expected to produce
+- The path to the shell script to be run (`script_path`)
+- The assets the shell script is expected to produce (`asset_specs`)
+
+In this example, we annotate the `ShellCommand` class with `script_path` and `asset_specs`.
 
 <Tabs groupId="interface">
   <TabItem value="yaml" label="YAML interface">
-    The `ShellCommand` class inherits from <PyObject section="components" module="dagster" object="Resolvable" />, in addition to <PyObject section="components" module="dagster" object="Component" /> and <PyObject section="components" module="dagster" object="Model" /> . `Resolvable` handles deriving a YAML schema for the class that inherits from it based on what the class is annotated with. In our example, the `ShellCommand` class is annotated with `script_path` and `asset_specs`:
-
     <CodeExample
       path="docs_snippets/docs_snippets/guides/components/shell-script-component/with-config-schema.py"
       language="python"
       title="src/my_project/components/shell_command.py"
     />
-
-    :::info
-
-    In the example above, we use the annotation `asset_specs: Sequence[dg.ResolvedAssetSpec]` because the `ShellCommand` component produces more than one `AssetSpec`.
-    
-    If the component only produced one asset, the annotation would be `asset_spec: ResolvedAssetSpec`, and the `Sequence` import would be unnecessary.
-
-    :::
   </TabItem>
   <TabItem value="pythonic" label="Pythonic interface">
-    The `ShellCommand` class inherits from <PyObject section="components" module="dagster" object="Resolvable" />, in addition to <PyObject section="components" module="dagster" object="Component" /> and <PyObject section="components" module="dagster" object="Model" /> . `Resolvable` handles deriving a YAML schema for the class that inherits from it based on what the class is annotated with. In our example, the `ShellCommand` class is annotated with `script_path` and `asset_specs`:
-
     <CodeExample
       path="docs_snippets/docs_snippets/guides/components/shell-script-component/with-config-schema-pythonic.py"
       language="python"
       title="src/my_project/components/shell_command.py"
     />
-
-    :::info
-
-    In the example above, we use the annotation `asset_specs: Sequence[dg.ResolvedAssetSpec]` because the `ShellCommand` component produces more than one `AssetSpec`.
-    
-    If the component only produced one asset, the annotation would be `asset_spec: ResolvedAssetSpec`, and the `Sequence` import would be unnecessary.
-
-    :::
   </TabItem>
 </Tabs>
+
+  <PyObject section="components" module="dagster" object="Resolvable" /> handles deriving a YAML schema for the class that inherits from it (in this case, `ShellCommand`) based on what the class is annotated with.
+
+  :::info
+
+  In the example above, we use the annotation `asset_specs: Sequence[dg.ResolvedAssetSpec]` because the `ShellCommand` component produces more than one `AssetSpec`.
+  
+  If the component only produced one asset, the annotation would be `asset_spec: ResolvedAssetSpec`, and the `Sequence` import would be unnecessary.
+
+  :::
 
 #### Using Dagster models for common schema annotations
 
