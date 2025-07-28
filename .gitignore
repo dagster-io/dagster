@@ -23,7 +23,6 @@ sdist/
 var/
 wheels/
 .buildkite/
-scripts/
 *.egg-info/
 .installed.cfg
 *.egg
