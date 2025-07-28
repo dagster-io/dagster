@@ -19,6 +19,7 @@ from automation.dagster_docs.path_converters import dagster_path_converter
 from automation.dagster_docs.public_api_validator import PublicApiValidator
 from automation.dagster_docs.validator import (
     SymbolImporter,
+    _find_docstring_start_line,
     validate_docstring_text,
     validate_symbol_docstring,
 )
@@ -67,7 +68,23 @@ def _validate_package_symbols(package: str) -> int:
     total_warnings = 0
 
     for symbol_info in symbols:
-        result = validate_docstring_text(symbol_info.docstring or "", symbol_info.dotted_path)
+        # Calculate docstring start line using AST parsing for accuracy
+        docstring_start_line = None
+        if symbol_info.line_number is not None and symbol_info.file_path:
+            # Try to find the actual docstring start line using AST
+            docstring_start_line = _find_docstring_start_line(
+                symbol_info.file_path, symbol_info.name, symbol_info.line_number
+            )
+            # Fall back to the old calculation if AST parsing fails
+            if docstring_start_line is None:
+                docstring_start_line = symbol_info.line_number + 1
+
+        result = validate_docstring_text(
+            symbol_info.docstring or "",
+            symbol_info.dotted_path,
+            file_path=symbol_info.file_path,
+            docstring_start_line=docstring_start_line,
+        )
 
         if result.has_errors() or result.has_warnings():
             click.echo(f"--- {symbol_info.dotted_path} ---")

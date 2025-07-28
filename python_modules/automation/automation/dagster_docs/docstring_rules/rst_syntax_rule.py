@@ -37,7 +37,7 @@ def validate_rst_syntax(context: ValidationContext, result: ValidationResult) ->
             enhanced_full_text = _enhance_full_error_message(warnings_text)
             if enhanced_full_text != warnings_text:
                 # We enhanced the message, use it as a single error
-                result = result.with_error(f"RST syntax: {enhanced_full_text}")
+                result = result.with_error(f"RST syntax: {enhanced_full_text}", None, context)
             else:
                 # Process line by line
                 for line in warnings_text.strip().split("\n"):
@@ -49,14 +49,16 @@ def validate_rst_syntax(context: ValidationContext, result: ValidationResult) ->
                         should_be_error = "ERROR" in line or _should_upgrade_warning_to_error(line)
 
                         if should_be_error:
-                            result = result.with_error(f"RST syntax: {enhanced_message}", line_num)
+                            result = result.with_error(
+                                f"RST syntax: {enhanced_message}", line_num, context
+                            )
                         else:
                             result = result.with_warning(
-                                f"RST syntax: {enhanced_message}", line_num
+                                f"RST syntax: {enhanced_message}", line_num, context
                             )
 
     except Exception as e:
-        result = result.with_error(f"RST validation failed: {e}")
+        result = result.with_error(f"RST validation failed: {e}", None, context)
 
     return result
 
@@ -74,11 +76,24 @@ def create_rst_syntax_validator(enabled: bool = True) -> ValidationFunction:
 
 def _extract_line_number(warning_line: str) -> Optional[int]:
     """Extract line number from a docutils warning message."""
+    # Try the old format first
     if "(line" in warning_line:
         try:
             return int(warning_line.split("(line")[1].split(")")[0])
         except (IndexError, ValueError):
             pass
+
+    # Try the new format: <string>:LINE:
+    if "<string>:" in warning_line:
+        try:
+            # Find the pattern <string>:LINE:
+            start = warning_line.find("<string>:") + len("<string>:")
+            end = warning_line.find(":", start)
+            if end > start:
+                return int(warning_line[start:end])
+        except (ValueError, IndexError):
+            pass
+
     return None
 
 

@@ -143,7 +143,12 @@ class SymbolInfo:
         return f"SymbolInfo({self.dotted_path}{location})"
 
 
-def validate_docstring_text(docstring: str, symbol_path: str = "unknown") -> ValidationResult:
+def validate_docstring_text(
+    docstring: str,
+    symbol_path: str = "unknown",
+    file_path: Optional[str] = None,
+    docstring_start_line: Optional[int] = None,
+) -> ValidationResult:
     """Validate a raw docstring text using the rule-based architecture.
 
     Args:
@@ -172,6 +177,8 @@ def validate_docstring_text(docstring: str, symbol_path: str = "unknown") -> Val
         docstring=docstring,
         symbol_path=symbol_path,
         processed_rst=processed_rst,
+        file_path=file_path,
+        docstring_start_line=docstring_start_line,
     )
 
     # 3. Apply all validation functions in sequence
@@ -199,6 +206,9 @@ def validate_symbol_docstring(dotted_path: str) -> ValidationResult:
     result = ValidationResult.create(dotted_path)
 
     try:
+        # Get symbol info to extract file location
+        symbol_info = SymbolImporter.import_symbol(dotted_path)
+
         # Try file-based reading first (most accurate for current file state)
         docstring = _read_docstring_from_file(dotted_path)
 
@@ -210,7 +220,23 @@ def validate_symbol_docstring(dotted_path: str) -> ValidationResult:
         if not docstring:
             return result.with_warning("Symbol has no docstring")
 
-        return validate_docstring_text(docstring, dotted_path)
+        # Calculate docstring start line using AST parsing for accuracy
+        docstring_start_line = None
+        if symbol_info.line_number is not None and symbol_info.file_path:
+            # Try to find the actual docstring start line using AST
+            docstring_start_line = _find_docstring_start_line(
+                symbol_info.file_path, symbol_info.name, symbol_info.line_number
+            )
+            # Fall back to the old calculation if AST parsing fails
+            if docstring_start_line is None:
+                docstring_start_line = symbol_info.line_number + 1
+
+        return validate_docstring_text(
+            docstring,
+            dotted_path,
+            file_path=symbol_info.file_path,
+            docstring_start_line=docstring_start_line,
+        )
 
     except (ImportError, AttributeError) as e:
         return result.with_error(f"Failed to import symbol: {e}").with_parsing_failed()
@@ -258,6 +284,59 @@ def _import_symbol(dotted_path: str, reload_module: bool = False) -> Any:
             continue
 
     raise ImportError(f"Could not import symbol '{dotted_path}'")
+
+
+def _find_docstring_start_line(
+    file_path: str, function_name: str, start_search_line: int
+) -> Optional[int]:
+    """Find the actual line number where a function's docstring starts.
+
+    Args:
+        file_path: Path to the source file
+        function_name: Name of the function to find
+        start_search_line: Line number to start searching from (typically from inspect)
+
+    Returns:
+        Line number where the docstring starts, or None if not found
+    """
+    try:
+        import ast
+
+        with open(file_path, encoding="utf-8") as f:
+            source_code = f.read()
+
+        # Parse the AST to find the function and its docstring
+        tree = ast.parse(source_code)
+
+        # Find all functions with the matching name
+        candidates = []
+        for node in ast.walk(tree):
+            if isinstance(node, ast.FunctionDef) and node.name == function_name:
+                candidates.append(node)
+
+        # If we have candidates, pick the one closest to the expected line number
+        target_node = None
+        if candidates:
+            if len(candidates) == 1:
+                target_node = candidates[0]
+            else:
+                # Pick the candidate closest to the expected line number
+                target_node = min(candidates, key=lambda n: abs(n.lineno - start_search_line))
+
+        if target_node:
+            # Check if the function has a docstring
+            if (
+                target_node.body
+                and isinstance(target_node.body[0], ast.Expr)
+                and isinstance(target_node.body[0].value, ast.Constant)
+                and isinstance(target_node.body[0].value.value, str)
+            ):
+                # Return the line number of the docstring node
+                return target_node.body[0].lineno
+
+        return None
+    except Exception:
+        return None
 
 
 def _read_docstring_from_file(dotted_path: str) -> Optional[str]:
