@@ -2,9 +2,9 @@ import {Box, Caption, Spinner} from '@dagster-io/ui-components';
 import {memo, useCallback} from 'react';
 import {useHistory} from 'react-router-dom';
 
-import {isTimeseriesDimension} from './MultipartitioningSupport';
+import {isTimeBasedPartition, isTimeseriesDimension} from './MultipartitioningSupport';
 import {AssetKey, AssetViewParams} from './types';
-import {PartitionHealthData} from './usePartitionHealthData';
+import {PartitionHealthData, PartitionHealthDimension} from './usePartitionHealthData';
 import {LiveDataForNode, displayNameForAssetKey} from '../asset-graph/Utils';
 import {PartitionStatus} from '../partitions/PartitionStatus';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
@@ -23,7 +23,8 @@ export const PartitionHealthSummary = memo((props: Props) => {
   );
   const history = useHistory();
 
-  const handlePartitionInteraction = useCallback((selectedPartitions: string[]) => {
+  const handlePartitionInteraction = useCallback((selectedPartitions: string[], dimension?: PartitionHealthDimension) => {
+
     if (selectedPartitions.length > 0) {
       const firstPartition = selectedPartitions[0]!;
       const lastPartition = selectedPartitions[selectedPartitions.length - 1]!;
@@ -42,7 +43,7 @@ export const PartitionHealthSummary = memo((props: Props) => {
         defaultRange = `[${firstPartition}...${lastPartition}]`;
         queryParams = {
           view: 'partitions',
-          partition: lastPartition,
+          ...(dimension && isTimeBasedPartition(dimension) ? { partition: lastPartition } : {}),
           default_range: defaultRange,
         };
       }
@@ -73,8 +74,8 @@ export const PartitionHealthSummary = memo((props: Props) => {
               partitionNames={dimension.partitionKeys}
               splitPartitions={!isTimeseriesDimension(dimension)}
               selected={[]}
-              onSelect={(selectedPartitions) => handlePartitionInteraction(selectedPartitions)}
-              onClick={(partitionName) => handlePartitionInteraction([partitionName])}
+              onSelect={(selectedPartitions) => handlePartitionInteraction(selectedPartitions, dimension)}
+              onClick={(partitionName) => handlePartitionInteraction([partitionName], dimension)}
               health={{
                 ranges: assetData.rangesForSingleDimension(dimensionIdx, undefined),
               }}

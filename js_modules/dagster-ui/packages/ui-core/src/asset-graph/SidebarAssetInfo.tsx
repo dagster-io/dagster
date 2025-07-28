@@ -280,26 +280,16 @@ const Header = ({assetNode, repoAddress}: HeaderProps) => {
       >
         <Box>{displayName}</Box>
       </SidebarTitle>
-      <Box flex={{direction: 'row', alignItems: 'center', gap: 10}}>
+      <Box flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center'}}>
         <Box flex={{direction: 'row', gap: 4}}>
-            <AnchorButton
-              to={assetDetailsPathForKey(assetNode.assetKey)}
-              icon={<Icon name="open_in_new" color={Colors.linkDefault()} />}
-            >
-              {'View in Asset Catalog '}
-            </AnchorButton>
-            <AddToFavoritesButton assetKey={assetNode.assetKey} />
+          <AnchorButton
+            to={assetDetailsPathForKey(assetNode.assetKey)}
+            icon={<Icon name="open_in_new" color={Colors.linkDefault()} />}
+          >
+            {'View in Asset Catalog '}
+          </AnchorButton>
+          <AddToFavoritesButton assetKey={assetNode.assetKey} />
         </Box>
-        {assetNode.partitionDefinition && (
-          <Box flex={{direction: 'row', gap: 4}}>
-            <AnchorButton
-              to={`${assetDetailsPathForKey(assetNode.assetKey)}view=partitions`}
-              icon={<Icon name="partition" color={Colors.linkDefault()} />}
-            >
-              {'View Partitions '}
-            </AnchorButton>
-          </Box>
-        )}
         {repoAddress && (
           <UnderlyingOpsOrGraph assetNode={assetNode} repoAddress={repoAddress} minimal />
         )}
