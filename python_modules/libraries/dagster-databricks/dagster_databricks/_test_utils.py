@@ -11,7 +11,6 @@ import dagster._check as check
 import pytest
 from databricks.sdk import WorkspaceClient
 from databricks.sdk.service import files
-from databricks.sdk.service.workspace import ImportFormat, Language
 
 from dagster_databricks.pipes import dbfs_tempdir
 
