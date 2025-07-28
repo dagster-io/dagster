@@ -68,7 +68,7 @@ def test_using_file_system_for_subplan():
     instance = DagsterInstance.ephemeral()
 
     resolved_run_config = ResolvedRunConfig.build(foo_job)
-    execution_plan = create_execution_plan(foo_job)
+    execution_plan = create_execution_plan(foo_job, instance)
     run = instance.create_run_for_job(job_def=foo_job, execution_plan=execution_plan)
     assert execution_plan.get_step_by_key("return_one")
 
@@ -115,6 +115,7 @@ def test_using_file_system_for_subplan_multiprocessing():
 
         execution_plan = create_execution_plan(
             foo_job,
+            instance,
         )
         run = instance.create_run_for_job(
             job_def=foo_job.get_definition(), execution_plan=execution_plan
@@ -171,7 +172,7 @@ def test_execute_step_wrong_step_key():
     instance = DagsterInstance.ephemeral()
 
     resolved_run_config = ResolvedRunConfig.build(foo_job)
-    execution_plan = create_execution_plan(foo_job)
+    execution_plan = create_execution_plan(foo_job, instance)
     run = instance.create_run_for_job(job_def=foo_job, execution_plan=execution_plan)
 
     with pytest.raises(dg.DagsterExecutionStepNotFoundError) as exc_info:
@@ -206,7 +207,7 @@ def test_using_file_system_for_subplan_missing_input():
 
     instance = DagsterInstance.ephemeral()
     resolved_run_config = ResolvedRunConfig.build(foo_job)
-    execution_plan = create_execution_plan(foo_job)
+    execution_plan = create_execution_plan(foo_job, instance)
     run = instance.create_run_for_job(job_def=foo_job, execution_plan=execution_plan)
 
     events = execute_plan(
@@ -227,7 +228,7 @@ def test_using_file_system_for_subplan_invalid_step():
     instance = DagsterInstance.ephemeral()
 
     resolved_run_config = ResolvedRunConfig.build(foo_job)
-    execution_plan = create_execution_plan(foo_job)
+    execution_plan = create_execution_plan(foo_job, instance)
 
     run = instance.create_run_for_job(job_def=foo_job, execution_plan=execution_plan)
 
@@ -258,7 +259,9 @@ def test_using_repository_data() -> None:
         recon_repo = ReconstructableRepository.for_file(__file__, fn_name="cacheable_asset_defs")
         recon_job = ReconstructableJob(repository=recon_repo, job_name="all_asset_job")
 
-        execution_plan = create_execution_plan(recon_job, repository_load_data=repository_load_data)
+        execution_plan = create_execution_plan(
+            recon_job, instance, repository_load_data=repository_load_data
+        )
 
         # need to get the definitions from metadata when creating the plan
         assert (

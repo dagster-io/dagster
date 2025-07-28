@@ -68,11 +68,11 @@ def test_clean_event_generator_exit():
 
     job_def = gen_basic_resource_job()
     instance = DagsterInstance.ephemeral()
-    execution_plan = create_execution_plan(job_def)
+    execution_plan = create_execution_plan(job_def, instance)
     run = instance.create_run_for_job(job_def=job_def, execution_plan=execution_plan)
     log_manager = DagsterLogManager.create(loggers=[], dagster_run=run)
     resolved_run_config = ResolvedRunConfig.build(job_def)
-    execution_plan = create_execution_plan(job_def)
+    execution_plan = create_execution_plan(job_def, instance)
 
     resource_name, resource_def = next(iter(job_def.resource_defs.items()))
     resource_context = dg.InitResourceContext(

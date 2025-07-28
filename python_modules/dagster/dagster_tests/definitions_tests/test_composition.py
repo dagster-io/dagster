@@ -6,6 +6,7 @@ from dagster import Int, Nothing
 from dagster._core.definitions.decorators.hook_decorator import event_list_hook
 from dagster._core.definitions.events import HookExecutionResult
 from dagster._core.execution.api import create_execution_plan
+from dagster._core.instance import DagsterInstance
 
 
 def builder(graph):
@@ -800,7 +801,7 @@ def test_tags():
     def tag():
         emit.tag({"invoke": "2"})()
 
-    plan = create_execution_plan(tag)
+    plan = create_execution_plan(tag, DagsterInstance.ephemeral())
     step = next(iter(plan.step_dict.values()))
     assert step.tags == {"def": "1", "invoke": "2"}
 
@@ -827,7 +828,7 @@ def test_tag_subset():
         empty()
         emit.tag({"invoke": "2"})()
 
-    plan = create_execution_plan(tag.get_subset(op_selection=["emit"]))
+    plan = create_execution_plan(tag.get_subset(op_selection=["emit"]), DagsterInstance.ephemeral())
     step = next(iter(plan.step_dict.values()))
     assert step.tags == {"def": "1", "invoke": "2"}
 

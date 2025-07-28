@@ -4,6 +4,7 @@ import dagster as dg
 import pytest
 from dagster import AssetMaterialization, Nothing
 from dagster._core.execution.api import create_execution_plan
+from dagster._core.instance import DagsterInstance
 
 
 def _define_nothing_dep_job():
@@ -287,7 +288,7 @@ def test_execution_plan():
     def pipe():
         consume_nothing(emit_nothing())
 
-    plan = create_execution_plan(pipe)
+    plan = create_execution_plan(pipe, DagsterInstance.ephemeral())
 
     levels = plan.get_steps_to_execute_by_level()
 

@@ -2,6 +2,7 @@ import dagster as dg
 from dagster._core.execution.api import create_execution_plan
 from dagster._core.execution.context.system import PlanData, PlanOrchestrationContext
 from dagster._core.execution.context_creation_job import create_context_free_log_manager
+from dagster._core.execution.plan.step import ExecutionStep
 from dagster._core.execution.retries import RetryMode
 from dagster._core.executor.step_delegating import StepHandlerContext
 from dagster._core.test_utils import create_run_for_test
@@ -18,7 +19,7 @@ def foo_pipline():
 
 
 def _get_executor(instance, pipeline, executor_config=None):
-    return test_step_delegating_executor.executor_creation_fn(  # pyright: ignore[reportOptionalCall]
+    return test_step_delegating_executor.executor_creation_fn(
         dg.InitExecutorContext(
             job=pipeline,
             executor_def=test_step_delegating_executor,
@@ -33,7 +34,7 @@ def test_step_handler_context():
     with dg.instance_for_test() as instance:
         run = create_run_for_test(instance, job_code_origin=recon_job.get_python_origin())
 
-        execution_plan = create_execution_plan(recon_job)
+        execution_plan = create_execution_plan(recon_job, instance)
         log_manager = create_context_free_log_manager(instance, run)
 
         executor = _get_executor(instance, recon_job)
@@ -62,7 +63,7 @@ def test_step_handler_context():
         ctx = StepHandlerContext(
             instance=instance,
             plan_context=plan_context,
-            steps=execution_plan.steps,  # pyright: ignore[reportArgumentType]
+            steps=[step for step in execution_plan.steps if isinstance(step, ExecutionStep)],
             execute_step_args=args,
             dagster_run=run,
         )
