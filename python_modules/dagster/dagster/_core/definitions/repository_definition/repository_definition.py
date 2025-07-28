@@ -92,6 +92,7 @@ class RepositoryLoadData(
         )
 
 
+@public
 class RepositoryDefinition:
     """Define a repository that contains a group of definitions.
 

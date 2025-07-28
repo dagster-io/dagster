@@ -2,6 +2,7 @@ from datetime import datetime
 from typing import Optional, Union
 
 import dagster._check as check
+from dagster._annotations import public
 from dagster._core.definitions.partitions.definition.time_window import (
     TimeWindowPartitionsDefinition,
 )
@@ -9,6 +10,7 @@ from dagster._core.definitions.partitions.schedule_type import ScheduleType
 from dagster._utils.partitions import DEFAULT_DATE_FORMAT, DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE
 
 
+@public
 class HourlyPartitionsDefinition(TimeWindowPartitionsDefinition):
     """A set of hourly partitions.
 
@@ -83,6 +85,7 @@ class HourlyPartitionsDefinition(TimeWindowPartitionsDefinition):
         )
 
 
+@public
 class DailyPartitionsDefinition(TimeWindowPartitionsDefinition):
     """A set of daily partitions.
 
@@ -235,6 +238,7 @@ class WeeklyPartitionsDefinition(TimeWindowPartitionsDefinition):
         )
 
 
+@public
 class MonthlyPartitionsDefinition(TimeWindowPartitionsDefinition):
     """A set of monthly partitions.
 

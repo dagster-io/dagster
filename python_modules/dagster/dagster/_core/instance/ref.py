@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Any, NamedTuple, Optional
 import yaml
 
 import dagster._check as check
+from dagster._annotations import public
 from dagster._core.instance.config import DAGSTER_CONFIG_YAML_FILENAME, dagster_instance_config
 from dagster._serdes import ConfigurableClassData, class_from_code_pointer, whitelist_for_serdes
 
@@ -184,6 +185,7 @@ def configurable_storage_data(
 
 
 @whitelist_for_serdes
+@public
 class InstanceRef(
     NamedTuple(
         "_InstanceRef",

@@ -38,6 +38,7 @@ T_Packable = TypeVar("T_Packable", bound=PackableValue, default=PackableValue, c
 # ########################
 
 
+@public
 class MetadataValue(ABC, Generic[T_Packable]):
     """Utility class to wrap metadata values passed into Dagster events so that they can be
     displayed in the Dagster UI and other tooling.
@@ -524,6 +525,7 @@ class MetadataValue(ABC, Generic[T_Packable]):
 # maintain backward compatibility. See docstring of `whitelist_for_serdes` for more info.
 
 
+@public
 @whitelist_for_serdes(storage_name="TextMetadataEntryData")
 @record(kw_only=False)
 class TextMetadataValue(MetadataValue[str]):
@@ -542,6 +544,7 @@ class TextMetadataValue(MetadataValue[str]):
         return self.text if self.text is not None else ""
 
 
+@public
 @whitelist_for_serdes(storage_name="UrlMetadataEntryData")
 @record(kw_only=False)
 class UrlMetadataValue(MetadataValue[str]):
@@ -560,6 +563,7 @@ class UrlMetadataValue(MetadataValue[str]):
         return self.url if self.url is not None else ""
 
 
+@public
 @whitelist_for_serdes(storage_name="PathMetadataEntryData")
 @record_custom(field_to_new_mapping={"fspath": "path"})
 class PathMetadataValue(MetadataValue[str], IHaveNew):
@@ -590,6 +594,7 @@ class PathMetadataValue(MetadataValue[str], IHaveNew):
         return self.fspath
 
 
+@public
 @whitelist_for_serdes(storage_name="NotebookMetadataEntryData")
 @record_custom(field_to_new_mapping={"fspath": "path"})
 class NotebookMetadataValue(MetadataValue[str], IHaveNew):
@@ -646,6 +651,7 @@ class JsonDataFieldSerializer(FieldSerializer):
     field_serializers={"data": JsonDataFieldSerializer},
 )
 @record_custom
+@public
 class JsonMetadataValue(
     IHaveNew,
     MetadataValue[Optional[Union[Sequence[Any], Mapping[str, Any]]]],
@@ -675,6 +681,7 @@ class JsonMetadataValue(
 
 @whitelist_for_serdes(storage_name="MarkdownMetadataEntryData")
 @record(kw_only=False)
+@public
 class MarkdownMetadataValue(MetadataValue[str]):
     """Container class for markdown metadata entry data.
 
@@ -692,6 +699,7 @@ class MarkdownMetadataValue(MetadataValue[str]):
 
 
 # This should be deprecated or fixed so that `value` does not return itself.
+@public
 @whitelist_for_serdes(storage_name="PythonArtifactMetadataEntryData")
 @record(kw_only=False)
 class PythonArtifactMetadataValue(
@@ -717,6 +725,7 @@ class PythonArtifactMetadataValue(
 
 @whitelist_for_serdes(storage_name="FloatMetadataEntryData")
 @record(kw_only=False)
+@public
 class FloatMetadataValue(MetadataValue[Optional[float]]):
     """Container class for float metadata entry data.
 
@@ -729,6 +738,7 @@ class FloatMetadataValue(MetadataValue[Optional[float]]):
 
 @whitelist_for_serdes(storage_name="IntMetadataEntryData")
 @record(kw_only=False)
+@public
 class IntMetadataValue(MetadataValue[Optional[int]]):
     """Container class for int metadata entry data.
 
@@ -751,6 +761,7 @@ class BoolMetadataValue(MetadataValue[Optional[bool]]):
     value: PublicAttr[Optional[bool]]  # type: ignore
 
 
+@public
 @whitelist_for_serdes
 @record(kw_only=False)
 class TimestampMetadataValue(MetadataValue[float]):
@@ -764,6 +775,7 @@ class TimestampMetadataValue(MetadataValue[float]):
 
 
 @whitelist_for_serdes(storage_name="DagsterPipelineRunMetadataEntryData")
+@public
 @record(kw_only=False)
 class DagsterRunMetadataValue(MetadataValue[str]):
     """Representation of a dagster run.
@@ -805,6 +817,7 @@ class DagsterJobMetadataValue(MetadataValue["DagsterJobMetadataValue"]):
 
 @whitelist_for_serdes(storage_name="DagsterAssetMetadataEntryData")
 @record(kw_only=False)
+@public
 class DagsterAssetMetadataValue(MetadataValue[AssetKey]):
     """Representation of a dagster asset.
 
@@ -822,6 +835,7 @@ class DagsterAssetMetadataValue(MetadataValue[AssetKey]):
 
 
 # This should be deprecated or fixed so that `value` does not return itself.
+@public
 @whitelist_for_serdes(storage_name="TableMetadataEntryData")
 @record_custom
 class TableMetadataValue(
@@ -897,6 +911,7 @@ class TableMetadataValue(
         return self
 
 
+@public
 @whitelist_for_serdes(storage_name="TableSchemaMetadataEntryData")
 @record(kw_only=False)
 class TableSchemaMetadataValue(MetadataValue[TableSchema]):
@@ -915,6 +930,7 @@ class TableSchemaMetadataValue(MetadataValue[TableSchema]):
         return self.schema
 
 
+@public
 @whitelist_for_serdes
 @record_custom(field_to_new_mapping={"lineage": "column_lineage"})
 class TableColumnLineageMetadataValue(

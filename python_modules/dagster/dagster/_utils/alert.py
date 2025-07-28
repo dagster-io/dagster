@@ -4,7 +4,7 @@ import ssl
 from collections.abc import Sequence
 from typing import TYPE_CHECKING, Callable, Optional, Union
 
-from dagster._annotations import deprecated_param
+from dagster._annotations import deprecated_param, public
 from dagster._core.definitions.sensor_definition import DefaultSensorStatus, SensorDefinition
 from dagster._core.errors import DagsterInvalidDefinitionError
 
@@ -79,6 +79,7 @@ def send_email_via_starttls(
         server.sendmail(email_from, email_to, message)
 
 
+@public
 @deprecated_param(
     param="job_selection",
     breaking_version="2.0",

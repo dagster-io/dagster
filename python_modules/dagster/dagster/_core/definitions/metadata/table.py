@@ -12,6 +12,7 @@ from dagster._core.definitions.asset_key import AssetKey, CoercibleToAssetKey
 # ########################
 
 
+@public
 @whitelist_for_serdes
 class TableRecord(
     NamedTuple(
@@ -37,6 +38,7 @@ class TableRecord(
 # ########################
 
 
+@public
 @whitelist_for_serdes
 class TableConstraints(
     NamedTuple(
@@ -72,6 +74,7 @@ _DEFAULT_TABLE_CONSTRAINTS = TableConstraints(other=[])
 # ########################
 
 
+@public
 @whitelist_for_serdes
 class TableColumnConstraints(
     NamedTuple(
@@ -115,6 +118,7 @@ _DEFAULT_TABLE_COLUMN_CONSTRAINTS = TableColumnConstraints()
 # ########################
 
 
+@public
 @whitelist_for_serdes(skip_when_empty_fields={"tags"})
 class TableColumn(
     NamedTuple(
@@ -171,6 +175,7 @@ class TableColumn(
 # ########################
 
 
+@public
 @whitelist_for_serdes
 class TableSchema(
     NamedTuple(
@@ -268,6 +273,7 @@ class TableSchema(
 # ###########################
 
 
+@public
 @whitelist_for_serdes
 class TableColumnDep(
     NamedTuple(
@@ -292,6 +298,7 @@ class TableColumnDep(
         )
 
 
+@public
 @whitelist_for_serdes
 class TableColumnLineage(
     NamedTuple(

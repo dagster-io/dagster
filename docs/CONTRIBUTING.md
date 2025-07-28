@@ -4,6 +4,8 @@
 
 ### Links
 
+#### Use full paths instead of relative links
+
 Docusaurus doesn't always render relative links correctly, which can result in users seeing intermittent 404s when accessing those links. Use full paths instead of relative links, like this:
 
 ```
@@ -15,6 +17,12 @@ instead of this:
 ```
 For more information, see "[Defining assets](defining-assets)".
 ```
+
+#### Use non-trailing slash links to Dagster docs
+
+e.g. use `/guides/build/assets/defining-assets` instead of `/guides/build/assets/defining-assets/`. 
+
+**Context:** Links to Dagster docs with trailing slashes automatically redirect to non-trailing slash links. While that's helpful for docs links we don't control, too many redirects on our own pages can confuse search engines and cause SEO issues.
 
 ### Partials
 

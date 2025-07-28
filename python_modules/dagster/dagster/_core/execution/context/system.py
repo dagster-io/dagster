@@ -1311,6 +1311,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             return self.op.output_dict.keys()
 
 
+@public
 class TypeCheckContext:
     """The ``context`` object available to a type check function on a DagsterType."""
 
@@ -1344,6 +1345,7 @@ class TypeCheckContext:
         return self._log
 
 
+@public
 class DagsterTypeLoaderContext(StepExecutionContext):
     """The context object provided to a :py:class:`@dagster_type_loader <dagster_type_loader>`-decorated function during execution.
 

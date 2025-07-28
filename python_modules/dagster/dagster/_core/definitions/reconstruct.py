@@ -22,6 +22,7 @@ from dagster_shared.utils.hash import hash_collection
 from typing_extensions import TypeAlias
 
 import dagster._check as check
+from dagster._annotations import public
 from dagster._core.code_pointer import (
     CodePointer,
     CustomPointer,
@@ -330,6 +331,7 @@ class ReconstructableJob(  # pyright: ignore[reportIncompatibleVariableOverride]
         return self._hash
 
 
+@public
 def reconstructable(target: Callable[..., "JobDefinition"]) -> ReconstructableJob:
     """Create a :py:class:`~dagster._core.definitions.reconstructable.ReconstructableJob` from a
     function that returns a :py:class:`~dagster.JobDefinition`/:py:class:`~dagster.JobDefinition`,

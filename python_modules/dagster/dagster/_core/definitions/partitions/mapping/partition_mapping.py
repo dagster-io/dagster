@@ -32,6 +32,7 @@ class UpstreamPartitionsResult:
         return list(self.required_but_nonexistent_subset.get_partition_keys())
 
 
+@public
 class PartitionMapping(ABC):
     """Defines a correspondence between the partitions in an asset and the partitions in an asset
     that it depends on.

@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, AbstractSet, Any, NamedTuple, Optional, Union 
 from dagster_shared.serdes import whitelist_for_serdes
 
 import dagster._check as check
-from dagster._annotations import PublicAttr
+from dagster._annotations import PublicAttr, public
 from dagster._core.definitions.asset_checks.asset_check_evaluation import AssetCheckEvaluation
 from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.asset_key import EntityKey
@@ -63,6 +63,7 @@ class SkipReason(NamedTuple("_SkipReason", [("skip_message", PublicAttr[Optional
         )
 
 
+@public
 @whitelist_for_serdes(kwargs_fields={"asset_graph_subset"})
 @record_custom
 class RunRequest(IHaveNew, LegacyNamedTupleMixin):
@@ -88,12 +89,11 @@ class RunRequest(IHaveNew, LegacyNamedTupleMixin):
             all the assets in the selection. This argument is used to specify that only a subset of
             these assets should be launched, instead of all of them.
         asset_check_keys (Optional[Sequence[AssetCheckKey]]): A subselection of asset checks that
-            should be launched with this run. This is currently only supported on sensors. If the
-            sensor targets a job, then by default a RunRequest returned from it will launch all of
-            the asset checks in the job. If the sensor targets an asset selection, then by default a
-            RunRequest returned from it will launch all the asset checks in the selection. This
-            argument is used to specify that only a subset of these asset checks should be launched,
-            instead of all of them.
+            should be launched with this run. If the sensor/schedule targets a job, then by default a
+            RunRequest returned from it will launch all of the asset checks in the job. If the
+            sensor/schedule targets an asset selection, then by default a RunRequest returned from it
+            will launch all the asset checks in the selection. This argument is used to specify that
+            only a subset of these asset checks should be launched, instead of all of them.
         stale_assets_only (bool): Set to true to further narrow the asset
             selection to stale assets. If passed without an asset selection, all stale assets in the
             job will be materialized. If the job does not materialize assets, this flag is ignored.
@@ -357,6 +357,7 @@ class DagsterRunReaction(
         )
 
 
+@public
 class SensorResult(
     NamedTuple(
         "_SensorResult",

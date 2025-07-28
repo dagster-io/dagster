@@ -179,6 +179,7 @@ class Any(ConfigType):
         )
 
 
+@public
 class Noneable(ConfigType):
     """Defines a configuration type that is the union of ``NoneType`` and the type ``inner_type``.
 
@@ -212,6 +213,7 @@ class Noneable(ConfigType):
         yield from super().type_iterator()
 
 
+@public
 class Array(ConfigType):
     """Defines an array (list) configuration type that contains values of type ``inner_type``.
 
@@ -241,6 +243,7 @@ class Array(ConfigType):
         yield from super().type_iterator()
 
 
+@public
 class EnumValue:
     """Define an entry in a :py:class:`Enum`.
 
@@ -265,6 +268,7 @@ class EnumValue:
         self.description = check.opt_str_param(description, "description")
 
 
+@public
 class Enum(ConfigType):
     """Defines a enum configuration type that allows one of a defined set of possible values.
 
@@ -379,6 +383,7 @@ class Enum(ConfigType):
         return cls(name, [EnumValue(v.name, python_value=v.value) for v in enum])
 
 
+@public
 class ScalarUnion(ConfigType):
     """Defines a configuration type that accepts a scalar value OR a non-scalar value like a
     :py:class:`~dagster.List`, :py:class:`~dagster.Dict`, or :py:class:`~dagster.Selector`.

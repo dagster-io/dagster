@@ -4,6 +4,7 @@ from contextlib import contextmanager
 from typing import Any, Optional, cast
 
 import dagster._check as check
+from dagster._annotations import public
 from dagster._config import process_config
 from dagster._core.definitions.resource_definition import (
     ResourceDefinition,
@@ -39,6 +40,7 @@ def get_mapped_resource_config(
     return config_map_resources(resource_defs, config_value)
 
 
+@public
 @contextmanager
 def build_resources(
     resources: Mapping[str, Any],

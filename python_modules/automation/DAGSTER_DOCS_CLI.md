@@ -106,14 +106,14 @@ Checks that top-level package exports have public decorators and entries in .rst
 
 Monitors files for changes and performs real-time validation.
 
-#### `watch docstring`
+#### `watch docstrings`
 
 ```bash
 # Watch a specific symbol
-dagster-docs watch docstring --symbol dagster.asset --verbose
+dagster-docs watch docstrings --symbol dagster.asset --verbose
 
 # Watch changed files
-dagster-docs watch docstring --changed
+dagster-docs watch docstrings --changed
 ```
 
 **Options** (exactly one required):
@@ -137,7 +137,7 @@ dagster-docs check docstrings --changed
 dagster-docs ls symbols --package dagster._core
 
 # Watch a symbol for changes
-dagster-docs watch docstring --symbol dagster.asset --verbose
+dagster-docs watch docstrings --symbol dagster.asset --verbose
 ```
 
 ## Development Notes

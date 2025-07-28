@@ -1102,6 +1102,7 @@ MultiAssetMaterializationFunction = Callable[
     "In cases where side effects are required, or a specific job must be targeted for execution, "
     "multi_asset_sensors may be used."
 )
+@public
 class MultiAssetSensorDefinition(SensorDefinition):
     """Define an asset sensor that initiates a set of runs based on the materialization of a list of
     assets.

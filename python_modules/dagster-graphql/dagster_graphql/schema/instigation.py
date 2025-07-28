@@ -34,7 +34,7 @@ from dagster_graphql.implementation.fetch_sensors import get_sensor_next_tick
 from dagster_graphql.implementation.fetch_ticks import get_instigation_ticks
 from dagster_graphql.implementation.loader import RepositoryScopedBatchLoader
 from dagster_graphql.implementation.utils import UserFacingGraphQLError
-from dagster_graphql.schema.entity_key import GrapheneAssetKey
+from dagster_graphql.schema.entity_key import GrapheneAssetCheckHandle, GrapheneAssetKey
 from dagster_graphql.schema.errors import (
     GrapheneError,
     GraphenePythonError,
@@ -488,6 +488,7 @@ class GrapheneRunRequest(graphene.ObjectType):
     tags = non_null_list(GraphenePipelineTag)
     runConfigYaml = graphene.NonNull(graphene.String)
     assetSelection = graphene.List(graphene.NonNull(GrapheneAssetKey))
+    assetChecks = graphene.List(graphene.NonNull(GrapheneAssetCheckHandle))
     jobName = graphene.String()
 
     _run_request: RunRequest
@@ -519,6 +520,14 @@ class GrapheneRunRequest(graphene.ObjectType):
 
     def resolve_jobName(self, _graphene_info: ResolveInfo):
         return self._run_request.job_name
+
+    def resolve_assetChecks(self, _graphene_info: ResolveInfo):
+        if self._run_request.asset_check_keys:
+            return [
+                GrapheneAssetCheckHandle(check_key)
+                for check_key in self._run_request.asset_check_keys
+            ]
+        return None
 
 
 class GrapheneDryRunInstigationTicks(graphene.ObjectType):
