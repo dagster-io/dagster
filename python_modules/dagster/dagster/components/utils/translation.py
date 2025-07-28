@@ -1,17 +1,9 @@
-import importlib.util
-import subprocess
-import sys
-import textwrap
-from collections.abc import Iterator, Mapping
-from contextlib import contextmanager
+from collections.abc import Mapping
 from dataclasses import dataclass
-from pathlib import Path
-from types import ModuleType
-from typing import Any, TypeVar, Union
+from typing import Annotated, Any, Callable, Generic, Optional, TypeVar, Union
 
-import click
-from dagster_shared.error import DagsterError
 from pydantic import BaseModel
+from typing_extensions import TypeAlias
 
 from dagster import _check as check
 from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
@@ -20,51 +12,13 @@ from dagster.components.resolved.core_models import (
     AssetAttributesModel,
     resolve_asset_spec_update_kwargs_to_mapping,
 )
-
-T = TypeVar("T")
-
-
-def exit_with_error(error_message: str) -> None:
-    click.echo(click.style(error_message, fg="red"))
-    sys.exit(1)
-
-
-def format_error_message(message: str) -> str:
-    # width=10000 unwraps any hardwrapping
-    dedented = textwrap.dedent(message).strip()
-    paragraphs = [textwrap.fill(p, width=10000) for p in dedented.split("\n\n")]
-    return "\n\n".join(paragraphs)
-
-
-# Temporarily places a path at the front of sys.path, ensuring that any modules in that path are
-# importable.
-@contextmanager
-def ensure_loadable_path(path: Path) -> Iterator[None]:
-    orig_path = sys.path.copy()
-    sys.path.insert(0, str(path))
-    try:
-        yield
-    finally:
-        sys.path = orig_path
-
-
-def get_path_for_package(package_name: str) -> str:
-    spec = importlib.util.find_spec(package_name)
-    if not spec:
-        raise DagsterError(f"Cannot find package: {package_name}")
-    # file_path = spec.origin
-    submodule_search_locations = spec.submodule_search_locations
-    if not submodule_search_locations:
-        raise DagsterError(f"Package does not have any locations for submodules: {package_name}")
-    return submodule_search_locations[0]
-
+from dagster.components.resolved.model import Resolver
 
 TRANSLATOR_MERGE_ATTRIBUTES = {"metadata", "tags"}
 
 
 @dataclass
 class TranslatorResolvingInfo:
-    obj_name: str
     asset_attributes: Union[str, BaseModel]
     resolution_context: ResolutionContext
     model_key: str = "asset_attributes"
@@ -143,43 +97,79 @@ class TranslatorResolvingInfo:
         )
 
 
-# ########################
-# ##### PLATFORM
-# ########################
+T = TypeVar("T")
+
+TranslationFn: TypeAlias = Callable[[AssetSpec, T], AssetSpec]
 
 
-def is_windows() -> bool:
-    return sys.platform == "win32"
+def _build_translation_fn(
+    template_vars_for_translation_fn: Callable[[T], Mapping[str, Any]],
+) -> Callable[[ResolutionContext, T], TranslationFn[T]]:
+    def resolve_translation(
+        context: ResolutionContext,
+        model,
+    ) -> TranslationFn[T]:
+        info = TranslatorResolvingInfo(
+            asset_attributes=model,
+            resolution_context=context,
+            model_key="translation",
+        )
+        return lambda base_asset_spec, data: info.get_asset_spec(
+            base_asset_spec,
+            {
+                **(template_vars_for_translation_fn(data)),
+                "spec": base_asset_spec,
+            },
+        )
+
+    return resolve_translation
 
 
-def is_macos() -> bool:
-    return sys.platform == "darwin"
+class TranslationFnResolver(Resolver, Generic[T]):
+    """Resolver which builds a TranslationFn from input AssetAttributesModel, injecting
+    the provided template vars into the resolution process.
+
+    This is useful to expose nested fields within the input data as template vars.
+
+    Example:
+    .. code-block:: python
+
+        class MyApiData(BaseModel):
+            name: str
+
+        class MyApiComponent(Component, Resolvable):
+            translation: Annotated[
+                TranslationFn[MyApiData],
+                TranslationFnResolver[MyApiData](
+                    template_vars_for_translation_fn=lambda data: {"name": data.name}
+                ),
+            ]
+
+    .. code-block:: yaml
+
+        type: my_module.MyApiComponent
+
+        attributes:
+            translation:
+                key: {{ name }}
+
+    """
+
+    def __init__(self, template_vars_for_translation_fn: Callable[[T], Mapping[str, Any]]):
+        super().__init__(
+            _build_translation_fn(
+                template_vars_for_translation_fn=template_vars_for_translation_fn
+            ),
+            model_field_type=Union[str, AssetAttributesModel],
+            inject_before_resolve=False,
+        )
 
 
-# ########################
-# ##### VENV
-# ########################
-
-
-def get_venv_executable(venv_dir: Path, executable: str = "python") -> Path:
-    if is_windows():
-        return venv_dir / "Scripts" / f"{executable}.exe"
-    else:
-        return venv_dir / "bin" / executable
-
-
-def install_to_venv(venv_dir: Path, install_args: list[str]) -> None:
-    executable = get_venv_executable(venv_dir)
-    command = ["uv", "pip", "install", "--python", str(executable), *install_args]
-    subprocess.run(command, check=True)
-
-
-def get_path_from_module(module: ModuleType) -> Path:
-    module_path = (
-        Path(module.__file__).parent
-        if module.__file__
-        else Path(module.__path__[0])
-        if module.__path__
-        else None
-    )
-    return check.not_none(module_path, f"Module {module.__name__} has no filepath")
+# Common case of a TranslationFn that takes a single underlying entity and passes it through
+# as a template var called "data".
+ResolvedTranslationFn: TypeAlias = Optional[
+    Annotated[
+        TranslationFn[T],
+        TranslationFnResolver[T](lambda data: {"data": data}),
+    ]
+]
