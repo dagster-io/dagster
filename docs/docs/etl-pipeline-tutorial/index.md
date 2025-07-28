@@ -36,27 +36,84 @@ To follow the steps in this tutorial, you'll need:
 
 ## Set up your Dagster project
 
-1. Open your terminal and scaffold a new project with `uv`:
+1. Scaffold a new Dagster project:
 
-   <CliInvocationExample path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/commands/uvx-create.txt" />
+    <Tabs groupId="package-manager">
+      <TabItem value="uv" label="uv">
+          1. Open your terminal and scaffold a new Dagster project:
 
-2. Change directory into your new project:
+            ```shell
+            uvx -U create-dagster project etl-tutorial
+            ```
+          
+          2. Respond `y` to the prompt to run `uv sync` after scaffolding
 
-   <CliInvocationExample contents="cd etl-tutorial" />
+            ![Responding y to uv sync prompt](/images/getting-started/quickstart/uv_sync_yes.png)
 
-3. Activate the project virtual environment:
+          3. Change to the `etl-tutorial` directory:
 
-   <Tabs>
-     <TabItem value="macos" label="MacOS">
-       ```source .venv/bin/activate ```
-     </TabItem>
-     <TabItem value="windows" label="Windows">
-       ```.venv\Scripts\activate ```
-     </TabItem>
-   </Tabs>
+            ```shell
+            cd etl-tutorial
+            ```
+          4. Activate the virtual environment:
 
+            <Tabs>
+                <TabItem value="macos" label="MacOS/Unix">
+                  ```shell
+                  source .venv/bin/activate
+                  ```
+                </TabItem>
+                <TabItem value="windows" label="Windows">
+                  ```shell
+                  .venv\Scripts\activate
+                  ```
+                </TabItem>
+            </Tabs>
 
-4. To make sure Dagster and its dependencies were installed correctly, start the Dagster webserver:
+      </TabItem>
+
+      <TabItem value="pip" label="pip">
+          1. Open your terminal and scaffold a new Dagster project:
+
+            ```shell
+            create-dagster project etl-tutorial
+            ```
+          2. Change to the `etl-tutorial` directory:
+
+            ```shell
+            cd etl-tutorial
+            ```
+          
+          3. Create and activate a virtual environment:
+
+            <Tabs>
+                <TabItem value="macos" label="MacOS/Unix">
+                  ```shell
+                  python -m venv .venv
+                  ```
+                  ```shell
+                  source .venv/bin/activate
+                  ```
+                </TabItem>
+                <TabItem value="windows" label="Windows">
+                  ```shell
+                  python -m venv .venv
+                  ```
+                  ```shell
+                  .venv\Scripts\activate
+                  ```
+                </TabItem>
+            </Tabs>
+          
+          4. Install your project as an editable package:
+
+            ```shell
+            pip install --editable .
+            ```
+      </TabItem>
+    </Tabs>
+
+2. Make sure Dagster and its dependencies were installed correctly by starting the Dagster webserver:
 
    <CliInvocationExample contents="dg dev" />
 

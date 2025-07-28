@@ -35,7 +35,23 @@ This dbt project already contains models that work with the raw data we brought 
 
 Now that we have a dbt project to work with, we need to install both the Dagster dbt integration and the dbt adapter for DuckDB:
 
-<CliInvocationExample contents="uv pip install dagster-dbt dbt-duckdb" />
+<Tabs groupId="package-manager">
+   <TabItem value="uv" label="uv">
+      Install the required dependencies:
+
+         ```shell
+         uv pip install dagster-dbt dbt-duckdb
+         ```
+   </TabItem>
+
+   <TabItem value="pip" label="pip">
+      Install the required dependencies:
+
+         ```shell
+         pip install dagster-dbt dbt-duckdb
+         ```
+   </TabItem>
+</Tabs>
 
 We still want our dbt project to be represented as assets in our graph, but we will define them in a slightly different way. In the previous step, we manually defined our assets by writing functions decorated with the <PyObject section="assets" module="dagster" object="asset" decorator />. This time ,we will use [components](/guides/build/components), which are predefined ways to interact with common integrations or patterns. In this case, we will use the [dbt component](/guides/build/components/integrations/dbt-component-tutorial) to quickly turn our dbt project into assets.
 

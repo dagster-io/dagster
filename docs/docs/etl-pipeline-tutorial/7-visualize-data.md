@@ -32,7 +32,23 @@ Change into that directory and install the necessary packages with [`npm`](https
 
 Next, we will need to install Dagster's [Evidence integration](https://docs.dagster.io/integrations/libraries/evidence):
 
-<CliInvocationExample contents="uv pip install dagster-evidence" />
+<Tabs groupId="package-manager">
+   <TabItem value="uv" label="uv">
+      Install the required dependencies:
+
+         ```shell
+         uv pip install dagster-evidence
+         ```
+   </TabItem>
+
+   <TabItem value="pip" label="pip">
+      Install the required dependencies:
+
+         ```shell
+         pip install dagster-evidence
+         ```
+   </TabItem>
+</Tabs>
 
 Now we can scaffold Evidence with `dg`:
 

@@ -10,9 +10,25 @@ We've now created our own ingest assets and combined them with assets from the d
 
 In Dagster, resources are reusable objects that provide external context or functionality, such as database connections, clients, or configurations. Resources can be used by a number of different Dagster objects.
 
-First, we will need to install the `dagster-duckdb` library:
+First, we will need to install the `dagster-duckdb` and `pandas` libraries:
 
-<CliInvocationExample contents="uv pip install dagster-duckdb pandas" />
+<Tabs groupId="package-manager">
+   <TabItem value="uv" label="uv">
+      Install the required dependencies:
+
+         ```shell
+         uv pip install dagster-duckdb pandas
+         ```
+   </TabItem>
+
+   <TabItem value="pip" label="pip">
+      Install the required dependencies:
+
+         ```shell
+         pip install dagster-duckdb pandas
+         ```
+   </TabItem>
+</Tabs>
 
 Next, we need to scaffold our resources file with `dg`:
 

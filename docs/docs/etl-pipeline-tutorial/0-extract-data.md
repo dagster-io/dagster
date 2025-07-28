@@ -8,9 +8,7 @@ In the first step in our pipeline, we will use [software-defined assets](/guides
 
 ## 1. Scaffold an asset
 
-
 We will start by writing our ingestion assets. Assets serve as the building blocks for our platform in Dagster and represent the underlying entities in our pipelines (such as tables, datasets, or machine learning models). Assets take dependencies on other assets to build out the full graph of our data platform and define its lineage.
-
 
 When building assets, the first step is to scaffold the assets file with the [`dg scaffold` command](/api/dg/dg-cli#dg-scaffold). The `dg` CLI provides a number of commands to help structure and navigate Dagster projects. For more information, see the [`dg` CLI documentation](/api/dg/dg-cli):
 
@@ -24,7 +22,23 @@ This adds a file called `assets.py` that will contain our asset code to the `etl
 
 Since we will be working with DuckDB, we will need to add the DuckDB Python library to our Dagster project:
 
-<CliInvocationExample contents="uv pip install duckdb" />
+<Tabs groupId="package-manager">
+   <TabItem value="uv" label="uv">
+      Install the required dependencies:
+
+         ```shell
+         uv pip install duckdb
+         ```
+   </TabItem>
+
+   <TabItem value="pip" label="pip">
+      Install the required dependencies:
+
+         ```shell
+         pip install duckdb
+         ```
+   </TabItem>
+</Tabs>
 
 We can use this library to establish a connection with a DuckDB database running locally. We will define multiple assets using the same DuckDB database, so we will want to write a helper function to ensure that each asset can acquire a lock on the DuckDB database file when writing data:
 
