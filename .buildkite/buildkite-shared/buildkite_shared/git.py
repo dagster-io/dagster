@@ -3,22 +3,16 @@ import os
 import subprocess
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional, Set
+from typing import Optional
 
 
 def get_commit(rev):
-    return (
-        subprocess.check_output(["git", "rev-parse", "--short", rev])
-        .decode("utf-8")
-        .strip()
-    )
+    return subprocess.check_output(["git", "rev-parse", "--short", rev]).decode("utf-8").strip()
 
 
 def get_commit_message(rev):
     return (
-        subprocess.check_output(
-            ["git", "rev-list", "--format=%B", "--max-count=1", rev]
-        )
+        subprocess.check_output(["git", "rev-list", "--format=%B", "--max-count=1", rev])
         .decode("utf-8")
         .strip()
     )
@@ -31,8 +25,8 @@ class GitInfo:
 
 
 class ChangedFiles:
-    _repositories: Set[Path] = set()
-    all: Set[Path] = set()
+    _repositories: set[Path] = set()
+    all: set[Path] = set()
 
     @classmethod
     def load_from_git(cls, git_info: GitInfo) -> None:

@@ -9,7 +9,8 @@ from buildkite_shared.step_builders.command_step_builder import (
     CommandStepBuilder,
     CommandStepConfiguration,
 )
-from dagster_buildkite.utils import UV_PIN, make_buildkite_section_header
+from buildkite_shared.uv import UV_PIN
+from dagster_buildkite.utils import make_buildkite_section_header
 from dagster_buildkite.images.versions import add_test_image
 
 _COMMAND_TYPE_TO_EMOJI_MAP = {

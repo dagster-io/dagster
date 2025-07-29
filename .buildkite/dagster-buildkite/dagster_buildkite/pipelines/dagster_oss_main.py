@@ -5,7 +5,11 @@ from typing import List, Optional
 
 from buildkite_shared.step_builders.step_builder import StepConfiguration
 from buildkite_shared.step_builders.trigger_step_builder import TriggerStepBuilder
-
+from buildkite_shared.environment import (
+    is_release_branch,
+    safe_getenv,
+    message_contains,
+)
 from dagster_buildkite.quarantine_utils import (
     get_buildkite_quarantined_objects,
     filter_and_print_steps_by_quarantined,
@@ -17,11 +21,6 @@ from dagster_buildkite.steps.dagster_ui import (
     skip_if_no_dagster_ui_changes,
 )
 from dagster_buildkite.steps.docs import build_docs_steps
-from dagster_buildkite.utils import (
-    is_release_branch,
-    message_contains,
-    safe_getenv,
-)
 
 
 def filter_steps_by_quarantined(steps, skip_quarantined_steps, mute_quarantined_steps):

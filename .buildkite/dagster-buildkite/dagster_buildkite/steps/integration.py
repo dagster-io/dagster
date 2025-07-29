@@ -6,12 +6,7 @@ from dagster_buildkite.defines import (
     GCP_CREDS_LOCAL_FILE,
     LATEST_DAGSTER_RELEASE,
 )
-from dagster_buildkite.git import ChangedFiles
-from dagster_buildkite.package_spec import (
-    PackageSpec,
-    PytestExtraCommandsFunction,
-    UnsupportedVersionsFunction,
-)
+from buildkite_shared.git import ChangedFiles
 from buildkite_shared.python_version import AvailablePythonVersion
 from buildkite_shared.step_builders.step_builder import (
     StepConfiguration,
@@ -24,6 +19,11 @@ from dagster_buildkite.utils import (
     has_helm_changes,
     library_version_from_core_version,
     network_buildkite_container,
+)
+from dagster_buildkite.steps.packages import (
+    PackageSpec,
+    PytestExtraCommandsFunction,
+    UnsupportedVersionsFunction,
 )
 
 SCRIPT_PATH = os.path.dirname(os.path.abspath(__file__))
