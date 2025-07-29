@@ -7,6 +7,7 @@ import click
 from dagster_dg_core.config import DgRawCliConfig, normalize_cli_config
 from dagster_dg_core.context import DgContext
 from dagster_dg_core.shared_options import dg_editable_dagster_options, dg_global_options
+from dagster_dg_core.utils import DgClickCommand
 from dagster_dg_core.utils.telemetry import cli_telemetry_wrapper
 from dagster_shared.plus.config import DagsterPlusCliConfig
 
@@ -121,7 +122,7 @@ def _get_project_contexts(dg_context: DgContext, cli_config: DgRawCliConfig) -> 
         return [dg_context]
 
 
-@click.command(name="build-artifacts")
+@click.command(name="build-artifacts", cls=DgClickCommand)
 @click.option(
     "--python-version",
     "python_version",
