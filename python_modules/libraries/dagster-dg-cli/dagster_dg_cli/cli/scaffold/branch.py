@@ -157,9 +157,9 @@ def _context_prompt(dg_context: DgContext) -> str:
         4. Use `dg scaffold defs` commands to scaffold a set of Dagster definitions to get the user started on their goal. Select technologies appropriate
            for the user's goal. If you have a choice between multiple technologies, present them to the user and ask them to select the one they prefer.
            If no matching integrations are found, let the user know, and abort the session. Do not use commands outside of your list of allowed commands.
-        5. Locate scaffolded YAML files and populaute them with data. Run `dg check yaml`, `dg check defs` to validate the files
+        5. Locate scaffolded YAML files and populate them with data. Run `dg check yaml`, `dg check defs` to validate the files
            and `dg list defs` to see the definitions that were created.
-        6. Update the newly generateddg list  `defs.yaml` file to mention all environment variables used across the scaffolded files. Do so with the format:
+        6. Update the newly generated `defs.yaml` file to mention all environment variables used across the scaffolded files. Do so with the format:
         ```yaml
         requirements:
           env:
