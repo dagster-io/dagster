@@ -11,8 +11,6 @@ This article covers how to use [Spark Connect](https://spark.apache.org/docs/lat
 
 ## Prerequisites
 
-To run the examples, you'll need to:
-
 <Tabs groupId="platform">
 <TabItem value="Databricks Connect" label="Databricks Connect">
 1.  Create a new Dagster project:
