@@ -9,13 +9,9 @@ import {OverviewJobsTable} from '../overview/OverviewJobsTable';
 import {sortRepoBuckets} from '../overview/sortRepoBuckets';
 import {visibleRepoKeys} from '../overview/visibleRepoKeys';
 import {WorkspaceContext} from '../workspace/WorkspaceContext/WorkspaceContext';
-import {
-  WorkspaceLocationNodeFragment,
-  WorkspacePipelineFragment,
-} from '../workspace/WorkspaceContext/types/WorkspaceQueries.types';
+import {WorkspaceLocationNodeFragment} from '../workspace/WorkspaceContext/types/WorkspaceQueries.types';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
-import {RepoAddress} from '../workspace/types';
 
 export const JobsPageContent = () => {
   const {
@@ -54,7 +50,11 @@ export const JobsPageContent = () => {
   const filteredRepoBuckets = useMemo(() => {
     return repoBuckets
       .filter((bucket) => {
-        return Array.from(filteredJobs).some((job) => job.repo.name === bucket.repoAddress.name);
+        return Array.from(filteredJobs).some(
+          (job) =>
+            job.repo.name === bucket.repoAddress.name &&
+            job.repo.location === bucket.repoAddress.location,
+        );
       })
       .map((bucket) => ({
         ...bucket,
@@ -98,11 +98,7 @@ export const JobsPageContent = () => {
 
   return (
     <>
-      <Box
-        padding={{horizontal: 24, vertical: 8}}
-        style={{display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)'}}
-        border="bottom"
-      >
+      <Box padding={{horizontal: 24, vertical: 8}} border="bottom">
         <JobSelectionInput items={allJobs} value={selection} onChange={setSelection} />
       </Box>
       {loading && !repoCount ? (
@@ -114,11 +110,6 @@ export const JobsPageContent = () => {
       )}
     </>
   );
-};
-
-type RepoBucket = {
-  repoAddress: RepoAddress;
-  jobs: WorkspacePipelineFragment[];
 };
 
 const buildBuckets = (
