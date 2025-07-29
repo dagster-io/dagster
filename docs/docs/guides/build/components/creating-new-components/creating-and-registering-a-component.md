@@ -123,7 +123,7 @@ You can optionally include metadata for your component by overriding the `get_sp
 <Tabs groupId="interface">
   <TabItem value="yaml" label="YAML interface">
     <CodeExample
-      path="docs_snippets/docs_snippets/guides/components/shell-script-component/with-config-schema-meta.py"
+      path="docs_snippets/docs_snippets/guides/components/shell-script-component/with-config-schema-meta-yaml.py"
       language="python"
       title="src/my_project/components/shell_command.py"
     />
