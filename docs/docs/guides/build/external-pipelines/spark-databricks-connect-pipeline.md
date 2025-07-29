@@ -80,7 +80,7 @@ Let's review what's happening in this code:
   - Provided <PyObject section="execution" module="dagster" object="AssetExecutionContext" /> as the `context` argument to the asset. This object provides access to system APIs such as resources, config, and logging.
   - Specified a `SparkSession` resource for the asset to use. We will provide this resource in the next step, connecting to Spark Connect or Databricks Connect.
 
-### Step 2: Define the Spark Connect or Databricks Connect resource and Definitions
+## Step 2: Define the Spark Connect or Databricks Connect resource and Definitions
 
 import ScaffoldResource from '@site/docs/partials/\_ScaffoldResource.md';
 
