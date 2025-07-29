@@ -129,6 +129,12 @@ To capture the snapshot, the `dagster-fivetran snapshot` CLI can be used.
 dagster-fivetran snapshot --python-module my_dagster_package --output-path snapshot.snap
 ```
 
+### Creating Fivetran jobs
+
+Once you have your Fivetran assets, you can define a job to materialize all of them.
+
+<CodeExample path="docs_snippets/docs_snippets/integrations/fivetran/create_fivetran_all_assets_job.py" language="python" />
+
 
 ### Load Fivetran assets from multiple workspaces
 
