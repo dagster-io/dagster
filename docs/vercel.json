@@ -1977,6 +1977,10 @@
       "destination": "/guides/build/components"
     },
     {
+      "source": "/guides/build/components/building-pipelines-with-components/adding-attributes-to-assets",
+      "destination": "/guides/build/assets/metadata-and-tags/building-pipelines-with-components/adding-attributes-to-assets"
+    },
+    {
       "source": "/changelog",
       "destination": "/about/changelog"
     },
