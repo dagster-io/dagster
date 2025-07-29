@@ -123,10 +123,13 @@ export const RecentUpdatesTimeline = ({assetKey, events, loading}: Props) => {
         hasFailedMaterializations: false,
         hasMaterializations: false,
       };
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       bucketsArr[bucketIndex]!.events.push(e);
       if (e.__typename === 'FailedToMaterializeEvent') {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         bucketsArr[bucketIndex]!.hasFailedMaterializations = true;
       } else {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         bucketsArr[bucketIndex]!.hasMaterializations = true;
       }
     });
@@ -381,9 +384,11 @@ function getTimelineBounds(sortedMaterializations: {timestamp: string}[]): [numb
   }
 
   const endTimestamp = parseInt(
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     sortedMaterializations[sortedMaterializations.length - 1]!.timestamp,
   );
   const startTimestamp = Math.min(
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     parseInt(sortedMaterializations[0]!.timestamp),
     endTimestamp - 100,
   );

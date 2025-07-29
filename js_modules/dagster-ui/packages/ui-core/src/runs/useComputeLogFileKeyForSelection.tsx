@@ -42,13 +42,16 @@ export function useComputeLogFileKeyForSelection({
         return selectionStepKeys.every(
           (stepKey) =>
             metadata.logCaptureSteps &&
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             metadata.logCaptureSteps[logFileKey]!.stepKeys.includes(stepKey),
         );
       });
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       setComputeLogFileKey(selectedLogKey || logFileKeys[0]!);
     } else if (!stepKeys.includes(computeLogFileKey)) {
       const matching = matchingComputeLogKeyFromStepKey(
         metadata.logCaptureSteps,
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         selectionStepKeys.length === 1 ? selectionStepKeys[0]! : stepKeys[0]!,
       );
       if (matching) {
@@ -57,6 +60,7 @@ export function useComputeLogFileKeyForSelection({
     } else if (selectionStepKeys.length === 1 && computeLogFileKey !== selectionStepKeys[0]) {
       const matching = matchingComputeLogKeyFromStepKey(
         metadata.logCaptureSteps,
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         selectionStepKeys[0]!,
       );
       if (matching) {

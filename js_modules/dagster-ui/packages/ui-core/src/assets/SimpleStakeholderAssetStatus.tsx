@@ -32,7 +32,7 @@ export const SimpleStakeholderAssetStatus = ({
   if ((liveData.inProgressRunIds || []).length > 0) {
     return (
       <Caption>
-        Materializing in{' '}
+        {/* eslint-disable-next-line @typescript-eslint/no-non-null-assertion */}
         <AssetRunLink assetKey={assetNode.assetKey} runId={liveData.inProgressRunIds[0]!} />
       </Caption>
     );

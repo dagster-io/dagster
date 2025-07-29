@@ -40,6 +40,7 @@ export const LaunchpadStoredSessionsContainer = (props: Props) => {
     onSave((data) => applyCreateSession(data, initialDataForMode));
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const currentSession = data.sessions[data.current]!;
 
   const onSaveSession = useSetStateUpdateCallback<IExecutionSessionChanges>(

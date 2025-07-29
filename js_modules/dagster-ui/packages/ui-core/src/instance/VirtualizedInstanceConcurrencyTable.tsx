@@ -34,6 +34,7 @@ export const ConcurrencyTable = ({concurrencyKeys}: {concurrencyKeys: string[]})
         <ConcurrencyHeader />
         <Inner $totalHeight={totalHeight}>
           {items.map(({index, key, size, start}) => {
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             const concurrencyKey = concurrencyKeys[index]!;
             return (
               <ConcurrencyRow

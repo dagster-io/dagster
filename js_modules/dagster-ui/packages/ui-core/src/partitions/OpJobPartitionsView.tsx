@@ -144,12 +144,14 @@ export function usePartitionDurations(partitions: PartitionRuns[]) {
         return;
       }
       const sortedRuns = p.runs.sort((a, b) => a.startTime || 0 - (b.startTime || 0));
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const lastRun = sortedRuns[sortedRuns.length - 1]!;
       stepDurationData[p.name] = {};
       runDurationData[p.name] =
         lastRun?.endTime && lastRun?.startTime ? lastRun.endTime - lastRun.startTime : undefined;
 
       lastRun.stepStats.forEach((s) => {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         stepDurationData[p.name]![s.stepKey] = [
           s.endTime && s.startTime ? s.endTime - s.startTime : undefined,
         ];

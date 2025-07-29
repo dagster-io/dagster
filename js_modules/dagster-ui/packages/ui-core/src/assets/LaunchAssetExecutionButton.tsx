@@ -708,6 +708,7 @@ function getAnchorAssetForPartitionMappedBackfill(assets: LaunchAssetExecutionAs
   if (
     first &&
     !partitionedRoots.every((r) =>
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       partitionDefinitionsEqual(first.partitionDefinition!, r.partitionDefinition!),
     )
   ) {

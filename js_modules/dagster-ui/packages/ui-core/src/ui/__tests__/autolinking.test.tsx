@@ -58,6 +58,7 @@ describe('autolinking', () => {
       'https://www.google.com/maps/place/Nashville,+TN/@36.1865271,-86.9503948,11z/data=!3m1!4b1!4m6!3m5!1s0x8864ec3213eb903d:0x7d3fb9d0a1e9daa0!8m2!3d36.1626638!4d-86.7816016!16zL20vMDVqYm4?entry=ttu',
     ]);
 
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     expect(rendered.container.textContent!.trim()).toEqual(message.trim());
   });
 
@@ -76,6 +77,7 @@ describe('autolinking', () => {
       'https://dataproc.googleapis.com/',
     ]);
 
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     expect(rendered.container.textContent!.trim()).toEqual(LongMessage.trim());
   });
 
@@ -95,6 +97,7 @@ describe('autolinking', () => {
         'https://dataproc.googleapis.com/',
       ]);
     });
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     expect(rendered.container.textContent!.trim()).toEqual(LongMessage.trim());
   });
 });

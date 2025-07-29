@@ -120,7 +120,9 @@ export const AssetGraphExplorerSidebar = React.memo(
           )
           .sort((a, b) =>
             COLLATOR.compare(
+              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
               getDisplayName(graphData.nodes[a]!),
+              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
               getDisplayName(graphData.nodes[b]!),
             ),
           ),
@@ -158,9 +160,11 @@ export const AssetGraphExplorerSidebar = React.memo(
           locationName: codeLocation,
           groups: {},
         };
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         if (!codeLocationNodes[codeLocation]!.groups[groupId]!) {
           groupsCount += 1;
         }
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         codeLocationNodes[codeLocation]!.groups[groupId] = codeLocationNodes[codeLocation]!.groups[
           groupId
         ] || {
@@ -169,6 +173,7 @@ export const AssetGraphExplorerSidebar = React.memo(
           repositoryName,
           repositoryLocationName: locationName,
         };
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         codeLocationNodes[codeLocation]!.groups[groupId]!.assets.push(node);
       });
       const codeLocationsCount = Object.keys(codeLocationNodes).length;
@@ -318,6 +323,7 @@ export const AssetGraphExplorerSidebar = React.memo(
             values={React.useMemo(() => {
               return allAssetKeys.map((key) => ({
                 value: JSON.stringify(key.path),
+                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                 label: key.path[key.path.length - 1]!,
               }));
             }, [allAssetKeys])}
@@ -346,6 +352,7 @@ export const AssetGraphExplorerSidebar = React.memo(
                   indexOfLastSelectedNodeRef.current = nextIndex;
                   e.preventDefault();
                   const nextNode =
+                    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                     renderedNodes[(nextIndex + renderedNodes.length) % renderedNodes.length]!;
                   setSelectedNode(nextNode);
                   selectNode(e, nextNode.id);
@@ -369,6 +376,7 @@ export const AssetGraphExplorerSidebar = React.memo(
             >
               <Inner $totalHeight={totalHeight}>
                 {items.map(({index, key, size, start}) => {
+                  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                   const node = renderedNodes[index]!;
                   const isCodelocationNode = 'locationName' in node;
                   const isGroupNode = 'groupNode' in node;
@@ -381,6 +389,7 @@ export const AssetGraphExplorerSidebar = React.memo(
                         <AssetSidebarNode
                           isOpen={openNodes.has(nodePathKey(node))}
                           fullAssetGraphData={fullAssetGraphData}
+                          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                           node={row!}
                           level={node.level}
                           isLastSelected={lastSelectedNode?.id === node.id}

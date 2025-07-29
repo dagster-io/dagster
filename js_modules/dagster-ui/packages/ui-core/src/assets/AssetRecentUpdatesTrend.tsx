@@ -151,13 +151,16 @@ const EventPopover = React.memo(
             return {
               content: <Body>In progress</Body>,
               icon: <Icon name="run_started" color={Colors.accentBlue()} />,
+              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
               runId: event.latestRun!.id,
+              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
               timestamp: Number(event.latestRun!.startTime) * 1000,
             };
           }
           return {
             content: <Body>Queued</Body>,
             icon: <Icon name="run_queued" color={Colors.accentBlue()} />,
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             runId: event.latestRun!.id,
             timestamp: null,
           };

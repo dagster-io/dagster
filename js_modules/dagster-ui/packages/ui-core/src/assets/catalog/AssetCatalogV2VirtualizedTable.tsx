@@ -99,6 +99,7 @@ export const AssetCatalogV2VirtualizedTable = React.memo(
             }}
           >
             {items.map(({index, key}) => {
+              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
               const item = rowItems[index]!;
 
               const wrapper = (content: React.ReactNode) => (

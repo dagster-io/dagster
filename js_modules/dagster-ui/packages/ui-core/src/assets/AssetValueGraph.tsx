@@ -176,6 +176,7 @@ export const AssetValueGraph = (props: {
         props.onHoverX(null);
         return;
       }
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       props.onHoverX(props.data.values[itemIdx]!.x);
     },
   };

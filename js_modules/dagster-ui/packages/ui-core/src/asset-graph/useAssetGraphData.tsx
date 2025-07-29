@@ -205,6 +205,7 @@ export const calculateGraphDistances = (items: GraphQueryItem[], assetKey: Asset
     upstreamDepth += 1;
 
     candidates.forEach((candidate) => {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       map[candidate]!.inputs.flatMap((i) =>
         i.dependsOn.forEach((d) => {
           if (!candidates.has(d.solid.name)) {
@@ -224,6 +225,7 @@ export const calculateGraphDistances = (items: GraphQueryItem[], assetKey: Asset
     downstreamDepth += 1;
 
     candidates.forEach((candidate) => {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       map[candidate]!.outputs.flatMap((i) =>
         i.dependedBy.forEach((d) => {
           if (!candidates.has(d.solid.name)) {
