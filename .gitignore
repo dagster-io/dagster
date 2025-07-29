@@ -186,3 +186,6 @@ exponent.txt
 
 # google cloud storage emulater
 .cloudstorage/
+
+# personal claude files
+.claude/**/*.local.md
