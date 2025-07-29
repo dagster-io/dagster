@@ -3,6 +3,7 @@ import os
 import re
 import subprocess
 import textwrap
+from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Optional
 
@@ -122,7 +123,7 @@ def _branch_name_prompt(prompt: str) -> str:
         "pr-title": "<pr-title>"
     }}
 
-    The user's stated goal is: {prompt}.
+    {prompt}.
     """
     )
 
@@ -153,7 +154,31 @@ def _find_claude(dg_context: DgContext) -> Optional[list[str]]:
     return None
 
 
-def get_branch_name_and_pr_title_from_prompt(dg_context: DgContext, prompt: str) -> tuple[str, str]:
+class InputType(ABC):
+    """Abstract base class for input types."""
+
+    @abstractmethod
+    @classmethod
+    def matches(cls, user_input: str) -> bool:
+        """Whether the user input matches this input type."""
+        raise NotImplementedError
+
+    @abstractmethod
+    @classmethod
+    def get_context(cls, user_input: str) -> str:
+        """Fetches context from the user input, to be passed to AI tools."""
+        raise NotImplementedError
+
+    @abstractmethod
+    @classmethod
+    def additional_allowed_tools(cls) -> list[str]:
+        """Additional allowed tools to be passed to AI tools."""
+        return []
+
+
+def get_branch_name_and_pr_title_from_prompt(
+    dg_context: DgContext, user_input: str, input_type: type[InputType]
+) -> tuple[str, str]:
     """Invokes Claude under the hood to generate a reasonable, valid
     git branch name and pull request title based on the user's stated goal.
     """
@@ -162,7 +187,9 @@ def get_branch_name_and_pr_title_from_prompt(dg_context: DgContext, prompt: str)
 
     cmd = [
         *claude_cmd,
-        _branch_name_prompt(prompt),
+        _branch_name_prompt(input_type.get_context(user_input)),
+        "--allowedTools",
+        ",".join(input_type.additional_allowed_tools()),
     ]
     output = subprocess.run(
         cmd,
@@ -174,26 +201,82 @@ def get_branch_name_and_pr_title_from_prompt(dg_context: DgContext, prompt: str)
     return json_output["branch-name"], json_output["pr-title"]
 
 
+class TextInputType(InputType):
+    """Passes along user input as-is."""
+
+    @classmethod
+    def matches(cls, user_input: str) -> bool:
+        return True
+
+    @classmethod
+    def get_context(cls, user_input: str) -> str:
+        return f"The user's stated goal is: {user_input}."
+
+    @classmethod
+    def additional_allowed_tools(cls) -> list[str]:
+        return []
+
+
+class GithubIssueInputType(InputType):
+    """Matches GitHub issue URLs and instructs AI tools to fetch issue details."""
+
+    @classmethod
+    def matches(cls, user_input: str) -> bool:
+        return user_input.startswith("https://github.com/")
+
+    @classmethod
+    def get_context(cls, user_input: str) -> str:
+        return (
+            "The user would like to create a branch to address the following "
+            f"GitHub issue, which might describe a bug or a feature request: {user_input}."
+            "Use the `gh issue view --repo OWNER/REPO` tool to fetch the issue details."
+        )
+
+    @classmethod
+    def additional_allowed_tools(cls) -> list[str]:
+        return ["Bash(gh issue view:*)"]
+
+
+INPUT_TYPES = [GithubIssueInputType]
+
+
+def _is_prompt_valid_git_branch_name(prompt: str) -> bool:
+    """Whether the prompt is a valid git branch name."""
+    return re.match(r"^[a-zA-Z0-9_.-]+$", prompt) is not None
+
+
 @click.command(name="branch", cls=DgClickCommand, hidden=True)
-@click.argument("branch-name", type=str, required=False)
+@click.argument("prompt", type=str, nargs=-1)
 @dg_path_options
 @dg_global_options
 @cli_telemetry_wrapper
 def scaffold_branch_command(
-    branch_name: Optional[str], target_path: Path, **other_options: object
+    prompt: tuple[str, ...], target_path: Path, **other_options: object
 ) -> None:
     """Scaffold a new branch."""
     cli_config = normalize_cli_config(other_options, click.get_current_context())
     dg_context = DgContext.for_workspace_or_project_environment(target_path, cli_config)
 
-    # If no branch name provided, prompt for it
-    if not branch_name:
-        initial_task = click.prompt("What would you like to accomplish?")
-        branch_name, pr_title = get_branch_name_and_pr_title_from_prompt(dg_context, initial_task)
+    prompt_text = " ".join(prompt)
 
-    else:
-        branch_name = branch_name.strip()
+    # If the user input a valid git branch name, bypass AI inference and create the branch directly.
+    if prompt_text and _is_prompt_valid_git_branch_name(prompt_text.strip()):
+        branch_name = prompt_text.strip()
         pr_title = branch_name
+    else:
+        # Otherwise, use AI to infer the branch name and PR title. Try to match the input to a known
+        # input type so we can gather more context.
+        if not prompt_text:
+            prompt_text = click.prompt("What would you like to accomplish?")
+        assert prompt_text
+        input_type = next(
+            (input_type for input_type in INPUT_TYPES if input_type.matches(prompt_text)),
+            TextInputType,
+        )
+
+        branch_name, pr_title = get_branch_name_and_pr_title_from_prompt(
+            dg_context, prompt_text, input_type
+        )
 
     click.echo(f"Creating new branch: {branch_name}")
 
