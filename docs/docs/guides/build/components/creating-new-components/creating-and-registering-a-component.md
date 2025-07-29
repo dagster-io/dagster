@@ -79,7 +79,7 @@ In this example, we annotate the `ShellCommand` class with `script_path` and `as
 <Tabs groupId="interface">
   <TabItem value="yaml" label="YAML interface">
     <CodeExample
-      path="docs_snippets/docs_snippets/guides/components/shell-script-component/with-config-schema.py"
+      path="docs_snippets/docs_snippets/guides/components/shell-script-component/with-config-schema-yaml.py"
       language="python"
       title="src/my_project/components/shell_command.py"
     />
@@ -154,7 +154,7 @@ The `@multi_asset` decorator is used to provide the flexibility of assigning mul
 <Tabs groupId="interface">
   <TabItem value="yaml" label="YAML interface">
     <CodeExample
-      path="docs_snippets/docs_snippets/guides/components/shell-script-component/with-build-defs.py"
+      path="docs_snippets/docs_snippets/guides/components/shell-script-component/with-build-defs-yaml.py"
       language="python"
       title="src/my_project/components/shell_command.py"
     />
@@ -180,7 +180,7 @@ You can also view automatically generated documentation describing your new comp
 
 ![Docs tab in Dagster webserver](/images/guides/labs/components/docs-in-UI.png)
 
-## Adding component definition to your project
+## Adding component definitions to your project
 
 After you create and register your new component, you can use it to add component definitions to your Dagster project with the `dg scaffold defs` command:
 
