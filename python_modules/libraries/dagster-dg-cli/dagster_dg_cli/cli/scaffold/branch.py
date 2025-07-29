@@ -3,7 +3,7 @@ import os
 import re
 import subprocess
 import textwrap
-from abc import ABC, abstractmethod
+from abc import ABC
 from pathlib import Path
 from typing import Optional
 
@@ -157,19 +157,16 @@ def _find_claude(dg_context: DgContext) -> Optional[list[str]]:
 class InputType(ABC):
     """Abstract base class for input types."""
 
-    @abstractmethod
     @classmethod
     def matches(cls, user_input: str) -> bool:
         """Whether the user input matches this input type."""
         raise NotImplementedError
 
-    @abstractmethod
     @classmethod
     def get_context(cls, user_input: str) -> str:
         """Fetches context from the user input, to be passed to AI tools."""
         raise NotImplementedError
 
-    @abstractmethod
     @classmethod
     def additional_allowed_tools(cls) -> list[str]:
         """Additional allowed tools to be passed to AI tools."""
