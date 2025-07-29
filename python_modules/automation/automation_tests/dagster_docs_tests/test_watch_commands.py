@@ -1,6 +1,5 @@
 """Tests for dagster-docs watch commands."""
 
-import pytest
 from automation.dagster_docs.commands.watch import watch
 from click.testing import CliRunner
 
@@ -46,14 +45,13 @@ class TestWatchCommands:
         assert result.exit_code == 1
         assert "Error: Cannot use both --changed and --symbol together" in result.output
 
-    def test_watch_docstrings_changed_not_implemented(self):
-        """Test that watch docstrings --changed raises NotImplementedError."""
-        with pytest.raises(NotImplementedError) as excinfo:
-            self.runner.invoke(watch, ["docstrings", "--changed"], catch_exceptions=False)
+    def test_watch_docstrings_changed_option_available(self):
+        """Test that watch docstrings --changed option is available in help."""
+        result = self.runner.invoke(watch, ["docstrings", "--help"])
 
-        assert "Watching changed files functionality not yet fully implemented" in str(
-            excinfo.value
-        )
+        assert result.exit_code == 0
+        assert "--changed" in result.output
+        assert "Watches the files currently changed in git" in result.output
 
     # Note: We don't test --symbol functionality since it would actually start watching
     # and would be difficult to test in a unit test environment. The integration
