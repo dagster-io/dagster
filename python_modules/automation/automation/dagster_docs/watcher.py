@@ -103,7 +103,7 @@ class GitignoreAwareHandler(FileSystemEventHandler):
         if event.is_directory:
             return
 
-        file_path = Path(event.src_path)
+        file_path = Path(str(event.src_path))
 
         # Only watch .py files that aren't gitignored
         if file_path.suffix == ".py" and not self._should_ignore_path(file_path):
@@ -114,7 +114,7 @@ class GitignoreAwareHandler(FileSystemEventHandler):
         if event.is_directory:
             return
         # Check if the destination is a .py file and not gitignored
-        dest_path = Path(event.dest_path)
+        dest_path = Path(str(event.dest_path))
         if dest_path.suffix == ".py" and not self._should_ignore_path(dest_path):
             self.parent_watcher._on_file_changed(dest_path)  # noqa: SLF001
 
@@ -122,7 +122,7 @@ class GitignoreAwareHandler(FileSystemEventHandler):
         """Handle file creation events (some editors recreate files)."""
         if event.is_directory:
             return
-        file_path = Path(event.src_path)
+        file_path = Path(str(event.src_path))
         if file_path.suffix == ".py" and not self._should_ignore_path(file_path):
             self.parent_watcher._on_file_changed(file_path)  # noqa: SLF001
 
@@ -149,6 +149,7 @@ class ChangedFilesWatcher:
 
     def _on_file_changed(self, file_path: Path) -> None:
         """Called when any .py file changes - triggers git refresh and watcher updates."""
+        # Debounced git status refresh to update the watcher set
         current_time = time.time()
         if current_time - self.last_git_check > self.git_refresh_debounce:
             self.last_git_check = current_time
