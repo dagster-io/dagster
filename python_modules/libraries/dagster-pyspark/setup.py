@@ -41,4 +41,9 @@ setup(
         "pyspark>=3,<5",
     ],
     zip_safe=False,
+    entry_points={
+        "dagster_dg.plugin": [
+            "dagster_pyspark = dagster_pyspark",
+        ],
+    },
 )

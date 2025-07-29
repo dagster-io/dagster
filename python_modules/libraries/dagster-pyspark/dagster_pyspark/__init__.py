@@ -1,5 +1,6 @@
 from dagster_shared.libraries import DagsterLibraryRegistry
 
+from dagster_pyspark.components.spark_session.component import SparkSessionComponent
 from dagster_pyspark.resources import (
     LazyPySparkResource,
     PySparkResource,
@@ -15,6 +16,7 @@ __all__ = [
     "DataFrame",
     "LazyPySparkResource",
     "PySparkResource",
+    "SparkSessionComponent",
     "lazy_pyspark_resource",
     "pyspark_resource",
 ]
