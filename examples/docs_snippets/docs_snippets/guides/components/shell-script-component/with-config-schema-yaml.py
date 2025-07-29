@@ -3,7 +3,7 @@ from collections.abc import Sequence
 import dagster as dg
 
 
-class ShellCommand(dg.Component, dg.Resolvable):
+class ShellCommand(dg.Component, dg.Model, dg.Resolvable):
     # highlight-start
     """Models a shell script as a Dagster asset."""
 
