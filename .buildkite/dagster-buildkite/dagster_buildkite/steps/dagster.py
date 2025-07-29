@@ -35,7 +35,7 @@ branch_name = safe_getenv("BUILDKITE_BRANCH")
 
 def build_buildkite_lint_steps() -> list[CommandStepConfiguration]:
     commands = [
-        "pytest .buildkite/dagster-buildkite/lints.py",
+        "pytest .buildkite/buildkite-shared/lints.py",
     ]
     return [
         add_test_image(
