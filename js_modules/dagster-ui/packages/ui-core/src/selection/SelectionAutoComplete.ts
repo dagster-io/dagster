@@ -9,6 +9,7 @@ export function createSelectionAutoComplete({
   getSubstringResultMatchingQuery,
   getAllResults,
   createOperatorSuggestion,
+  supportsTraversal = true,
 }: Omit<SelectionAutoCompleteProvider, 'renderResult' | 'useAutoComplete'>) {
   return function (line: string, actualCursorIndex: number) {
     const {parseTrees} = parseInput(line);
@@ -27,6 +28,7 @@ export function createSelectionAutoComplete({
         getFunctionResultsMatchingQuery,
         getSubstringResultMatchingQuery,
         createOperatorSuggestion,
+        supportsTraversal,
       });
       visitorWithAutoComplete.addUnmatchedValueResults('');
     } else {
@@ -43,6 +45,7 @@ export function createSelectionAutoComplete({
             getFunctionResultsMatchingQuery,
             getSubstringResultMatchingQuery,
             createOperatorSuggestion,
+            supportsTraversal,
           });
           tree.accept(visitor);
           visitorWithAutoComplete = visitor;
