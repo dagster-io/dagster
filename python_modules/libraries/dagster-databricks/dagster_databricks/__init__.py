@@ -10,6 +10,9 @@ This package provides:
 
 from dagster_shared.libraries import DagsterLibraryRegistry
 
+from dagster_databricks.components.databricks_session import (
+    DatabricksSessionComponent as DatabricksSessionComponent,
+)
 from dagster_databricks.databricks import (
     DatabricksClient as DatabricksClient,
     DatabricksError as DatabricksError,
