@@ -7,7 +7,7 @@ import click
 from dagster_dg_core.config import DgRawCliConfig, normalize_cli_config
 from dagster_dg_core.context import DgContext
 from dagster_dg_core.shared_options import dg_global_options
-from dagster_dg_core.utils import exit_with_error
+from dagster_dg_core.utils import DgClickCommand, exit_with_error
 from dagster_dg_core.utils.telemetry import cli_telemetry_wrapper
 from dagster_shared.plus.config import DagsterPlusCliConfig
 
@@ -151,6 +151,7 @@ def _get_registry_fragment(registry_urls: list[str]) -> tuple[str, list[str]]:
 
 @click.command(
     name="github-actions",
+    cls=DgClickCommand,
     context_settings={"help_option_names": ["-h", "--help"]},
 )
 @click.option("--git-root", type=Path, help="Path to the git root of the repository")
